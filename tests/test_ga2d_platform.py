@@ -9,11 +9,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_ga2d_p3_activates_only_the_apb_shell_and_irq_route() -> None:
+def test_ga2d_p4_activates_the_real_private_axi64_master_and_irq_route() -> None:
     memory_map = json.loads(
         (ROOT / "rtl/mini/address_map/memory_map.json").read_text(encoding="utf-8")
     )
@@ -23,6 +25,7 @@ def test_ga2d_p3_activates_only_the_apb_shell_and_irq_route() -> None:
     )
     apb4_periph = (ROOT / "rtl/mini/top/apb4_periph.sv").read_text(encoding="utf-8")
     apb4_system = (ROOT / "rtl/mini/top/apb4_system.sv").read_text(encoding="utf-8")
+    data_plane = (ROOT / "rtl/mini/top/soc_data_plane.sv").read_text(encoding="utf-8")
     top = (ROOT / "rtl/mini/top/retrosoc.sv").read_text(encoding="utf-8")
 
     assert "APB4_GA" not in regions
@@ -48,6 +51,11 @@ def test_ga2d_p3_activates_only_the_apb_shell_and_irq_route() -> None:
     assert topology["interrupts"][-1]["signal"] == "resource_irq_lp_i[7]"
     assert {
         "ga2d_pkg.sv",
+        "ga2d_addr_gen.sv",
+        "ga2d_axi4_master.sv",
+        "ga2d_dma.sv",
+        "ga2d_pixel.sv",
+        "ga2d_core.sv",
         "ga2d_reg.sv",
         "apb4_ga2d.sv",
     } <= {path.name for path in (ROOT / "rtl/ip/multimedia").glob("*ga2d*.sv")}
@@ -57,13 +65,21 @@ def test_ga2d_p3_activates_only_the_apb_shell_and_irq_route() -> None:
     assert "s_hp_plic_source[11] = resource_irq_hp_i[7];" in apb4_periph
     assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8]" in top
     assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8]" in top
-    assert "axi4_master_idle u_ga2d_master_idle" in top
+    assert "axi4_master_idle u_ga2d_master_idle" not in top
+    assert "axi4_if.master" in apb4_periph
+    assert "ga2d_axi4" in apb4_periph
+    assert "ga2d_axi4" in top
+    assert "core_safe_idle" in apb4_periph
+    assert "assign s_ga2d_core_safe_idle = ga2d_core_safe_idle_i;" in data_plane
+    lp_data_cdc = data_plane.split(") u_lp_data_cdc (", 1)[1].split(");", 1)[0]
+    assert ".clear_i     (1'b0)" in lp_data_cdc
+    assert "HP lifecycle flush invalidates HP transport" in lp_data_cdc
 
 
-def test_ga2d_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:
+def test_ga2d_p4_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
-        return
+        pytest.fail("GA2D P4 platform lifecycle test requires Verilator")
 
     topology = tmp_path / "topology"
     memory_map = tmp_path / "memory_map"
@@ -158,4 +174,4 @@ def test_ga2d_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:
         },
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
-    assert "GA2D P2 bridge, ID7, lifecycle, flush, and reset test passed" in result.stdout
+    assert "GA2D P2 bridge, ID7, lifecycle, flush, LP retention, and reset test passed" in result.stdout

@@ -121,6 +121,10 @@ module resource_controller_tb;
     if ((owner_o[0] != 2'd1) || irq_lp_o[0] || !irq_hp_o[0]) begin
       $fatal(1, "HP resource ownership or IRQ routing mismatch");
     end
+    apb_read(12'h108, read_data);
+    if (read_data != 32'h0000_00D5) begin
+      $fatal(1, "resource STATUS bit layout mismatch after HP handoff");
+    end
     apb_read(12'h110, read_data);
     if (read_data != 32'd1) $fatal(1, "resource handoff counter mismatch");
 
@@ -139,6 +143,10 @@ module resource_controller_tb;
     apb_write(12'h124, 32'h0000_0003, 1'b0);
     if (!quiesce_o[1] || !reset_o[1]) begin
       $fatal(1, "resource lifecycle controls did not update");
+    end
+    apb_read(12'h128, read_data);
+    if (read_data != 32'h0000_005C) begin
+      $fatal(1, "resource STATUS lifecycle bit layout mismatch: %h", read_data);
     end
 
     irq_i[7] = 1'b1;

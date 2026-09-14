@@ -119,13 +119,14 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
-The Mini GA2D graphics accelerator has a frozen architecture and ABI. Phase 3
-activates `APB4_GA2D` as a PCLK register shell with ownership-routed IRQ
-support; it does not implement START, 2D DMA, pixel operations, or AXI payload
-traffic. Its approved phases first expanded the LP interrupt platform and
-native AXI64 fabric, then activated the former GA reservation before later
-fill/copy/convert/alpha engine work. The exact allocations, Common reuse
-limits, lifecycle, HAL, and evidence gates are in [GA2D](../docs/ip/ga2d.md).
+The Mini GA2D graphics accelerator has a frozen architecture and ABI. Phase 4
+implements `APB4_GA2D` as a PCLK-controlled, direct single-job private-AXI64
+2D FILL/COPY DMA engine with ownership-routed IRQ support, snapshots, byte
+pitches, and byte-edge transfers. RGB565, RGB888, XRGB8888, and ARGB8888 are
+implemented. CONVERT, BLEND, A8, in-place background composition, and
+descriptor/ring/queue submission remain unavailable. The earlier LP interrupt
+platform and native AXI64 fabric expansion retain their fixed allocations.
+The exact lifecycle, HAL, and evidence gates are in [GA2D](../docs/ip/ga2d.md).
 
 The Mini Audio Processing Unit has a frozen coreless architecture. APU-P5 adds
 the private AXI4 DMA and scheduler, microcode loader/sequencer, 112 KiB local

@@ -43,4 +43,10 @@ package ga2d_pkg;
     logic [1:0]  axi_response;
     logic [31:0] address;
   } ga2d_error_t;
+
+  typedef struct packed {
+    logic [31:0] address;
+    logic [31:0] pitch;
+    logic [2:0]  format;
+  } ga2d_plane_t;
 endpackage

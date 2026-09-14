@@ -48,9 +48,9 @@
 
 `define APB4_GA2D__IP_ID_VALUE                 32'h4741_3244
 `define APB4_GA2D__IP_VERSION_VALUE            32'h0001_0000
-`define APB4_GA2D__CAPABILITY_P3               32'h0000_0040
-`define APB4_GA2D__LIMITS_P3                   32'h0000_0000
-`define APB4_GA2D__FORMAT_CAPABILITY_P3        32'h0000_0000
+`define APB4_GA2D__CAPABILITY_P4               32'h0000_03e3
+`define APB4_GA2D__LIMITS_P4                   32'h0820_2010
+`define APB4_GA2D__FORMAT_CAPABILITY_P4        32'h000f_000f
 `define APB4_GA2D__TIMEOUT_CYCLES_RESET        32'h0010_0000
 `define APB4_GA2D__GLOBAL_ALPHA_RESET          32'h0000_00ff
 

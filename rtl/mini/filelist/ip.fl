@@ -145,6 +145,11 @@
 /ip/multimedia/apu_reg.sv
 /ip/multimedia/apb4_apu.sv
 /ip/multimedia/ga2d_pkg.sv
+/ip/multimedia/ga2d_addr_gen.sv
+/ip/multimedia/ga2d_axi4_master.sv
+/ip/multimedia/ga2d_dma.sv
+/ip/multimedia/ga2d_pixel.sv
+/ip/multimedia/ga2d_core.sv
 /ip/multimedia/ga2d_reg.sv
 /ip/multimedia/apb4_ga2d.sv
 /ip/multimedia/jpeg_pkg.sv

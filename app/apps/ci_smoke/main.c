@@ -31,12 +31,17 @@ static bool rs_ci_smoke_archinfo_v2(void) {
 }
 
 #ifdef CSR_ENABLE
+#define RS_CI_SMOKE_GA2D_BUFFER_BYTES UINT32_C(62)
+
 static volatile uint32_t rs_ci_smoke_external_irq_count;
 static volatile uint32_t rs_ci_smoke_external_irq_sequence[4];
 static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
 static volatile uint32_t rs_ci_smoke_timer_irq_count;
 static volatile uint32_t rs_ci_smoke_software_irq_count;
 static volatile uint32_t rs_ci_smoke_ga2d_irq_count;
+static volatile uint8_t rs_ci_smoke_ga2d_fill_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
+static volatile uint8_t rs_ci_smoke_ga2d_copy_source_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
+static volatile uint8_t rs_ci_smoke_ga2d_copy_destination_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
 
 static void rs_ci_smoke_external_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
     const uint32_t context = (uint32_t)__RV_CSR_READ(CSR_HAZARD3_MEICONTEXT);
@@ -72,7 +77,7 @@ static void rs_ci_smoke_software_irq_handler(uintptr_t mcause, uintptr_t stack_p
 static void rs_ci_smoke_ga2d_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
     (void)mcause;
     (void)stack_pointer;
-    RS_GA2D_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_DONE;
+    RS_GA2D_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_ALL;
     ++rs_ci_smoke_ga2d_irq_count;
 }
 
@@ -103,6 +108,13 @@ static bool rs_ci_smoke_wait_external_count(uint32_t target) {
          (timeout != 0U) && (rs_ci_smoke_external_irq_count < target); --timeout) {
     }
     return rs_ci_smoke_external_irq_count >= target;
+}
+
+static bool rs_ci_smoke_wait_ga2d_irq(uint32_t target) {
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT;
+         (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_ga2d_irq_count >= target;
 }
 
 static bool rs_ci_smoke_external_single(uint32_t id) {
@@ -268,12 +280,131 @@ static bool rs_ci_smoke_external_irq(void) {
     return (rs_ci_smoke_timer_irq_count != 0U) && (rs_ci_smoke_software_irq_count != 0U);
 }
 
+static bool rs_ci_smoke_ga2d_fill_copy(void) {
+    const rs_ga2d_job_t fill = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_fill_buffer[1U], 20U, RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0x80123456),
+    };
+    const rs_ga2d_job_t copy = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {(uintptr_t)&rs_ci_smoke_ga2d_copy_source_buffer[1U], 20U,
+                       RS_GA2D_FORMAT_RGB888},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_copy_destination_buffer[1U], 20U,
+                        RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    const uint32_t row_bytes = UINT32_C(15);
+    const uint32_t span = UINT32_C(60);
+    volatile uint8_t *const fill_guard = rs_ci_smoke_ga2d_fill_buffer;
+    volatile uint8_t *const fill_destination = fill_guard + 1U;
+    volatile uint8_t *const copy_source_guard = rs_ci_smoke_ga2d_copy_source_buffer;
+    volatile uint8_t *const copy_source = copy_source_guard + 1U;
+    volatile uint8_t *const copy_destination_guard = rs_ci_smoke_ga2d_copy_destination_buffer;
+    volatile uint8_t *const copy_destination = copy_destination_guard + 1U;
+    rs_ga2d_error_t error;
+    rs_ga2d_stats_t stats;
+    rs_ga2d_status_t status;
+    uint32_t expected_irq;
+
+    fill_guard[0] = UINT8_C(0xD3);
+    fill_guard[span + 1U] = UINT8_C(0xD3);
+    for (uint32_t index = 0U; index < span; ++index) {
+        fill_destination[index] = UINT8_C(0xD3);
+    }
+    expected_irq = rs_ci_smoke_ga2d_irq_count + 1U;
+    if (rs_ga2d_configure(&fill) != RS_OK) {
+        return false;
+    }
+    if ((rs_ga2d_start() != RS_OK) || !rs_ci_smoke_wait_ga2d_irq(expected_irq) ||
+        (rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK) || (rs_ga2d_get_status(&status) != RS_OK) ||
+        !status.done || status.busy || status.error || (rs_ga2d_get_error(&error) != RS_OK) ||
+        error.valid || (rs_ga2d_get_stats(&stats) != RS_OK) || (stats.lines_done != fill.height) ||
+        (stats.read_bytes != 0U) || (stats.write_bytes != UINT64_C(45))) {
+        return false;
+    }
+    if ((fill_guard[0] != UINT8_C(0xD3)) || (fill_guard[span + 1U] != UINT8_C(0xD3))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < fill.height; ++row) {
+        const uint32_t offset = row * fill.destination.pitch;
+
+        for (uint32_t byte = 0U; byte < row_bytes; ++byte) {
+            const uint8_t expected = (byte % 3U == 0U)   ? UINT8_C(0x12)
+                                     : (byte % 3U == 1U) ? UINT8_C(0x34)
+                                                         : UINT8_C(0x56);
+
+            if (fill_destination[offset + byte] != expected) {
+                return false;
+            }
+        }
+        for (uint32_t byte = row_bytes; byte < fill.destination.pitch; ++byte) {
+            if (fill_destination[offset + byte] != UINT8_C(0xD3)) {
+                return false;
+            }
+        }
+    }
+
+    copy_source_guard[0] = UINT8_C(0xA5);
+    copy_source_guard[span + 1U] = UINT8_C(0xA5);
+    copy_destination_guard[0] = UINT8_C(0xC7);
+    copy_destination_guard[span + 1U] = UINT8_C(0xC7);
+    for (uint32_t index = 0U; index < span; ++index) {
+        copy_source[index] = (uint8_t)(index ^ UINT32_C(0x5A));
+        copy_destination[index] = UINT8_C(0xC7);
+    }
+    expected_irq = rs_ci_smoke_ga2d_irq_count + 1U;
+    if (rs_ga2d_configure(&copy) != RS_OK) {
+        return false;
+    }
+    if ((rs_ga2d_start() != RS_OK) || !rs_ci_smoke_wait_ga2d_irq(expected_irq) ||
+        (rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK) || (rs_ga2d_get_status(&status) != RS_OK) ||
+        !status.done || status.busy || status.error || (rs_ga2d_get_error(&error) != RS_OK) ||
+        error.valid || (rs_ga2d_get_stats(&stats) != RS_OK) || (stats.lines_done != copy.height) ||
+        (stats.read_bytes != UINT64_C(45)) || (stats.write_bytes != UINT64_C(45))) {
+        return false;
+    }
+    if ((copy_source_guard[0] != UINT8_C(0xA5)) ||
+        (copy_source_guard[span + 1U] != UINT8_C(0xA5)) ||
+        (copy_destination_guard[0] != UINT8_C(0xC7)) ||
+        (copy_destination_guard[span + 1U] != UINT8_C(0xC7))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < copy.height; ++row) {
+        const uint32_t offset = row * copy.destination.pitch;
+
+        for (uint32_t byte = 0U; byte < row_bytes; ++byte) {
+            if (copy_destination[offset + byte] != copy_source[offset + byte]) {
+                return false;
+            }
+        }
+        for (uint32_t byte = row_bytes; byte < copy.destination.pitch; ++byte) {
+            if ((copy_source[offset + byte] != (uint8_t)((offset + byte) ^ UINT32_C(0x5A))) ||
+                (copy_destination[offset + byte] != UINT8_C(0xC7))) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 static bool rs_ci_smoke_ga2d_irq(void) {
     rs_ga2d_capability_t capability;
 
     rs_ci_smoke_ga2d_irq_count = 0U;
     if ((rs_ga2d_get_capability(&capability) != RS_OK) ||
-        (capability.features != RS_GA2D_CAPABILITY_P3) ||
+        (capability.features != RS_GA2D_CAPABILITY_P4) ||
+        (capability.limits != RS_GA2D_LIMITS_P4) ||
+        (capability.formats != RS_GA2D_FORMAT_CAPABILITY_P4) ||
         (rs_ga2d_irq_clear(RS_GA2D_IRQ_ALL) != RS_OK) ||
         (rs_ga2d_irq_enable(RS_GA2D_IRQ_DONE) != RS_OK) ||
         (rs_irq_enable_external(RS_SOC_EXT_IRQ_GA2D, rs_ci_smoke_ga2d_irq_handler) != RS_OK)) {
@@ -281,10 +412,7 @@ static bool rs_ci_smoke_ga2d_irq(void) {
     }
     RS_GA2D_REG(RS_GA2D_REG_IRQ_TEST) = RS_GA2D_IRQ_DONE;
     __enable_irq();
-    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < 1U);
-         --timeout) {
-    }
-    if (rs_ci_smoke_ga2d_irq_count != 1U) {
+    if (!rs_ci_smoke_wait_ga2d_irq(1U) || !rs_ci_smoke_ga2d_fill_copy()) {
         __disable_irq();
         (void)rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D);
         __disable_ext_irq();
@@ -370,6 +498,7 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
         (RS_SOC_HAS_SRAM != 0U) ? RS_FABRIC_TARGET_SRAM : RS_FABRIC_TARGET_SDRAM;
     rs_fabric_monitor_status_t status;
     rs_fabric_master_stats_t master;
+    rs_fabric_master_stats_t ga2d_master;
     rs_fabric_target_stats_t target;
     rs_fabric_fault_t fault;
     uint32_t flush_count;
@@ -377,6 +506,7 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
     if ((rs_fabric_monitor_snapshot() != RS_OK) ||
         (rs_fabric_monitor_get_status(&status) != RS_OK) ||
         (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_LP, &master) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_master) != RS_OK) ||
         (rs_fabric_monitor_read_target(active_memory_target, &target) != RS_OK) ||
         (rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
         (rs_fabric_monitor_get_flush_count(&flush_count) != RS_OK)) {
@@ -385,6 +515,8 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
     return !status.recovery && !status.flush_busy && !fault.valid && (flush_count == 0U) &&
            (master.read_requests != 0U) && (master.write_requests != 0U) &&
            (master.read_beats != 0U) && (master.write_beats != 0U) &&
+           (ga2d_master.read_requests != 0U) && (ga2d_master.write_requests != 0U) &&
+           (ga2d_master.read_beats != 0U) && (ga2d_master.write_beats != 0U) &&
            (target.read_requests != 0U) && (target.write_requests != 0U) &&
            (target.read_beats != 0U) && (target.write_beats != 0U);
 }
@@ -672,17 +804,17 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 15U);
     }
     printf("ci_smoke: external irq passed\n");
+    if (!rs_ci_smoke_fabric_monitor_start()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
     if (!rs_ci_smoke_ga2d_irq()) {
         rs_test_finish(RS_TEST_FAILED, 15U);
     }
-    printf("ci_smoke: GA2D shell IRQ passed\n");
+    printf("ci_smoke: GA2D FILL/COPY IRQ passed\n");
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }
     printf("ci_smoke: APU-P5 discovery passed\n");
-    if (!rs_ci_smoke_fabric_monitor_start()) {
-        rs_test_finish(RS_TEST_FAILED, 13U);
-    }
     if (!rs_ci_smoke_onchip_sram() || !rs_ci_smoke_onchip_sram_access()) {
         rs_test_finish(RS_TEST_FAILED, 12U);
     }

@@ -105,3 +105,31 @@ def test_mailbox_c_offsets_match_handwritten_rtl() -> None:
             "LP_INTR_ENABLE",
         )
     }
+
+
+def test_hp_boot_uses_private_ga2d_mailbox_and_resource_lifecycle() -> None:
+    source = (ROOT / "app/apps/hp_boot/main.c").read_text(encoding="utf-8")
+
+    for requirement in (
+        "RS_HP_BOOT_READY_EVENT",
+        "RS_HP_BOOT_READY_ARG",
+        "RS_HP_BOOT_GA2D_START_COMMAND",
+        "RS_HP_BOOT_GA2D_PASS_EVENT",
+        "RS_HP_BOOT_GA2D_FAIL_EVENT",
+        "RS_HP_BOOT_GA2D_CACHE_EVENT",
+        "rs_resource_set_owner(RS_RESOURCE_GA2D, RS_RESOURCE_OWNER_HP, false)",
+        "rs_resource_set_owner(RS_RESOURCE_GA2D, RS_RESOURCE_OWNER_LP, false)",
+        "rs_resource_acknowledge_cache_clean()",
+        "rs_hp_boot_wait_message",
+        "rs_hp_boot_wait_cache_request",
+        "rs_hp_boot_wait_hp_held",
+        "HP_GA2D_PASS",
+        "HP_GA2D_IDLE",
+        "HP_GA2D_CACHE_REQUESTED",
+        "HP_GA2D_CACHE_REQUEST",
+        "HP_GA2D_CACHE_MESSAGE",
+        "HP_GA2D_CACHE_ACK",
+        "HP_GA2D_HELD",
+        "HP_GA2D_CACHE_CLEAN",
+    ):
+        assert requirement in source

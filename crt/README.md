@@ -69,9 +69,12 @@ abort/reset, interrupt, and first-error access. The P5 surface remains coreless;
 MP3, KWS, model loading, and the APU RX route stay unavailable until their
 frozen later phases.
 
-`<retrosoc/hal/ga2d.h>` provides GA2D shell discovery, status/error, IRQ,
-and bounded abort/reset access. In Phase 3 its private DMA, 2D job, and pixel
-operations remain unavailable and return `RS_ENOTSUP`.
+`<retrosoc/hal/ga2d.h>` provides GA2D discovery, direct single-job 2D FILL/COPY
+configuration and execution, status/error, snapshots, IRQ, and bounded
+abort/reset access. Its private AXI64 DMA supports RGB565, RGB888, XRGB8888,
+and ARGB8888 surfaces with byte pitches and byte edges. CONVERT, BLEND, A8,
+in-place background composition, descriptor/ring/queue submission, cache
+coherency, and a Linux graphics driver are not provided.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

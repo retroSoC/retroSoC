@@ -263,7 +263,7 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
     ]
 
 
-def test_ga2d_p3_topology_activates_the_shell_without_a_data_source() -> None:
+def test_ga2d_p4_topology_preserves_the_private_master_policy_and_active_shell() -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
     policies = document["data_master_policies"]
 

@@ -333,7 +333,7 @@
     "sources": [
       "docs/ip/resource-controller.md"
     ],
-    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 owns the P3 GA2D shell IRQ and an idle AXI bridge placeholder."
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 owns the active P4 GA2D direct FILL/COPY DMA and IRQ route."
   },
   {
     "id": "monitor",
@@ -344,7 +344,7 @@
     "sources": [
       "docs/ip/fabric-monitor.md"
     ],
-    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes the idle GA2D bridge behind the P3 shell."
+    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P4 GA2D direct FILL/COPY DMA traffic."
   },
   {
     "id": "i2s",
@@ -487,9 +487,15 @@
     "sources": [
       "docs/ip/ga2d.md",
       "rtl/ip/multimedia/apb4_ga2d.sv",
+      "rtl/ip/multimedia/ga2d_pkg.sv",
+      "rtl/ip/multimedia/ga2d_addr_gen.sv",
+      "rtl/ip/multimedia/ga2d_axi4_master.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "rtl/ip/multimedia/ga2d_core.sv",
       "rtl/ip/multimedia/ga2d_reg.sv"
     ],
-    "summary": "P3 APB4 register shell with resource-owned IRQ; START, 2D DMA, and pixel operations remain unavailable."
+    "summary": "P4 APB4-controlled direct single-job private-AXI64 2D FILL/COPY DMA with resource-owned IRQ, snapshots, pitch, and byte-edge support; no CONVERT, BLEND, A8, in-place background, or descriptor/ring/queue submission."
   },
   {
     "id": "reserved",

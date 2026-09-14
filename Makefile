@@ -130,6 +130,7 @@ HP_BOOT_BUNDLE_BIN      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).bin
 HP_BOOT_BUNDLE_HEX      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).hex
 HP_BOOT_BUNDLE_MANIFEST := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).json
 HP_LINUX_SIM_TIME       ?= 7200
+HP_SMOKE_SIM_TIME       ?= 300
 HP_SMOKE_BUILD_DIR      := $(VARIANT_ROOT)/hp-smoke
 HP_SMOKE_STAMP          := $(HP_SMOKE_BUILD_DIR)/images/.stamp
 HP_SMOKE_BUNDLE_NAME    ?= retrosoc_hp_smoke
@@ -395,7 +396,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-apu | formal-gateway-a | formal-sdio run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-ga2d | formal-apu | formal-gateway-a | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -583,7 +584,15 @@ hp-smoke-bundle: $(HP_SMOKE_BUNDLE_BIN) $(HP_SMOKE_BUNDLE_HEX)
 
 hp-smoke-sim: hp-smoke-bundle comp
 	@test '$(SIMU)' = VERILATOR
-	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_SMOKE_BUNDLE_NAME) sim
+	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_SMOKE_BUNDLE_NAME) \
+		SOC_SIM_TIME=$(HP_SMOKE_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
+	python3 $(ROOT_PATH)/scripts/check_simulation.py \
+		--log $(SIM_BUILD_ROOT)/sim.log \
+		--result $(SIM_BUILD_ROOT)/result-hp-smoke-sim-check.json \
+		--require 'SIM_TEST_PASS code=0' \
+		--require 'HP_LINUX_READY' \
+		--require 'HP_GA2D_PASS' \
+		--require 'HP_GA2D_CACHE_CLEAN'
 
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_vexiiriscv.py \

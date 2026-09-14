@@ -25,6 +25,17 @@ REQUIRED_FIELDS = {
     "psram_wait",
     "flash_wait",
     "dma_wait",
+    "workload_bytes",
+    "pixels",
+    "jobs",
+    "cpu_cycles",
+    "cpu_hz",
+    "ga2d_features",
+    "ga2d_limits",
+    "ga2d_formats",
+    "ga2d_cycles",
+    "ga2d_read_bytes",
+    "ga2d_write_bytes",
 }
 TOKEN = re.compile(r"([a-z0-9_]+)=([^\s]+)")
 
@@ -48,16 +59,47 @@ def parse_log(content: str) -> dict[str, object]:
             "words": parse_number(fields["words"]),
             "checksum": int(fields["checksum"], 16),
             "cycles": parse_number(fields["cycles"]),
+            "workload_bytes": parse_number(fields["workload_bytes"]),
+            "pixels": parse_number(fields["pixels"]),
+            "jobs": parse_number(fields["jobs"]),
+            "cpu_cycles": parse_number(fields["cpu_cycles"]),
+            "ga2d_cycles": parse_number(fields["ga2d_cycles"]),
+            "ga2d_read_bytes": parse_number(fields["ga2d_read_bytes"]),
+            "ga2d_write_bytes": parse_number(fields["ga2d_write_bytes"]),
+            "configuration": {
+                "cpu_hz": parse_number(fields["cpu_hz"]),
+                "ga2d_features": parse_number(fields["ga2d_features"]),
+                "ga2d_limits": parse_number(fields["ga2d_limits"]),
+                "ga2d_formats": parse_number(fields["ga2d_formats"]),
+            },
         }
         for counter in sorted(
-            REQUIRED_FIELDS - {"region", "op", "words", "checksum", "cycles"}
+            REQUIRED_FIELDS
+            - {
+                "region",
+                "op",
+                "words",
+                "checksum",
+                "cycles",
+                "workload_bytes",
+                "pixels",
+                "jobs",
+                "cpu_cycles",
+                "cpu_hz",
+                "ga2d_features",
+                "ga2d_limits",
+                "ga2d_formats",
+                "ga2d_cycles",
+                "ga2d_read_bytes",
+                "ga2d_write_bytes",
+            }
         ):
             sample[counter] = parse_number(fields[counter])
         samples.append(sample)
     passed = PASS_MARKER in content
     failure_marker = any(line.startswith(FAIL_PREFIX) for line in content.splitlines())
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "passed" if passed and samples and not failure_marker else "failed",
         "failure_marker": failure_marker,
         "pass_marker": passed,

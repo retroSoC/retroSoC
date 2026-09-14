@@ -17,6 +17,7 @@
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/jpeg.h>
+#include <retrosoc/hal/memory.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
@@ -47,11 +48,14 @@ static uint8_t storage[32];
 static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
 volatile uint32_t rs_ga2d_test_mmio[1024];
+uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
+volatile uint32_t rs_resource_test_mmio[1024];
 
 #define APU_TEST_REG(offset)            rs_apu_test_mmio[(offset) / 4U]
 #define GA2D_TEST_REG(offset)           rs_ga2d_test_mmio[(offset) / 4U]
 #define FABRIC_MONITOR_TEST_REG(offset) rs_fabric_monitor_test_mmio[(offset) / 4U]
+#define RESOURCE_TEST_REG(offset)       rs_resource_test_mmio[(offset) / 4U]
 
 void putch(char ch) {
     (void)ch;
@@ -860,6 +864,7 @@ static int test_extension_validation(void) {
 
 static int test_resource_validation(void) {
     rs_resource_status_t status;
+    const uint32_t ga2d_base = UINT32_C(0x100) + ((uint32_t)RS_RESOURCE_GA2D * UINT32_C(0x20));
 
     if ((RS_RESOURCE_DMA != 0) || (RS_RESOURCE_USB2 != 1) || (RS_RESOURCE_SDIO0 != 2) ||
         (RS_RESOURCE_SDIO1 != 3) || (RS_RESOURCE_SPISD != 4) || (RS_RESOURCE_EXT_H != 5) ||
@@ -876,6 +881,30 @@ static int test_resource_validation(void) {
         (rs_resource_clear_fault((rs_resource_t)RS_RESOURCE_COUNT) != RS_EINVAL) ||
         (rs_resource_get_cache_status(NULL) != RS_EINVAL)) {
         return 2;
+    }
+
+    for (size_t index = 0U;
+         index < (sizeof(rs_resource_test_mmio) / sizeof(rs_resource_test_mmio[0])); ++index) {
+        rs_resource_test_mmio[index] = 0U;
+    }
+    RESOURCE_TEST_REG(ga2d_base) = (uint32_t)RS_RESOURCE_OWNER_HP;
+    RESOURCE_TEST_REG(ga2d_base + UINT32_C(0x008)) = UINT32_C(0x00000011);
+    RESOURCE_TEST_REG(ga2d_base + UINT32_C(0x010)) = UINT32_C(0x00001234);
+    if ((rs_resource_get_status(RS_RESOURCE_GA2D, &status) != RS_OK) ||
+        (status.owner != RS_RESOURCE_OWNER_HP) || (status.handoff_count != UINT16_C(0x1234)) ||
+        status.owner_locked || status.blocked || !status.idle || status.quiesced ||
+        status.in_reset || status.irq_pending || status.fault) {
+        return 3;
+    }
+
+    RESOURCE_TEST_REG(ga2d_base) = (uint32_t)RS_RESOURCE_OWNER_LP | UINT32_C(0x00000100);
+    RESOURCE_TEST_REG(ga2d_base + UINT32_C(0x008)) = UINT32_C(0x000000FC);
+    RESOURCE_TEST_REG(ga2d_base + UINT32_C(0x010)) = UINT32_C(0x0000FFFF);
+    if ((rs_resource_get_status(RS_RESOURCE_GA2D, &status) != RS_OK) ||
+        (status.owner != RS_RESOURCE_OWNER_LP) || (status.handoff_count != UINT16_MAX) ||
+        !status.owner_locked || !status.blocked || !status.idle || !status.quiesced ||
+        !status.in_reset || !status.irq_pending || !status.fault) {
+        return 4;
     }
     return 0;
 }
@@ -1118,8 +1147,11 @@ static void test_ga2d_mmio_reset(void) {
     }
     GA2D_TEST_REG(RS_GA2D_REG_IP_ID) = RS_GA2D_IP_ID_VALUE;
     GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = RS_GA2D_IP_VERSION_VALUE;
-    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P3;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P4;
+    GA2D_TEST_REG(RS_GA2D_REG_LIMITS) = RS_GA2D_LIMITS_P4;
+    GA2D_TEST_REG(RS_GA2D_REG_FORMAT_CAPABILITY) = RS_GA2D_FORMAT_CAPABILITY_P4;
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
 }
 
 static int test_ga2d_hal_contract(void) {
@@ -1127,14 +1159,34 @@ static int test_ga2d_hal_contract(void) {
     rs_ga2d_status_t status;
     rs_ga2d_error_t error;
     rs_ga2d_stats_t stats;
-    rs_ga2d_job_t job = {0};
+    rs_ga2d_job_t fill = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)UINT32_C(0x38001000), 15U, RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0xA5),
+        .color = UINT32_C(0x80123456),
+    };
+    rs_ga2d_job_t copy = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {(uintptr_t)UINT32_C(0x38002000), 32U, RS_GA2D_FORMAT_ARGB8888},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)UINT32_C(0x38003000), 32U, RS_GA2D_FORMAT_ARGB8888},
+        .width = 4U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
 
     test_ga2d_mmio_reset();
     if ((rs_ga2d_get_capability(NULL) != RS_EINVAL) ||
         (rs_ga2d_get_capability(&capability) != RS_OK) ||
         (capability.version != RS_GA2D_IP_VERSION_VALUE) ||
-        (capability.features != RS_GA2D_CAPABILITY_P3) || (capability.limits != 0U) ||
-        (capability.formats != 0U)) {
+        (capability.features != RS_GA2D_CAPABILITY_P4) ||
+        (capability.limits != RS_GA2D_LIMITS_P4) ||
+        (capability.formats != RS_GA2D_FORMAT_CAPABILITY_P4)) {
         return 1;
     }
     GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = UINT32_C(0x00020000);
@@ -1142,13 +1194,154 @@ static int test_ga2d_hal_contract(void) {
         return 2;
     }
     test_ga2d_mmio_reset();
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_IRQ;
     GA2D_TEST_REG(RS_GA2D_REG_COMMAND) = UINT32_C(0xA5A5A5A5);
-    if ((rs_ga2d_job_validate(NULL) != RS_EINVAL) || (rs_ga2d_job_validate(&job) != RS_ENOTSUP) ||
-        (rs_ga2d_configure(NULL) != RS_EINVAL) || (rs_ga2d_configure(&job) != RS_ENOTSUP) ||
+    if ((rs_ga2d_job_validate(NULL) != RS_EINVAL) || (rs_ga2d_job_validate(&fill) != RS_ENOTSUP) ||
+        (rs_ga2d_configure(NULL) != RS_EINVAL) || (rs_ga2d_configure(&fill) != RS_ENOTSUP) ||
         (rs_ga2d_start() != RS_ENOTSUP) || (rs_ga2d_wait(1U) != RS_ENOTSUP) ||
         (rs_ga2d_get_stats(NULL) != RS_EINVAL) || (rs_ga2d_get_stats(&stats) != RS_ENOTSUP) ||
         (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != UINT32_C(0xA5A5A5A5))) {
         return 3;
+    }
+
+    test_ga2d_mmio_reset();
+    if ((rs_ga2d_job_validate(&fill) != RS_OK) || (rs_ga2d_configure(&fill) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_JOB_CONFIG) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_GLOBAL_ALPHA) != fill.global_alpha) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COLOR) != fill.color) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_SIZE) != UINT32_C(0x00030005)) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_ADDRESS) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_PITCH) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_FORMAT) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_ADDRESS) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_PITCH) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_FORMAT) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_ADDRESS) != fill.destination.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_PITCH) != fill.destination.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_FORMAT) != fill.destination.format)) {
+        return 4;
+    }
+    if ((rs_ga2d_configure(&copy) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_JOB_CONFIG) != RS_GA2D_OP_COPY) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_ADDRESS) != copy.foreground.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_PITCH) != copy.foreground.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_FORMAT) != copy.foreground.format) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_ADDRESS) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_PITCH) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_FORMAT) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_ADDRESS) != copy.destination.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_PITCH) != copy.destination.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_DST_FORMAT) != copy.destination.format)) {
+        return 5;
+    }
+
+    fill.width = 0U;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 6;
+    }
+    fill.width = 5U;
+    fill.destination.format = RS_GA2D_FORMAT_A8;
+    if (rs_ga2d_job_validate(&fill) != RS_ENOTSUP) {
+        return 7;
+    }
+    fill.destination.format = (rs_ga2d_format_t)5;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 8;
+    }
+    fill.destination.format = RS_GA2D_FORMAT_RGB888;
+    fill.destination.pitch = 14U;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 9;
+    }
+    fill.destination.address = (uintptr_t)UINT32_C(0x38001001);
+    fill.destination.pitch = 16U;
+    if (rs_ga2d_job_validate(&fill) != RS_OK) {
+        return 10;
+    }
+    fill.destination.format = RS_GA2D_FORMAT_RGB565;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 11;
+    }
+    fill.destination.address = (uintptr_t)UINT32_C(0xFFFFFFFC);
+    fill.destination.pitch = 4U;
+    fill.destination.format = RS_GA2D_FORMAT_XRGB8888;
+    fill.width = 1U;
+    fill.height = 2U;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 12;
+    }
+    fill.destination.address = (uintptr_t)UINT32_C(0x10000000);
+    fill.destination.pitch = 4U;
+    fill.destination.format = RS_GA2D_FORMAT_XRGB8888;
+    fill.width = 1U;
+    fill.height = 1U;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 13;
+    }
+#if UINTPTR_MAX > UINT32_MAX
+    fill.destination.address = (uintptr_t)UINT64_C(0x100000000);
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 14;
+    }
+#endif
+    fill.destination.address = (uintptr_t)UINT32_C(0x38001000);
+    fill.destination.pitch = 15U;
+    fill.destination.format = RS_GA2D_FORMAT_RGB888;
+    fill.width = 5U;
+    fill.height = 3U;
+    fill.destination.address = (uintptr_t)UINT32_C(0x40001001);
+    fill.destination.pitch = 16U;
+    if (rs_ga2d_job_validate(&fill) != RS_OK) {
+        return 15;
+    }
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_OPI;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 16;
+    }
+    fill.destination.address = (uintptr_t)UINT32_C(0x48001001);
+    if (rs_ga2d_job_validate(&fill) != RS_OK) {
+        return 17;
+    }
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 18;
+    }
+    fill.destination.address = (uintptr_t)UINT32_C(0x38001000);
+    fill.destination.pitch = 15U;
+    copy.destination.address = copy.foreground.address;
+    if (rs_ga2d_job_validate(&copy) != RS_EINVAL) {
+        return 19;
+    }
+    copy.destination.address = (uintptr_t)UINT32_C(0x38003000);
+    copy.operation = RS_GA2D_OP_CONVERT;
+    if (rs_ga2d_job_validate(&copy) != RS_ENOTSUP) {
+        return 20;
+    }
+    copy.operation = RS_GA2D_OP_COPY;
+
+    GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_ALL;
+    GA2D_TEST_REG(RS_GA2D_REG_ERROR_STATUS) = RS_GA2D_ERROR_STATUS_VALID;
+    if ((rs_ga2d_start() != RS_OK) || (GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) != RS_GA2D_IRQ_ALL) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_ERROR_STATUS) != RS_GA2D_ERROR_STATUS_VALID) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != RS_GA2D_COMMAND_START)) {
+        return 21;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
+    GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_DONE;
+    if (rs_ga2d_wait(1U) != RS_ETIMEOUT) {
+        return 22;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DONE;
+    if (rs_ga2d_wait(0U) != RS_OK) {
+        return 23;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DONE | RS_GA2D_STATUS_ERROR;
+    if (rs_ga2d_wait(1U) != RS_EIO) {
+        return 24;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DONE | RS_GA2D_STATUS_BUSY;
+    if (rs_ga2d_wait(1U) != RS_ETIMEOUT) {
+        return 25;
     }
 
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) =
@@ -1157,7 +1350,7 @@ static int test_ga2d_hal_contract(void) {
     if ((rs_ga2d_get_status(NULL) != RS_EINVAL) || (rs_ga2d_get_status(&status) != RS_OK) ||
         !status.busy || !status.data_ready || !status.error ||
         (status.irq_state != (RS_GA2D_IRQ_DONE | RS_GA2D_IRQ_ABORT_DONE))) {
-        return 4;
+        return 26;
     }
     GA2D_TEST_REG(RS_GA2D_REG_ERROR_STATUS) =
         RS_GA2D_ERROR_STATUS_VALID | (UINT32_C(11) << RS_GA2D_ERROR_STATUS_CODE_SHIFT) |
@@ -1167,7 +1360,7 @@ static int test_ga2d_hal_contract(void) {
     if ((rs_ga2d_get_error(NULL) != RS_EINVAL) || (rs_ga2d_get_error(&error) != RS_OK) ||
         !error.valid || (error.code != 11U) || (error.stage != 5U) || (error.axi_response != 2U) ||
         (error.address != (uintptr_t)UINT32_C(0x30000040))) {
-        return 5;
+        return 27;
     }
 
     if ((rs_ga2d_irq_enable(RS_GA2D_IRQ_ALL) != RS_OK) ||
@@ -1178,29 +1371,61 @@ static int test_ga2d_hal_contract(void) {
         (rs_ga2d_irq_clear(RS_GA2D_IRQ_ERROR) != RS_OK) ||
         (GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) != RS_GA2D_IRQ_ERROR) ||
         (rs_ga2d_irq_enable(UINT32_C(0x8)) != RS_EINVAL)) {
-        return 6;
+        return 28;
     }
 
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_CYCLES_LO) = UINT32_C(0x89ABCDEF);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_CYCLES_HI) = UINT32_C(0x01234567);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_READ_BYTES_LO) = UINT32_C(0x11111111);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_READ_BYTES_HI) = UINT32_C(0x22222222);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_WRITE_BYTES_LO) = UINT32_C(0x33333333);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_WRITE_BYTES_HI) = UINT32_C(0x44444444);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_READ_STALL_LO) = UINT32_C(0x55555555);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_READ_STALL_HI) = UINT32_C(0x66666666);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_WRITE_STALL_LO) = UINT32_C(0x77777777);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_WRITE_STALL_HI) = UINT32_C(0x88888888);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_PIPE_STALL_LO) = UINT32_C(0x99999999);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_PIPE_STALL_HI) = UINT32_C(0xAAAAAAAA);
+    GA2D_TEST_REG(RS_GA2D_REG_SNAP_LINES_DONE) = UINT32_C(0x0000FEDC);
+    if ((rs_ga2d_get_stats(&stats) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_PERF_SNAPSHOT) != UINT32_C(1)) ||
+        (stats.cycles != UINT64_C(0x0123456789ABCDEF)) ||
+        (stats.read_bytes != UINT64_C(0x2222222211111111)) ||
+        (stats.write_bytes != UINT64_C(0x4444444433333333)) ||
+        (stats.read_stalls != UINT64_C(0x6666666655555555)) ||
+        (stats.write_stalls != UINT64_C(0x8888888877777777)) ||
+        (stats.pipe_stalls != UINT64_C(0xAAAAAAAA99999999)) ||
+        (stats.lines_done != UINT16_C(0xFEDC))) {
+        return 29;
+    }
     if ((rs_ga2d_reset() != RS_OK) ||
         (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != RS_GA2D_COMMAND_SOFT_RESET)) {
-        return 7;
+        return 30;
     }
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_RECOVERY_REQUIRED;
     GA2D_TEST_REG(RS_GA2D_REG_COMMAND) = UINT32_C(0x5A5A5A5A);
     if ((rs_ga2d_reset() != RS_EIO) ||
         (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != UINT32_C(0x5A5A5A5A))) {
-        return 8;
+        return 31;
     }
 
-    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = 0U;
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
     if ((rs_ga2d_abort_wait(0U) != RS_OK) ||
         (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != RS_GA2D_COMMAND_ABORT)) {
-        return 9;
+        return 32;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = 0U;
+    if (rs_ga2d_abort_wait(1U) != RS_EIO) {
+        return 33;
     }
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_BUSY;
     if (rs_ga2d_abort_wait(1U) != RS_ETIMEOUT) {
-        return 10;
+        return 34;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_RECOVERY_REQUIRED;
+    if (rs_ga2d_abort_wait(1U) != RS_EIO) {
+        return 35;
     }
     return 0;
 }

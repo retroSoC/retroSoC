@@ -13,6 +13,7 @@ module ga2d_wrapper_tb;
   logic        bridge_clear_busy_i = 1'b0;
   logic [ 7:0] bridge_epoch_i = 8'd0;
   logic        data_ready_i = 1'b1;
+  logic [ 1:0] mem_pad_mode_i = 2'd0;
   logic        idle_o;
   logic        irq_o;
   logic [31:0] read_data;
@@ -21,8 +22,31 @@ module ga2d_wrapper_tb;
       .pclk   (clk_i),
       .presetn(rst_n_i)
   );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) ga2d_axi4 (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
 
   always #5 clk_i = ~clk_i;
+
+  assign ga2d_axi4.awready = 1'b1;
+  assign ga2d_axi4.wready  = 1'b1;
+  assign ga2d_axi4.bid     = '0;
+  assign ga2d_axi4.bresp   = 2'd0;
+  assign ga2d_axi4.buser   = '0;
+  assign ga2d_axi4.bvalid  = 1'b0;
+  assign ga2d_axi4.arready = 1'b1;
+  assign ga2d_axi4.rid     = '0;
+  assign ga2d_axi4.rdata   = '0;
+  assign ga2d_axi4.rresp   = 2'd0;
+  assign ga2d_axi4.rlast   = 1'b1;
+  assign ga2d_axi4.ruser   = '0;
+  assign ga2d_axi4.rvalid  = 1'b0;
 
   apb4_ga2d u_dut (
       .clk_i              (clk_i),
@@ -35,7 +59,9 @@ module ga2d_wrapper_tb;
       .bridge_clear_busy_i(bridge_clear_busy_i),
       .bridge_epoch_i     (bridge_epoch_i),
       .data_ready_i       (data_ready_i),
+      .mem_pad_mode_i     (mem_pad_mode_i),
       .apb4               (apb4),
+      .ga2d_axi4          (ga2d_axi4),
       .idle_o             (idle_o),
       .irq_o              (irq_o)
   );
@@ -248,12 +274,12 @@ module ga2d_wrapper_tb;
       $fatal(1, "GA2D soft reset did not clear retained diagnostic state");
     end
 
-    $display("GA2D P3 wrapper lifecycle test passed");
+    $display("GA2D P4 wrapper lifecycle test passed");
     $finish;
   end
 
   initial begin
     repeat (400) @(posedge clk_i);
-    $fatal(1, "GA2D P3 wrapper lifecycle test timed out");
+    $fatal(1, "GA2D P4 wrapper lifecycle test timed out");
   end
 endmodule

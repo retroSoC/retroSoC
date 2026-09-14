@@ -8213,7 +8213,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 routes the P3 GA2D shell IRQ while its AXI bridge stays idle. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
+    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 routes the active P4 GA2D direct FILL/COPY DMA IRQ and controls its AXI64 lifecycle. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
   },
   "monitor": {
     "nodes": [

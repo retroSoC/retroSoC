@@ -116,6 +116,7 @@ module ga2d_platform_tb;
   logic        flush_i = 1'b0;
   logic [ 8:0] resource_block_i = '0;
   logic [ 1:0] mem_pad_mode_i = 2'd1;
+  logic        ga2d_core_safe_idle_i = 1'b1;
   logic        ext_h_block_i = 1'b0;
   logic        sram_hold_ar_i = 1'b0;
   logic        sram_hold_response_i = 1'b0;
@@ -315,7 +316,6 @@ module ga2d_platform_tb;
   axi4_master_idle u_usb2_idle (.axi4(usb2_axi4));
   axi4_master_idle u_apu_idle (.axi4(apu_axi4));
   axi4_master_idle u_jpeg_idle (.axi4(jpeg_axi4));
-  axi4_master_idle u_lp_data_idle (.axi4(lp_data_axi4));
   axi4_master_idle u_ext_h_idle (.axi4(ext_h_axi4));
   ga2d_platform_sram_target u_sram_target (
       .clk_i           (clk_hp_i),
@@ -347,6 +347,7 @@ module ga2d_platform_tb;
       .flush_i                 (flush_i),
       .resource_block_i        (resource_block_i),
       .mem_pad_mode_i          (mem_pad_mode_i),
+      .ga2d_core_safe_idle_i   (ga2d_core_safe_idle_i),
       .ext_h_block_i           (ext_h_block_i),
       .ext_h_read_base_i       (32'h3000_0000),
       .ext_h_read_limit_i      (32'h4FFF_FFFF),
@@ -491,6 +492,36 @@ module ga2d_platform_tb;
     end
   endtask
 
+  task automatic issue_lp_read(input logic id, input logic [31:0] address);
+    begin
+      @(negedge clk_lp_i);
+      lp_data_axi4.arid     = id;
+      lp_data_axi4.araddr   = address;
+      lp_data_axi4.arlen    = '0;
+      lp_data_axi4.arsize   = 3'd2;
+      lp_data_axi4.arburst  = 2'b01;
+      lp_data_axi4.arlock   = 1'b0;
+      lp_data_axi4.arcache  = '0;
+      lp_data_axi4.arprot   = '0;
+      lp_data_axi4.arqos    = '0;
+      lp_data_axi4.arregion = '0;
+      lp_data_axi4.aruser   = '0;
+      lp_data_axi4.arvalid  = 1'b1;
+      do @(posedge clk_lp_i); while (!lp_data_axi4.arready);
+      @(negedge clk_lp_i);
+      lp_data_axi4.arvalid = 1'b0;
+    end
+  endtask
+
+  task automatic expect_lp_read(input logic id);
+    begin
+      wait (lp_data_axi4.rvalid);
+      if ((lp_data_axi4.rid != id) || (lp_data_axi4.rresp != 2'b00)) begin
+        $fatal(1, "LP response did not survive the HP lifecycle flush");
+      end
+    end
+  endtask
+
   task automatic wait_for_data_ready;
     begin
       wait (ga2d_data_ready_o && !ga2d_source_stop_o);
@@ -498,6 +529,38 @@ module ga2d_platform_tb;
   endtask
 
   initial begin
+    lp_data_axi4.awid           = '0;
+    lp_data_axi4.awaddr         = '0;
+    lp_data_axi4.awlen          = '0;
+    lp_data_axi4.awsize         = 3'd2;
+    lp_data_axi4.awburst        = 2'b01;
+    lp_data_axi4.awlock         = 1'b0;
+    lp_data_axi4.awcache        = '0;
+    lp_data_axi4.awprot         = '0;
+    lp_data_axi4.awqos          = '0;
+    lp_data_axi4.awregion       = '0;
+    lp_data_axi4.awuser         = '0;
+    lp_data_axi4.awvalid        = 1'b0;
+    lp_data_axi4.wdata          = '0;
+    lp_data_axi4.wstrb          = '0;
+    lp_data_axi4.wlast          = 1'b1;
+    lp_data_axi4.wuser          = '0;
+    lp_data_axi4.wvalid         = 1'b0;
+    lp_data_axi4.bready         = 1'b1;
+    lp_data_axi4.arid           = '0;
+    lp_data_axi4.araddr         = '0;
+    lp_data_axi4.arlen          = '0;
+    lp_data_axi4.arsize         = 3'd2;
+    lp_data_axi4.arburst        = 2'b01;
+    lp_data_axi4.arlock         = 1'b0;
+    lp_data_axi4.arcache        = '0;
+    lp_data_axi4.arprot         = '0;
+    lp_data_axi4.arqos          = '0;
+    lp_data_axi4.arregion       = '0;
+    lp_data_axi4.aruser         = '0;
+    lp_data_axi4.arvalid        = 1'b0;
+    lp_data_axi4.rready         = 1'b1;
+
     ga2d_axi4.awid              = '0;
     ga2d_axi4.awaddr            = '0;
     ga2d_axi4.awlen             = '0;
@@ -577,6 +640,22 @@ module ga2d_platform_tb;
     rst_mem_n_i = 1'b1;
     wait_for_data_ready();
 
+    // A core that has not established a known-safe idle state cannot hand the
+    // resource to HP even when the address gate itself is empty.
+    @(negedge clk_io_i);
+    ga2d_core_safe_idle_i = 1'b0;
+    resource_block_i[8]   = 1'b1;
+    repeat (5) @(posedge clk_hp_i);
+    if (ga2d_source_safe_idle_o || resource_block_ack_o[8] || resource_idle_o[8]) begin
+      $fatal(1, "unsafe GA2D core idle state allowed resource-8 handoff");
+    end
+    @(negedge clk_io_i);
+    ga2d_core_safe_idle_i = 1'b1;
+    wait (resource_block_ack_o[8]);
+    @(negedge clk_io_i);
+    resource_block_i[8] = 1'b0;
+    wait_for_data_ready();
+
     fork
       issue_ga2d_read(3'd0, 32'h3000_0040);
       expect_ga2d_read(3'd0);
@@ -593,6 +672,24 @@ module ga2d_platform_tb;
     join
     if (!sram_saw_ga2d_write) begin
       $fatal(1, "GA2D write did not preserve global ID 7'h40");
+    end
+
+    wait (!flush_busy_o);
+    block_new_i = 1'b1;
+    repeat (2) @(posedge clk_hp_i);
+    issue_lp_read(1'b0, 32'h3000_0180);
+    repeat (2) @(posedge clk_hp_i);
+    @(negedge clk_hp_i);
+    flush_i = 1'b1;
+    repeat (4) @(posedge clk_lp_i);
+    repeat (4) @(posedge clk_hp_i);
+    @(negedge clk_hp_i);
+    flush_i = 1'b0;
+    wait (!flush_busy_o);
+    block_new_i = 1'b0;
+    expect_lp_read(1'b0);
+    if (sram_last_arid != 7'h28) begin
+      $fatal(1, "HP lifecycle flush discarded the queued LP request");
     end
 
     wait (ga2d_source_safe_idle_o);
@@ -688,7 +785,8 @@ module ga2d_platform_tb;
     wait (sram_last_arid == 7'h42);
     epoch_before = ga2d_bridge_epoch_o;
     @(negedge clk_hp_i);
-    flush_i = 1'b1;
+    flush_i              = 1'b1;
+    sram_hold_response_i = 1'b0;
     repeat (4) @(posedge clk_io_i);
     if (ga2d_data_ready_o) begin
       $fatal(1, "GA2D data-ready remained asserted during a warm flush");
@@ -701,8 +799,8 @@ module ga2d_platform_tb;
     if (ga2d_axi4.rvalid) begin
       $fatal(1, "late pre-flush response reached the GA2D source");
     end
-    sram_hold_response_i = 1'b0;
     wait_for_data_ready();
+    wait (!flush_busy_o);
 
     epoch_before = ga2d_bridge_epoch_o;
     @(negedge clk_hp_i);
@@ -726,7 +824,7 @@ module ga2d_platform_tb;
     rst_io_n_i = 1'b1;
     wait_for_data_ready();
 
-    $display("GA2D P2 bridge, ID7, lifecycle, flush, and reset test passed");
+    $display("GA2D P2 bridge, ID7, lifecycle, flush, LP retention, and reset test passed");
     $finish;
   end
 

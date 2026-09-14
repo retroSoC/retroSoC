@@ -329,6 +329,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint_filelist = tmp_path / "clint.fl"
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
+    ga2d_filelist = tmp_path / "ga2d.fl"
     apu_filelist = tmp_path / "apu.fl"
     apu_primitives_filelist = tmp_path / "apu_primitives.fl"
     apu_loader_filelist = tmp_path / "apu_loader.fl"
@@ -359,6 +360,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist("ga2d", ga2d_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "apu_primitives", apu_primitives_filelist, memory_map, topology, user_extensions
@@ -384,6 +386,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint = parse_filelists([clint_filelist], require_files=False)
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
+    ga2d = parse_filelists([ga2d_filelist], require_files=False)
     apu = parse_filelists([apu_filelist], require_files=False)
     apu_primitives = parse_filelists([apu_primitives_filelist], require_files=False)
     apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
@@ -444,6 +447,15 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
     assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_pkg.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_addr_gen.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_axi4_master.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_dma.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_pixel.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_core.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_reg.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/apb4_ga2d.sv" in ga2d.files
+    assert ROOT / "rtl/mini/formal/ga2d_formal.sv" in ga2d.files
     assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
     assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
     assert ROOT / "rtl/ip/multimedia/apu_resampler.sv" in apu_primitives.files
@@ -481,6 +493,53 @@ def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
     assert re.search(r"^FORMAL_OPIPSRAM_TIMEOUT\s+\?= 300$", formal_makefile, re.MULTILINE)
     assert re.search(r"^FORMAL_OPIPSRAM_BMC_TIMEOUT\s+\?= 600$", formal_makefile, re.MULTILINE)
     assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
+
+
+def test_ga2d_formal_target_uses_the_p4_production_hierarchy() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    filelist_generator = (
+        ROOT / "rtl/mini/formal/generate_formal_filelist.py"
+    ).read_text(encoding="utf-8")
+    formal = (ROOT / "rtl/mini/formal/ga2d_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/ga2d_formal_props.sv").read_text(
+        encoding="utf-8"
+    )
+
+    assert re.search(r"^FORMAL_GA2D_DEPTH\s+\?= 36$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 48$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 180$", formal_makefile, re.MULTILINE)
+    assert "formal-ga2d: $(FORMAL_DIR)/ga2d/.stamp | manifest" in formal_makefile
+    assert 'if target == "ga2d":' in filelist_generator
+    for source in (
+        "ga2d_pkg.sv",
+        "ga2d_addr_gen.sv",
+        "ga2d_axi4_master.sv",
+        "ga2d_dma.sv",
+        "ga2d_pixel.sv",
+        "ga2d_core.sv",
+        "ga2d_reg.sv",
+        "apb4_ga2d.sv",
+        "ga2d_formal.sv",
+    ):
+        assert source in filelist_generator
+    assert "ga2d_formal_design u_design" in formal
+    assert "ga2d_core u_dut" in properties
+    assert "assert (awlen <= 8'd15);" in formal
+    assert "assert (arlen <= 8'd15);" in formal
+    assert "assert ((arlen == 8'd0) || (arsize == 3'd3));" in formal
+    assert "assert (output_fifo_count >= ({1'b0, awlen} + 9'd1));" in formal
+    assert "if (s_read_inflight_q && !bridge_clear_busy_i)" in formal
+    assert "assert (wstrb != 8'd0);" in formal
+    assert "cover (scenario == 4'd0 && done" in formal
+    assert "cover (scenario == 4'd3 && aborted && safe_idle);" in formal
+    assert "cover (scenario == 4'd2 && awvalid && awready && (awlen == 8'd14));" in formal
+    assert "cover (scenario == 4'd7 && awvalid && awready && (awlen == 8'd15));" in formal
+    assert "protocol_residual_rvalid" in formal
+    assert "assert (!rready);" in formal
+    assert "assert (!arvalid);" in formal
+    assert "cover ((scenario == 4'd8) && protocol_residual_rvalid" in formal
+    assert "output logic [3:0]  scenario" in properties
+    assert "s_residual_r_valid_q" in properties
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -1135,6 +1194,7 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
 def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
+    benchmark_profile = (ROOT / "app/apps/benchmark/app.mk").read_text(encoding="utf-8")
     benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
 
     assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
@@ -1143,7 +1203,26 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
     assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
-    assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
+    assert "SOC_SIM_TIME ?= 600" in benchmark_profile
+    assert "VERILATOR_SIM_ARGS ?= --fast-flash" in benchmark_profile
+    offset_match = re.search(
+        r"^#define\s+RS_BENCHMARK_SRAM_OFFSET\s+UINT32_C\((0x[0-9A-F]+)\)$",
+        benchmark,
+        re.MULTILINE,
+    )
+    words_match = re.search(
+        r"^#define\s+RS_BENCHMARK_WORDS\s+UINT32_C\(([0-9]+)\)$",
+        benchmark,
+        re.MULTILINE,
+    )
+    assert offset_match is not None
+    assert words_match is not None
+
+    sram_size_bytes = 32 * 1024
+    benchmark_bytes = int(words_match.group(1), 10) * 4
+    benchmark_offset = int(offset_match.group(1), 16)
+    assert benchmark_offset + benchmark_bytes <= sram_size_bytes
+    assert sram_size_bytes - (benchmark_offset + benchmark_bytes) >= 7 * 1024
 
 
 def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:

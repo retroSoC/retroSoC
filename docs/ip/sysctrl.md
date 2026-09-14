@@ -63,7 +63,7 @@ offset macros.
 | `0x01C` | `PLL_STATUS` | RO | Active profile, valid, busy, error/error reason, safe clock, lock, and capability. |
 | `0x020` | `USER_CORE_RESET` | RO/unsupported | Product reads all ones and rejects writes. MPW retains its reset mask. |
 | `0x024` | `USER_CORE_STATUS` | RO/unsupported | Product reports present=0, idle=1, and sticky unsupported-write error. |
-| `0x028` | `FAULT_MASTER` | RO | First fault master, a four-bit AXI master ID (0..8); HP is 7 and the P3 GA2D shell's idle bridge placeholder is 8. The offset is unchanged. |
+| `0x028` | `FAULT_MASTER` | RO | First fault master, a four-bit AXI master ID (0..8); HP is 7 and the active P4 GA2D private-DMA master is 8. The offset is unchanged. |
 | `0x02C` | `FAULT_DETAIL` | RO | First raw RIB response code. |
 | `0x040` | `PERF_CTRL` | RW | Bit 0 enable, bit 1 clear pulse, bit 2 snapshot pulse. |
 | `0x044`-`0x098` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, central DMA, SDIO0, SDIO1, APB4, SDRAM, PSRAM, and flash wait counters. |

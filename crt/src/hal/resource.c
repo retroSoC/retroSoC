@@ -17,6 +17,8 @@
 #define RS_RESOURCE_OWNER_LOCK           UINT32_C(0x00000100)
 #define RS_RESOURCE_CONTROL_QUIESCE      UINT32_C(0x00000001)
 #define RS_RESOURCE_CONTROL_RESET        UINT32_C(0x00000002)
+#define RS_RESOURCE_STATUS_QUIESCED      UINT32_C(0x00000004)
+#define RS_RESOURCE_STATUS_RESET         UINT32_C(0x00000008)
 #define RS_RESOURCE_STATUS_IDLE          UINT32_C(0x00000010)
 #define RS_RESOURCE_STATUS_FAULT         UINT32_C(0x00000020)
 #define RS_RESOURCE_STATUS_IRQ           UINT32_C(0x00000040)
@@ -29,7 +31,13 @@ static bool rs_resource_valid(rs_resource_t resource) {
 }
 
 static volatile uint32_t *rs_resource_register(uint32_t offset) {
+#if defined(RS_RESOURCE_TEST_MMIO)
+    extern volatile uint32_t rs_resource_test_mmio[1024];
+
+    return &rs_resource_test_mmio[offset / sizeof(uint32_t)];
+#else
     return (volatile uint32_t *)(RS_SOC_APB4_RESOURCE_CTRL_BASE + (uintptr_t)offset);
+#endif
 }
 
 static uint32_t rs_resource_offset(rs_resource_t resource, uint32_t offset) {
@@ -51,8 +59,8 @@ rs_status_t rs_resource_get_status(rs_resource_t resource, rs_resource_status_t 
     status->owner_locked = (owner & RS_RESOURCE_OWNER_LOCK) != 0U;
     status->blocked = (state & RS_RESOURCE_STATUS_BLOCKED) != 0U;
     status->idle = (state & RS_RESOURCE_STATUS_IDLE) != 0U;
-    status->quiesced = (state & RS_RESOURCE_CONTROL_QUIESCE) != 0U;
-    status->in_reset = (state & RS_RESOURCE_CONTROL_RESET) != 0U;
+    status->quiesced = (state & RS_RESOURCE_STATUS_QUIESCED) != 0U;
+    status->in_reset = (state & RS_RESOURCE_STATUS_RESET) != 0U;
     status->fault = (state & RS_RESOURCE_STATUS_FAULT) != 0U;
     status->irq_pending = (state & RS_RESOURCE_STATUS_IRQ) != 0U;
     return RS_OK;

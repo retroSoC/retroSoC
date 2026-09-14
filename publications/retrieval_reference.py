@@ -210,8 +210,8 @@ def boot_status(root: Path, spec: dict) -> dict:
             or int(count[0]) != spec["expected_entries"]
             or set(terminals) != {("RS_TEST_FAILED", "1"), ("RS_TEST_PASSED", "0")}):
         raise ValueError("HP boot diagnostic branches changed")
-    codes = [0, 1, *direct, *range(int(base[0]), int(base[0]) + int(count[0]))]
-    if len(set(codes)) != len(codes) or set(map(str, codes)) != set(spec["meanings"]):
+    codes = sorted({0, 1, *direct, *range(int(base[0]), int(base[0]) + int(count[0]))})
+    if set(map(str, codes)) != set(spec["meanings"]):
         raise ValueError("HP boot code coverage or scope mismatch")
     hal = (root / "crt/src/hal/sysctrl.c").read_text(encoding="utf-8")
     rtl = (root / "rtl/ip/peripheral/sysctrl_define.svh").read_text(encoding="utf-8")

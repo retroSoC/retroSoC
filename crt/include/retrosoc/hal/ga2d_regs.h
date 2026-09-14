@@ -50,9 +50,9 @@
 #define RS_GA2D_IP_VERSION_VALUE                    UINT32_C(0x00010000)
 #define RS_GA2D_IP_VERSION_MAJOR_MASK               UINT32_C(0xFFFF0000)
 #define RS_GA2D_IP_VERSION_MAJOR_1                  UINT32_C(0x00010000)
-#define RS_GA2D_CAPABILITY_P3                       UINT32_C(0x00000040)
-#define RS_GA2D_LIMITS_P3                           UINT32_C(0x00000000)
-#define RS_GA2D_FORMAT_CAPABILITY_P3                UINT32_C(0x00000000)
+#define RS_GA2D_CAPABILITY_P4                       UINT32_C(0x000003E3)
+#define RS_GA2D_LIMITS_P4                           UINT32_C(0x08202010)
+#define RS_GA2D_FORMAT_CAPABILITY_P4                UINT32_C(0x000F000F)
 #define RS_GA2D_TIMEOUT_CYCLES_RESET                UINT32_C(0x00100000)
 #define RS_GA2D_GLOBAL_ALPHA_RESET                  UINT32_C(0x000000FF)
 

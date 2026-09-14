@@ -258,6 +258,7 @@ module retrosoc (
   logic             s_apu_idle;
   logic             s_jpeg_idle;
   logic             s_ga2d_idle;
+  logic             s_ga2d_core_safe_idle;
   logic [ 8:0]      s_resource_idle_combined;
   logic [ 8:0]      s_resource_block_ack_combined;
   logic             s_ga2d_source_stop;
@@ -276,6 +277,8 @@ module retrosoc (
 `else
   localparam bit SramPresent = 1'b0;
 `endif
+  // Permit the HP cache-maintenance and mailbox round trip before forced containment.
+  localparam logic [15:0] HpCacheHandshakeTimeout = 16'hffff;
 
   // PCLK-visible data-plane faults retain their legacy priority over local bus faults.
   assign u_sysctrl_if.fault_access_i = s_data_plane_fault_valid_pclk ?
@@ -515,7 +518,7 @@ module retrosoc (
       .hp_idle_i      (s_hp_idle_aon),
       .flush_busy_i   (s_hp_flush_busy_aon),
       .cache_clean_i  (s_hp_cache_clean_aon),
-      .timeout_i      (16'd1024),
+      .timeout_i      (HpCacheHandshakeTimeout),
       .hp_release_o   (s_hp_lifecycle_release_aon),
       .block_new_o    (s_hp_lifecycle_block),
       .flush_o        (s_hp_lifecycle_flush),
@@ -608,6 +611,7 @@ module retrosoc (
       .apu_axi4                (u_apu_axi4_if),
       .jpeg_axi4               (u_jpeg_wide_axi4_if),
       .ga2d_axi4               (u_ga2d_wide_axi4_if),
+      .ga2d_core_safe_idle_i   (s_ga2d_core_safe_idle),
       .lp_data_axi4            (u_mgmt_data_axi4_if),
       .ext_h_axi4              (u_ext_h_wide_axi4_if),
       .sram_gateway_axi4       (u_data_sram_axi4_if),
@@ -678,7 +682,6 @@ module retrosoc (
   );
 
   axi4_master_idle u_idle_master (.axi4(u_idle_axi4_if));
-  axi4_master_idle u_ga2d_master_idle (.axi4(u_ga2d_wide_axi4_if));
   axi4_master_idle u_retired_sram_master (.axi4(u_retired_data_sram_axi4_if));
   axi4_master_idle u_retired_sdram_master (.axi4(u_retired_data_sdram_axi4_if));
   axi4_master_idle u_retired_qpi_master (.axi4(u_retired_data_qpi_axi4_if));
@@ -878,6 +881,7 @@ module retrosoc (
       .ga2d_bridge_clear_busy_i    (s_ga2d_bridge_clear_busy),
       .ga2d_bridge_epoch_i         (s_ga2d_bridge_epoch),
       .ga2d_data_ready_i           (s_ga2d_data_ready),
+      .mem_pad_mode_i              (s_mem_pad_mode_lp),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
       .sdio0_axi4                  (u_sdio0_axi4_if),
@@ -885,6 +889,7 @@ module retrosoc (
       .usb2_axi4                   (u_usb2_axi4_if),
       .apu_axi4                    (u_apu_axi4_if),
       .jpeg_axi4                   (u_jpeg_wide_axi4_if),
+      .ga2d_axi4                   (u_ga2d_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
@@ -923,6 +928,7 @@ module retrosoc (
       .apu_idle_o                  (s_apu_idle),
       .jpeg_idle_o                 (s_jpeg_idle),
       .ga2d_idle_o                 (s_ga2d_idle),
+      .ga2d_core_safe_idle_o       (s_ga2d_core_safe_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
 

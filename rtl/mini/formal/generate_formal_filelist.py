@@ -63,6 +63,8 @@ def target_defines(target: str) -> list[str]:
         return ["+define+PDK_BEHAV"]
     if target == "sysctrl":
         return ["+define+SV_ASSRT_DISABLE", "+define+MINI_PRODUCT"]
+    if target == "ga2d":
+        return ["+define+SV_ASSRT_DISABLE", "+define+GA2D_FORMAL_DESIGN"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
@@ -278,6 +280,24 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "dma_core.sv",
             SCRIPT_DIR / "dma_formal.sv",
         ]
+    if target == "ga2d":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            MULTIMEDIA / "ga2d_pkg.sv",
+            MULTIMEDIA / "ga2d_addr_gen.sv",
+            MULTIMEDIA / "ga2d_axi4_master.sv",
+            MULTIMEDIA / "ga2d_dma.sv",
+            MULTIMEDIA / "ga2d_pixel.sv",
+            MULTIMEDIA / "ga2d_core.sv",
+            MULTIMEDIA / "ga2d_reg.sv",
+            MULTIMEDIA / "apb4_ga2d.sv",
+            SCRIPT_DIR / "ga2d_formal_props.sv",
+            SCRIPT_DIR / "ga2d_formal.sv",
+        ]
     if target == "apu":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -395,6 +415,7 @@ def parse_args() -> argparse.Namespace:
             "onchip_ram",
             "opipsram",
             "dma",
+            "ga2d",
             "apu",
             "apu_codec",
             "apu_primitives",

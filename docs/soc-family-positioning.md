@@ -144,10 +144,13 @@ capabilities:
 - AXI4 uses a 32-bit LP control plane and a 9x6 native AXI64 HP data plane
   with seven-bit global IDs. Vexii I/D ports remain independent; DMA and I/O
   masters cross into HP and current memory frontends are reached through
-  64-to-32 target adapters. Master 8 is a dedicated PCLK-to-HP AXI64/ID3 GA2D
-  bridge whose source is idle. `APB4_GA2D` is an active PCLK register shell
-  with resource-owned IRQ routing, while GA2D payload/DMA and pixel functions
-  remain unavailable.
+  64-to-32 target adapters. Master 8 is the dedicated PCLK-to-HP AXI64/ID3
+  GA2D bridge for direct single-job private-AXI64 2D FILL/COPY DMA.
+  `APB4_GA2D` provides its PCLK control plane and resource-owned IRQ routing.
+  The P4 engine supports RGB565, RGB888, XRGB8888, and ARGB8888, snapshots,
+  two-dimensional pitch, and byte edges; CONVERT, BLEND, A8, in-place
+  background composition, and descriptor/ring/queue submission remain
+  deferred.
 - Current external-memory targets serialize accepted AXI4 bursts into ordered
   scalar engine accesses. They do not yet combine a burst into a native SDRAM,
   PSRAM, flash, or SPI-SD physical transaction.

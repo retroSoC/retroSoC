@@ -33,6 +33,8 @@ module soc_data_plane (
     axi4_if.slave      apu_axi4,
     axi4_if.slave      jpeg_axi4,
     axi4_if.slave      ga2d_axi4,
+    input  logic       ga2d_core_safe_idle_i
+                              = 1'b1,
     axi4_if.slave      lp_data_axi4,
     axi4_if.slave      ext_h_axi4,
     axi4_if.master     sram_gateway_axi4,
@@ -113,6 +115,8 @@ module soc_data_plane (
   logic                             s_ga2d_recovery_condition;
   logic                             s_ga2d_source_stop_q;
   logic                             s_ga2d_source_stop_ready;
+  logic                             s_ga2d_addr_gate_idle;
+  logic                             s_ga2d_core_safe_idle;
   logic                             s_ga2d_source_safe_idle;
   logic                             s_ga2d_write_pending;
   logic                             s_ga2d_source_safe_idle_hp;
@@ -394,6 +398,8 @@ module soc_data_plane (
   assign s_ga2d_recovery_condition = resource_block_i[8] || !s_ga2d_hp_reset_n_pclk ||
                                      s_ga2d_flush_pclk || s_ga2d_clear_busy ||
                                      (s_ga2d_epoch != s_ga2d_epoch_seen_q);
+  assign s_ga2d_core_safe_idle = ga2d_core_safe_idle_i;
+  assign s_ga2d_source_safe_idle = s_ga2d_addr_gate_idle && s_ga2d_core_safe_idle;
   assign s_ga2d_source_stop_ready = (!ga2d_axi4.awvalid || ga2d_axi4.awready) &&
                                     (!ga2d_axi4.arvalid || ga2d_axi4.arready) &&
                                     (!ga2d_axi4.wvalid || s_ga2d_write_pending);
@@ -540,7 +546,9 @@ module soc_data_plane (
       .src_rst_n_i (rst_lp_n_i),
       .dst_clk_i   (clk_hp_i),
       .dst_rst_n_i (rst_hp_n_i),
-      .clear_i     (flush_i),
+      // An HP lifecycle flush invalidates HP transport, not an LP request
+      // still queued before crossbar admission.
+      .clear_i     (1'b0),
       .clear_busy_o(s_lp_clear_busy),
       .epoch_o     (unused_lp_epoch),
       .src_axi4    (lp_data_axi4),
@@ -586,7 +594,7 @@ module soc_data_plane (
       .clear_i        (s_ga2d_flush_pclk),
       .source         (ga2d_axi4),
       .sink           (u_ga2d_gated_axi4),
-      .idle_o         (s_ga2d_source_safe_idle),
+      .idle_o         (s_ga2d_addr_gate_idle),
       .write_pending_o(s_ga2d_write_pending)
   );
   axi4_async_bridge #(

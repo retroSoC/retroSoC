@@ -974,7 +974,7 @@
     "groups": [
       {
         "id": "main",
-        "title": "Phase 3 register shell",
+        "title": "Phase 4 direct FILL/COPY DMA",
         "pattern": "APB4_GA2D__.+",
         "strip": "^APB4_GA2D__",
         "base": 0,
@@ -983,7 +983,13 @@
       }
     ],
     "support": [
-      "rtl/ip/multimedia/apb4_ga2d.sv"
+      "rtl/ip/multimedia/apb4_ga2d.sv",
+      "rtl/ip/multimedia/ga2d_pkg.sv",
+      "rtl/ip/multimedia/ga2d_addr_gen.sv",
+      "rtl/ip/multimedia/ga2d_axi4_master.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "rtl/ip/multimedia/ga2d_core.sv"
     ]
   },
   "dvp": {

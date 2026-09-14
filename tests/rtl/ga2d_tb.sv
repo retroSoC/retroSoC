@@ -13,6 +13,7 @@ module ga2d_tb;
   logic               idle_i = 1'b1;
   logic               done_i = 1'b0;
   logic               aborted_i = 1'b0;
+  logic               error_i = 1'b0;
   logic        [ 2:0] irq_event_i = 3'd0;
   logic               error_valid_i = 1'b0;
   logic        [ 6:0] error_code_i = 7'd0;
@@ -21,10 +22,21 @@ module ga2d_tb;
   logic        [31:0] error_address_i = 32'd0;
   logic               soft_reset_o;
   logic               abort_o;
+  logic               start_o;
+  logic               snapshot_o;
   logic               idle_o;
   logic               irq_o;
+  logic        [63:0] cycles_i = 64'd0;
+  logic        [63:0] read_bytes_i = 64'd0;
+  logic        [63:0] write_bytes_i = 64'd0;
+  logic        [63:0] read_stalls_i = 64'd0;
+  logic        [63:0] write_stalls_i = 64'd0;
+  logic        [63:0] pipe_stalls_i = 64'd0;
+  logic        [15:0] lines_done_i = 16'd0;
   logic        [31:0] read_data;
   int unsigned        soft_reset_count;
+  int unsigned        start_count;
+  int unsigned        snapshot_count;
 
   apb4_if apb4 (
       .pclk   (clk_i),
@@ -36,6 +48,12 @@ module ga2d_tb;
   always @(posedge clk_i) begin
     if (soft_reset_o) begin
       soft_reset_count++;
+    end
+    if (start_o) begin
+      start_count++;
+    end
+    if (snapshot_o) begin
+      snapshot_count++;
     end
   end
 
@@ -50,16 +68,26 @@ module ga2d_tb;
       .idle_i              (idle_i),
       .done_i              (done_i),
       .aborted_i           (aborted_i),
+      .error_i             (error_i),
       .irq_event_i         (irq_event_i),
       .error_valid_i       (error_valid_i),
       .error_code_i        (error_code_i),
       .error_stage_i       (error_stage_i),
       .error_axi_response_i(error_axi_response_i),
       .error_address_i     (error_address_i),
+      .cycles_i            (cycles_i),
+      .read_bytes_i        (read_bytes_i),
+      .write_bytes_i       (write_bytes_i),
+      .read_stalls_i       (read_stalls_i),
+      .write_stalls_i      (write_stalls_i),
+      .pipe_stalls_i       (pipe_stalls_i),
+      .lines_done_i        (lines_done_i),
       .apb4                (apb4),
       .config_o            (),
+      .start_o             (start_o),
       .soft_reset_o        (soft_reset_o),
       .abort_o             (abort_o),
+      .snapshot_o          (snapshot_o),
       .idle_o              (idle_o),
       .irq_o               (irq_o)
   );
@@ -149,6 +177,8 @@ module ga2d_tb;
     apb4.pwdata      = '0;
     apb4.pstrb       = '0;
     soft_reset_count = 0;
+    start_count      = 0;
+    snapshot_count   = 0;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
@@ -158,7 +188,11 @@ module ga2d_tb;
     apb_read(`APB4_GA2D__IP_VERSION, 1'b0, read_data);
     if (read_data != 32'h0001_0000) $fatal(1, "GA2D IP_VERSION mismatch");
     apb_read(`APB4_GA2D__CAPABILITY, 1'b0, read_data);
-    if (read_data != 32'h0000_0040) $fatal(1, "GA2D shell capability mismatch");
+    if (read_data != 32'h0000_03e3) $fatal(1, "GA2D P4 capability mismatch");
+    apb_read(`APB4_GA2D__LIMITS, 1'b0, read_data);
+    if (read_data != 32'h0820_2010) $fatal(1, "GA2D P4 limits mismatch");
+    apb_read(`APB4_GA2D__FORMAT_CAPABILITY, 1'b0, read_data);
+    if (read_data != 32'h000f_000f) $fatal(1, "GA2D P4 format capability mismatch");
     apb_read(`APB4_GA2D__TIMEOUT_CYCLES, 1'b0, read_data);
     if (read_data != 32'h0010_0000) $fatal(1, "GA2D timeout reset mismatch");
     apb_read(`APB4_GA2D__GLOBAL_ALPHA, 1'b0, read_data);
@@ -177,10 +211,20 @@ module ga2d_tb;
     apb_read(12'h06c, 1'b1, read_data);
     apb_read(12'h003, 1'b1, read_data);
 
-    apb_write(`APB4_GA2D__COMMAND, 32'h0000_0001, 4'hf, 1'b1);
-    apb_write(`APB4_GA2D__PERF_SNAPSHOT, 32'h0000_0001, 4'hf, 1'b1);
+    apb_write(`APB4_GA2D__COMMAND, 32'h0000_0001, 4'hf, 1'b0);
+    if (start_count != 1) $fatal(1, "GA2D P4 START did not execute exactly once");
+    cycles_i      = 64'h1122_3344_5566_7788;
+    read_bytes_i  = 64'h0102_0304_0506_0708;
+    write_bytes_i = 64'h8877_6655_4433_2211;
+    lines_done_i  = 16'h0023;
+    apb_write(`APB4_GA2D__PERF_SNAPSHOT, 32'h0000_0001, 4'hf, 1'b0);
+    if (snapshot_count != 1) $fatal(1, "GA2D P4 snapshot did not execute exactly once");
     apb_read(`APB4_GA2D__SNAP_CYCLES_LO, 1'b0, read_data);
-    if (read_data != 32'd0) $fatal(1, "GA2D P3 counter stub is nonzero");
+    if (read_data != 32'h5566_7788) $fatal(1, "GA2D P4 snapshot cycle mismatch");
+    apb_read(`APB4_GA2D__SNAP_READ_BYTES_HI, 1'b0, read_data);
+    if (read_data != 32'h0102_0304) $fatal(1, "GA2D P4 snapshot read mismatch");
+    apb_read(`APB4_GA2D__SNAP_LINES_DONE, 1'b0, read_data);
+    if (read_data != 32'h0000_0023) $fatal(1, "GA2D P4 snapshot line mismatch");
 
     @(negedge clk_i);
     irq_event_i = `APB4_GA2D__IRQ_ALL;
@@ -239,12 +283,12 @@ module ga2d_tb;
     apb_read(`APB4_GA2D__STATUS, 1'b0, read_data);
     if (read_data != 32'h0000_00b7) $fatal(1, "GA2D live status mismatch");
 
-    $display("GA2D P3 APB shell test passed");
+    $display("GA2D P4 APB shell test passed");
     $finish;
   end
 
   initial begin
     repeat (400) @(posedge clk_i);
-    $fatal(1, "GA2D P3 APB shell test timed out");
+    $fatal(1, "GA2D P4 APB shell test timed out");
   end
 endmodule

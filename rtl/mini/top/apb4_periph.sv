@@ -40,6 +40,7 @@ module apb4_periph (
     input logic                                   ga2d_bridge_clear_busy_i,
     input logic [7:0]                             ga2d_bridge_epoch_i,
     input logic                                   ga2d_data_ready_i,
+    input logic [1:0]                             mem_pad_mode_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -61,6 +62,7 @@ module apb4_periph (
     axi4_if.master                                usb2_axi4,
     axi4_if.master                                apu_axi4,
     axi4_if.master                                jpeg_axi4,
+    axi4_if.master                                ga2d_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     clock_ctrl_if.sysctrl                         clock_ctrl,
@@ -84,6 +86,7 @@ module apb4_periph (
     output logic                                  apu_idle_o,
     output logic                                  jpeg_idle_o,
     output logic                                  ga2d_idle_o,
+    output logic                                  ga2d_core_safe_idle_o,
     output logic [7:0]                            resource_irq_raw_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
@@ -548,8 +551,11 @@ axi4_stream_if #(
       .bridge_clear_busy_i(ga2d_bridge_clear_busy_i),
       .bridge_epoch_i     (ga2d_bridge_epoch_i),
       .data_ready_i       (ga2d_data_ready_i),
+      .mem_pad_mode_i     (mem_pad_mode_i),
       .apb4               (u_ga2d_apb4_if),
+      .ga2d_axi4          (ga2d_axi4),
       .idle_o             (ga2d_idle_o),
+      .core_safe_idle_o   (ga2d_core_safe_idle_o),
       .irq_o              (s_ga2d_irq_raw)
   );
 
