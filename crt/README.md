@@ -59,8 +59,8 @@ See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
 `<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD,
-EXT-H, JPEG, and APU owner/lock, lifecycle-request, fault, and HP cache-maintenance
-handshake.
+EXT-H, JPEG, APU, and GA2D owner/lock, lifecycle-request, fault, and HP
+cache-maintenance handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
 
 `<retrosoc/hal/apu.h>` provides APU discovery, ACL and microcode loading,
@@ -68,6 +68,10 @@ validated direct/ring WAV and FLAC jobs, TX stream routing, bounded waits,
 abort/reset, interrupt, and first-error access. The P5 surface remains coreless;
 MP3, KWS, model loading, and the APU RX route stay unavailable until their
 frozen later phases.
+
+`<retrosoc/hal/ga2d.h>` provides GA2D shell discovery, status/error, IRQ,
+and bounded abort/reset access. In Phase 3 its private DMA, 2D job, and pixel
+operations remain unavailable and return `RS_ENOTSUP`.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

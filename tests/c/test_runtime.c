@@ -12,6 +12,7 @@
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/fabric_monitor.h>
+#include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/lcd.h>
 #include <retrosoc/hal/i2s.h>
@@ -45,9 +46,11 @@ unsigned long long __umoddi3(unsigned long long dividend, unsigned long long div
 static uint8_t storage[32];
 static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
+volatile uint32_t rs_ga2d_test_mmio[1024];
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 
-#define APU_TEST_REG(offset) rs_apu_test_mmio[(offset) / 4U]
+#define APU_TEST_REG(offset)            rs_apu_test_mmio[(offset) / 4U]
+#define GA2D_TEST_REG(offset)           rs_ga2d_test_mmio[(offset) / 4U]
 #define FABRIC_MONITOR_TEST_REG(offset) rs_fabric_monitor_test_mmio[(offset) / 4U]
 
 void putch(char ch) {
@@ -899,9 +902,9 @@ static int test_fabric_monitor_hal_contract(void) {
 
     test_fabric_monitor_mmio_reset();
     FABRIC_MONITOR_TEST_REG(UINT32_C(0x004)) = UINT32_C(0x00010000);
-    FABRIC_MONITOR_TEST_REG(UINT32_C(0x014)) =
-        UINT32_C(0x00001000) | UINT32_C(0x0A00) | UINT32_C(0x0080) | UINT32_C(0x000C) |
-        UINT32_C(0x0003);
+    FABRIC_MONITOR_TEST_REG(UINT32_C(0x014)) = UINT32_C(0x00001000) | UINT32_C(0x0A00) |
+                                               UINT32_C(0x0080) | UINT32_C(0x000C) |
+                                               UINT32_C(0x0003);
     FABRIC_MONITOR_TEST_REG(UINT32_C(0x018)) = UINT32_C(0x12345678);
     FABRIC_MONITOR_TEST_REG(UINT32_C(0x020)) = UINT32_C(0x0000002A);
     if ((rs_fabric_monitor_read_fault(&fault) != RS_OK) || (fault.master != 3U) ||
@@ -1108,6 +1111,100 @@ static int test_apu_hal_contract(void) {
     return 0;
 }
 
+static void test_ga2d_mmio_reset(void) {
+    for (size_t index = 0U; index < (sizeof(rs_ga2d_test_mmio) / sizeof(rs_ga2d_test_mmio[0]));
+         ++index) {
+        rs_ga2d_test_mmio[index] = 0U;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_IP_ID) = RS_GA2D_IP_ID_VALUE;
+    GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = RS_GA2D_IP_VERSION_VALUE;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P3;
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
+}
+
+static int test_ga2d_hal_contract(void) {
+    rs_ga2d_capability_t capability;
+    rs_ga2d_status_t status;
+    rs_ga2d_error_t error;
+    rs_ga2d_stats_t stats;
+    rs_ga2d_job_t job = {0};
+
+    test_ga2d_mmio_reset();
+    if ((rs_ga2d_get_capability(NULL) != RS_EINVAL) ||
+        (rs_ga2d_get_capability(&capability) != RS_OK) ||
+        (capability.version != RS_GA2D_IP_VERSION_VALUE) ||
+        (capability.features != RS_GA2D_CAPABILITY_P3) || (capability.limits != 0U) ||
+        (capability.formats != 0U)) {
+        return 1;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = UINT32_C(0x00020000);
+    if (rs_ga2d_get_capability(&capability) != RS_ENOTSUP) {
+        return 2;
+    }
+    test_ga2d_mmio_reset();
+    GA2D_TEST_REG(RS_GA2D_REG_COMMAND) = UINT32_C(0xA5A5A5A5);
+    if ((rs_ga2d_job_validate(NULL) != RS_EINVAL) || (rs_ga2d_job_validate(&job) != RS_ENOTSUP) ||
+        (rs_ga2d_configure(NULL) != RS_EINVAL) || (rs_ga2d_configure(&job) != RS_ENOTSUP) ||
+        (rs_ga2d_start() != RS_ENOTSUP) || (rs_ga2d_wait(1U) != RS_ENOTSUP) ||
+        (rs_ga2d_get_stats(NULL) != RS_EINVAL) || (rs_ga2d_get_stats(&stats) != RS_ENOTSUP) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != UINT32_C(0xA5A5A5A5))) {
+        return 3;
+    }
+
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) =
+        RS_GA2D_STATUS_BUSY | RS_GA2D_STATUS_DATA_READY | RS_GA2D_STATUS_ERROR;
+    GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_DONE | RS_GA2D_IRQ_ABORT_DONE;
+    if ((rs_ga2d_get_status(NULL) != RS_EINVAL) || (rs_ga2d_get_status(&status) != RS_OK) ||
+        !status.busy || !status.data_ready || !status.error ||
+        (status.irq_state != (RS_GA2D_IRQ_DONE | RS_GA2D_IRQ_ABORT_DONE))) {
+        return 4;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_ERROR_STATUS) =
+        RS_GA2D_ERROR_STATUS_VALID | (UINT32_C(11) << RS_GA2D_ERROR_STATUS_CODE_SHIFT) |
+        (UINT32_C(5) << RS_GA2D_ERROR_STATUS_STAGE_SHIFT) |
+        (UINT32_C(2) << RS_GA2D_ERROR_STATUS_AXI_RESPONSE_SHIFT);
+    GA2D_TEST_REG(RS_GA2D_REG_ERROR_ADDRESS) = UINT32_C(0x30000040);
+    if ((rs_ga2d_get_error(NULL) != RS_EINVAL) || (rs_ga2d_get_error(&error) != RS_OK) ||
+        !error.valid || (error.code != 11U) || (error.stage != 5U) || (error.axi_response != 2U) ||
+        (error.address != (uintptr_t)UINT32_C(0x30000040))) {
+        return 5;
+    }
+
+    if ((rs_ga2d_irq_enable(RS_GA2D_IRQ_ALL) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_IRQ_ENABLE) != RS_GA2D_IRQ_ALL) ||
+        (rs_ga2d_irq_pending(NULL) != RS_EINVAL) ||
+        (rs_ga2d_irq_pending(&capability.features) != RS_OK) ||
+        (capability.features != (RS_GA2D_IRQ_DONE | RS_GA2D_IRQ_ABORT_DONE)) ||
+        (rs_ga2d_irq_clear(RS_GA2D_IRQ_ERROR) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_IRQ_STATE) != RS_GA2D_IRQ_ERROR) ||
+        (rs_ga2d_irq_enable(UINT32_C(0x8)) != RS_EINVAL)) {
+        return 6;
+    }
+
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
+    if ((rs_ga2d_reset() != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != RS_GA2D_COMMAND_SOFT_RESET)) {
+        return 7;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_RECOVERY_REQUIRED;
+    GA2D_TEST_REG(RS_GA2D_REG_COMMAND) = UINT32_C(0x5A5A5A5A);
+    if ((rs_ga2d_reset() != RS_EIO) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != UINT32_C(0x5A5A5A5A))) {
+        return 8;
+    }
+
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = 0U;
+    if ((rs_ga2d_abort_wait(0U) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_COMMAND) != RS_GA2D_COMMAND_ABORT)) {
+        return 9;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_BUSY;
+    if (rs_ga2d_abort_wait(1U) != RS_ETIMEOUT) {
+        return 10;
+    }
+    return 0;
+}
+
 static int test_jpeg_validation(void) {
     static _Alignas(RS_JPEG_DESCRIPTOR_ALIGNMENT) rs_jpeg_descriptor_t ring[2];
     rs_jpeg_descriptor_t descriptor;
@@ -1263,6 +1360,7 @@ int main(void) {
         test_fabric_monitor_hal_contract(),
         test_apu_validation(),
         test_apu_hal_contract(),
+        test_ga2d_hal_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

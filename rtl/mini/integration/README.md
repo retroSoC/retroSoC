@@ -5,11 +5,12 @@ that is not part of the software address-map ABI or the package pad map.
 
 [GA2D](../../../docs/ip/ga2d.md) Phase 2 expands the topology to data
 master/resource 8 and seven-bit global IDs while retaining all existing
-allocations. It adds only a dedicated PCLK-to-HP AXI64/ID3 GA2D bridge whose
-source is held idle. `APB4_GA` remains reserved and inactive; the GA2D APB
-shell, IRQ wiring, payload/DMA, and pixel function remain deferred to later
-phases. Phase 3 appends APB slot 28 and GA2D's LP32/HP PLIC11 interrupt. The
-Xh3irq SDK path also requires the Phase 1 implementation; a wiring-only
+allocations. It adds a dedicated PCLK-to-HP AXI64/ID3 GA2D bridge whose source
+remains idle. Phase 3 activates `APB4_GA2D` at slot 28 as a PCLK register
+shell and routes its raw IRQ through resource 8: LP group bit 24, core vector
+bit 32/external ordinal 30, or HP PLIC source 11 according to owner. The shell
+exposes IRQ-only capability; payload/DMA, pixel work, and START remain deferred.
+The Xh3irq SDK path also requires the Phase 1 implementation; a wiring-only
 expansion is insufficient.
 
 The topology generator validates APB4 island ownership against

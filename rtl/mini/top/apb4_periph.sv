@@ -23,8 +23,8 @@ module apb4_periph (
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
     input logic                                   ext_h_hp_irq_i,
-    input logic [6:0]                             resource_irq_lp_i,
-    input logic [6:0]                             resource_irq_hp_i,
+    input logic [7:0]                             resource_irq_lp_i,
+    input logic [7:0]                             resource_irq_hp_i,
     input logic [1:0]                             apu_owner_i,
     input logic                                   apu_owner_lock_i,
     input logic                                   apu_quiesce_i,
@@ -32,6 +32,14 @@ module apb4_periph (
     input logic [7:0]                             apu_bridge_epoch_i,
     input logic                                   jpeg_quiesce_i,
     input logic                                   jpeg_reset_i,
+    input logic                                   ga2d_quiesce_i,
+    input logic                                   ga2d_reset_i,
+    input logic                                   ga2d_source_stop_i,
+    input logic                                   ga2d_source_safe_idle_i,
+    input logic                                   ga2d_block_ack_i,
+    input logic                                   ga2d_bridge_clear_busy_i,
+    input logic [7:0]                             ga2d_bridge_epoch_i,
+    input logic                                   ga2d_data_ready_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -75,7 +83,8 @@ module apb4_periph (
     output logic                                  hp_supervisor_external_irq_o,
     output logic                                  apu_idle_o,
     output logic                                  jpeg_idle_o,
-    output logic [6:0]                            resource_irq_raw_o,
+    output logic                                  ga2d_idle_o,
+    output logic [7:0]                            resource_irq_raw_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -179,6 +188,7 @@ axi4_stream_if #(
   logic s_apu_irq_raw;
   logic s_i2s_tx_underrun_evt, s_i2s_rx_overrun_evt;
   logic s_jpeg_irq_raw;
+  logic s_ga2d_irq_raw;
   logic s_usb2_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
@@ -237,7 +247,14 @@ axi4_stream_if #(
   assign hp_machine_external_irq_o = s_hp_plic_context_irq[0];
   assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
   assign resource_irq_raw_o = {
-    s_apu_irq_raw, s_jpeg_irq_raw, spisd.irq_o, sdio1.irq_o, sdio0.irq_o, s_usb2_irq, s_dma_irq
+    s_ga2d_irq_raw,
+    s_apu_irq_raw,
+    s_jpeg_irq_raw,
+    spisd.irq_o,
+    sdio1.irq_o,
+    sdio0.irq_o,
+    s_usb2_irq,
+    s_dma_irq
   };
 
   apb4_async_bridge u_psram_cfg_mem_cdc (
@@ -319,6 +336,7 @@ axi4_stream_if #(
     s_hp_plic_source[8]  = resource_irq_hp_i[4];
     s_hp_plic_source[9]  = resource_irq_hp_i[5];
     s_hp_plic_source[10] = resource_irq_hp_i[6];
+    s_hp_plic_source[11] = resource_irq_hp_i[7];
   end
 
   `include "apb4_periph_irq_bindings.svh"
@@ -517,6 +535,22 @@ axi4_stream_if #(
       .i2s_rx_axis      (u_i2s_rx_axis_if),
       .idle_o           (apu_idle_o),
       .irq_o            (s_apu_irq_raw)
+  );
+
+  apb4_ga2d u_apb4_ga2d (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .resource_quiesce_i (ga2d_quiesce_i),
+      .resource_reset_i   (ga2d_reset_i),
+      .source_stop_i      (ga2d_source_stop_i),
+      .source_safe_idle_i (ga2d_source_safe_idle_i),
+      .block_ack_i        (ga2d_block_ack_i),
+      .bridge_clear_busy_i(ga2d_bridge_clear_busy_i),
+      .bridge_epoch_i     (ga2d_bridge_epoch_i),
+      .data_ready_i       (ga2d_data_ready_i),
+      .apb4               (u_ga2d_apb4_if),
+      .idle_o             (ga2d_idle_o),
+      .irq_o              (s_ga2d_irq_raw)
   );
 
   apb4_sysctrl u_apb4_sysctrl (

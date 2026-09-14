@@ -3,9 +3,10 @@
 The frozen [GA2D specification](ip/ga2d.md) defines the phased GA2D delivery.
 Phase 2 expands the implemented platform to nine AXI64 masters with seven-bit
 global IDs and Resource Controller entry 8. Its dedicated PCLK-to-HP
-AXI64/ID3 bridge is an idle placeholder only. `APB4_GA` remains reserved and
-inactive, and the GA2D APB shell, IRQ, payload/DMA, and pixel function remain
-deferred. Existing hart, memory, and source identities remain fixed.
+AXI64/ID3 bridge remains an idle placeholder. Phase 3 activates
+`APB4_GA2D` as a PCLK register shell and connects its resource-owned IRQ, but
+payload/DMA, pixel function, and START remain deferred. Existing hart, memory,
+and source identities remain fixed.
 
 ## Product contract
 
@@ -94,6 +95,7 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 | I/O gateway A | USB2 and SDIO0, then PCLK-to-HP CDC and upsizer |
 | I/O gateway B | SDIO1 and SPI-SD, then PCLK-to-HP CDC and upsizer |
 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC and upsizer |
+| JPEG | PCLK-to-HP AXI64 async bridge, ID prefix 6; zero normal admission credit (`GA2D-GAP-01`) |
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 | GA2D bridge placeholder | dedicated PCLK-to-HP AXI64/ID3 async bridge; source held idle |
 
@@ -154,12 +156,13 @@ Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
 never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
 The Resource Controller at `0x2000_A000` is the central owner and IRQ authority
-for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, and APU, and the lifecycle
-authority for the idle GA2D bridge placeholder. Resource 8 has no routed IRQ
-until Phase 3. Handoff requires idle,
-owner lock is sticky, and rejected handoffs raise LP IRQ 29. APU index 7 routes
-exclusively to LP IRQ31 or HP PLIC source10. The controller also carries the
-AON cache request/clean acknowledgement used before HP drain. See
+for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, APU, and the P3 GA2D shell. Resource
+8 routes its raw IRQ exclusively to LP vector 32/external ordinal 30 or HP PLIC
+source 11 according to owner, while the associated AXI bridge remains idle.
+Handoff requires idle, owner lock is sticky, and rejected handoffs raise LP IRQ
+29. APU index 7 routes exclusively to LP IRQ31 or HP PLIC source10. The
+controller also carries the AON cache request/clean acknowledgement used before
+HP drain. See
 [`ip/resource-controller.md`](ip/resource-controller.md).
 Resource 8 qualifies its HP block acknowledgement with a fresh synchronized
 source-quiesced state, so an old idle sample cannot hand off a

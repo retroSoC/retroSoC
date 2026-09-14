@@ -5,7 +5,8 @@ adds master bank 8, version 1.1, and master bit 3 at `FAULT[12]`, preserving
 the existing packed fields. It also carries the complete four-bit master
 identity through SYSCTRL. Bank 8 observes the dedicated PCLK-to-HP
 AXI64/ID3 GA2D bridge placeholder, whose source is idle; it does not imply an
-implemented GA2D APB shell, IRQ, payload/DMA, or pixel function.
+implemented GA2D payload/DMA or pixel function. Phase 3 adds an `APB4_GA2D`
+register shell and resource-owned IRQ without changing the idle bridge source.
 
 ## Scope
 

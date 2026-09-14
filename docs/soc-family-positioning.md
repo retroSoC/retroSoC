@@ -145,8 +145,9 @@ capabilities:
   with seven-bit global IDs. Vexii I/D ports remain independent; DMA and I/O
   masters cross into HP and current memory frontends are reached through
   64-to-32 target adapters. Master 8 is a dedicated PCLK-to-HP AXI64/ID3 GA2D
-  bridge whose source is idle; `APB4_GA` remains reserved and inactive, and no
-  GA2D APB shell, IRQ, payload/DMA, or pixel function is implemented.
+  bridge whose source is idle. `APB4_GA2D` is an active PCLK register shell
+  with resource-owned IRQ routing, while GA2D payload/DMA and pixel functions
+  remain unavailable.
 - Current external-memory targets serialize accepted AXI4 bursts into ordered
   scalar engine accesses. They do not yet combine a burst into a native SDRAM,
   PSRAM, flash, or SPI-SD physical transaction.

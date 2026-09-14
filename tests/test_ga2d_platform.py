@@ -1,4 +1,4 @@
-"""Directed GA2D Phase 2 fabric and lifecycle verification."""
+"""Directed GA2D Phase 2 fabric/lifecycle and Phase 3 shell boundaries."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_ga2d_p2_preserves_deferred_apb_irq_and_payload_boundaries() -> None:
+def test_ga2d_p3_activates_only_the_apb_shell_and_irq_route() -> None:
     memory_map = json.loads(
         (ROOT / "rtl/mini/address_map/memory_map.json").read_text(encoding="utf-8")
     )
@@ -21,25 +21,43 @@ def test_ga2d_p2_preserves_deferred_apb_irq_and_payload_boundaries() -> None:
     topology = json.loads(
         (ROOT / "rtl/mini/integration/soc_topology.json").read_text(encoding="utf-8")
     )
+    apb4_periph = (ROOT / "rtl/mini/top/apb4_periph.sv").read_text(encoding="utf-8")
     apb4_system = (ROOT / "rtl/mini/top/apb4_system.sv").read_text(encoding="utf-8")
     top = (ROOT / "rtl/mini/top/retrosoc.sv").read_text(encoding="utf-8")
 
-    assert regions["APB4_GA"] == {
-        "symbol": "APB4_GA",
+    assert "APB4_GA" not in regions
+    assert regions["APB4_GA2D"] == {
+        "symbol": "APB4_GA2D",
         "base": "0x10012000",
         "size": "0x00001000",
-        "route": "reserved",
-        "kind": "reserved",
-        "public": False,
+        "route": "apb4_periph",
+        "kind": "active",
+        "public": True,
         "user_access": "none",
     }
-    assert all("ga2d" not in interrupt["name"].lower() for interrupt in topology["interrupts"])
-    assert not list((ROOT / "rtl/ip/multimedia").glob("ga2d_*.sv"))
+    assert topology["apb4_periph_targets"][-1] == {
+        "slot": 28,
+        "name": "ga2d",
+        "timed_interface": "u_ga2d_apb4_if",
+        "pure_interface": "u_ga2d_apb4_pure_if",
+        "region": "APB4_GA2D",
+    }
+    assert topology["interrupts"][-1]["name"] == "ga2d"
+    assert topology["interrupts"][-1]["group_bit"] == 24
+    assert topology["interrupts"][-1]["core_bit"] == 32
+    assert topology["interrupts"][-1]["signal"] == "resource_irq_lp_i[7]"
+    assert {
+        "ga2d_pkg.sv",
+        "ga2d_reg.sv",
+        "apb4_ga2d.sv",
+    } <= {path.name for path in (ROOT / "rtl/ip/multimedia").glob("*ga2d*.sv")}
     assert ".ResourceCount(9)" in apb4_system
-    assert "1'b0, resource_irq_i[6:5], s_ext_h_irq_raw, resource_irq_i[4:0]" in apb4_system
-    assert "resource_irq_lp_o     = {s_resource_irq_lp[7:6], s_resource_irq_lp[4:0]}" in apb4_system
-    assert "s_ga2d_source_safe_idle && s_resource_idle_pclk[8]" in top
-    assert "s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8]" in top
+    assert "resource_irq_i[7]" in apb4_system
+    assert "s_resource_irq_lp[8]" in apb4_system
+    assert "s_hp_plic_source[11] = resource_irq_hp_i[7];" in apb4_periph
+    assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8]" in top
+    assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8]" in top
+    assert "axi4_master_idle u_ga2d_master_idle" in top
 
 
 def test_ga2d_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:

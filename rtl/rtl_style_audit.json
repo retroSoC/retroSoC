@@ -134,6 +134,7 @@
     ],
     "rtl/ip/multimedia": [
       "apb4_apu.sv",
+      "apb4_ga2d.sv",
       "apb4_jpeg.sv",
       "apu_bitstream_engine.sv",
       "apu_codec_controller.sv",
@@ -158,6 +159,9 @@
       "dvp_core.sv",
       "dvp_define.svh",
       "dvp_reg.sv",
+      "ga2d_define.svh",
+      "ga2d_pkg.sv",
+      "ga2d_reg.sv",
       "jpeg_bit_packer.sv",
       "jpeg_bit_reader.sv",
       "jpeg_block_decoder.sv",

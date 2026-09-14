@@ -151,15 +151,21 @@ module resource_controller_tb;
       $fatal(1, "APU resource index 7 ownership or IRQ routing mismatch");
     end
 
+    irq_i[8] = 1'b1;
     apb_read(12'h200, read_data);
-    if (read_data != 32'd0 || owner_o[8] != 2'd0 || owner_lock_o[8]) begin
+    if (read_data != 32'd0 || owner_o[8] != 2'd0 || owner_lock_o[8] || !irq_lp_o[8] ||
+        irq_hp_o[8]) begin
       $fatal(1, "GA2D resource 8 did not reset to unlocked LP ownership");
     end
     apb_write(12'h204, 32'h0000_0001, 1'b0);
     block_ack_i[8] = 1'b1;
     apb_write(12'h200, 32'h0000_0001, 1'b0);
-    if ((owner_o[8] != 2'd1) || irq_lp_o[8] || irq_hp_o[8]) begin
-      $fatal(1, "GA2D resource 8 lifecycle or inactive IRQ mismatch");
+    if ((owner_o[8] != 2'd1) || irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 LP-to-HP IRQ handoff mismatch");
+    end
+    apb_write(12'h204, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset did not mask both IRQ routes");
     end
 
     $display("Resource Controller ownership, IRQ, and cache handshake test passed");

@@ -150,12 +150,12 @@
     "Lifecycle-gated device identity reads."
   ],
   "resource": [
-    "Nine independently managed shared resources; resource 8 is the idle GA2D bridge placeholder only.",
+    "Nine independently managed shared resources; resource 8 owns the P3 GA2D shell IRQ and idle bridge placeholder.",
     "Owner locks, quiesce/reset and LP/HP IRQ routing.",
     "Explicit cache-maintenance handoff and sticky faults."
   ],
   "monitor": [
-    "Nine master and six target observation banks; bank 8 observes the idle GA2D bridge placeholder.",
+    "Nine master and six target observation banks; bank 8 observes the idle GA2D bridge behind the P3 shell.",
     "Saturating counters, snapshots and outstanding high-water marks.",
     "Sticky first-fault attribution and live isolation status."
   ],

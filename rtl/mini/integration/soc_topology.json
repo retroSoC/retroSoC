@@ -5,7 +5,7 @@
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 24,
+      "width": 25,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -284,6 +284,15 @@
       "group_bit": 23,
       "core_bit": 31,
       "signal": "resource_irq_lp_i[6]",
+      "user_visible": false
+    },
+    {
+      "name": "ga2d",
+      "description": "GA2D shell completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 24,
+      "core_bit": 32,
+      "signal": "resource_irq_lp_i[7]",
       "user_visible": false
     }
   ],
@@ -624,6 +633,13 @@
       "timed_interface": "u_apu_apb4_if",
       "pure_interface": "u_apu_apb4_pure_if",
       "region": "APB4_APU"
+    },
+    {
+      "slot": 28,
+      "name": "ga2d",
+      "timed_interface": "u_ga2d_apb4_if",
+      "pure_interface": "u_ga2d_apb4_pure_if",
+      "region": "APB4_GA2D"
     }
   ],
   "apb4_system_targets": [

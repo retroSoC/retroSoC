@@ -80,7 +80,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     ).read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("apb4_if u_") == 26
+    assert interfaces.count("apb4_if u_") == 27
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_psel_comb[17] = `SOC_ADDR_IS_APB4_I2C1(s_decode_addr);" in routes
@@ -97,6 +97,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_psel_comb[25] = `SOC_ADDR_IS_HP_PLIC(s_decode_addr);" in routes
     assert "assign s_psel_comb[26] = `SOC_ADDR_IS_APB4_JPEG(s_decode_addr);" in routes
     assert "assign s_psel_comb[27] = `SOC_ADDR_IS_APB4_APU(s_decode_addr);" in routes
+    assert "assign s_psel_comb[28] = `SOC_ADDR_IS_APB4_GA2D(s_decode_addr);" in routes
+    assert "apb4_if u_ga2d_apb4_if (clk_i, rst_n_i);" in interfaces
     assert gpio.count("// GPIO") == 64
     assert "u_uart1_if" not in gpio
     assert "assign u_uart0_if.cts_n_i = u_gpio_if.di_i[0];" in gpio
@@ -145,7 +147,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert ".usb2_axi4(u_usb2_axi4_if)" in apb_periph_fabric
     assert "`define SOC_IRQ_VECTOR_WIDTH 64" in irq_config
     assert "`define SOC_USER_IRQ_MASK 64'h00000000004EFBFC" in irq_config
-    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 24" in irq_config
+    assert "`define SOC_IRQ_APB4_PERIPH_WIDTH 25" in irq_config
     assert "`define SOC_IRQ_APB4_SYSTEM_WIDTH 8" in irq_config
     assert "assign irq_o[0] = u_clint_if.software_irq_o[0];" in rib_irq
     assert "assign irq_o[10] = ws2812.irq_o;" in rib_irq
@@ -160,6 +162,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign irq_o[19] = resource_irq_lp_i[1];" in rib_irq
     assert "assign irq_o[22] = resource_irq_lp_i[5];" in rib_irq
     assert "assign irq_o[23] = resource_irq_lp_i[6];" in rib_irq
+    assert "assign irq_o[24] = resource_irq_lp_i[7];" in rib_irq
     assert "assign irq_o[0] = pwm.irq_o;" in apb_irq
     assert "assign irq_o[4] = s_rng_irq;" in apb_irq
     assert "assign irq_o[5] = s_ext_l_irq;" in apb_irq
@@ -178,6 +181,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "s_irq[29] = s_apb4_system_irq[7];" in irq_wiring
     assert "s_irq[30] = s_apb4_periph_irq[22];" in irq_wiring
     assert "s_irq[31] = s_apb4_periph_irq[23];" in irq_wiring
+    assert "s_irq[32] = s_apb4_periph_irq[24];" in irq_wiring
     assert "irq_i[10] == apb4_periph_irq_i[16]" in irq_sva
     assert "irq_i[15] == apb4_periph_irq_i[13]" in irq_sva
     assert "irq_i[20] == apb4_periph_irq_i[14]" in irq_sva
@@ -187,6 +191,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "irq_i[24] == apb4_periph_irq_i[19]" in irq_sva
     assert "irq_i[30] == apb4_periph_irq_i[22]" in irq_sva
     assert "irq_i[31] == apb4_periph_irq_i[23]" in irq_sva
+    assert "irq_i[32] == apb4_periph_irq_i[24]" in irq_sva
     assert "bind retrosoc soc_irq_topology_sva" in irq_sva
     assert ".clk_i(clk_lp_i)" in irq_sva
     assert ".rst_n_i(rst_lp_n_i)" in irq_sva
@@ -203,7 +208,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "RS_SOC_IRQ_UART0 UINT32_C(2)" in irq_metadata
     assert "RS_SOC_EXT_IRQ_UART0 UINT32_C(0)" in irq_metadata
     assert "RS_SOC_IRQ_APU" in irq_metadata
-    assert "RS_SOC_IRQ_GA2D" not in irq_metadata
+    assert "RS_SOC_IRQ_GA2D UINT32_C(32)" in irq_metadata
+    assert "RS_SOC_EXT_IRQ_GA2D UINT32_C(30)" in irq_metadata
     assert filelist.startswith("+incdir+")
 
 
@@ -253,10 +259,11 @@ def test_topology_preserves_default_irq_compatibility_mapping() -> None:
         ("jpeg", "apb4_periph", 22, 30, "resource_irq_lp_i[5]"),
         ("resource_fault", "apb4_system", 7, 29, "s_resource_fault_irq"),
         ("apu", "apb4_periph", 23, 31, "resource_irq_lp_i[6]"),
+        ("ga2d", "apb4_periph", 24, 32, "resource_irq_lp_i[7]"),
     ]
 
 
-def test_ga2d_p2_topology_is_data_master_only() -> None:
+def test_ga2d_p3_topology_activates_the_shell_without_a_data_source() -> None:
     document = json.loads(TOPOLOGY.read_text(encoding="utf-8"))
     policies = document["data_master_policies"]
 
@@ -280,11 +287,12 @@ def test_ga2d_p2_topology_is_data_master_only() -> None:
         "allow_instruction": False,
         "require_noncacheable": True,
     }
-    assert all(
-        target["name"] != "ga2d"
-        for target in document["apb4_periph_targets"] + document["apb4_system_targets"]
-    )
-    assert all("ga2d" not in interrupt["name"] for interrupt in document["interrupts"])
+    assert document["apb4_periph_targets"][-1]["name"] == "ga2d"
+    assert document["apb4_periph_targets"][-1]["slot"] == 28
+    assert document["apb4_periph_targets"][-1]["region"] == "APB4_GA2D"
+    assert document["interrupts"][-1]["name"] == "ga2d"
+    assert document["interrupts"][-1]["group_bit"] == 24
+    assert document["interrupts"][-1]["core_bit"] == 32
 
 
 def test_apu_p1_fixed_resource_and_hp_irq_allocations() -> None:
@@ -296,11 +304,15 @@ def test_apu_p1_fixed_resource_and_hp_irq_allocations() -> None:
     )
 
     assert "s_hp_plic_source[10] = resource_irq_hp_i[6];" in periph
-    assert "s_apu_irq_raw, s_jpeg_irq_raw" in periph
+    assert "s_hp_plic_source[11] = resource_irq_hp_i[7];" in periph
+    assert "s_ga2d_irq_raw," in periph
     assert ".ResourceCount(9)" in system
     assert ".apu_owner_i                 (s_resource_owner[7])" in top
     assert ".apu_quiesce_i               (s_resource_quiesce[7])" in top
     assert ".apu_reset_i                 (s_resource_reset[7])" in top
+    compact_top = "".join(top.split())
+    assert ".ga2d_quiesce_i(s_resource_quiesce[8])" in compact_top
+    assert ".ga2d_reset_i(s_resource_reset[8])" in compact_top
     assert "RS_RESOURCE_APU = 7" in resource_header
     assert "RS_RESOURCE_COUNT = 9" in resource_header
 

@@ -590,7 +590,7 @@
       "id": "resource",
       "title": "Resource Controller",
       "implementation": "Partial",
-      "scope": "Nine independently managed shared resources; resource 8 is the idle GA2D bridge placeholder only.",
+      "scope": "Nine independently managed shared resources; resource 8 owns the P3 GA2D shell IRQ and an idle AXI bridge placeholder.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -610,7 +610,7 @@
       "id": "monitor",
       "title": "Fabric Monitor",
       "implementation": "Integrated",
-      "scope": "Nine master and six target observation banks; bank 8 observes the idle GA2D bridge placeholder.",
+      "scope": "Nine master and six target observation banks; bank 8 observes the idle GA2D bridge behind the P3 shell.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -3626,6 +3626,20 @@
         ]
       },
       {
+        "id": "apb4_ga2d",
+        "chapter": "resource",
+        "family": "ga2d",
+        "mode": "PRODUCT",
+        "region": "APB4_GA2D",
+        "catalog": "ga2d",
+        "qualification": "Phase 3 exposes only the GA2D APB4 shell and its resource-owned IRQ route. START, private DMA, and pixel operations remain unavailable.",
+        "sources": [
+          "docs/ip/ga2d.md",
+          "rtl/ip/multimedia/ga2d_reg.sv",
+          "rtl/ip/multimedia/apb4_ga2d.sv"
+        ]
+      },
+      {
         "id": "apb4_crypto",
         "chapter": "crypto",
         "family": "crypto",
@@ -5307,7 +5321,16 @@
             "code": 15,
             "trigger": "rs_ci_smoke_external_irq(",
             "coverage": "Exercise Xh3irq ordinals 0/15/16/29/30/31/32/61, invalid 62, priority/masking, no-handler masking, timer/software coexistence, and handler entry/return.",
-            "boundary": "Only the CSR-enabled build exercises dispatch; no peripheral GA2D source is wired."
+            "boundary": "Only the CSR-enabled build exercises dispatch; the physical P3 GA2D shell route is covered by the following stage."
+          },
+          {
+            "id": "ga2d-irq",
+            "title": "GA2D shell IRQ route",
+            "kind": "test-fail",
+            "code": 15,
+            "trigger": "rs_ci_smoke_ga2d_irq(",
+            "coverage": "Discover the P3 shell and use IRQ_TEST to exercise its resource-owned LP external route.",
+            "boundary": "Does not submit a GA2D datapath job or claim private DMA or pixel-operation availability."
           },
           {
             "id": "apu",

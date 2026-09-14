@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -45,14 +46,15 @@ def test_phase1_generates_64bit_vector_and_sdk_metadata(tmp_path: Path) -> None:
     assert "`define SOC_IRQ_VECTOR_WIDTH 64" in irq_config
     assert "`define SOC_USER_IRQ_MASK 64'h00000000004EFBFC" in irq_config
     assert "s_irq[31] = s_apb4_periph_irq[23];" in irq_wiring
-    assert "s_irq[32]" not in irq_wiring
-    assert "irq_i[32] == 1'b0" in irq_sva
+    assert "s_irq[32] = s_apb4_periph_irq[24];" in irq_wiring
+    assert "irq_i[32] == apb4_periph_irq_i[24]" in irq_sva
     assert "irq_i[63] == 1'b0" in irq_sva
     assert "RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(64)" in metadata
     assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(62)" in metadata
-    assert "RS_SOC_ALLOCATED_IRQ_COUNT UINT32_C(30)" in metadata
+    assert "RS_SOC_ALLOCATED_IRQ_COUNT UINT32_C(31)" in metadata
     assert "RS_SOC_EXT_IRQ_APU UINT32_C(29)" in metadata
-    assert "RS_SOC_IRQ_GA2D" not in metadata
+    assert "RS_SOC_IRQ_GA2D UINT32_C(32)" in metadata
+    assert "RS_SOC_EXT_IRQ_GA2D UINT32_C(30)" in metadata
 
 
 def test_phase1_supports_32bit_compatibility_metadata(tmp_path: Path) -> None:
@@ -128,10 +130,11 @@ def test_phase1_wrapper_and_backend_contracts() -> None:
     assert "CSR_HAZARD3_MEIEA         0xbe0" in csr
     assert "CSR_HAZARD3_MEINEXT       0xbe4" in csr
     assert "CSR_HAZARD3_MEICONTEXT    0xbe5" in csr
-    assert "{0U, 15U, 16U, 29U, 30U, 31U, 32U, 61U}" in firmware
+    assert "static const uint32_t tested_ordinals[]" in firmware
+    assert re.search(r"29U,\s*RS_SOC_EXT_IRQ_GA2D,\s*31U", firmware) is not None
     assert "rs_irq_register_external(62U" in firmware
     assert "rs_irq_set_external_priority(29U, UINT8_C(0))" in firmware
-    assert "rs_irq_set_external_priority(30U, UINT8_C(1))" in firmware
+    assert "rs_irq_set_external_priority(RS_SOC_EXT_IRQ_GA2D, UINT8_C(1))" in firmware
     assert "rs_irq_set_external_priority(31U, UINT8_C(2))" in firmware
     assert "rs_irq_set_external_priority(32U, UINT8_C(3))" in firmware
     assert "rs_irq_set_external_priority(15U, UINT8_C(3))" in firmware

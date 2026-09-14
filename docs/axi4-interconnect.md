@@ -3,16 +3,19 @@
 Mini uses two cooperating AXI fabrics. `axi4_interconnect` is the 32-bit LP
 control/compatibility plane; `axi4_data_crossbar` is the 64-bit HP payload
 plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
-executable protocol, address, and integration sources of truth.
+executable protocol, address, and integration sources of truth. GA2D Phase 3
+activates the PCLK-only `APB4_GA2D` shell and its resource-owned interrupt;
+the dedicated master-8 AXI bridge remains an idle source until a later phase
+implements payload/DMA traffic.
 
 [GA2D Phase 2](ip/ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
 expands the fabric to nine native masters and seven-bit global IDs. It adds
 master 8 and preserves all existing identities, target policy, and timeout
 behavior. Master 8 is fed only by its dedicated PCLK-to-HP AXI64/ID3 bridge,
-whose source is idle. `APB4_GA` remains reserved and inactive; the GA2D APB
-shell, IRQ, payload/DMA, and pixel function remain deferred. The GA2D
-specification also records the existing master-6/JPEG admission discrepancy;
-it must not be interpreted as a free port.
+whose source remains idle. Phase 3 activates the separate PCLK `APB4_GA2D`
+shell and resource-owned IRQ, while payload/DMA, pixel work, and START remain
+deferred. The GA2D specification also records the existing master-6/JPEG
+admission discrepancy; it must not be interpreted as a free port.
 
 ## LP control plane
 
@@ -74,7 +77,7 @@ the integration RTL:
 | HP I-cache | all five memories | none | allowed | cache attributes preserved |
 | HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
 | DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
-| GA2D bridge placeholder | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; source is idle in P2 |
+| GA2D bridge placeholder | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; source remains idle in P3 |
 | JPEG | none | none | denied | zero normal admission credit (`GA2D-GAP-01`) |
 | EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
 

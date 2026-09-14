@@ -3,8 +3,9 @@
 [GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
 adds resource 8 and version 1.1. It covers only the dedicated PCLK-to-HP
 AXI64/ID3 GA2D bridge placeholder, whose source is idle. LP vector 32 / HP
-PLIC source 11 and GA2D APB-shell wiring remain Phase 3 work; `APB4_GA`
-therefore remains reserved and inactive. Its source-stop/drain-before-block
+PLIC source 11 and `APB4_GA2D` shell wiring are implemented in Phase 3. The
+shell has IRQ-only capability; it does not create GA2D payload/DMA or pixel
+work, and the bridge source remains idle. Its source-stop/drain-before-block
 sequence is specified there. Existing resources and register fields are not
 renumbered or reinterpreted.
 
@@ -29,13 +30,13 @@ Resource indices are fixed:
 | 5 | EXT-H | 3 |
 | 6 | JPEG | 9 |
 | 7 | APU | 10 |
-| 8 | GA2D bridge placeholder (idle) | 11, not routed until Phase 3 |
+| 8 | GA2D APB shell and idle bridge placeholder | 11 |
 
 For resources 0 through 7, owner `0` routes the resource interrupt to the
 existing LP vector. Owner `1` removes it from LP and routes it to the listed HP
-PLIC source. Resource 8 has a fixed-inactive raw IRQ and no LP or HP IRQ route
-until Phase 3. Reset masks both applicable routes. Hardware never delivers one
-resource interrupt to both owners.
+PLIC source. Resource 8 routes the GA2D shell raw IRQ to LP vector 32/external
+ordinal 30 for owner `0`, or HP PLIC source 11 for owner `1`. Reset masks both
+routes. Hardware never delivers one resource interrupt to both owners.
 
 ## Register ABI
 
@@ -90,9 +91,9 @@ and a Linux platform driver remain software responsibilities.
 ## Delivery Boundary
 
 Central owner/lock, quiesce-gated handoff, cache request/ACK, fault IRQ, and
-LP/HP IRQ routing are implemented and directed-tested. P2 appends resource 8
-for the idle GA2D bridge placeholder only; it creates no GA2D IRQ route or
-functional GA2D peripheral. `CONTROL.QUIESCE` blocks the corresponding
+LP/HP IRQ routing are implemented and directed-tested. Phase 3 adds the GA2D
+PCLK shell raw IRQ to resource 8, while its AXI bridge remains idle and it does
+not provide a functional GA2D engine. `CONTROL.QUIESCE` blocks the corresponding
 data-crossbar master and waits per-master outstanding zero; shared I/O gateways
 are conservatively blocked as a pair. `CONTROL.RESET` also blocks new data and
 masks IRQ but is not yet connected to every peripheral engine's internal reset

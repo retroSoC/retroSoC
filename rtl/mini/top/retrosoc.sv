@@ -252,11 +252,12 @@ module retrosoc (
   logic [ 8:0]      s_resource_idle_pclk;
   logic [ 8:0]      s_resource_block_ack_hp;
   logic [ 8:0]      s_resource_block_ack_pclk;
-  logic [ 6:0]      s_resource_irq_raw;
-  logic [ 6:0]      s_resource_irq_lp;
-  logic [ 6:0]      s_resource_irq_hp;
+  logic [ 7:0]      s_resource_irq_raw;
+  logic [ 7:0]      s_resource_irq_lp;
+  logic [ 7:0]      s_resource_irq_hp;
   logic             s_apu_idle;
   logic             s_jpeg_idle;
+  logic             s_ga2d_idle;
   logic [ 8:0]      s_resource_idle_combined;
   logic [ 8:0]      s_resource_block_ack_combined;
   logic             s_ga2d_source_stop;
@@ -869,6 +870,14 @@ module retrosoc (
       .apu_bridge_epoch_i          (s_apu_bridge_epoch),
       .jpeg_quiesce_i              (s_resource_quiesce[6]),
       .jpeg_reset_i                (s_resource_reset[6]),
+      .ga2d_quiesce_i              (s_resource_quiesce[8]),
+      .ga2d_reset_i                (s_resource_reset[8]),
+      .ga2d_source_stop_i          (s_ga2d_source_stop),
+      .ga2d_source_safe_idle_i     (s_ga2d_source_safe_idle),
+      .ga2d_block_ack_i            (s_resource_block_ack_pclk[8]),
+      .ga2d_bridge_clear_busy_i    (s_ga2d_bridge_clear_busy),
+      .ga2d_bridge_epoch_i         (s_ga2d_bridge_epoch),
+      .ga2d_data_ready_i           (s_ga2d_data_ready),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
       .sdio0_axi4                  (u_sdio0_axi4_if),
@@ -913,6 +922,7 @@ module retrosoc (
       .resource_irq_raw_o          (s_resource_irq_raw),
       .apu_idle_o                  (s_apu_idle),
       .jpeg_idle_o                 (s_jpeg_idle),
+      .ga2d_idle_o                 (s_ga2d_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
 
@@ -963,14 +973,14 @@ module retrosoc (
   );
 
   assign s_resource_idle_combined = {
-    s_ga2d_source_safe_idle && s_resource_idle_pclk[8],
+    s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8],
     s_apu_idle && s_resource_idle_pclk[7],
     s_jpeg_idle && s_resource_idle_pclk[6],
     s_ext_h_data_idle && s_resource_idle_pclk[5],
     s_resource_idle_pclk[4:0]
   };
   assign s_resource_block_ack_combined = {
-    s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8],
+    s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8],
     s_apu_idle && s_resource_block_ack_pclk[7],
     s_resource_block_ack_pclk[6:0]
   };

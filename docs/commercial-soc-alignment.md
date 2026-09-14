@@ -23,11 +23,12 @@ Mini remains a small, non-coherent, performance-first SoC. Hazard3 is the
 only root-management master. Vexii I/D, DMA, I/O gateways, the LP data gateway,
 EXT-H, and an idle GA2D bridge placeholder use a nine-master native AXI64 data
 plane with seven-bit global IDs. The placeholder is a dedicated
-PCLK-to-HP AXI64/ID3 bridge only: `APB4_GA` remains reserved and inactive, and
-the GA2D APB shell, IRQ, payload/DMA, and pixel function remain deferred. APB
-remains a separate control plane. Every data initiator has a generated fixed
-identity, target permissions, execute/cache-attribute rules, outstanding
-limit, QoS class, and fault attribution.
+PCLK-to-HP AXI64/ID3 bridge whose source remains idle. Phase 3 activates a
+separate PCLK `APB4_GA2D` register shell and resource-owned IRQ route, but
+payload/DMA and pixel functions remain deferred. APB remains a separate control
+plane. Every data initiator has a generated fixed identity, target permissions,
+execute/cache-attribute rules, outstanding limit, QoS class, and fault
+attribution.
 
 The design combines the references at their smallest useful boundary:
 

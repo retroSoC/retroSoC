@@ -1976,6 +1976,1024 @@
       "reset": "0"
     }
   },
+  "ga2d": {
+    "main.IP_ID": {
+      "access": "RO",
+      "reset": "0x47413244",
+      "description": "Fixed GA2D identifier.",
+      "fields": [
+        {
+          "name": "IDENTIFIER",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 0x47413244 (GA2D).",
+          "reset": "0x47413244",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.IP_VERSION": {
+      "access": "RO",
+      "reset": "0x00010000",
+      "description": "GA2D register ABI version.",
+      "fields": [
+        {
+          "name": "MINOR",
+          "lsb": 0,
+          "msb": 15,
+          "description": "ABI minor version.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "MAJOR",
+          "lsb": 16,
+          "msb": 31,
+          "description": "ABI major version; P3 implements major 1.",
+          "reset": "1",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.CAPABILITY": {
+      "access": "RO",
+      "reset": "0x00000040",
+      "description": "P3 capability bitmap; only IRQ routing is advertised.",
+      "fields": [
+        {
+          "name": "FILL",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Fill operation capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "COPY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Copy operation capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "CONVERT",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Conversion operation capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "BLEND",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Blend operation capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "A8_MASK",
+          "lsb": 4,
+          "msb": 4,
+          "description": "A8 mask capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "PRIVATE_DMA",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Private AXI DMA capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "IRQ",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Shell IRQ capability.",
+          "reset": "1",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "SNAPSHOT",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Performance snapshot capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "TWO_DIMENSIONAL_PITCH",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Two-dimensional pitch capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "BYTE_EDGES",
+          "lsb": 9,
+          "msb": 9,
+          "description": "Byte-edge DMA capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "INPLACE_BACKGROUND",
+          "lsb": 10,
+          "msb": 10,
+          "description": "In-place background capability; clear in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 11,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.LIMITS": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "DMA geometry limits; all fields are zero until private DMA is implemented.",
+      "fields": [
+        {
+          "name": "MAX_BURST_BEATS",
+          "lsb": 0,
+          "msb": 7,
+          "description": "Maximum DMA burst beats; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "INPUT_FIFO_DEPTH",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Input FIFO depth; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "OUTPUT_FIFO_DEPTH",
+          "lsb": 16,
+          "msb": 23,
+          "description": "Output FIFO depth; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "AXI_BEAT_BYTES",
+          "lsb": 24,
+          "msb": 31,
+          "description": "AXI DMA beat width; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.COMMAND": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Single-command write port; START is unsupported in P3.",
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Start a job; rejected with PSLVERR in P3.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ABORT",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Request a safe abort; idle P3 shell is a no-op.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "SOFT_RESET",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Clear local shell state only when safe idle and recovered.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live shell, lifecycle, and recovery status.",
+      "fields": [
+        {
+          "name": "BUSY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Live job-active status; clear in the P3 shell.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "DRAINING",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Live drain status; clear in the P3 shell.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "QUIESCED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Resource stop has reached safe source idle and block acknowledgement.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "DATA_READY",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Qualified bridge data readiness.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "DONE",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Last job completed; clear in the P3 shell.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Last job aborted; clear in the P3 shell.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Sticky first-error validity.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "RECOVERY_REQUIRED",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Bridge clear, reset epoch, or data-readiness recovery is unresolved.",
+          "reset": "Dynamic",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 8,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_STATE": {
+      "access": "RW1C",
+      "reset": "0x00000000",
+      "description": "Sticky IRQ causes; a same-cycle new event wins over a clear.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Successful terminal job event.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "First-error event.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Safe abort completion event.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_ENABLE": {
+      "access": "RW",
+      "reset": "0x00000000",
+      "description": "Interrupt-cause enable mask.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Enable DONE raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Enable ERROR raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Enable ABORT_DONE raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_TEST": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Set selected IRQ_STATE causes for route testing without job progress.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Set DONE state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Set ERROR state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Set ABORT_DONE state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.ERROR_STATUS": {
+      "access": "RO/W1C",
+      "reset": "0x00000000",
+      "description": "Sticky first-error record; write one clears a safe idle record.",
+      "fields": [
+        {
+          "name": "VALID",
+          "lsb": 0,
+          "msb": 0,
+          "description": "First-error record is valid.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "CODE",
+          "lsb": 1,
+          "msb": 7,
+          "description": "First-error code.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "STAGE",
+          "lsb": 8,
+          "msb": 11,
+          "description": "First-error processing stage.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "AXI_RESPONSE",
+          "lsb": 12,
+          "msb": 13,
+          "description": "Captured AXI response for a bus error.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 14,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.ERROR_ADDRESS": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Address associated with the sticky first-error record.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Captured first-error byte address.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.TIMEOUT_CYCLES": {
+      "access": "RW idle",
+      "reset": "0x00100000",
+      "description": "Idle-only no-progress timeout threshold; zero is rejected.",
+      "fields": [
+        {
+          "name": "CYCLES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "PCLK no-progress timeout budget.",
+          "reset": "0x00100000",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.JOB_CONFIG": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow job operation selector; no operation capability is advertised in P3.",
+      "fields": [
+        {
+          "name": "OPERATION",
+          "lsb": 0,
+          "msb": 1,
+          "description": "0: FILL; 1: COPY; 2: CONVERT; 3: BLEND.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.GLOBAL_ALPHA": {
+      "access": "RW idle",
+      "reset": "0x000000FF",
+      "description": "Shadow global alpha value.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 7,
+          "description": "Global alpha value.",
+          "reset": "0xFF",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 8,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.COLOR": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow constant color in AARRGGBB order.",
+      "fields": [
+        {
+          "name": "COLOR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "AARRGGBB constant color.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SIZE": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow job dimensions.",
+      "fields": [
+        {
+          "name": "WIDTH",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Job width in pixels.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "HEIGHT",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Job height in pixels.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.FG_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground byte address.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Foreground byte address.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.FG_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground row pitch in bytes.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Foreground bytes between rows.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.FG_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground format selector.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888; 4: A8.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.BG_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background byte address.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Background byte address.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.BG_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background row pitch in bytes.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Background bytes between rows.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.BG_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background format selector.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888; 4: A8.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.DST_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination byte address.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Destination byte address.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.DST_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination row pitch in bytes.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Destination bytes between rows.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.DST_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination format selector.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888; 4: A8.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_SNAPSHOT": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Performance snapshot command; rejected with PSLVERR in P3.",
+      "fields": [
+        {
+          "name": "SNAPSHOT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Capture live counters; unsupported in P3.",
+          "reset": "Not retained",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.FORMAT_CAPABILITY": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Format support bitmap; all fields are zero in P3.",
+      "fields": [
+        {
+          "name": "FOREGROUND",
+          "lsb": 0,
+          "msb": 4,
+          "description": "Foreground format capability bits; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 5,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "BACKGROUND",
+          "lsb": 8,
+          "msb": 12,
+          "description": "Background format capability bits; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 13,
+          "msb": 15,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "DESTINATION",
+          "lsb": 16,
+          "msb": 20,
+          "description": "Destination format capability bits; zero in P3.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 21,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.SNAP_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the active-job PCLK cycle snapshot; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low cycle-counter snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the active-job PCLK cycle snapshot; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High cycle-counter snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of successful logical input bytes; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low read-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of successful logical input bytes; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High read-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of acknowledged output bytes; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low write-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of acknowledged output bytes; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High write-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of read-channel stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low read-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of read-channel stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High read-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of write-channel stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low write-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of write-channel stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High write-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_PIPE_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of pixel-pipeline stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low pipeline-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_PIPE_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of pixel-pipeline stall cycles; zero in P3.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High pipeline-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        }
+      ]
+    },
+    "main.SNAP_LINES_DONE": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Completed destination rows; zero in P3.",
+      "fields": [
+        {
+          "name": "LINES_DONE",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Completed destination row count.",
+          "reset": "0",
+          "expression": "reviewed P3 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    }
+  },
   "crypto": {
     "main.COMMAND": {
       "fields": [

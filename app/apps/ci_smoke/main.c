@@ -3,11 +3,13 @@
 #include <retrosoc/core/irq.h>
 #include <retrosoc/core/soc.h>
 #include <retrosoc/arch/riscv/system_base.h>
+#include <retrosoc/generated/irq_metadata.h>
 #include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/fabric_monitor.h>
+#include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/rng.h>
@@ -34,6 +36,7 @@ static volatile uint32_t rs_ci_smoke_external_irq_sequence[4];
 static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
 static volatile uint32_t rs_ci_smoke_timer_irq_count;
 static volatile uint32_t rs_ci_smoke_software_irq_count;
+static volatile uint32_t rs_ci_smoke_ga2d_irq_count;
 
 static void rs_ci_smoke_external_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
     const uint32_t context = (uint32_t)__RV_CSR_READ(CSR_HAZARD3_MEICONTEXT);
@@ -64,6 +67,13 @@ static void rs_ci_smoke_software_irq_handler(uintptr_t mcause, uintptr_t stack_p
     (void)stack_pointer;
     (void)rs_clint_set_software_interrupt(0U, false);
     ++rs_ci_smoke_software_irq_count;
+}
+
+static void rs_ci_smoke_ga2d_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    RS_GA2D_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_DONE;
+    ++rs_ci_smoke_ga2d_irq_count;
 }
 
 static void rs_ci_smoke_force_external_irq(uint32_t id) {
@@ -125,26 +135,27 @@ static bool rs_ci_smoke_external_priority_matrix(void) {
     rs_ci_smoke_external_irq_sequence_count = 0U;
     __RV_CSR_WRITE(CSR_HAZARD3_MEICONTEXT, UINT32_C(0));
     if ((rs_irq_set_external_priority(29U, UINT8_C(0)) != RS_OK) ||
-        (rs_irq_set_external_priority(30U, UINT8_C(1)) != RS_OK) ||
+        (rs_irq_set_external_priority(RS_SOC_EXT_IRQ_GA2D, UINT8_C(1)) != RS_OK) ||
         (rs_irq_set_external_priority(31U, UINT8_C(2)) != RS_OK) ||
         (rs_irq_set_external_priority(32U, UINT8_C(3)) != RS_OK) ||
         (rs_irq_enable_external(29U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
-        (rs_irq_enable_external(30U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(RS_SOC_EXT_IRQ_GA2D, rs_ci_smoke_external_irq_handler) != RS_OK) ||
         (rs_irq_enable_external(31U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
         (rs_irq_enable_external(32U, rs_ci_smoke_external_irq_handler) != RS_OK)) {
         return false;
     }
     rs_ci_smoke_force_external_irq(29U);
-    rs_ci_smoke_force_external_irq(30U);
+    rs_ci_smoke_force_external_irq(RS_SOC_EXT_IRQ_GA2D);
     rs_ci_smoke_force_external_irq(31U);
     rs_ci_smoke_force_external_irq(32U);
     __enable_irq();
     passed = rs_ci_smoke_wait_external_count(4U) && (rs_ci_smoke_external_irq_sequence[0] == 32U) &&
              (rs_ci_smoke_external_irq_sequence[1] == 31U) &&
-             (rs_ci_smoke_external_irq_sequence[2] == 30U) &&
+             (rs_ci_smoke_external_irq_sequence[2] == RS_SOC_EXT_IRQ_GA2D) &&
              (rs_ci_smoke_external_irq_sequence[3] == 29U);
     __disable_irq();
-    if ((rs_irq_disable_external(29U) != RS_OK) || (rs_irq_disable_external(30U) != RS_OK) ||
+    if ((rs_irq_disable_external(29U) != RS_OK) ||
+        (rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D) != RS_OK) ||
         (rs_irq_disable_external(31U) != RS_OK) || (rs_irq_disable_external(32U) != RS_OK)) {
         passed = false;
     }
@@ -153,7 +164,8 @@ static bool rs_ci_smoke_external_priority_matrix(void) {
 }
 
 static bool rs_ci_smoke_external_irq(void) {
-    static const uint32_t tested_ordinals[] = {0U, 15U, 16U, 29U, 30U, 31U, 32U, 61U};
+    static const uint32_t tested_ordinals[] = {0U,  15U, 16U, 29U, RS_SOC_EXT_IRQ_GA2D,
+                                               31U, 32U, 61U};
     uint64_t now;
     uint32_t index;
 
@@ -255,8 +267,44 @@ static bool rs_ci_smoke_external_irq(void) {
     __disable_ext_irq();
     return (rs_ci_smoke_timer_irq_count != 0U) && (rs_ci_smoke_software_irq_count != 0U);
 }
+
+static bool rs_ci_smoke_ga2d_irq(void) {
+    rs_ga2d_capability_t capability;
+
+    rs_ci_smoke_ga2d_irq_count = 0U;
+    if ((rs_ga2d_get_capability(&capability) != RS_OK) ||
+        (capability.features != RS_GA2D_CAPABILITY_P3) ||
+        (rs_ga2d_irq_clear(RS_GA2D_IRQ_ALL) != RS_OK) ||
+        (rs_ga2d_irq_enable(RS_GA2D_IRQ_DONE) != RS_OK) ||
+        (rs_irq_enable_external(RS_SOC_EXT_IRQ_GA2D, rs_ci_smoke_ga2d_irq_handler) != RS_OK)) {
+        return false;
+    }
+    RS_GA2D_REG(RS_GA2D_REG_IRQ_TEST) = RS_GA2D_IRQ_DONE;
+    __enable_irq();
+    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < 1U);
+         --timeout) {
+    }
+    if (rs_ci_smoke_ga2d_irq_count != 1U) {
+        __disable_irq();
+        (void)rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D);
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_irq();
+    if ((rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D) != RS_OK) ||
+        (rs_ga2d_irq_enable(0U) != RS_OK)) {
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_ext_irq();
+    return true;
+}
 #else
 static bool rs_ci_smoke_external_irq(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_irq(void) {
     return true;
 }
 #endif
@@ -624,6 +672,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 15U);
     }
     printf("ci_smoke: external irq passed\n");
+    if (!rs_ci_smoke_ga2d_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: GA2D shell IRQ passed\n");
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

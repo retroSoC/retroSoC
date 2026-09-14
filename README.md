@@ -42,7 +42,9 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   [bidirectional PS/2](docs/ip/ps2.md),
   WS2812, SPI/QSPI, SDIO, PSRAM/[OPI-PSRAM](docs/ip/opipsram.md), SDRAM, DMA, LCD, RTC, an
   independent-clock window watchdog, CRC, and a
-  management-only RNG entropy controller. The current deterministic RNG integration source is
+  management-only RNG entropy controller. The P3 [GA2D](docs/ip/ga2d.md) APB4 shell and
+  ownership-routed IRQ are integrated, while its 2D DMA and pixel operations remain unavailable.
+  The current deterministic RNG integration source is
   explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
   support. Available interfaces depend on the selected SoC configuration.
 - A standalone RISC-V runtime, HAL, board support, middleware, and `benchmark`, `bringup`,

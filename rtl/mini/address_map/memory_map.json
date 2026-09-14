@@ -409,12 +409,12 @@
       "user_access": "rw"
     },
     {
-      "symbol": "APB4_GA",
+      "symbol": "APB4_GA2D",
       "base": "0x10012000",
       "size": "0x00001000",
-      "route": "reserved",
-      "kind": "reserved",
-      "public": false,
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
       "user_access": "none"
     },
     {

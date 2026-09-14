@@ -8131,7 +8131,7 @@
         "from": "resources.p1",
         "to": "core.p1",
         "kind": "control",
-        "label": "IDLE / 8",
+        "label": "IDLE / 9",
         "style": "direct",
         "bindings": [
           {
@@ -8159,7 +8159,7 @@
         "from": "core.p2",
         "to": "owners.p2",
         "kind": "control",
-        "label": "OWNER / 16",
+        "label": "OWNER / 18",
         "style": "direct",
         "bindings": [
           {
@@ -8187,7 +8187,7 @@
         "from": "core.p3",
         "to": "irq.p3",
         "kind": "control",
-        "label": "LP IRQ / 8",
+        "label": "LP IRQ / 9",
         "style": "direct",
         "bindings": [
           {
@@ -8213,7 +8213,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 is the idle GA2D bridge placeholder only. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
+    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 routes the P3 GA2D shell IRQ while its AXI bridge stays idle. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
   },
   "monitor": {
     "nodes": [

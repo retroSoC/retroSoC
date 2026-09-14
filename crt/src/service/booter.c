@@ -115,6 +115,8 @@ static void rs_print_mmio_map(void) {
            (void *)(uintptr_t)RS_SOC_APB4_OPIPSRAM_BASE);
     printf("                       1 x I2C1           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
+    printf("                       1 x GA2D SHELL     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_GA2D_BASE);
     printf("                       1 x GPIO ADMIN     @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
     printf("                       1 x SDIO1          @%p\n",

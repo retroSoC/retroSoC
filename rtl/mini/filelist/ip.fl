@@ -144,6 +144,9 @@
 /ip/multimedia/apu_codec_controller.sv
 /ip/multimedia/apu_reg.sv
 /ip/multimedia/apb4_apu.sv
+/ip/multimedia/ga2d_pkg.sv
+/ip/multimedia/ga2d_reg.sv
+/ip/multimedia/apb4_ga2d.sv
 /ip/multimedia/jpeg_pkg.sv
 /ip/multimedia/jpeg_transform.sv
 /ip/multimedia/jpeg_quantizer.sv
