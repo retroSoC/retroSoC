@@ -174,4 +174,7 @@ def test_ga2d_p5_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Pat
         },
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
-    assert "GA2D P2 bridge, ID7, lifecycle, flush, LP retention, and reset test passed" in result.stdout
+    assert (
+        "GA2D P2 bridge, JPEG master-6 admission, ID7, lifecycle, flush, LP retention, and "
+        "reset test passed"
+    ) in result.stdout

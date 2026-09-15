@@ -108,6 +108,9 @@ private 64-bit AXI4 master rather than consuming central-DMA channels. The
 master is index 6 in the generated data-plane policy and crosses from PCLK to
 the HP fabric through `u_jpeg_cdc`; its buffers must be non-cacheable/shared or
 covered by the Resource Controller cache-maintenance handoff.
+The production crossbar admits one normal read and one normal write for this
+master at class 8; target policy, lifecycle, and buffer-ownership requirements
+remain in force.
 
 JPEG is resource index 6. Its LP interrupt is APB4-peripheral group bit 22 and
 management-core IRQ30; HP ownership routes the raw source to PLIC source 9.

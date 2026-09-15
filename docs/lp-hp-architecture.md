@@ -94,7 +94,7 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 | I/O gateway A | USB2 and SDIO0, then PCLK-to-HP CDC and upsizer |
 | I/O gateway B | SDIO1 and SPI-SD, then PCLK-to-HP CDC and upsizer |
 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC and upsizer |
-| JPEG | PCLK-to-HP AXI64 async bridge, ID prefix 6; zero normal admission credit (`GA2D-GAP-01`) |
+| JPEG | PCLK-to-HP AXI64 async bridge, ID prefix 6; one normal read and one normal write credit, class 8 |
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 | GA2D | dedicated PCLK-to-HP AXI64/ID3 async bridge; direct single-job FILL/COPY/CONVERT/BLEND engine |
 

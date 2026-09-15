@@ -672,7 +672,7 @@
       "title": "JPEG Codec",
       "implementation": "Partial",
       "scope": "8-bit Baseline Sequential JPEG encode or decode.",
-      "dependencies": "Native slot-6 payload admission is blocked by zero master credits in the reviewed crossbar; standalone codec behavior is a separate scope.",
+      "dependencies": "Native slot-6 payload admission has one normal read and one normal write credit at class 8; standalone codec behavior and end-to-end system qualification remain separate scopes.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
@@ -686,7 +686,8 @@
         "rtl/mini/top/soc_data_plane.sv"
       ],
       "tests": [
-        "tests/test_jpeg.py"
+        "tests/test_jpeg.py",
+        "tests/test_ga2d_platform.py"
       ],
       "reports": []
     },
@@ -984,12 +985,12 @@
       ]
     },
     {
-      "id": "jpeg-master-credit",
-      "title": "Native JPEG master has no normal admission credits",
-      "impact": "The dedicated JPEG AXI path is wired to data-master slot 6, but the current crossbar read/write credit functions return zero for that slot. Normal payload addresses cannot be admitted through that route.",
-      "trigger": "JPEG private-master traffic routed through the reviewed PRODUCT data plane.",
-      "workaround": "Treat end-to-end JPEG private-DMA operation as unavailable on this snapshot. Standalone codec behavior does not prove SoC integration. A separately reviewed RTL change and regression are required; this publication does not change hardware.",
-      "applies_to": "Reviewed PRODUCT source snapshot; static implementation finding, not silicon measurement.",
+      "id": "jpeg-system-qualification",
+      "title": "JPEG native path lacks complete system qualification",
+      "impact": "The dedicated JPEG AXI path now has one normal read and one normal write credit at data-master slot 6, but its end-to-end producer/consumer workloads, contention behavior, cache ownership, and board performance have not been qualified.",
+      "trigger": "Claiming a complete JPEG system workload from source-level admission or standalone codec evidence.",
+      "workaround": "Treat the checked slot-6 admission path as bounded transport evidence only. Run an end-to-end workload with explicit source ordering, buffer ownership, error recovery, and platform evidence before making a system claim.",
+      "applies_to": "Reviewed PRODUCT source snapshot; static integration qualification boundary, not silicon measurement.",
       "sources": [
         "rtl/mini/top/soc_data_plane.sv",
         "rtl/mini/top/axi4_data_crossbar.sv"
@@ -1651,7 +1652,7 @@
           "jpeg"
         ],
         "name": "JPEG private DMA",
-        "master": "6; zero normal credits",
+        "master": "6; 1 read / 1 write credit; class 8",
         "irq": "jpeg",
         "hp_signal": "resource_irq_hp_i[5]",
         "sources": [
@@ -1828,7 +1829,7 @@
         ],
         "resource": "Shared memory targets",
         "state": "Bandwidth contention",
-        "condition": "Allowed routes are not a simultaneous throughput guarantee. Native JPEG slot 6 currently has zero master credits; see the bus table.",
+        "condition": "Allowed routes are not a simultaneous throughput guarantee. Native JPEG slot 6 has one read and one write credit at class 8; target readiness and arbitration still bound progress.",
         "sources": [
           "rtl/mini/top/axi4_data_crossbar.sv",
           "rtl/mini/top/soc_data_plane.sv"
@@ -3004,9 +3005,9 @@
         ],
         "title": "DVP RGB565 -> memory -> JPEG",
         "classification": "Blocked",
-        "condition": "Even-width word packing can describe compatible RGB565 storage only after byte-order/stride checks. Current JPEG normal admission credits are zero.",
+        "condition": "Even-width word packing can describe compatible RGB565 storage only after byte-order/stride checks. Slot-6 admission is bounded to one read and one write; the end-to-end DVP-to-JPEG workload remains unqualified.",
         "blockers": [
-          "jpeg-master-credit"
+          "jpeg-system-qualification"
         ],
         "sources": [
           "rtl/ip/multimedia/dvp_core.sv",
@@ -3029,9 +3030,9 @@
         ],
         "title": "DVP YUV422 -> memory -> JPEG YUYV",
         "classification": "Blocked",
-        "condition": "Confirm Y0/Cb/Y1/Cr order; otherwise software rearrangement is required. Format agreement does not remove the current JPEG admission block.",
+        "condition": "Confirm Y0/Cb/Y1/Cr order; otherwise software rearrangement is required. Format agreement and bounded slot-6 admission do not qualify an end-to-end DVP-to-JPEG workload.",
         "blockers": [
-          "jpeg-master-credit"
+          "jpeg-system-qualification"
         ],
         "sources": [
           "rtl/ip/multimedia/dvp_core.sv",
@@ -4185,7 +4186,7 @@
           "JpegErrorInternal": "Internal failure."
         },
         "observation": "ERROR_STATUS code and stage, ERROR_ADDRESS/DETAIL and descriptor result. A declared code does not prove the system payload path is usable.",
-        "handling": "Copy the first error before ERROR_STATUS/IRQ_STATE W1C and follow ring/direct-job recovery. The reviewed native master-credit limitation still applies.",
+        "handling": "Copy the first error before ERROR_STATUS/IRQ_STATE W1C and follow ring/direct-job recovery. JPEG master 6 has bounded transport of one normal read and one normal write credit at class 8; complete system qualification remains separate.",
         "link": "jpeg",
         "sources": [
           "rtl/ip/multimedia/jpeg_pkg.sv"
@@ -4782,7 +4783,7 @@
           "docs/ip/resource-controller.md"
         ],
         "boundary": "Directed unit/component tests exist; selected test invocation and source/profile must accompany a run.",
-        "limitations": "The native JPEG master-credit limitation remains unresolved.",
+        "limitations": "JPEG master 6 has bounded transport of one normal read and one normal write credit at class 8; end-to-end producer/consumer workloads, contention, cache ownership, and board performance remain unqualified.",
         "reports": []
       },
       {

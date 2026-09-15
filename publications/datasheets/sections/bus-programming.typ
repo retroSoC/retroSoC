@@ -34,15 +34,15 @@ one read/one write. Target credits and master credits both constrain admission. 
 identity receives a fixed master prefix, and the same source ID is blocked while its earlier
 transaction remains active. Multiple IDs do not remove ordering requirements imposed by software.
 
-The JPEG private path is connected to slot 6 in #code("soc_data_plane"), but both current
-master-credit functions return zero for that slot. Consequently normal JPEG payload addresses
-cannot enter that route in this snapshot. Error handling can use a separate credit allowance;
-it does not make the normal path usable. This static integration finding does not change the
-standalone codec/register implementation. See @known-limitations; no RTL fix is included here.
+The JPEG private path is connected to slot 6 in #code("soc_data_plane") and receives one normal
+read credit plus one normal write credit. Normal JPEG payload addresses remain subject to target
+policy, source-ID, lifecycle, and non-cacheable requirements. Error handling uses a separate
+credit allowance and does not weaken normal-path containment. This bounded admission repair does
+not qualify a complete JPEG workload, board behavior, or performance; see @known-limitations.
 
 ==== Arbitration and its assumptions
 Read and write arbitration are separate per target. The normal base priorities are HP I/D 12,
-I/O gateways 10, DMA/EXT-H 8 and LP gateway 2; the default case, including slot 6, is zero.
+I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8 and LP gateway 2; unassigned slots use priority zero.
 Incoming QoS can raise a normal request to 15. Continuously eligible requests age to priority
 16 after the configured 256-cycle interval, while LP recovery receives priority 31.
 
@@ -61,4 +61,3 @@ Admission policy and a completed error response do not guarantee recovery of par
 #source-note("rtl/mini/top/axi4_interconnect.sv",title:"Actual LP alignment, burst and target checks")
 #source-note("rtl/mini/top/axi4_data_crossbar.sv",title:"Native admission, credit and arbitration functions")
 #source-note("rtl/mini/top/soc_data_plane.sv",title:"Private masters, prefixes, gateways and CDC wiring")
-

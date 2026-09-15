@@ -1155,7 +1155,7 @@ remain explicitly outside the MVP evidence claim.
 
 | Gap | Disposition |
 | --- | --- |
-| GA2D-GAP-01: JPEG admission baseline | At the inspected revision, topology and JPEG integration assign master 6, but `master_read_limit()` / `master_write_limit()` in `axi4_data_crossbar.sv` return zero for 6. This is an existing integration discrepancy, not a free port or a GA2D architecture choice. It does not block Phase 0/1. Route it to the JPEG/fabric diagnosis and approved repair flow before claiming JPEG contention or final platform closure; do not silently absorb a JPEG redesign into GA2D. |
+| GA2D-GAP-01: JPEG admission baseline | Resolved by the separately approved JPEG/fabric repair: `master_read_limit()` and `master_write_limit()` now grant master 6 one normal credit each, and `master_priority()` assigns class 8. Direct crossbar and PCLK-to-HP bridge tests cover admission, response routing, bounded credit, arbitration, ACL rejection, and drain. This makes JPEG available to a future V13 campaign; it does not complete JPEG contention, V13, Phase 6, or final platform closure. |
 | No GA2D implementation evidence | Phases 1..6 must supply the matrix, artifacts and results. Research arithmetic is not an achieved throughput number. |
 | Memory clock/performance characterization | Record actual memory-root and device clocks, refresh/turnaround and active QPI/OPI device configuration. Existing prose about nominal SDRAM frequency is not a measurement; GA2D does not change the PHY to satisfy a benchmark. |
 | Portable software integration | LVGL asynchronous drawing/fallback, a versioned queue ABI, Linux DMA/graphics integration and release examples require later approved phases. |

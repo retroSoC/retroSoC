@@ -32,7 +32,7 @@ clock, pin route or software stack may also be required before a mode is usable 
 + Check identity/capability, published exclusions and board prerequisites.
 + Match software transactions and data layout to the supported subset; an SDK enumeration or
   descriptor field is not proof of hardware support.
-+ Check transport availability separately from format support. JPEG admission and APU
++ Check transport availability separately from format support. JPEG system-integration and APU
   production-job gates remain binding.
 + Verify a bounded normal transfer and its error/recovery case on the selected platform.
 

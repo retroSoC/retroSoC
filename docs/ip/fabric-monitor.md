@@ -64,8 +64,8 @@ Nine master banks start at `0x100 + master * 0x20`. Master bank 8 occupies
 
 Master indices are HP I-cache, HP D-cache, central DMA, I/O gateway A, I/O
 gateway B, LP data gateway, JPEG, EXT-H, and GA2D.
-JPEG remains visible with zero normal admission credit (`GA2D-GAP-01`), so an
-integration defect cannot silently disappear from accounting.
+Master bank 6 records admitted JPEG traffic; master 6 has one normal read and
+one normal write credit at class 8.
 
 ## Target Counter Banks
 

@@ -295,15 +295,13 @@ module axi4_data_crossbar #(
   function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master);
     if ((master <= 2) || (master == 7)) return CountWidth'(4);
     if ((master == 3) || (master == 4)) return CountWidth'(2);
-    if (master == 5) return CountWidth'(1);
-    if (master == 8) return CountWidth'(1);
+    if ((master == 5) || (master == 6) || (master == 8)) return CountWidth'(1);
     return '0;
   endfunction
 
   function automatic logic [CountWidth-1:0] master_write_limit(input int unsigned master);
     if ((master == 1) || (master == 2) || (master == 7)) return CountWidth'(2);
-    if ((master >= 3) && (master <= 5)) return CountWidth'(1);
-    if (master == 8) return CountWidth'(1);
+    if (((master >= 3) && (master <= 6)) || (master == 8)) return CountWidth'(1);
     return '0;
   endfunction
 
@@ -323,12 +321,11 @@ module axi4_data_crossbar #(
                                                  input logic recovery);
     logic [3:0] base_priority;
     unique case (master)
-      0, 1:    base_priority = 4'd12;
-      3, 4:    base_priority = 4'd10;
-      2, 7:    base_priority = 4'd8;
-      5:       base_priority = recovery ? 4'd15 : 4'd2;
-      8:       base_priority = 4'd8;
-      default: base_priority = 4'd0;
+      0, 1:       base_priority = 4'd12;
+      3, 4:       base_priority = 4'd10;
+      2, 6, 7, 8: base_priority = 4'd8;
+      5:          base_priority = recovery ? 4'd15 : 4'd2;
+      default:    base_priority = 4'd0;
     endcase
     if (recovery && (master == 5)) return 5'd31;
     if (aged) return 5'd16;

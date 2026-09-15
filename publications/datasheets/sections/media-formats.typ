@@ -54,8 +54,8 @@ For packed 24-bit audio files, place each sample in the correct low 24 bits of a
 copying three-byte file data directly into a word-stream DMA buffer changes the sample layout.
 
 No automatic RGB/YUV colorspace conversion, sample-rate conversion, codec activation or
-frame-ring service is implied by this overview. The current JPEG admission and APU production-job
-limitations remain binding. A transport failure and a format mismatch require different recovery:
+frame-ring service is implied by this overview. JPEG system-integration qualification and APU
+production-job limitations remain binding. A transport failure and a format mismatch require different recovery:
 stop the producer, preserve errors and ownership, and discard or explicitly repair the affected
 buffer rather than passing partially valid data onward.
 #source-note("rtl/ip/multimedia/dvp_core.sv",title:"Actual DVP pixel packing and framing")

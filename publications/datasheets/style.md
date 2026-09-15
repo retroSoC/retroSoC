@@ -87,7 +87,7 @@ conventions are supported by driver call sites, not inferred from selector IDs.
 Private masters and central DMA contexts are different resources. Preserve
 endpoint IRQ, aggregate DMA IRQ, LP vector bit and HP PLIC source as separate
 fields/namespaces. Derive PLIC assignments and normal master credits from the
-current implementation; mark a zero-credit connected route explicitly.
+current implementation; mark any connected zero-credit route explicitly.
 
 Cross-IP rules are explanatory defaults with documented exceptions. Do not
 invent a global atomic-register alias, exclusive-access guarantee or universal
@@ -158,8 +158,8 @@ do not establish physical input voltage, pad pull behavior or package numbering.
 Interface tables separate role, source-level subset, exclusions, software support
 and evidence; none is a compliance certificate. Media tables specify containers,
 byte order, stride/alignment and boundary metadata. Format compatibility must not
-override an active integration limitation: JPEG admission and APU production-job
-gates remain visible even for matching data layouts. A claimed format or route
+override an active integration limitation: JPEG system qualification and APU
+production-job gates remain visible even for matching data layouts. A claimed format or route
 must retain its source binding and any blocker reference.
 
 Maintenance commands are operator examples. The publication build never connects
@@ -735,8 +735,10 @@ APU opcode values and whole-field zero requirements come from the current encode
 validator and are checked against RTL. List all 62 defined operations by family;
 distinguish tool-target acceptance, primitive masks, public capability bits and
 production delivery. Examples are encoded specimens, not execution/codec-pass
-evidence. Keep disabled-path qualifications on diagrams, including the current
-JPEG normal-admission block. A connected port does not establish a usable path.
+evidence. Keep system-qualification boundaries on diagrams, including the
+distinction between JPEG's bounded master-6 transport (one normal read and one
+normal write credit at class 8) and an unqualified end-to-end workload. A
+connected port and admission allocation do not establish a qualified system path.
 
 Every frozen chapter has a coverage record with category, source pointers,
 primary/shared diagrams or an explicit not-applicable reason. Primary format and

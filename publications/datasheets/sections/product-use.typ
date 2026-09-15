@@ -108,9 +108,10 @@ an independently configured memory job. The drawing does not assert a direct har
 connection from DVP to the JPEG engine. I2S uses its independent audio clock and compatible
 external codec wiring. Production APU codec/KWS availability must be checked separately.
 
-The current native JPEG master has zero normal admission credits in the reviewed crossbar.
-The diagram describes the intended memory-mediated composition; an end-to-end JPEG private-DMA
-application requires the separately corrected and validated route described in @bus-programming.
+The native JPEG master has one normal read and one normal write credit in the reviewed crossbar.
+The diagram describes a memory-mediated composition, not an end-to-end JPEG private-DMA
+application qualification. Validate source ordering, buffer ownership, error recovery, and the
+selected platform separately as described in @bus-programming.
 
 + Select external interface modes, pin routing and clocks before starting capture/playback.
 + Allocate aligned buffers, prepare ownership, and configure the consumer before enabling

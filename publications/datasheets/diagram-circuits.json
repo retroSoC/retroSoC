@@ -9690,7 +9690,7 @@
         "availability": "admission-blocked"
       }
     ],
-    "note": "Direct and ring jobs share one active codec job and a private memory DMA. Encode/decode surfaces and entropy streams are multiplexed by wrapper state; the shared coefficient engine is not a second independent job lane. The JPEG AXI64 interface is wired, but normal PRODUCT read/write admission credits for master slot 6 are zero."
+    "note": "Direct and ring jobs share one active codec job and a private memory DMA. Encode/decode surfaces and entropy streams are multiplexed by wrapper state; the shared coefficient engine is not a second independent job lane. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
   },
   "usb2": {
     "nodes": [
@@ -11165,7 +11165,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Selected PRODUCT paths. Interface arrows group request and response channels; separate gateways perform adaptation and CDC. The access matrix remains authoritative, including the read-only HP data-plane route to XPI. The JPEG AXI64 interface is wired, but normal PRODUCT read/write admission credits for master slot 6 are zero."
+    "note": "Selected PRODUCT paths. Interface arrows group request and response channels; separate gateways perform adaptation and CDC. The access matrix remains authoritative, including the read-only HP data-plane route to XPI. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
   },
   "system-media": {
     "nodes": [
@@ -11527,7 +11527,7 @@
         "availability": "admission-blocked"
       }
     ],
-    "note": "Camera capture reaches memory through central DMA; JPEG accesses memory as a separate job. I2S passes through the stream router and selected DMA/software paths. APU RX is disconnected and production codec delivery remains qualified separately. The JPEG AXI64 interface is wired, but normal PRODUCT read/write admission credits for master slot 6 are zero."
+    "note": "Camera capture reaches memory through central DMA; JPEG accesses memory as a separate job. I2S passes through the stream router and selected DMA/software paths. APU RX is disconnected and production codec delivery remains qualified separately. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
   },
   "system-mpw": {
     "nodes": [

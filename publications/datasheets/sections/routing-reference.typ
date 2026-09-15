@@ -45,6 +45,8 @@ These HP source numbers are read from the actual PLIC assignments. The Resource 
 selects one owner's route and masks routes according to its lifecycle contract; it does not
 deliver a completion to both owners. Private DMA engines do not consume a central DMA channel
 simply because both move memory. They can still share a gateway or destination bandwidth.
+JPEG uses master 6 with one normal read and one normal write credit at class 8;
+this does not establish an end-to-end JPEG system workload.
 JPEG's slot-6 admission limitation is described in @bus-programming.
 
 === Completion and event handling
@@ -63,4 +65,3 @@ PIO handling or a separately implemented extension; do not discard the partial-w
 #source-note("crt/include/retrosoc/hal/dma.h",title:"SDK selectors, contexts and descriptor type")
 #source-note("rtl/mini/top/apb4_periph.sv",title:"Request, stream and PLIC wiring")
 #source-note("rtl/ip/peripheral/dma_core.sv",title:"Start validation, endpoint exclusion and stream acceptance")
-

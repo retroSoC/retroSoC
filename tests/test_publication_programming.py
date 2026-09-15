@@ -30,8 +30,30 @@ def test_complete_dma_routes_and_native_credit_boundary(spec):
     result = pr.collect_programming(ROOT, spec, IDS, REFERENCE["source_revision"])
     assert [r["number"] for r in result["dma_routes"]] == list(range(14))
     assert [r["number"] for r in result["channels"]] == list(range(8))
-    assert result["read_credits"] == [4, 4, 4, 2, 2, 1, 0, 4]
-    assert result["write_credits"] == [0, 2, 2, 1, 1, 1, 0, 2]
+    assert result["read_credits"] == [4, 4, 4, 2, 2, 1, 1, 4, 1]
+    assert result["write_credits"] == [0, 2, 2, 1, 1, 1, 1, 2, 1]
+
+
+def test_jpeg_bounded_admission_publication_facts_match_executable_credits(spec):
+    result = pr.collect_programming(ROOT, spec, IDS, REFERENCE["source_revision"])
+    assert result["read_credits"][6] == 1
+    assert result["write_credits"][6] == 1
+
+    jpeg_error = next(row for row in REFERENCE["retrieval"]["codes"] if row["id"] == "jpeg-error")
+    fabric_support = next(row for row in REFERENCE["retrieval"]["verification"] if row["id"] == "fabric")
+    public_sources = (
+        (ROOT / "publications/README.md").read_text(encoding="utf-8"),
+        (ROOT / "publications/datasheets/style.md").read_text(encoding="utf-8"),
+        jpeg_error["handling"],
+        fabric_support["limitations"],
+    )
+    expected_transport = "one normal read and one normal write credit at class 8"
+    for source in public_sources:
+        normalized = " ".join(source.split())
+        assert expected_transport in normalized
+        assert "zero normal read/write credits" not in normalized
+        assert "jpeg normal-admission block" not in normalized.lower()
+        assert "native jpeg master-credit limitation remains unresolved" not in normalized.lower()
 
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "unknown_ip", "connection"])

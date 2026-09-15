@@ -30,6 +30,8 @@ module ga2d_platform_sram_target (
     output logic               saw_ga2d_o,
     output logic               saw_legacy_o,
     output logic               saw_ga2d_write_o,
+    output logic               saw_jpeg_o,
+    output logic               saw_jpeg_write_o,
            axi4_if.slave       axi4
 );
   logic       read_pending_q;
@@ -67,11 +69,14 @@ module ga2d_platform_sram_target (
       saw_ga2d_o              <= 1'b0;
       saw_legacy_o            <= 1'b0;
       saw_ga2d_write_o        <= 1'b0;
+      saw_jpeg_o              <= 1'b0;
+      saw_jpeg_write_o        <= 1'b0;
     end else begin
       if (axi4.awvalid && axi4.awready) begin
         write_address_pending_q <= 1'b1;
         write_id_q              <= axi4.awid;
         if (axi4.awid == 7'h40) saw_ga2d_write_o <= 1'b1;
+        if (axi4.awid[6:3] == 4'd6) saw_jpeg_write_o <= 1'b1;
       end
       if (axi4.wvalid && axi4.wready) begin
         write_data_pending_q <= 1'b1;
@@ -90,6 +95,7 @@ module ga2d_platform_sram_target (
         last_arid_o    <= axi4.arid;
         if (axi4.arid == 7'h40) saw_ga2d_o <= 1'b1;
         if (axi4.arid == 7'h08) saw_legacy_o <= 1'b1;
+        if (axi4.arid[6:3] == 4'd6) saw_jpeg_o <= 1'b1;
       end
       if (read_pending_q && !hold_response_i) begin
         read_valid_q <= 1'b1;
@@ -124,6 +130,8 @@ module ga2d_platform_tb;
   logic        sram_saw_ga2d;
   logic        sram_saw_legacy;
   logic        sram_saw_ga2d_write;
+  logic        sram_saw_jpeg;
+  logic        sram_saw_jpeg_write;
   logic        idle_o;
   logic        flush_busy_o;
   logic        ext_h_idle_o;
@@ -315,7 +323,6 @@ module ga2d_platform_tb;
   axi4_master_idle u_spisd_idle (.axi4(spisd_axi4));
   axi4_master_idle u_usb2_idle (.axi4(usb2_axi4));
   axi4_master_idle u_apu_idle (.axi4(apu_axi4));
-  axi4_master_idle u_jpeg_idle (.axi4(jpeg_axi4));
   axi4_master_idle u_ext_h_idle (.axi4(ext_h_axi4));
   ga2d_platform_sram_target u_sram_target (
       .clk_i           (clk_hp_i),
@@ -326,6 +333,8 @@ module ga2d_platform_tb;
       .saw_ga2d_o      (sram_saw_ga2d),
       .saw_legacy_o    (sram_saw_legacy),
       .saw_ga2d_write_o(sram_saw_ga2d_write),
+      .saw_jpeg_o      (sram_saw_jpeg),
+      .saw_jpeg_write_o(sram_saw_jpeg_write),
       .axi4            (sram_gateway_axi4)
   );
   ga2d_platform_idle_target u_sdram_target (.axi4(sdram_gateway_axi4));
@@ -462,6 +471,75 @@ module ga2d_platform_tb;
     end
   endtask
 
+  task automatic issue_jpeg_read(input logic [2:0] id, input logic [31:0] address);
+    begin
+      @(negedge clk_io_i);
+      jpeg_axi4.arid     = id;
+      jpeg_axi4.araddr   = address;
+      jpeg_axi4.arlen    = '0;
+      jpeg_axi4.arsize   = 3'd3;
+      jpeg_axi4.arburst  = 2'b01;
+      jpeg_axi4.arlock   = 1'b0;
+      jpeg_axi4.arcache  = '0;
+      jpeg_axi4.arprot   = '0;
+      jpeg_axi4.arqos    = '0;
+      jpeg_axi4.arregion = '0;
+      jpeg_axi4.aruser   = '0;
+      jpeg_axi4.arvalid  = 1'b1;
+      do @(posedge clk_io_i); while (!jpeg_axi4.arready);
+      @(negedge clk_io_i);
+      jpeg_axi4.arvalid = 1'b0;
+    end
+  endtask
+
+  task automatic expect_jpeg_read(input logic [2:0] id);
+    begin
+      wait (jpeg_axi4.rvalid);
+      if ((jpeg_axi4.rid != id) || (jpeg_axi4.rresp != 2'b00)) begin
+        $fatal(1, "JPEG response did not preserve the local source ID");
+      end
+    end
+  endtask
+
+  task automatic issue_jpeg_write(input logic [2:0] id, input logic [31:0] address,
+                                  input logic [63:0] data);
+    begin
+      @(negedge clk_io_i);
+      jpeg_axi4.awid     = id;
+      jpeg_axi4.awaddr   = address;
+      jpeg_axi4.awlen    = '0;
+      jpeg_axi4.awsize   = 3'd3;
+      jpeg_axi4.awburst  = 2'b01;
+      jpeg_axi4.awlock   = 1'b0;
+      jpeg_axi4.awcache  = '0;
+      jpeg_axi4.awprot   = '0;
+      jpeg_axi4.awqos    = '0;
+      jpeg_axi4.awregion = '0;
+      jpeg_axi4.awuser   = '0;
+      jpeg_axi4.awvalid  = 1'b1;
+      do @(posedge clk_io_i); while (!jpeg_axi4.awready);
+      @(negedge clk_io_i);
+      jpeg_axi4.awvalid = 1'b0;
+      jpeg_axi4.wdata   = data;
+      jpeg_axi4.wstrb   = '1;
+      jpeg_axi4.wlast   = 1'b1;
+      jpeg_axi4.wuser   = '0;
+      jpeg_axi4.wvalid  = 1'b1;
+      do @(posedge clk_io_i); while (!jpeg_axi4.wready);
+      @(negedge clk_io_i);
+      jpeg_axi4.wvalid = 1'b0;
+    end
+  endtask
+
+  task automatic expect_jpeg_write(input logic [2:0] id);
+    begin
+      wait (jpeg_axi4.bvalid);
+      if ((jpeg_axi4.bid != id) || (jpeg_axi4.bresp != 2'b00)) begin
+        $fatal(1, "JPEG write response did not preserve the local source ID");
+      end
+    end
+  endtask
+
   task automatic issue_legacy_read(input logic [2:0] id, input logic [31:0] address);
     begin
       @(negedge clk_hp_i);
@@ -593,6 +671,38 @@ module ga2d_platform_tb;
     ga2d_axi4.arvalid           = 1'b0;
     ga2d_axi4.rready            = 1'b1;
 
+    jpeg_axi4.awid              = '0;
+    jpeg_axi4.awaddr            = '0;
+    jpeg_axi4.awlen             = '0;
+    jpeg_axi4.awsize            = 3'd3;
+    jpeg_axi4.awburst           = 2'b01;
+    jpeg_axi4.awlock            = 1'b0;
+    jpeg_axi4.awcache           = '0;
+    jpeg_axi4.awprot            = '0;
+    jpeg_axi4.awqos             = '0;
+    jpeg_axi4.awregion          = '0;
+    jpeg_axi4.awuser            = '0;
+    jpeg_axi4.awvalid           = 1'b0;
+    jpeg_axi4.wdata             = '0;
+    jpeg_axi4.wstrb             = '0;
+    jpeg_axi4.wlast             = 1'b1;
+    jpeg_axi4.wuser             = '0;
+    jpeg_axi4.wvalid            = 1'b0;
+    jpeg_axi4.bready            = 1'b1;
+    jpeg_axi4.arid              = '0;
+    jpeg_axi4.araddr            = '0;
+    jpeg_axi4.arlen             = '0;
+    jpeg_axi4.arsize            = 3'd3;
+    jpeg_axi4.arburst           = 2'b01;
+    jpeg_axi4.arlock            = 1'b0;
+    jpeg_axi4.arcache           = '0;
+    jpeg_axi4.arprot            = '0;
+    jpeg_axi4.arqos             = '0;
+    jpeg_axi4.arregion          = '0;
+    jpeg_axi4.aruser            = '0;
+    jpeg_axi4.arvalid           = 1'b0;
+    jpeg_axi4.rready            = 1'b1;
+
     hp_dcache_axi4.awid         = '0;
     hp_dcache_axi4.awaddr       = '0;
     hp_dcache_axi4.awlen        = '0;
@@ -664,6 +774,16 @@ module ga2d_platform_tb;
     join
     if (!sram_saw_ga2d || !sram_saw_legacy) begin
       $fatal(1, "mixed legacy and GA2D IDs did not reach distinct global IDs");
+    end
+
+    fork
+      issue_jpeg_read(3'd0, 32'h3000_00A0);
+      expect_jpeg_read(3'd0);
+      issue_jpeg_write(3'd1, 32'h3000_00E0, 64'h89AB_CDEF_0123_4567);
+      expect_jpeg_write(3'd1);
+    join
+    if (!sram_saw_jpeg || !sram_saw_jpeg_write) begin
+      $fatal(1, "JPEG did not cross PCLK-to-HP with master prefix 6");
     end
 
     fork
@@ -824,7 +944,8 @@ module ga2d_platform_tb;
     rst_io_n_i = 1'b1;
     wait_for_data_ready();
 
-    $display("GA2D P2 bridge, ID7, lifecycle, flush, LP retention, and reset test passed");
+    $display(
+        "GA2D P2 bridge, JPEG master-6 admission, ID7, lifecycle, flush, LP retention, and reset test passed");
     $finish;
   end
 

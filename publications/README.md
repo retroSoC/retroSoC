@@ -119,11 +119,11 @@ against the existing C helpers by `tests/test_publication_programming.py` in the
 Linux host environment. No MMIO or new firmware/RTL simulation is involved in
 those calculation checks.
 
-The current native JPEG path is connected to master slot 6 but receives zero
-normal read/write credits in the reviewed crossbar. The publication now records
-that static integration limitation; it does not change RTL or promote standalone
-codec tests into an end-to-end SoC DMA result. Existing IP register/codec details
-remain available with this system-level qualification.
+The current native JPEG path is connected to master slot 6 with one normal read
+and one normal write credit at class 8. This bounded transport evidence does not
+promote standalone codec tests into an end-to-end SoC DMA result. Existing IP
+register/codec details remain available while system-level qualification remains
+separate.
 
 The implementation-detail layer adds the LP/HP configuration comparison, reset
 initial-state/dependency summary, interface selection/subset matrices, multimedia

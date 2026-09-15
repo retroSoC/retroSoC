@@ -405,26 +405,165 @@ module axi4_data_crossbar_tb;
       $fatal(1, "same-target reads did not drain the crossbar");
     end
 
-    jpeg_zero_credit : begin
+    jpeg_master_admission_credit_priority_and_acl : begin
+      // JPEG's normal class is above the LP gateway's class before aging.
       @(negedge clk_i);
+      targets[0].arready = 1'b0;
       masters[6].arid    = 7'h30;
       masters[6].araddr  = 32'h3000_0000;
       masters[6].arvalid = 1'b1;
+      masters[5].arid    = 7'h28;
+      masters[5].araddr  = 32'h3000_0020;
+      masters[5].arvalid = 1'b1;
       #1;
-      if (masters[6].arready || targets[0].arvalid) begin
-        $fatal(1, "JPEG read received normal admission credit");
+      if (!targets[0].arvalid || (targets[0].arid != 7'h30)) begin
+        $fatal(1, "JPEG class-8 read did not outrank the LP gateway");
       end
-      masters[6].arvalid = 1'b0;
-
+      targets[0].arready = 1'b1;
+      do @(posedge clk_i); while (!masters[6].arready);
       @(negedge clk_i);
+      masters[6].arvalid = 1'b0;
+      masters[5].arvalid = 1'b0;
+      fork
+        return_target0_read(7'h30, 64'h6666_6666_6666_0030);
+        begin
+          wait (masters[6].rvalid);
+          if (masters[6].rid != 7'h30) begin
+            $fatal(1, "JPEG class-8 response did not route to master 6");
+          end
+        end
+      join
+
+      // A continuously eligible JPEG request must still receive aging promotion.
+      @(negedge clk_i);
+      targets[0].arready = 1'b0;
+      masters[6].arid    = 7'h32;
+      masters[6].araddr  = 32'h3000_0040;
+      masters[6].arvalid = 1'b1;
+      repeat (4) @(posedge clk_i);
+      @(negedge clk_i);
+      masters[0].arid    = 7'h02;
+      masters[0].araddr  = 32'h3000_0060;
+      masters[0].arvalid = 1'b1;
+      #1;
+      if (!targets[0].arvalid || (targets[0].arid != 7'h32)) begin
+        $fatal(1, "aged JPEG request did not outrank a newer CPU request");
+      end
+      targets[0].arready = 1'b1;
+      #1;
+      if (!monitor_master_promotion_o[6]) begin
+        $fatal(1, "JPEG aging promotion was not reported");
+      end
+      do @(posedge clk_i); while (!masters[6].arready);
+      @(negedge clk_i);
+      masters[6].arvalid = 1'b0;
+      do @(posedge clk_i); while (!masters[0].arready);
+      @(negedge clk_i);
+      masters[0].arvalid = 1'b0;
+      return_target0_read(7'h32, 64'h6666_6666_6666_0032);
+      return_target0_read(7'h02, 64'h0000_0000_0000_0002);
+
+      // One normal read and one normal write may overlap, but no second
+      // transaction per direction can pass before the terminal response.
+      @(negedge clk_i);
+      targets[0].arready = 1'b0;
+      targets[0].awready = 1'b0;
+      masters[6].arid    = 7'h30;
+      masters[6].araddr  = 32'h3000_0080;
+      masters[6].arvalid = 1'b1;
       masters[6].awid    = 7'h31;
-      masters[6].awaddr  = 32'h3000_0040;
+      masters[6].awaddr  = 32'h3000_00C0;
       masters[6].awvalid = 1'b1;
       #1;
-      if (masters[6].awready || targets[0].awvalid) begin
-        $fatal(1, "JPEG write received normal admission credit");
+      if (!targets[0].arvalid || (targets[0].arid != 7'h30) ||
+          !targets[0].awvalid || (targets[0].awid != 7'h31)) begin
+        $fatal(1, "JPEG did not present independent normal read and write addresses");
       end
+      targets[0].arready = 1'b1;
+      targets[0].awready = 1'b1;
+      @(posedge clk_i);
+      #1;
+      if ((outstanding_read_o != 8'd1) || (outstanding_write_o != 8'd1)) begin
+        $fatal(1, "JPEG did not consume exactly one read and one write credit");
+      end
+      @(negedge clk_i);
+      masters[6].arvalid = 1'b0;
       masters[6].awvalid = 1'b0;
+      masters[6].wdata   = 64'h0123_4567_89AB_CDEF;
+      masters[6].wstrb   = 8'hFF;
+      masters[6].wvalid  = 1'b1;
+      do @(posedge clk_i); while (!masters[6].wready);
+      @(negedge clk_i);
+      masters[6].wvalid = 1'b0;
+
+      @(negedge clk_i);
+      masters[6].arid    = 7'h32;
+      masters[6].araddr  = 32'h3000_0100;
+      masters[6].arvalid = 1'b1;
+      masters[6].awid    = 7'h33;
+      masters[6].awaddr  = 32'h3000_0140;
+      masters[6].awvalid = 1'b1;
+      #1;
+      if (masters[6].arready || masters[6].awready) begin
+        $fatal(1, "JPEG exceeded its one-read plus one-write credit");
+      end
+      masters[6].arvalid = 1'b0;
+      masters[6].awvalid = 1'b0;
+      fork
+        return_target0_read(7'h30, 64'h6666_6666_6666_0030);
+        begin
+          wait (masters[6].rvalid);
+          if ((masters[6].rid != 7'h30) || (masters[6].rdata != 64'h6666_6666_6666_0030)) begin
+            $fatal(1, "JPEG read response did not return to master 6");
+          end
+        end
+      join
+      fork
+        return_target0_write(7'h31);
+        begin
+          wait (masters[6].bvalid);
+          if (masters[6].bid != 7'h31) begin
+            $fatal(1, "JPEG write response did not return to master 6");
+          end
+        end
+      join
+      @(negedge clk_i);
+      if (!idle_o || (outstanding_read_o != 8'd0) || (outstanding_write_o != 8'd0)) begin
+        $fatal(1, "JPEG master credits did not drain independently");
+      end
+
+      @(negedge clk_i);
+      masters[6].arid    = 7'h32;
+      masters[6].araddr  = 32'h3000_0100;
+      masters[6].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[6].arready);
+      @(negedge clk_i);
+      masters[6].arvalid = 1'b0;
+      fork
+        return_target0_read(7'h32, 64'h6666_6666_6666_0032);
+        begin
+          wait (masters[6].rvalid);
+          if (masters[6].rid != 7'h32) begin
+            $fatal(1, "JPEG did not recover read admission after terminal response");
+          end
+        end
+      join
+
+      // Enabling normal credit must not weaken JPEG's non-cacheable ACL.
+      @(negedge clk_i);
+      masters[6].arid    = 7'h30;
+      masters[6].araddr  = 32'h3000_0180;
+      masters[6].arcache = 4'b0011;
+      masters[6].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[6].arready);
+      #1;
+      if (!fault_valid_o || (fault_master_o != 4'd6) || (fault_reason_o != 4'd3)) begin
+        $fatal(1, "JPEG cache-attribute ACL fault attribution mismatch");
+      end
+      @(negedge clk_i);
+      masters[6].arvalid = 1'b0;
+      masters[6].arcache = '0;
+      return_target5_read(7'h30);
     end
 
     fault_backpressure : begin
