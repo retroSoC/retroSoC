@@ -122,6 +122,16 @@ module ga2d_dma_tb;
   logic               s_ar_allowed_after_stop_q;
   logic               s_previous_awvalid_q;
   logic               s_previous_arvalid_q;
+  logic               s_track_dual_sources_i;
+  logic        [31:0] s_dual_foreground_start_i;
+  logic        [31:0] s_dual_foreground_end_i;
+  logic        [31:0] s_dual_background_start_i;
+  logic        [31:0] s_dual_background_end_i;
+  logic               s_dual_owner_valid_q;
+  logic               s_dual_owner_q;
+  logic               s_saw_dual_foreground_q;
+  logic               s_saw_dual_background_q;
+  int unsigned        s_dual_owner_switches_q;
 
   apb4_if apb4 (
       .pclk   (clk_i),
@@ -398,6 +408,11 @@ module ga2d_dma_tb;
       s_ar_allowed_after_stop_q <= 1'b0;
       s_previous_awvalid_q      <= 1'b0;
       s_previous_arvalid_q      <= 1'b0;
+      s_dual_owner_valid_q      <= 1'b0;
+      s_dual_owner_q            <= 1'b0;
+      s_saw_dual_foreground_q   <= 1'b0;
+      s_saw_dual_background_q   <= 1'b0;
+      s_dual_owner_switches_q   <= 0;
     end else begin
       if (!source_stop_i) begin
         s_source_stop_seen_q      <= 1'b0;
@@ -411,16 +426,20 @@ module ga2d_dma_tb;
                                     ga2d_axi4.arvalid && !ga2d_axi4.arready;
       end
       if (s_clear_burst_observations_i) begin
-        s_saw_arsize_0_q <= 1'b0;
-        s_saw_arsize_1_q <= 1'b0;
-        s_saw_arsize_2_q <= 1'b0;
-        s_saw_arlen_0_q  <= 1'b0;
-        s_saw_arlen_14_q <= 1'b0;
-        s_saw_arlen_15_q <= 1'b0;
-        s_saw_awlen_0_q  <= 1'b0;
-        s_saw_awlen_7_q  <= 1'b0;
-        s_saw_awlen_14_q <= 1'b0;
-        s_saw_awlen_15_q <= 1'b0;
+        s_saw_arsize_0_q        <= 1'b0;
+        s_saw_arsize_1_q        <= 1'b0;
+        s_saw_arsize_2_q        <= 1'b0;
+        s_saw_arlen_0_q         <= 1'b0;
+        s_saw_arlen_14_q        <= 1'b0;
+        s_saw_arlen_15_q        <= 1'b0;
+        s_saw_awlen_0_q         <= 1'b0;
+        s_saw_awlen_7_q         <= 1'b0;
+        s_saw_awlen_14_q        <= 1'b0;
+        s_saw_awlen_15_q        <= 1'b0;
+        s_dual_owner_valid_q    <= 1'b0;
+        s_saw_dual_foreground_q <= 1'b0;
+        s_saw_dual_background_q <= 1'b0;
+        s_dual_owner_switches_q <= 0;
       end
       if (bridge_clear_busy_i) begin
         // Model the existing bridge clear boundary: it contains every queued
@@ -465,6 +484,29 @@ module ga2d_dma_tb;
                 (({25'd0, ga2d_axi4.arlen} + 33'd1) << ga2d_axi4.arsize) <=
                 {1'b0, s_read_row1_end_i})))) begin
             $fatal(1, "GA2D read padding or crossed a logical source row");
+          end
+          if (s_track_dual_sources_i) begin
+            if ((ga2d_axi4.araddr >= s_dual_foreground_start_i) &&
+                (ga2d_axi4.araddr < s_dual_foreground_end_i)) begin
+              if (s_dual_owner_valid_q && !s_dual_owner_q) begin
+                $fatal(1, "GA2D P5 source scheduler did not alternate to foreground");
+              end
+              s_dual_owner_q          <= 1'b0;
+              s_saw_dual_foreground_q <= 1'b1;
+            end else if ((ga2d_axi4.araddr >= s_dual_background_start_i) &&
+                         (ga2d_axi4.araddr < s_dual_background_end_i)) begin
+              if (s_dual_owner_valid_q && s_dual_owner_q) begin
+                $fatal(1, "GA2D P5 source scheduler did not alternate to background");
+              end
+              s_dual_owner_q          <= 1'b1;
+              s_saw_dual_background_q <= 1'b1;
+            end else begin
+              $fatal(1, "GA2D P5 source scheduler emitted an unattributed AR");
+            end
+            if (s_dual_owner_valid_q) begin
+              s_dual_owner_switches_q <= s_dual_owner_switches_q + 1;
+            end
+            s_dual_owner_valid_q <= 1'b1;
           end
           s_rvalid_q <= 1'b1;
           s_rid_q    <= s_inject_bad_rid ? 3'd1 : 3'd0;
@@ -836,6 +878,490 @@ module ga2d_dma_tb;
       apb_write(`APB4_GA2D__DST_ADDRESS, destination_i, 1'b0);
       apb_write(`APB4_GA2D__DST_PITCH, destination_pitch_i, 1'b0);
       apb_write(`APB4_GA2D__DST_FORMAT, {29'd0, format_i}, 1'b0);
+    end
+  endtask
+
+  task automatic configure_convert(
+      input logic [2:0] foreground_format_i, input logic [2:0] destination_format_i,
+      input logic [15:0] width_i, input logic [15:0] height_i, input logic [31:0] foreground_i,
+      input logic [31:0] foreground_pitch_i, input logic [31:0] destination_i,
+      input logic [31:0] destination_pitch_i);
+    begin
+      apb_write(`APB4_GA2D__JOB_CONFIG, `APB4_GA2D__OP_CONVERT, 1'b0);
+      apb_write(`APB4_GA2D__SIZE, {height_i, width_i}, 1'b0);
+      apb_write(`APB4_GA2D__FG_ADDRESS, foreground_i, 1'b0);
+      apb_write(`APB4_GA2D__FG_PITCH, foreground_pitch_i, 1'b0);
+      apb_write(`APB4_GA2D__FG_FORMAT, {29'd0, foreground_format_i}, 1'b0);
+      apb_write(`APB4_GA2D__DST_ADDRESS, destination_i, 1'b0);
+      apb_write(`APB4_GA2D__DST_PITCH, destination_pitch_i, 1'b0);
+      apb_write(`APB4_GA2D__DST_FORMAT, {29'd0, destination_format_i}, 1'b0);
+    end
+  endtask
+
+  task automatic configure_blend(
+      input logic [2:0] foreground_format_i, input logic [2:0] background_format_i,
+      input logic [2:0] destination_format_i, input logic [15:0] width_i,
+      input logic [15:0] height_i, input logic [31:0] foreground_i,
+      input logic [31:0] foreground_pitch_i, input logic [31:0] background_i,
+      input logic [31:0] background_pitch_i, input logic [31:0] destination_i,
+      input logic [31:0] destination_pitch_i, input logic [7:0] alpha_i,
+      input logic [31:0] color_i);
+    begin
+      apb_write(`APB4_GA2D__JOB_CONFIG, `APB4_GA2D__OP_BLEND, 1'b0);
+      apb_write(`APB4_GA2D__GLOBAL_ALPHA, {24'd0, alpha_i}, 1'b0);
+      apb_write(`APB4_GA2D__COLOR, color_i, 1'b0);
+      apb_write(`APB4_GA2D__SIZE, {height_i, width_i}, 1'b0);
+      apb_write(`APB4_GA2D__FG_ADDRESS, foreground_i, 1'b0);
+      apb_write(`APB4_GA2D__FG_PITCH, foreground_pitch_i, 1'b0);
+      apb_write(`APB4_GA2D__FG_FORMAT, {29'd0, foreground_format_i}, 1'b0);
+      apb_write(`APB4_GA2D__BG_ADDRESS, background_i, 1'b0);
+      apb_write(`APB4_GA2D__BG_PITCH, background_pitch_i, 1'b0);
+      apb_write(`APB4_GA2D__BG_FORMAT, {29'd0, background_format_i}, 1'b0);
+      apb_write(`APB4_GA2D__DST_ADDRESS, destination_i, 1'b0);
+      apb_write(`APB4_GA2D__DST_PITCH, destination_pitch_i, 1'b0);
+      apb_write(`APB4_GA2D__DST_FORMAT, {29'd0, destination_format_i}, 1'b0);
+    end
+  endtask
+
+  task automatic expect_validation_error_no_axi(input logic [6:0] expected_code_i,
+                                                input logic [31:0] expected_address_i);
+    int unsigned        ar_count_before;
+    int unsigned        aw_count_before;
+    logic        [31:0] error_address;
+    logic        [31:0] error_status;
+    begin
+      ar_count_before = s_ar_count;
+      aw_count_before = s_aw_count;
+      start_job();
+      wait_for_terminal(1'b0, 1'b1, 1'b0);
+      apb_read(`APB4_GA2D__ERROR_STATUS, error_status);
+      if (!error_status[`APB4_GA2D__ERROR_STATUS_VALID] ||
+          (error_status[`APB4_GA2D__ERROR_STATUS_CODE+:7] != expected_code_i) ||
+          (error_status[`APB4_GA2D__ERROR_STATUS_STAGE+:4] !=
+           `APB4_GA2D__ERROR_STAGE_VALIDATE)) begin
+        $fatal(1, "GA2D validation error status mismatch: expected=%h actual=%h", expected_code_i,
+               error_status);
+      end
+      apb_read(`APB4_GA2D__ERROR_ADDRESS, error_address);
+      if (error_address != expected_address_i) begin
+        $fatal(1, "GA2D validation error address mismatch: expected=%h actual=%h",
+               expected_address_i, error_address);
+      end
+      if ((s_ar_count != ar_count_before) || (s_aw_count != aw_count_before)) begin
+        $fatal(1, "GA2D P5 validation failure issued AXI traffic");
+      end
+      clear_first_error();
+    end
+  endtask
+
+  task automatic run_validation_precedence_cases;
+    logic [31:0] foreground;
+    logic [31:0] background;
+    logic [31:0] destination;
+    begin
+      foreground  = SramBase + 32'h3000;
+      background  = SramBase + 32'h3400;
+      destination = SramBase + 32'h3800;
+
+      configure_convert(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_RGB565, 16'd0, 16'd1,
+                        foreground + 1, 32'd1, 32'd0, 32'd2);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_SIZE, 32'd0);
+
+      configure_convert(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1,
+                        foreground + 1, 32'd1, 32'd0, 32'd2);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_FORMAT, 32'd0);
+
+      configure_convert(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1,
+                        foreground + 1, 32'd2, 32'd0, 32'd2);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_ALIGNMENT, foreground + 1);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, foreground + 3, 32'd2,
+                      background + 5, 32'd2, destination + 1, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_ALIGNMENT, destination + 1);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, foreground + 3, 32'd2,
+                      background + 5, 32'd2, destination, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_ALIGNMENT, foreground + 3);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, foreground, 32'd0, background, 32'd0,
+                      32'd0, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_PITCH, foreground);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd2, 32'hffff_fffe, 32'd2, 32'hffff_fffe,
+                      32'd2, destination, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_ADDRESS_OVERFLOW, 32'hffff_fffe);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, destination, 32'd2, 32'd0, 32'd2,
+                      destination, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_ADDRESS_RANGE, 32'd0);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, 32'd0, 32'd2, 32'h0000_1000, 32'd2,
+                      destination, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_ADDRESS_RANGE, 32'd0);
+
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1, destination, 32'd2, background,
+                      32'd2, destination, 32'd2, 8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_OVERLAP, destination);
+    end
+  endtask
+
+  task automatic run_p5_directed_cases;
+    logic [31:0] foreground;
+    logic [31:0] background;
+    logic [31:0] destination;
+    begin
+      foreground  = SramBase + 32'h3000;
+      background  = SramBase + 32'h3400;
+      destination = SramBase + 32'h3800;
+      clear_memory(8'hd3);
+
+      // ARGB input retains alpha only for ARGB-to-ARGB conversion.
+      s_memory[(foreground+0)-SramBase] = 8'h56;
+      s_memory[(foreground+1)-SramBase] = 8'h34;
+      s_memory[(foreground+2)-SramBase] = 8'h12;
+      s_memory[(foreground+3)-SramBase] = 8'h80;
+      configure_convert(`APB4_GA2D__FORMAT_ARGB8888, `APB4_GA2D__FORMAT_ARGB8888, 16'd1, 16'd1,
+                        foreground, 32'd4, destination, 32'd4);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      if ({memory_byte(
+              destination + 3
+          ), memory_byte(
+              destination + 2
+          ), memory_byte(
+              destination + 1
+          ), memory_byte(
+              destination
+          )} != 32'h8012_3456) begin
+        $fatal(1, "GA2D P5 ARGB conversion did not preserve alpha");
+      end
+
+      // Opaque background composition writes alpha/X as 255 after rounded alpha math.
+      s_memory[(foreground+0)-SramBase] = 8'h20;
+      s_memory[(foreground+1)-SramBase] = 8'h40;
+      s_memory[(foreground+2)-SramBase] = 8'h80;
+      s_memory[(foreground+3)-SramBase] = 8'h7f;
+      s_memory[(background+0)-SramBase] = 8'h60;
+      s_memory[(background+1)-SramBase] = 8'h30;
+      s_memory[(background+2)-SramBase] = 8'h10;
+      configure_blend(`APB4_GA2D__FORMAT_ARGB8888, `APB4_GA2D__FORMAT_RGB888,
+                      `APB4_GA2D__FORMAT_ARGB8888, 16'd1, 16'd1, foreground, 32'd4, background,
+                      32'd3, destination, 32'd4, 8'h80, 32'h0012_3456);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      if ({memory_byte(
+              destination + 3
+          ), memory_byte(
+              destination + 2
+          ), memory_byte(
+              destination + 1
+          ), memory_byte(
+              destination
+          )} != 32'hff68_3414) begin
+        $fatal(1, "GA2D P5 alpha BLEND rounding or alpha packing mismatch");
+      end
+
+      // A8 supplies coverage only; COLOR.A is deliberately ignored.
+      s_memory[foreground-SramBase]     = 8'h80;
+      s_memory[(background+0)-SramBase] = 8'h06;
+      s_memory[(background+1)-SramBase] = 8'h05;
+      s_memory[(background+2)-SramBase] = 8'h04;
+      s_memory[(background+3)-SramBase] = 8'h77;
+      configure_blend(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_XRGB8888,
+                      `APB4_GA2D__FORMAT_XRGB8888, 16'd1, 16'd1, foreground, 32'd1, background,
+                      32'd4, destination, 32'd4, 8'h40, 32'ha512_3456);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      if ({memory_byte(
+              destination + 3
+          ), memory_byte(
+              destination + 2
+          ), memory_byte(
+              destination + 1
+          ), memory_byte(
+              destination
+          )} != 32'hff06_0b10) begin
+        $fatal(1, "GA2D P5 A8 BLEND color or coverage mismatch");
+      end
+
+      // The only legal overlap is exact BG/DST equality, and alpha zero preserves it.
+      destination                        = SramBase + 32'h3c00;
+      s_memory[destination-SramBase]     = 8'haa;
+      s_memory[(destination+1)-SramBase] = 8'h11;
+      s_memory[(destination+2)-SramBase] = 8'h55;
+      s_memory[(destination+3)-SramBase] = 8'h22;
+      s_memory[foreground-SramBase]      = 8'h00;
+      s_memory[(foreground+1)-SramBase]  = 8'h00;
+      configure_blend(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      16'd2, 16'd1, foreground, 32'd2, destination, 32'd4, destination, 32'd4,
+                      8'hff, 32'hffff_ffff);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      if ((memory_byte(
+              destination
+          ) != 8'haa) || (memory_byte(
+              destination + 1
+          ) != 8'h11) || (memory_byte(
+              destination + 2
+          ) != 8'h55) || (memory_byte(
+              destination + 3
+          ) != 8'h22)) begin
+        $fatal(1, "GA2D P5 in-place background composition was not read before write");
+      end
+
+      configure_copy(`APB4_GA2D__FORMAT_A8, 16'd1, 16'd1, foreground, 32'd1, destination, 32'd2);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_INVALID_FORMAT, 32'd0);
+      configure_convert(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565, 16'd1, 16'd1,
+                        destination, 32'd2, destination, 32'd2);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_OVERLAP, destination);
+      configure_blend(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      16'd1, 16'd1, foreground, 32'd1, destination, 32'd4, destination, 32'd2,
+                      8'hff, 32'h0012_3456);
+      expect_validation_error_no_axi(`APB4_GA2D__ERROR_OVERLAP, destination);
+    end
+  endtask
+
+  task automatic run_ci_smoke_p5_geometry_cases;
+    logic        [31:0] foreground;
+    logic        [31:0] background;
+    logic        [31:0] destination;
+    logic        [ 7:0] convert_source     [ 0:9];
+    logic        [ 7:0] convert_destination[0:14];
+    logic        [ 7:0] blend_foreground   [0:11];
+    logic        [ 7:0] blend_background   [ 0:8];
+    logic        [ 7:0] blend_destination  [ 0:8];
+    logic        [ 7:0] a8_foreground      [ 0:7];
+    logic        [ 7:0] a8_background      [0:23];
+    logic        [ 7:0] a8_destination     [0:23];
+    int unsigned        row;
+    int unsigned        byte_index;
+    begin
+      foreground              = SramBase + 32'h5004;
+      background              = SramBase + 32'h5404;
+      destination             = SramBase + 32'h5804;
+
+      convert_source[0]       = 8'h00;
+      convert_source[1]       = 8'hf8;
+      convert_source[2]       = 8'he0;
+      convert_source[3]       = 8'h07;
+      convert_source[4]       = 8'h1f;
+      convert_source[5]       = 8'h00;
+      convert_source[6]       = 8'hff;
+      convert_source[7]       = 8'hff;
+      convert_source[8]       = 8'h10;
+      convert_source[9]       = 8'h84;
+      convert_destination[0]  = 8'hff;
+      convert_destination[1]  = 8'h00;
+      convert_destination[2]  = 8'h00;
+      convert_destination[3]  = 8'h00;
+      convert_destination[4]  = 8'hff;
+      convert_destination[5]  = 8'h00;
+      convert_destination[6]  = 8'h00;
+      convert_destination[7]  = 8'h00;
+      convert_destination[8]  = 8'hff;
+      convert_destination[9]  = 8'hff;
+      convert_destination[10] = 8'hff;
+      convert_destination[11] = 8'hff;
+      convert_destination[12] = 8'h84;
+      convert_destination[13] = 8'h82;
+      convert_destination[14] = 8'h84;
+
+      clear_memory(8'hd3);
+      for (row = 0; row < 3; row++) begin
+        for (byte_index = 0; byte_index < 10; byte_index++) begin
+          s_memory[(foreground+(row*16)+byte_index)-SramBase] = convert_source[byte_index];
+        end
+      end
+      configure_convert(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB888, 16'd5, 16'd3,
+                        foreground, 32'd16, destination, 32'd20);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      check_terminal_counters(64'd30, 64'd45, 16'd3);
+      for (row = 0; row < 3; row++) begin
+        for (byte_index = 0; byte_index < 15; byte_index++) begin
+          if (memory_byte(
+                  destination + (row * 20) + byte_index
+              ) != convert_destination[byte_index]) begin
+            $fatal(1, "GA2D ci_smoke RGB565 conversion mismatch");
+          end
+        end
+        for (byte_index = 10; byte_index < 16; byte_index++) begin
+          if (memory_byte(foreground + (row * 16) + byte_index) != 8'hd3) begin
+            $fatal(1, "GA2D ci_smoke RGB565 conversion changed source padding");
+          end
+        end
+        for (byte_index = 15; byte_index < 20; byte_index++) begin
+          if (memory_byte(destination + (row * 20) + byte_index) != 8'hd3) begin
+            $fatal(1, "GA2D ci_smoke RGB565 conversion wrote destination padding");
+          end
+        end
+      end
+
+      blend_foreground[0]  = 8'h10;
+      blend_foreground[1]  = 8'h20;
+      blend_foreground[2]  = 8'hf0;
+      blend_foreground[3]  = 8'h00;
+      blend_foreground[4]  = 8'hc0;
+      blend_foreground[5]  = 8'h80;
+      blend_foreground[6]  = 8'h40;
+      blend_foreground[7]  = 8'hff;
+      blend_foreground[8]  = 8'h80;
+      blend_foreground[9]  = 8'hff;
+      blend_foreground[10] = 8'h00;
+      blend_foreground[11] = 8'h7f;
+      blend_background[0]  = 8'h30;
+      blend_background[1]  = 8'h20;
+      blend_background[2]  = 8'h10;
+      blend_background[3]  = 8'h30;
+      blend_background[4]  = 8'h20;
+      blend_background[5]  = 8'h10;
+      blend_background[6]  = 8'h20;
+      blend_background[7]  = 8'h40;
+      blend_background[8]  = 8'hc0;
+      blend_destination[0] = 8'h30;
+      blend_destination[1] = 8'h20;
+      blend_destination[2] = 8'h10;
+      blend_destination[3] = 8'h38;
+      blend_destination[4] = 8'h50;
+      blend_destination[5] = 8'h68;
+      blend_destination[6] = 8'h18;
+      blend_destination[7] = 8'h70;
+      blend_destination[8] = 8'hb0;
+
+      clear_memory(8'ha5);
+      for (row = 0; row < 2; row++) begin
+        for (byte_index = 0; byte_index < 12; byte_index++) begin
+          s_memory[(foreground+(row*16)+byte_index)-SramBase] = blend_foreground[byte_index];
+        end
+        for (byte_index = 0; byte_index < 9; byte_index++) begin
+          s_memory[(background+(row*12)+byte_index)-SramBase] = blend_background[byte_index];
+        end
+      end
+      for (row = 0; row < 24; row++) begin
+        s_memory[(destination+row)-SramBase] = 8'hc7;
+      end
+      configure_blend(`APB4_GA2D__FORMAT_ARGB8888, `APB4_GA2D__FORMAT_RGB888,
+                      `APB4_GA2D__FORMAT_RGB888, 16'd3, 16'd2, foreground, 32'd16, background,
+                      32'd12, destination, 32'd12, 8'h80, 32'd0);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      check_terminal_counters(64'd42, 64'd18, 16'd2);
+      for (row = 0; row < 2; row++) begin
+        for (byte_index = 0; byte_index < 12; byte_index++) begin
+          if (memory_byte(
+                  foreground + (row * 16) + byte_index
+              ) != blend_foreground[byte_index]) begin
+            $fatal(1, "GA2D ci_smoke ARGB blend changed foreground");
+          end
+        end
+        for (byte_index = 0; byte_index < 9; byte_index++) begin
+          if (memory_byte(
+                  background + (row * 12) + byte_index
+              ) != blend_background[byte_index]) begin
+            $fatal(1, "GA2D ci_smoke ARGB blend changed background");
+          end
+          if (memory_byte(
+                  destination + (row * 12) + byte_index
+              ) != blend_destination[byte_index]) begin
+            $fatal(1, "GA2D ci_smoke ARGB blend mismatch");
+          end
+        end
+        for (byte_index = 9; byte_index < 12; byte_index++) begin
+          if (memory_byte(destination + (row * 12) + byte_index) != 8'hc7) begin
+            $fatal(1, "GA2D ci_smoke ARGB blend wrote destination padding");
+          end
+        end
+      end
+
+      a8_foreground[0]   = 8'h00;
+      a8_foreground[1]   = 8'hff;
+      a8_foreground[2]   = 8'h7f;
+      a8_foreground[3]   = 8'ha5;
+      a8_foreground[4]   = 8'h80;
+      a8_foreground[5]   = 8'h01;
+      a8_foreground[6]   = 8'hfe;
+      a8_foreground[7]   = 8'ha5;
+      a8_background[0]   = 8'h10;
+      a8_background[1]   = 8'h20;
+      a8_background[2]   = 8'h30;
+      a8_background[3]   = 8'h40;
+      a8_background[4]   = 8'h50;
+      a8_background[5]   = 8'h60;
+      a8_background[6]   = 8'h70;
+      a8_background[7]   = 8'h80;
+      a8_background[8]   = 8'h90;
+      a8_background[9]   = 8'he1;
+      a8_background[10]  = 8'he1;
+      a8_background[11]  = 8'he1;
+      a8_background[12]  = 8'ha0;
+      a8_background[13]  = 8'hb0;
+      a8_background[14]  = 8'hc0;
+      a8_background[15]  = 8'h01;
+      a8_background[16]  = 8'h02;
+      a8_background[17]  = 8'h03;
+      a8_background[18]  = 8'hf0;
+      a8_background[19]  = 8'he0;
+      a8_background[20]  = 8'hd0;
+      a8_background[21]  = 8'he1;
+      a8_background[22]  = 8'he1;
+      a8_background[23]  = 8'he1;
+      a8_destination[0]  = 8'h10;
+      a8_destination[1]  = 8'h20;
+      a8_destination[2]  = 8'h30;
+      a8_destination[3]  = 8'h28;
+      a8_destination[4]  = 8'h38;
+      a8_destination[5]  = 8'h48;
+      a8_destination[6]  = 8'h58;
+      a8_destination[7]  = 8'h68;
+      a8_destination[8]  = 8'h78;
+      a8_destination[9]  = 8'he1;
+      a8_destination[10] = 8'he1;
+      a8_destination[11] = 8'he1;
+      a8_destination[12] = 8'h7c;
+      a8_destination[13] = 8'h8c;
+      a8_destination[14] = 8'h9c;
+      a8_destination[15] = 8'h01;
+      a8_destination[16] = 8'h02;
+      a8_destination[17] = 8'h03;
+      a8_destination[18] = 8'h80;
+      a8_destination[19] = 8'h80;
+      a8_destination[20] = 8'h80;
+      a8_destination[21] = 8'he1;
+      a8_destination[22] = 8'he1;
+      a8_destination[23] = 8'he1;
+
+      clear_memory(8'he1);
+      for (byte_index = 0; byte_index < 8; byte_index++) begin
+        s_memory[(foreground+byte_index)-SramBase] = a8_foreground[byte_index];
+      end
+      for (byte_index = 0; byte_index < 24; byte_index++) begin
+        s_memory[(background+byte_index)-SramBase] = a8_background[byte_index];
+      end
+      configure_blend(`APB4_GA2D__FORMAT_A8, `APB4_GA2D__FORMAT_RGB888, `APB4_GA2D__FORMAT_RGB888,
+                      16'd3, 16'd2, foreground, 32'd4, background, 32'd12, background, 32'd12,
+                      8'h80, 32'h1210_2030);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      check_terminal_counters(64'd24, 64'd18, 16'd2);
+      for (byte_index = 0; byte_index < 8; byte_index++) begin
+        if (memory_byte(foreground + byte_index) != a8_foreground[byte_index]) begin
+          $fatal(1, "GA2D ci_smoke A8 blend changed foreground");
+        end
+      end
+      for (byte_index = 0; byte_index < 24; byte_index++) begin
+        if (memory_byte(background + byte_index) != a8_destination[byte_index]) begin
+          $fatal(1,
+                 "GA2D ci_smoke in-place A8 blend mismatch at byte %0d: expected=%02x actual=%02x",
+                 byte_index, a8_destination[byte_index], memory_byte(background + byte_index));
+        end
+      end
     end
   endtask
 
@@ -1530,6 +2056,464 @@ module ga2d_dma_tb;
     end
   endtask
 
+  task automatic run_dual_source_schedule_case;
+    logic [31:0] foreground;
+    logic [31:0] background;
+    logic [31:0] destination;
+    begin
+      foreground  = SramBase + 32'h6000;
+      background  = SramBase + 32'h6200;
+      destination = SramBase + 32'h6400;
+      clear_memory(8'hd3);
+      for (int unsigned byte_index = 0; byte_index < 160; byte_index++) begin
+        s_memory[(foreground+byte_index)-SramBase] = byte_index[7:0];
+        s_memory[(background+byte_index)-SramBase] = ~byte_index[7:0];
+      end
+      clear_burst_observations();
+      s_dual_foreground_start_i = foreground;
+      s_dual_foreground_end_i   = foreground + 32'd160;
+      s_dual_background_start_i = background;
+      s_dual_background_end_i   = background + 32'd160;
+      s_track_dual_sources_i    = 1'b1;
+      configure_blend(`APB4_GA2D__FORMAT_RGB565, `APB4_GA2D__FORMAT_RGB565,
+                      `APB4_GA2D__FORMAT_RGB565, 16'd80, 16'd1, foreground, 32'd160, background,
+                      32'd160, destination, 32'd160, 8'h80, 32'h0012_3456);
+      start_job();
+      wait_for_terminal(1'b1, 1'b0, 1'b0);
+      s_track_dual_sources_i = 1'b0;
+      if (!s_saw_dual_foreground_q || !s_saw_dual_background_q ||
+          (s_dual_owner_switches_q < 3)) begin
+        $fatal(1, "GA2D P5 full-FIFO reservation did not service both blend inputs");
+      end
+    end
+  endtask
+
+  function automatic logic [2:0] p5_reference_bytes_per_pixel(input logic [2:0] format_i);
+    begin
+      unique case (format_i)
+        `APB4_GA2D__FORMAT_RGB565:   return 3'd2;
+        `APB4_GA2D__FORMAT_RGB888:   return 3'd3;
+        `APB4_GA2D__FORMAT_XRGB8888: return 3'd4;
+        `APB4_GA2D__FORMAT_ARGB8888: return 3'd4;
+        `APB4_GA2D__FORMAT_A8:       return 3'd1;
+        default:                     return '0;
+      endcase
+    end
+  endfunction
+
+  function automatic logic [7:0] p5_reference_pattern(
+      input logic [31:0] seed_i, input logic [7:0] plane_i, input int unsigned row_i,
+      input int unsigned byte_i);
+    logic [31:0] mixed;
+    begin
+      mixed = seed_i ^ {plane_i, plane_i, plane_i, plane_i} ^
+              (row_i * 32'h45d9_f3b) ^ (byte_i * 32'h27d4_eb2d);
+      return mixed[7:0] ^ mixed[15:8] ^ mixed[23:16] ^ mixed[31:24];
+    end
+  endfunction
+
+  function automatic logic [7:0] p5_reference_plane_byte(
+      input logic [31:0] seed_i, input logic [7:0] plane_i, input logic [2:0] format_i,
+      input int unsigned row_i, input int unsigned byte_i);
+    int unsigned pixel_i;
+    begin
+      pixel_i = byte_i / p5_reference_bytes_per_pixel(format_i);
+      if ((plane_i == 8'hf1) &&
+          (((format_i == `APB4_GA2D__FORMAT_ARGB8888) && ((byte_i % 4) == 3)) ||
+           (format_i == `APB4_GA2D__FORMAT_A8))) begin
+        unique case ((row_i + pixel_i) % 4)
+          0:       return 8'h00;
+          1:       return 8'hff;
+          2:       return 8'h7f;
+          default: return 8'h80;
+        endcase
+      end
+      return p5_reference_pattern(seed_i, plane_i, row_i, byte_i);
+    end
+  endfunction
+
+  function automatic logic [31:0] p5_reference_plane_pixel(
+      input logic [31:0] seed_i, input logic [7:0] plane_i, input logic [2:0] format_i,
+      input int unsigned row_i, input int unsigned pixel_i);
+    logic        [31:0] pixel;
+    int unsigned        bytes_per_pixel;
+    begin
+      pixel           = '0;
+      bytes_per_pixel = p5_reference_bytes_per_pixel(format_i);
+      for (int unsigned byte_i = 0; byte_i < bytes_per_pixel; byte_i++) begin
+        pixel[byte_i*8+:8] = p5_reference_plane_byte(seed_i, plane_i, format_i, row_i,
+                                                     (pixel_i * bytes_per_pixel) + byte_i);
+      end
+      return pixel;
+    end
+  endfunction
+
+  function automatic logic [31:0] p5_reference_unpack(input logic [31:0] pixel_i,
+                                                      input logic [2:0] format_i);
+    logic [7:0] red;
+    logic [7:0] green;
+    logic [7:0] blue;
+    logic [7:0] alpha;
+    begin
+      red   = '0;
+      green = '0;
+      blue  = '0;
+      alpha = 8'hff;
+      unique case (format_i)
+        `APB4_GA2D__FORMAT_RGB565: begin
+          red   = {pixel_i[15:11], pixel_i[15:13]};
+          green = {pixel_i[10:5], pixel_i[10:9]};
+          blue  = {pixel_i[4:0], pixel_i[4:2]};
+        end
+        `APB4_GA2D__FORMAT_RGB888: begin
+          red   = pixel_i[7:0];
+          green = pixel_i[15:8];
+          blue  = pixel_i[23:16];
+        end
+        `APB4_GA2D__FORMAT_XRGB8888: begin
+          red   = pixel_i[23:16];
+          green = pixel_i[15:8];
+          blue  = pixel_i[7:0];
+        end
+        `APB4_GA2D__FORMAT_ARGB8888: begin
+          red   = pixel_i[23:16];
+          green = pixel_i[15:8];
+          blue  = pixel_i[7:0];
+          alpha = pixel_i[31:24];
+        end
+        default: begin
+        end
+      endcase
+      return {alpha, red, green, blue};
+    end
+  endfunction
+
+  function automatic logic [31:0] p5_reference_pack(input logic [31:0] rgba_i,
+                                                    input logic [2:0] format_i);
+    begin
+      unique case (format_i)
+        `APB4_GA2D__FORMAT_RGB565:   return {16'd0, rgba_i[23:19], rgba_i[15:10], rgba_i[7:3]};
+        `APB4_GA2D__FORMAT_RGB888:   return {8'd0, rgba_i[7:0], rgba_i[15:8], rgba_i[23:16]};
+        `APB4_GA2D__FORMAT_XRGB8888: return {8'hff, rgba_i[23:0]};
+        `APB4_GA2D__FORMAT_ARGB8888: return rgba_i;
+        default:                     return '0;
+      endcase
+    end
+  endfunction
+
+  function automatic logic [7:0] p5_reference_blend_channel(
+      input logic [7:0] foreground_i, input logic [7:0] background_i, input logic [7:0] alpha_i);
+    logic [16:0] numerator;
+    begin
+      numerator = ({9'd0, foreground_i} * {9'd0, alpha_i}) +
+                  ({9'd0, background_i} * ({9'd0, 8'hff} - {9'd0, alpha_i})) + 17'd127;
+      return numerator / 17'd255;
+    end
+  endfunction
+
+  function automatic logic [31:0] p5_reference_convert(input logic [31:0] foreground_i,
+                                                       input logic [2:0] foreground_format_i,
+                                                       input logic [2:0] destination_format_i);
+    logic [31:0] rgba;
+    begin
+      rgba = p5_reference_unpack(foreground_i, foreground_format_i);
+      if (!((foreground_format_i == `APB4_GA2D__FORMAT_ARGB8888) &&
+            (destination_format_i == `APB4_GA2D__FORMAT_ARGB8888))) begin
+        rgba[31:24] = 8'hff;
+      end
+      return p5_reference_pack(rgba, destination_format_i);
+    end
+  endfunction
+
+  function automatic logic [31:0] p5_reference_blend(
+      input logic [31:0] foreground_i, input logic [31:0] background_i, input logic [31:0] color_i,
+      input logic [7:0] global_alpha_i, input logic [2:0] foreground_format_i,
+      input logic [2:0] background_format_i, input logic [2:0] destination_format_i);
+    logic [31:0] foreground_rgba;
+    logic [31:0] background_rgba;
+    logic [ 7:0] foreground_alpha;
+    logic [ 7:0] alpha;
+    logic [15:0] alpha_product;
+    logic [31:0] result_rgba;
+    begin
+      foreground_rgba  = p5_reference_unpack(foreground_i, foreground_format_i);
+      background_rgba  = p5_reference_unpack(background_i, background_format_i);
+      foreground_alpha = foreground_rgba[31:24];
+      if (foreground_format_i == `APB4_GA2D__FORMAT_A8) begin
+        foreground_rgba[23:0] = color_i[23:0];
+        foreground_alpha      = foreground_i[7:0];
+      end
+      alpha_product = {8'd0, foreground_alpha} * {8'd0, global_alpha_i};
+      alpha = (alpha_product + 16'd127) / 16'd255;
+      result_rgba[31:24] = 8'hff;
+      result_rgba[23:16] =
+          p5_reference_blend_channel(foreground_rgba[23:16], background_rgba[23:16], alpha);
+      result_rgba[15:8] =
+          p5_reference_blend_channel(foreground_rgba[15:8], background_rgba[15:8], alpha);
+      result_rgba[7:0] =
+          p5_reference_blend_channel(foreground_rgba[7:0], background_rgba[7:0], alpha);
+      return p5_reference_pack(result_rgba, destination_format_i);
+    end
+  endfunction
+
+  task automatic run_p5_mixed_campaign;
+    logic        [31:0] random_value;
+    logic        [ 2:0] foreground_format;
+    logic        [ 2:0] background_format;
+    logic        [ 2:0] destination_format;
+    logic        [ 1:0] operation;
+    logic        [ 3:0] fill_seen;
+    logic        [ 3:0] copy_seen;
+    logic        [15:0] convert_seen;
+    logic        [79:0] blend_seen;
+    logic        [79:0] inplace_seen;
+    logic        [ 2:0] global_alpha_seen;
+    logic        [ 2:0] offsets_seen;
+    logic        [ 9:0] seeds_seen;
+    logic        [31:0] foreground;
+    logic        [31:0] background;
+    logic        [31:0] destination;
+    logic        [31:0] foreground_storage;
+    logic        [31:0] background_storage;
+    logic        [31:0] destination_storage;
+    logic        [31:0] foreground_pixel;
+    logic        [31:0] background_pixel;
+    logic        [31:0] expected_pixel;
+    logic        [ 7:0] global_alpha;
+    logic        [ 2:0] foreground_bytes_per_pixel;
+    logic        [ 2:0] background_bytes_per_pixel;
+    logic        [ 2:0] destination_bytes_per_pixel;
+    logic        [ 7:0] expected_foreground         [0:127];
+    logic        [ 7:0] expected_background         [0:127];
+    logic        [ 7:0] expected_destination        [0:127];
+    logic               inplace;
+    int unsigned        width;
+    int unsigned        height;
+    int unsigned        foreground_pitch;
+    int unsigned        background_pitch;
+    int unsigned        destination_pitch;
+    int unsigned        foreground_row_bytes;
+    int unsigned        background_row_bytes;
+    int unsigned        destination_row_bytes;
+    int unsigned        foreground_offset;
+    int unsigned        background_offset;
+    int unsigned        destination_offset;
+    int unsigned        completed;
+    int unsigned        combo;
+    begin
+      completed         = 0;
+      fill_seen         = '0;
+      copy_seen         = '0;
+      convert_seen      = '0;
+      blend_seen        = '0;
+      inplace_seen      = '0;
+      global_alpha_seen = '0;
+      offsets_seen      = '0;
+      seeds_seen        = '0;
+      enable_random_delays();
+      for (int unsigned seed = 0; seed < 10; seed++) begin
+        reseed_random_delays(32'h9e37_79b9 ^ seed);
+        seeds_seen[seed] = 1'b1;
+        random_value     = 32'h9e37_79b9 ^ seed;
+        for (int unsigned job = 0; job < 1000; job++) begin
+          random_value       = (random_value * 32'd1664525) + 32'd1013904223;
+          operation          = job[1:0];
+          foreground_format  = `APB4_GA2D__FORMAT_RGB565;
+          background_format  = `APB4_GA2D__FORMAT_RGB565;
+          destination_format = `APB4_GA2D__FORMAT_RGB565;
+          unique case (operation)
+            `APB4_GA2D__OP_FILL: begin
+              destination_format            = (job >> 2) % 4;
+              fill_seen[destination_format] = 1'b1;
+            end
+            `APB4_GA2D__OP_COPY: begin
+              foreground_format            = (job >> 2) % 4;
+              destination_format           = foreground_format;
+              copy_seen[foreground_format] = 1'b1;
+            end
+            `APB4_GA2D__OP_CONVERT: begin
+              combo               = (job >> 2) % 16;
+              foreground_format   = combo >> 2;
+              destination_format  = combo % 4;
+              convert_seen[combo] = 1'b1;
+            end
+            default: begin
+              combo              = (job >> 2) % 80;
+              foreground_format  = combo / 16;
+              background_format  = (combo / 4) % 4;
+              destination_format = combo % 4;
+              blend_seen[combo]  = 1'b1;
+            end
+          endcase
+          foreground_bytes_per_pixel = p5_reference_bytes_per_pixel(foreground_format);
+          background_bytes_per_pixel = p5_reference_bytes_per_pixel(background_format);
+          destination_bytes_per_pixel = p5_reference_bytes_per_pixel(destination_format);
+          width = (random_value[3:2] % 4) + 1;
+          height = (random_value[5:4] % 4) + 1;
+          foreground_row_bytes = width * foreground_bytes_per_pixel;
+          background_row_bytes = width * background_bytes_per_pixel;
+          destination_row_bytes = width * destination_bytes_per_pixel;
+          foreground_pitch = foreground_row_bytes +
+                             (foreground_bytes_per_pixel * (1 + (random_value[7:6] % 2)));
+          background_pitch = background_row_bytes +
+                             (background_bytes_per_pixel * (1 + (random_value[9:8] % 2)));
+          destination_pitch = destination_row_bytes +
+                              (destination_bytes_per_pixel * (1 + (random_value[11:10] % 2)));
+          foreground_storage = SramBase + 32'h1000 + ((job % 32) * 128);
+          background_storage = SramBase + 32'h3000 + ((job % 32) * 128);
+          destination_storage = SramBase + 32'h5000 + ((job % 32) * 128);
+          foreground_offset = (random_value[13:12] % 4) * foreground_bytes_per_pixel;
+          background_offset = (random_value[15:14] % 4) * background_bytes_per_pixel;
+          destination_offset = (random_value[17:16] % 4) * destination_bytes_per_pixel;
+          foreground = foreground_storage + foreground_offset;
+          background = background_storage + background_offset;
+          destination = destination_storage + destination_offset;
+          inplace = (operation == `APB4_GA2D__OP_BLEND) &&
+                    (background_format == destination_format) && (seed == 0);
+          if (inplace) begin
+            destination         = background;
+            destination_storage = background_storage;
+            destination_offset  = background_offset;
+            destination_pitch   = background_pitch;
+          end
+          if (foreground_offset != 0) begin
+            offsets_seen[0] = 1'b1;
+          end
+          if (background_offset != 0) begin
+            offsets_seen[1] = 1'b1;
+          end
+          if (destination_offset != 0) begin
+            offsets_seen[2] = 1'b1;
+          end
+          for (int unsigned byte_i = 0; byte_i < 128; byte_i++) begin
+            expected_foreground[byte_i]                    = 8'ha5;
+            expected_background[byte_i]                    = 8'he1;
+            expected_destination[byte_i]                   = inplace ? 8'he1 : 8'hc7;
+            s_memory[(foreground_storage+byte_i)-SramBase] = 8'ha5;
+            s_memory[(background_storage+byte_i)-SramBase] = 8'he1;
+            if (!inplace) begin
+              s_memory[(destination_storage+byte_i)-SramBase] = 8'hc7;
+            end
+          end
+          unique case (seed % 4)
+            0: begin
+              global_alpha         = 8'h00;
+              global_alpha_seen[0] = 1'b1;
+            end
+            1: begin
+              global_alpha         = 8'hff;
+              global_alpha_seen[1] = 1'b1;
+            end
+            2: begin
+              global_alpha         = 8'h80;
+              global_alpha_seen[2] = 1'b1;
+            end
+            default: global_alpha = random_value[7:0];
+          endcase
+          for (int unsigned row = 0; row < height; row++) begin
+            for (int unsigned byte_i = 0; byte_i < foreground_row_bytes; byte_i++) begin
+              expected_foreground[foreground_offset + (row * foreground_pitch) + byte_i] =
+                  p5_reference_plane_byte(random_value, 8'hf1, foreground_format, row, byte_i);
+              s_memory[(foreground + (row * foreground_pitch) + byte_i) - SramBase] =
+                  expected_foreground[foreground_offset + (row * foreground_pitch) + byte_i];
+            end
+            for (int unsigned byte_i = 0; byte_i < background_row_bytes; byte_i++) begin
+              expected_background[background_offset + (row * background_pitch) + byte_i] =
+                  p5_reference_plane_byte(random_value, 8'hb2, background_format, row, byte_i);
+              s_memory[(background + (row * background_pitch) + byte_i) - SramBase] =
+                  expected_background[background_offset + (row * background_pitch) + byte_i];
+            end
+            for (int unsigned pixel_i = 0; pixel_i < width; pixel_i++) begin
+              foreground_pixel =
+                  p5_reference_plane_pixel(random_value, 8'hf1, foreground_format, row, pixel_i);
+              background_pixel =
+                  p5_reference_plane_pixel(random_value, 8'hb2, background_format, row, pixel_i);
+              unique case (operation)
+                `APB4_GA2D__OP_FILL:
+                expected_pixel = p5_reference_pack({random_value[31:24], random_value[23:0]},
+                                                   destination_format);
+                `APB4_GA2D__OP_COPY: expected_pixel = foreground_pixel;
+                `APB4_GA2D__OP_CONVERT:
+                expected_pixel =
+                    p5_reference_convert(foreground_pixel, foreground_format, destination_format);
+                default:
+                expected_pixel = p5_reference_blend(
+                    foreground_pixel,
+                    background_pixel,
+                    random_value,
+                    global_alpha,
+                    foreground_format,
+                    background_format,
+                    destination_format
+                );
+              endcase
+              for (int unsigned byte_i = 0; byte_i < destination_bytes_per_pixel; byte_i++) begin
+                if (inplace) begin
+                  expected_background[destination_offset + (row * destination_pitch) +
+                                      (pixel_i * destination_bytes_per_pixel) + byte_i] =
+                      expected_pixel[byte_i*8+:8];
+                end else begin
+                  expected_destination[destination_offset + (row * destination_pitch) +
+                                       (pixel_i * destination_bytes_per_pixel) + byte_i] =
+                      expected_pixel[byte_i*8+:8];
+                end
+              end
+            end
+          end
+          unique case (operation)
+            `APB4_GA2D__OP_FILL:
+            configure_fill(destination_format, width, height, destination, destination_pitch,
+                           random_value);
+            `APB4_GA2D__OP_COPY:
+            configure_copy(foreground_format, width, height, foreground, foreground_pitch,
+                           destination, destination_pitch);
+            `APB4_GA2D__OP_CONVERT:
+            configure_convert(foreground_format, destination_format, width, height, foreground,
+                              foreground_pitch, destination, destination_pitch);
+            default: begin
+              if (inplace) begin
+                inplace_seen[combo] = 1'b1;
+              end
+              configure_blend(foreground_format, background_format, destination_format, width,
+                              height, foreground, foreground_pitch, background, background_pitch,
+                              destination, destination_pitch, global_alpha, random_value);
+            end
+          endcase
+          start_job();
+          wait_for_terminal(1'b1, 1'b0, 1'b0);
+          for (int unsigned byte_i = 0; byte_i < 128; byte_i++) begin
+            if (memory_byte(foreground_storage + byte_i) != expected_foreground[byte_i]) begin
+              $fatal(1, "GA2D P5 mixed campaign changed foreground data, guard, or padding");
+            end
+            if (memory_byte(background_storage + byte_i) != expected_background[byte_i]) begin
+              $fatal(1, "GA2D P5 mixed campaign background or in-place result mismatch");
+            end
+            if (!inplace && (memory_byte(
+                    destination_storage + byte_i
+                ) != expected_destination[byte_i])) begin
+              $fatal(1, "GA2D P5 mixed campaign destination, guard, or padding mismatch");
+            end
+          end
+          completed++;
+        end
+      end
+      for (int unsigned foreground_index = 0; foreground_index < 5; foreground_index++) begin
+        for (int unsigned format_index = 0; format_index < 4; format_index++) begin
+          combo = (foreground_index * 16) + (format_index * 4) + format_index;
+          if (!inplace_seen[combo]) begin
+            $fatal(1, "GA2D P5 mixed campaign missed exact BG/DST in-place blend coverage");
+          end
+        end
+      end
+      if ((completed != 10000) || (seeds_seen != 10'h3ff) || (fill_seen != 4'hf) ||
+          (copy_seen != 4'hf) || (convert_seen != 16'hffff) || (blend_seen != {80{1'b1}}) ||
+          (global_alpha_seen != 3'b111) || (offsets_seen != 3'b111)) begin
+        $fatal(1, "GA2D P5 mixed campaign missed required scoring coverage");
+      end
+      check_random_delay_coverage();
+    end
+  endtask
+
   initial begin
     logic [31:0] error_status;
     logic [31:0] status;
@@ -1570,6 +2554,11 @@ module ga2d_dma_tb;
     s_write_row0_end_i              = '0;
     s_write_row1_start_i            = '0;
     s_write_row1_end_i              = '0;
+    s_track_dual_sources_i          = 1'b0;
+    s_dual_foreground_start_i       = '0;
+    s_dual_foreground_end_i         = '0;
+    s_dual_background_start_i       = '0;
+    s_dual_background_end_i         = '0;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
@@ -1663,7 +2652,11 @@ module ga2d_dma_tb;
     run_copy_burst_case(16'd60, SramBase + 32'h2000, SramBase + 32'h2400, 8'd14);
     run_copy_burst_case(16'd64, SramBase + 32'h2600, SramBase + 32'h2A00, 8'd15);
 
-    run_random_campaign();
+    run_p5_directed_cases();
+    run_validation_precedence_cases();
+    run_ci_smoke_p5_geometry_cases();
+    run_dual_source_schedule_case();
+    run_p5_mixed_campaign();
 
     clear_memory(8'ha5);
     configure_copy(`APB4_GA2D__FORMAT_RGB888, 16'd3, 16'd1, SramBase + 32'h1200, 32'd12,
@@ -1822,12 +2815,13 @@ module ga2d_dma_tb;
     block_ack_i        = 1'b0;
     repeat (4) @(posedge clk_i);
 
-    $display("GA2D P4 DMA test passed with independent AXI delay coverage");
+    $display(
+        "GA2D P5 DMA test passed with independent AXI delay and validation-precedence coverage");
     $finish;
   end
 
   initial begin
     repeat (2000000) @(posedge clk_i);
-    $fatal(1, "GA2D P4 DMA test timed out");
+    $fatal(1, "GA2D P5 DMA test timed out");
   end
 endmodule

@@ -333,7 +333,7 @@
     "sources": [
       "docs/ip/resource-controller.md"
     ],
-    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 owns the active P4 GA2D direct FILL/COPY DMA and IRQ route."
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route."
   },
   {
     "id": "monitor",
@@ -344,7 +344,7 @@
     "sources": [
       "docs/ip/fabric-monitor.md"
     ],
-    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P4 GA2D direct FILL/COPY DMA traffic."
+    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P5 GA2D direct 2D traffic."
   },
   {
     "id": "i2s",
@@ -495,7 +495,7 @@
       "rtl/ip/multimedia/ga2d_core.sv",
       "rtl/ip/multimedia/ga2d_reg.sv"
     ],
-    "summary": "P4 APB4-controlled direct single-job private-AXI64 2D FILL/COPY DMA with resource-owned IRQ, snapshots, pitch, and byte-edge support; no CONVERT, BLEND, A8, in-place background, or descriptor/ring/queue submission."
+    "summary": "P5 APB4-controlled direct single-job private-AXI64 2D engine with FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color foreground masks, and exact equal background/destination in-place composition. RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is BLEND foreground-only. Resource-owned IRQ, snapshots, pitch, and byte-edge support remain available; transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, hardware cache coherency, and a Linux graphics driver are unavailable."
   },
   {
     "id": "reserved",

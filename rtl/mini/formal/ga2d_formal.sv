@@ -39,6 +39,11 @@ module ga2d_formal;
   wire [5:0]              background_fifo_count;
   wire [5:0]              output_fifo_count;
   wire                    read_reserved;
+  wire                    read_owner;
+  wire                    next_read_owner;
+  wire                    inplace_background;
+  wire [31:0]             bg_captured_pixels;
+  wire [32:0]             write_cover_end_pixel;
   wire                    awvalid;
   wire                    awready;
   wire [2:0]              awid;
@@ -89,6 +94,8 @@ module ga2d_formal;
   logic        s_read_inflight_q;
   logic        s_write_inflight_q;
   logic [8:0]  s_read_beats_q;
+  logic        s_read_owner_inflight_q;
+  logic        s_blend_foreground_retired_q;
   logic [8:0]  s_write_beats_q;
   logic        s_stop_seen_q;
   logic [7:0]  s_stop_age_q;
@@ -122,6 +129,11 @@ module ga2d_formal;
       .background_fifo_count   (background_fifo_count),
       .output_fifo_count       (output_fifo_count),
       .read_reserved           (read_reserved),
+      .read_owner              (read_owner),
+      .next_read_owner         (next_read_owner),
+      .inplace_background      (inplace_background),
+      .bg_captured_pixels      (bg_captured_pixels),
+      .write_cover_end_pixel   (write_cover_end_pixel),
       .awvalid                 (awvalid),
       .awready                 (awready),
       .awid                    (awid),
@@ -171,27 +183,31 @@ module ga2d_formal;
 
   always @(posedge clk_i) begin
     if (!rst_n_i) begin
-      s_read_inflight_q  <= 1'b0;
-      s_write_inflight_q <= 1'b0;
-      s_read_beats_q     <= '0;
-      s_write_beats_q    <= '0;
-      s_stop_seen_q      <= 1'b0;
-      s_stop_age_q       <= '0;
+      s_read_inflight_q            <= 1'b0;
+      s_write_inflight_q           <= 1'b0;
+      s_read_beats_q               <= '0;
+      s_read_owner_inflight_q      <= 1'b0;
+      s_blend_foreground_retired_q <= 1'b0;
+      s_write_beats_q              <= '0;
+      s_stop_seen_q                <= 1'b0;
+      s_stop_age_q                 <= '0;
     end else begin
       if (resource_stop_i) begin
         s_stop_seen_q <= 1'b1;
       end
 
       if (bridge_clear_busy_i) begin
-        s_read_inflight_q  <= 1'b0;
-        s_write_inflight_q <= 1'b0;
-        s_read_beats_q     <= '0;
-        s_write_beats_q    <= '0;
+        s_read_inflight_q       <= 1'b0;
+        s_write_inflight_q      <= 1'b0;
+        s_read_beats_q          <= '0;
+        s_read_owner_inflight_q <= 1'b0;
+        s_write_beats_q         <= '0;
       end else begin
         if (arvalid && arready) begin
           assert (!s_read_inflight_q);
-          s_read_inflight_q <= 1'b1;
-          s_read_beats_q    <= {1'b0, arlen} + 1'b1;
+          s_read_inflight_q       <= 1'b1;
+          s_read_beats_q          <= {1'b0, arlen} + 1'b1;
+          s_read_owner_inflight_q <= read_owner;
         end
         if (rvalid && rready) begin
           assert (s_read_inflight_q);
@@ -200,6 +216,13 @@ module ga2d_formal;
           if (rlast) begin
             s_read_inflight_q <= 1'b0;
             s_read_beats_q    <= '0;
+            if ((scenario == 4'd9) || (scenario == 4'd10)) begin
+              if (!s_read_owner_inflight_q) begin
+                s_blend_foreground_retired_q <= 1'b1;
+              end else begin
+                assert (s_blend_foreground_retired_q);
+              end
+            end
           end else begin
             s_read_beats_q <= s_read_beats_q - 1'b1;
           end
@@ -269,6 +292,21 @@ module ga2d_formal;
         assert (arqos == $past(arqos));
         assert (arregion == $past(arregion));
         assert (aruser == $past(aruser));
+        assert (read_owner == $past(read_owner));
+      end
+      if ($past(
+              s_read_inflight_q
+          ) && s_read_inflight_q && !$past(
+              bridge_clear_busy_i
+          ) && !bridge_clear_busy_i) begin
+        assert (read_owner == $past(read_owner));
+      end
+      if ($past(
+              ((scenario == 4'd9) || (scenario == 4'd10)) &&
+                rvalid && rready && rlast && (rresp == 2'd0) &&
+                (rid == 3'd0)
+          )) begin
+        assert (next_read_owner == !$past(read_owner));
       end
       if ($past(bvalid && !bready)) begin
         assert (bvalid);
@@ -330,11 +368,23 @@ module ga2d_formal;
       assert (output_fifo_count <= 6'd32);
       if (arvalid) begin
         assert (read_reserved);
-        assert ({3'd0, foreground_fifo_count} + ({1'b0, arlen} + 9'd1) <= 9'd32);
+        if (!read_owner) begin
+          assert ({3'd0, foreground_fifo_count} + ({1'b0, arlen} + 9'd1) <= 9'd32);
+        end else begin
+          assert ({3'd0, background_fifo_count} + ({1'b0, arlen} + 9'd1) <= 9'd32);
+        end
       end
       if (s_read_inflight_q && !bridge_clear_busy_i) begin
         assert (read_reserved);
-        assert ({3'd0, foreground_fifo_count} + s_read_beats_q <= 9'd32);
+        assert (read_owner == s_read_owner_inflight_q);
+        if (!read_owner) begin
+          assert ({3'd0, foreground_fifo_count} + s_read_beats_q <= 9'd32);
+        end else begin
+          assert ({3'd0, background_fifo_count} + s_read_beats_q <= 9'd32);
+        end
+      end
+      if (awvalid && inplace_background) begin
+        assert ({1'b0, bg_captured_pixels} >= write_cover_end_pixel);
       end
       if (safe_idle) begin
         assert (!busy);
@@ -349,7 +399,7 @@ module ga2d_formal;
       if (error) begin
         assert (!done);
       end
-      assume (scenario <= 4'd8);
+      assume (scenario <= 4'd10);
       if (scenario == 4'd5) begin
         assert (!done);
       end
@@ -365,6 +415,9 @@ module ga2d_formal;
         assert (!arvalid);
         assert (!safe_idle);
       end
+      if ((scenario == 4'd9) || (scenario == 4'd10)) begin
+        assert (!error);
+      end
 
       cover (scenario == 4'd0 && done && safe_idle && (write_bytes == 64'd2));
       cover (scenario == 4'd1 && done && safe_idle &&
@@ -376,6 +429,9 @@ module ga2d_formal;
       cover (scenario == 4'd7 && awvalid && awready && (awlen == 8'd15));
       cover ((scenario == 4'd8) && protocol_residual_rvalid && error &&
              recovery_required && !rready && !arvalid && !safe_idle);
+      cover (scenario == 4'd9 && done && safe_idle && (read_bytes == 64'd3));
+      cover (scenario == 4'd10 && done && safe_idle && inplace_background &&
+             (bg_captured_pixels >= write_cover_end_pixel));
       cover (awvalid && !awready);
       cover (wvalid && !wready);
       cover (arvalid && !arready);

@@ -1988,7 +1988,7 @@
           "msb": 31,
           "description": "Fixed value 0x47413244 (GA2D).",
           "reset": "0x47413244",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2003,70 +2003,70 @@
           "msb": 15,
           "description": "ABI minor version.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "MAJOR",
           "lsb": 16,
           "msb": 31,
-          "description": "ABI major version; P4 retains major 1.",
+          "description": "ABI major version; P5 retains major 1.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.CAPABILITY": {
       "access": "RO",
-      "reset": "0x000003E3",
-      "description": "P4 capability bitmap; FILL, COPY, private DMA, IRQ, snapshots, two-dimensional pitch, and byte edges are advertised.",
+      "reset": "0x000007FF",
+      "description": "P5 capability bitmap; FILL, COPY, CONVERT, BLEND, A8 fixed-color foreground masks, private DMA, IRQ, snapshots, two-dimensional pitch, byte edges, and exact equal background/destination in-place composition are advertised.",
       "fields": [
         {
           "name": "FILL",
           "lsb": 0,
           "msb": 0,
-          "description": "Fill operation capability; set in P4.",
+          "description": "Fill operation capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "COPY",
           "lsb": 1,
           "msb": 1,
-          "description": "Copy operation capability; set in P4.",
+          "description": "Copy operation capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "CONVERT",
           "lsb": 2,
           "msb": 2,
-          "description": "Conversion operation capability; clear in P4.",
-          "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "description": "Bit-exact conversion operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "BLEND",
           "lsb": 3,
           "msb": 3,
-          "description": "Blend operation capability; clear in P4.",
-          "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "description": "Opaque alpha blend operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "A8_MASK",
           "lsb": 4,
           "msb": 4,
-          "description": "A8 mask capability; clear in P4.",
-          "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "description": "A8 fixed-color foreground-mask capability for BLEND only; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "PRIVATE_DMA",
           "lsb": 5,
           "msb": 5,
-          "description": "Private AXI64 DMA capability; set in P4.",
+          "description": "Private AXI64 DMA capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "IRQ",
@@ -2074,39 +2074,39 @@
           "msb": 6,
           "description": "Direct-engine IRQ capability.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "SNAPSHOT",
           "lsb": 7,
           "msb": 7,
-          "description": "Performance snapshot capability; set in P4.",
+          "description": "Performance snapshot capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "TWO_DIMENSIONAL_PITCH",
           "lsb": 8,
           "msb": 8,
-          "description": "Two-dimensional pitch capability; set in P4.",
+          "description": "Two-dimensional pitch capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "BYTE_EDGES",
           "lsb": 9,
           "msb": 9,
-          "description": "Byte-edge DMA capability; set in P4.",
+          "description": "Byte-edge DMA capability; set in P5.",
           "reset": "1",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "INPLACE_BACKGROUND",
           "lsb": 10,
           "msb": 10,
-          "description": "In-place background capability; clear in P4.",
-          "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "description": "Exact equal background/destination in-place composition capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2121,54 +2121,54 @@
     "main.LIMITS": {
       "access": "RO",
       "reset": "0x08202010",
-      "description": "P4 private-AXI64 DMA geometry limits.",
+      "description": "P5 private-AXI64 DMA geometry limits.",
       "fields": [
         {
           "name": "MAX_BURST_BEATS",
           "lsb": 0,
           "msb": 7,
-          "description": "Maximum DMA burst beats; 16 in P4.",
+          "description": "Maximum DMA burst beats; 16 in P5.",
           "reset": "16",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "INPUT_FIFO_DEPTH",
           "lsb": 8,
           "msb": 15,
-          "description": "Input FIFO depth; 32 beats in P4.",
+          "description": "Input FIFO depth; 32 beats in P5.",
           "reset": "32",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "OUTPUT_FIFO_DEPTH",
           "lsb": 16,
           "msb": 23,
-          "description": "Output FIFO depth; 32 beats in P4.",
+          "description": "Output FIFO depth; 32 beats in P5.",
           "reset": "32",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "AXI_BEAT_BYTES",
           "lsb": 24,
           "msb": 31,
-          "description": "AXI DMA beat width; 8 bytes in P4.",
+          "description": "AXI DMA beat width; 8 bytes in P5.",
           "reset": "8",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.COMMAND": {
       "access": "WO",
       "reset": "Not retained",
-      "description": "Single-command write port for P4 direct jobs.",
+      "description": "Single-command write port for P5 direct jobs.",
       "fields": [
         {
           "name": "START",
           "lsb": 0,
           "msb": 0,
-          "description": "Start an idle, recovered P4 direct FILL or COPY job.",
+          "description": "Start an idle, recovered P5 direct FILL, COPY, CONVERT, or BLEND job.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ABORT",
@@ -2176,7 +2176,7 @@
           "msb": 1,
           "description": "Request a safe abort; an idle engine is a no-op.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "SOFT_RESET",
@@ -2184,7 +2184,7 @@
           "msb": 2,
           "description": "Clear local shell state only when safe idle and recovered.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2199,7 +2199,7 @@
     "main.STATUS": {
       "access": "RO",
       "reset": "Dynamic",
-      "description": "Live P4 engine, lifecycle, and recovery status.",
+      "description": "Live P5 engine, lifecycle, and recovery status.",
       "fields": [
         {
           "name": "BUSY",
@@ -2207,7 +2207,7 @@
           "msb": 0,
           "description": "Live job-active status.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "DRAINING",
@@ -2215,7 +2215,7 @@
           "msb": 1,
           "description": "Live drain status while abort, error, or resource stop retires accepted traffic.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "QUIESCED",
@@ -2223,7 +2223,7 @@
           "msb": 2,
           "description": "Resource stop has reached safe source idle and block acknowledgement.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "DATA_READY",
@@ -2231,7 +2231,7 @@
           "msb": 3,
           "description": "Qualified bridge data readiness.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "DONE",
@@ -2239,7 +2239,7 @@
           "msb": 4,
           "description": "Last direct job completed successfully.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ABORTED",
@@ -2247,7 +2247,7 @@
           "msb": 5,
           "description": "Last direct job reached safe abort completion.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ERROR",
@@ -2255,7 +2255,7 @@
           "msb": 6,
           "description": "Sticky first-error validity.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "RECOVERY_REQUIRED",
@@ -2263,7 +2263,7 @@
           "msb": 7,
           "description": "Bridge clear, reset epoch, or data-readiness recovery is unresolved.",
           "reset": "Dynamic",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2286,7 +2286,7 @@
           "msb": 0,
           "description": "Successful terminal job event.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ERROR",
@@ -2294,7 +2294,7 @@
           "msb": 1,
           "description": "First-error event.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ABORT_DONE",
@@ -2302,7 +2302,7 @@
           "msb": 2,
           "description": "Safe abort completion event.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2325,7 +2325,7 @@
           "msb": 0,
           "description": "Enable DONE raw IRQ contribution.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ERROR",
@@ -2333,7 +2333,7 @@
           "msb": 1,
           "description": "Enable ERROR raw IRQ contribution.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ABORT_DONE",
@@ -2341,7 +2341,7 @@
           "msb": 2,
           "description": "Enable ABORT_DONE raw IRQ contribution.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2364,7 +2364,7 @@
           "msb": 0,
           "description": "Set DONE state for route testing.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ERROR",
@@ -2372,7 +2372,7 @@
           "msb": 1,
           "description": "Set ERROR state for route testing.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "ABORT_DONE",
@@ -2380,7 +2380,7 @@
           "msb": 2,
           "description": "Set ABORT_DONE state for route testing.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2403,7 +2403,7 @@
           "msb": 0,
           "description": "First-error record is valid.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "CODE",
@@ -2411,7 +2411,7 @@
           "msb": 7,
           "description": "First-error code.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "STAGE",
@@ -2419,7 +2419,7 @@
           "msb": 11,
           "description": "First-error processing stage.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "AXI_RESPONSE",
@@ -2427,7 +2427,7 @@
           "msb": 13,
           "description": "Captured AXI response for a bus error.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2450,7 +2450,7 @@
           "msb": 31,
           "description": "Captured first-error byte address.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2465,22 +2465,22 @@
           "msb": 31,
           "description": "PCLK no-progress timeout budget.",
           "reset": "0x00100000",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.JOB_CONFIG": {
       "access": "RW idle",
       "reset": "0x00000000",
-      "description": "Shadow job operation selector; P4 supports FILL and COPY only.",
+      "description": "Shadow job operation selector for P5 direct jobs.",
       "fields": [
         {
           "name": "OPERATION",
           "lsb": 0,
           "msb": 1,
-          "description": "0: FILL; 1: COPY; 2: CONVERT and 3: BLEND remain unsupported in P4.",
+          "description": "0: FILL; 1: COPY; 2: bit-exact CONVERT; 3: opaque alpha BLEND.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2495,15 +2495,15 @@
     "main.GLOBAL_ALPHA": {
       "access": "RW idle",
       "reset": "0x000000FF",
-      "description": "Shadow global alpha value; unused by P4 FILL/COPY.",
+      "description": "Shadow global alpha value used only by P5 BLEND; FILL, COPY, and CONVERT ignore it.",
       "fields": [
         {
           "name": "VALUE",
           "lsb": 0,
           "msb": 7,
-          "description": "Global alpha value; ignored by P4 FILL/COPY.",
+          "description": "Global alpha value used only by BLEND; ignored by FILL, COPY, and CONVERT.",
           "reset": "0xFF",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2524,9 +2524,9 @@
           "name": "COLOR",
           "lsb": 0,
           "msb": 31,
-          "description": "AARRGGBB constant color.",
+          "description": "AARRGGBB constant color; FILL uses it directly and A8 BLEND uses its RGB as the fixed foreground color while ignoring its alpha.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2541,7 +2541,7 @@
           "msb": 15,
           "description": "Job width in pixels.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "HEIGHT",
@@ -2549,7 +2549,7 @@
           "msb": 31,
           "description": "Job height in pixels.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2564,7 +2564,7 @@
           "msb": 31,
           "description": "Foreground byte address.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2579,7 +2579,7 @@
           "msb": 31,
           "description": "Foreground bytes between rows.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2592,9 +2592,9 @@
           "name": "FORMAT",
           "lsb": 0,
           "msb": 2,
-          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are supported in P4; 4: A8 is unsupported.",
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are color formats; 4: A8 is valid only as a BLEND foreground.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2609,45 +2609,45 @@
     "main.BG_ADDRESS": {
       "access": "RW idle",
       "reset": "0x00000000",
-      "description": "Shadow background byte address; unused by P4 FILL/COPY.",
+      "description": "Shadow background byte address used by BLEND; it may equal DST_ADDRESS only with exactly equal pitch and format.",
       "fields": [
         {
           "name": "ADDRESS",
           "lsb": 0,
           "msb": 31,
-          "description": "Background byte address; unused by P4 FILL/COPY.",
+          "description": "Background byte address for BLEND; exact equality with destination is the only permitted input/output overlap.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.BG_PITCH": {
       "access": "RW idle",
       "reset": "0x00000000",
-      "description": "Shadow background row pitch in bytes; unused by P4 FILL/COPY.",
+      "description": "Shadow background row pitch in bytes used by BLEND.",
       "fields": [
         {
           "name": "PITCH",
           "lsb": 0,
           "msb": 31,
-          "description": "Background bytes between rows; unused by P4 FILL/COPY.",
+          "description": "Background bytes between rows for BLEND.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.BG_FORMAT": {
       "access": "RW idle",
       "reset": "0x00000000",
-      "description": "Shadow background format selector; unused by P4 FILL/COPY.",
+      "description": "Shadow background color-format selector used by BLEND.",
       "fields": [
         {
           "name": "FORMAT",
           "lsb": 0,
           "msb": 2,
-          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are supported in P4; 4: A8 is unsupported.",
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are valid BLEND background color formats; 4: A8 is invalid.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2670,7 +2670,7 @@
           "msb": 31,
           "description": "Destination byte address.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2685,7 +2685,7 @@
           "msb": 31,
           "description": "Destination bytes between rows.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
@@ -2698,9 +2698,9 @@
           "name": "FORMAT",
           "lsb": 0,
           "msb": 2,
-          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are supported in P4; 4: A8 is unsupported.",
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are valid destination color formats; 4: A8 is invalid.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2715,15 +2715,15 @@
     "main.PERF_SNAPSHOT": {
       "access": "WO",
       "reset": "Not retained",
-      "description": "Performance snapshot command for P4 direct-job counters.",
+      "description": "Performance snapshot command for P5 direct-job counters.",
       "fields": [
         {
           "name": "SNAPSHOT",
           "lsb": 0,
           "msb": 0,
-          "description": "Capture live P4 direct-job counters into the read bank.",
+          "description": "Capture live P5 direct-job counters into the read bank.",
           "reset": "Not retained",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2737,16 +2737,16 @@
     },
     "main.FORMAT_CAPABILITY": {
       "access": "RO",
-      "reset": "0x000F000F",
-      "description": "P4 format bitmap: foreground and destination RGB565/RGB888/XRGB8888/ARGB8888 bits are set; background bits are clear.",
+      "reset": "0x000F0F1F",
+      "description": "P5 format bitmap: foreground RGB565/RGB888/XRGB8888/ARGB8888/A8 bits are set; background and destination RGB565/RGB888/XRGB8888/ARGB8888 bits are set.",
       "fields": [
         {
           "name": "FOREGROUND",
           "lsb": 0,
           "msb": 4,
-          "description": "Foreground format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P4.",
-          "reset": "15",
-          "expression": "reviewed P4 ABI"
+          "description": "Foreground format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 and A8 are set in P5. A8 is valid only for BLEND.",
+          "reset": "31",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2760,9 +2760,9 @@
           "name": "BACKGROUND",
           "lsb": 8,
           "msb": 12,
-          "description": "Background format capability bits; clear in P4 because BLEND is unavailable.",
-          "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "description": "Background format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P5. A8 is not a background format.",
+          "reset": "15",
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2776,9 +2776,9 @@
           "name": "DESTINATION",
           "lsb": 16,
           "msb": 20,
-          "description": "Destination format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P4.",
+          "description": "Destination format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P5. A8 is not a destination format.",
           "reset": "15",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",
@@ -2793,7 +2793,7 @@
     "main.SNAP_CYCLES_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of the P4 active-job PCLK cycle snapshot.",
+      "description": "Low 32 bits of the P5 active-job PCLK cycle snapshot.",
       "fields": [
         {
           "name": "VALUE",
@@ -2801,14 +2801,14 @@
           "msb": 31,
           "description": "Low cycle-counter snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_CYCLES_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of the P4 active-job PCLK cycle snapshot.",
+      "description": "High 32 bits of the P5 active-job PCLK cycle snapshot.",
       "fields": [
         {
           "name": "VALUE",
@@ -2816,14 +2816,14 @@
           "msb": 31,
           "description": "High cycle-counter snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_READ_BYTES_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of P4 successful logical input bytes.",
+      "description": "Low 32 bits of P5 successful logical input bytes.",
       "fields": [
         {
           "name": "VALUE",
@@ -2831,14 +2831,14 @@
           "msb": 31,
           "description": "Low read-byte snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_READ_BYTES_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of P4 successful logical input bytes.",
+      "description": "High 32 bits of P5 successful logical input bytes.",
       "fields": [
         {
           "name": "VALUE",
@@ -2846,14 +2846,14 @@
           "msb": 31,
           "description": "High read-byte snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_WRITE_BYTES_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of P4 acknowledged output bytes.",
+      "description": "Low 32 bits of P5 acknowledged output bytes.",
       "fields": [
         {
           "name": "VALUE",
@@ -2861,14 +2861,14 @@
           "msb": 31,
           "description": "Low write-byte snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_WRITE_BYTES_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of P4 acknowledged output bytes.",
+      "description": "High 32 bits of P5 acknowledged output bytes.",
       "fields": [
         {
           "name": "VALUE",
@@ -2876,14 +2876,14 @@
           "msb": 31,
           "description": "High write-byte snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_READ_STALL_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of P4 read-channel stall cycles.",
+      "description": "Low 32 bits of P5 read-channel stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2891,14 +2891,14 @@
           "msb": 31,
           "description": "Low read-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_READ_STALL_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of P4 read-channel stall cycles.",
+      "description": "High 32 bits of P5 read-channel stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2906,14 +2906,14 @@
           "msb": 31,
           "description": "High read-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_WRITE_STALL_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of P4 write-channel stall cycles.",
+      "description": "Low 32 bits of P5 write-channel stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2921,14 +2921,14 @@
           "msb": 31,
           "description": "Low write-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_WRITE_STALL_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of P4 write-channel stall cycles.",
+      "description": "High 32 bits of P5 write-channel stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2936,14 +2936,14 @@
           "msb": 31,
           "description": "High write-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_PIPE_STALL_LO": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Low 32 bits of P4 pixel-pipeline stall cycles.",
+      "description": "Low 32 bits of P5 pixel-pipeline stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2951,14 +2951,14 @@
           "msb": 31,
           "description": "Low pipeline-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_PIPE_STALL_HI": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "High 32 bits of P4 pixel-pipeline stall cycles.",
+      "description": "High 32 bits of P5 pixel-pipeline stall cycles.",
       "fields": [
         {
           "name": "VALUE",
@@ -2966,14 +2966,14 @@
           "msb": 31,
           "description": "High pipeline-stall snapshot word.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         }
       ]
     },
     "main.SNAP_LINES_DONE": {
       "access": "RO",
       "reset": "0x00000000",
-      "description": "Completed P4 destination rows.",
+      "description": "Completed P5 destination rows.",
       "fields": [
         {
           "name": "LINES_DONE",
@@ -2981,7 +2981,7 @@
           "msb": 15,
           "description": "Completed destination row count.",
           "reset": "0",
-          "expression": "reviewed P4 ABI"
+          "expression": "reviewed P5 ABI"
         },
         {
           "name": "Reserved",

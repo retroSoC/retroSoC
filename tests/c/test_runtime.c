@@ -34,6 +34,7 @@
 #include <retrosoc/media/video_player.h>
 #include <retrosoc/media/wav_audio.h>
 
+#include "../../crt/src/hal/ga2d_math.h"
 #include "../../crt/src/hal/opipsram_math.c"
 
 #define TEST_STORAGE_ADDRESS ((uintptr_t)0x1000U)
@@ -1147,11 +1148,499 @@ static void test_ga2d_mmio_reset(void) {
     }
     GA2D_TEST_REG(RS_GA2D_REG_IP_ID) = RS_GA2D_IP_ID_VALUE;
     GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = RS_GA2D_IP_VERSION_VALUE;
-    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P4;
-    GA2D_TEST_REG(RS_GA2D_REG_LIMITS) = RS_GA2D_LIMITS_P4;
-    GA2D_TEST_REG(RS_GA2D_REG_FORMAT_CAPABILITY) = RS_GA2D_FORMAT_CAPABILITY_P4;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P5;
+    GA2D_TEST_REG(RS_GA2D_REG_LIMITS) = RS_GA2D_LIMITS_P5;
+    GA2D_TEST_REG(RS_GA2D_REG_FORMAT_CAPABILITY) = RS_GA2D_FORMAT_CAPABILITY_P5;
     GA2D_TEST_REG(RS_GA2D_REG_STATUS) = RS_GA2D_STATUS_DATA_READY;
     rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
+}
+
+static int check_ga2d_validation_result(
+    const rs_ga2d_job_t *job, const rs_ga2d_capability_t *capability, rs_status_t expected_status,
+    rs_ga2d_validation_category_t expected_category, rs_ga2d_plane_t expected_plane) {
+    const rs_ga2d_validation_result_t result =
+        rs_ga2d_job_validate_capability_result(job, capability);
+
+    return ((result.status == expected_status) && (result.category == expected_category) &&
+            (result.plane == expected_plane) &&
+            (rs_ga2d_job_validate_capability(job, capability) == expected_status))
+               ? 0
+               : 1;
+}
+
+static int test_ga2d_pixel_math(void) {
+    uint8_t source[4] = {UINT8_C(0), UINT8_C(0), UINT8_C(0), UINT8_C(0)};
+    uint8_t destination[4] = {UINT8_C(0), UINT8_C(0), UINT8_C(0), UINT8_C(0)};
+    rs_ga2d_pixel_t pixel;
+
+    for (uint32_t encoded = 0U; encoded < UINT32_C(65536); ++encoded) {
+        source[0] = (uint8_t)encoded;
+        source[1] = (uint8_t)(encoded >> 8U);
+        if ((rs_ga2d_unpack_pixel(source, RS_GA2D_FORMAT_RGB565, &pixel) != RS_OK) ||
+            (pixel.alpha != UINT8_C(0xFF)) ||
+            (rs_ga2d_pack_pixel(destination, RS_GA2D_FORMAT_RGB565, &pixel) != RS_OK) ||
+            (destination[0] != source[0]) || (destination[1] != source[1])) {
+            return 1;
+        }
+    }
+
+    source[0] = UINT8_C(0x03);
+    source[1] = UINT8_C(0x02);
+    source[2] = UINT8_C(0x01);
+    source[3] = UINT8_C(0x00);
+    if ((rs_ga2d_unpack_pixel(source, RS_GA2D_FORMAT_XRGB8888, &pixel) != RS_OK) ||
+        (pixel.red != UINT8_C(0x01)) || (pixel.green != UINT8_C(0x02)) ||
+        (pixel.blue != UINT8_C(0x03)) || (pixel.alpha != UINT8_C(0xFF))) {
+        return 2;
+    }
+    pixel.alpha = UINT8_C(0x11);
+    if ((rs_ga2d_pack_pixel(destination, RS_GA2D_FORMAT_XRGB8888, &pixel) != RS_OK) ||
+        (destination[0] != UINT8_C(0x03)) || (destination[1] != UINT8_C(0x02)) ||
+        (destination[2] != UINT8_C(0x01)) || (destination[3] != UINT8_C(0xFF))) {
+        return 3;
+    }
+
+    source[0] = UINT8_C(0x03);
+    source[1] = UINT8_C(0x02);
+    source[2] = UINT8_C(0x01);
+    source[3] = UINT8_C(0x44);
+    if ((rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_ARGB8888, destination,
+                               RS_GA2D_FORMAT_ARGB8888) != RS_OK) ||
+        (destination[0] != UINT8_C(0x03)) || (destination[1] != UINT8_C(0x02)) ||
+        (destination[2] != UINT8_C(0x01)) || (destination[3] != UINT8_C(0x44)) ||
+        (rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_ARGB8888, destination,
+                               RS_GA2D_FORMAT_XRGB8888) != RS_OK) ||
+        (destination[3] != UINT8_C(0xFF))) {
+        return 4;
+    }
+    if ((rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_XRGB8888, destination,
+                               RS_GA2D_FORMAT_ARGB8888) != RS_OK) ||
+        (destination[3] != UINT8_C(0xFF)) ||
+        (rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_A8, destination,
+                               RS_GA2D_FORMAT_RGB888) != RS_EINVAL) ||
+        (rs_ga2d_pack_pixel(destination, RS_GA2D_FORMAT_A8, &pixel) != RS_EINVAL)) {
+        return 5;
+    }
+
+    for (uint32_t pixel_alpha = 0U; pixel_alpha < UINT32_C(256); ++pixel_alpha) {
+        for (uint32_t global_alpha = 0U; global_alpha < UINT32_C(256); ++global_alpha) {
+            const uint8_t expected =
+                (uint8_t)((pixel_alpha * global_alpha + UINT32_C(127)) / UINT32_C(255));
+
+            if (rs_ga2d_alpha_round((uint8_t)pixel_alpha, (uint8_t)global_alpha) != expected) {
+                return 6;
+            }
+        }
+    }
+
+    source[0] = UINT8_C(127);
+    destination[0] = UINT8_C(0x20);
+    destination[1] = UINT8_C(0x40);
+    destination[2] = UINT8_C(0x80);
+    if ((rs_ga2d_blend_pixel(source, RS_GA2D_FORMAT_A8, destination, RS_GA2D_FORMAT_RGB888,
+                             destination, RS_GA2D_FORMAT_RGB888, UINT32_C(0x12102030),
+                             UINT8_C(128)) != RS_OK) ||
+        (destination[0] != UINT8_C(0x1C)) || (destination[1] != UINT8_C(0x38)) ||
+        (destination[2] != UINT8_C(0x6C))) {
+        return 7;
+    }
+    destination[0] = UINT8_C(0x20);
+    destination[1] = UINT8_C(0x40);
+    destination[2] = UINT8_C(0x80);
+    if ((rs_ga2d_blend_pixel(source, RS_GA2D_FORMAT_A8, destination, RS_GA2D_FORMAT_RGB888,
+                             destination, RS_GA2D_FORMAT_RGB888, UINT32_C(0xFF102030),
+                             UINT8_C(128)) != RS_OK) ||
+        (destination[0] != UINT8_C(0x1C)) || (destination[1] != UINT8_C(0x38)) ||
+        (destination[2] != UINT8_C(0x6C))) {
+        return 8;
+    }
+    source[0] = UINT8_C(0xC0);
+    source[1] = UINT8_C(0x80);
+    source[2] = UINT8_C(0x40);
+    source[3] = UINT8_C(0xFF);
+    destination[0] = UINT8_C(0x30);
+    destination[1] = UINT8_C(0x20);
+    destination[2] = UINT8_C(0x10);
+    destination[3] = UINT8_C(0x00);
+    if ((rs_ga2d_blend_pixel(source, RS_GA2D_FORMAT_ARGB8888, destination,
+                             RS_GA2D_FORMAT_XRGB8888, destination, RS_GA2D_FORMAT_XRGB8888,
+                             UINT32_C(0), UINT8_C(128)) != RS_OK) ||
+        (destination[0] != UINT8_C(0x78)) || (destination[1] != UINT8_C(0x50)) ||
+        (destination[2] != UINT8_C(0x28)) || (destination[3] != UINT8_C(0xFF))) {
+        return 9;
+    }
+    return 0;
+}
+
+static int test_ga2d_p5_validation(void) {
+    static const uint32_t color_pitches[4] = {10U, 15U, 20U, 20U};
+    rs_ga2d_job_t fill = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)UINT32_C(0x38001000), 10U, RS_GA2D_FORMAT_RGB565},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0x80123456),
+    };
+    rs_ga2d_job_t copy = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {(uintptr_t)UINT32_C(0x38002000), 10U, RS_GA2D_FORMAT_RGB565},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)UINT32_C(0x38003000), 10U, RS_GA2D_FORMAT_RGB565},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    rs_ga2d_job_t convert = {
+        .operation = RS_GA2D_OP_CONVERT,
+        .foreground = {(uintptr_t)UINT32_C(0x38004000), 10U, RS_GA2D_FORMAT_RGB565},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)UINT32_C(0x38005000), 10U, RS_GA2D_FORMAT_RGB565},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    rs_ga2d_job_t blend = {
+        .operation = RS_GA2D_OP_BLEND,
+        .foreground = {(uintptr_t)UINT32_C(0x38006000), 5U, RS_GA2D_FORMAT_A8},
+        .background = {(uintptr_t)UINT32_C(0x38007000), 15U, RS_GA2D_FORMAT_RGB888},
+        .destination = {(uintptr_t)UINT32_C(0x38008000), 15U, RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(128),
+        .color = UINT32_C(0x12102030),
+    };
+
+    test_ga2d_mmio_reset();
+    for (uint32_t destination_format = 0U; destination_format < 4U; ++destination_format) {
+        fill.destination.format = (rs_ga2d_format_t)destination_format;
+        fill.destination.pitch = color_pitches[destination_format];
+        if (rs_ga2d_job_validate(&fill) != RS_OK) {
+            return 1;
+        }
+    }
+    fill.foreground.format = (rs_ga2d_format_t)7;
+    fill.background.format = (rs_ga2d_format_t)7;
+    if (rs_ga2d_job_validate(&fill) != RS_OK) {
+        return 2;
+    }
+    fill.foreground.format = RS_GA2D_FORMAT_A8;
+    fill.background.format = RS_GA2D_FORMAT_A8;
+    fill.destination.format = RS_GA2D_FORMAT_A8;
+    fill.destination.pitch = 5U;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 3;
+    }
+    fill.destination.format = RS_GA2D_FORMAT_RGB565;
+    fill.destination.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
+    fill.operation = (rs_ga2d_operation_t)4;
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
+        return 4;
+    }
+    fill.operation = RS_GA2D_OP_FILL;
+
+    for (uint32_t format = 0U; format < 4U; ++format) {
+        copy.foreground.format = (rs_ga2d_format_t)format;
+        copy.foreground.pitch = color_pitches[format];
+        copy.destination.format = (rs_ga2d_format_t)format;
+        copy.destination.pitch = color_pitches[format];
+        if (rs_ga2d_job_validate(&copy) != RS_OK) {
+            return 5;
+        }
+    }
+    copy.foreground.format = RS_GA2D_FORMAT_RGB565;
+    copy.foreground.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
+    copy.destination.format = RS_GA2D_FORMAT_RGB888;
+    copy.destination.pitch = color_pitches[RS_GA2D_FORMAT_RGB888];
+    if (rs_ga2d_job_validate(&copy) != RS_EINVAL) {
+        return 6;
+    }
+    copy.foreground.format = RS_GA2D_FORMAT_A8;
+    copy.foreground.pitch = 5U;
+    if (rs_ga2d_job_validate(&copy) != RS_EINVAL) {
+        return 7;
+    }
+
+    for (uint32_t foreground_format = 0U; foreground_format < 4U; ++foreground_format) {
+        convert.foreground.format = (rs_ga2d_format_t)foreground_format;
+        convert.foreground.pitch = color_pitches[foreground_format];
+        for (uint32_t destination_format = 0U; destination_format < 4U;
+             ++destination_format) {
+            convert.destination.format = (rs_ga2d_format_t)destination_format;
+            convert.destination.pitch = color_pitches[destination_format];
+            if (rs_ga2d_job_validate(&convert) != RS_OK) {
+                return 8;
+            }
+        }
+    }
+    convert.foreground.format = RS_GA2D_FORMAT_A8;
+    convert.foreground.pitch = 5U;
+    if (rs_ga2d_job_validate(&convert) != RS_EINVAL) {
+        return 9;
+    }
+    convert.foreground.format = RS_GA2D_FORMAT_RGB565;
+    convert.foreground.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
+    convert.destination.format = RS_GA2D_FORMAT_RGB565;
+    convert.destination.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) =
+        RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_CONVERT;
+    if (rs_ga2d_job_validate(&convert) != RS_ENOTSUP) {
+        return 10;
+    }
+    test_ga2d_mmio_reset();
+    GA2D_TEST_REG(RS_GA2D_REG_FORMAT_CAPABILITY) =
+        RS_GA2D_FORMAT_CAPABILITY_P5 &
+        ~(UINT32_C(1) << (RS_GA2D_FORMAT_CAPABILITY_DESTINATION_SHIFT +
+                          (uint32_t)RS_GA2D_FORMAT_RGB565));
+    if (rs_ga2d_job_validate(&convert) != RS_ENOTSUP) {
+        return 11;
+    }
+    test_ga2d_mmio_reset();
+
+    for (uint32_t foreground_format = 0U; foreground_format < 5U; ++foreground_format) {
+        blend.foreground.format = (rs_ga2d_format_t)foreground_format;
+        blend.foreground.pitch =
+            (foreground_format == (uint32_t)RS_GA2D_FORMAT_A8) ? 5U : color_pitches[foreground_format];
+        for (uint32_t background_format = 0U; background_format < 4U; ++background_format) {
+            blend.background.format = (rs_ga2d_format_t)background_format;
+            blend.background.pitch = color_pitches[background_format];
+            for (uint32_t destination_format = 0U; destination_format < 4U;
+                 ++destination_format) {
+                blend.destination.format = (rs_ga2d_format_t)destination_format;
+                blend.destination.pitch = color_pitches[destination_format];
+                if (rs_ga2d_job_validate(&blend) != RS_OK) {
+                    return 12;
+                }
+            }
+        }
+    }
+    blend.foreground.format = RS_GA2D_FORMAT_A8;
+    blend.foreground.pitch = 5U;
+    blend.background.format = RS_GA2D_FORMAT_RGB888;
+    blend.background.pitch = 15U;
+    blend.destination.format = RS_GA2D_FORMAT_RGB888;
+    blend.destination.pitch = 15U;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) =
+        RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_A8_MASK;
+    if (rs_ga2d_job_validate(&blend) != RS_ENOTSUP) {
+        return 13;
+    }
+    test_ga2d_mmio_reset();
+
+    blend.background.address = blend.destination.address;
+    if (rs_ga2d_job_validate(&blend) != RS_OK) {
+        return 14;
+    }
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) =
+        RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_INPLACE_BACKGROUND;
+    if (rs_ga2d_job_validate(&blend) != RS_ENOTSUP) {
+        return 15;
+    }
+    test_ga2d_mmio_reset();
+    blend.background.pitch = 16U;
+    if (rs_ga2d_job_validate(&blend) != RS_EINVAL) {
+        return 16;
+    }
+    blend.background.pitch = 15U;
+    blend.foreground.address = blend.destination.address;
+    if (rs_ga2d_job_validate(&blend) != RS_EINVAL) {
+        return 17;
+    }
+    blend.foreground.format = RS_GA2D_FORMAT_RGB888;
+    blend.foreground.pitch = 15U;
+    blend.destination.address = (uintptr_t)UINT32_C(0x38008000);
+    blend.background.address = (uintptr_t)UINT32_C(0x38007000);
+    blend.foreground.address = blend.background.address;
+    if (rs_ga2d_job_validate(&blend) != RS_OK) {
+        return 18;
+    }
+
+    blend.foreground.format = RS_GA2D_FORMAT_A8;
+    blend.foreground.pitch = 5U;
+    blend.foreground.address = (uintptr_t)UINT32_C(0x40001000);
+    blend.background.address = (uintptr_t)UINT32_C(0x48001000);
+    blend.destination.address = (uintptr_t)UINT32_C(0x38008000);
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
+    if (rs_ga2d_job_validate(&blend) != RS_EINVAL) {
+        return 19;
+    }
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_OPI;
+    if (rs_ga2d_job_validate(&blend) != RS_EINVAL) {
+        return 20;
+    }
+    blend.foreground.address = (uintptr_t)UINT32_C(0x38006000);
+    if (rs_ga2d_job_validate(&blend) != RS_OK) {
+        return 21;
+    }
+    blend.background.address = (uintptr_t)UINT32_C(0x38007000);
+    blend.destination.address = (uintptr_t)UINT32_C(0x40002000);
+    if (rs_ga2d_job_validate(&blend) != RS_EINVAL) {
+        return 22;
+    }
+    rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
+    if (rs_ga2d_job_validate(&blend) != RS_OK) {
+        return 23;
+    }
+
+    convert.foreground.format = RS_GA2D_FORMAT_RGB565;
+    convert.foreground.pitch = 10U;
+    convert.destination.format = RS_GA2D_FORMAT_ARGB8888;
+    convert.destination.pitch = 20U;
+    if ((rs_ga2d_configure(&convert) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_ADDRESS) != convert.foreground.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_PITCH) != convert.foreground.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_FORMAT) != convert.foreground.format) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_ADDRESS) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_PITCH) != 0U) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_FORMAT) != 0U)) {
+        return 24;
+    }
+
+    blend.foreground.address = (uintptr_t)UINT32_C(0x38006000);
+    blend.foreground.format = RS_GA2D_FORMAT_A8;
+    blend.foreground.pitch = 5U;
+    blend.background.address = (uintptr_t)UINT32_C(0x38007000);
+    blend.background.format = RS_GA2D_FORMAT_RGB888;
+    blend.background.pitch = 15U;
+    blend.destination.address = (uintptr_t)UINT32_C(0x38008000);
+    blend.destination.format = RS_GA2D_FORMAT_RGB888;
+    blend.destination.pitch = 15U;
+    if ((rs_ga2d_configure(&blend) != RS_OK) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_ADDRESS) != blend.foreground.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_PITCH) != blend.foreground.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_FG_FORMAT) != blend.foreground.format) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_ADDRESS) != blend.background.address) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_PITCH) != blend.background.pitch) ||
+        (GA2D_TEST_REG(RS_GA2D_REG_BG_FORMAT) != blend.background.format)) {
+        return 25;
+    }
+    return 0;
+}
+
+static int test_ga2d_validation_precedence(void) {
+    const rs_ga2d_capability_t capability = {
+        .version = RS_GA2D_IP_VERSION_VALUE,
+        .features = RS_GA2D_CAPABILITY_P5,
+        .limits = RS_GA2D_LIMITS_P5,
+        .formats = RS_GA2D_FORMAT_CAPABILITY_P5,
+    };
+    rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_BLEND,
+        .foreground = {(uintptr_t)UINT32_C(0x38001000), 2U, RS_GA2D_FORMAT_RGB565},
+        .background = {(uintptr_t)UINT32_C(0x38002000), 2U, RS_GA2D_FORMAT_RGB565},
+        .destination = {(uintptr_t)UINT32_C(0x38003000), 2U, RS_GA2D_FORMAT_RGB565},
+        .width = 1U,
+        .height = 1U,
+        .global_alpha = UINT8_C(0xFF),
+        .color = UINT32_C(0),
+    };
+
+    job.width = 0U;
+    job.foreground.format = RS_GA2D_FORMAT_A8;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_SIZE,
+                                     RS_GA2D_PLANE_NONE) != 0) {
+        return 1;
+    }
+
+    job.width = 1U;
+    job.operation = RS_GA2D_OP_CONVERT;
+    job.foreground.address = (uintptr_t)UINT32_C(0x38001001);
+    job.foreground.pitch = 1U;
+    job.foreground.format = RS_GA2D_FORMAT_A8;
+    job.destination.address = 0U;
+    job.destination.pitch = 2U;
+    job.destination.format = RS_GA2D_FORMAT_RGB565;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_FORMAT,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 2;
+    }
+
+    job.foreground.address = (uintptr_t)UINT32_C(0x38001001);
+    job.foreground.pitch = 2U;
+    job.foreground.format = RS_GA2D_FORMAT_RGB565;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_ALIGNMENT,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 3;
+    }
+
+    job.operation = RS_GA2D_OP_BLEND;
+    job.destination.address = (uintptr_t)UINT32_C(0x38003001);
+    job.destination.pitch = 2U;
+    job.foreground.address = (uintptr_t)UINT32_C(0x38001003);
+    job.foreground.pitch = 2U;
+    job.background.address = (uintptr_t)UINT32_C(0x38002005);
+    job.background.pitch = 2U;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_ALIGNMENT,
+                                     RS_GA2D_PLANE_DESTINATION) != 0) {
+        return 4;
+    }
+
+    job.destination.address = (uintptr_t)UINT32_C(0x38003000);
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_ALIGNMENT,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 5;
+    }
+
+    job.destination.address = 0U;
+    job.foreground.address = (uintptr_t)UINT32_C(0x38001000);
+    job.foreground.pitch = 0U;
+    job.background.address = (uintptr_t)UINT32_C(0x38002000);
+    job.background.pitch = 0U;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_PITCH,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 6;
+    }
+
+    job.destination.address = (uintptr_t)UINT32_C(0x38003000);
+    job.destination.pitch = 2U;
+    job.foreground.address = (uintptr_t)UINT32_C(0xFFFFFFFE);
+    job.foreground.pitch = 2U;
+    job.background.address = (uintptr_t)UINT32_C(0xFFFFFFFE);
+    job.background.pitch = 2U;
+    job.height = 2U;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_OVERFLOW,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 7;
+    }
+
+    job.height = 1U;
+    job.foreground.address = job.destination.address;
+    job.foreground.pitch = 2U;
+    job.background.address = 0U;
+    job.background.pitch = 2U;
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_RANGE,
+                                     RS_GA2D_PLANE_BACKGROUND) != 0) {
+        return 8;
+    }
+
+    job.foreground.address = 0U;
+    job.background.address = (uintptr_t)UINT32_C(0x00001000);
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_RANGE,
+                                     RS_GA2D_PLANE_FOREGROUND) != 0) {
+        return 9;
+    }
+
+    job.foreground.address = job.destination.address;
+    job.background.address = (uintptr_t)UINT32_C(0x38002000);
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
+                                     RS_GA2D_VALIDATION_CATEGORY_OVERLAP,
+                                     RS_GA2D_PLANE_DESTINATION) != 0) {
+        return 10;
+    }
+    return 0;
 }
 
 static int test_ga2d_hal_contract(void) {
@@ -1184,9 +1673,9 @@ static int test_ga2d_hal_contract(void) {
     if ((rs_ga2d_get_capability(NULL) != RS_EINVAL) ||
         (rs_ga2d_get_capability(&capability) != RS_OK) ||
         (capability.version != RS_GA2D_IP_VERSION_VALUE) ||
-        (capability.features != RS_GA2D_CAPABILITY_P4) ||
-        (capability.limits != RS_GA2D_LIMITS_P4) ||
-        (capability.formats != RS_GA2D_FORMAT_CAPABILITY_P4)) {
+        (capability.features != RS_GA2D_CAPABILITY_P5) ||
+        (capability.limits != RS_GA2D_LIMITS_P5) ||
+        (capability.formats != RS_GA2D_FORMAT_CAPABILITY_P5)) {
         return 1;
     }
     GA2D_TEST_REG(RS_GA2D_REG_IP_VERSION) = UINT32_C(0x00020000);
@@ -1241,7 +1730,7 @@ static int test_ga2d_hal_contract(void) {
     }
     fill.width = 5U;
     fill.destination.format = RS_GA2D_FORMAT_A8;
-    if (rs_ga2d_job_validate(&fill) != RS_ENOTSUP) {
+    if (rs_ga2d_job_validate(&fill) != RS_EINVAL) {
         return 7;
     }
     fill.destination.format = (rs_ga2d_format_t)5;
@@ -1314,7 +1803,7 @@ static int test_ga2d_hal_contract(void) {
     }
     copy.destination.address = (uintptr_t)UINT32_C(0x38003000);
     copy.operation = RS_GA2D_OP_CONVERT;
-    if (rs_ga2d_job_validate(&copy) != RS_ENOTSUP) {
+    if (rs_ga2d_job_validate(&copy) != RS_OK) {
         return 20;
     }
     copy.operation = RS_GA2D_OP_COPY;
@@ -1585,6 +2074,9 @@ int main(void) {
         test_fabric_monitor_hal_contract(),
         test_apu_validation(),
         test_apu_hal_contract(),
+        test_ga2d_pixel_math(),
+        test_ga2d_p5_validation(),
+        test_ga2d_validation_precedence(),
         test_ga2d_hal_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),

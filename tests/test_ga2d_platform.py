@@ -1,4 +1,4 @@
-"""Directed GA2D Phase 2 fabric/lifecycle and Phase 3 shell boundaries."""
+"""Directed GA2D Phase 2 fabric/lifecycle and Phase 5 datapath boundaries."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_ga2d_p4_activates_the_real_private_axi64_master_and_irq_route() -> None:
+def test_ga2d_p5_preserves_the_real_private_axi64_master_and_irq_route() -> None:
     memory_map = json.loads(
         (ROOT / "rtl/mini/address_map/memory_map.json").read_text(encoding="utf-8")
     )
@@ -76,10 +76,10 @@ def test_ga2d_p4_activates_the_real_private_axi64_master_and_irq_route() -> None
     assert "HP lifecycle flush invalidates HP transport" in lp_data_cdc
 
 
-def test_ga2d_p4_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:
+def test_ga2d_p5_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Path) -> None:
     verilator = shutil.which("verilator")
     if verilator is None:
-        pytest.fail("GA2D P4 platform lifecycle test requires Verilator")
+        pytest.fail("GA2D P5 platform lifecycle test requires Verilator")
 
     topology = tmp_path / "topology"
     memory_map = tmp_path / "memory_map"

@@ -69,12 +69,16 @@ abort/reset, interrupt, and first-error access. The P5 surface remains coreless;
 MP3, KWS, model loading, and the APU RX route stay unavailable until their
 frozen later phases.
 
-`<retrosoc/hal/ga2d.h>` provides GA2D discovery, direct single-job 2D FILL/COPY
+`<retrosoc/hal/ga2d.h>` provides GA2D discovery, direct single-job 2D FILL,
+COPY, bit-exact CONVERT, opaque alpha BLEND, and A8 fixed-color foreground-mask
 configuration and execution, status/error, snapshots, IRQ, and bounded
 abort/reset access. Its private AXI64 DMA supports RGB565, RGB888, XRGB8888,
-and ARGB8888 surfaces with byte pitches and byte edges. CONVERT, BLEND, A8,
-in-place background composition, descriptor/ring/queue submission, cache
-coherency, and a Linux graphics driver are not provided.
+and ARGB8888 color surfaces with byte pitches and byte edges; A8 is valid only
+as a BLEND foreground. BLEND permits in-place composition only when background
+and destination address, pitch, and format are exactly equal. Transparent-
+background and premultiplied-alpha modes, scaling, rendering,
+descriptor/ring/queue submission, cache coherency, and a Linux graphics driver
+are not provided.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

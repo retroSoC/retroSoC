@@ -39,6 +39,11 @@ module ga2d_formal_design (
     output logic [5:0]  background_fifo_count,
     output logic [5:0]  output_fifo_count,
     output logic        read_reserved,
+    output logic        read_owner,
+    output logic        next_read_owner,
+    output logic        inplace_background,
+    output logic [31:0] bg_captured_pixels,
+    output logic [32:0] write_cover_end_pixel,
     output logic        awvalid,
     output logic        awready,
     output logic [2:0]  awid,
@@ -108,7 +113,9 @@ module ga2d_formal_design (
   localparam logic [31:0] FormalSramBase = 32'h3000_0000;
   localparam logic [1:0] OperationFill = 2'd0;
   localparam logic [1:0] OperationCopy = 2'd1;
+  localparam logic [1:0] OperationBlend = 2'd3;
   localparam logic [2:0] FormatRgb565 = 3'd0;
+  localparam logic [2:0] FormatA8 = 3'd4;
   localparam logic [1:0] AxiRespOkay = 2'b00;
   localparam logic [1:0] AxiRespSlverr = 2'b10;
 
@@ -169,6 +176,21 @@ module ga2d_formal_design (
       s_config.fg_pitch   = 32'd2;
       s_config.fg_format  = {29'd0, FormatRgb565};
     end
+    if ((f_scenario == 4'd9) || (f_scenario == 4'd10)) begin
+      s_config.job_config  = {30'd0, OperationBlend};
+      s_config.fg_address  = FormalSramBase + 32'h20;
+      s_config.fg_pitch    = 32'd1;
+      s_config.fg_format   = {29'd0, FormatA8};
+      s_config.bg_address  = FormalSramBase + 32'h40;
+      s_config.bg_pitch    = 32'd2;
+      s_config.bg_format   = {29'd0, FormatRgb565};
+      s_config.dst_address = FormalSramBase + 32'h60;
+      s_config.dst_pitch   = 32'd2;
+      s_config.dst_format  = {29'd0, FormatRgb565};
+      if (f_scenario == 4'd10) begin
+        s_config.dst_address = FormalSramBase + 32'h40;
+      end
+    end
   end
 
   assign axi4.arready = !s_read_active_q && !s_residual_r_pending_q &&
@@ -206,6 +228,11 @@ module ga2d_formal_design (
   assign background_fifo_count = u_dut.u_dma.unused_bg_fifo_count;
   assign output_fifo_count = u_dut.u_dma.unused_output_fifo_count;
   assign read_reserved = u_dut.u_dma.s_read_reserved_q;
+  assign read_owner = u_dut.u_dma.s_read_owner_q;
+  assign next_read_owner = u_dut.u_dma.s_next_read_owner_q;
+  assign inplace_background = u_dut.u_dma.s_inplace_background_q;
+  assign bg_captured_pixels = u_dut.u_dma.s_bg_captured_pixels_q;
+  assign write_cover_end_pixel = u_dut.u_dma.s_write_cover_end_pixel;
   assign awvalid = axi4.awvalid;
   assign awready = axi4.awready;
   assign awid = axi4.awid;

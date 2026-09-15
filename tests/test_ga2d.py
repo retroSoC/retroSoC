@@ -1,4 +1,4 @@
-"""Required GA2D Phase 4 APB4 shell and private-DMA RTL verification."""
+"""Required GA2D Phase 5 APB4 shell and private-DMA RTL verification."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _require_tool(name: str) -> str:
     path = shutil.which(name)
     if path is None:
-        pytest.fail(f"GA2D P4 RTL tests require {name}")
+        pytest.fail(f"GA2D P5 RTL tests require {name}")
     return path
 
 
@@ -143,19 +143,19 @@ def _run_iverilog_test(
     assert success_marker in result.stdout
 
 
-def test_ga2d_p4_apb_shell(tmp_path: Path) -> None:
+def test_ga2d_p5_apb_shell(tmp_path: Path) -> None:
     _run_verilator_test(
         tmp_path,
         "ga2d_tb",
         "ga2d_tb.sv",
-        "GA2D P4 APB shell test passed",
+        "GA2D P5 APB shell test passed",
     )
 
 
-def test_ga2d_p4_wrapper_lifecycle(tmp_path: Path) -> None:
+def test_ga2d_p5_wrapper_lifecycle(tmp_path: Path) -> None:
     _run_verilator_test(
         tmp_path,
         "ga2d_wrapper_tb",
         "ga2d_wrapper_tb.sv",
-        "GA2D P4 wrapper lifecycle test passed",
+        "GA2D P5 wrapper lifecycle test passed",
     )

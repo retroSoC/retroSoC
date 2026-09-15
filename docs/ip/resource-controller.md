@@ -1,15 +1,15 @@
 # Mini Resource Controller
 
 [GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
-adds resource 8 and version 1.1. Phase 4 uses its dedicated PCLK-to-HP
-AXI64/ID3 bridge for the GA2D direct single-job private-AXI64 2D FILL/COPY DMA
-engine. LP vector 32 / HP PLIC source 11 and `APB4_GA2D` routing retain their
-Phase 3 allocations. The engine supports RGB565, RGB888, XRGB8888, and
-ARGB8888 with snapshots, two-dimensional pitch, and byte edges; it does not
-implement CONVERT, BLEND, A8, in-place background composition, or
-descriptor/ring/queue submission. Its source-stop/drain-before-block sequence
-is specified there. Existing resources and register fields are not renumbered
-or reinterpreted.
+adds resource 8 and version 1.1. Phase 5 uses its dedicated PCLK-to-HP
+AXI64/ID3 bridge for the GA2D direct single-job private-AXI64 2D engine. LP
+vector 32 / HP PLIC source 11 and `APB4_GA2D` routing retain their Phase 3
+allocations. The engine supports FILL, COPY, bit-exact CONVERT, opaque alpha
+BLEND, A8 fixed-color foreground masks, and exact equal
+background/destination in-place composition. RGB565, RGB888, XRGB8888, and
+ARGB8888 are color surfaces; A8 is BLEND foreground-only. Its
+source-stop/drain-before-block sequence is specified there. Existing resources
+and register fields are not renumbered or reinterpreted.
 
 ## Scope
 
@@ -32,7 +32,7 @@ Resource indices are fixed:
 | 5 | EXT-H | 3 |
 | 6 | JPEG | 9 |
 | 7 | APU | 10 |
-| 8 | GA2D direct FILL/COPY DMA engine | 11 |
+| 8 | GA2D direct 2D engine | 11 |
 
 For resources 0 through 7, owner `0` routes the resource interrupt to the
 existing LP vector. Owner `1` removes it from LP and routes it to the listed HP
@@ -93,9 +93,9 @@ and a Linux platform driver remain software responsibilities.
 ## Delivery Boundary
 
 Central owner/lock, quiesce-gated handoff, cache request/ACK, fault IRQ, and
-LP/HP IRQ routing are implemented and directed-tested. Phase 4 adds the GA2D
-direct FILL/COPY DMA engine's raw IRQ and active private AXI64 master to
-resource 8. `CONTROL.QUIESCE` blocks the corresponding data-crossbar master
+LP/HP IRQ routing are implemented and directed-tested. Phase 5 adds the active
+GA2D private AXI64 engine's raw IRQ and master traffic to resource 8.
+`CONTROL.QUIESCE` blocks the corresponding data-crossbar master
 and waits per-master outstanding zero; shared I/O gateways
 are conservatively blocked as a pair. `CONTROL.RESET` also blocks new data and
 masks IRQ but is not yet connected to every peripheral engine's internal reset

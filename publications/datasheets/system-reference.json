@@ -590,7 +590,7 @@
       "id": "resource",
       "title": "Resource Controller",
       "implementation": "Partial",
-      "scope": "Nine independently managed shared resources; resource 8 owns the active P4 GA2D direct FILL/COPY DMA engine and IRQ route.",
+      "scope": "Nine independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -610,7 +610,7 @@
       "id": "monitor",
       "title": "Fabric Monitor",
       "implementation": "Integrated",
-      "scope": "Nine master and six target observation banks; bank 8 observes active P4 GA2D direct FILL/COPY DMA traffic.",
+      "scope": "Nine master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -3632,7 +3632,7 @@
         "mode": "PRODUCT",
         "region": "APB4_GA2D",
         "catalog": "ga2d",
-        "qualification": "Phase 4 implements GA2D as a direct single-job private-AXI64 2D FILL/COPY DMA engine with resource-owned IRQ, snapshots, pitch, and byte-edge support. RGB565, RGB888, XRGB8888, and ARGB8888 are supported; CONVERT, BLEND, A8, in-place background composition, and descriptor/ring/queue submission are unavailable.",
+        "qualification": "Phase 5 implements GA2D as a PCLK-controlled, direct single-job private-AXI64 2D engine with resource-owned IRQ, snapshots, pitch, and byte-edge support. FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color foreground masks, and exact equal background/destination in-place composition are supported. RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is BLEND foreground-only. Transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, hardware cache coherency, and a Linux graphics driver are unavailable.",
         "sources": [
           "docs/ip/ga2d.md",
           "rtl/ip/multimedia/ga2d_reg.sv",
@@ -4921,7 +4921,7 @@
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Linux-ready and P4 GA2D mailbox/cache-clean handoff completed; successful terminal status.",
+        "0": "Linux-ready and P5 GA2D mailbox/cache-clean handoff completed; successful terminal status.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -4933,11 +4933,11 @@
         "9": "Mailbox probe, LP-owned idle check, GA2D handoff to HP, or HP-owned idle confirmation failed.",
         "10": "LP interrupt clear, HP release request, or released-state check failed.",
         "11": "The expected Linux-ready mailbox event/argument/sequence was not received.",
-        "12": "The P4 GA2D start mailbox command could not be sent to HP.",
-        "13": "The expected P4 GA2D FILL/COPY completion mailbox event/argument/sequence was not received.",
-        "14": "GA2D did not return to the expected HP-owned safe idle state after the P4 job.",
-        "15": "The request to hold HP after P4 GA2D completion returned an unexpected error.",
-        "16": "Cache-clean request, P4 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
+        "12": "The P5 GA2D start mailbox command could not be sent to HP.",
+        "13": "The expected P5 GA2D FILL/COPY-subset completion mailbox event/argument/sequence was not received.",
+        "14": "GA2D did not return to the expected HP-owned safe idle state after the P5 FILL/COPY-subset job.",
+        "15": "The request to hold HP after P5 GA2D completion returned an unexpected error.",
+        "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
         "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed."
       }
     }
@@ -5343,7 +5343,7 @@
             "code": 15,
             "trigger": "rs_ci_smoke_external_irq(",
             "coverage": "Exercise Xh3irq ordinals 0/15/16/29/30/31/32/61, invalid 62, priority/masking, no-handler masking, timer/software coexistence, and handler entry/return.",
-            "boundary": "Only the CSR-enabled build exercises dispatch; the physical P4 GA2D DMA route is covered by the following stage."
+            "boundary": "Only the CSR-enabled build exercises dispatch; the physical P5 GA2D route is covered by the following stage."
           },
           {
             "id": "monitor-start",
@@ -5355,13 +5355,13 @@
             "boundary": "Code 13 also identifies the later monitor-observation stage."
           },
           {
-            "id": "ga2d-fill-copy-dma",
-            "title": "GA2D direct FILL/COPY DMA and IRQ route",
+            "id": "ga2d-p5-composition-dma",
+            "title": "GA2D P5 direct 2D composition and IRQ route",
             "kind": "test-fail",
             "code": 15,
             "trigger": "rs_ci_smoke_ga2d_irq(",
-            "coverage": "Discover P4 capability, submit direct single-job FILL/COPY DMA work through master 8, verify the resource-owned LP external completion route, and inspect the destination.",
-            "boundary": "Exercises direct private-AXI64 FILL/COPY work only; it does not cover CONVERT, BLEND, A8, in-place background composition, descriptor/ring/queue submission, cache coherency, a Linux graphics driver, or physical performance."
+            "coverage": "Discover P5 capability, submit direct single-job FILL/COPY/CONVERT/BLEND work through master 8, including A8 fixed-color foreground masks and exact equal background/destination in-place composition, verify the resource-owned LP external completion route, and inspect destinations.",
+            "boundary": "Exercises the direct private-AXI64 P5 functional subset only; it does not cover transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, cache coherency, a Linux graphics driver, HP P5 composition acceptance, or physical performance."
           },
           {
             "id": "apu",

@@ -209,9 +209,9 @@ static bool rs_hp_boot_ga2d_idle(rs_resource_owner_t expected_owner) {
     rs_resource_status_t resource_status;
 
     return (rs_ga2d_get_capability(&capability) == RS_OK) &&
-           (capability.features == RS_GA2D_CAPABILITY_P4) &&
-           (capability.limits == RS_GA2D_LIMITS_P4) &&
-           (capability.formats == RS_GA2D_FORMAT_CAPABILITY_P4) &&
+           (capability.features == RS_GA2D_CAPABILITY_P5) &&
+           (capability.limits == RS_GA2D_LIMITS_P5) &&
+           (capability.formats == RS_GA2D_FORMAT_CAPABILITY_P5) &&
            (rs_ga2d_get_status(&ga2d_status) == RS_OK) && !ga2d_status.busy &&
            !ga2d_status.draining && !ga2d_status.error && !ga2d_status.aborted &&
            !ga2d_status.recovery_required && ga2d_status.data_ready &&

@@ -114,8 +114,8 @@ module ga2d_reg (
     unique case (s_offset)
       `APB4_GA2D__IP_ID: s_read_data = `APB4_GA2D__IP_ID_VALUE;
       `APB4_GA2D__IP_VERSION: s_read_data = `APB4_GA2D__IP_VERSION_VALUE;
-      `APB4_GA2D__CAPABILITY: s_read_data = `APB4_GA2D__CAPABILITY_P4;
-      `APB4_GA2D__LIMITS: s_read_data = `APB4_GA2D__LIMITS_P4;
+      `APB4_GA2D__CAPABILITY: s_read_data = `APB4_GA2D__CAPABILITY_P5;
+      `APB4_GA2D__LIMITS: s_read_data = `APB4_GA2D__LIMITS_P5;
       `APB4_GA2D__STATUS:
       s_read_data = {
         24'd0,
@@ -147,7 +147,7 @@ module ga2d_reg (
       `APB4_GA2D__DST_ADDRESS: s_read_data = s_config_q.dst_address;
       `APB4_GA2D__DST_PITCH: s_read_data = s_config_q.dst_pitch;
       `APB4_GA2D__DST_FORMAT: s_read_data = s_config_q.dst_format;
-      `APB4_GA2D__FORMAT_CAPABILITY: s_read_data = `APB4_GA2D__FORMAT_CAPABILITY_P4;
+      `APB4_GA2D__FORMAT_CAPABILITY: s_read_data = `APB4_GA2D__FORMAT_CAPABILITY_P5;
       `APB4_GA2D__SNAP_CYCLES_LO: s_read_data = s_snap_cycles_q[31:0];
       `APB4_GA2D__SNAP_CYCLES_HI: s_read_data = s_snap_cycles_q[63:32];
       `APB4_GA2D__SNAP_READ_BYTES_LO: s_read_data = s_snap_read_bytes_q[31:0];
@@ -190,7 +190,7 @@ module ga2d_reg (
               end
               32'h0000_0001: begin
                 if (busy_i || draining_i || recovery_required_i || !idle_i || !data_ready_i ||
-                    (s_config_q.job_config[1:0] > `APB4_GA2D__OP_COPY)) begin
+                    (s_config_q.job_config[1:0] > `APB4_GA2D__OP_BLEND)) begin
                   s_write_err = 1'b1;
                 end else begin
                   s_cmd_start = 1'b1;

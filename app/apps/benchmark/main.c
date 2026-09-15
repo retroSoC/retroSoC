@@ -434,9 +434,9 @@ int main(void) {
     }
     rs_benchmark_puts("retroSoC: A Customized ASIC for Retro Stuff\n");
     if ((rs_ga2d_get_capability(&s_ga2d_capability) != RS_OK) ||
-        (s_ga2d_capability.features != RS_GA2D_CAPABILITY_P4) ||
-        (s_ga2d_capability.limits != RS_GA2D_LIMITS_P4) ||
-        (s_ga2d_capability.formats != RS_GA2D_FORMAT_CAPABILITY_P4)) {
+        (s_ga2d_capability.features != RS_GA2D_CAPABILITY_P5) ||
+        (s_ga2d_capability.limits != RS_GA2D_LIMITS_P5) ||
+        (s_ga2d_capability.formats != RS_GA2D_FORMAT_CAPABILITY_P5)) {
         rs_test_finish(RS_TEST_FAILED, 6U);
     }
 

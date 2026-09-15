@@ -495,7 +495,7 @@ def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
     assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
 
 
-def test_ga2d_formal_target_uses_the_p4_production_hierarchy() -> None:
+def test_ga2d_formal_target_uses_the_p5_production_hierarchy() -> None:
     formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
     filelist_generator = (
         ROOT / "rtl/mini/formal/generate_formal_filelist.py"
@@ -506,8 +506,8 @@ def test_ga2d_formal_target_uses_the_p4_production_hierarchy() -> None:
     )
 
     assert re.search(r"^FORMAL_GA2D_DEPTH\s+\?= 36$", formal_makefile, re.MULTILINE)
-    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 48$", formal_makefile, re.MULTILINE)
-    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 180$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 199$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
     assert "formal-ga2d: $(FORMAL_DIR)/ga2d/.stamp | manifest" in formal_makefile
     assert 'if target == "ga2d":' in filelist_generator
     for source in (
@@ -538,8 +538,14 @@ def test_ga2d_formal_target_uses_the_p4_production_hierarchy() -> None:
     assert "assert (!rready);" in formal
     assert "assert (!arvalid);" in formal
     assert "cover ((scenario == 4'd8) && protocol_residual_rvalid" in formal
+    assert "assert (read_owner == $past(read_owner));" in formal
+    assert "assert ({1'b0, bg_captured_pixels} >= write_cover_end_pixel);" in formal
+    assert "cover (scenario == 4'd9 && done && safe_idle" in formal
+    assert "cover (scenario == 4'd10 && done && safe_idle && inplace_background" in formal
     assert "output logic [3:0]  scenario" in properties
     assert "s_residual_r_valid_q" in properties
+    assert "OperationBlend" in properties
+    assert "FormatA8" in properties
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:

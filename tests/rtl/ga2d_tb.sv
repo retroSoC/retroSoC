@@ -188,11 +188,11 @@ module ga2d_tb;
     apb_read(`APB4_GA2D__IP_VERSION, 1'b0, read_data);
     if (read_data != 32'h0001_0000) $fatal(1, "GA2D IP_VERSION mismatch");
     apb_read(`APB4_GA2D__CAPABILITY, 1'b0, read_data);
-    if (read_data != 32'h0000_03e3) $fatal(1, "GA2D P4 capability mismatch");
+    if (read_data != 32'h0000_07ff) $fatal(1, "GA2D P5 capability mismatch");
     apb_read(`APB4_GA2D__LIMITS, 1'b0, read_data);
-    if (read_data != 32'h0820_2010) $fatal(1, "GA2D P4 limits mismatch");
+    if (read_data != 32'h0820_2010) $fatal(1, "GA2D P5 limits mismatch");
     apb_read(`APB4_GA2D__FORMAT_CAPABILITY, 1'b0, read_data);
-    if (read_data != 32'h000f_000f) $fatal(1, "GA2D P4 format capability mismatch");
+    if (read_data != 32'h000f_0f1f) $fatal(1, "GA2D P5 format capability mismatch");
     apb_read(`APB4_GA2D__TIMEOUT_CYCLES, 1'b0, read_data);
     if (read_data != 32'h0010_0000) $fatal(1, "GA2D timeout reset mismatch");
     apb_read(`APB4_GA2D__GLOBAL_ALPHA, 1'b0, read_data);
@@ -211,14 +211,17 @@ module ga2d_tb;
     apb_read(12'h06c, 1'b1, read_data);
     apb_read(12'h003, 1'b1, read_data);
 
+    apb_write(`APB4_GA2D__JOB_CONFIG, `APB4_GA2D__OP_CONVERT, 4'hf, 1'b0);
     apb_write(`APB4_GA2D__COMMAND, 32'h0000_0001, 4'hf, 1'b0);
-    if (start_count != 1) $fatal(1, "GA2D P4 START did not execute exactly once");
+    apb_write(`APB4_GA2D__JOB_CONFIG, `APB4_GA2D__OP_BLEND, 4'hf, 1'b0);
+    apb_write(`APB4_GA2D__COMMAND, 32'h0000_0001, 4'hf, 1'b0);
+    if (start_count != 2) $fatal(1, "GA2D P5 START did not accept CONVERT and BLEND");
     cycles_i      = 64'h1122_3344_5566_7788;
     read_bytes_i  = 64'h0102_0304_0506_0708;
     write_bytes_i = 64'h8877_6655_4433_2211;
     lines_done_i  = 16'h0023;
     apb_write(`APB4_GA2D__PERF_SNAPSHOT, 32'h0000_0001, 4'hf, 1'b0);
-    if (snapshot_count != 1) $fatal(1, "GA2D P4 snapshot did not execute exactly once");
+    if (snapshot_count != 1) $fatal(1, "GA2D P5 snapshot did not execute exactly once");
     apb_read(`APB4_GA2D__SNAP_CYCLES_LO, 1'b0, read_data);
     if (read_data != 32'h5566_7788) $fatal(1, "GA2D P4 snapshot cycle mismatch");
     apb_read(`APB4_GA2D__SNAP_READ_BYTES_HI, 1'b0, read_data);
@@ -283,12 +286,12 @@ module ga2d_tb;
     apb_read(`APB4_GA2D__STATUS, 1'b0, read_data);
     if (read_data != 32'h0000_00b7) $fatal(1, "GA2D live status mismatch");
 
-    $display("GA2D P4 APB shell test passed");
+    $display("GA2D P5 APB shell test passed");
     $finish;
   end
 
   initial begin
     repeat (400) @(posedge clk_i);
-    $fatal(1, "GA2D P4 APB shell test timed out");
+    $fatal(1, "GA2D P5 APB shell test timed out");
   end
 endmodule

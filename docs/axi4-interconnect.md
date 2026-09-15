@@ -3,16 +3,16 @@
 Mini uses two cooperating AXI fabrics. `axi4_interconnect` is the 32-bit LP
 control/compatibility plane; `axi4_data_crossbar` is the 64-bit HP payload
 plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
-executable protocol, address, and integration sources of truth. GA2D Phase 4
+executable protocol, address, and integration sources of truth. GA2D Phase 5
 uses `APB4_GA2D` and its resource-owned interrupt to control the direct
-single-job private-AXI64 FILL/COPY DMA engine on dedicated master 8.
+single-job private-AXI64 2D engine on dedicated master 8.
 
 [GA2D Phase 2](ip/ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
 expands the fabric to nine native masters and seven-bit global IDs. It adds
 master 8 and preserves all existing identities, target policy, and timeout
 behavior. Master 8 is fed only by its dedicated PCLK-to-HP AXI64/ID3 bridge and runs the
-GA2D direct FILL/COPY DMA source. Phase 4 retains the separate PCLK
-`APB4_GA2D` control plane and resource-owned IRQ. The GA2D specification also
+GA2D direct 2D source. Phase 5 retains the separate PCLK `APB4_GA2D` control
+plane and resource-owned IRQ. The GA2D specification also
 records the existing master-6/JPEG
 admission discrepancy; it must not be interpreted as a free port.
 
@@ -49,7 +49,7 @@ IDs. It has nine masters:
 | 5 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC, AXI32-to-64 |
 | 6 | JPEG | PCLK-to-HP AXI64 CDC; zero normal admission credit (`GA2D-GAP-01`) |
 | 7 | EXT-H | PCLK-to-HP AXI64 CDC |
-| 8 | GA2D | dedicated PCLK-to-HP AXI64/ID3 CDC; direct single-job private-AXI64 FILL/COPY DMA |
+| 8 | GA2D | dedicated PCLK-to-HP AXI64/ID3 CDC; direct single-job private-AXI64 2D engine |
 
 Each source receives a fixed four-bit master prefix over a three-bit source
 ID. The crossbar maintains
@@ -76,7 +76,7 @@ the integration RTL:
 | HP I-cache | all five memories | none | allowed | cache attributes preserved |
 | HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
 | DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
-| GA2D | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; direct FILL/COPY DMA, no hardware coherency |
+| GA2D | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; direct FILL/COPY/CONVERT/BLEND 2D engine, no hardware coherency |
 | JPEG | none | none | denied | zero normal admission credit (`GA2D-GAP-01`) |
 | EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
 

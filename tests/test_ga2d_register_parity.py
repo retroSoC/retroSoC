@@ -109,6 +109,9 @@ def test_ga2d_register_offsets_and_scalar_encodings_are_exhaustive() -> None:
         "APB4_GA2D__CAPABILITY_P4": "RS_GA2D_CAPABILITY_P4",
         "APB4_GA2D__LIMITS_P4": "RS_GA2D_LIMITS_P4",
         "APB4_GA2D__FORMAT_CAPABILITY_P4": "RS_GA2D_FORMAT_CAPABILITY_P4",
+        "APB4_GA2D__CAPABILITY_P5": "RS_GA2D_CAPABILITY_P5",
+        "APB4_GA2D__LIMITS_P5": "RS_GA2D_LIMITS_P5",
+        "APB4_GA2D__FORMAT_CAPABILITY_P5": "RS_GA2D_FORMAT_CAPABILITY_P5",
         "APB4_GA2D__TIMEOUT_CYCLES_RESET": "RS_GA2D_TIMEOUT_CYCLES_RESET",
         "APB4_GA2D__GLOBAL_ALPHA_RESET": "RS_GA2D_GLOBAL_ALPHA_RESET",
         "APB4_GA2D__IRQ_ALL": "RS_GA2D_IRQ_ALL",
@@ -121,6 +124,9 @@ def test_ga2d_register_offsets_and_scalar_encodings_are_exhaustive() -> None:
     assert rtl["APB4_GA2D__CAPABILITY_P4"] == 0x000003E3
     assert rtl["APB4_GA2D__LIMITS_P4"] == 0x08202010
     assert rtl["APB4_GA2D__FORMAT_CAPABILITY_P4"] == 0x000F000F
+    assert rtl["APB4_GA2D__CAPABILITY_P5"] == 0x000007FF
+    assert rtl["APB4_GA2D__LIMITS_P5"] == 0x08202010
+    assert rtl["APB4_GA2D__FORMAT_CAPABILITY_P5"] == 0x000F0F1F
     assert {name for name in rtl if name.endswith(tuple(OFFSETS))} >= set(offset_mapping)
     assert expected_c <= set(c)
 
@@ -236,6 +242,9 @@ def test_ga2d_handwritten_definition_sets_have_no_missing_or_extra_entries() -> 
         "CAPABILITY_P4",
         "LIMITS_P4",
         "FORMAT_CAPABILITY_P4",
+        "CAPABILITY_P5",
+        "LIMITS_P5",
+        "FORMAT_CAPABILITY_P5",
         "TIMEOUT_CYCLES_RESET",
         "GLOBAL_ALPHA_RESET",
         "IRQ_ALL",
@@ -322,6 +331,9 @@ def test_ga2d_handwritten_definition_sets_have_no_missing_or_extra_entries() -> 
             "RS_GA2D_CAPABILITY_P4",
             "RS_GA2D_LIMITS_P4",
             "RS_GA2D_FORMAT_CAPABILITY_P4",
+            "RS_GA2D_CAPABILITY_P5",
+            "RS_GA2D_LIMITS_P5",
+            "RS_GA2D_FORMAT_CAPABILITY_P5",
             "RS_GA2D_TIMEOUT_CYCLES_RESET",
             "RS_GA2D_GLOBAL_ALPHA_RESET",
             "RS_GA2D_COMMAND_START",

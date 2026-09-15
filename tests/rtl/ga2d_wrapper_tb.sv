@@ -274,12 +274,12 @@ module ga2d_wrapper_tb;
       $fatal(1, "GA2D soft reset did not clear retained diagnostic state");
     end
 
-    $display("GA2D P4 wrapper lifecycle test passed");
+    $display("GA2D P5 wrapper lifecycle test passed");
     $finish;
   end
 
   initial begin
     repeat (400) @(posedge clk_i);
-    $fatal(1, "GA2D P4 wrapper lifecycle test timed out");
+    $fatal(1, "GA2D P5 wrapper lifecycle test timed out");
   end
 endmodule

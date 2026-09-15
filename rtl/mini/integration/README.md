@@ -5,14 +5,17 @@ that is not part of the software address-map ABI or the package pad map.
 
 [GA2D](../../../docs/ip/ga2d.md) Phase 2 expands the topology to data
 master/resource 8 and seven-bit global IDs while retaining all existing
-allocations. Phase 4 drives its dedicated PCLK-to-HP AXI64/ID3 bridge with the
-direct single-job private-AXI64 FILL/COPY DMA engine at `APB4_GA2D` slot 28.
-Its raw IRQ is routed through resource 8: LP group bit 24, core vector
-bit 32/external ordinal 30, or HP PLIC source 11 according to owner. The
-engine supports RGB565, RGB888, XRGB8888, and ARGB8888 with pitch and byte-edge
-handling; CONVERT, BLEND, A8, in-place background composition, and
-descriptor/ring/queue submission remain unavailable. The Xh3irq SDK path also
-requires the Phase 1 implementation; a wiring-only expansion is insufficient.
+allocations. Phase 5 drives its dedicated PCLK-to-HP AXI64/ID3 bridge with a
+direct single-job private-AXI64 2D engine at `APB4_GA2D` slot 28. It supports
+FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color foreground
+masks, and exact equal background/destination in-place composition. Its raw
+IRQ is routed through resource 8: LP group bit 24, core vector bit 32/external
+ordinal 30, or HP PLIC source 11 according to owner. RGB565, RGB888, XRGB8888,
+and ARGB8888 are color surfaces with pitch and byte-edge handling; A8 is BLEND
+foreground-only. Transparent-background and premultiplied-alpha modes,
+scaling, rendering, and descriptor/ring/queue submission remain unavailable.
+The Xh3irq SDK path also requires the Phase 1 implementation; a wiring-only
+expansion is insufficient.
 
 The topology generator validates APB4 island ownership against
 `../address_map/memory_map.json` and emits generated SystemVerilog include

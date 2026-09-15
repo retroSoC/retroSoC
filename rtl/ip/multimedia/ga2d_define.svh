@@ -51,6 +51,9 @@
 `define APB4_GA2D__CAPABILITY_P4               32'h0000_03e3
 `define APB4_GA2D__LIMITS_P4                   32'h0820_2010
 `define APB4_GA2D__FORMAT_CAPABILITY_P4        32'h000f_000f
+`define APB4_GA2D__CAPABILITY_P5               32'h0000_07ff
+`define APB4_GA2D__LIMITS_P5                   32'h0820_2010
+`define APB4_GA2D__FORMAT_CAPABILITY_P5        32'h000f_0f1f
 `define APB4_GA2D__TIMEOUT_CYCLES_RESET        32'h0010_0000
 `define APB4_GA2D__GLOBAL_ALPHA_RESET          32'h0000_00ff
 

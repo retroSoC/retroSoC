@@ -42,11 +42,14 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
   [bidirectional PS/2](docs/ip/ps2.md),
   WS2812, SPI/QSPI, SDIO, PSRAM/[OPI-PSRAM](docs/ip/opipsram.md), SDRAM, DMA, LCD, RTC, an
   independent-clock window watchdog, CRC, and a
-  management-only RNG entropy controller. The P4 [GA2D](docs/ip/ga2d.md) is an
-  ownership-routed, direct single-job private-AXI64 2D FILL/COPY DMA engine with
-  RGB565, RGB888, XRGB8888, and ARGB8888 support, pitch and byte-edge handling,
-  snapshots, and IRQs at the existing APB4_GA2D window. It does not provide
-  CONVERT, BLEND, A8, in-place background composition, descriptors/rings/queues,
+  management-only RNG entropy controller. The P5 [GA2D](docs/ip/ga2d.md) is an
+  ownership-routed, PCLK-controlled, direct single-job private-AXI64 2D engine
+  with FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color
+  foreground masks, and exact equal background/destination in-place composition.
+  Color surfaces are RGB565, RGB888, XRGB8888, and ARGB8888; A8 is BLEND
+  foreground-only. It retains pitch, byte-edge, snapshot, and IRQ support at
+  the existing APB4_GA2D window. It does not provide transparent-background or
+  premultiplied-alpha modes, a scaler or renderer, descriptors/rings/queues,
   cache coherency, or a Linux graphics driver.
   The current deterministic RNG integration source is
   explicitly unqualified and intended only for diagnostics until a PDK-qualified entropy source is integrated.
@@ -104,8 +107,9 @@ used with commercial 32 KiB SRAM and PLL simulation models.
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`
 application, which checks UART, archinfo APB readback, macro-backed on-chip SRAM,
-the GA2D direct FILL/COPY DMA route, RNG fail-closed behavior, and test-status
-completion without the verbose startup report. ARCHINFO checks include its
+the GA2D direct 2D route including CONVERT/BLEND/A8 in-place acceptance, RNG
+fail-closed behavior, and test-status completion without the verbose startup
+report. ARCHINFO checks include its
 ABI and the build/configuration identifiers generated for that variant. The
 IHP130 PR run links this image into the 32 KiB SRAM, explicitly enables the
 fast-flash backend, and allows 360 seconds; Icarus keeps the real serial XPI

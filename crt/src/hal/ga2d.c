@@ -121,10 +121,16 @@ static rs_status_t rs_ga2d_validate_runtime_memory(const rs_ga2d_job_t *job) {
     if (status != RS_OK) {
         return status;
     }
-    if (job->operation != RS_GA2D_OP_COPY) {
-        return RS_OK;
+    if (job->operation != RS_GA2D_OP_FILL) {
+        status = rs_ga2d_validate_runtime_memory_surface(&job->foreground);
+        if (status != RS_OK) {
+            return status;
+        }
     }
-    return rs_ga2d_validate_runtime_memory_surface(&job->foreground);
+    if (job->operation == RS_GA2D_OP_BLEND) {
+        return rs_ga2d_validate_runtime_memory_surface(&job->background);
+    }
+    return RS_OK;
 }
 
 static uint64_t rs_ga2d_read_snapshot64(uint32_t low_offset, uint32_t high_offset) {
@@ -201,7 +207,7 @@ rs_status_t rs_ga2d_configure(const rs_ga2d_job_t *job) {
     RS_GA2D_REG(RS_GA2D_REG_SIZE) = ((uint32_t)job->width << RS_GA2D_SIZE_WIDTH_SHIFT) |
                                     ((uint32_t)job->height << RS_GA2D_SIZE_HEIGHT_SHIFT);
 
-    if (job->operation == RS_GA2D_OP_COPY) {
+    if (job->operation != RS_GA2D_OP_FILL) {
         RS_GA2D_REG(RS_GA2D_REG_FG_ADDRESS) = (uint32_t)job->foreground.address;
         RS_GA2D_REG(RS_GA2D_REG_FG_PITCH) = job->foreground.pitch;
         RS_GA2D_REG(RS_GA2D_REG_FG_FORMAT) =
@@ -212,9 +218,17 @@ rs_status_t rs_ga2d_configure(const rs_ga2d_job_t *job) {
         RS_GA2D_REG(RS_GA2D_REG_FG_PITCH) = 0U;
         RS_GA2D_REG(RS_GA2D_REG_FG_FORMAT) = 0U;
     }
-    RS_GA2D_REG(RS_GA2D_REG_BG_ADDRESS) = 0U;
-    RS_GA2D_REG(RS_GA2D_REG_BG_PITCH) = 0U;
-    RS_GA2D_REG(RS_GA2D_REG_BG_FORMAT) = 0U;
+    if (job->operation == RS_GA2D_OP_BLEND) {
+        RS_GA2D_REG(RS_GA2D_REG_BG_ADDRESS) = (uint32_t)job->background.address;
+        RS_GA2D_REG(RS_GA2D_REG_BG_PITCH) = job->background.pitch;
+        RS_GA2D_REG(RS_GA2D_REG_BG_FORMAT) =
+            ((uint32_t)job->background.format << RS_GA2D_BG_FORMAT_VALUE_SHIFT) &
+            RS_GA2D_FORMAT_VALUE_MASK;
+    } else {
+        RS_GA2D_REG(RS_GA2D_REG_BG_ADDRESS) = 0U;
+        RS_GA2D_REG(RS_GA2D_REG_BG_PITCH) = 0U;
+        RS_GA2D_REG(RS_GA2D_REG_BG_FORMAT) = 0U;
+    }
     RS_GA2D_REG(RS_GA2D_REG_DST_ADDRESS) = (uint32_t)job->destination.address;
     RS_GA2D_REG(RS_GA2D_REG_DST_PITCH) = job->destination.pitch;
     RS_GA2D_REG(RS_GA2D_REG_DST_FORMAT) =

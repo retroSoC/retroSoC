@@ -3,9 +3,9 @@
 [GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
 adds master bank 8, version 1.1, and master bit 3 at `FAULT[12]`, preserving
 the existing packed fields. It also carries the complete four-bit master
-identity through SYSCTRL. Phase 4 makes bank 8 observe GA2D's dedicated
-PCLK-to-HP AXI64/ID3 direct single-job FILL/COPY DMA traffic, controlled by
-`APB4_GA2D` and its resource-owned IRQ route.
+identity through SYSCTRL. Phase 5 makes bank 8 observe GA2D's dedicated
+PCLK-to-HP AXI64/ID3 direct single-job 2D traffic, controlled by `APB4_GA2D`
+and its resource-owned IRQ route.
 
 ## Scope
 

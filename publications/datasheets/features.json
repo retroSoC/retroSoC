@@ -150,12 +150,12 @@
     "Lifecycle-gated device identity reads."
   ],
   "resource": [
-    "Nine independently managed shared resources; resource 8 owns the active P4 GA2D direct FILL/COPY DMA and IRQ route.",
+    "Nine independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
     "Owner locks, quiesce/reset and LP/HP IRQ routing.",
     "Explicit cache-maintenance handoff and sticky faults."
   ],
   "monitor": [
-    "Nine master and six target observation banks; bank 8 observes active P4 GA2D direct FILL/COPY DMA traffic.",
+    "Nine master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
     "Saturating counters, snapshots and outstanding high-water marks.",
     "Sticky first-fault attribution and live isolation status."
   ],

@@ -51,25 +51,12 @@ module ga2d_core (
     Drain
   } state_e;
 
-  typedef struct packed {
-    logic [31:0] timeout_cycles;
-    logic [31:0] job_config;
-    logic [31:0] color;
-    logic [31:0] size;
-    logic [31:0] fg_address;
-    logic [31:0] fg_pitch;
-    logic [31:0] fg_format;
-    logic [31:0] dst_address;
-    logic [31:0] dst_pitch;
-    logic [31:0] dst_format;
-  } ga2d_p4_job_t;
-
   localparam logic [2:0] IrqDoneEvent = 3'b001 << `APB4_GA2D__IRQ_DONE;
   localparam logic [2:0] IrqErrorEvent = 3'b001 << `APB4_GA2D__IRQ_ERROR;
   localparam logic [2:0] IrqAbortDoneEvent = 3'b001 << `APB4_GA2D__IRQ_ABORT_DONE;
 
   state_e              s_state_q;
-  ga2d_p4_job_t        s_job_q;
+  ga2d_config_t        s_job_q;
   logic         [ 7:0] s_epoch_seen_q;
   logic                s_recovery_q;
   logic                s_recovery_seen_not_ready_q;
@@ -91,19 +78,28 @@ module ga2d_core (
   logic         [ 3:0] s_err_stage_q;
   logic         [ 1:0] s_err_axi_rsp_q;
   logic         [31:0] s_err_addr_q;
-  logic                s_fill_format_valid;
-  logic         [ 2:0] s_fill_bytes_per_pixel;
-  logic         [31:0] s_fill_pixel;
   logic                s_validation_err;
   logic         [ 6:0] s_validation_code;
   logic         [ 3:0] s_validation_stage;
   logic         [31:0] s_validation_addr;
   logic         [ 2:0] s_dst_bpp;
   logic         [ 2:0] s_fg_bpp;
+  logic         [ 2:0] s_bg_bpp;
   logic         [31:0] s_dst_row_bytes;
   logic         [31:0] s_fg_row_bytes;
+  logic         [31:0] s_bg_row_bytes;
   logic         [64:0] s_dst_end;
   logic         [64:0] s_fg_end;
+  logic         [64:0] s_bg_end;
+  logic                s_op_fill;
+  logic                s_op_copy;
+  logic                s_op_blend;
+  logic                s_fg_used;
+  logic                s_bg_used;
+  logic                s_fg_color_format;
+  logic                s_bg_color_format;
+  logic                s_dst_color_format;
+  logic                s_bg_dst_exact;
   logic                s_epoch_changed;
   logic                s_dma_clear;
   logic                s_dma_start;
@@ -133,12 +129,21 @@ module ga2d_core (
       `APB4_GA2D__FORMAT_RGB565:                                return 3'd2;
       `APB4_GA2D__FORMAT_RGB888:                                return 3'd3;
       `APB4_GA2D__FORMAT_XRGB8888, `APB4_GA2D__FORMAT_ARGB8888: return 3'd4;
+      `APB4_GA2D__FORMAT_A8:                                    return 3'd1;
       default:                                                  return '0;
     endcase
   endfunction
 
+  function automatic logic color_format(input logic [2:0] format_i);
+    return (format_i == `APB4_GA2D__FORMAT_RGB565) ||
+           (format_i == `APB4_GA2D__FORMAT_RGB888) ||
+           (format_i == `APB4_GA2D__FORMAT_XRGB8888) ||
+           (format_i == `APB4_GA2D__FORMAT_ARGB8888);
+  endfunction
+
   function automatic logic naturally_aligned(input logic [31:0] value_i, input logic [2:0] bytes_i);
     unique case (bytes_i)
+      3'd1:    return 1'b1;
       3'd2:    return value_i[0] == 1'b0;
       3'd3:    return 1'b1;
       3'd4:    return value_i[1:0] == 2'd0;
@@ -209,16 +214,32 @@ module ga2d_core (
     return value_i + increment_i;
   endfunction
 
+  assign s_op_fill = s_job_q.job_config[1:0] == `APB4_GA2D__OP_FILL;
+  assign s_op_copy = s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY;
+  assign s_op_blend = s_job_q.job_config[1:0] == `APB4_GA2D__OP_BLEND;
+  assign s_fg_used = !s_op_fill;
+  assign s_bg_used = s_op_blend;
+  assign s_dst_color_format = color_format(s_job_q.dst_format[2:0]);
+  assign s_fg_color_format = color_format(s_job_q.fg_format[2:0]);
+  assign s_bg_color_format = color_format(s_job_q.bg_format[2:0]);
   assign s_dst_bpp = bytes_per_pixel(s_job_q.dst_format[2:0]);
   assign s_fg_bpp = bytes_per_pixel(s_job_q.fg_format[2:0]);
-  assign s_dst_row_bytes = s_job_q.size[15:0] * s_dst_bpp;
-  assign s_fg_row_bytes = s_job_q.size[15:0] * s_fg_bpp;
+  assign s_bg_bpp = bytes_per_pixel(s_job_q.bg_format[2:0]);
+  assign s_dst_row_bytes = {16'd0, s_job_q.size[15:0]} * {29'd0, s_dst_bpp};
+  assign s_fg_row_bytes = {16'd0, s_job_q.size[15:0]} * {29'd0, s_fg_bpp};
+  assign s_bg_row_bytes = {16'd0, s_job_q.size[15:0]} * {29'd0, s_bg_bpp};
   assign s_dst_end = plane_end(
       s_job_q.dst_address, s_job_q.dst_pitch, s_dst_row_bytes, s_job_q.size[31:16]
   );
   assign s_fg_end = plane_end(
       s_job_q.fg_address, s_job_q.fg_pitch, s_fg_row_bytes, s_job_q.size[31:16]
   );
+  assign s_bg_end = plane_end(
+      s_job_q.bg_address, s_job_q.bg_pitch, s_bg_row_bytes, s_job_q.size[31:16]
+  );
+  assign s_bg_dst_exact = (s_job_q.bg_address == s_job_q.dst_address) &&
+                          (s_job_q.bg_pitch == s_job_q.dst_pitch) &&
+                          (s_job_q.bg_format == s_job_q.dst_format);
   assign s_epoch_changed = bridge_epoch_i != s_epoch_seen_q;
   assign s_dma_clear = bridge_clear_busy_i || s_epoch_changed;
   assign s_dma_start = (s_state_q == Validate) && !s_validation_err;
@@ -227,29 +248,27 @@ module ga2d_core (
   assign s_timeout_expired = (s_state_q == Run) && !s_dma_progress &&
                              (s_timeout_count_q == (s_job_q.timeout_cycles - 1'b1));
 
-  ga2d_pixel u_pixel (
-      .color_i          (s_job_q.color),
-      .format_i         (s_job_q.dst_format[2:0]),
-      .pixel_o          (s_fill_pixel),
-      .bytes_per_pixel_o(s_fill_bytes_per_pixel),
-      .format_valid_o   (s_fill_format_valid)
-  );
-
   ga2d_dma u_dma (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
       .clear_i              (s_dma_clear),
       .start_i              (s_dma_start),
       .stop_i               (s_dma_stop),
-      .fill_i               (s_job_q.job_config[1:0] == `APB4_GA2D__OP_FILL),
+      .operation_i          (s_job_q.job_config[1:0]),
       .width_i              (s_job_q.size[15:0]),
       .height_i             (s_job_q.size[31:16]),
-      .bytes_per_pixel_i    (s_fill_bytes_per_pixel),
+      .foreground_format_i  (s_job_q.fg_format[2:0]),
       .foreground_address_i (s_job_q.fg_address),
       .foreground_pitch_i   (s_job_q.fg_pitch),
+      .background_format_i  (s_job_q.bg_format[2:0]),
+      .background_address_i (s_job_q.bg_address),
+      .background_pitch_i   (s_job_q.bg_pitch),
+      .destination_format_i (s_job_q.dst_format[2:0]),
       .destination_address_i(s_job_q.dst_address),
       .destination_pitch_i  (s_job_q.dst_pitch),
-      .fill_pixel_i         (s_fill_pixel),
+      .color_i              (s_job_q.color),
+      .global_alpha_i       (s_job_q.global_alpha[7:0]),
+      .inplace_background_i (s_op_blend && s_bg_dst_exact),
       .busy_o               (unused_dma_busy),
       .draining_o           (s_dma_draining),
       .idle_o               (s_dma_idle),
@@ -278,62 +297,81 @@ module ga2d_core (
     if ((s_job_q.size[15:0] == 16'd0) || (s_job_q.size[31:16] == 16'd0)) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_SIZE;
-    end else if ((s_job_q.job_config[1:0] != `APB4_GA2D__OP_FILL) &&
-                 (s_job_q.job_config[1:0] != `APB4_GA2D__OP_COPY)) begin
+    end else if (!s_dst_color_format) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_FORMAT;
-    end else if ((s_dst_bpp == 3'd0) || !s_fill_format_valid ||
-                 ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) &&
-                  ((s_fg_bpp == 3'd0) ||
-                   (s_job_q.fg_format[2:0] != s_job_q.dst_format[2:0])))) begin
+    end else if (s_fg_used &&
+                 ((!s_fg_color_format && !(s_op_blend &&
+                                            (s_job_q.fg_format[2:0] ==
+                                             `APB4_GA2D__FORMAT_A8))) ||
+                  (s_op_copy && (s_job_q.fg_format[2:0] != s_job_q.dst_format[2:0])))) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_INVALID_FORMAT;
+    end else if (s_bg_used && !s_bg_color_format) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_FORMAT;
     end else if (!naturally_aligned(s_job_q.dst_address, s_dst_bpp)) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_ALIGNMENT;
       s_validation_addr = s_job_q.dst_address;
+    end else if (s_fg_used && !naturally_aligned(s_job_q.fg_address, s_fg_bpp)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_INVALID_ALIGNMENT;
+      s_validation_addr = s_job_q.fg_address;
+    end else if (s_bg_used && !naturally_aligned(s_job_q.bg_address, s_bg_bpp)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_INVALID_ALIGNMENT;
+      s_validation_addr = s_job_q.bg_address;
     end else if ((s_job_q.dst_pitch < s_dst_row_bytes) || !naturally_aligned(
             s_job_q.dst_pitch, s_dst_bpp
         )) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_PITCH;
       s_validation_addr = s_job_q.dst_address;
-    end else if (s_dst_end > 65'h1_0000_0000) begin
-      s_validation_err  = 1'b1;
-      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_OVERFLOW;
-      s_validation_addr = s_job_q.dst_address;
-    end else if (!range_allowed(s_job_q.dst_address, s_dst_end, 1'b1)) begin
-      s_validation_err  = 1'b1;
-      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_RANGE;
-      s_validation_addr = s_job_q.dst_address;
-    end else if ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) && !naturally_aligned(
-            s_job_q.fg_address, s_fg_bpp
-        )) begin
-      s_validation_err  = 1'b1;
-      s_validation_code = `APB4_GA2D__ERROR_INVALID_ALIGNMENT;
-      s_validation_addr = s_job_q.fg_address;
-    end else if ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) &&
-                 ((s_job_q.fg_pitch < s_fg_row_bytes) ||
-                  !naturally_aligned(
+    end else if (s_fg_used && ((s_job_q.fg_pitch < s_fg_row_bytes) || !naturally_aligned(
             s_job_q.fg_pitch, s_fg_bpp
         ))) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_INVALID_PITCH;
       s_validation_addr = s_job_q.fg_address;
-    end else if ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) &&
-                 (s_fg_end > 65'h1_0000_0000)) begin
+    end else if (s_bg_used && ((s_job_q.bg_pitch < s_bg_row_bytes) || !naturally_aligned(
+            s_job_q.bg_pitch, s_bg_bpp
+        ))) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_INVALID_PITCH;
+      s_validation_addr = s_job_q.bg_address;
+    end else if (s_dst_end > 65'h1_0000_0000) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_OVERFLOW;
+      s_validation_addr = s_job_q.dst_address;
+    end else if (s_fg_used && (s_fg_end > 65'h1_0000_0000)) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_ADDRESS_OVERFLOW;
       s_validation_addr = s_job_q.fg_address;
-    end else if ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) && !range_allowed(
-            s_job_q.fg_address, s_fg_end, 1'b0
-        )) begin
+    end else if (s_bg_used && (s_bg_end > 65'h1_0000_0000)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_OVERFLOW;
+      s_validation_addr = s_job_q.bg_address;
+    end else if (!range_allowed(s_job_q.dst_address, s_dst_end, 1'b1)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_RANGE;
+      s_validation_addr = s_job_q.dst_address;
+    end else if (s_fg_used && !range_allowed(s_job_q.fg_address, s_fg_end, 1'b0)) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_ADDRESS_RANGE;
       s_validation_addr = s_job_q.fg_address;
-    end else if ((s_job_q.job_config[1:0] == `APB4_GA2D__OP_COPY) &&
-                 ({33'd0, s_job_q.dst_address} < s_fg_end) &&
+    end else if (s_bg_used && !range_allowed(s_job_q.bg_address, s_bg_end, 1'b0)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_ADDRESS_RANGE;
+      s_validation_addr = s_job_q.bg_address;
+    end else if (s_fg_used && ({33'd0, s_job_q.dst_address} < s_fg_end) &&
                  ({33'd0, s_job_q.fg_address} < s_dst_end)) begin
+      s_validation_err  = 1'b1;
+      s_validation_code = `APB4_GA2D__ERROR_OVERLAP;
+      s_validation_addr = s_job_q.dst_address;
+    end else if (s_bg_used && !s_bg_dst_exact &&
+                 ({33'd0, s_job_q.dst_address} < s_bg_end) &&
+                 ({33'd0, s_job_q.bg_address} < s_dst_end)) begin
       s_validation_err  = 1'b1;
       s_validation_code = `APB4_GA2D__ERROR_OVERLAP;
       s_validation_addr = s_job_q.dst_address;
@@ -448,11 +486,15 @@ module ga2d_core (
                 !bridge_clear_busy_i && !s_epoch_changed) begin
               s_job_q.timeout_cycles <= config_i.timeout_cycles;
               s_job_q.job_config     <= config_i.job_config;
+              s_job_q.global_alpha   <= config_i.global_alpha;
               s_job_q.color          <= config_i.color;
               s_job_q.size           <= config_i.size;
               s_job_q.fg_address     <= config_i.fg_address;
               s_job_q.fg_pitch       <= config_i.fg_pitch;
               s_job_q.fg_format      <= config_i.fg_format;
+              s_job_q.bg_address     <= config_i.bg_address;
+              s_job_q.bg_pitch       <= config_i.bg_pitch;
+              s_job_q.bg_format      <= config_i.bg_format;
               s_job_q.dst_address    <= config_i.dst_address;
               s_job_q.dst_pitch      <= config_i.dst_pitch;
               s_job_q.dst_format     <= config_i.dst_format;

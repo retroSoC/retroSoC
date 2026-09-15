@@ -19,6 +19,11 @@ package ga2d_pkg;
     A8       = `APB4_GA2D__FORMAT_A8
   } ga2d_format_e;
 
+  typedef enum logic {
+    ForegroundOwner = 1'b0,
+    BackgroundOwner = 1'b1
+  } ga2d_read_owner_e;
+
   typedef struct packed {
     logic [31:0] timeout_cycles;
     logic [31:0] job_config;

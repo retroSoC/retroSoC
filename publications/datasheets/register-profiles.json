@@ -974,7 +974,7 @@
     "groups": [
       {
         "id": "main",
-        "title": "Phase 4 direct FILL/COPY DMA",
+        "title": "Phase 5 direct 2D composition engine",
         "pattern": "APB4_GA2D__.+",
         "strip": "^APB4_GA2D__",
         "base": 0,
