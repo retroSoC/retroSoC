@@ -81,7 +81,7 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     ("rtl/ip/serial/uart_reg.sv", ".DATA_WIDTH      (12)", ".DATA_WIDTH      (16)"),
     ("rtl/ip/serial/uart_reg.sv", "TxFifoDepth    = 64", "TxFifoDepth    = 32"),
     ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
-    ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = 2048", "APUMC_MAX_INSTRUCTIONS = 4096"),
+    ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1", "APUMC_MAX_INSTRUCTIONS = 4096"),
     ("app/ports/linux/linux/retrosoc_hp.dts", "riscv,cbom-block-size = <64>", "riscv,cbom-block-size = <128>"),
 ])
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):
