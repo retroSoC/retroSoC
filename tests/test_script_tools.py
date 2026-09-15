@@ -1365,6 +1365,19 @@ def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
     assert "--behavioral-only" in workflow
 
 
+def test_hosted_smoke_formal_check_is_doctor_only() -> None:
+    workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+    smoke = (ROOT / ".github/workflows/regression-smoke.yml").read_text(encoding="utf-8")
+    software_makefile = (ROOT / "rtl/mini/mk/software.mk").read_text(encoding="utf-8")
+
+    assert "timeout_minutes: 60" in smoke
+    assert "formal_checks: true" in smoke
+    assert "make CONFIG=${{ inputs.profile }} formal-doctor" in workflow
+    assert "make CONFIG=${{ inputs.profile }} formal\n" not in workflow
+    assert "$(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt" in software_makefile
+    assert "$(DUMP) -D" not in software_makefile
+
+
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for pdk, profile in PDK_PR_PROFILES.items():

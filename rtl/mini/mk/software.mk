@@ -225,7 +225,6 @@ $(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(
 	cd $(SW_BUILD_DIR) && $(OBJC) -O verilog $(@F) $(FIRMWARE_NAME).hex
 	cd $(SW_BUILD_DIR) && $(OBJC) -O binary $(@F) $(FIRMWARE_NAME).bin
 	cd $(SW_BUILD_DIR) && $(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt
-	cd $(SW_BUILD_DIR) && $(DUMP) -D $(@F) > $(FIRMWARE_NAME)_all.txt
 
 firmware: $(FIRMWARE_ELF)
 

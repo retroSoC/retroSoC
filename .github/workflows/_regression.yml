@@ -36,7 +36,7 @@ on:
         default: true
         type: boolean
       formal_checks:
-        description: Run SBY-managed Yosys, sv2v, and Bitwuzla protocol proofs before the suite
+        description: Check the SBY, Yosys, sv2v, and Bitwuzla formal environment before the suite
         required: false
         default: false
         type: boolean
@@ -123,9 +123,7 @@ jobs:
 
       - name: Check formal environment
         if: inputs.formal_checks
-        run: |
-          make CONFIG=${{ inputs.profile }} formal-doctor
-          make CONFIG=${{ inputs.profile }} formal
+        run: make CONFIG=${{ inputs.profile }} formal-doctor
 
       - name: Run ${{ inputs.suite }} regression
         run: >-

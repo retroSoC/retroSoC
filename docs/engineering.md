@@ -242,10 +242,12 @@ ClusterIP interfaces, registers, and utility cells. The generated conversion,
 SBY configuration, SMT2 model, logs, traces, task status, and structured
 verdict are stored below
 `build/<variant>/formal/<proof>/` and `build/<variant>/meta/formal.json`.
-The IHP130 smoke workflow enables this target; the full PDK regressions do not
-repeat PDK-independent protocol proofs. The reusable regression workflow runs
-the target only when its `formal_checks` input is enabled and its locked
-toolset provides SBY and Bitwuzla.
+The IHP130 smoke workflow enables `formal-doctor` so hosted CI checks that the
+locked SBY and Bitwuzla tools are present. It does not run `make formal`: the
+GA2D cover bound is 199 steps with a 7200s task budget, which does not fit the
+60-minute smoke job. Full PDK regressions also skip those PDK-independent
+protocol proofs. Run `make CONFIG=<profile> formal` locally or on a longer
+job when the complete proof suite is required.
 
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
