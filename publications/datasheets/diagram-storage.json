@@ -601,7 +601,7 @@
     "stores": [
       {
         "title": "64-bit instruction words",
-        "depth": 2048,
+        "depth": 4096,
         "bits": 64,
         "depth_ref": {
           "file": "rtl/ip/multimedia/apu_control_store.sv",
@@ -618,7 +618,7 @@
       "rtl/ip/multimedia/apu_control_store.sv"
     ],
     "bindings": [],
-    "note": "The current loader/fetch address is 11 bits, selecting 2,048 64-bit words (16 KiB). The later 4,096-word / 32 KiB refreeze is not implemented by this snapshot. Instruction memory and local data memory are separate spaces."
+    "note": "The loader/fetch address is 12 bits, selecting 4,096 64-bit words (32 KiB) per the implemented V1.1 refreeze. Instruction memory and local data memory are separate spaces."
   },
   {
     "id": "apu-local",

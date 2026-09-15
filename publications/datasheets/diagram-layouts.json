@@ -211,7 +211,7 @@
       },
       {
         "file": "scripts/apu_isa.py",
-        "text": "APUMC_MAGIC, APUMC_ABI, total_bytes, len(instructions), APUMC_INSTRUCTION_OFFSET, table_offset, len(table_payload), APUMC_HEADER_BYTES, APUMC_ENTRY_COUNT, required_mask, scratch_end, crc, build_id & 0xFFFFFFFF, (build_id >> 32) & 0xFFFFFFFF, 0, 0,"
+        "text": "APUMC_MAGIC, abi, total_bytes, len(instructions), APUMC_INSTRUCTION_OFFSET, table_offset, len(table_payload), APUMC_HEADER_BYTES, APUMC_ENTRY_COUNT, required_mask, scratch_end, crc, build_id & 0xFFFFFFFF, (build_id >> 32) & 0xFFFFFFFF, 0, 0,"
       }
     ],
     "order": "lsb",
@@ -346,7 +346,7 @@
     "bindings": [
       {
         "file": "scripts/apu_isa.py",
-        "text": "self.format_id | (self.entry_pc << 4), self.first_pc | (self.last_pc << 16), self.scratch_base, self.scratch_bytes, self.max_loop_count, self.max_retired, self.primitive_mask, self.table_offset | (self.table_bytes << 16),"
+        "text": "self.format_id | ((self.entry_pc & entry_mask) << 4), (self.first_pc & range_mask) | ((self.last_pc & range_mask) << 16), self.scratch_base, self.scratch_bytes, self.max_loop_count, self.max_retired, self.primitive_mask, self.table_offset | (self.table_bytes << 16),"
       }
     ],
     "order": "lsb",

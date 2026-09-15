@@ -5904,7 +5904,7 @@
       },
       {
         "file": "rtl/ip/multimedia/apb4_apu.sv",
-        "text": "assign u_apu_rx_axis.tready = 1'b0;"
+        "text": "assign u_apu_rx_axis.tready = s_kws_rx_ready;"
       }
     ],
     "sdio_command": [
