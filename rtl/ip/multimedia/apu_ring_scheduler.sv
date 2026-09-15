@@ -3,7 +3,9 @@
 
 `include "apu_define.svh"
 
-module apu_ring_scheduler (
+module apu_ring_scheduler #(
+    parameter bit EnableP7 = 1'b0
+) (
     // verilog_format: off -- preserve ring, backend, and DMA service columns
     input  logic                   clk_i,
     input  logic                   rst_n_i,
@@ -49,6 +51,7 @@ module apu_ring_scheduler (
     input  logic [31:0]            backend_cycles_i,
     input  logic [31:0]            backend_detail_i,
     input  logic [31:0]            backend_build_id_i,
+    input  logic [31:0]            backend_kws_result_i,
     output logic [31:0]            job_status_o,
     output logic [31:0]            ring_status_o,
     output logic [7:0]             ring_head_o,
@@ -131,25 +134,28 @@ module apu_ring_scheduler (
   endfunction
 
   always_comb begin
-    s_descriptor_valid = s_descriptor_q[0][`APB4_APU__DESCRIPTOR_CONTROL_OWN] &&
-        (s_descriptor_q[0][29:12] == 18'd0) &&
-        (s_descriptor_q[0][3:0] <= 4'd1) && (s_descriptor_q[0][7:4] <= 4'd2) &&
-        (s_descriptor_q[0][9:8] <= 2'd1) &&
-        (s_descriptor_q[2][1:0] == 2'd0) && (s_descriptor_q[3] != 32'd0) &&
-        (((s_descriptor_q[0][9:8] == 2'd0) && (s_descriptor_q[4][1:0] == 2'd0) &&
-          (s_descriptor_q[5] != 32'd0)) ||
-         ((s_descriptor_q[0][9:8] == 2'd1) && (s_descriptor_q[4] == 32'd0) &&
-          (s_descriptor_q[5] == 32'd0))) &&
-        (s_descriptor_q[6][31:26] == 6'd0) && (s_descriptor_q[6][19] == 1'b0) &&
-        (s_descriptor_q[6][18:17] <= 2'd2) &&
-        ((s_descriptor_q[6][25:20] == 6'd0) || (s_descriptor_q[6][25:20] == 6'd16) ||
-         (s_descriptor_q[6][25:20] == 6'd24)) &&
-        (s_descriptor_q[7][31:21] == 11'd0) && (s_descriptor_q[7][18:17] <= 2'd2) &&
-        (s_descriptor_q[7][20:19] <= 2'd1) && (s_descriptor_q[8][31:1] == 31'd0) &&
-        (((s_descriptor_q[0][3:0] == 4'd0) && (s_descriptor_q[9] == 32'd0)) ||
-         (s_descriptor_q[0][3:0] == 4'd1));
-    for (int word_index = 24; word_index < 32; word_index++) begin
-      s_descriptor_valid = s_descriptor_valid && (s_descriptor_q[word_index] == 32'd0);
+    s_descriptor_valid = s_descriptor_q[0][`APB4_APU__DESCRIPTOR_CONTROL_OWN];
+    if (!(EnableP7 && (s_descriptor_q[0][3:0] == 4'd1))) begin
+      s_descriptor_valid = s_descriptor_valid &&
+          (s_descriptor_q[0][29:12] == 18'd0) &&
+          (s_descriptor_q[0][3:0] <= 4'd1) && (s_descriptor_q[0][7:4] <= 4'd2) &&
+          (s_descriptor_q[0][9:8] <= 2'd1) &&
+          (s_descriptor_q[2][1:0] == 2'd0) && (s_descriptor_q[3] != 32'd0) &&
+          (((s_descriptor_q[0][9:8] == 2'd0) && (s_descriptor_q[4][1:0] == 2'd0) &&
+            (s_descriptor_q[5] != 32'd0)) ||
+           ((s_descriptor_q[0][9:8] == 2'd1) && (s_descriptor_q[4] == 32'd0) &&
+            (s_descriptor_q[5] == 32'd0))) &&
+          (s_descriptor_q[6][31:26] == 6'd0) && (s_descriptor_q[6][19] == 1'b0) &&
+          (s_descriptor_q[6][18:17] <= 2'd2) &&
+          ((s_descriptor_q[6][25:20] == 6'd0) || (s_descriptor_q[6][25:20] == 6'd16) ||
+           (s_descriptor_q[6][25:20] == 6'd24)) &&
+          (s_descriptor_q[7][31:21] == 11'd0) && (s_descriptor_q[7][18:17] <= 2'd2) &&
+          (s_descriptor_q[7][20:19] <= 2'd1) && (s_descriptor_q[8][31:1] == 31'd0) &&
+          (((s_descriptor_q[0][3:0] == 4'd0) && (s_descriptor_q[9] == 32'd0)) ||
+           (s_descriptor_q[0][3:0] == 4'd1));
+      for (int word_index = 24; word_index < 32; word_index++) begin
+        s_descriptor_valid = s_descriptor_valid && (s_descriptor_q[word_index] == 32'd0);
+      end
     end
   end
 
@@ -569,6 +575,7 @@ module apu_ring_scheduler (
             s_descriptor_q[13] <= backend_source_info_i;
             s_descriptor_q[14] <= backend_cycles_i;
             s_descriptor_q[15] <= backend_detail_i;
+            s_descriptor_q[22] <= (s_descriptor_q[0][3:0] == 4'd1) ? backend_kws_result_i : 32'd0;
             s_descriptor_q[20] <= s_timestamp_q[31:0];
             s_descriptor_q[21] <= s_timestamp_q[63:32];
             s_descriptor_q[23] <= backend_build_id_i;

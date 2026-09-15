@@ -27,7 +27,9 @@ tooling.
   deterministic coefficient/APUMC artifacts, integer WAV/FLAC and PCM models,
   direct/ring product paths, and identical Icarus/Verilator execution of the
   production class-6 transport. The explicit `apu-p5-corpus` target qualifies
-  every pinned official FLAC file against locked libFLAC.
+  every pinned official FLAC file against locked libFLAC and records matching
+  released-APUMC production results from identical verification-only Icarus
+  and Verilator fixtures.
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

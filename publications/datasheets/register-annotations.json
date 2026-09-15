@@ -1662,6 +1662,10 @@
     }
   },
   "apu": {
+    "main.KWS_INPUT_CONFIG": {
+      "access": "RW",
+      "description": "Capture rate, physical channel count, and sample precision for continuous KWS input."
+    },
     "main.COMMAND": {
       "fields": [
         {
@@ -1833,10 +1837,10 @@
       "reset": "Not retained (command/data port)"
     },
     "main.IP_VERSION": {
-      "description": "Current RTL APB interface version is 1.0 (0x00010000). The capacity-refreeze document specifies a later V1.1 interface; that change is not reflected in this snapshot."
+      "description": "Expanded P5 uses APB interface V1.1 (0x00010001) and retains the frozen V1.0 register offsets and accepted fields."
     },
     "main.CAPABILITY1": {
-      "description": "Current geometry word is 0x01827010: 16 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding. The proposed 32 KiB expansion remains a later implementation contract."
+      "description": "Expanded P5 geometry is 0x01827020: 32 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding."
     },
     "main.JOB_INPUT_CONFIG": {
       "fields": [

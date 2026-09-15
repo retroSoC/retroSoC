@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import re
 import sys
 from pathlib import Path
 
@@ -26,11 +27,16 @@ def reference():
     return collect_registers()
 
 
-def test_current_apu_interface_does_not_advertise_the_unimplemented_refreeze(reference):
+def test_current_apu_interface_advertises_the_expanded_p5_profile(reference):
     registers = {r["name"]: r for r in reference["apu"]["registers"]}
-    assert registers["IP_VERSION"]["rtl_reset"] == "0x00010000"
-    assert registers["CAPABILITY0"]["rtl_reset"] == "0x000001BD"
-    assert registers["CAPABILITY1"]["rtl_reset"] == "0x01827010"
+    constants = (ROOT / "crt/include/retrosoc/hal/apu_regs.h").read_text(
+        encoding="utf-8"
+    )
+    assert re.search(r"RS_APU_IP_VERSION_VALUE\s+UINT32_C\(0x00010001\)", constants)
+    assert re.search(r"RS_APU_CAPABILITY0_IMPLEMENTED\s+UINT32_C\(0x000001BD\)", constants)
+    assert re.search(r"RS_APU_CAPABILITY1_IMPLEMENTED\s+UINT32_C\(0x01827020\)", constants)
+    assert "V1.1" in registers["IP_VERSION"]["description"]
+    assert "32 KiB" in registers["CAPABILITY1"]["description"]
 
 
 def test_repeated_banks_keep_their_real_instance_ranges(reference):

@@ -50,10 +50,13 @@ the root README and subsystem guides.
   AXI64 2D DMA, APB4/HAL ABI, opaque alpha composition, and the approved LP
   interrupt/fabric expansion phases; implementation and PPA evidence remain pending.
 - [ip/apu.md](ip/apu.md) defines the coreless Mini Audio Processing Unit,
-  including LP-loaded codec microcode, WAV/MP3/FLAC decode, private AXI4 DMA,
+  including LP-loaded codec microcode, WAV/FLAC decode, private AXI4 DMA,
   APB4/ring ABI, I2S streams, independent KWS, lifecycle, and evidence gates;
   its P5 capacity refreeze specifies a 4096-word control store and versioned
-  APUMC V2 with V1 compatibility.
+  APUMC V2 with V1 compatibility. P6 MP3 is deferred. The P7 refreeze fixes
+  APUM wire/numerical/HAL contracts and the content-hashed
+  [1000-waveform input manifest](ip/apu-kws-corpus.tsv); P7 starts from reviewed
+  P5 and retains the MP3 unsupported stub. Physical closure remains P8 work.
 - [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
   optional Mini-AI NPU architecture direction, memory constraints, software
   boundary, and integration prerequisites; it is not an implemented profile.

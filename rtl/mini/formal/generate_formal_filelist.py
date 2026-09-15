@@ -32,6 +32,11 @@ APU_LOADER_SCENARIOS = {
     "apu_loader_control_flow": 4,
     "apu_loader_abort": 5,
     "apu_loader_resource_reset": 6,
+    "apu_loader_p5_success": 7,
+    "apu_loader_p5_bound": 8,
+    "apu_loader_p5_abort": 9,
+    "apu_loader_p5_resource_reset": 10,
+    "apu_loader_p5_memo_fallback": 11,
 }
 APU_PRIMITIVE_SCENARIOS = {
     "apu_primitives_invalid_read": 0,
@@ -313,6 +318,12 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "apu_codec_transport.sv",
             SCRIPT_DIR / "apu_codec_formal.sv",
         ]
+    if target == "apu_kws":
+        return [
+            MULTIMEDIA / "apu_kws_model_loader.sv",
+            MULTIMEDIA / "apu_codec_controller.sv",
+            SCRIPT_DIR / "apu_kws_formal.sv",
+        ]
     if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
         return [
             COMMON_RTL / "utils/fifo.sv",
@@ -418,6 +429,7 @@ def parse_args() -> argparse.Namespace:
             "ga2d",
             "apu",
             "apu_codec",
+            "apu_kws",
             "apu_primitives",
             *APU_PRIMITIVE_SCENARIOS,
             *APU_LOADER_SCENARIOS,

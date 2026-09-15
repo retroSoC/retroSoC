@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from apu_codecs import CodecError, decode_flac  # noqa: E402
+from apu_codecs import CodecError, decode_flac, process_pcm  # noqa: E402
 
 
 def _sha256_file(path: Path) -> str:
@@ -53,8 +53,21 @@ def _classify(flac: Path, corpus: Path, path: Path) -> dict[str, object]:
     reason = 0
     geometry: dict[str, int | None] | None = None
     model_pcm_hash: str | None = None
+    production_pcm_hash = hashlib.sha256(b"").hexdigest()
+    production_input_used = 0
+    production_output_bytes = 0
+    production_frames = 0
+    production_source_info = 0
+    model_error: CodecError | None = None
     try:
         decoded = decode_flac(payload, strict=True)
+    except CodecError as error:
+        profile = "unsupported" if error.code == 3 else "malformed"
+        reason = error.reason
+        model_error = error
+        decoded = error.partial_audio
+
+    if decoded is not None:
         info = decoded.info
         geometry = {
             "rate": info.rate,
@@ -68,9 +81,34 @@ def _classify(flac: Path, corpus: Path, path: Path) -> dict[str, object]:
             for sample in frame:
                 pcm.update(sample.to_bytes(sample_bytes, "little", signed=True))
         model_pcm_hash = pcm.hexdigest()
-    except CodecError as error:
-        profile = "unsupported" if error.code == 3 else "malformed"
-        reason = error.reason
+        production_pcm = process_pcm(
+            decoded,
+            output_rate=info.rate,
+            output_channels=info.channels,
+            output_bits=info.bits,
+        )
+        production_pcm_hash = hashlib.sha256(production_pcm.payload).hexdigest()
+        production_input_used = info.input_used
+        production_output_bytes = len(production_pcm.payload)
+        production_frames = production_pcm.frames
+        production_source_info = info.rate | (info.channels << 17) | (info.bits << 19)
+
+    if model_error is not None:
+        production_input_used = model_error.input_used
+    production_truth = {
+        "status": "success" if model_error is None else "error",
+        "code": 0 if model_error is None else model_error.code,
+        "stage": 0 if model_error is None else model_error.stage,
+        "warnings": decoded.info.warnings if model_error is None else (model_error.warnings | 1),
+        "reason": 0 if model_error is None else model_error.reason,
+        "error_offset": 0 if model_error is None else model_error.offset,
+        "input_used": production_input_used,
+        "output_bytes": production_output_bytes,
+        "frames": production_frames,
+        "source_info": production_source_info,
+        "pcm_sha256": production_pcm_hash,
+        "input_used_policy": "exact",
+    }
 
     model_result = profile
     return_code, pcm_hash, stderr = _decode_hash(flac, path)
@@ -97,6 +135,7 @@ def _classify(flac: Path, corpus: Path, path: Path) -> dict[str, object]:
         "geometry": geometry,
         "reference_pcm_sha256": pcm_hash,
         "model_pcm_sha256": model_pcm_hash,
+        "production_truth": production_truth,
         "reference_integrity": "md5_mismatch"
         if md5_mismatch
         else ("passed" if return_code == 0 else "decode_failed"),

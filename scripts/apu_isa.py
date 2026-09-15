@@ -1,4 +1,4 @@
-"""Frozen APU microcode V1 encoding and APUMC bundle helpers."""
+"""Frozen APU microcode V1/V2 encoding and APUMC bundle helpers."""
 
 from __future__ import annotations
 
@@ -10,12 +10,16 @@ from typing import Iterable
 
 
 APUMC_MAGIC = 0x41504D43
-APUMC_ABI = 0x00010000
+APUMC_ABI_V1 = 0x00010000
+APUMC_ABI_V2 = 0x00020000
+APUMC_ABI = APUMC_ABI_V1
 APUMC_HEADER_BYTES = 64
 APUMC_ENTRY_BYTES = 32
 APUMC_ENTRY_COUNT = 3
 APUMC_INSTRUCTION_OFFSET = 192
-APUMC_MAX_INSTRUCTIONS = 2048
+APUMC_MAX_INSTRUCTIONS_V1 = 2048
+APUMC_MAX_INSTRUCTIONS_V2 = 4096
+APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1
 APUMC_P3_CAPABILITY_MASK = 0
 APUMC_P4_CAPABILITY_MASK = 0x0000FFFF
 APUMC_P5_CAPABILITY_MASK = 0x001FFFFF
@@ -205,10 +209,14 @@ def abi_manifest() -> dict[str, object]:
         "apumc": {
             "magic": APUMC_MAGIC,
             "abi": APUMC_ABI,
+            "abi_v1": APUMC_ABI_V1,
+            "abi_v2": APUMC_ABI_V2,
             "header_bytes": APUMC_HEADER_BYTES,
             "entry_bytes": APUMC_ENTRY_BYTES,
             "entry_count": APUMC_ENTRY_COUNT,
             "max_instructions": APUMC_MAX_INSTRUCTIONS,
+            "max_instructions_v1": APUMC_MAX_INSTRUCTIONS_V1,
+            "max_instructions_v2": APUMC_MAX_INSTRUCTIONS_V2,
         },
         "classes": {item.name.lower(): int(item) for item in InstructionClass},
         "control_opcodes": CONTROL_OPCODES,
@@ -308,10 +316,16 @@ class Entry:
     table_offset: int = 0
     table_bytes: int = 0
 
-    def words(self) -> tuple[int, ...]:
+    def words(self, abi: int = APUMC_ABI_V1) -> tuple[int, ...]:
+        if abi == APUMC_ABI_V2:
+            entry_mask = 0xFFFF
+            range_mask = 0xFFF
+        else:
+            entry_mask = 0x7FF
+            range_mask = 0x7FF
         return (
-            self.format_id | (self.entry_pc << 4),
-            self.first_pc | (self.last_pc << 16),
+            self.format_id | ((self.entry_pc & entry_mask) << 4),
+            (self.first_pc & range_mask) | ((self.last_pc & range_mask) << 16),
             self.scratch_base,
             self.scratch_bytes,
             self.max_loop_count,
@@ -384,8 +398,8 @@ def instruction_required_mask(instruction: Instruction) -> int:
     return 0
 
 
-def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
-    """Validate one frozen V1 instruction for the selected implementation target."""
+def validate_instruction(instruction: Instruction, target: str = "p3", abi: int = APUMC_ABI_V1) -> None:
+    """Validate one frozen instruction for the selected target and image ABI."""
 
     target_mask = _target_mask(target)
     if instruction.predicate > 11:
@@ -400,8 +414,9 @@ def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
             _require_zero(instruction, ("dst", "src0", "src1", "aux"))
         elif opcode in (ControlOpcode.JUMP_FWD, ControlOpcode.CALL_FWD):
             _require_zero(instruction, ("dst", "src0", "src1", "aux"))
-            if not 1 <= instruction.immediate <= 0x7FF:
-                raise ValueError("forward branch delta must be 1..2047")
+            branch_limit = 0xFFF if abi == APUMC_ABI_V2 else 0x7FF
+            if not 1 <= instruction.immediate <= branch_limit:
+                raise ValueError("forward branch delta is outside the image PC width")
         elif opcode == ControlOpcode.RET:
             _require_zero(instruction, ("dst", "src0", "src1", "aux", "immediate"))
             if instruction.predicate != 0:
@@ -415,7 +430,7 @@ def validate_instruction(instruction: Instruction, target: str = "p3") -> None:
             if (
                 instruction.predicate != 0
                 or instruction.aux > 3
-                or not 1 <= instruction.immediate <= 0x7FF
+                or not 1 <= instruction.immediate <= (0xFFF if abi == APUMC_ABI_V2 else 0x7FF)
             ):
                 raise ValueError("LOOP_BACK encoding is invalid")
         else:
@@ -581,10 +596,11 @@ def validate_p5_instruction(instruction: Instruction) -> None:
 
 
 def validate_entry(entry: Entry, instruction_count: int, target: str = "p3",
-                   table_payload_bytes: int = 0) -> None:
+                   table_payload_bytes: int = 0, abi: int = APUMC_ABI_V1) -> None:
     if entry.format_id not in range(APUMC_ENTRY_COUNT):
         raise ValueError("entry format must be 0, 1, or 2")
-    if not (0 <= entry.first_pc <= entry.entry_pc <= entry.last_pc < instruction_count):
+    pc_limit = APUMC_MAX_INSTRUCTIONS_V2 if abi == APUMC_ABI_V2 else APUMC_MAX_INSTRUCTIONS_V1
+    if not (0 <= entry.first_pc <= entry.entry_pc <= entry.last_pc < instruction_count <= pc_limit):
         raise ValueError("entry PC range is invalid")
     if not 1 <= entry.max_loop_count <= 0xFFFF:
         raise ValueError("maximum loop count must be 1..65535")
@@ -617,9 +633,10 @@ def validate_entry(entry: Entry, instruction_count: int, target: str = "p3",
 
 
 def control_flow_report(
-    instructions: list[Instruction], entry: Entry, target: str = "p3"
+    instructions: list[Instruction], entry: Entry, target: str = "p3",
+    abi: int = APUMC_ABI_V1
 ) -> dict[str, object]:
-    """Prove bounded V1 control flow and return its deterministic report."""
+    """Prove bounded control flow for the selected image ABI."""
 
     loop_pairs: dict[int, int] = {}
     active_setup: dict[int, int] = {}
@@ -728,7 +745,8 @@ def control_flow_report(
             else:
                 raise ValueError(f"WAIT requires a primitive unavailable in {target.upper()}")
         pending.extend(successors)
-        if len(visited) > APUMC_MAX_INSTRUCTIONS * 64:
+        proof_limit = (APUMC_MAX_INSTRUCTIONS_V2 if abi == APUMC_ABI_V2 else APUMC_MAX_INSTRUCTIONS_V1) * 64
+        if len(visited) > proof_limit:
             raise ValueError(f"entry {entry.format_id} control-flow proof exceeded its bound")
     if not terminals:
         raise ValueError(f"entry {entry.format_id} has no reachable END or TRAP")
@@ -755,11 +773,12 @@ def control_flow_report(
 
 
 def validate_control_flow(
-    instructions: list[Instruction], entry: Entry, target: str = "p3"
+    instructions: list[Instruction], entry: Entry, target: str = "p3",
+    abi: int = APUMC_ABI_V1
 ) -> None:
-    """Prove bounded V1 control flow for one entry descriptor."""
+    """Prove bounded control flow for one entry descriptor."""
 
-    control_flow_report(instructions, entry, target)
+    control_flow_report(instructions, entry, target, abi)
 
 
 def build_apumc(
@@ -769,10 +788,18 @@ def build_apumc(
     *,
     target: str = "p3",
     table_payload: bytes = b"",
+    abi: int | None = None,
 ) -> bytes:
+    if abi is None:
+        abi = APUMC_ABI_V2 if target == "p5" else APUMC_ABI_V1
+    if abi not in (APUMC_ABI_V1, APUMC_ABI_V2):
+        raise ValueError("unsupported APUMC ABI")
+    if abi == APUMC_ABI_V2 and target != "p5":
+        raise ValueError("APUMC V2 is available only for P5")
     target_mask = _target_mask(target)
-    if not 1 <= len(instructions) <= APUMC_MAX_INSTRUCTIONS:
-        raise ValueError("instruction count must be 1..2048")
+    instruction_limit = APUMC_MAX_INSTRUCTIONS_V2 if abi == APUMC_ABI_V2 else APUMC_MAX_INSTRUCTIONS_V1
+    if not 1 <= len(instructions) <= instruction_limit:
+        raise ValueError("instruction count is outside the selected APUMC ABI")
     if len(table_payload) & 3 or len(table_payload) > APUMC_P4_TABLE_SCRATCH_BYTES:
         raise ValueError("table payload must be four-byte aligned and at most 24 KiB")
     if target == "p3" and table_payload:
@@ -782,11 +809,11 @@ def build_apumc(
     for index, entry in enumerate(entries):
         if entry.format_id != index:
             raise ValueError("entry descriptor order must be WAV, MP3, FLAC")
-        validate_entry(entry, len(instructions), target, len(table_payload))
+        validate_entry(entry, len(instructions), target, len(table_payload), abi)
     for instruction in instructions:
-        validate_instruction(instruction, target)
+        validate_instruction(instruction, target, abi)
     for entry in entries:
-        validate_control_flow(instructions, entry, target)
+        validate_control_flow(instructions, entry, target, abi)
         for pc in range(entry.first_pc, entry.last_pc + 1):
             required = instruction_required_mask(instructions[pc])
             if instructions[pc].instruction_class == InstructionClass.CONTROL and required:
@@ -798,7 +825,7 @@ def build_apumc(
             elif required & ~entry.primitive_mask:
                 raise ValueError(f"entry {entry.format_id} omits an instruction primitive")
 
-    descriptor = b"".join(struct.pack("<8I", *entry.words()) for entry in entries)
+    descriptor = b"".join(struct.pack("<8I", *entry.words(abi)) for entry in entries)
     padding = bytes(APUMC_INSTRUCTION_OFFSET - APUMC_HEADER_BYTES - len(descriptor))
     encoded = b"".join(struct.pack("<Q", instruction.encode()) for instruction in instructions)
     table_offset = APUMC_INSTRUCTION_OFFSET + len(encoded) if table_payload else 0
@@ -815,7 +842,7 @@ def build_apumc(
     header = struct.pack(
         "<16I",
         APUMC_MAGIC,
-        APUMC_ABI,
+        abi,
         total_bytes,
         len(instructions),
         APUMC_INSTRUCTION_OFFSET,
@@ -835,15 +862,22 @@ def build_apumc(
 
 
 def parse_apumc(
-    bundle: bytes, target: str = "p3"
+    bundle: bytes, target: str = "p3", abi: int | None = None
 ) -> tuple[list[Instruction], list[Entry], tuple[int, ...]]:
     target_mask = _target_mask(target)
     if len(bundle) < APUMC_HEADER_BYTES:
         raise ValueError("bundle is smaller than the APUMC header")
     header = struct.unpack_from("<16I", bundle)
+    image_abi = header[1]
+    if abi is not None and image_abi != abi:
+        raise ValueError("APUMC ABI does not match requested version")
+    if target == "p5":
+        if image_abi not in (APUMC_ABI_V1, APUMC_ABI_V2):
+            raise ValueError("APUMC header is invalid")
+    elif image_abi != APUMC_ABI_V1:
+        raise ValueError("APUMC header is invalid")
     if (
         header[0] != APUMC_MAGIC
-        or header[1] != APUMC_ABI
         or header[2] != len(bundle)
         or len(bundle) < 160
         or header[14] != 0
@@ -859,7 +893,8 @@ def parse_apumc(
     entry_offset = header[7]
     instruction_end = instruction_offset + instruction_count * 8
     entry_end = entry_offset + APUMC_ENTRY_COUNT * APUMC_ENTRY_BYTES
-    if not 1 <= instruction_count <= APUMC_MAX_INSTRUCTIONS:
+    instruction_limit = APUMC_MAX_INSTRUCTIONS_V2 if image_abi == APUMC_ABI_V2 else APUMC_MAX_INSTRUCTIONS_V1
+    if not 1 <= instruction_count <= instruction_limit:
         raise ValueError("APUMC instruction count is invalid")
     common_range_error = (
         instruction_offset < APUMC_HEADER_BYTES
@@ -895,8 +930,8 @@ def parse_apumc(
     for index in range(APUMC_ENTRY_COUNT):
         words = struct.unpack_from("<8I", bundle, entry_offset + index * APUMC_ENTRY_BYTES)
         reserved_error = (
-            words[0] >> 15
-            or (words[1] & 0xF800F800)
+            (words[0] >> (16 if image_abi == APUMC_ABI_V2 else 15))
+            or (words[1] & (0xF000F000 if image_abi == APUMC_ABI_V2 else 0xF800F800))
             or words[4] >> 16
             or words[5] >> 24
             or words[2] >> 17
@@ -907,9 +942,9 @@ def parse_apumc(
         entries.append(
             Entry(
                 format_id=words[0] & 0xF,
-                entry_pc=(words[0] >> 4) & 0x7FF,
-                first_pc=words[1] & 0x7FF,
-                last_pc=(words[1] >> 16) & 0x7FF,
+                entry_pc=(words[0] >> 4) & (0xFFF if image_abi == APUMC_ABI_V2 else 0x7FF),
+                first_pc=words[1] & (0xFFF if image_abi == APUMC_ABI_V2 else 0x7FF),
+                last_pc=(words[1] >> 16) & (0xFFF if image_abi == APUMC_ABI_V2 else 0x7FF),
                 scratch_base=words[2] & 0x1FFFF,
                 scratch_bytes=words[3] & 0x1FFFF,
                 max_loop_count=words[4] & 0xFFFF,
@@ -936,11 +971,11 @@ def parse_apumc(
     for index, entry in enumerate(entries):
         if entry.format_id != index:
             raise ValueError("entry descriptor order must be WAV, MP3, FLAC")
-        validate_entry(entry, instruction_count, target, table_bytes)
+        validate_entry(entry, instruction_count, target, table_bytes, image_abi)
     for instruction in instructions:
-        validate_instruction(instruction, target)
+        validate_instruction(instruction, target, image_abi)
     for entry in entries:
-        validate_control_flow(instructions, entry, target)
+        validate_control_flow(instructions, entry, target, image_abi)
         for pc in range(entry.first_pc, entry.last_pc + 1):
             required = instruction_required_mask(instructions[pc])
             if instructions[pc].instruction_class == InstructionClass.CONTROL and required:

@@ -41,6 +41,7 @@ class Assembly:
     build_id: int
     target: str
     table_payload: bytes
+    mc_abi: int
 
 
 def _number(token: str) -> int:
@@ -255,7 +256,12 @@ def _encode_instruction(tokens: list[str], pc: int, labels: dict[str, int]) -> I
     return Instruction(InstructionClass.SCALAR, opcode, **values)
 
 
-def assemble(source: str, target: str = "p3", table_payload_input: bytes | None = None) -> Assembly:
+def assemble(
+    source: str,
+    target: str = "p3",
+    table_payload_input: bytes | None = None,
+    mc_abi: int | None = None,
+) -> Assembly:
     if target not in APUMC_TARGETS:
         raise ValueError(f"unknown APU target {target}")
     lines = []
@@ -326,16 +332,32 @@ def assemble(source: str, target: str = "p3", table_payload_input: bytes | None 
         if table_payload_input is not None
         else b"".join(struct.pack("<I", word) for word in table_words)
     )
-    bundle = build_apumc(instructions, entries, build_id, target=target, table_payload=table_payload)
-    return Assembly(bundle, dict(sorted(labels.items())), instructions, entries, build_id, target, table_payload)
+    bundle = build_apumc(
+        instructions, entries, build_id, target=target, table_payload=table_payload, abi=mc_abi
+    )
+    selected_abi = mc_abi if mc_abi is not None else (0x00020000 if target == "p5" else 0x00010000)
+    return Assembly(
+        bundle,
+        dict(sorted(labels.items())),
+        instructions,
+        entries,
+        build_id,
+        target,
+        table_payload,
+        selected_abi,
+    )
 
 
 def _artifact_data(assembly: Assembly) -> dict[str, object]:
+    instruction_limit = 4096 if assembly.mc_abi == 0x00020000 else 2048
     return {
-        "abi": "1.0",
+        "abi": "2.0" if assembly.mc_abi == 0x00020000 else "1.0",
+        "mc_abi": f"0x{assembly.mc_abi:08x}",
         "build_id": f"0x{assembly.build_id:016x}",
         "bundle_bytes": len(assembly.bundle),
         "instruction_count": len(assembly.instructions),
+        "maximum_instruction_words": instruction_limit,
+        "free_instruction_words": instruction_limit - len(assembly.instructions),
         "payload_crc32": f"0x{crc32_iso_hdlc(assembly.bundle[64:]):08x}",
     }
 
@@ -344,6 +366,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("--target", choices=APUMC_TARGETS, default="p3")
+    parser.add_argument("--mc-abi", choices=("1.0", "2.0"))
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--symbols", type=Path)
     parser.add_argument("--cfg-report", type=Path)
@@ -353,7 +376,8 @@ def main() -> int:
     parser.add_argument("--table-binary", type=Path)
     args = parser.parse_args()
     table_payload = args.table_binary.read_bytes() if args.table_binary is not None else None
-    assembly = assemble(args.source.read_text(encoding="utf-8"), args.target, table_payload)
+    selected_abi = None if args.mc_abi is None else (0x00010000 if args.mc_abi == "1.0" else 0x00020000)
+    assembly = assemble(args.source.read_text(encoding="utf-8"), args.target, table_payload, selected_abi)
     args.output.write_bytes(assembly.bundle)
     artifacts = {
         args.symbols: assembly.symbols,
@@ -361,13 +385,19 @@ def main() -> int:
             **_artifact_data(assembly),
             "entries": [entry.__dict__ for entry in assembly.entries],
             "control_flow": [
-                control_flow_report(assembly.instructions, entry, assembly.target)
+                control_flow_report(
+                    assembly.instructions, entry, assembly.target, assembly.mc_abi
+                )
                 for entry in assembly.entries
             ],
         },
         args.primitive_manifest: {
             "target": assembly.target,
-            "implemented_mask": 0 if assembly.target == "p3" else 0x0000FFFF,
+            "implemented_mask": {
+                "p3": 0,
+                "p4": 0x0000FFFF,
+                "p5": 0x001FFFFF,
+            }[assembly.target],
             "required_mask": __import__("functools").reduce(
                 int.__or__, (entry.primitive_mask for entry in assembly.entries), 0
             ),
