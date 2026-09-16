@@ -125,6 +125,7 @@ APU_P5_REFERENCE_DIR    := $(VARIANT_ROOT)/apu/reference
 APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
 APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
+NPU_P0_DIR              := $(VARIANT_ROOT)/npu/p0
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -508,6 +509,9 @@ setup-apu-reference:
 
 setup-apu-kws-reference:
 	python3 $(ROOT_PATH)/scripts/setup_apu_reference.py --target p7 --build-dir $(APU_P7_DIR)
+
+setup-npu-reference:
+	python3 $(ROOT_PATH)/scripts/setup_npu_reference.py --build-dir $(NPU_P0_DIR)
 
 $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
 	$(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \

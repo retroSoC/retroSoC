@@ -232,6 +232,12 @@
       "destination": ".cache/retrosoc/downloads/apu/kws-pcm-speech-commands-test-v0.02.tar.gz",
       "license": "CC-BY-4.0"
     },
+    "npu_vww_dataset": {
+      "url": "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz",
+      "sha256": "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58",
+      "destination": ".cache/retrosoc/downloads/npu/vw-coco2014-96.tar.gz",
+      "license": "NOASSERTION"
+    },
     "typst_cetz": {
       "version": "0.5.2",
       "url": "https://packages.typst.org/preview/cetz-0.5.2.tar.gz",
