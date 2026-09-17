@@ -66,9 +66,8 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
-// This edition tracks reviewed dev changes, not the previous diagram-rollout markers.
-#let current-change(id) = id.starts-with("dev-") or id in (
-  "contents", "table-directory", "figure-directory", "ga2d-chapter", "revision-history")
+// This edit appends one closing page; earlier body-edit markers remain inactive.
+#let current-change(id) = id == "closing-page"
 #let change-start(id, title, category:"modified") = context {
   if current-change(id) {metadata((
     kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))}

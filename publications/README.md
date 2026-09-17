@@ -278,6 +278,9 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
 - `ip-pages.json`: queried start/end pages used to enforce per-IP page breaks.
 - `layout-regions.json`: renderer-marked continuation-text regions, hashed in
   the manifest to limit the 8.5 pt continuation-notice exception.
+- `page-roles.json`: the renderer-declared unique closing page, hashed in the
+  manifest. Only this final page omits running headers, footers and printed page
+  numbers; it still contributes to the document's total page count.
 - `waveform-audit.json`: source files/scopes, declaration lines, resolved lane
   widths and behavior-review qualifications for every waveform.
 - `change-markers.json`: paired layout positions for the current edit's substantive
@@ -299,7 +302,9 @@ For a content-edit handoff, retain the previous PDF and run:
 python publications/report_changes.py --baseline build/<previous>/<filename>.pdf --pdf build/<final>/<filename>.pdf
 ```
 
-The report checks printed footers and PDF/marker integrity. Review its ranges
+The report checks printed footers and PDF/marker integrity. The closing page is
+identified by its viewer page with null printed-page values and `unprinted`
+numbering; every ordinary page retains the full footer requirement. Review its ranges
 against the rendered content, then include them in the final change summary.
 Subsequent pages whose only differences are pagination or automatic numbering
 are described separately from substantive edits. Maintain the paired markers for
@@ -389,7 +394,11 @@ footnotes, page balance and grayscale readability.
 `tests/test_publication_diagrams.py` and `tests/test_publication_full_diagrams.py`
 cover field/source drift, all instruction families, C descriptor layouts, actual
 storage geometry, named instance ports, chapter coverage and renderer completeness.
-The footer displays the complete clickable repository URL; Contents bolds only
+Ordinary-page footers display the complete clickable repository URL; the unique
+unnumbered closing page has its own body link and no running furniture.
+`tests/test_publication_closing.py` checks that this exception cannot hide a
+missing ordinary footer, duplicate/non-final page role or modified role record.
+Contents bolds only
 level-one chapter numbers/titles, leaving leaders/page numbers and flat lists regular.
 
 No RTL/HAL change is made by this publication flow. Simulation, synthesis,

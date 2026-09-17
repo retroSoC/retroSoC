@@ -28,3 +28,4 @@
 #include "sections/software.typ"
 #change-end("dev-software")
 #include "sections/appendices.typ"
+#include "sections/closing.typ"

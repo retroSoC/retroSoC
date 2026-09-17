@@ -1,8 +1,8 @@
 # Mini datasheet chapter review - 2026-09-17
 
-Review snapshot: **v0.4 DRAFT**, 746 pages, IHP130 PRODUCT / 32 KiB SRAM.
+Review snapshot: **v0.4 DRAFT**, 747 pages, IHP130 PRODUCT / 32 KiB SRAM.
 
-Hardware commit: `2a497ecef0b084c02f77ddfb1e94fb0197e14b02`. PDF SHA-256: `710fe0e0fd74ac41895b89915130b03bfe78c9aad7f397678e354843b8c55e9c`.
+Hardware commit: `2a497ecef0b084c02f77ddfb1e94fb0197e14b02`. PDF SHA-256: `f6ddf7f1a78e2de2ff2e3733d9b44149f2208dbf4361a5930322de37b3e9b30e`.
 
 The table covers all **108 frozen entries / 41 IP chapters**. Page numbers belong to this exact PDF. "Already covered" describes the documented subset, not complete protocol compliance or qualification. Implementation, default enable/capability, available tests, executed passes and physical evidence remain separate.
 

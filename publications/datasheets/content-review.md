@@ -33,3 +33,7 @@ The snapshot is stored jointly in [mini.json](mini.json) and
 [system-reference.json](system-reference.json). Layout and evidence rules are in
 [style.md](style.md); the approved structural addition is frozen in
 [structure-contract.json](structure-contract.json).
+
+The independent closing page is an unnumbered publication element outside the
+108-entry chapter contract. It adds the empty logo reserve and project notice;
+it does not change implementation coverage, capability or qualification status.

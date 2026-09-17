@@ -709,10 +709,10 @@ report and behavioral-only regression is not synthesis, netlist, STA or silicon.
 Do not fill electrical, thermal, power or throughput fields with borrowed device
 figures, target clocks or analytic ceilings.
 
-For this refresh, change markers use the `dev-` namespace plus the explicitly
-retained navigation/revision and new GA2D chapter markers. Earlier diagram-rollout
-markers do not make unchanged chapters appear rewritten. The date/footer metadata
-changes and pure page/number advancement remain distinct in the final report.
+The dev refresh used the `dev-` namespace plus navigation/revision and GA2D
+chapter markers. The current closing-page edit activates only `closing-page`;
+earlier markers do not make unchanged chapters appear rewritten. Footer-total
+changes remain distinct from the newly appended unnumbered page in the report.
 
 Use the existing Overview icon artwork, including its reverted outline style.
 The five Multimedia entries use two rows of three and two cells within the same
@@ -888,6 +888,35 @@ center-aligned within that width, uses 9 pt muted small-text rhythm and
 actual SVG as well as color and grayscale PDF renders.
 
 ## Header, footer, assets and maintenance
+
+### Independent closing page
+
+Append one unnumbered closing page after Document Status and Contact. It is an
+A4 page with 19 mm left/right margins and a 24 mm bottom margin; hide its running
+header, footer, rules, date and visible page number in a local page scope. Count
+it in the full PDF total. It has no heading, bookmark, figure number or directory
+entry, so the 41-IP / 108-entry structure contract remains unchanged.
+
+Bottom-align a single nonbreaking content block. Its first element is an empty
+60 x 14 mm white rectangle with a 0.6 pt gold outline, reserved for a future logo.
+Do not add a label, caption, placeholder text or an external logo asset. Leave
+7 mm before the 13 pt Inter Semibold title, "Disclaimer and Copyright Notice".
+Use 9 pt Inter Regular text with the small-text leading (about 10.8 pt baseline
+pitch) and 5 pt paragraph spacing. Keep the existing ink/gold/link palette.
+
+Use the reviewed English notice in `sections/closing.typ`, the copyright line
+from the project LICENSE and a blue clickable repository link. The notice refers
+to Mulan PSL v2 and third-party licenses without substituting new license terms
+or importing another manufacturer's copyright/trademark statements.
+
+The start/end metadata must identify one complete final page. Export
+`page-roles.json` and bind its digest in the manifest. Only that validated role
+permits absent footer content and links; all ordinary pages remain subject to
+the standard furniture checks. Missing, modified, duplicated or non-final role
+records fail validation. Change reports use viewer indexes and null printed
+page values for this page. Keep first-page Integration note placement intact.
+
+### Running furniture and managed assets
 
 The header displays `retroSoC Mini Gen2/Gen2+` from `doc.title` on the left and the active IP identifier,
 or current level-one chapter outside an IP, on the right. It uses 9 pt muted
