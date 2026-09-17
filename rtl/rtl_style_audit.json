@@ -195,7 +195,14 @@
       "jpeg_table_cache.sv",
       "jpeg_table_register_bank.sv",
       "jpeg_table_store.sv",
-      "jpeg_transform.sv"
+      "jpeg_transform.sv",
+      "npu_accumulator.sv",
+      "npu_local_sram.sv",
+      "npu_mac_array.sv",
+      "npu_patch_packer.sv",
+      "npu_pkg.sv",
+      "npu_requantizer.sv",
+      "npu_vector.sv"
     ],
     "rtl/ip/peripheral": [
       "apb4_clint.sv",
