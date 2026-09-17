@@ -61,7 +61,8 @@
   *Media and data processing*
   - Stereo 16/24-bit I2S master; 8-bit RGB565/YUV422 DVP with crop/snapshot capture.
   - Baseline JPEG encode/decode up to 2048 × 2048, with private DMA.
-  - Coreless APU WAV/FLAC job infrastructure; production qualification incomplete.
+  - GA2D fill/copy/convert/opaque blend and A8 masks.
+  - APU WAV/FLAC decode; MP3/KWS not advertised.
   - AES-128/192/256, SHA-224/256 and raw RSA-2048; programmable CRC.
   - RNG source remains unqualified for production entropy.
 

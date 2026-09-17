@@ -495,7 +495,7 @@
       "rtl/ip/multimedia/ga2d_core.sv",
       "rtl/ip/multimedia/ga2d_reg.sv"
     ],
-    "summary": "P5 APB4-controlled direct single-job private-AXI64 2D engine with FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color foreground masks, and exact equal background/destination in-place composition. RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is BLEND foreground-only. Resource-owned IRQ, snapshots, pitch, and byte-edge support remain available; transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, hardware cache coherency, and a Linux graphics driver are unavailable."
+    "summary": "P5 direct single-job 2D accelerator with private AXI64 DMA. Supports FILL, COPY, bit-exact format CONVERT and opaque alpha BLEND, including A8 foreground masks and exact background/destination in-place composition. Resource ownership, bounded buffers and cache handoff remain mandatory."
   },
   {
     "id": "reserved",

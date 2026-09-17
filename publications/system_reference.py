@@ -10,6 +10,7 @@ from publications.implementation_reference import collect_details, dependencies 
 from publications.retrieval_reference import dependencies as retrieval_dependencies
 from publications.software_reference import collect_software, dependencies as software_dependencies
 from publications.diagram_reference import dependencies as diagram_dependencies
+from publications.dev_reference import APU_SOURCES, apu_implementation, validate_ci_snapshot
 
 REFERENCE = "publications/datasheets/system-reference.json"
 
@@ -34,6 +35,8 @@ def validate_reference(reference: dict, expected_ids: set[str], root: Path) -> N
         raise ValueError("unsupported system-reference schema")
     if not re.fullmatch(r"[0-9a-f]{40}", reference.get("source_revision", "")):
         raise ValueError("system-reference requires reviewed source revision")
+    if "ci_snapshot" in reference:
+        validate_ci_snapshot(reference["ci_snapshot"], reference["source_revision"])
     for collection in ("support", "limitations"):
         ids = [row["id"] for row in reference[collection]]
         if len(ids) != len(set(ids)):
@@ -91,4 +94,7 @@ def collect_system_reference(root: Path, revision: str) -> dict:
     reference["programming"] = collect_programming(root, reference["programming"], {row["id"] for row in index}, revision)
     reference["product_details"] = collect_details(root, reference["product_details"], {row["id"] for row in index}, {row["id"] for row in reference["limitations"]})
     reference["software"] = collect_software(root, reference["software"])
+    if not set(APU_SOURCES) <= source_paths(reference):
+        raise ValueError("APU implementation dependencies missing from publication sources")
+    reference["apu_implementation"] = apu_implementation(root)
     return reference

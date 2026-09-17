@@ -2195,5 +2195,97 @@
       "Fixed slot + lifecycle",
       "Response / IRQ"
     ]
+  },
+  "ga2d": {
+    "title": "2D Graphics Accelerator",
+    "blocks": [
+      "APB4 configuration",
+      "Single-job lifecycle",
+      "Private AXI64 DMA",
+      "Pixel conversion/blending",
+      "Foreground/background/output FIFOs"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "reference": "docs/ip/ga2d.md",
+    "notes": [
+      "The P5 engine admits one direct job. FILL uses a constant color, COPY preserves bytes between equal color formats, CONVERT performs bit-exact format conversion, and BLEND composites a foreground over an opaque background. The current capability is 0x000007FF; format capability is 0x000F0F1F.",
+      "RGB565, RGB888, XRGB8888 and ARGB8888 are color surfaces. A8 is a BLEND foreground mask whose RGB color comes from COLOR. A8 is not a COPY/CONVERT source or a destination format. Transparent-background and premultiplied-alpha composition are not supported.",
+      "Width and height are nonzero 16-bit pixel counts. Each used surface has a byte address and a positive byte pitch covering its logical row. RGB565 requires two-byte address/pitch alignment; 32-bit surfaces require four-byte alignment; RGB888 and A8 use byte alignment. Address arithmetic and the final exclusive end must remain inside one allowed 32-bit memory range.",
+      "Foreground/destination overlap is rejected conservatively. BLEND permits background/destination in-place use only when address, pitch and format are all equal; other background/destination overlap is rejected. Padding participates in the conservative address envelope but is not modified as image payload.",
+      "The private AXI64 engine splits work at line and 4 KiB boundaries. It uses bursts of at most 16 beats and byte strobes for edges. Foreground and background reads are kept distinct; accepted traffic must drain before software reuses a buffer.",
+      "Resource 8 owns control and interrupt routing. GA2D is master 8 of the nine-master data plane, reads SRAM/SDRAM/QPI/OPI/XPI and writes the first four targets. XPI is read-only. Root policy rejects instruction and cacheable attributes; software remains responsible for cache maintenance and buffer ownership.",
+      "The PCLK-domain engine reaches the HP fabric through its address gate and asynchronous bridge. HP reset, bridge epoch/clear, resource stop and DATA_READY participate in recovery. These implemented mechanisms are not CDC/RDC signoff evidence.",
+      "There is no descriptor, ring or queue submission, scaling, rotation, negative pitch, YUV/CLUT renderer, hardware cache coherence or native Linux graphics driver. The presence of P5 tests and firmware scenarios does not establish Phase 6 system-performance or physical qualification."
+    ],
+    "software_steps": [
+      "Read capability/format words, select an implemented operation, and obtain resource ownership. Confirm DATA_READY and that no recovery is pending.",
+      "Allocate disjoint bounded surfaces, except the explicitly supported equal background/destination BLEND case. Validate pitch, format, dimensions, alignment and addresses with rs_ga2d_job_validate.",
+      "Clean CPU-produced inputs as required, prepare destination ownership, and issue the required memory fence before configuring the job. Keep surfaces and configuration stable while active.",
+      "Call rs_ga2d_configure, then rs_ga2d_start. Use rs_ga2d_wait or the owner-routed IRQ; LP vector 32, external ordinal 30 and HP PLIC source 11 name different routing layers.",
+      "Capture terminal status, first-error details and counter snapshots before acknowledging W1C IRQ causes. Invalidate a DMA-written destination before CPU consumption where its mapping is cached.",
+      "A polling timeout does not prove hardware idle. Use rs_ga2d_abort_wait to stop/drain accepted traffic, inspect recovery_required, and perform the documented resource/bridge rearm when required. A soft reset must not be used to discard in-flight bus obligations."
+    ],
+    "example_file": "publications/examples/ga2d.c",
+    "api": [
+      {
+        "name": "rs_ga2d_get_capability",
+        "signature": "rs_status_t rs_ga2d_get_capability(rs_ga2d_capability_t *capability);"
+      },
+      {
+        "name": "rs_ga2d_job_validate",
+        "signature": "rs_status_t rs_ga2d_job_validate(const rs_ga2d_job_t *job);"
+      },
+      {
+        "name": "rs_ga2d_configure",
+        "signature": "rs_status_t rs_ga2d_configure(const rs_ga2d_job_t *job);"
+      },
+      {
+        "name": "rs_ga2d_start",
+        "signature": "rs_status_t rs_ga2d_start(void);"
+      },
+      {
+        "name": "rs_ga2d_wait",
+        "signature": "rs_status_t rs_ga2d_wait(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ga2d_abort_wait",
+        "signature": "rs_status_t rs_ga2d_abort_wait(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_ga2d_reset",
+        "signature": "rs_status_t rs_ga2d_reset(void);"
+      },
+      {
+        "name": "rs_ga2d_get_status",
+        "signature": "rs_status_t rs_ga2d_get_status(rs_ga2d_status_t *status);"
+      },
+      {
+        "name": "rs_ga2d_get_error",
+        "signature": "rs_status_t rs_ga2d_get_error(rs_ga2d_error_t *error);"
+      },
+      {
+        "name": "rs_ga2d_get_stats",
+        "signature": "rs_status_t rs_ga2d_get_stats(rs_ga2d_stats_t *stats);"
+      },
+      {
+        "name": "rs_ga2d_irq_enable",
+        "signature": "rs_status_t rs_ga2d_irq_enable(uint32_t mask);"
+      },
+      {
+        "name": "rs_ga2d_irq_pending",
+        "signature": "rs_status_t rs_ga2d_irq_pending(uint32_t *pending);"
+      },
+      {
+        "name": "rs_ga2d_irq_clear",
+        "signature": "rs_status_t rs_ga2d_irq_clear(uint32_t mask);"
+      }
+    ],
+    "api_header": "crt/include/retrosoc/hal/ga2d.h",
+    "flow": [
+      "Foreground / background surfaces",
+      "GA2D pixel and AXI64 engine",
+      "Destination surface"
+    ]
   }
 }

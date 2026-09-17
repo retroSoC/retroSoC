@@ -653,9 +653,9 @@ exception to the ordinary body/list rhythm:
 | Cover setting | Value |
 | --- | --- |
 | Paragraph leading / spacing | 4.96 / 3.675 pt |
-| Level-one / deeper heading before | 20 / 12 pt |
+| Level-one / deeper heading before | 12 / 12 pt |
 | Heading after | 6 pt |
-| General / metadata / rule gaps | 9 / 10 / 8 pt |
+| General / metadata / rule gaps | 3 / 4 / 2 pt |
 | List | Non-tight; `cover-list-spacing: 7.96pt`; body indent 0.5 em |
 
 Features list continuation lines have approximately 12.6 pt baseline spacing,
@@ -693,8 +693,33 @@ Do not achieve this by absolute positioning or shrinking the text.
 
 ### Specialized diagram packages
 
+#### Implementation refresh and evidence scope
+
+The 2026-09-17 v0.4 refresh explicitly adds GA2D as an independent Multimedia IP
+after JPEG and before APU: 41 IP entries and 108 frozen structural records.
+Keep the APU `(partial)` title while MP3 and default KWS remain unavailable.
+Audit semantics as well as source snippets: a binding that still matches code
+does not prove that every surrounding capability or limitation sentence is true.
+
+Separate implemented code, default-enabled/advertised capability, test facilities,
+matching successful runs and physical qualification. Record CI revision, checked
+date, run URL, outcome and scope, including failed prerequisites and skipped
+downstream tests. A workflow pass is not a substitute for an exact-profile IP
+report and behavioral-only regression is not synthesis, netlist, STA or silicon.
+Do not fill electrical, thermal, power or throughput fields with borrowed device
+figures, target clocks or analytic ceilings.
+
+For this refresh, change markers use the `dev-` namespace plus the explicitly
+retained navigation/revision and new GA2D chapter markers. Earlier diagram-rollout
+markers do not make unchanged chapters appear rewritten. The date/footer metadata
+changes and pure page/number advancement remain distinct in the final report.
+
+Use the existing Overview icon artwork, including its reverted outline style.
+The five Multimedia entries use two rows of three and two cells within the same
+panel. Keep the repository footer blue and clickable without an underline.
+
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 40 IP diagrams plus PRODUCT fabric,
+chapters. Circuiteria 0.2.1 covers all 41 IP diagrams plus PRODUCT fabric,
 clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
@@ -789,14 +814,14 @@ fill; the two processor cells are pale gold. Cells adapt to the item count:
 Connectivity uses three columns and splits its last row between two items.
 
 [overview-groups.json](overview-groups.json) is the sole source of category and
-IP names (currently nine categories and 43 IPs). Show each integrated PRODUCT
+IP names (currently nine categories and 44 IPs). Show each integrated PRODUCT
 IP once, without external chips, reserved windows, MPW-only blocks, topology
 arrows, capacities, frequencies or state badges. Decorative icons express
 category only. Keep Overview-only drawing helpers separate from shared boxes.
 
 The Interconnect Matrix remains on a portrait page, 172 mm wide: a 45 mm
 initiator column and five 25.4 mm target columns. Header height is 8.5 mm; the
-eight data rows are 8.2 mm high. Labels stay at least 9 pt. Permissions are
+data rows, one per reviewed initiator (currently nine), are 8.2 mm high. Labels stay at least 9 pt. Permissions are
 printed as `R / W`, `R`, `W` or `-`; cells allowing writes also use pale gold.
 Do not rescale the complete drawing or change data to make it fit.
 

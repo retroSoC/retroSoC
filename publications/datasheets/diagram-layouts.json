@@ -2533,5 +2533,167 @@
       }
     ],
     "bits": 2048
+  },
+  {
+    "id": "ga2d-pixels",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D pixel-word fields and memory byte order",
+    "kind": "bits",
+    "section": "functional",
+    "order": "lsb",
+    "rows": [
+      {
+        "label": "RGB565",
+        "bits": 16,
+        "fields": [
+          {
+            "name": "Blue",
+            "label": "Blue",
+            "lsb": 0,
+            "bits": 5,
+            "role": "configuration"
+          },
+          {
+            "name": "Green",
+            "label": "Green",
+            "lsb": 5,
+            "bits": 6,
+            "role": "configuration"
+          },
+          {
+            "name": "Red",
+            "label": "Red",
+            "lsb": 11,
+            "bits": 5,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "RGB888",
+        "bits": 24,
+        "fields": [
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "XRGB8888",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "X",
+            "label": "X",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "ARGB8888",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "A",
+            "label": "A",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "A8 foreground mask",
+        "bits": 8,
+        "fields": [
+          {
+            "name": "Alpha",
+            "label": "Alpha",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "crt/src/hal/ga2d_math.c"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_pixel.sv",
+        "text": "s_red = pixel_i[7:0]; s_green = pixel_i[15:8]; s_blue = pixel_i[23:16];"
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_pixel.sv",
+        "text": "s_red = pixel_i[23:16]; s_green = pixel_i[15:8]; s_blue = pixel_i[7:0];"
+      }
+    ],
+    "note": "Bit 0 is at the left, so increasing byte addresses read left to right. These are memory pixel words, not serial-wire slots. COPY preserves bytes. FILL/CONVERT/BLEND packing follows the operation-specific rules; X is written as 255 when repacked. A8 is permitted only as a BLEND foreground mask."
   }
 ]

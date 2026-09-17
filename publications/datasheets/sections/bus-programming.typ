@@ -43,7 +43,8 @@ not qualify a complete JPEG workload, board behavior, or performance; see @known
 ==== Arbitration and its assumptions
 Read and write arbitration are separate per target. The normal base priorities are HP I/D 12,
 I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8 and LP gateway 2; unassigned slots use priority zero.
-Incoming QoS can raise a normal request to 15. Continuously eligible requests age to priority
+Incoming QoS can raise eligible normal requests to 15, except GA2D, whose base class remains 8
+and does not consume its incoming QoS. Age promotion still applies. Continuously eligible requests age to priority
 16 after the configured 256-cycle interval, while LP recovery receives priority 31.
 
 These priorities choose among eligible requests. A full credit count, a busy source ID,

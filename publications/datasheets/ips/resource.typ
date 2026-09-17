@@ -1,6 +1,6 @@
 #import "../style.typ": *
 
-#import "../ip-reference.typ": ip-reference, register-section
+#import "../ip-reference.typ": ip-reference
 
 #pagebreak(weak:true)
 
@@ -25,7 +25,6 @@ handoff. HP can inspect allowed status but cannot take over root writes. An owne
 does not bypass the target access policy or EXT-H address bounds.
 ])
 
-#heading(level:5,numbering:none,outlined:false,bookmarked:false)[GA2D Phase 5 Direct 2D Composition] <ga2d>
-#register-section("ga2d",4)
+See @ga2d for the independent 2D engine programming, format and register reference.
 
 #context metadata((kind:"ip-end",id:"resource",page:here().page()))

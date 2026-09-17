@@ -1,40 +1,59 @@
 {
   "schema_version": 1,
-  "source_revision": "56eb92312e2b83a85765bc7638b446382c1990dc",
+  "source_revision": "2a497ecef0b084c02f77ddfb1e94fb0197e14b02",
   "sources": [
     "app/README.md",
+    "app/apps/hp_boot/hp_boot_bundle.h",
+    "app/apps/hp_boot/main.c",
+    "app/ports/linux/README.md",
+    "app/ports/linux/linux/retrosoc_hp.dts",
+    "app/ports/linux/opensbi/retrosoc_hp/platform.c",
+    "configs/benchmark/ihp130-hazard3-coremark.mk",
+    "configs/ci/ihp130-hp.mk",
+    "configs/ci/ihp130.mk",
+    "configs/cluster/mini-mpw.mk",
     "crt/README.md",
-    "publications/datasheets/mini.json",
-    "publications/datasheets/register-profiles.json",
-    "rtl/mini/integration/soc_topology.json",
-    "docs/lp-hp-architecture.md",
-    "docs/pll-clock-control.md",
-    "docs/hazard3-debug.md",
+    "crt/include/retrosoc/hal/ga2d.h",
+    "crt/include/retrosoc/hal/resource.h",
+    "crt/include/retrosoc/hal/sysctrl.h",
+    "crt/src/hal/ga2d.c",
+    "crt/src/hal/resource.c",
+    "crt/src/hal/sysctrl.c",
     "docs/axi4-interconnect.md",
     "docs/axi4-stream.md",
     "docs/coremark.md",
     "docs/engineering.md",
-    "docs/mini-high-performance-traceability.md",
-    "docs/ip/resource-controller.md",
+    "docs/hazard3-debug.md",
     "docs/ip/fabric-monitor.md",
-    "app/ports/linux/README.md",
-    "app/ports/linux/linux/retrosoc_hp.dts",
-    "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-    "app/apps/hp_boot/main.c",
-    "app/apps/hp_boot/hp_boot_bundle.h",
-    "crt/src/hal/resource.c",
-    "crt/src/hal/sysctrl.c",
-    "crt/include/retrosoc/hal/resource.h",
-    "crt/include/retrosoc/hal/sysctrl.h",
-    "scripts/package_hp_boot.py",
-    "scripts/build_hp_linux.py",
-    "scripts/check_lp_hp_performance.py",
+    "docs/ip/ga2d.md",
+    "docs/ip/resource-controller.md",
+    "docs/lp-hp-architecture.md",
+    "docs/mini-high-performance-traceability.md",
+    "docs/pll-clock-control.md",
     "fpga/README.md",
     "physical/README.md",
-    "configs/ci/ihp130.mk",
-    "configs/ci/ihp130-hp.mk",
-    "configs/cluster/mini-mpw.mk",
-    "configs/benchmark/ihp130-hazard3-coremark.mk"
+    "publications/datasheets/mini.json",
+    "publications/datasheets/register-profiles.json",
+    "rtl/ip/multimedia/apb4_apu.sv",
+    "rtl/ip/multimedia/apb4_ga2d.sv",
+    "rtl/ip/multimedia/apu_define.svh",
+    "rtl/ip/multimedia/apu_kws_engine.sv",
+    "rtl/ip/multimedia/apu_kws_model_loader.sv",
+    "rtl/ip/multimedia/apu_kws_sram_client.sv",
+    "rtl/ip/multimedia/apu_local_sram.sv",
+    "rtl/ip/multimedia/apu_p5_codecs.apus",
+    "rtl/ip/multimedia/ga2d_core.sv",
+    "rtl/ip/multimedia/ga2d_dma.sv",
+    "rtl/mini/integration/soc_topology.json",
+    "scripts/apu_isa.py",
+    "scripts/apu_kws.py",
+    "scripts/apu_mcasm.py",
+    "scripts/apu_p5_coefficients.py",
+    "scripts/build_apu_p5_bundle.py",
+    "scripts/build_hp_linux.py",
+    "scripts/check_lp_hp_performance.py",
+    "scripts/package_hp_boot.py",
+    "tests/test_lp_irq.py"
   ],
   "support": [
     {
@@ -692,19 +711,48 @@
       "reports": []
     },
     {
+      "id": "ga2d",
+      "implementation": "Integrated",
+      "verification": "Tests available",
+      "scope": "P5 direct single-job FILL, COPY, CONVERT, opaque alpha BLEND, A8 masks and exact background/destination in-place composition.",
+      "dependencies": "LP-owned resource admission, DATA_READY, bounded surfaces, cache ownership and external-memory readiness. Phase 6 contention/performance/physical qualification is not implied.",
+      "sources": [
+        "docs/ip/ga2d.md",
+        "rtl/ip/multimedia/apb4_ga2d.sv",
+        "rtl/ip/multimedia/ga2d_core.sv",
+        "rtl/ip/multimedia/ga2d_dma.sv",
+        "crt/include/retrosoc/hal/ga2d.h",
+        "crt/src/hal/ga2d.c"
+      ],
+      "tests": [
+        "tests/test_ga2d.py",
+        "tests/test_ga2d_dma.py",
+        "tests/test_ga2d_platform.py",
+        "tests/test_ga2d_register_parity.py"
+      ],
+      "reports": [],
+      "title": "2D Graphics Accelerator",
+      "hal": "P5 discovery, job validation/configure/start/wait, abort/reset, status/error/counter and IRQ APIs.",
+      "linux": "No native Linux graphics driver supplied."
+    },
+    {
       "id": "apu",
       "title": "Audio Processing Unit",
       "implementation": "Partial",
-      "scope": "Coreless microcode sequencer with private DMA and local storage.",
-      "dependencies": "Codec microcode and stream integration; production codec jobs disabled.",
+      "scope": "Microcode-controlled WAV/FLAC decoding with private DMA, direct/ring submission, I2S TX and local storage.",
+      "dependencies": "Load the compatible checked-in P5 APUMC V2 image. MP3 is unsupported and KWS is gated off by default; corpus, real-time and physical qualification remain separate.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
       "sources": [
         "crt/include/retrosoc/hal/apu.h",
+        "crt/src/hal/apu.c",
         "docs/ip/apu.md",
         "publications/examples/apu.c",
-        "rtl/ip/multimedia/apu_reg.sv"
+        "rtl/ip/multimedia/apb4_apu.sv",
+        "rtl/ip/multimedia/apu_p5_codecs.apus",
+        "rtl/ip/multimedia/apu_reg.sv",
+        "scripts/build_apu_p5_bundle.py"
       ],
       "tests": [
         "tests/test_apu.py"
@@ -938,10 +986,10 @@
     },
     {
       "id": "apu-production",
-      "title": "APU production codec jobs remain disabled",
-      "impact": "The register shell and bounded codec/transport work do not establish a complete media product.",
-      "trigger": "Submitting unsupported production codec or KWS jobs.",
-      "workaround": "Check the implemented capability and job result; use only the bounded supported path described in the APU chapter.",
+      "title": "APU MP3/KWS availability and qualification limits",
+      "impact": "WAV/FLAC code and image are implemented; this does not establish complete corpus, sustained real-time or physical qualification. MP3 remains a reserved trap entry; KWS RTL exists but PRODUCT defaults to EnableP7=0 and does not advertise KWS.",
+      "trigger": "Submitting MP3, assuming default KWS availability, or inferring full qualification from capability bits.",
+      "workaround": "Use advertised WAV/FLAC paths with a validated APUMC image and supported formats/rates. Treat KWS as gated development functionality until its complete qualification evidence is supplied.",
       "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "publications/datasheets/ips/apu.typ",
@@ -1693,6 +1741,22 @@
           "rtl/mini/integration/soc_topology.json",
           "docs/ip/resource-controller.md"
         ]
+      },
+      {
+        "id": "ga2d",
+        "ips": [
+          "ga2d"
+        ],
+        "name": "GA2D private 2D DMA",
+        "master": "8",
+        "irq": "ga2d",
+        "hp_signal": "resource_irq_hp_i[7]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/ga2d.md"
+        ]
       }
     ],
     "conflicts": [
@@ -1751,7 +1815,7 @@
         ],
         "resource": "I2S stream-switch producer/consumer",
         "state": "Mode-dependent",
-        "condition": "Check the APU/I2S stream-switch selection. No simultaneous competing TX producers or RX consumers are implied. Production APU jobs remain disabled.",
+        "condition": "Check the APU/I2S stream-switch selection and exclusive endpoint ownership. Supported WAV/FLAC TX uses the selected path; KWS RX exists but is gated off in the default PRODUCT build.",
         "sources": [
           "rtl/ip/multimedia/apb4_apu.sv",
           "rtl/mini/top/apb4_periph.sv",
@@ -2818,7 +2882,7 @@
         "title": "APU",
         "role": "Coreless control/transport subsystem",
         "modes": "Register/transport and bounded development codec paths described in the IP chapter.",
-        "excluded": "Production codec/KWS jobs remain disabled in the reviewed snapshot.",
+        "excluded": "MP3 is not supported. KWS is implemented as a gated development path and remains disabled/unadvertised by default. No generic codec or full corpus qualification is implied.",
         "software": "A HAL, microcode format or test source does not establish an enabled production audio service.",
         "evidence": "Source-level subset; no compliance report attached",
         "sources": [
@@ -2831,6 +2895,30 @@
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
             "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
+          }
+        ]
+      },
+      {
+        "id": "ga2d",
+        "ips": [
+          "ga2d"
+        ],
+        "title": "GA2D",
+        "role": "Direct 2D color-surface processing",
+        "modes": "P5 FILL, COPY, CONVERT, opaque BLEND, A8 foreground masks and exact background/destination in-place blending.",
+        "software": "LP HAL and directed firmware scenarios; no native Linux graphics driver.",
+        "excluded": "No descriptors, job queue, scaling/rotation, transparent-background or premultiplied-alpha blend, YUV/CLUT or rendering API.",
+        "evidence": "Source-level subset; no compliance report attached",
+        "sources": [
+          "rtl/ip/multimedia/ga2d_define.svh",
+          "rtl/ip/multimedia/ga2d_core.sv",
+          "crt/include/retrosoc/hal/ga2d.h"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_define.svh",
+            "kind": "snippet",
+            "text": "`define APB4_GA2D__CAPABILITY_P5 32'h0000_07ff"
           }
         ]
       }
@@ -3004,11 +3092,9 @@
           "jpeg"
         ],
         "title": "DVP RGB565 -> memory -> JPEG",
-        "classification": "Blocked",
+        "classification": "Conditional",
         "condition": "Even-width word packing can describe compatible RGB565 storage only after byte-order/stride checks. Slot-6 admission is bounded to one read and one write; the end-to-end DVP-to-JPEG workload remains unqualified.",
-        "blockers": [
-          "jpeg-system-qualification"
-        ],
+        "blockers": [],
         "sources": [
           "rtl/ip/multimedia/dvp_core.sv",
           "docs/ip/jpeg.md",
@@ -3029,11 +3115,9 @@
           "jpeg"
         ],
         "title": "DVP YUV422 -> memory -> JPEG YUYV",
-        "classification": "Blocked",
+        "classification": "Conditional",
         "condition": "Confirm Y0/Cb/Y1/Cr order; otherwise software rearrangement is required. Format agreement and bounded slot-6 admission do not qualify an end-to-end DVP-to-JPEG workload.",
-        "blockers": [
-          "jpeg-system-qualification"
-        ],
+        "blockers": [],
         "sources": [
           "rtl/ip/multimedia/dvp_core.sv",
           "docs/ip/jpeg.md"
@@ -3097,12 +3181,10 @@
           "apu",
           "i2s"
         ],
-        "title": "Production APU codec output -> I2S",
-        "classification": "Blocked",
-        "condition": "The stream-switch/control path does not establish enabled production codec jobs. Follow the documented job/transport restrictions.",
-        "blockers": [
-          "apu-production"
-        ],
+        "title": "Supported APU WAV/FLAC output -> I2S",
+        "classification": "Conditional",
+        "condition": "Load the accepted APUMC image, choose supported rate/channel/sample format and the APU TX route, and retain exclusive stream ownership. MP3 and default KWS are unavailable; corpus and sustained playback qualification are separate.",
+        "blockers": [],
         "sources": [
           "docs/ip/apu.md",
           "rtl/ip/multimedia/apb4_apu.sv",
@@ -4654,7 +4736,7 @@
           "main.ERROR_DETAIL"
         ],
         "observation": "Capture ERROR_ADDRESS, ring position and descriptor status with the error code/stage.",
-        "handling": "Acknowledge only after recording the first failure. The documented zero-credit system limitation remains in force.",
+        "handling": "Record the first failure before acknowledgement. Slot 6 has bounded normal admission; drain/recovery and complete system qualification remain separate requirements.",
         "link": "jpeg",
         "sources": [
           "rtl/ip/multimedia/jpeg_reg.sv",
@@ -4945,39 +5027,42 @@
   },
   "software": {
     "sources": [
-      "crt/arch/riscv/startup.S",
-      "crt/arch/riscv/system_irq.S",
-      "crt/src/core/system_irq_handler.c",
-      "crt/src/core/irq.c",
-      "crt/include/retrosoc/core/irq.h",
-      "crt/src/service/test.c",
-      "rtl/mini/mk/software.mk",
-      "crt/linker/ld2_psram.lds",
-      "crt/linker/ld2_all_sram.lds",
-      "crt/linker/ld2_sram.lds",
-      "crt/linker/jtag_sram.lds",
       "app/apps/bringup/app.mk",
-      "app/apps/hp_boot/app.mk",
-      "app/apps/debug/app.mk",
-      "app/apps/xpi_flash_loader/app.mk",
-      "app/apps/debug/startup.S",
-      "app/apps/xpi_flash_loader/startup.S",
-      "app/apps/ci_smoke/app.mk",
       "app/apps/bringup/main.c",
+      "app/apps/ci_smoke/app.mk",
       "app/apps/ci_smoke/main.c",
-      "scripts/regress.py",
-      "crt/src/hal/sdio.c",
-      "crt/src/hal/usb2.c",
-      "crt/src/hal/crypto.c",
-      "crt/src/core/archinfo.c",
-      "app/ports/linux/linux/retrosoc_hp.dts",
+      "app/apps/debug/app.mk",
+      "app/apps/debug/startup.S",
+      "app/apps/hp_boot/app.mk",
+      "app/apps/hp_boot/hp_boot_bundle.h",
+      "app/apps/hp_boot/main.c",
+      "app/apps/xpi_flash_loader/app.mk",
+      "app/apps/xpi_flash_loader/startup.S",
       "app/ports/linux/linux/retrosoc_hp.config",
+      "app/ports/linux/linux/retrosoc_hp.dts",
       "app/ports/linux/opensbi/retrosoc_hp/platform.c",
       "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+      "crt/arch/riscv/startup.S",
+      "crt/arch/riscv/system_irq.S",
+      "crt/include/retrosoc/arch/riscv/system_csr.h",
+      "crt/include/retrosoc/core/irq.h",
+      "crt/linker/jtag_sram.lds",
+      "crt/linker/ld2_all_sram.lds",
+      "crt/linker/ld2_psram.lds",
+      "crt/linker/ld2_sram.lds",
+      "crt/src/core/archinfo.c",
+      "crt/src/core/irq.c",
+      "crt/src/core/irq_nocsr.c",
+      "crt/src/core/system_irq_handler.c",
+      "crt/src/hal/crypto.c",
+      "crt/src/hal/sdio.c",
+      "crt/src/hal/usb2.c",
+      "crt/src/service/test.c",
+      "publications/datasheets/mini.json",
+      "rtl/mini/integration/soc_topology.json",
+      "rtl/mini/mk/software.mk",
       "scripts/build_hp_linux.py",
-      "app/apps/hp_boot/main.c",
-      "app/apps/hp_boot/hp_boot_bundle.h",
-      "publications/datasheets/mini.json"
+      "scripts/regress.py"
     ],
     "bindings": [
       {
@@ -5708,6 +5793,7 @@
       "crt/linker/ld2_psram.lds",
       "crt/linker/ld2_sram.lds",
       "crt/src/hal/dma.c",
+      "crt/src/hal/ga2d_math.c",
       "crt/src/hal/i2s_math.c",
       "crt/src/hal/ws2812_math.c",
       "crt/src/hal/xpi.c",
@@ -5745,6 +5831,7 @@
       "rtl/ip/memory/sdram_core.sv",
       "rtl/ip/memory/sdram_reg.sv",
       "rtl/ip/multimedia/apb4_apu.sv",
+      "rtl/ip/multimedia/apb4_ga2d.sv",
       "rtl/ip/multimedia/apb4_jpeg.sv",
       "rtl/ip/multimedia/apu_control_store.sv",
       "rtl/ip/multimedia/apu_define.svh",
@@ -5755,6 +5842,11 @@
       "rtl/ip/multimedia/axi4s_dvp.sv",
       "rtl/ip/multimedia/dvp_core.sv",
       "rtl/ip/multimedia/dvp_reg.sv",
+      "rtl/ip/multimedia/ga2d_axi4_master.sv",
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "rtl/ip/multimedia/ga2d_reg.sv",
       "rtl/ip/multimedia/jpeg_coefficient_engine.sv",
       "rtl/ip/multimedia/jpeg_decode_core.sv",
       "rtl/ip/multimedia/jpeg_dma.sv",
@@ -6701,7 +6793,7 @@
           },
           {
             "id": "store",
-            "title": "Control store\n2048 x 64 bits",
+            "title": "Control store\n4096 x 64 bits",
             "x": 12.6,
             "y": 7,
             "w": 4.0,
@@ -7048,11 +7140,66 @@
             ]
           }
         ],
-        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; launch/status/return handshakes are not all shown. APU RX is disconnected and production codec qualification remains restricted."
+        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; detailed launch/status/return handshakes are not all shown. WAV/FLAC use the checked-in P5 image. KWS RX is connected internally but gated by EnableP7, which is false in default PRODUCT. MP3 and KWS are not publicly advertised; corpus and physical qualification remain separate."
       }
     },
     "circuit_catalog": "publications/datasheets/diagram-circuits.json",
     "layout_catalog": "publications/datasheets/diagram-layouts.json",
     "storage_catalog": "publications/datasheets/diagram-storage.json"
+  },
+  "ci_snapshot": {
+    "revision": "2a497ecef0b084c02f77ddfb1e94fb0197e14b02",
+    "checked_date": "2026-09-17",
+    "boundary": "Public GitHub workflow/job outcomes for this exact commit. Behavioral regression success is not synthesis, netlist, STA, formal, FPGA or silicon qualification. A failed prerequisite can leave later tests unexecuted.",
+    "runs": [
+      {
+        "name": "regression-ihp130",
+        "run_id": 35035899124,
+        "result": "success",
+        "scope": "IHP130 PR behavioral-only regression",
+        "note": "Run pr regression passed; formal environment step skipped. Synthesis/timing environment checks are setup checks, not physical results.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899124"
+      },
+      {
+        "name": "regression-gf180",
+        "run_id": 35035899130,
+        "result": "success",
+        "scope": "GF180 workflow",
+        "note": "Workflow outcome only; detailed stages require their own artifacts.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899130"
+      },
+      {
+        "name": "regression-ics55",
+        "run_id": 35035899146,
+        "result": "success",
+        "scope": "ICS55 workflow",
+        "note": "Workflow outcome only; detailed stages require their own artifacts.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899146"
+      },
+      {
+        "name": "regression-smoke",
+        "run_id": 35035899140,
+        "result": "success",
+        "scope": "Smoke workflow",
+        "note": "Does not qualify all peripheral use cases.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899140"
+      },
+      {
+        "name": "quality",
+        "run_id": 35035898949,
+        "result": "failure",
+        "scope": "Quality workflow",
+        "note": "Check source formatting failed. Later host tests, script tests and APU P5 acceptance were skipped.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035898949"
+      },
+      {
+        "name": "regression-sky130",
+        "run_id": 35035899137,
+        "result": "failure",
+        "scope": "SKY130 PR workflow",
+        "note": "Run pr regression failed. Do not present this platform as passing.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899137"
+      }
+    ]
   }
 }

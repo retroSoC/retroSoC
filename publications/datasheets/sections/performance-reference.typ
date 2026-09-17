@@ -1,6 +1,7 @@
 #import "../style.typ": *
 
 == Performance and Power Characterization <performance-characterization>
+#change-start("dev-performance","Current benchmark counters and missing performance evidence")
 This section defines reproducible measurement conditions for the documented implementation.
 No new hardware measurement was performed for this publication update. The current evidence
 index contains no matching reviewed performance report, so numerical product results remain
@@ -26,7 +27,7 @@ State warmup, sample count, start/stop boundaries, uncertainty and the pass/fail
    ([DMA throughput],[Include descriptor setup, completion and any required cache maintenance separately.],[TBD; no bus-width-times-clock claim.]),
    ([Boot time],[Separate LP entry, memory readiness, image copy, HP release and Linux readiness.],[TBD; exact checkpoints required.]),
    ([Camera / JPEG],[Frame format/size, complete frame cycles, input/output handling and memory stalls.],[No sustained system-rate claim.]),
-   ([Audio],[Codec/path, sample format/rate, block size, underruns and end-to-end latency.],[No production APU codec claim.]),
+   ([Audio],[Codec/path, sample format/rate, block size, underruns and end-to-end latency.],[WAV/FLAC implemented; no qualified sustained rate attached.]),
    ([Power],[Per-rail method, workload, clocks, external-device contribution and thermal conditions.],[TBD; see electrical conditions.])),
   widths:(0.85fr,2.4fr,0.9fr))
 
@@ -42,6 +43,15 @@ publication profile. Retain the structured report, console log and final test ve
 Do not extrapolate the LP result to the HP core or infer a dual-core score by addition.
 
 === Memory, DMA and multimedia experiments
+The current benchmark emits GA2D FILL/COPY workload bytes, pixels, jobs, CPU cycles and
+CPU clock together with GA2D cycle/read-byte/write-byte counters. CPU-observed job time and
+engine service cycles measure different boundaries; payload size also differs from total
+read-plus-write traffic. Preserve format, pitch, capability words, target memory and
+contention with the structured sample. These implemented counters and smoke workloads do not
+constitute a qualified graphics throughput score.
+#source-note("app/apps/benchmark/main.c",title:"Implemented benchmark workloads and reported counters")
+#source-note("scripts/parse_performance_log.py",title:"Structured performance sample format")
+
 + Choose one actual target and a bounded buffer range; validate the external device/mode first.
 + Define whether the experiment measures engine service time or the complete software operation,
   including cache maintenance, descriptor setup and notification.
@@ -73,6 +83,8 @@ electrical conditions remain those of @electrical-specifications.
 #source-note("docs/ip/jpeg.md",title:"JPEG functional and performance qualification boundary")
 
 = Known Limitations and Revision Compatibility <known-limitations>
+#change-end("dev-performance")
+#change-start("dev-limitations","Current feature gates and revision limitations")
 The following items describe the reviewed implementation and its publication boundary. They
 are not silicon errata for an identified manufactured part. A new source revision requires
 review of both the limitation and the proposed workaround; a document version alone cannot
@@ -122,3 +134,4 @@ that snapshot, and record changed offsets, field meanings or reset behavior in a
 before claiming backward compatibility. This publication adds no hardware or software ABI.
 #source-note("publications/datasheets/system-reference.json",title:"Versioned limitation and evidence index")
 #source-note("publications/datasheets/register-profiles.json",title:"Published register extraction boundary")
+#change-end("dev-limitations")

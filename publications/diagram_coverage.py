@@ -73,7 +73,7 @@ def coverage(contract: dict, diagrams: dict) -> list[dict]:
                       "status": "covered" if identifiers else "not_applicable",
                       "reason": "Primary diagram or explicit shared-format reference in this chapter." if identifiers else reasons[package]}
             for package, identifiers in values.items()}})
-    if len(result) != len(contract["entries"]) or len(ip_ids) != 40:
+    if len(result) != len(contract["entries"]) or {row["anchor"] for row in contract["entries"] if row["anchor"] in ip_ids} != ip_ids:
         raise ValueError("diagram chapter coverage differs from the frozen inventory")
     for row in reversed(result):
         descendants = []

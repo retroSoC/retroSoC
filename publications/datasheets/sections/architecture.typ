@@ -4,6 +4,7 @@
 #import "../diagram-packages.typ": memory-window-diagram
 
 = System Architecture
+#change-start("dev-architecture","Nine-master fabric, address map, LP IRQ and lifecycle reference")
 == Introduction
 === SoC Architecture
 Mini PRODUCT contains two fixed harts, an LP-owned control plane, a native HP data fabric and
@@ -54,9 +55,9 @@ byte strobes, burst limits, access permissions and IP-specific side effects rema
 #timing("axis",[AXI4-Stream backpressure and end-of-transfer example.])
 
 === Interconnect Matrix
-Eight initiator identities access five memory targets. The crossbar arbitrates reads and
+The #data.policies.len() initiator identities access #data.targets.len() memory targets. The crossbar arbitrates reads and
 writes separately for each target. I/O gateway A combines USB2, SDIO0 and the APU private
-master; gateway B combines SDIO1 and SPI-SD. JPEG occupies data-master slot 6.
+master; gateway B combines SDIO1 and SPI-SD. JPEG occupies slot 6 and GA2D slot 8; EXT-H uses slot 7.
 
 #note[The matrix on the next page is generated from the RTL access policy. R/W permission is
 subject to active memory-pad mode, resource ownership, target readiness and EXT-H address bounds.
@@ -65,7 +66,7 @@ An allowed entry does not guarantee throughput.]
 #pagebreak()
 #figure(matrix-diagram(), caption:[AXI64 memory access matrix: R = read, W = write, - = denied.])<bus-matrix>
 The I-cache is the only instruction-permitted initiator. HP cache attributes are preserved;
-DMA, I/O gateways, LP gateway, JPEG and EXT-H require non-cacheable transactions. XPI is read-only
+DMA, I/O gateways, LP gateway, JPEG, EXT-H and GA2D require non-cacheable transactions. XPI is read-only
 on this data plane; indirect writes use its APB-controlled command engine.
 
 Denied accesses return a finite error response with source attribution. EXT-H has additional
@@ -98,9 +99,9 @@ advertise an implemented IP.
   widths:(1.3fr,1fr,0.6fr,1.35fr),
 )
 <reserved>
-The retained GA register range and SPI-SD data aperture are reserved. PRODUCT keeps a
-compatibility responder at the former selectable user-IP window; it does not instantiate
-MPW user IPs there. Neither case should be counted as an active accelerator.
+GA2D occupies the active 4 KiB APB4 window at 0x10012000. The former SPI-SD data aperture
+remains reserved. PRODUCT keeps a compatibility responder at the former selectable user-IP
+window; it does not instantiate MPW user IPs there.
 
 #block(breakable:false)[
   #figure(memory-window-diagram(),kind:image,supplement:[Figure],caption:[Selected PRODUCT memory address windows in the reference configuration.])<memory-window-layout>
@@ -142,7 +143,8 @@ qualification. No crystal-oscillator range or maximum core frequency is specifie
 #include "clock-programming.typ"
 
 == Interrupt System
-The management interrupt vector contains 32 allocated positions. The following numbers are
+The management interrupt vector is 64 bits wide; two local causes and 62 external positions
+are distinct from the currently allocated source list. The following numbers are
 LP vector bits, not HP PLIC source IDs. Peripheral-level status registers identify causes
 within an aggregate source. Resource-controlled interrupts are routed according to ownership.
 #ds-table("lp-irqs", [LP interrupt vector],
@@ -152,8 +154,9 @@ within an aggregate source. Resource-controlled interrupts are routed according 
 )
 
 HP has local software/timer interrupts and a 32-source, two-context PLIC. Source 0 is
-reserved; sources 1-10 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG and APU.
-Sources 11-31 are reserved. The contexts drive machine and supervisor external interrupts.
+reserved; sources 1-11 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU
+and GA2D. Sources 12-31 are reserved. GA2D uses LP vector bit 32 (external ordinal 30),
+which is distinct from HP PLIC source 11. The contexts drive machine and supervisor external interrupts.
 Claim/complete and priority rules are defined in the HP platform contract.
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
@@ -163,3 +166,4 @@ Claim/complete and priority rules are defined in the HP platform contract.
 #include "system-management.typ"
 #include "register-programming.typ"
 #include "interface-subsets.typ"
+#change-end("dev-architecture")

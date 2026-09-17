@@ -36,6 +36,7 @@
     "i2s",
     "dvp",
     "jpeg",
+    "ga2d",
     "apu",
     "crypto",
     "crc",
@@ -305,6 +306,11 @@
       "level": 4,
       "title": "JPEG Encoder / Decoder",
       "anchor": "jpeg"
+    },
+    {
+      "level": 4,
+      "title": "2D Graphics Accelerator (GA2D)",
+      "anchor": "ga2d"
     },
     {
       "level": 4,

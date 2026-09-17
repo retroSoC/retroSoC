@@ -94,7 +94,10 @@ def test_interface_claims_require_correct_scope_and_evidence(spec, mutation):
         ir.validate_details(spec, IDS, ROOT, LIMITS)
 
 
-def test_same_format_does_not_remove_jpeg_integration_block(spec):
+def test_same_format_does_not_remove_an_explicit_integration_block(spec):
+    assert spec["interoperability"][0]["classification"] == "Conditional"
+    assert "unqualified" in spec["interoperability"][0]["condition"]
+    spec["interoperability"][0]["blockers"] = ["jpeg-system-qualification"]
     spec["interoperability"][0]["classification"] = "Format-compatible"
     with pytest.raises(ValueError, match="ignores active blocker"):
         ir.validate_details(spec, IDS, ROOT, LIMITS)

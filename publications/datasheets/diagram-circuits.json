@@ -8318,7 +8318,7 @@
         "from": "events.p0",
         "to": "core.p0",
         "kind": "control",
-        "label": "Accept / 8",
+        "label": "Accept / 9",
         "style": "direct",
         "bindings": [
           {
@@ -9667,7 +9667,7 @@
         "from": "dma.p6",
         "to": "memory.p6",
         "kind": "data",
-        "label": "AXI64: blocked",
+        "label": "AXI64 / 1R+1W",
         "style": "direct",
         "bindings": [
           {
@@ -9686,8 +9686,7 @@
             "expression": "axi4"
           }
         ],
-        "zigzag-dir": "horizontal",
-        "availability": "admission-blocked"
+        "zigzag-dir": "horizontal"
       }
     ],
     "note": "Direct and ring jobs share one active codec job and a private memory DMA. Encode/decode surfaces and entropy streams are multiplexed by wrapper state; the shared coefficient engine is not a second independent job lane. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
@@ -10888,6 +10887,12 @@
             "direction": "out",
             "width": 32,
             "side": "south"
+          },
+          {
+            "id": "ga",
+            "direction": "in",
+            "width": 64,
+            "side": "east"
           }
         ],
         "sources": [
@@ -10970,6 +10975,25 @@
         ],
         "sources": [
           "rtl/mini/top/retrosoc.sv"
+        ]
+      },
+      {
+        "id": "ga2d",
+        "title": "GA2D private AXI64\ngate / CDC / master 8",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "ga",
+            "direction": "out",
+            "width": 64,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/mini/top/soc_data_plane.sv"
         ]
       }
     ],
@@ -11163,9 +11187,30 @@
           }
         ],
         "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "ga2d.ga",
+        "to": "fabric.ga",
+        "kind": "data",
+        "label": "AXI64",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".DataWidth(64), .IdWidth(3)"
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".MasterIndex(4'd8)"
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".source(u_ga2d_prefixed_axi4), .sink(u_master_axi4[8])"
+          }
+        ]
       }
     ],
-    "note": "Selected PRODUCT paths. Interface arrows group request and response channels; separate gateways perform adaptation and CDC. The access matrix remains authoritative, including the read-only HP data-plane route to XPI. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
+    "note": "Nine PRODUCT initiator identities feed five memory targets through width/clock adapters. GA2D is master 8 and uses 7-bit global IDs after source-prefix insertion. JPEG and GA2D each have one normal read and one normal write credit. Only the HP I-cache may issue instructions; XPI is read-only on this data plane. Interface arrows group request/response channels."
   },
   "system-media": {
     "nodes": [
@@ -11504,7 +11549,7 @@
         "from": "jpeg.p5",
         "to": "memory.p5",
         "kind": "data",
-        "label": "AXI64: blocked",
+        "label": "AXI64 / 1R+1W",
         "style": "zigzag",
         "bindings": [
           {
@@ -11523,11 +11568,10 @@
             "expression": "jpeg_axi4"
           }
         ],
-        "zigzag-dir": "horizontal",
-        "availability": "admission-blocked"
+        "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Camera capture reaches memory through central DMA; JPEG accesses memory as a separate job. I2S passes through the stream router and selected DMA/software paths. APU RX is disconnected and production codec delivery remains qualified separately. The JPEG AXI64 interface is wired with one normal read and one normal write credit for master slot 6; complete JPEG system qualification remains separate."
+    "note": "Camera capture reaches memory through central DMA; JPEG jobs use private master 6 with one read and one write normal credit. I2S TX can select DMA or supported APU WAV/FLAC output. KWS RX has an internal route but is gated off by default. Buffer ownership, complete workload qualification and external-device setup remain required."
   },
   "system-mpw": {
     "nodes": [
@@ -11805,5 +11849,442 @@
       }
     ],
     "note": "MPW compatibility only. Generated bindings select and isolate one legacy user core; they do not alter PRODUCT LP/HP architecture. User-IP selection has its own APB/GPIO wrapper and is not an extra bus master."
+  },
+  "ga2d": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 registers\njob / status / IRQ",
+        "x": 0,
+        "y": 7,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_ga2d.sv",
+          "rtl/ip/multimedia/ga2d_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+          "name": "u_ga2d_reg",
+          "module": "ga2d_reg",
+          "declaration_file": "rtl/ip/multimedia/ga2d_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Single-job core\nvalidate / run / drain",
+        "x": 6.3,
+        "y": 7,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p7",
+            "direction": "in",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_ga2d.sv",
+          "rtl/ip/multimedia/ga2d_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+          "name": "u_ga2d_core",
+          "module": "ga2d_core",
+          "declaration_file": "rtl/ip/multimedia/ga2d_core.sv"
+        }
+      },
+      {
+        "id": "dma",
+        "title": "Private 2D DMA\nline / burst / FIFOs",
+        "x": 12.6,
+        "y": 7,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 64,
+            "side": "south"
+          },
+          {
+            "id": "p6",
+            "direction": "in",
+            "width": 64,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/ga2d_core.sv",
+          "rtl/ip/multimedia/ga2d_dma.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/ga2d_core.sv",
+          "name": "u_dma",
+          "module": "ga2d_dma",
+          "declaration_file": "rtl/ip/multimedia/ga2d_dma.sv"
+        }
+      },
+      {
+        "id": "lifecycle",
+        "title": "Resource / HP lifecycle\nstop / clear / epoch",
+        "x": 0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p7",
+            "direction": "out",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_ga2d.sv",
+          "rtl/mini/top/soc_data_plane.sv"
+        ]
+      },
+      {
+        "id": "pixel",
+        "title": "Pixel conversion / blend\nopaque RGB and A8",
+        "x": 12.6,
+        "y": 10.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/ga2d_dma.sv",
+          "rtl/ip/multimedia/ga2d_pixel.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/ga2d_dma.sv",
+          "name": "u_pixel",
+          "module": "ga2d_pixel",
+          "declaration_file": "rtl/ip/multimedia/ga2d_pixel.sv"
+        }
+      },
+      {
+        "id": "axi",
+        "title": "AXI64 transaction engine\nCDC to master 8",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 64,
+            "side": "north"
+          },
+          {
+            "id": "p6",
+            "direction": "out",
+            "width": 64,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/ga2d_dma.sv",
+          "rtl/ip/multimedia/ga2d_axi4_master.sv",
+          "rtl/mini/top/soc_data_plane.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/ga2d_dma.sv",
+          "name": "u_axi4_master",
+          "module": "ga2d_axi4_master",
+          "declaration_file": "rtl/ip/multimedia/ga2d_axi4_master.sv"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "core.p0",
+        "kind": "control",
+        "label": "START",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+            "text": ".start_i(s_start)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "start_i",
+            "expression": "s_start"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+            "scope": "apb4_ga2d",
+            "symbol": "s_start",
+            "bits": 1
+          }
+        ]
+      },
+      {
+        "from": "core.p1",
+        "to": "reg.p1",
+        "kind": "control",
+        "label": "Status",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+            "text": ".busy_i(s_core_busy)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "busy_i",
+            "expression": "s_core_busy"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+            "scope": "apb4_ga2d",
+            "symbol": "s_core_busy",
+            "bits": 1
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "dma.p2",
+        "kind": "control",
+        "label": "START",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_core.sv",
+            "text": ".start_i(s_dma_start)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "dma",
+            "port": "start_i",
+            "expression": "s_dma_start"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_core.sv",
+            "scope": "ga2d_core",
+            "symbol": "s_dma_start",
+            "bits": 1
+          }
+        ]
+      },
+      {
+        "from": "dma.p3",
+        "to": "pixel.p3",
+        "kind": "data",
+        "label": "IN / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "text": ".foreground_pixel_i(s_foreground_pixel_q)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "pixel",
+            "port": "foreground_pixel_i",
+            "expression": "s_foreground_pixel_q"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "scope": "ga2d_dma",
+            "symbol": "s_foreground_pixel_q",
+            "bits": 32
+          }
+        ]
+      },
+      {
+        "from": "pixel.p4",
+        "to": "dma.p4",
+        "kind": "data",
+        "label": "OUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "text": ".pixel_o(s_processed_pixel)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "pixel",
+            "port": "pixel_o",
+            "expression": "s_processed_pixel"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "scope": "ga2d_dma",
+            "symbol": "s_processed_pixel",
+            "bits": 32
+          }
+        ]
+      },
+      {
+        "from": "dma.p5",
+        "to": "axi.p5",
+        "kind": "data",
+        "label": "WR / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "text": ".write_data_i(s_output_fifo_data)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "axi",
+            "port": "write_data_i",
+            "expression": "s_output_fifo_data"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "scope": "ga2d_dma",
+            "symbol": "s_output_fifo_data",
+            "bits": 64
+          }
+        ]
+      },
+      {
+        "from": "axi.p6",
+        "to": "dma.p6",
+        "kind": "data",
+        "label": "RD / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "text": ".read_data_o(s_read_data)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "axi",
+            "port": "read_data_o",
+            "expression": "s_read_data"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/ga2d_dma.sv",
+            "scope": "ga2d_dma",
+            "symbol": "s_read_data",
+            "bits": 64
+          }
+        ]
+      },
+      {
+        "from": "lifecycle.p7",
+        "to": "core.p7",
+        "kind": "control",
+        "label": "Stop / epoch",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_ga2d.sv",
+            "text": ".resource_stop_i(resource_quiesce_i || resource_reset_i || source_stop_i)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "resource_stop_i",
+            "expression": "resource_quiesce_i || resource_reset_i || source_stop_i"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "PCLK-domain direct single-job organization; configuration and detailed response channels are grouped. Three 32-entry data FIFOs reside in the DMA. Address gating, CDC, source-prefix insertion and target permissions form the separate master-8 integration path. There is no descriptor queue or hardware cache coherency."
   }
 }

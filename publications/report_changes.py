@@ -94,6 +94,19 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
         global_changes.append({"id": "repository-footer", "category": "global-presentation",
                                "title": "Left footer replaced by the clickable repository URL",
                                "start_page": 1, "end_page": len(reader.pages), "url": REPOSITORY_URL})
+    old_manifest = json.loads((baseline.parent / "manifest.json").read_text(encoding="utf-8"))
+    old_date = old_manifest.get("document", {}).get("date")
+    new_date = manifest.get("document", {}).get("date")
+    if old_date and new_date and old_date != new_date:
+        global_changes.append({"id": "document-date", "category": "global-presentation",
+                               "title": "Document date and running footer date updated",
+                               "start_page": 1, "end_page": len(reader.pages),
+                               "before": old_date, "after": new_date})
+    if len(old.pages) != len(reader.pages):
+        global_changes.append({"id": "page-total", "category": "pagination",
+                               "title": "Running page totals and dependent page references updated",
+                               "start_page": 1, "end_page": len(reader.pages),
+                               "before": len(old.pages), "after": len(reader.pages)})
     return {
         "baseline": {"path": str(baseline.resolve()), "sha256": baseline_hash, "pages": len(old.pages)},
         "final": {"path": str(pdf.resolve()), "sha256": final_hash, "pages": len(reader.pages)},

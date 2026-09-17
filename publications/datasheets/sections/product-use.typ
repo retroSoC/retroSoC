@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("dev-product-availability","Current IP availability and media-composition limits")
 #import "../system-figures.typ": *
 
 == Product Configuration and Feature Availability <product-configuration>

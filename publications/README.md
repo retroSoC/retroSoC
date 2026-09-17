@@ -21,8 +21,25 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
+The 2026-09-17 refresh retains v0.4 DRAFT and binds the document to reviewed dev
+commit `2a497ecef0b084c02f77ddfb1e94fb0197e14b02`. GA2D P5 is an independent
+chapter between JPEG and APU. The explicit structure review expands the contract
+to 41 IP chapters and 108 frozen entries; the nine-category Overview contains
+44 labels. Register definitions retain their original link identifiers.
+
+The [content review](datasheets/content-review.md) distinguishes already covered
+material, refreshed implementation facts, default-disabled features, and missing
+measurement evidence. APU's checked-in WAV/FLAC image is statically assembled by
+`dev_reference.py`: image availability is separate from corpus qualification.
+The [108-entry chapter review](datasheets/chapter-review.md) records final page
+numbers, implementation status, document completeness, sources and recommendations
+for the delivered PDF snapshot.
+MP3 remains a reserved trap entry and default PRODUCT keeps KWS gated off.
+CI workflow outcomes are a separately scoped snapshot, including failures and
+skipped downstream tests; they do not populate per-IP hardware pass records.
+
 The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
-circuiteria 0.2.1. All 40 IP chapters and four system hardware figures use
+circuiteria 0.2.1. All 41 IP chapters and four system hardware figures use
 source-bound circuits. Binary layouts cover descriptors, boot/microcode bundles,
 serial framing and media/crypto packing. APU's seven current instruction classes
 and 62 operations are grouped by format, operand constraints and tool target.
@@ -35,7 +52,7 @@ and WaveDrom keep their existing rendering.
 adapters. The catalogs under `datasheets/diagram-*.json` record sources and
 primary/shared chapter placement; `diagram-packages.typ` owns their appearance.
 `diagram_coverage.py` records covered/shared/not-applicable categories for all
-107 frozen entries and rejects declared drawings absent from renderer output.
+108 frozen entries and rejects declared drawings absent from renderer output.
 Instance port directions, selected signal widths, descriptor arrays, FIFO
 parameters and linker regions are checked against their actual definitions.
 Rendering a connected interface or accepted instruction encoding does not remove
@@ -92,7 +109,7 @@ Electrical, thermal, performance and power sections describe required conditions
 and evidence without manufacturing values for uncharacterized hardware. Known
 limitations and revision compatibility are collected before Document Control.
 
-`datasheets/system-reference.json` owns the publication's 40-IP support inventory,
+`datasheets/system-reference.json` owns the publication's 41-IP support inventory,
 limitation records and source/test/report references. `system_reference.py`
 checks coverage, unique identifiers, paths and evidence context; the builder
 emits `data.json.system_reference` and hashes these dependencies. Boot-image
@@ -269,7 +286,7 @@ Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
   contract and protected by a manifest digest.
 - `diagram-inventory.json`: every specialized diagram's package, sources, actual
   page and visual bounds; missing or duplicate renderer uses fail the build.
-- `diagram-coverage.json`: per-entry coverage of the 107 frozen structure records,
+- `diagram-coverage.json`: per-entry coverage of the 108 frozen structure records,
   including shared diagrams, source pointers and explicit not-applicable reasons.
 - `changed-pages.json`: final page-range report, generated after PDF checking with
   the command below; binds the previous delivered PDF and final PDF digests.

@@ -3843,5 +3843,177 @@
       "rtl/ip/usb/usb2_ulpi_link.sv"
     ],
     "review_note": "Reviewed tx_data_ready and data_oe equations and TxPayload DIR handling; replaced a combined bidirectional DATA lane."
+  },
+  "ga2d": {
+    "source": {
+      "signal": [
+        {
+          "name": "data_ready_i",
+          "wave": "1........"
+        },
+        {
+          "name": "start_i",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1.....0"
+        },
+        {
+          "name": "draining_o",
+          "wave": "0........"
+        },
+        {
+          "name": "done_o",
+          "wave": "0.......1"
+        },
+        {
+          "name": "error_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ga2d_core. Clock: clk_i. Successful direct-job sequence after configuration and memory ownership are valid. The spacing is schematic; validation, pixel work and bus handshakes have variable duration. No fixed job or abort latency is guaranteed.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "data_ready_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "data_ready_i",
+        "meaning": "Data path is ready for the job.",
+        "polarity": "active-high"
+      },
+      "start_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "start_i",
+        "meaning": "One-cycle job start request.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "busy_o",
+        "meaning": "One job remains active until completion.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "draining_o",
+        "meaning": "No stop/drain request in the successful path.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "done_o",
+        "meaning": "Successful job completion is retained.",
+        "polarity": "active-high"
+      },
+      "error_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "error_o",
+        "meaning": "No error in the illustrated path.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/apb4_ga2d.sv"
+    ],
+    "review_note": "Signals name actual core ports. Detailed AXI ready/valid and owner IRQ routing are specified separately."
+  },
+  "ga2d-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_i",
+          "wave": "010........"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1.......0"
+        },
+        {
+          "name": "abort_i",
+          "wave": "0....10...."
+        },
+        {
+          "name": "draining_o",
+          "wave": "0....1....0"
+        },
+        {
+          "name": "aborted_o",
+          "wave": "0.........1"
+        },
+        {
+          "name": "error_o",
+          "wave": "0.........."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ga2d_core. Clock: clk_i. Abort sequence with accepted traffic still outstanding; buffers remain owned until safe termination. The spacing is schematic; validation, pixel work and bus handshakes have variable duration. No fixed job or abort latency is guaranteed.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "start_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "start_i",
+        "meaning": "One job starts.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "busy_o",
+        "meaning": "The job remains busy while accepted traffic drains.",
+        "polarity": "active-high"
+      },
+      "abort_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "abort_i",
+        "meaning": "Software requests abort.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "draining_o",
+        "meaning": "Accepted AXI transactions are drained.",
+        "polarity": "active-high"
+      },
+      "aborted_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "aborted_o",
+        "meaning": "Abort completes after drain.",
+        "polarity": "active-high"
+      },
+      "error_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "error_o",
+        "meaning": "An explicit abort is shown without a bus error.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/apb4_ga2d.sv"
+    ],
+    "review_note": "Signals name actual core ports. Detailed AXI ready/valid and owner IRQ routing are specified separately."
   }
 }

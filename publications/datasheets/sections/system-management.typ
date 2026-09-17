@@ -17,7 +17,7 @@ which software owns each resource and buffer before enabling interrupts or bus m
    ([DMA / I/O masters],[Transactions admitted by the topology and resource policy.],[Descriptors and data remain under exclusive ownership until completion or completed recovery.])),
   widths:(0.8fr,1.6fr,1.8fr))
 
-The central Resource Controller covers DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG and APU.
+The central Resource Controller covers nine resources: DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, APU and GA2D.
 An owner selects one interrupt route, not both LP and HP simultaneously. The resource
 #code("CONTROL.RESET") request masks both routes; controller reset assignments and dynamic
 IRQ observations are distinguished in @reset-summary. Owner locks are sticky under their

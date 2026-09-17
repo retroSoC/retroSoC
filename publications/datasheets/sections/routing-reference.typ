@@ -47,7 +47,7 @@ deliver a completion to both owners. Private DMA engines do not consume a centra
 simply because both move memory. They can still share a gateway or destination bandwidth.
 JPEG uses master 6 with one normal read and one normal write credit at class 8;
 this does not establish an end-to-end JPEG system workload.
-JPEG's slot-6 admission limitation is described in @bus-programming.
+JPEG's slot-6 bounded admission and system qualification boundary is described in @bus-programming.
 
 === Completion and event handling
 + Prepare the receiving handler and buffers before enabling the channel, peripheral event and owner route.

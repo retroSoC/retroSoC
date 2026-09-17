@@ -32,6 +32,7 @@
 #include "../ips/i2s.typ"
 #include "../ips/dvp.typ"
 #include "../ips/jpeg.typ"
+#include "../ips/ga2d.typ"
 #include "../ips/apu.typ"
 #include "../ips/crypto.typ"
 #include "../ips/crc.typ"

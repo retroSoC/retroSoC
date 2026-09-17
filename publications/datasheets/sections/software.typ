@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("dev-software","Current IRQ runtime, GA2D/APU support, boot and application diagnostics")
 #import "../figures.typ": *
 
 = Software

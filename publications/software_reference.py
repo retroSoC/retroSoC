@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import re
 from pathlib import Path
 
@@ -104,7 +105,8 @@ def irq_support(root: Path) -> dict:
     if "RS_EXTERNAL_IRQ_COUNT" not in counts and re.search(
         r"^#define\s+RS_EXTERNAL_IRQ_COUNT\s+RS_SOC_EXTERNAL_IRQ_COUNT$", source, re.M
     ):
-        counts["RS_EXTERNAL_IRQ_COUNT"] = "62"
+        topology = json.loads((root / "rtl/mini/integration/soc_topology.json").read_text(encoding="utf-8"))
+        counts["RS_EXTERNAL_IRQ_COUNT"] = str(topology["irq_vector_width"] - 2)
     if set(counts) != {"RS_EXCEPTION_COUNT", "RS_CORE_IRQ_COUNT", "RS_EXTERNAL_IRQ_COUNT"}:
         raise ValueError("missing runtime handler-table limits")
     return {"enabled_core_causes": supported, "counts": {k: int(v) for k, v in counts.items()}}

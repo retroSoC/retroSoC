@@ -88,7 +88,7 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-06],[0.4 DRAFT],[Extend source-bound circuit, binary-layout, instruction and storage figures across applicable chapters, including all IPs. Bold level-one Contents titles and replace the left footer with the repository link. Preserve the frozen structure, hardware snapshot and register/waveform implementations.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-17],[0.4 DRAFT],[Refresh the reviewed dev snapshot; add the independent GA2D P5 reference and 41-IP/108-entry structure. Synchronize APU V1/V2 and gated KWS, nine-master fabric, JPEG admission, LP external IRQ and scoped CI evidence. Retain the approved layout and unadorned repository footer.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

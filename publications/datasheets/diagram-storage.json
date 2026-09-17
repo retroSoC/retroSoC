@@ -633,7 +633,7 @@
       "rtl/ip/multimedia/apu_local_sram.sv"
     ],
     "bindings": [],
-    "note": "Offsets refer to the private local-data space, separate from instruction memory and SoC SRAM. These declared ranges do not advertise enabled KWS, verify physical bank utilization or establish a completed codec image.",
+    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The current codec/internal macro branch uses 12 four-KiB banks; the separate 64 KiB KWS client uses inferred storage and is gated off by default. Logical capacity does not establish a 28-macro physical implementation or completed PPA qualification.",
     "derived": "apu-local"
   },
   {
@@ -1008,5 +1008,92 @@
     "bindings": [],
     "note": "Cells compare quantities, not adjacent memory regions. Packing overhead can occur within every row or sample, so it is not necessarily one tail-padding region. Odd-width DVP storage is illustrative and is not supported by the current full-word central-DMA path.",
     "derived": "worked-budgets"
+  },
+  {
+    "id": "ga2d-fifos",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D foreground, background and output staging",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_foreground_fifo",
+        "title": "Foreground data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_background_fifo",
+        "title": "Background data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_output_fifo",
+        "title": "Output data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "symbols": [
+          "s_output_strobe_mem"
+        ],
+        "title": "Output byte-strobe sidecar",
+        "depth": 32,
+        "bits": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_dma.sv"
+    ],
+    "bindings": [],
+    "note": "Each stream has 32 64-bit data entries. Output strobes have one eight-bit entry per output data slot; they are metadata, not extra payload. Job configuration and pixel holding registers are separate. The FIFOs do not create a software-visible job queue."
+  },
+  {
+    "id": "ga2d-pitched-buffer",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D RGB888 pitched-surface example",
+    "section": "functional",
+    "stores": [],
+    "ranges": [
+      {
+        "name": "Row 0 pixel bytes",
+        "base": 0,
+        "bytes": 24
+      },
+      {
+        "name": "Row 0 padding",
+        "base": 24,
+        "bytes": 8
+      },
+      {
+        "name": "Row 1 pixel bytes",
+        "base": 32,
+        "bytes": 24
+      },
+      {
+        "name": "Allocation tail",
+        "base": 56,
+        "bytes": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "crt/src/hal/ga2d_math.c"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "text": "s_job_q.dst_pitch < s_dst_row_bytes"
+      }
+    ],
+    "note": "Relative offsets for width 8, height 2 and pitch 32 bytes in RGB888. The allocated example is 64 bytes; the exclusive accessed envelope is 56 bytes. Padding and the tail are not image payload and must remain unmodified. Foreground/destination overlap is forbidden; only an exactly matching BLEND background/destination is admitted."
   }
 ]

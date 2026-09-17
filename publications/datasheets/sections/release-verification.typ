@@ -1,17 +1,29 @@
 #import "../style.typ": *
 
 == Release Verification Summary <release-verification>
+#change-start("dev-release-evidence","Commit-bound CI outcomes and qualification boundaries")
 This summary separates the existence of an implementation or test from evidence for a
 particular release. Every reported pass must identify the reviewed source revision, exact
 configuration, platform stage and matching report. A newer source-tree result cannot
 silently qualify this publication's older hardware snapshot.
 
-The current 40-IP inventory records
+The current #(data.system_reference.support.len())-IP inventory records
 #data.system_reference.retrieval.verification.support_counts.at("Source reviewed") source-reviewed entries,
 #data.system_reference.retrieval.verification.support_counts.at("Tests available") entries with test sources,
 and #data.system_reference.retrieval.verification.support_counts.at("Reported pass") entries with a matching
 reported pass. These counts describe publication evidence, not a percentage of functional
 coverage. See @software-support and @known-limitations for the per-IP qualifications.
+
+=== CI snapshot for the reviewed commit
+#let ci=data.system_reference.ci_snapshot
+Checked #ci.checked_date for commit #code(ci.revision). #ci.boundary
+#ds-table("ci-snapshot",[CI workflow outcomes and their evidence scope],
+  ([Workflow],[Outcome],[Scope and qualification]),
+  ci.runs.map(r=>(link(r.url,r.name),r.result,[#r.scope. #r.note])),
+  widths:(0.9fr,0.55fr,2.55fr))
+These links identify recorded public workflow/job outcomes. They are not substitutes for
+per-IP reports tied to the exact profile, test selection and platform stage below. In particular,
+the quality workflow did not reach its later host/script/APU tests after its formatting failure.
 
 === Verification inventory
 #for row in data.system_reference.retrieval.verification.rows {
@@ -57,3 +69,4 @@ For the ordered checks performed by bringup and CI smoke, see @application-diagn
 @firmware-application-results. An application's terminal pass qualifies only that selected
 sequence; controller self-test, CPU interrupt delivery and external-device traffic remain
 separate coverage statements.
+#change-end("dev-release-evidence")

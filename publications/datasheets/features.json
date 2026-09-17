@@ -188,5 +188,11 @@
     "MPW-selectable user GPIO data and enables.",
     "Readback of the shared user-GPIO input bus.",
     "Selection and pad ownership remain root-controlled."
+  ],
+  "ga2d": [
+    "P5 direct single-job FILL, COPY, CONVERT and opaque alpha BLEND.",
+    "RGB565/RGB888/XRGB8888/ARGB8888 color surfaces; A8 foreground mask.",
+    "Private AXI64 master with pitch and byte-edge handling, owner-routed IRQ and retained error/counter snapshots.",
+    "No descriptor queue, scaling, rotation, transparent-background blend or Linux graphics driver."
   ]
 }

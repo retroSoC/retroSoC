@@ -1664,7 +1664,8 @@
   "apu": {
     "main.KWS_INPUT_CONFIG": {
       "access": "RW",
-      "description": "Capture rate, physical channel count, and sample precision for continuous KWS input."
+      "description": "Capture rate, physical channel count, and sample precision for continuous KWS input.",
+      "notes": "Default PRODUCT has EnableP7=0; both reads and writes of this offset return an APB error. The stored reset value does not establish an enabled KWS input path."
     },
     "main.COMMAND": {
       "fields": [
