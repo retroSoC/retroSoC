@@ -2,6 +2,7 @@
 #import "../figures.typ": *
 #import "../waveforms.typ": timing
 #import "../diagram-packages.typ": memory-window-diagram
+#import "../soc-architecture.typ": soc-functional-diagram
 
 = System Architecture
 #change-start("dev-architecture","Nine-master fabric, address map, LP IRQ and lifecycle reference")
@@ -10,6 +11,8 @@
 Mini PRODUCT contains two fixed harts, an LP-owned control plane, a native HP data fabric and
 two APB4 register islands. There is no hardware cache coherency. Software transfers shared
 buffer ownership explicitly and performs the required fences and cache maintenance.
+
+#figure(soc-functional-diagram(), caption:[Mini PRODUCT functional architecture and clock domains.])<soc-functional-overview>
 
 === Management Processor
 ==== Hazard3

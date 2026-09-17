@@ -66,8 +66,8 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
-// This edit appends one closing page; earlier body-edit markers remain inactive.
-#let current-change(id) = id == "closing-page"
+// This edit adds the functional overview and updates its navigation references.
+#let current-change(id) = id in ("soc-functional","contents","table-directory","figure-directory")
 #let change-start(id, title, category:"modified") = context {
   if current-change(id) {metadata((
     kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))}

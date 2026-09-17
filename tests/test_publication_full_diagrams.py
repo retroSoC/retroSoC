@@ -40,7 +40,8 @@ def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
     assert len(diagrams["circuits"]) == 45
     assert len(diagrams["layouts"]) == 38
     assert len(diagrams["storage"]) == 42
-    assert len(expected) == 135
+    assert len(diagrams["soc_architecture"]) == 1
+    assert len(expected) == 136
     for identifier in contract["ip_ids"]:
         row = next(row for row in rows if row["anchor"] == identifier)
         assert row["categories"]["circuiteria"]["diagrams"] == ["circuiteria:" + identifier]
@@ -49,7 +50,7 @@ def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "unknown", "bad-page"])
 def test_declared_but_unused_or_duplicate_diagrams_fail_build(diagrams, mutation):
     records = [{**item, "page": index + 1} for index, item in enumerate(inventory(diagrams).values())]
-    assert len(validate_usage(diagrams, records)) == 135
+    assert len(validate_usage(diagrams, records)) == 136
     if mutation == "missing":
         records.pop()
     elif mutation == "duplicate":

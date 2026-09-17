@@ -523,7 +523,13 @@ def validate_page_map(items: list[dict], index: list[dict]) -> None:
 
 def validate_character_size(char: dict, number: int, regions: list[dict]) -> None:
     """Only continuation text inside a renderer-marked box may be below 9 pt."""
-    if not char["text"].strip() or char["size"] >= 8.95:
+    # PDFMiner's `size` becomes glyph advance for a quarter-turn label. Its
+    # rendered font-height axis is then the bounding-box width, not page height.
+    matrix = char.get("matrix", ())
+    quarter_turn = (len(matrix) == 6 and abs(matrix[0]) < 1e-8 and abs(matrix[3]) < 1e-8
+                    and abs(matrix[1]) > 1e-8 and abs(matrix[2]) > 1e-8)
+    size = char["width"] if quarter_turn else char["size"]
+    if not char["text"].strip() or size >= 8.95:
         return
     continuation = any(
         region["kind"] == "table-continuation"
@@ -535,7 +541,7 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
         for region in regions
     )
     minimum = 8.5 if continuation else 9.0
-    if char["size"] < minimum - 0.05:
+    if size < minimum - 0.05:
         raise ValueError(f"text smaller than {minimum:g} pt on page {number}")
 
 

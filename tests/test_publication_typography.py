@@ -42,3 +42,15 @@ def test_unmarked_or_partly_outside_text_keeps_nine_point_minimum(overrides, pag
 def test_even_marked_continuation_text_cannot_shrink_below_eight_point_five():
     with pytest.raises(ValueError, match="smaller than 8.5 pt"):
         validate_character_size(character(size=8), 2, [REGION])
+
+
+def test_quarter_turn_uses_rendered_font_height_not_glyph_advance():
+    validate_character_size(character(size=2.2, width=9, matrix=(0, 1, -1, 0, 0, 0)), 1, [])
+    with pytest.raises(ValueError, match="smaller than 9 pt"):
+        validate_character_size(character(size=12, width=8, matrix=(0, -1, 1, 0, 0, 0)), 1, [])
+
+
+def test_wide_upright_or_slanted_glyph_does_not_bypass_type_minimum():
+    for matrix in [(1, 0, 0, 1, 0, 0), (.7, .7, -.7, .7, 0, 0)]:
+        with pytest.raises(ValueError, match="smaller than 9 pt"):
+            validate_character_size(character(size=8, width=12, matrix=matrix), 1, [])

@@ -5941,6 +5941,9 @@
       "rtl/managed/mpw/ip/username1/user_ip_design.sv",
       "rtl/managed/mpw/ip/username2/user_ip_design.sv",
       "rtl/mini/address_map/memory_map.json",
+      "rtl/mini/integration/clock_reset_domains.json",
+      "rtl/mini/integration/soc_topology.json",
+      "rtl/mini/pin_map/pin_map.json",
       "rtl/mini/top/apb4_periph.sv",
       "rtl/mini/top/apb4_system.sv",
       "rtl/mini/top/axi4_bus.sv",
@@ -5952,6 +5955,8 @@
       "rtl/mini/top/extension_subsystem.sv",
       "rtl/mini/top/fabric_monitor.sv",
       "rtl/mini/top/hp_subsystem.sv",
+      "rtl/mini/top/memory_pad_mux.sv",
+      "rtl/mini/top/mgmt_debug_wrapper.sv",
       "rtl/mini/top/onchip_ram.sv",
       "rtl/mini/top/rcu.sv",
       "rtl/mini/top/resource_controller.sv",
@@ -7145,7 +7150,8 @@
     },
     "circuit_catalog": "publications/datasheets/diagram-circuits.json",
     "layout_catalog": "publications/datasheets/diagram-layouts.json",
-    "storage_catalog": "publications/datasheets/diagram-storage.json"
+    "storage_catalog": "publications/datasheets/diagram-storage.json",
+    "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
     "revision": "2a497ecef0b084c02f77ddfb1e94fb0197e14b02",

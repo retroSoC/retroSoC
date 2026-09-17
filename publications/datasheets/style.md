@@ -710,9 +710,9 @@ Do not fill electrical, thermal, power or throughput fields with borrowed device
 figures, target clocks or analytic ceilings.
 
 The dev refresh used the `dev-` namespace plus navigation/revision and GA2D
-chapter markers. The current closing-page edit activates only `closing-page`;
-earlier markers do not make unchanged chapters appear rewritten. Footer-total
-changes remain distinct from the newly appended unnumbered page in the report.
+chapter markers. The current functional-overview edit activates `soc-functional`
+and the three navigation directories. Earlier changes, including the closing
+page, must not be relabeled as new content; pagination remains a separate change.
 
 Use the existing Overview icon artwork, including its reverted outline style.
 The five Multimedia entries use two rows of three and two cells within the same
@@ -888,6 +888,76 @@ center-aligned within that width, uses 9 pt muted small-text rhythm and
 actual SVG as well as color and grayscale PDF renders.
 
 ## Header, footer, assets and maintenance
+
+### Compact PRODUCT functional architecture
+
+Insert the new `cetz:soc-functional` figure after the Section 2.1.1 introduction.
+It is a single portrait vector diagram within the 172 mm body width; keep its
+caption and diagram together and allow normal pagination if the current page is
+too short. Use locked CeTZ 0.5.2 directly. This component does not replace or
+restyle existing Circuiteria/IP, interconnect, clock, Overview or matrix figures.
+
+Every diagram label is Inter Regular, weight 400, at least 9 pt, including bus
+and bridge labels, clock-domain labels, external signals and notes. Do not use
+bold or semibold to create hierarchy. Use compact rows, thin 0.6 pt symbol
+borders, 0.65 pt routes, pale domain backgrounds and the existing ink/gold
+palette. Rotate long bus-spine and narrow bridge labels by 90 degrees where
+needed; keep ordinary module and external-interface labels horizontal. Check
+the actual embedded PDF font weight and rendered font size, not just the Typst
+settings. A quarter-turn glyph's page-height extent measures its advance, so
+the font-size check uses its rendered width for this orientation; the minimum
+font size remains 9 pt.
+
+CPU and memory blocks occupy the top tier, independent initiators and gateways
+the middle, and narrow APB peripheral rows the lower tier. Name UART0/1,
+I2C0/1, TIM0/1 and SDIO0/1 individually. Cover every PRODUCT IP; the separate
+MPW IPs remain in their appendix. Show DMA subcells only for implementations
+with the corresponding private path, and keep the central eight-channel DMA
+independent of Gateway A/B. Avoid summary boxes that collapse several unrelated
+peripherals or a large Reference panel that displaces functional content.
+
+AXI32/AXI64 text is permitted only in bus-spine and bridge symbols. It must not
+reappear in CPU/IP titles or as floating wire labels. Identify AHB-Lite to AXI,
+MMIO gating/downsizing, ingress CDC/upsizing and four independent memory-target
+CDC/downsizing paths in their bridge symbols. APB4 and stream paths stay distinct.
+Gateway A visibly receives separate APU, SDIO0 and USB2 inputs; Gateway B receives
+separate SDIO1 and SPI-SD inputs. Each has one output to its own CDC/width bridge
+and then the HP fabric. The two outputs are not merged into one fabricated bus.
+
+Use the following functional clock-domain fills, with printed names or a compact
+key. Multi-clock peripherals have distinct control/FIFO and timing/link views.
+
+| Domain | Fill |
+| --- | --- |
+| AON | `#ECEDEF` |
+| LP | `#F4EFE4` |
+| HP | `#E7EFF6` |
+| PCLK | `#EBF2E8` |
+| MEM | `#EEE9F4` |
+| JTAG | `#E7F2F0` |
+| AUDIO | `#F7E9E9` |
+| DVP | `#F8EFD9` |
+| ULPI | `#E8ECF7` |
+
+Both APB4 register islands are PCLK functions. SRAM and Fabric Monitor execute
+in HP; the external-memory controllers execute in MEM. PCLK derives from LP,
+so different fills do not imply all domain pairs are asynchronous. These are
+functional clock regions, not power islands or timing-signoff statements.
+
+Place concise external signal groups outside the module rows. Bind them to the
+pin map, interface declarations or actual GPIO alternate-function routes.
+Mark GPIO alternate functions, QPI/OPI shared-pad selection and the external
+ULPI PHY accurately; interface arrows do not promise concurrent use of conflicting
+routes. Solid request paths and grey stream paths remain visually distinct;
+responses and remote register-control CDC detail may be omitted from this overview
+and retained in the detailed references. Crossings without junctions are not joins.
+
+The catalog records semantic node roles, clock sources, gateway inputs/output,
+literal interface widths, stream connections, source files and external pin
+groups. Validate those against current sources and include them in the manifest.
+Record the new CeTZ category in the 108-entry coverage report and require the
+actual render. Its addition raises the specialized inventory from 135 to 136;
+the original 45 Circuiteria figures remain unchanged.
 
 ### Independent closing page
 

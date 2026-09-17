@@ -48,6 +48,19 @@ memory, descriptor examples, address windows, linker/load placement and budgets.
 Overview classification, access matrices, software flows, register bit layouts
 and WaveDrom keep their existing rendering.
 
+Section 2.1.1 adds a compact functional overview drawn independently with locked
+CeTZ 0.5.2. It uses regular 9 pt text, individually named PRODUCT IP/instance
+rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
+labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
+are separate from IP categories. The original 45 Circuiteria figures retain
+their rendering; the tracked inventory now totals 136 specialized figures.
+
+`soc_diagram_reference.py` checks the new `datasheets/soc-architecture.json`
+against PRODUCT IP coverage, selected RTL clock/interface bindings, gateway
+clients, stream routes, pin groups and alternate-function mappings. Its CeTZ
+renderer is `datasheets/soc-architecture.typ`. The new diagram is recorded under
+Introduction without changing the 41-IP / 108-entry structure contract.
+
 `diagram_reference.py` coordinates the circuit, binary, instruction and storage
 adapters. The catalogs under `datasheets/diagram-*.json` record sources and
 primary/shared chapter placement; `diagram-packages.typ` owns their appearance.
@@ -388,6 +401,9 @@ topology and pin-map tests cover the reused canonical validators. PDF checks
 verify snapshot freshness, metadata, embedded fonts, bookmarks, navigable links,
 minimum 9 pt text (8.5 pt only inside marked continuation notices), page-bound
 text, per-IP starts and presence of every generated pad/window.
+Quarter-turn labels use their rendered font-height axis: PDFMiner reports glyph
+advance as `size` for rotated text, so the checker measures the rotated bounding
+width instead. This corrects measurement without lowering the 9 pt threshold.
 They complement manual inspection of diagram meaning, continued headers,
 footnotes, page balance and grayscale readability.
 

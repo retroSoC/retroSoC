@@ -14,10 +14,13 @@ from publications.circuit_reference import validate_instance_connections
 from publications.instruction_reference import instruction_families
 from publications.format_reference import collect_layouts
 from publications.storage_reference import collect_storage
+from publications.soc_diagram_reference import collect_soc_diagram
 
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
+    if spec.get("soc_architecture_catalog"):
+        paths.add(spec["soc_architecture_catalog"])
     for binding in spec.get("bindings", []):
         paths.add(binding["file"])
     for circuit in spec.get("circuits", {}).values():
@@ -229,4 +232,5 @@ def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) 
             "sdio_command": copy.deepcopy(spec["sdio_command"]), "apu": apu_formats(root),
             "uart_fifo": uart_fifo(root), "windows": sorted(windows, key=lambda r: r["base"]),
             "cache": {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128},
-            "circuits": circuits, "layouts": layouts, "storage": storage}
+            "circuits": circuits, "layouts": layouts, "storage": storage,
+            "soc_architecture": collect_soc_diagram(root, spec["soc_architecture_catalog"], regions) if spec.get("soc_architecture_catalog") else {}}
