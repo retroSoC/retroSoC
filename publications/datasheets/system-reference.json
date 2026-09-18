@@ -3647,6 +3647,22 @@
         ]
       },
       {
+        "id": "apb4_npu",
+        "chapter": "npu",
+        "family": "npu",
+        "mode": "PRODUCT",
+        "region": "APB4_NPU",
+        "catalog": "npu",
+        "qualification": "Phase 2 integrates the NPU control shell only: register window, epoch-reconciled PCLK/HP lifecycle CDC, resource-9 ownership with round-trip quiesce acknowledgement, DONE/ERROR/ABORTED interrupt routing (LP vector 33 or HP PLIC source 12 by owner), and an atomic performance snapshot bank. The private AXI64 master is tied safely idle; EXECUTION_READY, operator, DMA, and numeric capabilities stay clear. Job execution, descriptor DMA, and inference are Phase 3/4 scope and are not advertised.",
+        "sources": [
+          "docs/ip/npu.md",
+          "rtl/ip/multimedia/npu_reg.sv",
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_control_cdc.sv",
+          "rtl/ip/multimedia/npu_core.sv"
+        ]
+      },
+      {
         "id": "apb4_crypto",
         "chapter": "crypto",
         "family": "crypto",
@@ -5363,6 +5379,15 @@
             "trigger": "rs_ci_smoke_ga2d_irq(",
             "coverage": "Discover P5 capability, submit direct single-job FILL/COPY/CONVERT/BLEND work through master 8, including A8 fixed-color foreground masks and exact equal background/destination in-place composition, verify the resource-owned LP external completion route, and inspect destinations.",
             "boundary": "Exercises the direct private-AXI64 P5 functional subset only; it does not cover transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, cache coherency, a Linux graphics driver, HP P5 composition acceptance, or physical performance."
+          },
+          {
+            "id": "npu-p2-shell-irq",
+            "title": "NPU P2 shell ownership and IRQ route",
+            "kind": "test-fail",
+            "code": 16,
+            "trigger": "rs_ci_smoke_npu_irq(",
+            "coverage": "Hand resource 9 to LP through the Resource Controller quiesce/acknowledge round trip, read back the shell identity/capability, and verify the IRQ_TEST-injected event reaches external ordinal 31 and clears by W1C.",
+            "boundary": "Covers the P2 register shell and interrupt route only; EXECUTION_READY stays clear, the private master is tied idle, and no job, DMA, or operator behavior is exercised."
           },
           {
             "id": "apu",

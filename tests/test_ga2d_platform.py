@@ -38,17 +38,28 @@ def test_ga2d_p5_preserves_the_real_private_axi64_master_and_irq_route() -> None
         "public": True,
         "user_access": "none",
     }
-    assert topology["apb4_periph_targets"][-1] == {
+    assert topology["apb4_periph_targets"][-2] == {
         "slot": 28,
         "name": "ga2d",
         "timed_interface": "u_ga2d_apb4_if",
         "pure_interface": "u_ga2d_apb4_pure_if",
         "region": "APB4_GA2D",
     }
-    assert topology["interrupts"][-1]["name"] == "ga2d"
-    assert topology["interrupts"][-1]["group_bit"] == 24
-    assert topology["interrupts"][-1]["core_bit"] == 32
-    assert topology["interrupts"][-1]["signal"] == "resource_irq_lp_i[7]"
+    assert topology["apb4_periph_targets"][-1] == {
+        "slot": 29,
+        "name": "npu",
+        "timed_interface": "u_npu_apb4_if",
+        "pure_interface": "u_npu_apb4_pure_if",
+        "region": "APB4_NPU",
+    }
+    assert topology["interrupts"][-2]["name"] == "ga2d"
+    assert topology["interrupts"][-2]["group_bit"] == 24
+    assert topology["interrupts"][-2]["core_bit"] == 32
+    assert topology["interrupts"][-2]["signal"] == "resource_irq_lp_i[7]"
+    assert topology["interrupts"][-1]["name"] == "npu"
+    assert topology["interrupts"][-1]["group_bit"] == 25
+    assert topology["interrupts"][-1]["core_bit"] == 33
+    assert topology["interrupts"][-1]["signal"] == "resource_irq_lp_i[8]"
     assert {
         "ga2d_pkg.sv",
         "ga2d_addr_gen.sv",
@@ -59,10 +70,11 @@ def test_ga2d_p5_preserves_the_real_private_axi64_master_and_irq_route() -> None
         "ga2d_reg.sv",
         "apb4_ga2d.sv",
     } <= {path.name for path in (ROOT / "rtl/ip/multimedia").glob("*ga2d*.sv")}
-    assert ".ResourceCount(9)" in apb4_system
+    assert ".ResourceCount(10)" in apb4_system
     assert "resource_irq_i[7]" in apb4_system
     assert "s_resource_irq_lp[8]" in apb4_system
     assert "s_hp_plic_source[11] = resource_irq_hp_i[7];" in apb4_periph
+    assert "s_hp_plic_source[12] = resource_irq_hp_i[8];" in apb4_periph
     assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8]" in top
     assert "s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8]" in top
     assert "axi4_master_idle u_ga2d_master_idle" not in top

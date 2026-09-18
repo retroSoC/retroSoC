@@ -16,7 +16,7 @@ module apb4_topology_tb;
     begin
       s_decode_addr = address;
       #1;
-      if (s_psel_comb !== (29'd1 << slot)) begin
+      if (s_psel_comb !== (30'd1 << slot)) begin
         $fatal(1, "unexpected APB4 target slot for %h: got %b", address, s_psel_comb);
       end
     end
@@ -35,6 +35,7 @@ module apb4_topology_tb;
     expect_select(`SOC_ADDR_APB4_CRYPTO_BASE, 19);
     expect_select(`SOC_ADDR_APB4_GA2D_BASE, 28);
     expect_select(`SOC_ADDR_APB4_APU_BASE, 27);
+    expect_select(`SOC_ADDR_APB4_NPU_BASE, 29);
     $display("SoC topology APB4 routing test passed");
     $finish;
   end

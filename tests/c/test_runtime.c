@@ -18,6 +18,7 @@
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/hal/jpeg.h>
 #include <retrosoc/hal/memory.h>
+#include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
@@ -50,11 +51,13 @@ static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
 volatile uint32_t rs_ga2d_test_mmio[1024];
 uint32_t rs_ga2d_test_mem_pad_mode;
+volatile uint32_t rs_npu_test_mmio[1024];
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 volatile uint32_t rs_resource_test_mmio[1024];
 
 #define APU_TEST_REG(offset)            rs_apu_test_mmio[(offset) / 4U]
 #define GA2D_TEST_REG(offset)           rs_ga2d_test_mmio[(offset) / 4U]
+#define NPU_TEST_REG(offset)            rs_npu_test_mmio[(offset) / 4U]
 #define FABRIC_MONITOR_TEST_REG(offset) rs_fabric_monitor_test_mmio[(offset) / 4U]
 #define RESOURCE_TEST_REG(offset)       rs_resource_test_mmio[(offset) / 4U]
 
@@ -870,7 +873,7 @@ static int test_resource_validation(void) {
     if ((RS_RESOURCE_DMA != 0) || (RS_RESOURCE_USB2 != 1) || (RS_RESOURCE_SDIO0 != 2) ||
         (RS_RESOURCE_SDIO1 != 3) || (RS_RESOURCE_SPISD != 4) || (RS_RESOURCE_EXT_H != 5) ||
         (RS_RESOURCE_JPEG != 6) || (RS_RESOURCE_APU != 7) || (RS_RESOURCE_GA2D != 8) ||
-        (RS_RESOURCE_COUNT != 9)) {
+        (RS_RESOURCE_NPU != 9) || (RS_RESOURCE_COUNT != 10)) {
         return 1;
     }
     if ((rs_resource_get_status((rs_resource_t)RS_RESOURCE_COUNT, &status) != RS_EINVAL) ||
@@ -926,7 +929,7 @@ static int test_fabric_monitor_hal_contract(void) {
         (RS_FABRIC_MASTER_IO_B != 4) || (RS_FABRIC_MASTER_LP != 5) ||
         (RS_FABRIC_MASTER_JPEG != 6) || (RS_FABRIC_MASTER_RESERVED != 6) ||
         (RS_FABRIC_MASTER_EXT_H != 7) || (RS_FABRIC_MASTER_GA2D != 8) ||
-        (RS_FABRIC_MASTER_COUNT != 9)) {
+        (RS_FABRIC_MASTER_NPU != 9) || (RS_FABRIC_MASTER_COUNT != 10)) {
         return 1;
     }
 
@@ -1066,12 +1069,10 @@ static int test_apu_kws_validation(void) {
         (APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
         return 5;
     }
-    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) =
-        UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
+    APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
     APU_TEST_REG(RS_APU_ABI_KWS_MODEL_STATUS) = 0U;
     if ((rs_apu_kws_model_load(&image, 1U) != RS_EIO) ||
-        (APU_TEST_REG(RS_APU_ABI_COMMAND) !=
-         (UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD))) {
+        (APU_TEST_REG(RS_APU_ABI_COMMAND) != (UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD))) {
         return 6;
     }
     APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = 0U;
@@ -1247,9 +1248,11 @@ static void test_ga2d_mmio_reset(void) {
     rs_ga2d_test_mem_pad_mode = (uint32_t)RS_MEMORY_PAD_QPI;
 }
 
-static int check_ga2d_validation_result(
-    const rs_ga2d_job_t *job, const rs_ga2d_capability_t *capability, rs_status_t expected_status,
-    rs_ga2d_validation_category_t expected_category, rs_ga2d_plane_t expected_plane) {
+static int check_ga2d_validation_result(const rs_ga2d_job_t *job,
+                                        const rs_ga2d_capability_t *capability,
+                                        rs_status_t expected_status,
+                                        rs_ga2d_validation_category_t expected_category,
+                                        rs_ga2d_plane_t expected_plane) {
     const rs_ga2d_validation_result_t result =
         rs_ga2d_job_validate_capability_result(job, capability);
 
@@ -1308,8 +1311,8 @@ static int test_ga2d_pixel_math(void) {
     if ((rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_XRGB8888, destination,
                                RS_GA2D_FORMAT_ARGB8888) != RS_OK) ||
         (destination[3] != UINT8_C(0xFF)) ||
-        (rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_A8, destination,
-                               RS_GA2D_FORMAT_RGB888) != RS_EINVAL) ||
+        (rs_ga2d_convert_pixel(source, RS_GA2D_FORMAT_A8, destination, RS_GA2D_FORMAT_RGB888) !=
+         RS_EINVAL) ||
         (rs_ga2d_pack_pixel(destination, RS_GA2D_FORMAT_A8, &pixel) != RS_EINVAL)) {
         return 5;
     }
@@ -1354,9 +1357,9 @@ static int test_ga2d_pixel_math(void) {
     destination[1] = UINT8_C(0x20);
     destination[2] = UINT8_C(0x10);
     destination[3] = UINT8_C(0x00);
-    if ((rs_ga2d_blend_pixel(source, RS_GA2D_FORMAT_ARGB8888, destination,
-                             RS_GA2D_FORMAT_XRGB8888, destination, RS_GA2D_FORMAT_XRGB8888,
-                             UINT32_C(0), UINT8_C(128)) != RS_OK) ||
+    if ((rs_ga2d_blend_pixel(source, RS_GA2D_FORMAT_ARGB8888, destination, RS_GA2D_FORMAT_XRGB8888,
+                             destination, RS_GA2D_FORMAT_XRGB8888, UINT32_C(0),
+                             UINT8_C(128)) != RS_OK) ||
         (destination[0] != UINT8_C(0x78)) || (destination[1] != UINT8_C(0x50)) ||
         (destination[2] != UINT8_C(0x28)) || (destination[3] != UINT8_C(0xFF))) {
         return 9;
@@ -1460,8 +1463,7 @@ static int test_ga2d_p5_validation(void) {
     for (uint32_t foreground_format = 0U; foreground_format < 4U; ++foreground_format) {
         convert.foreground.format = (rs_ga2d_format_t)foreground_format;
         convert.foreground.pitch = color_pitches[foreground_format];
-        for (uint32_t destination_format = 0U; destination_format < 4U;
-             ++destination_format) {
+        for (uint32_t destination_format = 0U; destination_format < 4U; ++destination_format) {
             convert.destination.format = (rs_ga2d_format_t)destination_format;
             convert.destination.pitch = color_pitches[destination_format];
             if (rs_ga2d_job_validate(&convert) != RS_OK) {
@@ -1478,8 +1480,7 @@ static int test_ga2d_p5_validation(void) {
     convert.foreground.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
     convert.destination.format = RS_GA2D_FORMAT_RGB565;
     convert.destination.pitch = color_pitches[RS_GA2D_FORMAT_RGB565];
-    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) =
-        RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_CONVERT;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_CONVERT;
     if (rs_ga2d_job_validate(&convert) != RS_ENOTSUP) {
         return 10;
     }
@@ -1495,13 +1496,13 @@ static int test_ga2d_p5_validation(void) {
 
     for (uint32_t foreground_format = 0U; foreground_format < 5U; ++foreground_format) {
         blend.foreground.format = (rs_ga2d_format_t)foreground_format;
-        blend.foreground.pitch =
-            (foreground_format == (uint32_t)RS_GA2D_FORMAT_A8) ? 5U : color_pitches[foreground_format];
+        blend.foreground.pitch = (foreground_format == (uint32_t)RS_GA2D_FORMAT_A8)
+                                     ? 5U
+                                     : color_pitches[foreground_format];
         for (uint32_t background_format = 0U; background_format < 4U; ++background_format) {
             blend.background.format = (rs_ga2d_format_t)background_format;
             blend.background.pitch = color_pitches[background_format];
-            for (uint32_t destination_format = 0U; destination_format < 4U;
-                 ++destination_format) {
+            for (uint32_t destination_format = 0U; destination_format < 4U; ++destination_format) {
                 blend.destination.format = (rs_ga2d_format_t)destination_format;
                 blend.destination.pitch = color_pitches[destination_format];
                 if (rs_ga2d_job_validate(&blend) != RS_OK) {
@@ -1516,8 +1517,7 @@ static int test_ga2d_p5_validation(void) {
     blend.background.pitch = 15U;
     blend.destination.format = RS_GA2D_FORMAT_RGB888;
     blend.destination.pitch = 15U;
-    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) =
-        RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_A8_MASK;
+    GA2D_TEST_REG(RS_GA2D_REG_CAPABILITY) = RS_GA2D_CAPABILITY_P5 & ~RS_GA2D_CAPABILITY_A8_MASK;
     if (rs_ga2d_job_validate(&blend) != RS_ENOTSUP) {
         return 13;
     }
@@ -1633,8 +1633,7 @@ static int test_ga2d_validation_precedence(void) {
 
     job.width = 0U;
     job.foreground.format = RS_GA2D_FORMAT_A8;
-    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL,
-                                     RS_GA2D_VALIDATION_CATEGORY_SIZE,
+    if (check_ga2d_validation_result(&job, &capability, RS_EINVAL, RS_GA2D_VALIDATION_CATEGORY_SIZE,
                                      RS_GA2D_PLANE_NONE) != 0) {
         return 1;
     }
@@ -2140,6 +2139,375 @@ static int test_video_parser(void) {
     return 0;
 }
 
+static void test_npu_mmio_reset(void) {
+    for (size_t index = 0U; index < (sizeof(rs_npu_test_mmio) / sizeof(rs_npu_test_mmio[0]));
+         ++index) {
+        rs_npu_test_mmio[index] = 0U;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IP_ID) = RS_NPU_IP_ID_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_IP_VERSION) = RS_NPU_IP_VERSION_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = RS_NPU_CAPABILITY_P2;
+    NPU_TEST_REG(RS_NPU_REG_NUMERIC_PROFILE) = RS_NPU_NUMERIC_PROFILE_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_DESCRIPTOR_BYTES) = RS_NPU_DESCRIPTOR_BYTES;
+    NPU_TEST_REG(RS_NPU_REG_TIMEOUT_CYCLES) = RS_NPU_TIMEOUT_CYCLES_RESET;
+    NPU_TEST_REG(RS_NPU_REG_FAULT_DESCRIPTOR) = RS_NPU_FAULT_DESCRIPTOR_RESET;
+}
+
+static int test_npu_capability_contract(void) {
+    rs_npu_capability_t capability;
+
+    test_npu_mmio_reset();
+    if (rs_npu_get_capability(NULL) != RS_EINVAL) {
+        return 1;
+    }
+    if ((rs_npu_get_capability(&capability) != RS_OK) || (capability.ip_id != RS_NPU_IP_ID_VALUE) ||
+        (capability.ip_version != RS_NPU_IP_VERSION_VALUE) ||
+        (capability.flags != RS_NPU_CAPABILITY_P2) ||
+        (capability.numeric_profile != RS_NPU_NUMERIC_PROFILE_VALUE) ||
+        (capability.local_bytes != 0U) || (capability.dense_macs != 0U) ||
+        (capability.depthwise_macs != 0U) || (capability.max_k_slice != 0U) ||
+        (capability.max_dimension != 0U) || (capability.op_mask != 0U)) {
+        return 2;
+    }
+    NPU_TEST_REG(RS_NPU_REG_MAC_CONFIG) = RS_NPU_MAC_CONFIG_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_LOCAL_BYTES) = RS_NPU_LOCAL_BYTES_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_MAX_K_SLICE) = RS_NPU_MAX_K_SLICE;
+    NPU_TEST_REG(RS_NPU_REG_MAX_DIMENSION) = RS_NPU_MAX_DIMENSION;
+    NPU_TEST_REG(RS_NPU_REG_OP_CAPABILITY) = RS_NPU_OP_CAPABILITY_MVP;
+    if ((rs_npu_get_capability(&capability) != RS_OK) ||
+        (capability.local_bytes != RS_NPU_LOCAL_BYTES_VALUE) || (capability.dense_macs != 64U) ||
+        (capability.depthwise_macs != 8U) || (capability.max_k_slice != RS_NPU_MAX_K_SLICE) ||
+        (capability.max_dimension != RS_NPU_MAX_DIMENSION) ||
+        (capability.op_mask != RS_NPU_OP_CAPABILITY_MVP)) {
+        return 3;
+    }
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_IP_ID) = 0U;
+    if (rs_npu_get_capability(&capability) != RS_ENOTSUP) {
+        return 4;
+    }
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_IP_VERSION) = UINT32_C(0x00020000);
+    if (rs_npu_get_capability(&capability) != RS_ENOTSUP) {
+        return 5;
+    }
+    return 0;
+}
+
+static int test_npu_irq_contract(void) {
+    uint32_t events = 0U;
+
+    test_npu_mmio_reset();
+    if (rs_npu_irq_pending(NULL) != RS_EINVAL) {
+        return 1;
+    }
+    if ((rs_npu_irq_enable(RS_NPU_IRQ_ALL | UINT32_C(0x8)) != RS_EINVAL) ||
+        (rs_npu_irq_ack(UINT32_C(0x80000000)) != RS_EINVAL)) {
+        return 2;
+    }
+    if ((rs_npu_irq_enable(RS_NPU_IRQ_DONE | RS_NPU_IRQ_ERROR) != RS_OK) ||
+        (NPU_TEST_REG(RS_NPU_REG_IRQ_ENABLE) != (RS_NPU_IRQ_DONE | RS_NPU_IRQ_ERROR))) {
+        return 3;
+    }
+    if ((rs_npu_irq_enable(RS_NPU_IRQ_ABORTED) != RS_OK) ||
+        (NPU_TEST_REG(RS_NPU_REG_IRQ_ENABLE) != RS_NPU_IRQ_ABORTED)) {
+        return 4;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_DONE | RS_NPU_IRQ_ABORTED;
+    if ((rs_npu_irq_pending(&events) != RS_OK) ||
+        (events != (RS_NPU_IRQ_DONE | RS_NPU_IRQ_ABORTED))) {
+        return 5;
+    }
+    /* The MMIO array is plain memory: the HAL writes the W1C mask and the test
+       then models the hardware clear that the write requests. */
+    if ((rs_npu_irq_ack(RS_NPU_IRQ_DONE) != RS_OK) ||
+        (NPU_TEST_REG(RS_NPU_REG_IRQ_STATE) != RS_NPU_IRQ_DONE)) {
+        return 6;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IRQ_STATE) = (RS_NPU_IRQ_DONE | RS_NPU_IRQ_ABORTED) & ~RS_NPU_IRQ_DONE;
+    if ((rs_npu_irq_pending(&events) != RS_OK) || (events != RS_NPU_IRQ_ABORTED)) {
+        return 7;
+    }
+    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = RS_NPU_CAPABILITY_PRESENT;
+    if ((rs_npu_irq_enable(RS_NPU_IRQ_DONE) != RS_ENOTSUP) ||
+        (rs_npu_irq_pending(&events) != RS_ENOTSUP) ||
+        (rs_npu_irq_ack(RS_NPU_IRQ_DONE) != RS_ENOTSUP)) {
+        return 8;
+    }
+    return 0;
+}
+
+static int test_npu_submit_p2(void) {
+    const rs_npu_job_t job = {
+        .descriptor_address = UINT32_C(0x10000000),
+        .descriptor_count = 2U,
+        .job_id = UINT32_C(0xA5),
+        .timeout_cycles = UINT32_C(72000000),
+    };
+    rs_npu_job_t malformed = job;
+
+    test_npu_mmio_reset();
+    if (rs_npu_submit(NULL) != RS_EINVAL) {
+        return 1;
+    }
+    malformed.descriptor_address = UINT32_C(0x10000001);
+    if (rs_npu_submit(&malformed) != RS_EINVAL) {
+        return 2;
+    }
+    malformed.descriptor_address = job.descriptor_address;
+    malformed.descriptor_count = 0U;
+    if (rs_npu_submit(&malformed) != RS_EINVAL) {
+        return 3;
+    }
+    malformed.descriptor_count = RS_NPU_JOB_COUNT_VALUE_MASK + 1U;
+    if (rs_npu_submit(&malformed) != RS_EINVAL) {
+        return 4;
+    }
+    malformed.descriptor_count = job.descriptor_count;
+    malformed.timeout_cycles = 0U;
+    if (rs_npu_submit(&malformed) != RS_EINVAL) {
+        return 5;
+    }
+    malformed.timeout_cycles = job.timeout_cycles;
+    malformed.descriptor_address = UINT32_C(0xFFFFFFC0);
+    malformed.descriptor_count = 2U;
+    if (rs_npu_submit(&malformed) != RS_EINVAL) {
+        return 6;
+    }
+    /* P2 advertises no EXECUTION_READY: a valid job is refused without writes. */
+    if ((rs_npu_submit(&job) != RS_ENOTSUP) || (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U) ||
+        (NPU_TEST_REG(RS_NPU_REG_JOB_BASE) != 0U) || (NPU_TEST_REG(RS_NPU_REG_JOB_COUNT) != 0U) ||
+        (NPU_TEST_REG(RS_NPU_REG_JOB_ID) != 0U)) {
+        return 7;
+    }
+    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = 0U;
+    if (rs_npu_submit(&job) != RS_ENOTSUP) {
+        return 8;
+    }
+    return 0;
+}
+
+static int test_npu_wait_abort_contract(void) {
+    rs_npu_status_t status;
+
+    test_npu_mmio_reset();
+    if ((rs_npu_wait(0U, 0U, NULL) != RS_EINVAL) ||
+        (rs_npu_abort_wait(0U, 0U, NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    /* P2 retains no active or terminal job: no token is known. */
+    if ((rs_npu_wait(UINT32_C(0xA5), 0U, &status) != RS_EINVAL) ||
+        (rs_npu_abort_wait(UINT32_C(0xA5), 0U, &status) != RS_EINVAL)) {
+        return 2;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IP_ID) = 0U;
+    if ((rs_npu_wait(UINT32_C(0xA5), 0U, &status) != RS_ENOTSUP) ||
+        (rs_npu_abort_wait(UINT32_C(0xA5), 0U, &status) != RS_ENOTSUP)) {
+        return 3;
+    }
+
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_RESULT_VALID;
+    NPU_TEST_REG(RS_NPU_REG_RESULT_JOB_ID) = UINT32_C(0xA5);
+    NPU_TEST_REG(RS_NPU_REG_RESULT_CODE) = RS_NPU_RESULT_DONE;
+    NPU_TEST_REG(RS_NPU_REG_COMPLETED_DESCRIPTORS) = 7U;
+    NPU_TEST_REG(RS_NPU_REG_RECOVERY_GENERATION) = 3U;
+    if ((rs_npu_wait(UINT32_C(0xA5), 0U, &status) != RS_OK) ||
+        (status.flags != RS_NPU_STATUS_RESULT_VALID) || (status.job_id != UINT32_C(0xA5)) ||
+        (status.result_code != RS_NPU_RESULT_DONE) || (status.completed_descriptors != 7U) ||
+        (status.recovery_generation != 3U)) {
+        return 4;
+    }
+    /* abort on an already terminal token is a no-op that reports the result */
+    if ((rs_npu_abort_wait(UINT32_C(0xA5), 0U, &status) != RS_OK) ||
+        (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U)) {
+        return 5;
+    }
+    if (rs_npu_wait(UINT32_C(0x5A), 0U, &status) != RS_EINVAL) {
+        return 6;
+    }
+    NPU_TEST_REG(RS_NPU_REG_RESULT_CODE) = RS_NPU_RESULT_ERROR;
+    if (rs_npu_wait(UINT32_C(0xA5), 0U, &status) != RS_EIO) {
+        return 7;
+    }
+    NPU_TEST_REG(RS_NPU_REG_RESULT_CODE) = RS_NPU_RESULT_ABORTED;
+    if (rs_npu_abort_wait(UINT32_C(0xA5), 0U, &status) != RS_EIO) {
+        return 8;
+    }
+    NPU_TEST_REG(RS_NPU_REG_RESULT_CODE) = RS_NPU_RESULT_RESET_CANCELLED;
+    if (rs_npu_wait(UINT32_C(0xA5), 0U, &status) != RS_EIO) {
+        return 9;
+    }
+
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_BUSY;
+    NPU_TEST_REG(RS_NPU_REG_JOB_ID) = UINT32_C(0xA5);
+    if ((rs_npu_wait(UINT32_C(0xA5), 4U, &status) != RS_ETIMEOUT) ||
+        (status.flags != RS_NPU_STATUS_BUSY)) {
+        return 10;
+    }
+    /* abort writes CONTROL.ABORT once for the active token, then expires */
+    if ((rs_npu_abort_wait(UINT32_C(0xA5), 4U, &status) != RS_ETIMEOUT) ||
+        (NPU_TEST_REG(RS_NPU_REG_CONTROL) != RS_NPU_CONTROL_ABORT)) {
+        return 11;
+    }
+    return 0;
+}
+
+static int test_npu_status_error_contract(void) {
+    rs_npu_status_t status;
+    rs_npu_error_t error;
+
+    test_npu_mmio_reset();
+    if ((rs_npu_get_status(NULL) != RS_EINVAL) || (rs_npu_get_error(NULL) != RS_EINVAL)) {
+        return 1;
+    }
+    /* P2 reset state: not READY, no retained result, fault index all ones */
+    if ((rs_npu_get_status(&status) != RS_OK) || (status.flags != 0U) || (status.job_id != 0U) ||
+        (status.result_code != RS_NPU_RESULT_NONE) || (status.completed_descriptors != 0U) ||
+        (status.recovery_generation != 0U)) {
+        return 2;
+    }
+    if ((rs_npu_get_error(&error) != RS_OK) || (error.code != RS_NPU_FAULT_NONE) ||
+        (error.address != 0U) || (error.descriptor_index != RS_NPU_FAULT_DESCRIPTOR_RESET) ||
+        (error.info != 0U)) {
+        return 3;
+    }
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_BUSY | RS_NPU_STATUS_DRAINING |
+                                      RS_NPU_STATUS_CLOCK_PAUSED | RS_NPU_STATUS_RECOVERING |
+                                      RS_NPU_STATUS_RESULT_VALID;
+    NPU_TEST_REG(RS_NPU_REG_RESULT_JOB_ID) = UINT32_C(0x55);
+    NPU_TEST_REG(RS_NPU_REG_RESULT_CODE) = RS_NPU_RESULT_ERROR;
+    NPU_TEST_REG(RS_NPU_REG_COMPLETED_DESCRIPTORS) = 5U;
+    NPU_TEST_REG(RS_NPU_REG_RECOVERY_GENERATION) = 9U;
+    NPU_TEST_REG(RS_NPU_REG_FAULT_CODE) = RS_NPU_FAULT_AXI_READ;
+    NPU_TEST_REG(RS_NPU_REG_FAULT_ADDRESS) = UINT32_C(0x10000040);
+    NPU_TEST_REG(RS_NPU_REG_FAULT_DESCRIPTOR) = 2U;
+    NPU_TEST_REG(RS_NPU_REG_FAULT_INFO) =
+        (UINT32_C(2) << RS_NPU_FAULT_INFO_AXI_RESPONSE_SHIFT) |
+        (RS_NPU_FAULT_INFO_DIRECTION_READ << RS_NPU_FAULT_INFO_DIRECTION_SHIFT) |
+        (UINT32_C(12) << RS_NPU_FAULT_INFO_LANE_SHIFT);
+    if ((rs_npu_get_status(&status) != RS_OK) ||
+        (status.flags != NPU_TEST_REG(RS_NPU_REG_STATUS)) || (status.job_id != UINT32_C(0x55)) ||
+        (status.result_code != RS_NPU_RESULT_ERROR) || (status.completed_descriptors != 5U) ||
+        (status.recovery_generation != 9U)) {
+        return 4;
+    }
+    if ((rs_npu_get_error(&error) != RS_OK) || (error.code != RS_NPU_FAULT_AXI_READ) ||
+        (error.address != UINT32_C(0x10000040)) || (error.descriptor_index != 2U) ||
+        (error.info != NPU_TEST_REG(RS_NPU_REG_FAULT_INFO))) {
+        return 5;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IP_VERSION) = 0U;
+    if ((rs_npu_get_status(&status) != RS_ENOTSUP) || (rs_npu_get_error(&error) != RS_ENOTSUP)) {
+        return 6;
+    }
+    return 0;
+}
+
+static int test_npu_snapshot_contract(void) {
+    rs_npu_counters_t counters;
+
+    test_npu_mmio_reset();
+    if (rs_npu_snapshot_counters(0U, NULL) != RS_EINVAL) {
+        return 1;
+    }
+    NPU_TEST_REG(RS_NPU_REG_PERF_STATUS) = RS_NPU_PERF_STATUS_SNAP_BUSY;
+    if (rs_npu_snapshot_counters(0U, &counters) != RS_EINVAL) {
+        return 2;
+    }
+    test_npu_mmio_reset();
+    if ((rs_npu_snapshot_counters(4U, &counters) != RS_ETIMEOUT) ||
+        (NPU_TEST_REG(RS_NPU_REG_PERF_CONTROL) != RS_NPU_PERF_CONTROL_SNAPSHOT)) {
+        return 3;
+    }
+    /* idle zero-bank snapshot: valid without any job execution evidence */
+    NPU_TEST_REG(RS_NPU_REG_PERF_STATUS) = RS_NPU_PERF_STATUS_SNAP_VALID;
+    if ((rs_npu_snapshot_counters(0U, &counters) != RS_OK) || (counters.job_id != 0U) ||
+        (counters.recovery_generation != 0U) || (counters.active_cycles != 0U) ||
+        (counters.clock_pause_cycles != 0U) || (counters.useful_macs != 0U) ||
+        (counters.pack_cycles != 0U) || (counters.local_bank_stall_cycles != 0U) ||
+        (counters.dma_read_bytes != 0U) || (counters.dma_write_bytes != 0U) ||
+        (counters.dma_stall_cycles != 0U) || (counters.requant_stall_cycles != 0U) ||
+        (counters.retired_descriptors != 0U)) {
+        return 4;
+    }
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_PERF_STATUS) = RS_NPU_PERF_STATUS_SNAP_VALID;
+    NPU_TEST_REG(RS_NPU_REG_PERF_JOB_ID) = UINT32_C(0x5A);
+    NPU_TEST_REG(RS_NPU_REG_PERF_GENERATION) = 2U;
+    for (uint32_t index = 0U; index < 10U; ++index) {
+        NPU_TEST_REG(RS_NPU_REG_PERF_ACTIVE_CYCLES_LO + (index * 8U)) = index + 1U;
+        NPU_TEST_REG(RS_NPU_REG_PERF_ACTIVE_CYCLES_HI + (index * 8U)) = index + 101U;
+    }
+    if (rs_npu_snapshot_counters(0U, &counters) != RS_OK) {
+        return 5;
+    }
+    {
+        const uint64_t values[10] = {
+            counters.active_cycles,
+            counters.clock_pause_cycles,
+            counters.useful_macs,
+            counters.pack_cycles,
+            counters.local_bank_stall_cycles,
+            counters.dma_read_bytes,
+            counters.dma_write_bytes,
+            counters.dma_stall_cycles,
+            counters.requant_stall_cycles,
+            counters.retired_descriptors,
+        };
+        for (uint32_t index = 0U; index < 10U; ++index) {
+            const uint64_t expected = ((uint64_t)(index + 101U) << 32U) | (uint64_t)(index + 1U);
+
+            if (values[index] != expected) {
+                return 6;
+            }
+        }
+    }
+    if ((counters.job_id != UINT32_C(0x5A)) || (counters.recovery_generation != 2U)) {
+        return 7;
+    }
+    NPU_TEST_REG(RS_NPU_REG_IP_ID) = 0U;
+    if (rs_npu_snapshot_counters(0U, &counters) != RS_ENOTSUP) {
+        return 8;
+    }
+    return 0;
+}
+
+static int test_npu_reset_contract(void) {
+    test_npu_mmio_reset();
+    /* the idle P2 shell accepts SOFT_RESET; READY stays low by design */
+    if ((rs_npu_reset(0U) != RS_OK) ||
+        (NPU_TEST_REG(RS_NPU_REG_CONTROL) != RS_NPU_CONTROL_SOFT_RESET)) {
+        return 1;
+    }
+    NPU_TEST_REG(RS_NPU_REG_CONTROL) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_BUSY;
+    if ((rs_npu_reset(0U) != RS_EINVAL) || (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U)) {
+        return 2;
+    }
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_DRAINING;
+    if (rs_npu_reset(0U) != RS_EINVAL) {
+        return 3;
+    }
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_RECOVERING;
+    if (rs_npu_reset(0U) != RS_EINVAL) {
+        return 4;
+    }
+    /* a snapshot transfer in flight also rejects reset */
+    test_npu_mmio_reset();
+    NPU_TEST_REG(RS_NPU_REG_PERF_STATUS) = RS_NPU_PERF_STATUS_SNAP_BUSY;
+    if ((rs_npu_reset(0U) != RS_EINVAL) || (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U)) {
+        return 5;
+    }
+    NPU_TEST_REG(RS_NPU_REG_PERF_STATUS) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_IP_ID) = 0U;
+    if (rs_npu_reset(0U) != RS_ENOTSUP) {
+        return 6;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -2171,6 +2539,13 @@ int main(void) {
         test_ga2d_p5_validation(),
         test_ga2d_validation_precedence(),
         test_ga2d_hal_contract(),
+        test_npu_capability_contract(),
+        test_npu_irq_contract(),
+        test_npu_submit_p2(),
+        test_npu_wait_abort_contract(),
+        test_npu_status_error_contract(),
+        test_npu_snapshot_contract(),
+        test_npu_reset_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

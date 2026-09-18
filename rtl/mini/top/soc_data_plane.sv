@@ -16,7 +16,7 @@ module soc_data_plane (
     input  logic       block_new_i,
     input  logic       recovery_i,
     input  logic       flush_i,
-    input  logic [8:0] resource_block_i,
+    input  logic [9:0] resource_block_i,
     input  logic [1:0] mem_pad_mode_i,
     input  logic       ext_h_block_i,
     input  logic [31:0] ext_h_read_base_i,
@@ -35,6 +35,10 @@ module soc_data_plane (
     axi4_if.slave      ga2d_axi4,
     input  logic       ga2d_core_safe_idle_i
                               = 1'b1,
+    axi4_if.slave      npu_axi4,
+    input  logic       npu_source_idle_i,
+    input  logic       npu_source_quiesced_i,
+    input  logic       npu_flush_busy_i,
     axi4_if.slave      lp_data_axi4,
     axi4_if.slave      ext_h_axi4,
     axi4_if.master     sram_gateway_axi4,
@@ -53,8 +57,8 @@ module soc_data_plane (
     output logic       ga2d_bridge_clear_busy_o,
     output logic [7:0] ga2d_bridge_epoch_o,
     output logic       ga2d_data_ready_o,
-    output logic [8:0] resource_idle_o,
-    output logic [8:0] resource_block_ack_o,
+    output logic [9:0] resource_idle_o,
+    output logic [9:0] resource_block_ack_o,
     output logic [7:0] outstanding_read_o,
     output logic [7:0] outstanding_write_o,
     output logic       fault_valid_o,
@@ -67,7 +71,7 @@ module soc_data_plane (
 );
   localparam int unsigned NumIoMasters = 3;
   localparam int unsigned NumMemoryTargets = 5;
-  localparam int unsigned NumDataMasters = 9;
+  localparam int unsigned NumDataMasters = 10;
   localparam int unsigned NumFaultSources = NumMemoryTargets + 1;
   localparam int unsigned FaultSourceWidth = $clog2(NumFaultSources);
   localparam logic [3:0] FaultTimeout = 4'd5;
@@ -129,17 +133,19 @@ module soc_data_plane (
   logic                             s_ga2d_rearm_q;
   logic                             s_ga2d_master_idle_pclk;
   logic                             s_ga2d_block_ack_pclk;
-  logic [                 8:0]      s_resource_block_hp;
-  logic [                 8:0]      s_master_idle;
-  logic [                 8:0]      s_master_block;
-  logic [                 8:0]      s_monitor_master_read_accept;
-  logic [                 8:0]      s_monitor_master_write_accept;
-  logic [                 8:0]      s_monitor_master_read_beat;
-  logic [                 8:0]      s_monitor_master_write_beat;
-  logic [                 8:0]      s_monitor_master_wait;
-  logic [                 8:0]      s_monitor_master_promotion;
-  logic [                 8:0][2:0] s_monitor_master_read_outstanding;
-  logic [                 8:0][2:0] s_monitor_master_write_outstanding;
+  logic                             s_npu_source_safe_idle_hp;
+  logic                             s_npu_source_quiesced_hp;
+  logic [                 9:0]      s_resource_block_hp;
+  logic [                 9:0]      s_master_idle;
+  logic [                 9:0]      s_master_block;
+  logic [                 9:0]      s_monitor_master_read_accept;
+  logic [                 9:0]      s_monitor_master_write_accept;
+  logic [                 9:0]      s_monitor_master_read_beat;
+  logic [                 9:0]      s_monitor_master_write_beat;
+  logic [                 9:0]      s_monitor_master_wait;
+  logic [                 9:0]      s_monitor_master_promotion;
+  logic [                 9:0][2:0] s_monitor_master_read_outstanding;
+  logic [                 9:0][2:0] s_monitor_master_write_outstanding;
   logic [                 5:0]      s_monitor_target_read_accept;
   logic [                 5:0]      s_monitor_target_write_accept;
   logic [                 5:0]      s_monitor_target_read_beat;
@@ -321,6 +327,15 @@ module soc_data_plane (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
   );
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (7),
+      .USER_WIDTH(1)
+  ) u_npu_prefixed_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
   cdc_sync #(
       .STAGE     (2),
       .DATA_WIDTH(2)
@@ -332,7 +347,7 @@ module soc_data_plane (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(9)
+      .DATA_WIDTH(10)
   ) u_resource_block_sync (
       .clk_i  (clk_hp_i),
       .rst_n_i(rst_hp_n_i),
@@ -394,6 +409,26 @@ module soc_data_plane (
       .dat_i  (resource_block_ack_o[8]),
       .dat_o  (s_ga2d_block_ack_pclk)
   );
+  // The NPU shell owns its PCLK-side idle and round-trip quiesce
+  // acknowledgement; both cross into HP exactly like the GA2D source state.
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_npu_source_idle_sync (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .dat_i  (npu_source_idle_i),
+      .dat_o  (s_npu_source_safe_idle_hp)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_npu_source_quiesced_sync (
+      .clk_i  (clk_hp_i),
+      .rst_n_i(rst_hp_n_i),
+      .dat_i  (npu_source_quiesced_i),
+      .dat_o  (s_npu_source_quiesced_hp)
+  );
 
   assign s_ga2d_recovery_condition = resource_block_i[8] || !s_ga2d_hp_reset_n_pclk ||
                                      s_ga2d_flush_pclk || s_ga2d_clear_busy ||
@@ -439,6 +474,7 @@ module soc_data_plane (
   end
 
   assign s_master_block = {
+    s_resource_block_hp[9] && s_npu_source_quiesced_hp,
     s_resource_block_hp[8] && s_ga2d_source_quiesced_hp,
     s_resource_block_hp[5],
     s_resource_block_hp[6],
@@ -449,6 +485,8 @@ module soc_data_plane (
     2'b00
   };
   assign resource_idle_o = {
+    (s_resource_block_hp[9] ? s_npu_source_quiesced_hp : s_npu_source_safe_idle_hp) &&
+        s_master_idle[9],
     (s_resource_block_hp[8] ? s_ga2d_source_quiesced_hp : s_ga2d_source_safe_idle_hp) &&
         s_master_idle[8],
     s_master_idle[3],
@@ -461,6 +499,7 @@ module soc_data_plane (
     s_master_idle[2]
   };
   assign resource_block_ack_o = {
+    s_resource_block_hp[9] && s_npu_source_quiesced_hp && s_master_idle[9],
     s_resource_block_hp[8] && s_ga2d_source_quiesced_hp && s_master_idle[8],
     s_resource_block_hp[7:0]
   };
@@ -620,6 +659,19 @@ module soc_data_plane (
   axi4_connector u_ga2d_connector (
       .source(u_ga2d_prefixed_axi4),
       .sink  (u_master_axi4[8])
+  );
+
+  // The NPU master is HP-native: no payload CDC or width upsizer. The shell
+  // ties it safely idle in Phase 2; the production DMA is Phase 3 scope.
+  axi4_id_prefix #(
+      .MasterIndex(4'd9)
+  ) u_npu_prefix (
+      .source(npu_axi4),
+      .sink  (u_npu_prefixed_axi4)
+  );
+  axi4_connector u_npu_connector (
+      .source(u_npu_prefixed_axi4),
+      .sink  (u_master_axi4[9])
   );
 
   axi4_async_bridge #(
@@ -958,7 +1010,7 @@ module soc_data_plane (
 
   assign flush_busy_o = (|s_io_clear_busy) || (|s_target_clear_busy) ||
                         (|s_guard_clear_busy) || s_lp_clear_busy || s_ext_clear_busy ||
-                        s_jpeg_clear_busy || s_ga2d_clear_busy;
+                        s_jpeg_clear_busy || s_ga2d_clear_busy || npu_flush_busy_i;
   assign apu_bridge_epoch_o = unused_io_epoch[1];
   assign s_unused_epoch = {
     ^unused_io_epoch, ^unused_target_epoch, ^{unused_lp_epoch, unused_ext_epoch, unused_jpeg_epoch}

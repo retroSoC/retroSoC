@@ -2998,6 +2998,1196 @@
       ]
     }
   },
+  "npu": {
+    "main.IP_ID": {
+      "access": "RO",
+      "reset": "0x4E505531",
+      "description": "Fixed NPU identifier.",
+      "fields": [
+        {
+          "name": "IDENTIFIER",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 0x4E505531 (NPU1).",
+          "reset": "0x4E505531",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.IP_VERSION": {
+      "access": "RO",
+      "reset": "0x00010000",
+      "description": "NPU register ABI version.",
+      "fields": [
+        {
+          "name": "MINOR",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Register ABI minor version.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "MAJOR",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Register ABI major version; P2 is major 1.",
+          "reset": "1",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.CAPABILITY": {
+      "access": "RO",
+      "reset": "0x00000009",
+      "description": "P2 capability bitmap; the register shell and interrupt routing are implemented, and no execution, DMA, numeric, or HP-native feature is advertised.",
+      "fields": [
+        {
+          "name": "PRESENT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Register shell integration; set in P2.",
+          "reset": "1",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "EXECUTION_READY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Complete supported MVP implementation; stays clear until every required operator and the production DMA are verified.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "PRIVATE_AXI64_DMA",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Private AXI64 DMA engine; Phase 3 scope.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "INTERRUPTS",
+          "lsb": 3,
+          "msb": 3,
+          "description": "DONE/ERROR/ABORTED interrupt routing; set in P2.",
+          "reset": "1",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "DOUBLE_ROUNDING",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Double-rounded requantization numerics.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "NATIVE_HP_CLOCK",
+          "lsb": 5,
+          "msb": 5,
+          "description": "HP-native clock execution.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "SOFTWARE_ABORT",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Software abort of an active job.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 7,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live shell/link, lifecycle, and terminal status.",
+      "fields": [
+        {
+          "name": "READY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Shell can accept a job: link reconciled, executable implementation present, and no request, busy launch, pending terminal IRQ, or snapshot handshake.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "BUSY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Accepted launch slot or HP job activity.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "DRAINING",
+          "lsb": 2,
+          "msb": 2,
+          "description": "HP side is draining accepted work.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "CLOCK_PAUSED",
+          "lsb": 3,
+          "msb": 3,
+          "description": "HP clock pause is active.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "RECOVERING",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Link/transport recovery is in progress.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "RESULT_VALID",
+          "lsb": 5,
+          "msb": 5,
+          "description": "A terminal result is held.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 6,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.CONTROL": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Issue exactly one implemented command bit per write.",
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Launch the staged job; PSLVERR while READY is low.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ABORT",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Cancel the active job; a successful no-op while idle.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "SOFT_RESET",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Clear programmable, IRQ, and result state, then reconcile the link.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_STATE": {
+      "access": "RW1C",
+      "reset": "0x00000000",
+      "description": "Sticky IRQ events; hardware/test set wins a same-cycle clear.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Job completion event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "First fault/error event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Abort completion event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_ENABLE": {
+      "access": "RW",
+      "reset": "0x00000000",
+      "description": "IRQ event enables.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Enable the completion interrupt.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Enable the error interrupt.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Enable the abort interrupt.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_TEST": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Inject implemented IRQ events as if hardware-set.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Inject the completion event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Inject the error event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Inject the abort event.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.JOB_BASE": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Physical descriptor base address; writable only while the shell is idle.",
+      "fields": [
+        {
+          "name": "ADDR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Physical byte address of the descriptor ring.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.JOB_COUNT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Descriptor count for the staged job.",
+      "fields": [
+        {
+          "name": "COUNT",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Number of descriptors.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.JOB_ID": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Opaque software job token mirrored into the result.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Opaque software token.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.TIMEOUT_CYCLES": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "HP active cycles without progress before a no-progress fault; a zero write is rejected.",
+      "fields": [
+        {
+          "name": "CYCLES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "No-progress timeout budget.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.RESULT_JOB_ID": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Job token of the last terminal or recovery result.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Terminal or recovery job token.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.RESULT_CODE": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Terminal result enumeration: NONE=0, DONE=1, ERROR=2, ABORTED=3, RESET_CANCELLED=4.",
+      "fields": [
+        {
+          "name": "CODE",
+          "lsb": 0,
+          "msb": 2,
+          "description": "Terminal result code.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.COMPLETED_DESCRIPTORS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Fully stored descriptor count of the last job.",
+      "fields": [
+        {
+          "name": "COUNT",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Complete stores only.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.FAULT_DESCRIPTOR": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Zero-based index of the first faulting descriptor, or all ones for a job-level fault.",
+      "fields": [
+        {
+          "name": "INDEX",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Faulting descriptor index; 0xFFFFFFFF marks a job-level fault.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.FAULT_CODE": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "First fault/error code.",
+      "fields": [
+        {
+          "name": "CODE",
+          "lsb": 0,
+          "msb": 3,
+          "description": "Fault enumeration.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.FAULT_ADDRESS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "First relevant external byte address, otherwise 0.",
+      "fields": [
+        {
+          "name": "ADDR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fault byte address.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.FAULT_INFO": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Fault direction, AXI response, and lane detail.",
+      "fields": [
+        {
+          "name": "AXI_RESPONSE",
+          "lsb": 0,
+          "msb": 1,
+          "description": "AXI response code of the faulting beat.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "DIRECTION",
+          "lsb": 2,
+          "msb": 3,
+          "description": "Fault direction: internal, read, or write.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "LANE",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Faulting lane, or 0xFF when not lane-specific.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.NUMERIC_PROFILE": {
+      "access": "RO",
+      "reset": "0x00000001",
+      "description": "Numeric profile identifier.",
+      "fields": [
+        {
+          "name": "PROFILE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 1: the numeric profile of this specification.",
+          "reset": "1",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.LOCAL_BYTES": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Instantiated local SRAM bytes; zero at P2 because no storage is instantiated.",
+      "fields": [
+        {
+          "name": "BYTES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Instantiated local bytes.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.MAC_CONFIG": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Instantiated MAC lane configuration; zero at P2 because no compute is instantiated.",
+      "fields": [
+        {
+          "name": "DENSE",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Dense lane count when implemented.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "DEPTHWISE",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Depthwise lane count when implemented.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.MAX_K_SLICE": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Maximum supported K slice; zero at P2.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "K-slice limit.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.MAX_DIMENSION": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Maximum supported tensor dimension; zero at P2.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Dimension limit.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.OP_CAPABILITY": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Implemented operator mask; bit n advertises opcode n. Zero at P2.",
+      "fields": [
+        {
+          "name": "Reserved",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "CONV2D",
+          "lsb": 1,
+          "msb": 1,
+          "description": "2D convolution operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "DEPTHWISE3X3",
+          "lsb": 2,
+          "msb": 2,
+          "description": "3x3 depthwise operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "FULLY_CONNECTED",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Fully connected operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "ADD",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Tensor add operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "MAX_POOL",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Max pooling operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "AVERAGE_POOL",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Average pooling operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "GLOBAL_AVERAGE_POOL",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Global average pooling operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "CLAMP",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Clamp operator.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 9,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.OWNER_STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live resource ownership view.",
+      "fields": [
+        {
+          "name": "OWNER",
+          "lsb": 0,
+          "msb": 1,
+          "description": "Current owner: 0 LP, 1 HP.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "LOCK",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Sticky owner lock.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "QUIESCE",
+          "lsb": 9,
+          "msb": 9,
+          "description": "Quiesce request in effect.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "RESET_REQUEST",
+          "lsb": 10,
+          "msb": 10,
+          "description": "Reset request in effect.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 11,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.RECOVERY_GENERATION": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "PCLK-visible epoch recovery generation; increments after each completed link/transport recovery.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Wrapping recovery generation counter.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_CONTROL": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Performance snapshot command.",
+      "fields": [
+        {
+          "name": "SNAPSHOT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Capture the counter bank and job token atomically.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Snapshot handshake status.",
+      "fields": [
+        {
+          "name": "SNAP_BUSY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "A snapshot request is in flight.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "SNAP_VALID",
+          "lsb": 1,
+          "msb": 1,
+          "description": "A captured counter bank is held.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_JOB_ID": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Job token associated with the captured snapshot.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Snapshot job token.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_GENERATION": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Recovery generation associated with the captured snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Snapshot recovery generation.",
+          "reset": "Dynamic",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.DESCRIPTOR_BYTES": {
+      "access": "RO",
+      "reset": "0x00000080",
+      "description": "Descriptor record size in bytes.",
+      "fields": [
+        {
+          "name": "BYTES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 128.",
+          "reset": "0x80",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_ACTIVE_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the HP active cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_ACTIVE_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the HP active cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_CLOCK_PAUSE_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the HP clock-pause cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_CLOCK_PAUSE_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the HP clock-pause cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_USEFUL_MACS_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the useful MAC operations counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_USEFUL_MACS_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the useful MAC operations counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_PACK_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the patch-packer cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_PACK_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the patch-packer cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_LOCAL_BANK_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the local bank stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_LOCAL_BANK_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the local bank stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_READ_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA read bytes counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_READ_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA read bytes counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_WRITE_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA write bytes counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_WRITE_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA write bytes counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_STALL_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_DMA_STALL_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_REQUANT_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the requantizer stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_REQUANT_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the requantizer stall cycles counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_RETIRED_DESCRIPTORS_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the retired descriptors counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    },
+    "main.PERF_RETIRED_DESCRIPTORS_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the retired descriptors counter; P2 never runs a job, so it stays zero.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P2 ABI"
+        }
+      ]
+    }
+  },
   "crypto": {
     "main.COMMAND": {
       "fields": [

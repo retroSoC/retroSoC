@@ -120,7 +120,7 @@ module ga2d_platform_tb;
   logic        block_new_i = 1'b0;
   logic        recovery_i = 1'b0;
   logic        flush_i = 1'b0;
-  logic [ 8:0] resource_block_i = '0;
+  logic [ 9:0] resource_block_i = '0;
   logic [ 1:0] mem_pad_mode_i = 2'd1;
   logic        ga2d_core_safe_idle_i = 1'b1;
   logic        ext_h_block_i = 1'b0;
@@ -141,8 +141,8 @@ module ga2d_platform_tb;
   logic        ga2d_bridge_clear_busy_o;
   logic [ 7:0] ga2d_bridge_epoch_o;
   logic        ga2d_data_ready_o;
-  logic [ 8:0] resource_idle_o;
-  logic [ 8:0] resource_block_ack_o;
+  logic [ 9:0] resource_idle_o;
+  logic [ 9:0] resource_block_ack_o;
   logic [ 7:0] outstanding_read_o;
   logic [ 7:0] outstanding_write_o;
   logic        fault_valid_o;
@@ -245,6 +245,15 @@ module ga2d_platform_tb;
   );
   axi4_if #(
       .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) npu_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  axi4_if #(
+      .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
@@ -324,6 +333,7 @@ module ga2d_platform_tb;
   axi4_master_idle u_usb2_idle (.axi4(usb2_axi4));
   axi4_master_idle u_apu_idle (.axi4(apu_axi4));
   axi4_master_idle u_ext_h_idle (.axi4(ext_h_axi4));
+  axi4_master_idle u_npu_idle (.axi4(npu_axi4));
   ga2d_platform_sram_target u_sram_target (
       .clk_i           (clk_hp_i),
       .rst_n_i         (rst_hp_n_i),
@@ -372,6 +382,10 @@ module ga2d_platform_tb;
       .apu_axi4                (apu_axi4),
       .jpeg_axi4               (jpeg_axi4),
       .ga2d_axi4               (ga2d_axi4),
+      .npu_axi4                (npu_axi4),
+      .npu_source_idle_i       (1'b1),
+      .npu_source_quiesced_i   (1'b1),
+      .npu_flush_busy_i        (1'b0),
       .lp_data_axi4            (lp_data_axi4),
       .ext_h_axi4              (ext_h_axi4),
       .sram_gateway_axi4       (sram_gateway_axi4),

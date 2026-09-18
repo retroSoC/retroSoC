@@ -11,7 +11,9 @@
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/npu_regs.h>
 #include <retrosoc/hal/onchip_sram.h>
+#include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sdram.h>
@@ -41,6 +43,7 @@ static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
 static volatile uint32_t rs_ci_smoke_timer_irq_count;
 static volatile uint32_t rs_ci_smoke_software_irq_count;
 static volatile uint32_t rs_ci_smoke_ga2d_irq_count;
+static volatile uint32_t rs_ci_smoke_npu_irq_count;
 static volatile uint8_t rs_ci_smoke_ga2d_fill_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
 static volatile uint8_t rs_ci_smoke_ga2d_copy_source_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
 static volatile uint8_t rs_ci_smoke_ga2d_copy_destination_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
@@ -97,6 +100,13 @@ static void rs_ci_smoke_ga2d_irq_handler(uintptr_t mcause, uintptr_t stack_point
     ++rs_ci_smoke_ga2d_irq_count;
 }
 
+static void rs_ci_smoke_npu_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    ++rs_ci_smoke_npu_irq_count;
+}
+
 static void rs_ci_smoke_force_external_irq(uint32_t id) {
     const uint32_t bank = id >> 4U;
     const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
@@ -131,6 +141,13 @@ static bool rs_ci_smoke_wait_ga2d_irq(uint32_t target) {
          (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < target); --timeout) {
     }
     return rs_ci_smoke_ga2d_irq_count >= target;
+}
+
+static bool rs_ci_smoke_wait_npu_irq(uint32_t target) {
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT;
+         (timeout != 0U) && (rs_ci_smoke_npu_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_npu_irq_count >= target;
 }
 
 static bool rs_ci_smoke_external_single(uint32_t id) {
@@ -613,12 +630,46 @@ static bool rs_ci_smoke_ga2d_irq(void) {
     __disable_ext_irq();
     return true;
 }
+
+static bool rs_ci_smoke_npu_irq(void) {
+    bool passed;
+
+    rs_ci_smoke_npu_irq_count = 0U;
+    if (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false) != RS_OK) {
+        return false;
+    }
+    if ((RS_NPU_REG(RS_NPU_REG_IP_ID) != RS_NPU_IP_ID_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_IP_VERSION) != RS_NPU_IP_VERSION_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_CAPABILITY) != RS_NPU_CAPABILITY_P2) ||
+        (RS_NPU_REG(RS_NPU_REG_IRQ_STATE) != 0U)) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = RS_NPU_IRQ_ALL;
+    if (rs_irq_enable_external(RS_SOC_EXT_IRQ_NPU, rs_ci_smoke_npu_irq_handler) != RS_OK) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_TEST) = RS_NPU_IRQ_ALL;
+    __enable_irq();
+    passed = rs_ci_smoke_wait_npu_irq(1U);
+    __disable_irq();
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = 0U;
+    if (rs_irq_disable_external(RS_SOC_EXT_IRQ_NPU) != RS_OK) {
+        passed = false;
+    }
+    __disable_ext_irq();
+    return passed;
+}
 #else
 static bool rs_ci_smoke_external_irq(void) {
     return true;
 }
 
 static bool rs_ci_smoke_ga2d_irq(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_npu_irq(void) {
     return true;
 }
 #endif
@@ -997,6 +1048,10 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 15U);
     }
     printf("ci_smoke: GA2D P5 IRQ passed\n");
+    if (!rs_ci_smoke_npu_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 16U);
+    }
+    printf("ci_smoke: NPU P2 IRQ passed\n");
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

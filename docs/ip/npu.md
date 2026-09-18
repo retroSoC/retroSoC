@@ -266,8 +266,8 @@ provide a reference boundary, not shared hardware or an APUM-compatible ABI.
 
 ### Mini allocations and capability integration
 
-These are frozen future allocations. The current executable topology remains
-unchanged until Phase 2; the specification does not claim they are wired now.
+These are frozen allocations. Phase 2 wires them exactly as specified; the
+integration advertises no execution readiness, DMA, or operator capability.
 
 | Allocation | Value |
 | --- | --- |

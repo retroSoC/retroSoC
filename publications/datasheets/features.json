@@ -81,13 +81,18 @@
   ],
   "jpeg": [
     "8-bit Baseline Sequential JPEG encode or decode.",
-    "Images up to 2048 × 2048; modes are mutually exclusive.",
+    "Images up to 2048 \u00d7 2048; modes are mutually exclusive.",
     "Private AXI64 DMA, direct jobs and a scatter-gather ring."
   ],
   "apu": [
     "Coreless microcode sequencer with private DMA and local storage.",
     "WAV/FLAC job and stream infrastructure in the current capability word.",
     "MP3/KWS are not advertised; production bundle and capacity qualification remain distinct gates."
+  ],
+  "npu": [
+    "Phase 2 register shell with PCLK/HP control CDC, epoch reconciliation, and resource-9 ownership.",
+    "Interrupt round trip (DONE/ERROR/ABORTED) routed to LP vector 33 or HP PLIC source 12 by owner.",
+    "No execution readiness, operator, or DMA capability is advertised until the production path is verified."
   ],
   "dvp": [
     "8-bit parallel RGB565/YUV422 capture.",

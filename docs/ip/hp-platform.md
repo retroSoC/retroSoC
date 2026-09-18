@@ -9,7 +9,8 @@ APB4 peripherals. Their role in boot and lifecycle control is defined by
 
 Source 0 is permanently reserved. Source 1 is UART1, source 2 is the HP-side
 mailbox doorbell, source 3 is EXT-H, and sources 4 through 10 are central DMA,
-USB2, SDIO0, SDIO1, SPI-SD, JPEG, and APU respectively. Sources 11 through 31
+USB2, SDIO0, SDIO1, SPI-SD, JPEG, and APU respectively. Source 11 is GA2D and
+source 12 is the NPU shell. Sources 13 through 31
 are reserved and tied low. Resource-owned sources are suppressed unless HP is
 the exclusive owner. Each source has a three-bit priority. Context 0 drives HP
 machine external interrupt and context 1 drives HP supervisor external interrupt.

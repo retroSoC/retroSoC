@@ -1769,6 +1769,75 @@
       "Private DMA / I2S stream"
     ]
   },
+  "npu": {
+    "title": "Neural Processing Unit",
+    "blocks": [
+      "APB register shell",
+      "Control/lifecycle CDC",
+      "HP lifecycle endpoint",
+      "Private AXI64 master (tied idle at P2)"
+    ],
+    "function_sections": [],
+    "software_sections": [],
+    "notes": [
+      "Phase 2 integrates the control shell only: the capability word is 0x00000009 (PRESENT and INTERRUPTS). EXECUTION_READY, PRIVATE_AXI64_DMA, and every operator bit stay clear, and START never passes READY.",
+      "The HP-native AXI64 master index 9 is tied safely idle at P2; production descriptor DMA is Phase 3 scope. No central-DMA channel is allocated.",
+      "The shell holds resource index 9, LP vector 33, and HP PLIC source 12. Ownership handoff uses the Resource Controller quiesce/acknowledge round trip reconciled across the PCLK/HP epoch boundary.",
+      "All writes require full word strobes; unknown offsets, reserved bits, and permission violations complete with PSLVERR and no side effect."
+    ],
+    "software_steps": [
+      "Read capability through rs_npu_get_capability and treat EXECUTION_READY=0 as not deployable; P2 supports register, IRQ, and snapshot round trips only.",
+      "Set ownership and lifecycle through the Resource Controller HAL (rs_resource_set_owner/rs_resource_set_lifecycle) before relying on the LP/HP IRQ route.",
+      "Exercise the interrupt path with IRQ_ENABLE/IRQ_TEST and acknowledge with the W1C IRQ_STATE write.",
+      "Capture the performance bank with rs_npu_snapshot_counters; at P2 the bank reads back zero with the snapshot job token and recovery generation."
+    ],
+    "api": [
+      {
+        "name": "rs_npu_get_capability",
+        "signature": "rs_status_t rs_npu_get_capability(rs_npu_capability_t *capability);"
+      },
+      {
+        "name": "rs_npu_submit",
+        "signature": "rs_status_t rs_npu_submit(const rs_npu_job_t *job);"
+      },
+      {
+        "name": "rs_npu_wait",
+        "signature": "rs_status_t rs_npu_wait(uint32_t job_id, rs_timeout_t timeout, rs_npu_status_t *status);"
+      },
+      {
+        "name": "rs_npu_abort_wait",
+        "signature": "rs_status_t rs_npu_abort_wait(uint32_t job_id, rs_timeout_t timeout, rs_npu_status_t *status);"
+      },
+      {
+        "name": "rs_npu_reset",
+        "signature": "rs_status_t rs_npu_reset(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_npu_get_status",
+        "signature": "rs_status_t rs_npu_get_status(rs_npu_status_t *status);"
+      },
+      {
+        "name": "rs_npu_get_error",
+        "signature": "rs_status_t rs_npu_get_error(rs_npu_error_t *error);"
+      },
+      {
+        "name": "rs_npu_snapshot_counters",
+        "signature": "rs_status_t rs_npu_snapshot_counters(rs_timeout_t timeout, rs_npu_counters_t *counters);"
+      },
+      {
+        "name": "rs_npu_irq_enable",
+        "signature": "rs_status_t rs_npu_irq_enable(uint32_t events);"
+      },
+      {
+        "name": "rs_npu_irq_pending",
+        "signature": "rs_status_t rs_npu_irq_pending(uint32_t *events);"
+      },
+      {
+        "name": "rs_npu_irq_ack",
+        "signature": "rs_status_t rs_npu_irq_ack(uint32_t events);"
+      }
+    ]
+  },
   "crypto": {
     "title": "Crypto Controller",
     "blocks": [

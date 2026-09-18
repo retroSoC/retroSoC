@@ -130,6 +130,65 @@
     {"name": "ga2d_flush", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_flush_sync"},
     {"name": "ga2d_master_idle", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_master_idle_sync"},
     {"name": "ga2d_block_ack", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ga2d_block_ack_sync"},
+    {
+      "name": "npu_launch_mailbox",
+      "source": "pclk",
+      "destination": "hp",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/multimedia/npu_control_cdc.sv",
+      "instance": "u_launch_mailbox",
+      "unilateral_reset": {
+        "source_reset": "flush_mailbox_via_reset_barrier",
+        "destination_reset": "flush_mailbox_via_reset_barrier"
+      }
+    },
+    {
+      "name": "npu_result_mailbox",
+      "source": "hp",
+      "destination": "pclk",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/multimedia/npu_control_cdc.sv",
+      "instance": "u_result_mailbox",
+      "unilateral_reset": {
+        "source_reset": "flush_mailbox_via_reset_barrier",
+        "destination_reset": "flush_mailbox_via_reset_barrier"
+      }
+    },
+    {
+      "name": "npu_snapshot_req_mailbox",
+      "source": "pclk",
+      "destination": "hp",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/multimedia/npu_control_cdc.sv",
+      "instance": "u_snapshot_req_mailbox",
+      "unilateral_reset": {
+        "source_reset": "flush_mailbox_via_reset_barrier",
+        "destination_reset": "flush_mailbox_via_reset_barrier"
+      }
+    },
+    {
+      "name": "npu_snapshot_resp_mailbox",
+      "source": "hp",
+      "destination": "pclk",
+      "primitive": "async_reqack",
+      "path": "rtl/ip/multimedia/npu_control_cdc.sv",
+      "instance": "u_snapshot_resp_mailbox",
+      "unilateral_reset": {
+        "source_reset": "flush_mailbox_via_reset_barrier",
+        "destination_reset": "flush_mailbox_via_reset_barrier"
+      }
+    },
+    {"name": "npu_hp_reset", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_hp_reset_sync"},
+    {"name": "npu_hp_flush", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_hp_flush_sync"},
+    {"name": "npu_epoch_req", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_epoch_req_sync"},
+    {"name": "npu_epoch_ack", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_epoch_ack_sync"},
+    {"name": "npu_quiesce_req", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_quiesce_req_sync"},
+    {"name": "npu_quiesce_ack", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_quiesce_ack_sync"},
+    {"name": "npu_hp_busy", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_hp_busy_sync"},
+    {"name": "npu_hp_draining", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_hp_draining_sync"},
+    {"name": "npu_hp_pause_active", "source": "hp", "destination": "pclk", "primitive": "cdc_sync", "path": "rtl/ip/multimedia/npu_control_cdc.sv", "instance": "u_hp_pause_active_sync"},
+    {"name": "npu_source_idle", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_npu_source_idle_sync"},
+    {"name": "npu_source_quiesced", "source": "pclk", "destination": "hp", "primitive": "cdc_sync", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_npu_source_quiesced_sync"},
     {"name": "extension_h_data", "source": "pclk", "destination": "hp", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_ext_h_cdc"},
     {"name": "sdram_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},
     {"name": "serial_memory_data", "source": "hp", "destination": "memory", "primitive": "axi4_async_bridge", "path": "rtl/mini/top/soc_data_plane.sv", "instance": "u_target_cdc"},

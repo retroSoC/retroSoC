@@ -17,7 +17,8 @@ typedef enum {
     RS_FABRIC_MASTER_RESERVED = RS_FABRIC_MASTER_JPEG,
     RS_FABRIC_MASTER_EXT_H = 7,
     RS_FABRIC_MASTER_GA2D = 8,
-    RS_FABRIC_MASTER_COUNT = 9,
+    RS_FABRIC_MASTER_NPU = 9,
+    RS_FABRIC_MASTER_COUNT = 10,
 } rs_fabric_master_t;
 
 typedef enum {

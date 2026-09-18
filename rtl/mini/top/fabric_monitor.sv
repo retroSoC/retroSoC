@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module fabric_monitor #(
-    parameter int unsigned NumMasters = 9,
+    parameter int unsigned NumMasters = 10,
     parameter int unsigned NumTargets = 6
 ) (
     // verilog_format: off -- preserve the monitor event boundary columns
@@ -418,8 +418,8 @@ module fabric_monitor #(
 
 `ifndef SYNTHESIS
   initial begin
-    if ((NumMasters != 9) || (NumTargets != 6)) begin
-      $fatal(1, "fabric_monitor: product topology must remain 9x6");
+    if ((NumMasters != 10) || (NumTargets != 6)) begin
+      $fatal(1, "fabric_monitor: product topology must remain 10x6");
     end
   end
 `endif

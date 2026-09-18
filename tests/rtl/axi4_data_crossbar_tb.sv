@@ -1,14 +1,14 @@
 `timescale 1ns / 1ps
 
 module axi4_data_crossbar_tb;
-  localparam int NumMasters = 9;
+  localparam int NumMasters = 10;
   localparam int NumTargets = 6;
 
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
   logic        idle_o;
-  logic [ 8:0] master_block_i = '0;
-  logic [ 8:0] master_idle_o;
+  logic [ 9:0] master_block_i = '0;
+  logic [ 9:0] master_idle_o;
   logic [ 7:0] outstanding_read_o;
   logic [ 7:0] outstanding_write_o;
   logic        fault_valid_o;
@@ -20,7 +20,7 @@ module axi4_data_crossbar_tb;
   logic [ 3:0] fault_reason_o;
   logic        recovery_i = 1'b0;
   logic        flush_i = 1'b0;
-  logic [ 8:0] monitor_master_promotion_o;
+  logic [ 9:0] monitor_master_promotion_o;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -51,13 +51,35 @@ module axi4_data_crossbar_tb;
   axi4_data_crossbar #(
       .StarvationCycles(4),
       .ReadTargetMask(
-      '{5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111, 5'b11111}
+      '{
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111,
+          5'b11111
+      }
       ),
       .WriteTargetMask(
-      '{5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b01111, 5'b00000}
+      '{
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b01111,
+          5'b00000
+      }
       ),
-      .AllowInstruction(9'b000000001),
-      .RequireNoncacheable(9'b111111100)
+      .AllowInstruction(10'b0000000001),
+      .RequireNoncacheable(10'b1111111100)
   ) u_dut (
       .clk_i                     (clk_i),
       .rst_n_i                   (rst_n_i),
@@ -248,6 +270,7 @@ module axi4_data_crossbar_tb;
     `INIT_MASTER(6)
     `INIT_MASTER(7)
     `INIT_MASTER(8)
+    `INIT_MASTER(9)
     `INIT_TARGET(0)
     `INIT_TARGET(1)
     `INIT_TARGET(2)
@@ -727,10 +750,10 @@ module axi4_data_crossbar_tb;
     end
 
     invalid_return_prefix_recovery : begin
-      for (int prefix = 9; prefix < 16; prefix++) begin
+      for (int prefix = 10; prefix < 16; prefix++) begin
         return_invalid_target0_response(4'(prefix), prefix[0]);
 
-        if (prefix == 9) begin
+        if (prefix == 10) begin
           masters[8].arid    = 7'h42;
           masters[8].araddr  = 32'h3000_0140;
           masters[8].arvalid = 1'b1;

@@ -179,6 +179,10 @@
 /ip/multimedia/jpeg_dma.sv
 /ip/multimedia/jpeg_reg.sv
 /ip/multimedia/apb4_jpeg.sv
+/ip/multimedia/npu_reg.sv
+/ip/multimedia/npu_control_cdc.sv
+/ip/multimedia/npu_core.sv
+/ip/multimedia/apb4_npu.sv
 /ip/peripheral/timer_core.sv
 /ip/peripheral/timer_reg.sv
 /ip/peripheral/apb4_timer.sv

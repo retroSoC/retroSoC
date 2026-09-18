@@ -8020,19 +8020,19 @@
           {
             "id": "p1",
             "direction": "in",
-            "width": 9,
+            "width": 10,
             "side": "west"
           },
           {
             "id": "p2",
             "direction": "out",
-            "width": 18,
+            "width": 20,
             "side": "east"
           },
           {
             "id": "p3",
             "direction": "out",
-            "width": 9,
+            "width": 10,
             "side": "south"
           }
         ],
@@ -8058,7 +8058,7 @@
           {
             "id": "p1",
             "direction": "out",
-            "width": 9,
+            "width": 10,
             "side": "east"
           }
         ],
@@ -8077,7 +8077,7 @@
           {
             "id": "p2",
             "direction": "in",
-            "width": 18,
+            "width": 20,
             "side": "west"
           }
         ],
@@ -8096,7 +8096,7 @@
           {
             "id": "p3",
             "direction": "in",
-            "width": 9,
+            "width": 10,
             "side": "north"
           }
         ],
@@ -8144,7 +8144,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "resource_idle_i",
-            "bits": 9
+            "bits": 10
           }
         ],
         "instance_ports": [
@@ -8172,7 +8172,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "s_resource_owner",
-            "bits": 18
+            "bits": 20
           }
         ],
         "instance_ports": [
@@ -8200,7 +8200,7 @@
             "file": "rtl/mini/top/apb4_system.sv",
             "scope": "apb4_system",
             "symbol": "s_resource_irq_lp",
-            "bits": 9
+            "bits": 10
           }
         ],
         "instance_ports": [
@@ -8228,7 +8228,7 @@
           {
             "id": "p0",
             "direction": "out",
-            "width": 9,
+            "width": 10,
             "side": "east"
           }
         ],
@@ -8247,7 +8247,7 @@
           {
             "id": "p0",
             "direction": "in",
-            "width": 9,
+            "width": 10,
             "side": "west"
           },
           {
@@ -8331,7 +8331,7 @@
             "file": "rtl/mini/top/soc_data_plane.sv",
             "scope": "soc_data_plane",
             "symbol": "s_monitor_master_read_accept",
-            "bits": 9
+            "bits": 10
           }
         ],
         "instance_ports": [
@@ -9676,7 +9676,7 @@
           },
           {
             "file": "rtl/mini/top/axi4_data_crossbar.sv",
-            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if ((master == 5) || (master == 6) || (master == 8)) return CountWidth'(1); return '0; endfunction"
+            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if ((master == 5) || (master == 6) || (master == 8) || (master == 9)) return CountWidth'(1); return '0; endfunction"
           }
         ],
         "instance_ports": [
@@ -11513,7 +11513,7 @@
           },
           {
             "file": "rtl/mini/top/axi4_data_crossbar.sv",
-            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if ((master == 5) || (master == 6) || (master == 8)) return CountWidth'(1); return '0; endfunction"
+            "text": "function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master); if ((master <= 2) || (master == 7)) return CountWidth'(4); if ((master == 3) || (master == 4)) return CountWidth'(2); if ((master == 5) || (master == 6) || (master == 8) || (master == 9)) return CountWidth'(1); return '0; endfunction"
           }
         ],
         "instance_ports": [

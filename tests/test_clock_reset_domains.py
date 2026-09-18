@@ -61,6 +61,21 @@ def test_clock_reset_domain_inventory_matches_the_rcu() -> None:
         ("ga2d_flush", "hp", "pclk"),
         ("ga2d_master_idle", "hp", "pclk"),
         ("ga2d_block_ack", "hp", "pclk"),
+        ("npu_launch_mailbox", "pclk", "hp"),
+        ("npu_result_mailbox", "hp", "pclk"),
+        ("npu_snapshot_req_mailbox", "pclk", "hp"),
+        ("npu_snapshot_resp_mailbox", "hp", "pclk"),
+        ("npu_hp_reset", "hp", "pclk"),
+        ("npu_hp_flush", "hp", "pclk"),
+        ("npu_epoch_req", "pclk", "hp"),
+        ("npu_epoch_ack", "hp", "pclk"),
+        ("npu_quiesce_req", "pclk", "hp"),
+        ("npu_quiesce_ack", "hp", "pclk"),
+        ("npu_hp_busy", "hp", "pclk"),
+        ("npu_hp_draining", "hp", "pclk"),
+        ("npu_hp_pause_active", "hp", "pclk"),
+        ("npu_source_idle", "pclk", "hp"),
+        ("npu_source_quiesced", "pclk", "hp"),
     }
     clint = next(
         crossing for crossing in document["crossings"] if crossing["name"] == "clint_timebase"
