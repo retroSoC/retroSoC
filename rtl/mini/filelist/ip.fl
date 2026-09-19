@@ -179,6 +179,12 @@
 /ip/multimedia/jpeg_dma.sv
 /ip/multimedia/jpeg_reg.sv
 /ip/multimedia/apb4_jpeg.sv
+/ip/multimedia/npu_pkg.sv
+/ip/multimedia/npu_local_sram.sv
+/ip/multimedia/npu_patch_packer.sv
+/ip/multimedia/npu_dma.sv
+/ip/multimedia/npu_job_decoder.sv
+/ip/multimedia/npu_scheduler.sv
 /ip/multimedia/npu_reg.sv
 /ip/multimedia/npu_control_cdc.sv
 /ip/multimedia/npu_core.sv

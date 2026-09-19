@@ -27,6 +27,13 @@ COMMON_SOURCES = [
     COMMON / "cdc/async_reqack.sv",
 ]
 SHELL_SOURCES = [
+    MULTIMEDIA / "npu_pkg.sv",
+    ROOT / "rtl/tech/tc_sram.sv",
+    MULTIMEDIA / "npu_local_sram.sv",
+    MULTIMEDIA / "npu_patch_packer.sv",
+    MULTIMEDIA / "npu_dma.sv",
+    MULTIMEDIA / "npu_job_decoder.sv",
+    MULTIMEDIA / "npu_scheduler.sv",
     MULTIMEDIA / "npu_reg.sv",
     MULTIMEDIA / "npu_control_cdc.sv",
     MULTIMEDIA / "npu_core.sv",

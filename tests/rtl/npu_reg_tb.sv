@@ -725,14 +725,13 @@ module npu_reg_tb;
     $finish;
   end
 
-  // The tied-off Phase 2 master must never issue a request and stays ready.
+  // With START still rejected at Phase 3, no software-visible job can launch,
+  // so the master must never issue a request in this shell context. The R/B
+  // receivers are engine-driven at Phase 3 (live while obligations exist).
   always @(posedge clk_hp_i) begin
     if (rst_hp_n_i) begin
       if (npu_axi4.awvalid || npu_axi4.wvalid || npu_axi4.arvalid) begin
-        $fatal(1, "NPU Phase 2 AXI master issued a request");
-      end
-      if (!npu_axi4.bready || !npu_axi4.rready) begin
-        $fatal(1, "NPU Phase 2 AXI receivers not ready");
+        $fatal(1, "NPU shell master issued a request without an accepted job");
       end
     end
   end

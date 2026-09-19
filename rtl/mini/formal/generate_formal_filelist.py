@@ -359,6 +359,12 @@ def source_files(target: str) -> list[Path]:
             TOP / "hp_axi4_mux3.sv",
             SCRIPT_DIR / "gateway_a_formal.sv",
         ]
+    if target == "npu_dma":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            MULTIMEDIA / "npu_dma.sv",
+            SCRIPT_DIR / "npu_dma_formal.sv",
+        ]
     if target == "sdio":
         return [
             COMMON_RTL / "interface/apb4_if.sv",
@@ -436,6 +442,7 @@ def parse_args() -> argparse.Namespace:
             "apu_sequencer",
             "gateway_a",
             "sdio",
+            "npu_dma",
         ),
         required=True,
     )

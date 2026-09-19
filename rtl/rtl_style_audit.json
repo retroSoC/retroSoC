@@ -201,12 +201,15 @@
       "npu_control_cdc.sv",
       "npu_core.sv",
       "npu_define.svh",
+      "npu_dma.sv",
+      "npu_job_decoder.sv",
       "npu_local_sram.sv",
       "npu_mac_array.sv",
       "npu_patch_packer.sv",
       "npu_pkg.sv",
       "npu_reg.sv",
       "npu_requantizer.sv",
+      "npu_scheduler.sv",
       "npu_vector.sv"
     ],
     "rtl/ip/peripheral": [

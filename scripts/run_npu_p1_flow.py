@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the isolated NPU-P1 IHP130 synthesis and 72 MHz STA flow."""
+"""Run the isolated NPU IHP130 synthesis and 72 MHz STA flow (P1/P3 modules)."""
 
 from __future__ import annotations
 
@@ -31,6 +31,11 @@ TOPS = (
     "npu_accumulator",
     "npu_vector",
     "npu_requantizer",
+    "npu_dma",
+    "npu_job_decoder",
+    "npu_scheduler",
+    "npu_core",
+    "apb4_npu",
 )
 NPU_RTL = (
     "npu_pkg.sv",
@@ -40,7 +45,159 @@ NPU_RTL = (
     "npu_accumulator.sv",
     "npu_vector.sv",
     "npu_requantizer.sv",
+    "npu_dma.sv",
+    "npu_job_decoder.sv",
+    "npu_scheduler.sv",
+    "npu_reg.sv",
+    "npu_control_cdc.sv",
+    "npu_core.sv",
+    "apb4_npu.sv",
 )
+# Tops whose only non-logic port is an AXI4 master interface get a generated
+# synthesis wrapper in the build tree (never tracked): the interface is
+# instantiated inside the wrapper so the DUT has no unconnected ports.
+INTERFACE_WRAPPED = {
+    "npu_dma": """
+module npu_dma_synth_top (
+    input  logic        clk_hp_i,
+    input  logic        rst_hp_n_i,
+    input  logic        clear_i,
+    input  logic        block_new_i,
+    output logic        pause_ack_o,
+    input  logic        read_req_valid_i,
+    output logic        read_req_ready_o,
+    input  logic [31:0] read_addr_i,
+    input  logic [31:0] read_bytes_i,
+    output logic        read_data_valid_o,
+    input  logic        read_data_ready_i,
+    output logic [63:0] read_data_o,
+    output logic [ 7:0] read_keep_o,
+    output logic        read_last_o,
+    input  logic        write_req_valid_i,
+    output logic        write_req_ready_o,
+    input  logic [31:0] write_addr_i,
+    input  logic [31:0] write_bytes_i,
+    input  logic        write_data_valid_i,
+    output logic        write_data_ready_o,
+    input  logic [63:0] write_data_i,
+    input  logic [ 7:0] write_keep_i,
+    input  logic        write_last_i,
+    output logic        write_done_o,
+    output logic        busy_o,
+    output logic        read_busy_o,
+    output logic        write_busy_o,
+    output logic [63:0] read_bytes_o,
+    output logic [63:0] write_bytes_o,
+    output logic [63:0] stall_cycles_o,
+    output logic        fault_o,
+    output logic [ 3:0] fault_code_o,
+    output logic [31:0] fault_addr_o,
+    output logic [ 1:0] fault_resp_o,
+    output logic        read_cmd_err_o,
+    output logic        write_cmd_err_o
+);
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) u_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  npu_dma u_dut (
+      .clk_hp_i          (clk_hp_i),
+      .rst_hp_n_i        (rst_hp_n_i),
+      .clear_i           (clear_i),
+      .block_new_i       (block_new_i),
+      .pause_ack_o       (pause_ack_o),
+      .read_req_valid_i  (read_req_valid_i),
+      .read_req_ready_o  (read_req_ready_o),
+      .read_addr_i       (read_addr_i),
+      .read_bytes_i      (read_bytes_i),
+      .read_data_valid_o (read_data_valid_o),
+      .read_data_ready_i (read_data_ready_i),
+      .read_data_o       (read_data_o),
+      .read_keep_o       (read_keep_o),
+      .read_last_o       (read_last_o),
+      .write_req_valid_i (write_req_valid_i),
+      .write_req_ready_o (write_req_ready_o),
+      .write_addr_i      (write_addr_i),
+      .write_bytes_i     (write_bytes_i),
+      .write_data_valid_i(write_data_valid_i),
+      .write_data_ready_o(write_data_ready_o),
+      .write_data_i      (write_data_i),
+      .write_keep_i      (write_keep_i),
+      .write_last_i      (write_last_i),
+      .write_done_o      (write_done_o),
+      .busy_o            (busy_o),
+      .read_busy_o       (read_busy_o),
+      .write_busy_o      (write_busy_o),
+      .read_bytes_o      (read_bytes_o),
+      .write_bytes_o     (write_bytes_o),
+      .stall_cycles_o    (stall_cycles_o),
+      .fault_o           (fault_o),
+      .fault_code_o      (fault_code_o),
+      .fault_addr_o      (fault_addr_o),
+      .fault_resp_o      (fault_resp_o),
+      .read_cmd_err_o    (read_cmd_err_o),
+      .write_cmd_err_o   (write_cmd_err_o),
+      .axi4              (u_axi4)
+  );
+endmodule
+""",
+    "apb4_npu": """
+module apb4_npu_synth_top (
+    input  logic       clk_i,
+    input  logic       rst_n_i,
+    input  logic       clk_hp_i,
+    input  logic       rst_hp_n_i,
+    input  logic [1:0] resource_owner_i,
+    input  logic       resource_owner_lock_i,
+    input  logic       resource_quiesce_i,
+    input  logic       resource_reset_i,
+    output logic       idle_o,
+    output logic       block_ack_o,
+    output logic       irq_o,
+    input  logic       hp_block_new_i,
+    output logic       hp_pause_ack_o,
+    input  logic       hp_flush_i,
+    output logic       hp_flush_busy_o,
+    output logic       hp_idle_o
+);
+  apb4_if u_apb4 (.pclk(clk_i), .presetn(rst_n_i));
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(64),
+      .ID_WIDTH  (3),
+      .USER_WIDTH(1)
+  ) u_npu_axi4 (
+      .aclk   (clk_hp_i),
+      .aresetn(rst_hp_n_i)
+  );
+  apb4_npu u_dut (
+      .clk_i               (clk_i),
+      .rst_n_i             (rst_n_i),
+      .clk_hp_i            (clk_hp_i),
+      .rst_hp_n_i          (rst_hp_n_i),
+      .resource_owner_i    (resource_owner_i),
+      .resource_owner_lock_i(resource_owner_lock_i),
+      .resource_quiesce_i  (resource_quiesce_i),
+      .resource_reset_i    (resource_reset_i),
+      .apb4                (u_apb4),
+      .idle_o              (idle_o),
+      .block_ack_o         (block_ack_o),
+      .irq_o               (irq_o),
+      .hp_block_new_i      (hp_block_new_i),
+      .hp_pause_ack_o      (hp_pause_ack_o),
+      .hp_flush_i          (hp_flush_i),
+      .hp_flush_busy_o     (hp_flush_busy_o),
+      .hp_idle_o           (hp_idle_o),
+      .npu_axi4            (u_npu_axi4)
+  );
+endmodule
+""",
+}
 SRAM_MACRO = "RM_IHPSG13_1P_1024x32_c2_bm_bist"
 EXPECTED_SRAM_MACROS = 16
 TARGET_PERIOD_PS = 13889
@@ -60,6 +217,10 @@ def _run_flow(tool: str, log: Path, result: Path, env: dict[str, str], command: 
         raise RuntimeError(f"{tool} flow failed for {env.get('TOP_DESIGN', env.get('OPENSTA_TOP'))}: {log}")
 
 
+def _synth_top(top: str) -> str:
+    return f"{top}_synth_top" if top in INTERFACE_WRAPPED else top
+
+
 def _write_filelist(path: Path) -> None:
     lines = [
         "+define+PDK_IHP130",
@@ -72,16 +233,36 @@ def _write_filelist(path: Path) -> None:
     for name in NPU_RTL:
         source = ROOT / "rtl/ip/multimedia" / name
         if not source.is_file():
-            raise RuntimeError(f"missing NPU-P1 RTL source: {source}")
+            raise RuntimeError(f"missing NPU RTL source: {source}")
         lines.append(str(source))
+    common_rtl = ROOT / "rtl/managed/clusterip/common/rtl"
     lines.append(str(ROOT / "rtl/tech/tc_sram.sv"))
-    lines.append(str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"))
+    for extra in (
+        "interface/apb4_if.sv",
+        "interface/axi4_if.sv",
+        "utils/register.sv",
+        "utils/xchecker.sv",
+        "utils/fifo.sv",
+        "clkrst/rst_sync.sv",
+        "cdc/cdc_sync.sv",
+        "cdc/cdc_rst_ctrlr.sv",
+        "cdc/async_reqack.sv",
+    ):
+        source = common_rtl / extra
+        if not source.is_file():
+            raise RuntimeError(f"missing Common source: {source}")
+        lines.append(str(source))
     path.parent.mkdir(parents=True, exist_ok=True)
+    for top, wrapper in INTERFACE_WRAPPED.items():
+        wrapper_path = path.parent / f"{_synth_top(top)}.sv"
+        wrapper_path.write_text(wrapper, encoding="utf-8")
+        lines.append(str(wrapper_path))
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _synth(top: str, build_root: Path, filelist: Path) -> dict[str, object]:
     base = build_root / "syn/yosys-npu" / top
+    synth_top = _synth_top(top)
     for sub in ("out", "tmp", "rpt"):
         (base / sub).mkdir(parents=True, exist_ok=True)
     env = {
@@ -92,17 +273,17 @@ def _synth(top: str, build_root: Path, filelist: Path) -> dict[str, object]:
         "SRAM_SIZE_KIB": "32",
         "YOSYS_TARGET_PERIOD_PS": str(TARGET_PERIOD_PS),
         "SV_FLIST": str(filelist),
-        "TOP_DESIGN": top,
-        "PROJ_NAME": top,
+        "TOP_DESIGN": synth_top,
+        "PROJ_NAME": synth_top,
         "BUILD": str(base / "out"),
         "WORK": str(base / "tmp"),
         "REPORTS": str(base / "rpt"),
-        "NETLIST": str(base / "out" / f"{top}_yosys.v"),
-        "CONFIG": str(base / "out" / f"{top}_yosys.config"),
+        "NETLIST": str(base / "out" / f"{synth_top}_yosys.v"),
+        "CONFIG": str(base / "out" / f"{synth_top}_yosys.config"),
     }
     log = build_root / "syn/yosys-npu" / f"{top}.log"
     _run_flow("yosys", log, base / "result-synth.json", env, ["yosys", "-c", str(SYNTH_TCL)])
-    area = json.loads((base / "rpt" / f"{top}_area.json").read_text(encoding="utf-8"))
+    area = json.loads((base / "rpt" / f"{synth_top}_area.json").read_text(encoding="utf-8"))
     design = area["design"]
     macro_count = design.get("num_cells_by_type", {}).get(SRAM_MACRO, 0)
     latch_cells = {
@@ -142,7 +323,7 @@ def _sta(top: str, build_root: Path, netlist: Path) -> dict[str, object]:
         "OPENSTA_SDC": str(STA_SDC),
         "OPENSTA_REPORT": str(base / f"{top}_checks.rpt"),
         "OPENSTA_METRICS": str(base / f"{top}_timing_metrics.rpt"),
-        "OPENSTA_TOP": top,
+        "OPENSTA_TOP": _synth_top(top),
     }
     log = base / f"{top}.log"
     _run_flow("opensta", log, base / "result-sta.json", env, ["sta", "-no_init", "-exit", str(STA_TCL)])
@@ -216,7 +397,7 @@ def main() -> int:
                 failures.append(
                     f"{top} synthesis shows latches: {synth['latch_log_lines']} {synth['latch_cells']}"
                 )
-        netlist = build_root / "syn/yosys-npu" / top / "out" / f"{top}_yosys.v"
+        netlist = build_root / "syn/yosys-npu" / top / "out" / f"{_synth_top(top)}_yosys.v"
         if args.sta:
             if not netlist.is_file():
                 raise RuntimeError(f"missing netlist for {top}: {netlist}; run --synth first")
