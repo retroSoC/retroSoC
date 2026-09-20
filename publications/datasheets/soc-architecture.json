@@ -132,7 +132,11 @@
       "y": 139,
       "w": 128,
       "h": 79,
-      "label": true
+      "label": true,
+      "label_position": [
+        29,
+        139.5
+      ]
     },
     {
       "domain": "jtag",
@@ -235,15 +239,16 @@
     },
     {
       "id": "lp_mem",
-      "label": "LP memory · CDC\nAXI32 → AXI64",
-      "x": 28,
-      "y": 35,
-      "w": 51,
-      "h": 8,
+      "label": "LP memory · CDC\nAXI32→AXI64",
+      "x": 38.0,
+      "y": 35.8,
+      "w": 31,
+      "h": 6.4,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "hp_core",
@@ -266,15 +271,16 @@
     },
     {
       "id": "hp_mmio",
-      "label": "MMIO gate / CDC\nAXI64 → AXI32",
-      "x": 107,
-      "y": 19.06896551724138,
-      "w": 43,
-      "h": 6.344827586206897,
+      "label": "MMIO gate / CDC\nAXI64→AXI32",
+      "x": 113.5,
+      "y": 19.09137931034483,
+      "w": 30,
+      "h": 6.3,
       "domain": "hp",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "hp_bus",
@@ -332,15 +338,16 @@
     },
     {
       "id": "mem_bridge",
-      "label": "AXI64 → AXI32\n4 target CDC bridges",
-      "x": 107,
-      "y": 53,
-      "w": 43,
-      "h": 9,
+      "label": "AXI64→AXI32\n4 target CDC bridges",
+      "x": 105,
+      "y": 53.75,
+      "w": 37,
+      "h": 7.5,
       "domain": "memory",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "sdram",
@@ -680,10 +687,10 @@
     {
       "id": "gwa",
       "label": "HP I/O\nGW A",
-      "x": 62,
-      "y": 47,
-      "w": 13,
-      "h": 27,
+      "x": 63.0,
+      "y": 49.0,
+      "w": 11,
+      "h": 23,
       "domain": "pclk",
       "role": "gateway",
       "ips": [],
@@ -694,15 +701,16 @@
         "module": "hp_axi4_mux3",
         "port": "clk_i",
         "signal": "clk_io_i"
-      }
+      },
+      "compact": true
     },
     {
       "id": "gwb",
       "label": "HP I/O\nGW B",
-      "x": 62,
-      "y": 75,
-      "w": 13,
-      "h": 22,
+      "x": 63.0,
+      "y": 77.0,
+      "w": 11,
+      "h": 18,
       "domain": "pclk",
       "role": "gateway",
       "ips": [],
@@ -713,79 +721,86 @@
         "module": "hp_axi4_mux3",
         "port": "clk_i",
         "signal": "clk_io_i"
-      }
+      },
+      "compact": true
     },
     {
       "id": "gca",
       "label": "AXI32→AXI64\nCDC",
-      "x": 78,
-      "y": 47,
-      "w": 8,
-      "h": 27,
+      "x": 79.0,
+      "y": 50.5,
+      "w": 6,
+      "h": 20,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": true
+      "rotate": true,
+      "compact": true
     },
     {
       "id": "gcb",
       "label": "AXI32→AXI64\nCDC",
-      "x": 78,
-      "y": 75,
-      "w": 8,
-      "h": 22,
+      "x": 79.0,
+      "y": 76.0,
+      "w": 6,
+      "h": 20,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": true
+      "rotate": true,
+      "compact": true
     },
     {
       "id": "dma_bridge",
-      "label": "AXI32 → AXI64\nCDC",
-      "x": 62,
-      "y": 98,
-      "w": 24,
-      "h": 9,
+      "label": "AXI32→AXI64\nCDC",
+      "x": 63.5,
+      "y": 99.30000000000001,
+      "w": 21,
+      "h": 6.4,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "jpeg_cdc",
       "label": "AXI64 / CDC",
-      "x": 62,
-      "y": 110,
-      "w": 24,
-      "h": 6,
+      "x": 64.5,
+      "y": 110.75,
+      "w": 19,
+      "h": 4.5,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "ga2d_cdc",
       "label": "AXI64 / CDC",
-      "x": 62,
-      "y": 121,
-      "w": 24,
-      "h": 6,
+      "x": 64.5,
+      "y": 121.75,
+      "w": 19,
+      "h": 4.5,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "ext-h_cdc",
       "label": "AXI64 / CDC",
-      "x": 62,
-      "y": 132,
-      "w": 24,
-      "h": 6,
+      "x": 64.5,
+      "y": 132.75,
+      "w": 19,
+      "h": 4.5,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "clint",
@@ -873,27 +888,29 @@
     },
     {
       "id": "periph_bridge",
-      "label": "AXI32 → APB4\nCDC",
-      "x": 68,
-      "y": 141,
-      "w": 24,
-      "h": 8,
+      "label": "AXI32→APB4\nCDC",
+      "x": 69.5,
+      "y": 141.8,
+      "w": 21,
+      "h": 6.4,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "system_bridge",
-      "label": "AXI32 → APB4\nCDC",
-      "x": 96,
-      "y": 141,
-      "w": 24,
-      "h": 8,
+      "label": "AXI32→APB4\nCDC",
+      "x": 97.5,
+      "y": 141.8,
+      "w": 21,
+      "h": 6.4,
       "domain": "boundary",
       "role": "bridge",
       "ips": [],
-      "rotate": false
+      "rotate": false,
+      "compact": true
     },
     {
       "id": "periph_bus",
@@ -1158,7 +1175,7 @@
       "label": "I2S serial",
       "x": 28,
       "y": 200,
-      "w": 20,
+      "w": 18,
       "h": 5.5,
       "domain": "audio",
       "role": "module",
@@ -1198,7 +1215,7 @@
       "label": "DVP pixel",
       "x": 28,
       "y": 206,
-      "w": 20,
+      "w": 18,
       "h": 5.5,
       "domain": "dvp",
       "role": "module",
@@ -1531,7 +1548,7 @@
     },
     {
       "id": "usb_pins",
-      "label": "ULPI D[7:0]\nCLK/DIR/NXT\nSTP → ext PHY",
+      "label": "ULPI D[7:0]\nCLK/DIR/NXT\nSTP→ext PHY",
       "x": 1,
       "y": 64.0,
       "w": 23,
@@ -1716,9 +1733,9 @@
       "from": "jtag",
       "to": "debug",
       "source_side": "east",
-      "target_side": "west",
+      "target_side": "north",
       "source_position": 0.5179640718562873,
-      "target_position": 0.49999999999999994,
+      "target_position": 0.2,
       "via": [
         [
           23,
@@ -1726,15 +1743,11 @@
         ],
         [
           23,
-          17.879310344827587
+          0.1
         ],
         [
-          56,
-          17.879310344827587
-        ],
-        [
-          56,
-          "target"
+          "target",
+          0.1
         ]
       ],
       "kind": "control",
@@ -1744,22 +1757,18 @@
       "id": "e1",
       "from": "debug",
       "to": "lp_core",
-      "source_side": "south",
-      "target_side": "east",
+      "source_side": "north",
+      "target_side": "north",
       "source_position": 0.5,
-      "target_position": 0.49999999999999994,
+      "target_position": 0.82,
       "via": [
         [
           "source",
-          17.482758620689655
+          2
         ],
         [
-          56,
-          17.482758620689655
-        ],
-        [
-          56,
-          "target"
+          "target",
+          2
         ]
       ],
       "kind": "control",
@@ -1772,7 +1781,7 @@
       "source_side": "south",
       "target_side": "north",
       "source_position": 0.5,
-      "target_position": 0.5,
+      "target_position": 0.2647058823529412,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -1909,7 +1918,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.376865671641791,
-      "target_position": 0.16666666666666666,
+      "target_position": 0.1,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -1920,7 +1929,7 @@
       "to": "sdram",
       "source_side": "south",
       "target_side": "west",
-      "source_position": 0.046511627906976744,
+      "source_position": 0.10810810810810811,
       "target_position": 0.5,
       "via": [
         [
@@ -1938,7 +1947,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.3917910447761194,
-      "target_position": 0.3888888888888889,
+      "target_position": 0.36666666666666664,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -1949,7 +1958,7 @@
       "to": "qpi",
       "source_side": "south",
       "target_side": "west",
-      "source_position": 0.11627906976744186,
+      "source_position": 0.1891891891891892,
       "target_position": 0.5,
       "via": [
         [
@@ -1967,7 +1976,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.40671641791044777,
-      "target_position": 0.6111111111111112,
+      "target_position": 0.6333333333333333,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -1978,7 +1987,7 @@
       "to": "opi",
       "source_side": "south",
       "target_side": "west",
-      "source_position": 0.18604651162790697,
+      "source_position": 0.2702702702702703,
       "target_position": 0.5,
       "via": [
         [
@@ -1996,7 +2005,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.4216417910447761,
-      "target_position": 0.8333333333333334,
+      "target_position": 0.9,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2007,7 +2016,7 @@
       "to": "xpi",
       "source_side": "south",
       "target_side": "west",
-      "source_position": 0.2558139534883721,
+      "source_position": 0.35135135135135137,
       "target_position": 0.5,
       "via": [
         [
@@ -2025,7 +2034,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.5,
-      "target_position": 0.14814814814814814,
+      "target_position": 0.08695652173913043,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2037,7 +2046,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.5,
-      "target_position": 0.48148148148148145,
+      "target_position": 0.4782608695652174,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2049,7 +2058,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.5,
-      "target_position": 0.8148148148148148,
+      "target_position": 0.8695652173913043,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2061,7 +2070,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.5,
-      "target_position": 0.22727272727272727,
+      "target_position": 0.16666666666666666,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2073,7 +2082,7 @@
       "source_side": "east",
       "target_side": "west",
       "source_position": 0.5,
-      "target_position": 0.6818181818181818,
+      "target_position": 0.7222222222222222,
       "via": [],
       "kind": "data",
       "arrow": true
@@ -2132,7 +2141,7 @@
       "to": "dma_bridge",
       "source_side": "east",
       "target_side": "west",
-      "source_position": 0.5,
+      "source_position": 0.5833333333333334,
       "target_position": 0.5,
       "via": [],
       "kind": "data",
@@ -2382,7 +2391,7 @@
       "to": "apu",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.005319148936170213,
+      "source_position": 0.0,
       "target_position": 0.5,
       "via": [
         [
@@ -2399,7 +2408,7 @@
       "to": "sdio0",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.10106382978723404,
+      "source_position": 0.09574468085106383,
       "target_position": 0.5,
       "via": [
         [
@@ -2416,7 +2425,7 @@
       "to": "usb2",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.19680851063829788,
+      "source_position": 0.19148936170212766,
       "target_position": 0.5,
       "via": [
         [
@@ -2433,7 +2442,7 @@
       "to": "sdio1",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.31382978723404253,
+      "source_position": 0.30851063829787234,
       "target_position": 0.5,
       "via": [
         [
@@ -2450,7 +2459,7 @@
       "to": "spisd",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.42021276595744683,
+      "source_position": 0.4148936170212766,
       "target_position": 0.5,
       "via": [
         [
@@ -2467,7 +2476,7 @@
       "to": "dma",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.5478723404255319,
+      "source_position": 0.5425531914893617,
       "target_position": 0.5,
       "via": [
         [
@@ -2484,7 +2493,7 @@
       "to": "jpeg",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.6648936170212766,
+      "source_position": 0.6595744680851063,
       "target_position": 0.5,
       "via": [
         [
@@ -2501,7 +2510,7 @@
       "to": "ga2d",
       "source_side": "west",
       "target_side": "north",
-      "source_position": 0.7819148936170213,
+      "source_position": 0.776595744680851,
       "target_position": 0.5,
       "via": [
         [
@@ -2516,10 +2525,10 @@
       "id": "e53",
       "from": "system_bus",
       "to": "ext-h",
-      "source_side": "west",
-      "target_side": "south",
-      "source_position": 0.019999999999999896,
-      "target_position": 0.5,
+      "source_side": "east",
+      "target_side": "north",
+      "source_position": 0.005454545454545454,
+      "target_position": 0.8,
       "via": [
         [
           121,
@@ -2527,11 +2536,19 @@
         ],
         [
           121,
-          139
+          139.5
+        ],
+        [
+          61,
+          139.5
+        ],
+        [
+          61,
+          129.5
         ],
         [
           "target",
-          139
+          129.5
         ]
       ],
       "kind": "control",
@@ -2908,7 +2925,7 @@
       "source_side": "south",
       "target_side": "north",
       "source_position": 0.5,
-      "target_position": 0.15,
+      "target_position": 0.15163934426229508,
       "via": [],
       "kind": "control",
       "arrow": true
@@ -2967,7 +2984,7 @@
       "to": "usb2",
       "source_side": "east",
       "target_side": "west",
-      "source_position": 0.5,
+      "source_position": 0.45454545454545453,
       "target_position": 0.5,
       "via": [],
       "kind": "io",
@@ -2979,7 +2996,7 @@
       "to": "rcu",
       "source_side": "east",
       "target_side": "west",
-      "source_position": 0.5,
+      "source_position": 0.55,
       "target_position": 0.5,
       "via": [],
       "kind": "io",
@@ -3111,7 +3128,7 @@
       "to": "sdram_pins",
       "source_side": "east",
       "target_side": "west",
-      "source_position": 0.5,
+      "source_position": 0.5833333333333334,
       "target_position": 0.5,
       "via": [],
       "kind": "io",
@@ -3125,7 +3142,16 @@
       "target_side": "west",
       "source_position": 0.5,
       "target_position": 0.25,
-      "via": [],
+      "via": [
+        [
+          151,
+          "source"
+        ],
+        [
+          151,
+          "target"
+        ]
+      ],
       "kind": "io",
       "arrow": false
     },
@@ -3137,7 +3163,16 @@
       "target_side": "west",
       "source_position": 0.5,
       "target_position": 0.75,
-      "via": [],
+      "via": [
+        [
+          151,
+          "source"
+        ],
+        [
+          151,
+          "target"
+        ]
+      ],
       "kind": "io",
       "arrow": false
     },
@@ -3159,20 +3194,20 @@
       "to": "apu",
       "source_side": "west",
       "target_side": "south",
-      "source_position": 0.7999999999999995,
+      "source_position": 0.8,
       "target_position": 0.2,
       "via": [
         [
-          27,
+          25.7,
           "source"
         ],
         [
-          27,
-          55.4
+          25.7,
+          56
         ],
         [
           "target",
-          55.4
+          56
         ]
       ],
       "kind": "stream",
@@ -3183,21 +3218,17 @@
       "id": "e110",
       "from": "apu",
       "to": "i2s",
-      "source_side": "south",
+      "source_side": "east",
       "target_side": "east",
-      "source_position": 0.5,
+      "source_position": 0.8,
       "target_position": 0.19999999999999896,
       "via": [
         [
-          "source",
-          55.4
+          59.5,
+          "source"
         ],
         [
-          58,
-          55.4
-        ],
-        [
-          58,
+          59.5,
           150
         ],
         [
@@ -3236,11 +3267,11 @@
         ],
         [
           59,
-          106.5
+          107.3
         ],
         [
           "target",
-          106.5
+          107.3
         ]
       ],
       "kind": "stream",
@@ -3848,5 +3879,18 @@
         "rx_axis": "u_i2s_rx_axis_if"
       }
     }
-  ]
+  ],
+  "typography": {
+    "compact_size_pt": 8,
+    "emphasis_weight": 700,
+    "compact_padding_x_mm": 1,
+    "compact_padding_y_mm": 0.6
+  },
+  "routing": {
+    "arrow_length_mm": 1,
+    "arrow_width_mm": 0.8,
+    "visible_shaft_mm": 1,
+    "arrow_clearance_mm": 0.5,
+    "stroke_pt": 0.65
+  }
 }

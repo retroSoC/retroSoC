@@ -41,6 +41,8 @@ from publications.diagram_coverage import coverage as diagram_coverage, validate
 from publications.package_reference import (  # noqa: E402
     directory_hashes, package_records, validate_imports, validate_package_closure,
 )
+from publications.soc_diagram_geometry import COMPACT_NODES  # noqa: E402
+from publications.soc_diagram_pdf import collect_text_regions, contains, check_diagram_pdf  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -426,7 +428,8 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     ]
     write_json(out / "ip-pages.json", page_map)
     # Read final labeled rectangles without feeding positions back into layout.
-    write_json(out / "layout-regions.json", layout_report["regions"])
+    soc = data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"]
+    write_json(out / "layout-regions.json", layout_report["regions"] + collect_text_regions(soc, layout_items))
     change_markers = [item for item in layout_items if isinstance(item, dict)
                       and item.get("kind") in {"publication-change-start", "publication-change-end"}]
     # Pair/validate here; the final report also checks actual PDF pages and printed footers.
@@ -522,7 +525,7 @@ def validate_page_map(items: list[dict], index: list[dict]) -> None:
 
 
 def validate_character_size(char: dict, number: int, regions: list[dict]) -> None:
-    """Only continuation text inside a renderer-marked box may be below 9 pt."""
+    """Small type is confined to marked continuations and the approved SoC cells."""
     # PDFMiner's `size` becomes glyph advance for a quarter-turn label. Its
     # rendered font-height axis is then the bounding-box width, not page height.
     matrix = char.get("matrix", ())
@@ -540,7 +543,9 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
         and char["bottom"] <= region["y"] + region["height"] + 0.5
         for region in regions
     )
-    minimum = 8.5 if continuation else 9.0
+    compact = any(region["kind"] == "soc-compact" and region.get("id") in COMPACT_NODES
+                  and contains(region, char, number) for region in regions)
+    minimum = 8.0 if compact else 8.5 if continuation else 9.0
     if size < minimum - 0.05:
         raise ValueError(f"text smaller than {minimum:g} pt on page {number}")
 
@@ -629,7 +634,13 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF navigation links missing")
     with pdfplumber.open(pdf) as document:
         all_text = ""
+        soc_bounds = next(item for item in actual_diagrams if item["package"] == "cetz" and item["id"] == "soc-functional")
+        soc_report = None
         for number, page in enumerate(document.pages, 1):
+            if number == soc_bounds["page"]:
+                soc_report = check_diagram_pdf(
+                    page, reader.pages[number - 1], data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"],
+                    layout_regions, soc_bounds, ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf")
             footer_text = "".join(c["text"] for c in page.chars if c["top"] > page.height - 50)
             validate_footer_text(footer_text, number, closing_pages)
             if number in closing_pages and any(c["text"].strip() for c in page.chars if c["top"] < 50):
@@ -656,6 +667,7 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         "external_links": sorted(external),
         "pdf_sha256": sha256(pdf),
         "unnumbered_closing_pages": sorted(closing_pages),
+        "soc_architecture": soc_report,
     }
     write_json(pdf.parent / "check-report.json", report)
     print(f"PDF checks passed: {len(reader.pages)} pages, {internal} internal links")

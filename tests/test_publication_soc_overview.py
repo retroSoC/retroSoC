@@ -29,7 +29,7 @@ def test_dense_overview_retains_instances_and_independent_gateway_fan_in(diagram
     assert diagram["pclk_parent"] == "lp"
 
 
-@pytest.mark.parametrize("mutation", ["bold", "small-font", "module-width-label", "wire-width-label",
+@pytest.mark.parametrize("mutation", ["bold", "small-font", "compact-ip", "compact-weight", "arrow-size", "module-width-label", "wire-width-label",
                                       "gateway-input", "gateway-output", "gateway-source", "bridge-width",
                                       "printed-width", "bus-width", "clock-domain", "clock-pin", "clock-parent",
                                       "interface-source", "interface-token", "interface-af", "interface-bus",
@@ -40,6 +40,12 @@ def test_overview_rejects_visual_claims_that_contradict_its_scope_or_sources(dia
         diagram["font_weight"] = 700
     elif mutation == "small-font":
         diagram["font_size_pt"] = 8
+    elif mutation == "compact-ip":
+        nodes["dma"]["compact"] = True
+    elif mutation == "compact-weight":
+        diagram["typography"]["emphasis_weight"] = 600
+    elif mutation == "arrow-size":
+        diagram["routing"]["arrow_length_mm"] = 2
     elif mutation == "module-width-label":
         nodes["dma"]["label"] += " AXI32"
     elif mutation == "wire-width-label":

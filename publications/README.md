@@ -49,7 +49,8 @@ Overview classification, access matrices, software flows, register bit layouts
 and WaveDrom keep their existing rendering.
 
 Section 2.1.1 adds a compact functional overview drawn independently with locked
-CeTZ 0.5.2. It uses regular 9 pt text, individually named PRODUCT IP/instance
+CeTZ 0.5.2. It uses regular 9 pt text for ordinary labels, regular 8 pt text
+inside compact CDC/Gateway cells, and bold 9 pt bus/domain labels. Individually named PRODUCT IP/instance
 rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
 labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
 are separate from IP categories. The original 45 Circuiteria figures retain
@@ -60,6 +61,14 @@ against PRODUCT IP coverage, selected RTL clock/interface bindings, gateway
 clients, stream routes, pin groups and alternate-function mappings. Its CeTZ
 renderer is `datasheets/soc-architecture.typ`. The new diagram is recorded under
 Introduction without changing the 41-IP / 108-entry structure contract.
+`soc_diagram_geometry.py` supplies the exact paths and arrowheads to CeTZ and
+checks orthogonality, visible shafts, symbol avoidance and arrow clearance.
+The arrowheads are 1 x 0.8 mm with at least 1 mm visible shaft and 0.5 mm
+clearance outside stroke envelopes. A 64 mm / 102 mm reference grid, separated
+by 6 mm, places the three-by-three domain key alongside the explanations.
+`soc_diagram_pdf.py` checks final label regions, actual size/weight and routes
+against exported character boxes. FontTools compares embedded Inter outlines
+with the locked 400/700 instances because variable subsets retain Regular names.
 
 `diagram_reference.py` coordinates the circuit, binary, instruction and storage
 adapters. The catalogs under `datasheets/diagram-*.json` record sources and
@@ -242,7 +251,7 @@ uses `configs/ci/ihp130-hp.mk`; legacy selection uses `configs/cluster/mini-mpw.
 ## Manual workflow
 
 Use Python 3.10 or newer, Git and **Typst 0.15.1**. PDF checks additionally use
-`pypdf` and `pdfplumber`, available in the Codex bundled document runtime. The
+`pypdf`, `pdfplumber` and `fonttools`, available in the Codex bundled document runtime. The
 build uses Python's standard library and the installed Typst CLI; Python 3.10
 also uses the `tomli` backport already pinned in `requirements/build.txt`.
 
@@ -399,11 +408,12 @@ The focused exporter tests are `tests/test_publications.py` and
 support/evidence metadata and boot-layout extraction. Existing memory,
 topology and pin-map tests cover the reused canonical validators. PDF checks
 verify snapshot freshness, metadata, embedded fonts, bookmarks, navigable links,
-minimum 9 pt text (8.5 pt only inside marked continuation notices), page-bound
+minimum 9 pt text (8.5 pt inside marked continuation notices and 8 pt only in
+the approved SoC CDC/Gateway cells), page-bound
 text, per-IP starts and presence of every generated pad/window.
 Quarter-turn labels use their rendered font-height axis: PDFMiner reports glyph
 advance as `size` for rotated text, so the checker measures the rotated bounding
-width instead. This corrects measurement without lowering the 9 pt threshold.
+width instead. The minimum remains 9 pt outside the explicitly marked exceptions.
 They complement manual inspection of diagram meaning, continued headers,
 footnotes, page balance and grayscale readability.
 

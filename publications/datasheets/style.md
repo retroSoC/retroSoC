@@ -349,7 +349,7 @@ spans for each new editing round so a prior round's changes are not relabeled as
 | Continuation notices only | Inter Regular, 8.5 pt; renderer-marked size exception |
 | Contents entries | 9.5 pt |
 | Signals, addresses and code | FiraCode Nerd Font, 9 pt |
-| Engineering diagram labels | At least 9 pt at final PDF size |
+| Engineering diagram labels | At least 9 pt; only the functional overview's CDC/Gateway labels use 8 pt |
 
 The `code` helper permits line wrapping after underscores and dots using
 zero-width break opportunities. Do not alter identifiers to make them fit.
@@ -604,7 +604,8 @@ IP header markers. Do not feed those positions back into the document through
 a template-wide metadata query, which adds a convergence pass.
 The build records these markers in `layout-regions.json`, hashes that file in
 the PDF manifest, and permits 8.5 pt text only inside those marked regions.
-Unmarked or partly outside text still requires 9 pt, and continuation text
+Unmarked or partly outside text still requires 9 pt (apart from the separate
+functional-overview CDC/Gateway exception below), and continuation text
 below 8.5 pt fails. Missing or changed region data requires rebuilding; do not
 lower the global font-size threshold to accommodate notices.
 
@@ -710,9 +711,10 @@ Do not fill electrical, thermal, power or throughput fields with borrowed device
 figures, target clocks or analytic ceilings.
 
 The dev refresh used the `dev-` namespace plus navigation/revision and GA2D
-chapter markers. The current functional-overview edit activates `soc-functional`
-and the three navigation directories. Earlier changes, including the closing
-page, must not be relabeled as new content; pagination remains a separate change.
+chapter markers. The current functional-overview refinement activates only
+`soc-functional`, categorized as modified. Earlier changes, including navigation
+directories and the closing page, must not be relabeled as new content;
+pagination remains a separate change.
 
 Use the existing Overview icon artwork, including its reverted outline style.
 The five Multimedia entries use two rows of three and two cells within the same
@@ -897,16 +899,38 @@ caption and diagram together and allow normal pagination if the current page is
 too short. Use locked CeTZ 0.5.2 directly. This component does not replace or
 restyle existing Circuiteria/IP, interconnect, clock, Overview or matrix figures.
 
-Every diagram label is Inter Regular, weight 400, at least 9 pt, including bus
-and bridge labels, clock-domain labels, external signals and notes. Do not use
-bold or semibold to create hierarchy. Use compact rows, thin 0.6 pt symbol
-borders, 0.65 pt routes, pale domain backgrounds and the existing ink/gold
-palette. Rotate long bus-spine and narrow bridge labels by 90 degrees where
-needed; keep ordinary module and external-interface labels horizontal. Check
-the actual embedded PDF font weight and rendered font size, not just the Typst
-settings. A quarter-turn glyph's page-height extent measures its advance, so
-the font-size check uses its rendered width for this orientation; the minimum
-font size remains 9 pt.
+Use Inter with these scoped rules: ordinary IP, external-interface and
+explanatory labels are Regular 400 at 9 pt; CDC and HP I/O Gateway labels are
+Regular 400 at 8 pt; the four gray bus spines, clock-domain titles and domain-key
+names are Bold 700 at 9 pt. Non-CDC bridges retain ordinary 9 pt type. The 8 pt
+exception is exclusive to the approved compact cells in this figure and does
+not lower any other diagram's minimum. Semibold is not a substitute for Bold.
+
+Size CDC rectangles and Gateway A/B trapezoids from the compact labels, with
+1 mm horizontal and 0.6 mm vertical text padding. Both dimensions must be
+smaller than the preceding 9 pt drawing, while the gateways retain separate
+input ports. Compact text uses 1 pt leading. Keep thin 0.6 pt symbol borders,
+0.65 pt routes, pale domain backgrounds and the existing ink/gold palette.
+Rotate long bus-spine and narrow bridge labels by 90 degrees where needed;
+keep ordinary module and external-interface labels horizontal.
+
+Use only horizontal/vertical connector centerlines. Arrow flanks and gateway
+outlines may be diagonal. Arrowheads are 1 mm long and 0.8 mm wide; reserve at
+least 1 mm of straight shaft beyond each head (3 mm total for a straight duplex
+gap). Other routes must remain at least 0.5 mm outside an arrowhead's stroke
+envelope. Avoid unrelated symbols and exported text, including domain titles.
+Ordinary crossings without junctions remain unconnected. Draw from the same
+computed route/head geometry used by the validator, rather than independent
+renderer defaults. CDC ingress and egress lines must remain visible.
+
+Check actual PDF typography using renderer-bound positions recorded and hashed
+in `layout-regions.json`. Only named CDC/Gateway regions authorize 8 pt. The
+final check requires exact 8/9 pt sizes and 400/700 weights by role; it rejects
+text outside its exception, empty/overlapping regions and line/text collisions.
+For quarter-turn labels use the rendered width as the font-height axis, since
+PDFMiner's `size` then measures glyph advance. Embedded variable-font subsets
+can retain the name Inter-Regular and omit OS/2 weight metadata; compare retained
+glyph outlines with locked Inter instances at weights 400 and 700 instead.
 
 CPU and memory blocks occupy the top tier, independent initiators and gateways
 the middle, and narrow APB peripheral rows the lower tier. Name UART0/1,
@@ -915,6 +939,10 @@ MPW IPs remain in their appendix. Show DMA subcells only for implementations
 with the corresponding private path, and keep the central eight-channel DMA
 independent of Gateway A/B. Avoid summary boxes that collapse several unrelated
 peripherals or a large Reference panel that displaces functional content.
+Below the figure, use top-aligned columns of 64 mm and 102 mm with a 6 mm gap
+and no outer frame. The left column holds the nine existing domain colors in
+a three-column, three-row key; the right preserves the existing gateway,
+arrow, LP/PCLK, AF, shared-pad and crossing explanations, wrapped at 9 pt.
 
 AXI32/AXI64 text is permitted only in bus-spine and bridge symbols. It must not
 reappear in CPU/IP titles or as floating wire labels. Identify AHB-Lite to AXI,

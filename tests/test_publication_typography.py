@@ -1,4 +1,4 @@
-"""Small-type exceptions stay inside the continuation text's layout region."""
+"""Small-type exceptions stay inside their renderer-bound layout regions."""
 
 from __future__ import annotations
 
@@ -54,3 +54,27 @@ def test_wide_upright_or_slanted_glyph_does_not_bypass_type_minimum():
     for matrix in [(1, 0, 0, 1, 0, 0), (.7, .7, -.7, .7, 0, 0)]:
         with pytest.raises(ValueError, match="smaller than 9 pt"):
             validate_character_size(character(size=8, width=12, matrix=matrix), 1, [])
+
+
+COMPACT = {**REGION, "kind": "soc-compact", "id": "gca"}
+
+
+def test_eight_point_type_is_allowed_in_approved_cdc_or_gateway_cell():
+    validate_character_size(character(size=8), 2, [COMPACT])
+    validate_character_size(character(size=3, width=8, matrix=(0, 1, -1, 0, 0, 0)), 2, [COMPACT])
+    validate_character_size(character(size=8), 2, [{**COMPACT, "id": "gwa"}])
+
+
+@pytest.mark.parametrize("changes,region", [
+    ({"x0": 53.9}, COMPACT), ({"top": 59.9}, COMPACT),
+    ({}, {**COMPACT, "page": 1}), ({}, {**COMPACT, "id": "ordinary-ip"}),
+    ({}, {**COMPACT, "kind": "soc-bus"}), ({}, {**COMPACT, "kind": "soc-emphasis-region"}),
+])
+def test_compact_exception_does_not_leak_into_other_text(changes, region):
+    with pytest.raises(ValueError, match="smaller than 9 pt"):
+        validate_character_size(character(size=8, **changes), 2, [region])
+
+
+def test_compact_text_still_has_eight_point_floor():
+    with pytest.raises(ValueError, match="smaller than 8 pt"):
+        validate_character_size(character(size=7.8), 2, [COMPACT])

@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from publications.circuit_reference import instance_ports
+from publications.soc_diagram_geometry import COMPACT_NODES, routes, validate_geometry
 from publications.waveform_reference import uncomment
 
 TOP = "rtl/mini/top/retrosoc.sv"
@@ -51,6 +52,12 @@ def interface_parameter(root: Path, source: dict, parameter: str) -> int:
 def validate_soc_diagram(root: Path, diagram: dict) -> None:
     if diagram["font_size_pt"] != 9 or diagram["font_weight"] != 400:
         raise ValueError("SoC diagram requires regular 9 pt text")
+    if diagram.get("typography") != {"compact_size_pt": 8, "emphasis_weight": 700,
+                                     "compact_padding_x_mm": 1, "compact_padding_y_mm": 0.6}:
+        raise ValueError("SoC diagram scoped typography changed")
+    if diagram.get("routing") != {"arrow_length_mm": 1, "arrow_width_mm": 0.8,
+                                  "visible_shaft_mm": 1, "arrow_clearance_mm": 0.5, "stroke_pt": 0.65}:
+        raise ValueError("SoC diagram routing style changed")
     sources = set(diagram["sources"])
     for source in sources:
         path = root / source
@@ -79,6 +86,9 @@ def validate_soc_diagram(root: Path, diagram: dict) -> None:
         if node["id"] in nodes:
             raise ValueError("duplicate SoC diagram node")
         nodes[node["id"]] = node
+        compact = node["role"] == "gateway" or (node["role"] == "bridge" and "CDC" in node["label"])
+        if node.get("compact", False) != compact or compact != (node["id"] in COMPACT_NODES):
+            raise ValueError("SoC diagram compact type outside CDC or gateway")
         coverage.update(node.get("ips", []))
         if re.search(r"AXI(?:32|64)", node["label"]) and node["role"] not in {"bus", "bridge"}:
             raise ValueError("SoC diagram width label outside bus or bridge")
@@ -148,6 +158,7 @@ def validate_soc_diagram(root: Path, diagram: dict) -> None:
             bus = interface["pin_bus"]
             if not any(row.get("prefix") == bus["prefix"] and row.get("count") == bus["count"] for row in pin_map["pads"]):
                 raise ValueError("SoC diagram external pin-group width changed")
+    validate_geometry(diagram)
 
 
 def collect_soc_diagram(root: Path, catalog: str, regions: list[dict]) -> dict:
@@ -157,4 +168,5 @@ def collect_soc_diagram(root: Path, catalog: str, regions: list[dict]) -> dict:
     sram = next(row for row in regions if row["symbol"] == "SRAM")
     for node in result["nodes"]:
         node["label"] = node["label"].replace("{sram_kib}", str(sram["size"] // 1024))
+    result["routes"] = routes(result)
     return {result["id"]: result}

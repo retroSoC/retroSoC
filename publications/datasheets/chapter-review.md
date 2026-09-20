@@ -2,7 +2,7 @@
 
 Review snapshot: **v0.4 DRAFT**, 749 pages, IHP130 PRODUCT / 32 KiB SRAM.
 
-Hardware commit: `2a497ecef0b084c02f77ddfb1e94fb0197e14b02`. PDF SHA-256: `226acff7c8da0cecb194bbfd72bcf216f718359f5784156b3f2c092992ebbbdb`.
+Hardware commit: `2a497ecef0b084c02f77ddfb1e94fb0197e14b02`. PDF SHA-256: `955e9ac211177161d389a1cbe9b68d939220fb57381ae463260be843e36c5844`.
 
 The table covers all **108 frozen entries / 41 IP chapters**. Page numbers belong to this exact PDF. "Already covered" describes the documented subset, not complete protocol compliance or qualification. Implementation, default enable/capability, available tests, executed passes and physical evidence remain separate.
 
