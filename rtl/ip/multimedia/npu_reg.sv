@@ -46,9 +46,10 @@ module npu_reg #(
     output logic                            irq_o
     // verilog_format: on
 );
-  // Phase 2 truthfulness: with no executable implementation compiled in,
-  // READY can never assert and START can never be accepted.
-  localparam logic ExecutionReady = 1'b0;
+  // Phase 4 truthfulness: the complete MVP operator pipeline is compiled in
+  // and the full supported operator mask passed its differential evidence, so
+  // READY/START are enabled (still gated by the live status rules below).
+  localparam logic ExecutionReady = 1'b1;
   localparam int unsigned CounterBankWidth = 8 * `APB4_NPU__PERF_COUNTER_COUNT * 8;
 
   logic s_apb4_ready_d, s_apb4_ready_q;
@@ -159,7 +160,7 @@ module npu_reg #(
       unique case (s_offset)
         `APB4_NPU__IP_ID: s_read_data = `APB4_NPU__IP_ID_VALUE;
         `APB4_NPU__IP_VERSION: s_read_data = `APB4_NPU__IP_VERSION_VALUE;
-        `APB4_NPU__CAPABILITY: s_read_data = `APB4_NPU__CAPABILITY_P2;
+        `APB4_NPU__CAPABILITY: s_read_data = `APB4_NPU__CAPABILITY_P4;
         `APB4_NPU__STATUS:
         s_read_data = {
           26'd0, s_result_valid_q, !link_up_i, clock_paused_i, hp_draining_i, s_shell_busy, s_ready
@@ -179,11 +180,11 @@ module npu_reg #(
         `APB4_NPU__FAULT_INFO: s_read_data = s_fault_info_q;
         `APB4_NPU__NUMERIC_PROFILE: s_read_data = `APB4_NPU__NUMERIC_PROFILE_VALUE;
         // Phase 2 advertises no instantiated storage, compute, or operators.
-        `APB4_NPU__LOCAL_BYTES: s_read_data = 32'd0;
-        `APB4_NPU__MAC_CONFIG: s_read_data = 32'd0;
-        `APB4_NPU__MAX_K_SLICE: s_read_data = 32'd0;
-        `APB4_NPU__MAX_DIMENSION: s_read_data = 32'd0;
-        `APB4_NPU__OP_CAPABILITY: s_read_data = 32'd0;
+        `APB4_NPU__LOCAL_BYTES: s_read_data = `APB4_NPU__LOCAL_BYTES_VALUE;
+        `APB4_NPU__MAC_CONFIG: s_read_data = `APB4_NPU__MAC_CONFIG_VALUE;
+        `APB4_NPU__MAX_K_SLICE: s_read_data = `APB4_NPU__MAX_K_SLICE_VALUE;
+        `APB4_NPU__MAX_DIMENSION: s_read_data = `APB4_NPU__MAX_DIMENSION_VALUE;
+        `APB4_NPU__OP_CAPABILITY: s_read_data = `APB4_NPU__OP_CAPABILITY_VALUE;
         `APB4_NPU__OWNER_STATUS:
         s_read_data = {
           21'd0, resource_reset_i, resource_quiesce_i, resource_owner_lock_i, 6'd0, resource_owner_i
@@ -323,7 +324,8 @@ module npu_reg #(
     s_launch_req_valid_d = s_launch_req_valid_q;
     // An accepted START latches the launch slot and raises the mailbox
     // request; the slot releases only on terminal result or epoch recovery.
-    // Unreachable at Phase 2 because START never passes the READY check.
+    // RESULT_VALID clears here on acceptance (not on IRQ W1C), so a stale
+    // terminal record can never be mistaken for the new job's completion.
     if (s_cmd_start) begin
       s_launch_busy_d      = 1'b1;
       s_launch_req_valid_d = 1'b1;
@@ -333,7 +335,7 @@ module npu_reg #(
       s_launch_req_valid_d = 1'b0;
     end
 
-    s_result_valid_d  = s_result_valid_q;
+    s_result_valid_d  = s_result_valid_q && !s_cmd_start;
     s_result_job_id_d = s_result_job_id_q;
     s_result_code_d   = s_result_code_q;
     s_completed_d     = s_completed_q;

@@ -132,8 +132,8 @@ module npu_reg_tb;
       s_reg_count = 0;
       add_register(`APB4_NPU__IP_ID, AccessRo, `APB4_NPU__IP_ID_VALUE, 1'b1);
       add_register(`APB4_NPU__IP_VERSION, AccessRo, `APB4_NPU__IP_VERSION_VALUE, 1'b1);
-      add_register(`APB4_NPU__CAPABILITY, AccessRo, `APB4_NPU__CAPABILITY_P2, 1'b1);
-      add_register(`APB4_NPU__STATUS, AccessRo, 32'd0, 1'b1);
+      add_register(`APB4_NPU__CAPABILITY, AccessRo, `APB4_NPU__CAPABILITY_P4, 1'b1);
+      add_register(`APB4_NPU__STATUS, AccessRo, 32'd1, 1'b1);
       add_register(`APB4_NPU__CONTROL, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_NPU__IRQ_STATE, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_NPU__IRQ_ENABLE, AccessRw, 32'd0, 1'b1);
@@ -150,11 +150,11 @@ module npu_reg_tb;
       add_register(`APB4_NPU__FAULT_ADDRESS, AccessRo, 32'd0, 1'b1);
       add_register(`APB4_NPU__FAULT_INFO, AccessRo, 32'd0, 1'b1);
       add_register(`APB4_NPU__NUMERIC_PROFILE, AccessRo, `APB4_NPU__NUMERIC_PROFILE_VALUE, 1'b1);
-      add_register(`APB4_NPU__LOCAL_BYTES, AccessRo, 32'd0, 1'b1);
-      add_register(`APB4_NPU__MAC_CONFIG, AccessRo, 32'd0, 1'b1);
-      add_register(`APB4_NPU__MAX_K_SLICE, AccessRo, 32'd0, 1'b1);
-      add_register(`APB4_NPU__MAX_DIMENSION, AccessRo, 32'd0, 1'b1);
-      add_register(`APB4_NPU__OP_CAPABILITY, AccessRo, 32'd0, 1'b1);
+      add_register(`APB4_NPU__LOCAL_BYTES, AccessRo, `APB4_NPU__LOCAL_BYTES_VALUE, 1'b1);
+      add_register(`APB4_NPU__MAC_CONFIG, AccessRo, `APB4_NPU__MAC_CONFIG_VALUE, 1'b1);
+      add_register(`APB4_NPU__MAX_K_SLICE, AccessRo, `APB4_NPU__MAX_K_SLICE_VALUE, 1'b1);
+      add_register(`APB4_NPU__MAX_DIMENSION, AccessRo, `APB4_NPU__MAX_DIMENSION_VALUE, 1'b1);
+      add_register(`APB4_NPU__OP_CAPABILITY, AccessRo, `APB4_NPU__OP_CAPABILITY_VALUE, 1'b1);
       add_register(`APB4_NPU__OWNER_STATUS, AccessRo, 32'd0, 1'b1);
       add_register(`APB4_NPU__RECOVERY_GENERATION, AccessRo, 32'd0, 1'b1);
       add_register(`APB4_NPU__PERF_CONTROL, AccessWo, 32'd0, 1'b1);
@@ -513,7 +513,16 @@ module npu_reg_tb;
       endcase
       hard_reset();
       apb_write(`APB4_NPU__TIMEOUT_CYCLES, 32'h044a_a200, 4'hf, 1'b0);
+      if (bad_index == 6) begin
+        apb_write(`APB4_NPU__IRQ_TEST, 32'h0000_0001, 4'hf, 1'b0);
+      end
       apb_write(s_bad_offset, s_bad_values[bad_index], 4'hf, 1'b1);
+      if (bad_index == 6) begin
+        apb_write(`APB4_NPU__IRQ_STATE, 32'h0000_0001, 4'hf, 1'b0);
+        if (u_dut.u_npu_reg.s_launch_busy_q !== 1'b0) begin
+          $fatal(1, "NPU rejected START had a launch side effect");
+        end
+      end
       expect_read(`APB4_NPU__TIMEOUT_CYCLES, 32'h044a_a200);
       expect_read(`APB4_NPU__IRQ_STATE, 32'd0);
       expect_read(`APB4_NPU__PERF_STATUS, 32'd0);
@@ -521,12 +530,16 @@ module npu_reg_tb;
 
     s_phase = "control semantics";
     hard_reset();
+    apb_write(`APB4_NPU__IRQ_TEST, 32'h0000_0001, 4'hf, 1'b0);
     apb_write(`APB4_NPU__CONTROL, 32'h0000_0001, 4'hf, 1'b1);
+    // A pending terminal IRQ holds READY low even with the P4 pipeline enabled.
     expect_read(`APB4_NPU__STATUS, 32'd0);
     expect_read(`APB4_NPU__RECOVERY_GENERATION, 32'd0);
     if (u_dut.u_npu_reg.s_launch_busy_q !== 1'b0) begin
       $fatal(1, "NPU rejected START had a launch side effect");
     end
+    apb_write(`APB4_NPU__IRQ_STATE, 32'h0000_0001, 4'hf, 1'b0);
+    expect_read(`APB4_NPU__IRQ_STATE, 32'd0);
     apb_write(`APB4_NPU__CONTROL, 32'h0000_0002, 4'hf, 1'b0);
     expect_read(`APB4_NPU__IRQ_STATE, 32'd0);
     expect_read(`APB4_NPU__RESULT_CODE, 32'd0);
@@ -568,6 +581,7 @@ module npu_reg_tb;
     if (!irq_o) $fatal(1, "NPU masked interrupt event did not assert");
     apb_write(`APB4_NPU__IRQ_ENABLE, 32'h0000_0002, 4'hf, 1'b0);
     if (irq_o) $fatal(1, "NPU irq_o is not exactly IRQ_STATE & IRQ_ENABLE");
+    // The injected terminal event stays pending, which holds READY low at P4.
     expect_read(`APB4_NPU__STATUS, 32'd0);
     expect_read(`APB4_NPU__RESULT_CODE, 32'd0);
     expect_read(`APB4_NPU__RESULT_JOB_ID, 32'd0);
@@ -618,7 +632,7 @@ module npu_reg_tb;
     expect_perf_bank_zero();
     expect_read(`APB4_NPU__PERF_JOB_ID, 32'd0);
     expect_read(`APB4_NPU__PERF_GENERATION, 32'd0);
-    expect_read(`APB4_NPU__STATUS, 32'd0);
+    expect_read(`APB4_NPU__STATUS, 32'd1);
     if (!idle_o) $fatal(1, "NPU stayed busy after snapshot completion");
     apb_write(`APB4_NPU__PERF_CONTROL, 32'h0000_0001, 4'hf, 1'b0);
     wait_snapshot_valid();
@@ -636,7 +650,7 @@ module npu_reg_tb;
     wait_link_up();
     expect_read(`APB4_NPU__PERF_STATUS, 32'd0);
     expect_perf_bank_zero();
-    expect_read(`APB4_NPU__STATUS, 32'd0);
+    expect_read(`APB4_NPU__STATUS, 32'd1);
 
     s_phase = "recovery generation";
     hard_reset();
@@ -711,7 +725,7 @@ module npu_reg_tb;
 
     s_phase = "p2 truthfulness";
     hard_reset();
-    expect_read(`APB4_NPU__STATUS, 32'd0);
+    expect_read(`APB4_NPU__STATUS, 32'd1);
     expect_read(`APB4_NPU__RESULT_CODE, 32'd0);
     expect_read(`APB4_NPU__RESULT_JOB_ID, 32'd0);
     expect_read(`APB4_NPU__COMPLETED_DESCRIPTORS, 32'd0);

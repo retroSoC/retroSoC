@@ -73,6 +73,16 @@ module npu_job_decoder (
     output logic [ 7:0] rec_pad_top_o,
     output logic [ 7:0] rec_pad_left_o,
     output logic [ 7:0] rec_input0_zero_o,
+    // P4 compute fields of the same validated record
+    output logic [ 7:0] rec_tile_h_o,
+    output logic [ 7:0] rec_tile_w_o,
+    output logic [15:0] rec_k_slice_o,
+    output logic [31:0] rec_input1_base_o,
+    output logic [31:0] rec_input1_row_bytes_o,
+    output logic [ 7:0] rec_input1_zero_o,
+    output logic [ 7:0] rec_output_zero_o,
+    output logic [ 7:0] rec_act_min_o,
+    output logic [ 7:0] rec_act_max_o,
     output logic [31:0] rec_weight_bytes_o,
     output logic [31:0] rec_param_bytes_o,
     output logic [15:0] rec_desc_index_o,
@@ -770,6 +780,15 @@ module npu_job_decoder (
   assign rec_pad_top_o = s_pad_t;
   assign rec_pad_left_o = s_pad_l;
   assign rec_input0_zero_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_INPUT0_ZERO][7:0];
+  assign rec_tile_h_o = s_tile_h;
+  assign rec_tile_w_o = s_tile_w;
+  assign rec_k_slice_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_K_SLICE][15:0];
+  assign rec_input1_base_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_INPUT1_BASE];
+  assign rec_input1_row_bytes_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_INPUT1_ROW_BYTES];
+  assign rec_input1_zero_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_INPUT1_ZERO][7:0];
+  assign rec_output_zero_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_OUTPUT_ZERO][7:0];
+  assign rec_act_min_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_ACTIVATION_BOUNDS][7:0];
+  assign rec_act_max_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_ACTIVATION_BOUNDS][15:8];
   assign rec_weight_bytes_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_WEIGHT_BYTES];
   assign rec_param_bytes_o = s_words_q[`APB4_NPU__DESCRIPTOR_WORD_PARAM_BYTES];
   assign rec_desc_index_o = s_index_q;

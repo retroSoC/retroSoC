@@ -64,9 +64,14 @@
 
 `define APB4_NPU__IP_ID_VALUE                  32'h4e50_5531
 `define APB4_NPU__IP_VERSION_VALUE             32'h0001_0000
-`define APB4_NPU__CAPABILITY_P2                32'h0000_0009
+`define APB4_NPU__CAPABILITY_P4                32'h0000_007f
 `define APB4_NPU__NUMERIC_PROFILE_VALUE        32'h0000_0001
 `define APB4_NPU__DESCRIPTOR_BYTES_VALUE       32'h0000_0080
+`define APB4_NPU__LOCAL_BYTES_VALUE            32'h0001_0000
+`define APB4_NPU__MAC_CONFIG_VALUE             32'h0008_0040
+`define APB4_NPU__MAX_K_SLICE_VALUE            32'h0000_0400
+`define APB4_NPU__MAX_DIMENSION_VALUE          32'h0000_1000
+`define APB4_NPU__OP_CAPABILITY_VALUE          32'h0000_01fe
 `define APB4_NPU__FAULT_DESCRIPTOR_RESET       32'hffff_ffff
 
 `define APB4_NPU__CAPABILITY_PRESENT           0

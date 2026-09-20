@@ -2146,11 +2146,16 @@ static void test_npu_mmio_reset(void) {
     }
     NPU_TEST_REG(RS_NPU_REG_IP_ID) = RS_NPU_IP_ID_VALUE;
     NPU_TEST_REG(RS_NPU_REG_IP_VERSION) = RS_NPU_IP_VERSION_VALUE;
-    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = RS_NPU_CAPABILITY_P2;
+    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = RS_NPU_CAPABILITY_P4;
     NPU_TEST_REG(RS_NPU_REG_NUMERIC_PROFILE) = RS_NPU_NUMERIC_PROFILE_VALUE;
     NPU_TEST_REG(RS_NPU_REG_DESCRIPTOR_BYTES) = RS_NPU_DESCRIPTOR_BYTES;
     NPU_TEST_REG(RS_NPU_REG_TIMEOUT_CYCLES) = RS_NPU_TIMEOUT_CYCLES_RESET;
     NPU_TEST_REG(RS_NPU_REG_FAULT_DESCRIPTOR) = RS_NPU_FAULT_DESCRIPTOR_RESET;
+    NPU_TEST_REG(RS_NPU_REG_LOCAL_BYTES) = RS_NPU_LOCAL_BYTES_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_MAC_CONFIG) = RS_NPU_MAC_CONFIG_VALUE;
+    NPU_TEST_REG(RS_NPU_REG_MAX_K_SLICE) = RS_NPU_MAX_K_SLICE;
+    NPU_TEST_REG(RS_NPU_REG_MAX_DIMENSION) = RS_NPU_MAX_DIMENSION;
+    NPU_TEST_REG(RS_NPU_REG_OP_CAPABILITY) = RS_NPU_OP_CAPABILITY_MVP;
 }
 
 static int test_npu_capability_contract(void) {
@@ -2162,11 +2167,13 @@ static int test_npu_capability_contract(void) {
     }
     if ((rs_npu_get_capability(&capability) != RS_OK) || (capability.ip_id != RS_NPU_IP_ID_VALUE) ||
         (capability.ip_version != RS_NPU_IP_VERSION_VALUE) ||
-        (capability.flags != RS_NPU_CAPABILITY_P2) ||
+        (capability.flags != RS_NPU_CAPABILITY_P4) ||
         (capability.numeric_profile != RS_NPU_NUMERIC_PROFILE_VALUE) ||
-        (capability.local_bytes != 0U) || (capability.dense_macs != 0U) ||
-        (capability.depthwise_macs != 0U) || (capability.max_k_slice != 0U) ||
-        (capability.max_dimension != 0U) || (capability.op_mask != 0U)) {
+        (capability.local_bytes != RS_NPU_LOCAL_BYTES_VALUE) ||
+        (capability.dense_macs != 64U) || (capability.depthwise_macs != 8U) ||
+        (capability.max_k_slice != RS_NPU_MAX_K_SLICE) ||
+        (capability.max_dimension != RS_NPU_MAX_DIMENSION) ||
+        (capability.op_mask != RS_NPU_OP_CAPABILITY_MVP)) {
         return 2;
     }
     NPU_TEST_REG(RS_NPU_REG_MAC_CONFIG) = RS_NPU_MAC_CONFIG_VALUE;
@@ -2237,7 +2244,7 @@ static int test_npu_irq_contract(void) {
     return 0;
 }
 
-static int test_npu_submit_p2(void) {
+static int test_npu_submit_contract(void) {
     const rs_npu_job_t job = {
         .descriptor_address = UINT32_C(0x10000000),
         .descriptor_count = 2U,
@@ -2274,15 +2281,33 @@ static int test_npu_submit_p2(void) {
     if (rs_npu_submit(&malformed) != RS_EINVAL) {
         return 6;
     }
-    /* P2 advertises no EXECUTION_READY: a valid job is refused without writes. */
-    if ((rs_npu_submit(&job) != RS_ENOTSUP) || (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U) ||
-        (NPU_TEST_REG(RS_NPU_REG_JOB_BASE) != 0U) || (NPU_TEST_REG(RS_NPU_REG_JOB_COUNT) != 0U) ||
-        (NPU_TEST_REG(RS_NPU_REG_JOB_ID) != 0U)) {
+    /* P4 executable path: a valid job is accepted with exactly one START write. */
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_READY;
+    if (rs_npu_submit(&job) != RS_OK) {
         return 7;
     }
-    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = 0U;
-    if (rs_npu_submit(&job) != RS_ENOTSUP) {
+    if ((NPU_TEST_REG(RS_NPU_REG_JOB_BASE) != job.descriptor_address) ||
+        (NPU_TEST_REG(RS_NPU_REG_JOB_COUNT) != job.descriptor_count) ||
+        (NPU_TEST_REG(RS_NPU_REG_JOB_ID) != job.job_id) ||
+        (NPU_TEST_REG(RS_NPU_REG_TIMEOUT_CYCLES) != job.timeout_cycles) ||
+        (NPU_TEST_REG(RS_NPU_REG_CONTROL) != RS_NPU_CONTROL_START)) {
         return 8;
+    }
+    /* Not-ready shell: rejected without touching the registers. */
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_CONTROL) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_JOB_BASE) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_JOB_COUNT) = 0U;
+    NPU_TEST_REG(RS_NPU_REG_JOB_ID) = 0U;
+    if ((rs_npu_submit(&job) != RS_EINVAL) || (NPU_TEST_REG(RS_NPU_REG_CONTROL) != 0U) ||
+        (NPU_TEST_REG(RS_NPU_REG_JOB_BASE) != 0U)) {
+        return 9;
+    }
+    /* Missing EXECUTION_READY: refused as unsupported. */
+    NPU_TEST_REG(RS_NPU_REG_STATUS) = RS_NPU_STATUS_READY;
+    NPU_TEST_REG(RS_NPU_REG_CAPABILITY) = RS_NPU_CAPABILITY_P4 & ~RS_NPU_CAPABILITY_EXECUTION_READY;
+    if (rs_npu_submit(&job) != RS_ENOTSUP) {
+        return 10;
     }
     return 0;
 }
@@ -2541,7 +2566,7 @@ int main(void) {
         test_ga2d_hal_contract(),
         test_npu_capability_contract(),
         test_npu_irq_contract(),
-        test_npu_submit_p2(),
+        test_npu_submit_contract(),
         test_npu_wait_abort_contract(),
         test_npu_status_error_contract(),
         test_npu_snapshot_contract(),

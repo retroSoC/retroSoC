@@ -316,6 +316,10 @@ module npu_core #(
     logic [31:0] s_rec_irow, s_rec_orow;
     logic [ 7:0] s_rec_kh, s_rec_kw, s_rec_sh, s_rec_sw;
     logic [ 7:0] s_rec_pad_top, s_rec_pad_left, s_rec_in0_zero;
+    logic [ 7:0] s_rec_tile_h, s_rec_tile_w;
+    logic [15:0] s_rec_k_slice;
+    logic [31:0] s_rec_input1_base, s_rec_input1_row_bytes;
+    logic [ 7:0] s_rec_in1_zero, s_rec_out_zero, s_rec_act_min, s_rec_act_max;
     logic [31:0] s_rec_weight_bytes, s_rec_param_bytes;
     logic [15:0] s_rec_desc_index;
     // scheduler wires
@@ -732,6 +736,15 @@ module npu_core #(
         .rec_pad_top_o     (s_rec_pad_top),
         .rec_pad_left_o    (s_rec_pad_left),
         .rec_input0_zero_o (s_rec_in0_zero),
+        .rec_tile_h_o      (s_rec_tile_h),
+        .rec_tile_w_o      (s_rec_tile_w),
+        .rec_k_slice_o     (s_rec_k_slice),
+        .rec_input1_base_o (s_rec_input1_base),
+        .rec_input1_row_bytes_o(s_rec_input1_row_bytes),
+        .rec_input1_zero_o (s_rec_in1_zero),
+        .rec_output_zero_o (s_rec_out_zero),
+        .rec_act_min_o     (s_rec_act_min),
+        .rec_act_max_o     (s_rec_act_max),
         .rec_weight_bytes_o(s_rec_weight_bytes),
         .rec_param_bytes_o (s_rec_param_bytes),
         .rec_desc_index_o  (s_rec_desc_index),
@@ -780,6 +793,15 @@ module npu_core #(
         .rec_pad_top_i       (s_rec_pad_top),
         .rec_pad_left_i      (s_rec_pad_left),
         .rec_input0_zero_i   (s_rec_in0_zero),
+        .rec_tile_h_i        (s_rec_tile_h),
+        .rec_tile_w_i        (s_rec_tile_w),
+        .rec_k_slice_i       (s_rec_k_slice),
+        .rec_input1_base_i   (s_rec_input1_base),
+        .rec_input1_row_bytes_i(s_rec_input1_row_bytes),
+        .rec_input1_zero_i   (s_rec_in1_zero),
+        .rec_output_zero_i   (s_rec_out_zero),
+        .rec_act_min_i       (s_rec_act_min),
+        .rec_act_max_i       (s_rec_act_max),
         .rec_weight_bytes_i  (s_rec_weight_bytes),
         .rec_param_bytes_i   (s_rec_param_bytes),
         .rec_desc_index_i    (s_rec_desc_index),

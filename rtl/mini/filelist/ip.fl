@@ -182,6 +182,10 @@
 /ip/multimedia/npu_pkg.sv
 /ip/multimedia/npu_local_sram.sv
 /ip/multimedia/npu_patch_packer.sv
+/ip/multimedia/npu_mac_array.sv
+/ip/multimedia/npu_accumulator.sv
+/ip/multimedia/npu_vector.sv
+/ip/multimedia/npu_requantizer.sv
 /ip/multimedia/npu_dma.sv
 /ip/multimedia/npu_job_decoder.sv
 /ip/multimedia/npu_scheduler.sv

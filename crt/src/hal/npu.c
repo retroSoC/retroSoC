@@ -130,8 +130,19 @@ rs_status_t rs_npu_submit(const rs_npu_job_t *job) {
     if (status != RS_OK) {
         return status;
     }
-    /* P2 integrates the register shell without a job execution path: START is never written. */
-    return RS_ENOTSUP;
+    if ((capability.flags & RS_NPU_CAPABILITY_EXECUTION_READY) == 0U) {
+        return RS_ENOTSUP;
+    }
+    if ((RS_NPU_REG(RS_NPU_REG_STATUS) & RS_NPU_STATUS_READY) == 0U) {
+        return RS_EINVAL;
+    }
+    RS_NPU_REG(RS_NPU_REG_JOB_BASE) = job->descriptor_address;
+    RS_NPU_REG(RS_NPU_REG_JOB_COUNT) = job->descriptor_count;
+    RS_NPU_REG(RS_NPU_REG_JOB_ID) = job->job_id;
+    RS_NPU_REG(RS_NPU_REG_TIMEOUT_CYCLES) = job->timeout_cycles;
+    /* Exactly one START write for an accepted job (see the frozen contract). */
+    RS_NPU_REG(RS_NPU_REG_CONTROL) = RS_NPU_CONTROL_START;
+    return RS_OK;
 }
 
 rs_status_t rs_npu_wait(uint32_t job_id, rs_timeout_t timeout, rs_npu_status_t *status) {

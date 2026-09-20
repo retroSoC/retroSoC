@@ -8,6 +8,11 @@ job-level testbench (production launch interface into npu_core + npu_dma over a
 byte-memory BFM) with directed transport jobs whose stored bytes are checked
 against a Python golden model of the documented P3 transport-content echo rule
 (output byte (oy, ox, c) echoes the gather byte at reduction index c mod G).
+``test_npu_job`` drives the shell-level job-admission testbench (apb4_npu
+driven through the software APB4 ABI over the same byte-memory BFM): START
+admission and PSLVERR rules, terminal DONE/ABORTED/ERROR mirrors with their
+IRQ events, RESULT_VALID lifetime, the no-progress watchdog, descriptor
+validation error propagation, and byte-exact golden stores.
 """
 
 from __future__ import annotations
@@ -34,6 +39,7 @@ from npu_descriptors import (  # noqa: E402
     DescriptorError,
     validate_descriptor,
 )
+import npu_reference  # noqa: E402
 
 INCDIRS = [COMMON, COMMON / "interface", MULTIMEDIA]
 COMMON_SOURCES = [
@@ -55,6 +61,10 @@ CORE_SOURCES = [
     MULTIMEDIA / "npu_patch_packer.sv",
     MULTIMEDIA / "npu_dma.sv",
     MULTIMEDIA / "npu_job_decoder.sv",
+    MULTIMEDIA / "npu_mac_array.sv",
+    MULTIMEDIA / "npu_accumulator.sv",
+    MULTIMEDIA / "npu_vector.sv",
+    MULTIMEDIA / "npu_requantizer.sv",
     MULTIMEDIA / "npu_scheduler.sv",
     MULTIMEDIA / "npu_core.sv",
 ]
@@ -616,7 +626,14 @@ def _pat(address: int) -> int:
     return (address ^ (address >> 7) ^ 0x36) & 0xFF
 
 
+def _s8(value: int) -> int:
+    return value - 256 if value >= 128 else value
+
+
 def _fill_descriptor_content(mem: bytearray, desc: Descriptor) -> None:
+    """Deterministic compute-valid content: any INT8 input, weights never
+    -128, and parameter encodings inside numerical profile 1 with magnitudes
+    that cannot trip the checked INT32 paths (the jobs must reach DONE)."""
     for offset in range(desc.input0_bytes):
         mem[desc.input0_base - MEM_BASE + offset] = _pat(desc.input0_base + offset)
     if desc.input1_base:
@@ -624,48 +641,141 @@ def _fill_descriptor_content(mem: bytearray, desc: Descriptor) -> None:
             mem[desc.input1_base - MEM_BASE + offset] = _pat(desc.input1_base + 3 + offset)
     if desc.weight_bytes:
         for offset in range(desc.weight_bytes):
-            mem[desc.weight_base - MEM_BASE + offset] = _pat(desc.weight_base + 1 + offset)
+            byte = _pat(desc.weight_base + 1 + offset)
+            mem[desc.weight_base - MEM_BASE + offset] = 0x7F if byte == 0x80 else byte
     if desc.param_bytes:
-        for offset in range(desc.param_bytes):
-            mem[desc.param_base - MEM_BASE + offset] = _pat(desc.param_base + 2 + offset)
+        if desc.opcode == 4:  # ADD: one 32-byte record
+            raw = [_pat(desc.param_base + 2 + offset) for offset in range(32)]
+            words = [int.from_bytes(bytes(raw[index * 4:(index + 1) * 4]), "little")
+                     for index in range(8)]
+            m0 = words[1] & 0x3FFFFFFF
+            s0 = max(-31, min(2, _s8(words[2] & 0xFF)))
+            m1 = words[3] & 0x3FFFFFFF
+            s1 = max(-31, min(2, _s8(words[4] & 0xFF)))
+            mout = words[5] & 0x7FFFFFFF
+            sout = max(-31, min(2, _s8(words[6] & 0xFF)))
+            struct.pack_into("<IiiiiiiI", mem, desc.param_base - MEM_BASE,
+                             20, m0, s0, m1, s1, mout, sout, 0)
+        else:  # per-channel 16-byte records
+            for record in range(desc.param_bytes // 16):
+                base = desc.param_base - MEM_BASE + record * 16
+                raw = [_pat(base + lane) for lane in range(12)]
+                bias = int.from_bytes(bytes(raw[0:4]), "little", signed=True)
+                bias = max(-(1 << 28), min((1 << 28) - 1, bias))
+                mult = int.from_bytes(bytes(raw[4:8]), "little") & 0x7FFFFFFF
+                shift = max(-31, min(2, _s8(raw[8])))
+                struct.pack_into("<iiiI", mem, base, bias, mult, shift, 0)
 
 
-def _gather_byte(desc: Descriptor, mem: bytearray, oy: int, ox: int, g: int) -> int:
-    """Gather byte at reduction index g of output position (oy, ox): the P3
-    transport-content rule. Reduction order kh, kw, cin; GAP rasters H*W."""
-    cin = desc.cin
-    kp, ci = divmod(g, cin)
-    if desc.opcode == 7:  # GLOBAL_AVERAGE_POOL: whole-input raster
-        iy, ix = divmod(kp, desc.w)
+def _input_tensor(desc: Descriptor, mem: bytearray, input1: bool = False):
+    """(H,W,Cin) input tensor parsed from memory in raster order."""
+    base = desc.input1_base if input1 else desc.input0_base
+    row_bytes = desc.input1_row_bytes if input1 else desc.input0_row_bytes
+    zero = desc.input1_zero if input1 else desc.input0_zero
+    data = []
+    for iy in range(desc.h):
+        for ix in range(desc.w):
+            for channel in range(desc.cin):
+                data.append(_s8(mem[base - MEM_BASE + iy * row_bytes + ix * desc.cin + channel]))
+    return npu_reference.Tensor((desc.h, desc.w, desc.cin), tuple(data), 1.0, zero)
+
+
+def _channel_params(desc: Descriptor, mem: bytearray) -> tuple[list, list, list]:
+    bias, mults, shifts = [], [], []
+    for record in range(desc.param_bytes // 16):
+        b_value, m_value, s_value, _ = struct.unpack(
+            "<iiiI", mem[desc.param_base - MEM_BASE + record * 16:
+                         desc.param_base - MEM_BASE + (record + 1) * 16])
+        bias.append(b_value)
+        mults.append(m_value)
+        shifts.append(s_value)
+    return bias, mults, shifts
+
+
+def _ref_output(desc: Descriptor, mem: bytearray) -> list[int]:
+    """Pinned numerical-reference output bytes of one descriptor."""
+    inputs = _input_tensor(desc, mem)
+    pads = (desc.pad_top, desc.pad_bottom, desc.pad_left, desc.pad_right)
+    if desc.opcode == 1:  # CONV2D
+        full_k = desc.kh * desc.kw * desc.cin
+        weights = [[[[_s8(mem[desc.weight_base - MEM_BASE +
+                              (c // 8) * full_k * 8 +
+                              (dkh * desc.kw * desc.cin + dkw * desc.cin + ci) * 8 + (c % 8)])
+                      for ci in range(desc.cin)] for dkw in range(desc.kw)]
+                    for dkh in range(desc.kh)] for c in range(desc.cout)]
+        bias, mults, shifts = _channel_params(desc, mem)
+        ref = npu_reference.conv2d(
+            inputs, weights, bias, mults, shifts, stride_h=desc.sh, stride_w=desc.sw,
+            pad_top=pads[0], pad_bottom=pads[1], pad_left=pads[2], pad_right=pads[3],
+            output_scale=1.0, output_zero_point=desc.output_zero,
+            act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 2:  # DEPTHWISE3X3
+        weights = [[[_s8(mem[desc.weight_base - MEM_BASE +
+                             (c // 8) * 72 + (dkh * 3 + dkw) * 8 + (c % 8)])
+                     for c in range(desc.cin)] for dkw in range(3)]
+                   for dkh in range(3)]
+        bias, mults, shifts = _channel_params(desc, mem)
+        ref = npu_reference.depthwise_conv2d(
+            inputs, weights, bias, mults, shifts, stride_h=desc.sh, stride_w=desc.sw,
+            pad_top=pads[0], pad_bottom=pads[1], pad_left=pads[2], pad_right=pads[3],
+            output_scale=1.0, output_zero_point=desc.output_zero,
+            act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 3:  # FULLY_CONNECTED
+        cin = desc.cin
+        weights = [[_s8(mem[desc.weight_base - MEM_BASE +
+                            (c // 8) * cin * 8 + ci * 8 + (c % 8)])
+                    for ci in range(cin)] for c in range(desc.cout)]
+        bias, mults, shifts = _channel_params(desc, mem)
+        ref = npu_reference.fully_connected(
+            inputs, weights, bias, mults, shifts, output_scale=1.0,
+            output_zero_point=desc.output_zero, act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 4:  # ADD
+        record = struct.unpack(
+            "<IiiiiiiI", mem[desc.param_base - MEM_BASE: desc.param_base - MEM_BASE + 32])
+        _, m0, s0, m1, s1, mout, sout, _ = record
+        ref = npu_reference.add(
+            inputs, _input_tensor(desc, mem, input1=True),
+            input0_multiplier=m0, input0_shift=s0, input1_multiplier=m1, input1_shift=s1,
+            output_multiplier=mout, output_shift=sout, output_scale=1.0,
+            output_zero_point=desc.output_zero, act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 5:
+        ref = npu_reference.max_pool(
+            inputs, kernel_h=desc.kh, kernel_w=desc.kw, stride_h=desc.sh,
+            stride_w=desc.sw, pad_top=pads[0], pad_bottom=pads[1], pad_left=pads[2],
+            pad_right=pads[3], act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 6:
+        ref = npu_reference.average_pool(
+            inputs, kernel_h=desc.kh, kernel_w=desc.kw, stride_h=desc.sh,
+            stride_w=desc.sw, pad_top=pads[0], pad_bottom=pads[1], pad_left=pads[2],
+            pad_right=pads[3], act_min=desc.act_min, act_max=desc.act_max)
+    elif desc.opcode == 7:
+        ref = npu_reference.global_average_pool(inputs, act_min=desc.act_min,
+                                                act_max=desc.act_max)
+    elif desc.opcode == 8:
+        ref = npu_reference.clamp(inputs, desc.act_min, desc.act_max)
     else:
-        kh, kw = divmod(kp, desc.kw)
-        iy = oy * desc.sh + kh - desc.pad_top
-        ix = ox * desc.sw + kw - desc.pad_left
-    if 0 <= iy < desc.h and 0 <= ix < desc.w:
-        return mem[desc.input0_base - MEM_BASE + iy * desc.input0_row_bytes + ix * cin + ci]
-    return desc.input0_zero & 0xFF
+        raise AssertionError(f"no reference for opcode {desc.opcode}")
+    return [value & 0xFF for value in ref.data]
 
 
 def _golden_window(descs: list[Descriptor], mem: bytearray) -> tuple[int, bytes]:
-    """Byte-exact output window content after a full run of the job."""
+    """Byte-exact output window content after a full run of the job: the
+    pinned reference output bytes at (oy, ox, c), inter-row padding zeroed by
+    the store engine, everything else the initial memory image."""
     lo = min(d.output_base for d in descs)
     hi = max(d.output_base + (d.oh - 1) * d.output_row_bytes + d.ow * d.cout for d in descs)
     window = bytearray(mem[lo - MEM_BASE : hi - MEM_BASE])
     for desc in descs:
-        if desc.opcode == 7:
-            kp_count = desc.h * desc.w
-        elif desc.opcode in (1, 2, 5, 6):
-            kp_count = desc.kh * desc.kw
-        else:
-            kp_count = 1
-        gather_len = kp_count * desc.cin
+        out_span = (desc.oh - 1) * desc.output_row_bytes + desc.ow * desc.cout
+        span = bytearray(out_span)
+        ref = _ref_output(desc, mem)
         for oy in range(desc.oh):
             for ox in range(desc.ow):
                 for channel in range(desc.cout):
-                    g = channel % gather_len
-                    byte = _gather_byte(desc, mem, oy, ox, g)
-                    window[desc.output_base - lo +
-                           oy * desc.output_row_bytes + ox * desc.cout + channel] = byte
+                    span[oy * desc.output_row_bytes + ox * desc.cout + channel] = ref[
+                        (oy * desc.ow + ox) * desc.cout + channel]
+        start = desc.output_base - lo
+        window[start : start + out_span] = span
     return lo, bytes(window)
 
 
@@ -688,6 +798,15 @@ def _core_case(tmp_path: Path, name: str, descs: list[Descriptor], scen: int,
     _image_hex(golden, list(struct.unpack(f"<{(len(gold) + pad) // 4}I", bytes(gold) +
                                           bytes(pad))))
     first = descs[0]
+    macs = 0
+    for desc in descs:
+        if desc.opcode == 1:
+            macs += desc.oh * desc.ow * desc.cout * desc.kh * desc.kw * desc.cin
+        elif desc.opcode == 2:
+            macs += desc.oh * desc.ow * desc.cin * 9
+        elif desc.opcode == 3:
+            macs += desc.cout * desc.cin
+    exp_pack = 1 if any(desc.opcode in (1, 2, 3) for desc in descs) else 0
     return [
         f"+IMG={image}",
         f"+GOLD={golden}",
@@ -706,6 +825,8 @@ def _core_case(tmp_path: Path, name: str, descs: list[Descriptor], scen: int,
         f"+WCHK={1 if wchk else 0}",
         f"+WCHK_BASE={first.weight_base:x}",
         f"+WCHK_BYTES={first.weight_bytes}",
+        f"+MACS={macs}",
+        f"+EXP_PACK={exp_pack}",
         f"+NAME={name}",
     ]
 
@@ -811,3 +932,84 @@ def test_npu_core(tmp_path: Path, simulator: str) -> None:
     )
     for plusargs in _core_cases(tmp_path):
         _run(command, plusargs, "NPU core test passed")
+
+
+# ---------------------------------------------------------------------------
+# Shell-level job admission testbench scenario
+# ---------------------------------------------------------------------------
+
+JOB_SOURCES = [
+    COMMON / "interface/apb4_if.sv",
+    COMMON / "utils/register.sv",
+    COMMON / "utils/xchecker.sv",
+    COMMON / "clkrst/rst_sync.sv",
+    COMMON / "cdc/cdc_sync.sv",
+    COMMON / "cdc/cdc_rst_ctrlr.sv",
+    COMMON / "cdc/async_reqack.sv",
+    MULTIMEDIA / "npu_pkg.sv",
+    TECH / "tc_sram.sv",
+    MULTIMEDIA / "npu_local_sram.sv",
+    MULTIMEDIA / "npu_patch_packer.sv",
+    MULTIMEDIA / "npu_dma.sv",
+    MULTIMEDIA / "npu_job_decoder.sv",
+    MULTIMEDIA / "npu_mac_array.sv",
+    MULTIMEDIA / "npu_accumulator.sv",
+    MULTIMEDIA / "npu_vector.sv",
+    MULTIMEDIA / "npu_requantizer.sv",
+    MULTIMEDIA / "npu_scheduler.sv",
+    MULTIMEDIA / "npu_reg.sv",
+    MULTIMEDIA / "npu_control_cdc.sv",
+    MULTIMEDIA / "npu_core.sv",
+    MULTIMEDIA / "apb4_npu.sv",
+]
+
+
+def _job_case(tmp_path: Path) -> list[str]:
+    """Single-run admission case: one valid CLAMP job at index 0 plus a
+    version-mismatched record at index 1, with the golden output window of
+    the valid job; the testbench drives every admission scenario from it."""
+    good = _valid_descriptor(8, 0)
+    bad_words = _words_of(_valid_descriptor(8, 1))
+    bad_words[0] = 0x0200_0000 | 8  # VERSION 2.0: rejected at ABI word 0
+    bad = Descriptor.from_bytes(struct.pack(f"<{len(bad_words)}I", *bad_words))
+    expected = _expected_fault([bad], 1)
+    assert expected == (F_DESCRIPTOR, 0, 0)
+    mem = bytearray([GAP_FILL] * CORE_MEM_BYTES)
+    struct.pack_into(f"<{DESCRIPTOR_BYTES // 4}I", mem, 0, *_words_of(good))
+    struct.pack_into(f"<{DESCRIPTOR_BYTES // 4}I", mem, DESCRIPTOR_BYTES, *bad_words)
+    _fill_descriptor_content(mem, good)
+    image = tmp_path / "job_img.hex"
+    _image_hex(image, list(struct.unpack(f"<{CORE_MEM_BYTES // 4}I", bytes(mem))))
+    gold_base, gold = _golden_window([good], mem)
+    golden = tmp_path / "job_gold.hex"
+    pad = (-len(gold)) % 4
+    _image_hex(golden, list(struct.unpack(f"<{(len(gold) + pad) // 4}I", bytes(gold) +
+                                          bytes(pad))))
+    bad_base = MEM_BASE + DESCRIPTOR_BYTES
+    return [
+        f"+IMG={image}",
+        f"+GOLD={golden}",
+        f"+GOLD_BASE={gold_base:x}",
+        f"+GOLD_BYTES={len(gold)}",
+        f"+BASE={MEM_BASE:x}",
+        f"+BAD_BASE={bad_base:x}",
+        f"+BAD_FADDR={bad_base:x}",
+        "+TIMEOUT=20000000",
+        "+WDOG=2000",
+        "+JOBID=51a50001",
+    ]
+
+
+@pytest.mark.parametrize("simulator", ("iverilog", "verilator"))
+def test_npu_job(tmp_path: Path, simulator: str) -> None:
+    tools = _tools()
+    command = _build_sim(
+        tools,
+        simulator,
+        tmp_path,
+        f"npu_job_{simulator}",
+        "npu_job_tb",
+        ROOT / "tests/rtl/npu_job_tb.sv",
+        JOB_SOURCES,
+    )
+    _run(command, _job_case(tmp_path), "NPU job test passed")

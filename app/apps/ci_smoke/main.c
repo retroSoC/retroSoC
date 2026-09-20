@@ -640,7 +640,7 @@ static bool rs_ci_smoke_npu_irq(void) {
     }
     if ((RS_NPU_REG(RS_NPU_REG_IP_ID) != RS_NPU_IP_ID_VALUE) ||
         (RS_NPU_REG(RS_NPU_REG_IP_VERSION) != RS_NPU_IP_VERSION_VALUE) ||
-        (RS_NPU_REG(RS_NPU_REG_CAPABILITY) != RS_NPU_CAPABILITY_P2) ||
+        (RS_NPU_REG(RS_NPU_REG_CAPABILITY) != RS_NPU_CAPABILITY_P4) ||
         (RS_NPU_REG(RS_NPU_REG_IRQ_STATE) != 0U)) {
         return false;
     }
