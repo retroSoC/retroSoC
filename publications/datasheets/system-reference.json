@@ -5450,6 +5450,24 @@
             "boundary": "Exercises the direct private-AXI64 P5 functional subset only; it does not cover transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, cache coherency, a Linux graphics driver, HP P5 composition acceptance, or physical performance."
           },
           {
+            "id": "ga2d-bounded-wait",
+            "title": "GA2D bounded wait and timeout ownership",
+            "kind": "test-fail",
+            "code": 15,
+            "trigger": "rs_ci_smoke_ga2d_bounded_wait(",
+            "coverage": "Force a deliberately small rs_ga2d_wait budget to expire with RS_ETIMEOUT while a real SDRAM job keeps running, prove timeout expiry does not imply safe idle or buffer reclaim, then complete the job under a normal bounded wait with exact destination and counter checks, and confirm rs_ga2d_abort_wait on the idle engine.",
+            "boundary": "Covers LP polling-budget semantics only; it does not exercise HP-side timeout handling, watchdog TIMEOUT error recovery, or abort of an in-flight job."
+          },
+          {
+            "id": "ga2d-dma-contention",
+            "title": "GA2D and central DMA concurrent progress",
+            "kind": "test-fail",
+            "code": 16,
+            "trigger": "rs_ci_smoke_ga2d_dma_contention(",
+            "coverage": "Run a central-DMA memory-to-memory transfer and a GA2D copy concurrently in disjoint SDRAM regions, verify both payloads byte-exactly, and confirm fabric-monitor request counters advance for both master 2 and master 8 during the shared window.",
+            "boundary": "Covers LP CPU, central DMA, and GA2D competition with SDRAM refresh in the behavioral product; wider peripheral-master contention is evidenced in the GA2D platform testbench, and no starvation bound is proven here."
+          },
+          {
             "id": "apu",
             "title": "APU discovery",
             "kind": "test-fail",

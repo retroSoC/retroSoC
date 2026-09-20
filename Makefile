@@ -36,21 +36,25 @@ SYNTH_RECIPE ?= balanced
 STA          ?= NONE
 
 # HW
-PDK                      ?= IHP130
-HAVE_PLL                 ?= NO
-HAVE_SRAM_IF             ?= $(if $(filter ICS55,$(PDK)),NO,YES)
-HAVE_SRAM_MACRO          ?= $(if $(filter ICS55,$(PDK)),NO,YES)
-SRAM_SIZE_KIB            ?= $(if $(filter ICS55,$(PDK)),128,32)
-PDK_BEHAV                ?= NO
-HAVE_SVA                 ?= NO
-HAVE_HP                  ?= YES
-HP_CONFIG                ?= rv32imafdc_zicbom_max
-BUILD_RELEASE            ?= NO
-JTAG_IDCODE              ?= DEADBEEF
-EXT_CLK_HZ               ?= 72000000
-AUD_CLK_HZ               ?= 18432000
-CLINT_TIMEBASE_HZ        ?= 1000000
-MGMT_CPU_CLK_HZ          := $(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ))
+PDK               ?= IHP130
+HAVE_PLL          ?= NO
+HAVE_SRAM_IF      ?= $(if $(filter ICS55,$(PDK)),NO,YES)
+HAVE_SRAM_MACRO   ?= $(if $(filter ICS55,$(PDK)),NO,YES)
+SRAM_SIZE_KIB     ?= $(if $(filter ICS55,$(PDK)),128,32)
+PDK_BEHAV         ?= NO
+HAVE_SVA          ?= NO
+HAVE_HP           ?= YES
+HP_CONFIG         ?= rv32imafdc_zicbom_max
+BUILD_RELEASE     ?= NO
+JTAG_IDCODE       ?= DEADBEEF
+EXT_CLK_HZ        ?= 72000000
+AUD_CLK_HZ        ?= 18432000
+CLINT_TIMEBASE_HZ ?= 1000000
+MGMT_CPU_CLK_HZ   := $(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ))
+# Reset-state peripheral clock: the PCLK divider in the clock/reset subsystem
+# resets to passthrough on the LP root clock, so PCLK starts at the management
+# CPU frequency until software programs a different divider.
+PCLK_CLK_HZ              := $(MGMT_CPU_CLK_HZ)
 WAVE                     ?= NO
 FORMAL                   ?= NO
 VCS_USE_LSF              ?= YES
@@ -334,6 +338,7 @@ endif
 
 ifeq ($(SYNTH), YOSYS)
 include physical/smoke/syn/yosys/yosys.mk
+include physical/smoke/syn/yosys/ga2d_block.mk
 endif
 
 ifeq ($(STA), OPENSTA)
@@ -365,6 +370,9 @@ help:
 	  '  netcomp | netsim           synthesized-netlist simulation' \
 	  '  postcomp | postsim         post-layout simulation' \
 	  '  synth | sta                synthesis and timing analysis' \
+	  '  synth-ga2d-block           isolated GA2D block synthesis evidence' \
+	  '  netsim-ga2d-block          GA2D synthesized-block transaction test' \
+	  '  sta-ga2d-block             GA2D block timing analysis' \
 	  '  librelane-doctor           validate the IHP130 LibreLane Chip flow' \
 	  '  librelane-chip             run the single-level IHP130 pad-ring flow' \
 	  '  librelane-openroad         open the current Chip run in OpenROAD' \

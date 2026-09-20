@@ -274,6 +274,47 @@ module ga2d_wrapper_tb;
       $fatal(1, "GA2D soft reset did not clear retained diagnostic state");
     end
 
+    apb_write(`APB4_GA2D__IRQ_ENABLE, 32'h0000_0002, 1'b0);
+    apb_write(`APB4_GA2D__SIZE, 32'h0003_0000, 1'b0);
+    apb_write(`APB4_GA2D__COMMAND, 32'h0000_0001, 1'b0);
+    apb_read(`APB4_GA2D__STATUS, read_data);
+    if (!read_data[`APB4_GA2D__STATUS_ERROR] || read_data[`APB4_GA2D__STATUS_DONE] ||
+        read_data[`APB4_GA2D__STATUS_BUSY] || read_data[`APB4_GA2D__STATUS_DRAINING]) begin
+      $fatal(1, "GA2D validation error did not report a terminal error state");
+    end
+    apb_read(`APB4_GA2D__IRQ_STATE, read_data);
+    if (read_data != 32'h0000_0002 || !irq_o) begin
+      $fatal(1, "GA2D validation error did not raise the enabled raw IRQ");
+    end
+    apb_read(`APB4_GA2D__ERROR_STATUS, read_data);
+    if (read_data != 32'h0000_0103) begin
+      $fatal(1, "GA2D validation error first-error record mismatch: %h", read_data);
+    end
+    apb_write(`APB4_GA2D__IRQ_ENABLE, 32'h0000_0000, 1'b0);
+    if (irq_o) $fatal(1, "GA2D IRQ mask did not deassert the raw level");
+    apb_read(`APB4_GA2D__IRQ_STATE, read_data);
+    if (read_data != 32'h0000_0002) begin
+      $fatal(1, "GA2D IRQ mask cleared retained state");
+    end
+    apb_write(`APB4_GA2D__IRQ_ENABLE, 32'h0000_0002, 1'b0);
+    if (!irq_o) $fatal(1, "GA2D IRQ unmask did not reassert the raw level");
+    apb_write(`APB4_GA2D__IRQ_STATE, 32'h0000_0002, 1'b0);
+    if (irq_o) $fatal(1, "GA2D IRQ W1C did not clear the raw level");
+    apb_read(`APB4_GA2D__ERROR_STATUS, read_data);
+    if (read_data != 32'h0000_0103) begin
+      $fatal(1, "GA2D first-error record changed before explicit clear");
+    end
+    apb_write(`APB4_GA2D__ERROR_STATUS, 32'h0000_0001, 1'b0);
+    apb_read(`APB4_GA2D__ERROR_STATUS, read_data);
+    if (read_data != 32'd0) begin
+      $fatal(1, "GA2D first-error record did not clear on explicit W1C");
+    end
+    apb_write(`APB4_GA2D__COMMAND, 32'h0000_0004, 1'b0);
+    apb_read(`APB4_GA2D__STATUS, read_data);
+    if (read_data[`APB4_GA2D__STATUS_ERROR] || read_data[`APB4_GA2D__STATUS_DONE] || irq_o) begin
+      $fatal(1, "GA2D soft reset did not clear the validation error state");
+    end
+
     $display("GA2D P5 wrapper lifecycle test passed");
     $finish;
   end

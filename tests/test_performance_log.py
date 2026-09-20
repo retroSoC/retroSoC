@@ -14,7 +14,8 @@ def test_parse_log_requires_terminal_marker_and_complete_samples() -> None:
         "PERF region=sdram op=read words=1024 checksum=0x1234 cycles=123 mgmt_wait=10 "
         "apb4_periph_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0 "
         "workload_bytes=4096 pixels=0 jobs=0 cpu_cycles=123 cpu_hz=24000000 "
-        "ga2d_features=0x3e3 ga2d_limits=0x08202010 ga2d_formats=0x000f000f "
+        "pclk_hz=24000000 "
+        "ga2d_features=0x7ff ga2d_limits=0x08202010 ga2d_formats=0x000f0f1f "
         "ga2d_cycles=0 ga2d_read_bytes=0 ga2d_write_bytes=0\n"
         "PERF_BENCHMARK_PASS\n"
     )
@@ -27,8 +28,9 @@ def test_parse_log_requires_terminal_marker_and_complete_samples() -> None:
             "checksum": 0x1234,
             "configuration": {
                 "cpu_hz": 24000000,
-                "ga2d_features": 0x3E3,
-                "ga2d_formats": 0x000F000F,
+                "pclk_hz": 24000000,
+                "ga2d_features": 0x7FF,
+                "ga2d_formats": 0x000F0F1F,
                 "ga2d_limits": 0x08202010,
             },
             "cpu_cycles": 123,
@@ -56,8 +58,8 @@ def test_parse_log_rejects_missing_benchmark_marker() -> None:
     report = parse_log(
         "PERF region=flash op=read words=1024 checksum=0 cycles=10 mgmt_wait=1 apb4_periph_wait=1 "
         "sdram_wait=0 psram_wait=0 flash_wait=1 dma_wait=0 workload_bytes=4096 pixels=0 "
-        "jobs=0 cpu_cycles=10 cpu_hz=24000000 ga2d_features=0x3e3 "
-        "ga2d_limits=0x08202010 ga2d_formats=0x000f000f ga2d_cycles=0 "
+        "jobs=0 cpu_cycles=10 cpu_hz=24000000 pclk_hz=24000000 ga2d_features=0x7ff "
+        "ga2d_limits=0x08202010 ga2d_formats=0x000f0f1f ga2d_cycles=0 "
         "ga2d_read_bytes=0 ga2d_write_bytes=0\n"
     )
 
@@ -69,7 +71,8 @@ def test_parse_log_rejects_report_with_performance_failure() -> None:
         "PERF region=sdram op=read words=1024 checksum=0x1234 cycles=123 mgmt_wait=10 "
         "apb4_periph_wait=9 sdram_wait=8 psram_wait=0 flash_wait=0 dma_wait=0 "
         "workload_bytes=4096 pixels=0 jobs=0 cpu_cycles=123 cpu_hz=24000000 "
-        "ga2d_features=0x3e3 ga2d_limits=0x08202010 ga2d_formats=0x000f000f "
+        "pclk_hz=24000000 "
+        "ga2d_features=0x7ff ga2d_limits=0x08202010 ga2d_formats=0x000f0f1f "
         "ga2d_cycles=0 ga2d_read_bytes=0 ga2d_write_bytes=0\n"
         "PERF_FAIL region=sdram op=read reason=data expected=1234 actual=0\n"
         "PERF_BENCHMARK_PASS\n"
@@ -84,8 +87,10 @@ def test_parse_log_preserves_ga2d_workload_and_configuration_facts() -> None:
         "PERF region=ga2d op=copy words=0 checksum=0x4567 cycles=99 mgmt_wait=3 "
         "apb4_periph_wait=2 sdram_wait=7 psram_wait=0 flash_wait=0 dma_wait=0 "
         "workload_bytes=192 pixels=32 jobs=1 cpu_cycles=99 cpu_hz=24000000 "
-        "ga2d_features=0x3e3 ga2d_limits=0x08202010 ga2d_formats=0x000f000f "
-        "ga2d_cycles=75 ga2d_read_bytes=96 ga2d_write_bytes=96\n"
+        "pclk_hz=24000000 "
+        "ga2d_features=0x7ff ga2d_limits=0x08202010 ga2d_formats=0x000f0f1f "
+        "ga2d_cycles=75 ga2d_read_bytes=96 ga2d_write_bytes=96 "
+        "width=8 height=4 pitch=48\n"
         "PERF_BENCHMARK_PASS\n"
     )
 
@@ -98,11 +103,22 @@ def test_parse_log_preserves_ga2d_workload_and_configuration_facts() -> None:
     assert sample["ga2d_cycles"] == 75
     assert sample["ga2d_read_bytes"] == 96
     assert sample["ga2d_write_bytes"] == 96
+    assert sample["width"] == 8
+    assert sample["height"] == 4
+    assert sample["pitch"] == 48
+    assert sample["derived"] == {
+        "ga2d_job_latency_us": "3.125",
+        "ga2d_effective_mb_per_s": "61.440",
+        "ga2d_pixels_per_s": "10240000.000",
+        "lp_cpu_us": "4.125",
+        "lp_cpu_cycles_per_pixel": "3.094",
+    }
     assert sample["configuration"] == {
         "cpu_hz": 24000000,
-        "ga2d_features": 0x3E3,
+        "pclk_hz": 24000000,
+        "ga2d_features": 0x7FF,
         "ga2d_limits": 0x08202010,
-        "ga2d_formats": 0x000F000F,
+        "ga2d_formats": 0x000F0F1F,
     }
 
 

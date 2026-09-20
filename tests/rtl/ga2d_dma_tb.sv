@@ -1927,135 +1927,6 @@ module ga2d_dma_tb;
     end
   endtask
 
-  task automatic run_random_job(input logic fill_i, input logic [2:0] format_i,
-                                input logic [31:0] random_i, input int unsigned job_i);
-    logic        [31:0] foreground;
-    logic        [31:0] destination;
-    logic        [31:0] pixel;
-    logic        [31:0] source_row;
-    logic        [31:0] destination_row;
-    logic        [15:0] width;
-    logic        [15:0] height;
-    int unsigned        bytes_per_pixel;
-    int unsigned        row_bytes;
-    int unsigned        foreground_pitch;
-    int unsigned        destination_pitch;
-    begin
-      width  = (random_i[15:12] % 8) + 1;
-      height = (random_i[18:16] % 3) + 1;
-      unique case (format_i)
-        `APB4_GA2D__FORMAT_RGB565: begin
-          bytes_per_pixel = 2;
-          foreground      = SramBase + 32'h1000 + ((job_i % 16) * 128) + ((random_i[5:4] % 4) * 2);
-          destination     = SramBase + 32'h5000 + ((job_i % 16) * 128) + ((random_i[7:6] % 4) * 2);
-        end
-        `APB4_GA2D__FORMAT_RGB888: begin
-          bytes_per_pixel = 3;
-          foreground      = SramBase + 32'h1000 + ((job_i % 16) * 128) + (random_i[2:0] % 8);
-          destination     = SramBase + 32'h5000 + ((job_i % 16) * 128) + (random_i[10:8] % 8);
-        end
-        default: begin
-          bytes_per_pixel = 4;
-          foreground      = SramBase + 32'h1000 + ((job_i % 16) * 128) + ((random_i[3] % 2) * 4);
-          destination     = SramBase + 32'h5000 + ((job_i % 16) * 128) + ((random_i[11] % 2) * 4);
-        end
-      endcase
-      row_bytes         = width * bytes_per_pixel;
-      foreground_pitch  = row_bytes + bytes_per_pixel * (random_i[21:20] % 4);
-      destination_pitch = row_bytes + bytes_per_pixel * (random_i[23:22] % 4);
-      pixel             = fill_pixel(format_i, random_i);
-      for (int unsigned line = 0; line < height; line++) begin
-        source_row      = foreground + line * foreground_pitch;
-        destination_row = destination + line * destination_pitch;
-        if (line == 0) begin
-          s_memory[(destination_row-SramBase)-1] = 8'hc7;
-        end
-        for (int unsigned byte_index = 0; byte_index < row_bytes; byte_index++) begin
-          s_memory[(destination_row-SramBase)+byte_index] = 8'hc7;
-          s_memory[(source_row - SramBase) + byte_index] =
-              random_i[(byte_index % 4)*8+:8] ^ line[7:0] ^ byte_index[7:0];
-        end
-        for (int unsigned padding = row_bytes; padding < foreground_pitch; padding++) begin
-          s_memory[(source_row-SramBase)+padding] = 8'hc7;
-        end
-        for (int unsigned padding = row_bytes; padding < destination_pitch; padding++) begin
-          s_memory[(destination_row-SramBase)+padding] = 8'hc7;
-        end
-      end
-      s_memory[(destination+((height-1'b1)*destination_pitch)+row_bytes)-SramBase] = 8'hc7;
-      if (fill_i) begin
-        configure_fill(format_i, width, height, destination, destination_pitch, random_i);
-      end else begin
-        configure_copy(format_i, width, height, foreground, foreground_pitch, destination,
-                       destination_pitch);
-      end
-      start_job();
-      wait_for_terminal(1'b1, 1'b0, 1'b0);
-      if (memory_byte(destination - 1'b1) != 8'hc7) begin
-        $fatal(1, "GA2D randomized job changed a leading guard byte");
-      end
-      for (int unsigned line = 0; line < height; line++) begin
-        source_row      = foreground + line * foreground_pitch;
-        destination_row = destination + line * destination_pitch;
-        for (int unsigned byte_index = 0; byte_index < row_bytes; byte_index++) begin
-          if (fill_i) begin
-            if (memory_byte(
-                    destination_row + byte_index
-                ) != pixel[(byte_index%bytes_per_pixel)*8+:8]) begin
-              $fatal(1, "GA2D randomized FILL byte mismatch");
-            end
-          end else if (memory_byte(
-                  destination_row + byte_index
-              ) != memory_byte(
-                  source_row + byte_index
-              )) begin
-            $fatal(1, "GA2D randomized COPY byte mismatch");
-          end
-        end
-        for (int unsigned padding = row_bytes; padding < destination_pitch; padding++) begin
-          if (memory_byte(destination_row + padding) != 8'hc7) begin
-            $fatal(1, "GA2D randomized job changed destination padding");
-          end
-        end
-      end
-      if (memory_byte(
-              destination + ((height - 1'b1) * destination_pitch) + row_bytes
-          ) != 8'hc7) begin
-        $fatal(1, "GA2D randomized job changed a trailing guard byte");
-      end
-    end
-  endtask
-
-  task automatic run_random_campaign;
-    logic        [31:0] random_value;
-    logic        [ 2:0] format;
-    logic        [ 9:0] seeds_seen;
-    int unsigned        completed;
-    begin
-      completed  = 0;
-      seeds_seen = '0;
-      enable_random_delays();
-      for (int unsigned seed = 0; seed < 10; seed++) begin
-        reseed_random_delays(32'h9e37_79b9 ^ seed);
-        seeds_seen[seed] = 1'b1;
-        random_value     = 32'h9e37_79b9 ^ seed;
-        for (int unsigned job = 0; job < 1000; job++) begin
-          random_value = (random_value * 32'd1664525) + 32'd1013904223;
-          format       = random_value[1:0];
-          run_random_job(random_value[2], format, random_value, job);
-          completed++;
-        end
-      end
-      if (completed != 10000) begin
-        $fatal(1, "GA2D randomized campaign did not execute 10,000 jobs");
-      end
-      if (seeds_seen != 10'h3ff) begin
-        $fatal(1, "GA2D randomized campaign did not execute all ten delay seeds");
-      end
-      check_random_delay_coverage();
-    end
-  endtask
-
   task automatic run_dual_source_schedule_case;
     logic [31:0] foreground;
     logic [31:0] background;
@@ -2511,6 +2382,9 @@ module ga2d_dma_tb;
         $fatal(1, "GA2D P5 mixed campaign missed required scoring coverage");
       end
       check_random_delay_coverage();
+      $display(
+          "GA2D_CAMPAIGN seeds=10 seed_base=0x9e3779b9 jobs=%0d fill=0x%01h copy=0x%01h convert=0x%04h blends=80/80 inplace=20/20 global_alpha=0x%01h offsets=0x%01h delays=covered result=PASS",
+          completed, fill_seen, copy_seen, convert_seen, global_alpha_seen, offsets_seen);
     end
   endtask
 

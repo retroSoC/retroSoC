@@ -175,6 +175,41 @@ module resource_controller_tb;
     if (irq_lp_o[8] || irq_hp_o[8]) begin
       $fatal(1, "GA2D resource reset did not mask both IRQ routes");
     end
+    apb_write(12'h204, 32'h0000_0001, 1'b0);
+    if (irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset release did not resume HP IRQ routing");
+    end
+    apb_write(12'h200, 32'h0000_0000, 1'b0);
+    if ((owner_o[8] != 2'd0) || !irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 HP-to-LP pending IRQ handback mismatch");
+    end
+    apb_read(12'h210, read_data);
+    if (read_data != 32'd2) $fatal(1, "GA2D resource 8 handoff counter mismatch");
+    apb_write(12'h204, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset did not mask both IRQ routes for LP ownership");
+    end
+    apb_write(12'h204, 32'h0000_0001, 1'b0);
+    if (!irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset release did not resume LP IRQ routing");
+    end
+    apb_write(12'h10C, 32'h0000_0001, 1'b0);
+    if (fault_irq_o) $fatal(1, "resource fault did not clear before GA2D lock test");
+    apb_write(12'h200, 32'h0000_0101, 1'b0);
+    if ((owner_o[8] != 2'd1) || !owner_lock_o[8] || irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 HP lock handoff mismatch");
+    end
+    apb_write(12'h200, 32'h0000_0000, 1'b1);
+    if ((owner_o[8] != 2'd1) || !owner_lock_o[8] || irq_lp_o[8] || !irq_hp_o[8] ||
+        !fault_irq_o) begin
+      $fatal(1, "GA2D resource 8 locked handoff attempt changed ownership or routing");
+    end
+    apb_read(12'h20C, read_data);
+    if (read_data != 32'd1) $fatal(1, "GA2D resource 8 fault was not recorded");
+    apb_write(12'h20C, 32'h0000_0001, 1'b0);
+    if (fault_irq_o) $fatal(1, "GA2D resource 8 fault did not clear");
+    apb_read(12'h20C, read_data);
+    if (read_data != 32'd0) $fatal(1, "GA2D resource 8 fault readback did not clear");
 
     $display("Resource Controller ownership, IRQ, and cache handshake test passed");
     $finish;

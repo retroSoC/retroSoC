@@ -100,7 +100,10 @@ fail-closed according to the synchronized AON pad mode.
 
 - `axi4_upsizer_32to64` preserves byte lanes and adds the master ID prefix.
 - `axi4_downsizer_64to32` splits 64-bit beats for current memory frontends and
-  recombines read responses.
+  recombines read responses. Aligned 64-bit `INCR` bursts longer than eight
+  beats are split into sequential legal narrow transactions of at most sixteen
+  beats, recombine read data across fragment boundaries, and return one
+  aggregated write response.
 - `axi4_async_bridge` carries AW, W, B, AR, and R through independent Common
   coordinated warm-flush FIFOs and reports clear-busy and epoch state.
 - `apb4_async_bridge` converts one APB request into a request/response CDC

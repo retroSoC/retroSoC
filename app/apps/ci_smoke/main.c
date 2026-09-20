@@ -7,6 +7,7 @@
 #include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
+#include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
@@ -613,12 +614,179 @@ static bool rs_ci_smoke_ga2d_irq(void) {
     __disable_ext_irq();
     return true;
 }
+
+static bool rs_ci_smoke_sdram_wait_ready(void);
+
+static bool rs_ci_smoke_ga2d_bounded_wait(void) {
+    const uint32_t pitch = UINT32_C(72);
+    const uint32_t rows = UINT32_C(256);
+    const uint32_t span = UINT32_C(18432);
+    volatile uint32_t *const destination =
+        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - span - UINT32_C(15));
+    const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)destination, pitch, RS_GA2D_FORMAT_XRGB8888},
+        .width = 16U,
+        .height = 256U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0x80123456),
+    };
+    rs_ga2d_stats_t stats;
+    rs_ga2d_status_t status;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+    if ((rs_ga2d_configure(&job) != RS_OK) || (rs_ga2d_start() != RS_OK) ||
+        (rs_ga2d_wait(1U) != RS_ETIMEOUT)) {
+        return false;
+    }
+    if ((rs_ga2d_get_status(&status) != RS_OK) || !status.busy || status.done || status.error ||
+        status.aborted) {
+        return false;
+    }
+    if ((rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK) || (rs_ga2d_get_stats(&stats) != RS_OK) ||
+        (stats.lines_done != 256U) || (stats.read_bytes != UINT64_C(0)) ||
+        (stats.write_bytes != UINT64_C(16384))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < rows; ++row) {
+        const uint32_t offset = (row * pitch) / UINT32_C(4);
+
+        for (uint32_t pixel = 0U; pixel < 16U; ++pixel) {
+            if (destination[offset + pixel] != UINT32_C(0xFF123456)) {
+                return false;
+            }
+        }
+    }
+    if ((rs_ga2d_get_status(&status) != RS_OK) || !status.done || status.busy || status.error ||
+        status.aborted) {
+        return false;
+    }
+    return rs_ga2d_abort_wait(RS_TIMEOUT_DEFAULT) == RS_OK;
+}
+
+#define RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK UINT32_C(33023)
+#define RS_CI_SMOKE_GA2D_DMA_WORDS       UINT32_C(64)
+#define RS_CI_SMOKE_GA2D_JOB_WORDS       UINT32_C(256)
+
+/* Kept out of line so the pattern loops stay compact instead of being fully
+   unrolled for every call site; the word pattern keeps every XRGB8888 alpha
+   byte at 0xFF so the copy is byte-exact regardless of X-channel handling. */
+__attribute__((noinline)) static void rs_ci_smoke_ga2d_pattern_fill(volatile uint32_t *region,
+                                                                    uint32_t words) {
+    for (uint32_t index = 0U; index < words; ++index) {
+        region[index] = UINT32_C(0xFF000000) | (index ^ UINT32_C(0x00005A5A));
+    }
+}
+
+__attribute__((noinline)) static bool
+rs_ci_smoke_ga2d_pattern_check(const volatile uint32_t *region, uint32_t words) {
+    for (uint32_t index = 0U; index < words; ++index) {
+        if (region[index] != (UINT32_C(0xFF000000) | (index ^ UINT32_C(0x00005A5A)))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_dma_contention(void) {
+    /* Disjoint 256-byte-aligned SDRAM window below the bounded-wait scratch:
+       DMA source/destination, then GA2D destination/source for a 16x16
+       XRGB8888 copy, all addressed by compile-time constants. */
+    static const rs_dma_config_t dma_config = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK,
+        .destination = RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x100),
+        .byte_count = RS_CI_SMOKE_GA2D_DMA_WORDS * UINT32_C(4),
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .priority = 1U,
+        .burst_beats = RS_DMA_MAX_BURST_BEATS,
+    };
+    static const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x780),
+                       UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x340),
+                        UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
+        .width = 16U,
+        .height = 16U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    rs_fabric_master_stats_t dma_before;
+    rs_fabric_master_stats_t dma_after;
+    rs_fabric_master_stats_t ga2d_before;
+    rs_fabric_master_stats_t ga2d_after;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+    /* The LP core is itself a competitor: these setup writes and the bounded
+       waits below keep LP-fabric traffic active while both engines run. */
+    rs_ci_smoke_ga2d_pattern_fill(
+        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK),
+        RS_CI_SMOKE_GA2D_DMA_WORDS);
+    rs_ci_smoke_ga2d_pattern_fill(
+        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                                         UINT32_C(0x780)),
+        RS_CI_SMOKE_GA2D_JOB_WORDS);
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_DMA, &dma_before) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_before) != RS_OK)) {
+        return false;
+    }
+    if ((rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config) != RS_OK) ||
+        (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) || (rs_ga2d_configure(&job) != RS_OK) ||
+        (rs_ga2d_start() != RS_OK)) {
+        return false;
+    }
+    if ((rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK)) {
+        return false;
+    }
+    if (!rs_ci_smoke_ga2d_pattern_check(
+            (const volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END -
+                                                   RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                                                   UINT32_C(0x100)),
+            RS_CI_SMOKE_GA2D_DMA_WORDS) ||
+        !rs_ci_smoke_ga2d_pattern_check(
+            (const volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END -
+                                                   RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                                                   UINT32_C(0x340)),
+            RS_CI_SMOKE_GA2D_JOB_WORDS)) {
+        return false;
+    }
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_DMA, &dma_after) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_after) != RS_OK)) {
+        return false;
+    }
+    return (dma_after.read_requests > dma_before.read_requests) &&
+           (dma_after.write_requests > dma_before.write_requests) &&
+           (ga2d_after.read_requests > ga2d_before.read_requests) &&
+           (ga2d_after.write_requests > ga2d_before.write_requests);
+}
 #else
 static bool rs_ci_smoke_external_irq(void) {
     return true;
 }
 
 static bool rs_ci_smoke_ga2d_irq(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_bounded_wait(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_dma_contention(void) {
     return true;
 }
 #endif
@@ -997,6 +1165,14 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 15U);
     }
     printf("ci_smoke: GA2D P5 IRQ passed\n");
+    if (!rs_ci_smoke_ga2d_bounded_wait()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: GA2D bounded wait passed\n");
+    if (!rs_ci_smoke_ga2d_dma_contention()) {
+        rs_test_finish(RS_TEST_FAILED, 16U);
+    }
+    printf("ci_smoke: GA2D DMA contention passed\n");
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

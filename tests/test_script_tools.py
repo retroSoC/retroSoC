@@ -1177,7 +1177,7 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
         encoding="utf-8"
     )
 
-    assert "JTAG_IDCODE              ?= DEADBEEF" in makefile
+    assert "JTAG_IDCODE       ?= DEADBEEF" in makefile
     assert "if [ $$value -gt 2147483647 ]" in makefile
     assert "HAVE_DEBUG               ?=" not in makefile
     assert ".MULDIV_UNROLL      (2)" in wrapper
@@ -1210,7 +1210,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
     assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
-    assert re.search(r"^SOC_SIM_TIME\s+\?= 600$", benchmark_profile, re.MULTILINE)
+    assert re.search(r"^SOC_SIM_TIME\s+\?= 25200$", benchmark_profile, re.MULTILINE)
     assert "VERILATOR_SIM_ARGS ?= --fast-flash" in benchmark_profile
     offset_match = re.search(
         r"^#define\s+RS_BENCHMARK_SRAM_OFFSET\s+UINT32_C\((0x[0-9A-F]+)\)$",

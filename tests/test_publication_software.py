@@ -95,8 +95,9 @@ def test_application_results_keep_early_return_and_repeated_stage_values():
         ("return", 1), ("test-fail", 1), ("test-fail", 2), ("test-fail", 3), ("test-pass", 0)]
     assert [r["id"] for r in smoke["stages"] if r["code"] == 12] == ["sram", "usb"]
     assert [r["id"] for r in smoke["stages"] if r["code"] == 13] == ["monitor-start", "monitor-check"]
-    assert [r["id"] for r in smoke["stages"] if r["code"] == 15] == ["external-irq", "ga2d-p5-composition-dma"]
-    assert len(smoke["stages"]) == 19
+    assert [r["id"] for r in smoke["stages"] if r["code"] == 15] == [
+        "external-irq", "ga2d-p5-composition-dma", "ga2d-bounded-wait"]
+    assert len(smoke["stages"]) == 21
 
 
 @pytest.mark.parametrize("mutation", ["omit", "duplicate-stage", "value", "scope", "trigger"])

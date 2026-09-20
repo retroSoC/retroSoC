@@ -443,3 +443,7 @@ def test_p5_reference_campaign_is_deterministic_for_ten_thousand_mixed_jobs() ->
         assert offsets == {offset for offset in range(8) if offset % pixel_alignment(fmt) == 0}
     for fmt, offsets in seen_destination_offsets.items():
         assert offsets == {offset for offset in range(8) if offset % pixel_alignment(fmt) == 0}
+    print(
+        "GA2D_REFERENCE_CAMPAIGN seeds=0..9 jobs=10000 "
+        f"combos={len(seen_cases)}/{len(legal_cases)} inplace=covered result=PASS"
+    )

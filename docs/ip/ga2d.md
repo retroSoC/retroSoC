@@ -12,6 +12,11 @@ explicit approval of the research choices. Phase 0 is documentation only;
 Phases 1 through 6 are implementation requirements, not completed work. This
 freeze is not an `rtl-freeze` or `verified` readiness claim. There is no
 implemented GA2D, measured GA2D PPA, or silicon qualification at this freeze.
+On 2026-09-18, Phases 1 through 6 implementation and verification evidence
+was recorded in "Phase 6 Implementation and Evidence Record" below; that
+record appends evidence without amending these freeze statements, and its
+behavioral, formal, and block-level results are not a silicon-qualification
+or verified-readiness claim.
 
 The feature slug is `ga2d`; this file is its authoritative specification.
 Stable phase headings and `GA2D-PN` identifiers in Development Order name the
@@ -1156,7 +1161,7 @@ remain explicitly outside the MVP evidence claim.
 | Gap | Disposition |
 | --- | --- |
 | GA2D-GAP-01: JPEG admission baseline | Resolved by the separately approved JPEG/fabric repair: `master_read_limit()` and `master_write_limit()` now grant master 6 one normal credit each, and `master_priority()` assigns class 8. Direct crossbar and PCLK-to-HP bridge tests cover admission, response routing, bounded credit, arbitration, ACL rejection, and drain. This makes JPEG available to a future V13 campaign; it does not complete JPEG contention, V13, Phase 6, or final platform closure. |
-| No GA2D implementation evidence | Phases 1..6 must supply the matrix, artifacts and results. Research arithmetic is not an achieved throughput number. |
+| No GA2D implementation evidence | Resolved by Phases 1..6 as recorded in "Phase 6 Implementation and Evidence Record" below (2026-09-18). The measured behavioral throughput there is approximately 7.7-8.8 MB/s at the reset-state 24 MHz clocks; the 184.32 MB/s composition figure remains a traffic requirement, not an achieved number, and the full-product synthesis/STA/netlist record remains pending in that section. |
 | Memory clock/performance characterization | Record actual memory-root and device clocks, refresh/turnaround and active QPI/OPI device configuration. Existing prose about nominal SDRAM frequency is not a measurement; GA2D does not change the PHY to satisfy a benchmark. |
 | Portable software integration | LVGL asynchronous drawing/fallback, a versioned queue ABI, Linux DMA/graphics integration and release examples require later approved phases. |
 | Verification closure | Reusable protocol VIP, coverage closure, long-duration stress and unbounded liveness evidence are separate from the directed/bounded MVP checks. |
@@ -1168,3 +1173,71 @@ implementation evidence or explicitly deferred work. The first implementation
 phase is **Phase 1 - Expand LP Interrupt Platform** (`GA2D-P1`); it begins with
 a separate read-only implementation preflight, not implicit authorization to
 execute all phases together.
+
+## Phase 6 Implementation and Evidence Record
+
+Recorded on 2026-09-18. This section appends measured evidence; it does not
+amend the frozen requirements, allocations, register/ABI tables, or phase
+scope above.
+
+### Scope and provenance
+
+Phases 1 through 6 were implemented per this specification. The evidence
+below was collected on the dev branch worktree from these named
+build-variant artifact roots: `build/ihp130-2026-09-16-18-16-097d0f6c4459`
+(PR ci_smoke), `build/ihp130-hp-2026-09-16-14-22-0ac7c74ed0d4` (HP
+acceptance), `build/ihp130-hazard3-2026-09-16-17-11-cb9ebfdcca5c`
+(benchmark), `build/ihp130-2026-09-16-21-59-30dd090c4e58` (formal),
+`build/ihp130-2026-09-16-20-38-30dd090c4e58` (block synthesis),
+`build/ihp130-2026-09-16-21-02-30dd090c4e58` (block netlist simulation),
+and `build/ihp130-2026-09-16-21-10-30dd090c4e58` (block STA). Hosted CI is
+behavioral-only and was not used as synthesis, STA, or netlist evidence;
+metrics remained in observe mode. The ICS55 commercial-model limitation
+note applies to the `regress-pr` record when it is appended.
+
+All behavioral measurements are Verilator results at the reset-state 24 MHz
+PCLK/mgmt clocks (`cpu_hz=pclk_hz=24000000` in the benchmark log); they are
+not silicon results and do not establish operation at the 48 MHz STA
+constraint. The 184.32 MB/s composition figure in this specification is a
+traffic requirement, not an achieved number: the measured effective
+throughput is approximately 7.7-8.8 MB/s at 24 MHz, and the 60
+compositions/second 800x480 target is not met by these runs.
+
+### Acceptance matrix results
+
+| Evidence ID | Result | Evidence and artifacts |
+| --- | --- | --- |
+| GA2D-V01 | PASS | Static map/topology/parity: `tests/test_ga2d_platform.py`, `tests/test_memory_map.py`, and `tests/test_soc_topology.py`, all inside the 908-test green `python3 -m pytest -q` run. |
+| GA2D-V02 | PASS | LP Xh3irq real interrupt evidence: ci_smoke `rs_ci_smoke_external_irq` (ordinals 0/15/16/29/30/31/32, invalid 62, priority matrix, no-handler masking, timer/software coexistence) and `rs_ci_smoke_ga2d_irq` (real DONE IRQs on external ordinal 30 for fill/copy/convert/blend/A8 in-place jobs); CSR-disabled stubs via `tests/test_lp_irq.py`. Artifact: PR ci_smoke run `build/ihp130-2026-09-16-18-16-097d0f6c4459` (SIM_TEST_PASS code=0, 9,559,082 cycles). |
+| GA2D-V03 | PASS | Master-8 fabric evidence: `tests/rtl/ga2d_platform_tb.sv` (SRAM byte-exact R/W; SDRAM/QPI/OPI/XPI per-gateway legs with exact-address attribution; denial paths: nonzero AxCACHE reason 3, AxLOCK reason 4, MMIO reason 1 target 5, instruction reason 3, XPI-write reason 3 target 4, inactive-OPI reason 2 target 5; fabric-monitor FAULT[12] master high bit; global-ID non-alias including 7'h40 preservation and 7'h00-never-seen; JPEG master-6 admission per GA2D-GAP-01). Full-SoC 16-beat SDRAM bursts are additionally proven by the GA2D-V12 benchmark after the `axi4_downsizer_64to32` long-burst split fix. |
+| GA2D-V04 | PASS | Independent golden model: `tests/ga2d_reference.py` plus `tests/test_ga2d_dma.py` (42 cases: exhaustive RGB565 expand/repack over all 65536 values, all 16 convert pairs, two-stage rounded blend, all 256x256 pixel-alpha x global-alpha pairs, boundary alphas 0/1/127/128/254/255 with ramps, in-place ordering, overlap rejection, extent overflow). |
+| GA2D-V05 | PASS | Burst/edge evidence: `tests/rtl/ga2d_dma_tb.sv` directed cases (1/2/4/8-byte read edges, awlen 0/14/15, 4 KiB crossing, end-of-mapped-memory, guard bytes, no padding reads/writes) plus the GA2D-V07 campaign coverage. |
+| GA2D-V06 | PASS | APB/register evidence: `tests/rtl/ga2d_tb.sv` plus `tests/rtl/ga2d_wrapper_tb.sv` (including validation-ERROR IRQ semantics: mask/unmask/W1C and ERROR_STATUS immutability) plus `tests/test_ga2d_register_parity.py` (exhaustive SVH/C parity in both directions). |
+| GA2D-V07 | PASS | Randomized/fault evidence: RTL mixed campaign of 10 seeds (0x9e3779b9 ^ 0..9) x 1000 jobs = 10,000 jobs under randomized independent channel delays with delay-coverage assertion, byte-exact scoring including guards/padding and in-place blends; SLVERR/DECERR, bad-ID/bad-RLAST quarantine plus recovery, watchdog timeout recovery; Python reference campaign of 10 seeds (0..9) x 1000 jobs. Both campaigns emit deterministic summary lines (GA2D_CAMPAIGN / GA2D_REFERENCE_CAMPAIGN). |
+| GA2D-V08 | PASS | Lifecycle evidence: `tests/rtl/ga2d_dma_tb.sv` abort/quiesce/reset at transaction states including the stalled-AW source stop; `tests/rtl/ga2d_platform_tb.sv` warm-flush epoch invalidation, HP reset epoch bump, PCLK reset source closure, and W-before-AW block drain; Phase 6 added HP clock-rate switching (22<->34 ns) across a coordinated flush with a presented-but-not-accepted read and byte-exact recovery. The stopped-clock flush is documented as a system recovery condition: the PCLK-local epoch must advance and the flush must not complete while the clock is stopped. |
+| GA2D-V09 | PASS | IRQ routing: `tests/rtl/resource_controller_tb.sv` index-8 dynamics (pending level follows the LP<->HP handoff in both directions, resource reset masks both routes, owner lock plus illegal-handoff fault, handoff counter), wrapper-level ERROR route, real LP vector-32 route in ci_smoke, HP PLIC source-11 line observability in platform tests, and unchanged LP29 fault meaning. |
+| GA2D-V10 | PASS | LP/HP acceptance: the ci_smoke LP payloads above plus `rs_ci_smoke_ga2d_bounded_wait` (a forced RS_ETIMEOUT with a tiny budget proves no safe-idle implication and no buffer reclaim; a later bounded wait completes byte-exact; an idle abort_wait returns RS_OK). HP acceptance end-to-end: `make CONFIG=configs/ci/ihp130-hp.mk SIMU=VERILATOR hp-smoke-sim` PASS with markers HP_LINUX_READY, HP_GA2D_PASS, HP_GA2D_CACHE_CLEAN (`build/ihp130-hp-2026-09-16-14-22-0ac7c74ed0d4`, 3,652,076 cycles, 199 s), exercising 64-byte-line CBO clean/invalidate and the LP<->HP ownership handoff. |
+| GA2D-V11 | PASS (bounded) | `make CONFIG=configs/ci/ihp130.mk formal-ga2d`: prove PASS (BMC depth 36, bitwuzla, 196 s) and cover PASS (depth 199, 4846 s) under `build/ihp130-2026-09-16-21-59-30dd090c4e58/formal/ga2d/`. These are bounded-model results, not unbounded liveness proofs. |
+| GA2D-V12 | PASS | Benchmark matrix of 18 cases (fill/copy/convert/blend/blend_a8 x 320x240/480x272/800x480 contiguous, plus strided representatives copy@320x240_s, convert@480x272_s, blend@800x480_s) plus the legacy 8x4 cases. Artifact: `build/ihp130-hazard3-2026-09-16-17-11-cb9ebfdcca5c/meta/performance.json` (28 samples, schema 3; merged from two segments of the same deterministic firmware after a sim-time budget retry, with the merged PERF log preserved beside it as `performance-merged.log`). Key 800x480 contiguous numbers at PCLK = 24 MHz (MB/s, pixels/s, job latency): fill 8.839 / 4,419,747 / 86.9 ms; copy 7.974 / 1,993,396 / 192.6 ms; convert 7.813 / 1,562,615 / 245.7 ms; blend 7.678 / 959,793 / 400.1 ms; blend_a8 7.932 / 1,586,322 / 242.1 ms. Strided is approximately contiguous (blend@800x480 strided 7.675 vs 7.678 MB/s). LP CPU cost is recorded per case (blend@800x480: 25.018 LP cycles/pixel). Pipeline context at these clocks: the engine runs at about 5.4 cycles/pixel for fill and about 25.0 cycles/pixel for blend. |
+| GA2D-V13 | PASS | Contention: `tests/rtl/ga2d_platform_tb.sv` with five seeded BFM masters (dma/apu/sdio0/sdio1/usb2), a JPEG admission loop, and an HP-dcache CPU proxy concurrent with an 8-job GA2D battery; every competitor's progress counters strictly grow, GA2D results are byte-exact with guards intact, and worst-case grant latency was about 1.5k clk_io cycles against the stated 40k-cycle fairness bound (aging-promotion assumption). ci_smoke `rs_ci_smoke_ga2d_dma_contention`: a central-DMA 256 B transfer and a GA2D 1 KiB copy run concurrently in disjoint SDRAM, byte-exact, with fabric-monitor counters advancing for masters 2 and 8. SDRAM refresh contention is inherent in the full-SoC model runs. |
+| GA2D-V14 | PARTIAL | Block level complete, full product pending. (i) Isolated block synthesis `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth-ga2d-block` (balanced recipe, PCLK target 20833 ps derived from the clock inventory): 64,952 cells, area 1,056,520.773, 9,765 DFFs, 0 latches, 0 black boxes; the three 32x64 FIFOs map to flip-flops (2048 storage DFF plus 16 pointer/count DFF each); gated by `ga2d_block_summary.json`; `build/ihp130-2026-09-16-20-38-30dd090c4e58`. (ii) Synthesized-block transaction test `netsim-ga2d-block` / `tests/test_ga2d_netlist.py` PASS: the IHP130 netlist executes real FILL/COPY/BLEND jobs with exact pixels/counters/IRQ plus a validation-error case with zero AXI traffic (`build/ihp130-2026-09-16-21-02-30dd090c4e58`). (iii) Block STA `sta-ga2d-block` (sg13g2 slow corner 1.08 V/125 C, PCLK 20.833333333 ns, honest negative): WNS -21.61 ns, TNS -20606.71 ns (report capped at 1000 endpoints), hold clean (0.00/0.00); the top paths are ~189 logic levels from the DMA row-byte counter through the validation address/range logic into the first-error registers; at this corner the block closes at about 23.5 MHz (`build/ihp130-2026-09-16-21-10-30dd090c4e58`). (iv) Full-product synthesis/STA/netlist-boot/warning/metric collection: PENDING under the frozen command `python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only` (recorded separately when the run completes). |
+
+### Defects found and fixed during Phase 6
+
+- `axi4_downsizer_64to32` now splits aligned 64-bit INCR bursts longer than
+  eight beats into at most two sequential legal 32-bit transactions; GA2D
+  16-beat SDRAM bursts previously tripped its geometry assertion. The
+  testbench was extended and `docs/axi4-interconnect.md` updated.
+- `formal.mk` cover recipe missing-paren fix; this pre-existing dev-branch
+  defect broke every cover stage.
+- Benchmark runtime fixes: `mcycle` `mcountinhibit` clear and a `.bss`
+  payload offset correction.
+- ci_smoke moved to `-Os` for the 32 KiB image.
+
+### Remaining gaps
+
+Physical and silicon signoff items remain outside the MVP evidence per the
+Commercial Delivery Gaps table above, and no mW or mm2 target is invented.
+The block-level 48 MHz timing is unclosed and blocks any higher-frequency
+claim. Full-product area/timing/warning/metric numbers land with the
+regression record in GA2D-V14 (iv).

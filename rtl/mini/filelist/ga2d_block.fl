@@ -1,0 +1,17 @@
++incdir+/clusterip/common/rtl
++incdir+/clusterip/common/rtl/interface
++incdir+/ip/multimedia
+/clusterip/common/rtl/interface/apb4_if.sv
+/clusterip/common/rtl/interface/axi4_if.sv
+/clusterip/common/rtl/utils/register.sv
+/clusterip/common/rtl/utils/fifo.sv
+/clusterip/common/rtl/stream/round_robin_arbiter.sv
+/ip/multimedia/ga2d_pkg.sv
+/ip/multimedia/ga2d_addr_gen.sv
+/ip/multimedia/ga2d_axi4_master.sv
+/ip/multimedia/ga2d_dma.sv
+/ip/multimedia/ga2d_pixel.sv
+/ip/multimedia/ga2d_core.sv
+/ip/multimedia/ga2d_reg.sv
+/ip/multimedia/apb4_ga2d.sv
+/physical/smoke/syn/yosys/apb4_ga2d_block_top.sv
