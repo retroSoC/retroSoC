@@ -133,3 +133,17 @@ def test_hp_boot_uses_private_ga2d_mailbox_and_resource_lifecycle() -> None:
         "HP_GA2D_CACHE_CLEAN",
     ):
         assert requirement in source
+
+
+def test_hp_boot_p5_transfers_npu_resource_and_reports_completion() -> None:
+    source = (ROOT / "app/apps/hp_boot/main.c").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    for requirement in (
+        "rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_HP, false)",
+        "rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false)",
+        "rs_hp_boot_wait_npu_idle",
+        "HP_NPU_PASS",
+        "npu-p5-hp-sim",
+    ):
+        assert requirement in source or requirement in makefile

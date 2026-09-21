@@ -274,6 +274,7 @@ module npu_scheduler (
   logic [13:0] s_wchunk_q;
   logic [12:0] s_wfill_off_q;
   logic s_whalf_q;
+  logic s_w_stream_q;  // weights exceed the two local W halves; fetch per K slice
   logic [31:0] s_pdone_q;
   logic [31:0] s_prem_q;
   logic [7:0] s_pchunk_q;
@@ -964,12 +965,14 @@ module npu_scheduler (
   assign s_a_read_addr = (s_state_q == SchMacStream) ? 13'(s_mac_k_q[10:0] << 3) :
       13'((s_vec_row << 3));
   assign s_w_read_valid = s_a_read_valid;
-  assign s_w_read_addr = 13'(s_wrow_lsb[9:0] << 3);
+  assign s_w_read_addr = s_w_stream_q ?
+      ((s_state_q == SchMacStream) ? 13'(s_mac_k_q[9:0] << 3) :
+       13'({9'd0, s_vec_k_q} << 3)) : 13'(s_wrow_lsb[9:0] << 3);
   assign s_vec_row = {8'd0, s_pidx_q} * 13'd9 + {9'd0, s_vec_k_q};
   assign s_wrow_abs = {24'd0, s_wrow_q} + {9'd0, s_ks0_q} +
       ((s_state_q == SchMacStream) ? {9'd0, s_mac_k_q} : {30'd0, s_vec_k_q});
   assign s_wrow_lsb = 10'(s_wrow_abs);
-  assign s_w_read_half = s_wrow_abs[10];
+  assign s_w_read_half = s_w_stream_q ? 1'b0 : s_wrow_abs[10];
   assign s_a_read_half = s_ahalf_q;
 
   // MAC array handshake: consume a returned row each cycle. The fault drain
@@ -1287,7 +1290,10 @@ module npu_scheduler (
     unique case (s_state_q)
       SchIdle: begin
         if (rec_valid_i && rec_ready_o) begin
-          s_state_d = (rec_weight_bytes_i != 32'd0) ? SchWCmd :
+          // Up to 16 KiB is resident for the descriptor. Larger tensors are
+          // fetched a group/K-slice at a time after packing the matching A.
+          s_state_d = ((rec_weight_bytes_i != 32'd0) &&
+                       (rec_weight_bytes_i <= 32'd16384)) ? SchWCmd :
               (rec_param_bytes_i != 32'd0) ? SchPCmd : SchDescInit;
         end
       end
@@ -1298,7 +1304,9 @@ module npu_scheduler (
       end
       SchWStream: begin
         if (s_stream_accept && read_last_i) begin
-          if ((s_woff_q + {18'd0, s_wchunk_q}) >= s_wbytes_q) begin
+          if (s_w_stream_q) begin
+            s_state_d = SchParamRd;
+          end else if ((s_woff_q + {18'd0, s_wchunk_q}) >= s_wbytes_q) begin
             s_state_d = (s_pbytes_q != 32'd0) ? SchPCmd : SchDescInit;
           end else begin
             s_state_d = SchWCmd;
@@ -1336,7 +1344,7 @@ module npu_scheduler (
         if (s_p_window_refill) begin
           s_state_d = SchPCmd;
         end else if (s_is_dense && s_a_reuse && s_a_ready_q) begin
-          s_state_d = SchParamRd;
+          s_state_d = s_w_stream_q ? SchWCmd : SchParamRd;
         end else begin
           s_state_d = SchGathSeg;
         end
@@ -1413,11 +1421,11 @@ module npu_scheduler (
       SchPackWait: begin
         if (s_pack_done) begin
           if (s_is_dw) begin
-            s_state_d = SchParamRd;
+            s_state_d = s_w_stream_q ? SchWCmd : SchParamRd;
           end else if (s_a_reuse && !s_a_ready_q && !s_slice_last) begin
             s_state_d = SchGathSeg;
           end else begin
-            s_state_d = SchParamRd;
+            s_state_d = s_w_stream_q ? SchWCmd : SchParamRd;
           end
         end
       end
@@ -1713,6 +1721,7 @@ module npu_scheduler (
       s_wchunk_q          <= '0;
       s_wfill_off_q       <= '0;
       s_whalf_q           <= 1'b0;
+      s_w_stream_q        <= 1'b0;
       s_pdone_q           <= '0;
       s_prem_q            <= '0;
       s_pchunk_q          <= '0;
@@ -1890,6 +1899,7 @@ module npu_scheduler (
           s_act_min_q <= rec_act_min_i;
           s_act_max_q <= rec_act_max_i;
           s_wbytes_q <= rec_weight_bytes_i;
+          s_w_stream_q <= rec_weight_bytes_i > 32'd16384;
           s_pbytes_q <= rec_param_bytes_i;
           s_desc_idx_q <= rec_desc_index_i;
           s_kp_count_q <= s_rec_kp_count;
@@ -1943,18 +1953,38 @@ module npu_scheduler (
         end
 
         // weights fill bookkeeping
+        // Large weight tensors use the same DMA/fill states as descriptor
+        // prefill, but each visit maps just the current group/K-slice to W
+        // half zero. K_SLICE<=1024 bounds every dense refill to 8192 bytes.
+        if (s_w_stream_q && (s_state_d == SchWCmd) &&
+            ((s_state_q == SchGrpInit) || (s_state_q == SchPackWait))) begin
+          if (s_is_dw) begin
+            s_woff_q   <= 32'(s_wrow_q << 3);
+            s_wchunk_q <= 14'd72;
+          end else if (s_a_reuse) begin
+            s_woff_q   <= 32'(s_wrow_q << 3);
+            s_wchunk_q <= 14'(s_full_k_q << 3);
+          end else begin
+            s_woff_q   <= 32'((s_wrow_q + {9'd0, s_ks0_q}) << 3);
+            s_wchunk_q <= 14'({3'd0, s_klen_q} << 3);
+          end
+          s_wfill_off_q <= '0;
+          s_whalf_q     <= 1'b0;
+        end
         if ((s_state_q == SchWCmd) && s_read_accept) begin
           s_wfill_off_q <= '0;
         end
         if ((s_state_q == SchWStream) && s_stream_accept) begin
           s_wfill_off_q <= s_wfill_off_q + 13'd8;
           if (read_last_i) begin
-            s_woff_q  <= s_woff_q + {18'd0, s_wchunk_q};
-            s_whalf_q <= ~s_whalf_q;
-            if ((s_wbytes_q - (s_woff_q + {18'd0, s_wchunk_q})) > 32'd8192) begin
-              s_wchunk_q <= 14'd8192;
-            end else begin
-              s_wchunk_q <= 14'(s_wbytes_q - (s_woff_q + {18'd0, s_wchunk_q}));
+            if (!s_w_stream_q) begin
+              s_woff_q  <= s_woff_q + {18'd0, s_wchunk_q};
+              s_whalf_q <= ~s_whalf_q;
+              if ((s_wbytes_q - (s_woff_q + {18'd0, s_wchunk_q})) > 32'd8192) begin
+                s_wchunk_q <= 14'd8192;
+              end else begin
+                s_wchunk_q <= 14'(s_wbytes_q - (s_woff_q + {18'd0, s_wchunk_q}));
+              end
             end
           end
         end
@@ -2737,6 +2767,17 @@ module npu_scheduler (
             // a new pass or tile starts a fresh staging window: the position
             // index restarts at slot 0 for both the compute and store loops
             s_pidx_q <= '0;
+            // Only one 8192-byte parameter window is resident. If the prior
+            // pass reached a later window, rewind the external stream so the
+            // new pass's group zero cannot consume those stale records.
+            if (s_pbytes_q > 32'd8192) begin
+              s_pdone_q     <= '0;
+              s_prem_q      <= '0;
+              s_pchunk_q    <= '0;
+              s_poff_q      <= '0;
+              s_phalf_q     <= 1'b0;
+              s_pend_last_q <= 1'b0;
+            end
             if (s_pass_last) begin
               // next tile
               if (({16'd0, s_tx_q} + {24'd0, s_tw_q}) < {16'd0, s_ow_q}) begin
@@ -2758,6 +2799,23 @@ module npu_scheduler (
               end
             end else begin
               s_pbase_q <= s_pbase_q + s_pcnt_q;
+              // The final position of the old pass did not take the
+              // same-pass position-advance branch above. Move the compute
+              // cursor to the first position of the next pass now.
+              if (({1'b0, s_dx_q} + 5'd1) == {1'b0, s_tcols_q}) begin
+                s_dx_q <= '0;
+                s_dy_q <= s_dy_q + 4'd1;
+              end else begin
+                s_dx_q <= s_dx_q + 4'd1;
+              end
+              if (s_is_pool) begin
+                if (({1'b0, s_gdx_q} + 5'd1) == {1'b0, s_tcols_q}) begin
+                  s_gdx_q <= '0;
+                  s_gdy_q <= s_gdy_q + 4'd1;
+                end else begin
+                  s_gdx_q <= s_gdx_q + 4'd1;
+                end
+              end
             end
             s_group_q   <= '0;
             s_wrow_q    <= '0;

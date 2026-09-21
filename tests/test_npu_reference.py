@@ -535,11 +535,17 @@ def test_clamp():
     assert output.zero_point == inputs.zero_point
 
 
+def _kws_softmax(logits, **overrides):
+    params = {"input_multiplier": 1242899200, "input_left_shift": 24, "diff_min": -124}
+    params.update(overrides)
+    return softmax_int8(logits, **params)
+
+
 def test_softmax_int8_kws_logits():
     logits = Tensor(
         (1, 1, 12), (12, -3, 15, -20, 7, 25, -31, 13, -9, 5, -17, 30), 0.1446, 14
     )
-    output = softmax_int8(logits)
+    output = _kws_softmax(logits)
     # Frozen constants computed once with the pinned integer path in
     # npu_reference.softmax_int8 (input_multiplier=1242899200, left shift 24,
     # diff_min=-124) and cross-checked against a float64 softmax at the
@@ -556,19 +562,19 @@ def test_softmax_int8_kws_logits():
 
 def test_softmax_int8_edge_cases():
     # Uniform logits give a uniform distribution: 256/12 rounds to 21 per class.
-    uniform = softmax_int8(Tensor((1, 1, 12), (5,) * 12, 0.1446, 0))
+    uniform = _kws_softmax(Tensor((1, 1, 12), (5,) * 12, 0.1446, 0))
     assert uniform.data == (-107,) * 12
     # Every non-maximum class below diff_min: the winner takes probability one,
     # which saturates the INT8 output at 127; excluded classes emit -128.
-    single = softmax_int8(Tensor((1, 1, 3), (0, -125, -125), 0.1446, 0))
+    single = _kws_softmax(Tensor((1, 1, 3), (0, -125, -125), 0.1446, 0))
     assert single.data == (127, -128, -128)
     # diff_min boundary: -124 is included, -125 is excluded (both emit -128
     # here because exp(-124) is far below one output LSB).
-    boundary = softmax_int8(Tensor((1, 1, 3), (0, -124, -125), 0.1446, 0))
+    boundary = _kws_softmax(Tensor((1, 1, 3), (0, -124, -125), 0.1446, 0))
     assert boundary.data == (127, -128, -128)
     # Softmax runs over the trailing channel dim of each H*W row; tied maxima
     # share probability equally.
-    two_rows = softmax_int8(Tensor((1, 2, 3), (10, 0, -10, -5, 5, 15), 0.1446, 0))
+    two_rows = _kws_softmax(Tensor((1, 2, 3), (10, 0, -10, -5, 5, 15), 0.1446, 0))
     assert two_rows.data == (70, -81, -117, -117, -81, 70)
     assert sum(value + 128 for value in two_rows.data[:3]) == 256
     assert sum(value + 128 for value in two_rows.data[3:]) == 256
@@ -579,14 +585,14 @@ def test_softmax_int8_accumulation_overflow():
     # wrapping the checked Q12 accumulation.
     logits = Tensor((1, 1, 4096), (7,) * 4096, 0.1, 0)
     with pytest.raises(ArithmeticFault):
-        softmax_int8(logits)
+        _kws_softmax(logits)
 
 
 def test_softmax_int8_parameter_validation():
     logits = Tensor((1, 1, 2), (0, -1), 0.1446, 0)
     with pytest.raises(ValueError):
-        softmax_int8(logits, input_multiplier=-1)
+        _kws_softmax(logits, input_multiplier=-1)
     with pytest.raises(ValueError):
-        softmax_int8(logits, input_left_shift=25)
+        _kws_softmax(logits, input_left_shift=32)
     with pytest.raises(ValueError):
-        softmax_int8(logits, diff_min=-125)
+        _kws_softmax(logits, diff_min=-125)

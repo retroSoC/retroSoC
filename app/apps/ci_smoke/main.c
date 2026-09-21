@@ -12,6 +12,7 @@
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/npu_regs.h>
+#include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/rng.h>
@@ -23,6 +24,15 @@
 #include <retrosoc/hal/user_ip.h>
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
+
+#if defined(RS_NPU_P5_ACCEPTANCE)
+#include "kws_npu.h"
+#include "npu_acceptance_data.h"
+
+static rs_kws_npu_workspace_t rs_ci_smoke_npu_workspace;
+static rs_kws_npu_profile_t rs_ci_smoke_npu_profile;
+static int8_t rs_ci_smoke_npu_output[RS_NPU_ACCEPTANCE_OUTPUT_BYTES];
+#endif
 
 static bool rs_ci_smoke_archinfo_v2(void) {
     rs_archinfo_t info;
@@ -652,6 +662,39 @@ static bool rs_ci_smoke_npu_irq(void) {
     RS_NPU_REG(RS_NPU_REG_IRQ_TEST) = RS_NPU_IRQ_ALL;
     __enable_irq();
     passed = rs_ci_smoke_wait_npu_irq(1U);
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    if (passed) {
+        rs_kws_npu_regions_t regions;
+        rs_npu_status_t status;
+        uint32_t index;
+
+        RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+        if ((rs_kws_npu_default_regions(&rs_ci_smoke_npu_workspace, &regions) != RS_OK) ||
+            (rs_kws_npu_prepare(&rs_ci_smoke_npu_workspace, &regions, rs_npu_acceptance_input,
+                                RS_NPU_ACCEPTANCE_INPUT_BYTES) != RS_OK) ||
+            (rs_npu_irq_enable(RS_NPU_IRQ_DONE | RS_NPU_IRQ_ERROR | RS_NPU_IRQ_ABORTED) != RS_OK) ||
+            (rs_kws_npu_execute(&rs_ci_smoke_npu_workspace, UINT32_C(0x4E505535),
+                                RS_TIMEOUT_DEFAULT, rs_ci_smoke_npu_output,
+                                RS_NPU_ACCEPTANCE_OUTPUT_BYTES,
+                                &rs_ci_smoke_npu_profile) != RS_OK) ||
+            (rs_npu_get_status(&status) != RS_OK) || (status.result_code != RS_NPU_RESULT_DONE) ||
+            (status.completed_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT) ||
+            (rs_ci_smoke_npu_irq_count < 2U) ||
+            (rs_ci_smoke_npu_profile.counters.retired_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT)) {
+            passed = false;
+        }
+        for (index = 0U; (index < RS_NPU_ACCEPTANCE_OUTPUT_BYTES) && passed; ++index) {
+            if (rs_ci_smoke_npu_output[index] != rs_npu_acceptance_output[index]) {
+                passed = false;
+            }
+        }
+        printf("NPU_P5_LP model=kws active=%llu read=%llu write=%llu softmax=%llu\n",
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.active_cycles,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_read_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_write_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.softmax_cycles);
+    }
+#endif
     __disable_irq();
     RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = 0U;
     if (rs_irq_disable_external(RS_SOC_EXT_IRQ_NPU) != RS_OK) {
@@ -1051,7 +1094,11 @@ int main(void) {
     if (!rs_ci_smoke_npu_irq()) {
         rs_test_finish(RS_TEST_FAILED, 16U);
     }
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    printf("ci_smoke: NPU P5 deployment passed\n");
+#else
     printf("ci_smoke: NPU P2 IRQ passed\n");
+#endif
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

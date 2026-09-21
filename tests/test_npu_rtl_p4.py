@@ -774,6 +774,17 @@ def _operator_cases(tmp_path: Path) -> list[list[str]]:
     compute("conv_c4096_w16k", lambda rng, job: _conv_like(
         rng, job, opcode=OP_CONV2D, h=1, w=1, cin=4, cout=4096, kh=1, kw=1, sh=1, sw=1,
         pads=(0, 0, 0, 0), zin=0, zout=0, tile=(1, 1), k_slice=4, act=(-128, 127)))
+    # The 64 KiB parameter tensor spans eight local windows. A second staging
+    # pass must rewind to group zero instead of reusing the final window.
+    compute("conv_c4096_m3", lambda rng, job: _conv_like(
+        rng, job, opcode=OP_CONV2D, h=1, w=3, cin=4, cout=4096, kh=1, kw=1, sh=1, sw=1,
+        pads=(0, 0, 0, 0), zin=0, zout=0, tile=(1, 3), k_slice=4, act=(-128, 127)))
+    # More than the two 8 KiB W halves must stream by group/K slice without
+    # later external chunks overwriting the weights of earlier groups.
+    compute("conv_pw_w32k", lambda rng, job: _conv_like(
+        rng, job, opcode=OP_CONV2D, h=1, w=2, cin=128, cout=256, kh=1, kw=1,
+        sh=1, sw=1, pads=(0, 0, 0, 0), zin=-128, zout=-128, tile=(1, 2),
+        k_slice=37, act=(-128, 127)))
     compute("gap_multichunk", lambda rng, job: _gap_like(
         rng, job, h=64, w=32, cin=8, zp=0, tile=(1, 1), k_slice=1000, act=(-128, 127)))
     # -- strided rows (bank-heavy access patterns)

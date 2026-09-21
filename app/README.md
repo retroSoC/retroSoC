@@ -40,6 +40,15 @@ The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
 `APP_SRCS` and, when necessary, `APP_INC_DIRS` to the SDK sources selected by
 the central build.
 
+NPU-P5 acceptance extends existing compositions rather than adding an APP.
+`NPU_P5_ACCEPTANCE=YES` is valid only with `ci_smoke` or `hp_boot` and is part
+of the reproducible variant key. The LP path links the generated KWS plan into
+`ci_smoke`, uses the real LP completion interrupt, and writes the normal
+SYSCTRL verdict. The HP smoke bundle assigns resource 9 to hart 1, runs the
+same plan with polling and 64-byte Zicbom maintenance, then returns ownership
+before LP publishes the final verdict. The option defaults to `NO`, preserving
+normal PR firmware size and behavior.
+
 Build and simulate the supported profiles from the repository root:
 
 ```sh

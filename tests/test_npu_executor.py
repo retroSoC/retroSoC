@@ -32,7 +32,6 @@ from npu_executor import (  # noqa: E402
     FAULT_ARITHMETIC,
     FAULT_DESCRIPTOR,
     FAULT_RANGE,
-    FAULT_UNSUPPORTED,
     ExecutorFault,
     execute_job,
 )
@@ -48,6 +47,7 @@ from npu_model import (  # noqa: E402
 from npu_reference import (  # noqa: E402
     Tensor,
     add,
+    average_pool,
     conv2d,
     depthwise_conv2d,
     fully_connected,
@@ -565,7 +565,7 @@ def test_executor_rejects_misaligned_weight_base():
     assert code == FAULT_DESCRIPTOR
 
 
-def test_executor_faults_unsupported_pool_opcode():
+def test_executor_runs_average_pool_opcode():
     h, w, cin = 2, 2, 4
     descriptor = Descriptor(
         version_opcode=(ABI_VERSION << 16) | 6,  # AVERAGE_POOL: ABI-defined, not P0-placed
@@ -608,7 +608,11 @@ def test_executor_faults_unsupported_pool_opcode():
         },
     )
 
-    assert _fault_code(job, _values(h * w * cin)) == FAULT_UNSUPPORTED
+    result = execute_job(job, _raw(_values(h * w * cin)))
+    source = Tensor((h, w, cin), tuple(_values(h * w * cin)), 0.1, 3)
+    assert result.output == average_pool(
+        source, kernel_h=2, kernel_w=2, stride_h=2, stride_w=2
+    )
 
 
 def test_unsupported_placement_diagnostics():
@@ -620,8 +624,11 @@ def test_unsupported_placement_diagnostics():
         compile_model(
             _conv_graph(3, 3, 2, 4, 3, 3, activation="RELU_N1_TO_1"), workload="synthetic"
         )
-    with pytest.raises(CompilerError, match="activation"):
-        compile_model(_conv_graph(3, 3, 2, 4, 3, 3, activation="RELU6"), workload="synthetic")
+    relu6 = compile_model(
+        _conv_graph(3, 3, 2, 4, 3, 3, activation="RELU6"), workload="synthetic"
+    )
+    assert relu6.descriptors[0].act_min == relu6.descriptors[0].output_zero
+    assert relu6.descriptors[0].act_max <= 127
     with pytest.raises(CompilerError, match="symmetric"):
         compile_model(_conv_graph(3, 3, 2, 4, 3, 3, w_zps=(1, 0, 0, 0)), workload="synthetic")
     with pytest.raises(CompilerError, match="-128"):
@@ -631,7 +638,7 @@ def test_unsupported_placement_diagnostics():
         )
 
 
-def test_unsupported_placement_depthwise_and_pool():
+def test_depthwise_rejections_and_pool_placements():
     cin = 4
     base_tensors = (
         _tensor("in", (1, 4, 4, cin), scales=(0.4,), zps=(0,)),
@@ -680,13 +687,13 @@ def test_unsupported_placement_depthwise_and_pool():
         _tensor("out", (1, 2, 2, cin), scales=(0.4,), zps=(0,)),
     )
     graph = GraphInfo(tensors=pool_tensors, operators=(pool,), inputs=(0,), outputs=(1,))
-    with pytest.raises(CompilerError, match="placement"):
-        compile_model(graph, workload="synthetic")
+    max_job = compile_model(graph, workload="synthetic")
+    assert max_job.descriptors[0].opcode == 5
 
     partial = dataclasses.replace(pool, opcode=1, op_name="AVERAGE_POOL_2D")
     graph = GraphInfo(tensors=pool_tensors, operators=(partial,), inputs=(0,), outputs=(1,))
-    with pytest.raises(CompilerError, match="whole-input"):
-        compile_model(graph, workload="synthetic")
+    average_job = compile_model(graph, workload="synthetic")
+    assert average_job.descriptors[0].opcode == 6
 
 
 def test_kws_compile_execute_matches_reference(tmp_path):
@@ -720,7 +727,7 @@ def test_kws_compile_execute_matches_reference(tmp_path):
     manifest = write_artifacts(job, tmp_path / "kws")
     assert manifest["schema"] == 1
     assert manifest["numeric_profile"] == 1
-    assert manifest["compiler"]["contract"] == "npu-p0/1.0.0"
+    assert manifest["compiler"]["contract"] == "npu-p0/1.0.2"
     assert manifest["files"]["descriptors.bin"]["bytes"] == 11 * 128
     assert manifest["files"]["weights.bin"]["bytes"] == len(job.weights)
     assert manifest["required_opcode_mask"] == (1 << 1) | (1 << 2) | (1 << 3) | (1 << 7)

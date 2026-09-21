@@ -4925,7 +4925,9 @@
         3,
         4,
         9,
+        18,
         9,
+        18,
         10,
         11,
         12,
@@ -4934,11 +4936,12 @@
         15,
         16,
         17,
-        17
+        17,
+        19
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Linux-ready and P5 GA2D mailbox/cache-clean handoff completed; successful terminal status.",
+        "0": "Linux-ready and P5 GA2D/NPU mailbox/cache-clean handoff completed; successful terminal status.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -4955,7 +4958,9 @@
         "14": "GA2D did not return to the expected HP-owned safe idle state after the P5 FILL/COPY-subset job.",
         "15": "The request to hold HP after P5 GA2D completion returned an unexpected error.",
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
-        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed."
+        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
+        "18": "NPU LP-owned idle prerequisite, handoff to HP, or HP-owned idle confirmation failed.",
+        "19": "NPU handoff back to LP or LP-owned safe-idle confirmation failed."
       }
     }
   },

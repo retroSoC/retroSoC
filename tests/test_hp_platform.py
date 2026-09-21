@@ -108,6 +108,21 @@ def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
         assert marker in source
 
 
+def test_hp_smoke_p5_npu_payload_has_stack_cache_and_polling_plan() -> None:
+    source = (ROOT / "app/ports/linux/smoke/start.S").read_text(encoding="utf-8")
+    linker = (ROOT / "app/ports/linux/smoke/linker.ld").read_text(encoding="utf-8")
+    acceptance = (ROOT / "app/ports/linux/smoke/npu_acceptance.c").read_text(encoding="utf-8")
+    builder = (ROOT / "scripts/build_hp_smoke.py").read_text(encoding="utf-8")
+
+    assert "la      sp, _stack_top" in source
+    assert "call    rs_hp_npu_acceptance" in source
+    assert "_bss_start" in linker and "_bss_end" in linker and "_stack_top" in linker
+    assert "rs_kws_npu_execute" in acceptance
+    assert "rs_npu_irq_enable(0U)" in acceptance
+    assert "rs_npu_irq_ack(RS_NPU_IRQ_ALL)" in acceptance
+    assert '"--extra-source"' in builder and '"--include"' in builder
+
+
 def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     target = makefile.split("hp-smoke-sim: hp-smoke-bundle comp", 1)[1].split("\nifeq", 1)[0]

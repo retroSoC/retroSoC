@@ -23,6 +23,7 @@ module npu_operator_tb;
   // plusarg case configuration
   string               s_img_path;
   string               s_gold_path;
+  string               s_trace_path;
   logic        [ 31:0] s_job_base;
   logic        [ 31:0] s_job_count;
   logic        [ 31:0] s_job_id;
@@ -35,6 +36,10 @@ module npu_operator_tb;
   logic        [ 31:0] s_exp_macs;
   logic        [ 31:0] s_gold_base;
   logic        [ 31:0] s_gold_bytes;
+  logic        [ 31:0] s_trace_bytes;
+  logic                s_trace_enable;
+  logic        [ 39:0] s_trace                      [       0:262143];
+  int unsigned         s_trace_index;
 
   logic                clk_hp_i = 1'b0;
   logic                rst_hp_n_i = 1'b0;
@@ -206,7 +211,11 @@ module npu_operator_tb;
       .dma_write_cmd_err_i   (s_dma_write_cmd_err)
   );
 
-  npu_dma u_dma (
+  // Match the integrated NPU instance: the 64-to-32 system-memory downsizer
+  // admits at most eight AXI64 beats (sixteen downstream AXI32 beats).
+  npu_dma #(
+      .MaxBurstBeats(8)
+  ) u_dma (
       .clk_hp_i          (clk_hp_i),
       .rst_hp_n_i        (rst_hp_n_i),
       .clear_i           (flush_i || s_dma_clear),
@@ -316,6 +325,7 @@ module npu_operator_tb;
       s_bfm_write_bytes_q <= '0;
       s_rd_outstanding_q  <= 0;
       s_wr_outstanding_q  <= 0;
+      s_trace_index       <= 0;
     end else if (flush_i || s_dma_clear) begin
       s_rvalid_q         <= 1'b0;
       s_rbeats_q         <= '0;
@@ -395,8 +405,25 @@ module npu_operator_tb;
                 ((s_awaddr_q + 32'(lane)) >= (SramBase + MemoryBytes))) begin
               $fatal(1, "NPU operator TB: write escaped the memory BFM");
             end
+            if (s_trace_enable) begin
+              int unsigned trace_position;
+              trace_position = s_trace_index + count_ones8(npu_axi4.wstrb & (8'hff >> (8 - lane)));
+              if (trace_position >= s_trace_bytes) begin
+                $fatal(1, "NPU operator emitted an unexpected output byte at %h",
+                       s_awaddr_q + 32'(lane));
+              end
+              if ((s_trace[trace_position][39:8] != (s_awaddr_q + 32'(lane))) ||
+                  (s_trace[trace_position][7:0] != npu_axi4.wdata[lane*8+:8])) begin
+                $fatal(1, "NPU operator trace mismatch %0d: got %h=%h expected %h=%h",
+                       trace_position, s_awaddr_q + 32'(lane), npu_axi4.wdata[lane*8+:8],
+                       s_trace[trace_position][39:8], s_trace[trace_position][7:0]);
+              end
+            end
             s_memory[(s_awaddr_q+32'(lane))-SramBase] <= npu_axi4.wdata[lane*8+:8];
           end
+        end
+        if (s_trace_enable) begin
+          s_trace_index <= s_trace_index + count_ones8(npu_axi4.wstrb);
         end
         s_bfm_write_bytes_q <= s_bfm_write_bytes_q + {60'd0, count_ones8(npu_axi4.wstrb)};
         if (s_wbeats_q == 9'd1) begin
@@ -472,6 +499,12 @@ module npu_operator_tb;
       for (int unsigned index = 0; index < 32'(s_gold_bytes); index++) begin
         s_golden[index] = s_img[index/4][(index%4)*8+:8];
       end
+    end
+  endtask
+
+  task automatic load_trace(input string path_i);
+    begin
+      $readmemh(path_i, s_trace, 0, s_trace_bytes - 1);
     end
   endtask
 
@@ -614,6 +647,10 @@ module npu_operator_tb;
         $fatal(1, "NPU operator RETIRED_DESCRIPTORS %0d != %0d", snap_counter(s_snap, 9),
                s_job_count);
       end
+      if (s_trace_enable && (s_trace_index != s_trace_bytes)) begin
+        $fatal(1, "NPU operator trace consumed %0d of %0d expected bytes", s_trace_index,
+               s_trace_bytes);
+      end
       $display(
           "NPU operator counters: active=%0d macs=%0d pack=%0d bank_stall=%0d rd=%0d wr=%0d requant_stall=%0d retired=%0d",
           snap_counter(s_snap, 0), snap_counter(s_snap, 2), snap_counter(s_snap, 3), snap_counter(
@@ -644,24 +681,27 @@ module npu_operator_tb;
   endtask
 
   initial begin
-    s_phase      = "plusargs";
-    s_hold_ar_i  = 1'b0;
-    s_hold_r_i   = 1'b0;
-    s_hold_aw_i  = 1'b0;
-    s_hold_w_i   = 1'b0;
-    s_hold_b_i   = 1'b0;
-    s_job_base   = 32'd0;
-    s_job_count  = 32'd0;
-    s_job_id     = 32'd0;
-    s_timeout    = 32'd0;
-    s_scen       = 32'd0;
-    s_exp_fcode  = 32'd0;
-    s_exp_fdesc  = 32'hffff_ffff;
-    s_exp_faddr  = 32'd0;
-    s_exp_code   = 32'd0;
-    s_exp_macs   = 32'd0;
-    s_gold_base  = 32'd0;
-    s_gold_bytes = 32'd0;
+    s_phase        = "plusargs";
+    s_hold_ar_i    = 1'b0;
+    s_hold_r_i     = 1'b0;
+    s_hold_aw_i    = 1'b0;
+    s_hold_w_i     = 1'b0;
+    s_hold_b_i     = 1'b0;
+    s_job_base     = 32'd0;
+    s_job_count    = 32'd0;
+    s_job_id       = 32'd0;
+    s_timeout      = 32'd0;
+    s_scen         = 32'd0;
+    s_exp_fcode    = 32'd0;
+    s_exp_fdesc    = 32'hffff_ffff;
+    s_exp_faddr    = 32'd0;
+    s_exp_code     = 32'd0;
+    s_exp_macs     = 32'd0;
+    s_gold_base    = 32'd0;
+    s_gold_bytes   = 32'd0;
+    s_trace_bytes  = 32'd0;
+    s_trace_enable = 1'b0;
+    s_trace_index  = 0;
     if (!$value$plusargs("IMG=%s", s_img_path)) $fatal(1, "missing +IMG");
     if (!$value$plusargs("GOLD=%s", s_gold_path)) $fatal(1, "missing +GOLD");
     if (!$value$plusargs("BASE=%h", s_job_base)) $fatal(1, "missing +BASE");
@@ -676,6 +716,14 @@ module npu_operator_tb;
     if (!$value$plusargs("MACS=%d", s_exp_macs)) $fatal(1, "missing +MACS");
     if (!$value$plusargs("GOLD_BASE=%h", s_gold_base)) $fatal(1, "missing +GOLD_BASE");
     if (!$value$plusargs("GOLD_BYTES=%d", s_gold_bytes)) $fatal(1, "missing +GOLD_BYTES");
+    if ($value$plusargs("TRACE=%s", s_trace_path)) begin
+      if (!$value$plusargs(
+              "TRACE_BYTES=%d", s_trace_bytes
+          ) || (s_trace_bytes == 0) || (s_trace_bytes > 262144)) begin
+        $fatal(1, "invalid +TRACE_BYTES");
+      end
+      s_trace_enable = 1'b1;
+    end
     for (int unsigned index = 0; index < MemoryBytes; index++) begin
       s_memory[index] = GapFill;
     end
@@ -690,6 +738,7 @@ module npu_operator_tb;
     set_phase("load image");
     load_image(s_img_path);
     load_golden(s_gold_path);
+    if (s_trace_enable) load_trace(s_trace_path);
 
     unique case (s_scen)
       32'd0:   scen_compute();

@@ -71,6 +71,7 @@ FIRMWARE_NAME      ?= retrosoc_fw
 APP                ?= shell
 LINK_TYPE          ?= ld2_sram
 COREMARK_MODE      ?= quick
+NPU_P5_ACCEPTANCE  ?= NO
 HP_PERF_MIN_RATIO  ?= 2.5
 LP_COREMARK_REPORT ?=
 HP_COREMARK_REPORT ?=
@@ -100,6 +101,7 @@ LOCAL_RTL_FILES    ?=
 CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
+CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -126,6 +128,22 @@ APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
 APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
 NPU_P0_DIR              := $(VARIANT_ROOT)/npu/p0
+NPU_P5_DIR              := $(VARIANT_ROOT)/npu/p5
+NPU_P5_KWS_DIR          := $(NPU_P5_DIR)/deployments/kws
+NPU_P5_VWW_DIR          := $(NPU_P5_DIR)/deployments/vww
+NPU_P5_KWS_C            := $(NPU_P5_KWS_DIR)/kws_npu.c
+NPU_P5_VWW_C            := $(NPU_P5_VWW_DIR)/vww_npu.c
+NPU_P5_KWS_STAMP        := $(NPU_P5_KWS_DIR)/.stamp
+NPU_P5_VWW_STAMP        := $(NPU_P5_VWW_DIR)/.stamp
+NPU_P5_ACCEPTANCE_DIR   := $(NPU_P5_DIR)/acceptance
+NPU_P5_ACCEPTANCE_C     := $(NPU_P5_ACCEPTANCE_DIR)/npu_acceptance_data.c
+NPU_P5_ACCEPTANCE_STAMP := $(NPU_P5_ACCEPTANCE_DIR)/.stamp
+NPU_P5_C_QUALITY_RESULT := $(NPU_P5_DIR)/evidence/result-c-quality.json
+NPU_P5_REPORT           := $(NPU_P5_DIR)/evidence/qualification-p5.json
+NPU_P5_LP_VARIANT_ROOT  ?=
+NPU_P5_HP_VARIANT_ROOT  ?=
+NPU_P5_LP_CONFIG_DIGEST ?=
+NPU_P5_HP_CONFIG_DIGEST ?=
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -204,6 +222,13 @@ $(call validate_value,HAVE_CSR,$(VALID_BOOL))
 $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
+$(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
+
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+ifeq ($(filter $(APP),ci_smoke hp_boot),)
+$(error NPU_P5_ACCEPTANCE=YES requires APP=ci_smoke or APP=hp_boot)
+endif
+endif
 
 ifeq ($(MINI_MODE),PRODUCT)
 ifneq ($(HAVE_HP),YES)
@@ -380,6 +405,15 @@ help:
 	  '  setup-apu-kws-reference   validate pinned P7 KWS model/corpus inputs' \
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
+	  '  setup-npu-reference        install/verify locked NPU models, corpora, and oracle' \
+	  '  npu-p0-qualify             qualify full corpora against the independent oracle' \
+	  '  npu-p5-deployments         build deterministic KWS/VWW ABI-1 packages' \
+	  '  npu-p5-c-quality           run retained embedded-C/HAL quality evidence' \
+	  '  npu-p5-host                run compiler, generated-C, executor, and ABI tests' \
+	  '  npu-p5-rtl                 run frozen model inputs through Icarus and Verilator' \
+	  '  npu-p5-lp-sim              run LP interrupt bare-metal NPU acceptance' \
+	  '  npu-p5-hp-sim              run HP polling/Zicbom bare-metal NPU acceptance' \
+	  '  npu-p5-report              validate and assemble retained P5 evidence' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
@@ -513,6 +547,94 @@ setup-apu-kws-reference:
 setup-npu-reference:
 	python3 $(ROOT_PATH)/scripts/setup_npu_reference.py --build-dir $(NPU_P0_DIR)
 
+.PHONY: setup-npu-reference npu-p0-qualify
+npu-p0-qualify: | manifest
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool npu-p0-qualification \
+		--log $(NPU_P0_DIR)/qualification.log --result $(NPU_P0_DIR)/result-qualification.json \
+		-- python3 $(ROOT_PATH)/scripts/qualify_npu_p0.py --output-dir $(NPU_P0_DIR) \
+		--profile $(PROFILE_NAME) --config-digest $(CONFIG_DIGEST) --jobs $(JOBS)
+
+NPU_P5_COMPILER_INPUTS := $(ROOT_PATH)/scripts/npu_compiler.py \
+	$(ROOT_PATH)/scripts/npu_compiler_p0.py $(ROOT_PATH)/scripts/npu_model.py \
+	$(ROOT_PATH)/scripts/npu_descriptors.py $(ROOT_PATH)/scripts/npu_reference.py
+NPU_KWS_MODEL          := $(CACHE_ROOT)/sources/apu-mlperf-tiny/benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite
+NPU_VWW_MODEL          := $(CACHE_ROOT)/sources/apu-mlperf-tiny/benchmark/training/visual_wake_words/trained_models/vww_96_int8.tflite
+
+$(NPU_P5_KWS_STAMP): $(NPU_P5_COMPILER_INPUTS) | setup-npu-reference
+	python3 $(ROOT_PATH)/scripts/npu_compiler.py --model $(NPU_KWS_MODEL) --workload kws \
+		--symbol-prefix kws --output-dir $(NPU_P5_KWS_DIR) \
+		--expected-sha256 aeea436800704fce17b17292e4412630ad856e9d777c044c64ef748a880bd0ae \
+		--preprocessing mfcc-49x10-int8
+	@touch $@
+
+$(NPU_P5_VWW_STAMP): $(NPU_P5_COMPILER_INPUTS) | setup-npu-reference
+	python3 $(ROOT_PATH)/scripts/npu_compiler.py --model $(NPU_VWW_MODEL) --workload vww \
+		--symbol-prefix vww --output-dir $(NPU_P5_VWW_DIR) \
+		--expected-sha256 597a384c8c2c8a1276f04702f25013b7838f2f814f1ca7c174d295b73e3d6b7b \
+		--preprocessing rgb96-u8-xor80
+	@touch $@
+
+$(NPU_P5_KWS_C): $(NPU_P5_KWS_STAMP)
+$(NPU_P5_VWW_C): $(NPU_P5_VWW_STAMP)
+
+$(NPU_P5_ACCEPTANCE_STAMP): $(NPU_P5_KWS_STAMP) \
+	$(ROOT_PATH)/scripts/npu_acceptance_data.py $(ROOT_PATH)/scripts/npu_executor.py
+	python3 $(ROOT_PATH)/scripts/npu_acceptance_data.py --output-dir $(NPU_P5_ACCEPTANCE_DIR)
+	@touch $@
+
+$(NPU_P5_ACCEPTANCE_C): $(NPU_P5_ACCEPTANCE_STAMP)
+
+npu-p5-deployments: $(NPU_P5_KWS_STAMP) $(NPU_P5_VWW_STAMP) | manifest
+
+npu-p5-rtl: npu-p5-deployments
+	python3 $(ROOT_PATH)/scripts/qualify_npu_p5.py \
+		--output-dir $(NPU_P5_DIR)/evidence/rtl --timeout-seconds 3600 --jobs 4 \
+		--profile $(PROFILE_NAME) --config-digest $(CONFIG_DIGEST) --pdk $(PDK) \
+		--lock $(LOCK_FILE)
+
+npu-p5-c-quality:
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool npu-p5-c-quality \
+		--log $(NPU_P5_DIR)/evidence/c-quality.log \
+		--result $(NPU_P5_C_QUALITY_RESULT) \
+		-- $(MAKE) sw-format-check sw-policy-check sw-host-test
+
+npu-p5-host: npu-p5-deployments npu-p5-c-quality
+	python3 $(ROOT_PATH)/scripts/run_flow.py --tool npu-p5-host \
+		--log $(NPU_P5_DIR)/evidence/host.log \
+		--result $(NPU_P5_DIR)/evidence/result-host.json \
+		-- python3 -m pytest -q $(ROOT_PATH)/tests/test_npu_compiler.py \
+		$(ROOT_PATH)/tests/test_npu_executor.py $(ROOT_PATH)/tests/test_npu_register_parity.py
+
+npu-p5-report:
+	@test -n '$(NPU_P5_LP_VARIANT_ROOT)' -a -n '$(NPU_P5_HP_VARIANT_ROOT)' \
+		-a -n '$(NPU_P5_LP_CONFIG_DIGEST)' -a -n '$(NPU_P5_HP_CONFIG_DIGEST)' || { \
+		echo 'NPU P5 LP/HP variant roots and config digests are required' >&2; exit 1; }
+	python3 $(ROOT_PATH)/scripts/npu_p5_report.py \
+		--kws $(NPU_P5_KWS_DIR) --vww $(NPU_P5_VWW_DIR) \
+		--host-result $(NPU_P5_DIR)/evidence/result-host.json \
+		--c-quality-result $(NPU_P5_C_QUALITY_RESULT) \
+		--p0-report $(NPU_P0_DIR)/qualification-p0.json \
+		--rtl-report $(NPU_P5_DIR)/evidence/rtl/qualification-p5-rtl.json \
+		--build-manifest $(META_DIR)/manifest.json --config-digest $(CONFIG_DIGEST) \
+		--lp-result $(NPU_P5_LP_VARIANT_ROOT)/sim/verilator/result-sim.json \
+		--lp-check $(NPU_P5_LP_VARIANT_ROOT)/sim/verilator/result-npu-p5-lp-sim-check.json \
+		--lp-log $(NPU_P5_LP_VARIANT_ROOT)/sim/verilator/sim.log \
+		--lp-manifest $(NPU_P5_LP_VARIANT_ROOT)/meta/manifest.json \
+		--lp-config-digest $(NPU_P5_LP_CONFIG_DIGEST) \
+		--lp-kws $(NPU_P5_LP_VARIANT_ROOT)/npu/p5/deployments/kws \
+		--lp-firmware $(NPU_P5_LP_VARIANT_ROOT)/sw/retrosoc_fw.bin \
+		--hp-result $(NPU_P5_HP_VARIANT_ROOT)/sim/verilator/result-sim.json \
+		--hp-check $(NPU_P5_HP_VARIANT_ROOT)/sim/verilator/result-npu-p5-hp-sim-check.json \
+		--hp-log $(NPU_P5_HP_VARIANT_ROOT)/sim/verilator/sim.log \
+		--hp-manifest $(NPU_P5_HP_VARIANT_ROOT)/meta/manifest.json \
+		--hp-config-digest $(NPU_P5_HP_CONFIG_DIGEST) \
+		--hp-kws $(NPU_P5_HP_VARIANT_ROOT)/npu/p5/deployments/kws \
+		--hp-firmware $(NPU_P5_HP_VARIANT_ROOT)/sw/retrosoc_hp_smoke.bin \
+		--output $(NPU_P5_REPORT)
+
+.PHONY: npu-p5-deployments npu-p5-c-quality npu-p5-host npu-p5-rtl npu-p5-report \
+	npu-p5-lp-sim npu-p5-hp-sim
+
 $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
 	$(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \
 	$(ROOT_PATH)/scripts/apu_p5_coefficients.py $(ROOT_PATH)/scripts/apu_mcasm.py \
@@ -579,13 +701,28 @@ hp-linux-sim: hp-bundle comp
 		--require 'HP_LINUX_READY' \
 		--require 'SIM_TEST_PASS code=0'
 
+HP_SMOKE_NPU_DEPS :=
+HP_SMOKE_NPU_ARGS :=
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+HP_SMOKE_NPU_DEPS += $(NPU_P5_KWS_C) $(NPU_P5_ACCEPTANCE_C) \
+	$(ROOT_PATH)/app/ports/linux/smoke/npu_acceptance.c $(ROOT_PATH)/crt/src/hal/npu.c
+HP_SMOKE_NPU_ARGS += --define=-DRS_NPU_P5_ACCEPTANCE \
+	--extra-source $(ROOT_PATH)/app/ports/linux/smoke/npu_acceptance.c \
+	--extra-source $(ROOT_PATH)/crt/src/hal/npu.c \
+	--extra-source $(NPU_P5_KWS_C) --extra-source $(NPU_P5_ACCEPTANCE_C) \
+	--include $(ROOT_PATH)/crt/include --include $(MEMORY_MAP_C_DIR) \
+	--include $(USER_EXTENSIONS_DIR)/include --include $(SOC_TOPOLOGY_INCLUDE_DIR) \
+	--include $(NPU_P5_KWS_DIR) --include $(NPU_P5_ACCEPTANCE_DIR)
+endif
+
 $(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py \
 	$(ROOT_PATH)/app/ports/linux/smoke/start.S \
-	$(ROOT_PATH)/app/ports/linux/smoke/linker.ld
+	$(ROOT_PATH)/app/ports/linux/smoke/linker.ld $(HP_SMOKE_NPU_DEPS) \
+	$(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(SOC_TOPOLOGY_STAMP)
 	python3 $(ROOT_PATH)/scripts/build_hp_smoke.py \
 		--source $(ROOT_PATH)/app/ports/linux/smoke/start.S \
 		--linker $(ROOT_PATH)/app/ports/linux/smoke/linker.ld \
-		--output $(HP_SMOKE_BUILD_DIR) --cross $(CROSS)
+		--output $(HP_SMOKE_BUILD_DIR) --cross $(CROSS) $(HP_SMOKE_NPU_ARGS)
 	@touch $@
 
 $(HP_SMOKE_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_SMOKE_STAMP) \
@@ -611,6 +748,20 @@ hp-smoke-sim: hp-smoke-bundle comp
 		--require 'HP_LINUX_READY' \
 		--require 'HP_GA2D_PASS' \
 		--require 'HP_GA2D_CACHE_CLEAN'
+
+npu-p5-hp-sim: hp-smoke-sim
+	@test '$(NPU_P5_ACCEPTANCE)' = YES
+	python3 $(ROOT_PATH)/scripts/check_simulation.py \
+		--log $(SIM_BUILD_ROOT)/sim.log \
+		--result $(SIM_BUILD_ROOT)/result-npu-p5-hp-sim-check.json \
+		--require 'HP_NPU_PASS' --require 'SIM_TEST_PASS code=0'
+
+npu-p5-lp-sim: firmware sim
+	@test '$(APP)' = ci_smoke -a '$(NPU_P5_ACCEPTANCE)' = YES -a '$(HAVE_CSR)' = YES
+	python3 $(ROOT_PATH)/scripts/check_simulation.py \
+		--log $(SIM_BUILD_ROOT)/sim.log \
+		--result $(SIM_BUILD_ROOT)/result-npu-p5-lp-sim-check.json \
+		--require 'NPU_P5_LP model=kws' --require 'SIM_TEST_PASS code=0'
 
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_vexiiriscv.py \

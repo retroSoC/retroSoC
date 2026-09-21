@@ -95,6 +95,15 @@ R_RESET_CANCELLED = 4
 UNIT_KERNEL_STRIDE = 0x01010101
 
 
+def test_npu_product_shell_caps_wide_bursts_for_memory_downsizer() -> None:
+    source = (MULTIMEDIA / "apb4_npu.sv").read_text(encoding="utf-8")
+    dma = (MULTIMEDIA / "npu_dma.sv").read_text(encoding="utf-8")
+
+    assert "parameter int unsigned MaxBurstBeats = 16" in dma
+    assert ".MaxBurstBeats(8)" in source
+    assert "eight AXI64 beats expand" in source
+
+
 def _tools() -> dict[str, str]:
     tools: dict[str, str] = {}
     missing = []

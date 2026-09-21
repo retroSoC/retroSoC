@@ -35,10 +35,13 @@ from npu_descriptors import (
     FAULT_RANGE,
     FAULT_UNSUPPORTED,
     OP_ADD,
+    OP_AVERAGE_POOL,
+    OP_CLAMP,
     OP_CONV2D,
     OP_DEPTHWISE3X3,
     OP_FULLY_CONNECTED,
     OP_GLOBAL_AVERAGE_POOL,
+    OP_MAX_POOL,
     Descriptor,
     DescriptorError,
     used_span,
@@ -49,6 +52,9 @@ from npu_reference import (
     INT32_MIN,
     ArithmeticFault,
     Tensor,
+    average_pool,
+    clamp,
+    max_pool,
     multiply_by_quantized_multiplier,
     softmax_int8,
 )
@@ -362,6 +368,41 @@ def _execute_add(mem: _Memory, desc: Descriptor) -> bytes:
     return bytes(out)
 
 
+def _activation_tensor(mem: _Memory, desc: Descriptor, *, input1: bool = False) -> Tensor:
+    base = desc.input1_base if input1 else desc.input0_base
+    row = desc.input1_row_bytes if input1 else desc.input0_row_bytes
+    zero = desc.input1_zero if input1 else desc.input0_zero
+    raw = _signed(mem.read(base, used_span(desc.h, desc.w, desc.cin, row)))
+    packed = tuple(
+        raw[y * row + x * desc.cin + channel]
+        for y in range(desc.h) for x in range(desc.w) for channel in range(desc.cin)
+    )
+    return Tensor((desc.h, desc.w, desc.cin), packed, 1.0, zero)
+
+
+def _execute_pool(mem: _Memory, desc: Descriptor) -> bytes:
+    source = _activation_tensor(mem, desc)
+    kwargs = {
+        "kernel_h": desc.kh, "kernel_w": desc.kw,
+        "stride_h": desc.sh, "stride_w": desc.sw,
+        "pad_top": desc.pad_top, "pad_bottom": desc.pad_bottom,
+        "pad_left": desc.pad_left, "pad_right": desc.pad_right,
+        "act_min": desc.act_min, "act_max": desc.act_max,
+    }
+    result = (max_pool(source, **kwargs) if desc.opcode == OP_MAX_POOL
+              else average_pool(source, **kwargs))
+    block = bytes(value & 0xFF for value in result.data)
+    mem.write(desc.output_base, block)
+    return block
+
+
+def _execute_clamp(mem: _Memory, desc: Descriptor) -> bytes:
+    result = clamp(_activation_tensor(mem, desc), desc.act_min, desc.act_max)
+    block = bytes(value & 0xFF for value in result.data)
+    mem.write(desc.output_base, block)
+    return block
+
+
 def _execute_validated(mem: _Memory, desc: Descriptor) -> bytes:
     try:
         if desc.opcode in (OP_CONV2D, OP_FULLY_CONNECTED):
@@ -372,6 +413,10 @@ def _execute_validated(mem: _Memory, desc: Descriptor) -> bytes:
             return _execute_global_average_pool(mem, desc)
         if desc.opcode == OP_ADD:
             return _execute_add(mem, desc)
+        if desc.opcode in (OP_MAX_POOL, OP_AVERAGE_POOL):
+            return _execute_pool(mem, desc)
+        if desc.opcode == OP_CLAMP:
+            return _execute_clamp(mem, desc)
         raise ExecutorFault(
             FAULT_UNSUPPORTED,
             f"opcode {desc.opcode} is defined by the ABI but not placed by NPU-P0",
@@ -429,6 +474,7 @@ def execute_job(
             )
     layers: list[Tensor] = []
     digests: list[str] = []
+    descriptor_layers: dict[int, Tensor] = {}
     for step in job.steps:
         kind = step.get("kind")
         if kind == "npu":
@@ -445,9 +491,13 @@ def execute_job(
                     desc.output_zero,
                 )
                 layers.append(tensor)
+                descriptor_layers[index] = tensor
                 digests.append(hashlib.sha256(block).hexdigest())
         elif kind == "cpu" and step.get("op") == "softmax":
             source_index = step["source_descriptor"]
+            if (not isinstance(source_index, int) or source_index < 0 or
+                    source_index >= len(finalized)):
+                raise ExecutorFault(FAULT_DESCRIPTOR, "invalid softmax source descriptor")
             desc = finalized[source_index]
             entry = metadata.get(source_index)
             quant = entry["quantization"]
@@ -460,9 +510,16 @@ def execute_job(
                 desc.output_zero,
             )
             try:
-                result = softmax_int8(logits)
+                result = softmax_int8(
+                    logits,
+                    input_multiplier=step["input_multiplier"],
+                    input_left_shift=step["input_left_shift"],
+                    diff_min=step["diff_min"],
+                )
             except ArithmeticFault as error:
                 raise ExecutorFault(FAULT_ARITHMETIC, str(error)) from error
+            except (KeyError, ValueError, TypeError) as error:
+                raise ExecutorFault(FAULT_DESCRIPTOR, f"invalid softmax step: {error}") from error
             layers.append(result)
             digests.append(
                 hashlib.sha256(bytes(value & 0xFF for value in result.data)).hexdigest()
@@ -471,4 +528,8 @@ def execute_job(
             raise ExecutorFault(FAULT_UNSUPPORTED, f"unsupported execution step {step!r}")
     if not layers:
         raise ExecutorFault(FAULT_DESCRIPTOR, "job produced no layers")
-    return ExecutionResult(layers=layers, digests=digests, output=layers[-1])
+    output = layers[-1]
+    output_descriptor = job.report.get("output", {}).get("source_descriptor")
+    if not any(step.get("kind") == "cpu" for step in job.steps):
+        output = descriptor_layers.get(output_descriptor, output)
+    return ExecutionResult(layers=layers, digests=digests, output=output)

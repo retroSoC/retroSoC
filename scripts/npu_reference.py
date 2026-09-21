@@ -765,23 +765,44 @@ def _one_over_one_plus_x(a: int) -> int:
     return _saturating_left_shift(estimate, 1)
 
 
+def softmax_parameters(input_scale: float, beta: float) -> dict[str, int]:
+    """Pinned PreprocessSoftmaxScaling/CalculateInputRadius for Q5.26."""
+    for name, value in (("input scale", input_scale), ("beta", beta)):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"softmax {name} must be positive and finite")
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(f"softmax {name} must be positive and finite")
+    scaled = min(float(beta) * float(input_scale) * (1 << 26), float(INT32_MAX))
+    if scaled <= 1.0:
+        raise ValueError("softmax scaling must exceed one for the pinned integer kernel")
+    multiplier, shift = quantize_multiplier(scaled)
+    return {
+        "input_multiplier": multiplier,
+        "input_left_shift": shift,
+        "diff_min": -((31 * (1 << 26)) // (1 << shift)),
+    }
+
+
 def softmax_int8(
     logits: Tensor,
     *,
-    input_multiplier: int = SOFTMAX_INPUT_MULTIPLIER,
-    input_left_shift: int = SOFTMAX_INPUT_LEFT_SHIFT,
-    diff_min: int = SOFTMAX_DIFF_MIN,
+    input_multiplier: int,
+    input_left_shift: int,
+    diff_min: int,
 ) -> Tensor:
     """Execute the pinned TFLite reference_ops::Softmax<int8_t, int8_t> integer path."""
     if not isinstance(logits, Tensor):
         raise ValueError("logits must be a Tensor")
     _require_multiplier(input_multiplier, "input multiplier")
     _require_int(input_left_shift, "input left shift")
-    if input_left_shift < 0 or input_left_shift > 24:
-        raise ValueError("input left shift must be within 0..24")
+    if input_multiplier == 0:
+        raise ValueError("softmax input multiplier must be positive")
+    if input_left_shift < 0 or input_left_shift > 31:
+        raise ValueError("input left shift must be within 0..31")
     _require_int(diff_min, "diff_min")
-    if diff_min < -124 or diff_min > 0:
-        raise ValueError("diff_min must be within -124..0")
+    radius = (31 * (1 << 26)) // (1 << input_left_shift)
+    if diff_min < -radius or diff_min > 0:
+        raise ValueError("diff_min exceeds the safe Q5.26 input radius")
     depth = logits.channels
     output: list[int] = []
     for row in range(logits.height * logits.width):

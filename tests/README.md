@@ -4,6 +4,21 @@ This directory contains tests for deterministic SDK behavior and build/quality
 tooling.
 
 - `c/test_runtime.c` is the host C test program used by `make sw-host-test`.
+- `test_npu_framework_reference.py` checks model-specific Softmax scaling,
+  all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
+  hardware artifacts and complete sample-model outputs against the locked
+  TFLite integer kernels. The C++ adapter under `cpp/` is host verification
+  code, not an embedded runtime or an alternative production datapath.
+- `test_npu_qualification.py` proves that common-mode Python errors, missing
+  oracle tools, stale source revisions and incomplete tensor records fail
+  closed. Full corpus qualification is the explicit `npu-p0-qualify` target;
+  ordinary Pytest results alone do not establish full-corpus acceptance.
+- `test_npu_compiler.py` covers all ABI-1 placements, branching ADD lifetime,
+  pooling/Clamp, malformed input, reproducible deployment packages, strict
+  host compilation and generated C Softmax vectors. `npu-p5-rtl` separately
+  runs the prescribed KWS/VWW inputs on Icarus and Verilator with per-layer
+  write traces; `npu-p5-lp-sim` and `npu-p5-hp-sim` establish the two
+  bare-metal submission paths and SYSCTRL verdicts.
 - `test_script_tools.py` covers setup, dependency, filelist, warning, metric,
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks the repository feature-skill metadata,

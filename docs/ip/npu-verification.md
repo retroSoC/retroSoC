@@ -209,6 +209,115 @@ does not imply that unexecuted earlier checks passed.
 
 ## Commands and Evidence Records
 
+### P0 numerical-reference correction
+
+The original `npu-p0/1.0.0` compiler used the KWS Softmax parameters for VWW.
+Its two Python comparison paths shared that error. Consequently the historical
+`build/npu-p0-qualification/qualification-p0.json` PASS establishes only agreement
+between those paths, not the independent framework agreement required by V001.
+Retain the historical report; it must not qualify the corrected deployment.
+
+Compiler `npu-p0/1.0.1` derives Softmax parameters from model scale and beta and
+records them explicitly in the CPU execution step. KWS uses
+`(input_multiplier, input_left_shift, diff_min) = (1242899200, 24, -124)`;
+VWW uses `(2011586560, 20, -1984)`. Existing binary descriptor, weight and
+parameter encodings are unaffected. Regenerate host deployment plans; an
+execution step missing its Softmax parameters is invalid.
+
+Compiler `npu-p0/1.0.2` preserves that numerical correction and additionally
+binds terminal CPU work to its actual tensor producer. Its traffic model counts
+parameter-window and large-reduction reloads plus valid-only pooling reads.
+The P5 package emitter is `npu-p5/1.0.1`; neither revision changes descriptor
+ABI 1.0 or the fixed KWS/VWW tensor bytes.
+
+The host-only C++ oracle directly invokes the dependency-locked TensorFlow Lite
+integer reference kernels with original weights and graph options. It derives
+quantization and padding independently of NPU lowering. Only raw TFLite parsing
+is shared, so this evidence does not certify an independent model parser. It
+also does not implement the P5 freestanding C Softmax or P6 performance baseline.
+
+```sh
+make CONFIG=configs/ci/ihp130.mk setup-npu-reference
+make CONFIG=configs/ci/ihp130.mk npu-p0-qualify
+```
+
+The second command compares all 1000 KWS and 1000 VWW inputs, every accelerated
+intermediate and terminal Softmax, against both NPU Python paths. It stores
+golden bytes, input/layer hashes, exact commands, compiler/source identities,
+first mismatch details and the report under `build/<variant>/npu/p0/`.
+`qualification-p0.json` is PASS only after both full corpora match the oracle.
+Missing prerequisites produce BLOCKED; execution/mismatch failures produce
+FAIL; interrupted runs remain INCOMPLETE. `--limit` is SMOKE-ONLY and never
+provides phase acceptance. Required acceptance has zero permitted skips.
+
+On 2026-09-21, the corrected full-corpus run completed with PASS under
+`build/ihp130-2026-09-20-23-05-5df52cb56c3c/npu/p0/qualification-p0.json`.
+KWS compared 12000 tensors across 1000 inputs, and VWW compared 30000 tensors
+across 1000 inputs; both Python paths matched the independent kernel outputs
+with zero mismatches and zero skips. Classification accuracy was 901/1000 and
+858/1000 respectively. The report identifies the working-tree implementation
+by per-source SHA-256 and records the locked oracle revisions and build command.
+This establishes repaired V001 host numerical evidence only, not P5 deployment
+or P6 hardware/performance/physical qualification.
+
+### P5 offline compiler and bare-metal deployment
+
+The P5 commands use the committed IHP130 profiles without adding an APP or
+Linux ABI. `ci_smoke` supplies the LP interrupt path and `hp_boot` packages the
+existing freestanding HP smoke payload. The production deployment compiler and
+model RTL matrix are run with:
+
+```sh
+make BUILD_TIMESTAMP=2026-09-20-23-05 CONFIG=configs/ci/ihp130.mk npu-p5-host
+make BUILD_TIMESTAMP=2026-09-20-23-05 CONFIG=configs/ci/ihp130.mk npu-p5-rtl
+make BUILD_TIMESTAMP=2026-09-21-00-00 CONFIG=configs/ci/ihp130.mk \
+  APP=ci_smoke NPU_P5_ACCEPTANCE=YES HAVE_CSR=YES HAVE_SVA=YES \
+  LINK_TYPE=ld2_sdram SIMU=VERILATOR VERILATOR_SIM_ARGS=--fast-flash \
+  SOC_SIM_TIME=3600 RTL_SIM_TIMEOUT=100000000 npu-p5-lp-sim
+make BUILD_TIMESTAMP=2026-09-20-23-00 CONFIG=configs/ci/ihp130-hp.mk \
+  NPU_P5_ACCEPTANCE=YES SIMU=VERILATOR HP_SMOKE_SIM_TIME=3600 \
+  RTL_SIM_TIMEOUT=100000000 npu-p5-hp-sim
+make BUILD_TIMESTAMP=2026-09-20-23-05 CONFIG=configs/ci/ihp130.mk \
+  NPU_P5_LP_VARIANT_ROOT=build/ihp130-2026-09-21-00-00-91bcae98059a \
+  NPU_P5_LP_CONFIG_DIGEST=91bcae98059a \
+  NPU_P5_HP_VARIANT_ROOT=build/ihp130-hp-2026-09-20-23-00-84e5b10b2dcd \
+  NPU_P5_HP_CONFIG_DIGEST=84e5b10b2dcd npu-p5-report
+```
+
+On 2026-09-21, `NPU-V013` and `NPU-V014` completed with PASS in
+`build/ihp130-2026-09-20-23-05-5df52cb56c3c/npu/p5/evidence/qualification-p5.json`.
+The deterministic KWS package contains 11 descriptors, 16512 arena bytes,
+22272 weight bytes and 9408 parameter bytes. The VWW package contains 29
+descriptors, 101376 arena bytes, 209856 weight bytes and 43808 parameter bytes.
+Both manifests record the preprocessing boundary, relocations, per-file hashes
+and the model-specific CPU Softmax parameters. Independently generated KWS
+packages in the LP/HP build variants had identical file hashes.
+
+The host compiler/executor/parity result is 33/33 PASS; the separately retained
+C-quality result covers formatting, policy, host HAL behavior and timeout/error
+paths. The production `npu_dma` model, configured for the integrated
+eight-AXI64-beat limit, ran ten frozen
+inputs per model with exact write traces for every accelerated layer: Icarus
+20/20 and Verilator 20/20 PASS. The complete P4 operator matrix also remained
+PASS on both simulators, including the directed 32 KiB pointwise-weight case.
+The RTL and aggregate reports fail closed over revision/config/lock identity,
+tool versions, exact commands, source/layer/trace/log hashes, zero skips and
+the repository's rejected simulation markers.
+
+The LP `ci_smoke` run used real external-interrupt entry and acknowledgement,
+completed the KWS job and terminal CPU Softmax, and ended with
+`SIM_TEST_PASS code=0`. Its retained counters were 5765715 active cycles,
+320326 DMA read bytes, 72076 DMA write bytes and 59530 CPU Softmax cycles. The
+HP run used polling plus Zicbom maintenance, completed the same KWS deployment,
+passed the concurrent GA2D/resource hand-off checks and ended with
+`HP_NPU_PASS` and `SIM_TEST_PASS code=0`.
+
+P5 intentionally did not run or extend synthesis, STA or netlist simulation.
+Those PRODUCT macro-aware and physical results remain deferred to P6 under the
+maintainer constraint; this PASS is functional deployment evidence only.
+
+### General validation foundations
+
 Commands run from the repository root in a supported locked tool environment.
 These are existing command foundations, verified against current build and
 workflow definitions; their presence here does not claim they have run for
@@ -230,18 +339,18 @@ python3 scripts/regress.py --root . --suite pr --pdk IHP130 --dry-run
 python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --dry-run
 ```
 
-The committed profile defaults to CSR-disabled LP firmware. Once the future
-NPU interrupt-acceptance scenario is integrated into a supported application,
-its actual ISR-entry/return run MUST explicitly enable the existing CSR flag:
+The committed profile defaults to CSR-disabled LP firmware. The P5 NPU
+interrupt-acceptance scenario is integrated into `ci_smoke`; its actual
+ISR-entry/return run explicitly enables the existing CSR flag:
 
 ```sh
-make CONFIG=configs/ci/ihp130.mk HAVE_CSR=YES SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke NPU_P5_ACCEPTANCE=YES \
+  HAVE_CSR=YES SIMU=VERILATOR npu-p5-lp-sim
 ```
 
-This is an existing flag/command combination for that future acceptance
-scenario, not a claim that the current firmware exercises NPU interrupts.
-CSR-disabled builds remain compatibility checks and cannot establish ISR
-qualification.
+The retained structured result and `NPU_P5_LP`/`SIM_TEST_PASS` markers establish
+that scenario. CSR-disabled builds remain compatibility checks and cannot
+establish ISR qualification.
 
 P6 additionally runs the full IHP130 flow and the affected committed PDK
 matrix. A boot-only netlist run can provide boot evidence while dedicated
@@ -258,10 +367,9 @@ The above full-flow command omits `--behavioral-only` deliberately. Current
 `--behavioral-only`; its optional formal stage runs `formal-doctor`, not NPU
 properties. Hosted green status therefore cannot supply missing physical or
 formal evidence. `Hello retroSoC!` from boot-only netlist simulation is not an
-NPU transaction verdict. New `tests/test_npu*.py`, NPU formal targets, corpus
-qualification commands and FPGA runners are **future implementation
-deliverables**; each phase MUST document its actual invocation when adding
-them. Do not cite a future command as an already available passing gate.
+NPU transaction verdict. P0/P5 host, corpus and RTL model commands are now
+implemented above; NPU formal closure and FPGA runners remain P6 deliverables.
+Do not cite a future command as an already available passing gate.
 
 Simulation acceptance requires successful process exit, the specified success
 marker, and no `FAILED`, `FATAL`, `assertion failed`, `%Error`, `SIM_TEST_FAIL`

@@ -80,6 +80,13 @@ background and premultiplied-alpha modes, scaling, rendering,
 descriptor/ring/queue submission, cache coherency, and a Linux graphics driver
 are not provided.
 
+`<retrosoc/hal/npu.h>` provides the frozen ABI-1 NPU capability, direct job,
+bounded wait/abort/reset, typed status/error/counter snapshot, and sticky IRQ
+operations. It does not load files, allocate memory, maintain HP cache lines,
+or hide CPU fallback. P5 generated static C plans perform checked relocation
+into caller-owned storage, explicit cache maintenance/fences and terminal
+integer Softmax while continuing to submit through this HAL.
+
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,
 and the sticky first-fault record. See the

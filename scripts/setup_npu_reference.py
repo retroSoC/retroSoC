@@ -19,6 +19,7 @@ from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, 
 MLCOMMONS_TINY = "apu_mlperf_tiny"
 KWS_MFCC = "apu_kws_mfcc"
 VWW_DATASET = "npu_vww_dataset"
+ORACLE_SOURCES = ("apu_tensorflow", "apu_gemmlowp")
 
 KWS_MODEL = Path("benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite")
 KWS_MODEL_SHA256 = "aeea436800704fce17b17292e4412630ad856e9d777c044c64ef748a880bd0ae"
@@ -145,7 +146,7 @@ def _git_revision(path: Path) -> str:
 def install(build_dir: Path, *, update: bool) -> dict[str, object]:
     tiny = tiny_root()
     mfcc = mfcc_root()
-    for name in (MLCOMMONS_TINY, KWS_MFCC):
+    for name in (MLCOMMONS_TINY, KWS_MFCC, *ORACLE_SOURCES):
         spec = source(name)
         ensure_git_repo(spec["url"], ROOT / spec["destination"], spec["revision"], update=update)
     dataset = archive(VWW_DATASET)
@@ -167,7 +168,7 @@ def install(build_dir: Path, *, update: bool) -> dict[str, object]:
         "target": "npu-p0",
         "sources": {
             name: {"revision": source(name)["revision"], "destination": source(name)["destination"]}
-            for name in (MLCOMMONS_TINY, KWS_MFCC)
+            for name in (MLCOMMONS_TINY, KWS_MFCC, *ORACLE_SOURCES)
         },
         "archives": {VWW_DATASET: dataset["sha256"]},
         "models": models,
@@ -189,6 +190,12 @@ def doctor() -> None:
         revision = _git_revision(path)
         if revision != source(name)["revision"]:
             raise RuntimeError(f"NPU source revision mismatch for {name}: {revision}")
+    for name in ORACLE_SOURCES:
+        path = ROOT / source(name)["destination"]
+        if not (path / ".git").is_dir() or _git_revision(path) != source(name)["revision"]:
+            raise RuntimeError(f"missing or stale NPU oracle source: {name}")
+        if subprocess.check_output(["git", "-C", str(path), "status", "--porcelain"], text=True).strip():
+            raise RuntimeError(f"dirty NPU oracle source: {name}")
     dataset = archive(VWW_DATASET)
     archive_path = ROOT / dataset["destination"]
     if not archive_path.is_file() or sha256(archive_path) != dataset["sha256"]:

@@ -3,9 +3,9 @@
 
 // NPU-P3 production AXI4 data-plane engine (docs/ip/npu.md "AXI4 data plane").
 // 32-bit addresses, 64-bit data, ID width 3 fixed to zero, USER fixed to
-// zero, INCR bursts of 1..16 beats, at most one outstanding read and one
-// outstanding write, which may overlap. AxCACHE/AxLOCK/AxPROT/AxQOS/AxREGION
-// are always zero.
+// zero, INCR bursts of 1..MaxBurstBeats (parameter range 1..16), at most one
+// outstanding read and one outstanding write, which may overlap.
+// AxCACHE/AxLOCK/AxPROT/AxQOS/AxREGION are always zero.
 //
 // Burst planning: bulk uses full 64-bit beats; leading/trailing read edges
 // use the largest naturally aligned narrow size (1/2/4 bytes) so reads never
@@ -44,7 +44,9 @@
 // response). fault_addr_o records the failing beat address (for a write
 // response, the final W beat of the failed burst) and fault_resp_o the AXI
 // response bits.
-module npu_dma (
+module npu_dma #(
+    parameter int unsigned MaxBurstBeats = 16
+) (
     input  logic                 clk_hp_i,
     input  logic                 rst_hp_n_i,
     input  logic                 clear_i,
@@ -89,6 +91,7 @@ module npu_dma (
            axi4_if.master        axi4
 );
   localparam int unsigned FifoDepth = 16;
+  localparam logic [4:0] MaxBurstBeatsValue = 5'(MaxBurstBeats);
   localparam logic [3:0] FaultAxiRead = 4'd4;
   localparam logic [3:0] FaultAxiWrite = 4'd5;
   localparam logic [3:0] FaultAxiProtocol = 4'd6;
@@ -231,7 +234,8 @@ module npu_dma (
     s_read_plan_size  = 3'd0;
     s_read_plan_bytes = 8'd1;
     if ((s_read_addr_q[2:0] == 3'd0) && (s_read_bytes_left_q >= 32'd8)) begin
-      s_read_plan_beats = (s_full_beats > 32'd16) ? 5'd16 : s_full_beats[4:0];
+      s_read_plan_beats = (s_full_beats > 32'(MaxBurstBeats)) ?
+          MaxBurstBeatsValue : s_full_beats[4:0];
       if (s_beats_to_4k < {8'd0, s_read_plan_beats}) begin
         s_read_plan_beats = s_beats_to_4k[4:0];
       end
@@ -284,18 +288,19 @@ module npu_dma (
   assign s_write_cmd_accept = write_req_valid_i && write_req_ready_o;
 
   // Write burst plan: the address-aligned beat span of the remaining segment,
-  // at most 16 beats, never crossing a 4 KiB page. Byte lanes outside the
-  // segment are left to the scheduler-built WSTRB.
+  // at most MaxBurstBeats, never crossing a 4 KiB page. Byte lanes outside
+  // the segment are left to the scheduler-built WSTRB.
   always_comb begin
     logic [12:0] s_bytes_to_4k;
     logic [12:0] s_beats_to_4k;
     logic [31:0] s_span_beats;
     logic [31:0] s_burst_room;
-    s_write_plan_addr  = {s_write_addr_q[31:3], 3'b000};
-    s_bytes_to_4k      = 13'd4096 - {1'b0, s_write_plan_addr[11:0]};
-    s_beats_to_4k      = s_bytes_to_4k >> 3;
-    s_span_beats       = ({29'd0, s_write_addr_q[2:0]} + s_write_bytes_left_q + 32'd7) >> 3;
-    s_write_plan_beats = (s_span_beats > 32'd16) ? 5'd16 : s_span_beats[4:0];
+    s_write_plan_addr = {s_write_addr_q[31:3], 3'b000};
+    s_bytes_to_4k = 13'd4096 - {1'b0, s_write_plan_addr[11:0]};
+    s_beats_to_4k = s_bytes_to_4k >> 3;
+    s_span_beats = ({29'd0, s_write_addr_q[2:0]} + s_write_bytes_left_q + 32'd7) >> 3;
+    s_write_plan_beats = (s_span_beats > 32'(MaxBurstBeats)) ?
+        MaxBurstBeatsValue : s_span_beats[4:0];
     if (s_beats_to_4k < {8'd0, s_write_plan_beats}) begin
       s_write_plan_beats = s_beats_to_4k[4:0];
     end

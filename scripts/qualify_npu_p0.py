@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NPU-P0 full-corpus qualification: reference vs compiled-job executor."""
+"""NPU-P0 full-corpus qualification against dependency-locked TFLite kernels."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ import json
 import subprocess
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import nullcontext
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +20,7 @@ import npu_compiler_p0  # noqa: E402
 import npu_executor  # noqa: E402
 import npu_model  # noqa: E402
 import setup_npu_reference as setup_npu  # noqa: E402
+from npu_framework_reference import FrameworkOracle, OracleError, build_oracle  # noqa: E402
 
 KWS_FEATURES = ROOT / ".cache/retrosoc/sources/apu-kws-mfcc/datasets/kws01"
 VWW_CORPUS = ROOT / ".cache/retrosoc/sources/npu-vww-corpus"
@@ -87,6 +90,62 @@ def _load_vww_corpus() -> list[tuple[str, int, Path]]:
     return rows
 
 
+def compare_layers(executed: list[bytes], reference: list[bytes],
+                   framework: list[bytes]) -> list[dict]:
+    """Neither Python path may certify the other; both must match the oracle."""
+    if not framework or len(executed) != len(framework) or len(reference) != len(framework):
+        raise RuntimeError("framework/reference/executor layer count mismatch")
+    mismatches = []
+    for index, expected in enumerate(framework):
+        for name, layers in (("executor", executed), ("reference", reference)):
+            got = layers[index]
+            if got == expected:
+                continue
+            first = next((i for i, (a, b) in enumerate(zip(got, expected)) if a != b),
+                         min(len(got), len(expected)))
+            mismatches.append({"layer": index, "path": name, "first_byte": first,
+                               "expected_bytes": len(expected), "actual_bytes": len(got),
+                               "expected": expected[first] if first < len(expected) else None,
+                               "actual": got[first] if first < len(got) else None})
+    return mismatches
+
+
+_WORKER_CONTEXT = None
+
+
+def _worker_init(graph, job, oracle, prepare_input):
+    global _WORKER_CONTEXT
+    _WORKER_CONTEXT = graph, job, oracle, prepare_input
+
+
+def _qualify_input(item):
+    graph, job, oracle, prepare_input = _WORKER_CONTEXT
+    name, label, path = item
+    input_bytes = prepare_input(path.read_bytes())
+    result = npu_executor.execute_job(job, input_bytes)
+    reference_layers = npu_compiler_p0.evaluate_reference(graph, input_bytes)
+    framework_layers = oracle.evaluate(input_bytes, name)
+    executed = [bytes(v & 255 for v in tensor.data) for tensor in result.layers]
+    reference = [bytes(v & 255 for v in tensor.data) for tensor in reference_layers]
+    differences = compare_layers(executed, reference, framework_layers)
+    record = {
+        "input": name, "input_sha256": hashlib.sha256(input_bytes).hexdigest(),
+        "layers": [
+            {"layer": i, "bytes": len(golden),
+             "framework_sha256": hashlib.sha256(golden).hexdigest(),
+             "reference_sha256": hashlib.sha256(reference[i]).hexdigest(),
+             "executor_sha256": hashlib.sha256(executed[i]).hexdigest()}
+            for i, golden in enumerate(framework_layers)
+        ],
+        "mismatches": differences,
+        "correct": _argmax(list(result.output.data)) == label,
+    }
+    (oracle.directory / name / "comparison.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True) + "\n"
+    )
+    return record
+
+
 def _qualify_model(
     workload: str,
     graph: "npu_model.GraphInfo",
@@ -95,36 +154,36 @@ def _qualify_model(
     prepare_input,
     *,
     limit: int | None,
+    oracle: FrameworkOracle,
+    jobs: int = 1,
 ) -> dict[str, object]:
     selected = corpus if limit is None else corpus[:limit]
     mismatches: list[dict[str, object]] = []
     correct = 0
     started = time.monotonic()
-    for index, (name, label, path) in enumerate(selected):
-        input_bytes = prepare_input(path.read_bytes())
-        result = npu_executor.execute_job(job, input_bytes)
-        reference_layers = npu_compiler_p0.evaluate_reference(graph, input_bytes)
-        if len(result.layers) != len(reference_layers):
-            raise RuntimeError(f"{workload} layer count drift on {name}")
-        for layer_index, (got, expected) in enumerate(zip(result.layers, reference_layers)):
-            if tuple(got.data) != tuple(expected.data):
-                mismatches.append(
-                    {"input": name, "layer": layer_index, "input_sha256": hashlib.sha256(
-                        input_bytes
-                    ).hexdigest()}
-                )
-                break
-        if _argmax(list(result.output.data)) == label:
-            correct += 1
-        if (index + 1) % 100 == 0:
-            print(f"[{workload}] {index + 1}/{len(selected)} inputs compared", flush=True)
+    records = []
+    context = (graph, job, oracle, prepare_input)
+    _worker_init(*context)
+    pool = (ProcessPoolExecutor(max_workers=jobs, initializer=_worker_init, initargs=context)
+            if jobs > 1 else nullcontext())
+    with pool as executor:
+        results = executor.map(_qualify_input, selected) if executor else map(_qualify_input, selected)
+        for index, record in enumerate(results):
+            records.append(record)
+            mismatches.extend({"input": record["input"], **item} for item in record["mismatches"])
+            correct += int(record["correct"])
+            if (index + 1) % 10 == 0:
+                print(f"[{workload}] {index + 1}/{len(selected)} inputs compared", flush=True)
     total = len(selected)
+    (oracle.directory / "index.json").write_text(json.dumps(records, indent=2, sort_keys=True) + "\n")
     return {
         "workload": workload,
         "inputs": total,
         "full_corpus": limit is None,
         "layer_mismatches": len(mismatches),
         "first_mismatches": mismatches[:8],
+        "tensor_comparisons": sum(len(item["layers"]) for item in records),
+        "index": str(oracle.directory / "index.json"),
         "accuracy": {"correct": correct, "total": total, "ratio": correct / total},
         "duration_seconds": round(time.monotonic() - started, 3),
     }
@@ -133,6 +192,10 @@ def _qualify_model(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--cxx", default="g++")
+    parser.add_argument("--profile", default="host")
+    parser.add_argument("--config-digest", default="not-supplied")
+    parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument(
         "--limit",
         type=int,
@@ -140,54 +203,78 @@ def main() -> int:
         help="debug-only input cap per model; a limited run is NOT an acceptance run",
     )
     args = parser.parse_args()
-
-    try:
-        _check_assets()
-    except QualificationBlocked as error:
-        print(f"NPU-P0 qualification BLOCKED: {error}")
-        return 2
-
-    kws_corpus = _load_kws_corpus()
-    vww_corpus = _load_vww_corpus()
-    kws_graph = npu_model.load_kws_model().main_graph()
-    vww_graph = npu_model.load_vww_model().main_graph()
-    kws_job = npu_compiler_p0.compile_kws()
-    vww_job = npu_compiler_p0.compile_vww()
-
-    results = [
-        _qualify_model(
-            "kws",
-            kws_graph,
-            kws_job,
-            kws_corpus,
-            lambda raw: raw,
-            limit=args.limit,
-        ),
-        _qualify_model(
-            "vww",
-            vww_graph,
-            vww_job,
-            vww_corpus,
-            npu_compiler_p0.vww_input_bytes,
-            limit=args.limit,
-        ),
-    ]
-
-    acceptance = args.limit is None and all(item["layer_mismatches"] == 0 for item in results)
+    if not 1 <= args.jobs <= 16:
+        parser.error("--jobs must be within 1..16")
+    if args.limit is not None and not 1 <= args.limit <= 1000:
+        parser.error("--limit must be within 1..1000; limited runs are never acceptance")
+    args.output_dir = args.output_dir.resolve()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     report = {
+        "schema": 1,
         "phase": "NPU-P0",
         "verification_ids": ["NPU-V001"],
         "git_revision": _git_revision(),
         "lock_sha256": hashlib.sha256(LOCK.read_bytes()).hexdigest(),
         "command": " ".join([sys.executable, *sys.argv]),
         "acceptance_run": args.limit is None,
-        "results": results,
-        "verdict": "PASS" if acceptance else ("FAIL" if args.limit is None else "SMOKE-ONLY"),
+        "profile": args.profile,
+        "config_digest": args.config_digest,
+        "jobs": args.jobs,
+        "compiler_contract": npu_compiler_p0.CONTRACT_REVISION,
+        "implementation_sha256": {
+            name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+            for name in (
+                "scripts/qualify_npu_p0.py", "scripts/npu_framework_reference.py",
+                "scripts/npu_model.py", "scripts/npu_reference.py",
+                "scripts/npu_compiler_p0.py", "scripts/npu_executor.py",
+                "scripts/setup_npu_reference.py", "tests/cpp/npu_framework_reference.cc",
+            )
+        },
+        "git_dirty": bool(subprocess.check_output(
+            ["git", "-C", str(ROOT), "status", "--porcelain"], text=True).strip()),
+        "method": "TFLite integer kernels vs Python graph reference vs compiled executor",
+        "supersedes": "build/npu-p0-qualification/qualification-p0.json (shared-arithmetic comparison only)",
+        "skipped": 0,
+        "results": [],
+        "verdict": "BLOCKED",
     }
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     report_path = args.output_dir / "qualification-p0.json"
+    def save():
+        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    save()
+    try:
+        _check_assets()
+        executable, evidence = build_oracle(args.output_dir / "oracle", args.cxx)
+        report["oracle"] = evidence
+        cases = [
+            ("kws", npu_model.load_kws_model, npu_compiler_p0.compile_kws,
+             _load_kws_corpus(), bytes),
+            ("vww", npu_model.load_vww_model, npu_compiler_p0.compile_vww,
+             _load_vww_corpus(), npu_compiler_p0.vww_input_bytes),
+        ]
+        report["verdict"] = "INCOMPLETE"
+        save()
+        for name, load, compile_model, corpus, prepare in cases:
+            graph = load().main_graph()
+            job = compile_model()
+            npu_compiler_p0.write_artifacts(job, args.output_dir / "deployments" / name)
+            oracle = FrameworkOracle(graph, executable, args.output_dir / "oracle" / name)
+            report["results"].append(_qualify_model(
+                name, graph, job, corpus, prepare, limit=args.limit, oracle=oracle, jobs=args.jobs,
+            ))
+            save()
+        passed = all(item["layer_mismatches"] == 0 for item in report["results"])
+        report["verdict"] = ("PASS" if args.limit is None else "SMOKE-ONLY") if passed else "FAIL"
+    except (QualificationBlocked, OracleError, OSError, ValueError, RuntimeError,
+            ArithmeticError, npu_executor.ExecutorFault) as error:
+        if report["verdict"] != "BLOCKED":
+            report["verdict"] = "FAIL"
+        report["error"] = str(error)
+    except KeyboardInterrupt:
+        report["verdict"] = "INCOMPLETE"
+        report["error"] = "interrupted before qualification completed"
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    for item in results:
+    for item in report["results"]:
         accuracy = item["accuracy"]
         print(
             f"[{item['workload']}] inputs={item['inputs']} "
@@ -195,7 +282,7 @@ def main() -> int:
             f"accuracy={accuracy['correct']}/{accuracy['total']} ({accuracy['ratio']:.4f})"
         )
     print(f"NPU-P0 qualification verdict: {report['verdict']} ({report_path})")
-    return 0 if acceptance else 1
+    return 0 if report["verdict"] == "PASS" else (2 if report["verdict"] == "BLOCKED" else 1)
 
 
 if __name__ == "__main__":

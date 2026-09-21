@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import struct
 import subprocess
 from dataclasses import dataclass
@@ -47,10 +48,14 @@ from npu_descriptors import (
     ABI_VERSION,
     DESCRIPTOR_BYTES,
     MAX_K_SLICE,
+    OP_ADD,
+    OP_AVERAGE_POOL,
+    OP_CLAMP,
     OP_CONV2D,
     OP_DEPTHWISE3X3,
     OP_FULLY_CONNECTED,
     OP_GLOBAL_AVERAGE_POOL,
+    OP_MAX_POOL,
     OPCODE_NAMES,
     Descriptor,
     DescriptorError,
@@ -67,20 +72,23 @@ from npu_model import (
     load_vww_model,
 )
 from npu_reference import (
-    SOFTMAX_INPUT_LEFT_SHIFT,
-    SOFTMAX_INPUT_MULTIPLIER,
     SOFTMAX_OUTPUT_SCALE,
     SOFTMAX_OUTPUT_ZERO_POINT,
     Tensor,
+    add,
+    average_pool,
+    clamp,
     conv2d,
     depthwise_conv2d,
     fully_connected,
     global_average_pool,
+    max_pool,
     quantize_multiplier,
     softmax_int8,
+    softmax_parameters,
 )
 
-CONTRACT_REVISION: Final = "npu-p0/1.0.0"
+CONTRACT_REVISION: Final = "npu-p0/1.0.2"
 NUMERIC_PROFILE: Final = 1
 # CAPABILITY bit 1 EXECUTION_READY | bit 4 DOUBLE_ROUNDING (docs/ip/npu.md).
 REQUIRED_CAPABILITY_MASK: Final = 0x12
@@ -117,7 +125,11 @@ _OPCODE_FOR_KIND: Final = {
     "conv2d": OP_CONV2D,
     "depthwise3x3": OP_DEPTHWISE3X3,
     "fully_connected": OP_FULLY_CONNECTED,
+    "add": OP_ADD,
+    "max_pool": OP_MAX_POOL,
+    "average_pool": OP_AVERAGE_POOL,
     "global_average_pool": OP_GLOBAL_AVERAGE_POOL,
+    "clamp": OP_CLAMP,
 }
 
 
@@ -168,10 +180,18 @@ def _hwc(tensor: TensorInfo) -> tuple[int, int, int]:
     raise CompilerError(f"tensor {tensor.name!r} shape {shape} is not batch-one NHWC")
 
 
-def _activation(options: dict, zero_point: int) -> tuple[int, int]:
+def _quantize_activation(value: float, scale: float, zero_point: int) -> int:
+    scaled = value / scale
+    rounded = int(math.floor(scaled + 0.5)) if scaled >= 0 else int(math.ceil(scaled - 0.5))
+    return max(-128, min(127, rounded + zero_point))
+
+
+def _activation(options: dict, scale: float, zero_point: int) -> tuple[int, int]:
     fused = options.get("fused_activation", "NONE")
     if fused == "RELU":
         return max(-128, zero_point), 127
+    if fused == "RELU6":
+        return max(-128, zero_point), _quantize_activation(6.0, scale, zero_point)
     if fused == "NONE":
         return -128, 127
     raise CompilerError(f"fused activation {fused} has no supported NPU-P0 placement")
@@ -320,6 +340,14 @@ def _pack_params(bias: list[int], multipliers: list[int], shifts: list[int]) -> 
     )
 
 
+def _pack_add_params(scale0: float, scale1: float, output_scale: float) -> bytes:
+    common = max(scale0, scale1)
+    m0, s0 = quantize_multiplier(scale0 / (2.0 * common))
+    m1, s1 = quantize_multiplier(scale1 / (2.0 * common))
+    mout, sout = quantize_multiplier((2.0 * common) / ((1 << 20) * output_scale))
+    return struct.pack("<IiiiiiiI", 20, m0, s0, m1, s1, mout, sout, 0)
+
+
 def _tile(oh: int, ow: int) -> tuple[int, int]:
     return min(2, oh), min(4, ow)
 
@@ -335,6 +363,7 @@ class _Plan:
     kind: str
     input_tensor: int
     output_tensor: int
+    input1_tensor: int | None = None
     h: int = 0
     w: int = 0
     cin: int = 0
@@ -350,12 +379,15 @@ class _Plan:
     act_max: int = 127
     in_scale: float = 1.0
     in_zp: int = 0
+    input1_scale: float = 1.0
+    input1_zp: int = 0
     out_scale: float = 1.0
     out_zp: int = 0
     full_k: int = 1
     k_slice: int = 1
     weights: bytes | None = None
     params: bytes | None = None
+    softmax: dict[str, int] | None = None
 
 
 def _lower_conv2d(graph: GraphInfo, index: int) -> _Plan:
@@ -396,8 +428,8 @@ def _lower_conv2d(graph: GraphInfo, index: int) -> _Plan:
         sh=options["stride_h"],
         sw=options["stride_w"],
         pads=_pads(options, h, w, kh, kw, oh, ow),
-        act_min=_activation(options, out_zp)[0],
-        act_max=_activation(options, out_zp)[1],
+        act_min=_activation(options, out_scale, out_zp)[0],
+        act_max=_activation(options, out_scale, out_zp)[1],
         in_scale=in_scale,
         in_zp=in_zp,
         out_scale=out_scale,
@@ -454,8 +486,8 @@ def _lower_depthwise(graph: GraphInfo, index: int) -> _Plan:
         sh=options["stride_h"],
         sw=options["stride_w"],
         pads=_pads(options, h, w, 3, 3, oh, ow),
-        act_min=_activation(options, out_zp)[0],
-        act_max=_activation(options, out_zp)[1],
+        act_min=_activation(options, out_scale, out_zp)[0],
+        act_max=_activation(options, out_scale, out_zp)[1],
         in_scale=in_scale,
         in_zp=in_zp,
         out_scale=out_scale,
@@ -515,8 +547,8 @@ def _lower_fully_connected(graph: GraphInfo, index: int) -> _Plan:
         sh=1,
         sw=1,
         pads=(0, 0, 0, 0),
-        act_min=_activation(options, out_zp)[0],
-        act_max=_activation(options, out_zp)[1],
+        act_min=_activation(options, out_scale, out_zp)[0],
+        act_max=_activation(options, out_scale, out_zp)[1],
         in_scale=in_scale,
         in_zp=in_zp,
         out_scale=out_scale,
@@ -531,58 +563,113 @@ def _lower_fully_connected(graph: GraphInfo, index: int) -> _Plan:
 def _lower_global_average_pool(graph: GraphInfo, index: int) -> _Plan:
     op = graph.operators[index]
     options = op.options
-    _require(
-        options.get("padding") == "VALID",
-        f"operator {index} (AVERAGE_POOL_2D): P0 lowers VALID whole-input pools only",
-    )
-    _require(len(op.inputs) == 1, f"operator {index} (AVERAGE_POOL_2D) needs 1 input")
+    _require(options.get("padding") == "VALID",
+             f"operator {index} (AVERAGE_POOL_2D): global pool must use VALID")
+    _require(len(op.inputs) == 1 and len(op.outputs) == 1,
+             f"operator {index} (AVERAGE_POOL_2D) requires one input and output")
     src = graph.tensors[op.inputs[0]]
     out_t = graph.tensors[op.outputs[0]]
     h, w, cin = _hwc(src)
     oh, ow, cout = _hwc(out_t)
-    _require(
-        (oh, ow, cout) == (1, 1, cin),
-        f"operator {index}: whole-input pool must produce 1x1x{cin}",
-    )
-    _require(
-        options["filter_height"] == h
-        and options["filter_width"] == w
-        and options["stride_h"] == h
-        and options["stride_w"] == w,
-        f"operator {index}: pool filter/stride must equal the whole {h}x{w} input",
-    )
+    _require((oh, ow, cout) == (1, 1, cin),
+             f"operator {index}: global pool must produce 1x1x{cin}")
+    _require(options["filter_height"] == h and options["filter_width"] == w
+             and options["stride_h"] == h and options["stride_w"] == w,
+             f"operator {index}: global pool filter/stride must cover {h}x{w}")
     in_scale, in_zp = _activation_quant(src, "input")
     out_scale, out_zp = _activation_quant(out_t, "output")
-    _require(
-        in_scale == out_scale and in_zp == out_zp,
-        f"operator {index}: GLOBAL_AVERAGE_POOL requires equal input/output quantization",
-    )
-    full_k = h * w
+    _require(in_scale == out_scale and in_zp == out_zp,
+             f"operator {index}: GLOBAL_AVERAGE_POOL requires equal quantization")
+    act_min, act_max = _activation(options, out_scale, out_zp)
     return _Plan(
-        op_index=index,
-        op_name=op.op_name,
-        kind="global_average_pool",
-        input_tensor=op.inputs[0],
-        output_tensor=op.outputs[0],
-        h=h,
-        w=w,
-        cin=cin,
-        cout=cout,
-        oh=1,
-        ow=1,
-        kh=0,
-        kw=0,
-        sh=0,
-        sw=0,
-        pads=(0, 0, 0, 0),
-        act_min=_activation(options, out_zp)[0],
-        act_max=_activation(options, out_zp)[1],
-        in_scale=in_scale,
-        in_zp=in_zp,
-        out_scale=out_scale,
-        out_zp=out_zp,
-        full_k=full_k,
-        k_slice=min(MAX_K_SLICE, full_k),
+        op_index=index, op_name=op.op_name, kind="global_average_pool",
+        input_tensor=op.inputs[0], output_tensor=op.outputs[0], h=h, w=w,
+        cin=cin, cout=cout, oh=1, ow=1, kh=0, kw=0, sh=0, sw=0,
+        act_min=act_min, act_max=act_max, in_scale=in_scale, in_zp=in_zp,
+        out_scale=out_scale, out_zp=out_zp, full_k=h * w,
+        k_slice=min(MAX_K_SLICE, h * w),
+    )
+
+
+def _lower_add(graph: GraphInfo, index: int) -> _Plan:
+    op = graph.operators[index]
+    _require(len(op.inputs) == 2 and len(op.outputs) == 1,
+             f"operator {index} (ADD) requires two inputs and one output")
+    left, right = (graph.tensors[item] for item in op.inputs)
+    out_t = graph.tensors[op.outputs[0]]
+    h, w, cin = _hwc(left)
+    h1, w1, c1 = _hwc(right)
+    oh, ow, cout = _hwc(out_t)
+    _require((h1, w1, c1) == (h, w, cin) and (oh, ow, cout) == (h, w, cin),
+             f"operator {index} (ADD) does not support broadcasting")
+    scale0, z0 = _activation_quant(left, "ADD input0")
+    scale1, z1 = _activation_quant(right, "ADD input1")
+    out_scale, zout = _activation_quant(out_t, "ADD output")
+    act_min, act_max = _activation(op.options, out_scale, zout)
+    return _Plan(
+        op_index=index, op_name=op.op_name, kind="add",
+        input_tensor=op.inputs[0], input1_tensor=op.inputs[1], output_tensor=op.outputs[0],
+        h=h, w=w, cin=cin, cout=cout, oh=oh, ow=ow, kh=1, kw=1, sh=1, sw=1,
+        act_min=act_min, act_max=act_max, in_scale=scale0, in_zp=z0,
+        input1_scale=scale1, input1_zp=z1, out_scale=out_scale, out_zp=zout,
+        full_k=1, k_slice=1, params=_pack_add_params(scale0, scale1, out_scale),
+    )
+
+
+def _lower_pool(graph: GraphInfo, index: int) -> _Plan:
+    op = graph.operators[index]
+    _require(len(op.inputs) == 1 and len(op.outputs) == 1,
+             f"operator {index} ({op.op_name}) requires one input and output")
+    src = graph.tensors[op.inputs[0]]
+    out_t = graph.tensors[op.outputs[0]]
+    h, w, cin = _hwc(src)
+    oh, ow, cout = _hwc(out_t)
+    in_scale, zin = _activation_quant(src, "pool input")
+    out_scale, zout = _activation_quant(out_t, "pool output")
+    _require(in_scale == out_scale and zin == zout and cout == cin,
+             f"operator {index} ({op.op_name}) requires equal quantization and channels")
+    options = op.options
+    kh, kw = options["filter_height"], options["filter_width"]
+    is_global = (op.op_name == "AVERAGE_POOL_2D" and options.get("padding") == "VALID"
+                 and (oh, ow) == (1, 1) and (kh, kw) == (h, w)
+                 and (options["stride_h"], options["stride_w"]) == (h, w))
+    if is_global:
+        return _lower_global_average_pool(graph, index)
+    _require(1 <= kh <= 16 and 1 <= kw <= 16,
+             f"operator {index} ({op.op_name}): kernel must be within 1..16")
+    _check_kernel_options(op.op_name, index, options)
+    act_min, act_max = _activation(options, out_scale, zout)
+    kind = "max_pool" if op.op_name == "MAX_POOL_2D" else "average_pool"
+    return _Plan(
+        op_index=index, op_name=op.op_name, kind=kind,
+        input_tensor=op.inputs[0], output_tensor=op.outputs[0],
+        h=h, w=w, cin=cin, cout=cout, oh=oh, ow=ow,
+        kh=kh, kw=kw, sh=options["stride_h"], sw=options["stride_w"],
+        pads=_pads(options, h, w, kh, kw, oh, ow), act_min=act_min, act_max=act_max,
+        in_scale=in_scale, in_zp=zin, out_scale=out_scale, out_zp=zout,
+        full_k=kh * kw, k_slice=min(MAX_K_SLICE, kh * kw),
+    )
+
+
+def _lower_clamp(graph: GraphInfo, index: int) -> _Plan:
+    op = graph.operators[index]
+    _require(len(op.inputs) == 1 and len(op.outputs) == 1,
+             f"operator {index} ({op.op_name}) requires one input and output")
+    src, out_t = graph.tensors[op.inputs[0]], graph.tensors[op.outputs[0]]
+    h, w, cin = _hwc(src)
+    oh, ow, cout = _hwc(out_t)
+    in_scale, zin = _activation_quant(src, "CLAMP input")
+    out_scale, zout = _activation_quant(out_t, "CLAMP output")
+    _require((h, w, cin) == (oh, ow, cout) and in_scale == out_scale and zin == zout,
+             f"operator {index} ({op.op_name}) must preserve geometry and quantization")
+    fused = "RELU6" if op.op_name == "RELU6" else "RELU"
+    act_min, act_max = _activation({"fused_activation": fused}, out_scale, zout)
+    return _Plan(
+        op_index=index, op_name=op.op_name, kind="clamp",
+        input_tensor=op.inputs[0], output_tensor=op.outputs[0],
+        h=h, w=w, cin=cin, cout=cout, oh=oh, ow=ow, kh=1, kw=1, sh=1, sw=1,
+        act_min=act_min, act_max=act_max, in_scale=in_scale, in_zp=zin,
+        out_scale=out_scale, out_zp=zout, full_k=1, k_slice=1,
     )
 
 
@@ -594,8 +681,12 @@ def _lower_operator(graph: GraphInfo, index: int) -> _Plan:
         return _lower_depthwise(graph, index)
     if op.op_name == "FULLY_CONNECTED":
         return _lower_fully_connected(graph, index)
-    if op.op_name == "AVERAGE_POOL_2D":
-        return _lower_global_average_pool(graph, index)
+    if op.op_name == "ADD":
+        return _lower_add(graph, index)
+    if op.op_name in ("AVERAGE_POOL_2D", "MAX_POOL_2D"):
+        return _lower_pool(graph, index)
+    if op.op_name in ("RELU", "RELU6"):
+        return _lower_clamp(graph, index)
     if op.op_name == "RESHAPE":
         src = graph.tensors[op.inputs[0]]
         out_t = graph.tensors[op.outputs[0]]
@@ -621,10 +712,24 @@ def _lower_operator(graph: GraphInfo, index: int) -> _Plan:
             output_tensor=op.outputs[0],
         )
     if op.op_name == "SOFTMAX":
+        _require(len(op.inputs) == 1 and len(op.outputs) == 1,
+                 f"operator {index} (SOFTMAX): requires one input and output")
         src = graph.tensors[op.inputs[0]]
         out_t = graph.tensors[op.outputs[0]]
         in_scale, in_zp = _activation_quant(src, "softmax input")
         out_scale, out_zp = _activation_quant(out_t, "softmax output")
+        _require(src.shape == out_t.shape,
+                 f"operator {index} (SOFTMAX): input/output shapes must match")
+        _require(all(1 <= dim <= 4096 for dim in _hwc(src)),
+                 f"operator {index} (SOFTMAX): dimensions must be within 1..4096")
+        _require(-128 <= in_zp <= 127,
+                 f"operator {index} (SOFTMAX): input zero point must fit INT8")
+        _require(out_scale == SOFTMAX_OUTPUT_SCALE and out_zp == SOFTMAX_OUTPUT_ZERO_POINT,
+                 f"operator {index} (SOFTMAX): output quantization must be 1/256, -128")
+        try:
+            softmax = softmax_parameters(in_scale, op.options.get("beta", 1.0))
+        except ValueError as error:
+            raise CompilerError(f"operator {index} (SOFTMAX): {error}") from error
         return _Plan(
             op_index=index,
             op_name=op.op_name,
@@ -635,6 +740,7 @@ def _lower_operator(graph: GraphInfo, index: int) -> _Plan:
             in_zp=in_zp,
             out_scale=out_scale,
             out_zp=out_zp,
+            softmax=softmax,
         )
     raise CompilerError(
         f"operator {index} ({op.op_name}) has no supported NPU-P0 placement"
@@ -714,6 +820,7 @@ def _git_identity() -> dict[str, Any]:
 
 def _buffer_report(plan: _Plan, positions: int) -> dict[str, int]:
     """Raw-gather/packed half-buffer footprints with the 8192-byte bound checked."""
+    raw_positions = positions
     if plan.kind == "depthwise3x3":
         gather_slice = 9 * 8  # 9 kernel positions x 8 channel lanes per spatial lane
         packed_a = positions * 72
@@ -722,11 +829,21 @@ def _buffer_report(plan: _Plan, positions: int) -> dict[str, int]:
         gather_slice = plan.k_slice * 8  # positions x 8 channel lanes
         packed_a = plan.k_slice * 8
         packed_w = 0
+    elif plan.kind in ("max_pool", "average_pool"):
+        # Local pool drains one output position before gathering the next.
+        gather_slice = max(1, plan.k_slice) * min(plan.cin, 8)
+        raw_positions = 1
+        packed_a = 0
+        packed_w = 0
+    elif plan.kind in ("add", "clamp"):
+        gather_slice = max(1, plan.k_slice) * min(plan.cin, 8)
+        packed_a = 0
+        packed_w = 0
     else:
         gather_slice = plan.k_slice
         packed_a = plan.k_slice * 8
         packed_w = plan.k_slice * 8
-    raw_gather = positions * gather_slice
+    raw_gather = raw_positions * gather_slice
     _require(
         raw_gather <= MAX_BUFFER_HALF_BYTES,
         f"operator {plan.op_index}: raw gather half {raw_gather} exceeds 8192",
@@ -746,25 +863,82 @@ def _buffer_report(plan: _Plan, positions: int) -> dict[str, int]:
 def _dma_report(plan: _Plan) -> dict[str, int]:
     weight_bytes = len(plan.weights) if plan.weights is not None else 0
     param_bytes = len(plan.params) if plan.params is not None else 0
-    if plan.kind == "depthwise3x3":
-        gather = plan.oh * plan.ow * ((plan.cin + 7) // 8) * 72
-        macs = plan.oh * plan.ow * plan.cin * 9
+    tile_h, tile_w = _tile(plan.oh, plan.ow)
+    slot_bytes = (plan.cout + 3) & ~3
+    pass_capacity = min(8, MAX_BUFFER_HALF_BYTES // slot_bytes)
+    passes = sum(
+        -(-(min(tile_h, plan.oh - tile_y) * min(tile_w, plan.ow - tile_x)) //
+          pass_capacity)
+        for tile_y in range(0, plan.oh, tile_h)
+        for tile_x in range(0, plan.ow, tile_w)
+    )
+    weight_fetches = passes if weight_bytes > (2 * MAX_BUFFER_HALF_BYTES) else int(
+        weight_bytes != 0
+    )
+    weight_reads = weight_bytes * weight_fetches
+    param_fetches = passes if param_bytes > MAX_BUFFER_HALF_BYTES else int(param_bytes != 0)
+    param_reads = param_bytes * param_fetches
+    if plan.kind in ("conv2d", "depthwise3x3"):
+        valid_kernel_positions = 0
+        for oy in range(plan.oh):
+            for ox in range(plan.ow):
+                for ky in range(plan.kh):
+                    iy = oy * plan.sh + ky - plan.pads[0]
+                    if not 0 <= iy < plan.h:
+                        continue
+                    for kx in range(plan.kw):
+                        ix = ox * plan.sw + kx - plan.pads[2]
+                        if 0 <= ix < plan.w:
+                            valid_kernel_positions += 1
+        gather = valid_kernel_positions * plan.cin
+        macs = (plan.oh * plan.ow * plan.full_k *
+                (plan.cin if plan.kind == "depthwise3x3" else plan.cout))
     elif plan.kind == "global_average_pool":
         gather = plan.h * plan.w * plan.cin
-        macs = plan.h * plan.w * plan.cin
+        macs = 0
+    elif plan.kind == "add":
+        gather = 2 * plan.h * plan.w * plan.cin
+        macs = 0
+    elif plan.kind in ("max_pool", "average_pool"):
+        valid_kernel_positions = 0
+        for oy in range(plan.oh):
+            for ox in range(plan.ow):
+                for ky in range(plan.kh):
+                    iy = oy * plan.sh + ky - plan.pads[0]
+                    if not 0 <= iy < plan.h:
+                        continue
+                    for kx in range(plan.kw):
+                        ix = ox * plan.sw + kx - plan.pads[2]
+                        if 0 <= ix < plan.w:
+                            valid_kernel_positions += 1
+        gather = valid_kernel_positions * plan.cin
+        macs = 0
+    elif plan.kind == "clamp":
+        gather = plan.h * plan.w * plan.cin
+        macs = 0
     else:
         # Every output position gathers its full receptive field; redundant
         # reads of overlapping windows are included on purpose.
         gather = plan.oh * plan.ow * plan.full_k
         macs = plan.oh * plan.ow * plan.cout * plan.full_k
+    input_fetches = (
+        (plan.cout + 7) // 8
+        if plan.kind in ("conv2d", "fully_connected") and plan.full_k > MAX_K_SLICE
+        else 1
+    )
+    gather *= input_fetches
     write = plan.oh * plan.ow * plan.cout
     pack_cycles = -(-gather // 8)
-    estimated = -(-macs // 8) + pack_cycles + -(-(weight_bytes + param_bytes) // 8) + -(-write // 8)
+    estimated = (-(-macs // 8) + pack_cycles +
+                 -(-(weight_reads + param_reads) // 8) + -(-write // 8))
     return {
         "gather_read_bytes": gather,
-        "weight_read_bytes": weight_bytes,
-        "param_read_bytes": param_bytes,
-        "read_bytes": gather + weight_bytes + param_bytes,
+        "input_tensor_fetches": input_fetches,
+        "weight_read_bytes": weight_reads,
+        "weight_tensor_fetches": weight_fetches,
+        "param_read_bytes": param_reads,
+        "param_tensor_fetches": param_fetches,
+        "read_bytes": gather + weight_reads + param_reads,
         "write_bytes": write,
         "useful_macs": macs,
         "pack_cycles": pack_cycles,
@@ -785,9 +959,7 @@ def _operator_report(plan: _Plan, descriptor_index: int | None) -> dict[str, Any
     if plan.kind == "softmax":
         entry["placement"] = "cpu-softmax"
         entry["pinned"] = {
-            "input_multiplier": SOFTMAX_INPUT_MULTIPLIER,
-            "input_left_shift": SOFTMAX_INPUT_LEFT_SHIFT,
-            "diff_min": -124,
+            **(plan.softmax or {}),
             "output_scale": SOFTMAX_OUTPUT_SCALE,
             "output_zero_point": SOFTMAX_OUTPUT_ZERO_POINT,
         }
@@ -823,6 +995,8 @@ def _operator_report(plan: _Plan, descriptor_index: int | None) -> dict[str, Any
             "quantization": {
                 "input_scale": plan.in_scale,
                 "input_zero_point": plan.in_zp,
+                "input1_scale": plan.input1_scale if plan.input1_tensor is not None else None,
+                "input1_zero_point": plan.input1_zp if plan.input1_tensor is not None else None,
                 "output_scale": plan.out_scale,
                 "output_zero_point": plan.out_zp,
                 "act_min": plan.act_min,
@@ -843,6 +1017,19 @@ def _operator_report(plan: _Plan, descriptor_index: int | None) -> dict[str, Any
                 "oh_mod_tile": plan.oh % tile_h,
                 "ow_mod_tile": plan.ow % tile_w,
             },
+            "tail_utilization": {
+                "output_channels": plan.cout / (8 * ((plan.cout + 7) // 8)),
+                "tile_positions": min(8, plan.oh * plan.ow) / 8.0,
+            },
+            "reloads": {
+                "input_k_slice": max(0, len(sizes) - 1) *
+                                 (-(-plan.oh // tile_h) * -(-plan.ow // tile_w)),
+                "input_tensors": dma["input_tensor_fetches"],
+                "weight_groups": (((plan.cout + 7) // 8) *
+                                  dma["weight_tensor_fetches"]),
+                "weight_tensors": dma["weight_tensor_fetches"],
+                "param_tensors": dma["param_tensor_fetches"],
+            },
             "buffers": _buffer_report(plan, tile_h * tile_w),
             "weights": (
                 {"bytes": len(plan.weights)} if plan.weights is not None else None
@@ -860,23 +1047,26 @@ def _operator_report(plan: _Plan, descriptor_index: int | None) -> dict[str, Any
 def _emit_descriptor(
     plan: _Plan,
     input_offset: int,
+    input1_offset: int,
     output_offset: int,
     weight_offset: int,
     param_offset: int,
 ) -> Descriptor:
     opcode = _OPCODE_FOR_KIND[plan.kind]
     tile_h, tile_w = _tile(plan.oh, plan.ow)
-    weighted = plan.weights is not None
+    has_params = plan.params is not None
     pad_top, pad_bottom, pad_left, pad_right = plan.pads
     return Descriptor(
         version_opcode=(ABI_VERSION << 16) | opcode,
         input0_base=input_offset,
+        input1_base=input1_offset,
         output_base=output_offset,
-        param_base=param_offset if weighted else 0,
+        param_base=param_offset if has_params else 0,
         input_hw=plan.h | (plan.w << 16),
         channels=plan.cin | (plan.cout << 16),
         output_hw=plan.oh | (plan.ow << 16),
         input0_row_bytes=plan.w * plan.cin,
+        input1_row_bytes=plan.w * plan.cin if plan.input1_tensor is not None else 0,
         output_row_bytes=plan.ow * plan.cout,
         kernel_stride=plan.kh | (plan.kw << 8) | (plan.sh << 16) | (plan.sw << 24),
         padding=pad_top | (pad_bottom << 8) | (pad_left << 16) | (pad_right << 24),
@@ -884,13 +1074,16 @@ def _emit_descriptor(
         k_slice=plan.k_slice,
         input0_bytes=used_span(plan.h, plan.w, plan.cin, plan.w * plan.cin),
         output_bytes=used_span(plan.oh, plan.ow, plan.cout, plan.ow * plan.cout),
-        param_bytes=len(plan.params) if weighted else 0,
+        input1_bytes=(used_span(plan.h, plan.w, plan.cin, plan.w * plan.cin)
+                      if plan.input1_tensor is not None else 0),
+        param_bytes=len(plan.params) if has_params else 0,
         input0_zero=plan.in_zp,
+        input1_zero=plan.input1_zp if plan.input1_tensor is not None else 0,
         output_zero=plan.out_zp,
         act_min=plan.act_min,
         act_max=plan.act_max,
-        weight_base=weight_offset if weighted else 0,
-        weight_bytes=len(plan.weights) if weighted else 0,
+        weight_base=weight_offset if plan.weights is not None else 0,
+        weight_bytes=len(plan.weights) if plan.weights is not None else 0,
     )
 
 
@@ -929,6 +1122,7 @@ def compile_model(
     """
     _require(len(graph.operators) > 0, "graph holds no operators")
     _require(len(graph.inputs) == 1, "graph must have exactly one input")
+    _require(len(graph.outputs) == 1, "graph must have exactly one output")
     plans = [_lower_operator(graph, index) for index in range(len(graph.operators))]
     for index, plan in enumerate(plans):
         _require(
@@ -947,6 +1141,7 @@ def compile_model(
     weights_region = bytearray()
     params_region = bytearray()
     report_ops: list[dict[str, Any]] = []
+    producer_descriptor: dict[int, int] = {}
 
     in_index = graph.inputs[0]
     in_h, in_w, in_c = _hwc(graph.tensors[in_index])
@@ -958,17 +1153,23 @@ def compile_model(
 
     def free_consumed(tensor_index: int, at: int) -> None:
         entry = alloc.get(tensor_index)
-        if entry is not None and entry[2] <= at:
+        if entry is None:
+            return
+        aliases = [key for key, value in alloc.items() if value[0] == entry[0]]
+        if max(alloc[key][2] for key in aliases) <= at:
             arena.free(entry[0], entry[1])
-            del alloc[tensor_index]
+            for key in aliases:
+                del alloc[key]
 
     for index, plan in enumerate(plans):
         if plan.kind == "reshape":
             src_offset, src_size, src_last = alloc[plan.input_tensor]
             out_last = last_use.get(plan.output_tensor, len(plans))
-            alloc[plan.output_tensor] = (src_offset, src_size, max(src_last, out_last))
-            if plan.input_tensor != in_index:
-                del alloc[plan.input_tensor]
+            retirement = max(src_last, out_last)
+            alloc[plan.input_tensor] = (src_offset, src_size, retirement)
+            alloc[plan.output_tensor] = (src_offset, src_size, retirement)
+            if plan.input_tensor in producer_descriptor:
+                producer_descriptor[plan.output_tensor] = producer_descriptor[plan.input_tensor]
             report_ops.append(_operator_report(plan, None))
             continue
         if plan.kind == "softmax":
@@ -976,6 +1177,9 @@ def compile_model(
             report_ops.append(_operator_report(plan, None))
             continue
         in_off, _, _ = alloc[plan.input_tensor]
+        input1_off = 0
+        if plan.input1_tensor is not None:
+            input1_off, _, _ = alloc[plan.input1_tensor]
         out_bytes = plan.oh * plan.ow * plan.cout
         out_off = arena.alloc(out_bytes)
         alloc[plan.output_tensor] = (
@@ -987,10 +1191,14 @@ def compile_model(
         param_offset = 0
         if plan.weights is not None:
             weight_offset = _append_aligned(weights_region, plan.weights)
-            param_offset = _append_aligned(params_region, plan.params or b"")
-        descriptor = _emit_descriptor(plan, in_off, out_off, weight_offset, param_offset)
+        if plan.params is not None:
+            param_offset = _append_aligned(params_region, plan.params)
+        descriptor = _emit_descriptor(
+            plan, in_off, input1_off, out_off, weight_offset, param_offset
+        )
         descriptor_index = len(descriptors)
         descriptors.append(descriptor)
+        producer_descriptor[plan.output_tensor] = descriptor_index
         relocations.append(
             {
                 "descriptor_index": descriptor_index,
@@ -999,6 +1207,11 @@ def compile_model(
                 "offset": in_off,
             }
         )
+        if plan.input1_tensor is not None:
+            relocations.append(
+                {"descriptor_index": descriptor_index, "word_index": 3,
+                 "region": "arena", "offset": input1_off}
+            )
         relocations.append(
             {
                 "descriptor_index": descriptor_index,
@@ -1007,7 +1220,7 @@ def compile_model(
                 "offset": out_off,
             }
         )
-        if plan.weights is not None:
+        if plan.params is not None:
             relocations.append(
                 {
                     "descriptor_index": descriptor_index,
@@ -1016,6 +1229,7 @@ def compile_model(
                     "offset": param_offset,
                 }
             )
+        if plan.weights is not None:
             relocations.append(
                 {
                     "descriptor_index": descriptor_index,
@@ -1027,27 +1241,62 @@ def compile_model(
         entry = _operator_report(plan, descriptor_index)
         entry["arena"] = {
             "input_offset": in_off,
+            "input1_offset": input1_off if plan.input1_tensor is not None else None,
             "output_offset": out_off,
             "output_bytes": out_bytes,
+            "output_live_until_operator": last_use.get(plan.output_tensor, len(plans)),
         }
         if plan.weights is not None:
             entry["weights"]["offset"] = weight_offset
+        if plan.params is not None:
             entry["params"]["offset"] = param_offset
         report_ops.append(entry)
         free_consumed(plan.input_tensor, index)
+        if plan.input1_tensor is not None and plan.input1_tensor != plan.input_tensor:
+            free_consumed(plan.input1_tensor, index)
 
     steps: list[dict[str, Any]] = []
     if descriptors:
         steps.append({"kind": "npu", "first_descriptor": 0, "count": len(descriptors)})
+    output_tensor = graph.outputs[0]
     if plans[-1].kind == "softmax":
+        _require(
+            plans[-1].output_tensor == output_tensor,
+            "terminal SOFTMAX output must be the graph output",
+        )
+        source_descriptor = producer_descriptor.get(plans[-1].input_tensor)
+        _require(
+            source_descriptor is not None,
+            "terminal SOFTMAX input must be produced by an NPU descriptor",
+        )
         steps.append(
             {
                 "kind": "cpu",
                 "op": "softmax",
-                "source_descriptor": len(descriptors) - 1,
+                "source_descriptor": source_descriptor,
                 "note": "pinned integer softmax (numerical profile 1)",
+                **(plans[-1].softmax or {}),
             }
         )
+    else:
+        source_descriptor = producer_descriptor.get(output_tensor)
+        _require(
+            source_descriptor is not None,
+            "graph output must be produced by an NPU descriptor",
+        )
+
+    output_h, output_w, output_c = _hwc(graph.tensors[output_tensor])
+    source_entry = next(
+        entry for entry in report_ops if entry.get("descriptor_index") == source_descriptor
+    )
+    output_record = {
+        "tensor_index": output_tensor,
+        "shape": [output_h, output_w, output_c],
+        "bytes": output_h * output_w * output_c,
+        "placement": "cpu-softmax" if plans[-1].kind == "softmax" else "npu",
+        "source_descriptor": source_descriptor,
+        "source_offset": source_entry["arena"]["output_offset"],
+    }
 
     if reference_input is not None:
         reference_layers = evaluate_reference(graph, reference_input)
@@ -1060,18 +1309,20 @@ def compile_model(
             entry["reference_sha256"] = _digest(tensor)
             entry["reference_shape"] = list(tensor.shape)
 
+    descriptor_read_bytes = len(descriptors) * DESCRIPTOR_BYTES
     totals = {
         "descriptors": len(descriptors),
+        "descriptor_read_bytes": descriptor_read_bytes,
         "weights_bytes": len(weights_region),
         "params_bytes": len(params_region),
         "useful_macs": sum(entry.get("useful_macs", 0) for entry in report_ops),
-        "dma_read_bytes": sum(
+        "dma_read_bytes": descriptor_read_bytes + sum(
             entry.get("dma", {}).get("read_bytes", 0) for entry in report_ops
         ),
         "dma_write_bytes": sum(
             entry.get("dma", {}).get("write_bytes", 0) for entry in report_ops
         ),
-        "estimated_cycles": sum(
+        "estimated_cycles": -(-descriptor_read_bytes // 8) + sum(
             entry.get("estimated_cycles", 0) for entry in report_ops
         ),
     }
@@ -1096,6 +1347,7 @@ def compile_model(
         ),
         "cycle_model": _CYCLE_MODEL,
         "operators": report_ops,
+        "output": output_record,
         "totals": totals,
     }
     job = CompiledJob(
@@ -1138,16 +1390,17 @@ def evaluate_reference(graph: GraphInfo, input_bytes: bytes) -> list[Tensor]:
         f"reference input is {len(input_bytes)} bytes, expected {h * w * cin}",
     )
     in_scale, in_zp = _activation_quant(src_t, "graph input")
-    current = Tensor((h, w, cin), tuple(_signed(bytes(input_bytes))), in_scale, in_zp)
+    tensors = {in_index: Tensor((h, w, cin), tuple(_signed(bytes(input_bytes))), in_scale, in_zp)}
     layers: list[Tensor] = []
     for index, op in enumerate(graph.operators):
         options = op.options
         out_t = graph.tensors[op.outputs[0]]
+        current = tensors[op.inputs[0]]
         if op.op_name in ("CONV_2D", "DEPTHWISE_CONV_2D", "FULLY_CONNECTED"):
             weight_t = graph.tensors[op.inputs[1]]
             bias_t = graph.tensors[op.inputs[2]]
             out_scale, out_zp = _activation_quant(out_t, "output")
-            act_min, act_max = _activation(options, out_zp)
+            act_min, act_max = _activation(options, out_scale, out_zp)
             cout = out_t.shape[-1]
             bias = _bias_values(bias_t, cout)
             multipliers, shifts = _channel_quant(
@@ -1210,20 +1463,59 @@ def evaluate_reference(graph: GraphInfo, input_bytes: bytes) -> list[Tensor]:
                 act_min=act_min,
                 act_max=act_max,
             )
-        elif op.op_name == "AVERAGE_POOL_2D":
+        elif op.op_name == "ADD":
+            other = tensors[op.inputs[1]]
+            out_scale, out_zp = _activation_quant(out_t, "ADD output")
+            common = max(current.scale, other.scale)
+            m0, s0 = quantize_multiplier(current.scale / (2.0 * common))
+            m1, s1 = quantize_multiplier(other.scale / (2.0 * common))
+            mout, sout = quantize_multiplier((2.0 * common) / ((1 << 20) * out_scale))
+            act_min, act_max = _activation(options, out_scale, out_zp)
+            current = add(
+                current, other, input0_multiplier=m0, input0_shift=s0,
+                input1_multiplier=m1, input1_shift=s1, output_multiplier=mout,
+                output_shift=sout, output_scale=out_scale, output_zero_point=out_zp,
+                act_min=act_min, act_max=act_max,
+            )
+        elif op.op_name in ("AVERAGE_POOL_2D", "MAX_POOL_2D"):
             out_scale, out_zp = _activation_quant(out_t, "output")
-            act_min, act_max = _activation(options, out_zp)
-            current = global_average_pool(current, act_min=act_min, act_max=act_max)
+            act_min, act_max = _activation(options, out_scale, out_zp)
+            kh, kw = options["filter_height"], options["filter_width"]
+            is_global = (op.op_name == "AVERAGE_POOL_2D" and options["padding"] == "VALID"
+                         and tuple(_hwc(out_t)[:2]) == (1, 1) and (kh, kw) == (current.height, current.width)
+                         and (options["stride_h"], options["stride_w"])
+                         == (current.height, current.width))
+            if is_global:
+                current = global_average_pool(current, act_min=act_min, act_max=act_max)
+            else:
+                oh, ow, _ = _hwc(out_t)
+                pads = _pads(options, current.height, current.width, kh, kw, oh, ow)
+                pool = max_pool if op.op_name == "MAX_POOL_2D" else average_pool
+                current = pool(
+                    current, kernel_h=kh, kernel_w=kw,
+                    stride_h=options["stride_h"], stride_w=options["stride_w"],
+                    pad_top=pads[0], pad_bottom=pads[1], pad_left=pads[2],
+                    pad_right=pads[3], act_min=act_min, act_max=act_max,
+                )
+        elif op.op_name in ("RELU", "RELU6"):
+            out_scale, out_zp = _activation_quant(out_t, "CLAMP output")
+            fused = "RELU6" if op.op_name == "RELU6" else "RELU"
+            act_min, act_max = _activation({"fused_activation": fused}, out_scale, out_zp)
+            current = clamp(current, act_min, act_max)
         elif op.op_name == "RESHAPE":
             oh, ow, oc = _hwc(out_t)
             current = Tensor((oh, ow, oc), current.data, current.scale, current.zero_point)
+            tensors[op.outputs[0]] = current
             continue
         elif op.op_name == "SOFTMAX":
-            current = softmax_int8(current)
+            current = softmax_int8(
+                current, **softmax_parameters(current.scale, options.get("beta", 1.0))
+            )
         else:
             raise CompilerError(
                 f"operator {index} ({op.op_name}) has no supported NPU-P0 placement"
             )
+        tensors[op.outputs[0]] = current
         layers.append(current)
     return layers
 
@@ -1311,3 +1603,4 @@ def write_artifacts(job: CompiledJob, out_dir: str | Path) -> dict[str, Any]:
         (out / name).write_bytes(payload)
     (out / "npu.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return manifest
+    max_pool,

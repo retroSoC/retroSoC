@@ -269,7 +269,11 @@ module apb4_npu (
   // receivers are live whenever an accepted obligation exists, and presented
   // but unaccepted requests stay stable through pause and abort per the
   // frozen contract.
-  npu_dma u_npu_dma (
+  // PRODUCT memory targets use a 64-to-32 downsizer: eight AXI64 beats expand
+  // to the frontends' frozen sixteen-AXI32-beat maximum.
+  npu_dma #(
+      .MaxBurstBeats(8)
+  ) u_npu_dma (
       .clk_hp_i          (clk_hp_i),
       .rst_hp_n_i        (rst_hp_n_i),
       .clear_i           (hp_flush_i || s_dma_clear),

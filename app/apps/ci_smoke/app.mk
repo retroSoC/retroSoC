@@ -1,1 +1,8 @@
 APP_SRCS += $(ROOT_PATH)/app/apps/ci_smoke/main.c
+
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+APP_SRCS     += $(NPU_P5_KWS_C)
+APP_SRCS     += $(NPU_P5_ACCEPTANCE_C)
+APP_INC_DIRS += $(NPU_P5_KWS_DIR)
+APP_INC_DIRS += $(NPU_P5_ACCEPTANCE_DIR)
+endif
