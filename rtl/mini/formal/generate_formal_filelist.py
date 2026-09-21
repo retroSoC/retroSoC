@@ -365,6 +365,23 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "npu_dma.sv",
             SCRIPT_DIR / "npu_dma_formal.sv",
         ]
+    if target == "npu_context":
+        return [
+            MULTIMEDIA / "npu_pkg.sv",
+            MULTIMEDIA / "npu_accumulator.sv",
+            SCRIPT_DIR / "npu_context_formal.sv",
+        ]
+    if target == "npu_control":
+        return [
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
+            COMMON_RTL / "cdc/async_reqack.sv",
+            COMMON_RTL / "clkrst/rst_sync.sv",
+            MULTIMEDIA / "npu_define.svh",
+            MULTIMEDIA / "npu_control_cdc.sv",
+            SCRIPT_DIR / "npu_control_formal.sv",
+        ]
     if target == "sdio":
         return [
             COMMON_RTL / "interface/apb4_if.sv",
@@ -443,6 +460,8 @@ def parse_args() -> argparse.Namespace:
             "gateway_a",
             "sdio",
             "npu_dma",
+            "npu_context",
+            "npu_control",
         ),
         required=True,
     )

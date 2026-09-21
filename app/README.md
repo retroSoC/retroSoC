@@ -49,6 +49,16 @@ same plan with polling and 64-byte Zicbom maintenance, then returns ownership
 before LP publishes the final verdict. The option defaults to `NO`, preserving
 normal PR firmware size and behavior.
 
+NPU-P6 likewise reuses `APP=hp_boot`; it does not add an application profile
+or public ABI. `NPU_P6_ACCEPTANCE=YES` selects a private qualification payload,
+and `NPU_P6_WORKLOAD=kws|vww` selects one frozen generated plan. The payload
+reads a CRC-protected 100-case shard from the existing HP `Image` slot, runs
+the portable C and production NPU paths through CPU Softmax, measures both
+with HP `rdcycle`, and emits fail-closed per-case records. The first ten global
+cases also overlap an identical GA2D DMA copy with both measured paths.
+Normal and P5 builds remain unchanged because P5 and P6 acceptance flags are
+mutually exclusive and both default to `NO`.
+
 Build and simulate the supported profiles from the repository root:
 
 ```sh

@@ -9,6 +9,14 @@ Design freeze is not RTL freeze: none of the NPU implementation, performance,
 or physical evidence is claimed by this document. Phase execution requires
 the matching implementation preflight and approval.
 
+The qualification contract was refrozen on 2026-09-21 to remove FPGA hardware
+as an NPU-P6 dependency. Full-corpus functional and performance qualification
+now runs on the complete PRODUCT Verilator model using architecturally counted
+cycles for the same modeled 72 MHz HP configuration. This refreeze does not
+change the NPU architecture, hardware or software ABI, workload, 2.0-times
+target, synthesis, timing, formal, netlist, or regression requirements. FPGA
+and board execution remain useful post-MVP evidence but are not P6 exit gates.
+
 The selected MVP has 64 MAC lanes, 64 KiB of private banked SRAM, a private
 AXI4 master with 64-bit data, APB4 configuration, and an independently compiled
 bare-metal deployment path. It accelerates small visual and keyword models.
@@ -82,7 +90,7 @@ silently expand an implementation phase.
 | NPU-014 | Clock pause, abort, resource reset, unilateral reset and coordinated transport flush MUST have distinct behavior; no local timeout may discard an outstanding AXI transaction. |
 | NPU-015 | KWS and VWW MUST pass the fixed-asset numerical and hardware qualification in the verification companion; missing inputs MUST NOT count as passing skips. |
 | NPU-016 | Capability, first-fault, coherent snapshots, traffic, packing, useful-MAC and stall observations MUST report actual implemented behavior. |
-| NPU-017 | IHP130 synthesis, 72 MHz timing, macro mapping, NPU-executing netlist tests and FPGA evidence MUST precede an MVP qualification claim. |
+| NPU-017 | IHP130 synthesis, 72 MHz timing, macro mapping and NPU-executing netlist tests MUST precede an MVP qualification claim. |
 | NPU-018 | Both model workloads MUST meet the companion's 2x performance-qualification target against the fixed same-frequency HP C baseline; a shortfall MUST be reported, not hidden by peak GOPS. |
 
 Explicit DEFER items are Linux/UAPI, ONNX/TOSA import, Vela reuse, training and
@@ -91,6 +99,8 @@ convolution, broadcast Add, nonconstant weights, float/INT16/INT4, sparsity,
 weight compression, queue/ring submission, preemption, cross-layer streaming,
 external AXI4-Stream ports, and larger arrays/stores. Existing APU KWS, camera,
 audio capture, and central DMA behavior are not replaced or rearchitected.
+FPGA prototype and board qualification are post-MVP evidence and MUST NOT be
+required for, or inferred from, an NPU-P6 verdict.
 
 ## Selected Architecture
 
@@ -831,11 +841,12 @@ At 72 MHz, 64 MAC/cycle gives a theoretical 4.608 GMAC/s or 9.216 GOPS when
 multiply/add count separately. Scalar requantization, eight-lane depthwise,
 small FC, gather transpose, memory traffic and tails reduce utilization.
 Neither continuous 64-MAC activity nor a vendor-equivalent model rate is
-promised. Qualification requires measured traffic/latency, the two-model 2x
-target, bit-exact supported semantics and physical evidence. If an approved
-target is missed, report it and return an architecture/performance change
-for approval; do not silently change array/store size, the model, baseline,
-precision or acceptance corpus.
+promised. Qualification requires architecturally counted traffic and cycles,
+cycle-derived modeled latency, the two-model 2x target, bit-exact supported
+semantics and IHP130 synthesis/timing evidence. If an approved target is
+missed, report it and return an architecture/performance change for approval;
+do not silently change array/store size, the model, baseline, precision or
+acceptance corpus.
 
 The post-MVP target preserves this separation of an independent compiler,
 versioned jobs, local tensor storage and autonomous memory transfers. Future
@@ -856,11 +867,13 @@ backend hidden behind a production shell.
 
 P0 provides an independent scalar numerical oracle and compiled-job executor.
 Compare every supported intermediate tensor, not merely top-1 labels. Host
-runs use the full qualified corpora; RTL runs use ten deterministic samples
-per model plus directed numerical/tiling cases; FPGA qualification runs use
-the full corpora. Missing assets or tools cannot become passing skips in an
-acceptance invocation. Ordinary optional repository tests may retain their
-existing behavior without being cited as model acceptance.
+runs use the full qualified corpora; the P5 dual-simulator RTL runs use ten
+deterministic samples per model plus directed numerical/tiling cases. P6 runs
+both complete corpora on the full PRODUCT Verilator model through the real HP
+software, private DMA and production datapath. Missing assets or tools cannot
+become passing skips in an acceptance invocation. Ordinary optional repository
+tests may retain their existing behavior without being cited as model
+acceptance.
 
 New host C follows the current MISRA C:2012 Amendment 2 policy and approved
 deviation procedure; this freeze adds no deviations. Host logic, HAL errors,
@@ -1019,11 +1032,13 @@ ID: `NPU-P5`. Dependency: P4 and P0 locked inputs/oracle.
 ID: `NPU-P6`. Dependency: P5 functional deployment.
 
 - Complete the companion matrix, fixed corpora, competing-master performance,
-  full FPGA runs, NPU and PRODUCT synthesis/STA, actual NPU netlist workloads,
-  warning review, formal results and release/readiness traceability.
+  full-corpus PRODUCT Verilator runs, NPU and PRODUCT synthesis/STA, actual NPU
+  netlist workloads, warning review, formal results and release/readiness
+  traceability.
 - Run supported PR/nightly matrices without treating hosted behavioral-only
-  results as physical evidence. Publish per-model latency/traffic/stalls,
-  both >=2x qualifications and remaining PDK/board gaps.
+  results as physical evidence. Publish per-model architectural cycles,
+  cycle-derived modeled latency, traffic and stalls, both >=2x qualifications,
+  and remaining PDK/board gaps. Simulator host runtime is not model latency.
 - Exit with linked evidence for every MVP requirement, no acceptance skips,
   correct release manifests and an honest maturity label. Unmet functional,
   performance or timing criteria leave P6 incomplete; commercial physical
@@ -1034,13 +1049,16 @@ ID: `NPU-P6`. Dependency: P5 functional deployment.
 All implementation evidence is pending at this design freeze. Following MVP,
 reusable protocol VIP/coverage closure, production CDC/RDC review, DFT and
 memory-test integration, SRAM repair strategy if needed, extracted MMMC,
-clock-tree/hold closure, floorplan/package/board constraints, PVT power/activity,
-release reproducibility and silicon characterization still require evidence.
+clock-tree/hold closure, floorplan/package/board constraints, FPGA prototype
+and board execution, PVT power/activity, release reproducibility and silicon
+characterization still require evidence.
 No safety/security, coherent-memory or low-power claim follows from these
 functional phases. Future architecture changes and Linux/framework deployment
 require separate approved specifications or appended phases.
 
-The first implementation preflight is exactly
-`NPU-P0 / Phase 0 - Workload and Numerical Contract`, using this document and
-the verification companion. The unresolved asset hashes are assigned P0
-deliverables; no other architectural choice is delegated to implementation.
+This refreeze does not reopen P0-P5 or change their evidence contracts. The
+next implementation preflight is exactly
+`NPU-P6 / Phase 6 - MVP Qualification and Delivery`, using this document and
+the verification companion. It must not add FPGA as a hidden prerequisite or
+weaken the full-corpus, 2.0-times, formal, netlist, synthesis, timing, or
+regression gates.

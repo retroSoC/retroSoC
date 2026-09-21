@@ -36,6 +36,7 @@ TOPS = (
     "npu_scheduler",
     "npu_core",
     "apb4_npu",
+    "npu_block_top",
 )
 NPU_RTL = (
     "npu_pkg.sv",
@@ -235,6 +236,7 @@ def _write_filelist(path: Path) -> None:
         if not source.is_file():
             raise RuntimeError(f"missing NPU RTL source: {source}")
         lines.append(str(source))
+    lines.append(str(ROOT / "physical/smoke/syn/yosys/npu_block_top.sv"))
     common_rtl = ROOT / "rtl/managed/clusterip/common/rtl"
     lines.append(str(ROOT / "rtl/tech/tc_sram.sv"))
     for extra in (

@@ -4,8 +4,10 @@ This is the normative verification companion to [NPU](npu.md). The main
 specification owns the architecture and ABI; this document owns evidence,
 workload provenance, coverage, and qualification verdicts. All evidence below
 is required future work unless a dated report explicitly records its execution.
-The architecture freeze itself supplies no simulator, performance, FPGA,
-synthesis, timing, or silicon result.
+The architecture freeze itself supplies no simulator, performance, synthesis,
+timing, board, or silicon result. The 2026-09-21 refreeze makes the complete
+PRODUCT Verilator model the mandatory P6 corpus/performance vehicle; FPGA and
+board execution are optional post-MVP evidence and cannot block P6.
 
 The selected implementation has 64 dense MACs, an eight-MAC depthwise mode,
 64 KiB of banked local SRAM, two 256-byte accumulator contexts, a scalar exact
@@ -65,9 +67,10 @@ Qualification corpus scope is fixed:
 | Execution level | Required scope |
 | --- | --- |
 | Host reference and compiled-command model | Complete KWS and VWW corpora; exact intermediate and final tensors. |
-| Icarus and Verilator RTL | The first ten distinct input IDs per model in bytewise lexicographic order from the frozen manifest, plus all directed arithmetic, tiling, protocol and lifecycle cases below. Both simulators consume identical command/input artifacts. |
-| FPGA | Complete KWS and VWW corpora using the production NPU datapath, DMA and runtime; report every mismatch and accuracy result. |
+| P5 Icarus and Verilator RTL | The first ten distinct input IDs per model in bytewise lexicographic order from the frozen manifest, plus all directed arithmetic, tiling, protocol and lifecycle cases below. Both simulators consume identical command/input artifacts. |
+| P6 PRODUCT Verilator | Complete KWS and VWW corpora through the modeled HP core, production NPU datapath, private DMA and freestanding runtime; compare terminal tensors and CPU Softmax exactly, and report every mismatch, classification result and architecturally counted cycle interval. |
 | Synthesized-block simulation | Directed compute, memory, transport and recovery transactions with exact output checks; full-corpus netlist execution is not required. |
+| Optional FPGA/board | When available, rerun the complete corpora and retain tool, bitstream, board and clock identities. This supplements P6 but is not required for its verdict and does not replace IHP130 physical evidence. |
 
 Top-1 agreement alone is insufficient. Accelerated layer outputs MUST match
 the independent integer reference byte-for-byte; CPU softmax MUST also match
@@ -97,9 +100,9 @@ Every report MUST identify the applicable `NPU-Vxxx` IDs and exact phase.
 | `NPU-V013` | **Compiler and SDK:** deterministic import/lowering/packing, checked address and size arithmetic, malformed-model diagnostics, no external full-image im2col, independently handwritten ABI parity, bounded freestanding API behavior, timeouts, cache maintenance/fences and explicit CPU preprocessing/softmax. | P5 |
 | `NPU-V014` | **Integrated model execution:** prescribed dual-simulator input sets, exact per-layer outputs, bare-metal command submission and final SYSCTRL verdicts. Exercise contention with other masters and software polling as well as interrupt completion. | P5 |
 | `NPU-V015` | **Formal and coverage closure:** control/DMA/context invariants, reachable success and failure covers, explicit fairness assumptions for any liveness property, reviewed unreachable cases and reported proof/bounded depth. A tool-doctor result or bounded check is not an unbounded proof. | P3; closure P6 |
-| `NPU-V016` | **Performance:** complete-corpus FPGA/model comparison under the fixed baseline below; dense, depthwise, packing, scalar-requantization, DMA and contention costs, with achieved utilization and per-model speedup. | P6 |
+| `NPU-V016` | **Performance:** complete-corpus, cycle-accounted PRODUCT Verilator comparison against the fixed same-model HP C baseline below; dense, depthwise, packing, scalar-requantization, DMA and contention costs, with achieved utilization and per-model speedup. Host simulation runtime is not performance evidence. | P6 |
 | `NPU-V017` | **Physical integration:** isolated NPU and full PRODUCT macro-aware synthesis/STA, exact memory mapping, no unexpected latches or unresolved non-PDK black boxes, 72 MHz HP target and unchanged other-domain constraints, complete warnings and metrics. | P1; full qualification P6 |
-| `NPU-V018` | **Delivery:** reproducible artifact manifests, full FPGA corpus correctness, synthesized-block transactions, full-SoC regression verdicts, reviewed coverage gaps and separate functional/performance/physical qualification status. | P6 |
+| `NPU-V018` | **Delivery:** reproducible artifact manifests, full PRODUCT Verilator corpus correctness, synthesized-block transactions, full-SoC regression verdicts, reviewed coverage gaps and separate functional/performance/physical qualification status. Optional FPGA status is reported independently. | P6 |
 
 Directed tests MUST cover each legal operator and each defined error. Random
 tests MUST vary legal memory latency, ready/valid timing, geometry, addresses,
@@ -149,20 +152,31 @@ simulation and the applicable bounded formal harness:
 
 ## Performance and Physical Qualification
 
-The reference is the pinned portable-C INT8 implementation on the same
-72 MHz HP VexiiRiscv configuration, with the same model, corpus, memory
-placement and declared cache policy. Both paths include the inference result
-through CPU softmax; the NPU path additionally includes command submission,
-DMA transfers, synchronization and wait. Preprocessing is timed separately
-and excluded from both inference totals. No dynamic allocation, model
-substitution or faster reference/NPU memory placement is allowed to obscure
-the comparison. Record first-run and steady-state behavior using the same
-declared cache initialization policy for both paths.
+The reference is the pinned portable-C INT8 implementation running beside the
+NPU path on the same complete PRODUCT Verilator model of the 72 MHz HP
+VexiiRiscv configuration, with the same model, corpus, memory placement and
+declared cache policy. Both paths include the inference result through CPU
+softmax; the NPU path additionally includes command submission, DMA transfers,
+synchronization and wait. Preprocessing and corpus transport are measured
+separately and excluded from both inference totals. No dynamic allocation,
+model substitution or faster reference/NPU memory placement is allowed to
+obscure the comparison. Record first-run and steady-state behavior using the
+same declared cache initialization policy for both paths.
+
+Performance uses architecturally visible HP cycle intervals and frozen NPU
+counters, not Verilator host elapsed time, simulator throughput or a
+peak-MAC-derived estimate. The reference and NPU intervals MUST execute in the
+same built simulator and firmware session or in separately reproduced sessions
+with identical manifest, memory image and reset/cache policy. Fast-flash or
+other simulator acceleration is permitted only outside the measured inference
+interval and MUST affect both paths identically. Batched corpus execution must
+preserve per-input start/end counters and make cache-state transitions explicit.
 
 For each complete qualified corpus, compute speedup as the sum of reference
-inference times divided by the sum of NPU-path inference times. Both KWS and
+inference cycles divided by the sum of NPU-path inference cycles. Both KWS and
 VWW MUST reach **at least 2.0 times** speedup for performance qualification;
-also report median and 99th-percentile latency and individual outliers.
+also report median and 99th-percentile cycles, cycle-derived modeled latency at
+72 MHz, and individual outliers.
 Passing numerical tests without meeting this target establishes functional
 evidence only and MUST NOT be described as performance-qualified. Report
 baseline and NPU measurements, not a peak-MAC-derived estimate.
@@ -205,7 +219,7 @@ does not imply that unexecuted earlier checks passed.
 | `NPU-P3 - Private DMA and Job Execution` | `NPU-V008..010` plus applicable bounded `NPU-V015`; independent-channel stalls/errors, descriptor validation, accepted-transfer drain, pause/reset collision cases, final-B completion ordering and updated synthesis/STA. |
 | `NPU-P4 - Complete MVP Operator Pipeline` | `NPU-V011..012`; all supported operators, legal tilings and boundary cases match the independent reference; actual DMA/packing/compute/store path participates, with updated synthesis/STA and formal checks. |
 | `NPU-P5 - Offline Compiler and Bare-Metal Deployment` | `NPU-V013..014`; deterministic model compilation, SDK/MISRA/host checks, prescribed RTL model inputs and bare-metal result/interrupt paths. |
-| `NPU-P6 - MVP Qualification and Delivery` | `NPU-V015..018`; coverage review, full FPGA corpora, both 2.0-times targets, isolated/full-product synthesis and STA, synthesized-block tests, regressions and explicit qualification report. |
+| `NPU-P6 - MVP Qualification and Delivery` | `NPU-V015..018`; coverage review, full PRODUCT Verilator corpora, both 2.0-times cycle-accounted targets, isolated/full-product synthesis and STA, synthesized-block tests, regressions and explicit qualification report. FPGA/board evidence is optional and reported separately. |
 
 ## Commands and Evidence Records
 
@@ -353,8 +367,32 @@ that scenario. CSR-disabled builds remain compatibility checks and cannot
 establish ISR qualification.
 
 P6 additionally runs the full IHP130 flow and the affected committed PDK
-matrix. A boot-only netlist run can provide boot evidence while dedicated
-synthesized NPU transactions provide functional evidence:
+matrix. The implementation provides fail-closed targets for every required
+evidence class:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk npu-p6-corpus
+make CONFIG=configs/ci/ihp130.mk npu-p6-formal
+make CONFIG=configs/ci/ihp130.mk npu-p6-verilator
+make CONFIG=configs/ci/ihp130.mk npu-p6-netlist
+make CONFIG=configs/ci/ihp130.mk npu-p6-physical
+make npu-p6-regression
+make CONFIG=configs/ci/ihp130.mk \
+  NPU_P6_P0_REPORT=<current-p0-report> \
+  NPU_P6_P5_REPORT=<current-p5-report> npu-p6-qualify
+```
+
+`npu-p6-corpus` creates ten ordered 100-case shards per model. Each PRODUCT
+HP session measures one cold case and 99 steady cases; the global first ten
+cases per model run the same 32x32768 RGB565 GA2D private-DMA copy beside both
+the C and NPU intervals. `npu-p6-verilator` compiles one model payload per workload and
+one PRODUCT emulator, executes all 20 shards, and emits per-case `rdcycle`,
+Softmax, DMA, MAC, packing and stall records. It passes only with exactly
+1000 ordered cases per model, zero skips/mismatches and both aggregate
+speedups at or above 2.0.
+
+A boot-only netlist run can provide boot evidence while dedicated synthesized
+NPU transactions provide functional evidence:
 
 ```sh
 python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only
@@ -367,9 +405,13 @@ The above full-flow command omits `--behavioral-only` deliberately. Current
 `--behavioral-only`; its optional formal stage runs `formal-doctor`, not NPU
 properties. Hosted green status therefore cannot supply missing physical or
 formal evidence. `Hello retroSoC!` from boot-only netlist simulation is not an
-NPU transaction verdict. P0/P5 host, corpus and RTL model commands are now
-implemented above; NPU formal closure and FPGA runners remain P6 deliverables.
-Do not cite a future command as an already available passing gate.
+NPU transaction verdict. The P6 netlist target runs KWS-shaped dense,
+VWW-used depthwise, descriptor-reject and arithmetic-fault transactions on the
+same Yosys run's technology-mapped vector-port netlist with deterministic
+functional standard-cell/SRAM views. The physical target separately validates
+the final P&R netlist, locked IHP macro Liberty and full PRODUCT STA.
+No FPGA runner is required for P6. Do not cite an available command as passing
+evidence until its retained report for the current revision says `PASS`.
 
 Simulation acceptance requires successful process exit, the specified success
 marker, and no `FAILED`, `FATAL`, `assertion failed`, `%Error`, `SIM_TEST_FAIL`

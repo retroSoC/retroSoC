@@ -4,6 +4,8 @@
 #include <ps2_keyboard.h>
 #include <ps2_mouse.h>
 
+#include "npu_p6_reference.h"
+
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/apu.h>
@@ -2169,9 +2171,8 @@ static int test_npu_capability_contract(void) {
         (capability.ip_version != RS_NPU_IP_VERSION_VALUE) ||
         (capability.flags != RS_NPU_CAPABILITY_P4) ||
         (capability.numeric_profile != RS_NPU_NUMERIC_PROFILE_VALUE) ||
-        (capability.local_bytes != RS_NPU_LOCAL_BYTES_VALUE) ||
-        (capability.dense_macs != 64U) || (capability.depthwise_macs != 8U) ||
-        (capability.max_k_slice != RS_NPU_MAX_K_SLICE) ||
+        (capability.local_bytes != RS_NPU_LOCAL_BYTES_VALUE) || (capability.dense_macs != 64U) ||
+        (capability.depthwise_macs != 8U) || (capability.max_k_slice != RS_NPU_MAX_K_SLICE) ||
         (capability.max_dimension != RS_NPU_MAX_DIMENSION) ||
         (capability.op_mask != RS_NPU_OP_CAPABILITY_MVP)) {
         return 2;
@@ -2533,6 +2534,58 @@ static int test_npu_reset_contract(void) {
     return 0;
 }
 
+static int test_npu_p6_reference_contract(void) {
+    uint32_t descriptors[RS_NPU_DESCRIPTOR_WORDS] = {0U};
+    uint8_t arena[32] = {4U, 5U};
+    uint8_t weights[16] = {2U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 3U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+    int32_t parameters[4] = {1, INT32_C(1073741824), 1, 0};
+    rs_npu_p6_memory_t memory = {
+        .arena = {.base = UINT32_C(0x1000), .bytes = sizeof(arena), .data = arena},
+        .weights = {.base = UINT32_C(0x2000), .bytes = sizeof(weights), .data = weights},
+        .params =
+            {
+                .base = UINT32_C(0x3000),
+                .bytes = sizeof(parameters),
+                .data = (uint8_t *)(void *)parameters,
+            },
+    };
+
+    descriptors[RS_NPU_DESCRIPTOR_WORD_VERSION_OPCODE] =
+        (RS_NPU_DESCRIPTOR_ABI_VERSION << 16U) | RS_NPU_OPCODE_FULLY_CONNECTED;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BASE] = UINT32_C(0x1000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BASE] = UINT32_C(0x1010);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_PARAM_BASE] = UINT32_C(0x3000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT_HW] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_CHANNELS] = UINT32_C(0x00010002);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_HW] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_ROW_BYTES] = 2U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_ROW_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_KERNEL_STRIDE] = UINT32_C(0x01010101);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_TILE_HW] = UINT32_C(0x00000101);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_K_SLICE] = 2U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BYTES] = 2U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_PARAM_BYTES] = RS_NPU_PARAM_RECORD_BYTES;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_ACTIVATION_BOUNDS] = UINT32_C(0x00007F80);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_WEIGHT_BASE] = UINT32_C(0x2000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_WEIGHT_BYTES] = sizeof(weights);
+
+    if ((rs_npu_p6_reference_execute(descriptors, 1U, &memory) != RS_OK) || (arena[16] != 24U)) {
+        return 1;
+    }
+    descriptors[RS_NPU_DESCRIPTOR_WORD_VERSION_OPCODE] = RS_NPU_OPCODE_FULLY_CONNECTED;
+    if (rs_npu_p6_reference_execute(descriptors, 1U, &memory) != RS_EFORMAT) {
+        return 2;
+    }
+    descriptors[RS_NPU_DESCRIPTOR_WORD_VERSION_OPCODE] =
+        (RS_NPU_DESCRIPTOR_ABI_VERSION << 16U) | RS_NPU_OPCODE_FULLY_CONNECTED;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BASE] = UINT32_C(0x2000);
+    if (rs_npu_p6_reference_execute(descriptors, 1U, &memory) != RS_EFORMAT) {
+        return 3;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -2571,6 +2624,7 @@ int main(void) {
         test_npu_status_error_contract(),
         test_npu_snapshot_contract(),
         test_npu_reset_contract(),
+        test_npu_p6_reference_contract(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

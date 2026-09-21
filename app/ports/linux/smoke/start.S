@@ -147,6 +147,10 @@ start_ga2d:
     call    rs_hp_npu_acceptance
     beqz    a0, publish_ga2d_fail
 #endif
+#ifdef RS_NPU_P6_ACCEPTANCE
+    call    rs_hp_npu_p6_acceptance
+    beqz    a0, publish_ga2d_fail
+#endif
 
 publish_ga2d_pass:
     li      t0, MAILBOX_BASE
@@ -174,6 +178,9 @@ clean_cache_request:
     jal     ra, clean_invalidate_shared_lines
 #ifdef RS_NPU_P5_ACCEPTANCE
     call    rs_hp_npu_cache_clean
+#endif
+#ifdef RS_NPU_P6_ACCEPTANCE
+    call    rs_hp_npu_p6_cache_clean
 #endif
     li      t0, MAILBOX_BASE
     li      t1, HP_GA2D_CACHE

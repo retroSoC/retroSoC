@@ -64,6 +64,19 @@ cross-profile KWS package identity; and zero skipped/rejected cases. Invoke it
 through `npu-p5-report` with the retained LP/HP variant roots and config
 digests. The generated report records its fully expanded command.
 
+NPU-P6 qualification is split into auditable drivers. `npu_p6_corpus.py`
+builds deterministic CRC-protected 100-case KWS/VWW shards from retained P0
+goldens. `run_npu_p6_verilator.py` builds the existing `hp_boot` composition,
+runs all shards on one PRODUCT Verilator model, and aggregates architectural
+cycles and NPU counters. `run_npu_p6_netlist.py` runs macro-aware isolated
+synthesis/STA and four directed synthesized-block transactions covering dense,
+depthwise, rejection and accumulation-overflow behavior;
+`run_npu_p6_physical.py` invokes the unchanged full PRODUCT Yosys/OpenSTA and
+warning/metric gates. `run_npu_p6_regression.py` retains PR/nightly verdicts,
+and `npu_p6_report.py` requires current-revision PASS evidence for all of
+NPU-V015 through NPU-V018. None of these scripts treats FPGA execution or host
+elapsed time as mandatory performance evidence.
+
 `development_environment.py` is the shared Docker, Nix, and manual bootstrap
 entry point. It installs only the checksum-verified open-source tool bundles and
 hash-pinned Python dependencies; project-local PDK and source setup remains under

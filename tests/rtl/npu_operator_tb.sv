@@ -147,112 +147,77 @@ module npu_operator_tb;
       .aresetn(rst_hp_n_i)
   );
 
-  npu_core #(
-      .ExecutionReady(1'b1)
-  ) u_core (
-      .clk_hp_i              (clk_hp_i),
-      .rst_hp_n_i            (rst_hp_n_i),
-      .launch_valid_i        (launch_valid_i),
-      .launch_ready_o        (launch_ready_o),
-      .launch_data_i         (launch_data_i),
-      .result_valid_o        (result_valid_o),
-      .result_ready_i        (result_ready_i),
-      .result_data_o         (result_data_o),
-      .snapshot_req_valid_i  (snapshot_req_valid_i),
-      .snapshot_req_ready_o  (snapshot_req_ready_o),
-      .snapshot_resp_valid_o (snapshot_resp_valid_o),
-      .snapshot_resp_ready_i (snapshot_resp_ready_i),
-      .snapshot_resp_data_o  (snapshot_resp_data_o),
-      .epoch_req_i           (epoch_req_i),
-      .epoch_ack_o           (epoch_ack_o),
-      .quiesce_req_i         (quiesce_req_i),
-      .quiesce_ack_o         (quiesce_ack_o),
-      .busy_o                (busy_o),
-      .draining_o            (draining_o),
-      .block_new_i           (block_new_i),
-      .clock_pause_ack_o     (clock_pause_ack_o),
-      .flush_i               (flush_i),
-      .flush_busy_o          (flush_busy_o),
-      .pause_active_o        (pause_active_o),
-      .idle_o                (idle_o),
-      .abort_i               (abort_i),
-      .dma_clear_o           (s_dma_clear),
-      .dma_read_req_valid_o  (s_dma_read_req_valid),
-      .dma_read_req_ready_i  (s_dma_read_req_ready),
-      .dma_read_addr_o       (s_dma_read_addr),
-      .dma_read_bytes_o      (s_dma_read_bytes),
-      .dma_read_data_valid_i (s_dma_read_data_valid),
-      .dma_read_data_ready_o (s_dma_read_data_ready),
-      .dma_read_data_i       (s_dma_read_data),
-      .dma_read_keep_i       (s_dma_read_keep),
-      .dma_read_last_i       (s_dma_read_last),
-      .dma_write_req_valid_o (s_dma_write_req_valid),
-      .dma_write_req_ready_i (s_dma_write_req_ready),
-      .dma_write_addr_o      (s_dma_write_addr),
-      .dma_write_bytes_o     (s_dma_write_bytes),
-      .dma_write_data_valid_o(s_dma_write_data_valid),
-      .dma_write_data_ready_i(s_dma_write_data_ready),
-      .dma_write_data_o      (s_dma_write_data),
-      .dma_write_keep_o      (s_dma_write_keep),
-      .dma_write_last_o      (s_dma_write_last),
-      .dma_write_done_i      (s_dma_write_done),
-      .dma_busy_i            (s_dma_busy),
-      .dma_read_busy_i       (s_dma_read_busy),
-      .dma_write_busy_i      (s_dma_write_busy),
-      .dma_pause_ack_i       (s_dma_pause_ack),
-      .dma_fault_i           (s_dma_fault),
-      .dma_fault_code_i      (s_dma_fault_code),
-      .dma_fault_addr_i      (s_dma_fault_addr),
-      .dma_fault_resp_i      (s_dma_fault_resp),
-      .dma_read_bytes_i      (s_dma_read_bytes_cnt),
-      .dma_write_bytes_i     (s_dma_write_bytes_cnt),
-      .dma_stall_cycles_i    (s_dma_stall_cycles),
-      .dma_read_cmd_err_i    (s_dma_read_cmd_err),
-      .dma_write_cmd_err_i   (s_dma_write_cmd_err)
-  );
-
-  // Match the integrated NPU instance: the 64-to-32 system-memory downsizer
-  // admits at most eight AXI64 beats (sixteen downstream AXI32 beats).
-  npu_dma #(
-      .MaxBurstBeats(8)
-  ) u_dma (
-      .clk_hp_i          (clk_hp_i),
-      .rst_hp_n_i        (rst_hp_n_i),
-      .clear_i           (flush_i || s_dma_clear),
-      .block_new_i       (block_new_i),
-      .pause_ack_o       (s_dma_pause_ack),
-      .read_req_valid_i  (s_dma_read_req_valid),
-      .read_req_ready_o  (s_dma_read_req_ready),
-      .read_addr_i       (s_dma_read_addr),
-      .read_bytes_i      (s_dma_read_bytes),
-      .read_data_valid_o (s_dma_read_data_valid),
-      .read_data_ready_i (s_dma_read_data_ready),
-      .read_data_o       (s_dma_read_data),
-      .read_keep_o       (s_dma_read_keep),
-      .read_last_o       (s_dma_read_last),
-      .write_req_valid_i (s_dma_write_req_valid),
-      .write_req_ready_o (s_dma_write_req_ready),
-      .write_addr_i      (s_dma_write_addr),
-      .write_bytes_i     (s_dma_write_bytes),
-      .write_data_valid_i(s_dma_write_data_valid),
-      .write_data_ready_o(s_dma_write_data_ready),
-      .write_data_i      (s_dma_write_data),
-      .write_keep_i      (s_dma_write_keep),
-      .write_last_i      (s_dma_write_last),
-      .write_done_o      (s_dma_write_done),
-      .busy_o            (s_dma_busy),
-      .read_busy_o       (s_dma_read_busy),
-      .write_busy_o      (s_dma_write_busy),
-      .read_bytes_o      (s_dma_read_bytes_cnt),
-      .write_bytes_o     (s_dma_write_bytes_cnt),
-      .stall_cycles_o    (s_dma_stall_cycles),
-      .fault_o           (s_dma_fault),
-      .fault_code_o      (s_dma_fault_code),
-      .fault_addr_o      (s_dma_fault_addr),
-      .fault_resp_o      (s_dma_fault_resp),
-      .read_cmd_err_o    (s_dma_read_cmd_err),
-      .write_cmd_err_o   (s_dma_write_cmd_err),
-      .axi4              (npu_axi4)
+  npu_block_top u_dut (
+      .clk_hp_i             (clk_hp_i),
+      .rst_hp_n_i           (rst_hp_n_i),
+      .launch_valid_i       (launch_valid_i),
+      .launch_ready_o       (launch_ready_o),
+      .launch_data_i        (launch_data_i),
+      .result_valid_o       (result_valid_o),
+      .result_ready_i       (result_ready_i),
+      .result_data_o        (result_data_o),
+      .snapshot_req_valid_i (snapshot_req_valid_i),
+      .snapshot_req_ready_o (snapshot_req_ready_o),
+      .snapshot_resp_valid_o(snapshot_resp_valid_o),
+      .snapshot_resp_ready_i(snapshot_resp_ready_i),
+      .snapshot_resp_data_o (snapshot_resp_data_o),
+      .epoch_req_i          (epoch_req_i),
+      .epoch_ack_o          (epoch_ack_o),
+      .quiesce_req_i        (quiesce_req_i),
+      .quiesce_ack_o        (quiesce_ack_o),
+      .busy_o               (busy_o),
+      .draining_o           (draining_o),
+      .block_new_i          (block_new_i),
+      .clock_pause_ack_o    (clock_pause_ack_o),
+      .flush_i              (flush_i),
+      .flush_busy_o         (flush_busy_o),
+      .pause_active_o       (pause_active_o),
+      .idle_o               (idle_o),
+      .abort_i              (abort_i),
+      .awid_o               (npu_axi4.awid),
+      .awaddr_o             (npu_axi4.awaddr),
+      .awlen_o              (npu_axi4.awlen),
+      .awsize_o             (npu_axi4.awsize),
+      .awburst_o            (npu_axi4.awburst),
+      .awlock_o             (npu_axi4.awlock),
+      .awcache_o            (npu_axi4.awcache),
+      .awprot_o             (npu_axi4.awprot),
+      .awqos_o              (npu_axi4.awqos),
+      .awregion_o           (npu_axi4.awregion),
+      .awuser_o             (npu_axi4.awuser),
+      .awvalid_o            (npu_axi4.awvalid),
+      .awready_i            (npu_axi4.awready),
+      .wdata_o              (npu_axi4.wdata),
+      .wstrb_o              (npu_axi4.wstrb),
+      .wlast_o              (npu_axi4.wlast),
+      .wuser_o              (npu_axi4.wuser),
+      .wvalid_o             (npu_axi4.wvalid),
+      .wready_i             (npu_axi4.wready),
+      .bid_i                (npu_axi4.bid),
+      .bresp_i              (npu_axi4.bresp),
+      .buser_i              (npu_axi4.buser),
+      .bvalid_i             (npu_axi4.bvalid),
+      .bready_o             (npu_axi4.bready),
+      .arid_o               (npu_axi4.arid),
+      .araddr_o             (npu_axi4.araddr),
+      .arlen_o              (npu_axi4.arlen),
+      .arsize_o             (npu_axi4.arsize),
+      .arburst_o            (npu_axi4.arburst),
+      .arlock_o             (npu_axi4.arlock),
+      .arcache_o            (npu_axi4.arcache),
+      .arprot_o             (npu_axi4.arprot),
+      .arqos_o              (npu_axi4.arqos),
+      .arregion_o           (npu_axi4.arregion),
+      .aruser_o             (npu_axi4.aruser),
+      .arvalid_o            (npu_axi4.arvalid),
+      .arready_i            (npu_axi4.arready),
+      .rid_i                (npu_axi4.rid),
+      .rdata_i              (npu_axi4.rdata),
+      .rresp_i              (npu_axi4.rresp),
+      .rlast_i              (npu_axi4.rlast),
+      .ruser_i              (npu_axi4.ruser),
+      .rvalid_i             (npu_axi4.rvalid),
+      .rready_o             (npu_axi4.rready)
   );
 
   always #5 clk_hp_i = ~clk_hp_i;
@@ -509,7 +474,17 @@ module npu_operator_tb;
   endtask
 
   task automatic launch_job(input logic [31:0] job_id_i);
+    int unsigned s_wait;
     begin
+      s_wait = 0;
+      while (launch_ready_o !== 1'b1) begin
+        @(posedge clk_hp_i);
+        s_wait++;
+        if ($isunknown(launch_ready_o)) begin
+          $fatal(1, "NPU operator launch_ready is unknown in %s", s_phase);
+        end
+        if (s_wait > 1000) $fatal(1, "NPU operator launch_ready timeout in %s", s_phase);
+      end
       @(negedge clk_hp_i);
       launch_data_i  = {16'd0, s_job_count[15:0], s_timeout, job_id_i, s_job_base};
       launch_valid_i = 1'b1;
@@ -525,6 +500,9 @@ module npu_operator_tb;
       while (!result_valid_o) begin
         @(posedge clk_hp_i);
         s_wait++;
+        if ($isunknown(result_valid_o)) begin
+          $fatal(1, "NPU operator result_valid is unknown in %s", s_phase);
+        end
         if (s_wait > 8000000) $fatal(1, "NPU operator result never arrived in %s", s_phase);
       end
       payload_o = result_data_o;

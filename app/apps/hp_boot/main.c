@@ -6,7 +6,7 @@
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/hp_mailbox.h>
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
 #include <retrosoc/hal/npu.h>
 #endif
 #include <retrosoc/hal/resource.h>
@@ -233,7 +233,7 @@ static bool rs_hp_boot_wait_ga2d_idle(rs_resource_owner_t expected_owner) {
     return false;
 }
 
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
 static bool rs_hp_boot_npu_idle(rs_resource_owner_t expected_owner) {
     rs_npu_status_t npu_status;
     rs_resource_status_t resource_status;
@@ -294,7 +294,7 @@ static bool rs_hp_boot_wait_hp_held(void) {
         if ((rs_sysctrl_get_hp_status(&hp_status) == RS_OK) && hp_status.reset_asserted &&
             !hp_status.released && !hp_status.draining && !hp_status.forced_fault &&
             rs_hp_boot_ga2d_idle(RS_RESOURCE_OWNER_HP)
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
             && rs_hp_boot_npu_idle(RS_RESOURCE_OWNER_HP)
 #endif
         ) {
@@ -350,7 +350,7 @@ int main(void) {
         rs_hp_boot_fail(UINT8_C(9));
     }
     s_hp_boot_ga2d_owned_by_hp = true;
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
     if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_LP) ||
         (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_HP, false) != RS_OK)) {
         rs_hp_boot_fail(UINT8_C(18));
@@ -359,7 +359,7 @@ int main(void) {
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(9));
     }
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
     if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(18));
     }
@@ -390,6 +390,9 @@ int main(void) {
     printf("HP_GA2D_PASS\n");
 #if defined(RS_NPU_P5_ACCEPTANCE)
     printf("HP_NPU_PASS\n");
+#endif
+#if defined(RS_NPU_P6_ACCEPTANCE)
+    printf("HP_NPU_P6_PASS\n");
 #endif
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(14));
@@ -424,7 +427,7 @@ int main(void) {
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_LP)) {
         rs_hp_boot_fail(UINT8_C(17));
     }
-#if defined(RS_NPU_P5_ACCEPTANCE)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
     if ((rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false) != RS_OK) ||
         !rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_LP)) {
         rs_hp_boot_fail(UINT8_C(19));

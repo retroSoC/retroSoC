@@ -24,9 +24,10 @@ see [Engineering Workflow](../docs/engineering.md) for results and artifacts.
 The [Mini NPU specification](../docs/ip/npu.md) freezes an independent
 64-MAC, 64 KiB accelerator with private AXI64 DMA, APB4 configuration and
 resource-owned interrupts. Its stable Phases 0-6 and
-[verification requirements](../docs/ip/npu-verification.md) govern future
-implementation; no NPU RTL, deployed model or physical qualification is
-claimed by this design freeze.
+[verification requirements](../docs/ip/npu-verification.md) govern the RTL,
+compiler, deployment and qualification flows. P0-P5 functionality is retained;
+P6 commands are implemented but only a current-revision aggregate PASS report
+establishes physical and performance qualification.
 
 ## Self-Owned RTL Naming
 

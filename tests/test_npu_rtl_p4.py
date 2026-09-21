@@ -53,6 +53,7 @@ P4_SOURCES = [
     ROOT / "rtl/ip/multimedia" / "npu_vector.sv",
     ROOT / "rtl/ip/multimedia" / "npu_requantizer.sv",
     *CORE_SOURCES[-2:],
+    ROOT / "physical/smoke/syn/yosys" / "npu_block_top.sv",
 ]
 
 CORE_MEM_BYTES = 0x80000
@@ -640,13 +641,19 @@ def _reject(tmp_path: Path, cases: list[list[str]], name: str, opcode: int,
     _emit(tmp_path, job, cases)
 
 
-def _operator_cases(tmp_path: Path) -> list[list[str]]:
+def _operator_cases(tmp_path: Path, selected: set[str] | None = None) -> list[list[str]]:
     cases: list[list[str]] = []
 
     def compute(name: str, build) -> None:
+        if (selected is not None) and (name not in selected):
+            return
         job = _Job(name, SCEN_COMPUTE)
         build(_Rng(zlib.crc32(name.encode()) ^ 0x5EED), job)
         _emit(tmp_path, job, cases)
+
+    def reject(name: str, opcode: int, mutate) -> None:
+        if (selected is None) or (name in selected):
+            _reject(tmp_path, cases, name, opcode, mutate)
 
     # -- V011: conv kernels {1,3,4,10,16} x strides {1,2}
     for kernel in (1, 3, 4, 10, 16):
@@ -919,16 +926,13 @@ def _operator_cases(tmp_path: Path) -> list[list[str]]:
         compute(f"rand_{index:02d}_{seed:08x}", _rand)
 
     # -- validation rejections: fail BEFORE execution with correct codes
-    _reject(tmp_path, cases, "rej_stride3", OP_CONV2D,
-            lambda w: w.__setitem__(12, (w[12] & 0xFF00_FFFF) | (3 << 16)))
-    _reject(tmp_path, cases, "rej_dw_mult", OP_DEPTHWISE3X3,
-            lambda w: w.__setitem__(7, w[7] + (1 << 16)))
-    _reject(tmp_path, cases, "rej_add_bcast", OP_ADD,
-            lambda w: w.__setitem__(8, w[8] + 1))
-    _reject(tmp_path, cases, "rej_clamp_shape", OP_CLAMP,
-            lambda w: w.__setitem__(8, w[8] + 1))
-    _reject(tmp_path, cases, "rej_pool_zp", OP_CLAMP,
-            lambda w: w.__setitem__(22, (w[22] + 1) & 0xFF))
+    reject("rej_stride3", OP_CONV2D,
+           lambda w: w.__setitem__(12, (w[12] & 0xFF00_FFFF) | (3 << 16)))
+    reject("rej_dw_mult", OP_DEPTHWISE3X3,
+           lambda w: w.__setitem__(7, w[7] + (1 << 16)))
+    reject("rej_add_bcast", OP_ADD, lambda w: w.__setitem__(8, w[8] + 1))
+    reject("rej_clamp_shape", OP_CLAMP, lambda w: w.__setitem__(8, w[8] + 1))
+    reject("rej_pool_zp", OP_CLAMP, lambda w: w.__setitem__(22, (w[22] + 1) & 0xFF))
 
     # -- arithmetic faults: checked INT32 accumulate overflow (code 7)
     def _arith_overflow(rng: _Rng, job: _Job) -> None:

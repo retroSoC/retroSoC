@@ -72,6 +72,8 @@ APP                ?= shell
 LINK_TYPE          ?= ld2_sram
 COREMARK_MODE      ?= quick
 NPU_P5_ACCEPTANCE  ?= NO
+NPU_P6_ACCEPTANCE  ?= NO
+NPU_P6_WORKLOAD    ?= kws
 HP_PERF_MIN_RATIO  ?= 2.5
 LP_COREMARK_REPORT ?=
 HP_COREMARK_REPORT ?=
@@ -101,7 +103,7 @@ LOCAL_RTL_FILES    ?=
 CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
-CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE
+CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE NPU_P6_ACCEPTANCE NPU_P6_WORKLOAD
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -140,6 +142,19 @@ NPU_P5_ACCEPTANCE_C     := $(NPU_P5_ACCEPTANCE_DIR)/npu_acceptance_data.c
 NPU_P5_ACCEPTANCE_STAMP := $(NPU_P5_ACCEPTANCE_DIR)/.stamp
 NPU_P5_C_QUALITY_RESULT := $(NPU_P5_DIR)/evidence/result-c-quality.json
 NPU_P5_REPORT           := $(NPU_P5_DIR)/evidence/qualification-p5.json
+NPU_P6_DIR              := $(VARIANT_ROOT)/npu/p6
+NPU_P6_CORPUS_DIR       := $(NPU_P6_DIR)/corpus
+NPU_P6_FORMAL_REPORT    := $(NPU_P6_DIR)/evidence/qualification-p6-formal.json
+NPU_P6_NETLIST_DIR      := $(NPU_P6_DIR)/netlist
+NPU_P6_PERF_DIR         := $(NPU_P6_DIR)/verilator
+NPU_P6_PERF_REPORT      := $(NPU_P6_PERF_DIR)/qualification-p6-verilator.json
+NPU_P6_PHYS_DIR         := $(NPU_P6_DIR)/physical
+NPU_P6_PHYS_REPORT      := $(NPU_P6_PHYS_DIR)/qualification-p6-physical.json
+NPU_P6_REGRESS_DIR      := $(NPU_P6_DIR)/regression
+NPU_P6_REGRESS_REPORT   := $(NPU_P6_REGRESS_DIR)/qualification-p6-regression.json
+NPU_P6_REPORT           := $(NPU_P6_DIR)/evidence/qualification-p6.json
+NPU_P6_P0_REPORT        ?=
+NPU_P6_P5_REPORT        ?=
 NPU_P5_LP_VARIANT_ROOT  ?=
 NPU_P5_HP_VARIANT_ROOT  ?=
 NPU_P5_LP_CONFIG_DIGEST ?=
@@ -223,10 +238,21 @@ $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 $(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,NPU_P6_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,NPU_P6_WORKLOAD,kws vww)
 
 ifeq ($(NPU_P5_ACCEPTANCE),YES)
 ifeq ($(filter $(APP),ci_smoke hp_boot),)
 $(error NPU_P5_ACCEPTANCE=YES requires APP=ci_smoke or APP=hp_boot)
+endif
+endif
+
+ifeq ($(NPU_P6_ACCEPTANCE),YES)
+ifneq ($(APP),hp_boot)
+$(error NPU_P6_ACCEPTANCE=YES requires APP=hp_boot)
+endif
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+$(error NPU_P5_ACCEPTANCE and NPU_P6_ACCEPTANCE are mutually exclusive)
 endif
 endif
 
@@ -414,6 +440,14 @@ help:
 	  '  npu-p5-lp-sim              run LP interrupt bare-metal NPU acceptance' \
 	  '  npu-p5-hp-sim              run HP polling/Zicbom bare-metal NPU acceptance' \
 	  '  npu-p5-report              validate and assemble retained P5 evidence' \
+	  '  npu-p6-corpus              build deterministic 100-case qualification shards' \
+	  '  npu-p6-formal              close DMA, context, and control bounded proofs' \
+	  '  npu-p6-verilator           run both complete corpora on PRODUCT Verilator' \
+	  '  npu-p6-netlist             run isolated NPU physical and gate transactions' \
+	  '  npu-p6-physical            run full PRODUCT IHP130 synthesis/STA evidence' \
+	  '  npu-p6-regression          run and retain the full PR/nightly matrices' \
+	  '  npu-p6-report              assemble fail-closed NPU-V015..V018 evidence' \
+	  '  npu-p6-qualify             execute all required P6 qualification gates' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
@@ -586,6 +620,48 @@ $(NPU_P5_ACCEPTANCE_C): $(NPU_P5_ACCEPTANCE_STAMP)
 
 npu-p5-deployments: $(NPU_P5_KWS_STAMP) $(NPU_P5_VWW_STAMP) | manifest
 
+npu-p6-corpus: npu-p0-qualify
+	python3 $(ROOT_PATH)/scripts/npu_p6_corpus.py --p0-dir $(NPU_P0_DIR) \
+		--output-dir $(NPU_P6_CORPUS_DIR) --cases-per-shard 100
+
+npu-p6-formal: formal-npu-p6
+	python3 $(ROOT_PATH)/scripts/npu_p6_formal_report.py --formal-dir $(FORMAL_DIR) \
+		--output $(NPU_P6_FORMAL_REPORT)
+
+npu-p6-netlist:
+	python3 $(ROOT_PATH)/scripts/run_npu_p6_netlist.py \
+		--output-dir $(NPU_P6_NETLIST_DIR) --timeout-seconds 7200 --jobs $(JOBS)
+
+npu-p6-verilator: npu-p6-corpus
+	python3 $(ROOT_PATH)/scripts/run_npu_p6_verilator.py \
+		--corpus-report $(NPU_P6_CORPUS_DIR)/corpus-shards.json \
+		--output-dir $(NPU_P6_PERF_DIR) --build-timestamp $(BUILD_TIMESTAMP) \
+		--jobs $(JOBS) --timeout-seconds 86400 --sim-time 86400
+
+npu-p6-physical: npu-p6-netlist
+	python3 $(ROOT_PATH)/scripts/run_npu_p6_physical.py \
+		--isolated-report $(NPU_P6_NETLIST_DIR)/qualification-p6-netlist.json \
+		--output-dir $(NPU_P6_PHYS_DIR) --build-timestamp $(BUILD_TIMESTAMP)
+
+npu-p6-regression:
+	python3 $(ROOT_PATH)/scripts/run_npu_p6_regression.py \
+		--output-dir $(NPU_P6_REGRESS_DIR) --build-timestamp $(BUILD_TIMESTAMP)
+
+npu-p6-report: npu-p6-corpus npu-p6-formal npu-p6-verilator npu-p6-netlist \
+	npu-p6-physical npu-p6-regression
+	@test -n '$(NPU_P6_P0_REPORT)' -a -n '$(NPU_P6_P5_REPORT)' || { \
+		echo 'NPU P6 requires explicit current-revision P0/P5 report paths' >&2; exit 1; }
+	python3 $(ROOT_PATH)/scripts/npu_p6_report.py \
+		--p0-report $(NPU_P6_P0_REPORT) --p5-report $(NPU_P6_P5_REPORT) \
+		--corpus-report $(NPU_P6_CORPUS_DIR)/corpus-shards.json \
+		--performance-report $(NPU_P6_PERF_REPORT) \
+		--formal-report $(NPU_P6_FORMAL_REPORT) \
+		--netlist-report $(NPU_P6_NETLIST_DIR)/qualification-p6-netlist.json \
+		--physical-report $(NPU_P6_PHYS_REPORT) \
+		--regression-report $(NPU_P6_REGRESS_REPORT) --output $(NPU_P6_REPORT)
+
+npu-p6-qualify: npu-p6-report
+
 npu-p5-rtl: npu-p5-deployments
 	python3 $(ROOT_PATH)/scripts/qualify_npu_p5.py \
 		--output-dir $(NPU_P5_DIR)/evidence/rtl --timeout-seconds 3600 --jobs 4 \
@@ -633,7 +709,8 @@ npu-p5-report:
 		--output $(NPU_P5_REPORT)
 
 .PHONY: npu-p5-deployments npu-p5-c-quality npu-p5-host npu-p5-rtl npu-p5-report \
-	npu-p5-lp-sim npu-p5-hp-sim
+	npu-p5-lp-sim npu-p5-hp-sim npu-p6-corpus npu-p6-formal npu-p6-netlist \
+	npu-p6-verilator npu-p6-physical npu-p6-regression npu-p6-report npu-p6-qualify
 
 $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
 	$(ROOT_PATH)/scripts/generate_apu_p5_microcode.py \
@@ -713,6 +790,27 @@ HP_SMOKE_NPU_ARGS += --define=-DRS_NPU_P5_ACCEPTANCE \
 	--include $(ROOT_PATH)/crt/include --include $(MEMORY_MAP_C_DIR) \
 	--include $(USER_EXTENSIONS_DIR)/include --include $(SOC_TOPOLOGY_INCLUDE_DIR) \
 	--include $(NPU_P5_KWS_DIR) --include $(NPU_P5_ACCEPTANCE_DIR)
+endif
+ifeq ($(NPU_P6_ACCEPTANCE),YES)
+NPU_P6_MODEL_DIR       := $(if $(filter kws,$(NPU_P6_WORKLOAD)),$(NPU_P5_KWS_DIR),$(NPU_P5_VWW_DIR))
+NPU_P6_MODEL_C         := $(if $(filter kws,$(NPU_P6_WORKLOAD)),$(NPU_P5_KWS_C),$(NPU_P5_VWW_C))
+NPU_P6_WORKLOAD_DEFINE := $(if $(filter kws,$(NPU_P6_WORKLOAD)),RS_NPU_P6_WORKLOAD_KWS,RS_NPU_P6_WORKLOAD_VWW)
+HP_SMOKE_NPU_DEPS      += $(NPU_P6_MODEL_C) \
+	$(ROOT_PATH)/app/benchmark/npu/npu_p6_reference.c \
+	$(ROOT_PATH)/app/benchmark/npu/npu_p6_reference.h \
+	$(ROOT_PATH)/app/benchmark/npu/npu_p6_runner.c \
+	$(ROOT_PATH)/app/benchmark/npu/npu_p6_runner.h $(ROOT_PATH)/crt/src/hal/npu.c \
+	$(ROOT_PATH)/crt/src/hal/ga2d.c $(ROOT_PATH)/crt/src/hal/ga2d_math.c
+HP_SMOKE_NPU_ARGS      += --define=-DRS_NPU_P6_ACCEPTANCE \
+	--define=-DRS_NPU_PLAN_TEST --define=-D$(NPU_P6_WORKLOAD_DEFINE) \
+	--extra-source $(ROOT_PATH)/app/benchmark/npu/npu_p6_runner.c \
+	--extra-source $(ROOT_PATH)/app/benchmark/npu/npu_p6_reference.c \
+	--extra-source $(ROOT_PATH)/crt/src/hal/npu.c \
+	--extra-source $(ROOT_PATH)/crt/src/hal/ga2d.c \
+	--extra-source $(ROOT_PATH)/crt/src/hal/ga2d_math.c --extra-source $(NPU_P6_MODEL_C) \
+	--include $(ROOT_PATH)/crt/include --include $(MEMORY_MAP_C_DIR) \
+	--include $(USER_EXTENSIONS_DIR)/include --include $(SOC_TOPOLOGY_INCLUDE_DIR) \
+	--include $(ROOT_PATH)/app/benchmark/npu --include $(NPU_P6_MODEL_DIR)
 endif
 
 $(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py \

@@ -19,6 +19,11 @@ tooling.
   runs the prescribed KWS/VWW inputs on Icarus and Verilator with per-layer
   write traces; `npu-p5-lp-sim` and `npu-p5-hp-sim` establish the two
   bare-metal submission paths and SYSCTRL verdicts.
+- `test_npu_p6.py` checks deterministic corpus framing and CRCs, exact PRODUCT
+  UART record parsing, cycle-accounting consistency, and fail-closed
+  1000-case/2x report rules. The `npu-p6-*`
+  targets, rather than Pytest alone, produce formal, PRODUCT Verilator,
+  synthesized-block, physical and regression evidence.
 - `test_script_tools.py` covers setup, dependency, filelist, warning, metric,
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks the repository feature-skill metadata,

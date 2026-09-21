@@ -49,6 +49,7 @@ TEST_SOURCES = (
     "rtl/managed/clusterip/rtc/sw/src/rtc.c",
     "app/media/src/video_player.c",
     "app/media/src/wav_audio.c",
+    "app/benchmark/npu/npu_p6_reference.c",
     "tests/c/test_runtime.c",
 )
 
@@ -115,6 +116,8 @@ def main() -> int:
             str(root / "crt/include"),
             "-I",
             str(root / "app/media/include"),
+            "-I",
+            str(root / "app/benchmark/npu"),
             "-o",
             str(executable),
             *(str(root / source) for source in TEST_SOURCES),
