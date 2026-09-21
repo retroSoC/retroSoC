@@ -57,6 +57,11 @@ module retrosoc (
     output logic         pclk_idle_o
     // verilog_format: on
 );
+`ifdef APU_ENABLE_P7
+  localparam bit ApuEnableP7 = 1'b1;
+`else
+  localparam bit ApuEnableP7 = 1'b0;
+`endif
 
   // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
@@ -792,7 +797,9 @@ core_wrapper u_core_wrapper (
       .perf_opipsram_wait_o   (s_perf_opipsram_wait)
   );
 
-  apb4_periph u_apb4_periph (
+  apb4_periph #(
+      .EnableP7(ApuEnableP7)
+  ) u_apb4_periph (
       .clk_i                       (clk_pclk_i),
       .rst_n_i                     (rst_pclk_n_i),
       .clk_aud_i                   (clk_aud_i),

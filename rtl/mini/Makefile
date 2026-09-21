@@ -92,6 +92,9 @@ $(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MA
 		--memory-map $(MEMORY_MAP_SOURCE) --output-dir $(SOC_TOPOLOGY_DIR)
 	@touch $@
 
+$(SOC_IRQ_METADATA): $(SOC_TOPOLOGY_STAMP)
+	@test -f $@ || { echo "missing generated IRQ metadata: $@" >&2; exit 1; }
+
 soc-topology: $(SOC_TOPOLOGY_STAMP)
 
 check-soc-topology:

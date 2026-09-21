@@ -623,6 +623,14 @@ the digest includes reserved MP3 identifiers and the P5 rejection/stub contract
 but excludes the inactive P6 design archive. A zero digest means
 prototype/incomplete ABI and is not a compatibility hash for a subset.
 
+The P8 digest input is canonical ASCII JSON over sections `discovery`, `apb`,
+`kws_model`, `formats`, `apumc`, `apum`, `isa`, and `mp3_stub`. Object keys are
+recursively sorted, separators are literal comma and colon with no whitespace,
+integers are JSON decimal numbers, non-ASCII text is escaped, and the byte stream
+has no terminal newline. Apply reflected CRC-32/ISO-HDLC to the complete byte
+stream. The checked-in tool, handwritten RTL constant, handwritten C constant,
+and parity test must agree on the exact nonzero result `0xf5005d7c`.
+
 Expanded P5 keeps `CAPABILITY0=0x000001bd` and primitive mask `0x001fffff`,
 but advertises `CAPABILITY1=0x01827020` and `IP_VERSION=0x00010001` for the
 32 KiB store and appended PC-high status bit. This hardware discovery is
@@ -2287,6 +2295,23 @@ scratch reservation. Codec/control-store banks, Gateway A identity, IRQ and
 resource allocations do not change. A new independently arbitrated KWS client
 may access only these KWS banks; it cannot borrow codec buffers or MAC lanes.
 
+P8 maps each of these sixteen logical banks to one `tc_sram_1024x32` wrapper.
+Within the APUM and scratch halves, physical bank is byte offset
+`[4:2] XOR [8:6]` and wrapper word address is byte offset `[14:5]`; this
+reversible word-interleaving distributes both consecutive and fixed 64-byte
+stride lanes without changing logical addresses. Every bank accepts at most
+one read or write per PCLK. The client snapshots one fixed-engine operand
+vector, coalesces duplicate word reads, issues at most one access per bank per
+cycle, and stalls the KWS state transition until every synchronous read and
+required write has retired. A model load is globally idle and has exclusive
+access; for engine traffic a write wins a same-bank read and the read remains
+pending. Successful bank activity resets the KWS no-progress watchdog, while a
+wedged client remains bounded by that watchdog. `HAVE_SRAM_MACRO=NO` uses the
+same bank selection, one-cycle read latency, arbitration, and stall contract
+with inferred arrays. This internal scheduling changes no APUM address, tensor,
+scratch, register, descriptor, result, or error ABI and must re-pass the P7
+accuracy, cycle, concurrency, xrun, abort, reset, and handoff gates.
+
 Scratch layout 1 has A at `0x0000..0x1fff`, B at `0x2000..0x3fff`, MFCC at
 `0x4000..0x41ff`, a 50x40 u32 raw-mel ring at `0x4200..0x61ff`, complex FFT
 workspace at `0x6200..0x71ff`, 768 S16 ingress samples at `0x7200..0x77ff`,
@@ -3507,7 +3532,7 @@ is changed by these feature evidence requirements.
 | Codecs | WAV/FLAC complete-file differential, sample/rate/channel counts, malformed/truncated/adversarial corpus, metadata limits, FLAC predictor/Rice extremes, and long playlists; MP3 is tested only for unsupported-request/stub compatibility. |
 | KWS | MFCC differential, every INT8 layer tensor, converter rejection, official accuracy, threshold/debounce, continuous stream and overrun. |
 | SoC | Address/topology, Gateway A fairness, Resource7, IRQ31/PLIC10 exclusion, cache maintenance, handoff, warm flush, HP reset, USB2/SDIO0 contention. |
-| Software | HAL validation/timeouts/errors, microcode/model load, owner handoff, bare-metal acceptance, and Linux ASoC tests when delivered. |
+| Software | HAL validation/timeouts/errors, microcode/model load, owner handoff, bare-metal LP/HP acceptance, and cache/handoff tests. Linux ASoC is deferred. |
 
 An internal KWS result is not called MLPerf unless the exact applicable rules
 and runner are followed. File interoperability alone is not codec certification.
@@ -3921,14 +3946,17 @@ contention and commercial physical closure remain P8; P6 remains deferred.
 
 ID: `APU-P8`.
 
-Scope: complete HAL, LP-only startup load, HP ownership/jobs, cache maintenance,
-Linux ASoC, handoff, USB2/SDIO0 contention, full regression, synthesis recipes,
-netlist, OpenSTA, warnings/metrics, and commercial-gap report.
+Scope: complete freestanding HAL, LP-only startup load, HP ownership/jobs,
+cache maintenance, handoff, USB2/SDIO0 contention, full regression, synthesis
+recipes, netlist, OpenSTA, warnings/metrics, and commercial-gap report. Linux
+ASoC is deferred because this phase does not freeze a Linux DT binding, kernel
+driver ABI, or ALSA ownership protocol.
 
 Dependencies: Phases1..5 and Phase7. Phase6 remains DEFERRED and is not a
 release prerequisite.
 
-Public changes: completes frozen HAL/Linux surfaces; V1 register/descriptor/
+Public changes: completes frozen HAL and bare-metal LP/HP surfaces; Linux ASoC
+is not part of this phase. V1 register/descriptor/
 microcode/model/address/IRQ/resource/clock allocation cannot change.
 
 Validation:

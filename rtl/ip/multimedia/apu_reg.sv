@@ -111,11 +111,12 @@ module apu_reg #(
 );
   localparam logic [31:0] IpId = 32'h4150_5530;
   localparam logic [31:0] IpVersion = (EnableP5 || EnableP7) ? 32'h0001_0001 : 32'h0001_0000;
-  // P7 logic remains deliberately unadvertised until golden-corpus release
-  // qualification; software must fail closed from the established P5 value.
-  localparam logic [31:0] Capability0 = EnableP5 ? 32'h0000_01bd : 32'h0000_0198;
+  localparam logic [31:0] P5Capability0 = EnableP5 ? 32'h0000_01bd : 32'h0000_0198;
+  // EnableP7 advertises the qualified KWS capability after the frozen release
+  // gates pass; the MP3 bit 1 stays zero for the deferred P6.
+  localparam logic [31:0] Capability0 = EnableP7 ? 32'h0000_01fd : P5Capability0;
   localparam logic [31:0] Capability1 = (EnableP5 || EnableP7) ? 32'h0182_7020 : 32'h0182_7010;
-  localparam logic [31:0] AbiDigest = 32'd0;
+  localparam logic [31:0] AbiDigest = EnableP7 ? 32'hf500_5d7c : 32'd0;
   localparam logic [10:0] IrqMask = 11'h7ff;
   localparam logic [31:0] TimeoutReset = 32'h0000_ffff;
   localparam logic [31:0] RingCoalesceReset = 32'h0001_0001;

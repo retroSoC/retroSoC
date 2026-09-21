@@ -27,13 +27,14 @@ def reference():
     return collect_registers()
 
 
-def test_current_apu_interface_advertises_the_expanded_p5_profile(reference):
+def test_current_apu_interface_declares_p5_default_and_p7_release(reference):
     registers = {r["name"]: r for r in reference["apu"]["registers"]}
     constants = (ROOT / "crt/include/retrosoc/hal/apu_regs.h").read_text(
         encoding="utf-8"
     )
     assert re.search(r"RS_APU_IP_VERSION_VALUE\s+UINT32_C\(0x00010001\)", constants)
-    assert re.search(r"RS_APU_CAPABILITY0_IMPLEMENTED\s+UINT32_C\(0x000001BD\)", constants)
+    assert re.search(r"RS_APU_CAPABILITY0_P5_IMPLEMENTED\s+UINT32_C\(0x000001BD\)", constants)
+    assert re.search(r"RS_APU_CAPABILITY0_P7_IMPLEMENTED\s+UINT32_C\(0x000001FD\)", constants)
     assert re.search(r"RS_APU_CAPABILITY1_IMPLEMENTED\s+UINT32_C\(0x01827020\)", constants)
     assert "V1.1" in registers["IP_VERSION"]["description"]
     assert "32 KiB" in registers["CAPABILITY1"]["description"]

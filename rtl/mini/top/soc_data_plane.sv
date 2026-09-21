@@ -277,7 +277,7 @@ module soc_data_plane (
     s_resource_block_hp[6],
     1'b0,
     s_resource_block_hp[4] || s_resource_block_hp[3],
-    s_resource_block_hp[7] || s_resource_block_hp[2] || s_resource_block_hp[1],
+    s_resource_block_hp[2] || s_resource_block_hp[1],
     s_resource_block_hp[0],
     2'b00
   };
