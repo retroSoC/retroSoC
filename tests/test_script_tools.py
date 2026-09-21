@@ -59,6 +59,7 @@ from scripts.regress import (  # noqa: E402
     select_regression,
 )
 from scripts import setup_helpers  # noqa: E402
+from scripts import setup_apu_reference  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -78,6 +79,37 @@ def test_atomic_write_preserves_unchanged_mtime(tmp_path: Path) -> None:
     first_mtime = output.stat().st_mtime_ns
     assert atomic_write(output, "same\n") is False
     assert output.stat().st_mtime_ns == first_mtime
+
+
+def test_apu_reference_reuses_verified_extracted_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "sources/apu-reference"
+    destination.mkdir(parents=True)
+    (destination / ".retrosoc-archive-sha256").write_text("locked-sha\n", encoding="utf-8")
+
+    monkeypatch.setattr(setup_apu_reference, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "source",
+        lambda _name: {"destination": "sources/apu-reference"},
+    )
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "archive",
+        lambda _name: {
+            "destination": "downloads/apu-reference.tar.gz",
+            "url": "https://example.invalid/apu-reference.tar.gz",
+            "sha256": "locked-sha",
+        },
+    )
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "download_file",
+        lambda *_args, **_kwargs: pytest.fail("verified source must not be downloaded again"),
+    )
+
+    assert setup_apu_reference._install_archive("apu-reference", update=False, timeout=1) == destination
 
 
 def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
@@ -1115,7 +1147,7 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
         if "SIMU=VERILATOR" in values:
             simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
             if "APP=ci_smoke" in values and "sim" in values:
-                assert simulation_timeout == ["SOC_SIM_TIME=600"]
+                assert simulation_timeout == ["SOC_SIM_TIME=1800"]
                 assert "LINK_TYPE=ld2_all_sram" in values
                 assert "VERILATOR_SIM_ARGS=--fast-flash" in values
                 assert "HAVE_CSR=YES" in values
@@ -1393,7 +1425,7 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
         if pdk == "IHP130":
             assert "LINK_TYPE=ld2_all_sram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
-            assert "SOC_SIM_TIME=600" in verilator_values
+            assert "SOC_SIM_TIME=1800" in verilator_values
         else:
             assert "LINK_TYPE=ld2_sdram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
@@ -1553,8 +1585,16 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
 def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
 
-    assert "tools: verilator sv2v iverilog" in quality
-    assert "python3 -m pytest -q tests/test_apu_codec_transport.py" in quality
+    assert "timeout-minutes: 60" in quality
+    assert "tools: verilator sv2v iverilog yosys" in quality
+    assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
+    assert "make setup-apu-reference" in quality
+    assert quality.index("Set up locked test tools") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
+    assert quality.index("Set up locked APU references") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

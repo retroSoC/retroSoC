@@ -39,6 +39,13 @@ def _install_archive(name: str, *, update: bool, timeout: int) -> Path:
     destination = ROOT / source_spec["destination"]
     marker = destination / ".retrosoc-archive-sha256"
 
+    if (
+        not update
+        and marker.is_file()
+        and marker.read_text(encoding="utf-8").strip() == archive_spec["sha256"]
+    ):
+        return destination
+
     download_file(
         archive_spec["url"],
         archive_path,

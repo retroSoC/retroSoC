@@ -112,8 +112,8 @@ fail-closed behavior, and test-status completion without the verbose startup
 report. ARCHINFO checks include its
 ABI and the build/configuration identifiers generated for that variant. The
 IHP130 PR run links this image into the 32 KiB SRAM, explicitly enables the
-fast-flash backend, and allows 600 seconds. GF180, ICS55, and SKY130 allow
-1800 seconds because their smoke image and GA2D traffic share the SDRAM target.
+fast-flash backend, and allows 1800 seconds. GF180, ICS55, and SKY130 use the
+same budget because their smoke image and GA2D traffic share the SDRAM target.
 Icarus keeps the real serial XPI boot-model check. The profiles retain
 `bringup` as their default for manual diagnostics. To run the full report in
 Verilator, use:
@@ -216,10 +216,10 @@ variant identifier; `make help` lists all available targets. Netlist simulation 
 analysis consume the Yosys netlist, so run the synthesis command first. The CI-proven netlist
 regression uses the assembly self-test image:
 
-Verilator simulations run for 180 seconds by default. The IHP130 `ci_smoke`
-regression explicitly uses 600 seconds. The GF180, ICS55, and SKY130
-SDRAM-linked smoke runs use 1800 seconds. Set `SOC_SIM_TIME` explicitly only
-when an exploratory local run needs a different limit.
+Verilator simulations run for 180 seconds by default. The PR `ci_smoke`
+regressions explicitly use 1800 seconds for the expanded GA2D acceptance
+workload. Set `SOC_SIM_TIME` explicitly only when an exploratory local run
+needs a different limit.
 
 VCS flow commands use `bsub -Is` by default: this includes parse-time Python helpers used to
 calculate the variant and dependency-lock digest, generated-flow Python helpers, VCS, `simv`, and

@@ -4,7 +4,11 @@ This directory owns repository automation metadata: pull-request templates,
 CODEOWNERS, Dependabot configuration, reusable actions, and CI/release
 workflows.
 
-`workflows/quality.yml` runs the fast quality gate. `workflows/regression-smoke.yml`,
+`workflows/quality.yml` runs the quality gate. It restores the locked IHP130
+PDK and APU references and installs the locked Verilator, Icarus, sv2v, and
+Yosys tools before the complete Pytest suite so required RTL and corpus
+fixtures execute instead of failing on a missing environment.
+`workflows/regression-smoke.yml`,
 `workflows/regression-ihp130.yml`, `workflows/regression-gf180.yml`,
 `workflows/regression-ics55.yml`, `workflows/regression-sky130.yml`, and
 `workflows/nightly.yml` call the reusable regression workflow. Smoke enables
