@@ -33,6 +33,7 @@ jobs:
         with:
           path: |
             physical/pdk/IHP-Open-PDK
+            rtl/managed/third_party
             .cache/retrosoc/pdk
             .cache/retrosoc/stamps
           key: sources-IHP130-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
@@ -73,6 +74,7 @@ jobs:
         run: |
           python3 setup.py
           python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
 
       - name: Set up locked IHP130 PDK
         run: make CONFIG=configs/ci/ihp130.mk setup-pdk

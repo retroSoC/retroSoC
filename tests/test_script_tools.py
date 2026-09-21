@@ -1587,8 +1587,13 @@ def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
 
     assert "timeout-minutes: 60" in quality
     assert "tools: verilator sv2v iverilog yosys" in quality
+    assert "rtl/managed/third_party" in quality
+    assert "python3 rtl/ip/setup.py" in quality
     assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
     assert "make setup-apu-reference" in quality
+    assert quality.index("python3 rtl/ip/setup.py") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
     assert quality.index("Set up locked test tools") < quality.index(
         "Test scripts and RTL fixtures"
     )

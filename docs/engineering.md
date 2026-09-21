@@ -310,10 +310,11 @@ changes after freeze must retain the baseline revision and equivalence evidence.
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as
 Python, YAML, GitHub Actions, the dependency lock, and the complete Pytest
 suite. The test environment restores the locked IHP130 PDK and APU reference
-corpus and installs the locked Verilator, Icarus, sv2v, and Yosys tools before
-Pytest so required RTL, netlist, and corpus fixtures execute. `regression-smoke.yml`
-provides fast IHP130 feedback; the four PDK regression workflows remain required
-PR coverage and do not repeat the format checks.
+corpus, installs the locked third-party simulation models, and installs the
+locked Verilator, Icarus, sv2v, and Yosys tools before Pytest so required RTL,
+netlist, timing-model, and corpus fixtures execute. `regression-smoke.yml`
+provides fast IHP130 feedback; the four PDK regression workflows remain
+required PR coverage and do not repeat the format checks.
 
 Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
 rules in `rtl/rtl_style_manifest.json`. New positional module connections,
