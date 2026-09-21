@@ -170,7 +170,11 @@ def test_ci_software_covers_sdram_mapped_window() -> None:
 
     assert "rs_ci_smoke_sdram_access" in smoke
     assert "RS_SOC_SDRAM_BASE" in smoke
-    assert "RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN" in smoke
+    assert "RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES UINT32_C(65536)" in smoke
+    assert "RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES" in smoke
+    assert "RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_SDRAM_SPAN" in smoke
+    assert "RS_CI_SMOKE_SDRAM_SCRATCH_END - span" in smoke
+    assert "RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK" in smoke
     assert "RS_SOC_SDRAM_BASE" in hello
     assert "WAIT_SDRAM_READY" in hello
 

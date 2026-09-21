@@ -23,6 +23,9 @@
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
 
+#define RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES UINT32_C(65536)
+#define RS_CI_SMOKE_SDRAM_SCRATCH_END         (RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES)
+
 static bool rs_ci_smoke_archinfo_v2(void) {
     rs_archinfo_t info;
     uint32_t device_id[4];
@@ -622,7 +625,7 @@ static bool rs_ci_smoke_ga2d_bounded_wait(void) {
     const uint32_t rows = UINT32_C(256);
     const uint32_t span = UINT32_C(18432);
     volatile uint32_t *const destination =
-        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - span - UINT32_C(15));
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END - span - UINT32_C(15));
     const rs_ga2d_job_t job = {
         .operation = RS_GA2D_OP_FILL,
         .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
@@ -699,8 +702,9 @@ static bool rs_ci_smoke_ga2d_dma_contention(void) {
     static const rs_dma_config_t dma_config = {
         .kind = RS_DMA_KIND_MM_TO_MM,
         .request = RS_DMA_REQUEST_SOFTWARE,
-        .source = RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK,
-        .destination = RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x100),
+        .source = RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK,
+        .destination =
+            RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x100),
         .byte_count = RS_CI_SMOKE_GA2D_DMA_WORDS * UINT32_C(4),
         .width = RS_DMA_WIDTH_32,
         .source_increment = true,
@@ -710,10 +714,12 @@ static bool rs_ci_smoke_ga2d_dma_contention(void) {
     };
     static const rs_ga2d_job_t job = {
         .operation = RS_GA2D_OP_COPY,
-        .foreground = {RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x780),
+        .foreground = {RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                           UINT32_C(0x780),
                        UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
         .background = {0U, 0U, RS_GA2D_FORMAT_A8},
-        .destination = {RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x340),
+        .destination = {RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                            UINT32_C(0x340),
                         UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
         .width = 16U,
         .height = 16U,
@@ -731,11 +737,12 @@ static bool rs_ci_smoke_ga2d_dma_contention(void) {
     /* The LP core is itself a competitor: these setup writes and the bounded
        waits below keep LP-fabric traffic active while both engines run. */
     rs_ci_smoke_ga2d_pattern_fill(
-        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK),
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                         RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK),
         RS_CI_SMOKE_GA2D_DMA_WORDS);
     rs_ci_smoke_ga2d_pattern_fill(
-        (volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
-                                         UINT32_C(0x780)),
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                         RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x780)),
         RS_CI_SMOKE_GA2D_JOB_WORDS);
     if ((rs_fabric_monitor_snapshot() != RS_OK) ||
         (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_DMA, &dma_before) != RS_OK) ||
@@ -752,12 +759,12 @@ static bool rs_ci_smoke_ga2d_dma_contention(void) {
         return false;
     }
     if (!rs_ci_smoke_ga2d_pattern_check(
-            (const volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END -
+            (const volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
                                                    RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
                                                    UINT32_C(0x100)),
             RS_CI_SMOKE_GA2D_DMA_WORDS) ||
         !rs_ci_smoke_ga2d_pattern_check(
-            (const volatile uint32_t *)(uintptr_t)(RS_SOC_SDRAM_END -
+            (const volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
                                                    RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
                                                    UINT32_C(0x340)),
             RS_CI_SMOKE_GA2D_JOB_WORDS)) {
@@ -1070,7 +1077,8 @@ static bool rs_ci_smoke_sdram_wait_ready(void) {
 }
 
 static bool rs_ci_smoke_sdram_access(void) {
-    const uintptr_t scratch = (uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
+    const uintptr_t scratch =
+        (uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
     volatile uint8_t *const bytes = (volatile uint8_t *)scratch;
     volatile uint16_t *const halfs = (volatile uint16_t *)scratch;
     volatile uint32_t *const words = (volatile uint32_t *)scratch;
