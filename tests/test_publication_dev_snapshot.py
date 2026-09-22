@@ -28,7 +28,8 @@ def test_refrozen_structure_covers_ga2d_without_duplicate_register_ownership(dat
     assert sum(len(group["items"]) for group in data["overview_groups"]) == 44
     ga2d = next(row for row in data["regions"] if row["symbol"] == "APB4_GA2D")
     assert (ga2d["base"], ga2d["size"], ga2d["kind"]) == (0x10012000, 4096, "active")
-    assert len(data["policies"]) == 9
+    assert len(data["policies"]) == 10
+    assert data["policies"][9]["name"] == "npu"
     route = next(row for row in data["system_reference"]["programming"]["engines"] if row["id"] == "ga2d")
     assert (route["master"], route["lp_irq"], route["hp_irq"]) == ("8", 32, 11)
 

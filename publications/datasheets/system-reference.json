@@ -3729,6 +3729,22 @@
         ]
       },
       {
+        "id": "apb4_npu",
+        "chapter": "npu",
+        "family": "npu",
+        "mode": "PRODUCT",
+        "region": "APB4_NPU",
+        "catalog": "npu",
+        "qualification": "Phase 2 integrates the NPU control shell only: register window, epoch-reconciled PCLK/HP lifecycle CDC, resource-9 ownership with round-trip quiesce acknowledgement, DONE/ERROR/ABORTED interrupt routing (LP vector 33 or HP PLIC source 12 by owner), and an atomic performance snapshot bank. The private AXI64 master is tied safely idle; EXECUTION_READY, operator, DMA, and numeric capabilities stay clear. Job execution, descriptor DMA, and inference are Phase 3/4 scope and are not advertised.",
+        "sources": [
+          "docs/ip/npu.md",
+          "rtl/ip/multimedia/npu_reg.sv",
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_control_cdc.sv",
+          "rtl/ip/multimedia/npu_core.sv"
+        ]
+      },
+      {
         "id": "apb4_crypto",
         "chapter": "crypto",
         "family": "crypto",
@@ -4991,7 +5007,9 @@
         3,
         4,
         9,
+        18,
         9,
+        18,
         10,
         11,
         12,
@@ -5000,11 +5018,12 @@
         15,
         16,
         17,
-        17
+        17,
+        19
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Linux-ready and P5 GA2D mailbox/cache-clean handoff completed; successful terminal status.",
+        "0": "Linux-ready and P5 GA2D/NPU mailbox/cache-clean handoff completed; successful terminal status.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -5021,7 +5040,9 @@
         "14": "GA2D did not return to the expected HP-owned safe idle state after the P5 FILL/COPY-subset job.",
         "15": "The request to hold HP after P5 GA2D completion returned an unexpected error.",
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
-        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed."
+        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
+        "18": "NPU LP-owned idle prerequisite, handoff to HP, or HP-owned idle confirmation failed.",
+        "19": "NPU handoff back to LP or LP-owned safe-idle confirmation failed."
       }
     }
   },
@@ -5466,6 +5487,15 @@
             "trigger": "rs_ci_smoke_ga2d_dma_contention(",
             "coverage": "Run a central-DMA memory-to-memory transfer and a GA2D copy concurrently in disjoint SDRAM regions, verify both payloads byte-exactly, and confirm fabric-monitor request counters advance for both master 2 and master 8 during the shared window.",
             "boundary": "Covers LP CPU, central DMA, and GA2D competition with SDRAM refresh in the behavioral product; wider peripheral-master contention is evidenced in the GA2D platform testbench, and no starvation bound is proven here."
+          },
+          {
+            "id": "npu-p2-shell-irq",
+            "title": "NPU P2 shell ownership and IRQ route",
+            "kind": "test-fail",
+            "code": 17,
+            "trigger": "rs_ci_smoke_npu_irq(",
+            "coverage": "Hand resource 9 to LP through the Resource Controller quiesce/acknowledge round trip, read back the shell identity/capability, and verify the IRQ_TEST-injected event reaches external ordinal 31 and clears by W1C.",
+            "boundary": "Covers the P2 register shell and interrupt route only; EXECUTION_READY stays clear, the private master is tied idle, and no job, DMA, or operator behavior is exercised."
           },
           {
             "id": "apu",

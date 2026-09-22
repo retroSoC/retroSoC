@@ -1,0 +1,51 @@
+{
+  "archives": {
+    "npu_vww_dataset": "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58"
+  },
+  "compiler": {
+    "contract_revision": "npu-p0/1.0.0"
+  },
+  "corpus": {
+    "bin_aggregate_sha256": "60eba765c6e705c18b521634fd951bb0346d8357d3da349afece1e6acea5c274",
+    "class_counts": {
+      "non_person": 500,
+      "person": 500
+    },
+    "count": 1000,
+    "definition": "docs/ip/npu-vww-corpus.tsv",
+    "definition_sha256": "97cd4f1b0f7d67fc3f8b8effe2342d9ab9c2d36b6292c4db4d226da5bde29eea",
+    "jpeg_aggregate_sha256": "fa6823a96e0395374fee223d642705bb7589ee7dd55d535a86bb6311548b9b9a",
+    "labels_index": "benchmark/evaluation/datasets/vww01/y_labels.csv",
+    "labels_index_sha256": "3697ca57c48b23b21602ae9bdb32b1925407a1d41d79167cdfb365054cb9c33d"
+  },
+  "input_quantization": {
+    "scale": 0.00392156862745098,
+    "zero_point": -128
+  },
+  "model": {
+    "bytes": 333288,
+    "path": "benchmark/training/visual_wake_words/trained_models/vww_96_int8.tflite",
+    "sha256": "597a384c8c2c8a1276f04702f25013b7838f2f814f1ca7c174d295b73e3d6b7b"
+  },
+  "preprocessing": {
+    "kind": "jpeg-rgb-96x96-minus-128",
+    "note": "Decode COCO_val2014 96x96 RGB JPEG to U8C3 bytes ([0]=ulc, [9215]=lrc), then quantize input = pixel - 128; preprocessing is outside the NPU graph."
+  },
+  "rtl_sample_ids": [
+    "000000000724.bin",
+    "000000000785.bin",
+    "000000000885.bin",
+    "000000001000.bin",
+    "000000001490.bin",
+    "000000002157.bin",
+    "000000002261.bin",
+    "000000002299.bin",
+    "000000002431.bin",
+    "000000003845.bin"
+  ],
+  "schema": 1,
+  "sources": {
+    "apu_mlperf_tiny": "4addd0fa08d216e20637637874e084895f289da4"
+  },
+  "workload": "vww"
+}

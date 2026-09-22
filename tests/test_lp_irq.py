@@ -47,14 +47,18 @@ def test_phase1_generates_64bit_vector_and_sdk_metadata(tmp_path: Path) -> None:
     assert "`define SOC_USER_IRQ_MASK 64'h00000000004EFBFC" in irq_config
     assert "s_irq[31] = s_apb4_periph_irq[23];" in irq_wiring
     assert "s_irq[32] = s_apb4_periph_irq[24];" in irq_wiring
+    assert "s_irq[33] = s_apb4_periph_irq[25];" in irq_wiring
     assert "irq_i[32] == apb4_periph_irq_i[24]" in irq_sva
+    assert "irq_i[33] == apb4_periph_irq_i[25]" in irq_sva
     assert "irq_i[63] == 1'b0" in irq_sva
     assert "RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(64)" in metadata
     assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(62)" in metadata
-    assert "RS_SOC_ALLOCATED_IRQ_COUNT UINT32_C(31)" in metadata
+    assert "RS_SOC_ALLOCATED_IRQ_COUNT UINT32_C(32)" in metadata
     assert "RS_SOC_EXT_IRQ_APU UINT32_C(29)" in metadata
     assert "RS_SOC_IRQ_GA2D UINT32_C(32)" in metadata
     assert "RS_SOC_EXT_IRQ_GA2D UINT32_C(30)" in metadata
+    assert "RS_SOC_IRQ_NPU UINT32_C(33)" in metadata
+    assert "RS_SOC_EXT_IRQ_NPU UINT32_C(31)" in metadata
 
 
 def test_phase1_supports_32bit_compatibility_metadata(tmp_path: Path) -> None:

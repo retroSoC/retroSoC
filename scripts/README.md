@@ -26,6 +26,57 @@ Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 
+`setup_npu_reference.py` prepares the locked KWS/VWW inputs and the existing
+TensorFlow/gemmlowp reference sources. `npu_framework_reference.py` builds the
+host-only adapter in `tests/cpp/npu_framework_reference.cc`; its integer kernels
+consume original tensor constants and quantization, never NPU packed artifacts.
+Only raw model parsing is shared with the NPU compiler. Run
+`make CONFIG=configs/ci/ihp130.mk npu-p0-qualify` after
+`make CONFIG=configs/ci/ihp130.mk setup-npu-reference` to compare both complete
+1000-input corpora against the Python graph reference and compiled executor.
+The selected variant's `npu/p0/` directory retains oracle build provenance,
+per-input golden tensors, three-way hashes, logs and `qualification-p0.json`.
+The runner uses at most 16 workers (`JOBS`); missing sources/tools, numerical
+differences and incomplete runs cannot pass. A direct `--limit` invocation is
+debug-only and returns a nonzero status even when its selected cases match.
+
+`npu_compiler.py` is the P5 production entry point. It accepts one static
+batch-one INT8 TFLite v3 subgraph, rejects unsupported placement with an
+operator-specific diagnostic, and emits ABI-1 descriptors, packed constants,
+`npu.json`, and a model-prefixed freestanding C plan. The generated plan uses
+caller-owned aligned descriptor/arena storage, checked physical relocation,
+bounded HAL waits, 64-byte Zicbom maintenance when compiled for HP, and the
+model-derived terminal integer Softmax. Generated files remain below the
+selected build variant. `make CONFIG=configs/ci/ihp130.mk npu-p5-deployments`
+builds the locked KWS and VWW packages reproducibly.
+
+`qualify_npu_p5.py` builds one production NPU fixture per simulator and runs
+the frozen ten-input sets from both manifests. Every accepted output byte is
+checked in actual tile-write order, so later arena reuse cannot hide an
+intermediate mismatch. Invoke it through
+`make CONFIG=configs/ci/ihp130.mk npu-p5-rtl`; missing tools, inputs, terminal
+markers, or any layer write fail the required run.
+
+`npu_p5_report.py` fails closed while assembling P5 evidence. It verifies P0,
+compiler/parity and embedded-C/HAL results; exact dual-simulator case counts;
+source, trace, log and deployment hashes; LP/HP build manifests and firmware;
+cross-profile KWS package identity; and zero skipped/rejected cases. Invoke it
+through `npu-p5-report` with the retained LP/HP variant roots and config
+digests. The generated report records its fully expanded command.
+
+NPU-P6 qualification is split into auditable drivers. `npu_p6_corpus.py`
+builds deterministic CRC-protected 100-case KWS/VWW shards from retained P0
+goldens. `run_npu_p6_verilator.py` builds the existing `hp_boot` composition,
+runs all shards on one PRODUCT Verilator model, and aggregates architectural
+cycles and NPU counters. `run_npu_p6_netlist.py` runs macro-aware isolated
+synthesis/STA and four directed synthesized-block transactions covering dense,
+depthwise, rejection and accumulation-overflow behavior;
+`run_npu_p6_physical.py` invokes the unchanged full PRODUCT Yosys/OpenSTA and
+warning/metric gates. `run_npu_p6_regression.py` retains PR/nightly verdicts,
+and `npu_p6_report.py` requires current-revision PASS evidence for all of
+NPU-V015 through NPU-V018. None of these scripts treats FPGA execution or host
+elapsed time as mandatory performance evidence.
+
 `development_environment.py` is the shared Docker, Nix, and manual bootstrap
 entry point. It installs only the checksum-verified open-source tool bundles and
 hash-pinned Python dependencies; project-local PDK and source setup remains under

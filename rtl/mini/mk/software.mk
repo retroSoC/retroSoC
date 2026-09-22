@@ -55,6 +55,12 @@ DEF_VAL += -DRS_RTC_CLOCK_HZ=$(AUD_CLK_HZ)U
 ifeq ($(HAVE_CSR),YES)
 DEF_VAL += -DCSR_ENABLE
 endif
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+DEF_VAL += -DRS_NPU_P5_ACCEPTANCE
+endif
+ifeq ($(NPU_P6_ACCEPTANCE),YES)
+DEF_VAL += -DRS_NPU_P6_ACCEPTANCE
+endif
 
 CFLAGS := $(GCC_FLAGS) $(SW_WARN_FLAGS) $(ISA_FLAGS) $(DEF_VAL)
 
@@ -109,6 +115,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/apu.c \
             $(ROOT_PATH)/crt/src/hal/ga2d_math.c \
             $(ROOT_PATH)/crt/src/hal/ga2d.c \
+            $(ROOT_PATH)/crt/src/hal/npu.c \
             $(ROOT_PATH)/crt/src/hal/jpeg_math.c \
             $(ROOT_PATH)/crt/src/hal/jpeg.c \
             $(ROOT_PATH)/crt/src/hal/dvp.c \

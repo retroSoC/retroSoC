@@ -30,8 +30,8 @@ def test_complete_dma_routes_and_native_credit_boundary(spec):
     result = pr.collect_programming(ROOT, spec, IDS, REFERENCE["source_revision"])
     assert [r["number"] for r in result["dma_routes"]] == list(range(14))
     assert [r["number"] for r in result["channels"]] == list(range(8))
-    assert result["read_credits"] == [4, 4, 4, 2, 2, 1, 1, 4, 1]
-    assert result["write_credits"] == [0, 2, 2, 1, 1, 1, 1, 2, 1]
+    assert result["read_credits"] == [4, 4, 4, 2, 2, 1, 1, 4, 1, 1]
+    assert result["write_credits"] == [0, 2, 2, 1, 1, 1, 1, 2, 1, 1]
 
 
 def test_jpeg_bounded_admission_publication_facts_match_executable_credits(spec):

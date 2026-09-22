@@ -12,7 +12,10 @@
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/npu_regs.h>
+#include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/onchip_sram.h>
+#include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sdram.h>
@@ -25,6 +28,15 @@
 
 #define RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES UINT32_C(65536)
 #define RS_CI_SMOKE_SDRAM_SCRATCH_END         (RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES)
+
+#if defined(RS_NPU_P5_ACCEPTANCE)
+#include "kws_npu.h"
+#include "npu_acceptance_data.h"
+
+static rs_kws_npu_workspace_t rs_ci_smoke_npu_workspace;
+static rs_kws_npu_profile_t rs_ci_smoke_npu_profile;
+static int8_t rs_ci_smoke_npu_output[RS_NPU_ACCEPTANCE_OUTPUT_BYTES];
+#endif
 
 static bool rs_ci_smoke_archinfo_v2(void) {
     rs_archinfo_t info;
@@ -45,6 +57,7 @@ static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
 static volatile uint32_t rs_ci_smoke_timer_irq_count;
 static volatile uint32_t rs_ci_smoke_software_irq_count;
 static volatile uint32_t rs_ci_smoke_ga2d_irq_count;
+static volatile uint32_t rs_ci_smoke_npu_irq_count;
 static volatile uint8_t rs_ci_smoke_ga2d_fill_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
 static volatile uint8_t rs_ci_smoke_ga2d_copy_source_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
 static volatile uint8_t rs_ci_smoke_ga2d_copy_destination_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
@@ -101,6 +114,13 @@ static void rs_ci_smoke_ga2d_irq_handler(uintptr_t mcause, uintptr_t stack_point
     ++rs_ci_smoke_ga2d_irq_count;
 }
 
+static void rs_ci_smoke_npu_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    ++rs_ci_smoke_npu_irq_count;
+}
+
 static void rs_ci_smoke_force_external_irq(uint32_t id) {
     const uint32_t bank = id >> 4U;
     const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
@@ -135,6 +155,13 @@ static bool rs_ci_smoke_wait_ga2d_irq(uint32_t target) {
          (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < target); --timeout) {
     }
     return rs_ci_smoke_ga2d_irq_count >= target;
+}
+
+static bool rs_ci_smoke_wait_npu_irq(uint32_t target) {
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT;
+         (timeout != 0U) && (rs_ci_smoke_npu_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_npu_irq_count >= target;
 }
 
 static bool rs_ci_smoke_external_single(uint32_t id) {
@@ -780,6 +807,69 @@ static bool rs_ci_smoke_ga2d_dma_contention(void) {
            (ga2d_after.read_requests > ga2d_before.read_requests) &&
            (ga2d_after.write_requests > ga2d_before.write_requests);
 }
+
+static bool rs_ci_smoke_npu_irq(void) {
+    bool passed;
+
+    rs_ci_smoke_npu_irq_count = 0U;
+    if (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false) != RS_OK) {
+        return false;
+    }
+    if ((RS_NPU_REG(RS_NPU_REG_IP_ID) != RS_NPU_IP_ID_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_IP_VERSION) != RS_NPU_IP_VERSION_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_CAPABILITY) != RS_NPU_CAPABILITY_P4) ||
+        (RS_NPU_REG(RS_NPU_REG_IRQ_STATE) != 0U)) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = RS_NPU_IRQ_ALL;
+    if (rs_irq_enable_external(RS_SOC_EXT_IRQ_NPU, rs_ci_smoke_npu_irq_handler) != RS_OK) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_TEST) = RS_NPU_IRQ_ALL;
+    __enable_irq();
+    passed = rs_ci_smoke_wait_npu_irq(1U);
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    if (passed) {
+        rs_kws_npu_regions_t regions;
+        rs_npu_status_t status;
+        uint32_t index;
+
+        RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+        if ((rs_kws_npu_default_regions(&rs_ci_smoke_npu_workspace, &regions) != RS_OK) ||
+            (rs_kws_npu_prepare(&rs_ci_smoke_npu_workspace, &regions, rs_npu_acceptance_input,
+                                RS_NPU_ACCEPTANCE_INPUT_BYTES) != RS_OK) ||
+            (rs_npu_irq_enable(RS_NPU_IRQ_DONE | RS_NPU_IRQ_ERROR | RS_NPU_IRQ_ABORTED) != RS_OK) ||
+            (rs_kws_npu_execute(&rs_ci_smoke_npu_workspace, UINT32_C(0x4E505535),
+                                RS_TIMEOUT_DEFAULT, rs_ci_smoke_npu_output,
+                                RS_NPU_ACCEPTANCE_OUTPUT_BYTES,
+                                &rs_ci_smoke_npu_profile) != RS_OK) ||
+            (rs_npu_get_status(&status) != RS_OK) || (status.result_code != RS_NPU_RESULT_DONE) ||
+            (status.completed_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT) ||
+            (rs_ci_smoke_npu_irq_count < 2U) ||
+            (rs_ci_smoke_npu_profile.counters.retired_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT)) {
+            passed = false;
+        }
+        for (index = 0U; (index < RS_NPU_ACCEPTANCE_OUTPUT_BYTES) && passed; ++index) {
+            if (rs_ci_smoke_npu_output[index] != rs_npu_acceptance_output[index]) {
+                passed = false;
+            }
+        }
+        printf("NPU_P5_LP model=kws active=%llu read=%llu write=%llu softmax=%llu\n",
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.active_cycles,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_read_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_write_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.softmax_cycles);
+    }
+#endif
+    __disable_irq();
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = 0U;
+    if (rs_irq_disable_external(RS_SOC_EXT_IRQ_NPU) != RS_OK) {
+        passed = false;
+    }
+    __disable_ext_irq();
+    return passed;
+}
 #else
 static bool rs_ci_smoke_external_irq(void) {
     return true;
@@ -794,6 +884,10 @@ static bool rs_ci_smoke_ga2d_bounded_wait(void) {
 }
 
 static bool rs_ci_smoke_ga2d_dma_contention(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_npu_irq(void) {
     return true;
 }
 #endif
@@ -1181,6 +1275,14 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 16U);
     }
     printf("ci_smoke: GA2D DMA contention passed\n");
+    if (!rs_ci_smoke_npu_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 17U);
+    }
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    printf("ci_smoke: NPU P5 deployment passed\n");
+#else
+    printf("ci_smoke: NPU P2 IRQ passed\n");
+#endif
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }

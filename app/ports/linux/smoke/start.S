@@ -58,6 +58,15 @@
     .equ GA2D_WAIT_POLLS,  0x00100000
 
 _start:
+    la      sp, _stack_top
+    la      t0, _bss_start
+    la      t1, _bss_end
+clear_bss:
+    bgeu    t0, t1, bss_cleared
+    sw      zero, 0(t0)
+    addi    t0, t0, 4
+    j       clear_bss
+bss_cleared:
     li      t0, UART1_BASE
     sw      zero, UART_CTRL(t0)
     li      t1, 3
@@ -134,6 +143,15 @@ start_ga2d:
     jal     ra, check_copy
     beqz    a0, publish_ga2d_fail
 
+#ifdef RS_NPU_P5_ACCEPTANCE
+    call    rs_hp_npu_acceptance
+    beqz    a0, publish_ga2d_fail
+#endif
+#ifdef RS_NPU_P6_ACCEPTANCE
+    call    rs_hp_npu_p6_acceptance
+    beqz    a0, publish_ga2d_fail
+#endif
+
 publish_ga2d_pass:
     li      t0, MAILBOX_BASE
     li      t1, HP_GA2D_PASS
@@ -158,6 +176,12 @@ wait_cache_request_loop:
 
 clean_cache_request:
     jal     ra, clean_invalidate_shared_lines
+#ifdef RS_NPU_P5_ACCEPTANCE
+    call    rs_hp_npu_cache_clean
+#endif
+#ifdef RS_NPU_P6_ACCEPTANCE
+    call    rs_hp_npu_p6_cache_clean
+#endif
     li      t0, MAILBOX_BASE
     li      t1, HP_GA2D_CACHE
     sw      t1, HP_EVENT(t0)

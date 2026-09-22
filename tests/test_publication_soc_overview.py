@@ -21,7 +21,7 @@ def test_dense_overview_retains_instances_and_independent_gateway_fan_in(diagram
     validate_soc_diagram(ROOT, diagram)
     assert diagram["font_weight"] == 400
     assert [len(gateway["members"]) for gateway in diagram["gateways"]] == [3, 2]
-    assert len(diagram["masters"]) == 9
+    assert len(diagram["masters"]) == 10
     nodes = {node["id"]: node for node in diagram["nodes"]}
     assert nodes["sram"]["domain"] == nodes["monitor"]["domain"] == "hp"
     assert nodes["gwa"]["domain"] == nodes["gwb"]["domain"] == "pclk"

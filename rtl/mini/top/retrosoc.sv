@@ -94,6 +94,8 @@ module retrosoc (
       u_jpeg_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_ga2d_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_npu_wide_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_apu_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
@@ -249,23 +251,28 @@ module retrosoc (
   logic [31:0]      s_ext_h_timeout;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      s_ext_h_owner;
-  logic [ 8:0][1:0] s_resource_owner;
-  logic [ 8:0]      s_resource_owner_lock;
-  logic [ 8:0]      s_resource_quiesce;
-  logic [ 8:0]      s_resource_reset;
-  logic [ 8:0]      s_resource_idle_hp;
-  logic [ 8:0]      s_resource_idle_pclk;
-  logic [ 8:0]      s_resource_block_ack_hp;
-  logic [ 8:0]      s_resource_block_ack_pclk;
-  logic [ 7:0]      s_resource_irq_raw;
-  logic [ 7:0]      s_resource_irq_lp;
-  logic [ 7:0]      s_resource_irq_hp;
+  logic [ 9:0][1:0] s_resource_owner;
+  logic [ 9:0]      s_resource_owner_lock;
+  logic [ 9:0]      s_resource_quiesce;
+  logic [ 9:0]      s_resource_reset;
+  logic [ 9:0]      s_resource_idle_hp;
+  logic [ 9:0]      s_resource_idle_pclk;
+  logic [ 9:0]      s_resource_block_ack_hp;
+  logic [ 9:0]      s_resource_block_ack_pclk;
+  logic [ 8:0]      s_resource_irq_raw;
+  logic [ 8:0]      s_resource_irq_lp;
+  logic [ 8:0]      s_resource_irq_hp;
   logic             s_apu_idle;
   logic             s_jpeg_idle;
   logic             s_ga2d_idle;
   logic             s_ga2d_core_safe_idle;
-  logic [ 8:0]      s_resource_idle_combined;
-  logic [ 8:0]      s_resource_block_ack_combined;
+  logic [ 9:0]      s_resource_idle_combined;
+  logic [ 9:0]      s_resource_block_ack_combined;
+  logic             s_npu_idle;
+  logic             s_npu_block_ack;
+  logic             s_npu_hp_pause_ack;
+  logic             s_npu_hp_flush_busy;
+  logic             s_npu_hp_idle;
   logic             s_ga2d_source_stop;
   logic             s_ga2d_source_safe_idle;
   logic             s_ga2d_bridge_clear_busy;
@@ -511,7 +518,7 @@ module retrosoc (
       .dat_i({
         u_sysctrl_if.hp_release_o,
         s_hp_debug_reset_req,
-        s_data_plane_idle && s_hp_mmio_idle,
+        s_data_plane_idle && s_hp_mmio_idle && (!s_hp_block_hp || s_npu_hp_pause_ack),
         s_data_plane_flush_busy || s_hp_mmio_clear_busy
       }),
       .dat_o({s_hp_release_req_aon, s_hp_debug_reset_req_aon, s_hp_idle_aon, s_hp_flush_busy_aon})
@@ -617,6 +624,10 @@ module retrosoc (
       .jpeg_axi4               (u_jpeg_wide_axi4_if),
       .ga2d_axi4               (u_ga2d_wide_axi4_if),
       .ga2d_core_safe_idle_i   (s_ga2d_core_safe_idle),
+      .npu_axi4                (u_npu_wide_axi4_if),
+      .npu_source_idle_i       (s_npu_idle),
+      .npu_source_quiesced_i   (s_npu_block_ack),
+      .npu_flush_busy_i        (s_npu_hp_flush_busy),
       .lp_data_axi4            (u_mgmt_data_axi4_if),
       .ext_h_axi4              (u_ext_h_wide_axi4_if),
       .sram_gateway_axi4       (u_data_sram_axi4_if),
@@ -669,7 +680,7 @@ module retrosoc (
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(9)
+      .DATA_WIDTH(10)
   ) u_resource_idle_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -678,7 +689,7 @@ module retrosoc (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(9)
+      .DATA_WIDTH(10)
   ) u_resource_block_ack_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -769,7 +780,7 @@ module retrosoc (
       .dat_o  (s_pclk_pending_q)
   );
 
-  assign hp_idle_o = s_data_plane_idle && s_hp_mmio_idle;
+  assign hp_idle_o = s_data_plane_idle && s_hp_mmio_idle && (!s_hp_block_hp || s_npu_hp_pause_ack);
   assign pclk_idle_o = !(|s_pclk_pending_q) && !u_cfg_axi4_if.awvalid &&
                        !u_cfg_axi4_if.arvalid && !u_system_axi4_if.awvalid &&
                        !u_system_axi4_if.arvalid;
@@ -868,6 +879,8 @@ module retrosoc (
       .clk_ulpi_i                  (clk_ulpi_i),
       .clk_mem_i                   (clk_mem_i),
       .rst_mem_n_i                 (rst_mem_n_i),
+      .clk_hp_i                    (clk_hp_i),
+      .rst_hp_n_i                  (rst_hp_n_i),
       .debug_halted_i              (s_mgmt_debug_halted),
       .timebase_tick_i             (timebase_tick_i),
       .ext_h_hp_irq_i              ((s_ext_h_owner == 2'd1) ? s_ext_h_irq_raw : 1'b0),
@@ -888,6 +901,12 @@ module retrosoc (
       .ga2d_bridge_clear_busy_i    (s_ga2d_bridge_clear_busy),
       .ga2d_bridge_epoch_i         (s_ga2d_bridge_epoch),
       .ga2d_data_ready_i           (s_ga2d_data_ready),
+      .npu_owner_i                 (s_resource_owner[9]),
+      .npu_owner_lock_i            (s_resource_owner_lock[9]),
+      .npu_quiesce_i               (s_resource_quiesce[9]),
+      .npu_reset_i                 (s_resource_reset[9]),
+      .npu_hp_block_new_i          (s_hp_block_hp),
+      .npu_hp_flush_i              (s_hp_flush_hp),
       .mem_pad_mode_i              (s_mem_pad_mode_lp),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
@@ -897,6 +916,7 @@ module retrosoc (
       .apu_axi4                    (u_apu_axi4_if),
       .jpeg_axi4                   (u_jpeg_wide_axi4_if),
       .ga2d_axi4                   (u_ga2d_wide_axi4_if),
+      .npu_axi4                    (u_npu_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
@@ -936,6 +956,11 @@ module retrosoc (
       .jpeg_idle_o                 (s_jpeg_idle),
       .ga2d_idle_o                 (s_ga2d_idle),
       .ga2d_core_safe_idle_o       (s_ga2d_core_safe_idle),
+      .npu_idle_o                  (s_npu_idle),
+      .npu_block_ack_o             (s_npu_block_ack),
+      .npu_hp_pause_ack_o          (s_npu_hp_pause_ack),
+      .npu_hp_flush_busy_o         (s_npu_hp_flush_busy),
+      .npu_hp_idle_o               (s_npu_hp_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
 
@@ -986,6 +1011,7 @@ module retrosoc (
   );
 
   assign s_resource_idle_combined = {
+    s_npu_idle && s_resource_idle_pclk[9],
     s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8],
     s_apu_idle && s_resource_idle_pclk[7],
     s_jpeg_idle && s_resource_idle_pclk[6],
@@ -993,12 +1019,13 @@ module retrosoc (
     s_resource_idle_pclk[4:0]
   };
   assign s_resource_block_ack_combined = {
+    s_npu_idle && s_resource_block_ack_pclk[9],
     s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8],
     s_apu_idle && s_resource_block_ack_pclk[7],
     s_resource_block_ack_pclk[6:0]
   };
 
-  logic [41:0] s_unused_domain_inputs;
+  logic [42:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {
     clk_pclk_i,
     rst_pclk_n_i,
@@ -1021,6 +1048,7 @@ module retrosoc (
     s_ga2d_bridge_clear_busy,
     ^s_ga2d_bridge_epoch,
     s_ga2d_data_ready,
+    s_npu_hp_idle,
     ^unused_cdc_clear_busy,
     ^unused_cdc_epoch,
     ^{s_hp_mmio_epoch, s_hp_mmio_clear_busy},

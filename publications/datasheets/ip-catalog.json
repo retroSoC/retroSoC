@@ -498,6 +498,23 @@
     "summary": "P5 direct single-job 2D accelerator with private AXI64 DMA. Supports FILL, COPY, bit-exact format CONVERT and opaque alpha BLEND, including A8 foreground masks and exact background/destination in-place composition. Resource ownership, bounded buffers and cache handoff remain mandatory."
   },
   {
+    "id": "npu",
+    "regions": [
+      "APB4_NPU"
+    ],
+    "irqs": [
+      "npu"
+    ],
+    "sources": [
+      "docs/ip/npu.md",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_control_cdc.sv",
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/npu_reg.sv"
+    ],
+    "summary": "P2 APB4 control shell for the neural processing unit: resource-9 ownership with epoch-reconciled PCLK/HP lifecycle CDC, DONE/ERROR/ABORTED interrupt round trip (LP vector 33 or HP PLIC source 12), performance snapshot bank, and a safely idle private AXI64 master. EXECUTION_READY, operator, and DMA capabilities stay clear until the production compute and descriptor path are verified."
+  },
+  {
     "id": "reserved",
     "regions": [
       "SPISD"

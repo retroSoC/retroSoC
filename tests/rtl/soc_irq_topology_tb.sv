@@ -45,6 +45,7 @@ module soc_irq_topology_tb;
         22:      expect_irq(64'd1 << 30);
         23:      expect_irq(64'd1 << 31);
         24:      expect_irq(64'd1 << 32);
+        25:      expect_irq(64'd1 << 33);
         default: expect_irq(64'd1 << (bit_index + 7));
       endcase
     end
@@ -68,8 +69,8 @@ module soc_irq_topology_tb;
 
     s_apb4_system_irq = '0;
     expect_irq('0);
-    if (s_irq[63:33] !== '0) begin
-      $fatal(1, "unallocated high IRQ vector bits are not low: %h", s_irq[63:33]);
+    if (s_irq[63:34] !== '0) begin
+      $fatal(1, "unallocated high IRQ vector bits are not low: %h", s_irq[63:34]);
     end
     if ((s_irq[10] !== 1'b0) || (s_irq[21] !== 1'b0)) begin
       $fatal(1, "SDIO core IRQ bits are not low when sources are low: IRQ10=%b IRQ21=%b",

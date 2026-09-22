@@ -15,21 +15,29 @@ def build(args: argparse.Namespace) -> None:
     elf = output / "hp_smoke.elf"
     compiler = f"{args.cross}gcc"
     objcopy = f"{args.cross}objcopy"
-    subprocess.run(
-        [
+    command = [
             compiler,
             "-march=rv32imafdc_zicbom_zicsr_zifencei",
             "-mabi=ilp32d",
             "-nostdlib",
             "-nostartfiles",
+            "-ffreestanding",
+            "-O3",
+            "-Wall",
+            "-Wextra",
+            "-Werror=implicit-function-declaration",
+            "-Werror=return-type",
             "-Wl,--build-id=none",
             f"-Wl,-T,{args.linker.resolve()}",
             "-o",
             str(elf),
             str(args.source.resolve()),
-        ],
-        check=True,
-    )
+    ]
+    for include in args.include:
+        command.append(f"-I{include.resolve()}")
+    command.extend(str(source.resolve()) for source in args.extra_source)
+    command.extend(args.define)
+    subprocess.run(command, check=True)
     subprocess.run(
         [objcopy, "-O", "binary", str(elf), str(images / "fw_jump.bin")],
         check=True,
@@ -45,6 +53,9 @@ def main() -> None:
     parser.add_argument("--linker", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cross", default="riscv32-unknown-elf-")
+    parser.add_argument("--extra-source", type=Path, action="append", default=[])
+    parser.add_argument("--include", type=Path, action="append", default=[])
+    parser.add_argument("--define", action="append", default=[])
     build(parser.parse_args())
 
 

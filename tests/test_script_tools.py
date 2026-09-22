@@ -367,6 +367,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     apu_loader_filelist = tmp_path / "apu_loader.fl"
     apu_sequencer_filelist = tmp_path / "apu_sequencer.fl"
     gateway_a_filelist = tmp_path / "gateway_a.fl"
+    npu_dma_filelist = tmp_path / "npu_dma.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -406,6 +407,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "gateway_a", gateway_a_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "npu_dma", npu_dma_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -424,6 +428,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
     apu_sequencer = parse_filelists([apu_sequencer_filelist], require_files=False)
     gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
+    npu_dma = parse_filelists([npu_dma_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert "+define+PDK_BEHAV" in onchip_ram.defines
     assert "+define+SYNTHESIS" in onchip_ram.defines
@@ -515,6 +520,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
     )
     assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
+    assert "+define+SV_ASSRT_DISABLE" in npu_dma.defines
+    assert ROOT / "rtl/ip/multimedia/npu_dma.sv" in npu_dma.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv" in npu_dma.files
+    assert ROOT / "rtl/mini/formal/npu_dma_formal.sv" in npu_dma.files
 
 
 def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
@@ -578,6 +587,49 @@ def test_ga2d_formal_target_uses_the_p5_production_hierarchy() -> None:
     assert "s_residual_r_valid_q" in properties
     assert "OperationBlend" in properties
     assert "FormatA8" in properties
+
+
+def test_npu_dma_formal_target_pins_the_bounded_axi4_contract() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    filelist_generator = (
+        ROOT / "rtl/mini/formal/generate_formal_filelist.py"
+    ).read_text(encoding="utf-8")
+    design = (ROOT / "rtl/mini/formal/npu_dma_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/npu_dma_formal_props.sv").read_text(
+        encoding="utf-8"
+    )
+
+    assert re.search(r"^FORMAL_NPU_DMA_DEPTH\s+\?= 16$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_NPU_DMA_COVER_DEPTH\s+\?= 32$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_NPU_DMA_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_TARGETS\s+:=.* npu_dma$", formal_makefile, re.MULTILINE)
+    assert "formal-npu_dma: $(FORMAL_DIR)/npu_dma/.stamp | manifest" in formal_makefile
+    assert 'if target == "npu_dma":' in filelist_generator
+    for source in ("npu_dma.sv", "npu_dma_formal.sv"):
+        assert source in filelist_generator
+    assert "npu_dma u_dut" in design
+    assert "(* anyconst *)logic [ 1:0] f_read_fault;" in design
+    assert "(* anyconst *)logic [ 3:0] f_block_start;" in design
+    assert "(* anyseq *)logic        f_write_last;" in design
+    assert "s_r_proto_rlast_q" in design
+    assert "s_w_bid_bad_q" in design
+    assert "npu_dma_formal_design u_design" in properties
+    assert "assert (arlen <= 8'd15);" in properties
+    assert "assert (awlen <= 8'd15);" in properties
+    assert "assert (awsize == 3'd3);" in properties
+    assert "assert ((arsize == 3'd3) || (arlen == 8'd0));" in properties
+    assert "assert (araddr == f_rd_next_burst_q);" in properties
+    assert "assert ({4'd0, wfifo_count} == ({1'b0, awlen} + 9'd1));" in properties
+    assert "assert (!f_rd_outstanding_q);" in properties
+    assert "assert (f_wr_aw_q);" in properties
+    assert "assert (fault_code == 4'd6);" in properties
+    assert "assert (fault_code == 4'd4);" in properties
+    assert "assert (fault_code == 4'd5);" in properties
+    assert "assume (read_bytes <= 32'd128);" in properties
+    assert "cover (pause_ack && arvalid && !arready);" in properties
+    assert "cover (clear && f_rd_outstanding_q);" in properties
+    assert "cover (fault && (fault_code == 4'd6));" in properties
+    assert "cover (write_done);" in properties
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:

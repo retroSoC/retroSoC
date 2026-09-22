@@ -3,17 +3,17 @@
 module resource_controller_tb;
   logic             clk_i = 1'b0;
   logic             rst_n_i = 1'b0;
-  logic [ 8:0]      idle_i = '0;
-  logic [ 8:0]      block_ack_i = '0;
-  logic [ 8:0]      irq_i = '0;
+  logic [ 9:0]      idle_i = '0;
+  logic [ 9:0]      block_ack_i = '0;
+  logic [ 9:0]      irq_i = '0;
   logic             cache_request_i = 1'b0;
   logic             cache_clean_o;
-  logic [ 8:0][1:0] owner_o;
-  logic [ 8:0]      owner_lock_o;
-  logic [ 8:0]      quiesce_o;
-  logic [ 8:0]      reset_o;
-  logic [ 8:0]      irq_lp_o;
-  logic [ 8:0]      irq_hp_o;
+  logic [ 9:0][1:0] owner_o;
+  logic [ 9:0]      owner_lock_o;
+  logic [ 9:0]      quiesce_o;
+  logic [ 9:0]      reset_o;
+  logic [ 9:0]      irq_lp_o;
+  logic [ 9:0]      irq_hp_o;
   logic             fault_irq_o;
   logic [31:0]      read_data;
 
@@ -92,14 +92,14 @@ module resource_controller_tb;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
-    idle_i  = 9'h1FF;
+    idle_i  = 10'h3FF;
 
     apb_read(12'h000, read_data);
     if (read_data != 32'h5253_4354) $fatal(1, "resource controller ID mismatch");
     apb_read(12'h004, read_data);
-    if (read_data != 32'h0001_0001) $fatal(1, "resource controller version mismatch");
+    if (read_data != 32'h0001_0002) $fatal(1, "resource controller version mismatch");
     apb_read(12'h008, read_data);
-    if (read_data != 32'h0000_0901) $fatal(1, "resource controller capability mismatch");
+    if (read_data != 32'h0000_0A01) $fatal(1, "resource controller capability mismatch");
 
     irq_i[1] = 1'b1;
     #1;
@@ -210,6 +210,23 @@ module resource_controller_tb;
     if (fault_irq_o) $fatal(1, "GA2D resource 8 fault did not clear");
     apb_read(12'h20C, read_data);
     if (read_data != 32'd0) $fatal(1, "GA2D resource 8 fault readback did not clear");
+
+    irq_i[9] = 1'b1;
+    apb_read(12'h220, read_data);
+    if (read_data != 32'd0 || owner_o[9] != 2'd0 || owner_lock_o[9] || !irq_lp_o[9] ||
+        irq_hp_o[9]) begin
+      $fatal(1, "NPU resource 9 did not reset to unlocked LP ownership");
+    end
+    apb_write(12'h224, 32'h0000_0001, 1'b0);
+    block_ack_i[9] = 1'b1;
+    apb_write(12'h220, 32'h0000_0001, 1'b0);
+    if ((owner_o[9] != 2'd1) || irq_lp_o[9] || !irq_hp_o[9]) begin
+      $fatal(1, "NPU resource 9 LP-to-HP IRQ handoff mismatch");
+    end
+    apb_write(12'h224, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[9] || irq_hp_o[9]) begin
+      $fatal(1, "NPU resource reset did not mask both IRQ routes");
+    end
 
     $display("Resource Controller ownership, IRQ, and cache handshake test passed");
     $finish;

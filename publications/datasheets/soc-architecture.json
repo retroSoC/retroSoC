@@ -214,6 +214,25 @@
       }
     },
     {
+      "id": "npu",
+      "label": "NPU\n64-MAC / 64 KiB",
+      "x": 59,
+      "y": 11.5,
+      "w": 21,
+      "h": 6,
+      "domain": "hp",
+      "role": "module",
+      "ips": [],
+      "rotate": false,
+      "clock": {
+        "file": "rtl/mini/top/retrosoc.sv",
+        "name": "u_apb4_periph",
+        "module": "apb4_periph",
+        "port": "clk_hp_i",
+        "signal": "clk_hp_i"
+      }
+    },
+    {
       "id": "ahb_bridge",
       "label": "AHB-Lite → AXI32",
       "x": 28,
@@ -1772,6 +1791,18 @@
         ]
       ],
       "kind": "control",
+      "arrow": true
+    },
+    {
+      "id": "e_npu",
+      "from": "npu",
+      "to": "hp_bus",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.07835820895522388,
+      "via": [],
+      "kind": "data",
       "arrow": true
     },
     {
@@ -3812,6 +3843,10 @@
     {
       "index": 8,
       "name": "ga2d"
+    },
+    {
+      "index": 9,
+      "name": "npu"
     }
   ],
   "bus_widths": [

@@ -4,7 +4,7 @@
 `include "mmap_define.svh"
 
 module axi4_data_crossbar #(
-    parameter int unsigned                                  NumMasters          = 9,
+    parameter int unsigned                                  NumMasters          = 10,
     parameter int unsigned                                  NumTargets          = 6,
     parameter int unsigned                                  StarvationCycles    = 256,
     parameter logic        [NumMasters-1:0][NumTargets-2:0] ReadTargetMask      = '1,
@@ -295,13 +295,13 @@ module axi4_data_crossbar #(
   function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master);
     if ((master <= 2) || (master == 7)) return CountWidth'(4);
     if ((master == 3) || (master == 4)) return CountWidth'(2);
-    if ((master == 5) || (master == 6) || (master == 8)) return CountWidth'(1);
+    if ((master == 5) || (master == 6) || (master == 8) || (master == 9)) return CountWidth'(1);
     return '0;
   endfunction
 
   function automatic logic [CountWidth-1:0] master_write_limit(input int unsigned master);
     if ((master == 1) || (master == 2) || (master == 7)) return CountWidth'(2);
-    if (((master >= 3) && (master <= 6)) || (master == 8)) return CountWidth'(1);
+    if (((master >= 3) && (master <= 6)) || (master == 8) || (master == 9)) return CountWidth'(1);
     return '0;
   endfunction
 
@@ -321,15 +321,15 @@ module axi4_data_crossbar #(
                                                  input logic recovery);
     logic [3:0] base_priority;
     unique case (master)
-      0, 1:       base_priority = 4'd12;
-      3, 4:       base_priority = 4'd10;
-      2, 6, 7, 8: base_priority = 4'd8;
-      5:          base_priority = recovery ? 4'd15 : 4'd2;
-      default:    base_priority = 4'd0;
+      0, 1:          base_priority = 4'd12;
+      3, 4:          base_priority = 4'd10;
+      2, 6, 7, 8, 9: base_priority = 4'd8;
+      5:             base_priority = recovery ? 4'd15 : 4'd2;
+      default:       base_priority = 4'd0;
     endcase
     if (recovery && (master == 5)) return 5'd31;
     if (aged) return 5'd16;
-    if (master == 8) return {1'b0, base_priority};
+    if ((master == 8) || (master == 9)) return {1'b0, base_priority};
     return {1'b0, (request_qos > base_priority) ? request_qos : base_priority};
   endfunction
 
@@ -660,7 +660,7 @@ module axi4_data_crossbar #(
       if (s_read_grant_valid[target]) begin
         automatic logic [MasterWidth-1:0] owner = s_read_selected[target];
         t_ar[target] = m_ar[owner];
-        if (owner == MasterWidth'(8)) t_ar[target].qos = 4'd0;
+        if ((owner == MasterWidth'(8)) || (owner == MasterWidth'(9))) t_ar[target].qos = 4'd0;
         if ((s_read_fault_reason[owner] == 4'd0) || s_read_fault_accept[owner]) begin
           t_arvalid[target]      = m_arvalid[owner];
           m_arready[owner]       = t_arready[target];
@@ -688,7 +688,7 @@ module axi4_data_crossbar #(
       if (s_write_grant_valid[target]) begin
         automatic logic [MasterWidth-1:0] owner = s_write_selected[target];
         t_aw[target] = m_aw[owner];
-        if (owner == MasterWidth'(8)) t_aw[target].qos = 4'd0;
+        if ((owner == MasterWidth'(8)) || (owner == MasterWidth'(9))) t_aw[target].qos = 4'd0;
         if ((s_write_fault_reason[owner] == 4'd0) || s_write_fault_accept[owner]) begin
           t_awvalid[target]                 = m_awvalid[owner];
           m_awready[owner]                  = t_awready[target];
@@ -1045,7 +1045,7 @@ module axi4_data_crossbar #(
   end
 
   initial begin
-    if ((NumMasters != 9) || (NumTargets != 6) || (StarvationCycles < 2) ||
+    if ((NumMasters != 10) || (NumTargets != 6) || (StarvationCycles < 2) ||
         ((StarvationCycles & (StarvationCycles - 1)) != 0)) begin
       $fatal(1, "axi4_data_crossbar: invalid product topology or aging interval");
     end

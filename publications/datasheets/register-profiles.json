@@ -995,6 +995,35 @@
       "rtl/ip/multimedia/ga2d_core.sv"
     ]
   },
+  "npu": {
+    "document": "docs/ip/npu.md",
+    "defines": [
+      "rtl/ip/multimedia/npu_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/multimedia/npu_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Phase 2 control shell and lifecycle endpoint",
+        "pattern": "APB4_NPU__.+",
+        "strip": "^APB4_NPU__",
+        "base": 0,
+        "stride": 0,
+        "count": 1,
+        "exclude": [
+          "APB4_NPU__DESCRIPTOR_VERSION"
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_control_cdc.sv",
+      "rtl/ip/multimedia/npu_core.sv"
+    ]
+  },
   "dvp": {
     "document": "docs/ip/dvp.md",
     "defines": [

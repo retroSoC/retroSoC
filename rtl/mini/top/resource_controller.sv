@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module resource_controller #(
-    parameter int unsigned ResourceCount = 9
+    parameter int unsigned ResourceCount = 10
 ) (
     // verilog_format: off -- preserve the resource ownership boundary columns
     input  logic                            clk_i,
@@ -23,7 +23,7 @@ module resource_controller #(
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h5253_4354;
-  localparam logic [31:0] IpVersion = 32'h0001_0001;
+  localparam logic [31:0] IpVersion = 32'h0001_0002;
   localparam logic [11:0] IpIdOffset = 12'h000;
   localparam logic [11:0] IpVersionOffset = 12'h004;
   localparam logic [11:0] CapabilityOffset = 12'h008;

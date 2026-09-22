@@ -6,6 +6,9 @@
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/hp_mailbox.h>
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+#include <retrosoc/hal/npu.h>
+#endif
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sysctrl.h>
@@ -230,6 +233,32 @@ static bool rs_hp_boot_wait_ga2d_idle(rs_resource_owner_t expected_owner) {
     return false;
 }
 
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+static bool rs_hp_boot_npu_idle(rs_resource_owner_t expected_owner) {
+    rs_npu_status_t npu_status;
+    rs_resource_status_t resource_status;
+
+    return (rs_npu_get_status(&npu_status) == RS_OK) &&
+           ((npu_status.flags &
+             (RS_NPU_STATUS_BUSY | RS_NPU_STATUS_DRAINING | RS_NPU_STATUS_RECOVERING)) == 0U) &&
+           (rs_resource_get_status(RS_RESOURCE_NPU, &resource_status) == RS_OK) &&
+           (resource_status.owner == expected_owner) && resource_status.idle &&
+           !resource_status.fault && !resource_status.blocked && !resource_status.quiesced &&
+           !resource_status.in_reset;
+}
+
+static bool rs_hp_boot_wait_npu_idle(rs_resource_owner_t expected_owner) {
+    uint32_t timeout;
+
+    for (timeout = 0U; timeout < RS_HP_BOOT_EVENT_TIMEOUT; ++timeout) {
+        if (rs_hp_boot_npu_idle(expected_owner)) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 static bool rs_hp_boot_wait_message(uint32_t code, uint32_t argument, uint32_t sequence) {
     rs_hp_mailbox_message_t message;
 
@@ -264,7 +293,11 @@ static bool rs_hp_boot_wait_hp_held(void) {
     for (uint32_t timeout = 0U; timeout < RS_HP_BOOT_EVENT_TIMEOUT; ++timeout) {
         if ((rs_sysctrl_get_hp_status(&hp_status) == RS_OK) && hp_status.reset_asserted &&
             !hp_status.released && !hp_status.draining && !hp_status.forced_fault &&
-            rs_hp_boot_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
+            rs_hp_boot_ga2d_idle(RS_RESOURCE_OWNER_HP)
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+            && rs_hp_boot_npu_idle(RS_RESOURCE_OWNER_HP)
+#endif
+        ) {
             return true;
         }
     }
@@ -317,9 +350,20 @@ int main(void) {
         rs_hp_boot_fail(UINT8_C(9));
     }
     s_hp_boot_ga2d_owned_by_hp = true;
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+    if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_LP) ||
+        (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_HP, false) != RS_OK)) {
+        rs_hp_boot_fail(UINT8_C(18));
+    }
+#endif
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(9));
     }
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+    if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_HP)) {
+        rs_hp_boot_fail(UINT8_C(18));
+    }
+#endif
     __asm__ volatile("fence rw, rw" ::: "memory");
     if ((rs_hp_mailbox_clear_lp_interrupt() != RS_OK) ||
         (rs_sysctrl_set_hp_release(true) != RS_OK) ||
@@ -344,6 +388,12 @@ int main(void) {
         rs_hp_boot_fail(UINT8_C(13));
     }
     printf("HP_GA2D_PASS\n");
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    printf("HP_NPU_PASS\n");
+#endif
+#if defined(RS_NPU_P6_ACCEPTANCE)
+    printf("HP_NPU_P6_PASS\n");
+#endif
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(14));
     }
@@ -377,6 +427,12 @@ int main(void) {
     if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_LP)) {
         rs_hp_boot_fail(UINT8_C(17));
     }
+#if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
+    if ((rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false) != RS_OK) ||
+        !rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_LP)) {
+        rs_hp_boot_fail(UINT8_C(19));
+    }
+#endif
     printf("HP_GA2D_CACHE_CLEAN\n");
     rs_test_finish(RS_TEST_PASSED, UINT8_C(0));
 }

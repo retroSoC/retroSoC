@@ -30,6 +30,7 @@ DATA_MASTER_NAMES = (
     "jpeg",
     "ext_h",
     "ga2d",
+    "npu",
 )
 DATA_TARGET_NAMES = ("sram", "sdram", "qpi", "opi", "xpi")
 COMPATIBILITY_IRQ_BINDINGS = (
