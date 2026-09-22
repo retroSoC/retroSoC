@@ -1634,22 +1634,32 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
 
 
-def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
+def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() -> None:
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
 
-    assert "timeout-minutes: 60" in quality
+    assert "timeout-minutes: 90" in quality
     assert "tools: verilator sv2v iverilog yosys" in quality
     assert "rtl/managed/third_party" in quality
     assert "python3 rtl/ip/setup.py" in quality
     assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
-    assert "make setup-apu-reference" in quality
+    assert "--requirement requirements/build.txt" in quality
+    assert "make setup-apu-reference setup-npu-reference" in quality
+    for path in (
+        ".cache/retrosoc/sources/apu-mlperf-tiny",
+        ".cache/retrosoc/sources/apu-kws-mfcc",
+        ".cache/retrosoc/sources/apu-tensorflow",
+        ".cache/retrosoc/sources/apu-gemmlowp",
+        ".cache/retrosoc/sources/npu-vww-corpus",
+        ".cache/retrosoc/downloads/npu",
+    ):
+        assert path in quality
     assert quality.index("python3 rtl/ip/setup.py") < quality.index(
         "Test scripts and RTL fixtures"
     )
     assert quality.index("Set up locked test tools") < quality.index(
         "Test scripts and RTL fixtures"
     )
-    assert quality.index("Set up locked APU references") < quality.index(
+    assert quality.index("Set up locked accelerator references") < quality.index(
         "Test scripts and RTL fixtures"
     )
 

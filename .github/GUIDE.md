@@ -5,10 +5,11 @@ CODEOWNERS, Dependabot configuration, reusable actions, and CI/release
 workflows.
 
 `workflows/quality.yml` runs the quality gate. It restores the locked IHP130
-PDK, third-party simulation models, and APU references and installs the locked
-Verilator, Icarus, sv2v, and Yosys tools before the complete Pytest suite so
-required RTL, timing-model, and corpus fixtures execute instead of failing on
-a missing environment.
+PDK, third-party simulation models, and APU/NPU references and installs the
+locked Verilator, Icarus, sv2v, and Yosys tools before the complete Pytest
+suite. The reference cache includes the NPU MLPerf Tiny models, MFCC inputs,
+TensorFlow/gemmlowp oracle sources, and decoded VWW corpus; setup still
+verifies every locked revision and checksum before tests run.
 `workflows/regression-smoke.yml`,
 `workflows/regression-ihp130.yml`, `workflows/regression-gf180.yml`,
 `workflows/regression-ics55.yml`, `workflows/regression-sky130.yml`, and
