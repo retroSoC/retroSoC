@@ -37,6 +37,7 @@ from scripts.development_environment import (  # noqa: E402
     DEFAULT_TOOLS,
     render_activation,
     stamp_data,
+    write_activation,
 )
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
@@ -1179,6 +1180,9 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
     activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
     assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
     assert "toolchains/verilator/bin" in activation
+    activation_path = tmp_path / "activate.sh"
+    write_activation(activation_path, activation)
+    assert activation_path.stat().st_mode & 0o777 == 0o644
 
 
 def test_container_and_nix_environment_files_use_locked_inputs() -> None:
@@ -1193,6 +1197,8 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
     assert "jdk17_headless" in flake
+    assert "python310Full" in flake
+    assert "python3Full" not in flake
     assert "retrosoc-development retrosoc-dev" in flake
     assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
     assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])

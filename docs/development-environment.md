@@ -8,9 +8,10 @@ bundles for Verilator, Verible, sv2v, Icarus Verilog, Yosys, SymbiYosys,
 Bitwuzla, OpenSTA, OpenOCD, SBT, and the RISC-V GNU toolchain. The GNU bundle
 includes `riscv32-unknown-elf-gdb`, which is used with OpenOCD by the Hazard3
 remote-bitbang debug acceptance flow. Docker, Nix, and manual Ubuntu installs
-provide Java 17 for SBT. The environment also installs the locked Python build
-and quality dependencies, clang-format-14, GNU Make, C/C++ build tools, and
-runtime libraries required by those binaries.
+provide Java 17 for SBT. Docker and Nix use Python 3.10 to match the
+hash-pinned Ubuntu 22.04 requirement sets. The environment also installs the
+locked Python build and quality dependencies, clang-format-14, GNU Make,
+C/C++ build tools, and runtime libraries required by those binaries.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are

@@ -65,7 +65,7 @@
           ncurses5
           numactl
           jdk17_headless
-          python3Full
+          python310Full
           unzip
           which
           xz

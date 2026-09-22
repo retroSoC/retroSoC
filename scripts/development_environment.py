@@ -160,6 +160,11 @@ def render_activation(cache: Path, paths: list[Path]) -> str:
     )
 
 
+def write_activation(path: Path, content: str) -> None:
+    atomic_write(path, content)
+    path.chmod(0o644)
+
+
 def run(command: list[str]) -> None:
     print("+ " + " ".join(shlex.quote(argument) for argument in command), flush=True)
     subprocess.run(command, check=True)
@@ -201,7 +206,10 @@ def bootstrap(args: argparse.Namespace) -> int:
         create_virtualenv(root, cache)
         atomic_write(cache / STAMP_NAME, json.dumps(expected_stamp, indent=2, sort_keys=True) + "\n")
     activation = args.output.resolve() if args.output else cache / ACTIVATE_NAME
-    atomic_write(activation, render_activation(cache, environment_paths(cache, tools, available)))
+    write_activation(
+        activation,
+        render_activation(cache, environment_paths(cache, tools, available)),
+    )
     print(f"development environment: {activation}")
     return check(args, quiet=False)
 
