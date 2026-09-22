@@ -47,8 +47,9 @@ selectable user cores or user IPs.
   widths:(0.5fr,1.8fr,1.2fr),
 )
 The product ladder expresses intended positioning. It does not advertise implemented Tiny,
-Std or Pro profiles, a Mini NPU, a graphics accelerator or measured performance for a future
-device. Only the current Mini snapshot is specified here.
+Std or Pro profiles or measured performance for a future device. The current Mini integrates
+the independently documented GA2D and NPU subsets; neither establishes a future-family feature
+set or commercial qualification. Only the reviewed Mini snapshot is specified here.
 #source-note("docs/soc-family-positioning.md", title:"Family roadmap and scope")
 
 == Roadmap
@@ -88,7 +89,8 @@ number is used to imply completion.
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
-   ([2026-09-17],[0.4 DRAFT],[Refresh the reviewed dev snapshot; add the independent GA2D P5 reference and 41-IP/108-entry structure. Synchronize APU V1/V2 and gated KWS, nine-master fabric, JPEG admission, LP external IRQ and scoped CI evidence. Retain the approved layout and unadorned repository footer.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-17],[0.4 DRAFT],[Refresh the reviewed dev snapshot; add the independent GA2D P5 reference and 41-IP/108-entry structure. Synchronize APU V1/V2 and gated KWS, nine-master fabric, JPEG admission, LP external IRQ and scoped CI evidence. Retain the approved layout and unadorned repository footer.],[Yuchi Miao / ECOS Team]),
+   ([2026-09-22],[0.5 DRAFT],[Bind the current dev snapshot; add the NPU chapter and 42-IP/109-entry structure. Synchronize ten-master/resource integration, configured APU KWS/digest and bare-metal acceptance, GA2D P6 and long-burst conversion. Separate current CI state, historical reports and missing qualification.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

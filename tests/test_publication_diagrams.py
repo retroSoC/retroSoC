@@ -50,7 +50,7 @@ def test_representative_inventory_uses_actual_widths_and_addresses(data):
     assert value["uart_fifo"] == {"tx": {"depth": 64, "bits": 8}, "rx": {"depth": 64, "bits": 12}}
     assert next(row for row in value["windows"] if row["symbol"] == "SRAM")["size"] == 32768
     assert value["cache"] == {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128}
-    assert len(value["circuits"]) == 45
+    assert len(value["circuits"]) == 46
     assert {"uart0", "dma", "apu", "system-fabric", "system-clocks"} <= set(value["circuits"])
 
 

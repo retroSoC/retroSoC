@@ -1,7 +1,7 @@
 # Mini Datasheet Layout Standard
 
 This document records the implemented layout of the English **retroSoC Mini
-Gen2/Gen2+**, **v0.4 DRAFT**, datasheet. It is a maintenance specification, not a
+Gen2/Gen2+**, **v0.5 DRAFT**, datasheet. It is a maintenance specification, not a
 new visual design or a hardware specification. The spacing follows the reviewed
 ST RM0486 Rev 4 reference, adapted to the retained Mini page width and fonts.
 
@@ -260,7 +260,7 @@ IP entry even when it is deeper in the hierarchy. Chapter/appendix order and
 stable destinations must not drift. Level-three and deeper explanatory sections
 outside the IP-entry set, body text, tables, figures, numbering and pagination
 remain editable. This is a document organization baseline, not RTL freeze or a
-change from v0.4 DRAFT.
+promotion beyond the current DRAFT maturity.
 
 Build and PDF check compare the resolved headings with the frozen contract.
 The renderer exports `document-structure.json`, which is hashed in the manifest.
@@ -696,32 +696,37 @@ Do not achieve this by absolute positioning or shrinking the text.
 
 #### Implementation refresh and evidence scope
 
-The 2026-09-17 v0.4 refresh explicitly adds GA2D as an independent Multimedia IP
-after JPEG and before APU: 41 IP entries and 108 frozen structural records.
-Keep the APU `(partial)` title while MP3 and default KWS remain unavailable.
+The 2026-09-22 v0.5 refresh adds NPU after APU: 42 IP entries and 109 frozen
+structural records. Preserve the previous anchors and add source-bound NPU
+functional, descriptor/parameter, storage, protocol, register and HAL material.
+Keep the APU `(partial)` title while MP3 remains unsupported and KWS is explicitly
+configuration-dependent. Default PRODUCT and P7 acceptance identities are separate.
 Audit semantics as well as source snippets: a binding that still matches code
 does not prove that every surrounding capability or limitation sentence is true.
 
 Separate implemented code, default-enabled/advertised capability, test facilities,
 matching successful runs and physical qualification. Record CI revision, checked
-date, run URL, outcome and scope, including failed prerequisites and skipped
+date, run URL, status, nullable conclusion and scope, including failed prerequisites and skipped
 downstream tests. A workflow pass is not a substitute for an exact-profile IP
 report and behavioral-only regression is not synthesis, netlist, STA or silicon.
 Do not fill electrical, thermal, power or throughput fields with borrowed device
 figures, target clocks or analytic ceilings.
+Never promote a historical narrative or a smoke test that did not execute its
+full workload into a current-revision Reported pass. Record missing raw artifacts
+and source/spec discrepancies as explicit recommendations. In particular, APU's
+inferred KWS storage must not be described as a completed macro implementation.
 
-The dev refresh used the `dev-` namespace plus navigation/revision and GA2D
-chapter markers. The current functional-overview refinement activates only
-`soc-functional`, categorized as modified. Earlier changes, including navigation
-directories and the closing page, must not be relabeled as new content;
-pagination remains a separate change.
+Use `v05-` for new content and activate only the reviewed existing content,
+navigation and revision markers listed in `current-change`. NPU is added;
+retained GA2D/APU and system material is modified. Earlier closing-page work
+must not be relabeled as new content. Pagination movement remains separate.
 
 Use the existing Overview icon artwork, including its reverted outline style.
-The five Multimedia entries use two rows of three and two cells within the same
+The six Multimedia entries use two rows of three cells within the same
 panel. Keep the repository footer blue and clickable without an underline.
 
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 41 IP diagrams plus PRODUCT fabric,
+chapters. Circuiteria 0.2.1 covers all 42 IP diagrams plus PRODUCT fabric,
 clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
@@ -816,14 +821,14 @@ fill; the two processor cells are pale gold. Cells adapt to the item count:
 Connectivity uses three columns and splits its last row between two items.
 
 [overview-groups.json](overview-groups.json) is the sole source of category and
-IP names (currently nine categories and 44 IPs). Show each integrated PRODUCT
+IP names (currently nine categories and 45 labels). Show each integrated PRODUCT
 IP once, without external chips, reserved windows, MPW-only blocks, topology
 arrows, capacities, frequencies or state badges. Decorative icons express
 category only. Keep Overview-only drawing helpers separate from shared boxes.
 
 The Interconnect Matrix remains on a portrait page, 172 mm wide: a 45 mm
 initiator column and five 25.4 mm target columns. Header height is 8.5 mm; the
-data rows, one per reviewed initiator (currently nine), are 8.2 mm high. Labels stay at least 9 pt. Permissions are
+data rows, one per reviewed initiator (currently ten), are 8.2 mm high. Labels stay at least 9 pt. Permissions are
 printed as `R / W`, `R`, `W` or `-`; cells allowing writes also use pale gold.
 Do not rescale the complete drawing or change data to make it fit.
 
@@ -968,7 +973,10 @@ key. Multi-clock peripherals have distinct control/FIFO and timing/link views.
 | ULPI | `#E8ECF7` |
 
 Both APB4 register islands are PCLK functions. SRAM and Fabric Monitor execute
-in HP; the external-memory controllers execute in MEM. PCLK derives from LP,
+in HP; NPU computation, private SRAM and payload DMA also execute in HP, while
+its PCLK control CDC is expanded in the NPU chapter. Its overview node must
+lie inside an HP background and bind the NPU chapter identity. The external-memory
+controllers execute in MEM. PCLK derives from LP,
 so different fills do not imply all domain pairs are asynchronous. These are
 functional clock regions, not power islands or timing-signoff statements.
 
@@ -983,9 +991,10 @@ and retained in the detailed references. Crossings without junctions are not joi
 The catalog records semantic node roles, clock sources, gateway inputs/output,
 literal interface widths, stream connections, source files and external pin
 groups. Validate those against current sources and include them in the manifest.
-Record the new CeTZ category in the 108-entry coverage report and require the
-actual render. Its addition raises the specialized inventory from 135 to 136;
-the original 45 Circuiteria figures remain unchanged.
+Record the CeTZ category in the 109-entry coverage report and require the actual
+render. The v0.5 specialized inventory has 142 figures, including the new NPU
+circuit, descriptor/parameter layouts and storage views. Preserve the existing
+package renderers and use source-bound content for every changed figure.
 
 ### Independent closing page
 
@@ -993,7 +1002,7 @@ Append one unnumbered closing page after Document Status and Contact. It is an
 A4 page with 19 mm left/right margins and a 24 mm bottom margin; hide its running
 header, footer, rules, date and visible page number in a local page scope. Count
 it in the full PDF total. It has no heading, bookmark, figure number or directory
-entry, so the 41-IP / 108-entry structure contract remains unchanged.
+entry, so it remains outside the 42-IP / 109-entry structure contract.
 
 Bottom-align a single nonbreaking content block. Its first element is an empty
 60 x 14 mm white rectangle with a 0.6 pt gold outline, reserved for a future logo.

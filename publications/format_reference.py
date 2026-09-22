@@ -58,6 +58,23 @@ def collect_layouts(root: Path, catalog_path: str, system: dict) -> dict[str, di
             key = "header_fields" if record["derived"] == "hp-header" else "entry_fields"
             record["fields"] = word_fields(bundle[key])
             record["bits"] = sum(field["bits"] for field in record["fields"])
+        if record.get("derived") == "npu-descriptor":
+            from publications.storage_reference import constants
+            host = (root / "scripts/npu_descriptors.py").read_text(encoding="utf-8")
+            words = {int(index): name.lower() for name, index in re.findall(r"^WORD_(\w+):\s*Final\s*=\s*(\d+)", host, re.M)}
+            rtl = constants(root, "rtl/ip/multimedia/npu_define.svh")
+            for index, name in words.items():
+                suffix = "RESERVED" if name == "reserved1" else name.upper()
+                if rtl.get("APB4_NPU__DESCRIPTOR_WORD_" + suffix) != index:
+                    raise ValueError("NPU descriptor word offset differs between host and RTL")
+            if set(words) != set(range(26)):
+                raise ValueError("NPU descriptor documented word inventory changed")
+            for index in range(26, 32):
+                words[index] = f"reserved{index}"
+            record["fields"] = [{"name": name, "label": name.replace("_", " "), "lsb": index * 32,
+                                 "bits": 32, "role": "reserved" if name.startswith("reserved") else "configuration"}
+                                for index, name in sorted(words.items())]
+            record["bits"] = rtl["APB4_NPU__DESCRIPTOR_BYTES_VALUE"] * 8
         if record.get("product_format"):
             original = product_formats[record["product_format"]]
             record["note"] = original["layout"] + " " + original["boundary"]

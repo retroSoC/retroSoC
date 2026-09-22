@@ -21,11 +21,12 @@ def data():
 
 def test_refrozen_structure_covers_ga2d_without_duplicate_register_ownership(data):
     contract = read_json(ROOT / "publications/datasheets/structure-contract.json")
-    assert len(contract["entries"]) == 108
-    assert len(contract["ip_ids"]) == 41
+    assert len(contract["entries"]) == 109
+    assert len(contract["ip_ids"]) == 42
     assert contract["ip_ids"].index("ga2d") == contract["ip_ids"].index("jpeg") + 1
     assert contract["ip_ids"].index("apu") == contract["ip_ids"].index("ga2d") + 1
-    assert sum(len(group["items"]) for group in data["overview_groups"]) == 44
+    assert contract["ip_ids"].index("npu") == contract["ip_ids"].index("apu") + 1
+    assert sum(len(group["items"]) for group in data["overview_groups"]) == 45
     ga2d = next(row for row in data["regions"] if row["symbol"] == "APB4_GA2D")
     assert (ga2d["base"], ga2d["size"], ga2d["kind"]) == (0x10012000, 4096, "active")
     assert len(data["policies"]) == 10
@@ -68,9 +69,7 @@ def test_ci_failures_do_not_become_per_ip_reported_pass(data):
     reference = data["system_reference"]
     snapshot = reference["ci_snapshot"]
     validate_ci_snapshot(snapshot, reference["source_revision"])
-    runs = {run["name"]: run for run in snapshot["runs"]}
-    assert runs["quality"]["result"] == runs["regression-sky130"]["result"] == "failure"
-    assert runs["regression-ihp130"]["result"] == "success"
+    assert all(run["conclusion"] is None for run in snapshot["runs"] if run["status"] != "completed")
     assert all(row["verification"] != "Reported pass" for row in reference["support"])
 
 
@@ -85,6 +84,6 @@ def test_ci_snapshot_rejects_mismatched_or_unscoped_results(data, mutation):
     elif mutation == "duplicate":
         snapshot["runs"].append(copy.deepcopy(snapshot["runs"][0]))
     else:
-        snapshot["runs"][0]["result"] = "silicon-qualified"
+        snapshot["runs"][0]["conclusion"] = "silicon-qualified"
     with pytest.raises(ValueError):
         validate_ci_snapshot(snapshot, reference["source_revision"])

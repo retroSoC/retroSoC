@@ -11,8 +11,9 @@
 #ip("resource")
 
 #ip-reference("resource","resource",4,legacy:[
-Nine resources are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
-APU, and the P5 GA2D direct single-job private-AXI64 2D engine. Resource 8 routes
+Ten resources are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
+APU, GA2D and NPU. Resource ABI 1.2 reports ten slots. Resource 9 owns the native-HP
+NPU, including LP vector 33 / HP PLIC 12 steering. Resource 8 routes the GA2D
 its IRQ according to its current owner and controls its private AXI64 lifecycle.
 GA2D supports FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color
 foreground masks, and exact equal background/destination in-place composition.
@@ -26,5 +27,7 @@ does not bypass the target access policy or EXT-H address bounds.
 ])
 
 See @ga2d for the independent 2D engine programming, format and register reference.
+See @npu for descriptor execution and the distinction between coordinated clock pause,
+resource quiesce and cancellation/drain.
 
 #context metadata((kind:"ip-end",id:"resource",page:here().page()))

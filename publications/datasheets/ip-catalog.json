@@ -333,7 +333,7 @@
     "sources": [
       "docs/ip/resource-controller.md"
     ],
-    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for nine resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route."
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for ten resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route."
   },
   {
     "id": "monitor",
@@ -344,7 +344,7 @@
     "sources": [
       "docs/ip/fabric-monitor.md"
     ],
-    "summary": "Nine-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P5 GA2D direct 2D traffic."
+    "summary": "Ten-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P5 GA2D direct 2D traffic."
   },
   {
     "id": "i2s",
@@ -512,7 +512,7 @@
       "rtl/ip/multimedia/npu_core.sv",
       "rtl/ip/multimedia/npu_reg.sv"
     ],
-    "summary": "P2 APB4 control shell for the neural processing unit: resource-9 ownership with epoch-reconciled PCLK/HP lifecycle CDC, DONE/ERROR/ABORTED interrupt round trip (LP vector 33 or HP PLIC source 12), performance snapshot bank, and a safely idle private AXI64 master. EXECUTION_READY, operator, and DMA capabilities stay clear until the production compute and descriptor path are verified."
+    "summary": "Integrated INT8 neural accelerator: 64 dense MACs, eight depthwise lanes, 64 KiB private SRAM and eight operator classes. The native HP AXI64 master executes validated 128-byte descriptors; PCLK control, owner-routed IRQs and explicit drain/recovery govern software use. Capability advertisement is separate from corpus and physical qualification."
   },
   {
     "id": "reserved",

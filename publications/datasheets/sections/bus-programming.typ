@@ -42,8 +42,8 @@ not qualify a complete JPEG workload, board behavior, or performance; see @known
 
 ==== Arbitration and its assumptions
 Read and write arbitration are separate per target. The normal base priorities are HP I/D 12,
-I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8 and LP gateway 2; unassigned slots use priority zero.
-Incoming QoS can raise eligible normal requests to 15, except GA2D, whose base class remains 8
+I/O gateways 10, DMA/JPEG/EXT-H/GA2D/NPU 8 and LP gateway 2; unassigned slots use priority zero.
+Incoming QoS can raise eligible normal requests to 15, except GA2D and NPU, whose base class remains 8
 and does not consume its incoming QoS. Age promotion still applies. Continuously eligible requests age to priority
 16 after the configured 256-cycle interval, while LP recovery receives priority 31.
 
@@ -62,3 +62,12 @@ Admission policy and a completed error response do not guarantee recovery of par
 #source-note("rtl/mini/top/axi4_interconnect.sv",title:"Actual LP alignment, burst and target checks")
 #source-note("rtl/mini/top/axi4_data_crossbar.sv",title:"Native admission, credit and arbitration functions")
 #source-note("rtl/mini/top/soc_data_plane.sv",title:"Private masters, prefixes, gateways and CDC wiring")
+
+==== Long bursts through the 64-to-32-bit converter
+An aligned 64-bit INCR request longer than eight beats is split into sequential legal narrow
+transactions, each of at most sixteen 32-bit beats. Reads are reassembled into the original
+64-bit response sequence; writes collect the narrow responses into one response for the
+original request. This conversion does not remove source/target alignment, 4 KiB boundary,
+permission or length restrictions. It also does not raise the NPU's independently configured
+eight-beat maximum. Verify the source master, converter and final memory contract together.
+#source-note("rtl/mini/top/axi4_downsizer_64to32.sv",title:"Implemented fragmentation, read reassembly and write response aggregation")

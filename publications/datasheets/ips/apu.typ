@@ -2,6 +2,7 @@
 
 #import "../ip-reference.typ": ip-reference
 #import "../diagram-packages.typ": apu-instruction-diagram, apu-family-figures
+#import "../sections/apu-release.typ": apu-release-reference
 
 #pagebreak(weak:true)
 
@@ -48,6 +49,7 @@
   Full KWS qualification still requires the specified end-to-end PCM corpus, per-layer
   comparisons, sustained WAV/FLAC concurrency and lifecycle evidence. Conditional tests that
   do not execute without tools or local model data are not substitute pass reports.
+  #apu-release-reference()
   #block(breakable:false)[
     #figure(apu-instruction-diagram(),kind:image,supplement:[Figure],caption:[APU 64-bit internal microcode fields and source-encoded examples.])<apu-instruction-layout>
     #source-note("scripts/apu_isa.py",title:"Instruction fields and encode/decode definitions")
@@ -55,7 +57,7 @@
   ]
   #apu-family-figures()
 ],legacy:[
-The current APU RTL advertises capability word `0x000001BD`, APB version `0x00010001`, and a 32 KiB control store through `CAPABILITY1=0x01827020`. WAV/FLAC transport, job submission and stream paths are integrated; APUMC V1 images remain loadable, while new P5 release images use APUMC V2. MP3 and KWS are not advertised. The checked-in P5 image can be assembled and fits the current control store. Complete corpus,
+Default PRODUCT advertises capability word `0x000001BD`, APB version `0x00010001`, and a 32 KiB control store through `CAPABILITY1=0x01827020`. The P7 acceptance configuration instead advertises `0x000001FD` and ABI digest `0xF5005D7C`. WAV/FLAC transport, job submission and stream paths are integrated; APUMC V1 images remain loadable, while new P5 release images use APUMC V2. MP3 remains unsupported; KWS is configuration-dependent. The checked-in P5 image can be assembled and fits the current control store. Complete corpus,
 sustained real-time and physical qualification require their own reports; they are not inferred from
 image availability. KWS implementation exists but EnableP7 defaults to false in PRODUCT.
 

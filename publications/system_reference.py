@@ -10,7 +10,10 @@ from publications.implementation_reference import collect_details, dependencies 
 from publications.retrieval_reference import dependencies as retrieval_dependencies
 from publications.software_reference import collect_software, dependencies as software_dependencies
 from publications.diagram_reference import dependencies as diagram_dependencies
-from publications.dev_reference import APU_SOURCES, apu_implementation, validate_ci_snapshot
+from publications.dev_reference import (
+    APU_SOURCES, NPU_SOURCES, apu_implementation, npu_implementation,
+    validate_accelerator_claims, validate_ci_snapshot,
+)
 
 REFERENCE = "publications/datasheets/system-reference.json"
 
@@ -97,4 +100,11 @@ def collect_system_reference(root: Path, revision: str) -> dict:
     if not set(APU_SOURCES) <= source_paths(reference):
         raise ValueError("APU implementation dependencies missing from publication sources")
     reference["apu_implementation"] = apu_implementation(root)
+    if not set(NPU_SOURCES) <= source_paths(reference):
+        raise ValueError("NPU implementation dependencies missing from publication sources")
+    reference["npu_implementation"] = npu_implementation(root)
+    files = [json.loads((root / "publications/datasheets" / name).read_text(encoding="utf-8"))
+             for name in ("ip-catalog.json", "features.json", "ip-content.json",
+                          "register-annotations.json", "register-profiles.json")]
+    validate_accelerator_claims(reference, *files)
     return reference

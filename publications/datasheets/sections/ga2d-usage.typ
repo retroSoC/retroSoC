@@ -29,6 +29,17 @@
   foreground and destination envelopes remain required; this is an illustrative layout,
   not a DMA descriptor or a reserved memory allocation.
   #source-note("rtl/ip/multimedia/ga2d_core.sv",title:"Surface geometry, allowed ranges and overlap checks")
+  #minor-title("P6 integration and evidence boundary")
+  The existing operation/register subset is retained. P6 adds wider directed and randomized
+  campaigns, owner-routed interrupt/cache handoff, contention and recovery tests, and block
+  physical-flow entrypoints. The benchmark now distinguishes CPU time, PCLK engine time,
+  useful pixels and bus traffic across operations, geometry and strides. See
+  @performance-characterization and @release-verification for the dated reports and remaining
+  gaps; the historical composition target and slow-corner block timing were not achieved.
+  Current-source sustained performance and full-product physical closure require matching
+  raw artifacts. No queue, scaling, rotation or Linux graphics driver is added by this record.
+  #source-note("tests/rtl/ga2d_platform_tb.sv",title:"Platform contention and lifecycle test cases")
+  #source-note("docs/ip/ga2d.md",title:"Dated P6 implementation/evidence record")
 ]
 
 #let ga2d-protocol() = [

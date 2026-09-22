@@ -170,6 +170,11 @@
     "depth": 4
   },
   {
+    "id": "npu",
+    "family": "npu",
+    "depth": 4
+  },
+  {
     "id": "crypto",
     "family": "crypto",
     "depth": 4

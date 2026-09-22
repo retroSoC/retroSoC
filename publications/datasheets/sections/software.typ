@@ -1,5 +1,5 @@
 #import "../style.typ": *
-#change-start("dev-software","Current IRQ runtime, GA2D/APU support, boot and application diagnostics")
+#change-start("dev-software","NPU/APU support, boot ownership and current application diagnostics")
 #import "../figures.typ": *
 
 = Software
@@ -8,6 +8,9 @@ The management hart starts from the reset flash alias. Normal firmware compositi
 placement depend on the committed application and linker profile. The HP acceptance example
 instead uses the SRAM-resident `hp_boot` image and validates an external boot bundle before
 releasing HP. It must not be assumed that every bringup image automatically boots Linux.
+The separate APU P7 acceptance profile performs LP image/model loading and bare-metal HP
+audio/KWS work; it is not the Linux boot profile. NPU compiler output and HP smoke payloads
+likewise do not supply a native Linux driver. See @apu and @npu for their software boundaries.
 
 #figure(boot-diagram(), caption:[HP boot example. Validation failure retains LP recovery control and prevents normal HP handoff.])<boot-flow>
 

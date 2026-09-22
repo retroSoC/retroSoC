@@ -2061,7 +2061,7 @@
     "parameters": {
       "ResourceCount": 9
     },
-    "parameter_note": "The reviewed resource-controller integration tracks nine resource positions."
+    "parameter_note": "The reviewed resource-controller integration tracks ten resource positions."
   },
   "monitor": {
     "source": {
@@ -2137,7 +2137,7 @@
       "NumMasters": 9,
       "NumTargets": 6
     },
-    "parameter_note": "Reference monitor parameters are nine masters and six target positions."
+    "parameter_note": "Reference monitor parameters are ten masters and six target positions."
   },
   "sysctrl": {
     "source": {
@@ -4015,5 +4015,251 @@
       "rtl/ip/multimedia/apb4_ga2d.sv"
     ],
     "review_note": "Signals name actual core ports. Detailed AXI ready/valid and owner IRQ routing are specified separately."
+  },
+  "npu": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_hp_i",
+          "wave": "p..........."
+        },
+        {
+          "name": "launch_valid_i",
+          "wave": "010........."
+        },
+        {
+          "name": "launch_ready_o",
+          "wave": "1.0........1"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1........0"
+        },
+        {
+          "name": "dma_read_req_valid_o",
+          "wave": "0..10......."
+        },
+        {
+          "name": "dma_write_req_valid_o",
+          "wave": "0.....10...."
+        },
+        {
+          "name": "dma_write_done_i",
+          "wave": "0........10."
+        },
+        {
+          "name": "result_valid_o",
+          "wave": "0.........10"
+        },
+        {
+          "name": "result_ready_i",
+          "wave": "1..........."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: npu_core with ExecutionReady=1. These are schematic, compressed phases with arbitrary wait intervals, not cycle-accurate latency or measured performance. Ready/valid handshakes and terminal ordering follow the actual core; APB IRQ delivery occurs after control CDC.",
+    "clock_domain": "clk_hp_i",
+    "signals": {
+      "clk_hp_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "clk_hp_i",
+        "meaning": "HP sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "launch_valid_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_valid_i",
+        "meaning": "Launch token is presented.",
+        "polarity": "active-high"
+      },
+      "launch_ready_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_ready_o",
+        "meaning": "A launch is accepted only when ready.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "busy_o",
+        "meaning": "Busy includes terminal publication until the result handshake.",
+        "polarity": "active-high"
+      },
+      "dma_read_req_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_read_req_valid_o",
+        "meaning": "Descriptor and input reads are grouped schematically.",
+        "polarity": "active-high"
+      },
+      "dma_write_req_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_write_req_valid_o",
+        "meaning": "Output stores follow compute; intermediate phases are compressed.",
+        "polarity": "active-high"
+      },
+      "dma_write_done_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_write_done_i",
+        "meaning": "The illustrated final accepted write response completes.",
+        "polarity": "active-high"
+      },
+      "result_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_valid_o",
+        "meaning": "DONE is published only after all work retires.",
+        "polarity": "active-high"
+      },
+      "result_ready_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_ready_i",
+        "meaning": "The result mailbox accepts the terminal result.",
+        "polarity": "active-high"
+      }
+    },
+    "parameters": {
+      "ExecutionReady": 1
+    },
+    "parameter_note": "The integrated apb4_npu selects ExecutionReady=1; dormant P2 defaults are not used.",
+    "review_sources": [
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_dma.sv"
+    ],
+    "review_note": "Normal terminal publication follows descriptor retirement and completed accepted writes. Abort drains before ABORTED; busy includes CorePublish until result_ready_i."
+  },
+  "npu-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_hp_i",
+          "wave": "p............."
+        },
+        {
+          "name": "launch_valid_i",
+          "wave": "010..........."
+        },
+        {
+          "name": "launch_ready_o",
+          "wave": "1.0..........1"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1..........0"
+        },
+        {
+          "name": "abort_i",
+          "wave": "0....10......."
+        },
+        {
+          "name": "draining_o",
+          "wave": "0.....1.....0."
+        },
+        {
+          "name": "dma_busy_i",
+          "wave": "0..1.......0.."
+        },
+        {
+          "name": "result_valid_o",
+          "wave": "0...........10"
+        },
+        {
+          "name": "result_ready_i",
+          "wave": "1............."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: npu_core with ExecutionReady=1. These are schematic, compressed phases with arbitrary wait intervals, not cycle-accurate latency or measured performance. Ready/valid handshakes and terminal ordering follow the actual core; APB IRQ delivery occurs after control CDC.",
+    "clock_domain": "clk_hp_i",
+    "signals": {
+      "clk_hp_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "clk_hp_i",
+        "meaning": "HP sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "launch_valid_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_valid_i",
+        "meaning": "A job is launched.",
+        "polarity": "active-high"
+      },
+      "launch_ready_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_ready_o",
+        "meaning": "Ready returns after result retirement.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "busy_o",
+        "meaning": "Job stays busy through drain and result publication.",
+        "polarity": "active-high"
+      },
+      "abort_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "abort_i",
+        "meaning": "Software abort arrives after accepted work.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "draining_o",
+        "meaning": "Accepted obligations drain before terminal publication.",
+        "polarity": "active-high"
+      },
+      "dma_busy_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_busy_i",
+        "meaning": "Outstanding DMA activity ends before publication.",
+        "polarity": "active-high"
+      },
+      "result_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_valid_o",
+        "meaning": "An ABORTED result, not DONE, is published.",
+        "polarity": "active-high"
+      },
+      "result_ready_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_ready_i",
+        "meaning": "The result mailbox accepts the cancellation.",
+        "polarity": "active-high"
+      }
+    },
+    "parameters": {
+      "ExecutionReady": 1
+    },
+    "parameter_note": "The integrated apb4_npu selects ExecutionReady=1; dormant P2 defaults are not used.",
+    "review_sources": [
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_dma.sv"
+    ],
+    "review_note": "Normal terminal publication follows descriptor retirement and completed accepted writes. Abort drains before ABORTED; busy includes CorePublish until result_ready_i."
   }
 }

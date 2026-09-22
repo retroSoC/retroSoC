@@ -1780,16 +1780,18 @@
     "function_sections": [],
     "software_sections": [],
     "notes": [
-      "Phase 4 delivers the complete MVP operator pipeline: the capability word is 0x0000007F (PRESENT, EXECUTION_READY, PRIVATE_AXI64_DMA, INTERRUPTS, DOUBLE_ROUNDING, NATIVE_HP_CLOCK, SOFTWARE_ABORT) and OP_CAPABILITY advertises the full 0x000001FE mask (opcodes 1..8).",
-      "The HP-native AXI64 master index 9 executes descriptor fetch/validation, byte-edge and 2D gather DMA, and output stores; no central-DMA channel is allocated.",
-      "The shell holds resource index 9, LP vector 33, and HP PLIC source 12. Ownership handoff uses the Resource Controller quiesce/acknowledge round trip reconciled across the PCLK/HP epoch boundary.",
-      "All writes require full word strobes; unknown offsets, reserved bits, and permission violations complete with PSLVERR and no side effect."
+      "The deployed implementation advertises CAPABILITY=0x0000007F and OP_CAPABILITY=0x000001FE. It includes the complete eight-operator execution path; reusable module defaults and older phase comments do not describe the deployed configuration.",
+      "The HP-native AXI64 master is index 9 and resource 9. It uses source ID zero, one outstanding read and one outstanding write, and an integrated maximum of eight beats per burst. It does not allocate a central-DMA channel.",
+      "The PCLK register shell exchanges launch, result and snapshot mailboxes with HP computation. Resource quiesce waits for cancellation/drain; a coordinated clock pause retains the active job.",
+      "LP vector 33 (external ordinal 31) and HP PLIC source 12 are selected through resource ownership. No dedicated NPU pad, GPIO alternate function or camera/audio stream port is added.",
+      "All APB writes require full word strobes. Unknown offsets, reserved-bit violations, busy configuration changes and disallowed START commands complete with PSLVERR without the prohibited side effect."
     ],
     "software_steps": [
-      "Check EXECUTION_READY and the required OP_CAPABILITY bits through rs_npu_get_capability before deploying a model; submit jobs with rs_npu_submit and complete them with rs_npu_wait, rs_npu_abort_wait, and the IRQ ack APIs.",
-      "Set ownership and lifecycle through the Resource Controller HAL (rs_resource_set_owner/rs_resource_set_lifecycle) before relying on the LP/HP IRQ route.",
-      "Exercise the interrupt path with IRQ_ENABLE/IRQ_TEST and acknowledge with the W1C IRQ_STATE write.",
-      "Check EXECUTION_READY and the required OP_CAPABILITY bits through rs_npu_get_capability before deploying a model; submit jobs with rs_npu_submit and complete them with rs_npu_wait, rs_npu_abort_wait, and the IRQ ack APIs."
+      "Read identity, numeric profile, EXECUTION_READY and required operator bits before preparing a model. Use only the compiler-supported static integer graph subset.",
+      "Establish Resource Controller ownership, allowed noncacheable DMA ranges and buffer lifetime. Clean CPU-produced descriptors/parameters/inputs and fence before START; the low-level HAL does not do this automatically.",
+      "Clear the previous terminal IRQ, then submit the aligned descriptor list with a job token and nonzero hardware watchdog. Wait for the matching token with a bounded software polling budget.",
+      "After DONE, snapshot counters and invalidate destination cache blocks before CPU consumption. CPU preprocessing and terminal Softmax are outside NPU execution time.",
+      "On software timeout keep buffers owned by the device. Abort and wait for terminal/drained state; rs_npu_abort_wait reports ABORTED through RS_EIO. Capture fault and recovery generation before reset or reuse."
     ],
     "api": [
       {
@@ -1836,7 +1838,8 @@
         "name": "rs_npu_irq_ack",
         "signature": "rs_status_t rs_npu_irq_ack(uint32_t events);"
       }
-    ]
+    ],
+    "example_file": "publications/examples/npu.c"
   },
   "crypto": {
     "title": "Crypto Controller",
@@ -2283,7 +2286,7 @@
       "Width and height are nonzero 16-bit pixel counts. Each used surface has a byte address and a positive byte pitch covering its logical row. RGB565 requires two-byte address/pitch alignment; 32-bit surfaces require four-byte alignment; RGB888 and A8 use byte alignment. Address arithmetic and the final exclusive end must remain inside one allowed 32-bit memory range.",
       "Foreground/destination overlap is rejected conservatively. BLEND permits background/destination in-place use only when address, pitch and format are all equal; other background/destination overlap is rejected. Padding participates in the conservative address envelope but is not modified as image payload.",
       "The private AXI64 engine splits work at line and 4 KiB boundaries. It uses bursts of at most 16 beats and byte strobes for edges. Foreground and background reads are kept distinct; accepted traffic must drain before software reuses a buffer.",
-      "Resource 8 owns control and interrupt routing. GA2D is master 8 of the nine-master data plane, reads SRAM/SDRAM/QPI/OPI/XPI and writes the first four targets. XPI is read-only. Root policy rejects instruction and cacheable attributes; software remains responsible for cache maintenance and buffer ownership.",
+      "Resource 8 owns control and interrupt routing. GA2D is master 8 of the ten-master data plane, reads SRAM/SDRAM/QPI/OPI/XPI and writes the first four targets. XPI is read-only. Root policy rejects instruction and cacheable attributes; software remains responsible for cache maintenance and buffer ownership.",
       "The PCLK-domain engine reaches the HP fabric through its address gate and asynchronous bridge. HP reset, bridge epoch/clear, resource stop and DATA_READY participate in recovery. These implemented mechanisms are not CDC/RDC signoff evidence.",
       "There is no descriptor, ring or queue submission, scaling, rotation, negative pitch, YUV/CLUT renderer, hardware cache coherence or native Linux graphics driver. The presence of P5 tests and firmware scenarios does not establish Phase 6 system-performance or physical qualification."
     ],

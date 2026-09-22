@@ -8131,7 +8131,7 @@
         "from": "resources.p1",
         "to": "core.p1",
         "kind": "control",
-      "label": "IDLE / 10",
+        "label": "IDLE / 10",
         "style": "direct",
         "bindings": [
           {
@@ -8159,7 +8159,7 @@
         "from": "core.p2",
         "to": "owners.p2",
         "kind": "control",
-      "label": "OWNER / 20",
+        "label": "OWNER / 20",
         "style": "direct",
         "bindings": [
           {
@@ -8187,7 +8187,7 @@
         "from": "core.p3",
         "to": "irq.p3",
         "kind": "control",
-      "label": "LP IRQ / 10",
+        "label": "LP IRQ / 10",
         "style": "direct",
         "bindings": [
           {
@@ -8213,7 +8213,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Nine resources retain independent owner/lock/quiesce/reset state; resource 8 routes the active P5 GA2D direct 2D engine IRQ and controls its AXI64 lifecycle. IRQ steering and cache-clean coordination are control relationships, not a hardware cache-coherence implementation."
+    "note": "Ten resources retain independent owner/lock/quiesce/reset state. Resource 8 owns GA2D; resource 9 owns NPU and routes LP vector 33 / HP PLIC source 12. IRQ steering and cache handoff are control relationships, not a payload DMA path."
   },
   "monitor": {
     "nodes": [
@@ -8318,7 +8318,7 @@
         "from": "events.p0",
         "to": "core.p0",
         "kind": "control",
-      "label": "Accept / 10",
+        "label": "Accept / 10",
         "style": "direct",
         "bindings": [
           {
@@ -10893,6 +10893,12 @@
             "direction": "in",
             "width": 64,
             "side": "east"
+          },
+          {
+            "id": "np",
+            "direction": "in",
+            "width": 64,
+            "side": "west"
           }
         ],
         "sources": [
@@ -10994,6 +11000,26 @@
         ],
         "sources": [
           "rtl/mini/top/soc_data_plane.sv"
+        ]
+      },
+      {
+        "id": "npu",
+        "title": "NPU native HP AXI64\nmaster 9 / no payload CDC",
+        "x": 0,
+        "y": -3.5,
+        "w": 4,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "np",
+            "direction": "out",
+            "width": 64,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/ip/multimedia/apb4_npu.sv"
         ]
       }
     ],
@@ -11208,9 +11234,30 @@
             "text": ".source(u_ga2d_prefixed_axi4), .sink(u_master_axi4[8])"
           }
         ]
+      },
+      {
+        "from": "npu.np",
+        "to": "fabric.np",
+        "kind": "data",
+        "label": "AXI64",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".MasterIndex(4'd9)"
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".source(u_npu_prefixed_axi4)"
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".sink(u_master_axi4[9])"
+          }
+        ]
       }
     ],
-    "note": "Nine PRODUCT initiator identities feed five memory targets through width/clock adapters. GA2D is master 8 and uses 7-bit global IDs after source-prefix insertion. JPEG and GA2D each have one normal read and one normal write credit. Only the HP I-cache may issue instructions; XPI is read-only on this data plane. Interface arrows group request/response channels."
+    "note": "Ten PRODUCT initiator identities feed five memory targets through width/clock adapters. GA2D is master 8 and uses 7-bit global IDs after source-prefix insertion. JPEG and GA2D each have one normal read and one normal write credit. Only the HP I-cache may issue instructions; XPI is read-only on this data plane. Interface arrows group request/response channels. NPU is a native-HP master with source ID zero, one read/one write and its own eight-beat limit; it does not pass through an I/O gateway or payload CDC."
   },
   "system-media": {
     "nodes": [
@@ -12286,5 +12333,453 @@
       }
     ],
     "note": "PCLK-domain direct single-job organization; configuration and detailed response channels are grouped. Three 32-entry data FIFOs reside in the DMA. Address gating, CDC, source-prefix insertion and target permissions form the separate master-8 integration path. There is no descriptor queue or hardware cache coherency."
+  },
+  "npu": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "PCLK registers\njob / status / IRQ",
+        "x": 0,
+        "y": 7.6,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_npu.sv",
+          "module": "npu_reg",
+          "name": "u_npu_reg",
+          "declaration_file": "rtl/ip/multimedia/npu_reg.sv"
+        }
+      },
+      {
+        "id": "cdc",
+        "title": "PCLK / HP control CDC\nmailboxes / epochs",
+        "x": 8.7,
+        "y": 7.6,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_control_cdc.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_npu.sv",
+          "module": "npu_control_cdc",
+          "name": "u_npu_control_cdc",
+          "declaration_file": "rtl/ip/multimedia/npu_control_cdc.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "HP job / compute\n64-MAC / vector / requant",
+        "x": 8.7,
+        "y": 3.8,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 64,
+            "side": "south"
+          },
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 64,
+            "side": "south"
+          },
+          {
+            "id": "p6",
+            "direction": "out",
+            "width": 64,
+            "side": "west"
+          },
+          {
+            "id": "p7",
+            "direction": "in",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_npu.sv",
+          "module": "npu_core",
+          "name": "u_npu_core",
+          "declaration_file": "rtl/ip/multimedia/npu_core.sv"
+        }
+      },
+      {
+        "id": "local",
+        "title": "Banked private SRAM\n64 KiB / 16 banks",
+        "x": 0,
+        "y": 3.8,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p6",
+            "direction": "in",
+            "width": 64,
+            "side": "east"
+          },
+          {
+            "id": "p7",
+            "direction": "out",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_local_sram.sv",
+          "rtl/ip/multimedia/npu_scheduler.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/npu_scheduler.sv",
+          "module": "npu_local_sram",
+          "name": "u_local_sram",
+          "declaration_file": "rtl/ip/multimedia/npu_local_sram.sv"
+        }
+      },
+      {
+        "id": "dma",
+        "title": "HP-native AXI64 DMA\nbyte edges / drain",
+        "x": 8.7,
+        "y": 0,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 64,
+            "side": "north"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 64,
+            "side": "north"
+          },
+          {
+            "id": "p8",
+            "direction": "out",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/ip/multimedia/npu_dma.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/apb4_npu.sv",
+          "module": "npu_dma",
+          "name": "u_npu_dma",
+          "declaration_file": "rtl/ip/multimedia/npu_dma.sv"
+        }
+      },
+      {
+        "id": "fabric",
+        "title": "HP fabric / memories\nmaster 9 / policy checks",
+        "x": 0,
+        "y": 0,
+        "w": 5.8,
+        "h": 2,
+        "ports": [
+          {
+            "id": "p8",
+            "direction": "in",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/apb4_npu.sv",
+          "rtl/mini/top/soc_data_plane.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "cdc.p0",
+        "kind": "control",
+        "label": "Launch",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".launch_req_valid_i(s_launch_req_valid)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "launch_req_valid_o",
+            "expression": "s_launch_req_valid"
+          },
+          {
+            "node": "cdc",
+            "port": "launch_req_valid_i",
+            "expression": "s_launch_req_valid"
+          }
+        ]
+      },
+      {
+        "from": "cdc.p1",
+        "to": "reg.p1",
+        "kind": "control",
+        "label": "Result",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".result_valid_i(s_result_valid)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "result_valid_i",
+            "expression": "s_result_valid"
+          },
+          {
+            "node": "cdc",
+            "port": "result_valid_o",
+            "expression": "s_result_valid"
+          }
+        ]
+      },
+      {
+        "from": "cdc.p2",
+        "to": "core.p2",
+        "kind": "control",
+        "label": "Launch",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".launch_valid_i(s_hp_launch_valid)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "launch_valid_i",
+            "expression": "s_hp_launch_valid"
+          },
+          {
+            "node": "cdc",
+            "port": "hp_launch_valid_o",
+            "expression": "s_hp_launch_valid"
+          }
+        ]
+      },
+      {
+        "from": "core.p3",
+        "to": "cdc.p3",
+        "kind": "control",
+        "label": "Result",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".result_valid_o(s_hp_result_valid)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "result_valid_o",
+            "expression": "s_hp_result_valid"
+          },
+          {
+            "node": "cdc",
+            "port": "hp_result_valid_i",
+            "expression": "s_hp_result_valid"
+          }
+        ]
+      },
+      {
+        "from": "core.p4",
+        "to": "dma.p4",
+        "kind": "data",
+        "label": "Write / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".write_data_i(s_dma_write_data)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "dma_write_data_o",
+            "expression": "s_dma_write_data"
+          },
+          {
+            "node": "dma",
+            "port": "write_data_i",
+            "expression": "s_dma_write_data"
+          }
+        ]
+      },
+      {
+        "from": "dma.p5",
+        "to": "core.p5",
+        "kind": "data",
+        "label": "Read / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".read_data_o(s_dma_read_data)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "dma_read_data_i",
+            "expression": "s_dma_read_data"
+          },
+          {
+            "node": "dma",
+            "port": "read_data_o",
+            "expression": "s_dma_read_data"
+          }
+        ]
+      },
+      {
+        "from": "core.p6",
+        "to": "local.p6",
+        "kind": "data",
+        "label": "Pack / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/npu_scheduler.sv",
+            "text": ".pack_write_data_i(s_pack_write_data_hd)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "local",
+            "port": "pack_write_data_i",
+            "expression": "s_pack_write_data_hd"
+          }
+        ]
+      },
+      {
+        "from": "local.p7",
+        "to": "core.p7",
+        "kind": "data",
+        "label": "A / W banks",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/npu_scheduler.sv",
+            "text": ".a_read_data_o(s_a_read_data)"
+          },
+          {
+            "file": "rtl/ip/multimedia/npu_scheduler.sv",
+            "text": ".w_read_data_o(s_w_read_data)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "local",
+            "port": "a_read_data_o",
+            "expression": "s_a_read_data"
+          }
+        ]
+      },
+      {
+        "from": "dma.p8",
+        "to": "fabric.p8",
+        "kind": "data",
+        "label": "AXI64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": ".axi4(npu_axi4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "dma",
+            "port": "axi4",
+            "expression": "npu_axi4"
+          }
+        ]
+      }
+    ],
+    "note": "The HP core groups descriptor validation, scheduler, packer, MAC/vector and scalar requantizer. Two 256-byte accumulator contexts are separate from SRAM. Payload traffic stays in HP; PCLK control uses launch/result/snapshot mailboxes and epoch reconciliation. Ready, address, response and lifecycle details are grouped, not omitted from the implementation."
   }
 }

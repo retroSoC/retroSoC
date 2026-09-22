@@ -66,8 +66,12 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
-// This edit adds the functional overview and updates its navigation references.
-#let current-change(id) = id == "soc-functional"
+// v0.5: only this refresh's reviewed content and dependent navigation markers.
+#let current-change(id) = id.starts-with("v05-") or id in (
+  "soc-functional","dev-architecture","dev-product-availability","dev-media-formats",
+  "dev-ip-apu","dev-ip-resource","dev-ip-monitor","dev-ip-i2s","ga2d-chapter",
+  "dev-performance","dev-limitations","dev-release-evidence","dev-software",
+  "revision-history","contents","table-directory","figure-directory")
 #let change-start(id, title, category:"modified") = context {
   if current-change(id) {metadata((
     kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))}

@@ -77,7 +77,8 @@
       "DVP",
       "JPEG",
       "APU",
-      "GA2D"
+      "GA2D",
+      "NPU"
     ]
   },
   {

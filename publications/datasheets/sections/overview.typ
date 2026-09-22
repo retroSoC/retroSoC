@@ -10,6 +10,7 @@
 )
 
 #cover(evaluation:artifact-status)[
+#change-start("v05-product-brief","v0.5 document identity and implemented accelerator features")
 #text(9pt, weight: "semibold", fill: gold)[PRODUCT DATASHEET / #doc.status]
 #v(rhythm.cover-gap)
 #text(30pt, weight: "semibold")[retroSoC Mini]
@@ -33,6 +34,7 @@
   *Compute and control*
   - Hazard3 LP: boot, clocks, resource ownership and fault recovery.
   - Dual-issue VexiiRiscv HP: RV32IMAFDC + Zicbom, Sv32.
+  - NPU: 64 dense MACs, eight INT8 operator classes and 64 KiB private SRAM.
   - JTAG debug; fixed EXT-L control and EXT-H AXI64 slots.
 
   *Memory and interconnect*
@@ -62,7 +64,7 @@
   - Stereo 16/24-bit I2S master; 8-bit RGB565/YUV422 DVP with crop/snapshot capture.
   - Baseline JPEG encode/decode up to 2048 × 2048, with private DMA.
   - GA2D fill/copy/convert/opaque blend and A8 masks.
-  - APU WAV/FLAC decode; MP3/KWS not advertised.
+  - APU WAV/FLAC decode; fixed KWS in the P7 configuration; MP3 unsupported.
   - AES-128/192/256, SHA-224/256 and raw RSA-2048; programmable CRC.
   - RNG source remains unqualified for production entropy.
 
@@ -74,10 +76,12 @@
 #note(below: 0pt)[This draft describes a reviewed RTL/configuration snapshot. It does not establish silicon
 speed grades, electrical limits, production availability or certification. Gen2/Gen2+ is the
 retained document title; no separate derivative specifications are inferred.]
+#change-end("v05-product-brief")
 ]
 
 #pagebreak()
 == Overview
+#change-start("v05-overview","NPU-inclusive functional inventory and configuration reference")
 retroSoC Mini combines a small management processor with an application processor and shared
 memory and I/O. Hazard3 retains authority over startup, clock transitions, resource ownership
 and fault recovery. VexiiRiscv supplies the application-side compute and Linux integration.
@@ -98,3 +102,4 @@ experimentation, education and ASIC prototyping.
     ([MPW compatibility], code(doc.mpw_profile)),
   ), widths:(0.8fr,1.9fr),
 )
+#change-end("v05-overview")

@@ -5,7 +5,7 @@
 #import "../soc-architecture.typ": soc-functional-diagram
 
 = System Architecture
-#change-start("dev-architecture","Nine-master fabric, address map, LP IRQ and lifecycle reference")
+#change-start("dev-architecture","Ten-master fabric, address map, LP IRQ and lifecycle reference")
 == Introduction
 === SoC Architecture
 Mini PRODUCT contains two fixed harts, an LP-owned control plane, a native HP data fabric and

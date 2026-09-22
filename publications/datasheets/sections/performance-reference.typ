@@ -43,12 +43,22 @@ publication profile. Retain the structured report, console log and final test ve
 Do not extrapolate the LP result to the HP core or infer a dual-core score by addition.
 
 === Memory, DMA and multimedia experiments
-The current benchmark emits GA2D FILL/COPY workload bytes, pixels, jobs, CPU cycles and
-CPU clock together with GA2D cycle/read-byte/write-byte counters. CPU-observed job time and
+The current schema-3 benchmark covers GA2D FILL, COPY, CONVERT, BLEND and A8 composition
+at 320×240, 480×272 and 800×480, with additional strided cases. It records geometry, workload
+bytes, pixels, jobs, CPU cycles, CPU clock and PCLK alongside engine cycle/read/write-byte
+counters and derived metrics. CPU-observed job time and
 engine service cycles measure different boundaries; payload size also differs from total
 read-plus-write traffic. Preserve format, pitch, capability words, target memory and
 contention with the structured sample. These implemented counters and smoke workloads do not
 constitute a qualified graphics throughput score.
+The dated GA2D P6 record includes earlier behavioral measurements and an unsuccessful
+48 MHz slow-corner block STA result. Those historical values do not qualify the current
+source revision; see @release-verification before interpreting a target rate as achieved.
+
+For NPU workloads, report preprocessing, cache handoff, descriptor execution and CPU Softmax
+separately. Useful MACs, active cycles and overlapping stall counters describe the deployed
+pipeline; 64 MACs times an assumed clock is only an arithmetic ceiling. For APU KWS, a small
+smoke subset is not the 1000-window accuracy gate or the complete sustained-audio matrix.
 #source-note("app/apps/benchmark/main.c",title:"Implemented benchmark workloads and reported counters")
 #source-note("scripts/parse_performance_log.py",title:"Structured performance sample format")
 

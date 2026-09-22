@@ -2,7 +2,7 @@
   "schema_version": 1,
   "state": "frozen",
   "scope": "Outlined level 1/2 headings and all IP entries; prose, deeper subsections and pagination remain editable.",
-  "document_version": "0.4 DRAFT",
+  "document_version": "0.5 DRAFT",
   "ip_ids": [
     "xpi",
     "spisd",
@@ -38,6 +38,7 @@
     "jpeg",
     "ga2d",
     "apu",
+    "npu",
     "crypto",
     "crc",
     "rng",
@@ -316,6 +317,11 @@
       "level": 4,
       "title": "Audio Processing Unit (APU, partial)",
       "anchor": "apu"
+    },
+    {
+      "level": 4,
+      "title": "Neural Processing Unit (NPU)",
+      "anchor": "npu"
     },
     {
       "level": 4,

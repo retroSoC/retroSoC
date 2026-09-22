@@ -81,18 +81,18 @@
   ],
   "jpeg": [
     "8-bit Baseline Sequential JPEG encode or decode.",
-    "Images up to 2048 \u00d7 2048; modes are mutually exclusive.",
+    "Images up to 2048 × 2048; modes are mutually exclusive.",
     "Private AXI64 DMA, direct jobs and a scatter-gather ring."
   ],
   "apu": [
     "Coreless microcode sequencer with private DMA and local storage.",
     "WAV/FLAC job and stream infrastructure in the current capability word.",
-    "MP3/KWS are not advertised; production bundle and capacity qualification remain distinct gates."
+    "MP3 is unsupported. Default PRODUCT disables KWS; the P7 acceptance profile advertises the fixed KWS model and ABI digest."
   ],
   "npu": [
-    "Phase 2 register shell with PCLK/HP control CDC, epoch reconciliation, and resource-9 ownership.",
-    "Interrupt round trip (DONE/ERROR/ABORTED) routed to LP vector 33 or HP PLIC source 12 by owner.",
-    "No execution readiness, operator, or DMA capability is advertised until the production path is verified."
+    "64 dense MACs, eight depthwise lanes and 64 KiB of private banked SRAM.",
+    "Eight INT8 operator classes, checked INT32 accumulation and profile-1 requantization.",
+    "HP-native AXI64 DMA, 128-byte descriptors, APB4 control and owner-routed interrupts."
   ],
   "dvp": [
     "8-bit parallel RGB565/YUV422 capture.",
@@ -155,12 +155,12 @@
     "Lifecycle-gated device identity reads."
   ],
   "resource": [
-    "Nine independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
+    "Ten independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
     "Owner locks, quiesce/reset and LP/HP IRQ routing.",
     "Explicit cache-maintenance handoff and sticky faults."
   ],
   "monitor": [
-    "Nine master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
+    "Ten master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
     "Saturating counters, snapshots and outstanding high-water marks.",
     "Sticky first-fault attribution and live isolation status."
   ],

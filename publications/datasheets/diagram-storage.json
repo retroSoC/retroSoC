@@ -1095,5 +1095,51 @@
       }
     ],
     "note": "Relative offsets for width 8, height 2 and pitch 32 bytes in RGB888. The allocated example is 64 bytes; the exclusive accessed envelope is 56 bytes. Padding and the tail are not image payload and must remain unmodified. Foreground/destination overlap is forbidden; only an exactly matching BLEND background/destination is admitted."
+  },
+  {
+    "id": "npu-local",
+    "chapters": [
+      "npu"
+    ],
+    "title": "NPU private SRAM partition map",
+    "section": "functional",
+    "stores": [],
+    "derived": "npu-local",
+    "sources": [
+      "rtl/ip/multimedia/npu_pkg.sv",
+      "rtl/ip/multimedia/npu_local_sram.sv"
+    ],
+    "bindings": [],
+    "note": "Offsets are private to the NPU: sixteen 4 KiB banks total 64 KiB. Raw, packed-A and packed-W allocations each occupy four banks; output and descriptor/parameter regions each occupy two. No CPU address aperture is created. Reset invalidates ownership without erasing physical SRAM."
+  },
+  {
+    "id": "npu-accumulators",
+    "chapters": [
+      "npu"
+    ],
+    "title": "NPU independent accumulator contexts",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Accumulator contexts",
+        "depth": 2,
+        "bits": 2048,
+        "depth_ref": {
+          "file": "rtl/ip/multimedia/npu_pkg.sv",
+          "constant": "AccContextCount"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/multimedia/npu_pkg.sv",
+          "constant": "AccSumCount",
+          "multiply": 32
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/npu_pkg.sv",
+      "rtl/ip/multimedia/npu_accumulator.sv"
+    ],
+    "bindings": [],
+    "note": "Each context holds 64 checked INT32 sums (256 bytes). Two contexts allow owned compute/requantization overlap; they are separate from the 64 KiB scratch SRAM. Bias is applied once and partial sums persist across K slices."
   }
 ]

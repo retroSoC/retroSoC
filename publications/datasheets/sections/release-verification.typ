@@ -16,14 +16,28 @@ coverage. See @software-support and @known-limitations for the per-IP qualificat
 
 === CI snapshot for the reviewed commit
 #let ci=data.system_reference.ci_snapshot
-Checked #ci.checked_date for commit #code(ci.revision). #ci.boundary
+Checked #ci.checked_at for commit #code(ci.revision). #ci.boundary
 #ds-table("ci-snapshot",[CI workflow outcomes and their evidence scope],
-  ([Workflow],[Outcome],[Scope and qualification]),
-  ci.runs.map(r=>(link(r.url,r.name),r.result,[#r.scope. #r.note])),
+  ([Workflow],[Status / conclusion],[Scope and qualification]),
+  ci.runs.map(r=>(link(r.url,r.name),[#r.status \ #if r.conclusion==none {[No conclusion yet]} else {r.conclusion}],[#r.scope. #r.note])),
   widths:(0.9fr,0.55fr,2.55fr))
 These links identify recorded public workflow/job outcomes. They are not substitutes for
 per-IP reports tied to the exact profile, test selection and platform stage below. In particular,
-the quality workflow did not reach its later host/script/APU tests after its formatting failure.
+an unfinished workflow has no pass/fail conclusion. Its eventual result must be read from the
+identified run and cannot qualify stages that it did not execute.
+
+=== Historical reports and current-source gaps
+#ds-table("historical-accelerator-evidence",[Earlier recorded results and their publication boundary],
+  ([Record],[What the repository records],[Current-source interpretation]),
+  (([GA2D / 2026-09-18],[P6 directed/randomized/lifecycle tests and block-level synthesis, netlist and STA records.],[The historical 24 MHz behavioral rates are not current-product guarantees. The documented 48 MHz slow-corner block STA did not close; full-product physical closure remained pending.]),
+   ([NPU / 2026-09-21],[Host reference and bounded P5 Icarus/Verilator deployment results.],[Matching raw reports for this document SHA are not supplied. P6 runners do not establish full-corpus or physical completion.]),
+   ([APU P7/P8],[Accuracy/concurrency, quiesced loading, gateway contention and LP/HP acceptance sources.],[Smoke subsets, missing-data early returns and source presence are separate from complete executed release campaigns.])),
+  widths:(0.8fr,1.45fr,1.9fr))
+These entries index dated repository narratives. They are not reconstructed machine reports
+and are not promoted to current per-IP Reported pass entries. The recorded GA2D throughput
+target was not met; the NPU arithmetic peak at an assumed clock is not model throughput.
+#source-note("docs/ip/ga2d.md",title:"Dated GA2D P6 evidence record and remaining gaps")
+#source-note("docs/ip/npu-verification.md",title:"Dated NPU reports and P6 acceptance requirements")
 
 === Verification inventory
 #for row in data.system_reference.retrieval.verification.rows {

@@ -24,6 +24,10 @@ alignment is not a substitute. The listed JPEG raster formats describe the codec
 with bounded normal SoC private-DMA admission through master 6 as documented in
 @bus-programming; this is not full-system workload qualification. GA2D adds explicit color-format
 conversion and opaque composition as described in @ga2d; it does not supply RGB/YUV conversion.
+NPU tensors follow a separate static INT8 layout and quantization contract. A camera frame or
+audio PCM buffer is not directly an NPU model input: CPU preprocessing must produce the
+compiler's expected features, byte layout and zero points. NPU receives memory jobs, not a
+dedicated camera/audio stream, and its model format is not the APU APUM container.
 
 The DVP core packs two completed 16-bit pixels per 32-bit word, with the first pixel in the
 lower half. Its FIFO also carries framing/byte-qualification metadata. That metadata is not

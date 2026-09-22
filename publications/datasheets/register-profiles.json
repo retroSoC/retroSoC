@@ -1007,7 +1007,7 @@
     "groups": [
       {
         "id": "main",
-        "title": "Phase 2 control shell and lifecycle endpoint",
+        "title": "NPU control, execution and lifecycle registers",
         "pattern": "APB4_NPU__.+",
         "strip": "^APB4_NPU__",
         "base": 0,
