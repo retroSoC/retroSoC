@@ -3,6 +3,10 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
+- [Contributing](../CONTRIBUTING.md) describes community discussion, development,
+  review, validation evidence, and maintainer responsibilities.
+- [git-workflow.md](git-workflow.md) defines branch and commit conventions,
+  merge-commit integration, synchronization, and conflict recovery.
 - [engineering.md](engineering.md) describes reproducible inputs, build
   artifacts, result policy, warning baselines, metrics, CI, and releases.
 - [development-environment.md](development-environment.md) describes the

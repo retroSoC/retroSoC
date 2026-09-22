@@ -4,6 +4,12 @@ This directory owns repository automation metadata: pull-request templates,
 CODEOWNERS, Dependabot configuration, reusable actions, and CI/release
 workflows.
 
+The default [pull request template](pull_request_template.md) captures scope,
+interface impact, validation evidence, and remaining risks. Follow the
+[contribution process](../CONTRIBUTING.md) and
+[Git workflow](../docs/git-workflow.md): ordinary PRs target `dev` and default
+to merge-commit integration. These documents do not configure branch protection.
+
 `workflows/quality.yml` runs the quality gate. It restores the locked IHP130
 PDK, third-party simulation models, and APU/NPU references and installs the
 locked Verilator, Icarus, sv2v, and Yosys tools before the complete Pytest

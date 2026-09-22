@@ -309,6 +309,10 @@ Contributions are welcome. If you want to improve the RTL, software, verificatio
 documentation, or development flows, open an issue or submit a pull request after
 reading [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+- Follow the [Git development workflow](docs/git-workflow.md) for branches,
+  commits, synchronization, and conflict recovery.
+- Use the [pull request template](.github/pull_request_template.md) to describe
+  scope, compatibility, validation, and remaining risks.
 - Report vulnerabilities according to [`Security.md`](Security.md).
 - Review retained third-party notices in [`NOTICE`](NOTICE) and
   [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
