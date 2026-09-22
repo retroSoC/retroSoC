@@ -65,6 +65,7 @@
           ncurses5
           numactl
           jdk17_headless
+          perl
           python310Full
           unzip
           which

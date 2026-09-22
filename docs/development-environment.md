@@ -11,7 +11,8 @@ remote-bitbang debug acceptance flow. Docker, Nix, and manual Ubuntu installs
 provide Java 17 for SBT. Docker and Nix use Python 3.10 to match the
 hash-pinned Ubuntu 22.04 requirement sets. The environment also installs the
 locked Python build and quality dependencies, clang-format-14, GNU Make,
-C/C++ build tools, and runtime libraries required by those binaries.
+C/C++ build tools, Perl for Verilator, and runtime libraries required by those
+binaries.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are
@@ -33,6 +34,9 @@ Python requirements, and writes:
 
 Bootstrap is idempotent. It reinstalls tools or Python packages when the
 dependency lock, selected tool set, or Python requirement hashes change.
+Installed public tool archives are made readable and their directories
+traversable by all users. This is required when Docker builds the image as root
+and runs regressions with the caller's user ID.
 
 ~~~sh
 python3 scripts/development_environment.py bootstrap

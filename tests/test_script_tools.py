@@ -40,7 +40,7 @@ from scripts.development_environment import (  # noqa: E402
     write_activation,
 )
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
-from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts.install_toolchain import make_tree_world_readable, safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
 from scripts.prepare_mpw import patch_serv  # noqa: E402
 from scripts import regress  # noqa: E402
@@ -1193,10 +1193,12 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
 
     assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
     assert "openjdk-17-jre-headless" in dockerfile
+    assert "        perl \\\n" in dockerfile
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
     assert "jdk17_headless" in flake
+    assert "          perl\n" in flake
     assert "python310Full" in flake
     assert "python3Full" not in flake
     assert "retrosoc-development retrosoc-dev" in flake
@@ -2315,6 +2317,34 @@ def test_safe_extract_rejects_parent_traversal(tmp_path: Path) -> None:
     else:
         raise AssertionError("unsafe archive was extracted")
     assert not (tmp_path / "outside").exists()
+
+
+def test_toolchain_tree_is_accessible_to_runtime_users(tmp_path: Path) -> None:
+    toolchain = tmp_path / "toolchain"
+    binary_directory = toolchain / "bundle/bin"
+    binary_directory.mkdir(parents=True)
+    executable = binary_directory / "tool"
+    executable.write_text("#!/bin/sh\n", encoding="utf-8")
+    data = toolchain / "bundle/data"
+    data.write_text("public tool data\n", encoding="utf-8")
+    marker = toolchain / ".complete"
+    marker.write_text("digest\n", encoding="utf-8")
+
+    toolchain.chmod(0o700)
+    (toolchain / "bundle").chmod(0o700)
+    binary_directory.chmod(0o700)
+    executable.chmod(0o700)
+    data.chmod(0o600)
+    marker.chmod(0o600)
+
+    make_tree_world_readable(toolchain)
+
+    assert toolchain.stat().st_mode & 0o777 == 0o755
+    assert (toolchain / "bundle").stat().st_mode & 0o777 == 0o755
+    assert binary_directory.stat().st_mode & 0o777 == 0o755
+    assert executable.stat().st_mode & 0o777 == 0o755
+    assert data.stat().st_mode & 0o777 == 0o644
+    assert marker.stat().st_mode & 0o777 == 0o644
 
 
 def test_fatfs_update_reextracts_downloaded_archive(tmp_path: Path) -> None:

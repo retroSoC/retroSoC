@@ -60,6 +60,7 @@ SYSTEM_EXECUTABLES = (
     "make",
     "mold",
     "numactl",
+    "perl",
 )
 STAMP_NAME = "development-environment.json"
 ACTIVATE_NAME = "activate.sh"

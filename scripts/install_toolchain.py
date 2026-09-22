@@ -6,9 +6,11 @@ import argparse
 import os
 import posixpath
 import shutil
+import stat
 import sys
 import tarfile
 import tempfile
+from itertools import chain
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -38,6 +40,22 @@ def safe_extract(archive: Path, destination: Path) -> None:
         bundle.extractall(destination)
 
 
+def make_tree_world_readable(root: Path) -> None:
+    """Make a public tool archive usable by accounts other than its installer."""
+
+    for path in chain((root,), root.rglob("*")):
+        if path.is_symlink():
+            continue
+        mode = stat.S_IMODE(path.stat().st_mode)
+        if path.is_dir():
+            path.chmod(mode | 0o555)
+        elif path.is_file():
+            shared_mode = mode | 0o444
+            if mode & 0o111:
+                shared_mode |= 0o111
+            path.chmod(shared_mode)
+
+
 def install(name: str, spec: dict[str, Any], cache: Path, update: bool) -> Path:
     downloads = cache / "downloads"
     archive = downloads / spec["archive"]
@@ -53,6 +71,7 @@ def install(name: str, spec: dict[str, Any], cache: Path, update: bool) -> Path:
     destination = cache / "toolchains" / f"{name}-{spec['version']}"
     marker = destination / ".complete"
     if marker.is_file() and marker.read_text(encoding="utf-8").strip() == spec["sha256"]:
+        make_tree_world_readable(destination)
         return destination / spec["path"]
 
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -61,6 +80,7 @@ def install(name: str, spec: dict[str, Any], cache: Path, update: bool) -> Path:
         extracted.mkdir()
         safe_extract(archive, extracted)
         atomic_write(extracted / ".complete", spec["sha256"] + "\n")
+        make_tree_world_readable(extracted)
         if destination.exists():
             shutil.rmtree(destination)
         os.replace(extracted, destination)
