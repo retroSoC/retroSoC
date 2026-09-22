@@ -238,6 +238,7 @@ module apu_kws_engine (
   logic signed [31:0] s_fft_left_real_data, s_fft_left_imag_data;
   logic signed [31:0] s_fft_right_real_data, s_fft_right_imag_data;
   logic signed [31:0] s_log_data;
+  logic        [ 7:0] s_dct_output_value;
   logic signed [7:0] s_logit_data, s_softmax_data[0:11];
   logic s_fft_overflow;
 
@@ -723,6 +724,7 @@ module apu_kws_engine (
   assign s_log_row_sum = {1'b0, s_snapshot_start_q} + {1'b0, s_mfcc_row_q};
   assign s_log_row_index = (s_log_row_sum >= 7'd50) ? 6'(s_log_row_sum - 7'd50) : 6'(s_log_row_sum);
   assign s_dct_coefficient = rne_shift(s_dct_total, 30);
+  assign s_dct_output_value = 8'((s_dct_coefficient + 64'sh3087_c475) / 64'sh0095_af17);
 
   assign s_weight_base = operator_weight_base(s_operator_q);
   assign s_bias_base = operator_bias_base(s_operator_q);
@@ -1092,7 +1094,7 @@ module apu_kws_engine (
             scratch_write_valid_o[0] = 1'b1;
             scratch_write_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_MFCC_BASE +
                 16'(9'(s_mfcc_row_q) * 9'd10 + 9'(s_mfcc_coefficient_q));
-            scratch_write_data_o[0] = {4{8'(s_dct_coefficient / 64'sh0095_af17 + 64'sd83)}};
+            scratch_write_data_o[0] = {4{s_dct_output_value}};
             scratch_write_strb_o[0] = 4'b0001 << scratch_write_addr_o[0][1:0];
           end
         end

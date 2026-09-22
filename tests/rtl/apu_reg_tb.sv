@@ -97,7 +97,9 @@ module apu_reg_tb;
 
   always #5 clk_i = ~clk_i;
 
-  apb4_apu u_dut (
+  apb4_apu #(
+      .EnableP7(1'b1)
+  ) u_dut (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
       .owner_i            (owner_i),
@@ -193,7 +195,7 @@ module apu_reg_tb;
       s_reg_count = 0;
       add_register(`APB4_APU__IP_ID, AccessRo, 32'h4150_5530, 1'b0);
       add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0001, 1'b0);
-      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_01bd, 1'b0);
+      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_01fd, 1'b0);
       add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'h0182_7020, 1'b0);
       add_register(`APB4_APU__COMMAND, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_APU__STATUS, AccessRo, 32'h0000_0100, 1'b0);
@@ -212,7 +214,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__WRITE_BASE, AccessRw, 32'hffff_ffff, 1'b1);
       add_register(`APB4_APU__WRITE_LIMIT, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_APU__DMA_TIMEOUT, AccessRw, 32'h0000_ffff, 1'b0);
-      add_register(`APB4_APU__ABI_DIGEST, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__ABI_DIGEST, AccessRo, 32'hf500_5d7c, 1'b0);
       add_register(`APB4_APU__SEQUENCER_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__SEQUENCER_RETIRED, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__STREAM_WATERMARK, AccessRw, 32'd0, 1'b0);
@@ -265,7 +267,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__KWS_OVERRUN_COUNT, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_MODEL_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_MODEL_ACTUAL_CRC, AccessRo, 32'd0, 1'b0);
-      add_register(`APB4_APU__KWS_INPUT_CONFIG, AccessRo, 32'h0104_bb80, 1'b0);
+      add_register(`APB4_APU__KWS_INPUT_CONFIG, AccessRw, 32'h0104_bb80, 1'b0);
       add_register(`APB4_APU__PERF_CONTROL, AccessRw, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_ACTIVE_CYCLES_LO, AccessRo, 32'd0, 1'b0);
@@ -428,8 +430,7 @@ module apu_reg_tb;
     logic [31:0] s_expected;
     begin
       for (int unsigned register_index = 0; register_index < RegisterCount; register_index++) begin
-        if ((s_reg_access[register_index] != AccessWo) &&
-            (s_reg_offset[register_index] != `APB4_APU__KWS_INPUT_CONFIG)) begin
+        if (s_reg_access[register_index] != AccessWo) begin
           s_expected = preserve_acl_i ?
               reset_or_preserved_value(s_reg_offset[register_index], s_reg_reset[register_index]) :
               s_reg_reset[register_index];
@@ -492,8 +493,6 @@ module apu_reg_tb;
       hard_reset();
       if (s_reg_access[register_index] == AccessWo) begin
         apb_read(s_reg_offset[register_index], s_value, 1'b1);
-      end else if (s_reg_offset[register_index] == `APB4_APU__KWS_INPUT_CONFIG) begin
-        apb_read(s_reg_offset[register_index], s_value, 1'b1);
       end else begin
         expect_read(s_reg_offset[register_index], s_reg_reset[register_index]);
       end
@@ -506,9 +505,7 @@ module apu_reg_tb;
           apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678, 4'hf, 1'b0);
           apb_write(s_reg_offset[register_index], 32'd0, 4'hf, 1'b1);
           expect_read(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678);
-          if (s_reg_offset[register_index] == `APB4_APU__KWS_INPUT_CONFIG) begin
-            apb_read(s_reg_offset[register_index], s_value, 1'b1);
-          end else if ((s_reg_offset[register_index] != `APB4_APU__ERROR_ADDRESS) &&
+          if ((s_reg_offset[register_index] != `APB4_APU__ERROR_ADDRESS) &&
               (s_reg_offset[register_index] != `APB4_APU__ERROR_DETAIL)) begin
             expect_read(s_reg_offset[register_index], s_reg_reset[register_index]);
           end
@@ -567,7 +564,7 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_RING_KICK,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_MODEL_LOAD,
-                         `APB4_APU__ERROR_CODE_UNSUPPORTED);
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__COMMAND, 32'h0000_0010, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__IRQ_STATE, 32'h0000_0800, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__IRQ_ENABLE, 32'h0000_0800,
@@ -579,7 +576,9 @@ module apu_reg_tb;
     hard_reset();
     apb_write(`APB4_APU__STREAM_ROUTE, 32'h0000_0001, 4'hf, 1'b0);
     expect_read(`APB4_APU__STREAM_ROUTE, 32'h0000_0001);
-    check_rejected_write(`APB4_APU__STREAM_ROUTE, 32'h0000_0004, `APB4_APU__ERROR_CODE_UNSUPPORTED);
+    hard_reset();
+    apb_write(`APB4_APU__STREAM_ROUTE, 32'h0000_0004, 4'hf, 1'b0);
+    expect_read(`APB4_APU__STREAM_ROUTE, 32'h0000_0004);
     check_rejected_write(`APB4_APU__STREAM_WATERMARK, 32'h0000_0041,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__STREAM_WATERMARK, 32'h0001_0000,
@@ -606,8 +605,11 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__KWS_MODEL_ADDRESS, 32'h3005_0001,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__KWS_MODEL_SIZE, 32'd0, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
-    check_rejected_write(`APB4_APU__KWS_CONTROL, 32'h0000_0001, `APB4_APU__ERROR_CODE_UNSUPPORTED);
-    check_rejected_write(`APB4_APU__KWS_CONTROL, 32'h0000_0002, `APB4_APU__ERROR_CODE_UNSUPPORTED);
+    check_rejected_write(`APB4_APU__KWS_CONTROL, 32'h0000_0001,
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    hard_reset();
+    apb_write(`APB4_APU__KWS_CONTROL, 32'h0000_0002, 4'hf, 1'b0);
+    expect_read(`APB4_APU__KWS_CONTROL, 32'h0000_0002);
     check_rejected_write(`APB4_APU__KWS_CONTROL, 32'h0000_0008,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__KWS_CONFIG, 32'h0000_0080,

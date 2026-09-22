@@ -95,6 +95,9 @@ $(SOC_TOPOLOGY_STAMP): $(SOC_TOPOLOGY_SOURCE) $(SOC_TOPOLOGY_SCRIPT) $(MEMORY_MA
 		--external-irq-count $(if $(filter PRODUCT,$(MINI_MODE)),62,30)
 	@touch $@
 
+$(SOC_IRQ_METADATA): $(SOC_TOPOLOGY_STAMP)
+	@test -f $@ || { echo "missing generated IRQ metadata: $@" >&2; exit 1; }
+
 soc-topology: $(SOC_TOPOLOGY_STAMP)
 
 check-soc-topology:

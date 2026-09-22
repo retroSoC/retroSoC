@@ -43,6 +43,7 @@ HAVE_SRAM_MACRO   ?= $(if $(filter ICS55,$(PDK)),NO,YES)
 SRAM_SIZE_KIB     ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV         ?= NO
 HAVE_SVA          ?= NO
+APU_ENABLE_P7     ?= NO
 HAVE_HP           ?= YES
 HP_CONFIG         ?= rv32imafdc_zicbom_max
 BUILD_RELEASE     ?= NO
@@ -101,7 +102,7 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
                        if [ "$$count" -gt "$(MAX_JOBS)" ]; then printf '%s' '$(MAX_JOBS)'; \
 else printf '%s' "$$count"; fi)
 LOCAL_RTL_FILES    ?=
-CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA \
+CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA APU_ENABLE_P7 \
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
@@ -129,6 +130,9 @@ APU_P5_REFERENCE_DIR    := $(VARIANT_ROOT)/apu/reference
 APU_P5_CORPUS_MANIFEST  := $(APU_P5_DIR)/corpus-manifest.json
 APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
+APU_P7_MODEL            := $(APU_P7_DIR)/apu-p7.apum
+APU_P7_MODEL_MANIFEST   := $(APU_P7_DIR)/apu-p7-manifest.json
+APU_P7_KWS_TFLITE       := $(CACHE_ROOT)/sources/apu-mlperf-tiny/benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite
 HP_LINUX_BUILD_DIR      := $(VARIANT_ROOT)/hp-linux
 HP_LINUX_STAMP          := $(HP_LINUX_BUILD_DIR)/images/.stamp
 HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
@@ -143,6 +147,12 @@ HP_SMOKE_BUNDLE_NAME    ?= retrosoc_hp_smoke
 HP_SMOKE_BUNDLE_BIN     := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).bin
 HP_SMOKE_BUNDLE_HEX     := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).hex
 HP_SMOKE_MANIFEST       := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).json
+HP_APU_BUILD_DIR        := $(VARIANT_ROOT)/hp-apu
+HP_APU_STAMP            := $(HP_APU_BUILD_DIR)/images/.stamp
+HP_APU_BUNDLE_NAME      ?= retrosoc_hp_apu
+HP_APU_BUNDLE_BIN       := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).bin
+HP_APU_BUNDLE_HEX       := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).hex
+HP_APU_MANIFEST         := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).json
 HP_BUILDRT_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/buildroot-hp
 HP_LINUX_ROOT           := $(ROOT_PATH)/.cache/retrosoc/sources/linux-hp
 HP_OPENSBI_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/opensbi-hp
@@ -173,7 +183,7 @@ VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
 VALID_HP_CONFIG     := rv32imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
-VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader
+VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader apu_release
 VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
 VALID_COREMARK_MODE := quick standard
 VALID_SRAM_SIZE_KIB := 4 16 32 64 128
@@ -195,6 +205,7 @@ $(call validate_value,HAVE_SRAM_MACRO,$(VALID_BOOL))
 $(call validate_value,SRAM_SIZE_KIB,$(VALID_SRAM_SIZE_KIB))
 $(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
+$(call validate_value,APU_ENABLE_P7,$(VALID_BOOL))
 $(call validate_value,HAVE_HP,$(VALID_BOOL))
 $(call validate_value,HP_CONFIG,$(VALID_HP_CONFIG))
 $(call validate_value,BUILD_RELEASE,$(VALID_BOOL))
@@ -317,6 +328,10 @@ ifeq ($(HAVE_HP), YES)
     DEF_LIST += +define+HAVE_HP
 endif
 
+ifeq ($(APU_ENABLE_P7), YES)
+    DEF_LIST += +define+APU_ENABLE_P7
+endif
+
 ifeq ($(MINI_MODE), PRODUCT)
     DEF_LIST += +define+MINI_PRODUCT
 else
@@ -339,6 +354,7 @@ endif
 ifeq ($(SYNTH), YOSYS)
 include physical/smoke/syn/yosys/yosys.mk
 include physical/smoke/syn/yosys/ga2d_block.mk
+include physical/smoke/syn/yosys/apu_block.mk
 endif
 
 ifeq ($(STA), OPENSTA)
@@ -348,12 +364,13 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
 	benchmark-report coremark-report \
 	hp-performance-check \
+	apu-block-filelist apu-block-synth apu-block-sta apu-block-report apu-block-evidence apu-block-clean \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-gateway-a formal-sdio formal-clean formal-doctor \
@@ -373,6 +390,7 @@ help:
 	  '  synth-ga2d-block           isolated GA2D block synthesis evidence' \
 	  '  netsim-ga2d-block          GA2D synthesized-block transaction test' \
 	  '  sta-ga2d-block             GA2D block timing analysis' \
+	  '  apu-block-evidence         compare P5/P7 APU block synthesis and STA' \
 	  '  librelane-doctor           validate the IHP130 LibreLane Chip flow' \
 	  '  librelane-chip             run the single-level IHP130 pad-ring flow' \
 	  '  librelane-openroad         open the current Chip run in OpenROAD' \
@@ -387,12 +405,15 @@ help:
 	  '  setup-apu-kws-reference   validate pinned P7 KWS model/corpus inputs' \
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
+	  '  apu-p7-model               convert the locked MLPerf Tiny KWS model to APUM' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
 	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
 	  '  hp-bundle                  package LP firmware and HP Linux images for flash' \
 	  '  hp-linux-sim               run the fast-flash HP Linux userspace acceptance test' \
 	  '  hp-smoke-sim               run LP release, HP MMIO, and mailbox RTL smoke test' \
+	  '  hp-apu-bundle              package the APU release LP firmware and HP payload' \
+	  '  hp-apu-sim                 run the LP/HP APU ownership evidence simulation' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
 	  '  memory-map                 generate the selected address-map artifacts' \
@@ -449,7 +470,7 @@ config:
 	  VCS_USE_LSF '$(VCS_USE_LSF)' PDK '$(PDK)' \
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' SRAM_SIZE_KIB '$(SRAM_SIZE_KIB)' \
-	  PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' \
+	  PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' APU_ENABLE_P7 '$(APU_ENABLE_P7)' \
 	  HAVE_HP '$(HAVE_HP)' HP_CONFIG '$(HP_CONFIG)' BUILD_RELEASE '$(BUILD_RELEASE)' \
 	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' AUD_CLK_HZ '$(AUD_CLK_HZ)' \
 	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' MGMT_CPU_CLK_HZ '$(MGMT_CPU_CLK_HZ)' \
@@ -526,6 +547,13 @@ $(APU_P5_BUNDLE): $(ROOT_PATH)/scripts/build_apu_p5_bundle.py \
 	python3 $(ROOT_PATH)/scripts/build_apu_p5_bundle.py --output-dir $(APU_P5_DIR)
 
 apu-p5-bundle: $(APU_P5_BUNDLE)
+
+$(APU_P7_MODEL): $(ROOT_PATH)/scripts/apu_kws_convert.py \
+	$(ROOT_PATH)/scripts/apu_kws.py $(APU_P7_KWS_TFLITE)
+	python3 $(ROOT_PATH)/scripts/apu_kws_convert.py --target p7 \
+		--model $(APU_P7_KWS_TFLITE) --output $@ --manifest $(APU_P7_MODEL_MANIFEST)
+
+apu-p7-model: $(APU_P7_MODEL)
 
 apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 	python3 $(ROOT_PATH)/scripts/qualify_apu_p5_corpus.py \
@@ -615,6 +643,45 @@ hp-smoke-sim: hp-smoke-bundle comp
 		--require 'HP_LINUX_READY' \
 		--require 'HP_GA2D_PASS' \
 		--require 'HP_GA2D_CACHE_CLEAN'
+
+$(HP_APU_STAMP): $(ROOT_PATH)/scripts/build_hp_apu.py \
+	$(ROOT_PATH)/app/ports/hp-apu/start.S \
+	$(ROOT_PATH)/app/ports/hp-apu/main.c \
+	$(ROOT_PATH)/app/ports/hp-apu/linker.ld \
+	$(ROOT_PATH)/app/apps/apu_release/apu_release_page.h \
+	$(ROOT_PATH)/crt/include/retrosoc/hal/apu_regs.h \
+	$(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP)
+	python3 $(ROOT_PATH)/scripts/build_hp_apu.py \
+		--source-dir $(ROOT_PATH)/app/ports/hp-apu \
+		--output $(HP_APU_BUILD_DIR) --cross $(CROSS) \
+		--include $(MEMORY_MAP_C_DIR) \
+		--include $(USER_EXTENSIONS_DIR)/include \
+		--include $(ROOT_PATH)/crt/include \
+		--include $(ROOT_PATH)/app/apps/apu_release
+	@touch $@
+
+$(HP_APU_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_APU_STAMP) \
+	$(ROOT_PATH)/scripts/package_hp_boot.py
+	python3 $(ROOT_PATH)/scripts/package_hp_boot.py \
+		--firmware $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
+		--images $(HP_APU_BUILD_DIR)/images --output $@ \
+		--manifest $(HP_APU_MANIFEST)
+
+$(HP_APU_BUNDLE_HEX): $(HP_APU_BUNDLE_BIN)
+	$(OBJC) -I binary -O verilog $< $@
+
+hp-apu-bundle: $(HP_APU_BUNDLE_BIN) $(HP_APU_BUNDLE_HEX)
+
+hp-apu-sim: hp-apu-bundle comp
+	@test '$(SIMU)' = VERILATOR
+	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_APU_BUNDLE_NAME) \
+		VERILATOR_SIM_ARGS=--fast-flash sim
+	python3 $(ROOT_PATH)/scripts/check_simulation.py \
+		--log $(SIM_BUILD_ROOT)/sim.log \
+		--result $(SIM_BUILD_ROOT)/result-hp-apu-sim-check.json \
+		--require 'VERILATOR_FAST_FLASH=enabled' \
+		--require 'APU_RELEASE_PASS' \
+		--require 'SIM_TEST_PASS code=0'
 
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_vexiiriscv.py \

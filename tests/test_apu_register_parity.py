@@ -11,6 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from apu_isa import abi_manifest  # noqa: E402
+from apu_abi_digest import (  # noqa: E402
+    c_implemented_digest,
+    compute_abi_digest,
+    rtl_implemented_digest,
+)
 
 
 RTL_DEFINE = ROOT / "rtl/ip/multimedia/apu_define.svh"
@@ -143,3 +148,10 @@ def test_apu_p4_tool_isa_matches_handwritten_rtl_and_c() -> None:
         if name != "reserved":
             exact[f"MC_TRAP_{trap_names[name]}"] = value
     assert {name: rtl[name] for name in exact} == exact
+
+
+def test_apu_abi_digest_matches_computed_value() -> None:
+    computed = compute_abi_digest()
+    assert computed != 0
+    assert rtl_implemented_digest() == computed
+    assert c_implemented_digest() == computed

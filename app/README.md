@@ -33,6 +33,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `hp_boot` | SRAM-resident LP loader that validates the HP Linux flash bundle, loads SDRAM, releases HP, and monitors the mailbox verdict. |
+| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to HP, HP-submitted WAV/KWS jobs with Zicbom maintenance, and LP-only register fault probe. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 | `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 

@@ -1,0 +1,42 @@
+# Copyright (c) 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# -- Adaptable modifications are redistributed under compatible License --
+#
+# Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+# retroSoC is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#             http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+
+# APU block-level variant of abc_balanced.script (same recipe minus one pass).
+#
+# Deviation from the whole-SoC recipe: the "&fraig -x" SAT-sweeping pass is
+# removed. On the APU multiplier-dominated AIGs (apu_kernel_engine and the
+# reconstruction/transform/resampler engines) "&fraig -x" does not terminate:
+# measured 14+ hours at 100% CPU on the 163k-AND apu_kernel_engine network
+# (yosys-abc 0.67, PDK_IHP130, 2026-09-16/17), with larger modules still
+# pending behind it. With only that pass removed the same module maps in
+# ~19 s and every other pass, the &nf delay target, and the tool versions are
+# identical to the whole-SoC flow. The SoC recipe itself is untouched.
+
+strash
+&get -n
+&put
+scorr
+dc2
+dretime
+strash
+&get -n
+&dch -f
+&nf {D}
+&put
+buffer
+upsize {D}
+dnsize {D}
+stime -p

@@ -30,6 +30,9 @@ tooling.
   every pinned official FLAC file against locked libFLAC and records matching
   released-APUMC production results from identical verification-only Icarus
   and Verilator fixtures.
+- `test_apu_p8_quiesce_load.py` drives the full `apb4_apu` shell and checks
+  that MICROCODE_LOAD and MODEL_LOAD DMA fetches are admitted and complete
+  while the LP quiesce is held (the APU-P8 loader-admission regression).
 - `test_user_ip_register_parity.py` keeps the integrated slot 1 timer and slot
   2 GPIO register offsets synchronized with their application-owned C
   definitions and checks their extension-manifest slot assignments.

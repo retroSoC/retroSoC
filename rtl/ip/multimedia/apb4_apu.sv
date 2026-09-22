@@ -758,7 +758,7 @@ module apb4_apu #(
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
       .abort_i            (s_dma_abort),
-      .quiesce_i          (s_dma_admission_block && s_mc_idle),
+      .quiesce_i          (s_dma_admission_block && s_mc_idle && !s_kws_loader_busy),
       .bridge_epoch_i     (bridge_epoch_i),
       .perf_enable_i      (s_perf_enable),
       .counter_clear_i    (s_cnt_clear),
