@@ -21,6 +21,9 @@ verifies every locked revision and checksum before tests run.
 `workflows/regression-ics55.yml`, `workflows/regression-sky130.yml`, and
 `workflows/nightly.yml` call the reusable regression workflow. Smoke enables
 `formal_checks`, which runs `formal-doctor` only; it does not run `make formal`.
+`workflows/development-environment.yml` builds the Docker environment and
+installs the Nix environment in parallel, checks the resulting tool closure,
+and runs the same hosted behavioral-only IHP130 PR regression in both.
 The reusable workflow currently selects `--behavioral-only`: hosted CI skips SoC Yosys
 synthesis, OpenSTA, and netlist simulation while the JPEG synthesis-memory
 issue is being resolved.

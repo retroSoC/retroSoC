@@ -69,6 +69,13 @@ def validate_lock(data: dict[str, Any]) -> None:
             _validate_url(f"toolchain {platform}/{name}", tool["url"])
             _validate_relative_path(f"toolchain {platform}/{name} archive", tool["archive"])
             _validate_relative_path(f"toolchain {platform}/{name} path", tool["path"])
+            timeout = tool.get("download_timeout_seconds", 120)
+            if not isinstance(timeout, int) or isinstance(timeout, bool) or timeout <= 0:
+                raise LockError(
+                    f"toolchain {platform}/{name} download_timeout_seconds must be positive"
+                )
+            if not isinstance(tool.get("resume", False), bool):
+                raise LockError(f"toolchain {platform}/{name} resume must be a boolean")
 
 
 def _validate_archive(kind: str, name: str, value: dict[str, Any]) -> None:

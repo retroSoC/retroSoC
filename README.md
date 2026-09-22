@@ -128,11 +128,12 @@ make regress-rtl
 ## Prerequisites
 
 The open-source development environment contains the exact Ubuntu 22.04 tool bundles, Python
-quality tools, compiler, formatters, simulators, synthesis, STA, and formal tools used by the
-current regression. It does not contain PDKs, managed RTL, or application archives; those remain
-checkout-local inputs installed and verified through the existing setup targets. Linux x86_64 is
-the supported host for the full native environment. On macOS, use Docker with linux/amd64
-emulation. Nix support is Linux x86_64 only.
+quality tools, compiler, formatters, simulators, synthesis, STA, formal tools, and the locked SBT
+launcher used to generate the VexiiRiscv HP core. Java 17 is supplied by the host environment. It
+does not contain PDKs, managed RTL, or application archives; those remain checkout-local inputs
+installed and verified through the existing setup targets. Linux x86_64 is the supported host for
+the full native environment. On macOS, use Docker with linux/amd64 emulation. Nix support is Linux
+x86_64 only.
 
 Choose one of the following installation methods. Each uses the locked versions in
 [dependencies/dependencies.lock.json](dependencies/dependencies.lock.json) and creates or reuses the local
@@ -178,7 +179,8 @@ downloads only checksum-verified tool bundles and Python packages pinned by the 
 sudo apt-get update
 sudo apt-get install --no-install-recommends --yes \
   bzip2 ca-certificates ccache clang-format-14 g++ git libfl2 libgoogle-perftools4 \
-  libunwind8 make mold numactl python3 python3-pip python3-venv xz-utils zlib1g
+  libunwind8 make mold numactl openjdk-17-jre-headless python3 python3-pip \
+  python3-venv xz-utils zlib1g
 python3 scripts/development_environment.py bootstrap
 source .cache/retrosoc/development/activate.sh
 make setup-regression

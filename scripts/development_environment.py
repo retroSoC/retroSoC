@@ -33,6 +33,7 @@ DEFAULT_TOOLS = (
     "bitwuzla",
     "opensta",
     "openocd",
+    "sbt",
     "riscv_gnu",
 )
 TOOL_EXECUTABLES = {
@@ -45,11 +46,21 @@ TOOL_EXECUTABLES = {
     "bitwuzla": ("bitwuzla",),
     "opensta": ("sta",),
     "openocd": ("openocd",),
+    "sbt": ("sbt",),
     "riscv_gnu": ("riscv32-unknown-elf-gcc", "riscv32-unknown-elf-gdb"),
 }
 PYTHON_IMPORTS = ("pytest", "ruff", "yamllint")
 PYTHON_EXECUTABLES = ("mbake",)
-SYSTEM_EXECUTABLES = ("cc", "ccache", "clang-format-14", "git", "make", "mold", "numactl")
+SYSTEM_EXECUTABLES = (
+    "cc",
+    "ccache",
+    "clang-format-14",
+    "git",
+    "java",
+    "make",
+    "mold",
+    "numactl",
+)
 STAMP_NAME = "development-environment.json"
 ACTIVATE_NAME = "activate.sh"
 

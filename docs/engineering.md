@@ -310,9 +310,10 @@ changes after freeze must retain the baseline revision and equivalence evidence.
 `quality.yml` validates C, Makefile, and self-owned RTL formatting as well as
 Python, YAML, GitHub Actions, the dependency lock, and the complete Pytest
 suite. The test environment restores the locked IHP130 PDK and APU reference
-corpus, installs the locked third-party simulation models, and installs the
-locked Verilator, Icarus, sv2v, and Yosys tools before Pytest so required RTL,
-netlist, timing-model, and corpus fixtures execute. `regression-smoke.yml`
+corpus plus the NPU models, inputs, and oracle sources, installs the locked
+third-party simulation models, and installs the locked Verilator, Icarus,
+sv2v, and Yosys tools before Pytest so required RTL, netlist, timing-model, and
+corpus fixtures execute. `regression-smoke.yml`
 provides fast IHP130 feedback; the four PDK regression workflows remain
 required PR coverage and do not repeat the format checks.
 
@@ -328,6 +329,10 @@ simulation, OpenSTA, and synthesis-recipe metrics. The locked tools are still
 installed and checked. This temporary policy avoids the unresolved JPEG
 synthesis-memory peak. Local full regressions retain those stages and remain the
 source of synthesis and timing evidence until hosted coverage is restored.
+`development-environment.yml` independently builds Docker and installs Nix,
+checks each resulting tool environment, and runs the same hosted IHP130 PR
+command set. It verifies environment reproducibility but does not expand the
+behavioral-only evidence boundary.
 `nightly.yml` repeats the fixed IHP130 architecture as two parallel behavioral
 jobs: the PR IHP130 matrix and the extra CoreMark coverage. Source dependencies,
 locked tool archives, and Verilator `ccache` use

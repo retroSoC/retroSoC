@@ -10,6 +10,7 @@ import sys
 import tarfile
 import tempfile
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -37,10 +38,17 @@ def safe_extract(archive: Path, destination: Path) -> None:
         bundle.extractall(destination)
 
 
-def install(name: str, spec: dict[str, str], cache: Path, update: bool) -> Path:
+def install(name: str, spec: dict[str, Any], cache: Path, update: bool) -> Path:
     downloads = cache / "downloads"
     archive = downloads / spec["archive"]
-    download_file(spec["url"], archive, spec["sha256"], update=update, timeout=120)
+    download_file(
+        spec["url"],
+        archive,
+        spec["sha256"],
+        update=update,
+        timeout=spec.get("download_timeout_seconds", 120),
+        resume=spec.get("resume", False),
+    )
 
     destination = cache / "toolchains" / f"{name}-{spec['version']}"
     marker = destination / ".complete"

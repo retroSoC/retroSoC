@@ -5,9 +5,10 @@
 The Docker image, Nix application, and manual bootstrap expose one Linux x86_64
 open-source development environment. It includes the locked Ubuntu 22.04 tool
 bundles for Verilator, Verible, sv2v, Icarus Verilog, Yosys, SymbiYosys,
-Bitwuzla, OpenSTA, OpenOCD, and the RISC-V GNU toolchain. The GNU bundle
+Bitwuzla, OpenSTA, OpenOCD, SBT, and the RISC-V GNU toolchain. The GNU bundle
 includes `riscv32-unknown-elf-gdb`, which is used with OpenOCD by the Hazard3
-remote-bitbang debug acceptance flow. It also installs the locked Python build
+remote-bitbang debug acceptance flow. Docker, Nix, and manual Ubuntu installs
+provide Java 17 for SBT. The environment also installs the locked Python build
 and quality dependencies, clang-format-14, GNU Make, C/C++ build tools, and
 runtime libraries required by those binaries.
 
@@ -82,3 +83,10 @@ Run the environment check before using a manually shared cache. Build the
 Docker image after Dockerfile or bootstrap changes. On a Linux x86_64 host,
 run nix flake check and a short nix run .#dev command after flake changes. Then
 run make setup-regression and the regression tier appropriate for the change.
+
+The `development-environment` GitHub workflow performs the installation and
+runtime validation for both entry points. Each job checks the installed
+environment and runs the same hosted behavioral-only IHP130 PR regression as
+`regression-ihp130`. Docker and Nix installation are CI-authoritative; local
+validation of workflow changes is limited to the repository's Python, YAML,
+Actions, dependency-lock, and regression dry-run gates.

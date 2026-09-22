@@ -64,6 +64,7 @@
           mold
           ncurses5
           numactl
+          jdk17_headless
           python3Full
           unzip
           which

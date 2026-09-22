@@ -22,6 +22,7 @@ RUN apt-get update -qq \
         make \
         mold \
         numactl \
+        openjdk-17-jre-headless \
         python3 \
         python3-pip \
         python3-venv \

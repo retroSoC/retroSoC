@@ -30,10 +30,13 @@ before materializing it below `.cache/retrosoc/pdk/sky130/openram/`. Generated
 Verilog, Liberty, LEF, GDS, and SPICE views are never committed here.
 
 The HP profile additionally locks VexiiRiscv, OpenSBI, Linux stable, and
-Buildroot source revisions. `make setup-hp-linux` installs the software sources
-below `.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
+Buildroot source revisions and the SBT launcher used by VexiiRiscv generation.
+`make setup-hp-linux` installs the software sources below
+`.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
 `VEXIIRISCV_ROOT`, but its revision is still checked before generated RTL is
-accepted. No generated CPU RTL or Linux build output belongs in Git.
+accepted. Java 17 is a host runtime supplied by Docker, Nix, or the documented
+Ubuntu prerequisites. No generated CPU RTL or Linux build output belongs in
+Git.
 
 The libjpeg-turbo source archive is a host-verification input for the JPEG
 accelerator. It supplies an implementation-independent interoperability oracle;

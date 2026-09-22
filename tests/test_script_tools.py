@@ -1098,6 +1098,15 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
     assert lock["container_images"]["ubuntu_22_04"]["image"] == "ubuntu"
     assert lock["nix_inputs"]["nixpkgs"]["revision"] == "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
+    assert lock["toolchains"]["ubuntu-22.04"]["sbt"] == {
+        "version": "1.10.0",
+        "url": "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz",
+        "sha256": "154b7de6c19207c73d0a304f901c8c4b6ead9a9c3a99a98a9d72ac19419d2640",
+        "archive": "sbt-1.10.0.tgz",
+        "path": "sbt/bin",
+        "download_timeout_seconds": 600,
+        "resume": True,
+    }
     validate_flake_lock(lock, ROOT / "flake.lock")
 
     command = (
@@ -1146,6 +1155,16 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     else:
         raise AssertionError("invalid submodule path was accepted")
 
+    invalid_timeout = json.loads(json.dumps(lock))
+    invalid_timeout["toolchains"]["ubuntu-22.04"]["sbt"]["download_timeout_seconds"] = 0
+    broken.write_text(json.dumps(invalid_timeout), encoding="utf-8")
+    try:
+        load_lock(broken)
+    except LockError as error:
+        assert "download_timeout_seconds must be positive" in str(error)
+    else:
+        raise AssertionError("invalid toolchain download timeout was accepted")
+
 
 def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
     lock_path = ROOT / "dependencies/dependencies.lock.json"
@@ -1155,6 +1174,7 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
 
     assert stamp["tools"]["verilator"] == lock["toolchains"]["ubuntu-22.04"]["verilator"]["version"]
     assert stamp["tools"]["openocd"] == lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"]
+    assert stamp["tools"]["sbt"] == lock["toolchains"]["ubuntu-22.04"]["sbt"]["version"]
     assert set(stamp["python_requirements"]) == {"requirements/build.txt", "requirements/ci.txt"}
     activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
     assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
@@ -1168,12 +1188,38 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     sbom = make_sbom(lock)
 
     assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
+    assert "openjdk-17-jre-headless" in dockerfile
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
+    assert "jdk17_headless" in flake
     assert "retrosoc-development retrosoc-dev" in flake
     assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
     assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])
+
+
+def test_development_environment_workflow_runs_the_ihp130_hosted_contract() -> None:
+    workflow = (ROOT / ".github/workflows/development-environment.yml").read_text()
+
+    assert "environment: [docker, nix]" in workflow
+    assert "timeout-minutes: 360" in workflow
+    assert "docker build --tag retrosoc-dev-ci --file docker/Dockerfile ." in workflow
+    assert "cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24" in workflow
+    assert "nix flake check" in workflow
+    assert "development_environment.py" in workflow
+    assert '--cache "${RETROSOC_DEVELOPMENT_CACHE}" check' in workflow
+    for command in (
+        "make CONFIG=configs/ci/ihp130.mk setup",
+        "SIMU=IVERILOG SYNTH=NONE STA=NONE doctor",
+        "SIMU=VERILATOR SYNTH=NONE STA=NONE doctor",
+        "SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor",
+        "SIMU=IVERILOG SYNTH=NONE STA=OPENSTA doctor",
+        "--pdk IHP130 --behavioral-only",
+    ):
+        assert command in workflow.replace("\\\n", "")
+    assert 'docker run --rm --init --platform linux/amd64' in workflow
+    assert 'nix run .#dev -- bash -c "${IHP130_REGRESSION_COMMAND}"' in workflow
+    assert "environment-${{ matrix.environment }}-ihp130-" in workflow
 
 
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
