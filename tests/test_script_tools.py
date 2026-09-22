@@ -1203,6 +1203,9 @@ def test_development_environment_workflow_runs_the_ihp130_hosted_contract() -> N
 
     assert "environment: [docker, nix]" in workflow
     assert "timeout-minutes: 360" in workflow
+    assert workflow.count(
+        "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+    ) == 3
     assert "docker build --tag retrosoc-dev-ci --file docker/Dockerfile ." in workflow
     assert "cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24" in workflow
     assert "nix flake check" in workflow
