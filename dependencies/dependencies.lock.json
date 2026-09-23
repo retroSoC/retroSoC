@@ -3,7 +3,7 @@
   "sources": {
     "publication_media": {
       "url": "https://github.com/retroSoC/media.git",
-      "revision": "773154ba6825f7878a0fee05cc6f2222efc1ca26",
+      "revision": "0405410177d22b93bd657f7895cb154e83646df0",
       "destination": "publications/media",
       "license": "MulanPSL-2.0 AND OFL-1.1",
       "purpose": "Publication fonts, licenses and original artwork"

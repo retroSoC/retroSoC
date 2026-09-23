@@ -754,6 +754,19 @@ opening parenthesis; the parenthesized address links to `mailto:miaoyuchi@ict.ac
 PDF author metadata remains `Yuchi Miao`. Retain the maintenance organization,
 metadata row alignment and single-page cover.
 
+The prototype brand is **Rill（清溪）**. Replace the visible `RS-MINI-DS` in the
+existing left metadata line with this brand, followed by the regular version
+text; keep the date on the second line. Retain the document ID in configuration
+and PDF identity metadata. The running header reads `Rill · retroSoC Mini
+Gen2/Gen2+` at the existing 9 pt size. The main two-line product title is unchanged,
+and the empty area to its right is reserved for a future logo.
+
+The brand uses 10.5 pt Inter Bold with locked Noto Sans CJK SC Bold 2.004 only
+for the Chinese/full-width glyphs. Match Inter's 1490/2048 em cap edge explicitly
+so fallback metrics do not increase the metadata row. Preserve the existing
+header height, author alignment, date baseline and both horizontal-rule positions.
+Do not add a brand row or use the logo reservation for text.
+
 The Product Brief heading shares a normal-flow row with an Artifact Evaluation
 component at the right. Keep the original heading body, numbering, contents
 entry and bookmark unchanged; the component is separate display content, not a

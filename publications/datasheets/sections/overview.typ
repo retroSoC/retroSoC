@@ -10,6 +10,7 @@
 )
 
 #cover(evaluation:artifact-status)[
+#change-start("v05-rill-cover","Rill bilingual prototype brand in the existing cover metadata row")
 #change-start("v05-emphasis-cover","Cover contact, partial Functional mark and selected feature emphasis")
 #change-start("v05-product-brief","v0.5 document identity and implemented accelerator features")
 #text(9pt, weight: "semibold", fill: gold)[PRODUCT DATASHEET / #doc.status]
@@ -20,8 +21,9 @@
 #v(rhythm.cover-gap)
 #text(13pt)[An Open-Source, Linux-Capable Asymmetric Dual-Core SoC]
 #v(rhythm.cover-meta-gap)
+// Inter's 1490/2048 em cap edge keeps CJK fallback from increasing this row.
 #grid(columns: (1fr, 1fr),
-  [*#doc.document_id* · v#doc.version \ #doc.date],
+  [#text(font:("Inter","Noto Sans CJK SC"),weight:"bold",top-edge:0.7275390625em)[#doc.brand_name（#doc.brand_name_zh）] · v#doc.version \ #doc.date],
   align(right)[#doc.author#link("mailto:"+doc.author_email)[(#doc.author_email)] \ #doc.maintainer],
 )
 #v(rhythm.cover-rule-gap)
@@ -79,6 +81,7 @@ speed grades, electrical limits, production availability or certification. Gen2/
 retained document title; no separate derivative specifications are inferred.]
 #change-end("v05-product-brief")
 #change-end("v05-emphasis-cover")
+#change-end("v05-rill-cover")
 ]
 
 #pagebreak()

@@ -1,9 +1,11 @@
 {
   "title": "retroSoC Mini Gen2/Gen2+",
   "document_id": "RS-MINI-DS",
+  "brand_name": "Rill",
+  "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-emphasis-",
+  "change_prefix": "v05-rill-",
   "date": "2026-09-22",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",

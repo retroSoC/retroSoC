@@ -7,6 +7,16 @@ The canonical RTL/configuration inputs remain authoritative.
 
 ## Mini datasheet
 
+The prototype chip brand is **Rill（清溪）**. Its bilingual label replaces the
+visible document ID in the existing cover metadata line; running headers prefix
+the retained document title with `Rill`. The document title/ID remain unchanged
+in identity metadata. Header height and the reserved cover logo area are fixed.
+Noto Sans CJK SC Bold 2.004 is pinned through the media revision for the brand's
+Chinese glyphs; its unmodified font, OFL license, provenance and hashes are stored
+with the other media fonts. This cover round uses `v05-rill-` change markers and
+compares against the retained 779-page presentation edition (PDF SHA-256
+`a69d55cff0e9b8bb4625072ca494f33eec709871d0eb4003403a2ccc0f197c82`).
+
 - Entry: [datasheets/retroSoC-mini-datasheet.typ](datasheets/retroSoC-mini-datasheet.typ).
 - Identity, reviewed hardware commit and reference profiles:
   [datasheets/mini.json](datasheets/mini.json).
@@ -43,9 +53,9 @@ an integrated eight-beat AXI64 DMA limit; its reusable DMA default is not the
 deployed limit. Native Linux NPU/ASoC support is not inferred from HP smoke code.
 CI workflow outcomes are a separately scoped snapshot, including failures and
 skipped downstream tests; they do not populate per-IP hardware pass records.
-The current presentation round compares against the retained 779-page PDF with
+The preceding emphasis round compared against the retained 779-page PDF with
 SHA-256 `25257e5243e945401c8a214d4043819cf802a7fa2d22b04d83b513ce9075647b`.
-It uses `v05-emphasis-` markers for the cover contact, partial Functional mark
+It used `v05-emphasis-` markers for the cover contact, partial Functional mark
 and selected body emphasis. Earlier `v05-refresh-` boot/mailbox, APU, environment
 and navigation corrections remain historical. The version and document date are retained. This presentation is built directly
 from the reviewed current dev checkout; its complete source SHA and timestamped

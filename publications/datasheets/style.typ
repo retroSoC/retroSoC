@@ -330,7 +330,7 @@
         ip-chapters.find(chapter=>label(chapter.id)==navigation.last().fields().at("label",default:none))
       }
       set text(size: 9pt, fill: muted)
-      grid(columns: (1fr, 1fr), doc.title, align(right)[
+      grid(columns: (1fr, 1fr), [#doc.brand_name · #doc.title], align(right)[
         #if active!=none { upper(active.id) } else if hs.len() > 0 { hs.last().body } else { [Product datasheet] }
       ])
       v(rhythm.header-gap)
