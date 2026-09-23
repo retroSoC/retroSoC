@@ -160,8 +160,18 @@
     "depth": 4
   },
   {
+    "id": "ga2d",
+    "family": "ga2d",
+    "depth": 4
+  },
+  {
     "id": "apu",
     "family": "apu",
+    "depth": 4
+  },
+  {
+    "id": "npu",
+    "family": "npu",
     "depth": 4
   },
   {

@@ -3,6 +3,10 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
+- [Contributing](../CONTRIBUTING.md) describes community discussion, development,
+  review, validation evidence, and maintainer responsibilities.
+- [git-workflow.md](git-workflow.md) defines branch and commit conventions,
+  merge-commit integration, synchronization, and conflict recovery.
 - [engineering.md](engineering.md) describes reproducible inputs, build
   artifacts, result policy, warning baselines, metrics, CI, and releases.
 - [development-environment.md](development-environment.md) describes the
@@ -46,14 +50,24 @@ the root README and subsystem guides.
 - [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and
   defines the Mini Baseline JPEG codec, private AXI4 DMA, APB4/ring ABI, HAL,
   verification boundary, and measured 1080p60 optimization plan.
+- [ip/ga2d.md](ip/ga2d.md) freezes the Mini 2D graphics accelerator, private
+  AXI64 2D DMA, APB4/HAL ABI, opaque alpha composition, and the approved LP
+  interrupt/fabric expansion phases; implementation and PPA evidence remain pending.
 - [ip/apu.md](ip/apu.md) defines the coreless Mini Audio Processing Unit,
-  including LP-loaded codec microcode, WAV/MP3/FLAC decode, private AXI4 DMA,
+  including LP-loaded codec microcode, WAV/FLAC decode, private AXI4 DMA,
   APB4/ring ABI, I2S streams, independent KWS, lifecycle, and evidence gates;
   its P5 capacity refreeze specifies a 4096-word control store and versioned
-  APUMC V2 with V1 compatibility.
-- [ip/mini-npu.md](ip/mini-npu.md) evaluates commercial edge-AI SoCs and records the
-  optional Mini-AI NPU architecture direction, memory constraints, software
-  boundary, and integration prerequisites; it is not an implemented profile.
+  APUMC V2 with V1 compatibility. P6 MP3 is deferred. The P7 refreeze fixes
+  APUM wire/numerical/HAL contracts and the content-hashed
+  [1000-waveform input manifest](ip/apu-kws-corpus.tsv); P7 starts from reviewed
+  P5 and retains the MP3 unsupported stub. Physical closure remains P8 work.
+- [ip/npu.md](ip/npu.md) freezes the independent 64-MAC Mini NPU, 64 KiB
+  private SRAM, AXI64 DMA, APB4/job/HAL ABI, resource and clock/reset contracts,
+  and stable Phases 0-6. [Its verification contract](ip/npu-verification.md)
+  defines fixed-model and physical evidence gates; implementation is pending.
+- [ip/mini-npu.md](ip/mini-npu.md) retains the historical commercial NPU
+  survey; its former platform assumptions and architecture recommendation are
+  superseded by the current platform and frozen NPU specification.
 - [ip/ws2812.md](ip/ws2812.md) defines the WS2812 transmitter register ABI,
   timing, FIFO, interrupt, DMA, and integration contracts.
 - [ip/timer.md](ip/timer.md) defines the dual general timer register ABI,

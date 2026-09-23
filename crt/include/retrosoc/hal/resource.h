@@ -15,7 +15,9 @@ typedef enum {
     RS_RESOURCE_EXT_H = 5,
     RS_RESOURCE_JPEG = 6,
     RS_RESOURCE_APU = 7,
-    RS_RESOURCE_COUNT = 8,
+    RS_RESOURCE_GA2D = 8,
+    RS_RESOURCE_NPU = 9,
+    RS_RESOURCE_COUNT = 10,
 } rs_resource_t;
 
 typedef enum {

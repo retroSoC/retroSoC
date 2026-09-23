@@ -206,10 +206,10 @@
     "parameters": {
       "ADDR_WIDTH": 32,
       "DATA_WIDTH": 64,
-      "ID_WIDTH": 6,
+      "ID_WIDTH": 7,
       "USER_WIDTH": 1
     },
-    "parameter_note": "Native PRODUCT data fabric is AXI64 with six-bit IDs; this example uses only the data channel."
+    "parameter_note": "Native PRODUCT data fabric is AXI64 with seven-bit IDs; this example uses only the data channel."
   },
   "axis": {
     "source": {
@@ -2059,9 +2059,9 @@
     ],
     "review_note": "Replaced resource-busy/cache-handoff prose with actual admission, idle, acknowledgement and owner ports. Reviewed owner-write guards.",
     "parameters": {
-      "ResourceCount": 8
+      "ResourceCount": 9
     },
-    "parameter_note": "The reviewed resource-controller integration tracks eight resource positions."
+    "parameter_note": "The reviewed resource-controller integration tracks ten resource positions."
   },
   "monitor": {
     "source": {
@@ -2134,10 +2134,10 @@
     ],
     "review_note": "Removed invented SNAPSHOT and snapshot-valid signals; used actual control decode and live/snapshot register arrays.",
     "parameters": {
-      "NumMasters": 8,
+      "NumMasters": 9,
       "NumTargets": 6
     },
-    "parameter_note": "Reference monitor parameters are eight masters and six target positions."
+    "parameter_note": "Reference monitor parameters are ten masters and six target positions."
   },
   "sysctrl": {
     "source": {
@@ -2319,7 +2319,7 @@
     "parameters": {
       "ADDR_WIDTH": 32,
       "DATA_WIDTH": 64,
-      "ID_WIDTH": 6,
+      "ID_WIDTH": 7,
       "USER_WIDTH": 1
     },
     "parameter_note": "The PRODUCT SRAM data port is native AXI64."
@@ -3843,5 +3843,423 @@
       "rtl/ip/usb/usb2_ulpi_link.sv"
     ],
     "review_note": "Reviewed tx_data_ready and data_oe equations and TxPayload DIR handling; replaced a combined bidirectional DATA lane."
+  },
+  "ga2d": {
+    "source": {
+      "signal": [
+        {
+          "name": "data_ready_i",
+          "wave": "1........"
+        },
+        {
+          "name": "start_i",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1.....0"
+        },
+        {
+          "name": "draining_o",
+          "wave": "0........"
+        },
+        {
+          "name": "done_o",
+          "wave": "0.......1"
+        },
+        {
+          "name": "error_o",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ga2d_core. Clock: clk_i. Successful direct-job sequence after configuration and memory ownership are valid. The spacing is schematic; validation, pixel work and bus handshakes have variable duration. No fixed job or abort latency is guaranteed.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "data_ready_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "data_ready_i",
+        "meaning": "Data path is ready for the job.",
+        "polarity": "active-high"
+      },
+      "start_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "start_i",
+        "meaning": "One-cycle job start request.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "busy_o",
+        "meaning": "One job remains active until completion.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "draining_o",
+        "meaning": "No stop/drain request in the successful path.",
+        "polarity": "active-high"
+      },
+      "done_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "done_o",
+        "meaning": "Successful job completion is retained.",
+        "polarity": "active-high"
+      },
+      "error_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "error_o",
+        "meaning": "No error in the illustrated path.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/apb4_ga2d.sv"
+    ],
+    "review_note": "Signals name actual core ports. Detailed AXI ready/valid and owner IRQ routing are specified separately."
+  },
+  "ga2d-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_i",
+          "wave": "010........"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1.......0"
+        },
+        {
+          "name": "abort_i",
+          "wave": "0....10...."
+        },
+        {
+          "name": "draining_o",
+          "wave": "0....1....0"
+        },
+        {
+          "name": "aborted_o",
+          "wave": "0.........1"
+        },
+        {
+          "name": "error_o",
+          "wave": "0.........."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ga2d_core. Clock: clk_i. Abort sequence with accepted traffic still outstanding; buffers remain owned until safe termination. The spacing is schematic; validation, pixel work and bus handshakes have variable duration. No fixed job or abort latency is guaranteed.",
+    "clock_domain": "clk_i",
+    "signals": {
+      "start_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "start_i",
+        "meaning": "One job starts.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "busy_o",
+        "meaning": "The job remains busy while accepted traffic drains.",
+        "polarity": "active-high"
+      },
+      "abort_i": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "abort_i",
+        "meaning": "Software requests abort.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "draining_o",
+        "meaning": "Accepted AXI transactions are drained.",
+        "polarity": "active-high"
+      },
+      "aborted_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "aborted_o",
+        "meaning": "Abort completes after drain.",
+        "polarity": "active-high"
+      },
+      "error_o": {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "scope": "ga2d_core",
+        "symbol": "error_o",
+        "meaning": "An explicit abort is shown without a bus error.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/apb4_ga2d.sv"
+    ],
+    "review_note": "Signals name actual core ports. Detailed AXI ready/valid and owner IRQ routing are specified separately."
+  },
+  "npu": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_hp_i",
+          "wave": "p..........."
+        },
+        {
+          "name": "launch_valid_i",
+          "wave": "010........."
+        },
+        {
+          "name": "launch_ready_o",
+          "wave": "1.0........1"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1........0"
+        },
+        {
+          "name": "dma_read_req_valid_o",
+          "wave": "0..10......."
+        },
+        {
+          "name": "dma_write_req_valid_o",
+          "wave": "0.....10...."
+        },
+        {
+          "name": "dma_write_done_i",
+          "wave": "0........10."
+        },
+        {
+          "name": "result_valid_o",
+          "wave": "0.........10"
+        },
+        {
+          "name": "result_ready_i",
+          "wave": "1..........."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: npu_core with ExecutionReady=1. These are schematic, compressed phases with arbitrary wait intervals, not cycle-accurate latency or measured performance. Ready/valid handshakes and terminal ordering follow the actual core; APB IRQ delivery occurs after control CDC.",
+    "clock_domain": "clk_hp_i",
+    "signals": {
+      "clk_hp_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "clk_hp_i",
+        "meaning": "HP sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "launch_valid_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_valid_i",
+        "meaning": "Launch token is presented.",
+        "polarity": "active-high"
+      },
+      "launch_ready_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_ready_o",
+        "meaning": "A launch is accepted only when ready.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "busy_o",
+        "meaning": "Busy includes terminal publication until the result handshake.",
+        "polarity": "active-high"
+      },
+      "dma_read_req_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_read_req_valid_o",
+        "meaning": "Descriptor and input reads are grouped schematically.",
+        "polarity": "active-high"
+      },
+      "dma_write_req_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_write_req_valid_o",
+        "meaning": "Output stores follow compute; intermediate phases are compressed.",
+        "polarity": "active-high"
+      },
+      "dma_write_done_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_write_done_i",
+        "meaning": "The illustrated final accepted write response completes.",
+        "polarity": "active-high"
+      },
+      "result_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_valid_o",
+        "meaning": "DONE is published only after all work retires.",
+        "polarity": "active-high"
+      },
+      "result_ready_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_ready_i",
+        "meaning": "The result mailbox accepts the terminal result.",
+        "polarity": "active-high"
+      }
+    },
+    "parameters": {
+      "ExecutionReady": 1
+    },
+    "parameter_note": "The integrated apb4_npu selects ExecutionReady=1; dormant P2 defaults are not used.",
+    "review_sources": [
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_dma.sv"
+    ],
+    "review_note": "Normal terminal publication follows descriptor retirement and completed accepted writes. Abort drains before ABORTED; busy includes CorePublish until result_ready_i."
+  },
+  "npu-exception": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_hp_i",
+          "wave": "p............."
+        },
+        {
+          "name": "launch_valid_i",
+          "wave": "010..........."
+        },
+        {
+          "name": "launch_ready_o",
+          "wave": "1.0..........1"
+        },
+        {
+          "name": "busy_o",
+          "wave": "0.1..........0"
+        },
+        {
+          "name": "abort_i",
+          "wave": "0....10......."
+        },
+        {
+          "name": "draining_o",
+          "wave": "0.....1.....0."
+        },
+        {
+          "name": "dma_busy_i",
+          "wave": "0..1.......0.."
+        },
+        {
+          "name": "result_valid_o",
+          "wave": "0...........10"
+        },
+        {
+          "name": "result_ready_i",
+          "wave": "1............."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: npu_core with ExecutionReady=1. These are schematic, compressed phases with arbitrary wait intervals, not cycle-accurate latency or measured performance. Ready/valid handshakes and terminal ordering follow the actual core; APB IRQ delivery occurs after control CDC.",
+    "clock_domain": "clk_hp_i",
+    "signals": {
+      "clk_hp_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "clk_hp_i",
+        "meaning": "HP sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "launch_valid_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_valid_i",
+        "meaning": "A job is launched.",
+        "polarity": "active-high"
+      },
+      "launch_ready_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "launch_ready_o",
+        "meaning": "Ready returns after result retirement.",
+        "polarity": "active-high"
+      },
+      "busy_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "busy_o",
+        "meaning": "Job stays busy through drain and result publication.",
+        "polarity": "active-high"
+      },
+      "abort_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "abort_i",
+        "meaning": "Software abort arrives after accepted work.",
+        "polarity": "active-high"
+      },
+      "draining_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "draining_o",
+        "meaning": "Accepted obligations drain before terminal publication.",
+        "polarity": "active-high"
+      },
+      "dma_busy_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "dma_busy_i",
+        "meaning": "Outstanding DMA activity ends before publication.",
+        "polarity": "active-high"
+      },
+      "result_valid_o": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_valid_o",
+        "meaning": "An ABORTED result, not DONE, is published.",
+        "polarity": "active-high"
+      },
+      "result_ready_i": {
+        "file": "rtl/ip/multimedia/npu_core.sv",
+        "scope": "npu_core",
+        "symbol": "result_ready_i",
+        "meaning": "The result mailbox accepts the cancellation.",
+        "polarity": "active-high"
+      }
+    },
+    "parameters": {
+      "ExecutionReady": 1
+    },
+    "parameter_note": "The integrated apb4_npu selects ExecutionReady=1; dormant P2 defaults are not used.",
+    "review_sources": [
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_dma.sv"
+    ],
+    "review_note": "Normal terminal publication follows descriptor retirement and completed accepted writes. Abort drains before ABORTED; busy includes CorePublish until result_ready_i."
   }
 }

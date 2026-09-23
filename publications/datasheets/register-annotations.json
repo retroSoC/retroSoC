@@ -1662,6 +1662,11 @@
     }
   },
   "apu": {
+    "main.KWS_INPUT_CONFIG": {
+      "access": "RW",
+      "description": "Capture rate, physical channel count, and sample precision for continuous KWS input.",
+      "notes": "Default PRODUCT has EnableP7=0; both reads and writes of this offset return an APB error. The stored reset value does not establish an enabled KWS input path."
+    },
     "main.COMMAND": {
       "fields": [
         {
@@ -1833,10 +1838,10 @@
       "reset": "Not retained (command/data port)"
     },
     "main.IP_VERSION": {
-      "description": "Current RTL APB interface version is 1.0 (0x00010000). The capacity-refreeze document specifies a later V1.1 interface; that change is not reflected in this snapshot."
+      "description": "Expanded P5 uses APB interface V1.1 (0x00010001) and retains the frozen V1.0 register offsets and accepted fields."
     },
     "main.CAPABILITY1": {
-      "description": "Current geometry word is 0x01827010: 16 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding. The proposed 32 KiB expansion remains a later implementation contract."
+      "description": "Expanded P5 geometry is 0x01827020: 32 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding."
     },
     "main.JOB_INPUT_CONFIG": {
       "fields": [
@@ -1974,6 +1979,2214 @@
       "review_source": "rtl/ip/multimedia/apu_define.svh",
       "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06.",
       "reset": "0"
+    }
+  },
+  "npu": {
+    "main.IP_ID": {
+      "access": "RO",
+      "reset": "0x4E505531",
+      "description": "Fixed NPU identifier.",
+      "fields": [
+        {
+          "name": "IDENTIFIER",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 0x4E505531 (NPU1).",
+          "reset": "0x4E505531",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.IP_VERSION": {
+      "access": "RO",
+      "reset": "0x00010000",
+      "description": "NPU register ABI version.",
+      "fields": [
+        {
+          "name": "MINOR",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Register ABI minor version.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "MAJOR",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Register ABI major version; the current major is 1.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.CAPABILITY": {
+      "access": "RO",
+      "reset": "0x0000007F",
+      "description": "Configured capability bitmap for the implemented operator pipeline, private AXI64 DMA, interrupts, double-rounded numerics, HP-native execution and software abort. Capability bits do not certify a workload or physical result.",
+      "fields": [
+        {
+          "name": "PRESENT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "NPU register and control integration is present.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "EXECUTION_READY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "The supported eight-operator implementation is compiled in and enabled. Execution readiness is separate from corpus or physical qualification.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "PRIVATE_AXI64_DMA",
+          "lsb": 2,
+          "msb": 2,
+          "description": "The private AXI64 DMA engine is implemented.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "INTERRUPTS",
+          "lsb": 3,
+          "msb": 3,
+          "description": "DONE, ERROR and ABORTED interrupt events are implemented.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "DOUBLE_ROUNDING",
+          "lsb": 4,
+          "msb": 4,
+          "description": "The implemented requantizer uses double-rounded integer numerics.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "NATIVE_HP_CLOCK",
+          "lsb": 5,
+          "msb": 5,
+          "description": "HP-native clock execution; compute runs on the HP fabric clock.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "SOFTWARE_ABORT",
+          "lsb": 6,
+          "msb": 6,
+          "description": "An active job accepts software abort and drains accepted work.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 7,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live shell/link, lifecycle, and terminal status.",
+      "fields": [
+        {
+          "name": "READY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Shell can accept a job: link reconciled, executable implementation present, and no request, busy launch, pending terminal IRQ, or snapshot handshake.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "BUSY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Accepted launch slot or HP job activity.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "DRAINING",
+          "lsb": 2,
+          "msb": 2,
+          "description": "HP side is draining accepted work.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "CLOCK_PAUSED",
+          "lsb": 3,
+          "msb": 3,
+          "description": "HP clock pause is active.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "RECOVERING",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Link/transport recovery is in progress.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "RESULT_VALID",
+          "lsb": 5,
+          "msb": 5,
+          "description": "A terminal result is held.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 6,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.CONTROL": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Issue exactly one implemented command bit per write.",
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Launch the staged job; PSLVERR while READY is low.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ABORT",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Cancel the active job; a successful no-op while idle.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "SOFT_RESET",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Clear programmable, IRQ, and result state, then reconcile the link.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_STATE": {
+      "access": "RW1C",
+      "reset": "0x00000000",
+      "description": "Sticky IRQ events; hardware/test set wins a same-cycle clear.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Job completion event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "First fault/error event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Abort completion event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_ENABLE": {
+      "access": "RW",
+      "reset": "0x00000000",
+      "description": "IRQ event enables.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Enable the completion interrupt.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Enable the error interrupt.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Enable the abort interrupt.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_TEST": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Inject implemented IRQ events as if hardware-set.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Inject the completion event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Inject the error event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Inject the abort event.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.JOB_BASE": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Physical descriptor base address; writable only while the shell is idle.",
+      "fields": [
+        {
+          "name": "ADDR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Physical byte address of the descriptor ring.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.JOB_COUNT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Descriptor count for the staged job.",
+      "fields": [
+        {
+          "name": "COUNT",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Number of descriptors.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.JOB_ID": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Opaque software job token mirrored into the result.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Opaque software token.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.TIMEOUT_CYCLES": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "HP active cycles without progress before a no-progress fault; a zero write is rejected.",
+      "fields": [
+        {
+          "name": "CYCLES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "No-progress timeout budget.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.RESULT_JOB_ID": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Job token of the last terminal or recovery result.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Terminal or recovery job token.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.RESULT_CODE": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Terminal result enumeration: NONE=0, DONE=1, ERROR=2, ABORTED=3, RESET_CANCELLED=4.",
+      "fields": [
+        {
+          "name": "CODE",
+          "lsb": 0,
+          "msb": 2,
+          "description": "Terminal result code.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.COMPLETED_DESCRIPTORS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Fully stored descriptor count of the last job.",
+      "fields": [
+        {
+          "name": "COUNT",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Complete stores only.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.FAULT_DESCRIPTOR": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Zero-based index of the first faulting descriptor, or all ones for a job-level fault.",
+      "fields": [
+        {
+          "name": "INDEX",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Faulting descriptor index; 0xFFFFFFFF marks a job-level fault.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.FAULT_CODE": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "First fault/error code.",
+      "fields": [
+        {
+          "name": "CODE",
+          "lsb": 0,
+          "msb": 3,
+          "description": "Fault enumeration.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.FAULT_ADDRESS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "First relevant external byte address, otherwise 0.",
+      "fields": [
+        {
+          "name": "ADDR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fault byte address.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.FAULT_INFO": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Fault direction, AXI response, and lane detail.",
+      "fields": [
+        {
+          "name": "AXI_RESPONSE",
+          "lsb": 0,
+          "msb": 1,
+          "description": "AXI response code of the faulting beat.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "DIRECTION",
+          "lsb": 2,
+          "msb": 3,
+          "description": "Fault direction: internal, read, or write.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "LANE",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Faulting lane, or 0xFF when not lane-specific.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.NUMERIC_PROFILE": {
+      "access": "RO",
+      "reset": "0x00000001",
+      "description": "Numeric profile identifier.",
+      "fields": [
+        {
+          "name": "PROFILE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 1: the numeric profile of this specification.",
+          "reset": "1",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.LOCAL_BYTES": {
+      "access": "RO",
+      "reset": "0x00010000",
+      "description": "Instantiated local SRAM bytes: 64 KiB of banked private SRAM (sixteen 1024x32 banks).",
+      "fields": [
+        {
+          "name": "BYTES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Instantiated local bytes.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.MAC_CONFIG": {
+      "access": "RO",
+      "reset": "0x00080040",
+      "description": "Instantiated MAC lane configuration: 64 dense lanes in bits 15:0, 8 depthwise lanes in bits 31:16.",
+      "fields": [
+        {
+          "name": "DENSE",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Dense lane count when implemented.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "DEPTHWISE",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Depthwise lane count when implemented.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.MAX_K_SLICE": {
+      "access": "RO",
+      "reset": "0x00000400",
+      "description": "Maximum supported K slice: 1024.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "K-slice limit.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.MAX_DIMENSION": {
+      "access": "RO",
+      "reset": "0x00001000",
+      "description": "Maximum supported tensor dimension: 4096.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Dimension limit.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.OP_CAPABILITY": {
+      "access": "RO",
+      "reset": "0x000001FE",
+      "description": "Implemented operator mask: bit n advertises opcode n; the configured mask 0x000001FE enables opcodes 1 through 8.",
+      "fields": [
+        {
+          "name": "Reserved",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "CONV2D",
+          "lsb": 1,
+          "msb": 1,
+          "description": "2D convolution operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "DEPTHWISE3X3",
+          "lsb": 2,
+          "msb": 2,
+          "description": "3x3 depthwise operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "FULLY_CONNECTED",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Fully connected operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "ADD",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Tensor add operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "MAX_POOL",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Max pooling operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "AVERAGE_POOL",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Average pooling operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "GLOBAL_AVERAGE_POOL",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Global average pooling operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "CLAMP",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Clamp operator.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 9,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.OWNER_STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live resource ownership view.",
+      "fields": [
+        {
+          "name": "OWNER",
+          "lsb": 0,
+          "msb": 1,
+          "description": "Current owner: 0 LP, 1 HP.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "LOCK",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Sticky owner lock.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "QUIESCE",
+          "lsb": 9,
+          "msb": 9,
+          "description": "Quiesce request in effect.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "RESET_REQUEST",
+          "lsb": 10,
+          "msb": 10,
+          "description": "Reset request in effect.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 11,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.RECOVERY_GENERATION": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "PCLK-visible epoch recovery generation; increments after each completed link/transport recovery.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Wrapping recovery generation counter.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_CONTROL": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Performance snapshot command.",
+      "fields": [
+        {
+          "name": "SNAPSHOT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Capture the counter bank and job token atomically.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Snapshot handshake status.",
+      "fields": [
+        {
+          "name": "SNAP_BUSY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "A snapshot request is in flight.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "SNAP_VALID",
+          "lsb": 1,
+          "msb": 1,
+          "description": "A captured counter bank is held.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_JOB_ID": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Job token associated with the captured snapshot.",
+      "fields": [
+        {
+          "name": "TOKEN",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Snapshot job token.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_GENERATION": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Recovery generation associated with the captured snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Snapshot recovery generation.",
+          "reset": "Dynamic",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.DESCRIPTOR_BYTES": {
+      "access": "RO",
+      "reset": "0x00000080",
+      "description": "Descriptor record size in bytes.",
+      "fields": [
+        {
+          "name": "BYTES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 128.",
+          "reset": "0x80",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_ACTIVE_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the HP active cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_ACTIVE_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the HP active cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_CLOCK_PAUSE_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the HP clock-pause cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_CLOCK_PAUSE_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the HP clock-pause cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_USEFUL_MACS_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the useful MAC operations counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_USEFUL_MACS_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the useful MAC operations counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_PACK_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the patch-packer cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_PACK_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the patch-packer cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_LOCAL_BANK_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the local bank stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_LOCAL_BANK_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the local bank stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_READ_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA read bytes counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_READ_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA read bytes counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_WRITE_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA write bytes counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_WRITE_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA write bytes counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_STALL_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the DMA stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_DMA_STALL_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the DMA stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_REQUANT_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the requantizer stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_REQUANT_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the requantizer stall cycles counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_RETIRED_DESCRIPTORS_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the retired descriptors counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    },
+    "main.PERF_RETIRED_DESCRIPTORS_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the retired descriptors counter; read from the captured performance snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High snapshot word.",
+          "reset": "0",
+          "expression": "reviewed register ABI 1.0"
+        }
+      ]
+    }
+  },
+  "ga2d": {
+    "main.IP_ID": {
+      "access": "RO",
+      "reset": "0x47413244",
+      "description": "Fixed GA2D identifier.",
+      "fields": [
+        {
+          "name": "IDENTIFIER",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Fixed value 0x47413244 (GA2D).",
+          "reset": "0x47413244",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.IP_VERSION": {
+      "access": "RO",
+      "reset": "0x00010000",
+      "description": "GA2D register ABI version.",
+      "fields": [
+        {
+          "name": "MINOR",
+          "lsb": 0,
+          "msb": 15,
+          "description": "ABI minor version.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "MAJOR",
+          "lsb": 16,
+          "msb": 31,
+          "description": "ABI major version; P5 retains major 1.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.CAPABILITY": {
+      "access": "RO",
+      "reset": "0x000007FF",
+      "description": "P5 capability bitmap; FILL, COPY, CONVERT, BLEND, A8 fixed-color foreground masks, private DMA, IRQ, snapshots, two-dimensional pitch, byte edges, and exact equal background/destination in-place composition are advertised.",
+      "fields": [
+        {
+          "name": "FILL",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Fill operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "COPY",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Copy operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "CONVERT",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Bit-exact conversion operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "BLEND",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Opaque alpha blend operation capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "A8_MASK",
+          "lsb": 4,
+          "msb": 4,
+          "description": "A8 fixed-color foreground-mask capability for BLEND only; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "PRIVATE_DMA",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Private AXI64 DMA capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "IRQ",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Direct-engine IRQ capability.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "SNAPSHOT",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Performance snapshot capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "TWO_DIMENSIONAL_PITCH",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Two-dimensional pitch capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "BYTE_EDGES",
+          "lsb": 9,
+          "msb": 9,
+          "description": "Byte-edge DMA capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "INPLACE_BACKGROUND",
+          "lsb": 10,
+          "msb": 10,
+          "description": "Exact equal background/destination in-place composition capability; set in P5.",
+          "reset": "1",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 11,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.LIMITS": {
+      "access": "RO",
+      "reset": "0x08202010",
+      "description": "P5 private-AXI64 DMA geometry limits.",
+      "fields": [
+        {
+          "name": "MAX_BURST_BEATS",
+          "lsb": 0,
+          "msb": 7,
+          "description": "Maximum DMA burst beats; 16 in P5.",
+          "reset": "16",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "INPUT_FIFO_DEPTH",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Input FIFO depth; 32 beats in P5.",
+          "reset": "32",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "OUTPUT_FIFO_DEPTH",
+          "lsb": 16,
+          "msb": 23,
+          "description": "Output FIFO depth; 32 beats in P5.",
+          "reset": "32",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "AXI_BEAT_BYTES",
+          "lsb": 24,
+          "msb": 31,
+          "description": "AXI DMA beat width; 8 bytes in P5.",
+          "reset": "8",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.COMMAND": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Single-command write port for P5 direct jobs.",
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Start an idle, recovered P5 direct FILL, COPY, CONVERT, or BLEND job.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ABORT",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Request a safe abort; an idle engine is a no-op.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "SOFT_RESET",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Clear local shell state only when safe idle and recovered.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.STATUS": {
+      "access": "RO",
+      "reset": "Dynamic",
+      "description": "Live P5 engine, lifecycle, and recovery status.",
+      "fields": [
+        {
+          "name": "BUSY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Live job-active status.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "DRAINING",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Live drain status while abort, error, or resource stop retires accepted traffic.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "QUIESCED",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Resource stop has reached safe source idle and block acknowledgement.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "DATA_READY",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Qualified bridge data readiness.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "DONE",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Last direct job completed successfully.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ABORTED",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Last direct job reached safe abort completion.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Sticky first-error validity.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "RECOVERY_REQUIRED",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Bridge clear, reset epoch, or data-readiness recovery is unresolved.",
+          "reset": "Dynamic",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 8,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_STATE": {
+      "access": "RW1C",
+      "reset": "0x00000000",
+      "description": "Sticky IRQ causes; a same-cycle new event wins over a clear.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Successful terminal job event.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "First-error event.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Safe abort completion event.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_ENABLE": {
+      "access": "RW",
+      "reset": "0x00000000",
+      "description": "Interrupt-cause enable mask.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Enable DONE raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Enable ERROR raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Enable ABORT_DONE raw IRQ contribution.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.IRQ_TEST": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Set selected IRQ_STATE causes for route testing without job progress.",
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Set DONE state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Set ERROR state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "ABORT_DONE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Set ABORT_DONE state for route testing.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.ERROR_STATUS": {
+      "access": "RO/W1C",
+      "reset": "0x00000000",
+      "description": "Sticky first-error record; write one clears a safe idle record.",
+      "fields": [
+        {
+          "name": "VALID",
+          "lsb": 0,
+          "msb": 0,
+          "description": "First-error record is valid.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "CODE",
+          "lsb": 1,
+          "msb": 7,
+          "description": "First-error code.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "STAGE",
+          "lsb": 8,
+          "msb": 11,
+          "description": "First-error processing stage.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "AXI_RESPONSE",
+          "lsb": 12,
+          "msb": 13,
+          "description": "Captured AXI response for a bus error.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 14,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.ERROR_ADDRESS": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Address associated with the sticky first-error record.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Captured first-error byte address.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.TIMEOUT_CYCLES": {
+      "access": "RW idle",
+      "reset": "0x00100000",
+      "description": "Idle-only no-progress timeout threshold; zero is rejected.",
+      "fields": [
+        {
+          "name": "CYCLES",
+          "lsb": 0,
+          "msb": 31,
+          "description": "PCLK no-progress timeout budget.",
+          "reset": "0x00100000",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.JOB_CONFIG": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow job operation selector for P5 direct jobs.",
+      "fields": [
+        {
+          "name": "OPERATION",
+          "lsb": 0,
+          "msb": 1,
+          "description": "0: FILL; 1: COPY; 2: bit-exact CONVERT; 3: opaque alpha BLEND.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.GLOBAL_ALPHA": {
+      "access": "RW idle",
+      "reset": "0x000000FF",
+      "description": "Shadow global alpha value used only by P5 BLEND; FILL, COPY, and CONVERT ignore it.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 7,
+          "description": "Global alpha value used only by BLEND; ignored by FILL, COPY, and CONVERT.",
+          "reset": "0xFF",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 8,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.COLOR": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow constant color in AARRGGBB order.",
+      "fields": [
+        {
+          "name": "COLOR",
+          "lsb": 0,
+          "msb": 31,
+          "description": "AARRGGBB constant color; FILL uses it directly and A8 BLEND uses its RGB as the fixed foreground color while ignoring its alpha.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SIZE": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow job dimensions.",
+      "fields": [
+        {
+          "name": "WIDTH",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Job width in pixels.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "HEIGHT",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Job height in pixels.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.FG_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground byte address.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Foreground byte address.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.FG_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground row pitch in bytes.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Foreground bytes between rows.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.FG_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow foreground format selector.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are color formats; 4: A8 is valid only as a BLEND foreground.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.BG_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background byte address used by BLEND; it may equal DST_ADDRESS only with exactly equal pitch and format.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Background byte address for BLEND; exact equality with destination is the only permitted input/output overlap.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.BG_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background row pitch in bytes used by BLEND.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Background bytes between rows for BLEND.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.BG_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow background color-format selector used by BLEND.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are valid BLEND background color formats; 4: A8 is invalid.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.DST_ADDRESS": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination byte address.",
+      "fields": [
+        {
+          "name": "ADDRESS",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Destination byte address.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.DST_PITCH": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination row pitch in bytes.",
+      "fields": [
+        {
+          "name": "PITCH",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Destination bytes between rows.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.DST_FORMAT": {
+      "access": "RW idle",
+      "reset": "0x00000000",
+      "description": "Shadow destination format selector.",
+      "fields": [
+        {
+          "name": "FORMAT",
+          "lsb": 0,
+          "msb": 2,
+          "description": "0: RGB565; 1: RGB888; 2: XRGB8888; 3: ARGB8888 are valid destination color formats; 4: A8 is invalid.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.PERF_SNAPSHOT": {
+      "access": "WO",
+      "reset": "Not retained",
+      "description": "Performance snapshot command for P5 direct-job counters.",
+      "fields": [
+        {
+          "name": "SNAPSHOT",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Capture live P5 direct-job counters into the read bank.",
+          "reset": "Not retained",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.FORMAT_CAPABILITY": {
+      "access": "RO",
+      "reset": "0x000F0F1F",
+      "description": "P5 format bitmap: foreground RGB565/RGB888/XRGB8888/ARGB8888/A8 bits are set; background and destination RGB565/RGB888/XRGB8888/ARGB8888 bits are set.",
+      "fields": [
+        {
+          "name": "FOREGROUND",
+          "lsb": 0,
+          "msb": 4,
+          "description": "Foreground format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 and A8 are set in P5. A8 is valid only for BLEND.",
+          "reset": "31",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 5,
+          "msb": 7,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "BACKGROUND",
+          "lsb": 8,
+          "msb": 12,
+          "description": "Background format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P5. A8 is not a background format.",
+          "reset": "15",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 13,
+          "msb": 15,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        },
+        {
+          "name": "DESTINATION",
+          "lsb": 16,
+          "msb": 20,
+          "description": "Destination format capability bits; RGB565/RGB888/XRGB8888/ARGB8888 are set in P5. A8 is not a destination format.",
+          "reset": "15",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 21,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
+    },
+    "main.SNAP_CYCLES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of the P5 active-job PCLK cycle snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low cycle-counter snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_CYCLES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of the P5 active-job PCLK cycle snapshot.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High cycle-counter snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of P5 successful logical input bytes.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low read-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of P5 successful logical input bytes.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High read-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_BYTES_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of P5 acknowledged output bytes.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low write-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_BYTES_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of P5 acknowledged output bytes.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High write-byte snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of P5 read-channel stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low read-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_READ_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of P5 read-channel stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High read-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of P5 write-channel stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low write-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_WRITE_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of P5 write-channel stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High write-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_PIPE_STALL_LO": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Low 32 bits of P5 pixel-pipeline stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Low pipeline-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_PIPE_STALL_HI": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "High 32 bits of P5 pixel-pipeline stall cycles.",
+      "fields": [
+        {
+          "name": "VALUE",
+          "lsb": 0,
+          "msb": 31,
+          "description": "High pipeline-stall snapshot word.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        }
+      ]
+    },
+    "main.SNAP_LINES_DONE": {
+      "access": "RO",
+      "reset": "0x00000000",
+      "description": "Completed P5 destination rows.",
+      "fields": [
+        {
+          "name": "LINES_DONE",
+          "lsb": 0,
+          "msb": 15,
+          "description": "Completed destination row count.",
+          "reset": "0",
+          "expression": "reviewed P5 ABI"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 16,
+          "msb": 31,
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "reserved"
+        }
+      ]
     }
   },
   "crypto": {

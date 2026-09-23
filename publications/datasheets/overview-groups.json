@@ -76,7 +76,9 @@
       "I2S",
       "DVP",
       "JPEG",
-      "APU"
+      "APU",
+      "GA2D",
+      "NPU"
     ]
   },
   {

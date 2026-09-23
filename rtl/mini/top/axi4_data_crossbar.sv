@@ -4,7 +4,7 @@
 `include "mmap_define.svh"
 
 module axi4_data_crossbar #(
-    parameter int unsigned                                  NumMasters          = 8,
+    parameter int unsigned                                  NumMasters          = 10,
     parameter int unsigned                                  NumTargets          = 6,
     parameter int unsigned                                  StarvationCycles    = 256,
     parameter logic        [NumMasters-1:0][NumTargets-2:0] ReadTargetMask      = '1,
@@ -18,6 +18,8 @@ module axi4_data_crossbar #(
     input  logic                block_new_i,
     input  logic [NumMasters-1:0] master_block_i,
     input  logic                recovery_i,
+    input  logic                flush_i,
+    input  logic                fault_ready_i,
     input  logic          [1:0] mem_pad_mode_i,
     input  logic         [31:0] ext_h_read_base_i,
     input  logic         [31:0] ext_h_read_limit_i,
@@ -30,7 +32,7 @@ module axi4_data_crossbar #(
     output logic          [7:0] outstanding_read_o,
     output logic          [7:0] outstanding_write_o,
     output logic                fault_valid_o,
-    output logic          [2:0] fault_master_o,
+    output logic          [3:0] fault_master_o,
     output logic          [2:0] fault_target_o,
     output logic         [31:0] fault_addr_o,
     output logic                fault_write_o,
@@ -72,7 +74,7 @@ module axi4_data_crossbar #(
   localparam logic [3:0] FaultProtocol = 4'd4;
 
   typedef struct packed {
-    logic [5:0]  id;
+    logic [6:0]  id;
     logic [31:0] addr;
     logic [7:0]  len;
     logic [2:0]  size;
@@ -93,13 +95,13 @@ module axi4_data_crossbar #(
   } write_channel_t;
 
   typedef struct packed {
-    logic [5:0] id;
+    logic [6:0] id;
     logic [1:0] resp;
     logic       user;
   } write_resp_t;
 
   typedef struct packed {
-    logic [5:0]  id;
+    logic [6:0]  id;
     logic [63:0] data;
     logic [1:0]  resp;
     logic        last;
@@ -161,6 +163,13 @@ module axi4_data_crossbar #(
   logic           [NumMasters-1:0]                  s_write_resp_valid;
   logic           [NumMasters-1:0]                  s_read_terminal;
   logic           [NumMasters-1:0]                  s_write_terminal;
+  logic           [NumTargets-1:0]                  s_invalid_read_response;
+  logic           [NumTargets-1:0]                  s_invalid_write_response;
+  logic           [NumTargets-1:0]                  s_invalid_read_fault_accept;
+  logic           [NumTargets-1:0]                  s_invalid_write_fault_accept;
+  logic                                             s_protocol_fault_pending;
+  logic                                             s_protocol_fault_event;
+  logic                                             s_protocol_recovery_q;
 
   logic           [NumTargets-1:0]                  s_target_write_owner_full;
   logic           [NumTargets-1:0]                  s_target_write_owner_empty;
@@ -194,6 +203,10 @@ module axi4_data_crossbar #(
 
   logic [NumMasters-1:0]                  s_read_accept;
   logic [NumMasters-1:0]                  s_write_accept;
+  logic [NumMasters-1:0]                  s_read_accept_pre;
+  logic [NumMasters-1:0]                  s_write_accept_pre;
+  logic [NumMasters-1:0]                  s_read_fault_accept;
+  logic [NumMasters-1:0]                  s_write_fault_accept;
   logic [NumMasters-1:0][TargetWidth-1:0] s_read_accept_target;
   logic [NumMasters-1:0][TargetWidth-1:0] s_write_accept_target;
   logic [NumMasters-1:0][            2:0] s_read_accept_id;
@@ -203,11 +216,12 @@ module axi4_data_crossbar #(
   logic [NumTargets-1:0][            4:0] s_read_max_priority;
   logic [NumTargets-1:0][            4:0] s_write_max_priority;
   logic                                   s_fault_valid_d;
-  logic [           2:0]                  s_fault_master_d;
+  logic [           3:0]                  s_fault_master_d;
   logic [           2:0]                  s_fault_target_d;
   logic [          31:0]                  s_fault_addr_d;
   logic                                   s_fault_write_d;
   logic [           3:0]                  s_fault_reason_d;
+  logic                                   s_fault_slot_ready;
 
   function automatic logic [TargetWidth-1:0] decode_target(input logic [31:0] addr,
                                                            input logic [1:0] pad_mode);
@@ -281,13 +295,13 @@ module axi4_data_crossbar #(
   function automatic logic [CountWidth-1:0] master_read_limit(input int unsigned master);
     if ((master <= 2) || (master == 7)) return CountWidth'(4);
     if ((master == 3) || (master == 4)) return CountWidth'(2);
-    if (master == 5) return CountWidth'(1);
+    if ((master == 5) || (master == 6) || (master == 8) || (master == 9)) return CountWidth'(1);
     return '0;
   endfunction
 
   function automatic logic [CountWidth-1:0] master_write_limit(input int unsigned master);
     if ((master == 1) || (master == 2) || (master == 7)) return CountWidth'(2);
-    if ((master >= 3) && (master <= 5)) return CountWidth'(1);
+    if (((master >= 3) && (master <= 6)) || (master == 8) || (master == 9)) return CountWidth'(1);
     return '0;
   endfunction
 
@@ -307,14 +321,15 @@ module axi4_data_crossbar #(
                                                  input logic recovery);
     logic [3:0] base_priority;
     unique case (master)
-      0, 1:    base_priority = 4'd12;
-      3, 4:    base_priority = 4'd10;
-      2, 7:    base_priority = 4'd8;
-      5:       base_priority = recovery ? 4'd15 : 4'd2;
-      default: base_priority = 4'd0;
+      0, 1:          base_priority = 4'd12;
+      3, 4:          base_priority = 4'd10;
+      2, 6, 7, 8, 9: base_priority = 4'd8;
+      5:             base_priority = recovery ? 4'd15 : 4'd2;
+      default:       base_priority = 4'd0;
     endcase
     if (recovery && (master == 5)) return 5'd31;
     if (aged) return 5'd16;
+    if ((master == 8) || (master == 9)) return {1'b0, base_priority};
     return {1'b0, (request_qos > base_priority) ? request_qos : base_priority};
   endfunction
 
@@ -466,7 +481,7 @@ module axi4_data_crossbar #(
     ) u_write_owner_fifo (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
-        .flush_i(1'b0),
+        .flush_i(flush_i),
         .push_i (s_target_write_owner_push[target]),
         .full_o (s_target_write_owner_full[target]),
         .dat_i  (s_write_selected[target]),
@@ -540,7 +555,8 @@ module axi4_data_crossbar #(
           s_read_decoded_target[master] : TargetError;
       s_write_routed_target[master] = (s_write_fault_reason[master] == 4'd0) ?
           s_write_decoded_target[master] : TargetError;
-      if (!block_new_i && !master_block_i[master] && m_arvalid[master] &&
+      if (!block_new_i && !s_protocol_recovery_q && !s_protocol_fault_pending &&
+          !master_block_i[master] && m_arvalid[master] &&
           (s_target_read_count_q[s_read_routed_target[master]] <
            target_read_limit(
               s_read_routed_target[master]
@@ -550,7 +566,8 @@ module axi4_data_crossbar #(
           ))) && !s_read_id_busy_q[master][m_ar[master].id[2:0]]) begin
         s_read_req[s_read_routed_target[master]][master] = 1'b1;
       end
-      if (!block_new_i && !master_block_i[master] && m_awvalid[master] &&
+      if (!block_new_i && !s_protocol_recovery_q && !s_protocol_fault_pending &&
+          !master_block_i[master] && m_awvalid[master] &&
           !s_target_write_owner_full[s_write_routed_target[master]] &&
           (s_target_write_count_q[s_write_routed_target[master]] <
            target_write_limit(
@@ -617,6 +634,21 @@ module axi4_data_crossbar #(
   end
 
   always_comb begin
+    s_read_accept_pre  = '0;
+    s_write_accept_pre = '0;
+    for (int target = 0; target < NumTargets; target++) begin
+      if (s_read_grant_valid[target]) begin
+        automatic logic [MasterWidth-1:0] owner = s_read_selected[target];
+        s_read_accept_pre[owner] = m_arvalid[owner] && t_arready[target];
+      end
+      if (s_write_grant_valid[target]) begin
+        automatic logic [MasterWidth-1:0] owner = s_write_selected[target];
+        s_write_accept_pre[owner] = m_awvalid[owner] && t_awready[target];
+      end
+    end
+  end
+
+  always_comb begin
     m_arready            = '0;
     t_ar                 = '{default: '0};
     t_arvalid            = '0;
@@ -627,14 +659,17 @@ module axi4_data_crossbar #(
     for (int target = 0; target < NumTargets; target++) begin
       if (s_read_grant_valid[target]) begin
         automatic logic [MasterWidth-1:0] owner = s_read_selected[target];
-        t_ar[target]           = m_ar[owner];
-        t_arvalid[target]      = m_arvalid[owner];
-        m_arready[owner]       = t_arready[target];
-        s_read_capture[target] = t_arvalid[target] && t_arready[target];
-        if (s_read_capture[target]) begin
-          s_read_accept[owner]        = 1'b1;
-          s_read_accept_target[owner] = TargetWidth'(target);
-          s_read_accept_id[owner]     = m_ar[owner].id[2:0];
+        t_ar[target] = m_ar[owner];
+        if ((owner == MasterWidth'(8)) || (owner == MasterWidth'(9))) t_ar[target].qos = 4'd0;
+        if ((s_read_fault_reason[owner] == 4'd0) || s_read_fault_accept[owner]) begin
+          t_arvalid[target]      = m_arvalid[owner];
+          m_arready[owner]       = t_arready[target];
+          s_read_capture[target] = t_arvalid[target] && t_arready[target];
+          if (s_read_capture[target]) begin
+            s_read_accept[owner]        = 1'b1;
+            s_read_accept_target[owner] = TargetWidth'(target);
+            s_read_accept_id[owner]     = m_ar[owner].id[2:0];
+          end
         end
       end
     end
@@ -652,15 +687,18 @@ module axi4_data_crossbar #(
     for (int target = 0; target < NumTargets; target++) begin
       if (s_write_grant_valid[target]) begin
         automatic logic [MasterWidth-1:0] owner = s_write_selected[target];
-        t_aw[target]                      = m_aw[owner];
-        t_awvalid[target]                 = m_awvalid[owner];
-        m_awready[owner]                  = t_awready[target];
-        s_write_capture[target]           = t_awvalid[target] && t_awready[target];
-        s_target_write_owner_push[target] = s_write_capture[target];
-        if (s_write_capture[target]) begin
-          s_write_accept[owner]        = 1'b1;
-          s_write_accept_target[owner] = TargetWidth'(target);
-          s_write_accept_id[owner]     = m_aw[owner].id[2:0];
+        t_aw[target] = m_aw[owner];
+        if ((owner == MasterWidth'(8)) || (owner == MasterWidth'(9))) t_aw[target].qos = 4'd0;
+        if ((s_write_fault_reason[owner] == 4'd0) || s_write_fault_accept[owner]) begin
+          t_awvalid[target]                 = m_awvalid[owner];
+          m_awready[owner]                  = t_awready[target];
+          s_write_capture[target]           = t_awvalid[target] && t_awready[target];
+          s_target_write_owner_push[target] = s_write_capture[target];
+          if (s_write_capture[target]) begin
+            s_write_accept[owner]        = 1'b1;
+            s_write_accept_target[owner] = TargetWidth'(target);
+            s_write_accept_id[owner]     = m_aw[owner].id[2:0];
+          end
         end
       end
     end
@@ -688,29 +726,105 @@ module axi4_data_crossbar #(
   end
 
   always_comb begin
-    s_read_resp_req  = '0;
-    s_write_resp_req = '0;
+    s_read_resp_req          = '0;
+    s_write_resp_req         = '0;
+    s_invalid_read_response  = '0;
+    s_invalid_write_response = '0;
     for (int target = 0; target < NumTargets; target++) begin
-      if (t_rvalid[target]) begin
-        s_read_resp_req[t_r[target].id[5:3]][target] = 1'b1;
+      if (t_rvalid[target] && !flush_i) begin
+        if (t_r[target].id[6:3] < 4'(NumMasters)) begin
+          s_read_resp_req[t_r[target].id[6:3]][target] = 1'b1;
+        end else begin
+          s_invalid_read_response[target] = 1'b1;
+        end
       end
-      if (t_bvalid[target]) begin
-        s_write_resp_req[t_b[target].id[5:3]][target] = 1'b1;
+      if (t_bvalid[target] && !flush_i) begin
+        if (t_b[target].id[6:3] < 4'(NumMasters)) begin
+          s_write_resp_req[t_b[target].id[6:3]][target] = 1'b1;
+        end else begin
+          s_invalid_write_response[target] = 1'b1;
+        end
       end
     end
   end
 
+  assign s_protocol_fault_pending = (|s_invalid_read_response) || (|s_invalid_write_response);
+  assign s_fault_slot_ready       = !fault_valid_o || fault_ready_i;
+
+  always_comb begin
+    s_fault_valid_d              = 1'b0;
+    s_fault_master_d             = '0;
+    s_fault_target_d             = '0;
+    s_fault_addr_d               = '0;
+    s_fault_write_d              = 1'b0;
+    s_fault_reason_d             = '0;
+    s_invalid_read_fault_accept  = '0;
+    s_invalid_write_fault_accept = '0;
+    s_read_fault_accept          = '0;
+    s_write_fault_accept         = '0;
+    if (s_fault_slot_ready) begin
+      for (int target = 0; target < NumTargets; target++) begin
+        if (!s_fault_valid_d && !s_protocol_recovery_q && s_invalid_read_response[target]) begin
+          s_fault_valid_d                     = 1'b1;
+          s_fault_master_d                    = t_r[target].id[6:3];
+          s_fault_target_d                    = 3'(target);
+          s_fault_addr_d                      = '0;
+          s_fault_write_d                     = 1'b0;
+          s_fault_reason_d                    = FaultProtocol;
+          s_invalid_read_fault_accept[target] = 1'b1;
+        end
+        if (!s_fault_valid_d && !s_protocol_recovery_q && s_invalid_write_response[target]) begin
+          s_fault_valid_d                      = 1'b1;
+          s_fault_master_d                     = t_b[target].id[6:3];
+          s_fault_target_d                     = 3'(target);
+          s_fault_addr_d                       = '0;
+          s_fault_write_d                      = 1'b1;
+          s_fault_reason_d                     = FaultProtocol;
+          s_invalid_write_fault_accept[target] = 1'b1;
+        end
+      end
+      for (int master = 0; master < NumMasters; master++) begin
+        if (!s_fault_valid_d && s_read_accept_pre[master] &&
+            (s_read_fault_reason[master] != 4'd0)) begin
+          s_fault_valid_d             = 1'b1;
+          s_fault_master_d            = 4'(master);
+          s_fault_target_d            = 3'(s_read_decoded_target[master]);
+          s_fault_addr_d              = m_ar[master].addr;
+          s_fault_write_d             = 1'b0;
+          s_fault_reason_d            = s_read_fault_reason[master];
+          s_read_fault_accept[master] = 1'b1;
+        end
+        if (!s_fault_valid_d && s_write_accept_pre[master] &&
+            (s_write_fault_reason[master] != 4'd0)) begin
+          s_fault_valid_d              = 1'b1;
+          s_fault_master_d             = 4'(master);
+          s_fault_target_d             = 3'(s_write_decoded_target[master]);
+          s_fault_addr_d               = m_aw[master].addr;
+          s_fault_write_d              = 1'b1;
+          s_fault_reason_d             = s_write_fault_reason[master];
+          s_write_fault_accept[master] = 1'b1;
+        end
+      end
+    end
+  end
+
+  assign s_protocol_fault_event = (|s_invalid_read_fault_accept) || (|s_invalid_write_fault_accept);
+
   always_comb begin
     m_r                 = '{default: '0};
     m_rvalid            = '0;
-    t_rready            = '0;
+    t_rready            = flush_i ? '1 : '0;
     s_read_terminal     = '0;
     s_read_complete_id  = '0;
     m_b                 = '{default: '0};
     m_bvalid            = '0;
-    t_bready            = '0;
+    t_bready            = flush_i ? '1 : '0;
     s_write_terminal    = '0;
     s_write_complete_id = '0;
+    for (int target = 0; target < NumTargets; target++) begin
+      if (s_invalid_read_fault_accept[target]) t_rready[target] = 1'b1;
+      if (s_invalid_write_fault_accept[target]) t_bready[target] = 1'b1;
+    end
     for (int master = 0; master < NumMasters; master++) begin
       if (s_read_resp_valid[master]) begin
         automatic logic [TargetWidth-1:0] target = s_read_resp_selected[master];
@@ -811,33 +925,6 @@ module axi4_data_crossbar #(
   end
 
   always_comb begin
-    s_fault_valid_d  = 1'b0;
-    s_fault_master_d = '0;
-    s_fault_target_d = '0;
-    s_fault_addr_d   = '0;
-    s_fault_write_d  = 1'b0;
-    s_fault_reason_d = '0;
-    for (int master = 0; master < NumMasters; master++) begin
-      if (!s_fault_valid_d && s_read_accept[master] && (s_read_fault_reason[master] != 4'd0)) begin
-        s_fault_valid_d  = 1'b1;
-        s_fault_master_d = 3'(master);
-        s_fault_target_d = 3'(s_read_decoded_target[master]);
-        s_fault_addr_d   = m_ar[master].addr;
-        s_fault_reason_d = s_read_fault_reason[master];
-      end
-      if (!s_fault_valid_d && s_write_accept[master] &&
-          (s_write_fault_reason[master] != 4'd0)) begin
-        s_fault_valid_d  = 1'b1;
-        s_fault_master_d = 3'(master);
-        s_fault_target_d = 3'(s_write_decoded_target[master]);
-        s_fault_addr_d   = m_aw[master].addr;
-        s_fault_write_d  = 1'b1;
-        s_fault_reason_d = s_write_fault_reason[master];
-      end
-    end
-  end
-
-  always_comb begin
     outstanding_read_o  = '0;
     outstanding_write_o = '0;
     for (int master = 0; master < NumMasters; master++) begin
@@ -846,8 +933,8 @@ module axi4_data_crossbar #(
     end
   end
 
-  assign idle_o = (outstanding_read_o == 8'd0) && (outstanding_write_o == 8'd0) &&
-                  !(|s_route_count_q);
+  assign idle_o = !s_protocol_recovery_q && (outstanding_read_o == 8'd0) &&
+                  (outstanding_write_o == 8'd0) && !(|s_route_count_q);
   for (genvar master = 0; master < NumMasters; master++) begin : gen_master_idle
     assign master_idle_o[master] = (s_master_read_count_q[master] == '0) &&
         (s_master_write_count_q[master] == '0) && (s_route_count_q[master] == '0) &&
@@ -897,6 +984,7 @@ module axi4_data_crossbar #(
       s_route_count_q        <= '0;
       s_read_age_q           <= '0;
       s_write_age_q          <= '0;
+      s_protocol_recovery_q  <= 1'b0;
       fault_valid_o          <= 1'b0;
       fault_master_o         <= '0;
       fault_target_o         <= '0;
@@ -904,24 +992,43 @@ module axi4_data_crossbar #(
       fault_write_o          <= 1'b0;
       fault_reason_o         <= '0;
     end else begin
-      s_master_read_count_q  <= s_master_read_count_d;
-      s_master_write_count_q <= s_master_write_count_d;
-      s_target_read_count_q  <= s_target_read_count_d;
-      s_target_write_count_q <= s_target_write_count_d;
-      s_read_id_busy_q       <= s_read_id_busy_d;
-      s_write_id_busy_q      <= s_write_id_busy_d;
-      s_write_route_q        <= s_write_route_d;
-      s_route_read_ptr_q     <= s_route_read_ptr_d;
-      s_route_write_ptr_q    <= s_route_write_ptr_d;
-      s_route_count_q        <= s_route_count_d;
-      s_read_age_q           <= s_read_age_d;
-      s_write_age_q          <= s_write_age_d;
-      fault_valid_o          <= s_fault_valid_d;
-      fault_master_o         <= s_fault_master_d;
-      fault_target_o         <= s_fault_target_d;
-      fault_addr_o           <= s_fault_addr_d;
-      fault_write_o          <= s_fault_write_d;
-      fault_reason_o         <= s_fault_reason_d;
+      if (flush_i) begin
+        s_master_read_count_q  <= '0;
+        s_master_write_count_q <= '0;
+        s_target_read_count_q  <= '0;
+        s_target_write_count_q <= '0;
+        s_read_id_busy_q       <= '0;
+        s_write_id_busy_q      <= '0;
+        s_write_route_q        <= '0;
+        s_route_read_ptr_q     <= '0;
+        s_route_write_ptr_q    <= '0;
+        s_route_count_q        <= '0;
+        s_read_age_q           <= '0;
+        s_write_age_q          <= '0;
+        s_protocol_recovery_q  <= 1'b0;
+      end else begin
+        s_master_read_count_q  <= s_master_read_count_d;
+        s_master_write_count_q <= s_master_write_count_d;
+        s_target_read_count_q  <= s_target_read_count_d;
+        s_target_write_count_q <= s_target_write_count_d;
+        s_read_id_busy_q       <= s_read_id_busy_d;
+        s_write_id_busy_q      <= s_write_id_busy_d;
+        s_write_route_q        <= s_write_route_d;
+        s_route_read_ptr_q     <= s_route_read_ptr_d;
+        s_route_write_ptr_q    <= s_route_write_ptr_d;
+        s_route_count_q        <= s_route_count_d;
+        s_read_age_q           <= s_read_age_d;
+        s_write_age_q          <= s_write_age_d;
+        if (s_protocol_fault_event) s_protocol_recovery_q <= 1'b1;
+      end
+      if (!fault_valid_o || fault_ready_i) begin
+        fault_valid_o  <= s_fault_valid_d;
+        fault_master_o <= s_fault_master_d;
+        fault_target_o <= s_fault_target_d;
+        fault_addr_o   <= s_fault_addr_d;
+        fault_write_o  <= s_fault_write_d;
+        fault_reason_o <= s_fault_reason_d;
+      end
     end
   end
 
@@ -938,7 +1045,7 @@ module axi4_data_crossbar #(
   end
 
   initial begin
-    if ((NumMasters != 8) || (NumTargets != 6) || (StarvationCycles < 2) ||
+    if ((NumMasters != 10) || (NumTargets != 6) || (StarvationCycles < 2) ||
         ((StarvationCycles & (StarvationCycles - 1)) != 0)) begin
       $fatal(1, "axi4_data_crossbar: invalid product topology or aging interval");
     end

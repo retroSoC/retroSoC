@@ -11,6 +11,10 @@
 #define RS_CPU_CLOCK_HZ UINT32_C(72000000)
 #endif
 
+#ifndef RS_PCLK_CLOCK_HZ
+#define RS_PCLK_CLOCK_HZ UINT32_C(72000000)
+#endif
+
 #define HW_CORE                    "Management Hazard3"
 #define CPU_FREQ                   (RS_CPU_CLOCK_HZ / UINT32_C(1000000))
 #define UART_BPS                   921600 // unit: bps

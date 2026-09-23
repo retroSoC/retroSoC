@@ -5,7 +5,7 @@
 The Mini SoC on-chip SRAM is a synthesis-time configurable AXI4 target backed
 by fixed 32-bit single-port technology wrappers. The reusable module keeps a
 32-bit/ID1 compatibility mode; the Mini product instantiates native
-64-bit/ID6 and stripes each beat over two wrappers. Supported capacities are
+64-bit/ID7 and stripes each beat over two wrappers. Supported capacities are
 4, 16, 32, 64, and 128 KiB in compatibility mode; the product selects 32 KiB.
 The data aperture starts at
 `0x3000_0000`; its generated end address and linker length match the selected
@@ -59,7 +59,7 @@ with `PRESENT=0`, zero memory bytes, and zero banks.
 
 ## AXI4 datapath
 
-The product target uses 32-bit addresses, 64-bit data, six-bit ID, and one-bit
+The product target uses 32-bit addresses, 64-bit data, seven-bit ID, and one-bit
 USER. It accepts one active read or write transaction, gives AR priority when
 AR and AW are simultaneously valid, and preserves the ID to the terminal
 response. The compatibility parameterization retains 32-bit data and one-bit
@@ -142,7 +142,7 @@ malformed accesses, counters, all four PDK wrapper polarities and masks, and
 the GF180 511/512 depth boundary. The setup tests independently validate the
 SKY130 artifact manifest and generated-file hashes. Full Verilator regression
 firmware exercises the first and last locations through the SoC interconnect.
-The native AXI64 test additionally covers six-bit IDs, continuous 64-bit bursts,
+The native AXI64 test additionally covers seven-bit IDs, continuous 64-bit bursts,
 and upper/lower 32-bit byte strobes.
 
 `make CONFIG=configs/ci/ihp130.mk formal-onchip-ram` runs a 20-cycle bounded

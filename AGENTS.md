@@ -9,6 +9,12 @@ truth wins.
 
 - [README.md](README.md) defines supported profiles, prerequisites, common
   flows, and release outputs.
+- [CONTRIBUTING.md](CONTRIBUTING.md) defines community contribution and PR
+  review responsibilities; [docs/git-workflow.md](docs/git-workflow.md)
+  defines branch, commit, synchronization, and history-preservation rules.
+  Follow these when preparing contributions: ordinary PRs target `dev` and
+  default to merge commits. Use the
+  [PR template](.github/pull_request_template.md) when preparing a PR description.
 - [docs/engineering.md](docs/engineering.md) defines reproducible inputs,
   artifact layout, warning baselines, metric promotion, and CI behavior.
 - [docs/misra-c-2012.md](docs/misra-c-2012.md) defines the embedded-C MISRA

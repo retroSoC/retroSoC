@@ -3,10 +3,38 @@
 module sysctrl_tb;
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
-  logic        fault_valid_i = 1'b0;
-  logic [31:0] fault_addr_i = '0;
-  logic [ 3:0] fault_wstrb_i = '0;
-  logic        fault_reserved_i = 1'b0;
+  logic        clk_hp_i = 1'b0;
+  logic        rst_hp_n_i = 1'b0;
+  logic        s_bus_fault_valid;
+  logic [31:0] s_bus_fault_addr;
+  logic [ 3:0] s_bus_fault_wstrb;
+  logic        s_bus_fault_reserved;
+  logic        s_bus_fault_access;
+  logic [ 3:0] s_bus_fault_master;
+  logic [ 2:0] s_bus_fault_code;
+  logic        s_data_plane_fault_valid_hp;
+  logic [ 3:0] s_data_plane_fault_master_hp;
+  logic [ 2:0] s_data_plane_fault_target_hp;
+  logic [31:0] s_data_plane_fault_addr_hp;
+  logic        s_data_plane_fault_write_hp;
+  logic [ 3:0] s_data_plane_fault_reason_hp;
+  logic        s_data_plane_fault_ready_hp;
+  logic        s_data_plane_fault_valid_pclk;
+  logic [ 3:0] s_data_plane_fault_master_pclk;
+  logic [ 2:0] s_data_plane_fault_target_pclk;
+  logic [31:0] s_data_plane_fault_addr_pclk;
+  logic        s_data_plane_fault_write_pclk;
+  logic [ 3:0] s_data_plane_fault_reason_pclk;
+  logic [ 3:0] s_data_plane_fault_delivery_count;
+  logic [ 3:0] s_data_plane_fault_delivery_master[0:2];
+  logic [ 2:0] s_data_plane_fault_delivery_target[0:2];
+  logic [31:0] s_data_plane_fault_delivery_addr  [0:2];
+  logic        s_data_plane_fault_delivery_write [0:2];
+  logic [ 3:0] s_data_plane_fault_delivery_reason[0:2];
+  logic        fault_valid_i;
+  logic [31:0] fault_addr_i;
+  logic [ 3:0] fault_wstrb_i;
+  logic        fault_reserved_i;
   apb4_if apb4 (
       .pclk   (clk_i),
       .presetn(rst_n_i)
@@ -15,7 +43,60 @@ module sysctrl_tb;
   pll_ctrl_if pll_ctrl ();
   clock_ctrl_if clock_ctrl ();
 
-  always #5 clk_i = ~clk_i;
+  always #17 clk_i = ~clk_i;
+  always #3 clk_hp_i = ~clk_hp_i;
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      s_data_plane_fault_delivery_count <= '0;
+    end else if (s_data_plane_fault_valid_pclk) begin
+      if (s_data_plane_fault_delivery_count < 4'd3) begin
+        s_data_plane_fault_delivery_master[s_data_plane_fault_delivery_count] <=
+            s_data_plane_fault_master_pclk;
+        s_data_plane_fault_delivery_target[s_data_plane_fault_delivery_count] <=
+            s_data_plane_fault_target_pclk;
+        s_data_plane_fault_delivery_addr[s_data_plane_fault_delivery_count] <=
+            s_data_plane_fault_addr_pclk;
+        s_data_plane_fault_delivery_write[s_data_plane_fault_delivery_count] <=
+            s_data_plane_fault_write_pclk;
+        s_data_plane_fault_delivery_reason[s_data_plane_fault_delivery_count] <=
+            s_data_plane_fault_reason_pclk;
+      end
+      s_data_plane_fault_delivery_count <= s_data_plane_fault_delivery_count + 1'b1;
+    end
+  end
+
+  data_plane_fault_cdc u_data_plane_fault_cdc (
+      .clk_hp_i      (clk_hp_i),
+      .rst_hp_n_i    (rst_hp_n_i),
+      .fault_valid_i (s_data_plane_fault_valid_hp),
+      .fault_master_i(s_data_plane_fault_master_hp),
+      .fault_target_i(s_data_plane_fault_target_hp),
+      .fault_addr_i  (s_data_plane_fault_addr_hp),
+      .fault_write_i (s_data_plane_fault_write_hp),
+      .fault_reason_i(s_data_plane_fault_reason_hp),
+      .fault_ready_o (s_data_plane_fault_ready_hp),
+      .clk_pclk_i    (clk_i),
+      .rst_pclk_n_i  (rst_n_i),
+      .fault_valid_o (s_data_plane_fault_valid_pclk),
+      .fault_master_o(s_data_plane_fault_master_pclk),
+      .fault_target_o(s_data_plane_fault_target_pclk),
+      .fault_addr_o  (s_data_plane_fault_addr_pclk),
+      .fault_write_o (s_data_plane_fault_write_pclk),
+      .fault_reason_o(s_data_plane_fault_reason_pclk)
+  );
+
+  assign fault_valid_i = s_data_plane_fault_valid_pclk || s_bus_fault_valid;
+  assign sysctrl.fault_access_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_write_pclk : s_bus_fault_access;
+  assign sysctrl.fault_master_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_master_pclk : s_bus_fault_master;
+  assign sysctrl.fault_code_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_reason_pclk[2:0] : s_bus_fault_code;
+  assign fault_addr_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_addr_pclk : s_bus_fault_addr;
+  assign fault_wstrb_i = s_data_plane_fault_valid_pclk && s_data_plane_fault_write_pclk ?
+      4'hF : s_bus_fault_wstrb;
+  assign fault_reserved_i = s_data_plane_fault_valid_pclk ? 1'b0 : s_bus_fault_reserved;
 
   apb4_sysctrl u_sysctrl (
       .clk_i           (clk_i),
@@ -29,6 +110,31 @@ module sysctrl_tb;
       .pll_ctrl        (pll_ctrl),
       .clock_ctrl      (clock_ctrl)
   );
+
+  task automatic send_data_plane_fault(input logic [3:0] master, input logic [2:0] target,
+                                       input logic [31:0] address, input logic write_access,
+                                       input logic [3:0] reason, input logic require_backpressure);
+    logic saw_backpressure;
+    begin
+      saw_backpressure = 1'b0;
+      @(negedge clk_hp_i);
+      s_data_plane_fault_master_hp = master;
+      s_data_plane_fault_target_hp = target;
+      s_data_plane_fault_addr_hp   = address;
+      s_data_plane_fault_write_hp  = write_access;
+      s_data_plane_fault_reason_hp = reason;
+      s_data_plane_fault_valid_hp  = 1'b1;
+      do begin
+        @(posedge clk_hp_i);
+        if (!s_data_plane_fault_ready_hp) saw_backpressure = 1'b1;
+      end while (!s_data_plane_fault_ready_hp);
+      if (require_backpressure && !saw_backpressure) begin
+        $fatal(1, "slow PCLK did not backpressure the successive HP fault");
+      end
+      @(negedge clk_hp_i);
+      s_data_plane_fault_valid_hp = 1'b0;
+    end
+  endtask
 
   task automatic read_register(input logic [31:0] address, output logic [31:0] data);
     begin
@@ -102,9 +208,19 @@ module sysctrl_tb;
     apb4.pwdata                     = '0;
     apb4.pstrb                      = '0;
     sysctrl.user_bus_idle_i         = 1'b1;
-    sysctrl.fault_access_i          = 1'b0;
-    sysctrl.fault_master_i          = '0;
-    sysctrl.fault_code_i            = `RIB_RESP_RESERVED;
+    s_bus_fault_valid               = 1'b0;
+    s_bus_fault_addr                = '0;
+    s_bus_fault_wstrb               = '0;
+    s_bus_fault_reserved            = 1'b0;
+    s_bus_fault_access              = 1'b0;
+    s_bus_fault_master              = '0;
+    s_bus_fault_code                = `RIB_RESP_RESERVED;
+    s_data_plane_fault_valid_hp     = 1'b0;
+    s_data_plane_fault_master_hp    = '0;
+    s_data_plane_fault_target_hp    = '0;
+    s_data_plane_fault_addr_hp      = '0;
+    s_data_plane_fault_write_hp     = 1'b0;
+    s_data_plane_fault_reason_hp    = '0;
     sysctrl.perf_mgmt_wait_i        = 64'd11;
     sysctrl.perf_user_wait_i        = 64'd12;
     sysctrl.perf_dma_wait_i         = 64'd13;
@@ -136,47 +252,89 @@ module sysctrl_tb;
     clock_ctrl.fault_i              = '0;
     clock_ctrl.memory_i             = 32'h0000_0005;
     repeat (2) @(posedge clk_i);
-    rst_n_i = 1'b1;
+    rst_n_i    = 1'b1;
+    rst_hp_n_i = 1'b1;
+    repeat (3) @(posedge clk_hp_i);
 
-    @(negedge clk_i);
-    sysctrl.fault_master_i = 3'd3;
-    fault_valid_i          = 1'b1;
-    fault_addr_i           = 32'h1001_2000;
-    fault_wstrb_i          = 4'hF;
-    fault_reserved_i       = 1'b1;
-    @(negedge clk_i);
-    fault_valid_i = 1'b0;
+    send_data_plane_fault(4'd8, 3'd5, 32'h1001_2000, 1'b1, {1'b0, `RIB_RESP_RESERVED}, 1'b0);
+    send_data_plane_fault(4'd4, 3'd2, 32'h1001_2800, 1'b0, {1'b0, `RIB_RESP_DECERR}, 1'b1);
+    send_data_plane_fault(4'd1, 3'd4, 32'h1001_2C00, 1'b1, {1'b0, `RIB_RESP_SLVERR}, 1'b1);
+    wait (s_data_plane_fault_delivery_count == 4'd3);
+    @(posedge clk_i);
+    #1;
+    if ((s_data_plane_fault_delivery_master[0] != 4'd8) ||
+        (s_data_plane_fault_delivery_target[0] != 3'd5) ||
+        (s_data_plane_fault_delivery_addr[0] != 32'h1001_2000) ||
+        !s_data_plane_fault_delivery_write[0] ||
+        (s_data_plane_fault_delivery_reason[0] != {1'b0, `RIB_RESP_RESERVED}) ||
+        (s_data_plane_fault_delivery_master[1] != 4'd4) ||
+        (s_data_plane_fault_delivery_target[1] != 3'd2) ||
+        (s_data_plane_fault_delivery_addr[1] != 32'h1001_2800) ||
+        s_data_plane_fault_delivery_write[1] ||
+        (s_data_plane_fault_delivery_reason[1] != {1'b0, `RIB_RESP_DECERR}) ||
+        (s_data_plane_fault_delivery_master[2] != 4'd1) ||
+        (s_data_plane_fault_delivery_target[2] != 3'd4) ||
+        (s_data_plane_fault_delivery_addr[2] != 32'h1001_2C00) ||
+        !s_data_plane_fault_delivery_write[2] ||
+        (s_data_plane_fault_delivery_reason[2] != {1'b0, `RIB_RESP_SLVERR})) begin
+      $fatal(1, "successive HP faults were not delivered exactly once and coherently");
+    end
 
     read_register(32'h1000_B010, read_data);
     if (read_data !== 32'h0000_000B) $fatal(1, "fault status was not recorded");
     read_register(32'h1000_B014, read_data);
     if (read_data !== 32'h1001_2000) $fatal(1, "fault address was not recorded");
     read_register(32'h1000_B018, read_data);
-    if (read_data !== 32'h0000_0001) $fatal(1, "fault count was not incremented");
+    if (read_data !== 32'h0000_0003) $fatal(1, "consecutive data-plane faults were lost");
     read_register(32'h1000_B028, read_data);
-    if (read_data !== 32'h0000_0003) $fatal(1, "three-bit fault master was not recorded");
+    if (read_data !== 32'h0000_0008) $fatal(1, "four-bit fault master was not recorded");
     read_register(32'h1000_B02C, read_data);
     if (read_data !== `RIB_RESP_RESERVED) $fatal(1, "fault detail was not recorded");
 
     @(negedge clk_i);
-    sysctrl.fault_master_i = 3'd4;
-    sysctrl.fault_code_i   = `RIB_RESP_DECERR;
-    fault_valid_i          = 1'b1;
-    fault_addr_i           = 32'hA000_0000;
-    fault_wstrb_i          = 4'h0;
-    fault_reserved_i       = 1'b0;
+    s_bus_fault_master   = 4'd4;
+    s_bus_fault_code     = `RIB_RESP_DECERR;
+    s_bus_fault_valid    = 1'b1;
+    s_bus_fault_addr     = 32'hA000_0000;
+    s_bus_fault_wstrb    = 4'h0;
+    s_bus_fault_reserved = 1'b0;
     @(negedge clk_i);
-    fault_valid_i = 1'b0;
+    s_bus_fault_valid = 1'b0;
     read_register(32'h1000_B014, read_data);
     if (read_data !== 32'h1001_2000) $fatal(1, "later fault overwrote first fault address");
     read_register(32'h1000_B018, read_data);
-    if (read_data !== 32'h0000_0002) $fatal(1, "later fault did not increment count");
+    if (read_data !== 32'h0000_0004) $fatal(1, "later fault did not increment count");
     read_register(32'h1000_B02C, read_data);
     if (read_data !== `RIB_RESP_RESERVED) $fatal(1, "later fault overwrote first fault detail");
 
     write_register(32'h1000_B010, 32'h0000_0001);
     read_register(32'h1000_B010, read_data);
     if (read_data !== 32'h0000_000A) $fatal(1, "fault W1C did not clear pending");
+
+    send_data_plane_fault(4'd8, 3'd2, 32'h1001_3000, 1'b0, {1'b0, `RIB_RESP_RESERVED}, 1'b0);
+    wait (s_data_plane_fault_valid_pclk);
+    @(negedge clk_i);
+    s_bus_fault_master   = 4'd4;
+    s_bus_fault_code     = `RIB_RESP_DECERR;
+    s_bus_fault_valid    = 1'b1;
+    s_bus_fault_addr     = 32'hA000_1000;
+    s_bus_fault_wstrb    = 4'h0;
+    s_bus_fault_reserved = 1'b0;
+    @(negedge clk_i);
+    s_bus_fault_valid = 1'b0;
+    read_register(32'h1000_B014, read_data);
+    if (read_data !== 32'h1001_3000) begin
+      $fatal(1, "simultaneous local fault overrode the PCLK-visible data-plane fault");
+    end
+    read_register(32'h1000_B028, read_data);
+    if (read_data !== 32'h0000_0008) begin
+      $fatal(1, "fault arbitration lost the data-plane master high bit");
+    end
+    wait (s_data_plane_fault_delivery_count == 4'd4);
+    read_register(32'h1000_B018, read_data);
+    if (read_data !== 32'h0000_0005) begin
+      $fatal(1, "simultaneous local fault was not deterministically suppressed");
+    end
 
     write_register(32'h1000_B040, 32'h0000_0005);
     read_register(32'h1000_B044, read_data);

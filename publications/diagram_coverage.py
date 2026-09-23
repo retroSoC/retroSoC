@@ -1,11 +1,13 @@
 """Chapter coverage and actual renderer-use checks for specialized publication figures."""
 from __future__ import annotations
 
-PACKAGES = ("circuiteria", "bytefield", "rivet", "blockcell")
+PACKAGES = ("circuiteria", "bytefield", "rivet", "blockcell", "cetz")
 
 
 def inventory(diagrams: dict) -> dict[str, dict]:
     result = {}
+    for identifier, record in diagrams.get("soc_architecture", {}).items():
+        result["cetz:" + identifier] = {"package": "cetz", "id": identifier, "sources": sorted(record["sources"])}
     for package, values in (("circuiteria", diagrams["circuits"]), ("bytefield", diagrams["layouts"]),
                             ("blockcell", diagrams["storage"])):
         for identifier, record in values.items():
@@ -31,13 +33,15 @@ def coverage(contract: dict, diagrams: dict) -> list[dict]:
     ip_ids = set(contract["ip_ids"])
     chapters = {}
     for identifier in ip_ids:
-        chapters[identifier] = {"circuiteria": ["circuiteria:" + identifier], "bytefield": [], "rivet": [], "blockcell": []}
+        chapters[identifier] = {package: [] for package in PACKAGES}
+        chapters[identifier]["circuiteria"] = ["circuiteria:" + identifier]
     for package, values in (("bytefield", diagrams["layouts"]), ("blockcell", diagrams["storage"])):
         for identifier, record in values.items():
             for chapter in record["chapters"]:
                 chapters.setdefault(chapter, {key: [] for key in PACKAGES})[package].append(package + ":" + identifier)
     chapters["apu"]["rivet"] = [key for key in items if key.startswith("rivet:")]
     direct = {
+        "Introduction": ["cetz:soc-functional"] if diagrams.get("soc_architecture") else [],
         "Typical Applications and System Configurations": ["circuiteria:system-media"],
         "Interconnect": ["circuiteria:system-fabric", "blockcell:product-memory-windows"],
         "Memory Attributes, Cache and DMA Coherency": ["blockcell:cache-boundaries"],
@@ -51,6 +55,7 @@ def coverage(contract: dict, diagrams: dict) -> list[dict]:
         "Linker Layout and Runtime Accounting": chapters["software-runtime"]["blockcell"],
     }
     reasons = {
+        "cetz": "No additional chip-level functional overview is owned by this section.",
         "circuiteria": "No separate hardware-port connection diagram is required here; existing workflows, matrices or lookup tables retain their own rendering.",
         "bytefield": "No additional binary frame/container layout is owned by this section; existing MMIO register bit layouts remain with the register renderer.",
         "rivet": "No APU internal instruction encoding is defined here; CPU ISA/CSR manuals remain outside this publication's scope.",
@@ -73,7 +78,7 @@ def coverage(contract: dict, diagrams: dict) -> list[dict]:
                       "status": "covered" if identifiers else "not_applicable",
                       "reason": "Primary diagram or explicit shared-format reference in this chapter." if identifiers else reasons[package]}
             for package, identifiers in values.items()}})
-    if len(result) != len(contract["entries"]) or len(ip_ids) != 40:
+    if len(result) != len(contract["entries"]) or {row["anchor"] for row in contract["entries"] if row["anchor"] in ip_ids} != ip_ids:
         raise ValueError("diagram chapter coverage differs from the frozen inventory")
     for row in reversed(result):
         descendants = []

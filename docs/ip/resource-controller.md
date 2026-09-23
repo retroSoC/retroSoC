@@ -1,10 +1,27 @@
 # Mini Resource Controller
 
+[GA2D Phase 2](ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+adds resource 8 and version 1.1. Phase 5 uses its dedicated PCLK-to-HP
+AXI64/ID3 bridge for the GA2D direct single-job private-AXI64 2D engine. LP
+vector 32 / HP PLIC source 11 and `APB4_GA2D` routing retain their Phase 3
+allocations. The engine supports FILL, COPY, bit-exact CONVERT, opaque alpha
+BLEND, A8 fixed-color foreground masks, and exact equal
+background/destination in-place composition. RGB565, RGB888, XRGB8888, and
+ARGB8888 are color surfaces; A8 is BLEND foreground-only. Its
+source-stop/drain-before-block sequence is specified there.
+[NPU Phase 2](npu.md#phase-2---soc-control-and-resource-integration) adds
+resource 9 and the append-only ABI version 1.2. LP vector 33 / HP PLIC source
+12 and the `APB4_NPU` routing are its frozen allocations. The NPU shell owns
+its PCLK-side idle and round-trip quiesce acknowledgement; the data plane
+combines them with the crossbar-side master idle exactly like the GA2D
+source state. Existing resources
+and register fields are not renumbered or reinterpreted.
+
 ## Scope
 
 The Resource Controller at `0x2000_A000` is the root-management ownership and
 interrupt-routing authority for central DMA, USB2, SDIO0, SDIO1, SPI-SD,
-EXT-H, JPEG, and APU. Hazard3 has read/write access; HP MMIO may inspect status
+EXT-H, JPEG, APU, GA2D, and NPU. Hazard3 has read/write access; HP MMIO may inspect status
 but writes are rejected by the root-control firewall.
 It is handwritten RTL and has a matching handwritten
 `<retrosoc/hal/resource.h>` API; no register generator is used.
@@ -21,9 +38,15 @@ Resource indices are fixed:
 | 5 | EXT-H | 3 |
 | 6 | JPEG | 9 |
 | 7 | APU | 10 |
+| 8 | GA2D direct 2D engine | 11 |
+| 9 | NPU shell | 12 |
 
-Owner `0` routes the resource interrupt to the existing LP vector. Owner `1`
-removes it from LP and routes it to the listed HP PLIC source. Reset masks both
+For resources 0 through 7, owner `0` routes the resource interrupt to the
+existing LP vector. Owner `1` removes it from LP and routes it to the listed HP
+PLIC source. Resource 8 routes the GA2D raw IRQ to LP vector 32/external
+ordinal 30 for owner `0`, or HP PLIC source 11 for owner `1`. Resource 9
+routes the NPU raw IRQ to LP vector 33/external ordinal 31 for owner `0`, or
+HP PLIC source 12 for owner `1`. Reset masks both
 routes. Hardware never delivers one resource interrupt to both owners.
 
 ## Register ABI
@@ -31,7 +54,7 @@ routes. Hardware never delivers one resource interrupt to both owners.
 | Offset | Name | Access | Contract |
 | ---: | --- | --- | --- |
 | `0x000` | `IP_ID` | RO | `0x52534354` (`RSCT`) |
-| `0x004` | `IP_VERSION` | RO | `0x00010000` |
+| `0x004` | `IP_VERSION` | RO | `0x00010002` |
 | `0x008` | `CAPABILITY` | RO | resource count and ABI capability |
 | `0x00C` | `GLOBAL_STATUS` | RO | cache request/clean and resource fault summary |
 | `0x010` | `CACHE_CONTROL` | RW | bit 0 clean ACK, bit 1 live request |
@@ -55,6 +78,13 @@ leaves the owner unchanged, and raises the resource-fault interrupt on LP IRQ
 condition for DMA and I/O resources; this is safe but can delay an otherwise
 independent handoff.
 
+For resource 8, the PCLK source stop admits an already presented address
+handshake before closing new traffic. Its HP block and acknowledgement require
+a fresh synchronized source-quiesced confirmation after the source has drained
+its AXI state. This prevents a stale idle indication from acknowledging a legal
+`WVALID`-before-`AWVALID` write. The PCLK controller view also qualifies
+resource-8 idle and ACK with the live source-safe-idle signal.
+
 ## Cache Maintenance
 
 VexiiRiscv implements `Zicbom` with a 64-byte CBO block. On HP shutdown the AON
@@ -72,11 +102,13 @@ and a Linux platform driver remain software responsibilities.
 ## Delivery Boundary
 
 Central owner/lock, quiesce-gated handoff, cache request/ACK, fault IRQ, and
-LP/HP IRQ routing are implemented and directed-tested. `CONTROL.QUIESCE`
-blocks the corresponding data-crossbar master and waits per-master outstanding
-zero; shared I/O gateways are conservatively blocked as a pair. `CONTROL.RESET`
-also blocks new data and masks IRQ but is not yet connected to every peripheral
-engine's internal reset state machine. The APU-P1 shell is an exception: its
-index-7 quiesce acknowledgement and reset are connected locally in PCLK. It
-must not be described as independent peripheral power isolation or reset containment until
+LP/HP IRQ routing are implemented and directed-tested. Phase 5 adds the active
+GA2D private AXI64 engine's raw IRQ and master traffic to resource 8.
+`CONTROL.QUIESCE` blocks the corresponding data-crossbar master
+and waits per-master outstanding zero; shared I/O gateways
+are conservatively blocked as a pair. `CONTROL.RESET` also blocks new data and
+masks IRQ but is not yet connected to every peripheral engine's internal reset
+state machine. The APU-P1 shell is an exception: its index-7 quiesce
+acknowledgement and reset are connected locally in PCLK. It must not be
+described as independent peripheral power isolation or reset containment until
 those downstream acknowledgements and fault-injection tests exist.

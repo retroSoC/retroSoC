@@ -3,7 +3,18 @@
 Mini uses two cooperating AXI fabrics. `axi4_interconnect` is the 32-bit LP
 control/compatibility plane; `axi4_data_crossbar` is the 64-bit HP payload
 plane. Common `axi4_if`, `memory_map.json`, and `soc_topology.json` are the
-executable protocol, address, and integration sources of truth.
+executable protocol, address, and integration sources of truth. GA2D Phase 5
+uses `APB4_GA2D` and its resource-owned interrupt to control the direct
+single-job private-AXI64 2D engine on dedicated master 8.
+
+[GA2D Phase 2](ip/ga2d.md#phase-2---expand-axi64-fabric-and-resource-integration)
+expands the fabric to nine native masters and seven-bit global IDs. It adds
+master 8 and preserves all existing identities, target policy, and timeout
+behavior. Master 8 is fed only by its dedicated PCLK-to-HP AXI64/ID3 bridge and runs the
+GA2D direct 2D source. Phase 5 retains the separate PCLK `APB4_GA2D` control
+plane and resource-owned IRQ. JPEG master 6 has one normal read credit, one
+normal write credit, and class-8 arbitration; this admission policy does not
+establish JPEG contention, performance, or end-to-end system qualification.
 
 ## LP control plane
 
@@ -25,8 +36,8 @@ master from writing SYSCTRL/RCU, watchdog, and GPIO administration windows.
 
 ## HP data plane
 
-The native payload fabric is AXI64 with 32-bit addresses and six-bit global
-IDs. It has eight masters:
+The native payload fabric is AXI64 with 32-bit addresses and seven-bit global
+IDs. It has nine masters:
 
 | Index | Master | Adaptation |
 | ---: | --- | --- |
@@ -36,10 +47,12 @@ IDs. It has eight masters:
 | 3 | I/O gateway A | USB2 and SDIO0, PCLK-to-HP CDC, AXI32-to-64 |
 | 4 | I/O gateway B | SDIO1 and SPI-SD, PCLK-to-HP CDC, AXI32-to-64 |
 | 5 | LP data gateway | Hazard3 memory traffic, LP-to-HP CDC, AXI32-to-64 |
-| 6 | reserved | permanently idle and denied |
+| 6 | JPEG | PCLK-to-HP AXI64 CDC; one normal read and one normal write credit, class 8 |
 | 7 | EXT-H | PCLK-to-HP AXI64 CDC |
+| 8 | GA2D | dedicated PCLK-to-HP AXI64/ID3 CDC; direct single-job private-AXI64 2D engine |
 
-Each source receives a fixed three-bit master prefix. The crossbar maintains
+Each source receives a fixed four-bit master prefix over a three-bit source
+ID. The crossbar maintains
 independent read and write arbitration for each target, enabling read/write
 overlap and cross-target concurrency. Different IDs from HP/DMA/EXT-H may be
 active on the same or different targets up to master and target credits. The
@@ -48,7 +61,7 @@ reads and two writes; serial and error targets use one read and one write.
 
 | Target | Current backend |
 | --- | --- |
-| on-chip SRAM | native AXI64/ID6 striped technology macros in HP |
+| on-chip SRAM | native AXI64/ID7 striped technology macros in HP |
 | SDRAM | HP-to-memory AXI64 CDC, local 64-to-32 SDRAM adaptation |
 | QPI PSRAM | AXI64-to-32, CDC, selected QPI frontend |
 | OPI/HyperBus | AXI64-to-32, CDC, selected OPI frontend |
@@ -63,7 +76,8 @@ the integration RTL:
 | HP I-cache | all five memories | none | allowed | cache attributes preserved |
 | HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
 | DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
-| reserved | none | none | denied | fail-closed |
+| GA2D | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; direct FILL/COPY/CONVERT/BLEND 2D engine, no hardware coherency |
+| JPEG | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; one normal read and one normal write credit |
 | EXT-H | all five memories within slot ACL | SRAM, SDRAM, QPI, OPI within slot ACL | denied | `AxCACHE=0` required |
 
 XPI is read-only on the data plane. A denied target, instruction access,
@@ -72,7 +86,7 @@ and records the immutable master identity and original decoded target.
 
 Per-target arbitration first selects the highest effective five-bit priority
 and then uses the Common round-robin arbiter among equal requesters. Normal
-classes are HP I/D 12, I/O gateways 10, DMA/EXT-H 8, and LP gateway 2, with
+classes are HP I/D 12, I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8, and LP gateway 2, with
 incoming AXI QoS able to raise a normal request up to 15. A continuously
 eligible request is promoted to 16 after 256 cycles. During recovery, the LP
 gateway is promoted to 31. Target backpressure is outside the service bound;
@@ -86,7 +100,10 @@ fail-closed according to the synchronized AON pad mode.
 
 - `axi4_upsizer_32to64` preserves byte lanes and adds the master ID prefix.
 - `axi4_downsizer_64to32` splits 64-bit beats for current memory frontends and
-  recombines read responses.
+  recombines read responses. Aligned 64-bit `INCR` bursts longer than eight
+  beats are split into sequential legal narrow transactions of at most sixteen
+  beats, recombine read data across fragment boundaries, and return one
+  aggregated write response.
 - `axi4_async_bridge` carries AW, W, B, AR, and R through independent Common
   coordinated warm-flush FIFOs and reports clear-busy and epoch state.
 - `apb4_async_bridge` converts one APB request into a request/response CDC

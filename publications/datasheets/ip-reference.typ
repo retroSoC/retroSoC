@@ -114,13 +114,15 @@
 
 #let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none, functional-note:none, protocol-note:none) = {
   let chapter=data.chapters.at(family)
+  let revised=id in ("sysctrl","resource","monitor","apu","i2s")
+  if revised {change-start("dev-ip-"+id,chapter.title+" current implementation and register reference")}
   subhead(id,"Features and Block Diagram",depth)
   list(..chapter.at("features",default:()).map(inline))
   block(breakable:false)[
-      #change-start("circuit-"+id,chapter.title+" internal circuit diagram")
+      #change-start(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id},chapter.title+" internal circuit diagram")
       #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#chapter.title functional organization.])
       #label("circuit-"+id)
-      #change-end("circuit-"+id)
+      #change-end(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id})
     ]
 
   subhead(id,"Functional Description",depth)
@@ -176,4 +178,5 @@
   } else {
     source-note(chapter.reference,title:"Detailed interface contract and source provenance")
   }
+  if revised {change-end("dev-ip-"+id)}
 }

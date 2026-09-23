@@ -50,7 +50,7 @@ def test_representative_inventory_uses_actual_widths_and_addresses(data):
     assert value["uart_fifo"] == {"tx": {"depth": 64, "bits": 8}, "rx": {"depth": 64, "bits": 12}}
     assert next(row for row in value["windows"] if row["symbol"] == "SRAM")["size"] == 32768
     assert value["cache"] == {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128}
-    assert len(value["circuits"]) == 44
+    assert len(value["circuits"]) == 46
     assert {"uart0", "dma", "apu", "system-fabric", "system-clocks"} <= set(value["circuits"])
 
 
@@ -81,7 +81,7 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     ("rtl/ip/serial/uart_reg.sv", ".DATA_WIDTH      (12)", ".DATA_WIDTH      (16)"),
     ("rtl/ip/serial/uart_reg.sv", "TxFifoDepth    = 64", "TxFifoDepth    = 32"),
     ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
-    ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = 2048", "APUMC_MAX_INSTRUCTIONS = 4096"),
+    ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1", "APUMC_MAX_INSTRUCTIONS = 4096"),
     ("app/ports/linux/linux/retrosoc_hp.dts", "riscv,cbom-block-size = <64>", "riscv,cbom-block-size = <128>"),
 ])
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):

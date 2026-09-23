@@ -2,6 +2,14 @@
 
 ## Status and Scope
 
+This is a historical survey. The approved [Mini NPU specification](npu.md)
+now owns feature `npu`, its independent architecture, interfaces and phases.
+The AXI32, 128 KiB SRAM and stream-first statements retained below describe
+the older research baseline and MUST NOT be used as current integration
+requirements. The [current LP/HP contract](../lp-hp-architecture.md) describes
+the AXI64 platform; [npu-verification.md](npu-verification.md) defines the new
+feature's acceptance evidence. Neither document claims implemented NPU RTL.
+
 This document evaluates commercial SoCs as system-level references for an
 optional retroSoC Mini AI accelerator. It is a roadmap study, not an
 implemented RTL, register ABI, performance claim, or supported build profile.
@@ -10,8 +18,7 @@ study should be identified separately, for example as `Mini-AI`, so that the
 base product remains below Std in memory bandwidth, area, power, and software
 complexity.
 
-The executable Mini baseline remains defined by the committed configuration,
-address map, topology, and RTL. In particular:
+At the time of this historical survey, the baseline assumptions were:
 
 - the system fabric has 32-bit address and data paths;
 - each master may own at most one read and one write transaction;

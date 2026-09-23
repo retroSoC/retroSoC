@@ -6,9 +6,13 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 
-REPOSITORY_URL = "https://github.com/retroSoC/retroSoC"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from publications.page_reference import (  # noqa: E402
+    REPOSITORY_URL, read_page_roles, validate_footer_pages, validate_page_roles,
+)
 
 
 def digest(path: Path) -> str:
@@ -69,6 +73,9 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
     old, baseline_hash = verified_pdf(baseline)
     marker_file = pdf.parent / "change-markers.json"
     manifest = json.loads((pdf.parent / "manifest.json").read_text(encoding="utf-8"))
+    roles = read_page_roles(pdf.parent, manifest, len(reader.pages))
+    unnumbered = validate_page_roles(roles, len(reader.pages))
+    validate_footer_pages(repository_footer_pages(reader), len(reader.pages), roles)
     if manifest["change_markers_sha256"] != digest(marker_file):
         raise ValueError("change markers do not match the delivered manifest")
     markers = json.loads(marker_file.read_text(encoding="utf-8"))
@@ -81,6 +88,9 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
         for page in range(row["start_page"], row["end_page"] + 1):
             if page in labels:
                 continue
+            if page in unnumbered:
+                labels[page] = None
+                continue
             text = reader.pages[page - 1].extract_text() or ""
             found = re.findall(r"\b(\d+)\s*/\s*(\d+)\b", text[-200:])
             if len(found) != 1 or int(found[0][1]) != len(reader.pages):
@@ -88,19 +98,36 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
             labels[page] = int(found[0][0])
         row["printed_start"] = labels[row["start_page"]]
         row["printed_end"] = labels[row["end_page"]]
+        row["numbering"] = ("unprinted" if all(page in unnumbered for page in range(row["start_page"], row["end_page"] + 1))
+                            else "mixed" if any(page in unnumbered for page in range(row["start_page"], row["end_page"] + 1))
+                            else "printed")
     global_changes = []
     footer_pages = repository_footer_pages(reader)
-    if footer_pages == list(range(1, len(reader.pages) + 1)) and not repository_footer_pages(old):
+    if footer_pages == [page for page in range(1, len(reader.pages) + 1) if page not in unnumbered] and not repository_footer_pages(old):
         global_changes.append({"id": "repository-footer", "category": "global-presentation",
                                "title": "Left footer replaced by the clickable repository URL",
                                "start_page": 1, "end_page": len(reader.pages), "url": REPOSITORY_URL})
+    old_manifest = json.loads((baseline.parent / "manifest.json").read_text(encoding="utf-8"))
+    old_date = old_manifest.get("document", {}).get("date")
+    new_date = manifest.get("document", {}).get("date")
+    if old_date and new_date and old_date != new_date:
+        global_changes.append({"id": "document-date", "category": "global-presentation",
+                               "title": "Document date and running footer date updated",
+                               "start_page": 1, "end_page": len(reader.pages),
+                               "before": old_date, "after": new_date})
+    if len(old.pages) != len(reader.pages):
+        global_changes.append({"id": "page-total", "category": "pagination",
+                               "title": "Running page totals and dependent page references updated",
+                               "start_page": 1, "end_page": len(reader.pages),
+                               "before": len(old.pages), "after": len(reader.pages)})
     return {
         "baseline": {"path": str(baseline.resolve()), "sha256": baseline_hash, "pages": len(old.pages)},
         "final": {"path": str(pdf.resolve()), "sha256": final_hash, "pages": len(reader.pages)},
         "marker_sha256": digest(marker_file), "ranges": ranges,
         "global_presentation_changes": global_changes,
-        "printed_pages_equal_viewer_pages": all(page == value for page, value in labels.items()),
-        "scope": "Tracked added/rewritten content and explicit cross-references; navigation and global presentation changes are separate. Subsequent pagination/numbering-only changes are not substantive edits.",
+        "printed_pages_equal_viewer_pages": all(page == value for page, value in labels.items() if value is not None),
+        "unnumbered_viewer_pages": sorted(unnumbered),
+        "scope": "Tracked added/rewritten content and explicit cross-references; navigation and global presentation changes are separate. Declared closing pages use viewer indexes with null printed page numbers. Subsequent pagination/numbering-only changes are not substantive edits.",
     }
 
 

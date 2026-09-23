@@ -21,6 +21,14 @@ RTL changes require an affected firmware build and simulation. Use
 `make regress-pr` or `make regress-nightly` for supported regression coverage;
 see [Engineering Workflow](../docs/engineering.md) for results and artifacts.
 
+The [Mini NPU specification](../docs/ip/npu.md) freezes an independent
+64-MAC, 64 KiB accelerator with private AXI64 DMA, APB4 configuration and
+resource-owned interrupts. Its stable Phases 0-6 and
+[verification requirements](../docs/ip/npu-verification.md) govern the RTL,
+compiler, deployment and qualification flows. P0-P5 functionality is retained;
+P6 commands are implemented but only a current-revision aggregate PASS report
+establishes physical and performance qualification.
+
 ## Self-Owned RTL Naming
 
 Self-owned SystemVerilog follows these signal and register naming rules. New
@@ -119,6 +127,18 @@ ownership. Its implemented limits, handwritten ABI, measured performance, and
 commercial release gates are documented in
 [Baseline JPEG Codec](../docs/ip/jpeg.md).
 
+The Mini GA2D graphics accelerator has a frozen architecture and ABI. Phase 5
+implements `APB4_GA2D` as a PCLK-controlled, direct single-job private-AXI64
+2D engine with FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color
+foreground masks, and exact equal background/destination in-place composition.
+It has ownership-routed IRQ support, snapshots, byte pitches, and byte-edge
+transfers. RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is
+BLEND foreground-only. Transparent-background and premultiplied-alpha modes,
+scaling, rendering, and descriptor/ring/queue submission remain unavailable.
+The earlier LP interrupt platform and native AXI64 fabric expansion retain their
+fixed allocations; no physical/PPA completion is claimed here.
+The exact lifecycle, HAL, and evidence gates are in [GA2D](../docs/ip/ga2d.md).
+
 The Mini Audio Processing Unit has a frozen coreless architecture. APU-P5 adds
 the private AXI4 DMA and scheduler, microcode loader/sequencer, 112 KiB local
 store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
@@ -135,6 +155,13 @@ Its eight control-store SRAM wrappers are separate from the unchanged 112 KiB
 data store. This is an implementation requirement: full WAV/FLAC resampling
 and long-Rice coverage plus a complete image fitting 4096 words are still
 required before claiming P5 completion.
+
+The P6 specification enables MP3 through a regenerated three-format APUMC V2
+bundle and the existing production pipeline. Its 4096-word/112 KiB limits,
+MP3 metadata/reservoir/CRC behavior, dual-reference PSNR and timed AXI/xrun
+qualification are normative design requirements, not evidence of delivered
+MP3 RTL or microcode. P5 compatibility and the complete-image packing gate
+remain prerequisites; KWS and RX stay deferred.
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its

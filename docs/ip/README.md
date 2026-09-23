@@ -22,11 +22,19 @@ extension interfaces.
 - [jpeg.md](jpeg.md) defines the Baseline JPEG encoder/decoder, commercial
   reference survey, APB4/AXI4 DMA and SG-ring ABI, HAL, verification evidence,
   measured performance baseline, and 1080p60 optimization gates.
+- [ga2d.md](ga2d.md) freezes the Mini 2D graphics accelerator, private AXI64
+  DMA, APB4 and HAL ABI, expanded LP interrupts, ninth data master, and
+  ordered implementation/evidence phases; it does not claim implemented RTL.
 - [apu.md](apu.md) defines the coreless Mini Audio Processing Unit, bounded
   codec microcode ISA, WAV/MP3/FLAC decode, private AXI4 DMA, APB4/ring ABI,
   I2S streams, independent KWS, lifecycle, and commercial delivery gates.
-- [mini-npu.md](mini-npu.md) records the commercial NPU reference survey and optional
-  Mini-AI architecture direction; it does not define implemented RTL or ABI.
+- [npu.md](npu.md) freezes the independent 64-MAC, 64 KiB Mini NPU,
+  private AXI64 DMA, APB4/job/HAL ABI, resource/IRQ and lifecycle contracts,
+  and stable Phases 0-6. [npu-verification.md](npu-verification.md) defines
+  numerical, fixed-model, protocol, performance and physical acceptance;
+  implementation and evidence remain pending.
+- [mini-npu.md](mini-npu.md) retains historical commercial NPU research;
+  its old platform assumptions and architecture direction are superseded.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.
 - [xpi.md](xpi.md) defines the native-AXI4/APB4 XPI V2 controller, commercial reference survey, LUT and PHY contracts, HAL, JTAG NOR programming, and delivery boundary.
 

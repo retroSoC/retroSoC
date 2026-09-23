@@ -1,6 +1,7 @@
 #include <stddef.h>
 
 #include <retrosoc/core/soc.h>
+#include <retrosoc/generated/irq_metadata.h>
 #include <retrosoc/lib/printf.h>
 #include <socver.h>
 #include <retrosoc/hal/psram.h>
@@ -25,7 +26,8 @@ static void rs_print_hazard3_spec(void) {
     printf("    Not present: U-mode PMP Zcb_Zclsd_Zcmp_Xh3PMPM_Xh3Power\n");
     printf("  Privilege and interrupts\n");
     printf("    Mode: M-mode only; mandatory, trap, and counter CSRs enabled\n");
-    printf("    IRQ: 30 external + software + timer; Xh3IRQ, 4 priority levels\n");
+    printf("    IRQ: %u external + software + timer; Xh3IRQ, 4 priority levels\n",
+           (unsigned int)RS_SOC_EXTERNAL_IRQ_COUNT);
     printf("  Memory bus\n");
     printf("    AHB5 manager -> AHB-Lite/AXI4 fabric\n");
     printf("    Single-beat access; no burst or exclusive transactions\n");
@@ -113,6 +115,8 @@ static void rs_print_mmio_map(void) {
            (void *)(uintptr_t)RS_SOC_APB4_OPIPSRAM_BASE);
     printf("                       1 x I2C1           @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_I2C1_BASE);
+    printf("                       1 x GA2D SHELL     @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_GA2D_BASE);
     printf("                       1 x GPIO ADMIN     @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_GPIO_ADMIN_BASE);
     printf("                       1 x SDIO1          @%p\n",
@@ -129,6 +133,8 @@ static void rs_print_mmio_map(void) {
            (void *)(uintptr_t)RS_SOC_APB4_JPEG_BASE);
     printf("                       1 x APU            @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_APU_BASE);
+    printf("                       1 x NPU SHELL      @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_NPU_BASE);
     printf("                       1 x CLINT          @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
     printf("                       1 x ARCHINFO       @%p\n",

@@ -11,6 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from apu_isa import abi_manifest  # noqa: E402
+from apu_abi_digest import (  # noqa: E402
+    c_implemented_digest,
+    compute_abi_digest,
+    rtl_implemented_digest,
+)
 
 
 RTL_DEFINE = ROOT / "rtl/ip/multimedia/apu_define.svh"
@@ -78,10 +83,16 @@ def test_apu_p4_tool_isa_matches_handwritten_rtl_and_c() -> None:
     exact = {
         "APUMC_MAGIC": manifest["apumc"]["magic"],
         "APUMC_ABI": manifest["apumc"]["abi"],
+        "APUMC_ABI_V1": manifest["apumc"]["abi_v1"],
+        "APUMC_ABI_V2": manifest["apumc"]["abi_v2"],
+        "APUMC_V1": manifest["apumc"]["abi_v1"],
+        "APUMC_V2": manifest["apumc"]["abi_v2"],
         "APUMC_HEADER_BYTES": manifest["apumc"]["header_bytes"],
         "APUMC_ENTRY_BYTES": manifest["apumc"]["entry_bytes"],
         "APUMC_ENTRY_COUNT": manifest["apumc"]["entry_count"],
         "APUMC_MAX_INSTRUCTIONS": manifest["apumc"]["max_instructions"],
+        "APUMC_MAX_INSTRUCTIONS_V1": manifest["apumc"]["max_instructions_v1"],
+        "APUMC_MAX_INSTRUCTIONS_V2": manifest["apumc"]["max_instructions_v2"],
         "APUMC_P3_PRIMITIVE_MASK": manifest["p3_implemented_primitive_mask"],
         "APUMC_P4_PRIMITIVE_MASK": manifest["p4_implemented_primitive_mask"],
         "APUMC_P5_PRIMITIVE_MASK": manifest["p5_implemented_primitive_mask"],
@@ -137,3 +148,10 @@ def test_apu_p4_tool_isa_matches_handwritten_rtl_and_c() -> None:
         if name != "reserved":
             exact[f"MC_TRAP_{trap_names[name]}"] = value
     assert {name: rtl[name] for name in exact} == exact
+
+
+def test_apu_abi_digest_matches_computed_value() -> None:
+    computed = compute_abi_digest()
+    assert computed != 0
+    assert rtl_implemented_digest() == computed
+    assert c_implemented_digest() == computed

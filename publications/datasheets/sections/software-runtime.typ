@@ -82,17 +82,20 @@ The generic trap assembly saves ABI caller registers and MEPC/MCAUSE/MSTATUS, pa
 and the saved stack pointer to the C dispatcher, restores the saved context and returns with
 MRET. The non-RV32E assembly frame reserves 20 register words; it is not the total interrupt
 stack budget, which also includes C handlers and their callees. No automatic nesting policy,
-full exception emulation or per-peripheral interrupt dispatch is provided by that frame.
+full exception emulation or peripheral acknowledgement is provided by that frame. With CSR support,
+the C runtime dispatches LP external interrupts through Hazard3 Xh3irq; it is not an LP PLIC.
 
 #ds-table("runtime-irq-support",[Generic LP IRQ API and dispatcher boundaries],
   ([Operation],[Current software behavior],[Required interpretation]),
   ((code("rs_irq_register_exception"),[Accept non-null handlers with an index below #sw.irq.counts.RS_EXCEPTION_COUNT.],[Registers a handler; does not validate or emulate every possible processor exception.]),
    (code("rs_irq_register_core"),[Store a non-null handler below #sw.irq.counts.RS_CORE_IRQ_COUNT.],[Handler-table storage is separate from interrupt-enable state.]),
    (code("rs_irq_enable_core"),[Register the handler, then enable only machine software or timer interrupts; otherwise return RS_ENOTSUP.],[An unsupported valid ID can already have updated the table; it is not a transactional rollback.]),
-   (code("rs_irq_register_external"),[Invalid input returns RS_EINVAL; otherwise return RS_ENOTSUP.],[No LP PLIC claim/complete implementation is supplied by this API. HP PLIC hardware remains a separate platform.]),
+   (code("rs_irq_register_external"),[Register a non-null handler below #sw.irq.counts.RS_EXTERNAL_IRQ_COUNT; otherwise return RS_EINVAL.],[CSR-enabled runtime only. Registration and delivery enable are separate operations; IDs are external ordinals.]),
+   (code("rs_irq_enable_external"),[Register the handler and enable the Xh3irq source; an unset priority defaults to 1.],[Global delivery remains under caller control; rs_irq_set_external_priority admits priorities 0-3.]),
+   (code("rs_irq_disable_external"),[Mask the selected external source.],[The no-CSR implementations return RS_ENOTSUP; they do not silently emulate interrupts.]),
    ([Global enable],[The caller controls the global interrupt-enable bit separately.],[Complete handler and source setup before enabling delivery.]),
    ([Default exception],[Print diagnostic mcause and stack pointer, then loop.],[No automatic TEST_STATUS failure or instruction recovery is generated.]),
-   ([Default / external interrupt],[Print a diagnostic and return. Machine external interrupts use this path.],[No generic peripheral acknowledgement is performed; an asserted source can retrigger.])),
+   ([External interrupt dispatch],[Claim the highest-priority Xh3irq source, call its installed handler, then restore context; mask a source with no handler.],[The peripheral cause still needs acknowledgement in the handler. HP PLIC claim/complete belongs to the HP platform.])),
   widths:(1.05fr,1.7fr,1.7fr))
 
 The supplied IRQ example registers machine timer/software handlers, enables global delivery,

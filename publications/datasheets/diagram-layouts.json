@@ -211,7 +211,7 @@
       },
       {
         "file": "scripts/apu_isa.py",
-        "text": "APUMC_MAGIC, APUMC_ABI, total_bytes, len(instructions), APUMC_INSTRUCTION_OFFSET, table_offset, len(table_payload), APUMC_HEADER_BYTES, APUMC_ENTRY_COUNT, required_mask, scratch_end, crc, build_id & 0xFFFFFFFF, (build_id >> 32) & 0xFFFFFFFF, 0, 0,"
+        "text": "APUMC_MAGIC, abi, total_bytes, len(instructions), APUMC_INSTRUCTION_OFFSET, table_offset, len(table_payload), APUMC_HEADER_BYTES, APUMC_ENTRY_COUNT, required_mask, scratch_end, crc, build_id & 0xFFFFFFFF, (build_id >> 32) & 0xFFFFFFFF, 0, 0,"
       }
     ],
     "order": "lsb",
@@ -346,7 +346,7 @@
     "bindings": [
       {
         "file": "scripts/apu_isa.py",
-        "text": "self.format_id | (self.entry_pc << 4), self.first_pc | (self.last_pc << 16), self.scratch_base, self.scratch_bytes, self.max_loop_count, self.max_retired, self.primitive_mask, self.table_offset | (self.table_bytes << 16),"
+        "text": "self.format_id | ((self.entry_pc & entry_mask) << 4), (self.first_pc & range_mask) | ((self.last_pc & range_mask) << 16), self.scratch_base, self.scratch_bytes, self.max_loop_count, self.max_retired, self.primitive_mask, self.table_offset | (self.table_bytes << 16),"
       }
     ],
     "order": "lsb",
@@ -2533,5 +2533,316 @@
       }
     ],
     "bits": 2048
+  },
+  {
+    "id": "ga2d-pixels",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D pixel-word fields and memory byte order",
+    "kind": "bits",
+    "section": "functional",
+    "order": "lsb",
+    "rows": [
+      {
+        "label": "RGB565",
+        "bits": 16,
+        "fields": [
+          {
+            "name": "Blue",
+            "label": "Blue",
+            "lsb": 0,
+            "bits": 5,
+            "role": "configuration"
+          },
+          {
+            "name": "Green",
+            "label": "Green",
+            "lsb": 5,
+            "bits": 6,
+            "role": "configuration"
+          },
+          {
+            "name": "Red",
+            "label": "Red",
+            "lsb": 11,
+            "bits": 5,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "RGB888",
+        "bits": 24,
+        "fields": [
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "XRGB8888",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "X",
+            "label": "X",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "ARGB8888",
+        "bits": 32,
+        "fields": [
+          {
+            "name": "B",
+            "label": "B",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "G",
+            "label": "G",
+            "lsb": 8,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "R",
+            "label": "R",
+            "lsb": 16,
+            "bits": 8,
+            "role": "configuration"
+          },
+          {
+            "name": "A",
+            "label": "A",
+            "lsb": 24,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      },
+      {
+        "label": "A8 foreground mask",
+        "bits": 8,
+        "fields": [
+          {
+            "name": "Alpha",
+            "label": "Alpha",
+            "lsb": 0,
+            "bits": 8,
+            "role": "configuration"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "crt/src/hal/ga2d_math.c"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_pixel.sv",
+        "text": "s_red = pixel_i[7:0]; s_green = pixel_i[15:8]; s_blue = pixel_i[23:16];"
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_pixel.sv",
+        "text": "s_red = pixel_i[23:16]; s_green = pixel_i[15:8]; s_blue = pixel_i[7:0];"
+      }
+    ],
+    "note": "Bit 0 is at the left, so increasing byte addresses read left to right. These are memory pixel words, not serial-wire slots. COPY preserves bytes. FILL/CONVERT/BLEND packing follows the operation-specific rules; X is written as 255 when repacked. A8 is permitted only as a BLEND foreground mask."
+  },
+  {
+    "chapters": [
+      "npu"
+    ],
+    "kind": "bytes",
+    "section": "functional",
+    "order": "lsb",
+    "id": "npu-descriptor",
+    "title": "NPU 128-byte descriptor ABI 1.0",
+    "sources": [
+      "scripts/npu_descriptors.py",
+      "rtl/ip/multimedia/npu_define.svh"
+    ],
+    "bindings": [],
+    "derived": "npu-descriptor",
+    "note": "32 little-endian words. Version/opcode occupies word 0; reserved words must be zero. HW and channel words pack two 16-bit dimensions. Zero points occupy signed low bytes with zero upper bits; activation bounds occupy the low two bytes. Addresses are system DMA addresses, not private-SRAM offsets. The descriptor base is 64-byte aligned."
+  },
+  {
+    "chapters": [
+      "npu"
+    ],
+    "kind": "bytes",
+    "section": "functional",
+    "order": "lsb",
+    "id": "npu-channel-parameters",
+    "title": "NPU per-output-channel parameter record",
+    "sources": [
+      "scripts/npu_compiler_p0.py",
+      "scripts/npu_executor.py"
+    ],
+    "bindings": [
+      {
+        "file": "scripts/npu_compiler_p0.py",
+        "text": "struct.pack(\"<iiiI\", bias[c], multipliers[c], shifts[c], 0)"
+      }
+    ],
+    "bits": 128,
+    "fields": [
+      {
+        "name": "bias",
+        "label": "bias",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "multiplier",
+        "label": "multiplier",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "shift",
+        "label": "shift",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "reserved",
+        "label": "reserved",
+        "lsb": 96,
+        "bits": 32,
+        "role": "reserved"
+      }
+    ],
+    "note": "Little-endian signed 32-bit bias, multiplier and shift followed by a zero reserved word. Requantization follows numeric profile 1. Parameter-base alignment is 64 bytes; the per-output-channel record is 16 bytes."
+  },
+  {
+    "chapters": [
+      "npu"
+    ],
+    "kind": "bytes",
+    "section": "functional",
+    "order": "lsb",
+    "id": "npu-add-parameters",
+    "title": "NPU Add parameter block",
+    "sources": [
+      "scripts/npu_compiler_p0.py",
+      "scripts/npu_executor.py"
+    ],
+    "bindings": [
+      {
+        "file": "scripts/npu_compiler_p0.py",
+        "text": "struct.pack(\"<IiiiiiiI\", 20, m0, s0, m1, s1, mout, sout, 0)"
+      }
+    ],
+    "bits": 256,
+    "fields": [
+      {
+        "name": "left_shift",
+        "label": "left shift",
+        "lsb": 0,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "input0_multiplier",
+        "label": "input0 multiplier",
+        "lsb": 32,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "input0_shift",
+        "label": "input0 shift",
+        "lsb": 64,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "input1_multiplier",
+        "label": "input1 multiplier",
+        "lsb": 96,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "input1_shift",
+        "label": "input1 shift",
+        "lsb": 128,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "output_multiplier",
+        "label": "output multiplier",
+        "lsb": 160,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "output_shift",
+        "label": "output shift",
+        "lsb": 192,
+        "bits": 32,
+        "role": "configuration"
+      },
+      {
+        "name": "reserved",
+        "label": "reserved",
+        "lsb": 224,
+        "bits": 32,
+        "role": "reserved"
+      }
+    ],
+    "note": "Little-endian 32-bit words. Reserved is zero. Multiplier and shift semantics follow numeric profile 1; the Add left shift is unsigned and the current compiler emits 20. Parameter-base alignment is 64 bytes, separate from record length."
   }
 ]

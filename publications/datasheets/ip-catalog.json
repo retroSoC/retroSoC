@@ -333,7 +333,7 @@
     "sources": [
       "docs/ip/resource-controller.md"
     ],
-    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for eight resources."
+    "summary": "LP-controlled ownership, quiesce, reset and LP/HP IRQ routing for ten resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route."
   },
   {
     "id": "monitor",
@@ -344,7 +344,7 @@
     "sources": [
       "docs/ip/fabric-monitor.md"
     ],
-    "summary": "Snapshot counters and sticky fault attribution beside the HP data crossbar."
+    "summary": "Ten-master/six-target snapshot counters and sticky fault attribution beside the HP data crossbar; bank 8 observes active P5 GA2D direct 2D traffic."
   },
   {
     "id": "i2s",
@@ -477,15 +477,52 @@
     "summary": "MPW selectable user-IP window; PRODUCT exposes a compatibility responder."
   },
   {
+    "id": "ga2d",
+    "regions": [
+      "APB4_GA2D"
+    ],
+    "irqs": [
+      "ga2d"
+    ],
+    "sources": [
+      "docs/ip/ga2d.md",
+      "rtl/ip/multimedia/apb4_ga2d.sv",
+      "rtl/ip/multimedia/ga2d_pkg.sv",
+      "rtl/ip/multimedia/ga2d_addr_gen.sv",
+      "rtl/ip/multimedia/ga2d_axi4_master.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "rtl/ip/multimedia/ga2d_reg.sv"
+    ],
+    "summary": "P5 direct single-job 2D accelerator with private AXI64 DMA. Supports FILL, COPY, bit-exact format CONVERT and opaque alpha BLEND, including A8 foreground masks and exact background/destination in-place composition. Resource ownership, bounded buffers and cache handoff remain mandatory."
+  },
+  {
+    "id": "npu",
+    "regions": [
+      "APB4_NPU"
+    ],
+    "irqs": [
+      "npu"
+    ],
+    "sources": [
+      "docs/ip/npu.md",
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_control_cdc.sv",
+      "rtl/ip/multimedia/npu_core.sv",
+      "rtl/ip/multimedia/npu_reg.sv"
+    ],
+    "summary": "Integrated INT8 neural accelerator: 64 dense MACs, eight depthwise lanes, 64 KiB private SRAM and eight operator classes. The native HP AXI64 master executes validated 128-byte descriptors; PCLK control, owner-routed IRQs and explicit drain/recovery govern software use. Capability advertisement is separate from corpus and physical qualification."
+  },
+  {
     "id": "reserved",
     "regions": [
-      "APB4_GA",
       "SPISD"
     ],
     "irqs": [],
     "sources": [
       "rtl/mini/address_map/memory_map.json"
     ],
-    "summary": "Reserved address ranges; no integrated graphics accelerator or card data aperture."
+    "summary": "Reserved card data aperture."
   }
 ]

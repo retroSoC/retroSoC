@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module axi4_upsizer_32to64 #(
-    parameter logic [2:0] MasterIndex = 3'd0
+    parameter logic [3:0] MasterIndex = 4'd0
 ) (
     input logic          clk_i,
     input logic          rst_n_i,

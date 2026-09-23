@@ -1,6 +1,7 @@
 #import "../style.typ": *
 
 ==== Data Formats and Peripheral Interoperability <media-interoperability>
+#change-start("dev-media-formats","Current format compatibility and transport qualifications")
 Matching names such as RGB565, YUV422 or PCM are only the beginning of an interoperability
 check. Compare the exact byte order, container width, stride, alignment, stream boundary and
 software lifetime. A shared address space does not convert formats or make an unavailable
@@ -20,8 +21,13 @@ These shared figures define representation; transport and ownership gates below 
 JPEG raster strides are byte strides and must cover the logical row. Its input/output
 addresses and descriptor layout have their own alignment requirements; central-DMA word
 alignment is not a substitute. The listed JPEG raster formats describe the codec contract,
-while normal SoC private-DMA admission is currently blocked at the native slot documented in
-@bus-programming.
+with bounded normal SoC private-DMA admission through master 6 as documented in
+@bus-programming; this is not full-system workload qualification. GA2D adds explicit color-format
+conversion and opaque composition as described in @ga2d; it does not supply RGB/YUV conversion.
+NPU tensors follow a separate static INT8 layout and quantization contract. A camera frame or
+audio PCM buffer is not directly an NPU model input: CPU preprocessing must produce the
+compiler's expected features, byte layout and zero points. NPU receives memory jobs, not a
+dedicated camera/audio stream, and its model format is not the APU APUM container.
 
 The DVP core packs two completed 16-bit pixels per 32-bit word, with the first pixel in the
 lower half. Its FIFO also carries framing/byte-qualification metadata. That metadata is not
@@ -54,11 +60,12 @@ For packed 24-bit audio files, place each sample in the correct low 24 bits of a
 copying three-byte file data directly into a word-stream DMA buffer changes the sample layout.
 
 No automatic RGB/YUV colorspace conversion, sample-rate conversion, codec activation or
-frame-ring service is implied by this overview. The current JPEG admission and APU production-job
-limitations remain binding. A transport failure and a format mismatch require different recovery:
+frame-ring service is implied by this overview. JPEG system-integration qualification and APU
+codec/corpus and default KWS limitations remain binding. A transport failure and a format mismatch require different recovery:
 stop the producer, preserve errors and ownership, and discard or explicitly repair the affected
 buffer rather than passing partially valid data onward.
 #source-note("rtl/ip/multimedia/dvp_core.sv",title:"Actual DVP pixel packing and framing")
 #source-note("crt/src/hal/i2s_math.c",title:"I2S sample-container helpers")
 #source-note("docs/ip/jpeg.md",title:"JPEG raster formats, strides and alignment")
 #source-note("docs/ip/apu.md",title:"APU transport and production availability boundary")
+#change-end("dev-media-formats")

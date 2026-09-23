@@ -8,11 +8,13 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module core_wrapper (
+module core_wrapper #(
+    parameter int ExternalIrqCount = 30
+) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
-    input  logic [31:0] irq_i,
+    input  logic [ExternalIrqCount+1:0] irq_i,
     input  logic        jtag_tck_i,
     input  logic        jtag_tms_i,
     input  logic        jtag_tdi_i,
@@ -23,7 +25,9 @@ module core_wrapper (
     // verilog_format: on
 );
 
-  mgmt_core_wrapper u_mgmt_core_wrapper (
+  mgmt_core_wrapper #(
+      .ExternalIrqCount(ExternalIrqCount)
+  ) u_mgmt_core_wrapper (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
       .irq_i         (irq_i),

@@ -7,6 +7,11 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      ncursesTermlib = pkgs.ncurses.override { withTermlib = true; };
+      runtimeLibraryPath = pkgs.lib.makeLibraryPath [
+        ncursesTermlib
+        pkgs.bzip2.out
+      ];
       clangFormat14 = pkgs.writeShellApplication {
         name = "clang-format-14";
         runtimeInputs = [ pkgs.clang_14 ];
@@ -44,32 +49,47 @@
           bash
           binutils
           bzip2
+          bzip2.out
           ccache
           clangFormat14
           coreutils
           curl
+          expat
           file
           findutils
           flex
           gawk
           gcc
+          gmp
           git
           gnugrep
           gnumake
           gnused
           gnutar
           gperftools
+          isl
           launcher
           libunwind
+          libmpc
           mold
-          ncurses5
+          mpfr
+          ncursesTermlib
           numactl
-          python3Full
+          jdk17_headless
+          perl
+          python310Full
+          readline
+          tcl
           unzip
           which
           xz
           zlib
+          zlib.dev
+          zstd
         ];
+        profile = ''
+          export LD_LIBRARY_PATH="${runtimeLibraryPath}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        '';
         runScript = "retrosoc-dev";
       };
       developmentApplication = pkgs.writeShellApplication {

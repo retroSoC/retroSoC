@@ -3,14 +3,14 @@
 module fabric_monitor_tb;
   logic             clk_i = 1'b0;
   logic             rst_n_i = 1'b0;
-  logic [ 7:0]      master_read_accept_i = '0;
-  logic [ 7:0]      master_write_accept_i = '0;
-  logic [ 7:0]      master_read_beat_i = '0;
-  logic [ 7:0]      master_write_beat_i = '0;
-  logic [ 7:0]      master_wait_i = '0;
-  logic [ 7:0]      master_promotion_i = '0;
-  logic [ 7:0][2:0] master_read_outstanding_i = '0;
-  logic [ 7:0][2:0] master_write_outstanding_i = '0;
+  logic [ 9:0]      master_read_accept_i = '0;
+  logic [ 9:0]      master_write_accept_i = '0;
+  logic [ 9:0]      master_read_beat_i = '0;
+  logic [ 9:0]      master_write_beat_i = '0;
+  logic [ 9:0]      master_wait_i = '0;
+  logic [ 9:0]      master_promotion_i = '0;
+  logic [ 9:0][2:0] master_read_outstanding_i = '0;
+  logic [ 9:0][2:0] master_write_outstanding_i = '0;
   logic [ 5:0]      target_read_accept_i = '0;
   logic [ 5:0]      target_write_accept_i = '0;
   logic [ 5:0]      target_read_beat_i = '0;
@@ -40,7 +40,7 @@ module fabric_monitor_tb;
       .outstanding_read_i        (8'd2),
       .outstanding_write_i       (8'd1),
       .fault_valid_i             (fault_valid_i),
-      .fault_master_i            (3'd5),
+      .fault_master_i            (4'd8),
       .fault_target_i            (3'd2),
       .fault_addr_i              (32'h4000_0040),
       .fault_write_i             (1'b1),
@@ -112,9 +112,15 @@ module fabric_monitor_tb;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 
+    apb_read(12'h004, read_data);
+    if (read_data != 32'h0001_0001) $fatal(1, "fabric monitor version mismatch");
+    apb_read(12'h008, read_data);
+    if (read_data != 32'h060A_0003) $fatal(1, "fabric monitor capability mismatch");
     apb_write(12'h00C, 32'h0000_0001);
     @(negedge clk_i);
     master_read_accept_i[0]      = 1'b1;
+    master_read_accept_i[8]      = 1'b1;
+    master_read_accept_i[9]      = 1'b1;
     master_read_beat_i[0]        = 1'b1;
     master_promotion_i[0]        = 1'b1;
     master_read_outstanding_i[0] = 3'd3;
@@ -147,6 +153,10 @@ module fabric_monitor_tb;
     apb_write(12'h00C, 32'h0000_0009);
     apb_read(12'h100, read_data);
     if (read_data != 32'd1) $fatal(1, "master read request count mismatch");
+    apb_read(12'h200, read_data);
+    if (read_data != 32'd1) $fatal(1, "GA2D master bank request count mismatch");
+    apb_read(12'h220, read_data);
+    if (read_data != 32'd1) $fatal(1, "NPU master bank request count mismatch");
     apb_read(12'h110, read_data);
     if (read_data != 32'd3) $fatal(1, "master wait count mismatch");
     apb_read(12'h114, read_data);
@@ -168,7 +178,7 @@ module fabric_monitor_tb;
     apb_read(12'h018, read_data);
     if (read_data != 32'h4000_0040) $fatal(1, "fault address mismatch");
     apb_read(12'h014, read_data);
-    if (read_data != 32'h0000_0557) $fatal(1, "sticky fault attribution mismatch");
+    if (read_data != 32'h0000_1543) $fatal(1, "sticky fault attribution mismatch");
     apb_read(12'h020, read_data);
     if (read_data != 32'd1) $fatal(1, "fault count mismatch");
 

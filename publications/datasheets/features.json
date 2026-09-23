@@ -87,7 +87,12 @@
   "apu": [
     "Coreless microcode sequencer with private DMA and local storage.",
     "WAV/FLAC job and stream infrastructure in the current capability word.",
-    "MP3/KWS are not advertised; production bundle and capacity qualification remain distinct gates."
+    "MP3 is unsupported. Default PRODUCT disables KWS; the P7 acceptance profile advertises the fixed KWS model and ABI digest."
+  ],
+  "npu": [
+    "64 dense MACs, eight depthwise lanes and 64 KiB of private banked SRAM.",
+    "Eight INT8 operator classes, checked INT32 accumulation and profile-1 requantization.",
+    "HP-native AXI64 DMA, 128-byte descriptors, APB4 control and owner-routed interrupts."
   ],
   "dvp": [
     "8-bit parallel RGB565/YUV422 capture.",
@@ -150,12 +155,12 @@
     "Lifecycle-gated device identity reads."
   ],
   "resource": [
-    "Eight independently managed shared resources.",
+    "Ten independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
     "Owner locks, quiesce/reset and LP/HP IRQ routing.",
     "Explicit cache-maintenance handoff and sticky faults."
   ],
   "monitor": [
-    "Eight master and six target observation banks.",
+    "Ten master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
     "Saturating counters, snapshots and outstanding high-water marks.",
     "Sticky first-fault attribution and live isolation status."
   ],
@@ -188,5 +193,11 @@
     "MPW-selectable user GPIO data and enables.",
     "Readback of the shared user-GPIO input bus.",
     "Selection and pad ownership remain root-controlled."
+  ],
+  "ga2d": [
+    "P5 direct single-job FILL, COPY, CONVERT and opaque alpha BLEND.",
+    "RGB565/RGB888/XRGB8888/ARGB8888 color surfaces; A8 foreground mask.",
+    "Private AXI64 master with pitch and byte-edge handling, owner-routed IRQ and retained error/counter snapshots.",
+    "No descriptor queue, scaling, rotation, transparent-background blend or Linux graphics driver."
   ]
 }

@@ -23,12 +23,17 @@ def render(
     depth: int,
     vcd: bool = True,
     skip: int | None = None,
+    properties_define: str | None = None,
 ) -> str:
     options = ["[options]", f"mode {mode}", f"depth {depth}"]
     if skip is not None:
         options.append(f"skip {skip}")
     if not vcd:
         options.append("vcd off")
+    properties_read = "read_verilog -formal -sv"
+    if properties_define is not None:
+        properties_read += f" -D{properties_define}"
+    properties_read += " properties.v"
     return "\n".join(
         tuple(options)
         + (
@@ -38,7 +43,7 @@ def render(
             "",
             "[script]",
             "read_verilog -formal -sv design.v",
-            "read_verilog -formal -sv properties.v",
+            properties_read,
             f"prep -top {top}",
             "async2sync",
             "dffunmap",
@@ -69,6 +74,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--depth", type=positive_int, required=True)
     parser.add_argument("--no-vcd", action="store_false", dest="vcd")
     parser.add_argument("--skip", type=positive_int)
+    parser.add_argument("--properties-define")
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -86,6 +92,7 @@ def main() -> int:
             args.depth,
             args.vcd,
             args.skip,
+            args.properties_define,
         ),
     )
     return 0

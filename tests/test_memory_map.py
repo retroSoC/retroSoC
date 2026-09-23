@@ -125,6 +125,7 @@ def test_booter_prints_every_public_active_mmio_region() -> None:
     assert "DMA(8CH)" in mmio_function
     assert "DMA(6CH)" not in mmio_function
     assert "RS_SOC_APB4_GA_BASE" not in mmio_function
+    assert "RS_SOC_APB4_GA2D_BASE" in mmio_function
     assert "RS_SOC_APB4_APU_BASE" in mmio_function
 
 
@@ -178,6 +179,7 @@ def test_user_ip_is_always_emitted_for_the_fixed_platform(tmp_path: Path) -> Non
     assert "#define RS_SOC_APB4_CRYPTO_BASE UINT32_C(0x1000C000)" in header
     assert "#define RS_SOC_APB4_USB2_BASE UINT32_C(0x10016000)" in header
     assert "#define RS_SOC_APB4_APU_BASE UINT32_C(0x10013000)" in header
+    assert "#define RS_SOC_APB4_GA2D_BASE UINT32_C(0x10012000)" in header
 
 
 def test_bootstrap_assembly_uses_the_generated_gpio_admin_base() -> None:

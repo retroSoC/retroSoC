@@ -16,7 +16,7 @@ interface sysctrl_if ();
   logic                                user_bus_enable_o;
   logic                                user_bus_idle_i;
   logic                                fault_access_i;
-  logic [                         2:0] fault_master_i;
+  logic [                         3:0] fault_master_i;
   logic [                         2:0] fault_code_i;
   logic                                perf_enable_o;
   logic                                perf_clear_o;

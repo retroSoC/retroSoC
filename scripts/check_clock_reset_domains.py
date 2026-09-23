@@ -23,6 +23,10 @@ CDC_PRIMITIVES = {
     "edge_det",
     "hazard3_apb_async_bridge",
 }
+DATA_PLANE_FAULT_RESET_CONTRACT = {
+    "source_reset": "abort_accepted_mailbox_item",
+    "destination_reset": "abort_accepted_item_backpressure_unaccepted_source",
+}
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 HIERARCHICAL_PIN_RE = re.compile(
     r"[A-Za-z_][A-Za-z0-9_.]*(?:/[A-Za-z_][A-Za-z0-9_.]*)+$"
@@ -144,6 +148,17 @@ def validate(document_path: Path, root: Path) -> None:
             raise ValueError(f"{field}.primitive is not an approved CDC primitive")
         path = root / require_string(crossing.get("path"), f"{field}.path")
         instance = require_identifier(crossing.get("instance"), f"{field}.instance")
+        if name == "data_plane_fault":
+            if primitive != "async_reqack" or instance != "u_fault_mailbox":
+                raise ValueError(
+                    f"{field} must use async_reqack instance u_fault_mailbox"
+                )
+            reset_contract = crossing.get("unilateral_reset")
+            if (not isinstance(reset_contract, dict) or
+                    reset_contract != DATA_PLANE_FAULT_RESET_CONTRACT):
+                raise ValueError(
+                    f"{field}.unilateral_reset must declare the data-plane fault reset contract"
+                )
         require_instance(path, primitive, instance, field)
 
 

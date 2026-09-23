@@ -601,7 +601,7 @@
     "stores": [
       {
         "title": "64-bit instruction words",
-        "depth": 2048,
+        "depth": 4096,
         "bits": 64,
         "depth_ref": {
           "file": "rtl/ip/multimedia/apu_control_store.sv",
@@ -618,7 +618,7 @@
       "rtl/ip/multimedia/apu_control_store.sv"
     ],
     "bindings": [],
-    "note": "The current loader/fetch address is 11 bits, selecting 2,048 64-bit words (16 KiB). The later 4,096-word / 32 KiB refreeze is not implemented by this snapshot. Instruction memory and local data memory are separate spaces."
+    "note": "The loader/fetch address is 12 bits, selecting 4,096 64-bit words (32 KiB) per the implemented V1.1 refreeze. Instruction memory and local data memory are separate spaces."
   },
   {
     "id": "apu-local",
@@ -633,7 +633,7 @@
       "rtl/ip/multimedia/apu_local_sram.sv"
     ],
     "bindings": [],
-    "note": "Offsets refer to the private local-data space, separate from instruction memory and SoC SRAM. These declared ranges do not advertise enabled KWS, verify physical bank utilization or establish a completed codec image.",
+    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The current codec/internal macro branch uses 12 four-KiB banks; the separate 64 KiB KWS client uses inferred storage and is gated off by default. Logical capacity does not establish a 28-macro physical implementation or completed PPA qualification.",
     "derived": "apu-local"
   },
   {
@@ -1008,5 +1008,138 @@
     "bindings": [],
     "note": "Cells compare quantities, not adjacent memory regions. Packing overhead can occur within every row or sample, so it is not necessarily one tail-padding region. Odd-width DVP storage is illustrative and is not supported by the current full-word central-DMA path.",
     "derived": "worked-budgets"
+  },
+  {
+    "id": "ga2d-fifos",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D foreground, background and output staging",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_foreground_fifo",
+        "title": "Foreground data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_background_fifo",
+        "title": "Background data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "instance": "u_output_fifo",
+        "title": "Output data",
+        "depth": 32,
+        "bits": 64
+      },
+      {
+        "file": "rtl/ip/multimedia/ga2d_dma.sv",
+        "symbols": [
+          "s_output_strobe_mem"
+        ],
+        "title": "Output byte-strobe sidecar",
+        "depth": 32,
+        "bits": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_dma.sv"
+    ],
+    "bindings": [],
+    "note": "Each stream has 32 64-bit data entries. Output strobes have one eight-bit entry per output data slot; they are metadata, not extra payload. Job configuration and pixel holding registers are separate. The FIFOs do not create a software-visible job queue."
+  },
+  {
+    "id": "ga2d-pitched-buffer",
+    "chapters": [
+      "ga2d"
+    ],
+    "title": "GA2D RGB888 pitched-surface example",
+    "section": "functional",
+    "stores": [],
+    "ranges": [
+      {
+        "name": "Row 0 pixel bytes",
+        "base": 0,
+        "bytes": 24
+      },
+      {
+        "name": "Row 0 padding",
+        "base": 24,
+        "bytes": 8
+      },
+      {
+        "name": "Row 1 pixel bytes",
+        "base": 32,
+        "bytes": 24
+      },
+      {
+        "name": "Allocation tail",
+        "base": 56,
+        "bytes": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/ga2d_core.sv",
+      "crt/src/hal/ga2d_math.c"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/multimedia/ga2d_core.sv",
+        "text": "s_job_q.dst_pitch < s_dst_row_bytes"
+      }
+    ],
+    "note": "Relative offsets for width 8, height 2 and pitch 32 bytes in RGB888. The allocated example is 64 bytes; the exclusive accessed envelope is 56 bytes. Padding and the tail are not image payload and must remain unmodified. Foreground/destination overlap is forbidden; only an exactly matching BLEND background/destination is admitted."
+  },
+  {
+    "id": "npu-local",
+    "chapters": [
+      "npu"
+    ],
+    "title": "NPU private SRAM partition map",
+    "section": "functional",
+    "stores": [],
+    "derived": "npu-local",
+    "sources": [
+      "rtl/ip/multimedia/npu_pkg.sv",
+      "rtl/ip/multimedia/npu_local_sram.sv"
+    ],
+    "bindings": [],
+    "note": "Offsets are private to the NPU: sixteen 4 KiB banks total 64 KiB. Raw, packed-A and packed-W allocations each occupy four banks; output and descriptor/parameter regions each occupy two. No CPU address aperture is created. Reset invalidates ownership without erasing physical SRAM."
+  },
+  {
+    "id": "npu-accumulators",
+    "chapters": [
+      "npu"
+    ],
+    "title": "NPU independent accumulator contexts",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Accumulator contexts",
+        "depth": 2,
+        "bits": 2048,
+        "depth_ref": {
+          "file": "rtl/ip/multimedia/npu_pkg.sv",
+          "constant": "AccContextCount"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/multimedia/npu_pkg.sv",
+          "constant": "AccSumCount",
+          "multiply": 32
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/npu_pkg.sv",
+      "rtl/ip/multimedia/npu_accumulator.sv"
+    ],
+    "bindings": [],
+    "note": "Each context holds 64 checked INT32 sums (256 bytes). Two contexts allow owned compute/requantization overlap; they are separate from the 64 KiB scratch SRAM. Bias is applied once and partial sums persist across K slices."
   }
 ]

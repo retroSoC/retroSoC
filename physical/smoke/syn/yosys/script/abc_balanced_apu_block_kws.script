@@ -1,0 +1,51 @@
+# Copyright (c) 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Authors:
+# - Philippe Sauter <phsauter@iis.ee.ethz.ch>
+#
+# -- Adaptable modifications are redistributed under compatible License --
+#
+# Copyright (c) 2023-2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
+# retroSoC is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#             http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+
+# KWS-window variant of abc_balanced_apu_block.script, applied ONLY to the
+# apu_kws_sram_client module by apu_block_synth.tcl (two-phase ABC).
+#
+# apu_kws_sram_client models the 64 KiB KWS model/scratch register-file window
+# as one 16384x32 RTL memory with 36 asynchronous read ports and 7 write
+# ports; memory_map lowers it to ~12.6M gate-level cells (36.7M ANDs after
+# strash). On that network "&dch -f" (choice computation) does not terminate,
+# exactly like the stock recipe's "&fraig -x":
+#   * "&fraig -x": two orphaned yosys-abc children at ~208 GB RSS each, killed
+#     (2026-09-16); 14+ h at 100% CPU on the 163k-AND apu_kernel_engine.
+#   * "&dch -f": >50 min with zero allocation progress on the 35.8M-AND
+#     network, killed (2026-09-17, yosys-abc 0.67).
+# With both passes removed the same network maps in 1 h 27 min at 20.4 GB peak
+# RSS (standalone yosys-abc probe on the exact abc input BLIF, -D 20833 ps,
+# sg13g2_stdcell_typ_1p20V_25C), versus ~98 GB peak abc in the whole-SoC flow.
+# Every other APU module still receives the standard block recipe; the liberty,
+# driving cell, load, and delay target are identical in both phases.
+
+strash
+&get -n
+&put
+scorr
+dc2
+dretime
+strash
+&get -n
+&nf {D}
+&put
+buffer
+upsize {D}
+dnsize {D}
+stime -p

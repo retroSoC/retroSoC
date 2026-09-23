@@ -4,35 +4,45 @@
 #include <retrosoc/core/soc.h>
 #include <retrosoc/hal/fabric_monitor.h>
 
-#define RS_FABRIC_CONTROL_OFFSET     UINT32_C(0x00C)
-#define RS_FABRIC_STATUS_OFFSET      UINT32_C(0x010)
-#define RS_FABRIC_FAULT_OFFSET       UINT32_C(0x014)
-#define RS_FABRIC_FAULT_ADDR_OFFSET  UINT32_C(0x018)
-#define RS_FABRIC_FLUSH_COUNT_OFFSET UINT32_C(0x01C)
-#define RS_FABRIC_FAULT_COUNT_OFFSET UINT32_C(0x020)
-#define RS_FABRIC_MASTER_BASE        UINT32_C(0x100)
-#define RS_FABRIC_TARGET_BASE        UINT32_C(0x300)
-#define RS_FABRIC_ENTRY_STRIDE       UINT32_C(0x020)
-#define RS_FABRIC_CONTROL_ENABLE     UINT32_C(0x00000001)
-#define RS_FABRIC_CONTROL_FREEZE     UINT32_C(0x00000002)
-#define RS_FABRIC_CONTROL_CLEAR      UINT32_C(0x00000004)
-#define RS_FABRIC_CONTROL_SNAPSHOT   UINT32_C(0x00000008)
-#define RS_FABRIC_STATUS_IDLE        UINT32_C(0x00000001)
-#define RS_FABRIC_STATUS_RECOVERY    UINT32_C(0x00000002)
-#define RS_FABRIC_STATUS_FLUSH_BUSY  UINT32_C(0x00000004)
-#define RS_FABRIC_STATUS_READ_SHIFT  8U
-#define RS_FABRIC_STATUS_WRITE_SHIFT 16U
-#define RS_FABRIC_HIGH_WATER_MASK    UINT32_C(0x00000007)
-#define RS_FABRIC_WRITE_HIGH_SHIFT   3U
-#define RS_FABRIC_FAULT_WRITE        UINT32_C(0x00000002)
-#define RS_FABRIC_FAULT_MASTER_SHIFT 2U
-#define RS_FABRIC_FAULT_TARGET_SHIFT 5U
-#define RS_FABRIC_FAULT_REASON_SHIFT 8U
-#define RS_FABRIC_FAULT_FIELD_MASK   UINT32_C(0x00000007)
-#define RS_FABRIC_FAULT_REASON_MASK  UINT32_C(0x0000000F)
+#define RS_FABRIC_CONTROL_OFFSET          UINT32_C(0x00C)
+#define RS_FABRIC_STATUS_OFFSET           UINT32_C(0x010)
+#define RS_FABRIC_FAULT_OFFSET            UINT32_C(0x014)
+#define RS_FABRIC_IP_VERSION_OFFSET       UINT32_C(0x004)
+#define RS_FABRIC_FAULT_ADDR_OFFSET       UINT32_C(0x018)
+#define RS_FABRIC_FLUSH_COUNT_OFFSET      UINT32_C(0x01C)
+#define RS_FABRIC_FAULT_COUNT_OFFSET      UINT32_C(0x020)
+#define RS_FABRIC_MASTER_BASE             UINT32_C(0x100)
+#define RS_FABRIC_TARGET_BASE             UINT32_C(0x300)
+#define RS_FABRIC_ENTRY_STRIDE            UINT32_C(0x020)
+#define RS_FABRIC_CONTROL_ENABLE          UINT32_C(0x00000001)
+#define RS_FABRIC_CONTROL_FREEZE          UINT32_C(0x00000002)
+#define RS_FABRIC_CONTROL_CLEAR           UINT32_C(0x00000004)
+#define RS_FABRIC_CONTROL_SNAPSHOT        UINT32_C(0x00000008)
+#define RS_FABRIC_STATUS_IDLE             UINT32_C(0x00000001)
+#define RS_FABRIC_STATUS_RECOVERY         UINT32_C(0x00000002)
+#define RS_FABRIC_STATUS_FLUSH_BUSY       UINT32_C(0x00000004)
+#define RS_FABRIC_STATUS_READ_SHIFT       8U
+#define RS_FABRIC_STATUS_WRITE_SHIFT      16U
+#define RS_FABRIC_HIGH_WATER_MASK         UINT32_C(0x00000007)
+#define RS_FABRIC_WRITE_HIGH_SHIFT        3U
+#define RS_FABRIC_FAULT_WRITE             UINT32_C(0x00000002)
+#define RS_FABRIC_FAULT_MASTER_SHIFT      2U
+#define RS_FABRIC_FAULT_TARGET_SHIFT      5U
+#define RS_FABRIC_FAULT_REASON_SHIFT      8U
+#define RS_FABRIC_FAULT_FIELD_MASK        UINT32_C(0x00000007)
+#define RS_FABRIC_FAULT_REASON_MASK       UINT32_C(0x0000000F)
+#define RS_FABRIC_FAULT_MASTER_HIGH       UINT32_C(0x00001000)
+#define RS_FABRIC_FAULT_MASTER_HIGH_SHIFT 9U
+#define RS_FABRIC_IP_VERSION_V1_1         UINT32_C(0x00010001)
 
 static volatile uint32_t *rs_fabric_register(uint32_t offset) {
+#if defined(RS_FABRIC_MONITOR_TEST_MMIO)
+    extern volatile uint32_t rs_fabric_monitor_test_mmio[1024];
+
+    return &rs_fabric_monitor_test_mmio[offset / sizeof(uint32_t)];
+#else
     return (volatile uint32_t *)(RS_SOC_APB4_FABRIC_MONITOR_BASE + (uintptr_t)offset);
+#endif
 }
 
 static uint32_t rs_fabric_control_value(bool enable, bool freeze) {
@@ -93,14 +103,20 @@ rs_status_t rs_fabric_monitor_get_flush_count(uint32_t *count) {
 
 rs_status_t rs_fabric_monitor_read_fault(rs_fabric_fault_t *fault) {
     uint32_t value;
+    uint32_t version;
 
     if (fault == NULL) {
         return RS_EINVAL;
     }
+    version = *rs_fabric_register(RS_FABRIC_IP_VERSION_OFFSET);
     value = *rs_fabric_register(RS_FABRIC_FAULT_OFFSET);
     fault->address = *rs_fabric_register(RS_FABRIC_FAULT_ADDR_OFFSET);
     fault->count = *rs_fabric_register(RS_FABRIC_FAULT_COUNT_OFFSET);
     fault->master = (uint8_t)((value >> RS_FABRIC_FAULT_MASTER_SHIFT) & RS_FABRIC_FAULT_FIELD_MASK);
+    if (version >= RS_FABRIC_IP_VERSION_V1_1) {
+        fault->master |=
+            (uint8_t)((value & RS_FABRIC_FAULT_MASTER_HIGH) >> RS_FABRIC_FAULT_MASTER_HIGH_SHIFT);
+    }
     fault->target = (uint8_t)((value >> RS_FABRIC_FAULT_TARGET_SHIFT) & RS_FABRIC_FAULT_FIELD_MASK);
     fault->reason =
         (uint8_t)((value >> RS_FABRIC_FAULT_REASON_SHIFT) & RS_FABRIC_FAULT_REASON_MASK);

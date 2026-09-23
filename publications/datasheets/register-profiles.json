@@ -951,6 +951,9 @@
       "rtl/ip/multimedia/apu_dma.sv",
       "rtl/ip/multimedia/apu_entropy_engine.sv",
       "rtl/ip/multimedia/apu_kernel_engine.sv",
+      "rtl/ip/multimedia/apu_kws_engine.sv",
+      "rtl/ip/multimedia/apu_kws_model_loader.sv",
+      "rtl/ip/multimedia/apu_kws_sram_client.sv",
       "rtl/ip/multimedia/apu_local_sram.sv",
       "rtl/ip/multimedia/apu_microcode_loader.sv",
       "rtl/ip/multimedia/apu_microcode_pkg.sv",
@@ -960,6 +963,65 @@
       "rtl/ip/multimedia/apu_ring_scheduler.sv",
       "rtl/ip/multimedia/apu_stream_router.sv",
       "rtl/ip/multimedia/apu_transform_engine.sv"
+    ]
+  },
+  "ga2d": {
+    "document": "docs/ip/ga2d.md",
+    "defines": [
+      "rtl/ip/multimedia/ga2d_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/multimedia/ga2d_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Phase 5 direct 2D composition engine",
+        "pattern": "APB4_GA2D__.+",
+        "strip": "^APB4_GA2D__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "support": [
+      "rtl/ip/multimedia/apb4_ga2d.sv",
+      "rtl/ip/multimedia/ga2d_pkg.sv",
+      "rtl/ip/multimedia/ga2d_addr_gen.sv",
+      "rtl/ip/multimedia/ga2d_axi4_master.sv",
+      "rtl/ip/multimedia/ga2d_dma.sv",
+      "rtl/ip/multimedia/ga2d_pixel.sv",
+      "rtl/ip/multimedia/ga2d_core.sv"
+    ]
+  },
+  "npu": {
+    "document": "docs/ip/npu.md",
+    "defines": [
+      "rtl/ip/multimedia/npu_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/multimedia/npu_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "NPU control, execution and lifecycle registers",
+        "pattern": "APB4_NPU__.+",
+        "strip": "^APB4_NPU__",
+        "base": 0,
+        "stride": 0,
+        "count": 1,
+        "exclude": [
+          "APB4_NPU__DESCRIPTOR_VERSION"
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/multimedia/apb4_npu.sv",
+      "rtl/ip/multimedia/npu_control_cdc.sv",
+      "rtl/ip/multimedia/npu_core.sv"
     ]
   },
   "dvp": {
@@ -1746,7 +1808,7 @@
     "parameters": {
       "NumMasters": 8,
       "NumTargets": 6,
-      "ResourceCount": 8
+      "ResourceCount": 9
     },
     "groups": [
       {
@@ -1765,7 +1827,7 @@
         "strip": "^",
         "base": 256,
         "stride": 32,
-        "count": 8
+        "count": 9
       }
     ],
     "support": []
@@ -1777,7 +1839,7 @@
       "rtl/mini/top/fabric_monitor.sv"
     ],
     "parameters": {
-      "NumMasters": 8,
+      "NumMasters": 9,
       "NumTargets": 6,
       "ResourceCount": 8
     },
@@ -1798,7 +1860,7 @@
         "strip": "^",
         "base": 256,
         "stride": 32,
-        "count": 8
+        "count": 9
       },
       {
         "id": "target",

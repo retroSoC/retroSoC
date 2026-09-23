@@ -1,13 +1,21 @@
 #include <archinfo_regs.h>
 #include <retrosoc/core/archinfo.h>
+#include <retrosoc/core/irq.h>
 #include <retrosoc/core/soc.h>
+#include <retrosoc/arch/riscv/system_base.h>
+#include <retrosoc/generated/irq_metadata.h>
 #include <retrosoc/hal/apu.h>
 #include <retrosoc/hal/clint.h>
 #include <retrosoc/hal/crypto.h>
+#include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/fabric_monitor.h>
+#include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/gpio.h>
+#include <retrosoc/hal/npu_regs.h>
+#include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/onchip_sram.h>
+#include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/rng.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sdram.h>
@@ -18,6 +26,18 @@
 #include <retrosoc/lib/printf.h>
 #include <retrosoc/service/test.h>
 
+#define RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES UINT32_C(65536)
+#define RS_CI_SMOKE_SDRAM_SCRATCH_END         (RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_STACK_RESERVE_BYTES)
+
+#if defined(RS_NPU_P5_ACCEPTANCE)
+#include "kws_npu.h"
+#include "npu_acceptance_data.h"
+
+static rs_kws_npu_workspace_t rs_ci_smoke_npu_workspace;
+static rs_kws_npu_profile_t rs_ci_smoke_npu_profile;
+static int8_t rs_ci_smoke_npu_output[RS_NPU_ACCEPTANCE_OUTPUT_BYTES];
+#endif
+
 static bool rs_ci_smoke_archinfo_v2(void) {
     rs_archinfo_t info;
     uint32_t device_id[4];
@@ -25,6 +45,852 @@ static bool rs_ci_smoke_archinfo_v2(void) {
     return (rs_archinfo_read(&info) == RS_OK) && (rs_archinfo_validate_build(&info) == RS_OK) &&
            (rs_archinfo_read_device_id(device_id) == RS_ENOTSUP) && (rs_rtc_probe() == RS_OK);
 }
+
+#ifdef CSR_ENABLE
+#define RS_CI_SMOKE_GA2D_BUFFER_BYTES     UINT32_C(62)
+#define RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES  UINT32_C(64)
+#define RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET UINT32_C(4)
+
+static volatile uint32_t rs_ci_smoke_external_irq_count;
+static volatile uint32_t rs_ci_smoke_external_irq_sequence[4];
+static volatile uint32_t rs_ci_smoke_external_irq_sequence_count;
+static volatile uint32_t rs_ci_smoke_timer_irq_count;
+static volatile uint32_t rs_ci_smoke_software_irq_count;
+static volatile uint32_t rs_ci_smoke_ga2d_irq_count;
+static volatile uint32_t rs_ci_smoke_npu_irq_count;
+static volatile uint8_t rs_ci_smoke_ga2d_fill_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
+static volatile uint8_t rs_ci_smoke_ga2d_copy_source_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
+static volatile uint8_t rs_ci_smoke_ga2d_copy_destination_buffer[RS_CI_SMOKE_GA2D_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_convert_source_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_convert_destination_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_blend_foreground_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_blend_background_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_blend_destination_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_a8_foreground_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+static _Alignas(4) volatile uint8_t
+    rs_ci_smoke_ga2d_a8_background_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES];
+
+static void rs_ci_smoke_external_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    const uint32_t context = (uint32_t)__RV_CSR_READ(CSR_HAZARD3_MEICONTEXT);
+    const uint32_t irq = (context >> 4U) & UINT32_C(0x1ff);
+
+    (void)mcause;
+    (void)stack_pointer;
+    ++rs_ci_smoke_external_irq_count;
+    if (rs_ci_smoke_external_irq_sequence_count < 4U) {
+        rs_ci_smoke_external_irq_sequence[rs_ci_smoke_external_irq_sequence_count] = irq;
+        ++rs_ci_smoke_external_irq_sequence_count;
+    }
+}
+
+static void rs_ci_smoke_timer_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    uint64_t now;
+
+    (void)mcause;
+    (void)stack_pointer;
+    ++rs_ci_smoke_timer_irq_count;
+    if (rs_clint_get_time(&now) == RS_OK) {
+        (void)rs_clint_set_compare(0U, now + UINT64_C(100));
+    }
+}
+
+static void rs_ci_smoke_software_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    (void)rs_clint_set_software_interrupt(0U, false);
+    ++rs_ci_smoke_software_irq_count;
+}
+
+static void rs_ci_smoke_ga2d_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    RS_GA2D_REG(RS_GA2D_REG_IRQ_STATE) = RS_GA2D_IRQ_ALL;
+    ++rs_ci_smoke_ga2d_irq_count;
+}
+
+static void rs_ci_smoke_npu_irq_handler(uintptr_t mcause, uintptr_t stack_pointer) {
+    (void)mcause;
+    (void)stack_pointer;
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    ++rs_ci_smoke_npu_irq_count;
+}
+
+static void rs_ci_smoke_force_external_irq(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+
+    (void)__RV_CSR_READ_SET(CSR_HAZARD3_MEIFA, (bank & UINT32_C(0x7f)) | (mask << 16U));
+}
+
+static void rs_ci_smoke_clear_external_irq(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+
+    (void)__RV_CSR_READ_CLEAR(CSR_HAZARD3_MEIFA, (bank & UINT32_C(0x7f)) | (mask << 16U));
+}
+
+static uint32_t rs_ci_smoke_external_enabled(uint32_t id) {
+    const uint32_t bank = id >> 4U;
+    const uint32_t mask = UINT32_C(1) << (id & UINT32_C(0xf));
+    const uint32_t value = (uint32_t)__RV_CSR_READ_SET(CSR_HAZARD3_MEIEA, bank & UINT32_C(0x1f));
+
+    return ((value >> 16U) & mask) != 0U ? 1U : 0U;
+}
+
+static bool rs_ci_smoke_wait_external_count(uint32_t target) {
+    for (rs_timeout_t timeout = 100000U;
+         (timeout != 0U) && (rs_ci_smoke_external_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_external_irq_count >= target;
+}
+
+static bool rs_ci_smoke_wait_ga2d_irq(uint32_t target) {
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT;
+         (timeout != 0U) && (rs_ci_smoke_ga2d_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_ga2d_irq_count >= target;
+}
+
+static bool rs_ci_smoke_wait_npu_irq(uint32_t target) {
+    for (rs_timeout_t timeout = RS_TIMEOUT_DEFAULT;
+         (timeout != 0U) && (rs_ci_smoke_npu_irq_count < target); --timeout) {
+    }
+    return rs_ci_smoke_npu_irq_count >= target;
+}
+
+static bool rs_ci_smoke_external_single(uint32_t id) {
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    if (rs_irq_enable_external(id, rs_ci_smoke_external_irq_handler) != RS_OK) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(id);
+    __enable_irq();
+    if (!rs_ci_smoke_wait_external_count(1U) || (rs_ci_smoke_external_irq_sequence[0] != id)) {
+        __disable_irq();
+        (void)rs_irq_disable_external(id);
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_irq();
+    if (rs_irq_disable_external(id) != RS_OK) {
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_ext_irq();
+    return true;
+}
+
+static bool rs_ci_smoke_external_priority_matrix(void) {
+    bool passed;
+
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    __RV_CSR_WRITE(CSR_HAZARD3_MEICONTEXT, UINT32_C(0));
+    if ((rs_irq_set_external_priority(29U, UINT8_C(0)) != RS_OK) ||
+        (rs_irq_set_external_priority(RS_SOC_EXT_IRQ_GA2D, UINT8_C(1)) != RS_OK) ||
+        (rs_irq_set_external_priority(31U, UINT8_C(2)) != RS_OK) ||
+        (rs_irq_set_external_priority(32U, UINT8_C(3)) != RS_OK) ||
+        (rs_irq_enable_external(29U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(RS_SOC_EXT_IRQ_GA2D, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(31U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(32U, rs_ci_smoke_external_irq_handler) != RS_OK)) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(29U);
+    rs_ci_smoke_force_external_irq(RS_SOC_EXT_IRQ_GA2D);
+    rs_ci_smoke_force_external_irq(31U);
+    rs_ci_smoke_force_external_irq(32U);
+    __enable_irq();
+    passed = rs_ci_smoke_wait_external_count(4U) && (rs_ci_smoke_external_irq_sequence[0] == 32U) &&
+             (rs_ci_smoke_external_irq_sequence[1] == 31U) &&
+             (rs_ci_smoke_external_irq_sequence[2] == RS_SOC_EXT_IRQ_GA2D) &&
+             (rs_ci_smoke_external_irq_sequence[3] == 29U);
+    __disable_irq();
+    if ((rs_irq_disable_external(29U) != RS_OK) ||
+        (rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D) != RS_OK) ||
+        (rs_irq_disable_external(31U) != RS_OK) || (rs_irq_disable_external(32U) != RS_OK)) {
+        passed = false;
+    }
+    __disable_ext_irq();
+    return passed;
+}
+
+static bool rs_ci_smoke_external_irq(void) {
+    static const uint32_t tested_ordinals[] = {0U,  15U, 16U, 29U, RS_SOC_EXT_IRQ_GA2D,
+                                               31U, 32U, 61U};
+    uint64_t now;
+    uint32_t index;
+
+    for (index = 0U; index < (uint32_t)(sizeof(tested_ordinals) / sizeof(tested_ordinals[0]));
+         ++index) {
+        if (!rs_ci_smoke_external_single(tested_ordinals[index])) {
+            return false;
+        }
+    }
+
+    if ((rs_irq_register_external(62U, rs_ci_smoke_external_irq_handler) != RS_EINVAL) ||
+        (rs_irq_enable_external(62U, rs_ci_smoke_external_irq_handler) != RS_EINVAL) ||
+        (rs_irq_disable_external(62U) != RS_EINVAL) ||
+        (rs_irq_set_external_priority(62U, UINT8_C(1)) != RS_EINVAL) ||
+        (rs_irq_set_external_priority(15U, UINT8_C(4)) != RS_EINVAL)) {
+        return false;
+    }
+
+    if ((rs_irq_set_external_priority(15U, UINT8_C(3)) != RS_OK) ||
+        (rs_irq_set_external_priority(16U, UINT8_C(1)) != RS_OK) ||
+        (rs_irq_enable_external(15U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_external(16U, rs_ci_smoke_external_irq_handler) != RS_OK)) {
+        return false;
+    }
+    rs_ci_smoke_external_irq_count = 0U;
+    rs_ci_smoke_external_irq_sequence_count = 0U;
+    rs_ci_smoke_force_external_irq(15U);
+    rs_ci_smoke_force_external_irq(16U);
+    __enable_irq();
+    if (!rs_ci_smoke_wait_external_count(2U) || (rs_ci_smoke_external_irq_sequence[0] != 15U) ||
+        (rs_ci_smoke_external_irq_sequence[1] != 16U)) {
+        __disable_irq();
+        return false;
+    }
+    __disable_irq();
+    if ((rs_irq_disable_external(15U) != RS_OK) || (rs_irq_disable_external(16U) != RS_OK)) {
+        return false;
+    }
+
+    if (!rs_ci_smoke_external_priority_matrix()) {
+        return false;
+    }
+
+    if (rs_irq_register_external(29U, rs_ci_smoke_external_irq_handler) != RS_OK) {
+        return false;
+    }
+    rs_ci_smoke_force_external_irq(29U);
+    __enable_irq();
+    for (rs_timeout_t timeout = 1000U; timeout != 0U; --timeout) {
+    }
+    __disable_irq();
+    rs_ci_smoke_clear_external_irq(29U);
+    if ((rs_ci_smoke_external_irq_count != 4U) || (rs_irq_disable_external(29U) != RS_OK)) {
+        return false;
+    }
+
+    if (rs_irq_set_external_priority(40U, UINT8_C(1)) != RS_OK) {
+        return false;
+    }
+    (void)__RV_CSR_READ_SET(CSR_HAZARD3_MEIEA,
+                            UINT32_C(2) | (UINT32_C(1) << (16U + (40U & UINT32_C(0xf)))));
+    rs_ci_smoke_force_external_irq(40U);
+    __enable_ext_irq();
+    __enable_irq();
+    for (rs_timeout_t timeout = 1000U; (timeout != 0U) && (rs_ci_smoke_external_enabled(40U) != 0U);
+         --timeout) {
+    }
+    __disable_irq();
+    rs_ci_smoke_clear_external_irq(40U);
+    if (rs_ci_smoke_external_enabled(40U) != 0U) {
+        return false;
+    }
+    __disable_ext_irq();
+
+    rs_ci_smoke_timer_irq_count = 0U;
+    rs_ci_smoke_software_irq_count = 0U;
+    if ((rs_irq_enable_external(0U, rs_ci_smoke_external_irq_handler) != RS_OK) ||
+        (rs_irq_enable_core(IRQ_M_TIMER, rs_ci_smoke_timer_irq_handler) != RS_OK) ||
+        (rs_irq_enable_core(IRQ_M_SOFT, rs_ci_smoke_software_irq_handler) != RS_OK) ||
+        (rs_clint_get_time(&now) != RS_OK) ||
+        (rs_clint_set_compare(0U, now + UINT64_C(100)) != RS_OK)) {
+        return false;
+    }
+    __enable_irq();
+    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_timer_irq_count == 0U);
+         --timeout) {
+    }
+    if (rs_clint_set_software_interrupt(0U, true) != RS_OK) {
+        __disable_irq();
+        return false;
+    }
+    for (rs_timeout_t timeout = 100000U; (timeout != 0U) && (rs_ci_smoke_software_irq_count == 0U);
+         --timeout) {
+    }
+    __disable_irq();
+    __disable_core_irq(IRQ_M_TIMER);
+    __disable_core_irq(IRQ_M_SOFT);
+    (void)rs_irq_disable_external(0U);
+    __disable_ext_irq();
+    return (rs_ci_smoke_timer_irq_count != 0U) && (rs_ci_smoke_software_irq_count != 0U);
+}
+
+static bool rs_ci_smoke_ga2d_run(const rs_ga2d_job_t *job, uint64_t expected_read_bytes,
+                                 uint64_t expected_write_bytes) {
+    rs_ga2d_error_t error;
+    rs_ga2d_stats_t stats;
+    rs_ga2d_status_t status;
+    const uint32_t expected_irq = rs_ci_smoke_ga2d_irq_count + 1U;
+
+    return (rs_ga2d_configure(job) == RS_OK) && (rs_ga2d_start() == RS_OK) &&
+           rs_ci_smoke_wait_ga2d_irq(expected_irq) && (rs_ga2d_wait(RS_TIMEOUT_DEFAULT) == RS_OK) &&
+           (rs_ga2d_get_status(&status) == RS_OK) && status.done && !status.busy &&
+           !status.draining && !status.error && !status.aborted && !status.recovery_required &&
+           (rs_ga2d_get_error(&error) == RS_OK) && !error.valid &&
+           (rs_ga2d_get_stats(&stats) == RS_OK) && (stats.lines_done == job->height) &&
+           (stats.read_bytes == expected_read_bytes) && (stats.write_bytes == expected_write_bytes);
+}
+
+static bool rs_ci_smoke_ga2d_p5_buffer_matches(const volatile uint8_t *buffer,
+                                               const uint8_t *expected, uint32_t span,
+                                               uint8_t guard) {
+    uint32_t index;
+
+    for (index = 0U; index < RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET; ++index) {
+        if (buffer[index] != guard) {
+            return false;
+        }
+    }
+    for (index = 0U; index < span; ++index) {
+        if (buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] != expected[index]) {
+            return false;
+        }
+    }
+    for (index = RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + span; index < RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES;
+         ++index) {
+        if (buffer[index] != guard) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_fill_copy(void) {
+    const rs_ga2d_job_t fill = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_fill_buffer[1U], 20U, RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0x80123456),
+    };
+    const rs_ga2d_job_t copy = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {(uintptr_t)&rs_ci_smoke_ga2d_copy_source_buffer[1U], 20U,
+                       RS_GA2D_FORMAT_RGB888},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_copy_destination_buffer[1U], 20U,
+                        RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    const uint32_t row_bytes = UINT32_C(15);
+    const uint32_t span = UINT32_C(60);
+    volatile uint8_t *const fill_guard = rs_ci_smoke_ga2d_fill_buffer;
+    volatile uint8_t *const fill_destination = fill_guard + 1U;
+    volatile uint8_t *const copy_source_guard = rs_ci_smoke_ga2d_copy_source_buffer;
+    volatile uint8_t *const copy_source = copy_source_guard + 1U;
+    volatile uint8_t *const copy_destination_guard = rs_ci_smoke_ga2d_copy_destination_buffer;
+    volatile uint8_t *const copy_destination = copy_destination_guard + 1U;
+    fill_guard[0] = UINT8_C(0xD3);
+    fill_guard[span + 1U] = UINT8_C(0xD3);
+    for (uint32_t index = 0U; index < span; ++index) {
+        fill_destination[index] = UINT8_C(0xD3);
+    }
+    if (!rs_ci_smoke_ga2d_run(&fill, 0U, UINT64_C(45))) {
+        return false;
+    }
+    if ((fill_guard[0] != UINT8_C(0xD3)) || (fill_guard[span + 1U] != UINT8_C(0xD3))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < fill.height; ++row) {
+        const uint32_t offset = row * fill.destination.pitch;
+
+        for (uint32_t byte = 0U; byte < row_bytes; ++byte) {
+            const uint8_t expected = (byte % 3U == 0U)   ? UINT8_C(0x12)
+                                     : (byte % 3U == 1U) ? UINT8_C(0x34)
+                                                         : UINT8_C(0x56);
+
+            if (fill_destination[offset + byte] != expected) {
+                return false;
+            }
+        }
+        for (uint32_t byte = row_bytes; byte < fill.destination.pitch; ++byte) {
+            if (fill_destination[offset + byte] != UINT8_C(0xD3)) {
+                return false;
+            }
+        }
+    }
+
+    copy_source_guard[0] = UINT8_C(0xA5);
+    copy_source_guard[span + 1U] = UINT8_C(0xA5);
+    copy_destination_guard[0] = UINT8_C(0xC7);
+    copy_destination_guard[span + 1U] = UINT8_C(0xC7);
+    for (uint32_t index = 0U; index < span; ++index) {
+        copy_source[index] = (uint8_t)(index ^ UINT32_C(0x5A));
+        copy_destination[index] = UINT8_C(0xC7);
+    }
+    if (!rs_ci_smoke_ga2d_run(&copy, UINT64_C(45), UINT64_C(45))) {
+        return false;
+    }
+    if ((copy_source_guard[0] != UINT8_C(0xA5)) ||
+        (copy_source_guard[span + 1U] != UINT8_C(0xA5)) ||
+        (copy_destination_guard[0] != UINT8_C(0xC7)) ||
+        (copy_destination_guard[span + 1U] != UINT8_C(0xC7))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < copy.height; ++row) {
+        const uint32_t offset = row * copy.destination.pitch;
+
+        for (uint32_t byte = 0U; byte < row_bytes; ++byte) {
+            if (copy_destination[offset + byte] != copy_source[offset + byte]) {
+                return false;
+            }
+        }
+        for (uint32_t byte = row_bytes; byte < copy.destination.pitch; ++byte) {
+            if ((copy_source[offset + byte] != (uint8_t)((offset + byte) ^ UINT32_C(0x5A))) ||
+                (copy_destination[offset + byte] != UINT8_C(0xC7))) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_convert(void) {
+    static const uint8_t source_rows[] = {
+        0x00U, 0xF8U, 0xE0U, 0x07U, 0x1FU, 0x00U, 0xFFU, 0xFFU, 0x10U, 0x84U, 0xA5U, 0xA5U,
+        0xA5U, 0xA5U, 0xA5U, 0xA5U, 0x00U, 0xF8U, 0xE0U, 0x07U, 0x1FU, 0x00U, 0xFFU, 0xFFU,
+        0x10U, 0x84U, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0x00U, 0xF8U, 0xE0U, 0x07U,
+        0x1FU, 0x00U, 0xFFU, 0xFFU, 0x10U, 0x84U, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0xA5U,
+    };
+    static const uint8_t destination_rows[] = {
+        0xFFU, 0x00U, 0x00U, 0x00U, 0xFFU, 0x00U, 0x00U, 0x00U, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
+        0x84U, 0x82U, 0x84U, 0xC7U, 0xC7U, 0xC7U, 0xC7U, 0xC7U, 0xFFU, 0x00U, 0x00U, 0x00U,
+        0xFFU, 0x00U, 0x00U, 0x00U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0x84U, 0x82U, 0x84U, 0xC7U,
+        0xC7U, 0xC7U, 0xC7U, 0xC7U, 0xFFU, 0x00U, 0x00U, 0x00U, 0xFFU, 0x00U, 0x00U, 0x00U,
+        0xFFU, 0xFFU, 0xFFU, 0xFFU, 0x84U, 0x82U, 0x84U, 0xC7U, 0xC7U, 0xC7U, 0xC7U, 0xC7U,
+    };
+    const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_CONVERT,
+        .foreground = {(uintptr_t)&rs_ci_smoke_ga2d_convert_source_buffer[4U], 16U,
+                       RS_GA2D_FORMAT_RGB565},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_convert_destination_buffer[4U], 20U,
+                        RS_GA2D_FORMAT_RGB888},
+        .width = 5U,
+        .height = 3U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+
+    for (uint32_t index = 0U; index < RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES; ++index) {
+        rs_ci_smoke_ga2d_convert_source_buffer[index] = UINT8_C(0xA5);
+        rs_ci_smoke_ga2d_convert_destination_buffer[index] = UINT8_C(0xC7);
+    }
+    for (uint32_t index = 0U; index < sizeof(source_rows); ++index) {
+        rs_ci_smoke_ga2d_convert_source_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] =
+            source_rows[index];
+    }
+    if (!rs_ci_smoke_ga2d_run(&job, UINT64_C(30), UINT64_C(45))) {
+        return false;
+    }
+    return rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_convert_source_buffer, source_rows,
+                                              (uint32_t)sizeof(source_rows), UINT8_C(0xA5)) &&
+           rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_convert_destination_buffer,
+                                              destination_rows, (uint32_t)sizeof(destination_rows),
+                                              UINT8_C(0xC7));
+}
+
+static bool rs_ci_smoke_ga2d_argb_blend(void) {
+    static const uint8_t foreground_rows[] = {
+        0x10U, 0x20U, 0xF0U, 0x00U, 0xC0U, 0x80U, 0x40U, 0xFFU, 0x80U, 0xFFU, 0x00U,
+        0x7FU, 0xA5U, 0xA5U, 0xA5U, 0xA5U, 0x10U, 0x20U, 0xF0U, 0x00U, 0xC0U, 0x80U,
+        0x40U, 0xFFU, 0x80U, 0xFFU, 0x00U, 0x7FU, 0xA5U, 0xA5U, 0xA5U, 0xA5U,
+    };
+    static const uint8_t background_rows[] = {
+        0x30U, 0x20U, 0x10U, 0x30U, 0x20U, 0x10U, 0x20U, 0x40U, 0xC0U, 0xA5U, 0xA5U, 0xA5U,
+        0x30U, 0x20U, 0x10U, 0x30U, 0x20U, 0x10U, 0x20U, 0x40U, 0xC0U, 0xA5U, 0xA5U, 0xA5U,
+    };
+    static const uint8_t destination_rows[] = {
+        0x30U, 0x20U, 0x10U, 0x38U, 0x50U, 0x68U, 0x18U, 0x70U, 0xB0U, 0xC7U, 0xC7U, 0xC7U,
+        0x30U, 0x20U, 0x10U, 0x38U, 0x50U, 0x68U, 0x18U, 0x70U, 0xB0U, 0xC7U, 0xC7U, 0xC7U,
+    };
+    const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_BLEND,
+        .foreground = {(uintptr_t)&rs_ci_smoke_ga2d_blend_foreground_buffer[4U], 16U,
+                       RS_GA2D_FORMAT_ARGB8888},
+        .background = {(uintptr_t)&rs_ci_smoke_ga2d_blend_background_buffer[4U], 12U,
+                       RS_GA2D_FORMAT_RGB888},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_blend_destination_buffer[4U], 12U,
+                        RS_GA2D_FORMAT_RGB888},
+        .width = 3U,
+        .height = 2U,
+        .global_alpha = UINT8_C(128),
+        .color = UINT32_C(0),
+    };
+
+    for (uint32_t index = 0U; index < RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES; ++index) {
+        rs_ci_smoke_ga2d_blend_foreground_buffer[index] = UINT8_C(0xA5);
+        rs_ci_smoke_ga2d_blend_background_buffer[index] = UINT8_C(0xA5);
+        rs_ci_smoke_ga2d_blend_destination_buffer[index] = UINT8_C(0xC7);
+    }
+    for (uint32_t index = 0U; index < sizeof(foreground_rows); ++index) {
+        rs_ci_smoke_ga2d_blend_foreground_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] =
+            foreground_rows[index];
+    }
+    for (uint32_t index = 0U; index < sizeof(background_rows); ++index) {
+        rs_ci_smoke_ga2d_blend_background_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] =
+            background_rows[index];
+    }
+    if (!rs_ci_smoke_ga2d_run(&job, UINT64_C(42), UINT64_C(18))) {
+        return false;
+    }
+    return rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_blend_foreground_buffer,
+                                              foreground_rows, (uint32_t)sizeof(foreground_rows),
+                                              UINT8_C(0xA5)) &&
+           rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_blend_background_buffer,
+                                              background_rows, (uint32_t)sizeof(background_rows),
+                                              UINT8_C(0xA5)) &&
+           rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_blend_destination_buffer,
+                                              destination_rows, (uint32_t)sizeof(destination_rows),
+                                              UINT8_C(0xC7));
+}
+
+static bool rs_ci_smoke_ga2d_a8_inplace_background(void) {
+    static const uint8_t foreground_rows[] = {
+        0x00U, 0xFFU, 0x7FU, 0xA5U, 0x80U, 0x01U, 0xFEU, 0xA5U,
+    };
+    static const uint8_t background_rows[] = {
+        0x10U, 0x20U, 0x30U, 0x40U, 0x50U, 0x60U, 0x70U, 0x80U, 0x90U, 0xE1U, 0xE1U, 0xE1U,
+        0xA0U, 0xB0U, 0xC0U, 0x01U, 0x02U, 0x03U, 0xF0U, 0xE0U, 0xD0U, 0xE1U, 0xE1U, 0xE1U,
+    };
+    static const uint8_t destination_rows[] = {
+        0x10U, 0x20U, 0x30U, 0x28U, 0x38U, 0x48U, 0x58U, 0x68U, 0x78U, 0xE1U, 0xE1U, 0xE1U,
+        0x7CU, 0x8CU, 0x9CU, 0x01U, 0x02U, 0x03U, 0x80U, 0x80U, 0x80U, 0xE1U, 0xE1U, 0xE1U,
+    };
+    const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_BLEND,
+        .foreground = {(uintptr_t)&rs_ci_smoke_ga2d_a8_foreground_buffer[4U], 4U,
+                       RS_GA2D_FORMAT_A8},
+        .background = {(uintptr_t)&rs_ci_smoke_ga2d_a8_background_buffer[4U], 12U,
+                       RS_GA2D_FORMAT_RGB888},
+        .destination = {(uintptr_t)&rs_ci_smoke_ga2d_a8_background_buffer[4U], 12U,
+                        RS_GA2D_FORMAT_RGB888},
+        .width = 3U,
+        .height = 2U,
+        .global_alpha = UINT8_C(128),
+        .color = UINT32_C(0x12102030),
+    };
+
+    for (uint32_t index = 0U; index < RS_CI_SMOKE_GA2D_P5_BUFFER_BYTES; ++index) {
+        rs_ci_smoke_ga2d_a8_foreground_buffer[index] = UINT8_C(0xA5);
+        rs_ci_smoke_ga2d_a8_background_buffer[index] = UINT8_C(0xE1);
+    }
+    for (uint32_t index = 0U; index < sizeof(foreground_rows); ++index) {
+        rs_ci_smoke_ga2d_a8_foreground_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] =
+            foreground_rows[index];
+    }
+    for (uint32_t index = 0U; index < sizeof(background_rows); ++index) {
+        rs_ci_smoke_ga2d_a8_background_buffer[RS_CI_SMOKE_GA2D_P5_BUFFER_OFFSET + index] =
+            background_rows[index];
+    }
+    if (!rs_ci_smoke_ga2d_run(&job, UINT64_C(24), UINT64_C(18))) {
+        return false;
+    }
+    return rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_a8_foreground_buffer,
+                                              foreground_rows, (uint32_t)sizeof(foreground_rows),
+                                              UINT8_C(0xA5)) &&
+           rs_ci_smoke_ga2d_p5_buffer_matches(rs_ci_smoke_ga2d_a8_background_buffer,
+                                              destination_rows, (uint32_t)sizeof(destination_rows),
+                                              UINT8_C(0xE1));
+}
+
+static bool rs_ci_smoke_ga2d_irq(void) {
+    rs_ga2d_capability_t capability;
+
+    rs_ci_smoke_ga2d_irq_count = 0U;
+    if ((rs_ga2d_get_capability(&capability) != RS_OK) ||
+        (capability.features != RS_GA2D_CAPABILITY_P5) ||
+        (capability.limits != RS_GA2D_LIMITS_P5) ||
+        (capability.formats != RS_GA2D_FORMAT_CAPABILITY_P5) ||
+        (rs_ga2d_irq_clear(RS_GA2D_IRQ_ALL) != RS_OK) ||
+        (rs_ga2d_irq_enable(RS_GA2D_IRQ_DONE) != RS_OK) ||
+        (rs_irq_enable_external(RS_SOC_EXT_IRQ_GA2D, rs_ci_smoke_ga2d_irq_handler) != RS_OK)) {
+        return false;
+    }
+    RS_GA2D_REG(RS_GA2D_REG_IRQ_TEST) = RS_GA2D_IRQ_DONE;
+    __enable_irq();
+    if (!rs_ci_smoke_wait_ga2d_irq(1U) || !rs_ci_smoke_ga2d_fill_copy() ||
+        !rs_ci_smoke_ga2d_convert() || !rs_ci_smoke_ga2d_argb_blend() ||
+        !rs_ci_smoke_ga2d_a8_inplace_background()) {
+        __disable_irq();
+        (void)rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D);
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_irq();
+    if ((rs_irq_disable_external(RS_SOC_EXT_IRQ_GA2D) != RS_OK) ||
+        (rs_ga2d_irq_enable(0U) != RS_OK)) {
+        __disable_ext_irq();
+        return false;
+    }
+    __disable_ext_irq();
+    return true;
+}
+
+static bool rs_ci_smoke_sdram_wait_ready(void);
+
+static bool rs_ci_smoke_ga2d_bounded_wait(void) {
+    const uint32_t pitch = UINT32_C(72);
+    const uint32_t rows = UINT32_C(256);
+    const uint32_t span = UINT32_C(18432);
+    volatile uint32_t *const destination =
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END - span - UINT32_C(15));
+    const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_FILL,
+        .foreground = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {(uintptr_t)destination, pitch, RS_GA2D_FORMAT_XRGB8888},
+        .width = 16U,
+        .height = 256U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0x80123456),
+    };
+    rs_ga2d_stats_t stats;
+    rs_ga2d_status_t status;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+    if ((rs_ga2d_configure(&job) != RS_OK) || (rs_ga2d_start() != RS_OK) ||
+        (rs_ga2d_wait(1U) != RS_ETIMEOUT)) {
+        return false;
+    }
+    if ((rs_ga2d_get_status(&status) != RS_OK) || !status.busy || status.done || status.error ||
+        status.aborted) {
+        return false;
+    }
+    if ((rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK) || (rs_ga2d_get_stats(&stats) != RS_OK) ||
+        (stats.lines_done != 256U) || (stats.read_bytes != UINT64_C(0)) ||
+        (stats.write_bytes != UINT64_C(16384))) {
+        return false;
+    }
+    for (uint32_t row = 0U; row < rows; ++row) {
+        const uint32_t offset = (row * pitch) / UINT32_C(4);
+
+        for (uint32_t pixel = 0U; pixel < 16U; ++pixel) {
+            if (destination[offset + pixel] != UINT32_C(0xFF123456)) {
+                return false;
+            }
+        }
+    }
+    if ((rs_ga2d_get_status(&status) != RS_OK) || !status.done || status.busy || status.error ||
+        status.aborted) {
+        return false;
+    }
+    return rs_ga2d_abort_wait(RS_TIMEOUT_DEFAULT) == RS_OK;
+}
+
+#define RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK UINT32_C(33023)
+#define RS_CI_SMOKE_GA2D_DMA_WORDS       UINT32_C(64)
+#define RS_CI_SMOKE_GA2D_JOB_WORDS       UINT32_C(256)
+
+/* Kept out of line so the pattern loops stay compact instead of being fully
+   unrolled for every call site; the word pattern keeps every XRGB8888 alpha
+   byte at 0xFF so the copy is byte-exact regardless of X-channel handling. */
+__attribute__((noinline)) static void rs_ci_smoke_ga2d_pattern_fill(volatile uint32_t *region,
+                                                                    uint32_t words) {
+    for (uint32_t index = 0U; index < words; ++index) {
+        region[index] = UINT32_C(0xFF000000) | (index ^ UINT32_C(0x00005A5A));
+    }
+}
+
+__attribute__((noinline)) static bool
+rs_ci_smoke_ga2d_pattern_check(const volatile uint32_t *region, uint32_t words) {
+    for (uint32_t index = 0U; index < words; ++index) {
+        if (region[index] != (UINT32_C(0xFF000000) | (index ^ UINT32_C(0x00005A5A)))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_dma_contention(void) {
+    /* Disjoint 256-byte-aligned SDRAM window below the bounded-wait scratch:
+       DMA source/destination, then GA2D destination/source for a 16x16
+       XRGB8888 copy, all addressed by compile-time constants. */
+    static const rs_dma_config_t dma_config = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK,
+        .destination =
+            RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x100),
+        .byte_count = RS_CI_SMOKE_GA2D_DMA_WORDS * UINT32_C(4),
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .priority = 1U,
+        .burst_beats = RS_DMA_MAX_BURST_BEATS,
+    };
+    static const rs_ga2d_job_t job = {
+        .operation = RS_GA2D_OP_COPY,
+        .foreground = {RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                           UINT32_C(0x780),
+                       UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
+        .background = {0U, 0U, RS_GA2D_FORMAT_A8},
+        .destination = {RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                            UINT32_C(0x340),
+                        UINT32_C(64), RS_GA2D_FORMAT_XRGB8888},
+        .width = 16U,
+        .height = 16U,
+        .global_alpha = UINT8_C(0),
+        .color = UINT32_C(0),
+    };
+    rs_fabric_master_stats_t dma_before;
+    rs_fabric_master_stats_t dma_after;
+    rs_fabric_master_stats_t ga2d_before;
+    rs_fabric_master_stats_t ga2d_after;
+
+    if (!rs_ci_smoke_sdram_wait_ready()) {
+        return false;
+    }
+    /* The LP core is itself a competitor: these setup writes and the bounded
+       waits below keep LP-fabric traffic active while both engines run. */
+    rs_ci_smoke_ga2d_pattern_fill(
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                         RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK),
+        RS_CI_SMOKE_GA2D_DMA_WORDS);
+    rs_ci_smoke_ga2d_pattern_fill(
+        (volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                         RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK + UINT32_C(0x780)),
+        RS_CI_SMOKE_GA2D_JOB_WORDS);
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_DMA, &dma_before) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_before) != RS_OK)) {
+        return false;
+    }
+    if ((rs_dma_configure(RS_DMA_CHANNEL_BULK, &dma_config) != RS_OK) ||
+        (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) || (rs_ga2d_configure(&job) != RS_OK) ||
+        (rs_ga2d_start() != RS_OK)) {
+        return false;
+    }
+    if ((rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_ga2d_wait(RS_TIMEOUT_DEFAULT) != RS_OK)) {
+        return false;
+    }
+    if (!rs_ci_smoke_ga2d_pattern_check(
+            (const volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                                   RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                                                   UINT32_C(0x100)),
+            RS_CI_SMOKE_GA2D_DMA_WORDS) ||
+        !rs_ci_smoke_ga2d_pattern_check(
+            (const volatile uint32_t *)(uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END -
+                                                   RS_CI_SMOKE_GA2D_DMA_WINDOW_BACK +
+                                                   UINT32_C(0x340)),
+            RS_CI_SMOKE_GA2D_JOB_WORDS)) {
+        return false;
+    }
+    if ((rs_fabric_monitor_snapshot() != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_DMA, &dma_after) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_after) != RS_OK)) {
+        return false;
+    }
+    return (dma_after.read_requests > dma_before.read_requests) &&
+           (dma_after.write_requests > dma_before.write_requests) &&
+           (ga2d_after.read_requests > ga2d_before.read_requests) &&
+           (ga2d_after.write_requests > ga2d_before.write_requests);
+}
+
+static bool rs_ci_smoke_npu_irq(void) {
+    bool passed;
+
+    rs_ci_smoke_npu_irq_count = 0U;
+    if (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_LP, false) != RS_OK) {
+        return false;
+    }
+    if ((RS_NPU_REG(RS_NPU_REG_IP_ID) != RS_NPU_IP_ID_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_IP_VERSION) != RS_NPU_IP_VERSION_VALUE) ||
+        (RS_NPU_REG(RS_NPU_REG_CAPABILITY) != RS_NPU_CAPABILITY_P4) ||
+        (RS_NPU_REG(RS_NPU_REG_IRQ_STATE) != 0U)) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = RS_NPU_IRQ_ALL;
+    if (rs_irq_enable_external(RS_SOC_EXT_IRQ_NPU, rs_ci_smoke_npu_irq_handler) != RS_OK) {
+        return false;
+    }
+    RS_NPU_REG(RS_NPU_REG_IRQ_TEST) = RS_NPU_IRQ_ALL;
+    __enable_irq();
+    passed = rs_ci_smoke_wait_npu_irq(1U);
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    if (passed) {
+        rs_kws_npu_regions_t regions;
+        rs_npu_status_t status;
+        uint32_t index;
+
+        RS_NPU_REG(RS_NPU_REG_IRQ_STATE) = RS_NPU_IRQ_ALL;
+        if ((rs_kws_npu_default_regions(&rs_ci_smoke_npu_workspace, &regions) != RS_OK) ||
+            (rs_kws_npu_prepare(&rs_ci_smoke_npu_workspace, &regions, rs_npu_acceptance_input,
+                                RS_NPU_ACCEPTANCE_INPUT_BYTES) != RS_OK) ||
+            (rs_npu_irq_enable(RS_NPU_IRQ_DONE | RS_NPU_IRQ_ERROR | RS_NPU_IRQ_ABORTED) != RS_OK) ||
+            (rs_kws_npu_execute(&rs_ci_smoke_npu_workspace, UINT32_C(0x4E505535),
+                                RS_TIMEOUT_DEFAULT, rs_ci_smoke_npu_output,
+                                RS_NPU_ACCEPTANCE_OUTPUT_BYTES,
+                                &rs_ci_smoke_npu_profile) != RS_OK) ||
+            (rs_npu_get_status(&status) != RS_OK) || (status.result_code != RS_NPU_RESULT_DONE) ||
+            (status.completed_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT) ||
+            (rs_ci_smoke_npu_irq_count < 2U) ||
+            (rs_ci_smoke_npu_profile.counters.retired_descriptors != RS_KWS_NPU_DESCRIPTOR_COUNT)) {
+            passed = false;
+        }
+        for (index = 0U; (index < RS_NPU_ACCEPTANCE_OUTPUT_BYTES) && passed; ++index) {
+            if (rs_ci_smoke_npu_output[index] != rs_npu_acceptance_output[index]) {
+                passed = false;
+            }
+        }
+        printf("NPU_P5_LP model=kws active=%llu read=%llu write=%llu softmax=%llu\n",
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.active_cycles,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_read_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.counters.dma_write_bytes,
+               (unsigned long long)rs_ci_smoke_npu_profile.softmax_cycles);
+    }
+#endif
+    __disable_irq();
+    RS_NPU_REG(RS_NPU_REG_IRQ_ENABLE) = 0U;
+    if (rs_irq_disable_external(RS_SOC_EXT_IRQ_NPU) != RS_OK) {
+        passed = false;
+    }
+    __disable_ext_irq();
+    return passed;
+}
+#else
+static bool rs_ci_smoke_external_irq(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_irq(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_bounded_wait(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_ga2d_dma_contention(void) {
+    return true;
+}
+
+static bool rs_ci_smoke_npu_irq(void) {
+    return true;
+}
+#endif
 
 static bool rs_ci_smoke_apu(void) {
     rs_apu_info_t info;
@@ -87,6 +953,7 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
         (RS_SOC_HAS_SRAM != 0U) ? RS_FABRIC_TARGET_SRAM : RS_FABRIC_TARGET_SDRAM;
     rs_fabric_monitor_status_t status;
     rs_fabric_master_stats_t master;
+    rs_fabric_master_stats_t ga2d_master;
     rs_fabric_target_stats_t target;
     rs_fabric_fault_t fault;
     uint32_t flush_count;
@@ -94,6 +961,7 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
     if ((rs_fabric_monitor_snapshot() != RS_OK) ||
         (rs_fabric_monitor_get_status(&status) != RS_OK) ||
         (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_LP, &master) != RS_OK) ||
+        (rs_fabric_monitor_read_master(RS_FABRIC_MASTER_GA2D, &ga2d_master) != RS_OK) ||
         (rs_fabric_monitor_read_target(active_memory_target, &target) != RS_OK) ||
         (rs_fabric_monitor_read_fault(&fault) != RS_OK) ||
         (rs_fabric_monitor_get_flush_count(&flush_count) != RS_OK)) {
@@ -102,6 +970,8 @@ static bool rs_ci_smoke_fabric_monitor_check(void) {
     return !status.recovery && !status.flush_busy && !fault.valid && (flush_count == 0U) &&
            (master.read_requests != 0U) && (master.write_requests != 0U) &&
            (master.read_beats != 0U) && (master.write_beats != 0U) &&
+           (ga2d_master.read_requests != 0U) && (ga2d_master.write_requests != 0U) &&
+           (ga2d_master.read_beats != 0U) && (ga2d_master.write_beats != 0U) &&
            (target.read_requests != 0U) && (target.write_requests != 0U) &&
            (target.read_beats != 0U) && (target.write_beats != 0U);
 }
@@ -301,7 +1171,8 @@ static bool rs_ci_smoke_sdram_wait_ready(void) {
 }
 
 static bool rs_ci_smoke_sdram_access(void) {
-    const uintptr_t scratch = (uintptr_t)(RS_SOC_SDRAM_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
+    const uintptr_t scratch =
+        (uintptr_t)(RS_CI_SMOKE_SDRAM_SCRATCH_END - RS_CI_SMOKE_SDRAM_SPAN + UINT32_C(1));
     volatile uint8_t *const bytes = (volatile uint8_t *)scratch;
     volatile uint16_t *const halfs = (volatile uint16_t *)scratch;
     volatile uint32_t *const words = (volatile uint32_t *)scratch;
@@ -385,13 +1256,37 @@ int main(void) {
         rs_test_finish(RS_TEST_FAILED, 1U);
     }
     printf("ci_smoke: archinfo passed\n");
+    if (!rs_ci_smoke_external_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: external irq passed\n");
+    if (!rs_ci_smoke_fabric_monitor_start()) {
+        rs_test_finish(RS_TEST_FAILED, 13U);
+    }
+    if (!rs_ci_smoke_ga2d_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: GA2D P5 IRQ passed\n");
+    if (!rs_ci_smoke_ga2d_bounded_wait()) {
+        rs_test_finish(RS_TEST_FAILED, 15U);
+    }
+    printf("ci_smoke: GA2D bounded wait passed\n");
+    if (!rs_ci_smoke_ga2d_dma_contention()) {
+        rs_test_finish(RS_TEST_FAILED, 16U);
+    }
+    printf("ci_smoke: GA2D DMA contention passed\n");
+    if (!rs_ci_smoke_npu_irq()) {
+        rs_test_finish(RS_TEST_FAILED, 17U);
+    }
+#if defined(RS_NPU_P5_ACCEPTANCE)
+    printf("ci_smoke: NPU P5 deployment passed\n");
+#else
+    printf("ci_smoke: NPU P2 IRQ passed\n");
+#endif
     if (!rs_ci_smoke_apu()) {
         rs_test_finish(RS_TEST_FAILED, 14U);
     }
     printf("ci_smoke: APU-P5 discovery passed\n");
-    if (!rs_ci_smoke_fabric_monitor_start()) {
-        rs_test_finish(RS_TEST_FAILED, 13U);
-    }
     if (!rs_ci_smoke_onchip_sram() || !rs_ci_smoke_onchip_sram_access()) {
         rs_test_finish(RS_TEST_FAILED, 12U);
     }

@@ -71,6 +71,7 @@ def generate_all(
             "clusterip.fl",
             "commonip.fl",
             "core_hazard3.fl",
+            "ga2d_block.fl",
             "inc.fl",
             "ip.fl",
             "netlist_support.fl",

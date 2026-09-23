@@ -154,11 +154,20 @@ def collect_storage(root: Path, catalog_path: str, regions: list[dict], system: 
             values = constants(root, "rtl/ip/multimedia/apu_define.svh")
             names = [("Tables / scratch", 0), ("Input workspace", values["APB4_APU__LOCAL_INPUT_BASE"]),
                      ("Output workspace", values["APB4_APU__LOCAL_OUTPUT_BASE"]),
-                     ("KWS reserve (not advertised)", values["APB4_APU__LOCAL_KWS_BASE"]),
+                     ("KWS (P7 configuration)", values["APB4_APU__LOCAL_KWS_BASE"]),
                      ("Internal/common reserve", values["APB4_APU__LOCAL_INTERNAL_BASE"])]
             end = values["APB4_APU__LOCAL_DATA_BYTES"]
             record["ranges"] = [{"name": name, "base": base, "bytes": (names[index + 1][1] if index + 1 < len(names) else end) - base}
                                 for index, (name, base) in enumerate(names)]
+        if record.get("derived") == "npu-local":
+            values = constants(root, "rtl/ip/multimedia/npu_pkg.sv")
+            first = [("Raw gather", "RawBankFirst"), ("Packed activations", "PackABankFirst"),
+                     ("Packed weights", "PackWBankFirst"), ("Output staging", "OutBankFirst"),
+                     ("Descriptor / parameters", "ParamBankFirst")]
+            rows = [(name, values[key] * values["BankBytes"]) for name, key in first]
+            record["ranges"] = [{"name": name, "base": base,
+                                 "bytes": (rows[i + 1][1] if i + 1 < len(rows) else values["LocalBytes"]) - base}
+                                for i, (name, base) in enumerate(rows)]
         if record.get("derived") == "hp-load":
             record["ranges"] = [{"name": row["name"], "base": int(row["address"], 16), "bytes": row["max_size_kib"] * 1024}
                                 for row in system["boot_layout"]]

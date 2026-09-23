@@ -41,15 +41,25 @@ endif
 endif
 
 DEF_VAL += -DAPP_$(APP)
+ifeq ($(APU_ENABLE_P7),YES)
+DEF_VAL += -DRS_APU_RELEASE_P7
+endif
 DEF_VAL += -DCOMPILER_NAME='"$(CC)"'
 DEF_VAL += -DCOMPILER_CFLAGS='"$(GCC_FLAGS) $(SW_WARN_FLAGS)"'
 DEF_VAL += -DCOMPILER_ISA='"$(ISA_FLAGS)"'
 DEF_VAL += -DRS_SOC_MGMT_JTAG_IDCODE=0x$(JTAG_IDCODE)U
 DEF_VAL += -DRS_CPU_CLOCK_HZ=$(MGMT_CPU_CLK_HZ)U
+DEF_VAL += -DRS_PCLK_CLOCK_HZ=$(PCLK_CLK_HZ)U
 DEF_VAL += -DRS_CLINT_TIMEBASE_HZ=$(CLINT_TIMEBASE_HZ)U
 DEF_VAL += -DRS_RTC_CLOCK_HZ=$(AUD_CLK_HZ)U
 ifeq ($(HAVE_CSR),YES)
 DEF_VAL += -DCSR_ENABLE
+endif
+ifeq ($(NPU_P5_ACCEPTANCE),YES)
+DEF_VAL += -DRS_NPU_P5_ACCEPTANCE
+endif
+ifeq ($(NPU_P6_ACCEPTANCE),YES)
+DEF_VAL += -DRS_NPU_P6_ACCEPTANCE
 endif
 
 CFLAGS := $(GCC_FLAGS) $(SW_WARN_FLAGS) $(ISA_FLAGS) $(DEF_VAL)
@@ -103,6 +113,9 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/crypto.c \
             $(ROOT_PATH)/crt/src/hal/apu.c \
+            $(ROOT_PATH)/crt/src/hal/ga2d_math.c \
+            $(ROOT_PATH)/crt/src/hal/ga2d.c \
+            $(ROOT_PATH)/crt/src/hal/npu.c \
             $(ROOT_PATH)/crt/src/hal/jpeg_math.c \
             $(ROOT_PATH)/crt/src/hal/jpeg.c \
             $(ROOT_PATH)/crt/src/hal/dvp.c \
@@ -135,6 +148,8 @@ CRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c
 CRT_SRCS += $(ROOT_PATH)/crt/src/core/irq.c
 endif
 
+CRT_SRCS += $(ROOT_PATH)/crt/src/core/irq_nocsr.c
+
 APP_SRCS     :=
 APP_INC_DIRS :=
 APP_CFLAGS   :=
@@ -161,6 +176,7 @@ endif
 
 INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
+            -I$(SOC_TOPOLOGY_INCLUDE_DIR) \
             -I$(USER_EXTENSIONS_DIR)/include \
             -I$(ARCHINFO_METADATA_DIR) \
             -I$(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
@@ -211,7 +227,7 @@ asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)
@@ -220,7 +236,6 @@ $(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP)
 	cd $(SW_BUILD_DIR) && $(OBJC) -O verilog $(@F) $(FIRMWARE_NAME).hex
 	cd $(SW_BUILD_DIR) && $(OBJC) -O binary $(@F) $(FIRMWARE_NAME).bin
 	cd $(SW_BUILD_DIR) && $(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt
-	cd $(SW_BUILD_DIR) && $(DUMP) -D $(@F) > $(FIRMWARE_NAME)_all.txt
 
 firmware: $(FIRMWARE_ELF)
 

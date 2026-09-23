@@ -23,7 +23,7 @@ module hp_lifecycle_controller_tb;
       .hp_idle_i      (hp_idle_i),
       .flush_busy_i   (flush_busy_i),
       .cache_clean_i  (cache_clean_i),
-      .timeout_i      (16'd4),
+      .timeout_i      (16'd16),
       .hp_release_o   (hp_release_o),
       .block_new_o    (block_new_o),
       .flush_o        (flush_o),
@@ -57,6 +57,10 @@ module hp_lifecycle_controller_tb;
     wait (cache_request_o);
     if (block_new_o || !hp_release_o) begin
       $fatal(1, "cache-maintenance phase blocked HP before acknowledgement");
+    end
+    repeat (8) @(negedge clk_i);
+    if (!cache_request_o || forced_fault_o) begin
+      $fatal(1, "cache-maintenance phase did not retain a delayed acknowledgement window");
     end
     cache_clean_i = 1'b1;
     @(posedge clk_i);

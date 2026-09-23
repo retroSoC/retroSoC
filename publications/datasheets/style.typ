@@ -33,8 +33,8 @@
   toc-leading: 9.09pt, toc-indent: 14pt, toc-group-before: 12pt, toc-group-after: 4pt,
   header-gap: 4pt,
   cover-leading: 4.96pt, cover-spacing: 3.675pt, cover-list-spacing: 7.96pt,
-  cover-heading-before: (20pt,12pt), cover-heading-after: 6pt,
-  cover-gap: 9pt, cover-meta-gap: 10pt, cover-rule-gap: 8pt,
+  cover-heading-before: (12pt,12pt), cover-heading-after: 6pt,
+  cover-gap: 3pt, cover-meta-gap: 4pt, cover-rule-gap: 2pt,
   cover-gutter: 7mm, cover-list-indent: 0.5em,
   diagram-leading: 0.4em, inventory-leading: 0.35em,
 )
@@ -66,9 +66,19 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
-#let change-start(id, title, category:"modified") = context metadata((
-  kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))
-#let change-end(id) = context metadata((kind:"publication-change-end",id:id,page:here().page()))
+// v0.5: only this refresh's reviewed content and dependent navigation markers.
+#let current-change(id) = id.starts-with("v05-") or id in (
+  "soc-functional","dev-architecture","dev-product-availability","dev-media-formats",
+  "dev-ip-apu","dev-ip-resource","dev-ip-monitor","dev-ip-i2s","ga2d-chapter",
+  "dev-performance","dev-limitations","dev-release-evidence","dev-software",
+  "revision-history","contents","table-directory","figure-directory")
+#let change-start(id, title, category:"modified") = context {
+  if current-change(id) {metadata((
+    kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))}
+}
+#let change-end(id) = context {
+  if current-change(id) {metadata((kind:"publication-change-end",id:id,page:here().page()))}
+}
 #let code-block(body, breakable:false) = block(above:rhythm.code-space,below:rhythm.code-space,
   width:100%,inset:rhythm.code-inset,fill:gray,breakable:breakable)[
   #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)

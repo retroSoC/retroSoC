@@ -32,6 +32,11 @@ APU_LOADER_SCENARIOS = {
     "apu_loader_control_flow": 4,
     "apu_loader_abort": 5,
     "apu_loader_resource_reset": 6,
+    "apu_loader_p5_success": 7,
+    "apu_loader_p5_bound": 8,
+    "apu_loader_p5_abort": 9,
+    "apu_loader_p5_resource_reset": 10,
+    "apu_loader_p5_memo_fallback": 11,
 }
 APU_PRIMITIVE_SCENARIOS = {
     "apu_primitives_invalid_read": 0,
@@ -63,6 +68,8 @@ def target_defines(target: str) -> list[str]:
         return ["+define+PDK_BEHAV"]
     if target == "sysctrl":
         return ["+define+SV_ASSRT_DISABLE", "+define+MINI_PRODUCT"]
+    if target == "ga2d":
+        return ["+define+SV_ASSRT_DISABLE", "+define+GA2D_FORMAL_DESIGN"]
     return ["+define+SV_ASSRT_DISABLE"]
 
 
@@ -278,6 +285,24 @@ def source_files(target: str) -> list[Path]:
             PERIPHERAL / "dma_core.sv",
             SCRIPT_DIR / "dma_formal.sv",
         ]
+    if target == "ga2d":
+        return [
+            COMMON_RTL / "interface/apb4_if.sv",
+            COMMON_RTL / "interface/axi4_if.sv",
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "utils/fifo.sv",
+            COMMON_RTL / "stream/round_robin_arbiter.sv",
+            MULTIMEDIA / "ga2d_pkg.sv",
+            MULTIMEDIA / "ga2d_addr_gen.sv",
+            MULTIMEDIA / "ga2d_axi4_master.sv",
+            MULTIMEDIA / "ga2d_dma.sv",
+            MULTIMEDIA / "ga2d_pixel.sv",
+            MULTIMEDIA / "ga2d_core.sv",
+            MULTIMEDIA / "ga2d_reg.sv",
+            MULTIMEDIA / "apb4_ga2d.sv",
+            SCRIPT_DIR / "ga2d_formal_props.sv",
+            SCRIPT_DIR / "ga2d_formal.sv",
+        ]
     if target == "apu":
         return [
             COMMON_RTL / "interface/axi4_if.sv",
@@ -292,6 +317,12 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "interface/axi4_stream_if.sv",
             MULTIMEDIA / "apu_codec_transport.sv",
             SCRIPT_DIR / "apu_codec_formal.sv",
+        ]
+    if target == "apu_kws":
+        return [
+            MULTIMEDIA / "apu_kws_model_loader.sv",
+            MULTIMEDIA / "apu_codec_controller.sv",
+            SCRIPT_DIR / "apu_kws_formal.sv",
         ]
     if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
         return [
@@ -327,6 +358,29 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "stream/round_robin_arbiter.sv",
             TOP / "hp_axi4_mux3.sv",
             SCRIPT_DIR / "gateway_a_formal.sv",
+        ]
+    if target == "npu_dma":
+        return [
+            COMMON_RTL / "interface/axi4_if.sv",
+            MULTIMEDIA / "npu_dma.sv",
+            SCRIPT_DIR / "npu_dma_formal.sv",
+        ]
+    if target == "npu_context":
+        return [
+            MULTIMEDIA / "npu_pkg.sv",
+            MULTIMEDIA / "npu_accumulator.sv",
+            SCRIPT_DIR / "npu_context_formal.sv",
+        ]
+    if target == "npu_control":
+        return [
+            COMMON_RTL / "utils/register.sv",
+            COMMON_RTL / "cdc/cdc_sync.sv",
+            COMMON_RTL / "cdc/cdc_rst_ctrlr.sv",
+            COMMON_RTL / "cdc/async_reqack.sv",
+            COMMON_RTL / "clkrst/rst_sync.sv",
+            MULTIMEDIA / "npu_define.svh",
+            MULTIMEDIA / "npu_control_cdc.sv",
+            SCRIPT_DIR / "npu_control_formal.sv",
         ]
     if target == "sdio":
         return [
@@ -395,14 +449,19 @@ def parse_args() -> argparse.Namespace:
             "onchip_ram",
             "opipsram",
             "dma",
+            "ga2d",
             "apu",
             "apu_codec",
+            "apu_kws",
             "apu_primitives",
             *APU_PRIMITIVE_SCENARIOS,
             *APU_LOADER_SCENARIOS,
             "apu_sequencer",
             "gateway_a",
             "sdio",
+            "npu_dma",
+            "npu_context",
+            "npu_control",
         ),
         required=True,
     )

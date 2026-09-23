@@ -57,6 +57,11 @@ module retrosoc (
     output logic         pclk_idle_o
     // verilog_format: on
 );
+`ifdef APU_ENABLE_P7
+  localparam bit ApuEnableP7 = 1'b1;
+`else
+  localparam bit ApuEnableP7 = 1'b0;
+`endif
 
   // verilog_format: off -- preserve reviewed column alignment
   // Generated fabric links use the common 32-bit AXI4 contract.
@@ -87,6 +92,10 @@ module retrosoc (
       u_ext_h_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
       u_jpeg_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_ga2d_wide_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
+      u_npu_wide_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_apu_axi4_if (.aclk(clk_pclk_i), .aresetn(rst_pclk_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(3), .USER_WIDTH(1))
@@ -101,7 +110,7 @@ module retrosoc (
       u_hp_mmio_gated_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_hp_mmio_lp_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
-  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(6), .USER_WIDTH(1))
+  axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(64), .ID_WIDTH(7), .USER_WIDTH(1))
       u_data_sram_axi4_if (.aclk(clk_hp_i), .aresetn(rst_hp_n_i));
   axi4_if #(.ADDR_WIDTH(32), .DATA_WIDTH(32), .ID_WIDTH(1), .USER_WIDTH(1))
       u_retired_data_sram_axi4_if (.aclk(clk_lp_i), .aresetn(rst_lp_n_i));
@@ -174,7 +183,7 @@ module retrosoc (
   logic [                          63:0] s_perf_flash_wait;
   logic [                          63:0] s_perf_opipsram_wait;
 `ifndef MINI_PRODUCT
-  logic [`SOC_IRQ_VECTOR_WIDTH-1:0] s_user_irq;
+  logic [31:0] s_user_irq;
 `else
   logic s_unused_product_legacy;
 `endif
@@ -194,12 +203,19 @@ module retrosoc (
   logic [ 7:0]      s_data_plane_outstanding_read;
   logic [ 7:0]      s_data_plane_outstanding_write;
   logic [ 7:0]      s_apu_bridge_epoch;
-  logic             s_data_plane_fault_valid;
-  logic [ 2:0]      s_data_plane_fault_master;
-  logic [ 2:0]      s_data_plane_fault_target;
-  logic [31:0]      s_data_plane_fault_addr;
-  logic             s_data_plane_fault_write;
-  logic [ 3:0]      s_data_plane_fault_reason;
+  logic             s_data_plane_fault_valid_hp;
+  logic             s_data_plane_fault_ready_hp;
+  logic [ 3:0]      s_data_plane_fault_master_hp;
+  logic [ 2:0]      s_data_plane_fault_target_hp;
+  logic [31:0]      s_data_plane_fault_addr_hp;
+  logic             s_data_plane_fault_write_hp;
+  logic [ 3:0]      s_data_plane_fault_reason_hp;
+  logic             s_data_plane_fault_valid_pclk;
+  logic [ 3:0]      s_data_plane_fault_master_pclk;
+  logic [ 2:0]      s_data_plane_fault_target_pclk;
+  logic [31:0]      s_data_plane_fault_addr_pclk;
+  logic             s_data_plane_fault_write_pclk;
+  logic [ 3:0]      s_data_plane_fault_reason_pclk;
   logic             s_hp_mmio_idle;
   logic [ 3:0]      s_pclk_pending_d;
   logic [ 3:0]      s_pclk_pending_q;
@@ -235,21 +251,33 @@ module retrosoc (
   logic [31:0]      s_ext_h_timeout;
   logic             s_ext_h_irq_raw;
   logic [ 1:0]      s_ext_h_owner;
-  logic [ 7:0][1:0] s_resource_owner;
-  logic [ 7:0]      s_resource_owner_lock;
-  logic [ 7:0]      s_resource_quiesce;
-  logic [ 7:0]      s_resource_reset;
-  logic [ 7:0]      s_resource_idle_hp;
-  logic [ 7:0]      s_resource_idle_pclk;
-  logic [ 7:0]      s_resource_block_ack_hp;
-  logic [ 7:0]      s_resource_block_ack_pclk;
-  logic [ 6:0]      s_resource_irq_raw;
-  logic [ 6:0]      s_resource_irq_lp;
-  logic [ 6:0]      s_resource_irq_hp;
+  logic [ 9:0][1:0] s_resource_owner;
+  logic [ 9:0]      s_resource_owner_lock;
+  logic [ 9:0]      s_resource_quiesce;
+  logic [ 9:0]      s_resource_reset;
+  logic [ 9:0]      s_resource_idle_hp;
+  logic [ 9:0]      s_resource_idle_pclk;
+  logic [ 9:0]      s_resource_block_ack_hp;
+  logic [ 9:0]      s_resource_block_ack_pclk;
+  logic [ 8:0]      s_resource_irq_raw;
+  logic [ 8:0]      s_resource_irq_lp;
+  logic [ 8:0]      s_resource_irq_hp;
   logic             s_apu_idle;
   logic             s_jpeg_idle;
-  logic [ 7:0]      s_resource_idle_combined;
-  logic [ 7:0]      s_resource_block_ack_combined;
+  logic             s_ga2d_idle;
+  logic             s_ga2d_core_safe_idle;
+  logic [ 9:0]      s_resource_idle_combined;
+  logic [ 9:0]      s_resource_block_ack_combined;
+  logic             s_npu_idle;
+  logic             s_npu_block_ack;
+  logic             s_npu_hp_pause_ack;
+  logic             s_npu_hp_flush_busy;
+  logic             s_npu_hp_idle;
+  logic             s_ga2d_source_stop;
+  logic             s_ga2d_source_safe_idle;
+  logic             s_ga2d_bridge_clear_busy;
+  logic [ 7:0]      s_ga2d_bridge_epoch;
+  logic             s_ga2d_data_ready;
   logic [31:0]      s_fault_addr_mux;
   logic [ 3:0]      s_fault_wstrb_mux;
   logic             s_fault_reserved_mux;
@@ -261,13 +289,16 @@ module retrosoc (
 `else
   localparam bit SramPresent = 1'b0;
 `endif
+  // Permit the HP cache-maintenance and mailbox round trip before forced containment.
+  localparam logic [15:0] HpCacheHandshakeTimeout = 16'hffff;
 
-  assign u_sysctrl_if.fault_access_i = s_data_plane_fault_valid ?
-      s_data_plane_fault_write : s_bus_fault_access;
-  assign u_sysctrl_if.fault_master_i = s_data_plane_fault_valid ?
-      s_data_plane_fault_master : s_bus_fault_master;
-  assign u_sysctrl_if.fault_code_i = s_data_plane_fault_valid ?
-      s_data_plane_fault_reason[2:0] : s_bus_fault_code;
+  // PCLK-visible data-plane faults retain their legacy priority over local bus faults.
+  assign u_sysctrl_if.fault_access_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_write_pclk : s_bus_fault_access;
+  assign u_sysctrl_if.fault_master_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_master_pclk : {1'b0, s_bus_fault_master};
+  assign u_sysctrl_if.fault_code_i = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_reason_pclk[2:0] : s_bus_fault_code;
   assign s_perf_en = u_sysctrl_if.perf_enable_o;
   assign s_perf_clear = u_sysctrl_if.perf_clear_o;
   assign test_done_o = u_sysctrl_if.test_done_o;
@@ -294,10 +325,11 @@ module retrosoc (
   assign u_sysctrl_if.hp_actual_released_i = s_hp_lifecycle_stat_pclk[2];
   assign u_sysctrl_if.hp_draining_i = s_hp_lifecycle_stat_pclk[1];
   assign u_sysctrl_if.hp_forced_fault_i = s_hp_lifecycle_stat_pclk[0];
-  assign s_fault_addr_mux = s_data_plane_fault_valid ? s_data_plane_fault_addr : s_bus_fault_addr;
-  assign s_fault_wstrb_mux = s_data_plane_fault_valid && s_data_plane_fault_write ?
+  assign s_fault_addr_mux = s_data_plane_fault_valid_pclk ?
+      s_data_plane_fault_addr_pclk : s_bus_fault_addr;
+  assign s_fault_wstrb_mux = s_data_plane_fault_valid_pclk && s_data_plane_fault_write_pclk ?
       4'hF : s_bus_fault_wstrb;
-  assign s_fault_reserved_mux = s_data_plane_fault_valid ? 1'b0 : s_bus_fault_reserved;
+  assign s_fault_reserved_mux = s_data_plane_fault_valid_pclk ? 1'b0 : s_bus_fault_reserved;
   assign u_uart0_if.rx_i = uart_rx_i;
   assign uart_tx_o = u_uart0_if.tx_o;
   assign u_uart1_if.rx_i = uart1_rx_i;
@@ -341,11 +373,22 @@ module retrosoc (
   // Generated GPIO alternate-function wiring is checked against soc_topology.json.
   `include "soc_gpio_alt_bindings.svh"
 
-core_wrapper u_core_wrapper (
+`ifdef MINI_PRODUCT
+  localparam int ManagementExternalIrqCount = `SOC_IRQ_VECTOR_WIDTH - 2;
+`else
+  localparam int ManagementExternalIrqCount = 30;
+  localparam logic [31:0] LegacyUserIrqMask = `SOC_USER_IRQ_MASK;
+`endif
+  logic [ManagementExternalIrqCount+1:0] s_management_irq;
+  assign s_management_irq = s_irq[ManagementExternalIrqCount+1:0];
+
+  core_wrapper #(
+      .ExternalIrqCount(ManagementExternalIrqCount)
+  ) u_core_wrapper (
       .clk_i         (clk_lp_i),
       .rst_n_i       (rst_lp_n_i),
       `include "soc_mgmt_core_wrapper_fabric.svh"
-      .irq_i         (s_irq),
+      .irq_i         (s_management_irq),
       .jtag_tck_i    (jtag_tck_i),
       .jtag_tms_i    (s_debug_hp_sel_jtag ? 1'b1 : jtag_tms_i),
       .jtag_tdi_i    (s_debug_hp_sel_jtag ? 1'b0 : jtag_tdi_i),
@@ -378,7 +421,7 @@ core_wrapper u_core_wrapper (
       .axi4   (u_user_axi4_if)
   );
 `else
-  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq & `SOC_USER_IRQ_MASK) : '0;
+  assign s_user_irq = u_sysctrl_if.user_bus_enable_o ? (s_irq[31:0] & LegacyUserIrqMask) : '0;
 
   user_core_top u_user_core_top (
       .clk_i       (clk_lp_i),
@@ -456,12 +499,14 @@ core_wrapper u_core_wrapper (
   );
 
   axi4_address_gate u_hp_mmio_gate (
-      .clk_i      (clk_hp_i),
-      .rst_n_i    (rst_hp_n_i),
-      .block_new_i(s_hp_block_hp),
-      .source     (u_hp_mmio_hp_axi4_if),
-      .sink       (u_hp_mmio_gated_axi4_if),
-      .idle_o     (s_hp_mmio_idle)
+      .clk_i          (clk_hp_i),
+      .rst_n_i        (rst_hp_n_i),
+      .block_new_i    (s_hp_block_hp),
+      .clear_i        (s_hp_flush_hp),
+      .source         (u_hp_mmio_hp_axi4_if),
+      .sink           (u_hp_mmio_gated_axi4_if),
+      .idle_o         (s_hp_mmio_idle),
+      .write_pending_o()
   );
 
   cdc_sync #(
@@ -473,7 +518,7 @@ core_wrapper u_core_wrapper (
       .dat_i({
         u_sysctrl_if.hp_release_o,
         s_hp_debug_reset_req,
-        s_data_plane_idle && s_hp_mmio_idle,
+        s_data_plane_idle && s_hp_mmio_idle && (!s_hp_block_hp || s_npu_hp_pause_ack),
         s_data_plane_flush_busy || s_hp_mmio_clear_busy
       }),
       .dat_o({s_hp_release_req_aon, s_hp_debug_reset_req_aon, s_hp_idle_aon, s_hp_flush_busy_aon})
@@ -485,7 +530,7 @@ core_wrapper u_core_wrapper (
       .hp_idle_i      (s_hp_idle_aon),
       .flush_busy_i   (s_hp_flush_busy_aon),
       .cache_clean_i  (s_hp_cache_clean_aon),
-      .timeout_i      (16'd1024),
+      .timeout_i      (HpCacheHandshakeTimeout),
       .hp_release_o   (s_hp_lifecycle_release_aon),
       .block_new_o    (s_hp_lifecycle_block),
       .flush_o        (s_hp_lifecycle_flush),
@@ -550,60 +595,92 @@ core_wrapper u_core_wrapper (
   );
 
   soc_data_plane u_data_plane (
-      .clk_lp_i            (clk_lp_i),
-      .rst_lp_n_i          (rst_lp_n_i),
-      .clk_io_i            (clk_pclk_i),
-      .rst_io_n_i          (rst_pclk_n_i),
-      .clk_hp_i            (clk_hp_i),
-      .rst_hp_n_i          (rst_hp_n_i),
-      .clk_mem_i           (clk_mem_i),
-      .rst_mem_n_i         (rst_mem_n_i),
-      .block_new_i         (s_hp_block_hp),
-      .recovery_i          (s_hp_recovery_hp),
-      .flush_i             (s_hp_flush_hp),
-      .resource_block_i    (s_resource_quiesce | s_resource_reset),
-      .mem_pad_mode_i      (s_mem_pad_mode_lp),
-      .ext_h_block_i       (s_ext_h_block),
-      .ext_h_read_base_i   (s_ext_h_read_base),
-      .ext_h_read_limit_i  (s_ext_h_read_limit),
-      .ext_h_write_base_i  (s_ext_h_write_base),
-      .ext_h_write_limit_i (s_ext_h_write_limit),
-      .hp_icache_axi4      (u_hp_icache_axi4_if),
-      .hp_dcache_axi4      (u_hp_dcache_axi4_if),
-      .dma_axi4            (u_dma_axi4_if),
-      .sdio0_axi4          (u_sdio0_axi4_if),
-      .sdio1_axi4          (u_sdio1_axi4_if),
-      .spisd_axi4          (u_spisd_axi4_if),
-      .usb2_axi4           (u_usb2_axi4_if),
-      .apu_axi4            (u_apu_axi4_if),
-      .jpeg_axi4           (u_jpeg_wide_axi4_if),
-      .lp_data_axi4        (u_mgmt_data_axi4_if),
-      .ext_h_axi4          (u_ext_h_wide_axi4_if),
-      .sram_gateway_axi4   (u_data_sram_axi4_if),
-      .sdram_gateway_axi4  (u_data_sdram_axi4_if),
-      .qpi_gateway_axi4    (u_data_qpi_axi4_if),
-      .opi_gateway_axi4    (u_data_opi_axi4_if),
-      .xpi_gateway_axi4    (u_data_xpi_axi4_if),
-      .fabric_monitor_apb4 (u_fabric_monitor_hp_if),
-      .idle_o              (s_data_plane_idle),
-      .flush_busy_o        (s_data_plane_flush_busy),
-      .ext_h_idle_o        (s_ext_h_data_idle),
-      .apu_bridge_epoch_o  (s_apu_bridge_epoch),
-      .resource_idle_o     (s_resource_idle_hp),
-      .resource_block_ack_o(s_resource_block_ack_hp),
-      .outstanding_read_o  (s_data_plane_outstanding_read),
-      .outstanding_write_o (s_data_plane_outstanding_write),
-      .fault_valid_o       (s_data_plane_fault_valid),
-      .fault_master_o      (s_data_plane_fault_master),
-      .fault_target_o      (s_data_plane_fault_target),
-      .fault_addr_o        (s_data_plane_fault_addr),
-      .fault_write_o       (s_data_plane_fault_write),
-      .fault_reason_o      (s_data_plane_fault_reason)
+      .clk_lp_i                (clk_lp_i),
+      .rst_lp_n_i              (rst_lp_n_i),
+      .clk_io_i                (clk_pclk_i),
+      .rst_io_n_i              (rst_pclk_n_i),
+      .clk_hp_i                (clk_hp_i),
+      .rst_hp_n_i              (rst_hp_n_i),
+      .clk_mem_i               (clk_mem_i),
+      .rst_mem_n_i             (rst_mem_n_i),
+      .block_new_i             (s_hp_block_hp),
+      .recovery_i              (s_hp_recovery_hp),
+      .flush_i                 (s_hp_flush_hp),
+      .resource_block_i        (s_resource_quiesce | s_resource_reset),
+      .mem_pad_mode_i          (s_mem_pad_mode_lp),
+      .ext_h_block_i           (s_ext_h_block),
+      .ext_h_read_base_i       (s_ext_h_read_base),
+      .ext_h_read_limit_i      (s_ext_h_read_limit),
+      .ext_h_write_base_i      (s_ext_h_write_base),
+      .ext_h_write_limit_i     (s_ext_h_write_limit),
+      .hp_icache_axi4          (u_hp_icache_axi4_if),
+      .hp_dcache_axi4          (u_hp_dcache_axi4_if),
+      .dma_axi4                (u_dma_axi4_if),
+      .sdio0_axi4              (u_sdio0_axi4_if),
+      .sdio1_axi4              (u_sdio1_axi4_if),
+      .spisd_axi4              (u_spisd_axi4_if),
+      .usb2_axi4               (u_usb2_axi4_if),
+      .apu_axi4                (u_apu_axi4_if),
+      .jpeg_axi4               (u_jpeg_wide_axi4_if),
+      .ga2d_axi4               (u_ga2d_wide_axi4_if),
+      .ga2d_core_safe_idle_i   (s_ga2d_core_safe_idle),
+      .npu_axi4                (u_npu_wide_axi4_if),
+      .npu_source_idle_i       (s_npu_idle),
+      .npu_source_quiesced_i   (s_npu_block_ack),
+      .npu_flush_busy_i        (s_npu_hp_flush_busy),
+      .lp_data_axi4            (u_mgmt_data_axi4_if),
+      .ext_h_axi4              (u_ext_h_wide_axi4_if),
+      .sram_gateway_axi4       (u_data_sram_axi4_if),
+      .sdram_gateway_axi4      (u_data_sdram_axi4_if),
+      .qpi_gateway_axi4        (u_data_qpi_axi4_if),
+      .opi_gateway_axi4        (u_data_opi_axi4_if),
+      .xpi_gateway_axi4        (u_data_xpi_axi4_if),
+      .fabric_monitor_apb4     (u_fabric_monitor_hp_if),
+      .idle_o                  (s_data_plane_idle),
+      .flush_busy_o            (s_data_plane_flush_busy),
+      .ext_h_idle_o            (s_ext_h_data_idle),
+      .apu_bridge_epoch_o      (s_apu_bridge_epoch),
+      .ga2d_source_stop_o      (s_ga2d_source_stop),
+      .ga2d_source_safe_idle_o (s_ga2d_source_safe_idle),
+      .ga2d_bridge_clear_busy_o(s_ga2d_bridge_clear_busy),
+      .ga2d_bridge_epoch_o     (s_ga2d_bridge_epoch),
+      .ga2d_data_ready_o       (s_ga2d_data_ready),
+      .resource_idle_o         (s_resource_idle_hp),
+      .resource_block_ack_o    (s_resource_block_ack_hp),
+      .outstanding_read_o      (s_data_plane_outstanding_read),
+      .outstanding_write_o     (s_data_plane_outstanding_write),
+      .fault_valid_o           (s_data_plane_fault_valid_hp),
+      .fault_ready_i           (s_data_plane_fault_ready_hp),
+      .fault_master_o          (s_data_plane_fault_master_hp),
+      .fault_target_o          (s_data_plane_fault_target_hp),
+      .fault_addr_o            (s_data_plane_fault_addr_hp),
+      .fault_write_o           (s_data_plane_fault_write_hp),
+      .fault_reason_o          (s_data_plane_fault_reason_hp)
+  );
+
+  data_plane_fault_cdc u_data_plane_fault_cdc (
+      .clk_hp_i      (clk_hp_i),
+      .rst_hp_n_i    (rst_hp_n_i),
+      .fault_valid_i (s_data_plane_fault_valid_hp),
+      .fault_master_i(s_data_plane_fault_master_hp),
+      .fault_target_i(s_data_plane_fault_target_hp),
+      .fault_addr_i  (s_data_plane_fault_addr_hp),
+      .fault_write_i (s_data_plane_fault_write_hp),
+      .fault_reason_i(s_data_plane_fault_reason_hp),
+      .fault_ready_o (s_data_plane_fault_ready_hp),
+      .clk_pclk_i    (clk_pclk_i),
+      .rst_pclk_n_i  (rst_pclk_n_i),
+      .fault_valid_o (s_data_plane_fault_valid_pclk),
+      .fault_master_o(s_data_plane_fault_master_pclk),
+      .fault_target_o(s_data_plane_fault_target_pclk),
+      .fault_addr_o  (s_data_plane_fault_addr_pclk),
+      .fault_write_o (s_data_plane_fault_write_pclk),
+      .fault_reason_o(s_data_plane_fault_reason_pclk)
   );
 
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(8)
+      .DATA_WIDTH(10)
   ) u_resource_idle_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -612,7 +689,7 @@ core_wrapper u_core_wrapper (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(8)
+      .DATA_WIDTH(10)
   ) u_resource_block_ack_sync (
       .clk_i  (clk_pclk_i),
       .rst_n_i(rst_pclk_n_i),
@@ -703,7 +780,7 @@ core_wrapper u_core_wrapper (
       .dat_o  (s_pclk_pending_q)
   );
 
-  assign hp_idle_o = s_data_plane_idle && s_hp_mmio_idle;
+  assign hp_idle_o = s_data_plane_idle && s_hp_mmio_idle && (!s_hp_block_hp || s_npu_hp_pause_ack);
   assign pclk_idle_o = !(|s_pclk_pending_q) && !u_cfg_axi4_if.awvalid &&
                        !u_cfg_axi4_if.arvalid && !u_system_axi4_if.awvalid &&
                        !u_system_axi4_if.arvalid;
@@ -712,7 +789,7 @@ core_wrapper u_core_wrapper (
       .Present    (SramPresent),
       .CapacityKiB(`SOC_ADDR_SRAM_SIZE >> 10),
       .DataWidth  (64),
-      .IdWidth    (6)
+      .IdWidth    (7)
   ) u_onchip_ram (
       .clk_i        (clk_hp_i),
       .rst_n_i      (rst_hp_n_i),
@@ -792,7 +869,9 @@ core_wrapper u_core_wrapper (
       .perf_opipsram_wait_o   (s_perf_opipsram_wait)
   );
 
-  apb4_periph u_apb4_periph (
+  apb4_periph #(
+      .EnableP7(ApuEnableP7)
+  ) u_apb4_periph (
       .clk_i                       (clk_pclk_i),
       .rst_n_i                     (rst_pclk_n_i),
       .clk_aud_i                   (clk_aud_i),
@@ -800,6 +879,8 @@ core_wrapper u_core_wrapper (
       .clk_ulpi_i                  (clk_ulpi_i),
       .clk_mem_i                   (clk_mem_i),
       .rst_mem_n_i                 (rst_mem_n_i),
+      .clk_hp_i                    (clk_hp_i),
+      .rst_hp_n_i                  (rst_hp_n_i),
       .debug_halted_i              (s_mgmt_debug_halted),
       .timebase_tick_i             (timebase_tick_i),
       .ext_h_hp_irq_i              ((s_ext_h_owner == 2'd1) ? s_ext_h_irq_raw : 1'b0),
@@ -812,6 +893,21 @@ core_wrapper u_core_wrapper (
       .apu_bridge_epoch_i          (s_apu_bridge_epoch),
       .jpeg_quiesce_i              (s_resource_quiesce[6]),
       .jpeg_reset_i                (s_resource_reset[6]),
+      .ga2d_quiesce_i              (s_resource_quiesce[8]),
+      .ga2d_reset_i                (s_resource_reset[8]),
+      .ga2d_source_stop_i          (s_ga2d_source_stop),
+      .ga2d_source_safe_idle_i     (s_ga2d_source_safe_idle),
+      .ga2d_block_ack_i            (s_resource_block_ack_pclk[8]),
+      .ga2d_bridge_clear_busy_i    (s_ga2d_bridge_clear_busy),
+      .ga2d_bridge_epoch_i         (s_ga2d_bridge_epoch),
+      .ga2d_data_ready_i           (s_ga2d_data_ready),
+      .npu_owner_i                 (s_resource_owner[9]),
+      .npu_owner_lock_i            (s_resource_owner_lock[9]),
+      .npu_quiesce_i               (s_resource_quiesce[9]),
+      .npu_reset_i                 (s_resource_reset[9]),
+      .npu_hp_block_new_i          (s_hp_block_hp),
+      .npu_hp_flush_i              (s_hp_flush_hp),
+      .mem_pad_mode_i              (s_mem_pad_mode_lp),
       .cfg_axi4                    (u_cfg_pclk_axi4_if),
       .dma_axi4                    (u_dma_axi4_if),
       .sdio0_axi4                  (u_sdio0_axi4_if),
@@ -819,6 +915,8 @@ core_wrapper u_core_wrapper (
       .usb2_axi4                   (u_usb2_axi4_if),
       .apu_axi4                    (u_apu_axi4_if),
       .jpeg_axi4                   (u_jpeg_wide_axi4_if),
+      .ga2d_axi4                   (u_ga2d_wide_axi4_if),
+      .npu_axi4                    (u_npu_wide_axi4_if),
       .psram_axi4                  (u_data_qpi_axi4_if),
       .xpi_axi4                    (u_data_xpi_axi4_if),
       .spisd_axi4                  (u_spisd_axi4_if),
@@ -844,7 +942,7 @@ core_wrapper u_core_wrapper (
       .usb2                        (usb2),
       .opipsram                    (u_opipsram_raw_if),
       .i2c1                        (u_i2c1_if),
-      .fault_valid_i               (s_data_plane_fault_valid || s_bus_fault_valid),
+      .fault_valid_i               (s_data_plane_fault_valid_pclk || s_bus_fault_valid),
       .fault_addr_i                (s_fault_addr_mux),
       .fault_wstrb_i               (s_fault_wstrb_mux),
       .fault_reserved_i            (s_fault_reserved_mux),
@@ -856,6 +954,13 @@ core_wrapper u_core_wrapper (
       .resource_irq_raw_o          (s_resource_irq_raw),
       .apu_idle_o                  (s_apu_idle),
       .jpeg_idle_o                 (s_jpeg_idle),
+      .ga2d_idle_o                 (s_ga2d_idle),
+      .ga2d_core_safe_idle_o       (s_ga2d_core_safe_idle),
+      .npu_idle_o                  (s_npu_idle),
+      .npu_block_ack_o             (s_npu_block_ack),
+      .npu_hp_pause_ack_o          (s_npu_hp_pause_ack),
+      .npu_hp_flush_busy_o         (s_npu_hp_flush_busy),
+      .npu_hp_idle_o               (s_npu_hp_idle),
       .irq_o                       (s_apb4_periph_irq)
   );
 
@@ -906,16 +1011,21 @@ core_wrapper u_core_wrapper (
   );
 
   assign s_resource_idle_combined = {
+    s_npu_idle && s_resource_idle_pclk[9],
+    s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_idle_pclk[8],
     s_apu_idle && s_resource_idle_pclk[7],
     s_jpeg_idle && s_resource_idle_pclk[6],
     s_ext_h_data_idle && s_resource_idle_pclk[5],
     s_resource_idle_pclk[4:0]
   };
   assign s_resource_block_ack_combined = {
-    s_apu_idle && s_resource_block_ack_pclk[7], s_resource_block_ack_pclk[6:0]
+    s_npu_idle && s_resource_block_ack_pclk[9],
+    s_ga2d_idle && s_ga2d_source_safe_idle && s_resource_block_ack_pclk[8],
+    s_apu_idle && s_resource_block_ack_pclk[7],
+    s_resource_block_ack_pclk[6:0]
   };
 
-  logic [36:0] s_unused_domain_inputs;
+  logic [42:0] s_unused_domain_inputs;
   assign s_unused_domain_inputs = {
     clk_pclk_i,
     rst_pclk_n_i,
@@ -923,9 +1033,9 @@ core_wrapper u_core_wrapper (
     rst_mem_n_i ^ s_mem_pad_lock_lp,
     s_data_plane_outstanding_read,
     s_data_plane_outstanding_write,
-    s_data_plane_fault_target,
-    s_data_plane_fault_addr[1:0],
-    s_data_plane_fault_reason[3],
+    s_data_plane_fault_target_pclk,
+    s_data_plane_fault_addr_pclk[1:0],
+    s_data_plane_fault_reason_pclk[3],
     s_mgmt_router_idle,
     s_hp_lifecycle_draining,
     s_hp_lifecycle_fault,
@@ -933,6 +1043,12 @@ core_wrapper u_core_wrapper (
     ^s_resource_owner_lock,
     ^s_resource_quiesce,
     ^s_resource_reset,
+    s_ga2d_source_stop,
+    s_ga2d_source_safe_idle,
+    s_ga2d_bridge_clear_busy,
+    ^s_ga2d_bridge_epoch,
+    s_ga2d_data_ready,
+    s_npu_hp_idle,
     ^unused_cdc_clear_busy,
     ^unused_cdc_epoch,
     ^{s_hp_mmio_epoch, s_hp_mmio_clear_busy},

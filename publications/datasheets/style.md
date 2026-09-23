@@ -1,7 +1,7 @@
 # Mini Datasheet Layout Standard
 
 This document records the implemented layout of the English **retroSoC Mini
-Gen2/Gen2+**, **v0.4 DRAFT**, datasheet. It is a maintenance specification, not a
+Gen2/Gen2+**, **v0.5 DRAFT**, datasheet. It is a maintenance specification, not a
 new visual design or a hardware specification. The spacing follows the reviewed
 ST RM0486 Rev 4 reference, adapted to the retained Mini page width and fonts.
 
@@ -87,7 +87,7 @@ conventions are supported by driver call sites, not inferred from selector IDs.
 Private masters and central DMA contexts are different resources. Preserve
 endpoint IRQ, aggregate DMA IRQ, LP vector bit and HP PLIC source as separate
 fields/namespaces. Derive PLIC assignments and normal master credits from the
-current implementation; mark a zero-credit connected route explicitly.
+current implementation; mark any connected zero-credit route explicitly.
 
 Cross-IP rules are explanatory defaults with documented exceptions. Do not
 invent a global atomic-register alias, exclusive-access guarantee or universal
@@ -158,8 +158,8 @@ do not establish physical input voltage, pad pull behavior or package numbering.
 Interface tables separate role, source-level subset, exclusions, software support
 and evidence; none is a compliance certificate. Media tables specify containers,
 byte order, stride/alignment and boundary metadata. Format compatibility must not
-override an active integration limitation: JPEG admission and APU production-job
-gates remain visible even for matching data layouts. A claimed format or route
+override an active integration limitation: JPEG system qualification and APU
+production-job gates remain visible even for matching data layouts. A claimed format or route
 must retain its source binding and any blocker reference.
 
 Maintenance commands are operator examples. The publication build never connects
@@ -260,7 +260,7 @@ IP entry even when it is deeper in the hierarchy. Chapter/appendix order and
 stable destinations must not drift. Level-three and deeper explanatory sections
 outside the IP-entry set, body text, tables, figures, numbering and pagination
 remain editable. This is a document organization baseline, not RTL freeze or a
-change from v0.4 DRAFT.
+promotion beyond the current DRAFT maturity.
 
 Build and PDF check compare the resolved headings with the frozen contract.
 The renderer exports `document-structure.json`, which is hashed in the manifest.
@@ -349,7 +349,7 @@ spans for each new editing round so a prior round's changes are not relabeled as
 | Continuation notices only | Inter Regular, 8.5 pt; renderer-marked size exception |
 | Contents entries | 9.5 pt |
 | Signals, addresses and code | FiraCode Nerd Font, 9 pt |
-| Engineering diagram labels | At least 9 pt at final PDF size |
+| Engineering diagram labels | At least 9 pt; only the functional overview's CDC/Gateway labels use 8 pt |
 
 The `code` helper permits line wrapping after underscores and dots using
 zero-width break opportunities. Do not alter identifiers to make them fit.
@@ -604,7 +604,8 @@ IP header markers. Do not feed those positions back into the document through
 a template-wide metadata query, which adds a convergence pass.
 The build records these markers in `layout-regions.json`, hashes that file in
 the PDF manifest, and permits 8.5 pt text only inside those marked regions.
-Unmarked or partly outside text still requires 9 pt, and continuation text
+Unmarked or partly outside text still requires 9 pt (apart from the separate
+functional-overview CDC/Gateway exception below), and continuation text
 below 8.5 pt fails. Missing or changed region data requires rebuilding; do not
 lower the global font-size threshold to accommodate notices.
 
@@ -653,9 +654,9 @@ exception to the ordinary body/list rhythm:
 | Cover setting | Value |
 | --- | --- |
 | Paragraph leading / spacing | 4.96 / 3.675 pt |
-| Level-one / deeper heading before | 20 / 12 pt |
+| Level-one / deeper heading before | 12 / 12 pt |
 | Heading after | 6 pt |
-| General / metadata / rule gaps | 9 / 10 / 8 pt |
+| General / metadata / rule gaps | 3 / 4 / 2 pt |
 | List | Non-tight; `cover-list-spacing: 7.96pt`; body indent 0.5 em |
 
 Features list continuation lines have approximately 12.6 pt baseline spacing,
@@ -693,8 +694,39 @@ Do not achieve this by absolute positioning or shrinking the text.
 
 ### Specialized diagram packages
 
+#### Implementation refresh and evidence scope
+
+The 2026-09-22 v0.5 refresh adds NPU after APU: 42 IP entries and 109 frozen
+structural records. Preserve the previous anchors and add source-bound NPU
+functional, descriptor/parameter, storage, protocol, register and HAL material.
+Keep the APU `(partial)` title while MP3 remains unsupported and KWS is explicitly
+configuration-dependent. Default PRODUCT and P7 acceptance identities are separate.
+Audit semantics as well as source snippets: a binding that still matches code
+does not prove that every surrounding capability or limitation sentence is true.
+
+Separate implemented code, default-enabled/advertised capability, test facilities,
+matching successful runs and physical qualification. Record CI revision, checked
+date, run URL, status, nullable conclusion and scope, including failed prerequisites and skipped
+downstream tests. A workflow pass is not a substitute for an exact-profile IP
+report and behavioral-only regression is not synthesis, netlist, STA or silicon.
+Do not fill electrical, thermal, power or throughput fields with borrowed device
+figures, target clocks or analytic ceilings.
+Never promote a historical narrative or a smoke test that did not execute its
+full workload into a current-revision Reported pass. Record missing raw artifacts
+and source/spec discrepancies as explicit recommendations. In particular, APU's
+inferred KWS storage must not be described as a completed macro implementation.
+
+Use `v05-` for new content and activate only the reviewed existing content,
+navigation and revision markers listed in `current-change`. NPU is added;
+retained GA2D/APU and system material is modified. Earlier closing-page work
+must not be relabeled as new content. Pagination movement remains separate.
+
+Use the existing Overview icon artwork, including its reverted outline style.
+The six Multimedia entries use two rows of three cells within the same
+panel. Keep the repository footer blue and clickable without an underline.
+
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 40 IP diagrams plus PRODUCT fabric,
+chapters. Circuiteria 0.2.1 covers all 42 IP diagrams plus PRODUCT fabric,
 clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
@@ -735,8 +767,10 @@ APU opcode values and whole-field zero requirements come from the current encode
 validator and are checked against RTL. List all 62 defined operations by family;
 distinguish tool-target acceptance, primitive masks, public capability bits and
 production delivery. Examples are encoded specimens, not execution/codec-pass
-evidence. Keep disabled-path qualifications on diagrams, including the current
-JPEG normal-admission block. A connected port does not establish a usable path.
+evidence. Keep system-qualification boundaries on diagrams, including the
+distinction between JPEG's bounded master-6 transport (one normal read and one
+normal write credit at class 8) and an unqualified end-to-end workload. A
+connected port and admission allocation do not establish a qualified system path.
 
 Every frozen chapter has a coverage record with category, source pointers,
 primary/shared diagrams or an explicit not-applicable reason. Primary format and
@@ -787,14 +821,14 @@ fill; the two processor cells are pale gold. Cells adapt to the item count:
 Connectivity uses three columns and splits its last row between two items.
 
 [overview-groups.json](overview-groups.json) is the sole source of category and
-IP names (currently nine categories and 43 IPs). Show each integrated PRODUCT
+IP names (currently nine categories and 45 labels). Show each integrated PRODUCT
 IP once, without external chips, reserved windows, MPW-only blocks, topology
 arrows, capacities, frequencies or state badges. Decorative icons express
 category only. Keep Overview-only drawing helpers separate from shared boxes.
 
 The Interconnect Matrix remains on a portrait page, 172 mm wide: a 45 mm
 initiator column and five 25.4 mm target columns. Header height is 8.5 mm; the
-eight data rows are 8.2 mm high. Labels stay at least 9 pt. Permissions are
+data rows, one per reviewed initiator (currently ten), are 8.2 mm high. Labels stay at least 9 pt. Permissions are
 printed as `R / W`, `R`, `W` or `-`; cells allowing writes also use pale gold.
 Do not rescale the complete drawing or change data to make it fit.
 
@@ -861,6 +895,135 @@ center-aligned within that width, uses 9 pt muted small-text rhythm and
 actual SVG as well as color and grayscale PDF renders.
 
 ## Header, footer, assets and maintenance
+
+### Compact PRODUCT functional architecture
+
+Insert the new `cetz:soc-functional` figure after the Section 2.1.1 introduction.
+It is a single portrait vector diagram within the 172 mm body width; keep its
+caption and diagram together and allow normal pagination if the current page is
+too short. Use locked CeTZ 0.5.2 directly. This component does not replace or
+restyle existing Circuiteria/IP, interconnect, clock, Overview or matrix figures.
+
+Use Inter with these scoped rules: ordinary IP, external-interface and
+explanatory labels are Regular 400 at 9 pt; CDC and HP I/O Gateway labels are
+Regular 400 at 8 pt; the four gray bus spines, clock-domain titles and domain-key
+names are Bold 700 at 9 pt. Non-CDC bridges retain ordinary 9 pt type. The 8 pt
+exception is exclusive to the approved compact cells in this figure and does
+not lower any other diagram's minimum. Semibold is not a substitute for Bold.
+
+Size CDC rectangles and Gateway A/B trapezoids from the compact labels, with
+1 mm horizontal and 0.6 mm vertical text padding. Both dimensions must be
+smaller than the preceding 9 pt drawing, while the gateways retain separate
+input ports. Compact text uses 1 pt leading. Keep thin 0.6 pt symbol borders,
+0.65 pt routes, pale domain backgrounds and the existing ink/gold palette.
+Rotate long bus-spine and narrow bridge labels by 90 degrees where needed;
+keep ordinary module and external-interface labels horizontal.
+
+Use only horizontal/vertical connector centerlines. Arrow flanks and gateway
+outlines may be diagonal. Arrowheads are 1 mm long and 0.8 mm wide; reserve at
+least 1 mm of straight shaft beyond each head (3 mm total for a straight duplex
+gap). Other routes must remain at least 0.5 mm outside an arrowhead's stroke
+envelope. Avoid unrelated symbols and exported text, including domain titles.
+Ordinary crossings without junctions remain unconnected. Draw from the same
+computed route/head geometry used by the validator, rather than independent
+renderer defaults. CDC ingress and egress lines must remain visible.
+
+Check actual PDF typography using renderer-bound positions recorded and hashed
+in `layout-regions.json`. Only named CDC/Gateway regions authorize 8 pt. The
+final check requires exact 8/9 pt sizes and 400/700 weights by role; it rejects
+text outside its exception, empty/overlapping regions and line/text collisions.
+For quarter-turn labels use the rendered width as the font-height axis, since
+PDFMiner's `size` then measures glyph advance. Embedded variable-font subsets
+can retain the name Inter-Regular and omit OS/2 weight metadata; compare retained
+glyph outlines with locked Inter instances at weights 400 and 700 instead.
+
+CPU and memory blocks occupy the top tier, independent initiators and gateways
+the middle, and narrow APB peripheral rows the lower tier. Name UART0/1,
+I2C0/1, TIM0/1 and SDIO0/1 individually. Cover every PRODUCT IP; the separate
+MPW IPs remain in their appendix. Show DMA subcells only for implementations
+with the corresponding private path, and keep the central eight-channel DMA
+independent of Gateway A/B. Avoid summary boxes that collapse several unrelated
+peripherals or a large Reference panel that displaces functional content.
+Below the figure, use top-aligned columns of 64 mm and 102 mm with a 6 mm gap
+and no outer frame. The left column holds the nine existing domain colors in
+a three-column, three-row key; the right preserves the existing gateway,
+arrow, LP/PCLK, AF, shared-pad and crossing explanations, wrapped at 9 pt.
+
+AXI32/AXI64 text is permitted only in bus-spine and bridge symbols. It must not
+reappear in CPU/IP titles or as floating wire labels. Identify AHB-Lite to AXI,
+MMIO gating/downsizing, ingress CDC/upsizing and four independent memory-target
+CDC/downsizing paths in their bridge symbols. APB4 and stream paths stay distinct.
+Gateway A visibly receives separate APU, SDIO0 and USB2 inputs; Gateway B receives
+separate SDIO1 and SPI-SD inputs. Each has one output to its own CDC/width bridge
+and then the HP fabric. The two outputs are not merged into one fabricated bus.
+
+Use the following functional clock-domain fills, with printed names or a compact
+key. Multi-clock peripherals have distinct control/FIFO and timing/link views.
+
+| Domain | Fill |
+| --- | --- |
+| AON | `#ECEDEF` |
+| LP | `#F4EFE4` |
+| HP | `#E7EFF6` |
+| PCLK | `#EBF2E8` |
+| MEM | `#EEE9F4` |
+| JTAG | `#E7F2F0` |
+| AUDIO | `#F7E9E9` |
+| DVP | `#F8EFD9` |
+| ULPI | `#E8ECF7` |
+
+Both APB4 register islands are PCLK functions. SRAM and Fabric Monitor execute
+in HP; NPU computation, private SRAM and payload DMA also execute in HP, while
+its PCLK control CDC is expanded in the NPU chapter. Its overview node must
+lie inside an HP background and bind the NPU chapter identity. The external-memory
+controllers execute in MEM. PCLK derives from LP,
+so different fills do not imply all domain pairs are asynchronous. These are
+functional clock regions, not power islands or timing-signoff statements.
+
+Place concise external signal groups outside the module rows. Bind them to the
+pin map, interface declarations or actual GPIO alternate-function routes.
+Mark GPIO alternate functions, QPI/OPI shared-pad selection and the external
+ULPI PHY accurately; interface arrows do not promise concurrent use of conflicting
+routes. Solid request paths and grey stream paths remain visually distinct;
+responses and remote register-control CDC detail may be omitted from this overview
+and retained in the detailed references. Crossings without junctions are not joins.
+
+The catalog records semantic node roles, clock sources, gateway inputs/output,
+literal interface widths, stream connections, source files and external pin
+groups. Validate those against current sources and include them in the manifest.
+Record the CeTZ category in the 109-entry coverage report and require the actual
+render. The v0.5 specialized inventory has 142 figures, including the new NPU
+circuit, descriptor/parameter layouts and storage views. Preserve the existing
+package renderers and use source-bound content for every changed figure.
+
+### Independent closing page
+
+Append one unnumbered closing page after Document Status and Contact. It is an
+A4 page with 19 mm left/right margins and a 24 mm bottom margin; hide its running
+header, footer, rules, date and visible page number in a local page scope. Count
+it in the full PDF total. It has no heading, bookmark, figure number or directory
+entry, so it remains outside the 42-IP / 109-entry structure contract.
+
+Bottom-align a single nonbreaking content block. Its first element is an empty
+60 x 14 mm white rectangle with a 0.6 pt gold outline, reserved for a future logo.
+Do not add a label, caption, placeholder text or an external logo asset. Leave
+7 mm before the 13 pt Inter Semibold title, "Disclaimer and Copyright Notice".
+Use 9 pt Inter Regular text with the small-text leading (about 10.8 pt baseline
+pitch) and 5 pt paragraph spacing. Keep the existing ink/gold/link palette.
+
+Use the reviewed English notice in `sections/closing.typ`, the copyright line
+from the project LICENSE and a blue clickable repository link. The notice refers
+to Mulan PSL v2 and third-party licenses without substituting new license terms
+or importing another manufacturer's copyright/trademark statements.
+
+The start/end metadata must identify one complete final page. Export
+`page-roles.json` and bind its digest in the manifest. Only that validated role
+permits absent footer content and links; all ordinary pages remain subject to
+the standard furniture checks. Missing, modified, duplicated or non-final role
+records fail validation. Change reports use viewer indexes and null printed
+page values for this page. Keep first-page Integration note placement intact.
+
+### Running furniture and managed assets
 
 The header displays `retroSoC Mini Gen2/Gen2+` from `doc.title` on the left and the active IP identifier,
 or current level-one chapter outside an IP, on the right. It uses 9 pt muted

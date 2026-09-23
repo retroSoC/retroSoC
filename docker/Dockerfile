@@ -18,15 +18,20 @@ RUN apt-get update -qq \
         git \
         libfl2 \
         libgoogle-perftools4 \
+        libncursesw6 \
+        libpython3.10 \
+        libtcl8.6 \
         libunwind8 \
         make \
         mold \
         numactl \
+        openjdk-17-jre-headless \
+        perl \
         python3 \
         python3-pip \
         python3-venv \
         xz-utils \
-        zlib1g \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/retrosoc

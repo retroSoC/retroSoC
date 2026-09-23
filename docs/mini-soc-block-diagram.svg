@@ -99,7 +99,7 @@
 <title>data_plane</title>
 <path fill="#bfdbfe" stroke="#4b5563" stroke-width="1.1" d="M1871.04,-420.1C1871.04,-420.1 1811.22,-448.16 1811.22,-448.16 1805.79,-450.7 1794.36,-453.25 1788.36,-453.25 1788.36,-453.25 1649.26,-453.25 1649.26,-453.25 1643.26,-453.25 1631.83,-450.7 1626.39,-448.16 1626.39,-448.16 1566.57,-420.1 1566.57,-420.1 1561.14,-417.55 1561.14,-412.45 1566.57,-409.9 1566.57,-409.9 1626.39,-381.84 1626.39,-381.84 1631.83,-379.3 1643.26,-376.75 1649.26,-376.75 1649.26,-376.75 1788.36,-376.75 1788.36,-376.75 1794.36,-376.75 1805.79,-379.3 1811.22,-381.84 1811.22,-381.84 1871.04,-409.9 1871.04,-409.9 1876.47,-412.45 1876.47,-417.55 1871.04,-420.1"/>
 <text text-anchor="middle" x="1718.81" y="-423.5" font-family="Arial" font-size="10.00" fill="#111827">Native AXI64 Data Plane</text>
-<text text-anchor="middle" x="1718.81" y="-412.5" font-family="Arial" font-size="10.00" fill="#111827">8 masters x 6 targets, global ID6</text>
+<text text-anchor="middle" x="1718.81" y="-412.5" font-family="Arial" font-size="10.00" fill="#111827">9 masters x 6 targets, global ID7</text>
 <text text-anchor="middle" x="1718.81" y="-401.5" font-family="Arial" font-size="10.00" fill="#111827">target credits, QoS aging, generated ACL</text>
 </g>
 <!-- aon&#45;&gt;data_plane -->
@@ -297,7 +297,7 @@
 <title>sram</title>
 <path fill="#fde68a" stroke="#4b5563" stroke-width="1.1" d="M2498.61,-491C2498.61,-491 2405.61,-491 2405.61,-491 2399.61,-491 2393.61,-485 2393.61,-479 2393.61,-479 2393.61,-467 2393.61,-467 2393.61,-461 2399.61,-455 2405.61,-455 2405.61,-455 2498.61,-455 2498.61,-455 2504.61,-455 2510.61,-461 2510.61,-467 2510.61,-467 2510.61,-479 2510.61,-479 2510.61,-485 2504.61,-491 2498.61,-491"/>
 <text text-anchor="middle" x="2452.11" y="-476" font-family="Arial" font-size="10.00" fill="#111827">32 KiB on&#45;chip SRAM</text>
-<text text-anchor="middle" x="2452.11" y="-465" font-family="Arial" font-size="10.00" fill="#111827">native AXI64 / ID6</text>
+<text text-anchor="middle" x="2452.11" y="-465" font-family="Arial" font-size="10.00" fill="#111827">native AXI64 / ID7</text>
 </g>
 <!-- guards&#45;&gt;sram -->
 <g id="edge17" class="edge">

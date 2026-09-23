@@ -20,19 +20,22 @@ CI_SMOKE_VERILATOR_VALUES = (
     "VERILATOR_SIM_ARGS=--fast-flash",
     "SIMU=VERILATOR",
     "HAVE_SVA=YES",
+    "HAVE_CSR=YES",
     "firmware",
     "sim",
 )
 CI_SMOKE_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_all_sram",
-    "SOC_SIM_TIME=360",
+    "SOC_SIM_TIME=1800",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 CI_SMOKE_SDRAM_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_sdram",
-    "SOC_SIM_TIME=600",
+    # Hosted Verilator executes the expanded GA2D acceptance workload more
+    # slowly when LP code and accelerator traffic share the SDRAM target.
+    "SOC_SIM_TIME=1800",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")

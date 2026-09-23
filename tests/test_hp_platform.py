@@ -99,6 +99,60 @@ def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
     assert "0x10019000" in source
     assert "0x4c4e5801" in source.lower()
     assert "HP_SMOKE_READY" in source
+    assert "0x10012000" in source
+    assert "0x2000a000" in source.lower()
+    assert "cbo.clean" in source
+    assert "cbo.inval" in source
+    assert source.count(".balign 64") >= 4
+    for marker in ("HP_GA2D_START", "HP_GA2D_PASS", "HP_GA2D_FAIL", "HP_GA2D_CACHE"):
+        assert marker in source
+
+
+def test_hp_smoke_p5_npu_payload_has_stack_cache_and_polling_plan() -> None:
+    source = (ROOT / "app/ports/linux/smoke/start.S").read_text(encoding="utf-8")
+    linker = (ROOT / "app/ports/linux/smoke/linker.ld").read_text(encoding="utf-8")
+    acceptance = (ROOT / "app/ports/linux/smoke/npu_acceptance.c").read_text(encoding="utf-8")
+    builder = (ROOT / "scripts/build_hp_smoke.py").read_text(encoding="utf-8")
+
+    assert "la      sp, _stack_top" in source
+    assert "call    rs_hp_npu_acceptance" in source
+    assert "_bss_start" in linker and "_bss_end" in linker and "_stack_top" in linker
+    assert "rs_kws_npu_execute" in acceptance
+    assert "rs_npu_irq_enable(0U)" in acceptance
+    assert "rs_npu_irq_ack(RS_NPU_IRQ_ALL)" in acceptance
+    assert '"--extra-source"' in builder and '"--include"' in builder
+
+
+def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    target = makefile.split("hp-smoke-sim: hp-smoke-bundle comp", 1)[1].split("\nifeq", 1)[0]
+
+    assert "HP_SMOKE_SIM_TIME       ?= 300" in makefile
+    assert "SOC_SIM_TIME=$(HP_SMOKE_SIM_TIME)" in target
+    assert "VERILATOR_SIM_ARGS=--fast-flash" in target
+
+    for marker in (
+        "SIM_TEST_PASS code=0",
+        "HP_LINUX_READY",
+        "HP_GA2D_PASS",
+        "HP_GA2D_CACHE_CLEAN",
+    ):
+        assert f"--require '{marker}'" in target
+
+
+def test_hp_cache_handshake_budget_covers_cbo_and_mailbox_round_trip() -> None:
+    source = (ROOT / "rtl/mini/top/retrosoc.sv").read_text(encoding="utf-8")
+
+    assert "HpCacheHandshakeTimeout = 16'hffff" in source
+    assert ".timeout_i      (HpCacheHandshakeTimeout)" in source
+
+
+def test_hp_lifecycle_flush_preserves_unadmitted_lp_requests() -> None:
+    source = (ROOT / "rtl/mini/top/soc_data_plane.sv").read_text(encoding="utf-8")
+    lp_data_cdc = source.split(") u_lp_data_cdc (", 1)[1].split(");", 1)[0]
+
+    assert ".clear_i     (1'b0)" in lp_data_cdc
+    assert "HP lifecycle flush invalidates HP transport" in lp_data_cdc
 
 
 def test_linux_build_uses_external_opensbi_platform_and_actual_initrd_end() -> None:

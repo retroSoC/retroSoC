@@ -14,7 +14,7 @@ module apu_p3_microcode_tb;
   logic [ 3:0] dma_keep;
   logic dma_last, dma_valid, dma_ready, dma_done, dma_error;
   logic store_active, store_read, store_write, store_valid;
-  logic [10:0] store_addr;
+  logic [11:0] store_addr;
   logic [63:0] store_write_data, store_read_data;
   logic [7:0] mc_status;
   logic [31:0] mc_abi, mc_actual_crc, mc_load_count;
@@ -29,7 +29,7 @@ module apu_p3_microcode_tb;
   logic [2:0][23:0] entry_max_retired;
   logic seq_launch, seq_stall, seq_fetch, seq_fetch_valid, seq_trapped, seq_trap_event;
   logic seq_abort_done, seq_fault_valid, seq_idle;
-  logic [10:0] seq_fetch_addr;
+  logic [11:0] seq_fetch_addr;
   logic [63:0] seq_fetch_data, seq_perf_retired;
   logic [31:0] seq_status, seq_retired, seq_timeout;
   logic [15:0][31:0] seq_gpr;
@@ -154,6 +154,8 @@ module apu_p3_microcode_tb;
       .fault_resp_o       (mc_fault_resp),
       .fault_addr_o       (mc_fault_addr),
       .fault_detail_o     (mc_fault_detail),
+      .proof_visit_count_o(),
+      .proof_memo_full_o  (),
       .idle_o             (mc_idle)
   );
 
@@ -184,6 +186,7 @@ module apu_p3_microcode_tb;
       .launch_i                (seq_launch),
       .launch_entry_i          (2'd0),
       .image_valid_i           (mc_status[`APB4_APU__MC_STATUS_VALID]),
+      .image_abi_i             (`APB4_APU__APUMC_ABI),
       .timeout_i               (seq_timeout),
       .entry_pc_i              (entry_pc),
       .entry_first_i           (entry_first),

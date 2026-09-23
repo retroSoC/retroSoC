@@ -4,7 +4,9 @@ module axi4_address_gate_tb;
   logic clk_i = 1'b0;
   logic rst_n_i = 1'b0;
   logic block_new_i = 1'b0;
+  logic clear_i = 1'b0;
   logic idle_o;
+  logic write_pending_o;
 
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -28,12 +30,14 @@ module axi4_address_gate_tb;
   always #5 clk_i = ~clk_i;
 
   axi4_address_gate u_dut (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .block_new_i(block_new_i),
-      .source     (source),
-      .sink       (sink),
-      .idle_o     (idle_o)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .block_new_i    (block_new_i),
+      .clear_i        (clear_i),
+      .source         (source),
+      .sink           (sink),
+      .idle_o         (idle_o),
+      .write_pending_o(write_pending_o)
   );
 
   initial begin
@@ -111,6 +115,15 @@ module axi4_address_gate_tb;
     sink.bvalid = 1'b0;
     if (!idle_o) $fatal(1, "write completion did not restore idle");
 
+    source.wvalid = 1'b1;
+    #1;
+    if (idle_o || source.wready || sink.wvalid || write_pending_o) begin
+      $fatal(1, "write data before its address was accepted or reported idle");
+    end
+    source.wvalid = 1'b0;
+    #1;
+    if (!idle_o) $fatal(1, "unaccepted write data did not restore idle after withdrawal");
+
     block_new_i    = 1'b0;
     source.arvalid = 1'b1;
     @(posedge clk_i);
@@ -127,6 +140,25 @@ module axi4_address_gate_tb;
     @(negedge clk_i);
     sink.rvalid = 1'b0;
     if (!idle_o) $fatal(1, "read completion did not restore idle");
+
+    block_new_i    = 1'b0;
+    clear_i        = 1'b1;
+    source.awvalid = 1'b1;
+    source.wvalid  = 1'b1;
+    source.arvalid = 1'b1;
+    #1;
+    if (source.awready || source.wready || source.arready || sink.awvalid || sink.wvalid ||
+        sink.arvalid) begin
+      $fatal(1, "clear boundary accepted a source transaction");
+    end
+    @(posedge clk_i);
+    @(negedge clk_i);
+    source.awvalid = 1'b0;
+    source.wvalid  = 1'b0;
+    source.arvalid = 1'b0;
+    clear_i        = 1'b0;
+    #1;
+    if (!idle_o) $fatal(1, "clear boundary did not restore the gate to idle");
 
     $display("AXI4 address gate quiesce test passed");
     $finish;

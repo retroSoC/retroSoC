@@ -5,9 +5,11 @@ module axi4_address_gate (
     input  logic          clk_i,
     input  logic          rst_n_i,
     input  logic          block_new_i,
+    input  logic          clear_i,
            axi4_if.slave  source,
            axi4_if.master sink,
-    output logic          idle_o
+    output logic          idle_o,
+    output logic          write_pending_o
 );
   logic s_write_pending_d;
   logic s_write_pending_q;
@@ -29,15 +31,15 @@ module axi4_address_gate (
   assign sink.awqos = source.awqos;
   assign sink.awregion = source.awregion;
   assign sink.awuser = source.awuser;
-  assign sink.awvalid = source.awvalid && !block_new_i && !s_write_pending_q;
-  assign source.awready = sink.awready && !block_new_i && !s_write_pending_q;
+  assign sink.awvalid = source.awvalid && !block_new_i && !clear_i && !s_write_pending_q;
+  assign source.awready = sink.awready && !block_new_i && !clear_i && !s_write_pending_q;
 
   assign sink.wdata = source.wdata;
   assign sink.wstrb = source.wstrb;
   assign sink.wlast = source.wlast;
   assign sink.wuser = source.wuser;
-  assign sink.wvalid = source.wvalid && (s_write_pending_q || s_aw_accept);
-  assign source.wready = sink.wready && (s_write_pending_q || s_aw_accept);
+  assign sink.wvalid = source.wvalid && !clear_i && (s_write_pending_q || s_aw_accept);
+  assign source.wready = sink.wready && !clear_i && (s_write_pending_q || s_aw_accept);
 
   assign source.bid = sink.bid;
   assign source.bresp = sink.bresp;
@@ -56,8 +58,8 @@ module axi4_address_gate (
   assign sink.arqos = source.arqos;
   assign sink.arregion = source.arregion;
   assign sink.aruser = source.aruser;
-  assign sink.arvalid = source.arvalid && !block_new_i && !s_read_pending_q;
-  assign source.arready = sink.arready && !block_new_i && !s_read_pending_q;
+  assign sink.arvalid = source.arvalid && !block_new_i && !clear_i && !s_read_pending_q;
+  assign source.arready = sink.arready && !block_new_i && !clear_i && !s_read_pending_q;
 
   assign source.rid = sink.rid;
   assign source.rdata = sink.rdata;
@@ -71,7 +73,9 @@ module axi4_address_gate (
   assign s_b_accept = source.bvalid && source.bready;
   assign s_ar_accept = source.arvalid && source.arready;
   assign s_r_accept = source.rvalid && source.rready && source.rlast;
-  assign idle_o = !s_write_pending_q && !s_read_pending_q && !source.awvalid && !source.arvalid;
+  assign write_pending_o = s_write_pending_q || s_aw_accept;
+  assign idle_o = !s_write_pending_q && !s_read_pending_q && !source.awvalid && !source.wvalid &&
+                  !source.arvalid;
 
   always_comb begin
     s_write_pending_d = s_write_pending_q;
@@ -80,6 +84,10 @@ module axi4_address_gate (
     if (s_aw_accept) s_write_pending_d = 1'b1;
     if (s_r_accept) s_read_pending_d = 1'b0;
     if (s_ar_accept) s_read_pending_d = 1'b1;
+    if (clear_i) begin
+      s_write_pending_d = 1'b0;
+      s_read_pending_d  = 1'b0;
+    end
   end
 
   dffr #(

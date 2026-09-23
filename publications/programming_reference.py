@@ -220,8 +220,9 @@ def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) ->
             raise ValueError(f"HP interrupt routing changed: {row['id']}")
         row["lp_irq"], row["hp_irq"] = interrupts[row["irq"]], int(routed[0])
     crossbar = (root / "rtl/mini/top/axi4_data_crossbar.sv").read_text()
-    result["read_credits"] = credit_values(crossbar, "master_read_limit", 8)
-    result["write_credits"] = credit_values(crossbar, "master_write_limit", 8)
+    masters = len(topology["data_master_policies"])
+    result["read_credits"] = credit_values(crossbar, "master_read_limit", masters)
+    result["write_credits"] = credit_values(crossbar, "master_write_limit", masters)
     result["timing"] = {
         "uart": [{"clock": c, "target": b, **uart_timing(c, b)} for c, b in ((24_000_000, 115200), (72_000_000, 115200))],
         "i2c": [{"clock": 24_000_000, "target": rate, **i2c_timing(24_000_000, rate)} for rate in (100_000, 400_000, 1_000_000)],

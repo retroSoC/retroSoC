@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module axi4_id_prefix #(
-    parameter logic [2:0] MasterIndex = 3'd0
+    parameter logic [3:0] MasterIndex = 4'd0
 ) (
     axi4_if.slave  source,
     axi4_if.master sink

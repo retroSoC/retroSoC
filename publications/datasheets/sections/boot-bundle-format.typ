@@ -6,7 +6,7 @@
 === HP Boot Bundle Binary Format <boot-bundle-format>
 
 The supplied format is a fixed four-artifact bundle, serialized as little-endian 32-bit words.
-The format version is #bundle.version; it is independent of the datasheet's v0.4 revision.
+The format version is #bundle.version; it is independent of the datasheet's v0.5 revision.
 The bundle starts at Flash offset #hex(bundle.bundle_offset), after the LP firmware area.
 Its fixed header is #bundle.fixed_header_bytes bytes, each descriptor is #bundle.entry_bytes
 bytes and the complete header including #bundle.entry_count descriptors is #bundle.header_bytes bytes.

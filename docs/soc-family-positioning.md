@@ -141,9 +141,21 @@ capabilities:
 - The canonical address map exposes configurable on-chip SRAM, a 64 MiB SDRAM
   window, and an 8 MiB PSRAM window. Address-window capacity does not guarantee
   that every implementation includes the corresponding physical memory.
-- AXI4 uses a 32-bit LP control plane and an 8x6 native AXI64 HP data plane.
-  Vexii I/D ports remain independent; DMA and I/O masters cross into HP and
-  current memory frontends are reached through 64-to-32 target adapters.
+- AXI4 uses a 32-bit LP control plane and a 10x6 native AXI64 HP data plane
+  with seven-bit global IDs. Vexii I/D ports remain independent; DMA and I/O
+  masters cross into HP and current memory frontends are reached through
+  64-to-32 target adapters. Master 8 is the dedicated PCLK-to-HP AXI64/ID3
+  GA2D bridge for a direct single-job private-AXI64 2D engine; master 9 is
+  the HP-native NPU path, tied safely idle until the Phase 3 DMA lands.
+  `APB4_GA2D` provides its PCLK control plane and resource-owned IRQ routing.
+  The P5 engine supports FILL, COPY, bit-exact CONVERT, opaque alpha BLEND,
+  A8 fixed-color foreground masks, and exact equal background/destination
+  in-place composition. RGB565, RGB888, XRGB8888, and ARGB8888 are color
+  surfaces; A8 is BLEND foreground-only. Snapshots, two-dimensional pitch, and
+  byte edges remain available. Transparent-background/premultiplied-alpha
+  modes, scaling, rendering, descriptor/ring/queue submission, hardware cache
+  coherency, a Linux graphics driver, and physical/PPA completion remain
+  deferred.
 - Current external-memory targets serialize accepted AXI4 bursts into ordered
   scalar engine accesses. They do not yet combine a burst into a native SDRAM,
   PSRAM, flash, or SPI-SD physical transaction.

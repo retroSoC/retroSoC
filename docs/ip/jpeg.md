@@ -71,8 +71,10 @@ the JPEG master into the HP AXI64 data plane. The master can read and write
 independently, uses incrementing bursts of up to 16 beats, splits at 4 KiB,
 honors byte strobes on tails, and drains accepted traffic on abort. It uses
 data-master index 6 and can access SRAM, SDRAM, QPI, OPI, and XPI for reads;
-writes exclude XPI. All JPEG buffers are non-cacheable/shared or explicitly
-cleaned/invalidated by the owner.
+writes exclude XPI. The crossbar admits one normal read and one normal write
+for master 6 at class 8. All JPEG buffers are non-cacheable/shared or explicitly
+cleaned/invalidated by the owner. This bounded admission path does not by itself
+qualify an end-to-end JPEG workload, contention behavior, or board performance.
 
 The Resource Controller exposes JPEG as resource 6. Ownership can move between
 LP and HP only after quiesce, DMA drain, and idle acknowledgement. The LP

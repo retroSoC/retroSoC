@@ -110,7 +110,7 @@
   panel(4,0.4 + w + 0.3,-6.0,w,4.0,(1,1,1))
   panel(5,0.4 + 2*(w + 0.3),-6.0,w,4.0,(2,2,1))
   panel(6,0.4,-10.3,2*w + 0.3,5.5,(3,3,3,2))
-  panel(7,0.4 + 2*(w + 0.3),-10.3,w,2.9,(2,2))
+  panel(7,0.4 + 2*(w + 0.3),-10.3,w,2.9,(3,3))
   panel(8,0.4 + 2*(w + 0.3),-13.5,w,2.3,(3,))
 })
 
@@ -118,7 +118,7 @@
 
 #let matrix-diagram() = cetz.canvas({
   import cetz.draw: *
-  let names = ("HP I-cache", "HP D-cache", "Central DMA", "I/O gateway A", "I/O gateway B", "LP gateway", "JPEG", "EXT-H")
+  let names = data.policies.map(p=>upper(p.name.replace("_"," ")))
   let targets = ("SRAM", "SDRAM", "QPI", "OPI", "XPI")
   let initiator-width = 4.5
   let target-width = 2.54

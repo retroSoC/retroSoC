@@ -3,17 +3,17 @@
 module resource_controller_tb;
   logic             clk_i = 1'b0;
   logic             rst_n_i = 1'b0;
-  logic [ 7:0]      idle_i = '0;
-  logic [ 7:0]      block_ack_i = '0;
-  logic [ 7:0]      irq_i = '0;
+  logic [ 9:0]      idle_i = '0;
+  logic [ 9:0]      block_ack_i = '0;
+  logic [ 9:0]      irq_i = '0;
   logic             cache_request_i = 1'b0;
   logic             cache_clean_o;
-  logic [ 7:0][1:0] owner_o;
-  logic [ 7:0]      owner_lock_o;
-  logic [ 7:0]      quiesce_o;
-  logic [ 7:0]      reset_o;
-  logic [ 7:0]      irq_lp_o;
-  logic [ 7:0]      irq_hp_o;
+  logic [ 9:0][1:0] owner_o;
+  logic [ 9:0]      owner_lock_o;
+  logic [ 9:0]      quiesce_o;
+  logic [ 9:0]      reset_o;
+  logic [ 9:0]      irq_lp_o;
+  logic [ 9:0]      irq_hp_o;
   logic             fault_irq_o;
   logic [31:0]      read_data;
 
@@ -92,10 +92,14 @@ module resource_controller_tb;
 
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
-    idle_i  = 8'hFF;
+    idle_i  = 10'h3FF;
 
     apb_read(12'h000, read_data);
     if (read_data != 32'h5253_4354) $fatal(1, "resource controller ID mismatch");
+    apb_read(12'h004, read_data);
+    if (read_data != 32'h0001_0002) $fatal(1, "resource controller version mismatch");
+    apb_read(12'h008, read_data);
+    if (read_data != 32'h0000_0A01) $fatal(1, "resource controller capability mismatch");
 
     irq_i[1] = 1'b1;
     #1;
@@ -117,6 +121,10 @@ module resource_controller_tb;
     if ((owner_o[0] != 2'd1) || irq_lp_o[0] || !irq_hp_o[0]) begin
       $fatal(1, "HP resource ownership or IRQ routing mismatch");
     end
+    apb_read(12'h108, read_data);
+    if (read_data != 32'h0000_00D5) begin
+      $fatal(1, "resource STATUS bit layout mismatch after HP handoff");
+    end
     apb_read(12'h110, read_data);
     if (read_data != 32'd1) $fatal(1, "resource handoff counter mismatch");
 
@@ -136,6 +144,10 @@ module resource_controller_tb;
     if (!quiesce_o[1] || !reset_o[1]) begin
       $fatal(1, "resource lifecycle controls did not update");
     end
+    apb_read(12'h128, read_data);
+    if (read_data != 32'h0000_005C) begin
+      $fatal(1, "resource STATUS lifecycle bit layout mismatch: %h", read_data);
+    end
 
     irq_i[7] = 1'b1;
     #1;
@@ -145,6 +157,75 @@ module resource_controller_tb;
     apb_write(12'h1E0, 32'h0000_0101, 1'b0);
     if ((owner_o[7] != 2'd1) || !owner_lock_o[7] || irq_lp_o[7] || !irq_hp_o[7]) begin
       $fatal(1, "APU resource index 7 ownership or IRQ routing mismatch");
+    end
+
+    irq_i[8] = 1'b1;
+    apb_read(12'h200, read_data);
+    if (read_data != 32'd0 || owner_o[8] != 2'd0 || owner_lock_o[8] || !irq_lp_o[8] ||
+        irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 did not reset to unlocked LP ownership");
+    end
+    apb_write(12'h204, 32'h0000_0001, 1'b0);
+    block_ack_i[8] = 1'b1;
+    apb_write(12'h200, 32'h0000_0001, 1'b0);
+    if ((owner_o[8] != 2'd1) || irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 LP-to-HP IRQ handoff mismatch");
+    end
+    apb_write(12'h204, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset did not mask both IRQ routes");
+    end
+    apb_write(12'h204, 32'h0000_0001, 1'b0);
+    if (irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset release did not resume HP IRQ routing");
+    end
+    apb_write(12'h200, 32'h0000_0000, 1'b0);
+    if ((owner_o[8] != 2'd0) || !irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 HP-to-LP pending IRQ handback mismatch");
+    end
+    apb_read(12'h210, read_data);
+    if (read_data != 32'd2) $fatal(1, "GA2D resource 8 handoff counter mismatch");
+    apb_write(12'h204, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset did not mask both IRQ routes for LP ownership");
+    end
+    apb_write(12'h204, 32'h0000_0001, 1'b0);
+    if (!irq_lp_o[8] || irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource reset release did not resume LP IRQ routing");
+    end
+    apb_write(12'h10C, 32'h0000_0001, 1'b0);
+    if (fault_irq_o) $fatal(1, "resource fault did not clear before GA2D lock test");
+    apb_write(12'h200, 32'h0000_0101, 1'b0);
+    if ((owner_o[8] != 2'd1) || !owner_lock_o[8] || irq_lp_o[8] || !irq_hp_o[8]) begin
+      $fatal(1, "GA2D resource 8 HP lock handoff mismatch");
+    end
+    apb_write(12'h200, 32'h0000_0000, 1'b1);
+    if ((owner_o[8] != 2'd1) || !owner_lock_o[8] || irq_lp_o[8] || !irq_hp_o[8] ||
+        !fault_irq_o) begin
+      $fatal(1, "GA2D resource 8 locked handoff attempt changed ownership or routing");
+    end
+    apb_read(12'h20C, read_data);
+    if (read_data != 32'd1) $fatal(1, "GA2D resource 8 fault was not recorded");
+    apb_write(12'h20C, 32'h0000_0001, 1'b0);
+    if (fault_irq_o) $fatal(1, "GA2D resource 8 fault did not clear");
+    apb_read(12'h20C, read_data);
+    if (read_data != 32'd0) $fatal(1, "GA2D resource 8 fault readback did not clear");
+
+    irq_i[9] = 1'b1;
+    apb_read(12'h220, read_data);
+    if (read_data != 32'd0 || owner_o[9] != 2'd0 || owner_lock_o[9] || !irq_lp_o[9] ||
+        irq_hp_o[9]) begin
+      $fatal(1, "NPU resource 9 did not reset to unlocked LP ownership");
+    end
+    apb_write(12'h224, 32'h0000_0001, 1'b0);
+    block_ack_i[9] = 1'b1;
+    apb_write(12'h220, 32'h0000_0001, 1'b0);
+    if ((owner_o[9] != 2'd1) || irq_lp_o[9] || !irq_hp_o[9]) begin
+      $fatal(1, "NPU resource 9 LP-to-HP IRQ handoff mismatch");
+    end
+    apb_write(12'h224, 32'h0000_0003, 1'b0);
+    if (irq_lp_o[9] || irq_hp_o[9]) begin
+      $fatal(1, "NPU resource reset did not mask both IRQ routes");
     end
 
     $display("Resource Controller ownership, IRQ, and cache handshake test passed");

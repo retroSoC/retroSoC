@@ -37,9 +37,11 @@ from scripts.development_environment import (  # noqa: E402
     DEFAULT_TOOLS,
     render_activation,
     stamp_data,
+    write_activation,
+    write_stamp,
 )
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
-from scripts.install_toolchain import safe_extract  # noqa: E402
+from scripts.install_toolchain import make_tree_world_readable, safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
 from scripts.prepare_mpw import patch_serv  # noqa: E402
 from scripts import regress  # noqa: E402
@@ -59,6 +61,7 @@ from scripts.regress import (  # noqa: E402
     select_regression,
 )
 from scripts import setup_helpers  # noqa: E402
+from scripts import setup_apu_reference  # noqa: E402
 from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
 
 
@@ -78,6 +81,37 @@ def test_atomic_write_preserves_unchanged_mtime(tmp_path: Path) -> None:
     first_mtime = output.stat().st_mtime_ns
     assert atomic_write(output, "same\n") is False
     assert output.stat().st_mtime_ns == first_mtime
+
+
+def test_apu_reference_reuses_verified_extracted_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "sources/apu-reference"
+    destination.mkdir(parents=True)
+    (destination / ".retrosoc-archive-sha256").write_text("locked-sha\n", encoding="utf-8")
+
+    monkeypatch.setattr(setup_apu_reference, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "source",
+        lambda _name: {"destination": "sources/apu-reference"},
+    )
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "archive",
+        lambda _name: {
+            "destination": "downloads/apu-reference.tar.gz",
+            "url": "https://example.invalid/apu-reference.tar.gz",
+            "sha256": "locked-sha",
+        },
+    )
+    monkeypatch.setattr(
+        setup_apu_reference,
+        "download_file",
+        lambda *_args, **_kwargs: pytest.fail("verified source must not be downloaded again"),
+    )
+
+    assert setup_apu_reference._install_archive("apu-reference", update=False, timeout=1) == destination
 
 
 def test_nested_filelist_and_space_path_round_trip(tmp_path: Path) -> None:
@@ -329,11 +363,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint_filelist = tmp_path / "clint.fl"
     onchip_ram_filelist = tmp_path / "onchip_ram.fl"
     opipsram_filelist = tmp_path / "opipsram.fl"
+    ga2d_filelist = tmp_path / "ga2d.fl"
     apu_filelist = tmp_path / "apu.fl"
     apu_primitives_filelist = tmp_path / "apu_primitives.fl"
     apu_loader_filelist = tmp_path / "apu_loader.fl"
     apu_sequencer_filelist = tmp_path / "apu_sequencer.fl"
     gateway_a_filelist = tmp_path / "gateway_a.fl"
+    npu_dma_filelist = tmp_path / "npu_dma.fl"
     assert generate_formal_filelist("bus", bus_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "rib_adapter", rib_adapter_filelist, memory_map, topology, user_extensions
@@ -359,6 +395,7 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "opipsram", opipsram_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist("ga2d", ga2d_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist("apu", apu_filelist, memory_map, topology, user_extensions)
     assert generate_formal_filelist(
         "apu_primitives", apu_primitives_filelist, memory_map, topology, user_extensions
@@ -372,6 +409,9 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert generate_formal_filelist(
         "gateway_a", gateway_a_filelist, memory_map, topology, user_extensions
     )
+    assert generate_formal_filelist(
+        "npu_dma", npu_dma_filelist, memory_map, topology, user_extensions
+    )
 
     bus = parse_filelists([bus_filelist], require_files=False)
     rib_adapter = parse_filelists([rib_adapter_filelist], require_files=False)
@@ -384,11 +424,13 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     clint = parse_filelists([clint_filelist], require_files=False)
     onchip_ram = parse_filelists([onchip_ram_filelist], require_files=False)
     opipsram = parse_filelists([opipsram_filelist], require_files=False)
+    ga2d = parse_filelists([ga2d_filelist], require_files=False)
     apu = parse_filelists([apu_filelist], require_files=False)
     apu_primitives = parse_filelists([apu_primitives_filelist], require_files=False)
     apu_loader = parse_filelists([apu_loader_filelist], require_files=False)
     apu_sequencer = parse_filelists([apu_sequencer_filelist], require_files=False)
     gateway_a = parse_filelists([gateway_a_filelist], require_files=False)
+    npu_dma = parse_filelists([npu_dma_filelist], require_files=False)
     assert "+define+SV_ASSRT_DISABLE" in bus.defines
     assert "+define+PDK_BEHAV" in onchip_ram.defines
     assert "+define+SYNTHESIS" in onchip_ram.defines
@@ -444,6 +486,15 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
     assert ROOT / "rtl/tech/tc_clk.sv" in opipsram.files
     assert ROOT / "rtl/tech/tc_opipsram_delay.sv" in opipsram.files
     assert ROOT / "rtl/mini/formal/opipsram_formal.sv" in opipsram.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_pkg.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_addr_gen.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_axi4_master.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_dma.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_pixel.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_core.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/ga2d_reg.sv" in ga2d.files
+    assert ROOT / "rtl/ip/multimedia/apb4_ga2d.sv" in ga2d.files
+    assert ROOT / "rtl/mini/formal/ga2d_formal.sv" in ga2d.files
     assert ROOT / "rtl/ip/multimedia/apu_dma.sv" in apu.files
     assert ROOT / "rtl/mini/formal/apu_formal.sv" in apu.files
     assert ROOT / "rtl/ip/multimedia/apu_resampler.sv" in apu_primitives.files
@@ -471,6 +522,10 @@ def test_formal_filelists_are_scoped_to_the_protocol_duts(tmp_path: Path) -> Non
         ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv" in gateway_a.files
     )
     assert ROOT / "rtl/mini/formal/gateway_a_formal.sv" in gateway_a.files
+    assert "+define+SV_ASSRT_DISABLE" in npu_dma.defines
+    assert ROOT / "rtl/ip/multimedia/npu_dma.sv" in npu_dma.files
+    assert ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv" in npu_dma.files
+    assert ROOT / "rtl/mini/formal/npu_dma_formal.sv" in npu_dma.files
 
 
 def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
@@ -481,6 +536,102 @@ def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
     assert re.search(r"^FORMAL_OPIPSRAM_TIMEOUT\s+\?= 300$", formal_makefile, re.MULTILINE)
     assert re.search(r"^FORMAL_OPIPSRAM_BMC_TIMEOUT\s+\?= 600$", formal_makefile, re.MULTILINE)
     assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
+
+
+def test_ga2d_formal_target_uses_the_p5_production_hierarchy() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    filelist_generator = (
+        ROOT / "rtl/mini/formal/generate_formal_filelist.py"
+    ).read_text(encoding="utf-8")
+    formal = (ROOT / "rtl/mini/formal/ga2d_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/ga2d_formal_props.sv").read_text(
+        encoding="utf-8"
+    )
+
+    assert re.search(r"^FORMAL_GA2D_DEPTH\s+\?= 36$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 199$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
+    assert "formal-ga2d: $(FORMAL_DIR)/ga2d/.stamp | manifest" in formal_makefile
+    assert 'if target == "ga2d":' in filelist_generator
+    for source in (
+        "ga2d_pkg.sv",
+        "ga2d_addr_gen.sv",
+        "ga2d_axi4_master.sv",
+        "ga2d_dma.sv",
+        "ga2d_pixel.sv",
+        "ga2d_core.sv",
+        "ga2d_reg.sv",
+        "apb4_ga2d.sv",
+        "ga2d_formal.sv",
+    ):
+        assert source in filelist_generator
+    assert "ga2d_formal_design u_design" in formal
+    assert "ga2d_core u_dut" in properties
+    assert "assert (awlen <= 8'd15);" in formal
+    assert "assert (arlen <= 8'd15);" in formal
+    assert "assert ((arlen == 8'd0) || (arsize == 3'd3));" in formal
+    assert "assert (output_fifo_count >= ({1'b0, awlen} + 9'd1));" in formal
+    assert "if (s_read_inflight_q && !bridge_clear_busy_i)" in formal
+    assert "assert (wstrb != 8'd0);" in formal
+    assert "cover (scenario == 4'd0 && done" in formal
+    assert "cover (scenario == 4'd3 && aborted && safe_idle);" in formal
+    assert "cover (scenario == 4'd2 && awvalid && awready && (awlen == 8'd14));" in formal
+    assert "cover (scenario == 4'd7 && awvalid && awready && (awlen == 8'd15));" in formal
+    assert "protocol_residual_rvalid" in formal
+    assert "assert (!rready);" in formal
+    assert "assert (!arvalid);" in formal
+    assert "cover ((scenario == 4'd8) && protocol_residual_rvalid" in formal
+    assert "assert (read_owner == $past(read_owner));" in formal
+    assert "assert ({1'b0, bg_captured_pixels} >= write_cover_end_pixel);" in formal
+    assert "cover (scenario == 4'd9 && done && safe_idle" in formal
+    assert "cover (scenario == 4'd10 && done && safe_idle && inplace_background" in formal
+    assert "output logic [3:0]  scenario" in properties
+    assert "s_residual_r_valid_q" in properties
+    assert "OperationBlend" in properties
+    assert "FormatA8" in properties
+
+
+def test_npu_dma_formal_target_pins_the_bounded_axi4_contract() -> None:
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    filelist_generator = (
+        ROOT / "rtl/mini/formal/generate_formal_filelist.py"
+    ).read_text(encoding="utf-8")
+    design = (ROOT / "rtl/mini/formal/npu_dma_formal.sv").read_text(encoding="utf-8")
+    properties = (ROOT / "rtl/mini/formal/npu_dma_formal_props.sv").read_text(
+        encoding="utf-8"
+    )
+
+    assert re.search(r"^FORMAL_NPU_DMA_DEPTH\s+\?= 16$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_NPU_DMA_COVER_DEPTH\s+\?= 32$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_NPU_DMA_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_TARGETS\s+:=.* npu_dma$", formal_makefile, re.MULTILINE)
+    assert "formal-npu_dma: $(FORMAL_DIR)/npu_dma/.stamp | manifest" in formal_makefile
+    assert 'if target == "npu_dma":' in filelist_generator
+    for source in ("npu_dma.sv", "npu_dma_formal.sv"):
+        assert source in filelist_generator
+    assert "npu_dma u_dut" in design
+    assert "(* anyconst *)logic [ 1:0] f_read_fault;" in design
+    assert "(* anyconst *)logic [ 3:0] f_block_start;" in design
+    assert "(* anyseq *)logic        f_write_last;" in design
+    assert "s_r_proto_rlast_q" in design
+    assert "s_w_bid_bad_q" in design
+    assert "npu_dma_formal_design u_design" in properties
+    assert "assert (arlen <= 8'd15);" in properties
+    assert "assert (awlen <= 8'd15);" in properties
+    assert "assert (awsize == 3'd3);" in properties
+    assert "assert ((arsize == 3'd3) || (arlen == 8'd0));" in properties
+    assert "assert (araddr == f_rd_next_burst_q);" in properties
+    assert "assert ({4'd0, wfifo_count} == ({1'b0, awlen} + 9'd1));" in properties
+    assert "assert (!f_rd_outstanding_q);" in properties
+    assert "assert (f_wr_aw_q);" in properties
+    assert "assert (fault_code == 4'd6);" in properties
+    assert "assert (fault_code == 4'd4);" in properties
+    assert "assert (fault_code == 4'd5);" in properties
+    assert "assume (read_bytes <= 32'd128);" in properties
+    assert "cover (pause_ack && arvalid && !arready);" in properties
+    assert "cover (clear && f_rd_outstanding_q);" in properties
+    assert "cover (fault && (fault_code == 4'd6));" in properties
+    assert "cover (write_done);" in properties
 
 
 def test_sysctrl_formal_properties_use_exported_user_core_shape() -> None:
@@ -949,6 +1100,15 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     assert lock["sources"]["pdk_sky130"]["submodules"] == ["libraries/sky130_fd_sc_hd/latest"]
     assert lock["container_images"]["ubuntu_22_04"]["image"] == "ubuntu"
     assert lock["nix_inputs"]["nixpkgs"]["revision"] == "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
+    assert lock["toolchains"]["ubuntu-22.04"]["sbt"] == {
+        "version": "1.10.0",
+        "url": "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz",
+        "sha256": "154b7de6c19207c73d0a304f901c8c4b6ead9a9c3a99a98a9d72ac19419d2640",
+        "archive": "sbt-1.10.0.tgz",
+        "path": "sbt/bin",
+        "download_timeout_seconds": 600,
+        "resume": True,
+    }
     validate_flake_lock(lock, ROOT / "flake.lock")
 
     command = (
@@ -997,6 +1157,16 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     else:
         raise AssertionError("invalid submodule path was accepted")
 
+    invalid_timeout = json.loads(json.dumps(lock))
+    invalid_timeout["toolchains"]["ubuntu-22.04"]["sbt"]["download_timeout_seconds"] = 0
+    broken.write_text(json.dumps(invalid_timeout), encoding="utf-8")
+    try:
+        load_lock(broken)
+    except LockError as error:
+        assert "download_timeout_seconds must be positive" in str(error)
+    else:
+        raise AssertionError("invalid toolchain download timeout was accepted")
+
 
 def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:
     lock_path = ROOT / "dependencies/dependencies.lock.json"
@@ -1006,10 +1176,18 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
 
     assert stamp["tools"]["verilator"] == lock["toolchains"]["ubuntu-22.04"]["verilator"]["version"]
     assert stamp["tools"]["openocd"] == lock["toolchains"]["ubuntu-22.04"]["openocd"]["version"]
+    assert stamp["tools"]["sbt"] == lock["toolchains"]["ubuntu-22.04"]["sbt"]["version"]
     assert set(stamp["python_requirements"]) == {"requirements/build.txt", "requirements/ci.txt"}
     activation = render_activation(cache, [cache / "venv/bin", cache / "toolchains/verilator/bin"])
     assert "export RETROSOC_DEVELOPMENT_CACHE=" in activation
     assert "toolchains/verilator/bin" in activation
+    activation_path = tmp_path / "activate.sh"
+    write_activation(activation_path, activation)
+    assert activation_path.stat().st_mode & 0o777 == 0o644
+    stamp_path = tmp_path / "development-environment.json"
+    write_stamp(stamp_path, stamp)
+    assert json.loads(stamp_path.read_text(encoding="utf-8")) == stamp
+    assert stamp_path.stat().st_mode & 0o777 == 0o644
 
 
 def test_container_and_nix_environment_files_use_locked_inputs() -> None:
@@ -1019,12 +1197,66 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     sbom = make_sbom(lock)
 
     assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
+    assert "        libncursesw6 \\\n" in dockerfile
+    assert "        libpython3.10 \\\n" in dockerfile
+    assert "        libtcl8.6 \\\n" in dockerfile
+    assert "openjdk-17-jre-headless" in dockerfile
+    assert "        perl \\\n" in dockerfile
+    assert "        zlib1g-dev \\\n" in dockerfile
+    assert "        zlib1g \\\n" not in dockerfile
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
+    assert "          bzip2.out\n" in flake
+    assert "withTermlib = true" in flake
+    assert "          expat\n" in flake
+    assert "          gmp\n" in flake
+    assert "          isl\n" in flake
+    assert "jdk17_headless" in flake
+    assert "          libmpc\n" in flake
+    assert "          mpfr\n" in flake
+    assert "          ncursesTermlib\n" in flake
+    assert "          ncurses5\n" not in flake
+    assert "runtimeLibraryPath = pkgs.lib.makeLibraryPath" in flake
+    assert "        pkgs.bzip2.out\n" in flake
+    assert "LD_LIBRARY_PATH" in flake
+    assert "          perl\n" in flake
+    assert "python310Full" in flake
+    assert "python3Full" not in flake
+    assert "          readline\n" in flake
     assert "retrosoc-development retrosoc-dev" in flake
+    assert "          tcl\n" in flake
+    assert "          zlib.dev\n" in flake
+    assert "          zstd\n" in flake
     assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
     assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])
+
+
+def test_development_environment_workflow_runs_the_ihp130_hosted_contract() -> None:
+    workflow = (ROOT / ".github/workflows/development-environment.yml").read_text()
+
+    assert "environment: [docker, nix]" in workflow
+    assert "timeout-minutes: 360" in workflow
+    assert workflow.count(
+        "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+    ) == 3
+    assert "docker build --tag retrosoc-dev-ci --file docker/Dockerfile ." in workflow
+    assert "cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24" in workflow
+    assert "nix flake check" in workflow
+    assert "development_environment.py" in workflow
+    assert '--cache "${RETROSOC_DEVELOPMENT_CACHE}" check' in workflow
+    for command in (
+        "make CONFIG=configs/ci/ihp130.mk setup",
+        "SIMU=IVERILOG SYNTH=NONE STA=NONE doctor",
+        "SIMU=VERILATOR SYNTH=NONE STA=NONE doctor",
+        "SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor",
+        "SIMU=IVERILOG SYNTH=NONE STA=OPENSTA doctor",
+        "--pdk IHP130 --behavioral-only",
+    ):
+        assert command in workflow.replace("\\\n", "")
+    assert 'docker run --rm --init --platform linux/amd64' in workflow
+    assert 'nix run .#dev -- bash -c "${IHP130_REGRESSION_COMMAND}"' in workflow
+    assert "environment-${{ matrix.environment }}-ihp130-" in workflow
 
 
 def test_regression_runner_uses_one_build_timestamp(monkeypatch) -> None:
@@ -1050,9 +1282,10 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
         if "SIMU=VERILATOR" in values:
             simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
             if "APP=ci_smoke" in values and "sim" in values:
-                assert simulation_timeout == ["SOC_SIM_TIME=360"]
+                assert simulation_timeout == ["SOC_SIM_TIME=1800"]
                 assert "LINK_TYPE=ld2_all_sram" in values
                 assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+                assert "HAVE_CSR=YES" in values
             elif "coremark-report" in values:
                 assert simulation_timeout == ["SOC_SIM_TIME=7200"]
                 assert not any(value.startswith("VERILATOR_SIM_ARGS=") for value in values)
@@ -1111,7 +1344,7 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
         encoding="utf-8"
     )
 
-    assert "JTAG_IDCODE              ?= DEADBEEF" in makefile
+    assert "JTAG_IDCODE       ?= DEADBEEF" in makefile
     assert "if [ $$value -gt 2147483647 ]" in makefile
     assert "HAVE_DEBUG               ?=" not in makefile
     assert ".MULDIV_UNROLL      (2)" in wrapper
@@ -1135,6 +1368,7 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
 def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     profile = (ROOT / "configs/benchmark/ihp130-hazard3.mk").read_text(encoding="utf-8")
+    benchmark_profile = (ROOT / "app/apps/benchmark/app.mk").read_text(encoding="utf-8")
     benchmark = (ROOT / "app/apps/benchmark/main.c").read_text(encoding="utf-8")
 
     assert re.search(r"^PDK_BEHAV\s+\?= NO$", makefile, re.MULTILINE)
@@ -1143,7 +1377,26 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", profile, re.MULTILINE)
     assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
     assert re.search(r"^PDK_BEHAV\s*:= YES$", profile, re.MULTILINE)
-    assert "RS_BENCHMARK_SRAM_OFFSET UINT32_C(0x10000)" in benchmark
+    assert re.search(r"^SOC_SIM_TIME\s+\?= 25200$", benchmark_profile, re.MULTILINE)
+    assert "VERILATOR_SIM_ARGS ?= --fast-flash" in benchmark_profile
+    offset_match = re.search(
+        r"^#define\s+RS_BENCHMARK_SRAM_OFFSET\s+UINT32_C\((0x[0-9A-F]+)\)$",
+        benchmark,
+        re.MULTILINE,
+    )
+    words_match = re.search(
+        r"^#define\s+RS_BENCHMARK_WORDS\s+UINT32_C\(([0-9]+)\)$",
+        benchmark,
+        re.MULTILINE,
+    )
+    assert offset_match is not None
+    assert words_match is not None
+
+    sram_size_bytes = 32 * 1024
+    benchmark_bytes = int(words_match.group(1), 10) * 4
+    benchmark_offset = int(offset_match.group(1), 16)
+    assert benchmark_offset + benchmark_bytes <= sram_size_bytes
+    assert sram_size_bytes - (benchmark_offset + benchmark_bytes) >= 7 * 1024
 
 
 def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:
@@ -1279,6 +1532,19 @@ def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
     assert "--behavioral-only" in workflow
 
 
+def test_hosted_smoke_formal_check_is_doctor_only() -> None:
+    workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+    smoke = (ROOT / ".github/workflows/regression-smoke.yml").read_text(encoding="utf-8")
+    software_makefile = (ROOT / "rtl/mini/mk/software.mk").read_text(encoding="utf-8")
+
+    assert "timeout_minutes: 60" in smoke
+    assert "formal_checks: true" in smoke
+    assert "make CONFIG=${{ inputs.profile }} formal-doctor" in workflow
+    assert "make CONFIG=${{ inputs.profile }} formal\n" not in workflow
+    assert "$(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt" in software_makefile
+    assert "$(DUMP) -D" not in software_makefile
+
+
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
     assert set(PDK_PR_PROFILES) == {"GF180", "IHP130", "ICS55", "SKY130"}
     for pdk, profile in PDK_PR_PROFILES.items():
@@ -1294,11 +1560,12 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
         if pdk == "IHP130":
             assert "LINK_TYPE=ld2_all_sram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
-            assert "SOC_SIM_TIME=360" in verilator_values
+            assert "SOC_SIM_TIME=1800" in verilator_values
         else:
             assert "LINK_TYPE=ld2_sdram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
-            assert "SOC_SIM_TIME=600" in verilator_values
+            assert "SOC_SIM_TIME=1800" in verilator_values
+        assert "HAVE_CSR=YES" in verilator_values
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)
         assert not any(
@@ -1450,11 +1717,34 @@ def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
 
 
-def test_quality_runs_p5_with_locked_open_source_simulators() -> None:
+def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() -> None:
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
 
-    assert "tools: verilator sv2v iverilog" in quality
-    assert "python3 -m pytest -q tests/test_apu_codec_transport.py" in quality
+    assert "timeout-minutes: 90" in quality
+    assert "tools: verilator sv2v iverilog yosys" in quality
+    assert "rtl/managed/third_party" in quality
+    assert "python3 rtl/ip/setup.py" in quality
+    assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
+    assert "--requirement requirements/build.txt" in quality
+    assert "make setup-apu-reference setup-npu-reference" in quality
+    for path in (
+        ".cache/retrosoc/sources/apu-mlperf-tiny",
+        ".cache/retrosoc/sources/apu-kws-mfcc",
+        ".cache/retrosoc/sources/apu-tensorflow",
+        ".cache/retrosoc/sources/apu-gemmlowp",
+        ".cache/retrosoc/sources/npu-vww-corpus",
+        ".cache/retrosoc/downloads/npu",
+    ):
+        assert path in quality
+    assert quality.index("python3 rtl/ip/setup.py") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
+    assert quality.index("Set up locked test tools") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
+    assert quality.index("Set up locked accelerator references") < quality.index(
+        "Test scripts and RTL fixtures"
+    )
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(
@@ -2053,6 +2343,34 @@ def test_safe_extract_rejects_parent_traversal(tmp_path: Path) -> None:
     else:
         raise AssertionError("unsafe archive was extracted")
     assert not (tmp_path / "outside").exists()
+
+
+def test_toolchain_tree_is_accessible_to_runtime_users(tmp_path: Path) -> None:
+    toolchain = tmp_path / "toolchain"
+    binary_directory = toolchain / "bundle/bin"
+    binary_directory.mkdir(parents=True)
+    executable = binary_directory / "tool"
+    executable.write_text("#!/bin/sh\n", encoding="utf-8")
+    data = toolchain / "bundle/data"
+    data.write_text("public tool data\n", encoding="utf-8")
+    marker = toolchain / ".complete"
+    marker.write_text("digest\n", encoding="utf-8")
+
+    toolchain.chmod(0o700)
+    (toolchain / "bundle").chmod(0o700)
+    binary_directory.chmod(0o700)
+    executable.chmod(0o700)
+    data.chmod(0o600)
+    marker.chmod(0o600)
+
+    make_tree_world_readable(toolchain)
+
+    assert toolchain.stat().st_mode & 0o777 == 0o755
+    assert (toolchain / "bundle").stat().st_mode & 0o777 == 0o755
+    assert binary_directory.stat().st_mode & 0o777 == 0o755
+    assert executable.stat().st_mode & 0o777 == 0o755
+    assert data.stat().st_mode & 0o777 == 0o644
+    assert marker.stat().st_mode & 0o777 == 0o644
 
 
 def test_fatfs_update_reextracts_downloaded_archive(tmp_path: Path) -> None:

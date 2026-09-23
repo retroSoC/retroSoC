@@ -30,13 +30,19 @@ from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
-from publications.report_changes import page_ranges, repository_footer_pages, REPOSITORY_URL  # noqa: E402
+from publications.report_changes import page_ranges, repository_footer_pages  # noqa: E402
+from publications.page_reference import (  # noqa: E402
+    CLOSING_TITLE, PAGE_ROLES_FILE, collect_page_roles, read_page_roles,
+    validate_footer_pages, validate_footer_text, validate_page_roles,
+)
 from publications.structure_reference import validate_structure  # noqa: E402
 from publications.diagram_reference import collect_diagrams  # noqa: E402
 from publications.diagram_coverage import coverage as diagram_coverage, validate_usage as validate_diagram_usage  # noqa: E402
 from publications.package_reference import (  # noqa: E402
     directory_hashes, package_records, validate_imports, validate_package_closure,
 )
+from publications.soc_diagram_geometry import COMPACT_NODES  # noqa: E402
+from publications.soc_diagram_pdf import collect_text_regions, contains, check_diagram_pdf  # noqa: E402
 
 CONFIG = ROOT / "publications/datasheets/mini.json"
 CACHE = ROOT / ".cache/retrosoc/publications"
@@ -310,6 +316,7 @@ def source_hashes(
         "rtl/mini/integration/user_extensions.json",
         "rtl/mini/integration/user_extensions_legacy.json",
         "dependencies/dependencies.lock.json",
+        "LICENSE",
     }
     for entry in catalog:
         paths.update(entry["sources"])
@@ -393,6 +400,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
                        layout_report["headings"], read_json(ROOT / "publications/datasheets/chapter-index.json"))
     write_json(out / "document-structure.json", layout_report["headings"])
     layout_items = layout_report["items"]
+    write_json(out / PAGE_ROLES_FILE, collect_page_roles(layout_items))
     diagram_records = [item for item in layout_items if isinstance(item, dict) and item.get("kind") == "publication-diagram"]
     diagram_inventory = validate_diagram_usage(data["system_reference"]["illustrations"], diagram_records)
     diagram_starts = {(item["package"], item["id"]): item for item in diagram_records}
@@ -420,7 +428,8 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     ]
     write_json(out / "ip-pages.json", page_map)
     # Read final labeled rectangles without feeding positions back into layout.
-    write_json(out / "layout-regions.json", layout_report["regions"])
+    soc = data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"]
+    write_json(out / "layout-regions.json", layout_report["regions"] + collect_text_regions(soc, layout_items))
     change_markers = [item for item in layout_items if isinstance(item, dict)
                       and item.get("kind") in {"publication-change-start", "publication-change-end"}]
     # Pair/validate here; the final report also checks actual PDF pages and printed footers.
@@ -442,6 +451,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "layout_regions_sha256": sha256(out / "layout-regions.json"),
         "change_markers_sha256": sha256(out / "change-markers.json"),
         "document_structure_sha256": sha256(out / "document-structure.json"),
+        "page_roles_sha256": sha256(out / PAGE_ROLES_FILE),
     }
     write_json(out / "manifest.json", manifest)
     atomic_write(CACHE / "latest", str(out) + "\n")
@@ -515,8 +525,14 @@ def validate_page_map(items: list[dict], index: list[dict]) -> None:
 
 
 def validate_character_size(char: dict, number: int, regions: list[dict]) -> None:
-    """Only continuation text inside a renderer-marked box may be below 9 pt."""
-    if not char["text"].strip() or char["size"] >= 8.95:
+    """Small type is confined to marked continuations and the approved SoC cells."""
+    # PDFMiner's `size` becomes glyph advance for a quarter-turn label. Its
+    # rendered font-height axis is then the bounding-box width, not page height.
+    matrix = char.get("matrix", ())
+    quarter_turn = (len(matrix) == 6 and abs(matrix[0]) < 1e-8 and abs(matrix[3]) < 1e-8
+                    and abs(matrix[1]) > 1e-8 and abs(matrix[2]) > 1e-8)
+    size = char["width"] if quarter_turn else char["size"]
+    if not char["text"].strip() or size >= 8.95:
         return
     continuation = any(
         region["kind"] == "table-continuation"
@@ -527,8 +543,10 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
         and char["bottom"] <= region["y"] + region["height"] + 0.5
         for region in regions
     )
-    minimum = 8.5 if continuation else 9.0
-    if char["size"] < minimum - 0.05:
+    compact = any(region["kind"] == "soc-compact" and region.get("id") in COMPACT_NODES
+                  and contains(region, char, number) for region in regions)
+    minimum = 8.0 if compact else 8.5 if continuation else 9.0
+    if size < minimum - 0.05:
         raise ValueError(f"text smaller than {minimum:g} pt on page {number}")
 
 
@@ -562,6 +580,8 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         read_json(ROOT / "publications/datasheets/chapter-index.json"),
     )
     reader = PdfReader(pdf)
+    page_roles = read_page_roles(pdf.parent, manifest, len(reader.pages))
+    closing_pages = validate_page_roles(page_roles, len(reader.pages))
     marker_path = pdf.parent / "change-markers.json"
     if not marker_path.is_file() or manifest.get("change_markers_sha256") != sha256(marker_path):
         raise ValueError("PDF change markers missing or changed; rebuild before checking")
@@ -575,17 +595,18 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF title or author metadata missing or inconsistent")
     if not all(value in (reader.metadata.keywords or "") for value in (config["document_id"], "v" + config["version"], config["status"])):
         raise ValueError("PDF identity/version/status keywords missing")
-    if repository_footer_pages(reader) != list(range(1, len(reader.pages) + 1)):
-        raise ValueError("PDF repository footer link missing on one or more pages")
+    validate_footer_pages(repository_footer_pages(reader), len(reader.pages), page_roles)
     if not reader.outline:
         raise ValueError("PDF bookmarks missing")
     internal, external = 0, set()
-    for page in reader.pages:
+    for number, page in enumerate(reader.pages, 1):
         text = page.extract_text() or ""
         if not text.strip():
             raise ValueError("empty or raster-only PDF page")
         if any(token in text for token in ("else if field.at(", "caption: [", "caption:[")):
             raise ValueError("unrendered diagram source syntax in PDF")
+        if number in closing_pages and CLOSING_TITLE not in text:
+            raise ValueError("declared closing page lacks its notice title")
         for annotation in page.get("/Annots", []):
             item = annotation.get_object()
             action = item.get("/A", {})
@@ -613,10 +634,17 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF navigation links missing")
     with pdfplumber.open(pdf) as document:
         all_text = ""
+        soc_bounds = next(item for item in actual_diagrams if item["package"] == "cetz" and item["id"] == "soc-functional")
+        soc_report = None
         for number, page in enumerate(document.pages, 1):
+            if number == soc_bounds["page"]:
+                soc_report = check_diagram_pdf(
+                    page, reader.pages[number - 1], data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"],
+                    layout_regions, soc_bounds, ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf")
             footer_text = "".join(c["text"] for c in page.chars if c["top"] > page.height - 50)
-            if REPOSITORY_URL not in footer_text:
-                raise ValueError("PDF footer does not display the complete repository URL")
+            validate_footer_text(footer_text, number, closing_pages)
+            if number in closing_pages and any(c["text"].strip() for c in page.chars if c["top"] < 50):
+                raise ValueError("closing page must not have a visible header")
             for char in page.chars:
                 if (
                     char["x0"] < -0.5
@@ -638,6 +666,8 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         "internal_links": internal,
         "external_links": sorted(external),
         "pdf_sha256": sha256(pdf),
+        "unnumbered_closing_pages": sorted(closing_pages),
+        "soc_architecture": soc_report,
     }
     write_json(pdf.parent / "check-report.json", report)
     print(f"PDF checks passed: {len(reader.pages)} pages, {internal} internal links")

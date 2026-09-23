@@ -27,11 +27,11 @@ module apu_sequencer_formal_design (
   (* anyconst *)logic [1:0] f_scenario;
   logic [5:0] s_cycle_q;
   logic s_fetch, s_fetch_pending_q;
-  logic [10:0] s_fetch_addr, s_fetch_addr_q;
+  logic [11:0] s_fetch_addr, s_fetch_addr_q;
   logic [63:0]       s_fetch_data;
   logic [15:0][31:0] s_gpr;
   logic s_trap_seen_q, s_abort_seen_q;
-  logic [2:0][10:0] s_entry_last;
+  logic [2:0][11:0] s_entry_last;
   logic [2:0][23:0] s_entry_max_retired;
 
   assign scenario = f_scenario;
@@ -39,7 +39,7 @@ module apu_sequencer_formal_design (
   assign result = s_gpr[2];
   assign trap_seen = s_trap_seen_q;
   assign abort_seen = s_abort_seen_q;
-  assign s_entry_last = (f_scenario == 2'd3) ? {11'd6, 11'd6, 11'd6} : {11'd3, 11'd3, 11'd3};
+  assign s_entry_last = (f_scenario == 2'd3) ? {12'd6, 12'd6, 12'd6} : {12'd3, 12'd3, 12'd3};
   assign s_entry_max_retired = (f_scenario == 2'd3) ?
       {24'd16, 24'd16, 24'd16} : {24'd8, 24'd8, 24'd8};
 
@@ -74,9 +74,10 @@ module apu_sequencer_formal_design (
       .launch_i                 (s_cycle_q == 6'd1),
       .launch_entry_i           (2'd0),
       .image_valid_i            (1'b1),
+      .image_abi_i              (`APB4_APU__APUMC_ABI),
       .timeout_i                ((f_scenario == 2'd1) ? 32'd1 : 32'd16),
-      .entry_pc_i               ({11'd0, 11'd0, 11'd0}),
-      .entry_first_i            ({11'd0, 11'd0, 11'd0}),
+      .entry_pc_i               ({12'd0, 12'd0, 12'd0}),
+      .entry_first_i            ({12'd0, 12'd0, 12'd0}),
       .entry_last_i             (s_entry_last),
       .entry_max_loop_i         ({16'd4, 16'd4, 16'd4}),
       .entry_max_retired_i      (s_entry_max_retired),

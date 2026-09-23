@@ -17,7 +17,14 @@ enable/clear, and sticky terminal test result. It receives user-bus idle,
 fault metadata, ten wait counters (including independent SDIO0 and SDIO1
 master wait counters), and asynchronous RTC wake. `sysctrl_core`
 synchronizes RTC wake with the Common `cdc_sync` primitive before storing its
-sticky state.
+sticky state. HP data-plane faults cross into PCLK through an acknowledged
+mailbox. Their HP sources use valid/ready flow control and retain the complete
+44-bit `{master,target,address,write,reason}` payload until the mailbox
+accepts it, so every accepted no-reset event is delivered once with coherent
+metadata. A reset in either mailbox domain aborts an item already accepted by
+the mailbox; a unilateral PCLK reset backpressures an unaccepted HP source
+event until the link is released. A data-plane fault visible in the same PCLK
+cycle as a local bus fault retains data-plane priority.
 
 `pll_ctrl_if` carries a one-request PLL configuration handshake. SystemCtrl
 asserts `req_valid_o` after a valid `PLL_CMD.APPLY`, holds `busy` until the
@@ -56,7 +63,7 @@ offset macros.
 | `0x01C` | `PLL_STATUS` | RO | Active profile, valid, busy, error/error reason, safe clock, lock, and capability. |
 | `0x020` | `USER_CORE_RESET` | RO/unsupported | Product reads all ones and rejects writes. MPW retains its reset mask. |
 | `0x024` | `USER_CORE_STATUS` | RO/unsupported | Product reports present=0, idle=1, and sticky unsupported-write error. |
-| `0x028` | `FAULT_MASTER` | RO | First fault master, a three-bit AXI master ID (0..7); HP is 7. |
+| `0x028` | `FAULT_MASTER` | RO | First fault master, a four-bit AXI master ID (0..8); HP is 7 and the active P5 GA2D private-AXI64 master is 8. The offset is unchanged. |
 | `0x02C` | `FAULT_DETAIL` | RO | First raw RIB response code. |
 | `0x040` | `PERF_CTRL` | RW | Bit 0 enable, bit 1 clear pulse, bit 2 snapshot pulse. |
 | `0x044`-`0x098` | `PERF_*_WAIT_{LO,HI}` | RO | Snapshot of management, user, central DMA, SDIO0, SDIO1, APB4, SDRAM, PSRAM, and flash wait counters. |

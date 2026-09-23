@@ -46,6 +46,12 @@ clock, user-core, performance, and test-service APIs use this HAL; direct
 `reg_sysctrl_*` register macros are not public SDK interfaces. See the
 [SystemCtrl contract](../docs/ip/sysctrl.md).
 
+`<retrosoc/core/irq.h>` provides exception/core registration and the LP Hazard3
+Xh3irq external registration, enable/disable, priority, and dispatch APIs.
+External IRQ ordinals are supplied by the build-local
+`<retrosoc/generated/irq_metadata.h>` header. CSR-disabled images keep polling
+support and return `RS_ENOTSUP` from the external-control APIs.
+
 `<retrosoc/hal/extension.h>` owns product EXT-L/EXT-H discovery, lifecycle,
 ownership, status, and ACL operations. `<retrosoc/hal/user_ip.h>` remains the
 MPW compatibility API; selector mutators return `RS_ENOTSUP` in product builds.
@@ -53,8 +59,8 @@ See the [extension contract](../docs/ip/extensions.md) and
 [legacy user-IP contract](../docs/ip/user-ip.md).
 
 `<retrosoc/hal/resource.h>` owns the central DMA, USB2, SDIO0/1, SPI-SD,
-EXT-H, JPEG, and APU owner/lock, lifecycle-request, fault, and HP cache-maintenance
-handshake.
+EXT-H, JPEG, APU, and GA2D owner/lock, lifecycle-request, fault, and HP
+cache-maintenance handshake.
 See the [Resource Controller contract](../docs/ip/resource-controller.md).
 
 `<retrosoc/hal/apu.h>` provides APU discovery, ACL and microcode loading,
@@ -62,6 +68,24 @@ validated direct/ring WAV and FLAC jobs, TX stream routing, bounded waits,
 abort/reset, interrupt, and first-error access. The P5 surface remains coreless;
 MP3, KWS, model loading, and the APU RX route stay unavailable until their
 frozen later phases.
+
+`<retrosoc/hal/ga2d.h>` provides GA2D discovery, direct single-job 2D FILL,
+COPY, bit-exact CONVERT, opaque alpha BLEND, and A8 fixed-color foreground-mask
+configuration and execution, status/error, snapshots, IRQ, and bounded
+abort/reset access. Its private AXI64 DMA supports RGB565, RGB888, XRGB8888,
+and ARGB8888 color surfaces with byte pitches and byte edges; A8 is valid only
+as a BLEND foreground. BLEND permits in-place composition only when background
+and destination address, pitch, and format are exactly equal. Transparent-
+background and premultiplied-alpha modes, scaling, rendering,
+descriptor/ring/queue submission, cache coherency, and a Linux graphics driver
+are not provided.
+
+`<retrosoc/hal/npu.h>` provides the frozen ABI-1 NPU capability, direct job,
+bounded wait/abort/reset, typed status/error/counter snapshot, and sticky IRQ
+operations. It does not load files, allocate memory, maintain HP cache lines,
+or hide CPU fallback. P5 generated static C plans perform checked relocation
+into caller-owned storage, explicit cache maintenance/fences and terminal
+integer Softmax while continuing to submit through this HAL.
 
 `<retrosoc/hal/fabric_monitor.h>` owns root-management access to native AXI64
 master/target counters, stable snapshots, warm-flush counts, target isolation,

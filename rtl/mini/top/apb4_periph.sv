@@ -11,7 +11,9 @@
 `include "mmap_define.svh"
 `include "soc_irq_config.svh"
 
-module apb4_periph (
+module apb4_periph #(
+    parameter bit EnableP7 = 1'b0
+) (
     // verilog_format: off -- preserve reviewed column alignment
     input logic                                   clk_i,
     input logic                                   rst_n_i,
@@ -20,11 +22,13 @@ module apb4_periph (
     input logic                                   clk_ulpi_i,
     input logic                                   clk_mem_i,
     input logic                                   rst_mem_n_i,
+    input logic                                   clk_hp_i,
+    input logic                                   rst_hp_n_i,
     input logic                                   debug_halted_i,
     input logic                                   timebase_tick_i,
     input logic                                   ext_h_hp_irq_i,
-    input logic [6:0]                             resource_irq_lp_i,
-    input logic [6:0]                             resource_irq_hp_i,
+    input logic [8:0]                             resource_irq_lp_i,
+    input logic [8:0]                             resource_irq_hp_i,
     input logic [1:0]                             apu_owner_i,
     input logic                                   apu_owner_lock_i,
     input logic                                   apu_quiesce_i,
@@ -32,6 +36,21 @@ module apb4_periph (
     input logic [7:0]                             apu_bridge_epoch_i,
     input logic                                   jpeg_quiesce_i,
     input logic                                   jpeg_reset_i,
+    input logic                                   ga2d_quiesce_i,
+    input logic                                   ga2d_reset_i,
+    input logic                                   ga2d_source_stop_i,
+    input logic                                   ga2d_source_safe_idle_i,
+    input logic                                   ga2d_block_ack_i,
+    input logic                                   ga2d_bridge_clear_busy_i,
+    input logic [7:0]                             ga2d_bridge_epoch_i,
+    input logic                                   ga2d_data_ready_i,
+    input logic [1:0]                             npu_owner_i,
+    input logic                                   npu_owner_lock_i,
+    input logic                                   npu_quiesce_i,
+    input logic                                   npu_reset_i,
+    input logic                                   npu_hp_block_new_i,
+    input logic                                   npu_hp_flush_i,
+    input logic [1:0]                             mem_pad_mode_i,
     axi4_if.slave                                 cfg_axi4,
     axi4_if.slave                                 psram_axi4,
     axi4_if.slave                                 xpi_axi4,
@@ -53,6 +72,8 @@ module apb4_periph (
     axi4_if.master                                usb2_axi4,
     axi4_if.master                                apu_axi4,
     axi4_if.master                                jpeg_axi4,
+    axi4_if.master                                ga2d_axi4,
+    axi4_if.master                                npu_axi4,
     sysctrl_if.dut                                sysctrl,
     pll_ctrl_if.sysctrl                           pll_ctrl,
     clock_ctrl_if.sysctrl                         clock_ctrl,
@@ -75,7 +96,14 @@ module apb4_periph (
     output logic                                  hp_supervisor_external_irq_o,
     output logic                                  apu_idle_o,
     output logic                                  jpeg_idle_o,
-    output logic [6:0]                            resource_irq_raw_o,
+    output logic                                  ga2d_idle_o,
+    output logic                                  ga2d_core_safe_idle_o,
+    output logic                                  npu_idle_o,
+    output logic                                  npu_block_ack_o,
+    output logic                                  npu_hp_pause_ack_o,
+    output logic                                  npu_hp_flush_busy_o,
+    output logic                                  npu_hp_idle_o,
+    output logic [8:0]                            resource_irq_raw_o,
     output logic [`SOC_IRQ_APB4_PERIPH_WIDTH-1:0] irq_o
     // verilog_format: on
 );
@@ -178,7 +206,10 @@ axi4_stream_if #(
   logic s_crypto_irq;
   logic s_apu_irq_raw;
   logic s_i2s_tx_underrun_evt, s_i2s_rx_overrun_evt;
+  logic s_i2s_rx_flush_busy;
   logic s_jpeg_irq_raw;
+  logic s_ga2d_irq_raw;
+  logic s_npu_irq_raw;
   logic s_usb2_irq;
   logic s_tim0_irq, s_tim1_irq;
   logic s_dvp_irq;
@@ -237,7 +268,15 @@ axi4_stream_if #(
   assign hp_machine_external_irq_o = s_hp_plic_context_irq[0];
   assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
   assign resource_irq_raw_o = {
-    s_apu_irq_raw, s_jpeg_irq_raw, spisd.irq_o, sdio1.irq_o, sdio0.irq_o, s_usb2_irq, s_dma_irq
+    s_npu_irq_raw,
+    s_ga2d_irq_raw,
+    s_apu_irq_raw,
+    s_jpeg_irq_raw,
+    spisd.irq_o,
+    sdio1.irq_o,
+    sdio0.irq_o,
+    s_usb2_irq,
+    s_dma_irq
   };
 
   apb4_async_bridge u_psram_cfg_mem_cdc (
@@ -319,6 +358,8 @@ axi4_stream_if #(
     s_hp_plic_source[8]  = resource_irq_hp_i[4];
     s_hp_plic_source[9]  = resource_irq_hp_i[5];
     s_hp_plic_source[10] = resource_irq_hp_i[6];
+    s_hp_plic_source[11] = resource_irq_hp_i[7];
+    s_hp_plic_source[12] = resource_irq_hp_i[8];
   end
 
   `include "apb4_periph_irq_bindings.svh"
@@ -434,6 +475,7 @@ axi4_stream_if #(
       .dma_rx_stall_o   (s_dma_i2s_rx_stall),
       .tx_underrun_evt_o(s_i2s_tx_underrun_evt),
       .rx_overrun_evt_o (s_i2s_rx_overrun_evt),
+      .rx_flush_busy_o  (s_i2s_rx_flush_busy),
       .apb4             (u_i2s_apb4_if),
       .tx_axis          (u_i2s_tx_axis_if),
       .rx_axis          (u_i2s_rx_axis_if),
@@ -499,24 +541,67 @@ axi4_stream_if #(
       .irq_o           (s_jpeg_irq_raw)
   );
 
-  apb4_apu u_apb4_apu (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .owner_i          (apu_owner_i),
-      .owner_lock_i     (apu_owner_lock_i),
-      .quiesce_i        (apu_quiesce_i),
-      .resource_reset_i (apu_reset_i),
-      .bridge_epoch_i   (apu_bridge_epoch_i),
-      .i2s_tx_underrun_i(s_i2s_tx_underrun_evt),
-      .i2s_rx_overrun_i (s_i2s_rx_overrun_evt),
-      .apb4             (u_apu_apb4_if),
-      .axi4             (apu_axi4),
-      .dma_tx_axis      (u_dma_i2s_tx_axis_if),
-      .dma_rx_axis      (u_dma_i2s_rx_axis_if),
-      .i2s_tx_axis      (u_i2s_tx_axis_if),
-      .i2s_rx_axis      (u_i2s_rx_axis_if),
-      .idle_o           (apu_idle_o),
-      .irq_o            (s_apu_irq_raw)
+  apb4_apu #(
+      .EnableP7(EnableP7)
+  ) u_apb4_apu (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .owner_i            (apu_owner_i),
+      .owner_lock_i       (apu_owner_lock_i),
+      .quiesce_i          (apu_quiesce_i),
+      .resource_reset_i   (apu_reset_i),
+      .bridge_epoch_i     (apu_bridge_epoch_i),
+      .i2s_tx_underrun_i  (s_i2s_tx_underrun_evt),
+      .i2s_rx_overrun_i   (s_i2s_rx_overrun_evt),
+      .i2s_rx_flush_busy_i(s_i2s_rx_flush_busy),
+      .apb4               (u_apu_apb4_if),
+      .axi4               (apu_axi4),
+      .dma_tx_axis        (u_dma_i2s_tx_axis_if),
+      .dma_rx_axis        (u_dma_i2s_rx_axis_if),
+      .i2s_tx_axis        (u_i2s_tx_axis_if),
+      .i2s_rx_axis        (u_i2s_rx_axis_if),
+      .idle_o             (apu_idle_o),
+      .irq_o              (s_apu_irq_raw)
+  );
+
+  apb4_ga2d u_apb4_ga2d (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .resource_quiesce_i (ga2d_quiesce_i),
+      .resource_reset_i   (ga2d_reset_i),
+      .source_stop_i      (ga2d_source_stop_i),
+      .source_safe_idle_i (ga2d_source_safe_idle_i),
+      .block_ack_i        (ga2d_block_ack_i),
+      .bridge_clear_busy_i(ga2d_bridge_clear_busy_i),
+      .bridge_epoch_i     (ga2d_bridge_epoch_i),
+      .data_ready_i       (ga2d_data_ready_i),
+      .mem_pad_mode_i     (mem_pad_mode_i),
+      .apb4               (u_ga2d_apb4_if),
+      .ga2d_axi4          (ga2d_axi4),
+      .idle_o             (ga2d_idle_o),
+      .core_safe_idle_o   (ga2d_core_safe_idle_o),
+      .irq_o              (s_ga2d_irq_raw)
+  );
+
+  apb4_npu u_apb4_npu (
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .clk_hp_i             (clk_hp_i),
+      .rst_hp_n_i           (rst_hp_n_i),
+      .resource_owner_i     (npu_owner_i),
+      .resource_owner_lock_i(npu_owner_lock_i),
+      .resource_quiesce_i   (npu_quiesce_i),
+      .resource_reset_i     (npu_reset_i),
+      .apb4                 (u_npu_apb4_if),
+      .idle_o               (npu_idle_o),
+      .block_ack_o          (npu_block_ack_o),
+      .irq_o                (s_npu_irq_raw),
+      .hp_block_new_i       (npu_hp_block_new_i),
+      .hp_pause_ack_o       (npu_hp_pause_ack_o),
+      .hp_flush_i           (npu_hp_flush_i),
+      .hp_flush_busy_o      (npu_hp_flush_busy_o),
+      .hp_idle_o            (npu_hp_idle_o),
+      .npu_axi4             (npu_axi4)
   );
 
   apb4_sysctrl u_apb4_sysctrl (

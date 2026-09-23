@@ -1,8 +1,11 @@
 #import "style.typ": *
 #show: template
+#change-start("dev-overview","Current PRODUCT Features and 44-item Overview")
 #include "sections/overview.typ"
+#change-end("dev-overview")
 #pagebreak()
 #include "sections/product-use.typ"
+#change-end("dev-product-availability")
 #pagebreak()
 #include "sections/reading.typ"
 #pagebreak()
@@ -23,4 +26,6 @@
 #include "sections/pins.typ"
 #pagebreak()
 #include "sections/software.typ"
+#change-end("dev-software")
 #include "sections/appendices.typ"
+#include "sections/closing.typ"

@@ -14,10 +14,13 @@ from publications.circuit_reference import validate_instance_connections
 from publications.instruction_reference import instruction_families
 from publications.format_reference import collect_layouts
 from publications.storage_reference import collect_storage
+from publications.soc_diagram_reference import collect_soc_diagram
 
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
+    if spec.get("soc_architecture_catalog"):
+        paths.add(spec["soc_architecture_catalog"])
     for binding in spec.get("bindings", []):
         paths.add(binding["file"])
     for circuit in spec.get("circuits", {}).values():
@@ -102,9 +105,15 @@ def apu_formats(root: Path) -> dict:
         found = re.findall(r"^`define\s+APB4_APU__MC_" + suffix + r"\s+(\S+)", defines, re.M)
         if len(found) != 1 or number(found[0]) != value:
             raise ValueError("APU example opcode/predicate differs from RTL")
-    maximum = re.findall(r"^`define\s+APB4_APU__APUMC_MAX_INSTRUCTIONS\s+(\d+)", defines, re.M)
-    if maximum != [str(isa.APUMC_MAX_INSTRUCTIONS)]:
-        raise ValueError("APU control-store capacity differs from the encoder")
+    limits = {}
+    legacy = re.findall(r"^`define\s+APB4_APU__APUMC_MAX_INSTRUCTIONS\s+(\d+)", defines, re.M)
+    if legacy != [str(isa.APUMC_MAX_INSTRUCTIONS)]:
+        raise ValueError("APU legacy image capacity differs from the encoder")
+    for version in ("V1", "V2"):
+        maximum = re.findall(r"^`define\s+APB4_APU__APUMC_MAX_INSTRUCTIONS_" + version + r"\s+(\d+)", defines, re.M)
+        if maximum != [str(getattr(isa, "APUMC_MAX_INSTRUCTIONS_" + version))]:
+            raise ValueError("APU control-store capacity differs from the encoder")
+        limits[version.lower()] = int(maximum[0])
     instructions = (
         ("SCALAR.MOVI: r1 = 0x12345678", isa.Instruction(int(isa.InstructionClass.SCALAR), int(isa.ScalarOpcode.MOVI), dst=1, immediate=0x12345678)),
         ("CONTROL.WAIT: DMA source", isa.Instruction(int(isa.InstructionClass.CONTROL), int(isa.ControlOpcode.WAIT), aux=isa.WAIT_SOURCES.index("dma"))),
@@ -116,7 +125,7 @@ def apu_formats(root: Path) -> dict:
             raise ValueError("APU instruction diagram failed round-trip encoding")
         examples.append({"title": title, "word": f"0x{word:016X}",
                          "values": {name: getattr(instruction, name) for name in aliases}})
-    return {"bits": 64, "fields": fields, "examples": examples, "max_instructions": isa.APUMC_MAX_INSTRUCTIONS,
+    return {"bits": 64, "fields": fields, "examples": examples, "max_instructions": limits["v2"], "image_limits": limits,
             "families": instruction_families(isa, defines)}
 
 
@@ -165,6 +174,9 @@ def validate_circuit(root: Path, circuit: dict) -> None:
             raise ValueError("circuit connection direction mismatch")
         if ports[src]["width"] != ports[dst]["width"] or edge["kind"] not in {"control", "data"}:
             raise ValueError("circuit connection width/kind mismatch")
+        displayed_width = re.search(r"/\s*(\d+)$", edge.get("label", ""))
+        if displayed_width and ports[src]["width"] is not None and int(displayed_width[1]) != ports[src]["width"]:
+            raise ValueError("circuit label width differs from the bound port width")
         if not edge.get("bindings") or not edge.get("label"):
             raise ValueError("circuit connection lacks source binding")
         validate_bindings(root, edge["bindings"])
@@ -220,4 +232,5 @@ def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) 
             "sdio_command": copy.deepcopy(spec["sdio_command"]), "apu": apu_formats(root),
             "uart_fifo": uart_fifo(root), "windows": sorted(windows, key=lambda r: r["base"]),
             "cache": {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128},
-            "circuits": circuits, "layouts": layouts, "storage": storage}
+            "circuits": circuits, "layouts": layouts, "storage": storage,
+            "soc_architecture": collect_soc_diagram(root, spec["soc_architecture_catalog"], regions) if spec.get("soc_architecture_catalog") else {}}

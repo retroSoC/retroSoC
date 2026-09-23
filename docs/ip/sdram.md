@@ -12,7 +12,7 @@ timings expressed in SDRAM-clock cycles.
 | AXI4 data window | `0x38000000` - `0x3BFFFFFF` |
 | Data window size | 64 MiB |
 | APB4 configuration window | `0x1000D000` - `0x1000DFFF` |
-| SoC data boundary | 64-bit AXI/ID6 from HP into the stable memory domain |
+| SoC data boundary | 64-bit AXI/ID7 from HP into the stable memory domain |
 | Controller frontend | local 64-to-32 adaptation, then 32-bit AXI over SDRAM x16 |
 | Address organization | 2-bit bank, 13-bit row, 10-bit column |
 | Physical interface | `sdram_if` (`BA[1:0]`, `A[12:0]`, `DQ[15:0]`) |

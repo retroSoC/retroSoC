@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module fabric_monitor #(
-    parameter int unsigned NumMasters = 8,
+    parameter int unsigned NumMasters = 10,
     parameter int unsigned NumTargets = 6
 ) (
     // verilog_format: off -- preserve the monitor event boundary columns
@@ -15,7 +15,7 @@ module fabric_monitor #(
     input  logic                         [7:0] outstanding_read_i,
     input  logic                         [7:0] outstanding_write_i,
     input  logic                               fault_valid_i,
-    input  logic                         [2:0] fault_master_i,
+    input  logic                         [3:0] fault_master_i,
     input  logic                         [2:0] fault_target_i,
     input  logic                        [31:0] fault_addr_i,
     input  logic                               fault_write_i,
@@ -41,7 +41,7 @@ module fabric_monitor #(
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h4450_4D4E;
-  localparam logic [31:0] IpVersion = 32'h0001_0000;
+  localparam logic [31:0] IpVersion = 32'h0001_0001;
   localparam logic [11:0] IpIdOffset = 12'h000;
   localparam logic [11:0] IpVersionOffset = 12'h004;
   localparam logic [11:0] CapabilityOffset = 12'h008;
@@ -60,7 +60,7 @@ module fabric_monitor #(
   logic        s_flush_q;
   logic        s_fault_valid_q;
   logic        s_fault_write_q;
-  logic [ 2:0] s_fault_master_q;
+  logic [ 3:0] s_fault_master_q;
   logic [ 2:0] s_fault_target_q;
   logic [ 3:0] s_fault_reason_q;
   logic [31:0] s_fault_addr_q;
@@ -126,10 +126,11 @@ module fabric_monitor #(
       };
       FaultOffset:
       s_read_data = {
-        20'd0,
+        19'd0,
+        s_fault_master_q[3],
         s_fault_reason_q,
         s_fault_target_q,
-        s_fault_master_q,
+        s_fault_master_q[2:0],
         s_fault_write_q,
         s_fault_valid_q
       };
@@ -417,8 +418,8 @@ module fabric_monitor #(
 
 `ifndef SYNTHESIS
   initial begin
-    if ((NumMasters != 8) || (NumTargets != 6)) begin
-      $fatal(1, "fabric_monitor: product topology must remain 8x6");
+    if ((NumMasters != 10) || (NumTargets != 6)) begin
+      $fatal(1, "fabric_monitor: product topology must remain 10x6");
     end
   end
 `endif

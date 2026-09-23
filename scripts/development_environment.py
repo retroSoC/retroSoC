@@ -33,6 +33,7 @@ DEFAULT_TOOLS = (
     "bitwuzla",
     "opensta",
     "openocd",
+    "sbt",
     "riscv_gnu",
 )
 TOOL_EXECUTABLES = {
@@ -45,11 +46,22 @@ TOOL_EXECUTABLES = {
     "bitwuzla": ("bitwuzla",),
     "opensta": ("sta",),
     "openocd": ("openocd",),
+    "sbt": ("sbt",),
     "riscv_gnu": ("riscv32-unknown-elf-gcc", "riscv32-unknown-elf-gdb"),
 }
 PYTHON_IMPORTS = ("pytest", "ruff", "yamllint")
 PYTHON_EXECUTABLES = ("mbake",)
-SYSTEM_EXECUTABLES = ("cc", "ccache", "clang-format-14", "git", "make", "mold", "numactl")
+SYSTEM_EXECUTABLES = (
+    "cc",
+    "ccache",
+    "clang-format-14",
+    "git",
+    "java",
+    "make",
+    "mold",
+    "numactl",
+    "perl",
+)
 STAMP_NAME = "development-environment.json"
 ACTIVATE_NAME = "activate.sh"
 
@@ -149,6 +161,16 @@ def render_activation(cache: Path, paths: list[Path]) -> str:
     )
 
 
+def write_activation(path: Path, content: str) -> None:
+    atomic_write(path, content)
+    path.chmod(0o644)
+
+
+def write_stamp(path: Path, content: dict[str, Any]) -> None:
+    atomic_write(path, json.dumps(content, indent=2, sort_keys=True) + "\n")
+    path.chmod(0o644)
+
+
 def run(command: list[str]) -> None:
     print("+ " + " ".join(shlex.quote(argument) for argument in command), flush=True)
     subprocess.run(command, check=True)
@@ -188,9 +210,12 @@ def bootstrap(args: argparse.Namespace) -> int:
         for name in tools:
             install(name, available[name], cache, update=args.update)
         create_virtualenv(root, cache)
-        atomic_write(cache / STAMP_NAME, json.dumps(expected_stamp, indent=2, sort_keys=True) + "\n")
+        write_stamp(cache / STAMP_NAME, expected_stamp)
     activation = args.output.resolve() if args.output else cache / ACTIVATE_NAME
-    atomic_write(activation, render_activation(cache, environment_paths(cache, tools, available)))
+    write_activation(
+        activation,
+        render_activation(cache, environment_paths(cache, tools, available)),
+    )
     print(f"development environment: {activation}")
     return check(args, quiet=False)
 

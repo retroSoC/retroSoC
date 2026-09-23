@@ -16,11 +16,13 @@
 Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. The IHP130 PR simulation also uses the
 32 KiB `ld2_all_sram` layout, the explicit Verilator `--fast-flash` backend,
-and a 360-second wall-clock budget. GF180, ICS55, and SKY130 use the common
-`ld2_sdram` execution layout, the same fast-flash backend, and a 600-second
-budget so the broad smoke does not execute from the serial PSRAM model. The
-full serial XPI and PSRAM path remains covered by the Icarus assembly self-test
-and directed memory-model tests. This application verifies UART output,
+and an 1800-second wall-clock budget. GF180, ICS55, and SKY130 use the common
+`ld2_sdram` execution layout, the same fast-flash backend, and an 1800-second
+budget for the GA2D acceptance workload while LP instruction traffic shares
+the SDRAM target. The broad smoke therefore does not execute from the serial
+PSRAM model. The full serial XPI and PSRAM path remains covered by the Icarus
+assembly self-test and directed memory-model tests. This application verifies
+UART output,
 archinfo APB readback, on-chip SRAM first/last-word and 8/16/32-bit access,
 Fabric Monitor collection through the PCLK-to-HP APB path, truthful extension
 capabilities, RNG integration, SDRAM 8/16/32-bit access in a reserved tail
@@ -242,10 +244,12 @@ ClusterIP interfaces, registers, and utility cells. The generated conversion,
 SBY configuration, SMT2 model, logs, traces, task status, and structured
 verdict are stored below
 `build/<variant>/formal/<proof>/` and `build/<variant>/meta/formal.json`.
-The IHP130 smoke workflow enables this target; the full PDK regressions do not
-repeat PDK-independent protocol proofs. The reusable regression workflow runs
-the target only when its `formal_checks` input is enabled and its locked
-toolset provides SBY and Bitwuzla.
+The IHP130 smoke workflow enables `formal-doctor` so hosted CI checks that the
+locked SBY and Bitwuzla tools are present. It does not run `make formal`: the
+GA2D cover bound is 199 steps with a 7200s task budget, which does not fit the
+60-minute smoke job. Full PDK regressions also skip those PDK-independent
+protocol proofs. Run `make CONFIG=<profile> formal` locally or on a longer
+job when the complete proof suite is required.
 
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
@@ -303,9 +307,15 @@ changes after freeze must retain the baseline revision and equivalence evidence.
 
 ## CI And Releases
 
-`quality.yml` validates C, Makefile, and self-owned RTL formatting as well as Python, YAML, GitHub
-Actions, the dependency lock, and script tests. `regression-smoke.yml` provides fast IHP130 feedback;
-the four PDK regression workflows remain required PR coverage and do not repeat the format checks.
+`quality.yml` validates C, Makefile, and self-owned RTL formatting as well as
+Python, YAML, GitHub Actions, the dependency lock, and the complete Pytest
+suite. The test environment restores the locked IHP130 PDK and APU reference
+corpus plus the NPU models, inputs, and oracle sources, installs the locked
+third-party simulation models, and installs the locked Verilator, Icarus,
+sv2v, and Yosys tools before Pytest so required RTL, netlist, timing-model, and
+corpus fixtures execute. `regression-smoke.yml`
+provides fast IHP130 feedback; the four PDK regression workflows remain
+required PR coverage and do not repeat the format checks.
 
 Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
 rules in `rtl/rtl_style_manifest.json`. New positional module connections,
@@ -319,6 +329,10 @@ simulation, OpenSTA, and synthesis-recipe metrics. The locked tools are still
 installed and checked. This temporary policy avoids the unresolved JPEG
 synthesis-memory peak. Local full regressions retain those stages and remain the
 source of synthesis and timing evidence until hosted coverage is restored.
+`development-environment.yml` independently builds Docker and installs Nix,
+checks each resulting tool environment, and runs the same hosted IHP130 PR
+command set. It verifies environment reproducibility but does not expand the
+behavioral-only evidence boundary.
 `nightly.yml` repeats the fixed IHP130 architecture as two parallel behavioral
 jobs: the PR IHP130 matrix and the extra CoreMark coverage. Source dependencies,
 locked tool archives, and Verilator `ccache` use

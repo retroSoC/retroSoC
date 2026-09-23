@@ -69,6 +69,36 @@
       "destination": ".cache/retrosoc/sources/apu-flac-corpus",
       "license": "CC0-1.0"
     },
+    "apu_mlperf_tiny": {
+      "url": "https://github.com/mlcommons/tiny.git",
+      "revision": "4addd0fa08d216e20637637874e084895f289da4",
+      "destination": ".cache/retrosoc/sources/apu-mlperf-tiny",
+      "license": "Apache-2.0"
+    },
+    "apu_kws_mfcc": {
+      "url": "https://github.com/eembc/benchmark-runner-ml.git",
+      "revision": "cf7c2f2634608a7c0ea7458ab7cb3379f2863424",
+      "destination": ".cache/retrosoc/sources/apu-kws-mfcc",
+      "license": "NOASSERTION"
+    },
+    "apu_tfds": {
+      "url": "https://github.com/tensorflow/datasets.git",
+      "revision": "8997c4140cd4fc145f0693787b1da78691930459",
+      "destination": ".cache/retrosoc/sources/apu-tfds",
+      "license": "Apache-2.0"
+    },
+    "apu_tensorflow": {
+      "url": "https://github.com/tensorflow/tensorflow.git",
+      "revision": "fcc4b966f1265f466e82617020af93670141b009",
+      "destination": ".cache/retrosoc/sources/apu-tensorflow",
+      "license": "Apache-2.0"
+    },
+    "apu_gemmlowp": {
+      "url": "https://github.com/google/gemmlowp.git",
+      "revision": "fda83bdc38b118cc6b56753bd540caa49e570745",
+      "destination": ".cache/retrosoc/sources/apu-gemmlowp",
+      "license": "Apache-2.0"
+    },
     "third_party_ip": {
       "url": "https://github.com/retroSoC/3rd-party.git",
       "revision": "d991ec9f7bf696e7e5d840758487068b11bd4121",
@@ -195,6 +225,18 @@
       "sha256": "36de2310155b4084011fbd56f24603dfef91a26c5433e3f92bd21995b45089c3",
       "destination": ".cache/retrosoc/downloads/apu/flac-corpus-aa7b0c6cf32994c106ae517a08134c28a96ff5b2.tar.gz",
       "license": "CC0-1.0"
+    },
+    "apu_kws_pcm": {
+      "url": "https://download.tensorflow.org/data/speech_commands_test_set_v0.02.tar.gz",
+      "sha256": "cc2a00c1147c2254e9be3fa0f779d8c17421dc349b86366567a8edfa9acd51df",
+      "destination": ".cache/retrosoc/downloads/apu/kws-pcm-speech-commands-test-v0.02.tar.gz",
+      "license": "CC-BY-4.0"
+    },
+    "npu_vww_dataset": {
+      "url": "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz",
+      "sha256": "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58",
+      "destination": ".cache/retrosoc/downloads/npu/vw-coco2014-96.tar.gz",
+      "license": "NOASSERTION"
     },
     "typst_cetz": {
       "version": "0.5.2",
@@ -334,6 +376,15 @@
         "sha256": "940f22eccddb0946b69149d227948f77d5917a2c5f1ab68e5d84d614c2ceed20",
         "archive": "xpack-openocd-0.12.0-1-linux-x64.tar.gz",
         "path": "xpack-openocd-0.12.0-1/bin"
+      },
+      "sbt": {
+        "version": "1.10.0",
+        "url": "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz",
+        "sha256": "154b7de6c19207c73d0a304f901c8c4b6ead9a9c3a99a98a9d72ac19419d2640",
+        "archive": "sbt-1.10.0.tgz",
+        "path": "sbt/bin",
+        "download_timeout_seconds": 600,
+        "resume": true
       },
       "riscv_gnu": {
         "version": "2025.05.01",

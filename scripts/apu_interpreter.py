@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from apu_isa import (
+    APUMC_ABI_V1,
     APUMC_TARGETS,
     BitstreamOpcode,
     ControlOpcode,
@@ -71,6 +72,7 @@ class TransportModel:
     events: int = 0
     pending: list[TransportCommand] = field(default_factory=list)
     completed: list[tuple[int, int]] = field(default_factory=list)
+    output_commands: list[dict[str, int]] = field(default_factory=list)
 
     @property
     def idle(self) -> bool:
@@ -88,6 +90,7 @@ class TransportModel:
         self.events = 0
         self.pending.clear()
         self.completed.clear()
+        self.output_commands.clear()
 
     def abort(self) -> None:
         self.pending.clear()
@@ -146,6 +149,7 @@ class TransportModel:
                 raise PrimitiveFault(8, 8, 9)
             address = entry.scratch_base + offset
             payload = primitives.memory.read(address, count, entry)
+            self.output_commands.append({"opcode": int(opcode), "bytes": count})
             self.pending.append(
                 TransportCommand(
                     opcode, instruction.dst, offset, count, payload, max(1, self.latency)
@@ -200,6 +204,12 @@ class TransportModel:
                 self.input_cursor += command.count
             else:
                 self.output.extend(command.payload)
+                context_output = entry.scratch_base + entry.scratch_bytes - 64 + 44
+                primitives.memory.write(
+                    context_output,
+                    len(self.output).to_bytes(4, "little"),
+                    entry,
+                )
             self.completed.append((command.destination, command.count))
             self.pending.remove(command)
 
@@ -233,6 +243,7 @@ class Machine:
     kernel_cycles_remaining: int = field(default=0, init=False)
     transport_pending_dst: set[int] = field(default_factory=set, init=False)
     transport_fault: PrimitiveFault | None = field(default=None, init=False)
+    mc_abi: int = APUMC_ABI_V1
 
     def __post_init__(self) -> None:
         self.begin_entry(self.entry)
@@ -432,14 +443,15 @@ class Machine:
             self.transport_fault = None
             raise SequencerTrap(fault.reason, self.pc, instruction)
         try:
-            validate_instruction(instruction, self.target)
+            validate_instruction(instruction, self.target, self.mc_abi)
         except ValueError as error:
             raise SequencerTrap(1, self.pc, instruction) from error
         if self.retired >= self.entry.max_retired:
             raise SequencerTrap(8, self.pc, instruction)
         predicate_true = self._predicate(instruction.predicate)
         if not predicate_true:
-            if self.pc == self.entry.last_pc or self.pc == 0x7FF:
+            store_last = 0x7FF if self.mc_abi == APUMC_ABI_V1 else 0xFFF
+            if self.pc == self.entry.last_pc or self.pc == store_last:
                 raise SequencerTrap(2, self.pc, instruction)
             self._retire(instruction, predicate_true)
             self.pc += 1
@@ -582,19 +594,19 @@ class Machine:
                     return False
             if instruction.instruction_class == InstructionClass.BITSTREAM:
                 opcode = BitstreamOpcode(instruction.opcode)
-                required = (
-                    instruction.immediate & 0x3F
-                    if opcode
-                    in (
-                        BitstreamOpcode.REFILL,
-                        BitstreamOpcode.PEEK,
-                        BitstreamOpcode.GET,
-                        BitstreamOpcode.SKIP,
-                    )
-                    else 1
-                )
-                self.primitives._refill(required)
-                if len(self.primitives.bits) < required and not self.primitives.eof:
+                required = 0
+                if opcode in (
+                    BitstreamOpcode.REFILL,
+                    BitstreamOpcode.PEEK,
+                    BitstreamOpcode.GET,
+                    BitstreamOpcode.SKIP,
+                ):
+                    required = instruction.immediate & 0x3F
+                elif opcode == BitstreamOpcode.FRAME_SYNC:
+                    required = instruction.aux & 0x1F
+                if required != 0:
+                    self.primitives._refill(required)
+                if required != 0 and len(self.primitives.bits) < required and not self.primitives.eof:
                     self._no_retirement_cycle(instruction, tick_kernel=False, tick_transport=False)
                     return False
             if instruction.instruction_class == InstructionClass.ENTROPY:
@@ -679,6 +691,7 @@ class Machine:
                 "result_stage": self.transport.result_stage,
                 "result_detail": self.transport.result_detail,
                 "events": self.transport.events,
+                "output_commands": self.transport.output_commands,
             },
         }
 
@@ -713,6 +726,7 @@ def main() -> int:
                 target=args.target,
                 primitives=PrimitiveBam() if args.target in ("p4", "p5") else None,
                 transport=TransportModel() if args.target == "p5" else None,
+                mc_abi=header[1],
             ).run(),
             sort_keys=True,
         )

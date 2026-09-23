@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "gpio_pins": 32,
-  "irq_vector_width": 32,
+  "irq_vector_width": 64,
   "irq_groups": [
     {
       "name": "apb4_periph",
-      "width": 24,
+      "width": 26,
       "top_signal": "s_apb4_periph_irq"
     },
     {
@@ -285,6 +285,24 @@
       "core_bit": 31,
       "signal": "resource_irq_lp_i[6]",
       "user_visible": false
+    },
+    {
+      "name": "ga2d",
+      "description": "GA2D shell completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 24,
+      "core_bit": 32,
+      "signal": "resource_irq_lp_i[7]",
+      "user_visible": false
+    },
+    {
+      "name": "npu",
+      "description": "NPU shell completion and error interrupt",
+      "group": "apb4_periph",
+      "group_bit": 25,
+      "core_bit": 33,
+      "signal": "resource_irq_lp_i[8]",
+      "user_visible": false
     }
   ],
   "wake_sources": [
@@ -405,6 +423,22 @@
     {
       "index": 7,
       "name": "ext_h",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 8,
+      "name": "ga2d",
+      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "allow_instruction": false,
+      "require_noncacheable": true
+    },
+    {
+      "index": 9,
+      "name": "npu",
       "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
       "write_targets": ["sram", "sdram", "qpi", "opi"],
       "allow_instruction": false,
@@ -616,6 +650,20 @@
       "timed_interface": "u_apu_apb4_if",
       "pure_interface": "u_apu_apb4_pure_if",
       "region": "APB4_APU"
+    },
+    {
+      "slot": 28,
+      "name": "ga2d",
+      "timed_interface": "u_ga2d_apb4_if",
+      "pure_interface": "u_ga2d_apb4_pure_if",
+      "region": "APB4_GA2D"
+    },
+    {
+      "slot": 29,
+      "name": "npu",
+      "timed_interface": "u_npu_apb4_if",
+      "pure_interface": "u_npu_apb4_pure_if",
+      "region": "APB4_NPU"
     }
   ],
   "apb4_system_targets": [

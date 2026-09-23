@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("dev-product-availability","Current IP availability and media-composition limits")
 #import "../system-figures.typ": *
 
 == Product Configuration and Feature Availability <product-configuration>
@@ -12,6 +13,7 @@ board wiring, a technology macro or additional software. A reserved address rang
   ([Role],[Committed profile],[Boundary]),
   (([PRODUCT reference],code(doc.profile),[Fixed LP/HP topology; reference for the main register and pad inventories.]),
    ([HP boot acceptance],code(doc.hp_profile),[Same PRODUCT organization; SRAM-resident LP loader and an external HP bundle.]),
+   ([APU P7 acceptance],code("configs/ci/ihp130-apu.mk"),[32 KiB SRAM, CSR-enabled LP orchestration and a bare-metal HP audio/KWS payload.]),
    ([MPW compatibility],code(doc.mpw_profile),[Selectable legacy user core/IP; use only the separate MPW appendix.])),
   widths:(0.75fr,1.35fr,1.6fr))
 The source revision printed in Document Control identifies the hardware/software contract.
@@ -42,16 +44,16 @@ does not establish all optional modes in a standard or a compliance certificate.
 + Start with the reference profile and identify the memory needed by the application.
   Confirm that mapped capacity, fitted device capacity and linker placement agree.
 + Check shared-pad exclusion and external clock/PHY requirements before allocating GPIOs.
-+ Read ARCHINFO and the relevant IP version/capability registers; reject unsupported modes
-  before writing configuration or submitting DMA work.
++ Check ARCHINFO and IP capabilities/version; reject unsupported setup or DMA.
 + Match the firmware or Linux path to the support matrix in @software-support. Keep unsupported
   resources under LP control until an appropriate driver and handoff protocol are supplied.
 
-A probe mismatch should stop initialization of that resource. Preserve diagnostic identity
-and report the incompatible image/profile instead of treating reserved or disabled registers
-as a compatible peripheral. The compatibility rules and known exceptions are in @known-limitations.
-#source-note("publications/datasheets/mini.json",title:"Publication identity and reference profiles")
-#source-note("rtl/mini/integration/soc_topology.json",title:"Integrated resources and access policy")
+On a probe mismatch, stop initialization and report the image/profile and diagnostic identity.
+Reserved or disabled registers do not prove compatibility; see @known-limitations.
+#block(above:5pt,below:0pt)[
+  #text(9pt)[#source("publications/datasheets/mini.json",title:"Configuration identity") ·
+    #source("rtl/mini/integration/soc_topology.json",title:"Resource and access policy")]
+]
 
 #pagebreak()
 == Typical Applications and System Configurations <typical-applications>
@@ -108,9 +110,10 @@ an independently configured memory job. The drawing does not assert a direct har
 connection from DVP to the JPEG engine. I2S uses its independent audio clock and compatible
 external codec wiring. Production APU codec/KWS availability must be checked separately.
 
-The current native JPEG master has zero normal admission credits in the reviewed crossbar.
-The diagram describes the intended memory-mediated composition; an end-to-end JPEG private-DMA
-application requires the separately corrected and validated route described in @bus-programming.
+The native JPEG master has one normal read and one normal write credit in the reviewed crossbar.
+The diagram describes a memory-mediated composition, not an end-to-end JPEG private-DMA
+application qualification. Validate source ordering, buffer ownership, error recovery, and the
+selected platform separately as described in @bus-programming.
 
 + Select external interface modes, pin routing and clocks before starting capture/playback.
 + Allocate aligned buffers, prepare ownership, and configure the consumer before enabling
