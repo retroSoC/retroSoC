@@ -7,6 +7,7 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      ncursesTermlib = pkgs.ncurses.override { withTermlib = true; };
       clangFormat14 = pkgs.writeShellApplication {
         name = "clang-format-14";
         runtimeInputs = [ pkgs.clang_14 ];
@@ -67,7 +68,7 @@
           libmpc
           mold
           mpfr
-          ncurses.out
+          ncursesTermlib
           numactl
           jdk17_headless
           perl
@@ -81,10 +82,6 @@
           zlib.dev
           zstd
         ];
-        extraBuildCommands = ''
-          ln -sfn ${pkgs.ncurses.out}/lib/libtinfo.so.6 \
-            "$out/usr/lib64/libtinfo.so.6"
-        '';
         runScript = "retrosoc-dev";
       };
       developmentApplication = pkgs.writeShellApplication {
