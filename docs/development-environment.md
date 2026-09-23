@@ -18,7 +18,7 @@ by the locked GDB, Yosys, and OpenSTA binaries, including explicit Expat and
 readline runtime dependencies. Nix builds ncurses with its separate termlib
 enabled and places that output first on the runtime library path so the
 Ubuntu-linked GDB receives a real ABI 6 `libtinfo` library. The Nix FHS also
-includes the separate bzip2 library output required by Icarus VPI modules.
+places the separate bzip2 library output on that path for Icarus VPI modules.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are

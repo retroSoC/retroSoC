@@ -1217,7 +1217,8 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "          mpfr\n" in flake
     assert "          ncursesTermlib\n" in flake
     assert "          ncurses5\n" not in flake
-    assert '${ncursesTermlib}/lib' in flake
+    assert "runtimeLibraryPath = pkgs.lib.makeLibraryPath" in flake
+    assert "        pkgs.bzip2.out\n" in flake
     assert "LD_LIBRARY_PATH" in flake
     assert "          perl\n" in flake
     assert "python310Full" in flake

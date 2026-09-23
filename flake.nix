@@ -8,6 +8,10 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
       ncursesTermlib = pkgs.ncurses.override { withTermlib = true; };
+      runtimeLibraryPath = pkgs.lib.makeLibraryPath [
+        ncursesTermlib
+        pkgs.bzip2.out
+      ];
       clangFormat14 = pkgs.writeShellApplication {
         name = "clang-format-14";
         runtimeInputs = [ pkgs.clang_14 ];
@@ -84,7 +88,7 @@
           zstd
         ];
         profile = ''
-          export LD_LIBRARY_PATH="${ncursesTermlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          export LD_LIBRARY_PATH="${runtimeLibraryPath}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         '';
         runScript = "retrosoc-dev";
       };
