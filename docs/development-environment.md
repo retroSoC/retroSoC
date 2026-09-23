@@ -13,7 +13,8 @@ hash-pinned Ubuntu 22.04 requirement sets. The environment also installs the
 locked Python build and quality dependencies, clang-format-14, GNU Make,
 C/C++ build tools, Perl and zlib development headers for Verilator, and the
 GNU MPC, MPFR, GMP, ISL, and Zstandard libraries required by the RISC-V
-compiler.
+compiler. It also provides the Python, ncurses, and Tcl shared libraries used
+by the locked GDB, Yosys, and OpenSTA binaries.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are

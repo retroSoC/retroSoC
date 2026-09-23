@@ -1197,6 +1197,9 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     sbom = make_sbom(lock)
 
     assert f"ubuntu@{lock['container_images']['ubuntu_22_04']['digest']}" in dockerfile
+    assert "        libncursesw6 \\\n" in dockerfile
+    assert "        libpython3.10 \\\n" in dockerfile
+    assert "        libtcl8.6 \\\n" in dockerfile
     assert "openjdk-17-jre-headless" in dockerfile
     assert "        perl \\\n" in dockerfile
     assert "        zlib1g-dev \\\n" in dockerfile
@@ -1209,10 +1212,12 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "jdk17_headless" in flake
     assert "          libmpc\n" in flake
     assert "          mpfr\n" in flake
+    assert "          ncurses\n" in flake
     assert "          perl\n" in flake
     assert "python310Full" in flake
     assert "python3Full" not in flake
     assert "retrosoc-development retrosoc-dev" in flake
+    assert "          tcl\n" in flake
     assert "          zlib.dev\n" in flake
     assert "          zstd\n" in flake
     assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])

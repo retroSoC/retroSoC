@@ -66,11 +66,13 @@
           libmpc
           mold
           mpfr
+          ncurses
           ncurses5
           numactl
           jdk17_headless
           perl
           python310Full
+          tcl
           unzip
           which
           xz

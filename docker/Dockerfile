@@ -18,6 +18,9 @@ RUN apt-get update -qq \
         git \
         libfl2 \
         libgoogle-perftools4 \
+        libncursesw6 \
+        libpython3.10 \
+        libtcl8.6 \
         libunwind8 \
         make \
         mold \
