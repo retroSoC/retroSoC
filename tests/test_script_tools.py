@@ -38,6 +38,7 @@ from scripts.development_environment import (  # noqa: E402
     render_activation,
     stamp_data,
     write_activation,
+    write_stamp,
 )
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
 from scripts.install_toolchain import make_tree_world_readable, safe_extract  # noqa: E402
@@ -1183,6 +1184,10 @@ def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None
     activation_path = tmp_path / "activate.sh"
     write_activation(activation_path, activation)
     assert activation_path.stat().st_mode & 0o777 == 0o644
+    stamp_path = tmp_path / "development-environment.json"
+    write_stamp(stamp_path, stamp)
+    assert json.loads(stamp_path.read_text(encoding="utf-8")) == stamp
+    assert stamp_path.stat().st_mode & 0o777 == 0o644
 
 
 def test_container_and_nix_environment_files_use_locked_inputs() -> None:
@@ -1198,6 +1203,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
     assert "jdk17_headless" in flake
+    assert "          libmpc\n" in flake
     assert "          perl\n" in flake
     assert "python310Full" in flake
     assert "python3Full" not in flake

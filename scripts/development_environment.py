@@ -166,6 +166,11 @@ def write_activation(path: Path, content: str) -> None:
     path.chmod(0o644)
 
 
+def write_stamp(path: Path, content: dict[str, Any]) -> None:
+    atomic_write(path, json.dumps(content, indent=2, sort_keys=True) + "\n")
+    path.chmod(0o644)
+
+
 def run(command: list[str]) -> None:
     print("+ " + " ".join(shlex.quote(argument) for argument in command), flush=True)
     subprocess.run(command, check=True)
@@ -205,7 +210,7 @@ def bootstrap(args: argparse.Namespace) -> int:
         for name in tools:
             install(name, available[name], cache, update=args.update)
         create_virtualenv(root, cache)
-        atomic_write(cache / STAMP_NAME, json.dumps(expected_stamp, indent=2, sort_keys=True) + "\n")
+        write_stamp(cache / STAMP_NAME, expected_stamp)
     activation = args.output.resolve() if args.output else cache / ACTIVATE_NAME
     write_activation(
         activation,

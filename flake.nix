@@ -61,6 +61,7 @@
           gperftools
           launcher
           libunwind
+          libmpc
           mold
           ncurses5
           numactl
