@@ -45,6 +45,7 @@
           bash
           binutils
           bzip2
+          bzip2.out
           ccache
           clangFormat14
           coreutils

@@ -1207,6 +1207,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
+    assert "          bzip2.out\n" in flake
     assert "withTermlib = true" in flake
     assert "          expat\n" in flake
     assert "          gmp\n" in flake
