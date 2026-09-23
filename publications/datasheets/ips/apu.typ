@@ -10,6 +10,7 @@
 
 ==== Audio Processing Unit (APU, partial) <apu>
 
+#change-start("v05-refresh-apu-chapter","Current codec availability and ordered APU acceptance")
 #ip("apu")
 
 #ip-reference("apu","apu",4,functional-note:[
@@ -20,8 +21,8 @@
     (([Control-store instructions],[#implementation.instruction_words / #implementation.maximum_instruction_words words],[#implementation.free_instruction_words words remain in the implemented V2 store.]),
      ([Serialized image],[#implementation.bundle_bytes bytes],[Includes the header, entries, instructions and coefficient tables.]),
      ([Coefficient/table payload],[#implementation.table_bytes bytes],[Separate from instruction-word capacity.]),
-     ([Entry roles],[WAV; reserved MP3 trap; FLAC],[MP3 is not a decoder implementation.]),
-     ([Qualification],[Static assembly only],[A valid image and capability bits do not establish corpus accuracy, sustained playback or physical signoff.])),
+     ([Entry roles],[WAV; reserved MP3 trap; FLAC],[*MP3 is not a decoder implementation*.]),
+     ([Qualification],[*Static assembly only*],[A valid image and capability bits do not establish corpus accuracy, sustained playback or physical signoff.])),
     widths:(1.1fr,0.85fr,2.05fr))
   APUMC V1 retains 2048-word limits and 11-bit control-flow PCs; V2 uses 4096-word limits and
   12-bit PCs. Both retain the common 64-bit instruction fields, seven classes and 62 defined
@@ -63,4 +64,5 @@ image availability. KWS implementation exists but EnableP7 defaults to false in 
 
 ])
 
+#change-end("v05-refresh-apu-chapter")
 #context metadata((kind:"ip-end",id:"apu",page:here().page()))

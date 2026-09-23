@@ -1,16 +1,17 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-performance-reference","Selected body emphasis: performance reference")
 
 == Performance and Power Characterization <performance-characterization>
 #change-start("dev-performance","Current benchmark counters and missing performance evidence")
 This section defines reproducible measurement conditions for the documented implementation.
-No new hardware measurement was performed for this publication update. The current evidence
+*No new hardware measurement* was performed for this publication update. The current evidence
 index contains no matching reviewed performance report, so numerical product results remain
-unfilled. Configuration frequencies, analytic ceilings and historical projections are not
-substituted for measurements.
+unfilled. Configuration frequencies, analytic ceilings and historical projections are *not
+substituted for measurements*.
 
-A published result or curve must retain its raw report, workload/transfer size, achieved
+A published result or curve must retain its *raw report*, workload/transfer size, achieved
 clock, memory placement and concurrent traffic, together with sample count and measurement
-boundaries. Use a distinct series for each configuration and show failed or incomplete runs
+boundaries. Use a distinct series for each configuration and show *failed or incomplete runs*
 in the supporting report. The evidence summary is @release-verification; the currently empty
 result fields below remain unmeasured.
 
@@ -78,10 +79,14 @@ boundaries and clock changes affect interpretation. A read/write permission matr
 admission, not bandwidth or latency guarantees.
 
 === Boot and power experiments
+#change-start("v05-refresh-boot-measurement","Measure current boot checkpoints and bounded polling correctly")
 Use the loader's existing checkpoint messages or a reviewed instrumentation change with defined
-timing boundaries. Separate simulator elapsed time from wall-clock tool duration. The current
-ready wait has no firmware-local deadline; report the external observation timeout when boot
-does not complete. Avoid timing a debugger-halted run as a normal boot.
+timing boundaries. Separate initial readiness from the complete acceptance/cache-clean sequence,
+and simulator elapsed time from wall-clock tool duration. The HP loader uses bounded polling
+iterations; those counts are not milliseconds or a guarantee against stalled MMIO. Report
+the actual failure stage and external observation timeout if the run cannot progress. Avoid
+timing a debugger-halted run as a normal boot.
+#change-end("v05-refresh-boot-measurement")
 
 For power, identify each rail and exclude or separately report the external PHY, memory and
 board regulators. Record LP/HP state, active peripherals and duty cycle. Gate-level estimates
@@ -94,7 +99,7 @@ electrical conditions remain those of @electrical-specifications.
 
 = Known Limitations and Revision Compatibility <known-limitations>
 #change-end("dev-performance")
-#change-start("dev-limitations","Current feature gates and revision limitations")
+#change-start("v05-refresh-limitations","Current feature gates and revision limitations")
 The following items describe the reviewed implementation and its publication boundary. They
 are not silicon errata for an identified manufactured part. A new source revision requires
 review of both the limitation and the proposed workaround; a document version alone cannot
@@ -144,4 +149,6 @@ that snapshot, and record changed offsets, field meanings or reset behavior in a
 before claiming backward compatibility. This publication adds no hardware or software ABI.
 #source-note("publications/datasheets/system-reference.json",title:"Versioned limitation and evidence index")
 #source-note("publications/datasheets/register-profiles.json",title:"Published register extraction boundary")
-#change-end("dev-limitations")
+#change-end("v05-refresh-limitations")
+
+#change-end("v05-emphasis-performance-reference")

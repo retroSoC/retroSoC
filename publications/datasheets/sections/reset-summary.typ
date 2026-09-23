@@ -1,8 +1,9 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-reset-summary","Selected body emphasis: reset summary")
 
 === Reset-State Summary and Initialization Dependencies <reset-summary>
 Distinguish an asserted reset, a reset assignment's initial value and a later software
-observation. A counter, event flag or external input can change immediately after local reset
+observation. A counter, event flag or external input *can change immediately after local reset*
 release. A physical supply ramp is also different from a digital reset transition; board
 sequencing remains subject to @electrical-specifications.
 
@@ -14,9 +15,9 @@ sequencing remains subject to @electrical-specifications.
 "Fixed" identifies the traced digital reset assignment, not a guarantee that firmware will
 read that value after arbitrary elapsed time. "Configured" depends on selected integration
 settings. "Input-dependent" requires the external or technology context, and "Dynamic" must
-be observed using the IP's live/snapshot rules.
+be observed using the IP's *live/snapshot rules*.
 
-The Resource Controller owner flops reset to LP, while its quiesce and resource-reset request
+The Resource Controller *owner flops reset to LP*, while its quiesce and resource-reset request
 bits reset clear. Its IRQ outputs combine raw causes with the owner and resource-reset request.
 Asserting #code("CONTROL.RESET") masks those owner routes; resetting the controller is not a
 separate universal IRQ-enable policy. Check each producer's local reset, cause and enable state.
@@ -37,10 +38,14 @@ separate universal IRQ-enable policy. Check each producer's local reset, cause a
 + Configure legal idle DMA/peripheral state and verify bounded operations before releasing HP
   or starting a sustained producer.
 
+#change-start("v05-refresh-reset-waits","Separate bounded HP polling from generic startup waits")
 An initialization dependency is not a fixed delay specification. Prefer documented ready,
-idle, lock and error observations with bounded software waits. Keep the existing HP-loader
-ready-wait limitation separate: that loader currently has no firmware-local final Linux-ready
-deadline, even though other controller waits are bounded.
+idle, lock and error observations with bounded software waits. The HP loader bounds its
+ready/result/cache-clean polls by iteration counts, not fixed elapsed time; stalled MMIO can
+still prevent progress. Its initial ready event is separate from complete acceptance and
+ownership return. The generic LP CRT's earlier PSRAM-ready loop remains unbounded; see
+@lp-runtime and @boot-configuration for the distinct startup stages.
+#change-end("v05-refresh-reset-waits")
 
 ==== Restart and failure handling
 After a debug or local reset, do not assume unrelated peripherals and clocks returned to their
@@ -58,3 +63,5 @@ approved physical implementation for those properties.
 #source-note("rtl/ip/peripheral/dma_reg.sv",title:"DMA context and interrupt-enable reset assignments")
 #source-note("rtl/ip/peripheral/gpio_reg.sv",title:"GPIO control reset-flop connections")
 
+
+#change-end("v05-emphasis-reset-summary")

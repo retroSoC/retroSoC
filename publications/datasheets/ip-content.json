@@ -21,9 +21,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/xpi.c",
     "api": [
@@ -88,9 +88,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/spisd.c",
     "api": [
@@ -154,9 +154,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/sdio.c",
     "api": [
@@ -218,9 +218,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/sram.c",
     "api": [
@@ -260,9 +260,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/psram.c",
     "api": [
@@ -326,9 +326,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/opipsram.c",
     "api": [
@@ -391,9 +391,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/sdram.c",
     "api": [
@@ -456,9 +456,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/gpio.c",
     "api": [
@@ -524,9 +524,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/dma.c",
     "api": [
@@ -586,9 +586,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/timer.c",
     "api": [
@@ -650,9 +650,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/rtc.c",
     "api": [
@@ -716,9 +716,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Configure prescale, reload, window and warning policy while inactive; lock only after validation.",
-      "Start once, then use the required two-key service inside the allowed window with bounded completion checks.",
-      "An APB reset does not stop the independent core. Inspect the retained cause after recovery."
+      "Configure prescale, reload, window and warning policy **while inactive**; lock only after validation.",
+      "Start once, then use the required **two-key service** inside the allowed window with bounded completion checks.",
+      "An **APB reset does not stop** the independent core. Inspect the retained cause after recovery."
     ],
     "flow": [
       "Service key writes",
@@ -748,9 +748,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/pwm.c",
     "api": [
@@ -812,9 +812,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/uart.c",
     "api": [
@@ -877,9 +877,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/i2c.c",
     "api": [
@@ -941,9 +941,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/ws2812.c",
     "api": [
@@ -1007,9 +1007,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/ps2.c",
     "api": [
@@ -1075,9 +1075,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/usb2.c",
     "api": [
@@ -1138,9 +1138,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Read a snapshot through core/archinfo.h and validate build identity before using configuration-dependent drivers.",
-      "Use discovered memory/topology/technology capabilities.",
-      "Read device identity only when its lifecycle gate permits it; the current top-level wiring does not provision a valid unique device ID."
+      "Read a snapshot through core/archinfo.h and **validate build identity** before using configuration-dependent drivers.",
+      "Use **discovered memory/topology/technology capabilities**.",
+      "Read device identity only when its lifecycle gate permits it; the current top-level wiring **does not provision a valid unique device ID**."
     ],
     "example_file": "publications/examples/archinfo.c",
     "api": [
@@ -1178,9 +1178,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/sysctrl.c",
     "api": [
@@ -1242,9 +1242,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/clint.c",
     "api": [
@@ -1296,9 +1296,9 @@
       "Each 64-bit timer value is accessed as two 32-bit words. Use the retry and safe compare-update sequences below. The HP boot configuration uses a 1 MHz reference timebase; changing a CPU PLL setting does not redefine this reference."
     ],
     "software_steps": [
-      "HP consumes hart slot 1 of the two-slot window. Do not use a management-CLINT base-address helper.",
-      "Read high/low/high and retry if the high words differ when a coherent RV32 time value is required.",
-      "Update compare using the safe high/low sequence. OpenSBI may provide this service for HP software."
+      "HP consumes **hart slot 1** of the two-slot window. Do not use a management-CLINT base-address helper.",
+      "Read **high/low/high and retry** if the high words differ when a coherent RV32 time value is required.",
+      "Update compare using the **safe high/low sequence**. OpenSBI may provide this service for HP software."
     ],
     "flow": [
       "Reference ticks / MSIP",
@@ -1322,9 +1322,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Program source priority, the machine/supervisor context enable and threshold.",
-      "Read CLAIM_COMPLETE once per claim. Zero means no eligible source; a nonzero ID claims that source.",
-      "Service the device cause, then write the claimed ID to the same context to complete it. A still-active level can pend again."
+      "Program source priority, the machine/supervisor **context enable and threshold**.",
+      "Read CLAIM_COMPLETE **once per claim**. Zero means no eligible source; a nonzero ID claims that source.",
+      "Service the device cause, then write the claimed ID to the **same context** to complete it. A still-active level can pend again."
     ],
     "flow": [
       "External IRQ levels",
@@ -1347,9 +1347,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/mailbox.c",
     "api": [
@@ -1404,9 +1404,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/resource.c",
     "api": [
@@ -1462,9 +1462,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/monitor.c",
     "api": [
@@ -1526,9 +1526,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/i2s.c",
     "api": [
@@ -1590,9 +1590,9 @@
     ],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/dvp.c",
     "api": [
@@ -1654,9 +1654,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/jpeg.c",
     "api": [
@@ -1713,7 +1713,8 @@
     "function_sections": [],
     "software_sections": [],
     "notes": [
-      "The default product capability word remains 0x000001BD until every P7/P8 release gate passes. The dedicated P7 evidence profile uses 0x000001FD for WAV, FLAC, private DMA, ring, stream, KWS, sequencer and resampler; MP3 remains clear with deferred P6.",
+      "The deployed P5 register, loader and sequencer paths enable WAV/FLAC jobs. Default PRODUCT advertises 0x000001BD with KWS disabled; the dedicated P7 acceptance profile advertises 0x000001FD with fixed-model KWS and ABI digest 0xF5005D7C. MP3 remains unsupported in both configurations.",
+      "Capability and ABI identities describe the selected implementation. Full-corpus codec/KWS accuracy, sustained-audio acceptance and production qualification require their own matching reports; none is implied by enabling the P7 configuration.",
       "LP loads a bounded APUMC image before submitting work. Expanded P5 RTL has 4096 64-bit control-store words (32 KiB), CAPABILITY1=0x01827020 and APB version 1.1 while retaining APUMC V1 image compatibility.",
       "The loader checks header, ABI, bounds, entry descriptors and CRC before publishing valid/lock state. Rejected or aborted loads must leave stale instructions unexecutable.",
       "Direct jobs use JOB_* staging registers; ring jobs use descriptor ownership and producer/consumer rules. Buffer limits, codec entry bounds, ownership, quiesce and transport completion participate in admission and termination.",
@@ -1721,11 +1722,11 @@
       "On a fault, inspect retained stage/address/detail and consumed/produced counts, acknowledge the correct IRQ causes, and stop or reset the appropriate lifecycle level before reusing buffers."
     ],
     "software_steps": [
-      "Probe information and capability through rs_apu_probe; reject codecs and formats not advertised by this snapshot.",
-      "Obtain ownership and configure allowed buffer ranges. Publish an aligned image and call rs_apu_microcode_load with a bounded timeout.",
-      "Check successful image validation before configuring a direct job or publishing ring descriptors. Set rate/channel/format expectations and valid input/output ranges.",
-      "Use the job/ring APIs declared in apu.h with the required fences and cache maintenance.",
-      "Wait for a terminal result and inspect counts, errors and IRQs. Successful transport alone does not establish full codec qualification."
+      "Probe information and capability through rs_apu_probe; **reject codecs and formats not advertised** by this snapshot.",
+      "**Obtain ownership** and configure allowed buffer ranges. Publish an aligned image and call rs_apu_microcode_load with a bounded timeout.",
+      "Check **successful image validation** before configuring a direct job or publishing ring descriptors. Set rate/channel/format expectations and valid input/output ranges.",
+      "Use the job/ring APIs declared in apu.h with the required **fences and cache maintenance**.",
+      "Wait for a **terminal result** and inspect counts, errors and IRQs. Successful transport alone does not establish full codec qualification."
     ],
     "example_file": "publications/examples/apu.c",
     "api": [
@@ -1787,11 +1788,11 @@
       "All APB writes require full word strobes. Unknown offsets, reserved-bit violations, busy configuration changes and disallowed START commands complete with PSLVERR without the prohibited side effect."
     ],
     "software_steps": [
-      "Read identity, numeric profile, EXECUTION_READY and required operator bits before preparing a model. Use only the compiler-supported static integer graph subset.",
-      "Establish Resource Controller ownership, allowed noncacheable DMA ranges and buffer lifetime. Clean CPU-produced descriptors/parameters/inputs and fence before START; the low-level HAL does not do this automatically.",
-      "Clear the previous terminal IRQ, then submit the aligned descriptor list with a job token and nonzero hardware watchdog. Wait for the matching token with a bounded software polling budget.",
-      "After DONE, snapshot counters and invalidate destination cache blocks before CPU consumption. CPU preprocessing and terminal Softmax are outside NPU execution time.",
-      "On software timeout keep buffers owned by the device. Abort and wait for terminal/drained state; rs_npu_abort_wait reports ABORTED through RS_EIO. Capture fault and recovery generation before reset or reuse."
+      "Read identity, numeric profile, EXECUTION_READY and required operator bits before preparing a model. Use only the compiler-supported **static integer graph subset**.",
+      "Establish Resource Controller ownership, allowed noncacheable DMA ranges and buffer lifetime. Clean CPU-produced descriptors/parameters/inputs and **fence before START**; the low-level HAL does not do this automatically.",
+      "Clear the previous terminal IRQ, then submit the aligned descriptor list with a job token and nonzero hardware watchdog. Wait for the **matching token** with a bounded software polling budget.",
+      "After DONE, snapshot counters and **invalidate destination cache blocks** before CPU consumption. CPU preprocessing and terminal Softmax are outside NPU execution time.",
+      "On software timeout **keep buffers owned by the device**. Abort and wait for terminal/drained state; rs_npu_abort_wait reports ABORTED through RS_EIO. Capture fault and recovery generation before reset or reuse."
     ],
     "api": [
       {
@@ -1859,9 +1860,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/crypto.c",
     "api": [
@@ -1920,9 +1921,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/crc.c",
     "api": [
@@ -1982,9 +1983,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/rng.c",
     "api": [
@@ -2044,9 +2045,9 @@
     "software_sections": [],
     "notes": [],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "example_file": "publications/examples/extensions.c",
     "api": [
@@ -2106,9 +2107,9 @@
       "Both demo IPs complete APB access with PREADY=1 and PSLVERR=0. Only address bits 7:0 are decoded, so the local register pattern aliases every 256 bytes. Undefined reads return zero and undefined writes have no effect. These legacy blocks ignore PSTRB; software must use aligned full-word accesses. Neither block has a FIFO, DMA engine or dedicated interrupt."
     ],
     "software_steps": [
-      "Run only with the committed MPW configuration and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
-      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. Check every returned status.",
-      "Use the sequence below. This legacy block has no completion interrupt or local abort command; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
+      "Run only with the **committed MPW configuration** and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
+      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. **Check every returned status**.",
+      "Use the sequence below. This legacy block has **no completion interrupt or local abort command**; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
     ],
     "flow": [
       "User clock",
@@ -2148,9 +2149,9 @@
       "Both demo IPs complete APB access with PREADY=1 and PSLVERR=0. Only address bits 7:0 are decoded, so the local register pattern aliases every 256 bytes. Undefined reads return zero and undefined writes have no effect. These legacy blocks ignore PSTRB; software must use aligned full-word accesses. Neither block has a FIFO, DMA engine or dedicated interrupt."
     ],
     "software_steps": [
-      "Run only with the committed MPW configuration and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
-      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. Check every returned status.",
-      "Use the sequence below. This legacy block has no completion interrupt or local abort command; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
+      "Run only with the **committed MPW configuration** and a board-safe user-GPIO ownership mask. The PRODUCT user-IP aperture does not instantiate this selectable demo.",
+      "Probe the expected slot and check its identifier before accessing local registers; the probe selects that slot through SYSCTRL. **Check every returned status**.",
+      "Use the sequence below. This legacy block has **no completion interrupt or local abort command**; GPIO recovery clears OE, and timer recovery uses root reset/selection under the board ownership policy."
     ],
     "flow": [
       "User data/output enable",
@@ -2190,9 +2191,9 @@
       "The RCU is controlled through SYSCTRL registers; it does not own another APB address aperture. Clock roots, divisions, safe fallback and memory-pad mode remain root-management operations."
     ],
     "software_steps": [
-      "Inspect clock status and capability; the reference profile has no enabled PLL macro.",
-      "Use rs_clock_set_frequency with a bounded timeout; traffic drain and safe-source sequencing remain controller responsibilities.",
-      "Check completion and sticky faults. Retain the safe source after a failed change."
+      "Inspect clock status and capability; the reference profile has **no enabled PLL macro**.",
+      "Use rs_clock_set_frequency with a **bounded timeout**; traffic drain and safe-source sequencing remain controller responsibilities.",
+      "Check completion and sticky faults. **Retain the safe source** after a failed change."
     ],
     "reference": "docs/pll-clock-control.md",
     "register_family": "sysctrl",
@@ -2236,9 +2237,9 @@
       "EXT-L exposes control and interrupt capability without a data master, stream interface or local SRAM. EXT-H-only data and DMA controls are not supported in this slot."
     ],
     "software_steps": [
-      "Confirm the instance base address, active clock/reset domain and resource owner before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. Do not write configuration fields while an operation forbids it.",
-      "Use bounded completion checks; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
+      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
+      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
     ],
     "reference": "docs/ip/extensions.md",
     "register_family": "extensions",
@@ -2291,12 +2292,12 @@
       "There is no descriptor, ring or queue submission, scaling, rotation, negative pitch, YUV/CLUT renderer, hardware cache coherence or native Linux graphics driver. The presence of P5 tests and firmware scenarios does not establish Phase 6 system-performance or physical qualification."
     ],
     "software_steps": [
-      "Read capability/format words, select an implemented operation, and obtain resource ownership. Confirm DATA_READY and that no recovery is pending.",
-      "Allocate disjoint bounded surfaces, except the explicitly supported equal background/destination BLEND case. Validate pitch, format, dimensions, alignment and addresses with rs_ga2d_job_validate.",
-      "Clean CPU-produced inputs as required, prepare destination ownership, and issue the required memory fence before configuring the job. Keep surfaces and configuration stable while active.",
-      "Call rs_ga2d_configure, then rs_ga2d_start. Use rs_ga2d_wait or the owner-routed IRQ; LP vector 32, external ordinal 30 and HP PLIC source 11 name different routing layers.",
-      "Capture terminal status, first-error details and counter snapshots before acknowledging W1C IRQ causes. Invalidate a DMA-written destination before CPU consumption where its mapping is cached.",
-      "A polling timeout does not prove hardware idle. Use rs_ga2d_abort_wait to stop/drain accepted traffic, inspect recovery_required, and perform the documented resource/bridge rearm when required. A soft reset must not be used to discard in-flight bus obligations."
+      "Read capability/format words, select an implemented operation, and obtain resource ownership. Confirm DATA_READY and that **no recovery is pending**.",
+      "Allocate **disjoint bounded surfaces**, except the explicitly supported equal background/destination BLEND case. Validate pitch, format, dimensions, alignment and addresses with rs_ga2d_job_validate.",
+      "Clean CPU-produced inputs as required, prepare destination ownership, and issue the required memory fence before configuring the job. Keep surfaces and configuration **stable while active**.",
+      "Call rs_ga2d_configure, then rs_ga2d_start. Use rs_ga2d_wait or the **owner-routed IRQ**; LP vector 32, external ordinal 30 and HP PLIC source 11 name different routing layers.",
+      "Capture terminal status, first-error details and counter snapshots **before acknowledging** W1C IRQ causes. Invalidate a DMA-written destination before CPU consumption where its mapping is cached.",
+      "A polling timeout **does not prove hardware idle**. Use rs_ga2d_abort_wait to stop/drain accepted traffic, inspect recovery_required, and perform the documented resource/bridge rearm when required. A soft reset must not be used to discard in-flight bus obligations."
     ],
     "example_file": "publications/examples/ga2d.c",
     "api": [

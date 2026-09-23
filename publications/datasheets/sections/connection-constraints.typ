@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-connection-constraints","Selected body emphasis: connection constraints")
 
 === External Interfaces and Connection Constraints <connection-constraints>
 Select external components using both the IP protocol contract and the board's electrical
 requirements. A logical controller instance does not establish an on-chip PHY, fitted memory
-or connector pinout. The pin/alternate-function tables above identify routes, not a complete PCB.
+or connector pinout. The pin/alternate-function tables above identify routes, *not a complete PCB*.
 
 #ds-table("external-dependencies",[External interface dependencies and integration restrictions],
   ([Interface],[Connection requirement]),
@@ -12,7 +13,7 @@ or connector pinout. The pin/alternate-function tables above identify routes, no
 
 ==== Memory and shared-pin selection
 QPI and OPI share a memory-pad route. Reset selects the documented QPI mode, and AON retains
-the selected mode and lock across LP/HP changes. Select the mode before accessing the attached
+the selected mode and lock across LP/HP changes. *Select the mode before accessing* the attached
 device. The inactive controller receives safe inputs and cannot drive its clock/chip-select/output
 enable; mapped accesses to that inactive target return an error. Live QPI-to-OPI switching is
 not a supported application operation in this snapshot.
@@ -21,7 +22,7 @@ The controller aperture bounds addressability. Confirm actual device count, dens
 command sequence, latency and refresh requirements from the supported controller contract
 and selected component. Do not assume arbitrary QSPI or HyperBus devices are interchangeable.
 XPI writes use indirect commands; a CPU store into the read-only data-plane flash mapping is
-not a programming operation. Verify erase/program completion before making code executable.
+*not a programming operation*. Verify erase/program completion before making code executable.
 
 #include "device-compatibility.typ"
 
@@ -62,3 +63,5 @@ VBUS sensing, role/power switching and ESD protection belong to the approved boa
 #source-note("docs/ip/gpio.md",title:"Pad ownership, guards and alternate-function behavior")
 #source-note("docs/ip/usb2.md",title:"ULPI digital/physical interface boundary")
 #source-note("fpga/README.md",title:"Board-specific wrapper and constraint ownership")
+
+#change-end("v05-emphasis-connection-constraints")

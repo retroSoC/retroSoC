@@ -12,8 +12,8 @@
 
 #ip-reference("monitor","monitor",4,legacy:[
 The monitor observes accepted requests, beats, waits, outstanding high-water marks, aging,
-timeouts, isolation and warm flushes. Saturating counters are read through explicit snapshots.
-Sticky first-fault attribution keeps source identity and decoded target information. Monitoring
+timeouts, isolation and warm flushes. Saturating counters are read through *explicit snapshots*.
+*Sticky first-fault attribution* keeps source identity and decoded target information. Monitoring
 does not alter arbitration or admission policy.
 ])
 

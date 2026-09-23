@@ -135,7 +135,10 @@ def test_linux_platform_uses_source_values_and_order():
     data = sr.linux_platform(ROOT)
     assert (data["hart_id"], data["timebase_hz"], data["cbom_bytes"]) == (1, 1000000, 64)
     assert data["initrd_start"] == data["initrd_template_end"] == 0x39000000
-    assert data["ready_writes"][-1] == {"address": "0x1001902C", "value": "0x00000001"}
+    assert data["ready_writes"][-1] == {
+        "address": "0x1001902C", "value": "0x00000001",
+        "register": "HP_DOORBELL", "purpose": "LP interrupt request",
+    }
     assert data["ready_writes"][1]["value"] == "0x4C4E5801"
 
 

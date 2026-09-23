@@ -1,8 +1,9 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-device-compatibility","Selected body emphasis: device compatibility")
 
 ==== External Memory and Device Compatibility <device-compatibility>
-The table distinguishes a controller protocol profile, a simulation model and a qualified
-physical component. Geometry or a similar command set is insufficient to establish drop-in
+The table distinguishes a controller protocol profile, a simulation model and a *qualified
+physical component*. Geometry or a similar command set is insufficient to establish drop-in
 compatibility. Device order codes, supply, speed grade and board timing must be reviewed together.
 
 #ds-table("external-device-profiles",[External-memory profiles and their evidence boundary],
@@ -14,13 +15,13 @@ compatibility. Device order codes, supply, speed grade and board timing must be 
   ([Device / profile],[Model evidence indexed],[Board],[Silicon]),
   data.system_reference.programming.devices.map(r=>(r.name,r.model,r.board,r.silicon)),
   widths:(1.1fr,1.85fr,0.6fr,0.6fr))
-Model source and test availability are not a reviewed passing run. The fast XPI backend is
+Model source and test availability are *not a reviewed passing run*. The fast XPI backend is
 specifically narrower than a pin-level flash model: it is useful for selected boot/regression
 work and must not qualify erase/program behavior, all LUT modes or board sampling margins.
 
 Before substituting a component, compare its reset state, command/address encoding, mode/dummy
 phases, latency configuration, page and chip boundaries, supported sampling clocks and status
-bits. Validate the complete initialization and recovery sequence, not only a successful ID read.
+bits. Validate the *complete initialization and recovery sequence*, not only a successful ID read.
 For SDRAM, match bank/row/column geometry and convert device timings to the actual memory clock.
 
 The QPI controller is device-specific. The OPI and modified single-clock HyperBus-style paths
@@ -37,3 +38,5 @@ because QPI and OPI use mutually exclusive shared pads.
 #source-note("docs/ip/opipsram.md",title:"Prototype OPI and single-clock HyperBus-style profiles")
 #source-note("docs/ip/sdram.md",title:"SDRAM geometry, clocking and timing configuration")
 
+
+#change-end("v05-emphasis-device-compatibility")

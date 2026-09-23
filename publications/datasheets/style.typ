@@ -66,12 +66,9 @@
 }
 
 #let minor-title(body) = block(above:rhythm.minor-before,below:rhythm.minor-after,sticky:true,strong(body))
-// v0.5: only this refresh's reviewed content and dependent navigation markers.
-#let current-change(id) = id.starts-with("v05-") or id in (
-  "soc-functional","dev-architecture","dev-product-availability","dev-media-formats",
-  "dev-ip-apu","dev-ip-resource","dev-ip-monitor","dev-ip-i2s","ga2d-chapter",
-  "dev-performance","dev-limitations","dev-release-evidence","dev-software",
-  "revision-history","contents","table-directory","figure-directory")
+// Only this editing round emits active ranges; earlier markers remain historical.
+#let current-change(id) = id.starts-with(doc.change_prefix) or id in (
+  "contents","table-directory","figure-directory")
 #let change-start(id, title, category:"modified") = context {
   if current-change(id) {metadata((
     kind:"publication-change-start",id:id,title:title,category:category,page:here().page()))}
@@ -84,6 +81,21 @@
   #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
   #body
 ]
+#let artifact-mark(state) = {
+  assert(state in ("empty", "left-half", "full"), message:"Unknown artifact mark")
+  box(width:3mm,height:3mm)[
+    #place(top + left,circle(radius:1.5mm,fill:white,stroke:none))
+    #if state=="left-half" {
+      place(top + left,box(width:1.5mm,height:3mm,clip:true)[
+        #circle(radius:1.5mm,fill:pale-gold,stroke:none)
+      ])
+    } else if state=="full" {
+      place(top + left,circle(radius:1.5mm,fill:pale-gold,stroke:none))
+    }
+    #place(top + left,circle(radius:1.5mm,fill:none,
+      stroke:0.6pt + if state=="empty" {ink} else {gold}))
+  ]
+}
 #let artifact-evaluation(states) = rect(width:92mm,height:10mm,radius:1.5mm,
   fill:white,stroke:0.6pt + ink,inset:(x:2mm,y:1mm))[
   #set text(size:9pt,weight:"regular",fill:ink)
@@ -91,9 +103,7 @@
   #align(center + horizon)[
     #grid(columns:(1fr,1fr,1fr,1fr),row-gutter:2pt,align:center,
       ..states.map(state=>state.name),
-      ..states.map(state=>circle(radius:1.5mm,
-        fill:if state.selected {pale-gold} else {white},
-        stroke:0.6pt + if state.selected {gold} else {ink})),
+      ..states.map(state=>artifact-mark(state.fill)),
     )
   ]
 ]
@@ -187,7 +197,7 @@
   set text(fill:if text.fill==link-color {link-color} else {inline-code-color})
   body
 }
-#let code(value) = inline-code(text(font: mono, size: 9pt,
+#let code(value) = inline-code(text(font: mono, size: 9pt, weight:"regular",
   value.replace("_", "_\u{200b}").replace(".", ".\u{200b}")))
 #let source(path, title: "Interface and implementation reference", line:none) = {
   // Publication metadata can postdate the frozen hardware commit. Route readers
@@ -303,6 +313,7 @@
   set document(title: doc.title, author: doc.author,
     keywords: ("retroSoC", "Mini", "Gen2", "Gen2+", "datasheet", doc.document_id, "v"+doc.version, doc.status))
   set text(font: "Inter", size: 10.5pt, fill: ink, lang: "en", weight: "regular")
+  show strong: it => text(weight:"bold",it.body)
   set par(justify: false, leading: rhythm.body-leading, spacing: rhythm.body-spacing,first-line-indent:0pt)
   set list(indent:rhythm.list-indent,body-indent:rhythm.list-body-indent,spacing:rhythm.list-spacing)
   set enum(indent:rhythm.list-indent,body-indent:rhythm.list-body-indent,spacing:rhythm.list-spacing)
@@ -339,7 +350,7 @@
   )
   set heading(numbering: "1.1.1.1.1", outlined: true)
   show heading: heading-layout
-  show raw: set text(font: mono, size: 9pt)
+  show raw: set text(font: mono, size: 9pt, weight:"regular")
   show raw.where(block:false): inline-code
   show link: set text(fill:link-color)
   show link: it => underline(stroke:0.4pt + link-color,offset:2pt,it)

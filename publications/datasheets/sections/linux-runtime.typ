@@ -1,16 +1,17 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-linux-runtime","Selected body emphasis: linux runtime")
 #import "../system-figures.typ": sequence-diagram
 #let platform = data.system_reference.software.platform
 
 === OpenSBI platform and console path <linux-runtime>
-The supplied OpenSBI platform exposes one application hart, with hart ID #platform.hart_id.
+The supplied OpenSBI platform exposes *one application hart*, with hart ID #platform.hart_id.
 LP remains the separate management firmware processor. The platform's ACLINT descriptor covers
 two hart-indexed register positions beginning at zero so it can address hart 1; that storage
-range is not a declaration that Linux runs on both harts. The kernel configuration disables SMP.
+range is not a declaration that Linux runs on both harts. The *kernel configuration disables SMP*.
 
 The early platform setup programs UART1, registers its polled console and initializes machine
 software-interrupt support. Timer initialization uses the ACLINT machine timer. Console writes
-wait while TX is full; this loop has no local timeout. These implemented callbacks do not
+wait while TX is full; this loop has *no local timeout*. These implemented callbacks do not
 establish that all optional SBI services or all peripherals have native Linux drivers.
 
 #figure(sequence-diagram((
@@ -54,6 +55,7 @@ together. A changed device-tree property does not reconfigure clocks or synthesi
 #source-note("scripts/build_hp_linux.py",title:"Actual initrd-end patch and FW_JUMP build arguments")
 
 === Kernel and rootfs ready handoff
+#change-start("v05-refresh-linux-mailbox","HAL-derived mailbox purposes and ready-only rootfs boundary")
 The rootfs service S99retrosoc-hp prints its ready message and then performs four 32-bit mailbox
 writes. The published event is an init-service checkpoint, not proof of all drivers, networking,
 storage or long-term Linux stability. The text is emitted before the mailbox writes, so the text
@@ -62,18 +64,26 @@ alone is not the LP's readiness condition.
 #ds-table("linux-ready-writes",[Rootfs service mailbox publication order],
   ([Order],[Address],[Written value],[Purpose]),
   platform.ready_writes.enumerate().map(((i,row))=>(str(i+1),code(row.address),code(row.value),
-    ([Sequence],[Linux-ready event],[Argument / ready state],[Interrupt request]).at(i))),
+    [#code(row.register) \ #row.purpose])),
   widths:(0.4fr,1.1fr,1.1fr,1.85fr))
 
 The script uses devmem from the supplied userland with CONFIG_DEVMEM enabled in the kernel.
 It contains no explicit readback or per-write failure handling. The LP loader checks the
-expected sequence/event in its existing mailbox loop; that final wait has no firmware-local
-deadline. A rootfs message, process exit, mailbox publication and final SYSCTRL TEST_STATUS are
-different observations. Preserve them with their stage and use an external timeout when a
-required checkpoint never arrives.
+exact sequence, event and argument with a bounded iteration budget. A rootfs message, process
+exit, mailbox publication and final SYSCTRL TEST_STATUS are different observations.
+The current loader subsequently requests GA2D acceptance and cache-clean responses before
+returning ownership to LP and writing a successful verdict. This rootfs script implements *only
+the first ready event*; it supplies none of those later responses. Reaching Linux init is
+therefore insufficient for a complete loader acceptance pass. Use the matching freestanding
+acceptance payload for that protocol, or provide and validate the missing Linux service as
+separate integration work. See @boot-configuration for the exact message identities and budget.
 
 Resource ownership and non-coherent buffer rules still apply after Linux starts. Follow
 @software-support before choosing a driver path, and @multicore-operation for later LP/HP
 transactions. This description adds no new successful boot or board-validation claim.
 #source-note("app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",title:"Ready message and actual mailbox write order")
+#source-note("crt/src/hal/hp_mailbox.c",title:"Event, argument and sequence register purposes")
 #source-note("app/apps/hp_boot/main.c",title:"LP sequence/event checks and final terminal result")
+#change-end("v05-refresh-linux-mailbox")
+
+#change-end("v05-emphasis-linux-runtime")

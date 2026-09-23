@@ -1,12 +1,13 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-system-management","Selected body emphasis: system management")
 #import "../system-figures.typ": sequence-diagram
 
 #include "routing-reference.typ"
 
 == Multicore Operation and Resource Ownership <multicore-operation>
-Hazard3 is the root-management hart; VexiiRiscv is the application hart. Linux does not take
+Hazard3 is the *root-management hart*; VexiiRiscv is the application hart. Linux does not take
 over the SoC's root clock, reset, admission and recovery controls merely by booting. Decide
-which software owns each resource and buffer before enabling interrupts or bus mastering.
+which software owns each resource and buffer *before enabling interrupts or bus mastering*.
 
 === Control and interrupt authority
 #ds-table("root-authority",[System authority and software responsibilities],
@@ -21,7 +22,7 @@ which software owns each resource and buffer before enabling interrupts or bus m
 The central Resource Controller covers ten resources: DMA, USB2, SDIO0/1, SPI-SD,
 EXT-H, JPEG, APU, GA2D and NPU. Resource ABI 1.2 assigns NPU to slot 9.
 #change-end("v05-resource-ownership")
-An owner selects one interrupt route, not both LP and HP simultaneously. The resource
+An owner selects one interrupt route, *not both LP and HP simultaneously*. The resource
 #code("CONTROL.RESET") request masks both routes; controller reset assignments and dynamic
 IRQ observations are distinguished in @reset-summary. Owner locks are sticky under their
 reset contract. Per-IP local interrupt causes
@@ -152,3 +153,5 @@ target-timeout and warm-flush conditions need distinct recovery decisions.
 #source-note("docs/ip/fabric-monitor.md",title:"Counter snapshots and sticky fault attribution")
 #source-note("docs/axi4-interconnect.md",title:"Timeout, isolation and finite-error contract")
 #source-note("docs/engineering.md",title:"Simulation verdict and reproducibility rules")
+
+#change-end("v05-emphasis-system-management")

@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-memory-use","Selected body emphasis: memory use")
 #import "../system-figures.typ": sequence-diagram
 #import "../diagram-packages.typ": cache-boundary-diagram
 
 == Memory Attributes, Cache and DMA Coherency <memory-coherency>
-The LP and HP cores do not form a cache-coherent SMP system. Shared memory is visible through
+The LP and HP cores *do not form a cache-coherent SMP system*. Shared memory is visible through
 different initiators, and non-CPU masters do not snoop the HP caches. A correct address and a
 successful bus response therefore do not prove that a consumer observed the latest data.
 
@@ -18,7 +19,7 @@ because its pads are inactive, the target is not ready, or an extension range ch
     [R: #p.read_targets.join(", ") \ W: #p.write_targets.join(", ")])),
   widths:(1fr,0.7fr,0.9fr,1.8fr))
 "No policy requirement" does not configure the CPU MMU or create cacheability for MMIO.
-Keep device registers uncached and use their documented access width and side-effect rules.
+*Keep device registers uncached* and use their documented access width and side-effect rules.
 The HP uncached MMIO path is distinct from its cache data path. Do not map one shared physical
 buffer with inconsistent aliases and then rely on a fence to repair the aliasing.
 
@@ -29,8 +30,8 @@ used as scratch space. Physical device capacity must match the controller and bo
 
 === Buffer ownership and alignment
 The supplied HP platform metadata declares Zicbom with a 64-byte cache-maintenance block. Round shared
-maintenance ranges to full blocks and prevent unrelated owners from sharing a boundary block.
-Check address-plus-length overflow before rounding. Device descriptors can impose additional
+maintenance ranges to full blocks and *prevent unrelated owners from sharing a boundary block*.
+*Check address-plus-length overflow* before rounding. Device descriptors can impose additional
 alignment, byte-count, stride and memory-placement constraints; the DMA TCD is a separate
 64-byte descriptor contract, not a universal transfer-alignment rule for every IP.
 
@@ -93,3 +94,5 @@ transaction at the protocol level; retries require a new ownership decision.
 #source-note("docs/ip/resource-controller.md",title:"Cache request and clean acknowledgement")
 #source-note("docs/ip/dma.md",title:"DMA descriptors, transfer restrictions and completion")
 #source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Linux RAM and cache-maintenance properties")
+
+#change-end("v05-emphasis-memory-use")

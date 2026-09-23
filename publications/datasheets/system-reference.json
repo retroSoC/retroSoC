@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "ca4b06d30456599a2d3fd676d832f8d4dd2f78af",
+  "source_revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -77,7 +77,18 @@
     "scripts/npu_descriptors.py",
     "scripts/package_hp_boot.py",
     "scripts/parse_performance_log.py",
-    "tests/test_lp_irq.py"
+    "tests/test_lp_irq.py",
+    "rtl/mini/top/retrosoc.sv",
+    "rtl/mini/top/apb4_periph.sv",
+    "docs/development-environment.md",
+    "scripts/development_environment.py",
+    "dependencies/dependencies.lock.json",
+    "docker/Dockerfile",
+    "flake.nix",
+    ".github/workflows/development-environment.yml",
+    ".github/workflows/quality.yml",
+    "CONTRIBUTING.md",
+    "docs/git-workflow.md"
   ],
   "support": [
     {
@@ -633,7 +644,7 @@
       "id": "resource",
       "title": "Resource Controller",
       "implementation": "Partial",
-      "scope": "Ten independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
+      "scope": "Ten independently managed shared resources; resource 8 owns GA2D and resource 9 owns NPU execution, including lifecycle and LP/HP IRQ routing.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -653,7 +664,7 @@
       "id": "monitor",
       "title": "Fabric Monitor",
       "implementation": "Integrated",
-      "scope": "Ten master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
+      "scope": "Ten master and six target observation banks; master bank 8 observes GA2D traffic and master bank 9 observes NPU descriptor and data DMA traffic.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -981,14 +992,16 @@
     },
     {
       "id": "hp-ready-wait",
-      "title": "HP loader has no firmware-local ready timeout",
-      "impact": "LP can wait indefinitely for the expected Linux mailbox event.",
-      "trigger": "No mailbox message after HP release.",
-      "workaround": "Use the simulator deadline during acceptance. A board supervisor/watchdog policy is integration work; no automatic retry is implemented here.",
+      "title": "Linux ready service does not complete loader acceptance",
+      "impact": "The supplied rootfs publishes the initial ready checkpoint but does not provide the later GA2D result and cache-clean service required by the current hp_boot acceptance sequence.",
+      "trigger": "Using the ready-only Linux service where the loader expects the full acceptance mailbox protocol.",
+      "workaround": "Pair the loader with a matching acceptance payload or service. Current polling is bounded by iteration budgets and missing handshakes fail their stage; an initial ready message is not a terminal pass.",
       "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "app/apps/hp_boot/main.c",
-        "configs/ci/ihp130-hp.mk"
+        "configs/ci/ihp130-hp.mk",
+        "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+        "crt/src/hal/hp_mailbox.c"
       ]
     },
     {
@@ -2639,7 +2652,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"64-byte TX and RX FIFOs; fractional baud-rate generator.\""
+            "text": "\"**64-byte TX and RX FIFOs**; fractional baud-rate generator.\""
           }
         ]
       },
@@ -2663,7 +2676,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Two controller instances with 7-bit and 10-bit addressing.\""
+            "text": "\"Two controller instances with **7-bit and 10-bit addressing**.\""
           }
         ]
       },
@@ -2688,7 +2701,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Stereo master TX/RX with independent audio clock.\""
+            "text": "\"**Stereo master TX/RX** with independent audio clock.\""
           }
         ]
       },
@@ -2712,7 +2725,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Bidirectional open-drain host interface.\""
+            "text": "\"Bidirectional **open-drain** host interface.\""
           }
         ]
       },
@@ -2736,7 +2749,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"24-bit GRB transmission on one GPIO alternate function.\""
+            "text": "\"**24-bit GRB** transmission on one GPIO alternate function.\""
           }
         ]
       },
@@ -2761,7 +2774,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"SD card SPI-mode command/data host.\""
+            "text": "\"SD card **SPI-mode** command/data host.\""
           }
         ]
       },
@@ -2787,7 +2800,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Native one-bit/four-bit SDR operation.\""
+            "text": "\"Native **one-bit/four-bit SDR** operation.\""
           }
         ]
       },
@@ -2812,7 +2825,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Dual-role digital controller with external 8-bit ULPI PHY.\""
+            "text": "\"Dual-role digital controller with **external 8-bit ULPI PHY**.\""
           }
         ]
       },
@@ -2837,7 +2850,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Four chip-select slots and 16 programmable LUT sequences.\""
+            "text": "\"Four chip-select slots and **16 programmable LUT sequences**.\""
           }
         ]
       },
@@ -2862,7 +2875,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Four ESP-PSRAM64H devices addressable through a 32 MiB window.\""
+            "text": "\"Four ESP-PSRAM64H devices addressable through a **32 MiB window**.\""
           }
         ]
       },
@@ -2887,7 +2900,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"One octal DDR memory interface and one selected protocol profile.\""
+            "text": "\"One octal DDR memory interface and **one selected protocol profile**.\""
           }
         ]
       },
@@ -2912,7 +2925,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Fixed 64 MiB, x16 SDR geometry with bank/row tracking.\""
+            "text": "\"Fixed **64 MiB, x16 SDR** geometry with bank/row tracking.\""
           }
         ]
       },
@@ -2936,7 +2949,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"8-bit parallel RGB565/YUV422 capture.\""
+            "text": "\"**8-bit parallel RGB565/YUV422** capture.\""
           }
         ]
       },
@@ -2961,7 +2974,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"8-bit Baseline Sequential JPEG encode or decode.\""
+            "text": "\"8-bit **Baseline Sequential JPEG** encode or decode.\""
           }
         ]
       },
@@ -2985,7 +2998,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
+            "text": "\"**Coreless microcode sequencer** with private DMA and local storage.\""
           }
         ]
       },
@@ -3309,7 +3322,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
+            "text": "\"**Coreless microcode sequencer** with private DMA and local storage.\""
           }
         ]
       }
@@ -5138,7 +5151,7 @@
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Linux-ready and P5 GA2D/NPU mailbox/cache-clean handoff completed; successful terminal status.",
+        "0": "Ready checkpoint, GA2D acceptance result, cache-clean and ownership return completed; successful terminal status. NPU ownership checks apply only with RS_NPU_P5_ACCEPTANCE or RS_NPU_P6_ACCEPTANCE.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -5198,7 +5211,12 @@
       "rtl/mini/integration/soc_topology.json",
       "rtl/mini/mk/software.mk",
       "scripts/build_hp_linux.py",
-      "scripts/regress.py"
+      "scripts/regress.py",
+      "crt/src/hal/hp_mailbox.c",
+      "crt/include/retrosoc/core/status.h",
+      "rtl/ip/peripheral/hp_mailbox_define.svh",
+      "rtl/mini/address_map/memory_map.json",
+      "rtl/ip/peripheral/apb4_hp_mailbox.sv"
     ],
     "bindings": [
       {
@@ -7330,65 +7348,111 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "ca4b06d30456599a2d3fd676d832f8d4dd2f78af",
-    "checked_date": "2026-09-22",
-    "boundary": "Observed public GitHub workflow status for this exact commit. Pending runs have no conclusion. Workflow success is not per-IP corpus, physical, FPGA or silicon qualification.",
+    "revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
+    "checked_date": "2026-09-23",
+    "checked_at": "2026-09-23T08:26:42Z",
+    "boundary": "Observed public GitHub workflow status for this exact commit. Unfinished runs have no conclusion. Installation, environment checking and runtime regression are separate evidence; workflow outcomes do not qualify unexecuted physical or silicon stages.",
     "runs": [
       {
+        "name": "quality",
+        "run_id": 35833990836,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990836",
+        "scope": "Repository quality checks and script/RTL fixture tests",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+      },
+      {
         "name": "regression-smoke",
-        "run_id": 35686910251,
+        "run_id": 35833991124,
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910251",
-        "scope": "Bounded smoke regression",
-        "note": "Selected workflow jobs completed successfully. This workflow-level result does not establish a full per-IP corpus pass or physical, FPGA or silicon qualification."
-      },
-      {
-        "name": "regression-ics55",
-        "run_id": 35686910426,
-        "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910426",
-        "scope": "ICS55 behavioral regression workflow",
-        "note": "Failed job: verified-open-source-flows / regression. Workflow outcome only; no current per-IP pass or physical closure is inferred."
-      },
-      {
-        "name": "regression-sky130",
-        "run_id": 35686910216,
-        "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910216",
-        "scope": "SKY130 behavioral regression workflow",
-        "note": "Selected workflow jobs completed successfully. This workflow-level result does not establish a full per-IP corpus pass or physical, FPGA or silicon qualification."
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991124",
+        "scope": "Bounded IHP130 smoke regression",
+        "note": "Selected workflow stages completed successfully. No per-IP corpus or physical qualification is inferred."
       },
       {
         "name": "regression-ihp130",
-        "run_id": 35686910339,
-        "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910339",
-        "scope": "IHP130 behavioral regression workflow",
-        "note": "Selected workflow jobs completed successfully. This workflow-level result does not establish a full per-IP corpus pass or physical, FPGA or silicon qualification."
+        "run_id": 35833991071,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991071",
+        "scope": "IHP130 hosted behavioral regression",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
       },
       {
-        "name": "quality",
-        "run_id": 35686910055,
-        "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910055",
-        "scope": "Repository quality workflow",
-        "note": "The scripts job failed in Test scripts and RTL fixtures; source formatting passed. Subsequent YAML, Actions and regression-definition checks were skipped. This record does not diagnose the failed fixture."
+        "name": "regression-sky130",
+        "run_id": 35833991199,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991199",
+        "scope": "SKY130 hosted behavioral regression",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
       },
       {
         "name": "regression-gf180",
-        "run_id": 35686910233,
-        "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35686910233",
-        "scope": "GF180 behavioral regression workflow",
-        "note": "Selected workflow jobs completed successfully. This workflow-level result does not establish a full per-IP corpus pass or physical, FPGA or silicon qualification."
+        "run_id": 35833991194,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991194",
+        "scope": "GF180 hosted behavioral regression",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+      },
+      {
+        "name": "regression-ics55",
+        "run_id": 35833991306,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991306",
+        "scope": "ICS55 hosted behavioral regression",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+      },
+      {
+        "name": "development-environment",
+        "run_id": 35833990893,
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893",
+        "scope": "Docker/Nix installation, environment checks and hosted IHP130 behavioral regression",
+        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred.",
+        "observations": [
+          {
+            "name": "docker: Build Docker development environment",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
+          },
+          {
+            "name": "docker: Run IHP130 regression in development environment",
+            "scope": "runtime-regression",
+            "status": "in_progress",
+            "conclusion": null,
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
+          },
+          {
+            "name": "nix: Install Nix",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
+          },
+          {
+            "name": "nix: Check Nix flake",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
+          },
+          {
+            "name": "nix: Run IHP130 regression in development environment",
+            "scope": "runtime-regression",
+            "status": "completed",
+            "conclusion": "success",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
+          }
+        ]
       }
-    ],
-    "checked_at": "2026-09-22T06:00:43Z"
+    ]
   }
 }

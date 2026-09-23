@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-clock-programming","Selected body emphasis: clock programming")
 #let examples = data.system_reference.programming.timing
 
 === Clock, Divider and Timebase Programming <clock-programming>
-Select a functional clock before calculating a divider. A profile's CPU clock, PCLK, stable
-memory clock and audio clock are not interchangeable. The existing clock/reset inventory names
+*Select a functional clock before calculating a divider*. A profile's CPU clock, PCLK, stable
+memory clock and audio clock are *not interchangeable*. The existing clock/reset inventory names
 the domains; the table below records which clock must be supplied to the relevant calculation.
 
 #ds-table("functional-clock-use",[Functional-clock inputs and configuration consequences],
@@ -21,7 +22,7 @@ The published calculator rounds the period to units of 1/256 input-clock cycle:
 #code("P = floor((Fclk * 256 + floor(Btarget / 2)) / Btarget)").
 #code("BAUD_INT = P >> 8") and #code("BAUD_FRAC = P & 255"); the nominal resulting rate is
 #code("Bactual = Fclk * 256 / P"). The accepted range is #code("4096 <= P <= 0xffffffff").
-Both zero inputs and a period below the supported minimum must be rejected.
+Both *zero inputs and a period below the supported minimum* must be rejected.
 
 #ds-table("uart-divider-examples",[UART integer/fraction examples checked against the SDK],
   ([Input Hz],[Target baud],[INT / FRAC],[Nominal baud],[Error ppm]),
@@ -87,3 +88,5 @@ The resulting buffer budget is worked through in @software-memory-budget.
 #source-note("crt/src/hal/timer_math.c",title:"Timer period calculation and overflow checks")
 #source-note("crt/src/hal/i2s_math.c",title:"Exact I2S divider and sample-packing helpers")
 #source-note("rtl/ip/serial/i2s_clkgen.sv",title:"I2S divider edge behavior")
+
+#change-end("v05-emphasis-clock-programming")

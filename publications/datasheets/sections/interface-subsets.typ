@@ -1,7 +1,8 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-interface-subsets","Selected body emphasis: interface subsets")
 
 == Interface Standards and Supported Subsets <interface-subsets>
-An interface name is not a claim that every mode in a related standard is implemented. This
+An interface name is *not a claim that every mode* in a related standard is implemented. This
 matrix summarizes the source-level subset, instance routing and software boundary of the
 reviewed snapshot. The individual IP contract and actual register/capability checks remain
 authoritative. No interface compliance certificate is attached to this matrix.
@@ -18,8 +19,8 @@ Use the instance's protocol and availability qualifications together with its fo
 #change-end("interface-format-links")
 
 === Software and verification boundary
-Hardware mode support, a callable HAL and a qualified protocol/system result are separate
-columns. A driver may implement only a subset of the digital engine. An external PHY, device,
+Hardware mode support, a callable HAL and a qualified protocol/system result are *separate
+columns*. A driver may implement only a subset of the digital engine. An external PHY, device,
 clock, pin route or software stack may also be required before a mode is usable on a board.
 
 #ds-table("interface-software-scope",[Software and verification scope for interface selection],
@@ -34,7 +35,7 @@ clock, pin route or software stack may also be required before a mode is usable 
   descriptor field is not proof of hardware support.
 + Check transport availability separately from format support. JPEG system-integration and APU
   production-job gates remain binding.
-+ Verify a bounded normal transfer and its error/recovery case on the selected platform.
++ Verify a *bounded normal transfer and its error/recovery case* on the selected platform.
 
 Calculations and model/test availability do not establish compliance. A board-level validation
 claim must identify the actual device, mode, configuration and matching result.
@@ -43,3 +44,5 @@ claim must identify the actual device, mode, configuration and matching result.
   #source("publications/datasheets/system-reference.json",title:"Subset evidence index") ·
   #source("publications/datasheets/features.json",title:"Per-IP feature summaries")
 ]
+
+#change-end("v05-emphasis-interface-subsets")

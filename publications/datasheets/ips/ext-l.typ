@@ -13,8 +13,8 @@
 #ip("ext-l")
 
 #ip-reference("ext-l","ext-l",4,shared:"ext-h",register-family:"extensions",legacy:[
-EXT-L is a fixed APB4 control slot with one interrupt. Its current capability declaration has
-no data master, stream interface or local SRAM.
+EXT-L is a *fixed APB4 control slot* with one interrupt. Its current capability declaration has
+*no data master, stream interface or local SRAM*.
 ])
 
 #context metadata((kind:"ip-end",id:"ext-l",page:here().page()))

@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-processor-details","Selected body emphasis: processor details")
 #let cpu = data.system_reference.product_details.cpu
 
 === Processor Configuration and Software-visible Capabilities <processor-details>
 The table separates the actual LP instance arguments, the explicit HP generator settings and
-the selected firmware build. It is a configuration summary, not a replacement for the CPU
+the selected firmware build. It is a *configuration summary*, not a replacement for the CPU
 ISA/CSR manuals. A software compiler option does not remove a hardware extension or CSR block.
 
 #ds-table("processor-config",[Processor settings and the reference software configuration],
@@ -23,14 +24,14 @@ ISA/CSR manuals. A software compiler option does not remove a hardware extension
 The reference LP build uses #code(cpu.build.ISA) with #code("HAVE_CSR="+cpu.build.HAVE_CSR).
 Those build choices are separate from the instantiated LP extension and mandatory CSR settings.
 The HP profile selects #code(cpu.build.HP_CONFIG). OpenSBI, the device tree and the kernel
-configuration must remain consistent with the core that is actually generated and used.
+configuration *must remain consistent with the core that is actually generated and used*.
 
 ==== Cache geometry and evidence basis
 #ds-table("processor-cache-evidence",[Cache and generated-core evidence boundaries],
   ([Item],[Recorded configuration],[Qualification]),
   (([HP instruction cache],[Enable setting #cpu.hp.fetchL1Enable with #cpu.hp.fetchL1Sets sets and #cpu.hp.fetchL1Ways ways; minimum memory data width #cpu.hp.fetchMemDataWidthMin bits.],[Explicit generator settings.]),
    ([HP data cache],[Enable setting #cpu.hp.lsuL1Enable with #cpu.hp.lsuL1Sets sets and #cpu.hp.lsuL1Ways ways; minimum memory data width #cpu.hp.lsuMemDataWidthMin bits.],[Explicit generator settings.]),
-   ([Cache total capacity],cpu.hp_cache_capacity,[Sets multiplied by ways is not a byte capacity without the reviewed block size.]),
+   ([Cache total capacity],cpu.hp_cache_capacity,[Sets multiplied by ways is *not a byte capacity* without the reviewed block size.]),
    ([Cache maintenance],[Zicbom selected; supplied platform metadata declares a 64-byte CBO block.],[Keep platform metadata and the eventual generated implementation consistent.]),
    ([Locked HP source],[#code(cpu.hp_revision.slice(0,12))],[The full dependency revision is recorded in the lock and publication manifest.]),
    ([Generated HP artifact],cpu.generated_artifact_basis,[No new HP RTL generation or independent generated-manifest validation was performed for this publication.])),
@@ -62,3 +63,5 @@ two harts into a symmetric cache-coherent SMP platform.
   #source("scripts/generate_vexiiriscv.py",title:"Artifact manifest") ·
   #source("app/ports/linux/linux/retrosoc_hp.dts",title:"HP platform properties")
 ]
+
+#change-end("v05-emphasis-processor-details")

@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-pins","Selected body emphasis: pins")
 
 == Packaging
 === Pin Mapping
-The following inventory describes the logical signal-pad ABI. It does not assign package pin
-numbers, die-pad sequence numbers or FPGA ball locations. Numeric suffixes in bus signal names
+The following inventory describes the *logical signal-pad ABI*. It *does not assign package pin
+numbers*, die-pad sequence numbers or FPGA ball locations. Numeric suffixes in bus signal names
 identify signal indices only. Power pads are technology-wrapper additions and are not assigned
 physical package numbers here.
 
@@ -14,7 +15,7 @@ together. Reset electrical properties require the selected PDK and board specifi
 
 #note[SDIO1 and USB2 ULPI have dedicated pad groups that are intentionally unbound in the generic
 FPGA wrapper until board pin locations, 3.3 V I/O-bank allocation and timing are approved.
-Do not derive a package drawing from the order of rows in this table.]
+*Do not derive a package drawing from the order of rows* in this table.]
 
 #ds-table("pads", [Logical signal-pad inventory - reference profile],
   ([Signal pad], [RTL direction], [Pad kind]),
@@ -96,3 +97,5 @@ availability for that exact part. The source SHA and draft document version iden
 publication; they are not a manufactured-device marking or a sales part number.
 
 #include "electrical-reference.typ"
+
+#change-end("v05-emphasis-pins")

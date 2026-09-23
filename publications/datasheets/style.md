@@ -1,8 +1,11 @@
 # Mini Datasheet Layout Standard
 
-This document records the implemented layout of the English **retroSoC Mini
-Gen2/Gen2+**, **v0.5 DRAFT**, datasheet. It is a maintenance specification, not a
-new visual design or a hardware specification. The spacing follows the reviewed
+This document records the implemented layout and maintenance rules of the English
+**retroSoC Mini Gen2/Gen2+** datasheet. The current publication identity belongs in
+[mini.json](mini.json); release-specific decisions and comparisons belong in the
+[content review](content-review.md) and [chapter review](chapter-review.md).
+This is a maintenance specification, not a new visual design or a hardware
+specification. The spacing follows the reviewed
 ST RM0486 Rev 4 reference, adapted to the retained Mini page width and fonts.
 
 [style.typ](style.typ), especially its `rhythm` configuration, is the executable
@@ -12,6 +15,53 @@ in [ip-reference.typ](ip-reference.typ), [figures.typ](figures.typ),
 Update this document together with any intentional change to those rules. If
 documentation and rendering disagree, inspect the implementation and the PDF;
 do not silently apply an older proposal instead.
+
+## Content refresh and evidence rules
+
+Bind each refresh to the complete reviewed dev commit SHA, not a moving branch
+name or an abbreviated hash. Record when the branch and its CI were checked in
+UTC; this observation time is separate from the publication date. Recheck before
+handoff. A later branch advance requires a reviewed source delta before changing
+the declared snapshot. Preserve unrelated work and the frozen structure, stable
+anchors and existing layout unless that change is explicitly in scope.
+
+Review every frozen chapter entry against its declared scope. If the current
+implementation and document are already adequate, state that they are retained
+and give only a concrete maintenance recommendation. Distinguish a documentation
+correction, an implementation/specification discrepancy and a missing evidence
+record. A new version number, more pages or repeated caveats do not improve
+coverage by themselves. Keep the previous delivered PDF and its digest as the
+comparison baseline even when the publication version and date are unchanged.
+
+Check the same fact in Features, product/support summaries, tables, detailed
+prose, code examples and diagrams. Follow the actual configuration, producing
+branch and lifecycle conditions; a source snippet that still matches is not
+proof that its surrounding description is current. Update inconsistent summaries
+with their detailed reference, and retain configuration-dependent and unsupported
+cases. Do not change RTL, SDK APIs or engineering contracts to fit publication text.
+
+Separate implemented code, default-enabled/advertised capability, available test
+facilities, executed tests and physical qualification. A successful report needs
+its complete source SHA, profile, platform/runtime stage, workload, result and
+original artifact. Distinguish an ordinary Linux path from a freestanding HP
+acceptance payload even when they use the same mailbox value or log marker.
+Describe polling budgets in their implemented units and follow every prerequisite
+through terminal completion; a ready event or early return is not the final pass.
+
+For CI, retain the complete source SHA, UTC observation time, run URL, status,
+nullable conclusion and job/step scope. Pending, failed prerequisites, skipped
+downstream tests and completed tests must remain distinguishable. A workflow pass
+is not an exact-profile IP report; a workflow failure does not prove every runtime
+stage failed. Prior test counts and narrative summaries are historical until the
+matching current run and artifacts are reviewed. Never convert a missing corpus,
+tool or report into a successful execution or physical result.
+
+Use official commercial references to improve organization and clarity. Record
+document identity, version/revision, release date, check date and relevant sections
+in the content review, together with the specific organization adopted. Do not
+transfer product features, electrical limits, performance figures, certification
+claims or a vendor's release-status policy into Mini. Source/spec discrepancies
+and missing measurements need explicit follow-up advice, not invented values.
 
 ## System-use content and evidence
 
@@ -229,9 +279,10 @@ their actual device and report revisions. Missing physical data remain unprovide
 Runtime, SDK and Shell owns ordinary LP startup, selected linker/CRT behavior and
 conditional exception/IRQ support. Distinguish hardware CSRs from HAVE_CSR and
 CSR_ENABLE, handler registration from enable/acknowledgement, and generic CRT
-initialization from an APP_CRT_SRCS replacement. A linker selection alone does
-not remove the generic PSRAM-ready wait. Source loops without a local deadline
-must remain identified; no new timeout or automatic TEST_STATUS result is implied.
+initialization from an APP_CRT_SRCS replacement. Read the selected startup guards
+as well as linker placement before claiming a wait is present or bypassed.
+Source loops without a local deadline must remain identified; no new timeout or
+automatic TEST_STATUS result is implied.
 
 Linux and Driver Status owns the supplied OpenSBI/DT/kernel/rootfs handoff.
 Separate software template declarations from the generated core and actual clock
@@ -337,6 +388,31 @@ Describe later pagination/numbering-only changes separately. Update the tracked
 spans for each new editing round so a prior round's changes are not relabeled as new.
 
 ## Page, typography and color
+
+### Selective emphasis in body content
+
+Use **Inter Bold (weight 700)** for explicitly selected key phrases, retaining
+the surrounding font size and color. Emphasize decisive capabilities/parameters,
+prerequisites, required operation order, restrictions, failure conditions and
+evidence boundaries. Normally select one to three short spans in a paragraph;
+do not bold entire paragraphs, tables or every numerical value. Review each
+chapter rather than applying a global keyword rule.
+
+Handwritten Typst uses `*strong spans*`. Publication JSON and imported prose use
+explicit `**strong spans**` through the IP inline renderer. It preserves emphasis
+across adjacent text and inline code; backtick code remains opaque, including
+literal asterisks. This is a limited inline grammar, not executable Typst or a
+general Markdown interpreter. Preserve code, addresses and register identifiers
+in regular FiraCode. Avoid unmatched delimiters and verify mixed text/code output.
+
+Heading, table-header and Contents rules remain separate. Do not propagate body
+emphasis into diagram labels, waveforms, register bit cells or source links.
+In particular, preserve the 172 mm architecture's regular 8 pt CDC/Gateway,
+bold 9 pt bus/domain and regular 9 pt remaining labels. Reflow longer bold text
+without shrinking type. Check representative long tables, section transitions,
+color/grayscale output and actual embedded Bold glyphs in the resulting PDF.
+
+### Base typography
 
 | Element | Current rule |
 | --- | --- |
@@ -484,6 +560,13 @@ Each directory starts on a new page and keeps its title with its first entry.
 Retain the page break after each complete directory and avoid additional blank
 pages. The two figure-directory titles are unnumbered, excluded from Contents,
 included as PDF bookmarks, and used as the running header on their pages.
+
+Reading this datasheet links to the existing Terminology, Notation and Document
+Map appendix. Its existing question-based navigation table links to the relevant
+internal anchors; keep those destinations meaningful and checked. Improve this
+single navigation table rather than adding another reader guide or duplicating
+the detailed reference material. Navigation edits do not change the frozen
+heading hierarchy or remove deeper PDF bookmarks.
 
 Level-one Contents chapter numbers and complete titles use bold Inter. Dot
 leaders and page numbers remain regular. Keep the rule local to Contents;
@@ -665,6 +748,12 @@ with approximately 3 pt extra between items. Keep all six groups, both columns,
 the Integration Note to accommodate this rhythm, not smaller type or an extra
 page.
 
+Keep `author` and `author_email` separate in the document identity. The cover
+contact reads exactly `Yuchi Miao(miaoyuchi@ict.ac.cn)`, with no space before the
+opening parenthesis; the parenthesized address links to `mailto:miaoyuchi@ict.ac.cn`.
+PDF author metadata remains `Yuchi Miao`. Retain the maintenance organization,
+metadata row alignment and single-page cover.
+
 The Product Brief heading shares a normal-flow row with an Artifact Evaluation
 component at the right. Keep the original heading body, numbering, contents
 entry and bookmark unchanged; the component is separate display content, not a
@@ -673,9 +762,15 @@ numbered figure or an additional heading.
 The outer box is 92 x 10 mm with a 1.5 mm corner radius, a 0.6 pt ink border and
 white fill (no gray background). Four equal columns show **Available**, **Functional**, **Reproduced**
 and **Tapedout**, with 9 pt Inter Regular labels above 3 mm circles. The current
-explicit `artifact-status` configuration in `sections/overview.typ` fills only
-Available in the existing pale gold (`#F4EFE4`), with a 0.6 pt gold outline;
-the other circles are white with 0.6 pt ink outlines.
+explicit `artifact-status` configuration in `sections/overview.typ` uses the
+states `full`, `left-half` and `empty`, not a selected/unselected boolean.
+Available is fully pale gold (`#F4EFE4`). Functional has the **vertical left
+semicircle** filled in the same pale gold and its right semicircle white; split
+at the circle center, without an extra divider line. Both retain a complete
+0.6 pt gold circular outline. Reproduced and Tapedout remain white with 0.6 pt
+ink outlines. Use clipped native vector geometry, not a font glyph or raster.
+The half mark denotes partial functional status, not complete verification or
+qualification; it does not alter the scoped evidence tables or per-IP results.
 Keep 4 mm between the heading and box, and vertically center the heading against
 the box body. The unnumbered 9 pt black label **Artifact Evaluation** is centered
 2 pt below the box. These are native Typst vector shapes and grid content, not
@@ -694,32 +789,21 @@ Do not achieve this by absolute positioning or shrinking the text.
 
 ### Specialized diagram packages
 
-#### Implementation refresh and evidence scope
+#### Source-bound diagram maintenance
 
-The 2026-09-22 v0.5 refresh adds NPU after APU: 42 IP entries and 109 frozen
-structural records. Preserve the previous anchors and add source-bound NPU
-functional, descriptor/parameter, storage, protocol, register and HAL material.
-Keep the APU `(partial)` title while MP3 remains unsupported and KWS is explicitly
-configuration-dependent. Default PRODUCT and P7 acceptance identities are separate.
-Audit semantics as well as source snippets: a binding that still matches code
-does not prove that every surrounding capability or limitation sentence is true.
+Retain the reviewed IP inventory and its functional, descriptor/parameter,
+storage, protocol, register and HAL material when it remains accurate. Keep
+source-level logical storage distinct from a completed technology-macro
+implementation. Configuration-dependent capabilities and delivery restrictions
+must agree between diagrams, summaries and the owning IP reference.
 
-Separate implemented code, default-enabled/advertised capability, test facilities,
-matching successful runs and physical qualification. Record CI revision, checked
-date, run URL, status, nullable conclusion and scope, including failed prerequisites and skipped
-downstream tests. A workflow pass is not a substitute for an exact-profile IP
-report and behavioral-only regression is not synthesis, netlist, STA or silicon.
-Do not fill electrical, thermal, power or throughput fields with borrowed device
-figures, target clocks or analytic ceilings.
-Never promote a historical narrative or a smoke test that did not execute its
-full workload into a current-revision Reported pass. Record missing raw artifacts
-and source/spec discrepancies as explicit recommendations. In particular, APU's
-inferred KWS storage must not be described as a completed macro implementation.
-
-Use `v05-` for new content and activate only the reviewed existing content,
-navigation and revision markers listed in `current-change`. NPU is added;
-retained GA2D/APU and system material is modified. Earlier closing-page work
-must not be relabeled as new content. Pagination movement remains separate.
+Choose a distinct marker prefix for each editing round and record it in the
+content review and `mini.json.change_prefix`. The renderer reads that prefix;
+build/check and change reporting reject markers from earlier rounds. Only the
+three navigation-directory identifiers may be shared, with navigation status.
+Activate only the reviewed content and revision markers through `current-change`.
+Retained chapters and previous figure work
+must not be relabeled as newly added. Keep pagination movement separate.
 
 Use the existing Overview icon artwork, including its reverted outline style.
 The six Multimedia entries use two rows of three cells within the same
@@ -992,7 +1076,7 @@ The catalog records semantic node roles, clock sources, gateway inputs/output,
 literal interface widths, stream connections, source files and external pin
 groups. Validate those against current sources and include them in the manifest.
 Record the CeTZ category in the 109-entry coverage report and require the actual
-render. The v0.5 specialized inventory has 142 figures, including the new NPU
+render. The reviewed specialized inventory has 142 figures, including the NPU
 circuit, descriptor/parameter layouts and storage views. Preserve the existing
 package renderers and use source-bound content for every changed figure.
 

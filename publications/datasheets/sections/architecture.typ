@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-architecture","Selected body emphasis: architecture")
 #import "../figures.typ": *
 #import "../waveforms.typ": timing
 #import "../diagram-packages.typ": memory-window-diagram
@@ -8,15 +9,15 @@
 #change-start("dev-architecture","Ten-master fabric, address map, LP IRQ and lifecycle reference")
 == Introduction
 === SoC Architecture
-Mini PRODUCT contains two fixed harts, an LP-owned control plane, a native HP data fabric and
-two APB4 register islands. There is no hardware cache coherency. Software transfers shared
+Mini PRODUCT contains *two fixed harts*, an LP-owned control plane, a native HP data fabric and
+two APB4 register islands. There is *no hardware cache coherency*. Software transfers shared
 buffer ownership explicitly and performs the required fences and cache maintenance.
 
 #figure(soc-functional-diagram(), caption:[Mini PRODUCT functional architecture and clock domains.])<soc-functional-overview>
 
 === Management Processor
 ==== Hazard3
-Hazard3 is hart 0 and the root-management processor. The reference profile selects RV32IM
+Hazard3 is hart 0 and the *root-management processor*. The reference profile selects RV32IM
 firmware. Its AHB-Lite interface is adapted to AXI32 for control access; memory transactions
 are directed through the LP gateway to the shared data plane. The management JTAG path provides
 halt, resume, register and system-bus access. LP retains control while HP is held in reset.
@@ -25,7 +26,7 @@ halt, resume, register and system-bus access. LP retains control while HP is hel
 === Application Processor
 ==== VexiiRiscv
 The generated HP hart is a dual-issue RV32IMAFDC + Zicbom configuration, with supervisor/user
-modes, Sv32 virtual memory and 64-byte cache-maintenance blocks. Hart 1 uses native AXI64
+modes, Sv32 virtual memory and *64-byte cache-maintenance blocks*. Hart 1 uses native AXI64
 instruction and data paths. Its uncached MMIO path is downsized and crosses into the LP
 control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
@@ -170,3 +171,5 @@ Claim/complete and priority rules are defined in the HP platform contract.
 #include "register-programming.typ"
 #include "interface-subsets.typ"
 #change-end("dev-architecture")
+
+#change-end("v05-emphasis-architecture")

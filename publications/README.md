@@ -21,8 +21,8 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
-The 2026-09-22 refresh binds v0.5 DRAFT to reviewed dev commit
-`ca4b06d30456599a2d3fd676d832f8d4dd2f78af`. NPU has an independent chapter
+The current 2026-09-22 refresh retains v0.5 DRAFT and binds it to reviewed dev commit
+`c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b`. NPU retains its independent chapter
 after APU. The reviewed contract contains 42 IP chapters and 109 frozen entries;
 the nine-category Overview contains 45 labels. Existing register anchors remain
 stable. The main reference stays IHP130 PRODUCT / 32 KiB SRAM, with the dedicated
@@ -43,6 +43,22 @@ an integrated eight-beat AXI64 DMA limit; its reusable DMA default is not the
 deployed limit. Native Linux NPU/ASoC support is not inferred from HP smoke code.
 CI workflow outcomes are a separately scoped snapshot, including failures and
 skipped downstream tests; they do not populate per-IP hardware pass records.
+The current presentation round compares against the retained 779-page PDF with
+SHA-256 `25257e5243e945401c8a214d4043819cf802a7fa2d22b04d83b513ce9075647b`.
+It uses `v05-emphasis-` markers for the cover contact, partial Functional mark
+and selected body emphasis. Earlier `v05-refresh-` boot/mailbox, APU, environment
+and navigation corrections remain historical. The version and document date are retained. This presentation is built directly
+from the reviewed current dev checkout; its complete source SHA and timestamped
+CI observations identify the build. Runtime-library/bootstrap increments were
+reviewed separately and do not change the hardware interfaces.
+
+The cover stores the author name and email separately; PDF author metadata keeps
+the name. Artifact marks explicitly support empty, left-half and full states.
+Body emphasis uses selected Inter Bold phrases, including explicit `**...**`
+spans in generated IP text, while code and diagram labels retain their own rules.
+See the [layout/content standard](datasheets/style.md) for exact geometry,
+emphasis scope and validation requirements. Rebuild all page-dependent records
+after typography changes and retain the previous PDF and actual test verdicts.
 
 The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
 circuiteria 0.2.1. All 42 IP chapters and four system hardware figures use
@@ -54,20 +70,20 @@ memory, descriptor examples, address windows, linker/load placement and budgets.
 Overview classification, access matrices, software flows, register bit layouts
 and WaveDrom keep their existing rendering.
 
-Section 2.1.1 adds a compact functional overview drawn independently with locked
+Section 2.1.1 contains a compact functional overview drawn independently with locked
 CeTZ 0.5.2. It uses regular 9 pt text for ordinary labels, regular 8 pt text
 inside compact CDC/Gateway cells, and bold 9 pt bus/domain labels. Individually named PRODUCT IP/instance
 rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
 labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
-are separate from IP categories. The original 45 Circuiteria figures continue
-to use their existing renderer; NPU adds one circuit, three binary layouts and two storage
-figures, bringing the inventory to 142 specialized figures.
+are separate from IP categories. All 46 Circuiteria figures retain their existing
+renderer. The 142 specialized figures include NPU's circuit, three binary layouts
+and two storage figures.
 
-`soc_diagram_reference.py` checks the new `datasheets/soc-architecture.json`
+`soc_diagram_reference.py` checks `datasheets/soc-architecture.json`
 against PRODUCT IP coverage, selected RTL clock/interface bindings, gateway
 clients, stream routes, pin groups and alternate-function mappings. Its CeTZ
-renderer is `datasheets/soc-architecture.typ`. The new diagram is recorded under
-Introduction; the NPU node is tied to its new chapter and HP-domain background.
+renderer is `datasheets/soc-architecture.typ`. The diagram is recorded under
+Introduction; the NPU node is tied to its chapter and HP-domain background.
 `soc_diagram_geometry.py` supplies the exact paths and arrowheads to CeTZ and
 checks orthogonality, visible shafts, symbol avoidance and arrow clearance.
 The arrowheads are 1 x 0.8 mm with at least 1 mm visible shaft and 0.5 mm
@@ -137,12 +153,22 @@ completeness, so the content and chapter reviews also record what was retained,
 updated or awaits evidence, with a concrete recommendation.
 
 CI snapshots keep `status` separate from nullable `conclusion`. Queued/in-progress
-runs have no verdict. Refresh the snapshot for the document commit before final
-delivery; do not reuse a previous commit's formatting failure or passing outcome.
+runs have no verdict. Retain the complete source SHA, UTC check time, run URL and
+job/step scope. Refresh the snapshot for the document commit before final delivery;
+do not reuse a previous commit's formatting failure or passing outcome. Distinguish
+a failed prerequisite from skipped runtime stages and completed scoped tests.
 Historical GA2D/NPU records remain dated narrative references unless their raw
 artifacts, source, profile and stage can be verified. APU smoke subsets and tests
 that return early without tools/data are not full-corpus or sustained-audio passes.
+Previous local test counts remain historical, not this refresh's validation result.
 Publication tests/builds do not promote RTL maturity or physical qualification.
+
+Source review follows the selected runtime stage through the complete terminal
+sequence. The `HP_LINUX_READY` marker is also used by freestanding acceptance
+payloads; it alone does not prove Linux readiness or completion of the later GA2D
+and cache-clean handoff. Keep mailbox offsets, event purposes, polling units and
+failure/reset ownership consistent in summaries, tables, diagrams and detailed
+prose. Source-binding checks complement this semantic review rather than replace it.
 
 ### System-use reference
 
@@ -165,7 +191,8 @@ configuration, HAL, boot loader and Linux platform files.
 Implementation, test availability and reviewed successful runs are separate
 states. A Linux device-tree node or bare-metal HAL is not native driver support.
 The supplied initial console uses SBI. The loader's DMA failure path falls back
-to software copy/CRC; its final Linux-ready wait has no firmware-local deadline.
+to software copy/CRC. Its ready/result/cache waits use bounded polling iterations;
+the initial ready message does not complete the later acceptance and ownership return.
 CRC is not authentication. Power isolation, qualified entropy, physical ratings
 and production APU codec support are not inferred from controller capabilities.
 
@@ -306,12 +333,14 @@ offline. The compiler is invoked with system fonts disabled, only the media font
 directory and the verified package cache. No root Makefile target or automatic
 publication workflow is added.
 
-If other work has advanced the hardware beyond `source_revision`, retain those
-changes and use an isolated checkout matching the reviewed snapshot with the
-publication changes applied there. Do not bypass the snapshot check or advance
-the advertised hardware revision to make a document build pass. Keep managed
-source checkouts inside that checkout so source-path containment remains valid;
-record the isolated publication checkout and input hashes in the build manifest.
+If the requested baseline is current `dev`, review the complete increment from
+the previous publication SHA, update the source identity and CI observation,
+then build directly in that checkout while preserving unrelated local changes.
+Do not advance the advertised revision merely to silence a snapshot error.
+Use an isolated checkout only when retaining an older reviewed snapshot is
+actually required by the task. Its managed inputs must remain inside that
+checkout, and its path/input hashes belong in the build manifest. Do not bypass
+the source check in either workflow; remove temporary checkouts when requested.
 
 Output goes to `build/datasheet-mini-<YYYY-MM-DD-HH-MM>-<input-hash>/`:
 
@@ -385,10 +414,21 @@ the main lock. A normal build never commits, pushes, or changes asset revisions.
 
 ## Updating technical content
 
-1. Review the current dev RTL and committed configurations; set the exact
-   reviewed SHA in `mini.json`. The builder rejects changed technical sources
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md) and the
+[Git workflow](../docs/git-workflow.md) when preparing publication contributions.
+Ordinary PRs target `dev` and default to merge commits; preserve unrelated history
+and use the repository PR template. These are maintenance instructions, not a
+product chapter.
+
+1. Review the current dev RTL and committed configurations; set the complete
+   reviewed SHA in `mini.json` and record the UTC source/CI observation time.
+   Recheck dev before handoff and review any subsequent delta before advancing
+   the snapshot. The builder rejects changed technical sources
    relative to this snapshot, including uncommitted tracked changes.
-2. Update explanatory prose and `ip-catalog.json`. Every allocated region,
+2. Assess every frozen chapter: retain adequate content, correct stale facts and
+   record specific source/specification or evidence gaps. Reconcile Features,
+   summaries, tables, detailed prose, diagrams and examples for the same fact.
+   Update explanatory prose and `ip-catalog.json` only as needed. Every allocated region,
    including reserved ranges, and every LP IRQ must have exactly one owner in
    the publication catalog. Keep still-integrated IPs and their child headings.
 3. Address, LP IRQ, GPIO, pad and access-policy data come from existing canonical
@@ -397,7 +437,14 @@ the main lock. A normal build never commits, pushes, or changes asset revisions.
    JPEG occupies AXI64 slot 6; APU advertises WAV/FLAC job/transport infrastructure
    while MP3 remains unsupported and KWS requires the P7 configuration; full production qualification is not established. Managed-IP links use their locked
    upstream commits, not nonexistent main-repository blob paths.
-5. Compile, check, render all pages and inspect 100% scale and grayscale.
+5. Record official commercial reference identity, version, release/check dates
+   and the organization adopted in the content review. Keep release-specific
+   source/baseline/marker decisions there and long-lived maintenance rules in
+   `datasheets/style.md`. Do not borrow device specifications or qualification.
+6. Compile, check, render all pages and inspect 100% scale and grayscale. Verify
+   the existing document-map links and current-round change ranges against the
+   previous delivered PDF. Report current checks with their actual scope and
+   outcomes; do not reuse prior test totals as a current pass.
 
 ### Deliberately unfilled specifications
 

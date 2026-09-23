@@ -1,11 +1,12 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-appendices","Selected body emphasis: appendices")
 #import "../figures.typ": *
 
 = Appendix: MPW Compatibility <mpw>
 == SoC Template
 === Architecture
 The separate MPW configuration retains selectable user-core and user-IP mechanisms. It is
-not the fixed PRODUCT topology and does not define a Gen2/Gen2+ derivative mapping. Hazard3
+*not the fixed PRODUCT topology* and does not define a Gen2/Gen2+ derivative mapping. Hazard3
 remains the management core. The selected C0-C3 interface uses RIBP and an AXI4 adapter.
 
 #change-start("system-mpw", "MPW hardware organization")
@@ -49,13 +50,13 @@ selectable user cores or user IPs.
 The product ladder expresses intended positioning. It does not advertise implemented Tiny,
 Std or Pro profiles or measured performance for a future device. The current Mini integrates
 the independently documented GA2D and NPU subsets; neither establishes a future-family feature
-set or commercial qualification. Only the reviewed Mini snapshot is specified here.
+set or commercial qualification. *Only the reviewed Mini snapshot is specified here*.
 #source-note("docs/soc-family-positioning.md", title:"Family roadmap and scope")
 
 == Roadmap
 #placeholder[Reviewed release and silicon roadmap]
 #tbd[Release dates, derivative differences, process/package selections and future accelerator
-milestones have not been established as product commitments in this datasheet.]
+milestones have *not been established as product commitments* in this datasheet.]
 
 = Technical Report
 #include "release-verification.typ"
@@ -83,21 +84,24 @@ number is used to imply completion.
 
 = Document Control
 == Revision History
-#change-start("revision-history", "Document revision history")
+#change-start("v05-refresh-revision", "Same-version dev revision history")
 #ds-table("revisions", [Document revision history],
   ([Date], [Version], [Change], [Author]),
   (([2025-09-28],[0.1],[Create document],[Yuchi Miao]),
    ([2025-12-02],[0.2],[Initial draft],[Yuchi Miao]),
    ([2026-02-15],[0.3],[Initial release (historical document entry)],[Yuchi Miao]),
    ([2026-09-17],[0.4 DRAFT],[Refresh the reviewed dev snapshot; add the independent GA2D P5 reference and 41-IP/108-entry structure. Synchronize APU V1/V2 and gated KWS, nine-master fabric, JPEG admission, LP external IRQ and scoped CI evidence. Retain the approved layout and unadorned repository footer.],[Yuchi Miao / ECOS Team]),
-   ([2026-09-22],[0.5 DRAFT],[Bind the current dev snapshot; add the NPU chapter and 42-IP/109-entry structure. Synchronize ten-master/resource integration, configured APU KWS/digest and bare-metal acceptance, GA2D P6 and long-burst conversion. Separate current CI state, historical reports and missing qualification.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-22],[0.5 DRAFT],[Initial v0.5, reviewed ca4b06d30456: add the NPU chapter and 42-IP/109-entry structure. Synchronize ten-master/resource integration, configured APU KWS/digest and bare-metal acceptance, GA2D P6 and long-burst conversion. Separate current CI state, historical reports and missing qualification.],[Yuchi Miao / ECOS Team]),
+   ([2026-09-22],[0.5 DRAFT],[Same-version dev refresh: correct bounded HP acceptance and mailbox purposes; align APU availability and loading order; add development-environment evidence boundaries and linked task navigation. Preserve the existing IP structure and hardware interfaces.],[Yuchi Miao / ECOS Team]),
+   ([2026-09-22],[0.5 DRAFT],[Presentation revision: add the cover email contact and partial Functional mark; emphasize selected capability, programming, limitation and evidence phrases. Bind the reviewed current dev source and CI observation; hardware statements and interfaces are retained.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify
 the electrical placeholders in this revision.
-#change-end("revision-history")
+#change-end("v05-refresh-revision")
 
 == Sources and Reproducibility <publication-provenance>
+#change-start("v05-refresh-provenance","Exact snapshot and same-version publication identity")
 Hardware snapshot: #code(doc.source_revision).
 The source revision, configuration files, media commit, font/package hashes and PDF digest
 are recorded in the build manifest. The datasheet is built manually with Typst 0.15.1 and
@@ -114,6 +118,15 @@ The generated address, IRQ, GPIO, pad and bus-permission data are derived from c
 inputs. Explanatory prose is reviewed against RTL and software contracts; stale descriptive
 documents do not override executable integration.
 
+This file is a same-version v0.5 DRAFT revision. Distinguish it from the previous
+v0.5 delivery by the complete reviewed source revision and the matching PDF/manifest
+digests; the version number alone does not identify these two source sets. The
+UTC time in @release-verification identifies the CI observation, not a hardware test date.
+The engineering guide owns the supported tool environment and full setup commands.
+#source-note("docs/development-environment.md",title:"Supported environment and checkout-specific prerequisites")
+#source-note("docs/engineering.md",title:"Reproducible inputs, artifacts and executed-stage evidence")
+#change-end("v05-refresh-provenance")
+
 == License
 retroSoC project material is distributed under Mulan Permissive Software License, Version 2.
 Third-party IP, fonts and Typst packages retain their own licenses. The media repository
@@ -128,3 +141,5 @@ is available. Specifications can change with later source revisions.
 Author: #link("mailto:miaoyuchi@ict.ac.cn")[Yuchi Miao] \
 Maintainer: #doc.maintainer \
 Project: #link("https://github.com/retroSoC/retroSoC")[retroSoC source repository]
+
+#change-end("v05-emphasis-appendices")

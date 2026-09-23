@@ -1,7 +1,7 @@
 """Snapshot-bound publication facts; compilation is distinct from hardware qualification."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 import json
 from pathlib import Path
 import re
@@ -9,7 +9,15 @@ import subprocess
 import sys
 
 from publications.storage_reference import constants
+from publications.software_reference import function_body
 from publications.waveform_reference import uncomment
+
+APU_CONFIGURATION_SOURCES = (
+    "Makefile", "configs/ci/ihp130.mk", "configs/ci/ihp130-apu.mk",
+    "rtl/mini/top/retrosoc.sv", "rtl/mini/top/apb4_periph.sv",
+    "rtl/ip/multimedia/apb4_apu.sv", "rtl/ip/multimedia/apu_reg.sv",
+    "rtl/ip/multimedia/apu_define.svh", "crt/include/retrosoc/hal/apu_regs.h",
+)
 
 APU_SOURCES = (
     "scripts/apu_mcasm.py", "scripts/apu_isa.py", "scripts/apu_p5_coefficients.py",
@@ -18,7 +26,8 @@ APU_SOURCES = (
     "rtl/ip/multimedia/apb4_apu.sv", "rtl/ip/multimedia/apu_local_sram.sv",
     "rtl/ip/multimedia/apu_kws_sram_client.sv",
     "rtl/ip/multimedia/apu_reg.sv", "crt/include/retrosoc/hal/apu_regs.h",
-    "configs/ci/ihp130-apu.mk", "Makefile", "scripts/apu_abi_digest.py",
+    "scripts/apu_abi_digest.py", "app/apps/apu_release/main.c",
+    *APU_CONFIGURATION_SOURCES,
 )
 
 NPU_SOURCES = (
@@ -31,28 +40,150 @@ NPU_SOURCES = (
 )
 
 
+def validate_ci_state(record: dict, subject: str) -> None:
+    status, conclusion = record.get("status"), record.get("conclusion")
+    if status not in {"queued", "in_progress", "completed", "waiting", "requested", "pending"}:
+        raise ValueError(f"invalid {subject} status")
+    if status == "completed":
+        if conclusion not in {"success", "failure", "cancelled", "skipped", "timed_out", "neutral", "action_required", "stale", "startup_failure"}:
+            raise ValueError(f"invalid completed {subject} outcome")
+    elif conclusion is not None:
+        raise ValueError(f"unfinished {subject} cannot have a conclusion")
+
+
 def validate_ci_snapshot(snapshot: dict, revision: str) -> None:
     if snapshot.get("revision") != revision or not snapshot.get("boundary"):
         raise ValueError("CI snapshot must identify the reviewed revision and evidence boundary")
     date.fromisoformat(snapshot["checked_date"])
+    checked_at = snapshot.get("checked_at", "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", checked_at):
+        raise ValueError("CI snapshot requires an exact UTC sampling time")
+    datetime.strptime(checked_at, "%Y-%m-%dT%H:%M:%SZ")
+    if checked_at[:10] != snapshot["checked_date"]:
+        raise ValueError("CI snapshot date differs from its UTC sampling time")
     ids = set()
     for run in snapshot["runs"]:
         identifier = run["run_id"]
         if type(identifier) is not int or identifier < 1 or identifier in ids:
             raise ValueError("invalid or duplicate CI run")
         ids.add(identifier)
-        status, conclusion = run.get("status"), run.get("conclusion")
-        if status not in {"queued", "in_progress", "completed", "waiting", "requested", "pending"}:
-            raise ValueError("invalid CI run status")
-        if status == "completed":
-            if conclusion not in {"success", "failure", "cancelled", "skipped", "timed_out", "neutral", "action_required", "stale", "startup_failure"}:
-                raise ValueError("invalid completed CI outcome")
-        elif conclusion is not None:
-            raise ValueError("unfinished CI run cannot have a conclusion")
+        validate_ci_state(run, "CI run")
         if run["url"] != f"https://github.com/retroSoC/retroSoC/actions/runs/{identifier}":
             raise ValueError("CI run URL does not match its recorded identifier")
         if not all(run.get(key) for key in ("name", "scope", "note")):
             raise ValueError("CI outcome lacks scope or qualification")
+        for stage in run.get("observations", []):
+            validate_ci_state(stage, "CI stage")
+            if not stage.get("name") or stage.get("scope") not in {
+                "installation", "environment-check", "runtime-regression"
+            }:
+                raise ValueError("CI stage lacks its installation/check/runtime boundary")
+            if not re.fullmatch(re.escape(run["url"]) + r"/job/\d+", stage.get("url", "")):
+                raise ValueError("CI stage URL does not belong to its recorded run")
+
+
+def apu_configurations(root: Path) -> list[dict]:
+    """Follow the committed Make selection through deployed instance parameters."""
+    def read(path: str) -> str:
+        return uncomment((root / path).read_text(encoding="utf-8"))
+
+    def parameter(source: str, module: str, instance: str, name: str) -> str:
+        blocks = re.findall(r"\b" + re.escape(module) + r"\s*#\((.*?)\)\s*"
+                            + re.escape(instance) + r"\s*\(", source, re.S)
+        values = re.findall(r"\." + re.escape(name) + r"\s*\(([^()]*)\)", blocks[0]) if len(blocks) == 1 else []
+        if len(values) != 1:
+            raise ValueError(f"APU deployed parameter missing or ambiguous: {instance}.{name}")
+        return re.sub(r"\s+", "", values[0])
+
+    make = (root / "Makefile").read_text(encoding="utf-8")
+    defaults = re.findall(r"^APU_ENABLE_P7\s*\?=\s*(YES|NO)\s*$", make, re.M)
+    if len(defaults) != 1 or not re.search(
+            r"ifeq\s*\(\$\(APU_ENABLE_P7\),\s*YES\)\s*DEF_LIST\s*\+=\s*\+define\+APU_ENABLE_P7\s*endif", make):
+        raise ValueError("APU P7 Make selection changed")
+    soc = read("rtl/mini/top/retrosoc.sv")
+    if not re.search(r"`ifdef\s+APU_ENABLE_P7\s+localparam\s+bit\s+ApuEnableP7\s*=\s*1'b1\s*;\s*"
+                     r"`else\s+localparam\s+bit\s+ApuEnableP7\s*=\s*1'b0\s*;\s*`endif", soc):
+        raise ValueError("APU P7 top-level selection changed")
+    peripheral = read("rtl/mini/top/apb4_periph.sv")
+    top = read("rtl/ip/multimedia/apb4_apu.sv")
+    if (parameter(soc, "apb4_periph", "u_apb4_periph", "EnableP7") != "ApuEnableP7"
+            or parameter(peripheral, "apb4_apu", "u_apb4_apu", "EnableP7") != "EnableP7"
+            or parameter(top, "apu_reg", "u_apu_reg", "EnableP7") != "EnableP7"):
+        raise ValueError("APU P7 deployed propagation changed")
+    for module, instance in (("apu_reg", "u_apu_reg"), ("apu_microcode_loader", "u_microcode_loader"),
+                             ("apu_codec_sequencer", "u_codec_sequencer")):
+        if parameter(top, module, instance, "EnableP5") != "1'b1":
+            raise ValueError("APU deployed WAV/FLAC EnableP5 path changed")
+
+    regs = read("rtl/ip/multimedia/apu_reg.sv")
+    p5 = re.findall(r"P5Capability0\s*=\s*EnableP5\s*\?\s*32'h([\da-fA-F_]+)", regs)
+    p7 = re.findall(r"\bCapability0\s*=\s*EnableP7\s*\?\s*32'h([\da-fA-F_]+)\s*:\s*P5Capability0", regs)
+    digest = re.findall(r"AbiDigest\s*=\s*EnableP7\s*\?\s*32'h([\da-fA-F_]+)\s*:\s*32'd0", regs)
+    if len(p5) != 1 or len(p7) != 1 or len(digest) != 1:
+        raise ValueError("APU configured capability/digest selection changed")
+    bits = constants(root, "rtl/ip/multimedia/apu_define.svh")
+    rows = []
+    for name, profile in (("Default PRODUCT", "configs/ci/ihp130.mk"),
+                          ("P7 acceptance", "configs/ci/ihp130-apu.mk")):
+        source = (root / profile).read_text(encoding="utf-8")
+        assignments = re.findall(r"^APU_ENABLE_P7\s*[:?+]?=\s*([^\n#]+)", source, re.M)
+        if len(assignments) > 1 or (assignments and assignments[0].strip() not in {"YES", "NO"}):
+            raise ValueError("APU publication requires a literal committed P7 selection")
+        enabled = (assignments[0].strip() if assignments else defaults[0]) == "YES"
+        capability = int((p7 if enabled else p5)[0].replace("_", ""), 16)
+        rows.append({"name": name, "profile": profile, "enabled": enabled,
+                     "capability": capability, "digest": int(digest[0].replace("_", ""), 16) if enabled else 0,
+                     "formats": {codec: bool(capability & (1 << bits["APB4_APU__CAPABILITY0_" + codec]))
+                                 for codec in ("WAV", "FLAC", "MP3", "KWS")}})
+        if rows[-1]["formats"] != {"WAV": True, "FLAC": True, "MP3": False, "KWS": enabled}:
+            raise ValueError("APU deployed format capability meanings changed")
+        if name == "P7 acceptance" and (re.findall(r"^APP\s*:=\s*(\w+)\s*$", source, re.M) != ["apu_release"]
+                        or re.findall(r"^HAVE_CSR\s*:=\s*(\w+)\s*$", source, re.M) != ["YES"]):
+            raise ValueError("APU P7 acceptance application or IRQ configuration changed")
+    if [(r["enabled"], r["capability"], r["digest"]) for r in rows] != [
+            (False, 0x1BD, 0), (True, 0x1FD, 0xF5005D7C)]:
+        raise ValueError("review APU configuration identities")
+    values = constants(root, "crt/include/retrosoc/hal/apu_regs.h")
+    if (values.get("RS_APU_DIGEST_P7_IMPLEMENTED"), values.get("RS_APU_CAPABILITY0_P5_IMPLEMENTED"),
+            values.get("RS_APU_CAPABILITY0_P7_IMPLEMENTED")) != (rows[1]["digest"], rows[0]["capability"], rows[1]["capability"]):
+        raise ValueError("APU published digest differs from the HAL")
+    return rows
+
+
+def apu_acceptance_steps(root: Path) -> list[dict]:
+    """Bind the rendered LP procedure to ordered, failure-checked application calls."""
+    source = "app/apps/apu_release/main.c"
+    text = (root / source).read_text(encoding="utf-8")
+    body = function_body(text, "rs_apu_release_run")
+    stages = (
+        ("probe", "rs_apu_probe", 5, "After holding HP in reset, waiting for SDRAM and loading the HP bundle, LP checks the P7 capability and ABI digest."),
+        ("quiesce", "rs_apu_release_quiesce", 6, "LP quiesces the APU resource and waits for LP ownership, asserted quiesce, reset released and engine idle."),
+        ("stage", "rs_apu_release_stage_assets", 7, "With the resource quiesced, LP stages the APUMC image, APUM model, WAV input and KWS PCM window in SDRAM."),
+        ("acl", "rs_apu_set_acl", 8, "LP configures the permitted read and write address ranges before requesting either image load."),
+        ("load", "rs_apu_release_load_images", 9, "LP loads the microcode, checks its valid/lock state and CRC, then loads the model and checks its status and CRC."),
+        ("handoff", "rs_apu_release_handoff", 10, "LP hands ownership to HP after successful image loading, then publishes the shared page and mailbox request before releasing HP."),
+    )
+    calls = list(re.finditer(r"\b(" + "|".join(row[1] for row in stages) + r")\s*\(", body))
+    if [match[1] for match in calls] != [row[1] for row in stages]:
+        raise ValueError("APU acceptance call order changed")
+    for index, (match, stage) in enumerate(zip(calls, stages, strict=True)):
+        stop = calls[index + 1].start() if index + 1 < len(calls) else body.index("rs_apu_release_fill_page", match.end())
+        failures = re.findall(r"rs_apu_release_fail\(\s*UINT8_C\((\d+)\)\s*\)", body[match.end():stop])
+        if failures != [str(stage[2])]:
+            raise ValueError("APU acceptance failure checkpoint changed")
+    loads = function_body(text, "rs_apu_release_load_images")
+    if re.findall(r"\b(rs_apu_(?:microcode|kws_model)_load)\s*\(", loads) != [
+            "rs_apu_microcode_load", "rs_apu_kws_model_load"]:
+        raise ValueError("APU acceptance image-load order changed")
+    tail = body[calls[-1].end():]
+    if re.findall(r"\b(rs_apu_release_fill_page|rs_hp_mailbox_clear_lp_interrupt|rs_hp_mailbox_send_to_hp|"
+                  r"rs_sysctrl_set_hp_release)\s*\(", tail) != [
+            "rs_apu_release_fill_page", "rs_hp_mailbox_clear_lp_interrupt", "rs_hp_mailbox_send_to_hp",
+            "rs_sysctrl_set_hp_release"] or not re.search(r"rs_sysctrl_set_hp_release\(\s*true\s*\)", tail):
+        raise ValueError("APU acceptance HP publication/release order changed")
+    return [{"id": identifier, "call": call, "failure_code": failure, "description": description,
+             "source": source, "function": "rs_apu_release_run"}
+            for identifier, call, failure, description in stages]
 
 
 def apu_implementation(root: Path) -> dict:
@@ -86,26 +217,8 @@ print(json.dumps({'abi':assembly.mc_abi,'instruction_words':len(assembly.instruc
     if len(enabled) != 1:
         raise ValueError("APU P7 default parameter is missing or ambiguous")
     result["p7_default_enabled"] = enabled[0] == "1"
-    regs = uncomment((root / "rtl/ip/multimedia/apu_reg.sv").read_text(encoding="utf-8"))
-    values = constants(root, "crt/include/retrosoc/hal/apu_regs.h")
-    p5 = re.findall(r"P5Capability0\s*=\s*EnableP5\s*\?\s*32'h([\da-fA-F_]+)", regs)
-    p7 = re.findall(r"\bCapability0\s*=\s*EnableP7\s*\?\s*32'h([\da-fA-F_]+)\s*:\s*P5Capability0", regs)
-    digest = re.findall(r"AbiDigest\s*=\s*EnableP7\s*\?\s*32'h([\da-fA-F_]+)\s*:\s*32'd0", regs)
-    if len(p5) != 1 or len(p7) != 1 or len(digest) != 1:
-        raise ValueError("APU configured capability/digest selection changed")
-    result["profiles"] = [
-        {"name": "Default PRODUCT", "profile": "configs/ci/ihp130.mk", "enabled": False,
-         "capability": int(p5[0].replace("_", ""), 16), "digest": 0},
-        {"name": "P7 acceptance", "profile": "configs/ci/ihp130-apu.mk", "enabled": True,
-         "capability": int(p7[0].replace("_", ""), 16), "digest": int(digest[0].replace("_", ""), 16)},
-    ]
-    if [(r["capability"], r["digest"]) for r in result["profiles"]] != [(0x1BD, 0), (0x1FD, 0xF5005D7C)]:
-        raise ValueError("review APU configuration identities")
-    if (values.get("RS_APU_DIGEST_P7_IMPLEMENTED"), values.get("RS_APU_CAPABILITY0_P5_IMPLEMENTED"),
-            values.get("RS_APU_CAPABILITY0_P7_IMPLEMENTED")) != (0xF5005D7C, 0x1BD, 0x1FD):
-        raise ValueError("APU published digest differs from the HAL")
-    if not re.search(r"APU_ENABLE_P7\s*:=\s*YES", (root / "configs/ci/ihp130-apu.mk").read_text()):
-        raise ValueError("APU acceptance profile no longer enables P7")
+    result["profiles"] = apu_configurations(root)
+    result["acceptance_steps"] = apu_acceptance_steps(root)
     result["qualification"] = "Static assembly and source inspection only; no codec corpus, KWS accuracy or physical qualification."
     return result
 
@@ -152,7 +265,13 @@ def validate_accelerator_claims(reference: dict, catalog: list, features: dict, 
                  r"implemented and verified|passed differential evidence")
         if any(re.search(stale, text, re.I) for text in texts):
             raise ValueError("NPU live publication claims contradict enabled execution")
-    for text in features["apu"] + content["apu"]["notes"]:
+    apu = reference["apu_implementation"]
+    texts = [row["summary"] for row in catalog if row["id"] == "apu"]
+    texts += features["apu"] + content["apu"]["notes"]
+    for text in texts:
+        if (all(row["formats"]["WAV"] and row["formats"]["FLAC"] for row in apu["profiles"])
+                and re.search(r"(?:codec jobs|WAV[/ ]FLAC).*remain(?:s)? disabled", text, re.I)):
+            raise ValueError("APU publication contradicts deployed WAV/FLAC capability")
         if (re.search(r"MP3(?: and |/)KWS.*not advertised", text, re.I)
                 and not re.search(r"default|P7|configuration", text, re.I)):
             raise ValueError("APU publication loses the configured KWS distinction")

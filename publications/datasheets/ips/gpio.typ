@@ -12,12 +12,12 @@
 
 #ip-reference("gpio","gpio",3,legacy:[
 Software controls per-pin mode, output data, output enable, open-drain behavior, input filtering
-and interrupt configuration. Alternate-function and user-IP paths share the same 32 physical
-GPIOs. Atomic set/clear/toggle operations avoid software read-modify-write races.
+and interrupt configuration. Alternate-function and user-IP paths share the *same 32 physical
+GPIOs*. *Atomic set/clear/toggle operations* avoid software read-modify-write races.
 
 ==== System IO / Management Window
 The administration window owns pad mode, electrical controls, filters, user access masks and
-configuration locks. The user access mask resets to zero. Configuration ownership and lock
+configuration locks. The *user access mask resets to zero*. Configuration ownership and lock
 semantics apply to the single controller; this window is not a separate GPIO bank.
 
 ==== User Custom IO / User Window

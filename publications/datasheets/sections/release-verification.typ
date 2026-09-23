@@ -1,18 +1,19 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-release-verification","Selected body emphasis: release verification")
 
 == Release Verification Summary <release-verification>
-#change-start("dev-release-evidence","Commit-bound CI outcomes and qualification boundaries")
+#change-start("v05-refresh-ci","Current commit CI outcomes and installation/check/runtime boundaries")
 This summary separates the existence of an implementation or test from evidence for a
-particular release. Every reported pass must identify the reviewed source revision, exact
-configuration, platform stage and matching report. A newer source-tree result cannot
+particular release. Every reported pass must identify the *reviewed source revision, exact
+configuration, platform stage and matching report*. A newer source-tree result cannot
 silently qualify this publication's older hardware snapshot.
 
 The current #(data.system_reference.support.len())-IP inventory records
 #data.system_reference.retrieval.verification.support_counts.at("Source reviewed") source-reviewed entries,
 #data.system_reference.retrieval.verification.support_counts.at("Tests available") entries with test sources,
 and #data.system_reference.retrieval.verification.support_counts.at("Reported pass") entries with a matching
-reported pass. These counts describe publication evidence, not a percentage of functional
-coverage. See @software-support and @known-limitations for the per-IP qualifications.
+reported pass. These counts describe publication evidence, *not a percentage of functional
+coverage*. See @software-support and @known-limitations for the per-IP qualifications.
 
 === CI snapshot for the reviewed commit
 #let ci=data.system_reference.ci_snapshot
@@ -25,6 +26,27 @@ These links identify recorded public workflow/job outcomes. They are not substit
 per-IP reports tied to the exact profile, test selection and platform stage below. In particular,
 an unfinished workflow has no pass/fail conclusion. Its eventual result must be read from the
 identified run and cannot qualify stages that it did not execute.
+
+#let environment-runs=ci.runs.filter(r=>r.at("observations",default:()).len()>0)
+#if environment-runs.len()>0 {
+  let stage-rows=()
+  let stage-names=("installation":[Installation],"environment-check":[Environment check],
+    "runtime-regression":[Runtime regression])
+  for run in environment-runs {
+    for stage in run.observations {
+      stage-rows.push((link(stage.url,stage.name),stage-names.at(stage.scope),
+        [#stage.status \ #if stage.conclusion==none {[No conclusion yet]} else {stage.conclusion}]))
+    }
+  }
+  ds-table("ci-environment-stages",[Observed development-environment stages],
+    ([Entrypoint and step],[Evidence stage],[Status / conclusion]),
+    stage-rows,
+    widths:(2.25fr,0.95fr,1fr))
+  par[Installation, environment checking and runtime regression are *separate observations*.
+    The runtime command includes environment checks followed by the selected behavioral
+    regression. A failure in that combined step does not identify its cause or prove that
+    simulation reached a particular stage. Job links retain the complete step record.]
+}
 
 === Historical reports and current-source gaps
 #ds-table("historical-accelerator-evidence",[Earlier recorded results and their publication boundary],
@@ -83,4 +105,6 @@ For the ordered checks performed by bringup and CI smoke, see @application-diagn
 @firmware-application-results. An application's terminal pass qualifies only that selected
 sequence; controller self-test, CPU interrupt delivery and external-device traffic remain
 separate coverage statements.
-#change-end("dev-release-evidence")
+#change-end("v05-refresh-ci")
+
+#change-end("v05-emphasis-release-verification")

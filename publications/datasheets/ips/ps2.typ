@@ -12,8 +12,8 @@
 
 #ip-reference("ps2","ps2",4,legacy:[
 GPIO0/1 ALT1 route PS/2 clock/data. The integration binds input sensing and active-low drive
-behavior for an open-drain bus. External pull-ups are required. Before changing GPIO ownership,
-firmware disables the controller and confirms that both output enables are released.
+behavior for an open-drain bus. *External pull-ups are required*. Before changing GPIO ownership,
+firmware disables the controller and confirms that *both output enables are released*.
 ])
 
 #context metadata((kind:"ip-end",id:"ps2",page:here().page()))

@@ -1,15 +1,16 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-fault-reference","Selected body emphasis: fault reference")
 #import "../ip-reference.typ": inline
 
 = Appendix: Fault and Status Code Reference <fault-code-reference>
-This appendix is a lookup aid for the reviewed implementation. Begin with the producing
-module and the validity/ownership state, then decode its value. An equal number in two tables
-does not imply an equal fault. Numeric enums select one value; bitmasks can contain several
+This appendix is a lookup aid for the reviewed implementation. Begin with the *producing
+module and the validity/ownership state*, then decode its value. An equal number in two tables
+*does not imply an equal fault*. Numeric enums select one value; bitmasks can contain several
 independent causes. Source-declared codes are not proof that every associated optional
 function or end-to-end path is implemented.
 
-Capture first-fault address, master, direction, engine progress and descriptor state before
-acknowledging or resetting anything. The detailed register and recovery contracts in
+Capture first-fault address, master, direction, engine progress and descriptor state *before
+acknowledging or resetting anything*. The detailed register and recovery contracts in
 @system-diagnostics remain authoritative. The global address lookup is @global-register-index.
 
 == Diagnostic Code Namespaces
@@ -59,10 +60,12 @@ intermediate console messages. The same integer can denote different stages, inc
 one application. Preserve application identity, execution order and preceding log markers.
 
 === HP Boot Application Results
+#change-start("v05-refresh-boot-results","Bounded boot failures and stage-qualified terminal result")
 These result codes belong to the supplied HP boot application. TEST_STATUS's result byte is
 application-defined; other firmware can assign different meanings. Code 1 can be written
-before a reliable console exists. A missing ready event does not generate a new firmware
-code: the current final mailbox wait has no firmware-local deadline.
+before a reliable console exists. The ready, result and cache-clean waits have bounded polling
+budgets and distinct failure stages. The initial ready marker precedes the remaining GA2D
+acceptance/cache handoff; it does not itself write a successful TEST_STATUS value.
 
 #ds-table("boot-result-codes",[HP boot application terminal result codes],
   ([Code],[Meaning / producing stage]),
@@ -71,9 +74,13 @@ code: the current final mailbox wait has no firmware-local deadline.
 The #code("HP_BOOT_FAILED:<code>") diagnostic is emitted by the failure helper before its
 terminal status write; UART initialization failure uses the direct terminal path. Entry-copy
 failure is reported only after both the DMA attempt and software copy/CRC fallback fail.
-After copying, HP release and Linux readiness are distinct checkpoints. See @boot-configuration
-for prerequisites and @image-maintenance for separate programming-tool result semantics.
+After copying, HP release, initial readiness, job result and cache-clean handoff are distinct
+checkpoints. NPU resource handoff is conditional on its acceptance build options. The failure
+helper preserves HP state after GA2D ownership moves to HP; a failed verdict does not guarantee
+a completed reset or DMA drain. See @boot-configuration for prerequisites/recovery and
+@image-maintenance for separate programming-tool result semantics.
 #source-note("app/apps/hp_boot/main.c",title:"Actual boot failure branches and ready-event handling")
+#change-end("v05-refresh-boot-results")
 
 #for app in data.system_reference.software.applications {
   heading(level:3,app.title)
@@ -120,3 +127,5 @@ different measurements. This appendix supplies no new successful hardware run.
 #source-note("rtl/mini/dv/tb/retrosoc_tb.sv",title:"Icarus testbench completion")
 #source-note("rtl/mini/dv/verilator/csrc/Emulator.cpp",title:"Verilator completion")
 #source-note("docs/engineering.md",title:"Regression verdict and evidence rules")
+
+#change-end("v05-emphasis-fault-reference")

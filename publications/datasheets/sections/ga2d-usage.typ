@@ -5,9 +5,9 @@
   #ds-table("ga2d-operations",[GA2D P5 operations and admitted surfaces],
     ([Operation],[Inputs],[Destination and boundary]),
     (([FILL],[COLOR; foreground/background surfaces unused.],[Any supported color format; fill alpha follows COLOR for ARGB8888.]),
-     ([COPY],[One color foreground.],[Same format as foreground; byte-preserving, no overlapping source/destination.]),
+     ([COPY],[One color foreground.],[Same format as foreground; byte-preserving, *no overlapping source/destination*.]),
      ([CONVERT],[One color foreground.],[Any supported color format; bit replication on RGB565 expansion and high-bit truncation on packing.]),
-     ([BLEND],[Color foreground or A8 mask; opaque color background.],[Color destination. Background may equal destination only with identical address, pitch and format.])),
+     ([BLEND],[Color foreground or A8 mask; opaque color background.],[Color destination. Background may equal destination only with *identical address, pitch and format*.])),
     widths:(0.6fr,1.3fr,2.3fr))
   RGB565 stores red in bits 15:11, green in 10:5 and blue in 4:0. RGB888 stores bytes R, G, B
   in increasing memory addresses. XRGB8888 and ARGB8888 store bytes B, G, R, X/A. Conversion
@@ -18,7 +18,7 @@
   Let #code("Af") be foreground alpha (255 for RGB/XRGB or the mask byte for A8),
   #code("Ag") the global alpha, and #code("F")/#code("B") one foreground/background color channel:
   #code-block(raw("A = floor((Af * Ag + 127) / 255)\nC = floor((F * A + B * (255 - A) + 127) / 255)",block:true))
-  The two rounding steps are separate. A8 supplies alpha only and takes foreground RGB from
+  The two rounding steps are separate. *A8 supplies alpha only* and takes foreground RGB from
   COLOR. Background alpha is not accumulated; BLEND writes opaque destination alpha.
   #source-note("rtl/ip/multimedia/ga2d_pixel.sv",title:"Implemented byte packing and two-stage alpha rounding")
 
@@ -45,12 +45,12 @@
 #let ga2d-protocol() = [
   #minor-title("Admission, completion and recovery")
   Configuration is staged through APB4 and latched for one accepted job. START requires a
-  ready data path, idle engine and valid geometry; BUSY is not a queue-space indicator.
+  ready data path, idle engine and valid geometry; BUSY is *not a queue-space indicator*.
   Completion is reported after the engine's accepted read/write obligations have completed.
   #ds-table("ga2d-recovery",[GA2D completion and recovery decisions],
     ([Observation],[Required software action]),
     (([DONE with no error],[Capture counters, acknowledge the owner IRQ, and transfer destination ownership before CPU reads.]),
-     ([Software polling timeout],[Do not reuse the buffers. Request abort and wait for accepted bus traffic to drain.]),
+     ([Software polling timeout],[*Do not reuse the buffers*. Request abort and wait for accepted bus traffic to drain.]),
      ([ERROR or ABORT_DONE],[Capture first-error code, stage, AXI response and address; verify busy/draining state before release.]),
      ([RECOVERY_REQUIRED or bridge epoch change],[Coordinate resource/HP recovery, wait for the bridge clear and DATA_READY rearm, then establish ownership again.]),
      ([PCLK/HP lifecycle transition],[Block new work, stop/drain, complete bridge flush and acknowledge the new epoch; source idle alone is insufficient.])),

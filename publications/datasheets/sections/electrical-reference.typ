@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-electrical-reference","Selected body emphasis: electrical reference")
 
 == Electrical and Timing Specifications <electrical-specifications>
-The RTL snapshot and reference configuration establish digital behavior, not production
-electrical ratings. The following groups define the information needed for a physical release.
-TBD means no reviewed specification is attached; it never means zero or an unrestricted limit.
+The RTL snapshot and reference configuration establish digital behavior, *not production
+electrical ratings*. The following groups define the information needed for a physical release.
+TBD means no reviewed specification is attached; it *never means zero or an unrestricted limit*.
 
 Each completed parameter row must identify its supply/pad domain, PVT and load conditions,
 unit, Min/Typ/Max interpretation and report revision. Attach setup/hold and output-delay
@@ -13,8 +14,8 @@ production-test guarantees distinct when the release record in @release-verifica
 === Parameter conditions and evidence
 Every numerical electrical entry must identify process/PDK and revision, macro/pad implementation,
 package, supply, temperature, clock configuration and loading. Label the basis as approved
-vendor specification, model/analysis, characterization or production test. Minimum/maximum
-guarantees and typical observations must not be interchanged.
+vendor specification, model/analysis, characterization or production test. *Minimum/maximum
+guarantees and typical observations must not be interchanged*.
 
 #ds-table("electrical-conditions",[Conditions required for a numerical electrical specification],
   ([Condition],[Required record],[Current publication state]),
@@ -37,7 +38,7 @@ Power connections and sequencing must come from the selected technology and pack
    ([Partial power],[Back-power/injection limits and permitted levels when another rail is absent.],[TBD]),
    ([Decoupling],[Approved capacitor network, placement, return path and package-specific requirements.],[TBD])),
   widths:(0.8fr,2.8fr,0.4fr))
-Digital initialization begins only after the board has met its approved rail, clock and reset
+Digital initialization begins *only after the board has met* its approved rail, clock and reset
 requirements. Use the clock/reset sequence in @operating-states after that point. No universal
 rail ordering, brownout threshold or reset pulse width is specified for the generic SoC here.
 
@@ -100,3 +101,5 @@ isolation and retention current are not established by the current digital clock
   widths:(1fr,2.4fr,0.6fr))
 #source-note("physical/README.md",title:"Technology, macro and physical-validation boundary")
 #source-note("docs/pll-clock-control.md",title:"Digital clock choices and physical qualification")
+
+#change-end("v05-emphasis-electrical-reference")

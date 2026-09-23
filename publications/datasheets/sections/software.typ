@@ -1,31 +1,36 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-software","Selected body emphasis: software")
 #change-start("dev-software","NPU/APU support, boot ownership and current application diagnostics")
 #import "../figures.typ": *
+#let boot = data.system_reference.software.boot_acceptance
+#change-start("v05-refresh-hp-boot","Current bounded HP boot and complete acceptance protocol")
 
 = Software
 == Boot Configuration, Initialization and Recovery <boot-configuration>
 The management hart starts from the reset flash alias. Normal firmware composition and memory
 placement depend on the committed application and linker profile. The HP acceptance example
-instead uses the SRAM-resident `hp_boot` image and validates an external boot bundle before
+instead uses the *SRAM-resident `hp_boot` image* and validates an external boot bundle before
 releasing HP. It must not be assumed that every bringup image automatically boots Linux.
 The separate APU P7 acceptance profile performs LP image/model loading and bare-metal HP
 audio/KWS work; it is not the Linux boot profile. NPU compiler output and HP smoke payloads
 likewise do not supply a native Linux driver. See @apu and @npu for their software boundaries.
 
-#figure(boot-diagram(), caption:[HP boot example. Validation failure retains LP recovery control and prevents normal HP handoff.])<boot-flow>
+#figure(boot-diagram(), caption:[Linux image loading and initial ready checkpoint. The loader's complete acceptance protocol continues below.])<boot-flow>
 
 The HP bundle contains locked OpenSBI, Linux, device-tree and initramfs inputs. LP validates
 the header and payload bounds, attempts transfer with the boot DMA context and CRC, and
 falls back to a software copy/CRC if that attempt fails. It fences memory, clears the LP
 mailbox interrupt and requests HP release. It then waits for the expected readiness event;
-it does not publish entry/DTB addresses through a boot mailbox before release.
+it does not publish entry/DTB addresses through a boot mailbox before release. The same loader
+also serves freestanding HP acceptance payloads. Its later GA2D/cache-clean protocol is required
+before a successful TEST_STATUS write; the *initial ready message alone does not complete it*.
 #source-note("docs/lp-hp-architecture.md", title:"Boot-bundle ABI, lifecycle and failure handling")
 
 === Prerequisites and image layout
 Use the dedicated HP profile for the acceptance loader. It runs from on-chip SRAM and waits
 for the SDRAM controller to be ready and free of initialization/error state. The software
 does not choose an arbitrary external device timing configuration during this wait. External
-flash placement, SDRAM wiring and timing must already match the selected integration.
+flash placement, SDRAM wiring and timing *must already match the selected integration*.
 
 #ds-table("hp-image-layout",[HP image locations extracted from the boot-bundle header],
   ([Artifact],[Load address],[Maximum allocation]),
@@ -34,7 +39,7 @@ flash placement, SDRAM wiring and timing must already match the selected integra
 The build uses OpenSBI FW_JUMP with a fixed Linux entry and DTB address, without a U-Boot
 stage. The bundle header contains a format version, required entry types, lengths, fixed
 load locations and CRCs. Keep the image builder, package builder, loader header and selected
-source revision together. A larger image must not be silently truncated to fit its allocation.
+source revision together. A larger image *must not be silently truncated* to fit its allocation.
 
 The manual preparation/build entry points are the existing #code("make setup-hp-linux") and
 #code("make CONFIG=configs/ci/ihp130-hp.mk hp-linux") flows. Setup obtains locked resources;
@@ -51,10 +56,34 @@ port guide for the generated output layout and boot packaging commands.
   total size, fixed entry order, flash bounds, destination bounds and header CRC.
 + For each entry, attempt the DMA TCD transfer with expected CRC and check status, transferred
   length and CRC result. If that attempt fails, execute the existing software-copy/CRC fallback.
++ Probe the mailbox, confirm that GA2D is safely idle under LP ownership, transfer it to HP,
+  and confirm HP-owned safe idle. NPU ownership participates only when
+  #code(boot.npu_defines.join(" or ")) is compiled.
 + Apply the memory fence, clear the LP mailbox interrupt, request release, and check the
   immediate HP status result. Observe #code("HP_BOOT_RELEASED") only as a release checkpoint.
-+ Wait for a nonzero-sequence mailbox message. The expected event/argument reports
-  #code("HP_LINUX_READY") and the common sticky test pass. An unexpected message is a failure.
++ Wait for the exact ready event, argument and sequence. #code("HP_LINUX_READY") marks this
+  checkpoint; a freestanding acceptance payload uses the same marker without booting Linux.
++ Send the GA2D start command and wait for the result message with its distinct sequence.
+  Confirm GA2D safe idle before requesting HP hold.
++ Observe the cache-clean request, receive the cache message, acknowledge clean state and
+  confirm HP held without a forced fault. Return GA2D to LP and verify safe idle; return NPU
+  as well when its acceptance option is enabled. Only then write the sticky successful verdict.
+
+#ds-table("hp-boot-mailbox-checkpoints",[Required HP-to-LP acceptance messages],
+  ([Checkpoint],[Event],[Argument],[Sequence]),
+  boot.messages.map(r=>(r.title,str(r.event),code("0x"+upper(str(r.argument,base:16))),str(r.sequence))),
+  widths:(1.65fr,0.45fr,1.15fr,0.65fr))
+The ready, result and cache waits each have a firmware polling budget of
+#boot.event_poll_iterations iterations (#boot.event_poll_multiplier × RS_TIMEOUT_DEFAULT).
+The budget is *not a duration in milliseconds*, and a stalled MMIO access can prevent loop
+progress. A different sequence remains pending until the budget expires; matching the sequence
+with a wrong event or argument fails immediately. A mailbox API error also fails the wait.
+
+The supplied Linux rootfs service sends *only the initial ready message*. It contains no GA2D
+command responder or cache-clean service. A Linux init checkpoint therefore does not satisfy
+the complete current acceptance loader. A matching HP acceptance payload supplies those later
+responses; deploying a Linux service that does so is additional integration work, not a native
+graphics-driver capability established by this publication. See @linux-runtime.
 
 The software fallback computes CRC from bytes read from the source while copying. It performs
 full destination readback only for entries up to the loader's small-entry threshold; it must
@@ -62,25 +91,19 @@ not be described as a complete large-image destination readback test. CRC checks
 integrity, not image origin or rollback policy.
 
 === Failure branches and supervision boundary
-#ds-table("hp-boot-failures",[HP loader checkpoints and diagnostic result codes],
-  ([Checkpoint],[Code / observation],[Result and required response]),
-  (([Console initialization],[1],[Common failed verdict; establish a usable diagnostic path.]),
-   ([HP prerequisite state],[2],[HP presence/reset/debug setup did not meet requirements.]),
-   ([SDRAM readiness],[3],[Bounded wait failed; inspect memory configuration and controller status.]),
-   ([Bundle header],[4],[Reject the bundle; rebuild matching images and header rather than relaxing bounds.]),
-   ([Payload loading],[5-8],[Both DMA and software paths failed for the respective entry.]),
-   ([Release/checkpoint],[9],[Inspect requested/actual HP state and lifecycle faults.]),
-   ([Unexpected ready event],[10],[Check software revisions, mailbox payload and boot epoch.]),
-   ([No ready message],[No firmware-local deadline],[The loop keeps waiting. The simulator deadline is external to the loader.])),
-  widths:(1fr,0.85fr,2.25fr))
-The failure helper requests HP reset and writes a failed test verdict; it does not implement
-an automatic image retry or signed recovery image selection. A board-level watchdog,
-supervisor deadline or replacement loader policy is additional integration work. After a
-failed release or forced stop, inspect actual reset/drain state before reusing HP memory.
+Use the source-checked result codes in @firmware-application-results for the producing stage;
+they include missing ready, result and cache-clean checkpoints. The failed verdict alone does
+not prove that HP, its dirty cache or accepted bus traffic has stopped.
+The failure helper requests HP hold/reset *only while GA2D is not recorded as HP-owned*.
+After that handoff, it preserves the ownership state and writes a failed verdict without an
+unconditional HP reset. Capture actual reset, drain, cache and resource state before recovery
+or buffer reuse. No automatic image retry or signed recovery image selection is implemented.
+A board supervisor/watchdog remains a separate protection against stalled accesses or software.
 
-For target acceptance, capture profile/image hashes, LP load/release checkpoints, the expected
-Linux readiness event and the final simulator verdict. Do not treat UART startup alone as
-success. A complete Linux peripheral qualification requires the separate support matrix.
+For target acceptance, capture profile/image hashes, enabled acceptance options, LP load/release
+checkpoints, ready/result/cache messages, final ownership and the simulator verdict. Do not treat
+UART startup or the ready marker alone as success. Linux peripheral qualification requires
+the separate support matrix and matching platform evidence.
 
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
@@ -90,6 +113,7 @@ success. A complete Linux peripheral qualification requires the separate support
   #source("scripts/build_hp_linux.py",title:"OpenSBI FW_JUMP and Linux artifact composition") ·
   #source("scripts/package_hp_boot.py",title:"Bundle generation and layout checks")
 ]
+#change-end("v05-refresh-hp-boot")
 
 
 #include "image-maintenance.typ"
@@ -189,6 +213,8 @@ Canonical memory, topology and pin generators emit build-local bindings. Managed
 toolchains and external inputs are revision-locked. This document does not modify those
 hardware interfaces or create another register source of truth.
 
+#include "development-environment.typ"
+
 == RTL Simulation
 Verilator and Icarus support behavioral verification; the repository also defines synthesis,
 netlist simulation, static timing, warning and metric collection flows. The supported PR
@@ -227,3 +253,5 @@ and bringup record. Publish the design-file revision with each drawing or downlo
 and identify which routes were actually tested. The current XDC provides constraints for its
 named FPGA board; the missing circuit and acceptance records remain listed in @release-verification.
 #source-note("fpga/mini/starrysky_v2.xdc",title:"Existing board-specific FPGA constraint input")
+
+#change-end("v05-emphasis-software")

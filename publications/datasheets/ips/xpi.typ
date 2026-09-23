@@ -18,10 +18,10 @@ Each IP chapter begins on a new page. Shared register layouts are documented onc
 #ip("xpi")
 
 #ip-reference("xpi","xpi",5,legacy:[
-XPI V2 supports programmable command sequences, SDR serial phases and independent chip-select
+XPI V2 supports programmable command sequences, *SDR serial phases* and independent chip-select
 configuration. The command LUT supports serial flash reads and indirect transfers without
 embedding one device's opcode sequence into software-visible hardware policy. Memory reads,
-command programming, DMA and status polling share a controlled transaction engine.
+command programming, DMA and status polling share a *controlled transaction engine*.
 
 The boot alias begins at address zero. The main XPI data aperture is 256 MiB, while the boot
 alias is 16 MiB; these are decoder windows, not fitted flash capacities. Data-plane writes are
