@@ -6,6 +6,8 @@ import argparse
 import json
 import os
 import re
+import resource
+import signal
 import subprocess
 import sys
 import termios
@@ -75,6 +77,17 @@ def write_console_bytes(chunk: bytes) -> None:
     sys.stdout.buffer.flush()
 
 
+def terminate_process_group(process: subprocess.Popen[str] | subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    os.killpg(process.pid, signal.SIGTERM)
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.wait()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a flow command with structured results")
     parser.add_argument("--tool", required=True)
@@ -111,6 +124,28 @@ def main() -> int:
     args.result.parent.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
+    atomic_write(
+        args.result,
+        json.dumps(
+            {
+                "schema_version": 1,
+                "tool": args.tool,
+                "command": command,
+                "started_at": started.isoformat(),
+                "status": "running",
+                "log": str(args.log.resolve()),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+    )
+
+    def interrupt_flow(_signum: int, _frame: object) -> None:
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, interrupt_flow)
+    signal.signal(signal.SIGTERM, interrupt_flow)
     returncode = 127
     error_message = None
     process: subprocess.Popen[str] | subprocess.Popen[bytes] | None = None
@@ -132,6 +167,7 @@ def main() -> int:
                 errors=None if args.stream_bytes else "replace",
                 bufsize=0 if args.stream_bytes else 1,
                 pass_fds=jobserver_fds(),
+                start_new_session=True,
             )
             assert process.stdout is not None
             if args.stream_bytes:
@@ -150,25 +186,15 @@ def main() -> int:
                         write_console_output(line)
                     if args.terminate_on_success_marker and args.success_marker in line:
                         marker_seen = True
-                        process.terminate()
-                        try:
-                            process.wait(timeout=5)
-                        except subprocess.TimeoutExpired:
-                            process.kill()
-                            process.wait()
+                        terminate_process_group(process)
                         returncode = 1 if rejected_matches else 0
                         break
             if not marker_seen:
                 returncode = process.wait()
     except KeyboardInterrupt:
         error_message = "interrupted"
-        if process is not None and process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+        if process is not None:
+            terminate_process_group(process)
         returncode = 130
     except (OSError, subprocess.SubprocessError) as error:
         error_message = str(error)
@@ -182,6 +208,7 @@ def main() -> int:
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "duration_seconds": round(time.monotonic() - start_clock, 3),
+        "peak_rss_kib": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
         "exit_code": returncode,
         "status": "passed" if returncode == 0 else "failed",
         "log": str(args.log.resolve()),

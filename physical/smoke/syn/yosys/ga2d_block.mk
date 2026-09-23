@@ -83,7 +83,8 @@ $(GA2D_BLOCK_NETLIST): $(GA2D_BLOCK_FLIST) $(GA2D_BLOCK_SCRIPTS)
 		--env PROJ_NAME=$(GA2D_BLOCK_TOP) --env WORK=$(GA2D_BLOCK_TMP) \
 		--env BUILD=$(GA2D_BLOCK_OUT) --env REPORTS=$(GA2D_BLOCK_RPT) \
 		--env NETLIST=$(GA2D_BLOCK_NETLIST) -- \
-		yosys -c $(YOSYS_DIR)/script/synth.tcl
+		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
+		yosys -t --perffile $(GA2D_BLOCK_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
 
 # Fails loudly on inferred latches or non-PDK (black-box/unmapped) cells and
 # records the register/FIFO mapping summary consumed by the evidence section.

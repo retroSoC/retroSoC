@@ -55,7 +55,13 @@ def test_yosys_recipe_scripts_and_public_slot_are_stable() -> None:
     assert "SYNTH_RECIPE" not in makefile.split("CONFIG_KEY_VARS", 1)[1].split("VARIANT_ID", 1)[0]
     assert "--env SYNTH_RECIPE=$(SYNTH_RECIPE)" in yosys_mk
     assert "--env YOSYS_TARGET_PERIOD_PS=$(YOSYS_TARGET_PERIOD_PS)" in yosys_mk
+    assert "YOSYS_TIMEOUT ?= 10800" in yosys_mk
+    assert "timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s" in yosys_mk
+    assert "yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json" in yosys_mk
     assert "abc_${synth_recipe}.script" in synth_tcl
+    assert '${proj_name}_pre_memory.rpt' in synth_tcl
+    assert '${proj_name}_pre_memory.json' in synth_tcl
+    assert synth_tcl.index('${proj_name}_pre_memory.json') < synth_tcl.index("yosys memory")
     assert "yosys abc {*}$tech_cells_args -D $period_ps -script $abc_script -constr $abc_constr" in synth_tcl
     assert "S110" not in synth_tcl
     assert "$(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v" in opensta

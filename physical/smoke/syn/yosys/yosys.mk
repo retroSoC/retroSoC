@@ -24,6 +24,7 @@ YOSYS_BUILD := $(SYN_BUILD_ROOT)
 YOSYS_OUT   := $(YOSYS_BUILD)/out
 YOSYS_TMP   := $(YOSYS_BUILD)/tmp
 YOSYS_RPT   := $(YOSYS_BUILD)/rpt
+YOSYS_TIMEOUT ?= 10800
 
 include $(YOSYS_DIR)/synth_config.mk
 
@@ -69,7 +70,8 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
-		yosys -c $(YOSYS_DIR)/script/synth.tcl
+		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
+		yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
 
 $(NETLIST_DEBUG): $(NETLIST)
 	@test -f $@

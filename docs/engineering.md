@@ -172,6 +172,18 @@ duration, warning signatures, and netlist simulation verdict together. The
 improved metric is not sufficient to replace `balanced`. Metrics policy remains
 in `observe` mode while recipe baselines are collected and reviewed.
 
+Every Yosys run writes `yosys-perf.json`, `<top>_pre_memory.rpt`, and
+`<top>_pre_memory.json` immediately before memory lowering. These reports are
+the authoritative pass-timing and inferred-memory inventory for memories that
+would otherwise be expanded into registers and muxes. Structured flow results
+also record `peak_rss_kib`, the operating system's maximum resident-set
+observation for the child tool. Keep both artifacts when a synthesis run times
+out or is interrupted; a missing final netlist is never a successful synthesis
+result.
+The full and block Yosys flows enforce `YOSYS_TIMEOUT=10800` seconds by
+default. Override it only for an explicitly reviewed diagnostic run; timeout
+exit 124 remains a failed synthesis verdict.
+
 Generated filelists and MPW output are flow-local. Make depfiles track expanded RTL sources and
 included headers. The shared MPW generator is protected by a file lock. Default tool parallelism is
 capped at 16 and can be set with `JOBS=<n>` or `MAX_JOBS=<n>`.

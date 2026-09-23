@@ -46,7 +46,10 @@ module apu_p7_accuracy_tb;
   logic [31:0] fault_addr_o, fault_detail_o;
   logic [15:0][14:0] model_addr_o;
   logic [15:0][ 7:0] model_store_data;
+  logic storage_req, storage_ready, storage_done, storage_progress, storage_write;
+  logic [15:0]       model_read_valid;
   logic              scratch_clear;
+  logic [19:0]       scratch_read_valid;
   logic [19:0][15:0] scratch_read_addr;
   logic [19:0][31:0] scratch_read_data;
   logic [ 5:0]       scratch_write_valid;
@@ -86,9 +89,16 @@ module apu_p7_accuracy_tb;
       .data_o               (),
       .valid_o              (),
       .access_err_o         (),
+      .access_req_i         (storage_req),
+      .access_ready_o       (storage_ready),
+      .access_done_o        (storage_done),
+      .access_progress_o    (storage_progress),
+      .access_write_i       (storage_write),
+      .model_read_valid_i   (model_read_valid),
       .model_addr_i         (model_addr_o),
       .model_data_o         (model_store_data),
       .scratch_clear_i      (scratch_clear),
+      .scratch_read_valid_i (scratch_read_valid),
       .scratch_read_addr_i  (scratch_read_addr),
       .scratch_read_data_o  (scratch_read_data),
       .scratch_write_valid_i(scratch_write_valid),
@@ -143,9 +153,16 @@ module apu_p7_accuracy_tb;
       .memory_input_used_o         (memory_input_used_o),
       .kws_config_i                (KwsConfig),
       .input_config_i              (InputConfig),
+      .storage_req_o               (storage_req),
+      .storage_ready_i             (storage_ready),
+      .storage_done_i              (storage_done),
+      .storage_progress_i          (storage_progress),
+      .storage_write_o             (storage_write),
+      .model_read_valid_o          (model_read_valid),
       .model_addr_o                (model_addr_o),
       .model_data_i                (model_store_data),
       .scratch_clear_o             (scratch_clear),
+      .scratch_read_valid_o        (scratch_read_valid),
       .scratch_read_addr_o         (scratch_read_addr),
       .scratch_read_data_i         (scratch_read_data),
       .scratch_write_valid_o       (scratch_write_valid),

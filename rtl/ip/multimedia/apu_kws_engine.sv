@@ -49,9 +49,16 @@ module apu_kws_engine (
     output logic [31:0]             memory_input_used_o,
     input  logic [15:0]             kws_config_i,
     input  logic [31:0]             input_config_i,
+    output logic                    storage_req_o,
+    input  logic                    storage_ready_i,
+    input  logic                    storage_done_i,
+    input  logic                    storage_progress_i,
+    output logic                    storage_write_o,
+    output logic [15:0]             model_read_valid_o,
     output logic [15:0][14:0]       model_addr_o,
     input  logic [15:0][ 7:0]       model_data_i,
     output logic                    scratch_clear_o,
+    output logic [19:0]             scratch_read_valid_o,
     output logic [19:0][15:0]       scratch_read_addr_o,
     input  logic [19:0][31:0]       scratch_read_data_i,
     output logic [ 5:0]             scratch_write_valid_o,
@@ -175,6 +182,9 @@ module apu_kws_engine (
   logic [31:0] s_fault_addr_q, s_fault_detail_q;
   logic [31:0] s_front_watchdog_q, s_infer_watchdog_q;
   logic s_front_progress, s_infer_progress;
+  logic s_storage_wait_q, s_storage_write_phase_q, s_storage_state_owned_q;
+  logic s_storage_read_access, s_storage_write_access, s_storage_has_access;
+  logic s_storage_final_done, s_storage_state_step;
 
   logic s_config_valid, s_continuous_active, s_listening, s_capture_available;
   logic s_stream_accept, s_stream_legal, s_window_deadline, s_mel_overwrite;
@@ -578,8 +588,8 @@ module apu_kws_engine (
       !s_stop_latched_q && model_valid_i && model_lock_i && s_config_valid;
   assign s_listening = s_continuous_active && s_en_q && !flush_busy_i;
   assign s_capture_available = (s_front_state_q == FrontIdle) && !s_frame_pending_q &&
-      !s_window_pending_q && (s_fir_tap_q == 6'd0);
-  assign rx_ready_o = s_listening && s_capture_available;
+      !s_window_pending_q && (s_infer_state_q == InferIdle) && (s_fir_tap_q == 6'd0);
+  assign rx_ready_o = s_listening && s_capture_available && !s_storage_wait_q && storage_ready_i;
   assign s_stream_accept = stream_i.tvalid && rx_ready_o;
   assign s_stream_legal = (stream_i.tkeep == 4'hf) && (stream_i.tstrb == 4'hf) && !stream_i.tlast;
   assign s_window_deadline = s_commit_valid &&
@@ -754,9 +764,11 @@ module apu_kws_engine (
   assign s_mac_total = s_mac_q + s_lane_sum;
 
   always_comb begin
-    model_addr_o        = '0;
-    scratch_read_addr_o = '0;
-    s_lane_active       = 16'd0;
+    model_read_valid_o   = 16'd0;
+    model_addr_o         = '0;
+    scratch_read_valid_o = 20'd0;
+    scratch_read_addr_o  = '0;
+    s_lane_active        = 16'd0;
     for (int lane = 0; lane < 16; lane++) begin
       s_lane_term[lane]         = {1'b0, s_term_q} + 9'(lane);
       s_lane_input_index[lane]  = 13'd0;
@@ -766,14 +778,17 @@ module apu_kws_engine (
     end
     unique case (s_front_state_q)
       FrontFir: begin
+        scratch_read_valid_o[0] = 1'b1;
         scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_FIR_BASE +
             {9'd0, fir_history_index(s_fir_write_q, s_fir_tap_q), 1'b0};
       end
       FrontFftLoad: begin
+        scratch_read_valid_o[0] = 1'b1;
         scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_INGRESS_BASE +
             16'(ingress_add(s_frame_start_q, s_front_index_q) * 2);
       end
       FrontFftRun: begin
+        scratch_read_valid_o[3:0] = 4'hf;
         scratch_read_addr_o[0] =
             `RETROSOC_APU_KWS__SCRATCH_FFT_REAL_BASE + 16'(s_fft_left_index * 4);
         scratch_read_addr_o[1] =
@@ -784,23 +799,28 @@ module apu_kws_engine (
             `RETROSOC_APU_KWS__SCRATCH_FFT_IMAG_BASE + 16'(s_fft_right_index * 4);
       end
       FrontMagnitude: begin
+        scratch_read_valid_o[1:0] = 2'b11;
         scratch_read_addr_o[0] =
             `RETROSOC_APU_KWS__SCRATCH_FFT_REAL_BASE + 16'(s_front_index_q * 4);
         scratch_read_addr_o[1] =
             `RETROSOC_APU_KWS__SCRATCH_FFT_IMAG_BASE + 16'(s_front_index_q * 4);
       end
       FrontMel: begin
-        scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_FFT_REAL_BASE + 16'(s_mel_bin_q * 4);
+        scratch_read_valid_o[0] = 1'b1;
+        scratch_read_addr_o[0]  = `RETROSOC_APU_KWS__SCRATCH_FFT_REAL_BASE + 16'(s_mel_bin_q * 4);
       end
       FrontPeak: begin
-        scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_PEAK_BASE + 16'(s_peak_scan_q * 2);
+        scratch_read_valid_o[0] = 1'b1;
+        scratch_read_addr_o[0]  = `RETROSOC_APU_KWS__SCRATCH_PEAK_BASE + 16'(s_peak_scan_q * 2);
       end
       FrontLog: begin
+        scratch_read_valid_o[0] = 1'b1;
         scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_MEL_BASE +
             16'((16'(s_log_row_index) * 16'd40 + 16'(s_mfcc_band_q)) * 16'd4);
       end
       FrontDct: begin
-        scratch_read_addr_o[0] = `RETROSOC_APU_KWS__SCRATCH_FFT_IMAG_BASE + 16'(s_mfcc_band_q * 4);
+        scratch_read_valid_o[0] = 1'b1;
+        scratch_read_addr_o[0]  = `RETROSOC_APU_KWS__SCRATCH_FFT_IMAG_BASE + 16'(s_mfcc_band_q * 4);
       end
       default: begin
       end
@@ -808,34 +828,42 @@ module apu_kws_engine (
     if (s_infer_state_q == InferPool) begin
       for (int lane = 0; lane < 16; lane++) begin
         if (({1'b0, s_term_q} + 9'(lane)) < 9'd125) begin
+          scratch_read_valid_o[lane+4] = 1'b1;
           scratch_read_addr_o[lane+4] = `RETROSOC_APU_KWS__SCRATCH_A_BASE +
               16'((32'(s_term_q) + 32'(lane)) * 32'd64 + 32'(s_output_q));
         end
       end
     end else if ((s_infer_state_q == InferSoftmaxMax) || (s_infer_state_q == InferSoftmaxSum)) begin
-      scratch_read_addr_o[4] = `RETROSOC_APU_KWS__SCRATCH_LOGITS_BASE + 16'(s_softmax_index_q);
+      scratch_read_valid_o[4] = 1'b1;
+      scratch_read_addr_o[4]  = `RETROSOC_APU_KWS__SCRATCH_LOGITS_BASE + 16'(s_softmax_index_q);
     end else if ((s_infer_state_q == InferSoftmaxScale) && (s_softmax_index_q > 0)) begin
+      scratch_read_valid_o[4] = 1'b1;
       scratch_read_addr_o[4] =
           `RETROSOC_APU_KWS__SCRATCH_LOGITS_BASE + 16'(s_softmax_index_q - 1'b1);
     end else if (s_infer_state_q == InferComplete) begin
       for (int class_index = 0; class_index < 12; class_index++) begin
+        scratch_read_valid_o[class_index+4] = 1'b1;
         scratch_read_addr_o[class_index+4] =
             `RETROSOC_APU_KWS__SCRATCH_SOFTMAX_BASE + 16'(class_index);
       end
     end
     if (s_infer_state_q == InferBias) begin
       for (int lane = 0; lane < 4; lane++) begin
-        model_addr_o[lane] = s_bias_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
+        model_read_valid_o[lane] = 1'b1;
+        model_addr_o[lane]       = s_bias_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
       end
     end else if (s_infer_state_q == InferQuant) begin
       for (int lane = 0; lane < 4; lane++) begin
-        model_addr_o[lane]   = s_multiplier_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
-        model_addr_o[lane+4] = s_shift_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
+        model_read_valid_o[lane]   = 1'b1;
+        model_read_valid_o[lane+4] = 1'b1;
+        model_addr_o[lane]         = s_multiplier_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
+        model_addr_o[lane+4]       = s_shift_base + 15'(s_output_channel) * 15'd4 + 15'(lane);
       end
     end else if (s_infer_state_q == InferMac) begin
       for (int lane = 0; lane < 16; lane++) begin
         if (s_lane_term[lane] < {1'b0, s_term_count}) begin
-          s_lane_active[lane] = 1'b1;
+          s_lane_active[lane]      = 1'b1;
+          model_read_valid_o[lane] = 1'b1;
           if (s_operator_q == 4'd0) begin
             s_lane_input_h[lane] = 7'($signed({1'b0, s_output_height_index})) * 7'sd2 +
                 7'($signed(s_lane_term[lane] / 9'd4)) - 7'sd4;
@@ -844,6 +872,7 @@ module apu_kws_engine (
             s_lane_weight_index[lane] = 15'(s_output_channel) * 15'd40 + 15'(s_lane_term[lane]);
             if ((s_lane_input_h[lane] >= 0) && (s_lane_input_h[lane] < 7'sd49) &&
                 (s_lane_input_w[lane] >= 0) && (s_lane_input_w[lane] < 5'sd10)) begin
+              scratch_read_valid_o[lane+4] = 1'b1;
               s_lane_input_index[lane] =
                   13'(s_lane_input_h[lane]) * 13'd10 + 13'(s_lane_input_w[lane]);
               scratch_read_addr_o[lane+4] =
@@ -858,6 +887,7 @@ module apu_kws_engine (
             s_lane_weight_index[lane] = 15'(s_lane_term[lane]) * 15'd64 + 15'(s_output_channel);
             if ((s_lane_input_h[lane] >= 0) && (s_lane_input_h[lane] < 7'sd25) &&
                 (s_lane_input_w[lane] >= 0) && (s_lane_input_w[lane] < 5'sd5)) begin
+              scratch_read_valid_o[lane+4] = 1'b1;
               s_lane_input_index[lane] =
                   (13'(s_lane_input_h[lane]) * 13'd5 + 13'(s_lane_input_w[lane])) *
                   13'd64 + 13'(s_output_channel);
@@ -865,6 +895,7 @@ module apu_kws_engine (
                   16'(s_lane_input_index[lane]);
             end
           end else begin
+            scratch_read_valid_o[lane+4] = 1'b1;
             s_lane_input_index[lane] = (s_operator_q == 4'd10) ?
                 13'(s_lane_term[lane]) :
                 (13'(s_output_spatial_index) * 13'd64 + 13'(s_lane_term[lane]));
@@ -1134,6 +1165,42 @@ module apu_kws_engine (
     end
   end
 
+  assign s_storage_read_access = |model_read_valid_o || |scratch_read_valid_o;
+  assign s_storage_write_access = |scratch_write_valid_o;
+  assign s_storage_has_access = s_storage_read_access || s_storage_write_access;
+  assign storage_write_o = s_storage_write_phase_q || !s_storage_read_access;
+  assign storage_req_o = !s_storage_wait_q && s_storage_has_access;
+  assign s_storage_final_done = storage_done_i &&
+      (s_storage_write_phase_q || !s_storage_read_access || !s_storage_write_access);
+  assign s_storage_state_step = (!s_storage_wait_q && !s_storage_has_access) ||
+      (s_storage_final_done && s_storage_state_owned_q);
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      s_storage_wait_q        <= 1'b0;
+      s_storage_write_phase_q <= 1'b0;
+      s_storage_state_owned_q <= 1'b0;
+    end else if (soft_reset_i || resource_reset_i || abort_i) begin
+      s_storage_wait_q        <= 1'b0;
+      s_storage_write_phase_q <= 1'b0;
+      s_storage_state_owned_q <= 1'b0;
+    end else begin
+      if (storage_req_o && storage_ready_i) begin
+        s_storage_wait_q <= 1'b1;
+        s_storage_state_owned_q <= (s_front_state_q != FrontIdle) || (s_infer_state_q != InferIdle);
+      end
+      if (storage_done_i && s_storage_wait_q) begin
+        s_storage_wait_q <= 1'b0;
+        if (!s_storage_write_phase_q && s_storage_read_access && s_storage_write_access) begin
+          s_storage_write_phase_q <= 1'b1;
+        end else begin
+          s_storage_write_phase_q <= 1'b0;
+          s_storage_state_owned_q <= 1'b0;
+        end
+      end
+    end
+  end
+
   assign memory_dma_request_valid_o = s_mem_req_q;
   assign memory_start_ready_o = enable_i && memory_window_i && model_valid_i && model_lock_i &&
       !abort_i && !soft_reset_i && !resource_reset_i && !s_mem_job_q &&
@@ -1338,12 +1405,14 @@ module apu_kws_engine (
           s_mem_err_detail_q  <= 32'd0;
         end
       end else begin
-        if (s_front_state_q == FrontIdle || s_front_progress) begin
+        if (s_front_state_q == FrontIdle || storage_progress_i ||
+            (s_storage_state_step && s_front_progress)) begin
           s_front_watchdog_q <= 32'd0;
         end else if (!(&s_front_watchdog_q)) begin
           s_front_watchdog_q <= s_front_watchdog_q + 1'b1;
         end
-        if (s_infer_state_q == InferIdle || s_infer_progress) begin
+        if (s_infer_state_q == InferIdle || storage_progress_i ||
+            (s_storage_state_step && s_infer_progress)) begin
           s_infer_watchdog_q <= 32'd0;
         end else if (!(&s_infer_watchdog_q)) begin
           s_infer_watchdog_q <= s_infer_watchdog_q + 1'b1;
@@ -1493,7 +1562,7 @@ module apu_kws_engine (
           s_s24_pending_q <= 1'b0;
         end
 
-        if (s_commit_valid) begin
+        if (s_commit_valid && ((s_front_state_q == FrontIdle) || s_storage_state_step)) begin
           s_ingress_write_q <= s_next_write;
           s_epoch_samples_q <= s_next_samples;
           s_timestamp_q     <= s_timestamp_q + 1'b1;
@@ -1528,295 +1597,297 @@ module apu_kws_engine (
           end
         end
 
-        unique case (s_front_state_q)
-          FrontIdle: begin
-            if (s_frame_pending_q) begin
-              s_frame_pending_q <= 1'b0;
-              s_front_index_q   <= 10'd0;
-              s_front_state_q   <= FrontFftLoad;
-            end else if (s_window_pending_q && (s_mel_count_q >= 6'd49) &&
+        if (s_storage_state_step) begin
+          unique case (s_front_state_q)
+            FrontIdle: begin
+              if (s_frame_pending_q) begin
+                s_frame_pending_q <= 1'b0;
+                s_front_index_q   <= 10'd0;
+                s_front_state_q   <= FrontFftLoad;
+              end else if (s_window_pending_q && (s_mel_count_q >= 6'd49) &&
                          (s_infer_state_q == InferIdle)) begin
-              s_window_pending_q <= 1'b0;
-              s_peak_scan_q      <= 7'd0;
-              s_window_peak_q    <= 16'd1;
-              s_front_state_q    <= FrontPeak;
-            end
-          end
-          FrontFir: begin
-            if (s_fir_tap_q == 6'd62) begin
-              s_fir_tap_q <= 6'd0;
-              s_fir_acc_q <= 64'sd0;
-              s_fir_phase_q <= (s_fir_phase_q == (s_decimation - 1'b1)) ?
-                  3'd0 : s_fir_phase_q + 1'b1;
-              s_front_state_q <= FrontIdle;
-            end else begin
-              s_fir_acc_q <= s_fir_total;
-              s_fir_tap_q <= s_fir_tap_q + 1'b1;
-            end
-          end
-          FrontFftLoad: begin
-            if (s_front_index_q == 10'd511) begin
-              s_fft_len_q     <= 10'd2;
-              s_fft_half_q    <= 9'd1;
-              s_fft_group_q   <= 9'd0;
-              s_fft_j_q       <= 8'd0;
-              s_front_state_q <= FrontFftRun;
-            end else begin
-              s_front_index_q <= s_front_index_q + 1'b1;
-            end
-          end
-          FrontFftRun: begin
-            if (s_fft_overflow) begin
-              s_fault_q        <= 1'b1;
-              s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
-              s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_FRONTEND;
-              s_fault_detail_q <= 32'h0700_0014;
-              s_stop_latched_q <= 1'b1;
-              s_front_state_q  <= FrontIdle;
-            end else begin
-              if (s_fft_j_q + 1'b1 == s_fft_half_q) begin
-                s_fft_j_q <= 8'd0;
-                if (s_fft_group_q + s_fft_len_q == 10'd512) begin
-                  s_fft_group_q <= 9'd0;
-                  if (s_fft_len_q == 10'd512) begin
-                    s_front_index_q <= 10'd0;
-                    s_front_state_q <= FrontMagnitude;
-                  end else begin
-                    s_fft_len_q  <= s_fft_len_q << 1;
-                    s_fft_half_q <= s_fft_half_q << 1;
-                  end
-                end else begin
-                  s_fft_group_q <= 9'(s_fft_group_q + s_fft_len_q);
-                end
-              end else begin
-                s_fft_j_q <= s_fft_j_q + 1'b1;
+                s_window_pending_q <= 1'b0;
+                s_peak_scan_q      <= 7'd0;
+                s_window_peak_q    <= 16'd1;
+                s_front_state_q    <= FrontPeak;
               end
             end
-          end
-          FrontMagnitude: begin
-            if (s_front_index_q == 10'd256) begin
-              s_mel_band_q    <= 8'd0;
-              s_mel_bin_q     <= 9'd0;
-              s_mel_acc_q     <= 64'd0;
-              s_front_state_q <= FrontMel;
-            end else begin
-              s_front_index_q <= s_front_index_q + 1'b1;
-            end
-          end
-          FrontMel: begin
-            if (s_mel_total < s_mel_acc_q) begin
-              s_fault_q        <= 1'b1;
-              s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
-              s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_FRONTEND;
-              s_fault_detail_q <= 32'h0700_0015;
-              s_stop_latched_q <= 1'b1;
-              s_front_state_q  <= FrontIdle;
-            end else if (s_mel_overwrite) begin
-              s_front_state_q <= FrontIdle;
-            end else if (s_mel_bin_q == 9'd256) begin
-              s_mel_bin_q <= 9'd0;
-              s_mel_acc_q <= 64'd0;
-              if (s_mel_band_q == 8'd39) begin
-                s_mel_band_q  <= 8'd0;
-                s_mel_write_q <= (s_mel_write_q == 6'd49) ? 6'd0 : s_mel_write_q + 1'b1;
-                if (s_mel_count_q < 6'd50) s_mel_count_q <= s_mel_count_q + 1'b1;
-                if (!counter_clear_i) begin
-                  s_frame_count_q <= (s_frame_count_q == 32'hffff_ffff) ?
-                      s_frame_count_q : s_frame_count_q + 1'b1;
-                end
+            FrontFir: begin
+              if (s_fir_tap_q == 6'd62) begin
+                s_fir_tap_q <= 6'd0;
+                s_fir_acc_q <= 64'sd0;
+                s_fir_phase_q <= (s_fir_phase_q == (s_decimation - 1'b1)) ?
+                  3'd0 : s_fir_phase_q + 1'b1;
                 s_front_state_q <= FrontIdle;
               end else begin
-                s_mel_band_q <= s_mel_band_q + 1'b1;
+                s_fir_acc_q <= s_fir_total;
+                s_fir_tap_q <= s_fir_tap_q + 1'b1;
               end
-            end else begin
-              s_mel_acc_q <= s_mel_total;
-              s_mel_bin_q <= s_mel_bin_q + 1'b1;
             end
-          end
-          FrontPeak: begin
-            if (s_peak_data > s_window_peak_q) begin
-              s_window_peak_q <= s_peak_data;
+            FrontFftLoad: begin
+              if (s_front_index_q == 10'd511) begin
+                s_fft_len_q     <= 10'd2;
+                s_fft_half_q    <= 9'd1;
+                s_fft_group_q   <= 9'd0;
+                s_fft_j_q       <= 8'd0;
+                s_front_state_q <= FrontFftRun;
+              end else begin
+                s_front_index_q <= s_front_index_q + 1'b1;
+              end
             end
-            if (s_peak_scan_q == 7'd99) begin
-              s_mfcc_row_q    <= 6'd0;
-              s_mfcc_band_q   <= 6'd0;
-              s_front_state_q <= FrontLog;
-            end else begin
-              s_peak_scan_q <= s_peak_scan_q + 1'b1;
+            FrontFftRun: begin
+              if (s_fft_overflow) begin
+                s_fault_q        <= 1'b1;
+                s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
+                s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_FRONTEND;
+                s_fault_detail_q <= 32'h0700_0014;
+                s_stop_latched_q <= 1'b1;
+                s_front_state_q  <= FrontIdle;
+              end else begin
+                if (s_fft_j_q + 1'b1 == s_fft_half_q) begin
+                  s_fft_j_q <= 8'd0;
+                  if (s_fft_group_q + s_fft_len_q == 10'd512) begin
+                    s_fft_group_q <= 9'd0;
+                    if (s_fft_len_q == 10'd512) begin
+                      s_front_index_q <= 10'd0;
+                      s_front_state_q <= FrontMagnitude;
+                    end else begin
+                      s_fft_len_q  <= s_fft_len_q << 1;
+                      s_fft_half_q <= s_fft_half_q << 1;
+                    end
+                  end else begin
+                    s_fft_group_q <= 9'(s_fft_group_q + s_fft_len_q);
+                  end
+                end else begin
+                  s_fft_j_q <= s_fft_j_q + 1'b1;
+                end
+              end
             end
-          end
-          FrontLog: begin
-            if (s_mfcc_band_q == 6'd39) begin
-              s_mfcc_band_q        <= 6'd0;
-              s_mfcc_coefficient_q <= 4'd0;
-              s_dct_acc_q          <= 64'sd0;
-              s_front_state_q      <= FrontDct;
-            end else begin
-              s_mfcc_band_q <= s_mfcc_band_q + 1'b1;
+            FrontMagnitude: begin
+              if (s_front_index_q == 10'd256) begin
+                s_mel_band_q    <= 8'd0;
+                s_mel_bin_q     <= 9'd0;
+                s_mel_acc_q     <= 64'd0;
+                s_front_state_q <= FrontMel;
+              end else begin
+                s_front_index_q <= s_front_index_q + 1'b1;
+              end
             end
-          end
-          FrontDct: begin
-            if (s_mfcc_band_q == 6'd39) begin
-              s_mfcc_band_q <= 6'd0;
-              s_dct_acc_q   <= 64'sd0;
-              if (s_mfcc_coefficient_q == 4'd9) begin
-                s_mfcc_coefficient_q <= 4'd0;
-                if (s_mfcc_row_q == 6'd48) begin
-                  s_operator_q    <= 4'd0;
-                  s_output_q      <= 14'd0;
-                  s_infer_state_q <= InferBias;
+            FrontMel: begin
+              if (s_mel_total < s_mel_acc_q) begin
+                s_fault_q        <= 1'b1;
+                s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
+                s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_FRONTEND;
+                s_fault_detail_q <= 32'h0700_0015;
+                s_stop_latched_q <= 1'b1;
+                s_front_state_q  <= FrontIdle;
+              end else if (s_mel_overwrite) begin
+                s_front_state_q <= FrontIdle;
+              end else if (s_mel_bin_q == 9'd256) begin
+                s_mel_bin_q <= 9'd0;
+                s_mel_acc_q <= 64'd0;
+                if (s_mel_band_q == 8'd39) begin
+                  s_mel_band_q  <= 8'd0;
+                  s_mel_write_q <= (s_mel_write_q == 6'd49) ? 6'd0 : s_mel_write_q + 1'b1;
+                  if (s_mel_count_q < 6'd50) s_mel_count_q <= s_mel_count_q + 1'b1;
+                  if (!counter_clear_i) begin
+                    s_frame_count_q <= (s_frame_count_q == 32'hffff_ffff) ?
+                      s_frame_count_q : s_frame_count_q + 1'b1;
+                  end
                   s_front_state_q <= FrontIdle;
                 end else begin
-                  s_mfcc_row_q    <= s_mfcc_row_q + 1'b1;
-                  s_front_state_q <= FrontLog;
+                  s_mel_band_q <= s_mel_band_q + 1'b1;
                 end
               end else begin
-                s_mfcc_coefficient_q <= s_mfcc_coefficient_q + 1'b1;
+                s_mel_acc_q <= s_mel_total;
+                s_mel_bin_q <= s_mel_bin_q + 1'b1;
               end
-            end else begin
-              s_dct_acc_q   <= s_dct_total;
-              s_mfcc_band_q <= s_mfcc_band_q + 1'b1;
             end
-          end
-          default: s_front_state_q <= FrontIdle;
-        endcase
-
-        unique case (s_infer_state_q)
-          InferIdle: begin
-          end
-          InferBias: begin
-            s_mac_q         <= 64'($signed(s_bias_word));
-            s_term_q        <= 8'd0;
-            s_infer_state_q <= InferMac;
-          end
-          InferMac: begin
-            if ((s_mac_total > 64'sh0000_0000_7fff_ffff) ||
-                (s_mac_total < -64'sh0000_0000_8000_0000)) begin
-              s_fault_q        <= 1'b1;
-              s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
-              s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_INFERENCE;
-              s_fault_detail_q <= 32'h0700_0016;
-              s_stop_latched_q <= 1'b1;
-              s_infer_state_q  <= InferIdle;
-            end else if (s_term_q + 8'd16 >= s_term_count) begin
-              s_mac_q         <= s_mac_total;
-              s_infer_state_q <= InferQuant;
-            end else begin
-              s_mac_q  <= s_mac_total;
-              s_term_q <= s_term_q + 8'd16;
+            FrontPeak: begin
+              if (s_peak_data > s_window_peak_q) begin
+                s_window_peak_q <= s_peak_data;
+              end
+              if (s_peak_scan_q == 7'd99) begin
+                s_mfcc_row_q    <= 6'd0;
+                s_mfcc_band_q   <= 6'd0;
+                s_front_state_q <= FrontLog;
+              end else begin
+                s_peak_scan_q <= s_peak_scan_q + 1'b1;
+              end
             end
-          end
-          InferQuant: begin
-            if (s_requant_overflow) begin
-              s_fault_q        <= 1'b1;
-              s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
-              s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_INFERENCE;
-              s_fault_detail_q <= 32'h0700_0017;
-              s_stop_latched_q <= 1'b1;
-              s_infer_state_q  <= InferIdle;
-            end else begin
-              if (s_output_q + 1'b1 == s_output_count) begin
-                s_output_q <= 14'd0;
-                if (s_operator_q == 4'd8) begin
-                  s_operator_q    <= 4'd9;
-                  s_term_q        <= 8'd0;
-                  s_mac_q         <= 64'sd0;
-                  s_infer_state_q <= InferPool;
-                end else if (s_operator_q == 4'd10) begin
-                  s_operator_q      <= 4'd11;
-                  s_softmax_index_q <= 4'd0;
-                  s_softmax_max_q   <= -8'sd128;
-                  s_infer_state_q   <= InferSoftmaxMax;
+            FrontLog: begin
+              if (s_mfcc_band_q == 6'd39) begin
+                s_mfcc_band_q        <= 6'd0;
+                s_mfcc_coefficient_q <= 4'd0;
+                s_dct_acc_q          <= 64'sd0;
+                s_front_state_q      <= FrontDct;
+              end else begin
+                s_mfcc_band_q <= s_mfcc_band_q + 1'b1;
+              end
+            end
+            FrontDct: begin
+              if (s_mfcc_band_q == 6'd39) begin
+                s_mfcc_band_q <= 6'd0;
+                s_dct_acc_q   <= 64'sd0;
+                if (s_mfcc_coefficient_q == 4'd9) begin
+                  s_mfcc_coefficient_q <= 4'd0;
+                  if (s_mfcc_row_q == 6'd48) begin
+                    s_operator_q    <= 4'd0;
+                    s_output_q      <= 14'd0;
+                    s_infer_state_q <= InferBias;
+                    s_front_state_q <= FrontIdle;
+                  end else begin
+                    s_mfcc_row_q    <= s_mfcc_row_q + 1'b1;
+                    s_front_state_q <= FrontLog;
+                  end
                 end else begin
-                  s_operator_q    <= s_operator_q + 1'b1;
+                  s_mfcc_coefficient_q <= s_mfcc_coefficient_q + 1'b1;
+                end
+              end else begin
+                s_dct_acc_q   <= s_dct_total;
+                s_mfcc_band_q <= s_mfcc_band_q + 1'b1;
+              end
+            end
+            default: s_front_state_q <= FrontIdle;
+          endcase
+
+          unique case (s_infer_state_q)
+            InferIdle: begin
+            end
+            InferBias: begin
+              s_mac_q         <= 64'($signed(s_bias_word));
+              s_term_q        <= 8'd0;
+              s_infer_state_q <= InferMac;
+            end
+            InferMac: begin
+              if ((s_mac_total > 64'sh0000_0000_7fff_ffff) ||
+                (s_mac_total < -64'sh0000_0000_8000_0000)) begin
+                s_fault_q        <= 1'b1;
+                s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
+                s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_INFERENCE;
+                s_fault_detail_q <= 32'h0700_0016;
+                s_stop_latched_q <= 1'b1;
+                s_infer_state_q  <= InferIdle;
+              end else if (s_term_q + 8'd16 >= s_term_count) begin
+                s_mac_q         <= s_mac_total;
+                s_infer_state_q <= InferQuant;
+              end else begin
+                s_mac_q  <= s_mac_total;
+                s_term_q <= s_term_q + 8'd16;
+              end
+            end
+            InferQuant: begin
+              if (s_requant_overflow) begin
+                s_fault_q        <= 1'b1;
+                s_fault_code_q   <= `APB4_APU__ERROR_CODE_KWS_ARITHMETIC;
+                s_fault_stage_q  <= `APB4_APU__ERROR_STAGE_KWS_INFERENCE;
+                s_fault_detail_q <= 32'h0700_0017;
+                s_stop_latched_q <= 1'b1;
+                s_infer_state_q  <= InferIdle;
+              end else begin
+                if (s_output_q + 1'b1 == s_output_count) begin
+                  s_output_q <= 14'd0;
+                  if (s_operator_q == 4'd8) begin
+                    s_operator_q    <= 4'd9;
+                    s_term_q        <= 8'd0;
+                    s_mac_q         <= 64'sd0;
+                    s_infer_state_q <= InferPool;
+                  end else if (s_operator_q == 4'd10) begin
+                    s_operator_q      <= 4'd11;
+                    s_softmax_index_q <= 4'd0;
+                    s_softmax_max_q   <= -8'sd128;
+                    s_infer_state_q   <= InferSoftmaxMax;
+                  end else begin
+                    s_operator_q    <= s_operator_q + 1'b1;
+                    s_infer_state_q <= InferBias;
+                  end
+                end else begin
+                  s_output_q      <= s_output_q + 1'b1;
                   s_infer_state_q <= InferBias;
                 end
-              end else begin
-                s_output_q      <= s_output_q + 1'b1;
-                s_infer_state_q <= InferBias;
               end
             end
-          end
-          InferPool: begin
-            if (s_term_q + 8'd16 >= 8'd125) begin
-              s_term_q <= 8'd0;
-              s_mac_q  <= 64'sd0;
-              if (s_output_q == 14'd63) begin
-                s_output_q      <= 14'd0;
-                s_operator_q    <= 4'd10;
-                s_infer_state_q <= InferBias;
+            InferPool: begin
+              if (s_term_q + 8'd16 >= 8'd125) begin
+                s_term_q <= 8'd0;
+                s_mac_q  <= 64'sd0;
+                if (s_output_q == 14'd63) begin
+                  s_output_q      <= 14'd0;
+                  s_operator_q    <= 4'd10;
+                  s_infer_state_q <= InferBias;
+                end else begin
+                  s_output_q <= s_output_q + 1'b1;
+                end
               end else begin
-                s_output_q <= s_output_q + 1'b1;
+                s_mac_q  <= s_pool_sum;
+                s_term_q <= s_term_q + 8'd16;
               end
-            end else begin
-              s_mac_q  <= s_pool_sum;
-              s_term_q <= s_term_q + 8'd16;
             end
-          end
-          InferSoftmaxMax: begin
-            if (s_logit_data > s_softmax_max_q) begin
-              s_softmax_max_q <= s_logit_data;
+            InferSoftmaxMax: begin
+              if (s_logit_data > s_softmax_max_q) begin
+                s_softmax_max_q <= s_logit_data;
+              end
+              if (s_softmax_index_q == 4'd11) begin
+                s_softmax_index_q <= 4'd0;
+                s_softmax_sum_q   <= 32'd0;
+                s_infer_state_q   <= InferSoftmaxSum;
+              end else begin
+                s_softmax_index_q <= s_softmax_index_q + 1'b1;
+              end
             end
-            if (s_softmax_index_q == 4'd11) begin
-              s_softmax_index_q <= 4'd0;
-              s_softmax_sum_q   <= 32'd0;
-              s_infer_state_q   <= InferSoftmaxSum;
-            end else begin
-              s_softmax_index_q <= s_softmax_index_q + 1'b1;
+            InferSoftmaxSum: begin
+              if (s_softmax_sum_diff >= -9'sd124) begin
+                s_softmax_sum_q <= s_softmax_sum_q +
+                    rounding_divide_pot(apu_kws_softmax_exp_q31(-s_softmax_sum_diff[6:0]), 12);
+              end
+              if (s_softmax_index_q == 4'd11) begin
+                s_softmax_index_q <= 4'd0;
+                s_infer_state_q   <= InferSoftmaxScale;
+              end else begin
+                s_softmax_index_q <= s_softmax_index_q + 1'b1;
+              end
             end
-          end
-          InferSoftmaxSum: begin
-            if (s_softmax_sum_diff >= -9'sd124) begin
-              s_softmax_sum_q <= s_softmax_sum_q +
-                  rounding_divide_pot(apu_kws_softmax_exp_q31(-s_softmax_sum_diff[6:0]), 12);
+            InferSoftmaxScale: begin
+              if (s_softmax_index_q == 0) begin
+                s_softmax_scale_q <= reciprocal_q31(s_softmax_shifted_sum);
+                s_softmax_bits_q  <= 6'(7'sd12 - $signed({1'b0, s_softmax_headroom}));
+              end
+              if (s_softmax_index_q == 4'd12) begin
+                s_softmax_index_q <= 4'd0;
+                s_infer_state_q   <= InferComplete;
+              end else begin
+                s_softmax_index_q <= s_softmax_index_q + 1'b1;
+              end
             end
-            if (s_softmax_index_q == 4'd11) begin
-              s_softmax_index_q <= 4'd0;
-              s_infer_state_q   <= InferSoftmaxScale;
-            end else begin
-              s_softmax_index_q <= s_softmax_index_q + 1'b1;
-            end
-          end
-          InferSoftmaxScale: begin
-            if (s_softmax_index_q == 0) begin
-              s_softmax_scale_q <= reciprocal_q31(s_softmax_shifted_sum);
-              s_softmax_bits_q  <= 6'(7'sd12 - $signed({1'b0, s_softmax_headroom}));
-            end
-            if (s_softmax_index_q == 4'd12) begin
-              s_softmax_index_q <= 4'd0;
-              s_infer_state_q   <= InferComplete;
-            end else begin
-              s_softmax_index_q <= s_softmax_index_q + 1'b1;
-            end
-          end
-          InferComplete: begin
-            s_result_q       <= {15'd0, s_stable_hit, s_best_score, s_best_class};
-            s_result_valid_q <= 1'b1;
-            s_timestamp_lo_q <= s_timestamp_q;
-            s_timestamp_hi_q <= 32'd0;
-            if (!counter_clear_i) begin
-              s_inference_count_q <= (s_inference_count_q == 32'hffff_ffff) ?
-                  s_inference_count_q : s_inference_count_q + 1'b1;
-            end
-            s_debounce_run_q <= s_next_debounce_run[7:0];
-            s_last_class_q   <= s_best_class;
-            s_last_match_q   <= s_match;
-            s_stable_hit_q   <= s_stable_hit;
-            if (s_hit_event) begin
+            InferComplete: begin
+              s_result_q       <= {15'd0, s_stable_hit, s_best_score, s_best_class};
+              s_result_valid_q <= 1'b1;
+              s_timestamp_lo_q <= s_timestamp_q;
+              s_timestamp_hi_q <= 32'd0;
               if (!counter_clear_i) begin
-                s_hit_count_q <= (s_hit_count_q == 32'hffff_ffff) ?
-                    s_hit_count_q : s_hit_count_q + 1'b1;
+                s_inference_count_q <= (s_inference_count_q == 32'hffff_ffff) ?
+                  s_inference_count_q : s_inference_count_q + 1'b1;
               end
-              s_hit_irq_q <= 1'b1;
+              s_debounce_run_q <= s_next_debounce_run[7:0];
+              s_last_class_q   <= s_best_class;
+              s_last_match_q   <= s_match;
+              s_stable_hit_q   <= s_stable_hit;
+              if (s_hit_event) begin
+                if (!counter_clear_i) begin
+                  s_hit_count_q <= (s_hit_count_q == 32'hffff_ffff) ?
+                    s_hit_count_q : s_hit_count_q + 1'b1;
+                end
+                s_hit_irq_q <= 1'b1;
+              end
+              s_infer_state_q <= InferIdle;
+              if (s_mem_job_q) begin
+                s_mem_job_q  <= 1'b0;
+                s_mem_done_q <= 1'b1;
+              end
             end
-            s_infer_state_q <= InferIdle;
-            if (s_mem_job_q) begin
-              s_mem_job_q  <= 1'b0;
-              s_mem_done_q <= 1'b1;
-            end
-          end
-          default: s_infer_state_q <= InferIdle;
-        endcase
+            default: s_infer_state_q <= InferIdle;
+          endcase
+        end
 
         if ((s_mem_job_q && s_mem_dma_done_q && !s_mem_word_valid_q) &&
             ((s_mem_received_q != 32'd32000) || s_mem_err_q)) begin

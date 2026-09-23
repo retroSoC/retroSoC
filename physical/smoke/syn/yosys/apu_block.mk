@@ -120,7 +120,8 @@ $(APU_BLOCK_NETLIST): $(APU_BLOCK_FL) $(APU_BLOCK_YOSYS_SCRIPTS)
 		--env PROJ_NAME=$(APU_BLOCK_TOP) --env WORK=$(APU_BLOCK_TMP) \
 		--env BUILD=$(APU_BLOCK_OUT) --env REPORTS=$(APU_BLOCK_RPT) \
 		--env NETLIST=$(APU_BLOCK_NETLIST) -- \
-		yosys -c $(APU_BLOCK_SYNTH_TCL)
+		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
+		yosys -t --perffile $(APU_BLOCK_SYN)/yosys-perf.json -c $(APU_BLOCK_SYNTH_TCL)
 
 apu-block-synth: $(APU_BLOCK_NETLIST)
 

@@ -248,7 +248,11 @@ module apb4_apu #(
   logic          s_mc_proof_memo_full_unused;
   logic [  31:0] s_kws_sram_data_unused;
   logic s_kws_sram_valid_unused, s_kws_sram_err_unused;
+  logic s_kws_storage_req, s_kws_storage_ready, s_kws_storage_done;
+  logic s_kws_storage_progress, s_kws_storage_write;
+  logic [15:0] s_kws_model_read_valid;
   logic s_kws_scratch_clear, s_kws_scratch_err;
+  logic [19:0]       s_kws_scratch_read_valid;
   logic [19:0][15:0] s_kws_scratch_read_addr;
   logic [19:0][31:0] s_kws_scratch_read_data;
   logic [ 5:0]       s_kws_scratch_write_valid;
@@ -718,9 +722,16 @@ module apb4_apu #(
       .memory_input_used_o         (s_kws_mem_input_used),
       .kws_config_i                (s_codec_kws_config_valid ? s_codec_kws_config : s_kws_config),
       .input_config_i              (s_kws_input_config),
+      .storage_req_o               (s_kws_storage_req),
+      .storage_ready_i             (s_kws_storage_ready),
+      .storage_done_i              (s_kws_storage_done),
+      .storage_progress_i          (s_kws_storage_progress),
+      .storage_write_o             (s_kws_storage_write),
+      .model_read_valid_o          (s_kws_model_read_valid),
       .model_addr_o                (s_kws_model_read_addr),
       .model_data_i                (s_kws_model_read_data),
       .scratch_clear_o             (s_kws_scratch_clear),
+      .scratch_read_valid_o        (s_kws_scratch_read_valid),
       .scratch_read_addr_o         (s_kws_scratch_read_addr),
       .scratch_read_data_i         (s_kws_scratch_read_data),
       .scratch_write_valid_o       (s_kws_scratch_write_valid),
@@ -920,9 +931,16 @@ module apb4_apu #(
       .data_o               (s_kws_sram_data_unused),
       .valid_o              (s_kws_sram_valid_unused),
       .access_err_o         (s_kws_sram_err_unused),
+      .access_req_i         (s_kws_storage_req),
+      .access_ready_o       (s_kws_storage_ready),
+      .access_done_o        (s_kws_storage_done),
+      .access_progress_o    (s_kws_storage_progress),
+      .access_write_i       (s_kws_storage_write),
+      .model_read_valid_i   (s_kws_model_read_valid),
       .model_addr_i         (s_kws_model_read_addr),
       .model_data_o         (s_kws_model_read_data),
       .scratch_clear_i      (s_kws_scratch_clear),
+      .scratch_read_valid_i (s_kws_scratch_read_valid),
       .scratch_read_addr_i  (s_kws_scratch_read_addr),
       .scratch_read_data_o  (s_kws_scratch_read_data),
       .scratch_write_valid_i(s_kws_scratch_write_valid),

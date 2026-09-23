@@ -1898,6 +1898,8 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["status"] == "passed"
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
+    assert isinstance(data["peak_rss_kib"], int)
+    assert data["peak_rss_kib"] > 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
 
 
