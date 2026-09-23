@@ -1205,6 +1205,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
     assert "          gmp\n" in flake
+    assert "          isl\n" in flake
     assert "jdk17_headless" in flake
     assert "          libmpc\n" in flake
     assert "          mpfr\n" in flake
@@ -1213,6 +1214,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "python3Full" not in flake
     assert "retrosoc-development retrosoc-dev" in flake
     assert "          zlib.dev\n" in flake
+    assert "          zstd\n" in flake
     assert any(component["name"] == "container/ubuntu_22_04" for component in sbom["components"])
     assert any(component["name"] == "nix/nixpkgs" for component in sbom["components"])
 

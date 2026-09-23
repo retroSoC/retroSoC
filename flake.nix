@@ -60,6 +60,7 @@
           gnused
           gnutar
           gperftools
+          isl
           launcher
           libunwind
           libmpc
@@ -75,6 +76,7 @@
           xz
           zlib
           zlib.dev
+          zstd
         ];
         runScript = "retrosoc-dev";
       };
