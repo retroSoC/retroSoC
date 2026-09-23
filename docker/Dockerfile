@@ -28,7 +28,7 @@ RUN apt-get update -qq \
         python3-pip \
         python3-venv \
         xz-utils \
-        zlib1g \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/retrosoc

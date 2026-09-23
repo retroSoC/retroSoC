@@ -53,6 +53,7 @@
           flex
           gawk
           gcc
+          gmp
           git
           gnugrep
           gnumake
@@ -63,6 +64,7 @@
           libunwind
           libmpc
           mold
+          mpfr
           ncurses5
           numactl
           jdk17_headless
@@ -72,6 +74,7 @@
           which
           xz
           zlib
+          zlib.dev
         ];
         runScript = "retrosoc-dev";
       };

@@ -11,8 +11,8 @@ remote-bitbang debug acceptance flow. Docker, Nix, and manual Ubuntu installs
 provide Java 17 for SBT. Docker and Nix use Python 3.10 to match the
 hash-pinned Ubuntu 22.04 requirement sets. The environment also installs the
 locked Python build and quality dependencies, clang-format-14, GNU Make,
-C/C++ build tools, Perl for Verilator, GNU MPC for the RISC-V compiler, and
-runtime libraries required by those binaries.
+C/C++ build tools, Perl and zlib development headers for Verilator, and the
+GNU MPC, MPFR, and GMP libraries required by the RISC-V compiler.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are
