@@ -81,6 +81,10 @@
           zlib.dev
           zstd
         ];
+        extraBuildCommands = ''
+          ln -sfn ${pkgs.ncurses.out}/lib/libtinfo.so.6 \
+            "$out/usr/lib64/libtinfo.so.6"
+        '';
         runScript = "retrosoc-dev";
       };
       developmentApplication = pkgs.writeShellApplication {

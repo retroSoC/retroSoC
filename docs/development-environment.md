@@ -15,7 +15,9 @@ C/C++ build tools, Perl and zlib development headers for Verilator, and the
 GNU MPC, MPFR, GMP, ISL, and Zstandard libraries required by the RISC-V
 compiler. It also provides the Python, ncurses, and Tcl shared libraries used
 by the locked GDB, Yosys, and OpenSTA binaries, including explicit Expat and
-readline runtime dependencies.
+readline runtime dependencies. The FHS root links ncurses ABI 6 `libtinfo`
+explicitly because its compatibility symlink is not propagated by the default
+multi-output package merge.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are

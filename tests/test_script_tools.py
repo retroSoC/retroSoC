@@ -1207,6 +1207,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
+    assert "extraBuildCommands" in flake
     assert "          expat\n" in flake
     assert "          gmp\n" in flake
     assert "          isl\n" in flake
@@ -1215,6 +1216,7 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "          mpfr\n" in flake
     assert "          ncurses.out\n" in flake
     assert "          ncurses5\n" not in flake
+    assert '"$out/usr/lib64/libtinfo.so.6"' in flake
     assert "          perl\n" in flake
     assert "python310Full" in flake
     assert "python3Full" not in flake
