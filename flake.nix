@@ -82,6 +82,9 @@
           zlib.dev
           zstd
         ];
+        profile = ''
+          export LD_LIBRARY_PATH="${ncursesTermlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        '';
         runScript = "retrosoc-dev";
       };
       developmentApplication = pkgs.writeShellApplication {

@@ -16,7 +16,8 @@ GNU MPC, MPFR, GMP, ISL, and Zstandard libraries required by the RISC-V
 compiler. It also provides the Python, ncurses, and Tcl shared libraries used
 by the locked GDB, Yosys, and OpenSTA binaries, including explicit Expat and
 readline runtime dependencies. Nix builds ncurses with its separate termlib
-enabled so the Ubuntu-linked GDB receives a real ABI 6 `libtinfo` library.
+enabled and places that output first on the runtime library path so the
+Ubuntu-linked GDB receives a real ABI 6 `libtinfo` library.
 
 The environment intentionally does not include PDK repositories, managed RTL,
 application archives, build output, or compiler caches. These inputs are
