@@ -1207,15 +1207,18 @@ def test_container_and_nix_environment_files_use_locked_inputs() -> None:
     assert "scripts/development_environment.py" in dockerfile
     assert "scripts/development_environment.py" in flake
     assert "buildFHSEnv" in flake
+    assert "          expat\n" in flake
     assert "          gmp\n" in flake
     assert "          isl\n" in flake
     assert "jdk17_headless" in flake
     assert "          libmpc\n" in flake
     assert "          mpfr\n" in flake
-    assert "          ncurses\n" in flake
+    assert "          ncurses.out\n" in flake
+    assert "          ncurses5\n" not in flake
     assert "          perl\n" in flake
     assert "python310Full" in flake
     assert "python3Full" not in flake
+    assert "          readline\n" in flake
     assert "retrosoc-development retrosoc-dev" in flake
     assert "          tcl\n" in flake
     assert "          zlib.dev\n" in flake

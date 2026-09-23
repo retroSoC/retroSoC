@@ -48,6 +48,7 @@
           clangFormat14
           coreutils
           curl
+          expat
           file
           findutils
           flex
@@ -66,12 +67,12 @@
           libmpc
           mold
           mpfr
-          ncurses
-          ncurses5
+          ncurses.out
           numactl
           jdk17_headless
           perl
           python310Full
+          readline
           tcl
           unzip
           which
