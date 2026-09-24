@@ -60,7 +60,11 @@ the root README and subsystem guides.
   APUMC V2 with V1 compatibility. P6 MP3 is deferred. The P7 refreeze fixes
   APUM wire/numerical/HAL contracts and the content-hashed
   [1000-waveform input manifest](ip/apu-kws-corpus.tsv); P7 starts from reviewed
-  P5 and retains the MP3 unsupported stub. Physical closure remains P8 work.
+  P5 and retains the MP3 unsupported stub. The P9 macro-first refreeze moves
+  coefficient/profile tables and proof memoization to dedicated SRAMs, fixes
+  APUC loading and APB V1.2, and requires memory/time/RSS A/B evidence before
+  final P8 physical closure; it does not reduce KWS numerical accuracy or
+  advertised workspace capacity.
 - [ip/npu.md](ip/npu.md) freezes the independent 64-MAC Mini NPU, 64 KiB
   private SRAM, AXI64 DMA, APB4/job/HAL ABI, resource and clock/reset contracts,
   and stable Phases 0-6. [Its verification contract](ip/npu-verification.md)

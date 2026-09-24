@@ -145,9 +145,12 @@ store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
 and fixed-point DSP engines plus production WAV/FLAC microprogram transport to
 the APB4 shell at `APB4_APU`.
 Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
-remain fixed. Direct/ring WAV/FLAC jobs and the TX stream route are available;
-MP3, KWS, and the RX route remain disabled. The complete ABI, phase order, and evidence gates
-are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
+remain fixed. P5 provides direct/ring WAV/FLAC jobs and the TX stream route;
+the source now also contains the independent P7 KWS model/frontend/inference
+path, RX integration and the banked KWS SRAM client. Their acceptance requires
+current-revision evidence, not this source inventory. The complete ABI, phase
+order and evidence gates are defined in
+[Mini Audio Processing Unit](../docs/ip/apu.md).
 
 The P5 capacity refreeze specifies a 4096x64 (32 KiB) control store, 12-bit
 PC/branch paths, APUMC V2 with V1 compatibility, and APB V1.1 PC-high discovery.
@@ -156,12 +159,17 @@ data store. This is an implementation requirement: full WAV/FLAC resampling
 and long-Rice coverage plus a complete image fitting 4096 words are still
 required before claiming P5 completion.
 
-The P6 specification enables MP3 through a regenerated three-format APUMC V2
-bundle and the existing production pipeline. Its 4096-word/112 KiB limits,
-MP3 metadata/reservoir/CRC behavior, dual-reference PSNR and timed AXI/xrun
-qualification are normative design requirements, not evidence of delivered
-MP3 RTL or microcode. P5 compatibility and the complete-image packing gate
-remain prerequisites; KWS and RX stay deferred.
+P6 MP3 remains deferred; its stable format ID and unsupported trap entry are
+retained, not an enabled third codec. The P9 refreeze requires macro-backed
+coefficient/profile storage and microcode memoization instead of large inferred
+arrays/case ROMs. Its full IHP130 inventory is 76 4 KiB wrappers: the existing
+44 (including proof stack), 17 memo/bitmap and 15 coefficient/profile wrappers.
+APUC startup loading and additive APB V1.2 are future P9 implementation
+obligations; this refreeze does not claim that they are already implemented.
+The model, fixed-point results, 32/112 KiB advertised capacities and existing
+system clock/reset/IRQ/resource assignments remain fixed. Macro/init/latency
+changes must re-pass P5/P7 functional/concurrency tests and the P9 synthesis
+memory/time/RSS comparison before final P8 physical acceptance.
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its

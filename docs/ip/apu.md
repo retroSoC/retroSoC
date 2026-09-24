@@ -21,8 +21,21 @@ remain in force.
 APU-P7 is refrozen on 2026-09-11 by the P7 sections below. They fix the
 reference inputs, APUM 1.0 wire format, numerical profile, capture settings,
 HAL and acceptance rules; they do not assert that P7 is implemented. The
-starting implementation remains reviewed P5 with `CAPABILITY0=0x000001bd`.
-Only completed P7 qualification permits `0x000001fd`. No P6 work is reactivated.
+starting implementation for that freeze was reviewed P5 with
+`CAPABILITY0=0x000001bd`. Completed pre-P9 KWS qualification permits
+`0x000001fd`. No P6 work is reactivated.
+
+The 2026-09-24 **APU-P9 macro-backed storage refreeze** supersedes the physical
+ROM representation and inferred loader-memo implementation, not their numerical
+or proof semantics. Its objective is to remove large synthesis-inferred
+memories, prioritizing additional physical SRAM macros, then additional bounded
+processing cycles. It does not shrink the advertised model/workspace capacity
+or weaken real-time/accuracy requirements. P9 introduces a separately loaded
+APUC coefficient image and additive APB V1.2 discovery/control; APUM 1.0,
+APUMC V1/V2 and the job descriptor remain unchanged. The detailed P9 contract
+below takes precedence for the post-P9 release; earlier phase identities and
+their historical discovery values remain valid for those earlier profiles.
+This refreeze is a future implementation contract, not a synthesis/PPA result.
 
 The APU is deliberately coreless. LP loads one validated codec-microcode bundle
 at startup and HP or LP later submits jobs. The APU contains a bounded codec
@@ -134,6 +147,7 @@ this release and MUST NOT be silently inserted into an MVP phase:
 apb4_apu
   apu_reg
   apu_microcode_loader
+    apu_proof_memo          (P9: 16 key SRAMs + one valid-bitmap SRAM)
   apu_job_scheduler
   apu_dma
   apu_codec_sequencer
@@ -148,6 +162,8 @@ apb4_apu
   apu_local_sram            (112 KiB)
   apu_kws_frontend
   apu_kws_engine
+  apu_kws_coeff_loader     (P9: LP-controlled APUC DMA/CRC/readback/lock)
+  apu_kws_coeff_store      (P9: 15 coefficient/profile SRAMs)
   apu_stream_router
 ```
 
@@ -172,6 +188,12 @@ The regions are statically partitioned. Software discovers capacities through
 capability registers but never physical bank count. The implementation uses
 existing 4 KiB technology SRAM abstractions and records the actual macro map in
 PPA evidence.
+
+P9 retains these 144 KiB advertised regions. Auxiliary physical storage adds
+32 KiB of existing verifier path stack, 68 KiB of macro-backed memo/valid
+storage and 60 KiB of coefficients/profile constants: 304 KiB / 76 logical
+4 KiB wrappers in the full macro-backed P9 APU. These auxiliary bytes are not
+new APUM scratch, codec-addressable SRAM or system memory windows.
 
 ### Fixed engines
 
@@ -445,11 +467,15 @@ the existing unsupported result/stub detail `0x01000001` is unchanged.
 | 8 | first error |
 | 9 | stream underrun/overrun |
 | 10 | sequencer trap/watchdog |
-| 11-31 | reserved |
+| 11 | P9 coefficient-load terminal completion; inspect KWS_COEFF_STATUS for success/failure. |
+| 12-31 | reserved |
 
 `IRQ_ENABLE` gates delivery, not collection. `IRQ_TEST` sets implemented state
 only. `IRQ_STATE` is W1C; hardware set wins a simultaneous clear. `irq_o` is
 the OR of enabled sticky state.
+Bit 11 is implemented only with the P9 coefficient interface; earlier profiles
+retain mask `0x000007ff` and reject it. The P9 mask is `0x00000fff`; LP/HP
+interrupt routes and existing bit meanings do not change.
 
 The APU is Resource Controller index 7. LP owner routes to APB-peripheral group
 bit23 and Hazard3 IRQ31. HP owner suppresses LP delivery and routes to HP PLIC
@@ -464,8 +490,8 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | Offset | Register | Access | Reset | Contract |
 | ---: | --- | --- | ---: | --- |
 | `0x000` | `IP_ID` | RO | `0x41505530` | ASCII `APU0`. |
-| `0x004` | `IP_VERSION` | RO | implementation | APB ABI V1.0 `0x00010000` for P1..P4 and pre-expansion P5; expanded P5 onward is V1.1 `0x00010001`. |
-| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler. P1 is `0`; P2 is `0x00000018`; P3 is `0x00000098`; P4 is `0x00000198`; P5 is `0x000001bd`; P7/completed current MVP is `0x000001fd`. MP3 bit 1 stays zero; deferred P6 introduces no current capability value. |
+| `0x004` | `IP_VERSION` | RO | implementation | APB V1.0 `0x00010000` for P1..P4 and pre-expansion P5; expanded pre-P9 profiles use V1.1 `0x00010001`; P9 coefficient-interface profiles use V1.2 `0x00010002`. |
+| `0x008` | `CAPABILITY0` | RO | implementation | Bits 0..2 WAV/MP3/FLAC, 3 private DMA, 4 ring, 5 streams, 6 KWS, 7 sequencer, 8 resampler; P9 appends coefficient-load interface bit 9. P1 `0`; P2 `0x18`; P3 `0x98`; P4 `0x198`; P5 `0x1bd`; qualified pre-P9 KWS `0x1fd`; qualified P9 `0x3fd`. MP3 bit 1 remains zero. |
 | `0x00c` | `CAPABILITY1` | RO | implementation | Control-store KiB `[7:0]`, data SRAM KiB `[15:8]`, max channels `[17:16]`, max source-rate kHz `[25:18]`; P1/P2 are `0`; P3 is `0x00000010`; P4 is `0x01827010`; expanded P5 onward is `0x01827020` (32/112/2/96). |
 | `0x010` | `COMMAND` | WO | `0` | Start-direct 0, abort 1, soft-reset 2, ring-kick 3, microcode-load 4, model-load 5, clear-counters 6. |
 | `0x014` | `STATUS` | RO | `0x00000100` | Microcode valid 0, model valid 1, busy 2, ring 3, decode 4, KWS listening 5, quiesced 6, aborting 7, idle 8, sequencer trapped 9. |
@@ -538,6 +564,7 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x234` | `KWS_MODEL_STATUS` | RO | `0` | Busy, valid/lock, header/range/size/CRC/operator errors. |
 | `0x238` | `KWS_MODEL_ACTUAL_CRC` | RO | `0` | Observed payload CRC32. |
 | `0x23c` | `KWS_INPUT_CONFIG` | RW disabled/idle | `0x0104bb80` | P7 append: rate `[16:0]`, physical channels `[18:17]`, precision `[25:20]`; see P7 capture rules. |
+| `0x240..0x260` | `KWS_COEFF_*` | P9 only | see P9 | Additive coefficient DMA/CRC/readback/lock interface; exact fields and resets below. |
 | `0x300` | `PERF_CONTROL` | RW | `0` | Enable 0, clear pulse 1, snapshot pulse 2. |
 | `0x304` | `PERF_STATUS` | RO | `0` | Snapshot valid and overflow summary. |
 | `0x308..0x354` | `PERF_*` | RO snapshot | `0` | Ten 64-bit pairs: active cycles, input/output bytes, decoded frames, DMA read/write stalls, stream stalls, sequencer instructions, KWS cycles, and faults. |
@@ -2320,8 +2347,10 @@ stereo word and reduction state). A/B lifetimes alternate exactly as in the
 tensor table. Scratch range checking cannot treat the entire 112 KiB local
 store as available. The one-second history is retained as raw mel bands plus
 peak metadata, not an additional unbudgeted 32000-byte PCM buffer. Immutable
-frontend coefficients are fixed engine ROM constants generated from the
-numerical recipe; report their separate ROM/logic footprint in P8.
+frontend coefficients are immutable numerical constants generated from the
+numerical recipe. Pre-P9 uses generated engine ROM functions; P9 requires
+the separately loaded and locked macro-backed coefficient store below.
+Report that auxiliary storage independently from these sixteen KWS banks.
 
 MODEL_LOAD is LP-only, globally idle and quiesced, KWS disabled, ACL-valid and
 model unlocked. Fetch/validate header first, then exact-size payload and CRC,
@@ -2382,8 +2411,10 @@ Host math-library defaults are not the numerical specification.
    integer square root of the unsigned-64 sum of component squares (ties
    even); no magnitude-squared/power substitution or log10 is allowed.
 4. Define `mel(f)=1127*ln(1+f/700)`. Forty triangular filters have 42 evenly
-   spaced mel edges from mel(20) to mel(4000). Evaluate triangles at
-   `f[k]=16000*k/512`; clamp each to [0,1], force DC-bin weights to zero,
+   spaced mel edges from mel(20) to mel(4000). Convert those edges back to Hz
+   and evaluate the linear triangle ramps in Hz at `f[k]=16000*k/512`, as
+   in the committed generator/BAM; this clarifies the coordinate convention
+   without changing any committed coefficient. Clamp each to [0,1], force DC-bin weights to zero,
    and quantize weights to Q2.30 using RNE. For each band store
    `M=RNE(sum(magnitude[k]*weight[k])/2^32)` as unsigned UQ28.4. This is
    raw, unnormalized magnitude, not power. Products/reduction use unsigned
@@ -2391,7 +2422,7 @@ Host math-library defaults are not the numerical specification.
 5. At a window endpoint, capture P and the 49 corresponding mel rows. For
    each band form the positive rational
    `z=(1000000*M+16*P)/(16000000*P)`; this is `M/(16*P)+1e-6`.
-   Normalize z exactly as `2^e*m`, 1<=m<2. The fixed log ROM contains
+   Normalize z exactly as `2^e*m`, 1<=m<2. The fixed log table contains
    `L[i]=RNE(2^24*ln(1+i/1024))`, i=0..1024, and
    `LN2=RNE(2^24*ln(2))`. Set i=floor(1024*(m-1)) and
    `f=RNE(65536*(1024*(m-1)-i))`, allowing f=65536. Output signed Q8.24
@@ -2470,7 +2501,7 @@ Let c=1/D, x=t-31, w=(1-cos(2*pi*t/62))/2 and
 `a=c*sinc(c*x)*w`, sinc(z)=sin(pi*z)/(pi*z), sinc(0)=1. Quantize normalized
 coefficients to Q2.30 by RNE and add the unity-sum residual to tap 31.
 Use signed-64 reduction, RNE divide by `2^30`, then S16 saturation. These
-126 fixed ROM words are independent of P5 codec resampler profiles/state.
+126 fixed coefficient words are independent of P5 codec resampler profiles/state.
 Record the 31-input-sample filter delay; do not trim it or silently resample
 the official mono16k diagnostic corpus. Neither this FIR nor the FFT may use
 codec microcode, codec scratch or codec MAC lanes.
@@ -2603,6 +2634,361 @@ silently switch a running continuous listener into memory mode.
 Invalid raw direct requests return PSLVERR without payload DMA/result change;
 invalid owned ring requests use code2/stage2 at the first invalid descriptor
 word, DETAIL=`0x07000200 | word_index`, then normal error writeback.
+
+### P9 macro-backed auxiliary storage
+
+#### Objective, inspected baseline and claim boundary
+
+This is a storage/latency refreeze, not a smaller KWS network or a new numerical
+profile. Priority is physical macros first, exact multi-cycle processing second.
+Do not replace the tables with a larger combinational case/mux network, reset-
+initialized flops, a hidden duplicate register file, or approximate CORDIC/log/
+polynomial coefficients to improve a memory statistic. Keep the 16 MAC lanes,
+the model/corpus/APUM hashes, all rounding/overflow rules and proof coverage.
+
+The inspected source baseline is commit
+`0b73994772068e5fac00fb1a98f87f88ed121cdf`:
+
+| Confirmed from source | P9 action |
+| --- | --- |
+| `apu_kws_sram_client.sv` already has sixteen synchronous 4 KiB physical banks for APUM/scratch, operand coalescing and stall-until-retired control. | Retain that implementation boundary; do not claim these 64 KiB as newly removed inferred memory. |
+| `apu_kws_rom.svh` has 12948 32-bit words; `apu_kws_apum_profile.svh` has 1496 expected APUM words. Multiple combinational calls include repeated twiddle/log/Softmax lookups. | Move all 14444 words (57776 logical bytes) to one shared, banked, immutable-after-load physical store. |
+| `apu_microcode_loader.sv` stores 8192 full 64-bit memo keys and 8192 valid bits as inferred memories: 532480 bits. | Replace both arrays with dedicated physical SRAMs; retain hashing, exact-key comparison and proof traversal. |
+| The 4096x64 proof path stack is already eight SRAM wrappers, separate from eight control-store plus 28 local-data wrappers. | Retain and count it; the full pre-P9 structural inventory is 44 wrappers, not just the 36 advertised-capacity wrappers. |
+| `apu_reg.sv` reports pre-P9 V1.1, CAPABILITY0 `0x1fd`, CAPABILITY1 `0x01827020`, digest `0xf5005d7c` with EnableP7. | Append V1.2 coefficient discovery/control; regenerate the digest from the new complete tables. |
+
+The user-supplied synthesis note reports 1900786 whole-SoC inferred bits,
+799680 KWS-table bits and 532480 memo bits for a 2026-09-23 IHP130 run, with
+the long-running pass after memory lowering being `opt_dff -sat -nodffe -nosdff`.
+Those remote raw logs were not available in this checkout and are not newly
+measured evidence. Inferred memories may be padded/duplicated by elaboration;
+the 462208 logical table bits above are not interchangeable with that tool
+statistic. Removing the two reported groups would arithmetically leave 568626
+bits (about 70.1 percent lower), but that is a projection, not a synthesis
+speed, RSS or measured memory claim. Vexii and other IP memories are outside
+P9 scope. Fresh like-for-like reports below are required.
+
+Stable requirements:
+
+- `APU-P9-001`: IHP130 macro builds MUST contain no inferred coefficient,
+  APUM-profile, memo-key or memo-valid memories and no logic-array substitutes.
+- `APU-P9-002`: macro-backed APU inferred storage MUST fall by at least 90
+  percent versus the inspected baseline and total at most 65536 bits at the
+  same pre-memory checkpoint. Small FIFOs, vector registers and metadata must
+  be individually inventoried; target arrays may not be relabeled as metadata.
+- `APU-P9-003`: numerical outputs, accepted/rejected microcode programs, first
+  errors, reset/ownership behavior and published results MUST remain equivalent
+  apart from the explicitly appended coefficient-init protocol and latency.
+- `APU-P9-004`: extra cycles are permitted within the frozen 20 ms feature /
+  100 ms inference schedule, 48 MHz qualification and zero-xrun concurrency
+  gates. Cold initialization is measured separately from steady-state latency.
+- `APU-P9-005`: completed same-configuration A/B synthesis, pass timing, peak
+  RSS, standard-cell/macro area and STA evidence are mandatory. Smaller
+  inferred-bit counts alone are not evidence of a faster or smaller chip.
+
+#### Selected macro geometry and bank ownership
+
+Reuse `rtl/tech/tc_sram.sv::tc_sram_1024x32`. Under the committed
+`configs/ci/ihp130.mk` (`HAVE_SRAM_MACRO=YES`), each wrapper is one
+`RM_IHPSG13_1P_1024x32_c2_bm_bist` with synchronous reads and byte write masks.
+Use the locked PDK/tool inputs; no new memory compiler or vendor macro is
+selected. Unsupported macro mappings fail elaboration rather than becoming
+flops or undriven wrappers. Non-macro profiles use synchronous inferred RAM
+with the same transactions and LP initialization; they establish functional
+compatibility, not the P9 inferred-memory reduction or physical acceptance.
+
+| Full P9 APU allocation | 4 KiB wrappers | Physical KiB |
+| --- | ---: | ---: |
+| Control store | 8 | 32 |
+| Codec/common local data | 12 | 48 |
+| KWS model/scratch | 16 | 64 |
+| Verifier path stack | 8 | 32 |
+| Verifier memo keys | 16 | 64 |
+| Verifier valid bitmap | 1 | 4 (1 KiB used) |
+| Coefficients plus APUM validation profile | 15 | 60 |
+| Total | 76 | 304 |
+
+Thus P9 adds exactly 32 wrappers / 128 KiB to the 44-wrapper source baseline.
+Neither verifier nor coefficient banks alias existing code/data/KWS banks.
+CAPABILITY1 continues to describe 32 KiB control + 112 KiB local data, not
+304 KiB software-addressable storage. Physical wrapper and PDK-cell counts
+are different on PDKs that assemble one wrapper from multiple macros.
+
+The coefficient payload is fifteen banks of 1024 little-endian 32-bit words,
+bank-major. Payload word `1024*bank+row` maps directly to that macro row.
+The following lossless placement avoids runtime frontend/Softmax bank conflicts
+without duplicating a lookup table:
+
+| Bank / row | Stored words / index mapping |
+| --- | --- |
+| 0 / 0..479 | Hann[0..479] |
+| 0 / 480..879 | DCT[j*40+b], j=0..9,b=0..39 |
+| 0 / 880..942; 943..1005 | FIR3[0..62]; FIR6[0..62] |
+| 1 / 0..255; 2 / 0..255 | Twiddle real[0..255]; imaginary[0..255] |
+| 1 / 256..768 | Log[2*r], r=0..512 |
+| 2 / 256..767 | Log[2*r+1], r=0..511 |
+| 3..12 / 0..1023 | Mel[i], i=0..10239, bank=3+floor(i/1024), row=i mod 1024 |
+| 13 / 0..39 | Mel[10240..10279] |
+| 13 / 40..1023 | APUM fixed-profile words[0..983] |
+| 14 / 0..511 | APUM fixed-profile words[984..1495] |
+| 14 / 512..636 | Softmax exp[-difference], difference=0..124 |
+
+All other 916 words are zero padding. The profile word order is the current
+generator's sorted unique APUM offsets: every word in `[0,0x500)`, followed
+by the multiplier/shift arrays at the ten weighted-operator offsets. It is
+not a duplicate model or weight image. Preserve the existing candidate-offset
+selection: ordinary weight/bias words that are not profile candidates must
+not acquire an unintended comparison. LN2 remains scalar constant 11629080,
+not an additional ROM array.
+
+#### APUC 1.0 image, identity and startup
+
+SRAM has no specified power-on contents. A synthesizable initial/readmemh
+block, a macro INIT attribute, or a giant case-ROM that copies itself into
+SRAM is NOT an implementation of this contract. LP loads the generated APUC
+image through the existing private AXI DMA while globally idle/quiesced, then
+hardware validates it and locks the store until hard/PCLK reset. No CPU
+MFCC/inference or runtime coefficient approximation is introduced.
+
+APUC has a 64-byte header and 61440-byte payload, total 61504 (`0xf040`) bytes,
+with 64-byte-aligned source address. It is separate from the unchanged
+32768-byte APUM. All header words are little-endian u32:
+
+| Byte | Field / required value |
+| ---: | --- |
+| `0x00` | Magic `0x43555041` (bytes APUC). |
+| `0x04` | Container ABI `0x00010000`. |
+| `0x08`, `0x0c` | Total bytes 61504; payload offset 64. |
+| `0x10`, `0x14` | Payload bytes 61440; numerical coefficient profile 1. |
+| `0x18`, `0x1c` | Bank-layout ID 1; bank count 15. |
+| `0x20`, `0x24` | Table count 10; payload CRC `0x25e7c27d`. |
+| `0x28`, `0x2c` | Coefficient ID low `0x8a0b038d`, high `0x806c780d`. |
+| `0x30`, `0x34` | Associated APUM payload CRC `0xb9034b22`; LN2 Q24 11629080. |
+| `0x38`, `0x3c` | Reserved zero. |
+
+CRC is the existing CRC-32/ISO-HDLC over exactly bytes `[64,61504)`, including
+zero padding. Source range additions must be checked without wrapping and all
+DMA bytes must remain in the snapshotted inclusive read ACL. Reject an illegal
+size/address/state before payload DMA. Check every fixed header field before
+payload, every padding word, and equality of observed/header/register/frozen
+payload CRC. After writing, read back all 15360 physical words and recompute
+CRC before atomically publishing valid+locked+ID. Readback has an exclusive
+port schedule and must finish within 15364 PCLK cycles once started; pipeline
+one word per cycle, with no clock-gated request left pending. The ready-target
+cold-load acceptance budget is 100000 PCLK cycles from command to publication;
+AXI starvation is separately bounded by DMA_TIMEOUT and reported as stalls.
+
+Freeze-time parsing of the committed tables and independent in-memory bank
+packing produced these golden identities (no RTL migration is claimed):
+
+| Byte stream | SHA-256 |
+| --- | --- |
+| Logical words in order Hann, real twiddle, imaginary twiddle, Mel, DCT, Log, FIR3, FIR6, Softmax, APUM profile, each word LE32, no delimiters | `f416585119e488c82e5cea1dabb17424e33a16dd8041393135903a613edced46` |
+| 61440-byte physical payload | `8d030b8a0d786c80a7fa072439700a4485711971d79a6a62e78fcafb1657d83a` |
+| Complete APUC image | `d670688442ea6efe1e638108157f55fc55c75218c8edbee931aaca3497567818` |
+
+The coefficient ID is the first eight payload-SHA digest bytes interpreted
+little-endian. SHA checks are release/tooling checks; hardware CRC is not
+authentication, anti-rollback or runtime ECC. The authoritative word source
+for migration is the two table files at the inspected commit and the existing
+generator/BAM parity tests, including the current Hz-linear Mel ramps. Do
+not change the numerical profile while changing its storage representation.
+
+Extend `scripts/generate_apu_kws_rtl_constants.py` to emit APUC and a bank/
+table/hash manifest from the same exact generators and frozen APUM. Add
+`make CONFIG=configs/ci/ihp130.mk apu-p9-coefficients` as a P9 implementation
+deliverable; it does not exist merely because it is specified here. Generated
+images/reports belong under the variant's `apu/coefficients/` directory.
+Keep old SV lookup functions only as host/test reference collateral, excluded
+from the production synthesizable hierarchy. Extend the release-asset generator
+and LP startup sequence to load microcode, APUC, then APUM before HP handoff.
+Account for the extra 61504 firmware/source bytes without changing a committed
+on-chip SRAM profile or silently truncating an image.
+
+#### Additive APB V1.2 and HAL contract
+
+P9 appends CAPABILITY0 bit9 = coefficient-load interface and reports
+`IP_VERSION=0x00010002`, qualified release CAPABILITY0 `0x000003fd`, unchanged
+CAPABILITY1 `0x01827020`, and IRQ mask `0x00000fff`. Bit9 describes an interface,
+not whether a particular PDK uses hard macros. Existing COMMAND bits, register
+offsets, descriptor, APUM/APUMC versions, MP3 stub and system IRQ/resource/DMA/
+clock/reset allocations are unchanged. Earlier profiles reject these new
+offsets and bit11 IRQ writes. P9-only software tests discovery before access.
+
+| Offset | Register | Access / reset | Contract |
+| ---: | --- | --- | --- |
+| `0x240` | KWS_COEFF_ADDRESS | RW idle/LP / 0 | 64-byte-aligned DMA source. |
+| `0x244` | KWS_COEFF_SIZE | RW idle/LP / 0 | Exact 61504 bytes. |
+| `0x248` | KWS_COEFF_EXPECTED_CRC | RW idle/LP / 0 | Expected APUC payload CRC. |
+| `0x24c` | KWS_COEFF_COMMAND | WO / 0 | Full-word value 1 starts load; all other values reject. |
+| `0x250` | KWS_COEFF_STATUS | RO / 0 | Busy0, valid1, locked2; header-declared size8, other header9, CRC10, padding11 error flags. |
+| `0x254` | KWS_COEFF_ACTUAL_CRC | RO / 0 | Finalized SRAM-readback CRC, zero until a complete readback. |
+| `0x258`, `0x25c` | KWS_COEFF_ID_LO/HI | RO / 0 | Published coefficient ID; zero until success. |
+| `0x260` | KWS_COEFF_CAPACITY | RO / `0x0000f000` | Auxiliary payload bytes, not APUM scratch bytes. |
+
+RW/WO writes require full-word strobes; reserved status bits read zero and
+RO writes reject. Load admission requires LP owner, globally idle/quiesced,
+disabled KWS, valid read ACL, unlocked coefficient store and no valid model,
+SIZE=61504, aligned ADDRESS and the complete checked image range inside the
+ACL. Failed command admission returns PSLVERR with the existing APB error
+collection; it issues no DMA, leaves loader status unchanged and does not
+raise IRQ11. After an accepted header transfer, mismatched words 0x08/0x10
+are header-declared size errors; other fixed-field mismatches are header errors.
+The DMA grant is exclusive with other APU loaders/jobs, reusing their drain
+and epoch protocol rather than adding a fabric master or CDC. Reuse the P8
+LP-quiesced-loader admission exception: the resource's block-new condition
+must not deadlock the already admitted asset load. Global busy/idle includes
+coefficient DMA, readback and all pending SRAM responses. An accepted
+load snapshots address/size/CRC/ACL, clears unlocked diagnostics/ID/actual CRC,
+and keeps both coefficient-valid and model execution clear until success.
+
+Terminal success/failure raises new local IRQ11; failures also collect the
+existing first-error IRQ8 and counters. Size/header/padding faults use code12,
+stage1, CRC/readback faults code13/stage1. ERROR_DETAIL is
+`0x09000000 | reason`, reason 1=header-declared size, 2=header, 3=payload CRC,
+4=padding, 5=readback CRC. ERROR_ADDRESS is the first bad external size/header/
+padding word or byte (size uses source+0x08 or source+0x10), or source+0x24 for either CRC
+failure respectively. Bus/timeout faults keep codes15/17 and their existing
+address/response precedence; semantic error flags stay zero for bus/abort
+faults. For coexisting semantic errors choose size, header-byte order, padding-
+byte order, payload CRC, then readback CRC; incomplete/failed DMA outranks
+checks requiring its missing bytes. Failures never publish valid/lock/ID.
+
+A successful coefficient lock is irrevocable until hard/PCLK reset. A failed
+or aborted load is retryable after drain/recovery and cannot execute partial
+contents. A clean abort emits abort-done, not IRQ11 or first error; forced
+loss retains existing lifecycle precedence. Soft/resource reset cancels an
+unpublished load but retains a validated locked coefficient image and its
+readback CRC/ID, just as it retains a validated model. It resets configuration
+registers and unlocked diagnostics, not retained SRAM contents. Hard reset
+invalidates coefficient and model locks together and requires both loads again.
+No macro array is asynchronously reset; flags and pending-response state are.
+Quiesce/owner handoff cannot expose half-loaded assets, and HP cannot load,
+write, unlock or alias these banks.
+
+On V1.2, MODEL_LOAD and KWS enable/operation1 require coefficient valid+locked
+with profile1/associated-model identity in addition to their existing checks.
+APUM1 is still accepted byte-for-byte after APUC initialization. An old firmware
+that never initializes APUC must fail closed, not find a hidden ROM fallback;
+a HAL that only accepts V1.1 must be updated to negotiate V1.2. WAV/FLAC-only
+work needs no coefficient load. Existing numerical/result/descriptor timestamps
+and model-lock semantics do not change.
+
+Append, without resizing existing public structs:
+
+```c
+typedef struct {
+    uint32_t status;
+    uint32_t actual_crc;
+    uint32_t coefficient_id[2];
+    uint32_t capacity_bytes;
+} rs_apu_kws_coeff_status_t;
+
+rs_status_t rs_apu_kws_coeff_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_coeff_status_read(rs_apu_kws_coeff_status_t *status);
+```
+
+Load is bounded/blocking, with existing image address/bytes/expected_crc and
+poll budget `max(1,timeout)`. It validates state/range/cache visibility before
+MMIO, starts the new command, then requires valid+locked, expected CRC and
+coefficient ID for RS_OK. Use RS_ENOTSUP for missing interface/version,
+RS_EINVAL for caller/state/range failures, RS_EFORMAT for hardware size/header/
+padding rejection, RS_EIO for CRC/bus/internal failures, RS_ETIMEOUT for
+exhausted polling. Timeout does not release buffers, cancel DMA, clear IRQs or
+reset the APU. Use explicit abort/drain recovery. Status read is non-consuming.
+Update the existing probe to accept supported minor versions 0,1,2; model/
+enable helpers check the new readiness only when bit9 is advertised.
+
+Independently append RTL/C constants, parity fixtures, Python image definitions
+and the APUC schema/identity to `scripts/apu_abi_digest.py`'s canonical inventory.
+Keep its existing serialization/CRC algorithm. The pre-P9 `0xf5005d7c` digest
+is not valid for V1.2; compute and review the new nonzero value during P9
+implementation, and require RTL/C/tool equality before release. Partial
+implementations report zero rather than advertising the old complete digest.
+
+#### Coefficient access, latency and exact multi-cycle arithmetic
+
+Coefficient/profile reads are synchronous transactions, not calls to a large
+combinational function. A frontend request carries kind and index; kinds are
+Hann=0, twiddle pair=1, Mel=2, DCT=3, Log pair=4, FIR3=5, FIR6=6. Softmax
+and APUM profile use kind codes 7 and 8 for diagnostics. The response returns one
+32-bit word or `{imaginary,real}` / `{L[i+1],L[i]}` as appropriate. Single-word
+responses have zero in the unused upper half. Preserve each old function's
+signed/unsigned interpretation at its arithmetic consumer; SRAM returns raw
+bits, not a newly sign-extended numerical format. Legal index
+ranges are 0..479, 0..255, 0..10279, 0..399, 0..1023, 0..62, 0..62. Both Log
+words always occupy different banks, including i=1023. A separate inference
+request reads Softmax differences 0..124 from bank14. Model validation alone
+uses the 1496-word profile read port and is globally exclusive with runtime.
+
+Allow one outstanding request per frontend/inference/profile client, stable
+payload until ready, and a retained response until consumed. Without consumer
+backpressure, an accepted request returns in at most two PCLK cycles (macro
+read plus response register). Frontend and inference requests may be accepted
+together; their banks never conflict in this layout. Model/APUC loading owns
+the banks exclusively. Illegal kind/index or invalid-store access returns a
+bounded fault, not default zero or a masked address. Use code14/stage9 or10
+for engine access faults and code12/stage1 for a model-profile access fault;
+detail `0x09000100 | kind`, address=4*requested logical table index. It is not
+a new CPU-addressable window.
+
+Issue coefficient and existing scratch requests in parallel where both are
+needed. Snapshot work identity, indices and operands and commit an arithmetic
+step exactly once only when both responses belong to that work item. Reuse
+the returned twiddle pair for all four products and the same L[i] for the
+interpolation/base term; never replicate the large ROM to gain read ports.
+Small response/operand holding registers are allowed, not a shadow table.
+Abort/reset/epoch change discards stale responses before new work; a blocked
+response does not count repeatedly as watchdog progress. Actual request issue,
+retired response, arithmetic iteration or scratch commit is progress.
+
+Additional pipeline/iterative cycles MUST preserve exact signed widths,
+RNE/TZ, Softmax scalar behavior and overflow faults. In particular the existing
+96-bit log normalization/divisions may be serialized using exact integer
+operations (at most 320 arithmetic PCLK cycles per band, excluding explicitly
+counted operand stalls), and nearest-isqrt may use at most 40 arithmetic cycles
+per bin. These are ceilings, not required delays or approximation permissions.
+No coefficient-generation CORDIC, smaller/recalibrated model, new LUT values,
+changed hop/window/threshold or reduced MAC-lane count is authorized.
+
+Every lookup wait and iteration contributes to measured KWS cycles. Preserve
+SEQUENCER_TIMEOUT as a consecutive no-progress bound, not a total-job budget;
+do not enlarge its reset value to mask a stalled handshake. The 100 ms window
+deadline and protection against overwriting the oldest of the 49 mel rows
+remain blocking even if individual transactions meet their local bounds.
+Qualify actual combined SRAM/arithmetic scheduling, not an ideal zero-latency
+lookup model. Other clock dividers make no new real-time claim.
+
+#### Macro-backed microcode proof memo
+
+Keep PathMemoDepth=8192 for expanded P5/P9, the existing full 64-bit key
+`{loop_active,return_pc[3:0],pc}`, hash constant `0x9e3779b97f4a7c15`, hash
+selection, linear probing and exact-key equality. Do not shorten keys, use
+hash-only matches, evict entries, skip deeper proof paths or lower path limits
+to save hardware. The call-depth>2 bypass, full-table normal-traversal fallback,
+V1/V2 traversal limits 131072/262144 and path-stack bounds remain unchanged.
+
+Map entry i to key bank-pair `floor(i/1024)` (0..7), row `i mod 1024`, low/high
+words in two 1024x32 macros, sixteen in total. The seventeenth macro stores
+valid bits: row `floor(i/32)` (0..255), bit `i mod 32`; other rows are unused.
+Read key halves and bitmap word in parallel, latch them synchronously, then
+perform the existing comparison/probe decision. One lookup/probe requires at
+most four PCLK cycles including controller staging. Insert both key halves
+and the previously read bitmap word OR its selected valid bit as one logical
+commit; never publish a valid bit before both key writes. Only one proof
+transaction is outstanding, so bitmap read/modify/write cannot lose an update.
+
+Before every memoized entry proof and every restarted load, clear the 256 used
+bitmap rows and drain the final write (at most 260 cycles). Keys need not be
+reset. Abort during clear/lookup/insert must drain at most the accepted
+transaction, suppress image publication and restart a complete clear on retry.
+Soft/resource reset never makes stale memo contents usable for a new proof.
+Use synchronous full-word writes, not a resettable 8192-bit valid flop vector.
+The actual checked path-visit counter still counts proof states, not SRAM
+service cycles; report visits, memo hits/probes/full events and wall cycles
+separately. Bounded probing/clearing must not be hidden from abort/idle logic.
+Smaller power-of-two depths used by directed tests retain their existing
+semantics; they are not permission to shrink the production table.
 
 ### HAL and compatibility
 
@@ -2963,8 +3349,8 @@ formal checks do not replace commercial CDC/RDC signoff.
 | 9 | invalid microcode header/range/control flow |
 | 10 | microcode CRC/capability failure |
 | 11 | sequencer trap/watchdog |
-| 12 | invalid KWS model/range/operator |
-| 13 | KWS model CRC |
+| 12 | invalid KWS model/coefficient header, range or operator |
+| 13 | KWS model/coefficient CRC |
 | 14 | KWS arithmetic/tensor failure |
 | 15 | AXI read response/protocol |
 | 16 | AXI write response/protocol |
@@ -3537,6 +3923,93 @@ is changed by these feature evidence requirements.
 An internal KWS result is not called MLPerf unless the exact applicable rules
 and runner are followed. File interoperability alone is not codec certification.
 
+### P9 memory-reduction verification and evidence
+
+Use the same committed IHP130 profile, locked Yosys (currently dependency-lock
+0.67), Slang build, PDK revision, macro views, PCLK/SDC, ABC recipe, flatten/
+keep-hierarchy rules, host resources and timeouts for baseline A and candidate B.
+Record executable/plugin hashes as well as version strings. Baseline A is the
+inspected pre-P9 revision; B includes the migration and generated APUC. Separate
+checkouts/output roots preserve both artifact sets. Non-APU inputs must match;
+otherwise rebaseline explicitly rather than attribute unrelated changes to P9.
+
+Do not confuse the existing EnableP7=0 versus EnableP7=1 block report with this
+A/B test: memory-reduction A and B both have KWS enabled. Also retain the
+existing P5-versus-KWS physical comparison. Use the production SRAM-macro
+configuration, real model/coefficient loaders and full arithmetic datapaths,
+not a stub, preinitialized inferred RAM or disabled KWS elaboration.
+
+Required evidence below the variant root in `apu/p9/evidence/`:
+
+| Report | Required evidence |
+| --- | --- |
+| `coefficient-layout.json` | All ten table word counts/hashes, logical-to-bank inverse mapping, zero padding, image/header CRC/SHA, generator revision and the exact 15-wrapper map. |
+| `coefficient-lifecycle.json` | LP admission, unsupported discovery, cache/ACL checks, DMA/backpressure, payload/readback corruption, partial load/retry, lock, ownership, hard/soft/resource reset, quiesce-load and abort-at-every-state tests. |
+| `memo-equivalence.json` | Baseline versus macro-memo proof verdicts/first errors/visited states on valid and mutated APUMC V1/V2; duplicate keys, collisions, wrap, full table, deeper-call bypass, key/bitmap boundaries and interrupted clearing/insertion. |
+| `numerical-latency.json` | Every coefficient and all scalar/table boundary cases, variable response backpressure, no double commit/stale response, bit-exact MFCC/layer/final outputs, component and complete-window cycle counts. |
+| `memory-synthesis-ab.json` | Per-hierarchy pre-memory bits/ports/instances, source and lowered memory forms, flop/mux counts, macro types/counts, memory/opt_dff/ABC/whole-flow times, peak RSS, return status/timeouts and raw report paths for A/B. |
+| `physical.json` | Logic area and macro area separately, total area, WNS/TNS, unconstrained paths, hold reports, macro timing views and netlist-model coverage; no PDK black box silently omitted. |
+
+The layout test must enumerate every valid logical table index, prove the
+inverse mapping, count exactly 14444 populated positions and 916 zero-padding
+positions (populated coefficient/profile words may themselves be zero),
+and compare the generated APUC to the frozen hashes. Compare every lookup
+against the pre-P9 reference, including last Hann/Mel/DCT/FIR indices, both
+twiddle components, Log[1024], Softmax differences 0/124 and rejection of 125,
+and all 1496 APUM profile words. Candidate tables/ROM helper functions cannot
+serve as the only oracle for their own SRAM addresses. Use unknown/random
+macro power-on data in tests; a successful LP load must establish all contents.
+
+Model validation must still reject profile-word mutations and CRC-consistent
+adversarial images as before; replacing the expected-word source with SRAM
+must not replace structural validation with CRC alone. Test access at key
+indices 0/31/32/1023/1024/8191, stale invalid-key data, same-bitmap-word inserts,
+full hash wrap and equality differing only in upper key bits. A memo hit may
+only skip a state that the unchanged exact-key policy permits. P9 may take
+more cycles but must not reject a formerly accepted image by counting SRAM
+cycles against the semantic traversal bound.
+
+Run the full existing 1000-PCM hardware accuracy path (at least 900/1000),
+per-stage/layer differentials and 60-second concurrent WAV/FLAC + KWS matrix,
+including 48/96 kHz and S16/S24. Neither reduced smoke windows nor a CPU
+reference replaces these reports. Reuse/extend `run_apu_p7_kws_rtl.py`,
+`run_apu_p7_concurrent_rtl.py` and the P8 LP/HP/quiesce/contention tests to load
+APUC through the public interface. Permit extra measured processing cycles
+only while every complete continuous window finishes before its successor,
+mel/input history is not overwritten and no xrun occurs under qualified
+ready-memory conditions. Keep arbitrary-starvation fault recovery separate.
+
+For structural acceptance, count memories with hierarchy multiplicity and
+width*depth consistently at the existing pre-`memory` checkpoint. The four
+targeted storage classes must contribute zero inferred bits. Require at least
+90 percent reduction in APU-owned inferred bits and the 65536-bit residual
+ceiling, plus exactly the live macro groups in the P9 allocation table. Do
+not move `memory_map` before the checkpoint, remove hierarchy from the report,
+replace memories with equivalent giant flop/mux banks, or alter the SAT/ABC
+recipe merely to meet this statistic. Archive post-memory/pre-tech mapped
+logic inventories as the cross-check. Wrapper simulation arrays are not
+counted as physical macro storage in an IHP130 synthesis report.
+
+The candidate must complete memory lowering and the unchanged
+`opt_dff -sat -nodffe -nosdff` pass within the existing flow limits; compare
+their combined runtime, full synthesis wall time and peak process-tree RSS.
+Require demonstrated improvement in post-memory processing and peak RSS for
+the memory-reduction handoff, not just fewer inferred bits. If A times out,
+record a censored observation and a lower time bound, not a made-up finished
+runtime or percentage. A completed B below that bound establishes a bounded
+runtime improvement; RSS needs its own measured comparison. Unavailable
+evidence is UNRUN, a timeout is not PASS, and absent improvement remains an
+explicit P9 acceptance gap. No new absolute area/power ceiling is invented.
+
+Update `report_apu_block.py`'s classifications and tests: source-era text that
+describes the KWS window as flops is already stale, and counts omitting the
+path stack, new memo/bitmap or coefficient banks are invalid. Distinguish
+advertised capacity, physical provision, utilized payload and alignment waste.
+Report added macro area/power/fanout and startup traffic alongside reduced
+standard-cell storage. These are phase acceptance/review requirements, not
+authorization to change the repository's observe-mode metrics policy, warning
+baselines, synthesis timeouts or global CI quality policy.
+
 ## Synthesis, Timing, and Physical Evidence
 
 The committed MVP profile is `configs/ci/ihp130.mk`. Block and full-SoC
@@ -3550,8 +4023,11 @@ profile and locked tools. Max-delay WNS must be >= 0 ns and TNS = 0 at the
 20.833 ns PCLK target, with no unconstrained active APU path, inferred latch,
 or unresolved non-PDK black box; all macro/clock/reset views must be accounted
 for and hold analysis reported separately. Retain the eight control-store
-plus 28 data-store SRAM wrappers and complete per-block cell/macro/delta
-accounting. Standard-cell area and power remain report-only with no approved
+plus 28 data-store SRAM wrappers and report verifier/auxiliary macros separately.
+The post-P9 hierarchy adds the frozen memo/bitmap/coefficient banks and must
+meet the full 76-wrapper inventory, not a historical 36-wrapper total. Complete
+per-block cell/macro/delta accounting is mandatory. Standard-cell area and power
+remain report-only with no approved
 absolute ceiling, and missing reports do not count as passes. Pre-layout STA
 does not replace physical signoff. No MP3 hierarchy, decoder quality or MP3
 performance result is required for this release's P8 acceptance.
@@ -3560,7 +4036,7 @@ Evidence includes:
 
 - control-store and local-SRAM macro count/utilization; expanded P5 uses eight
   4 KiB control-store wrappers plus the unchanged 28 local-data wrappers
-  (36 logical wrappers total versus 32 before expansion). Control storage
+  (36 advertised-capacity wrappers versus 32 before expansion). Control storage
   increases 16 KiB and combined image/data storage increases from 128 to
   144 KiB. These are capacity counts, not measured area/power; report verifier
   workspace, additional PC/branch flops, muxing, and fetch paths separately;
@@ -3583,8 +4059,12 @@ silicon characterization.
 The following phase IDs and titles are frozen. They MUST NOT be renamed,
 renumbered, or reused; later work receives a new phase.
 
-The current active order is P0..P5, then P7, then P8. P6 is a deferred
-placeholder, not an implementation task or a prerequisite for P7/P8. Record
+The active order is P0..P5, then P7 functionality, then the new P9 storage
+migration, then final P8 physical/release closure. Existing P8 software and
+banked-KWS integration work is reused; P9 does not depend on completed P8
+physical signoff. Phase numbers are stable identities, not a reason to create
+a circular prerequisite. P6 is a deferred placeholder, not an implementation
+task or a prerequisite for P7/P8/P9. Record
 it as DEFERRED, not completed or verified. Resuming MP3 requires a later
 explicit scope refreeze; the retained reference material is not authorization
 to start it automatically.
@@ -3953,11 +4433,14 @@ ASoC is deferred because this phase does not freeze a Linux DT binding, kernel
 driver ABI, or ALSA ownership protocol.
 
 Dependencies: Phases1..5 and Phase7. Phase6 remains DEFERRED and is not a
-release prerequisite.
+release prerequisite. Post-P9 physical/release closure additionally requires
+Phase9; previously completed P8 software work need not be repeated except for
+the new asset-loading/discovery integration and affected regression.
 
 Public changes: completes frozen HAL and bare-metal LP/HP surfaces; Linux ASoC
-is not part of this phase. V1 register/descriptor/
-microcode/model/address/IRQ/resource/clock allocation cannot change.
+is not part of this phase. It introduces no further public changes beyond the
+separately approved P9 V1.2 extension; descriptor, APUM/APUMC, address-map,
+system IRQ/resource/clock allocations remain fixed.
 
 Validation:
 
@@ -3971,9 +4454,89 @@ make regress-nightly
 Completion: every active WAV/FLAC/KWS MVP item passes; IHP130 block/full-SoC
 evidence is reviewed; unrun commercial gates remain explicit; no unsupported
 claim ships. MP3 remains unadvertised and its absence does not block this
-release. The current-release capability word stays `0x000001fd`; P8's ABI
-digest covers the released contract including reserved MP3 IDs/stub and
-excludes inactive P6 proposals.
+release. Pre-P9 capability remains `0x000001fd`; the post-P9 release uses
+`0x000003fd`. P8's digest covers the actual released contract, including the
+P9 coefficient extension when present and the reserved MP3 IDs/stub, and
+excludes inactive P6 proposals. Reusing pre-P9 physical results or digest as
+proof of the new macro-backed release is not permitted.
+
+### Phase 9 - Macro-backed Coefficients and Loader Memoization
+
+ID: `APU-P9`.
+
+Scope: replace the large synthesized KWS coefficient/profile tables and
+microcode memo arrays with the exact dedicated physical-bank layout, add
+bounded synchronous access and LP APUC initialization, and qualify inferred-
+memory, synthesis resource, numerical and real-time behavior. This is not a
+new model, reduced workspace, approximate frontend or MP3 phase.
+
+Dependencies: the inspected P5/P7 implementation and its existing banked KWS
+client/P8 ownership integration, the frozen generators/BAM/model/corpus, the
+current Common/technology wrappers and IHP130 macro views. Existing functional
+evidence must be rechecked at preflight; missing evidence is not assumed PASS.
+Full P8 physical signoff is an output after this phase, not its prerequisite.
+
+Public changes: APB V1.2, CAPABILITY0 bit9, registers `0x240..0x260`, local
+IRQ11, APUC1 container and two additive HAL APIs as specified above. Existing
+field meanings/offsets, APUM1 bytes, APUMC V1/V2, 128-byte descriptors,
+advertised capacities and system topology/clock/reset allocations are retained.
+An extra LP coefficient load is intentionally required for KWS after hard reset.
+
+Implementation order within this phase:
+
+1. Capture baseline A inventory/flow status and deterministic table/proof
+   fixtures; generate the exact APUC image and independent layout oracle.
+2. Migrate memo keys/bitmap to 17 macros, reusing Common register/control
+   primitives and preserving exact proof, clear/insert and abort semantics.
+3. Add 15 coefficient SRAMs, tagged synchronous ports and exclusive loader/
+   readback/lock, then the handwritten APB/C/Python constants and HAL.
+4. Replace all production function lookups, including APUM fixed-word checks,
+   with SRAM transactions. Retain bit-exact arithmetic and add only bounded
+   state/latency needed by the macro interface or exact iterative operations.
+5. Update LP/HP startup and evidence fixtures to load APUC, extend lifecycle/
+   formal/host tests, update ABI-digest and macro-accounting tooling, and run
+   the full existing numerical/concurrent corpus gates.
+6. Capture candidate B using the unchanged comparison flow, verify the
+   inferred-bit reduction and actual runtime/RSS change, then refresh P8
+   macro/netlist/STA/area evidence. No acceptance status is inferred from
+   the design estimates or from a timeout.
+
+Profile: `configs/ci/ihp130.mk`, locked tools, HAVE_SRAM_MACRO=YES, 48 MHz
+PCLK performance target. Required existing entry points after implementation:
+
+```sh
+python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
+ruff check .
+make sw-format-check sw-policy-check sw-host-test
+python3 -m pytest -q
+python3 scripts/apu_abi_digest.py --check
+make CONFIG=configs/ci/ihp130.mk formal
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke SIMU=VERILATOR firmware sim
+make CONFIG=configs/ci/ihp130.mk APU_BLOCK_ENABLE_P7=1 apu-block-synth apu-block-sta
+make CONFIG=configs/ci/ihp130.mk apu-block-evidence
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS synth
+make CONFIG=configs/ci/ihp130.mk STA=OPENSTA sta
+make regress-pr
+make regress-nightly
+git diff --check
+```
+
+The generic entry points do not replace the full 1000-window/60-second P7
+qualification or the six P9 reports; register those tests and their exact
+commands during implementation. Run A and B in separate revision-qualified
+variants, not successive overwrites of the same outputs. New coefficient-
+asset targets and extended report fields are deliverables, not tools assumed
+already present in the source baseline.
+
+Completion: every P9 requirement passes, all affected P5/P7 semantic results
+remain equivalent, the added software-visible init flow is qualified, target
+inferred memories are absent in macro synthesis, and the reported physical
+inventory is 76 wrappers / 304 KiB with no hidden large register-file copy.
+Timing/area/RSS/runtime evidence must describe the actual post-P9 hierarchy.
+If functional or real-time gates fail, do not compensate by weakening
+accuracy, using CPU inference, shrinking the memo or increasing the 100 ms
+period. P6, Linux ASoC and commercial post-layout/silicon qualification remain
+explicitly deferred/outside this phase.
 
 ## Commercial Delivery Gaps
 
