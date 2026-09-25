@@ -11,7 +11,9 @@
 
 `include "axi4_define.svh"
 
-module ahbl2axi4 (
+module ahbl2axi4 #(
+    parameter bit TwoCycleErrors = 1'b0
+) (
            ahbl_if.slave  ahbl,
            axi4_if.master axi4,
     output logic          idle_o
@@ -27,6 +29,7 @@ module ahbl2axi4 (
   localparam logic [2:0] FSM_WRITE_RESP = 3'd2;
   localparam logic [2:0] FSM_READ = 3'd3;
   localparam logic [2:0] FSM_READ_RESP = 3'd4;
+  localparam logic [2:0] FSM_ERROR_RESP = 3'd5;
 
   logic [2:0] s_fsm_d, s_fsm_q;
   logic [31:0] s_addr_d, s_addr_q;
@@ -37,15 +40,22 @@ module ahbl2axi4 (
   logic [ 3:0] s_wstrb;
   logic [31:0] s_wdata;
   logic        s_terminal;
+  logic        s_axi_err;
+  logic        s_resp_valid;
 
   assign idle_o = s_fsm_q == FSM_IDLE;
-  assign s_terminal = ((s_fsm_q == FSM_WRITE_RESP) && axi4.bvalid) ||
-                      ((s_fsm_q == FSM_READ_RESP) && axi4.rvalid);
+  assign s_resp_valid = ((s_fsm_q == FSM_WRITE_RESP) && axi4.bvalid) ||
+                            ((s_fsm_q == FSM_READ_RESP) && axi4.rvalid);
+  assign s_axi_err = s_resp_valid &&
+      (((s_fsm_q == FSM_WRITE_RESP) && (axi4.bresp != `AXI4_RESP_OKAY)) ||
+       ((s_fsm_q == FSM_READ_RESP) && (axi4.rresp != `AXI4_RESP_OKAY)));
+  // In compliant mode, the AXI terminal error is consumed during the first
+  // AHB ERROR cycle (HREADY=0). The saved state supplies the final ERROR cycle
+  // (HREADY=1), allowing Hazard3 to squash a following pipelined access.
+  assign s_terminal = (s_resp_valid && !(TwoCycleErrors && s_axi_err)) ||
+                      (s_fsm_q == FSM_ERROR_RESP);
   assign ahbl.hready = (s_fsm_q == FSM_IDLE) || s_terminal;
-  assign ahbl.hresp = s_terminal &&
-                      (((s_fsm_q == FSM_WRITE_RESP) && (axi4.bresp != `AXI4_RESP_OKAY)) ||
-                       ((s_fsm_q == FSM_READ_RESP) && (axi4.rresp != `AXI4_RESP_OKAY))) ?
-                          AHBL_RESP_ERROR : AHBL_RESP_OKAY;
+  assign ahbl.hresp = (s_axi_err || (s_fsm_q == FSM_ERROR_RESP)) ? AHBL_RESP_ERROR : AHBL_RESP_OKAY;
   assign ahbl.hrdata = axi4.rdata;
 
   always_comb begin
@@ -154,6 +164,9 @@ module ahbl2axi4 (
         end
         FSM_READ: begin
           if (axi4.arvalid && axi4.arready) s_fsm_d = FSM_READ_RESP;
+        end
+        FSM_WRITE_RESP, FSM_READ_RESP: begin
+          if (TwoCycleErrors && s_axi_err) s_fsm_d = FSM_ERROR_RESP;
         end
         default: begin
         end

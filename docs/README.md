@@ -3,6 +3,8 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
+- [Tiny MCU](ip/tiny-soc.md) defines the independent wired Tiny product, AXI4/APB4, SRAM-only startup and IHP130 acceptance.
+
 - [Contributing](../CONTRIBUTING.md) describes community discussion, development,
   review, validation evidence, and maintainer responsibilities.
 - [git-workflow.md](git-workflow.md) defines branch and commit conventions,

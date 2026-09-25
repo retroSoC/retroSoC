@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from rtl.mini.pin_map.generate_pin_map import Pad, ihp130_pad_instance, read_map  # noqa: E402
+from scripts.rtl.generate_pin_map import Pad, ihp130_pad_instance, read_map  # noqa: E402
 from scripts.check_clock_reset_domains import validate  # noqa: E402
 from scripts.setup_helpers import atomic_write  # noqa: E402
 

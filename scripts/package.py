@@ -93,6 +93,8 @@ def main() -> int:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     config = manifest["configuration"]
     lock = load_lock(args.lock)
+    soc = config.get("SOC", "MINI")
+    product_root = root / "rtl" / soc.lower()
     args.output_dir.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(
@@ -100,7 +102,9 @@ def main() -> int:
     ) as temp:
         staging = Path(temp) / "package"
         staging.mkdir()
-        timing_contract = Path(temp) / "commercial_timing_contract.tcl"
+        timing_contract = Path(temp) / ("tiny_core.sdc" if soc == "TINY" else "commercial_timing_contract.tcl")
+        timing_generator = (root / "physical/smoke/sta/opensta/generate_sdc.py" if soc == "TINY"
+                            else root / "physical/commercial/scripts/generate_timing_contract.py")
         if config.get("MINI_MODE", "PRODUCT") == "MPW":
             dynamic_core_filelist = (
                 args.variant_root
@@ -124,14 +128,11 @@ def main() -> int:
         subprocess.run(
             [
                 "python3",
-                str(
-                    root
-                    / "physical/commercial/scripts/generate_timing_contract.py"
-                ),
+                str(timing_generator),
                 "--domains",
-                str(root / "rtl/mini/integration/clock_reset_domains.json"),
+                str(product_root / "integration/clock_reset_domains.json"),
                 "--pin-map",
-                str(root / "rtl/mini/pin_map/pin_map.json"),
+                str(product_root / "pin_map/pin_map.json"),
                 "--output",
                 str(timing_contract),
             ],
@@ -171,8 +172,16 @@ def main() -> int:
             "--archinfo-incdir",
             str(args.variant_root / "generated/archinfo"),
             "--metadata-file",
-            "contracts/commercial_timing_contract.tcl={0}".format(timing_contract),
+            f"contracts/{timing_contract.name}={timing_contract}",
         ]
+        if soc == "TINY":
+            if config.get("SYNTH") == "YOSYS":
+                recipe = config.get("SYNTH_RECIPE", "balanced")
+                folder = "yosys" if recipe == "balanced" else f"yosys-{recipe}"
+                source_dir = args.variant_root / "syn" / folder / "filelists"
+            else:
+                source_dir = args.variant_root / "sim" / config["SIMU"].lower() / "filelists"
+            command.extend(("--soc", "TINY", "--source-filelist-dir", str(source_dir)))
         for key, flag in (
             ("HAVE_PLL", "--have-pll"),
             ("HAVE_SRAM_IF", "--have-sram-if"),

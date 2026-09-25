@@ -11,7 +11,9 @@
 `include "mmap_define.svh"
 
 module mgmt_core_wrapper #(
-    parameter int ExternalIrqCount = 30
+    parameter int ExternalIrqCount  = 30,
+    parameter bit EnableAtomics     = 1'b1,
+    parameter bit TwoCycleBusErrors = 1'b0
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
@@ -58,7 +60,7 @@ module mgmt_core_wrapper #(
       .hclk(clk_i),
       .hresetn(s_core_rst_n)
   );
-  ahbl2axi4 u_ahbl2axi4 (
+  ahbl2axi4 #(.TwoCycleErrors(TwoCycleBusErrors)) u_ahbl2axi4 (
       .ahbl  (u_ahbl_if),
       .axi4  (axi4),
       .idle_o(s_ahbl_idle)
@@ -103,7 +105,7 @@ module mgmt_core_wrapper #(
   hazard3_cpu_1port #(
       .RESET_VECTOR       (`SOC_CPU_RESET_ADDR),
       .MTVEC_INIT         (32'h0000_0000),
-      .EXTENSION_A        (1),
+      .EXTENSION_A        (EnableAtomics),
       .EXTENSION_C        (1),
       .EXTENSION_E        (0),
       .EXTENSION_M        (1),

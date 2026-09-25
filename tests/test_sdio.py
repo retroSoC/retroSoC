@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONVERTER = ROOT / "rtl/mini/script/convt_sv2v.py"
+CONVERTER = ROOT / "scripts/rtl/convt_sv2v.py"
 BUILD = ROOT / "build/test-sdio"
 
 SDIO_FULL_SOURCES = [

@@ -143,3 +143,13 @@ def test_real_tool_dry_run_never_invokes_gdb_and_is_not_device_pass(tmp_path, mo
     assert result["passed"] is True and result["executed"] is False
     assert ir.programming_result(result) == "Script generated; device not programmed"
     assert "XPI_FLASH_PROGRAM_PASS" in args.gdb_script.read_text()
+
+
+def test_lp_boolean_feature_defaults_preserve_mini_atomics():
+    text = """
+    module mgmt_core_wrapper #(parameter bit EnableAtomics = 1'b1) ();
+      hazard3_cpu_1port #(.EXTENSION_A(EnableAtomics), .NUM_IRQS(ExternalIrqCount))
+        u_hazard3_cpu_1port ();
+    endmodule
+    """
+    assert ir.lp_parameters(text) == {"EXTENSION_A": "1", "NUM_IRQS": "ExternalIrqCount"}

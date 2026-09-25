@@ -52,3 +52,12 @@ macro must select either this mode or a qualified macro timing model.
 
 For supported profiles and commands, see the root [README](../README.md) and
 [agent contract](../AGENTS.md).
+
+## Tiny MCU
+
+`ci/ihp130-tiny.mk` selects `SOC=TINY`, one RV32IMC Hazard3 (A disabled),
+128 KiB SRAM, AXI32/APB4, four DMA channels and the wired peripheral subset.
+The profile uses 24 MHz, `HAVE_HP=NO`, `MINI_MODE=NONE`, CSR-enabled RV32IM
+firmware and `ld2_all_sram`. Both `bringup` and `ci_smoke` select Tiny acceptance
+firmware. Icarus and Verilator use the same pin-level Flash model. Other PDKs,
+wireless, external RAM and HP applications are rejected by the Tiny config gate.

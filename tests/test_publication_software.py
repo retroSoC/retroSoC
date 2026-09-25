@@ -61,7 +61,7 @@ def test_function_extraction_rejects_unsupported_definitions(source):
 
 
 @pytest.mark.parametrize("relative,old,new", [
-    ("rtl/mini/mk/software.mk", "CRT_SRCS := $(APP_CRT_SRCS)", "CRT_SRCS += $(APP_CRT_SRCS)"),
+    ("rtl/mk/software.mk", "CRT_SRCS := $(APP_CRT_SRCS)", "CRT_SRCS += $(APP_CRT_SRCS)"),
     ("crt/arch/riscv/startup.S", "beqz t1, PSRAM_READY_WAIT", "beqz t1, main_start"),
     ("crt/arch/riscv/startup.S", "call     _premain_init", "call     other_premain"),
     ("crt/arch/riscv/system_irq.S", "SAVE_CSR_CONTEXT\n", "SAVE_CHANGED_CONTEXT\n"),

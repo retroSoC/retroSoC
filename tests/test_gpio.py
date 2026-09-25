@@ -47,7 +47,7 @@ def test_gpio_register_pad_interrupt_and_filter_contract(tmp_path: Path) -> None
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

@@ -72,7 +72,7 @@ def main() -> int:
         subprocess.run(
             [
                 sys.executable,
-                str(root / "rtl/mini/address_map/generate_memory_map.py"),
+                str(root / "scripts/rtl/generate_memory_map.py"),
                 "--map",
                 str(root / "rtl/mini/address_map/memory_map.json"),
                 "--output-dir",
@@ -122,6 +122,17 @@ def main() -> int:
             str(executable),
             *(str(root / source) for source in TEST_SOURCES),
         ]
+        tiny_object = temporary_root / "tiny_dma_math.o"
+        subprocess.run([
+            compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-DRS_SOC_TINY",
+            "-Drs_dma_config_validate=rs_tiny_dma_config_validate",
+            "-Drs_dma_tcd_validate=rs_tiny_dma_tcd_validate",
+            "-I", str(memory_map_root / "include"),
+            "-I", str(user_extensions_root / "include"),
+            "-I", str(root / "crt/include"), "-c", str(root / "crt/src/hal/dma_math.c"),
+            "-o", str(tiny_object),
+        ], check=True)
+        command.append(str(tiny_object))
         subprocess.run(command, check=True)
         subprocess.run([str(executable)], check=True)
     return 0

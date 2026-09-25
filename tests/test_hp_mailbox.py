@@ -39,7 +39,7 @@ def test_hp_mailbox_registers_and_doorbells(tmp_path: Path) -> None:
     )
     converted = tmp_path / "hp_mailbox_tb.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(filelist),
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(filelist),
          "--output", str(converted)],
         check=True,
     )

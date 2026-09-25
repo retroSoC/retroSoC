@@ -3,9 +3,9 @@
 ## Status and Scope
 
 This document defines the intended Tiny, Mini, Std, and Pro product ladder.
-It is a product roadmap, not a statement of implemented repository support.
-The current build system accepts only `SOC=MINI`, and the committed Mini
-profiles remain the executable source of truth.
+Tiny and Mini have executable build profiles; Std and Pro remain roadmap
+targets. Committed product profiles and retained validation evidence define
+implemented support. Tiny first targets IHP130 as a wired MCU.
 
 Mini is the family anchor. It establishes the common product model: an open
 RISC-V SoC in which a small, always-available Hazard3 management core owns
@@ -14,8 +14,8 @@ add application processors and accelerators without transferring final
 lifecycle control to Linux. Tiny reduces this model to an MCU-class device and
 does not require a separate application processor.
 
-All frequencies, memory sizes, bus widths, accelerator rates, and software
-features below are product targets. They require separate RTL integration,
+Except for the explicitly identified executable baselines, frequencies, memory
+sizes, bus widths, accelerator rates, and software features below are product targets. They require separate RTL integration,
 driver enablement, verification, and physical qualification before they can be
 advertised for a device or PDK.
 
@@ -47,45 +47,36 @@ nodes, protocol bridges, and smart-home edge endpoints. It is MCU-first: boot
 latency, sleep behavior, deterministic I/O, security, package cost, and usable
 energy per event take precedence over Linux compatibility.
 
-Tiny has two productization profiles:
+The first executable product is **Tiny-MCU**, an independent wired MCU
+integration in `rtl/tiny`, selected with `configs/ci/ihp130-tiny.mk`. It has no
+wireless IP, wireless protocol stack, or radio-specific companion integration.
+Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 
-- **Tiny-MCU** contains no radio and targets wired control or products that do
-  not need connectivity on every unit.
-- **Tiny-Connect** provides Bluetooth Low Energy and IEEE 802.15.4 capability.
-  The open digital-RTL baseline should expose a qualified SPI or SDIO host,
-  interrupt, reset, wake, and power-sequencing interface to a certified radio.
-  On-die or co-packaged RF becomes a product option only after suitable RF IP,
-  analog integration, PDK support, and regulatory qualification exist.
+### First-release Architecture
 
-Wi-Fi 6 is an optional upper Tiny-Connect SKU rather than a baseline
-requirement. This avoids imposing its RF, memory, and active-power costs on
-802.15.4 and Bluetooth endpoint products.
-
-### Recommended Architecture
-
-| Area | Product target |
+| Area | Tiny MCU baseline |
 | --- | --- |
-| CPU | One Hazard3 RV32IMAC core at 64-160 MHz, subject to PDK qualification |
-| On-chip memory | 256-512 KiB banked SRAM, boot ROM, and 8-32 KiB retention SRAM |
-| Code storage | QSPI flash with execute-in-place and authenticated recovery boot |
-| Memory model | No MMU and no external DRAM dependency |
-| Interconnect | 32-bit RIB; bounded `INCR4` support for DMA and XIP, without a full AXI4 fabric |
-| Software | Freestanding SDK, bare metal, and Zephyr- or FreeRTOS-class RTOS ports |
-| Low power | Clock gating, switchable SRAM banks, RTC/event wake, retention, and a separately measured deep-sleep state |
-| Security | Immutable boot root, signed boot, OTP key material, PMP, TRNG, and symmetric/hash acceleration |
-| Edge I/O | UART, SPI, I2C, PWM, ADC, I2S/PDM, USB full speed, and CAN FD selected by package profile |
+| CPU | One Hazard3 RV32IMC hart; A extension disabled until atomic bus semantics are qualified |
+| On-chip memory | 128 KiB macro-backed SRAM; 256–512 KiB and retention SRAM deferred |
+| Code storage | XPI NOR boot, loaded into SRAM; authenticated recovery boot deferred |
+| Memory model | No MMU, HP hart, or external DRAM/PSRAM dependency |
+| Interconnect | 32-bit AXI4 data plane and APB4 control; no RIB/RIBP |
+| Software | Existing freestanding SDK, RV32IM compiler target, CSR/IRQ-enabled acceptance firmware |
+| Clock/reset | 24 MHz system clock, no PLL, 1 MHz CLINT timebase, watchdog and JTAG reset |
+| Edge I/O | 32 GPIO, two UARTs, two I2C controllers, two timers, four DMA channels, PWM, RTC, watchdog and XPI |
 
-No power-current number should be published until it is measured on a
-qualified physical implementation with the wake sources and retention state
-specified. Tiny's acceptance criteria should include sleep-to-active latency,
-energy per sensing/reporting cycle, and certified-radio interoperability, not
-only CPU benchmarks.
+The normative [Tiny MCU contract](ip/tiny-soc.md) defines the AXI subset,
+address/interrupt ABI, startup, errors and phased acceptance. Independent
+low-power clocks, clock/power gating, retention, secure boot, RTOS ports, USB,
+SDIO, standalone general SPI, CAN and ADC remain future work. No measured
+frequency ceiling, power-current, wake-latency or security claim follows from
+this initial functional profile.
 
 ### Commercial Reference Points
 
 | Commercial SoC | Relevant axis | Position relative to Tiny |
 | --- | --- | --- |
-| [Espressif ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2) | Low-power RV32 MCU with Bluetooth LE and IEEE 802.15.4 | Primary Tiny-Connect endpoint and Thread/Zigbee market reference |
+| [Espressif ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2) | Low-power RV32 MCU with Bluetooth LE and IEEE 802.15.4 | Deferred Tiny-Connect research reference |
 | [Espressif ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6) | RV32 high- and low-power cores with Wi-Fi 6, Bluetooth LE, and IEEE 802.15.4 | Upper connectivity reference; RF and protocol integration are well beyond a radio-companion Tiny baseline |
 | [Raspberry Pi RP2350](https://www.raspberrypi.com/products/rp2350/) | Dual Hazard3 option, 520 KiB SRAM, security, USB, and programmable I/O | Closest open-core MCU and deterministic-I/O reference, without integrated radio |
 | [ST STM32U5](https://www.st.com/en/microcontrollers-microprocessors/stm32u5-series.html) | Ultra-low-power secure MCU family with large embedded memory and graphics options | Energy-efficiency, security, and industrial MCU ecosystem reference rather than an ISA-equivalent peer |
@@ -414,7 +405,7 @@ software quality.
 
 | Tier | Claim gate |
 | --- | --- |
-| Tiny | Measured active and sleep power, bounded wake latency, secure-boot validation, and qualified edge-connectivity operation |
+| Tiny | First release: wired-MCU boot, AXI/APB/DMA/IRQ and IHP130 evidence; future low-power/security claims require separate measurements and qualification |
 | Mini | Repeatable Linux boot, at least 64 MiB usable main memory, native memory bursts, and management-controlled start/stop recovery |
 | Std | Full AXI4 ordering tests, coherent accelerator traffic, 1080p60 graphical desktop, audio playback, and NPU inference under concurrent DMA load |
 | Pro | Four-hart coherent SMP stress, RV64 distribution boot, more-than-4-GiB memory validation, and concurrent GPU/NPU/video operation |

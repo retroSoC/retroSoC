@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from rtl.mini.pin_map.generate_pin_map import (  # noqa: E402
+from scripts.rtl.generate_pin_map import (  # noqa: E402
     IHP130_POWER_PAD_COUNTS,
     Pad,
     ihp130_pad_instance,

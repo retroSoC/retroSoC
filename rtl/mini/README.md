@@ -1,8 +1,12 @@
 # Mini SoC Integration
 
-This directory is the active Mini SoC integration boundary.
+This directory is the Mini SoC integration boundary. Tiny owns a separate
+[MCU integration](../tiny/README.md). Shared CPU/debug, memory, bus helpers and
+software build logic are owned outside Mini. Filelists, build rules and tests
+reference their canonical shared paths directly.
 
-- address_map contains the canonical address-map input and generator.
+- address_map contains the canonical Mini address-map input. Its generator
+  lives in `scripts/rtl/generate_memory_map.py`.
 - core contains self-owned Mini core wrappers.
 - dv contains behavioural testbench, device models, and Verilator harness
   sources.
@@ -10,8 +14,10 @@ This directory is the active Mini SoC integration boundary.
   behavioral/synthesis Common source set; `netlist_support.fl` is the explicit
   allowlist of testbench dependencies not already present in a synthesized
   netlist.
-- mk contains simulator and software make fragments.
-- script contains filelist, address-map, conversion, and setup helpers.
+- mk contains Mini simulator and formal make fragments; shared firmware rules
+  live in `rtl/mk/software.mk`.
+- script contains Mini filelist generation and simulator-binding helpers.
+  Shared parsing/conversion helpers live in `scripts/rtl`.
 - top contains SoC integration RTL, including `apb4_system` for the APB4
   platform block and `apb4_periph` for the APB4 peripheral container.
 

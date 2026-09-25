@@ -10,7 +10,7 @@ validated without changing functional behavior.
 The owned profile in
 [`rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json) is the source
 of truth for the reviewed source set. It includes `rtl/ip/**` and
-`rtl/mini/top/**`, but excludes managed, generated, PDK, formal, device-model,
+`rtl/mini/top/**` and `rtl/tiny/top/**`, but excludes managed, generated, PDK, formal, device-model,
 and third-party sources.
 
 [`rtl/rtl_style_audit.json`](../rtl/rtl_style_audit.json) records the exact

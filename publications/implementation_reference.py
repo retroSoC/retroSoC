@@ -34,7 +34,12 @@ def lp_parameters(text: str) -> dict[str, str]:
     matches = re.findall(r"\bhazard3_cpu_1port\s*#\s*\((.*?)\)\s+u_hazard3_cpu_1port\s*\(", without_comments(text), re.S)
     if len(matches) != 1:
         raise ValueError("LP instance missing or ambiguous")
-    return unique_pairs(re.findall(r"\.([A-Z][A-Z0-9_]*)\s*\(([^()]*)\)", matches[0]), "LP")
+    parameters = unique_pairs(re.findall(r"\.([A-Z][A-Z0-9_]*)\s*\(([^()]*)\)", matches[0]), "LP")
+    # The fixed Mini integration uses the shared wrapper's Boolean feature
+    # defaults. Keep configurable integer expressions (notably IRQ count) intact.
+    defaults = dict(re.findall(r"parameter\s+bit\s+(\w+)\s*=\s*1'b([01])", without_comments(text)))
+    return {name: defaults.get(value, value) if name.startswith("EXTENSION_") else value
+            for name, value in parameters.items()}
 
 
 def hp_parameters(text: str) -> tuple[dict[str, str], list[str]]:
@@ -109,7 +114,7 @@ def validate_details(spec: dict, ids: set[str], root: Path, active_limits: set[s
 
 def collect_details(root: Path, spec: dict, ids: set[str], active_limits: set[str]) -> dict:
     validate_details(spec, ids, root, active_limits)
-    lp = lp_parameters((root / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8"))
+    lp = lp_parameters((root / "rtl/ip/core/mgmt_core_wrapper.sv").read_text(encoding="utf-8"))
     hp_source = (root / "scripts/vexiiriscv/GenerateRetroSocHp.scala").read_text(encoding="utf-8")
     hp, hp_isa = hp_parameters(hp_source)
     for required, actual, name in ((spec["cpu"]["lp_fields"], lp, "LP"), (spec["cpu"]["hp_fields"], hp, "HP")):

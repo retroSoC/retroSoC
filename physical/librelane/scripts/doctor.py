@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 from librelane.flows import Flow  # noqa: E402
-from rtl.mini.pin_map.generate_pin_map import IHP130_POWER_PAD_COUNTS  # noqa: E402
+from scripts.rtl.generate_pin_map import IHP130_POWER_PAD_COUNTS  # noqa: E402
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 

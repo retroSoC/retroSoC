@@ -22,7 +22,7 @@ def test_psram_controller_data_integrity_and_fault_isolation(tmp_path: Path) -> 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",

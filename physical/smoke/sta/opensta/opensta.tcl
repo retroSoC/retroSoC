@@ -14,7 +14,11 @@ if {[info exists ::env(OPENSTA_SRAM_LIBS)] && $::env(OPENSTA_SRAM_LIBS) ne ""} {
     }
 }
 read_verilog $::env(OPENSTA_NETLIST)
-link_design retrosoc_asic
+set top_design retrosoc_asic
+if {[info exists ::env(OPENSTA_TOP)] && $::env(OPENSTA_TOP) ne ""} {
+    set top_design $::env(OPENSTA_TOP)
+}
+link_design $top_design
 read_sdc $::env(OPENSTA_SDC)
 
 report_checks -path_delay min_max -sort_by_slack -slack_max 0.0 -group_path_count 1000 -endpoint_path_count 1000 > $::env(OPENSTA_REPORT)

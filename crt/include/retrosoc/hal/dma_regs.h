@@ -77,11 +77,15 @@
 #define RS_DMA_ERROR_READ             UINT32_C(0x00000040)
 #define RS_DMA_ERROR_STREAM_LAST      UINT32_C(0x00000100)
 
-#define RS_DMA_CHANNEL_COUNT          8U
-#define RS_DMA_CHANNEL_HP             6U
-#define RS_DMA_CHANNEL_RESERVED       7U
-#define RS_DMA_MAX_BURST_BEATS        16U
-#define RS_DMA_DATA_WIDTH_BITS        32U
+#ifdef RS_SOC_TINY
+#define RS_DMA_CHANNEL_COUNT 4U
+#else
+#define RS_DMA_CHANNEL_COUNT 8U
+#endif
+#define RS_DMA_CHANNEL_HP       6U
+#define RS_DMA_CHANNEL_RESERVED 7U
+#define RS_DMA_MAX_BURST_BEATS  16U
+#define RS_DMA_DATA_WIDTH_BITS  32U
 
 #define RS_DMA_CHANNEL_OFFSET(channel, offset)                                                     \
     (RS_DMA_CH_BASE + ((uint32_t)(channel)*RS_DMA_CH_STRIDE) + (offset))

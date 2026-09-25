@@ -111,11 +111,11 @@ def buffer_budget(kind: str, *, width=0, height=0, rate=0, bits=0, milliseconds=
             "total_bytes": stride * count, "dma_supported": supported}
 
 
-def constants(text: str, prefix: str, rtl=False) -> dict[str, int]:
+def constants(text: str, prefix: str, rtl=False, *, exclude: frozenset[str] = frozenset()) -> dict[str, int]:
     text = re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.S)
     pattern = (rf"\b({prefix}\w+)\s*=\s*\d+'d(\d+)\s*;" if rtl else
                rf"\b({prefix}\w+)\s*(?:=\s*|\s+)(\d+)(?:U)?(?=\s*[,;\n])")
-    pairs = re.findall(pattern, text)
+    pairs = [(name, value) for name, value in re.findall(pattern, text) if name not in exclude]
     if len({name for name, _ in pairs}) != len(pairs):
         raise ValueError(f"duplicate constant: {prefix}")
     return {name: int(value) for name, value in pairs}
@@ -194,8 +194,10 @@ def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) ->
     sdk_text = (root / "crt/include/retrosoc/hal/dma.h").read_text()
     sdk = constants(sdk_text, "RS_DMA_REQUEST_")
     channels = constants(sdk_text, "RS_DMA_CHANNEL_")
-    channels.update(constants((root / "crt/include/retrosoc/hal/dma_regs.h").read_text(), "RS_DMA_CHANNEL_"))
-    channels.pop("RS_DMA_CHANNEL_COUNT")
+    # Capacity is selected by product; it is not a named channel allocation.
+    # Keep the Mini publication's role inventory independent of Tiny's count.
+    channels.update(constants((root / "crt/include/retrosoc/hal/dma_regs.h").read_text(),
+                              "RS_DMA_CHANNEL_", exclude=frozenset({"RS_DMA_CHANNEL_COUNT"})))
     if {r["symbol"] for r in spec["channels"]} != set(channels):
         raise ValueError("DMA channel allocation coverage mismatch")
     for row in result["dma_routes"]:

@@ -162,3 +162,10 @@ make regress-nightly
 
 See the [repository README](../README.md) for prerequisites, supported
 configurations, and build artifact locations.
+
+For `SOC=TINY`, `bringup` and `ci_smoke` use the MCU acceptance composition. It
+boots through XPI into SRAM, checks CPU C/A behavior and bus exceptions, DMA
+(including UART requests), interrupts, RTC, GPIO, UART1 and I2C error completion,
+then verifies watchdog reset by completing after the next NOR boot. It uses
+SYSCTRL terminal status. The small `asm/tiny_boot.S` image separately qualifies
+the synthesized SRAM/pad path; it is not a replacement for the full RTL test.

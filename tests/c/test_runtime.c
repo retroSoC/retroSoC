@@ -730,6 +730,41 @@ static int test_gpio_helpers(void) {
     return 0;
 }
 
+/* The runner compiles the same validator with Tiny's capability selection. */
+rs_status_t rs_tiny_dma_config_validate(uint32_t channel, const rs_dma_config_t *config);
+rs_status_t rs_tiny_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
+
+static int test_tiny_dma_config_validation(void) {
+    rs_dma_config_t config = {
+        .kind = RS_DMA_KIND_MM_TO_MM, .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = (uintptr_t)UINT32_C(0x30000000),
+        .destination = (uintptr_t)UINT32_C(0x30001000), .byte_count = 259U,
+        .width = RS_DMA_WIDTH_32, .source_increment = true, .destination_increment = true,
+        .burst_beats = 16U,
+    };
+    static _Alignas(64) rs_dma_tcd_t descriptor;
+    if ((rs_tiny_dma_config_validate(3U, &config) != RS_OK) ||
+        (rs_tiny_dma_config_validate(4U, &config) != RS_EINVAL)) {
+        return 1;
+    }
+    config.kind = RS_DMA_KIND_MM_TO_STREAM;
+    config.request = RS_DMA_REQUEST_I2S_TX;
+    config.byte_count = 256U;
+    if (rs_tiny_dma_config_validate(0U, &config) != RS_EINVAL) {
+        return 2;
+    }
+    descriptor.source = UINT32_C(0x30000000);
+    descriptor.byte_count = 256U;
+    descriptor.y_count = 1U;
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
+        ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+        ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(0U, &descriptor) != RS_ENOTSUP) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_dma_config_validation(void) {
     static rs_dma_tcd_t tcd __attribute__((aligned(64)));
     rs_dma_config_t config = {
@@ -2631,6 +2666,7 @@ int main(void) {
         test_spisd_helpers(),
         test_gpio_helpers(),
         test_dma_config_validation(),
+        test_tiny_dma_config_validation(),
         test_opipsram_helpers(),
         test_user_ip_validation(),
         test_extension_validation(),

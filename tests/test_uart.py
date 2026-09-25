@@ -52,7 +52,7 @@ def test_uart_register_fifo_loopback_flow_control_and_errors(tmp_path: Path) -> 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

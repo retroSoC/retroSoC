@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-from filelist import atomic_write, parse_filelists
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.rtl.filelist import atomic_write, parse_filelists  # noqa: E402
 
 
 HEADER_SUFFIXES = {".h", ".vh", ".svh"}

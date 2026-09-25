@@ -5,7 +5,8 @@
       "name": "owned-rtl",
       "paths": [
         "rtl/ip",
-        "rtl/mini/top"
+        "rtl/mini/top",
+        "rtl/tiny/top"
       ],
       "status": "prototype",
       "baseline_revision": null,

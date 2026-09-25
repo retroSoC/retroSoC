@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "build/test-usb2"
-CONVERTER = ROOT / "rtl/mini/script/convt_sv2v.py"
+CONVERTER = ROOT / "scripts/rtl/convt_sv2v.py"
 
 
 def test_usb2_drain_stream_has_registered_ready_cut() -> None:

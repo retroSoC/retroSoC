@@ -148,7 +148,7 @@ def _compile_dump_tb(build_dir: Path) -> dict[str, Path | None]:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",

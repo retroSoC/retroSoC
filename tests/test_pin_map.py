@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATOR = ROOT / "rtl/mini/pin_map/generate_pin_map.py"
+GENERATOR = ROOT / "scripts/rtl/generate_pin_map.py"
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
 FPGA_TOP = ROOT / "fpga/mini/retrosoc_top.sv"
 FPGA_XDC = ROOT / "fpga/mini/starrysky_v2.xdc"
@@ -213,7 +213,7 @@ def test_apb4_interface_bridge(tmp_path: Path) -> None:
             [
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_pure_if.sv"),
-                str(ROOT / "rtl/mini/top/apb4_if_bridge.sv"),
+                str(ROOT / "rtl/ip/interconnect/apb4_if_bridge.sv"),
                 str(ROOT / "tests/rtl/apb4_if_bridge_tb.sv"),
                 "",
             ]
@@ -224,7 +224,7 @@ def test_apb4_interface_bridge(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

@@ -38,7 +38,7 @@ def test_plic_priority_claim_and_completion(tmp_path: Path) -> None:
     )
     converted = tmp_path / "plic_tb.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(filelist),
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(filelist),
          "--output", str(converted)],
         check=True,
     )

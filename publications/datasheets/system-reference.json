@@ -167,7 +167,7 @@
         "crt/include/retrosoc/hal/onchip_sram.h",
         "docs/ip/onchip-sram.md",
         "publications/examples/sram.c",
-        "rtl/mini/top/onchip_ram_reg.sv"
+        "rtl/ip/memory/onchip_ram_reg.sv"
       ],
       "tests": [
         "tests/test_onchip_sram_register_parity.py"
@@ -1159,7 +1159,7 @@
       "applies_to": "Reviewed generic LP CRT; dedicated debug and XPI-loader startups have separate initialization contracts.",
       "sources": [
         "crt/arch/riscv/startup.S",
-        "rtl/mini/mk/software.mk"
+        "rtl/mk/software.mk"
       ]
     },
     {
@@ -3385,7 +3385,7 @@
       "rtl/managed/clusterip/common/rtl/utils/register.sv",
       "rtl/mini/top/clock_config_controller.sv",
       "rtl/mini/top/hp_lifecycle_controller.sv",
-      "rtl/mini/top/mgmt_core_wrapper.sv",
+      "rtl/ip/core/mgmt_core_wrapper.sv",
       "rtl/mini/top/resource_controller.sv",
       "rtl/mini/top/soc_clock_reset_subsystem.sv",
       "scripts/generate_vexiiriscv.py",
@@ -5213,7 +5213,7 @@
       "crt/src/service/test.c",
       "publications/datasheets/mini.json",
       "rtl/mini/integration/soc_topology.json",
-      "rtl/mini/mk/software.mk",
+      "rtl/mk/software.mk",
       "scripts/build_hp_linux.py",
       "scripts/regress.py",
       "crt/src/hal/hp_mailbox.c",
@@ -5225,17 +5225,17 @@
     "bindings": [
       {
         "id": "csr-selection",
-        "file": "rtl/mini/mk/software.mk",
+        "file": "rtl/mk/software.mk",
         "text": "ifeq ($(HAVE_CSR),YES)\nDEF_VAL += -DCSR_ENABLE\nendif"
       },
       {
         "id": "irq-objects",
-        "file": "rtl/mini/mk/software.mk",
+        "file": "rtl/mk/software.mk",
         "text": "ifeq ($(HAVE_CSR),YES)\nCRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/system_irq.S\nCRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c\nCRT_SRCS += $(ROOT_PATH)/crt/src/core/irq.c"
       },
       {
         "id": "app-override",
-        "file": "rtl/mini/mk/software.mk",
+        "file": "rtl/mk/software.mk",
         "text": "ifneq ($(strip $(APP_CRT_SRCS)),)\nCRT_SRCS := $(APP_CRT_SRCS)\nendif"
       },
       {
@@ -6151,8 +6151,8 @@
       "rtl/mini/top/fabric_monitor.sv",
       "rtl/mini/top/hp_subsystem.sv",
       "rtl/mini/top/memory_pad_mux.sv",
-      "rtl/mini/top/mgmt_debug_wrapper.sv",
-      "rtl/mini/top/onchip_ram.sv",
+      "rtl/ip/core/mgmt_debug_wrapper.sv",
+      "rtl/ip/memory/onchip_ram.sv",
       "rtl/mini/top/rcu.sv",
       "rtl/mini/top/resource_controller.sv",
       "rtl/mini/top/retrosoc.sv",

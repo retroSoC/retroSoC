@@ -18,10 +18,9 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-SCRIPT_DIR = REPO_ROOT / "rtl/mini/script"
-sys.path.insert(0, str(SCRIPT_DIR))
-from filelist import FileList, parse_filelists, write_filelist  # noqa: E402
-from generate_filelist import generate_all  # noqa: E402
+sys.path.insert(0, str(REPO_ROOT))
+from scripts.rtl.filelist import FileList, parse_filelists, write_filelist  # noqa: E402
+from rtl.mini.script.generate_filelist import generate_all  # noqa: E402
 
 
 APU_SOURCE_MARKERS = ("/ip/multimedia/apu_", "/ip/multimedia/apb4_apu.sv")

@@ -54,7 +54,7 @@ def test_dvp_capture_framing(tmp_path: Path) -> None:
     source_list.write_text("\n".join([*defines, *source, ""]), encoding="utf-8")
     converted = tmp_path / "dvp.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(source_list), "--output", str(converted)],
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(source_list), "--output", str(converted)],
         check=True,
     )
     simulation = tmp_path / "dvp_tb"

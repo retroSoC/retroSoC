@@ -4,6 +4,8 @@ This directory owns architecture, register ABI, software contract, and
 verification documentation for self-owned retroSoC peripheral IP and platform
 extension interfaces.
 
+- [Tiny MCU](tiny-soc.md) defines the independent wired Tiny product, AXI4/APB4, SRAM-only startup and IHP130 acceptance.
+
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.
 - [resource-controller.md](resource-controller.md) defines root-managed resource ownership, IRQ routing, and cache-maintenance handoff.

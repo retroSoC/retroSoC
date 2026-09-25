@@ -4,7 +4,8 @@
     "owned": {
       "roots": [
         "rtl/ip",
-        "rtl/mini/top"
+        "rtl/mini/top",
+        "rtl/tiny/top"
       ],
       "suffixes": [
         ".sv",
@@ -18,7 +19,8 @@
     "verification": {
       "roots": [
         "rtl/mini/formal",
-        "rtl/mini/dv"
+        "rtl/mini/dv",
+        "rtl/tiny/dv"
       ],
       "suffixes": [
         ".sv",

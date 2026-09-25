@@ -1,0 +1,6 @@
+/top/tiny_axi4_fabric.sv
+/top/tiny_axi42apb4.sv
+/top/tiny_sysctrl.sv
+/top/tiny_archinfo.sv
+/top/retrosoc_tiny.sv
+/top/retrosoc_tiny_asic.sv

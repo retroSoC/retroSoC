@@ -454,7 +454,7 @@ rs_status_t rs_i2c_write_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_ad
     const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;
     const rs_dma_request_t request =
         (bus == RS_I2C_BUS_0) ? RS_DMA_REQUEST_I2C0_TX : RS_DMA_REQUEST_I2C1_TX;
-    rs_dma_config_t dma_config;
+    rs_dma_config_t dma_config = {0};
 
     if (!rs_i2c_bus_valid(bus) || (data == NULL) || (workspace == NULL) || (length == 0U) ||
         (length > RS_I2C_DMA_MAX_BYTES)) {
@@ -499,7 +499,7 @@ rs_status_t rs_i2c_read_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_add
     const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;
     const rs_dma_request_t request =
         (bus == RS_I2C_BUS_0) ? RS_DMA_REQUEST_I2C0_RX : RS_DMA_REQUEST_I2C1_RX;
-    rs_dma_config_t dma_config;
+    rs_dma_config_t dma_config = {0};
 
     if (!rs_i2c_bus_valid(bus) || (data == NULL) || (workspace == NULL) || (length == 0U) ||
         (length > RS_I2C_DMA_MAX_BYTES)) {

@@ -58,7 +58,7 @@ the existing non-coherent buffer protocol. LP and HP configuration differences d
 two harts into a symmetric cache-coherent SMP platform.
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
-  #source("rtl/mini/top/mgmt_core_wrapper.sv",title:"LP instance") ·
+  #source("rtl/ip/core/mgmt_core_wrapper.sv",title:"LP instance") ·
   #source("scripts/vexiiriscv/GenerateRetroSocHp.scala",title:"HP configuration/PMA") ·
   #source("scripts/generate_vexiiriscv.py",title:"Artifact manifest") ·
   #source("app/ports/linux/linux/retrosoc_hp.dts",title:"HP platform properties")

@@ -20,7 +20,7 @@ def test_management_debug_reset_waits_for_the_ahbl_bridge(tmp_path: Path) -> Non
     sources = (
         ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv",
         ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv",
-        ROOT / "rtl/mini/top/mgmt_debug_reset.sv",
+        ROOT / "rtl/ip/core/mgmt_debug_reset.sv",
         ROOT / "tests/rtl/mgmt_debug_reset_tb.sv",
     )
     subprocess.run(

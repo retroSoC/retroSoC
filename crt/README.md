@@ -160,7 +160,7 @@ on it.
 ## Build Integration
 
 The central software build assembles the runtime sources in
-[`../rtl/mini/mk/software.mk`](../rtl/mini/mk/software.mk). It selects the
+[`../rtl/mk/software.mk`](../rtl/mk/software.mk). It selects the
 RISC-V ISA, optional CSR interrupt support, linker layout, and the application
 profile. Applications add their own sources after the common runtime is
 selected.
@@ -219,3 +219,17 @@ hardware validation.
 
 For the complete firmware, simulation, synthesis, and timing flow, see the
 [repository README](../README.md).
+
+## Product composition
+
+Tiny uses the same `rs_` SDK and selects its generated memory, IRQ and capability
+headers through the committed profile. The generated memory-map header includes
+Tiny capability metadata, so public DMA headers report four channels without
+requiring an application to reproduce private compiler flags. Unavailable IP
+drivers are omitted; Tiny SYSCTRL rejects unsupported lifecycle/PLL operations
+before MMIO. Startup skips external-RAM initialization and loads into SRAM.
+
+`<retrosoc/hal/watchdog.h>` provides `rs_watchdog_configure`, `rs_watchdog_start`,
+`rs_watchdog_service`, `rs_watchdog_get_status` and `rs_watchdog_clear_reset_cause`,
+with SDK status values and bounded command waits. These wrappers preserve the
+locked watchdog register ABI.

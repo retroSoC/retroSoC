@@ -10,7 +10,7 @@ differ: retroSoC uses `clk_i` and `rst_n_i`, not `rst_ni`.
 
 ## 1. Scope and rule levels
 
-The owned profile applies to `rtl/ip/**` and `rtl/mini/top/**`. Formal,
+The owned profile applies to `rtl/ip/**`, `rtl/mini/top/**`, and `rtl/tiny/top/**`. Formal,
 device-model, PDK, generated, managed, and third-party sources use the profiles
 declared in [`rtl/rtl_style_manifest.json`](../rtl/rtl_style_manifest.json).
 

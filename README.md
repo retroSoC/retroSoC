@@ -20,11 +20,13 @@ An open-source RISC-V SoC platform, from SystemVerilog RTL and firmware to repro
 
 ## Platform overview
 
-**Mini is the active implementation.** The product configuration combines a
-low-power (LP) management hart and a high-performance (HP) application hart.
-The separate Mini MPW profile retains the legacy selectable-core integration.
-[Tiny, Std, and Pro](docs/soc-family-positioning.md) are product-roadmap targets,
-not additional supported build profiles.
+**Mini and Tiny have independent integration flows.** Mini combines a
+low-power Hazard3 management hart and a VexiiRiscv application hart; its separate
+MPW profile retains selectable-core compatibility. [Tiny](docs/ip/tiny-soc.md)
+is a wired MCU with one Hazard3 RV32IMC hart, 128 KiB SRAM, AXI4/APB4 and no
+wireless IP. Tiny first targets IHP130; [Std and Pro](docs/soc-family-positioning.md)
+remain roadmap products. Qualification is determined by each profile's retained
+verification and physical reports.
 
 | Area | Mini platform |
 | --- | --- |
@@ -96,6 +98,20 @@ Keep `firmware sim` in the same Make invocation so both use one build variant.
 Outputs live under `build/<profile>-<YYYY-MM-DD-HH-MM>-<config-hash>/`.
 Check the flow logs and result JSON; UART startup text alone is not a pass.
 
+### Build and simulate Tiny
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk setup
+make CONFIG=configs/ci/ihp130-tiny.mk doctor
+make CONFIG=configs/ci/ihp130-tiny.mk firmware sim
+make CONFIG=configs/ci/ihp130-tiny.mk SIMU=IVERILOG firmware sim
+```
+
+Tiny uses its own source lists and product maps under `rtl/tiny`. Its firmware
+loads into on-chip SRAM without PSRAM/SDRAM initialization. The first release
+uses a fixed 24 MHz clock and disables atomic instructions. Wireless, external
+RAM, HP cores, accelerators and advanced low-power modes remain deferred.
+
 ## Configurations and common flows
 
 Start from a [committed profile](configs/README.md). These are selected entry
@@ -103,6 +119,7 @@ points, not the complete profile or application inventory.
 
 | Profile | Purpose |
 | --- | --- |
+| [IHP130 Tiny](configs/ci/ihp130-tiny.mk) | Single-hart wired MCU, 128 KiB SRAM, pin-level Flash boot and automated acceptance. |
 | [IHP130 Mini](configs/ci/ihp130.mk) | Manual bring-up with 32 KiB macro-backed SRAM. |
 | [GF180](configs/ci/gf180.mk) / [SKY130](configs/ci/sky130.mk) | Alternative PDK profiles with 32 KiB macro-backed SRAM. |
 | [ICS55](configs/ci/ics55.mk) | Regression-compatible profile with SRAM and PLL disabled. |

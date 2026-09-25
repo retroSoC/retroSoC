@@ -98,7 +98,7 @@ APU_BLOCK_STA_RESULT  := $(APU_BLOCK_STA)/result-sta.json
 APU_BLOCK_SYN_RESULT  := $(APU_BLOCK_SYN)/result-synth.json
 
 $(APU_BLOCK_FL): $(APU_BLOCK_EXPORTER) $(FILELIST_TEMPLATES) \
-		$(RTL_PATH)/script/generate_filelist.py $(RTL_PATH)/script/filelist.py
+		$(RTL_PATH)/script/generate_filelist.py $(ROOT_PATH)/scripts/rtl/filelist.py
 	@mkdir -p $(APU_BLOCK_FL_DIR)
 	python3 $(APU_BLOCK_EXPORTER) --output-dir $(APU_BLOCK_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))

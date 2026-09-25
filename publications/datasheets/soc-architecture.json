@@ -13,7 +13,7 @@
     "rtl/mini/top/apb4_periph.sv",
     "rtl/mini/top/apb4_system.sv",
     "rtl/mini/top/memory_pad_mux.sv",
-    "rtl/mini/top/mgmt_debug_wrapper.sv",
+    "rtl/ip/core/mgmt_debug_wrapper.sv",
     "rtl/mini/top/retrosoc.sv",
     "rtl/mini/top/soc_clock_reset_subsystem.sv",
     "rtl/mini/top/soc_data_plane.sv"
@@ -168,7 +168,7 @@
       "ips": [],
       "rotate": false,
       "clock": {
-        "file": "rtl/mini/top/mgmt_debug_wrapper.sv",
+        "file": "rtl/ip/core/mgmt_debug_wrapper.sv",
         "name": "u_jtag_rst_sync",
         "module": "rst_sync",
         "port": "clk_i",

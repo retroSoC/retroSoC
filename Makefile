@@ -29,7 +29,7 @@ $(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
 endif
 
 SOC          ?= MINI
-MINI_MODE    ?= PRODUCT
+MINI_MODE    ?= $(if $(filter MINI,$(SOC)),PRODUCT,NONE)
 SIMU         ?= VCS
 SYNTH        ?= NONE
 SYNTH_RECIPE ?= balanced
@@ -44,7 +44,7 @@ SRAM_SIZE_KIB     ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV         ?= NO
 HAVE_SVA          ?= NO
 APU_ENABLE_P7     ?= NO
-HAVE_HP           ?= YES
+HAVE_HP           ?= $(if $(filter TINY,$(SOC)),NO,YES)
 HP_CONFIG         ?= rv32imafdc_zicbom_max
 BUILD_RELEASE     ?= NO
 JTAG_IDCODE       ?= DEADBEEF
@@ -65,7 +65,7 @@ RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
 SIM_SUCCESS_MARKER ?= SIM_TEST_PASS
 
-RTL_PATH := $(ROOT_PATH)/rtl/mini
+RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lower:]')
 
 RTL_TOP ?= retrosoc_tb
 
@@ -212,8 +212,8 @@ else
 FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
-VALID_SOC           := MINI
-VALID_MINI_MODE     := PRODUCT MPW
+VALID_SOC           := MINI TINY
+VALID_MINI_MODE     := PRODUCT MPW NONE
 VALID_SIMU          := VCS VERILATOR IVERILOG
 VALID_SYNTH         := NONE YOSYS
 VALID_SYNTH_RECIPE  := balanced area speed
@@ -276,10 +276,17 @@ $(error NPU_P5_ACCEPTANCE and NPU_P6_ACCEPTANCE are mutually exclusive)
 endif
 endif
 
+ifeq ($(SOC),MINI)
+ifeq ($(MINI_MODE),NONE)
+$(error SOC=MINI requires MINI_MODE=PRODUCT or MPW)
+endif
 ifeq ($(MINI_MODE),PRODUCT)
 ifneq ($(HAVE_HP),YES)
 $(error MINI_MODE=PRODUCT requires HAVE_HP=YES)
 endif
+endif
+else
+include $(ROOT_PATH)/rtl/tiny/mk/config.mk
 endif
 
 MISSING_LOCAL_RTL_FILES := $(filter-out $(wildcard $(LOCAL_RTL_FILES)),$(LOCAL_RTL_FILES))
@@ -389,7 +396,9 @@ ifeq ($(APU_ENABLE_P7), YES)
     DEF_LIST += +define+APU_ENABLE_P7
 endif
 
-ifeq ($(MINI_MODE), PRODUCT)
+ifeq ($(SOC), TINY)
+    DEF_LIST += +define+RETROSOC_SOC__TINY
+else ifeq ($(MINI_MODE), PRODUCT)
     DEF_LIST += +define+MINI_PRODUCT
 else
     DEF_LIST += +define+MINI_MPW
@@ -399,8 +408,10 @@ ifeq ($(SYNTH), YOSYS)
     DEF_LIST += +define+SYNTHESIS
 endif
 
-include rtl/mini/Makefile
+include $(RTL_PATH)/Makefile
+ifeq ($(SOC),MINI)
 include rtl/mini/mk/formal.mk
+endif
 
 ifeq ($(SIMU),IVERILOG)
 PERF_LOG ?= $(IVERILOG_BEHV_DIR)/sim.log
@@ -410,8 +421,10 @@ endif
 
 ifeq ($(SYNTH), YOSYS)
 include physical/smoke/syn/yosys/yosys.mk
+ifeq ($(SOC),MINI)
 include physical/smoke/syn/yosys/ga2d_block.mk
 include physical/smoke/syn/yosys/apu_block.mk
+endif
 endif
 
 ifeq ($(STA), OPENSTA)
@@ -440,7 +453,7 @@ crypto-p0-report: manifest
 	apu-block-filelist apu-block-synth apu-block-sta apu-block-report apu-block-evidence apu-block-clean \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	  formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all vexii-generate
 .NOTPARALLEL: setup
 
@@ -571,7 +584,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --have-sram-macro $(HAVE_SRAM_MACRO) \
+	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) \
 	  --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
@@ -593,7 +606,13 @@ hp-performance-check:
 		--lp $(LP_COREMARK_REPORT) --hp $(HP_COREMARK_REPORT) \
 		--minimum-ratio $(HP_PERF_MIN_RATIO) --output $(META_DIR)/lp-hp-performance.json
 
+ifeq ($(SOC),TINY)
+setup: setup-tiny
+setup-tiny:
+	python3 $(ROOT_PATH)/scripts/setup_tiny.py
+else
 setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
+endif
 
 setup-regression:
 	$(MAKE) CONFIG=configs/ci/ihp130.mk setup
@@ -1091,19 +1110,22 @@ commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-rtl:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+ifneq ($(SOC),TINY)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk ICS55 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 
+endif
+
 regress-nightly:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY)
 
 sim-asm: asm
 	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) sim

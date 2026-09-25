@@ -41,7 +41,7 @@ The debug replacement sets the stack and calls main, without the generic PSRAM i
 relocation or BSS loop. The XPI flash-loader replacement sets the stack, clears BSS and calls
 main; if main returns it executes EBREAK and loops. Those compact entries are tied to their
 application/linker assumptions and do not establish a universal alternative startup sequence.
-#source-note("rtl/mini/mk/software.mk",title:"Generic CRT, conditional IRQ objects and application CRT replacement")
+#source-note("rtl/mk/software.mk",title:"Generic CRT, conditional IRQ objects and application CRT replacement")
 #source-note("crt/arch/riscv/startup.S",title:"Actual generic LP entry and PSRAM-ready loop")
 #source-note("app/apps/debug/startup.S",title:"Dedicated debug entry")
 #source-note("app/apps/xpi_flash_loader/startup.S",title:"Dedicated SRAM flash-loader entry")

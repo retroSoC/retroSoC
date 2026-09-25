@@ -21,6 +21,22 @@ LITERAL = re.compile(r"(?P<w>\d+)?'[sS]?(?P<base>[hHbBdDoO])(?P<digits>[0-9a-fA-
 def number(expression: str, constants: dict[str, int] | None = None) -> int:
     constants = constants or {}
     expression = " ".join(expression.split()).replace("`", "")
+    # Preserve sized-cast truncation and unwrap a complete parenthesized
+    # expression before looking for an SV conditional at its top level.
+    while expression.startswith("(") and expression.endswith(")"):
+        depth = 0
+        enclosed = True
+        for index, character in enumerate(expression):
+            depth += (character == "(") - (character == ")")
+            if depth == 0 and index != len(expression) - 1:
+                enclosed = False
+                break
+        if not enclosed or depth != 0:
+            break
+        expression = expression[1:-1].strip()
+    sized_cast = re.fullmatch(r"(\d+)'\(([^()]*)\)", expression)
+    if sized_cast:
+        return number(sized_cast[2], constants) & ((1 << int(sized_cast[1])) - 1)
     expression = LITERAL.sub(
         lambda m: str(
             int(m["digits"].replace("_", ""), {"h": 16, "b": 2, "d": 10, "o": 8}[m["base"].lower()])
@@ -151,7 +167,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
                 "line": text.count("\n", 0, match.start()) + 1,
             }
         for match in re.finditer(
-            r"\b(?:localparam|parameter)\s+(?:(?:int(?:\s+unsigned)?|logic(?:\s*\[[^]]+\])?|\w+_t)\s+)?"
+            r"\b(?:localparam|parameter)\s+(?:(?:int(?:\s+unsigned)?|bit|logic(?:\s*\[[^]]+\])?|\w+_t)\s+)?"
             r"(\w+)\s*=\s*([^;\n]+)",
             text,
         ):
@@ -165,7 +181,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
                 },
             )
         for match in re.finditer(
-            r"\blocalparam\s+(?:int(?:\s+unsigned)?|logic(?:\s*\[[^]]+\])?|\w+_t)\s+(\w+)\s*=\s*([^;]+);",
+            r"\blocalparam\s+(?:int(?:\s+unsigned)?|bit|logic(?:\s*\[[^]]+\])?|\w+_t)\s+(\w+)\s*=\s*([^;]+);",
             text,
         ):
             definitions[match[1]] = {

@@ -17,6 +17,7 @@ SELF_OWNED_RTL_ROOTS = {
     ("rtl", "demo"),
     ("rtl", "ip"),
     ("rtl", "mini"),
+    ("rtl", "tiny"),
     ("rtl", "tech"),
     ("tests", "rtl"),
 }

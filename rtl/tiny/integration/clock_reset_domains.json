@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "reset_ports": [
+    "ext_rst_n_i_pad",
+    "jtag_trst_n_i_pad"
+  ],
+  "domains": [
+    {
+      "name": "system",
+      "clock": "clk_i",
+      "reset": "s_rst_n",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_system_rst_sync",
+      "sta": {
+        "source_port": "extclk_i_pad",
+        "pin": "u_clock_buffer/clk_o",
+        "period_ns": 41.666666667,
+        "async_group": "system"
+      }
+    },
+    {
+      "name": "jtag",
+      "clock": "s_jtag_tck_buf",
+      "reset": "s_jtag_trst_n_sync",
+      "reset_source": "jtag_trst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/ip/core/mgmt_debug_wrapper.sv",
+      "instance": "u_jtag_rst_sync",
+      "sta": {
+        "source_port": "jtag_tck_i_pad",
+        "object_type": "port",
+        "period_ns": 100.0,
+        "async_group": "jtag"
+      }
+    }
+  ],
+  "crossings": [
+    {
+      "name": "debug_dmi",
+      "source": "jtag",
+      "destination": "system",
+      "primitive": "hazard3_apb_async_bridge",
+      "path": "rtl/managed/hazard3/hdl/debug/dtm/hazard3_jtag_dtm_core.v",
+      "instance": "inst_hazard3_apb_async_bridge"
+    },
+    {
+      "name": "debug_hard_reset",
+      "source": "jtag",
+      "destination": "system",
+      "primitive": "cdc_sync",
+      "path": "rtl/ip/core/mgmt_debug_wrapper.sv",
+      "instance": "u_dmihardreset_cdc_sync"
+    }
+  ]
+}

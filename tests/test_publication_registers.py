@@ -95,6 +95,9 @@ def test_reset_disagreement_and_field_overflow_are_rejected(reference):
 
 def test_constant_reader_does_not_execute_source_text():
     assert number("8'(DEPTH / 2)", {"DEPTH": 16}) == 8
+    assert number("4'(MaxBurstBeats)", {"MaxBurstBeats": 16}) == 0
+    assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 1}) == 3
+    assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 0}) == 0
     assert number("(DEPTH > 4) ? 32'd4 : DEPTH - 1", {"DEPTH": 16}) == 4
     assert number("(32'd1 << 0) |\n (32'd1 << 8)") == 0x101
     with pytest.raises(ValueError):

@@ -193,7 +193,7 @@ def rtl(variant: Path, output: Path, jobs: int, selected: str | None = None) -> 
             includes = [CRYPTO, COMMON, COMMON / "interface"]
             if top == "crypto_dma_p0_tb":
                 generated = case / "memory_map"
-                execute(case, "memory-map", [sys.executable, str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+                execute(case, "memory-map", [sys.executable, str(ROOT / "scripts/rtl/generate_memory_map.py"),
                         "--map", str(ROOT / "rtl/mini/address_map/memory_map.json"),
                         "--output-dir", str(generated), "--have-sram-if", "NO"])
                 includes += [generated / "rtl", COMMON / "stream", COMMON / "utils"]
@@ -214,7 +214,7 @@ def rtl(variant: Path, output: Path, jobs: int, selected: str | None = None) -> 
                 fl.write_text("+define+SV_ASSRT_DISABLE\n" +
                               "\n".join([*[f"+incdir+{p}" for p in includes], *map(str, sources)]) + "\n")
                 converted = case / "test.v"
-                execute(case, "convert", [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+                execute(case, "convert", [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"),
                         "-f", str(fl), "--output", str(converted)])
                 binary = case / "test.vvp"
                 execute(case, "compile", ["iverilog", "-g2012", "-s", top,

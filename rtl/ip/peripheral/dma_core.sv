@@ -12,13 +12,15 @@
 `include "axi4_define.svh"
 
 module dma_core #(
-    parameter int AddrWidth         = 32,
-    parameter int DataWidth         = 32,
-    parameter int NumChannels       = 4,
-    parameter int ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
-    parameter int MaxBurstBeats     = 16,
-    parameter int FifoDepth         = 16,
-    parameter bit EnableCrc         = 1'b1
+    parameter int          AddrWidth         = 32,
+    parameter int          DataWidth         = 32,
+    parameter int          NumChannels       = 4,
+    parameter int          ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
+    parameter int          MaxBurstBeats     = 16,
+    parameter int          FifoDepth         = 16,
+    parameter bit          EnableCrc         = 1'b1,
+    parameter logic [15:0] RequestMask       = 16'h3fff,
+    parameter bit          EnableStreams     = 1'b1
 ) (
     // verilog_format: off -- channel vectors are kept aligned with the register-bank ABI.
     input  logic                           clk_i,
@@ -447,7 +449,9 @@ module dma_core #(
 
       s_start_valid[channel]    = 1'b1;
       s_start_err_code[channel] = DMA_ERROR_CONFIG;
-      if ((s_cfg_width[channel] != DMA_WIDTH_32) || (s_cfg_byte_count[channel] == 32'd0) ||
+      if (!RequestMask[s_cfg_request[channel]] ||
+          (!EnableStreams && (s_cfg_kind[channel] != DMA_KIND_MM_TO_MM)) ||
+          (s_cfg_width[channel] != DMA_WIDTH_32) || (s_cfg_byte_count[channel] == 32'd0) ||
           (s_cfg_burst[channel] == 5'd0) ||
           (s_cfg_burst[channel] > 5'(MaxBurstBeats))) begin
         s_start_valid[channel]    = 1'b0;
@@ -1268,7 +1272,9 @@ module dma_core #(
 
         if (s_tcd_parse_q) begin
           s_tcd_parse_q <= 1'b0;
-          if (s_err_q[s_tcd_read_owner_q] ||
+          if (!RequestMask[s_tcd_word7_q[s_tcd_read_owner_q][15:12]] ||
+              (!EnableStreams && (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM)) ||
+              s_err_q[s_tcd_read_owner_q] ||
               (s_tcd_word7_q[s_tcd_read_owner_q][0] == 1'b0) ||
               (s_tcd_word3_q[s_tcd_read_owner_q] == 32'd0) ||
               (s_tcd_word1_q[s_tcd_read_owner_q][1:0] != 2'b00) ||

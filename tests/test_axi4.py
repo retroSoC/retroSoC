@@ -76,7 +76,7 @@ def test_axi4_async_bridge_transfers_and_warm_flushes(tmp_path: Path) -> None:
             str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_rst_ctrlr.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv"),
-            str(ROOT / "rtl/mini/top/soc_common_cdc.sv"),
+            str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
             str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
             str(ROOT / "tests/rtl/axi4_async_bridge_tb.sv"),
             "-Mdir", str(tmp_path / "obj"), "-o", str(output),
@@ -187,7 +187,7 @@ def test_axi4_interconnect_classifies_decode_protocol_and_access_errors(
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -217,7 +217,7 @@ def test_axi4_interconnect_classifies_decode_protocol_and_access_errors(
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
             str(ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv"),
             str(ROOT / "rtl/mini/top/axi4_interconnect.sv"),
-            str(ROOT / "rtl/mini/top/axi4_error_slave.sv"),
+            str(ROOT / "rtl/ip/interconnect/axi4_error_slave.sv"),
             str(ROOT / "tests/rtl/axi4_interconnect_tb.sv"),
             "-Mdir",
             str(tmp_path / "obj"),
@@ -246,7 +246,7 @@ def test_axi4_data_crossbar_supports_cross_target_outstanding_and_acl(tmp_path: 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",

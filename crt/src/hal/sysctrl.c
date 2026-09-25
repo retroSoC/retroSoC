@@ -86,6 +86,12 @@ static rs_status_t rs_sysctrl_perf_offsets(rs_sysctrl_perf_counter_t counter, ui
         return RS_EINVAL;
     }
 
+#ifdef RS_SOC_TINY
+    if ((counter != RS_SYSCTRL_PERF_MGMT_WAIT) && (counter != RS_SYSCTRL_PERF_DMA_WAIT)) {
+        return RS_ENOTSUP;
+    }
+#endif
+
     switch (counter) {
     case RS_SYSCTRL_PERF_MGMT_WAIT:
         *low_offset = RS_SYSCTRL_PERF_MGMT_WAIT_LO_OFFSET;
@@ -215,6 +221,9 @@ rs_status_t rs_sysctrl_clear_user_core_config_error(void) {
 }
 
 rs_status_t rs_sysctrl_get_pll_config(uint8_t *selection) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     if (selection == NULL) {
         return RS_EINVAL;
     }
@@ -224,6 +233,9 @@ rs_status_t rs_sysctrl_get_pll_config(uint8_t *selection) {
 }
 
 rs_status_t rs_sysctrl_set_pll_config(uint8_t selection) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     if (((uint32_t)selection & ~RS_SYSCTRL_PLL_SELECTION_MASK) != 0U) {
         return RS_EINVAL;
     }
@@ -232,16 +244,25 @@ rs_status_t rs_sysctrl_set_pll_config(uint8_t selection) {
 }
 
 rs_status_t rs_sysctrl_apply_pll_config(void) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     *rs_sysctrl_register(RS_SYSCTRL_PLL_CMD_OFFSET) = RS_SYSCTRL_PLL_CMD_APPLY;
     return RS_OK;
 }
 
 rs_status_t rs_sysctrl_clear_pll_error(void) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     *rs_sysctrl_register(RS_SYSCTRL_PLL_CMD_OFFSET) = RS_SYSCTRL_PLL_CMD_CLEAR_ERROR;
     return RS_OK;
 }
 
 rs_status_t rs_sysctrl_get_pll_status(rs_sysctrl_pll_status_t *status) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     uint32_t value;
 
     if (status == NULL) {
@@ -282,6 +303,9 @@ rs_status_t rs_sysctrl_clear_fault(void) {
 }
 
 rs_status_t rs_sysctrl_set_hp_release(bool release) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     rs_sysctrl_hp_status_t status;
 
     if ((rs_sysctrl_get_hp_status(&status) != RS_OK) || !status.present) {
@@ -295,6 +319,9 @@ rs_status_t rs_sysctrl_set_hp_release(bool release) {
 }
 
 rs_status_t rs_sysctrl_get_hp_status(rs_sysctrl_hp_status_t *status) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     uint32_t value;
 
     if (status == NULL) {
@@ -311,6 +338,9 @@ rs_status_t rs_sysctrl_get_hp_status(rs_sysctrl_hp_status_t *status) {
 }
 
 rs_status_t rs_sysctrl_select_hp_debug(bool select_hp) {
+#ifdef RS_SOC_TINY
+    return RS_ENOTSUP;
+#endif
     rs_sysctrl_hp_status_t status;
     uint32_t value;
 

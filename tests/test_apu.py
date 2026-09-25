@@ -121,7 +121,7 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -238,7 +238,7 @@ def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -530,7 +530,7 @@ last:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -658,7 +658,7 @@ done:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -747,7 +747,7 @@ def test_apu_p2_stream_router(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -801,7 +801,7 @@ def test_apu_p2_private_dma(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -846,7 +846,7 @@ def test_apu_p2_ring_scheduler_backend(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -904,7 +904,7 @@ def test_apu_p2_integrated_dma_ring_backend(tmp_path: Path) -> None:
                 str(ROOT / "rtl/ip/peripheral/dma_axi4_master.sv"),
                 str(multimedia / "apu_dma.sv"),
                 str(multimedia / "apu_ring_scheduler.sv"),
-                str(ROOT / "rtl/mini/top/soc_common_cdc.sv"),
+                str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
                 str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
                 str(ROOT / "rtl/mini/top/axi4_target_guard.sv"),
                 str(ROOT / "rtl/mini/top/hp_axi4_mux3.sv"),
@@ -919,7 +919,7 @@ def test_apu_p2_integrated_dma_ring_backend(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -972,7 +972,7 @@ def test_apu_p2_gateway_a_round_robin_fairness(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1039,7 +1039,7 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1151,7 +1151,7 @@ def test_apu_p7_kws_sram_layout_and_isolation(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1202,7 +1202,7 @@ def test_apu_p7_kws_job_lifecycle(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1242,7 +1242,7 @@ def test_apu_p7_kws_loader_admission_and_abort(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

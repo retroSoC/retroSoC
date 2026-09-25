@@ -9,7 +9,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 MINI_DIR = SCRIPT_DIR.parent
-ROOT_DIR = MINI_DIR.parent.parent
+ROOT_DIR = SCRIPT_DIR.parents[1]
 DEFAULT_MODELS = ROOT_DIR / "rtl" / "managed" / "third_party" / "norflash"
 DEFAULT_FIRMWARE = ROOT_DIR / ".sw_build" / "retrosoc_fw.hex"
 

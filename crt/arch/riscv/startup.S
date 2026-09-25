@@ -17,6 +17,7 @@ _start:
     /* Direct Mode: All exceptions set pc to BASE */
     csrc CSR_MTVEC, 0x3
 #endif
+#ifndef RS_SOC_TINY
 # wait psram reset done
     la       a0, _flash_wait_start
     la       a1, 2000
@@ -24,6 +25,8 @@ wait_psram_reset:
     lw       t0, 0(a0)
     addi     a0, a0, 4
     blt      a0, a1, wait_psram_reset
+
+#endif
 
 # ===== Startup Stage 1 =====
 # init the regfile
@@ -68,6 +71,7 @@ wait_psram_reset:
 # when code LMA is different with VMA
 # test: using psram before loading
 
+#ifndef RS_SOC_TINY
 # Define the addresses
 .equ GPIO_ALT_ENABLE, RS_SOC_APB4_GPIO_ADMIN_BASE + 0x34
 .equ GPIO_ALT_SELECT, RS_SOC_APB4_GPIO_ADMIN_BASE + 0x38
@@ -97,6 +101,8 @@ PSRAM_READY_WAIT:
     lw t1, 0(t0)
     andi t1, t1, PSRAM_READY
     beqz t1, PSRAM_READY_WAIT
+
+#endif
 
 app_loader_start:
     la       a0, _ram_lma

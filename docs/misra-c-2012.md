@@ -32,8 +32,10 @@ and reviewed evidence for the applicable rules.
 - Use `rs_status_t` for fallible operations. Prefer bounded string/format APIs
   and timeout-based register waits. Dynamic allocation is not permitted in
   self-owned embedded C.
-- New `tiny` identifiers, legacy include paths, and prohibited library calls
+- Retired `tiny`-prefixed SDK identifiers, legacy include paths, and prohibited library calls
   are not allowed outside the compatibility files explicitly listed by policy.
+  The Tiny product name in prose/string literals and `RS_SOC_TINY` product
+  selection do not restore those retired SDK interfaces.
 
 The standard is referenced by name and category only. Consult the licensed
 MISRA publication for the complete rule text and applicability guidance; do

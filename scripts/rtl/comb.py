@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-from filelist import parse_filelists, write_filelist
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.rtl.filelist import parse_filelists, write_filelist  # noqa: E402
 
 
 DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent / ".generated_fl" / "yosys.fl"

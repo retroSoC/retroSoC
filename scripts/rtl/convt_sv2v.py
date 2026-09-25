@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import sys
 from pathlib import Path
 
-from filelist import parse_filelists
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.rtl.filelist import parse_filelists  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:

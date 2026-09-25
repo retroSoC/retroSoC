@@ -142,6 +142,17 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/user_ip.c \
             $(ROOT_PATH)/crt/src/hal/user_core.c
 
+ifeq ($(SOC),TINY)
+DEF_VAL        += -DRS_SOC_TINY
+CFLAGS         += -DRS_SOC_TINY
+TINY_CRT_NAMES := startup.S clzsi2.c divdi3.c ffssi2.c udivdi3.c umoddi3.c \
+    stdlib.c string.c console.c printf.c archinfo.c clint.c uart_math.c uart.c \
+    gpio_math.c gpio.c timer_math.c timer.c pwm.c rtc.c wdg.c watchdog.c i2c_math.c i2c.c \
+    dma_math.c dma.c onchip_sram.c xpi.c
+CRT_SRCS       := $(foreach source,$(CRT_SRCS),$(if $(filter $(notdir $(source)),$(TINY_CRT_NAMES)),$(source)))
+CRT_SRCS       += $(ROOT_PATH)/crt/src/hal/sysctrl.c
+endif
+
 ifeq ($(HAVE_CSR),YES)
 CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/system_irq.S
 CRT_SRCS += $(ROOT_PATH)/crt/src/core/system_irq_handler.c
@@ -154,7 +165,7 @@ APP_SRCS     :=
 APP_INC_DIRS :=
 APP_CFLAGS   :=
 APP_CRT_SRCS :=
-APP_MK       := $(ROOT_PATH)/app/apps/$(APP)/app.mk
+APP_MK       := $(ROOT_PATH)/app/apps/$(APP)/$(if $(filter TINY,$(SOC)),tiny.mk,app.mk)
 
 ifeq ($(wildcard $(APP_MK)),)
 $(error Application profile not found: $(APP_MK))
@@ -219,6 +230,11 @@ FORCE_VERSION:
 
 upd_ver_info: $(VERSION_HEADER)
 
+ifeq ($(SOC),TINY)
+asm: tiny-boot-image
+	cp $(SW_BUILD_DIR)/tiny_boot.hex $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).hex
+	cp $(SW_BUILD_DIR)/tiny_boot.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
+else
 asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	@mkdir -p $(SW_BUILD_DIR)/asm
 	$(MAKE) -C $(ROOT_PATH)/app/asm OUT_DIR=$(SW_BUILD_DIR)/asm \
@@ -227,8 +243,10 @@ asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
+endif
+
 $(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
-	$(ROOT_PATH)/rtl/mini/mk/software.mk
+	$(ROOT_PATH)/rtl/mk/software.mk $(APP_MK)
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)
 	cp $(MEMORY_REGIONS_LD) $(SW_BUILD_DIR)/memory_regions.ld

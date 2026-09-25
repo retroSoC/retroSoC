@@ -10,7 +10,9 @@
 
 `include "xpi_define.svh"
 
-`ifdef SIMU_VERILATOR
+`ifdef RETROSOC_SOC__TINY
+`define APB4_XPI_CORE_MODULE xpi_core
+`elsif SIMU_VERILATOR
 `define APB4_XPI_CORE_MODULE xpi_core_verilator
 `else
 `define APB4_XPI_CORE_MODULE xpi_core

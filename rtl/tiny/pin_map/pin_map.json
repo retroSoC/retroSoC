@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "pads": [
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "extclk_i_pad",
+          "signal": "s_ext_clk"
+        }
+      ]
+    },
+    {
+      "kind": "schmitt_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "ext_rst_n_i_pad",
+          "signal": "s_ext_rst_n"
+        }
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "jtag_tck_i_pad",
+          "signal": "s_jtag_tck"
+        },
+        {
+          "name": "jtag_tms_i_pad",
+          "signal": "s_jtag_tms"
+        },
+        {
+          "name": "jtag_tdi_i_pad",
+          "signal": "s_jtag_tdi"
+        }
+      ]
+    },
+    {
+      "kind": "schmitt_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "jtag_trst_n_i_pad",
+          "signal": "s_jtag_trst_n"
+        }
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {
+          "name": "jtag_tdo_o_pad",
+          "signal": "s_jtag_tdo"
+        }
+      ]
+    },
+    {
+      "kind": "full",
+      "direction": "inout",
+      "prefix": "gpio_",
+      "suffix": "_io_pad",
+      "count": 32,
+      "interface": "u_gpio_if"
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {
+          "name": "uart0_tx_o_pad",
+          "signal": "s_uart0_tx"
+        }
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "uart0_rx_i_pad",
+          "signal": "s_uart0_rx"
+        }
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {
+          "name": "uart1_tx_o_pad",
+          "signal": "s_uart1_tx"
+        }
+      ]
+    },
+    {
+      "kind": "tri_input",
+      "direction": "inout",
+      "ports": [
+        {
+          "name": "uart1_rx_i_pad",
+          "signal": "s_uart1_rx"
+        }
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "ports": [
+        {
+          "name": "xpi_sck_o_pad",
+          "signal": "u_xpi_if.sck_o"
+        }
+      ]
+    },
+    {
+      "kind": "tri_output",
+      "direction": "output",
+      "prefix": "xpi_nss",
+      "suffix": "_o_pad",
+      "count": 4,
+      "signal": "u_xpi_if.nss_o[{index}]"
+    },
+    {
+      "kind": "xpi_data",
+      "direction": "inout",
+      "prefix": "xpi_dat",
+      "suffix": "_io_pad",
+      "count": 4
+    }
+  ],
+  "profiles": {
+    "fpga_mini": {
+      "bindings": {
+        "extclk_i_pad": "s_clk",
+        "ext_rst_n_i_pad": "s_rst_n",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": "s_jtag_tdo",
+        "gpio_0_io_pad": "s_gpio[0]",
+        "gpio_1_io_pad": "s_gpio[1]",
+        "gpio_2_io_pad": "s_gpio[2]",
+        "gpio_3_io_pad": "s_gpio[3]",
+        "gpio_4_io_pad": "s_gpio[4]",
+        "gpio_5_io_pad": "s_gpio[5]",
+        "gpio_6_io_pad": "s_gpio[6]",
+        "gpio_7_io_pad": "s_gpio[7]",
+        "gpio_8_io_pad": "s_gpio[8]",
+        "gpio_9_io_pad": "s_gpio[9]",
+        "gpio_10_io_pad": "s_gpio[10]",
+        "gpio_11_io_pad": "s_gpio[11]",
+        "gpio_12_io_pad": "s_gpio[12]",
+        "gpio_13_io_pad": "s_gpio[13]",
+        "gpio_14_io_pad": "s_gpio[14]",
+        "gpio_15_io_pad": "s_gpio[15]",
+        "gpio_16_io_pad": "s_gpio[16]",
+        "gpio_17_io_pad": "s_gpio[17]",
+        "gpio_18_io_pad": "s_gpio[18]",
+        "gpio_19_io_pad": "s_gpio[19]",
+        "gpio_20_io_pad": "s_gpio[20]",
+        "gpio_21_io_pad": "s_gpio[21]",
+        "gpio_22_io_pad": "s_gpio[22]",
+        "gpio_23_io_pad": "s_gpio[23]",
+        "gpio_24_io_pad": "s_gpio[24]",
+        "gpio_25_io_pad": "s_gpio[25]",
+        "gpio_26_io_pad": "s_gpio[26]",
+        "gpio_27_io_pad": "s_gpio[27]",
+        "gpio_28_io_pad": "s_gpio[28]",
+        "gpio_29_io_pad": "s_gpio[29]",
+        "gpio_30_io_pad": "s_gpio[30]",
+        "gpio_31_io_pad": "s_gpio[31]",
+        "uart0_tx_o_pad": "s_uart0_tx",
+        "uart0_rx_i_pad": "s_uart0_rx",
+        "uart1_tx_o_pad": "s_uart1_tx",
+        "uart1_rx_i_pad": "s_uart1_rx",
+        "xpi_sck_o_pad": "s_xpi_sck",
+        "xpi_nss0_o_pad": "s_xpi_nss[0]",
+        "xpi_nss1_o_pad": "s_xpi_nss[1]",
+        "xpi_nss2_o_pad": "s_xpi_nss[2]",
+        "xpi_nss3_o_pad": "s_xpi_nss[3]",
+        "xpi_dat0_io_pad": "s_xpi_data[0]",
+        "xpi_dat1_io_pad": "s_xpi_data[1]",
+        "xpi_dat2_io_pad": "s_xpi_data[2]",
+        "xpi_dat3_io_pad": "s_xpi_data[3]"
+      }
+    },
+    "verilator": {
+      "bindings": {
+        "extclk_i_pad": "s_clk",
+        "ext_rst_n_i_pad": "s_rst_n",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": "s_jtag_tdo",
+        "gpio_0_io_pad": "s_gpio[0]",
+        "gpio_1_io_pad": "s_gpio[1]",
+        "gpio_2_io_pad": "s_gpio[2]",
+        "gpio_3_io_pad": "s_gpio[3]",
+        "gpio_4_io_pad": "s_gpio[4]",
+        "gpio_5_io_pad": "s_gpio[5]",
+        "gpio_6_io_pad": "s_gpio[6]",
+        "gpio_7_io_pad": "s_gpio[7]",
+        "gpio_8_io_pad": "s_gpio[8]",
+        "gpio_9_io_pad": "s_gpio[9]",
+        "gpio_10_io_pad": "s_gpio[10]",
+        "gpio_11_io_pad": "s_gpio[11]",
+        "gpio_12_io_pad": "s_gpio[12]",
+        "gpio_13_io_pad": "s_gpio[13]",
+        "gpio_14_io_pad": "s_gpio[14]",
+        "gpio_15_io_pad": "s_gpio[15]",
+        "gpio_16_io_pad": "s_gpio[16]",
+        "gpio_17_io_pad": "s_gpio[17]",
+        "gpio_18_io_pad": "s_gpio[18]",
+        "gpio_19_io_pad": "s_gpio[19]",
+        "gpio_20_io_pad": "s_gpio[20]",
+        "gpio_21_io_pad": "s_gpio[21]",
+        "gpio_22_io_pad": "s_gpio[22]",
+        "gpio_23_io_pad": "s_gpio[23]",
+        "gpio_24_io_pad": "s_gpio[24]",
+        "gpio_25_io_pad": "s_gpio[25]",
+        "gpio_26_io_pad": "s_gpio[26]",
+        "gpio_27_io_pad": "s_gpio[27]",
+        "gpio_28_io_pad": "s_gpio[28]",
+        "gpio_29_io_pad": "s_gpio[29]",
+        "gpio_30_io_pad": "s_gpio[30]",
+        "gpio_31_io_pad": "s_gpio[31]",
+        "uart0_tx_o_pad": "s_uart0_tx",
+        "uart0_rx_i_pad": "s_uart0_rx",
+        "uart1_tx_o_pad": "s_uart1_tx",
+        "uart1_rx_i_pad": "s_uart1_rx",
+        "xpi_sck_o_pad": "s_xpi_sck",
+        "xpi_nss0_o_pad": "s_xpi_nss[0]",
+        "xpi_nss1_o_pad": "s_xpi_nss[1]",
+        "xpi_nss2_o_pad": "s_xpi_nss[2]",
+        "xpi_nss3_o_pad": "s_xpi_nss[3]",
+        "xpi_dat0_io_pad": "s_xpi_data[0]",
+        "xpi_dat1_io_pad": "s_xpi_data[1]",
+        "xpi_dat2_io_pad": "s_xpi_data[2]",
+        "xpi_dat3_io_pad": "s_xpi_data[3]"
+      }
+    },
+    "tb": {
+      "bindings": {
+        "extclk_i_pad": "s_clk",
+        "ext_rst_n_i_pad": "s_rst_n",
+        "jtag_tck_i_pad": "s_jtag_tck",
+        "jtag_tms_i_pad": "s_jtag_tms",
+        "jtag_tdi_i_pad": "s_jtag_tdi",
+        "jtag_trst_n_i_pad": "s_jtag_trst_n",
+        "jtag_tdo_o_pad": "s_jtag_tdo",
+        "gpio_0_io_pad": "s_gpio[0]",
+        "gpio_1_io_pad": "s_gpio[1]",
+        "gpio_2_io_pad": "s_gpio[2]",
+        "gpio_3_io_pad": "s_gpio[3]",
+        "gpio_4_io_pad": "s_gpio[4]",
+        "gpio_5_io_pad": "s_gpio[5]",
+        "gpio_6_io_pad": "s_gpio[6]",
+        "gpio_7_io_pad": "s_gpio[7]",
+        "gpio_8_io_pad": "s_gpio[8]",
+        "gpio_9_io_pad": "s_gpio[9]",
+        "gpio_10_io_pad": "s_gpio[10]",
+        "gpio_11_io_pad": "s_gpio[11]",
+        "gpio_12_io_pad": "s_gpio[12]",
+        "gpio_13_io_pad": "s_gpio[13]",
+        "gpio_14_io_pad": "s_gpio[14]",
+        "gpio_15_io_pad": "s_gpio[15]",
+        "gpio_16_io_pad": "s_gpio[16]",
+        "gpio_17_io_pad": "s_gpio[17]",
+        "gpio_18_io_pad": "s_gpio[18]",
+        "gpio_19_io_pad": "s_gpio[19]",
+        "gpio_20_io_pad": "s_gpio[20]",
+        "gpio_21_io_pad": "s_gpio[21]",
+        "gpio_22_io_pad": "s_gpio[22]",
+        "gpio_23_io_pad": "s_gpio[23]",
+        "gpio_24_io_pad": "s_gpio[24]",
+        "gpio_25_io_pad": "s_gpio[25]",
+        "gpio_26_io_pad": "s_gpio[26]",
+        "gpio_27_io_pad": "s_gpio[27]",
+        "gpio_28_io_pad": "s_gpio[28]",
+        "gpio_29_io_pad": "s_gpio[29]",
+        "gpio_30_io_pad": "s_gpio[30]",
+        "gpio_31_io_pad": "s_gpio[31]",
+        "uart0_tx_o_pad": "s_uart0_tx",
+        "uart0_rx_i_pad": "s_uart0_rx",
+        "uart1_tx_o_pad": "s_uart1_tx",
+        "uart1_rx_i_pad": "s_uart1_rx",
+        "xpi_sck_o_pad": "s_xpi_sck",
+        "xpi_nss0_o_pad": "s_xpi_nss[0]",
+        "xpi_nss1_o_pad": "s_xpi_nss[1]",
+        "xpi_nss2_o_pad": "s_xpi_nss[2]",
+        "xpi_nss3_o_pad": "s_xpi_nss[3]",
+        "xpi_dat0_io_pad": "s_xpi_data[0]",
+        "xpi_dat1_io_pad": "s_xpi_data[1]",
+        "xpi_dat2_io_pad": "s_xpi_data[2]",
+        "xpi_dat3_io_pad": "s_xpi_data[3]"
+      }
+    }
+  }
+}

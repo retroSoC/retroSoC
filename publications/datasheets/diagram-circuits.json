@@ -8451,13 +8451,13 @@
         ],
         "sources": [
           "rtl/mini/top/retrosoc.sv",
-          "rtl/mini/top/onchip_ram.sv"
+          "rtl/ip/memory/onchip_ram.sv"
         ],
         "instance_source": {
           "file": "rtl/mini/top/retrosoc.sv",
           "name": "u_onchip_ram",
           "module": "onchip_ram",
-          "declaration_file": "rtl/mini/top/onchip_ram.sv"
+          "declaration_file": "rtl/ip/memory/onchip_ram.sv"
         }
       },
       {
@@ -8495,7 +8495,7 @@
           }
         ],
         "sources": [
-          "rtl/mini/top/onchip_ram.sv"
+          "rtl/ip/memory/onchip_ram.sv"
         ]
       }
     ],
@@ -8562,11 +8562,11 @@
         "style": "direct",
         "bindings": [
           {
-            "file": "rtl/mini/top/onchip_ram.sv",
+            "file": "rtl/ip/memory/onchip_ram.sv",
             "text": ".data_i(s_mem_wdata[31:0])"
           },
           {
-            "file": "rtl/mini/top/onchip_ram.sv",
+            "file": "rtl/ip/memory/onchip_ram.sv",
             "text": ".data_i(s_mem_wdata[63:32])"
           }
         ],
@@ -10929,13 +10929,13 @@
         ],
         "sources": [
           "rtl/mini/top/retrosoc.sv",
-          "rtl/mini/top/onchip_ram.sv"
+          "rtl/ip/memory/onchip_ram.sv"
         ],
         "instance_source": {
           "file": "rtl/mini/top/retrosoc.sv",
           "name": "u_onchip_ram",
           "module": "onchip_ram",
-          "declaration_file": "rtl/mini/top/onchip_ram.sv"
+          "declaration_file": "rtl/ip/memory/onchip_ram.sv"
         }
       },
       {

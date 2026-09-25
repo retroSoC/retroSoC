@@ -96,12 +96,21 @@
     }
   ],
   "inventory": {
+    "rtl/ip/core": [
+      "mgmt_core_wrapper.sv",
+      "mgmt_debug_reset.sv",
+      "mgmt_debug_wrapper.sv"
+    ],
     "rtl/ip/experimental": [
       "apb4_gpu.sv",
       "axi4f2ribp.sv",
       "wb2ribp.sv"
     ],
     "rtl/ip/interconnect": [
+      "ahbl2axi4.sv",
+      "apb4_if_bridge.sv",
+      "axi4_connector.sv",
+      "axi4_error_slave.sv",
       "axi4l2ribp.sv",
       "ribp2ribp.sv",
       "ribp_regslice.sv"
@@ -110,6 +119,9 @@
       "apb4_opipsram.sv",
       "apb4_psram.sv",
       "axi4_sdram.sv",
+      "onchip_ram.sv",
+      "onchip_ram_define.svh",
+      "onchip_ram_reg.sv",
       "opipsram_axi4.sv",
       "opipsram_core.sv",
       "opipsram_define.svh",
@@ -125,11 +137,11 @@
       "psram_phy.sv",
       "psram_pkg.sv",
       "psram_reg.sv",
+      "sdram_axi4.sv",
       "sdram_clkgen.sv",
       "sdram_core.sv",
       "sdram_define.svh",
       "sdram_pkg.sv",
-      "sdram_axi4.sv",
       "sdram_reg.sv"
     ],
     "rtl/ip/multimedia": [
@@ -142,8 +154,8 @@
       "apu_codec_sequencer.sv",
       "apu_codec_transport.sv",
       "apu_control_store.sv",
-      "apu_dma.sv",
       "apu_define.svh",
+      "apu_dma.sv",
       "apu_entropy_engine.sv",
       "apu_kernel_engine.sv",
       "apu_kws_apum_profile.svh",
@@ -159,9 +171,9 @@
       "apu_primitive_dispatcher.sv",
       "apu_proof_memo.sv",
       "apu_reconstruction_engine.sv",
+      "apu_reg.sv",
       "apu_resampler.sv",
       "apu_ring_scheduler.sv",
-      "apu_reg.sv",
       "apu_stream_router.sv",
       "apu_transform_engine.sv",
       "axi4s_dvp.sv",
@@ -171,8 +183,8 @@
       "ga2d_addr_gen.sv",
       "ga2d_axi4_master.sv",
       "ga2d_core.sv",
-      "ga2d_dma.sv",
       "ga2d_define.svh",
+      "ga2d_dma.sv",
       "ga2d_pixel.sv",
       "ga2d_pkg.sv",
       "ga2d_reg.sv",
@@ -217,7 +229,6 @@
     ],
     "rtl/ip/peripheral": [
       "apb4_clint.sv",
-      "clock_ctrl_if.sv",
       "apb4_dma.sv",
       "apb4_gpio.sv",
       "apb4_hp_mailbox.sv",
@@ -229,6 +240,7 @@
       "clint_if.sv",
       "clint_reg.sv",
       "clint_timebase.sv",
+      "clock_ctrl_if.sv",
       "dma_axi4_master.sv",
       "dma_core.sv",
       "dma_define.svh",
@@ -238,6 +250,7 @@
       "gpio_core.sv",
       "gpio_define.svh",
       "gpio_if.sv",
+      "gpio_pad_bridge.sv",
       "gpio_reg.sv",
       "hp_mailbox_define.svh",
       "pll_ctrl_if.sv",
@@ -249,6 +262,17 @@
       "timer_define.svh",
       "timer_reg.sv",
       "user_gpio_if.sv"
+    ],
+    "rtl/ip/security": [
+      "apb4_crypto.sv",
+      "crypto_aes_core.sv",
+      "crypto_aes_engine.sv",
+      "crypto_define.svh",
+      "crypto_montgomery.sv",
+      "crypto_pkg.sv",
+      "crypto_rsa_core.sv",
+      "crypto_sha2_core.sv",
+      "crypto_sha2_engine.sv"
     ],
     "rtl/ip/serial": [
       "apb4_i2c.sv",
@@ -279,17 +303,6 @@
       "ws2812_define.svh",
       "ws2812_if.sv",
       "ws2812_reg.sv"
-    ],
-    "rtl/ip/security": [
-      "apb4_crypto.sv",
-      "crypto_aes_core.sv",
-      "crypto_aes_engine.sv",
-      "crypto_define.svh",
-      "crypto_montgomery.sv",
-      "crypto_pkg.sv",
-      "crypto_rsa_core.sv",
-      "crypto_sha2_core.sv",
-      "crypto_sha2_engine.sv"
     ],
     "rtl/ip/storage": [
       "apb4_sdio.sv",
@@ -324,9 +337,6 @@
       "xpi_pkg.sv",
       "xpi_reg.sv"
     ],
-    "rtl/ip/util": [
-      "async_fifo.sv"
-    ],
     "rtl/ip/usb": [
       "apb4_usb2.sv",
       "usb2_define.svh",
@@ -345,53 +355,49 @@
       "usb2_ulpi_if.sv",
       "usb2_ulpi_link.sv"
     ],
+    "rtl/ip/util": [
+      "async_fifo.sv",
+      "soc_common_cdc.sv",
+      "soc_common_fifo.sv"
+    ],
     "rtl/mini/top": [
-      "ahbl2axi4.sv",
       "ahbl2ribp.sv",
-      "apb4_if_bridge.sv",
       "apb4_async_bridge.sv",
       "apb4_periph.sv",
       "apb4_system.sv",
-      "axi42apb4_system.sv",
+      "axi42apb4.svh",
       "axi42apb4_periph.sv",
+      "axi42apb4_state.svh",
+      "axi42apb4_system.sv",
       "axi42ram.sv",
       "axi42ribp.sv",
       "axi42ribp_burst.sv",
-      "axi4_bus.sv",
       "axi4_address_gate.sv",
       "axi4_async_bridge.sv",
-      "axi4_connector.sv",
+      "axi4_bus.sv",
       "axi4_data_crossbar.sv",
-      "axi4_target_guard.sv",
       "axi4_downsizer_64to32.sv",
-      "axi4_error_slave.sv",
       "axi4_id_prefix.sv",
       "axi4_interconnect.sv",
       "axi4_master_idle.sv",
       "axi4_mgmt_router.sv",
+      "axi4_target_guard.sv",
       "axi4_upsizer_32to64.sv",
       "axi4_word_bridge.sv",
-      "core_wrapper.sv",
       "clock_config_controller.sv",
       "clock_frequency_monitor.sv",
+      "core_wrapper.sv",
       "data_plane_fault_cdc.sv",
       "extension_compat.sv",
       "extension_dma_master.sv",
       "extension_slot.sv",
       "extension_subsystem.sv",
       "fabric_monitor.sv",
-      "gpio_pad_bridge.sv",
       "hp_axi4_mux3.sv",
       "hp_core_wrapper.sv",
-      "hp_subsystem.sv",
       "hp_lifecycle_controller.sv",
-      "mgmt_core_wrapper.sv",
-      "mgmt_debug_reset.sv",
-      "mgmt_debug_wrapper.sv",
+      "hp_subsystem.sv",
       "memory_pad_mux.sv",
-      "onchip_ram_define.svh",
-      "onchip_ram_reg.sv",
-      "onchip_ram.sv",
       "pll_rcu_controller.sv",
       "rcu.sv",
       "resource_controller.sv",
@@ -412,24 +418,28 @@
       "soc_clock_config.svh",
       "soc_clock_gate.sv",
       "soc_clock_reset_subsystem.sv",
-      "soc_common_cdc.sv",
-      "soc_common_fifo.sv",
       "soc_data_plane.sv",
       "user_core_design.sv",
       "user_core_top.sv",
       "user_extensions.svh",
       "user_ip_design_template.sv",
       "user_ip_top.sv",
-      "user_ip_wrapper.sv",
-      "axi42apb4.svh",
-      "axi42apb4_state.svh"
+      "user_ip_wrapper.sv"
+    ],
+    "rtl/tiny/top": [
+      "retrosoc_tiny.sv",
+      "retrosoc_tiny_asic.sv",
+      "tiny_archinfo.sv",
+      "tiny_axi42apb4.sv",
+      "tiny_axi4_fabric.sv",
+      "tiny_sysctrl.sv"
     ]
   },
   "reviewed_boundaries": [
     {
       "paths": [
-        "rtl/ip/experimental/axi4f2ribp.sv",
         "rtl/ip/experimental/apb4_gpu.sv",
+        "rtl/ip/experimental/axi4f2ribp.sv",
         "rtl/ip/experimental/wb2ribp.sv"
       ],
       "result": "inactive experimental source",
@@ -471,16 +481,16 @@
     },
     {
       "paths": [
-        "rtl/mini/top/onchip_ram.sv",
-        "rtl/mini/top/onchip_ram_reg.sv"
+        "rtl/ip/memory/onchip_ram.sv",
+        "rtl/ip/memory/onchip_ram_reg.sv"
       ],
       "result": "reviewed AXI and technology-memory boundary",
       "rationale": "AXI and APB state uses Common registers; the synchronous bank array retains the stable technology wrapper and PDK SRAM pin boundary."
     },
     {
       "paths": [
-        "rtl/mini/top/soc_common_cdc.sv",
-        "rtl/mini/top/soc_common_fifo.sv"
+        "rtl/ip/util/soc_common_cdc.sv",
+        "rtl/ip/util/soc_common_fifo.sv"
       ],
       "result": "managed compatibility wrapper retained",
       "rationale": "The narrow self-owned wrappers preserve required Verilator filename behavior while including managed Common source."

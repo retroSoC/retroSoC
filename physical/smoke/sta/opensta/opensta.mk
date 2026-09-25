@@ -1,5 +1,6 @@
 
 OPENSTA            ?= sta
+OPENSTA_TOP        ?= $(if $(filter TINY,$(SOC)),retrosoc_tiny_asic,retrosoc_asic)
 OPENSTA_THREADS    ?= $(JOBS)
 OPENSTA_NETLIST    ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 OPENSTA_REPORT     ?= $(STA_BUILD_ROOT)/retrosoc_sta.log
@@ -8,8 +9,8 @@ OPENSTA_METRICS    ?= $(STA_BUILD_ROOT)/timing_metrics.rpt
 OPENSTA_CONFIG     ?= $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.config
 OPENSTA_SDC        ?= $(STA_BUILD_ROOT)/retrosoc_core.sdc
 OPENSTA_SDC_GEN    := $(ROOT_PATH)/physical/smoke/sta/opensta/generate_sdc.py
-OPENSTA_DOMAIN_MAP := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json
-OPENSTA_PIN_MAP    := $(ROOT_PATH)/rtl/mini/pin_map/pin_map.json
+OPENSTA_DOMAIN_MAP := $(RTL_PATH)/integration/clock_reset_domains.json
+OPENSTA_PIN_MAP    := $(RTL_PATH)/pin_map/pin_map.json
 
 include $(ROOT_PATH)/physical/smoke/sta/opensta/pdk_timing.mk
 
@@ -36,7 +37,7 @@ sta: $(OPENSTA_SDC) | manifest
 		}
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool opensta --log $(OPENSTA_LOG) \
 		--result $(STA_BUILD_ROOT)/result-sta.json \
-		--env OPENSTA_NETLIST=$(OPENSTA_NETLIST) --env OPENSTA_LIBERTY=$(OPENSTA_LIBERTY) \
+		--env OPENSTA_TOP=$(OPENSTA_TOP) --env OPENSTA_NETLIST=$(OPENSTA_NETLIST) --env OPENSTA_LIBERTY=$(OPENSTA_LIBERTY) \
 		--env 'OPENSTA_LINK_LIBS=$(OPENSTA_LINK_LIBS)' --env 'OPENSTA_SRAM_LIBS=$(OPENSTA_SRAM_LIBS)' \
 		--env OPENSTA_SDC=$(OPENSTA_SDC) --env OPENSTA_REPORT=$(OPENSTA_REPORT) \
 		--env OPENSTA_METRICS=$(OPENSTA_METRICS) -- \

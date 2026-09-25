@@ -22,7 +22,7 @@ truth wins.
   records approved Required-rule deviations.
 - [crt/README.md](crt/README.md) defines the freestanding RISC-V runtime and
   SDK layout; [app/README.md](app/README.md) defines application composition.
-- `Makefile`, `rtl/mini/mk/software.mk`, committed `configs/*.mk`, and the
+- `Makefile`, `rtl/mk/software.mk`, committed `configs/*.mk`, and the
   GitHub workflows define the active build and regression behavior.
 - `quality/embedded_c_policy.json`, `quality/warnings/`, and
   `quality/metrics/policy.json` define the active quality policy.
@@ -77,7 +77,9 @@ README that states its ownership, source of truth, and validation expectations.
   `bringup`, `debug`, and `shell`; each profile is declared in
   `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
   acceptance image, not a user-facing firmware profile.
-- Do not add new dependencies on `crt/inc`, retired `tiny` names, or legacy
+- Tiny is a distinct wired MCU product under `rtl/tiny`; `SOC=TINY` selects its
+  IHP130 profile and AXI4/APB4 integration.
+- Do not add new dependencies on `crt/inc`, retired SDK `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,
   and managed ports as third-party or managed code. Update them through their
