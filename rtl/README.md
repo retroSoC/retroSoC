@@ -120,6 +120,15 @@ RSA-2048 Montgomery exponentiation. Its register ABI, key/zeroize boundary,
 commercial survey, and verification roadmap are documented in
 [AES/SHA-2/RSA Crypto Controller](../docs/ip/crypto.md).
 
+The Crypto storage refreeze requires six private `tc_sram_1024x32` banks for
+constants, keys, SHA schedule and RSA limb storage, with LP initialization,
+APB V2 discovery and bounded physical scrub/readback. It replaces the old
+one-round-per-cycle AES/SHA contract with bounded microsteps while preserving
+algorithms and engine concurrency. Three small stream FIFOs remain explicit
+inferred-memory exceptions. CRYPTO-P0/P1/P2 define the baseline, implementation
+and qualification work; the current RTL must not be described as already
+macro-backed on the strength of this specification.
+
 The self-owned JPEG controller provides 8-bit Baseline Sequential encode and
 decode, five raster formats, a 64-bit AXI4 2D DMA, direct and 128-byte SG-ring
 jobs, four encoder table contexts, interrupts, and LP/HP transferable resource

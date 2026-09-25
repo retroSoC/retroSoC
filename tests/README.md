@@ -36,6 +36,14 @@ tooling.
   APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
   RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
   tail-byte writes, and crypto endpoints.
+- `test_crypto_p0.py` checks the independent mathematical constant oracle,
+  corruption rejection and hierarchy-multiplicity/register accounting.
+  `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS crypto-p0-rtl` runs the V1
+  baseline without invoking Pytest: real Crypto/DMA channel 4/5 traffic,
+  AES CBC/CTR tails, SHA-224/256 padding boundaries and RSA-2048 including
+  equal-schedule private-result verification failure. The deterministic RSA
+  key material is public test data. These are baseline measurements, not V2
+  initialization/scrub or physical qualification.
 - `test_apu.py` checks the fail-closed APU APB4/IRQ shell plus the P2 private
   DMA, ring scheduler, stream router, Gateway A, and verification-only backend;
   `test_apu_register_parity.py` keeps its handwritten RTL/C ABI and matrix

@@ -44,7 +44,10 @@ the root README and subsystem guides.
   register ABI, SDK API, scheduling, error, IRQ, and stream contracts.
 - [ip/crypto.md](ip/crypto.md) records the commercial AES/SHA/RSA survey and
   defines the Mini SoC crypto architecture, APB/DMA ABI, security boundary,
-  HAL, verification evidence, and commercialization roadmap.
+  HAL, verification evidence, and commercialization roadmap. Its approved
+  storage refreeze specifies six private SRAM banks, LP-loaded/locked constants,
+  synchronous AES/SHA/RSA access, APB V2 and verified scrub completion;
+  CRYPTO-P0 through CRYPTO-P2 remain implementation/qualification work.
 - [ip/usb2.md](ip/usb2.md) defines the ULPI USB 2.0 dual-role architecture,
   AXI4 descriptor DMA, APB4 ABI, dedicated pads, HAL, and release gates.
 - [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and

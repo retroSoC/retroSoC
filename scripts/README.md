@@ -163,6 +163,27 @@ without modifying them. Run `make rtl-migrate-connections`, then
 ports and interface fields are intentionally unchanged. Run
 `make rtl-migrate-names`, then format and lint the resulting diff.
 
+`crypto_constants.py` packs the frozen CRYC1 image from the V1 tables;
+`crypto_p0.py` independently checks it against the mathematical oracle in
+`tests/crypto_reference.py`. The P0 runner also executes existing V1 tests,
+full-width RSA-2048 public/private/recheck vectors, SHA padding boundaries and
+a real DMA-to-AES-to-memory test. Missing tools or missing success markers are
+errors. It invokes the shared simulation verdict checker; an Icarus `$fatal`
+that exits with code zero is still a failed test.
+
+The `crypto-p0-constants`, `crypto-p0-rtl`, `crypto-p0-baseline` and
+`crypto-p0-report` Make targets write below `build/<variant>/crypto/p0/`.
+Select `CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS` and one BUILD_TIMESTAMP for
+all four. P0 preserves production RTL/HAL and records V1 lifecycle limitations;
+it does not implement the six-bank V2 refreeze. Block synthesis calls the
+unchanged `synth.tcl` and `abc_balanced.script`, adding JSON checkpoints and
+standalone interface elaboration only. Each new synthesis attempt uses a fresh
+`synth-*` artifact directory recorded in the report, preventing an old netlist
+from masking a new failed attempt. Its 20833 ps target is derived from
+the PCLK inventory; it is not a full-chip timing result. A timeout/interruption
+retains partial checkpoints and cannot pass the aggregate report. See
+[`../docs/ip/crypto.md`](../docs/ip/crypto.md).
+
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
 relevant dry-run or regression profile from [`AGENTS.md`](../AGENTS.md).

@@ -421,6 +421,16 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
+.PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report
+crypto-p0-constants: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py constants --variant-root $(VARIANT_ROOT)
+crypto-p0-rtl: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py rtl --variant-root $(VARIANT_ROOT) --jobs $(JOBS)
+crypto-p0-baseline: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py synth --variant-root $(VARIANT_ROOT)
+crypto-p0-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py report --variant-root $(VARIANT_ROOT)
+
 .PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
@@ -437,6 +447,10 @@ include physical/ecc/Makefile
 help:
 	@printf '%s\n' \
 	  'retroSoC build targets:' \
+	  '  crypto-p0-constants        verify and package the independent CRYC1 baseline' \
+	  '  crypto-p0-rtl              run V1 Crypto, RSA-2048 and real DMA evidence' \
+	  '  crypto-p0-baseline         run unchanged balanced Crypto block synthesis' \
+	  '  crypto-p0-report           check and aggregate CRYPTO-P0 evidence' \
 	  '  firmware | asm             build firmware' \
 	  '  comp | sim                 behavioral simulation' \
 	  '  sim-asm                    build/run the assembly self-test' \

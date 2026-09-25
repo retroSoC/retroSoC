@@ -46,6 +46,15 @@ The default ABC target period is derived from the `external` STA period in
 `YOSYS_TARGET_PERIOD_PS=<ps>` when needed.
 
 Synthesis outputs are generated below `build/` and must not be committed.
+The CRYPTO-P0 baseline uses `make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS
+crypto-p0-baseline`. Its wrapper in `yosys/script/crypto_block_synth.tcl`
+sources the ordinary SoC script and balanced ABC recipe without optimization
+changes, while exporting JSON checkpoints for inferred RAM/ROM and register
+accounting. The standalone Crypto target uses the inventory's PCLK period.
+Its reports live in `build/<variant>/crypto/p0/`; the macro-backed V2 candidate
+and whole-chip A/B qualification are later phases in
+[`docs/ip/crypto.md`](../../../docs/ip/crypto.md).
+
 Review warning and metric changes with `make check-warnings check-metrics` for
 the affected profile. `make metrics` writes the recipe-specific file listed
 above; `make check-metrics` checks that same file.
