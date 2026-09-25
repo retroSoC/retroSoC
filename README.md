@@ -28,6 +28,11 @@ wireless IP. Tiny first targets IHP130; [Std and Pro](docs/soc-family-positionin
 remain roadmap products. Qualification is determined by each profile's retained
 verification and physical reports.
 
+The [Tiny Gen1 datasheet](publications/datasheets/tiny/README.md) provides the
+independent product, register, software and evidence reference using the
+established publication layout. Its build does not require Mini's HP or
+multimedia inputs.
+
 | Area | Mini platform |
 | --- | --- |
 | Compute | Hazard3 LP management hart; generated dual-issue VexiiRiscv HP application hart. Baseline profiles compile LP firmware for RV32IM and select an RV32IMAFDC HP core with Zicbom cache maintenance. |

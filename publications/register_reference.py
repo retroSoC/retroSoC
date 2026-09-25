@@ -141,10 +141,11 @@ def named_argument(text: str, name: str) -> str | None:
     raise ValueError(f"unclosed {name} argument")
 
 
-def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, dict]:
+def parse_definitions(paths: list[str], extra: dict[str, int],
+                      memory_map: str = "rtl/mini/address_map/memory_map.json") -> tuple[dict, dict]:
     definitions = {}
     constants = dict(extra)
-    memory = json.loads((ROOT / "rtl/mini/address_map/memory_map.json").read_text())
+    memory = json.loads((ROOT / memory_map).read_text(encoding="utf-8"))
     constants.update(
         {
             f"SOC_SYSCTRL_{r['symbol']}_OFFSET": int(r["offset"], 0)
@@ -155,7 +156,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
         key = f"SOC_SYSCTRL_{register['symbol']}_OFFSET"
         definitions[key] = {
             "expression": f"16'h{int(register['offset'], 0):04x}",
-            "source": "rtl/mini/address_map/memory_map.json",
+            "source": memory_map,
             "line": 1,
         }
     for path in paths:
@@ -710,7 +711,8 @@ def refine_fields(record: dict, spec: dict, definitions: dict, model: dict) -> l
 
 def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
     paths = list(dict.fromkeys(spec.get("defines", []) + spec["rtl"]))
-    definitions, constants = parse_definitions(paths, spec.get("parameters", {}))
+    memory_map = spec.get("memory_map", "rtl/mini/address_map/memory_map.json")
+    definitions, constants = parse_definitions(paths, spec.get("parameters", {}), memory_map)
     text = "\n".join(strip_comments((ROOT / p).read_text(encoding="utf-8")) for p in spec["rtl"])
     model = source_model(text, constants)
     model["definitions"] = definitions
@@ -728,7 +730,7 @@ def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
         if support_module is None:
             continue
         _, support_constants = parse_definitions(
-            spec.get("defines", []) + [source], spec.get("parameters", {})
+            spec.get("defines", []) + [source], spec.get("parameters", {}), memory_map
         )
         support_model = source_model(support_text, support_constants)
         support_model["module"] = support_module[1]

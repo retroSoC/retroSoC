@@ -1,0 +1,591 @@
+[
+  {
+    "id": "xpi",
+    "family": "xpi",
+    "title": "XPI Universal Controller",
+    "depth": 3,
+    "regions": [
+      "FLASH",
+      "APB4_XPI",
+      "XPI"
+    ],
+    "irqs": [
+      "xpi"
+    ],
+    "summary": "Four-chip-select SDR serial-memory controller; pin-level boot uses NOR on NSS0.",
+    "features": [
+      "Four chip selects; 16 programmable LUT sequences.",
+      "Single, dual and quad SDR phases; mapped reads plus indirect PIO/DMA and status polling.",
+      "64-word TX and RX staging FIFOs; device-specific commands and timing remain software responsibilities."
+    ],
+    "paragraphs": [
+      "The Flash alias at address zero and XPI aperture route to the same command engine. They are address windows, not two independent memories. The boot setup is the implemented NOR profile on NSS0; other chip selects are not qualified board configurations.",
+      "Memory reads and indirect operations share the controlled transaction engine. A write to a mapped Flash address is not a Flash program command. Execute erase/program service from SRAM with all users of the affected memory quiesced.",
+      "LUT phase widths, dummy cycles, clock divider and device/page bounds must match the selected NOR. Unsupported modes, FIFO starvation and device timeout require status inspection and bounded recovery. The generic controller does not imply DDR, HyperBus or arbitrary-device compatibility."
+    ],
+    "steps": [
+      "Identify the actual NOR and configure the supported slot, timing and LUT while idle.",
+      "Keep the executing service and its working state in SRAM before erase/program.",
+      "Configure source/destination ranges and the supported DMA request, then start and use a bounded wait.",
+      "Inspect engine/FIFO/device status, verify completion and contents as required before making an updated image executable."
+    ],
+    "nodes": [
+      "APB registers / LUT",
+      "Mapped read frontend",
+      "Transaction / SDR PHY",
+      "TX / RX FIFOs",
+      "NSS[3:0] / SCK / DQ[3:0]"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/xpi.md",
+      "rtl/ip/storage/xpi_reg.sv",
+      "rtl/ip/storage/xpi_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "sram",
+    "family": "sram",
+    "title": "On-Chip SRAM",
+    "depth": 3,
+    "regions": [
+      "SRAM",
+      "APB4_SRAM"
+    ],
+    "irqs": [],
+    "summary": "128 KiB on-chip SRAM; AXI32 data and one APB discovery/counter window.",
+    "features": [
+      "32 banks of 4 KiB in the selected profile.",
+      "32-bit AXI data, one-bit ID; byte writes and supported memory bursts.",
+      "SRAM code, data, BSS and stack; reset does not erase memory."
+    ],
+    "paragraphs": [
+      "The Tiny top overrides the reusable SRAM to 128 KiB and 32-bit data. The native memory aperture is 0x30000000 through 0x3001FFFF. APB registers describe the integrated configuration and observations; they are not another storage aperture.",
+      "Technology macros are selected by the IHP130 profile. Logical bank capacity is not a claim of timing closure, yield or physical area. Preserve byte-lane and natural alignment rules, and keep transfers within the decoded aperture.",
+      "Reset clears control state, not SRAM contents. Startup copies initialized sections from Flash and clears BSS explicitly. Stack placement at the SRAM end does not establish a measured maximum stack demand."
+    ],
+    "steps": [
+      "Probe memory size, bank count and data width before using a linked image.",
+      "Compare ELF/MAP section sizes, buffers and stack margin against the actual 128 KiB region.",
+      "Use naturally aligned memory transfers and preserve ownership while DMA is active.",
+      "Read/reset counters according to their register semantics; reset is not data sanitization."
+    ],
+    "nodes": [
+      "AXI32 adapter",
+      "Bank / byte selection",
+      "32 x 4 KiB SRAM",
+      "APB discovery / counters"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/onchip-sram.md",
+      "rtl/ip/memory/onchip_ram_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "gpio",
+    "family": "gpio",
+    "title": "General-Purpose Input/Output (GPIO)",
+    "depth": 3,
+    "regions": [
+      "APB4_GPIO",
+      "APB4_GPIO_ADMIN"
+    ],
+    "irqs": [
+      "gpio"
+    ],
+    "summary": "32 physical GPIOs with management and restricted-user register windows.",
+    "features": [
+      "Atomic set, clear and toggle outputs; mode, output-enable and open-drain control.",
+      "Per-pin interrupts and filtering; alternate functions from the Tiny pin map.",
+      "Both windows address the same pads, not two GPIO banks."
+    ],
+    "paragraphs": [
+      "GPIO administration controls pad mode, filtering, masks and locks. The restricted window exposes only permitted data/event operations. The user-access mask starts clear; grant only the pins required by the application.",
+      "Tiny retains only its implemented alternate functions. Unavailable alternatives drive neither peripheral requests nor pads. UART TX/RX and XPI use dedicated pads and are not inferred from a Mini pin assignment.",
+      "Before changing a driven alternate function, disable its producer, release output enable and use the controller guard/ownership sequence. Electrical drive settings require a reviewed pad/board specification; a register field is not a voltage rating."
+    ],
+    "steps": [
+      "Confirm the Tiny alternate-function map and external circuit.",
+      "Prepare output data before enabling the driver; set open-drain/pull behavior only as supported by the pad.",
+      "Clear observed event causes before enabling the intended interrupt mask.",
+      "Use atomic aliases for concurrent updates and apply irreversible locks only after validation."
+    ],
+    "nodes": [
+      "APB user / admin",
+      "Mode / mask / locks",
+      "Data / event / filter",
+      "Alternate-function mux",
+      "32 shared GPIO pads"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/gpio.md",
+      "rtl/ip/peripheral/gpio_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "dma",
+    "family": "dma",
+    "title": "Direct Memory Access (DMA)",
+    "depth": 3,
+    "regions": [
+      "APB4_DMA"
+    ],
+    "irqs": [
+      "dma"
+    ],
+    "summary": "Four channel contexts share one AXI32 master; memory-mapped endpoints only.",
+    "features": [
+      "Four channels; direct transfers and 64-byte linked TCDs.",
+      "32-bit transfers, up to 16 beats, 32-word FIFO per channel.",
+      "Request mask 0x07F9; stream modes are disabled in Tiny."
+    ],
+    "paragraphs": [
+      "Channel conventions are 0 UART0, 1 I2C0, 2 I2C1 and 3 bulk/XPI. They are software allocation conventions for one shared engine. Reserve a channel and all buffers through completion or confirmed abort.",
+      "Only request 0 and requests 3 through 10 are enabled. UART1 has no DMA request binding. Request enum names for omitted peripherals in the shared SDK do not establish Tiny hardware support; invalid kinds/requests must be rejected.",
+      "The fabric admits only one read or write transaction globally. CPU and DMA contend for that admission; burst length times bus width is not sustained throughput. A software wait timeout does not prove the engine is idle.",
+      "TCDs remain 64 bytes and require 64-byte alignment. Stride fields and y_count do not advertise 2D transfers: current validation requires zero strides and at most one row. Do not modify a descriptor or data buffer while hardware may still consume it.",
+      "The CAPABILITY maximum-burst field currently casts the configured 16 beats to four bits and therefore reads zero. The implemented parameter and SDK limit remain 16. Treat this as a discovery-encoding limitation; do not infer a zero-length engine or a qualified performance result from that field."
+    ],
+    "steps": [
+      "Check channel < 4, MM-to-MM kind, 32-bit width, nonzero bounded length and an enabled request.",
+      "Prepare aligned descriptors/buffers and publish them with the required memory ordering.",
+      "Configure, start, then wait with a bounded software budget; distinguish submission from completion.",
+      "On failure capture error address/response and progress, request abort, and confirm terminal/drained state before reuse."
+    ],
+    "nodes": [
+      "APB / 4 channel state",
+      "TCD fetch / validation",
+      "4 x 32-word FIFOs",
+      "Shared AXI32 master",
+      "Memory / paced I/O windows"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/dma.md",
+      "rtl/ip/peripheral/dma_reg.sv",
+      "rtl/ip/peripheral/dma_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "timer",
+    "family": "timer",
+    "title": "General-Purpose Timers (TIM0, TIM1)",
+    "depth": 3,
+    "regions": [
+      "APB4_TIM0",
+      "APB4_TIM1"
+    ],
+    "irqs": [
+      "timer0",
+      "timer1"
+    ],
+    "summary": "Two 32-bit timer instances with prescalers and interrupt support.",
+    "features": [
+      "Free-running, periodic and one-shot modes.",
+      "16-bit prescalers and two compare channels per instance.",
+      "Debug-freeze integration; no additional advanced timer."
+    ],
+    "paragraphs": [
+      "TIM0 and TIM1 share one register definition but have separate base addresses and IRQ bits. Program the selected timer against the actual 24 MHz system clock, not the CLINT microsecond timebase.",
+      "A delay API has both a requested time interval and a separate software polling budget. A zero polling budget or timeout is not proof that a previously running timer stopped.",
+      "Use documented status/W1C handling and capture event causes before rearming. Debug halt may stop counting when configured; it does not prevent all register access or provide a system-wide freeze."
+    ],
+    "steps": [
+      "Stop the selected timer before changing prescale/reload/compare values.",
+      "Compute timing from its functional clock and check representable range.",
+      "Clear stale events, configure interrupt selection and start.",
+      "Acknowledge observed events, recheck pending state and verify stop on recovery."
+    ],
+    "nodes": [
+      "APB register bank",
+      "Prescale / counter",
+      "Compare / reload",
+      "Event / debug-freeze"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/timer.md",
+      "rtl/ip/peripheral/timer_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "pwm",
+    "family": "pwm",
+    "title": "Pulse Width Modulation (PWM)",
+    "depth": 3,
+    "regions": [
+      "APB4_PWM"
+    ],
+    "irqs": [
+      "pwm"
+    ],
+    "summary": "Two internal timers and four waveform output channels with capture/fault control.",
+    "features": [
+      "Four PWM outputs, two capture inputs and fault/synchronization routes.",
+      "Shadow configuration and documented update boundaries.",
+      "Functional clock parameter is 24 MHz in Tiny."
+    ],
+    "paragraphs": [
+      "PWM outputs and capture/fault inputs are selected through Tiny GPIO alternate functions. The reusable block has timer/operator state, not an unrestricted programmable I/O processor.",
+      "Shadow values become active at the configured update event. Writing a duty field alone does not guarantee an immediate glitch-free transition. Establish safe output levels before enabling external power circuitry.",
+      "Capture entries and overflow status require coherent reads and explicit acknowledgement. Fault handling and debug-halt behavior must be checked with the actual pin route; no electrical frequency limit is qualified here."
+    ],
+    "steps": [
+      "Probe ABI and use the actual system clock in timing calculations.",
+      "Keep outputs inactive while programming timer/operator/channel state.",
+      "Latch shadow values at the selected boundary, then enable output routes.",
+      "On fault, preserve status and disable/recover outputs before clearing the cause."
+    ],
+    "nodes": [
+      "APB / shadow registers",
+      "Timer / operator update",
+      "4 waveform channels",
+      "Capture / fault / IRQ"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/pwm/doc/datasheet.md",
+      "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "rtc",
+    "family": "rtc",
+    "title": "Real-Time Clock (RTC)",
+    "depth": 3,
+    "regions": [
+      "APB4_RTC"
+    ],
+    "irqs": [
+      "rtc"
+    ],
+    "summary": "64-bit seconds, 1/256-second subsecond time, alarms and wake status.",
+    "features": [
+      "Two alarms, periodic wake and calibration controls.",
+      "Atomic time snapshot and command/response interface.",
+      "Tiny clocks the RTC from the system clock, not a separate sleep crystal."
+    ],
+    "paragraphs": [
+      "The managed RTC engine is configured for 24 MHz and is wired to the same system clock as the MCU. Its separate logical clock/reset ports do not establish an independent low-power timing source.",
+      "Time reads use the documented snapshot/command sequence. Poll command completion before assuming a write has taken effect. Alarm interrupt and wake signals are separate; SYSCTRL exposes both live and sticky wake observations.",
+      "Battery-backed retention, oscillator accuracy, calendar drift and deep-sleep operation remain unspecified. A digital counter resolution is not a measured time accuracy."
+    ],
+    "steps": [
+      "Probe the engine and configure it against the actual clock.",
+      "Set time through the bounded command API and verify completion.",
+      "Configure alarm/periodic selections and clear prior causes before enabling events.",
+      "Read snapshots consistently and capture wake/IRQ causes before acknowledgement."
+    ],
+    "nodes": [
+      "APB command bridge",
+      "Time / calibration",
+      "Alarm / periodic logic",
+      "Snapshot / IRQ / wake"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/rtc/doc/datasheet.md",
+      "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv",
+      "rtl/managed/clusterip/rtc/rtl/rtc_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "wdg",
+    "family": "wdg",
+    "title": "Watchdog (WDG)",
+    "depth": 3,
+    "regions": [
+      "APB4_WDG"
+    ],
+    "irqs": [
+      "watchdog_early_warning"
+    ],
+    "summary": "Window watchdog with early warning and whole-system reset request.",
+    "features": [
+      "24 MHz system-clock reference in Tiny.",
+      "Two-key service, window checking and retained reset-cause observation.",
+      "Eight watchdog-clock reset-request cycles in this integration."
+    ],
+    "paragraphs": [
+      "Configure timing and window policy while inactive, then start and service using the prescribed key sequence. An early or malformed service can request reset just as an expired timeout can.",
+      "Tiny routes the watchdog request into system reset generation. Its own reset/retention boundary is distinct from the reset it requests; the acceptance application checks retained reset_count on reboot.",
+      "Because the watchdog uses the same system clock, it does not guarantee recovery from a failed system clock or provide independent deep-sleep supervision. The current integration is not a safety certificate."
+    ],
+    "steps": [
+      "Probe status and inspect retained reset cause before starting a new diagnostic campaign.",
+      "Program prescaler, timeout, window and warning policy while inactive.",
+      "Start once and service inside the allowed window with bounded checks.",
+      "After reset distinguish watchdog reboot from fresh power-on and retain diagnostic evidence."
+    ],
+    "nodes": [
+      "APB command bridge",
+      "Prescale / window counter",
+      "Service-key checker",
+      "Warning / retained cause / reset"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/wdg/doc/datasheet.md",
+      "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv",
+      "rtl/managed/clusterip/wdg/rtl/wdg_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "uart0",
+    "family": "uart",
+    "title": "Management UART (UART0)",
+    "depth": 3,
+    "regions": [
+      "APB4_UART0"
+    ],
+    "irqs": [
+      "uart0"
+    ],
+    "summary": "Primary console UART with 64-byte transmit and receive FIFOs.",
+    "features": [
+      "Fractional baud generation, 5-8 data bits, parity, break and diagnostics.",
+      "Dedicated TX/RX pads; UART0 DMA requests available.",
+      "RTS/CTS require the selected GPIO alternate routes."
+    ],
+    "paragraphs": [
+      "The shared rs_uart_* convenience HAL targets UART0. It is the normal Tiny diagnostic console. Configure baud against 24 MHz and the permitted fractional divider range; sampling margin remains a board/peer requirement.",
+      "FIFO acceptance is not completed wire transmission. A UART write timeout can leave a transmitted/queued prefix. Preserve protocol framing and inspect RX error flags instead of blindly retrying an entire message.",
+      "The polling budget is consumed while the FIFO blocks progress and is shared across the call. It is not a duration in milliseconds and cannot bound a stalled bus access."
+    ],
+    "steps": [
+      "Configure baud, framing and optional flow-control routing before enabling the peer.",
+      "Clear stale error/event state and use bounded FIFO operations.",
+      "Reserve channel 0 when using UART0 DMA, and follow buffer lifetime rules.",
+      "Wait for the required queue/serializer completion boundary before changing framing or disabling clocks."
+    ],
+    "nodes": [
+      "APB / baud registers",
+      "64-byte TX FIFO / serializer",
+      "RX sampler / 64-byte FIFO",
+      "IRQ / error / DMA requests"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/uart.md",
+      "rtl/ip/serial/uart_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "uart1",
+    "family": "uart",
+    "title": "Second UART (UART1)",
+    "depth": 3,
+    "regions": [
+      "APB4_UART1"
+    ],
+    "irqs": [
+      "uart1"
+    ],
+    "summary": "Second UART instance with dedicated TX/RX and its own interrupt.",
+    "features": [
+      "Same UART v3 register ABI and 64-byte FIFOs.",
+      "PIO/IRQ integration; no Tiny UART1 DMA request route.",
+      "CTS input is tied permissive; no dedicated RTS/CTS pad pair."
+    ],
+    "paragraphs": [
+      "UART1 has its own base and core IRQ bit 26. The generic UART0 helper must not be mistaken for an instance-selecting UART1 API. Use the correct base/register contract or the documented Tiny loopback acceptance source.",
+      "The instance reuses the UART FIFO, divider, framing and error semantics. Tiny ties its CTS input low and leaves the DMA stall outputs unconnected to requests; shared register fields do not create the omitted routing.",
+      "Loopback acceptance is a source-level test facility. It does not qualify an external baud rate, cable, voltage domain or Linux driver."
+    ],
+    "steps": [
+      "Select the UART1 base and confirm framing/divider settings before use.",
+      "Use PIO or core IRQ bit 26; do not allocate a UART0 DMA selector for UART1.",
+      "Handle RX error entries and use bounded TX/RX waits.",
+      "Confirm serializer idle before changing framing, then clear only captured interrupt causes."
+    ],
+    "nodes": [
+      "UART1 APB bank",
+      "64-byte TX / RX FIFOs",
+      "Framing / fractional divider",
+      "Dedicated TX/RX / IRQ26"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/uart.md",
+      "rtl/ip/serial/uart_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "i2c",
+    "family": "i2c",
+    "title": "Inter-Integrated Circuit (I2C0, I2C1)",
+    "depth": 3,
+    "regions": [
+      "APB4_I2C0",
+      "APB4_I2C1"
+    ],
+    "irqs": [
+      "i2c0",
+      "i2c1"
+    ],
+    "summary": "Two controller-mode I2C instances with command/receive queues.",
+    "features": [
+      "7-bit/10-bit addressing, repeated START and clock stretching.",
+      "Sixteen-entry command and RX queues; arbitration and recovery reporting.",
+      "DMA pacing uses channels 1 and 2 by software convention."
+    ],
+    "paragraphs": [
+      "I2C0 and I2C1 share the register layout but have separate base addresses, GPIO alternate routes and IRQ bits. They are controllers, not target/slave peripherals. Board pull-ups and compatible voltage levels are required.",
+      "The queued command grammar and FIFO limits define how START, data, repeated START and STOP are submitted. A NACK is an observed protocol outcome; do not treat command FIFO acceptance as a successful bus transaction.",
+      "Use bounded transaction and recovery waits. Arbitration loss, stuck-low lines or clock stretching require inspection and a bus-safe recovery sequence rather than concurrent driving or automatic infinite retry."
+    ],
+    "steps": [
+      "Select the bus, verify its GPIO route and calculate timing from 24 MHz.",
+      "Ensure the bus is released, clear stale events and configure supported address mode.",
+      "Submit the documented command sequence and inspect terminal/NACK/arbitration status.",
+      "Recover and release lines before retrying; preserve timeout/error context."
+    ],
+    "nodes": [
+      "APB / timing / status",
+      "16-entry command queue",
+      "START / shift / STOP engine",
+      "RX queue / IRQ / DMA pacing"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/i2c.md",
+      "rtl/ip/serial/i2c_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "sysctrl",
+    "family": "sysctrl",
+    "title": "System Controller (SYSCTRL)",
+    "depth": 3,
+    "regions": [
+      "APB4_SYSCTRL"
+    ],
+    "irqs": [],
+    "summary": "Tiny-owned control and first-fault/acceptance register bank.",
+    "features": [
+      "Sticky first-fault address, master, response and saturating event count.",
+      "CPU/DMA wait-counter snapshot; live/sticky RTC wake status.",
+      "First full-word valid TEST_STATUS result remains sticky until reset."
+    ],
+    "paragraphs": [
+      "Only the decoded Tiny offsets below are implemented. Compatibility identity reads do not create selectable cores, a PLL or an application processor. Other offsets fail; writes to read-only locations, unaligned accesses and partial writes return APB error.",
+      "FAULT_STATUS captures the first pending event. Clearing pending permits a subsequent fault record; FAULT_COUNT counts events independently and saturates. Capture address/master/response before clearing.",
+      "PERF_CTRL controls wait counters and snapshots. Read low/high words from the captured snapshot, not from independently changing live values. A wait count is not end-to-end throughput.",
+      "TEST_STATUS accepts a full-word write with VALID set only while the prior result is invalid. Reserved input bits are masked; the terminal result is not UART text. A later result cannot overwrite the first valid one before reset."
+    ],
+    "steps": [
+      "Use the Tiny identity before choosing control operations.",
+      "Read and preserve pending fault status/address/master/detail before W1C acknowledgement.",
+      "Enable/capture CPU and DMA wait counters through PERF_CTRL and then read both snapshot words.",
+      "For automated acceptance write VALID, PASS and result code once; an earlier failure cannot be replaced by a later pass."
+    ],
+    "nodes": [
+      "APB alignment / strobe gate",
+      "Tiny offset decoder",
+      "First-fault / snapshots",
+      "Sticky TEST_STATUS / RTC wake"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/tiny/top/tiny_sysctrl.sv",
+      "docs/ip/tiny-soc.md"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "clint",
+    "family": "clint",
+    "title": "Local Interrupt Controller (CLINT)",
+    "depth": 3,
+    "regions": [
+      "APB4_CLINT"
+    ],
+    "irqs": [
+      "clint_software",
+      "clint_timer"
+    ],
+    "summary": "Machine software interrupt and 64-bit timer for hart slot zero.",
+    "features": [
+      "Core interrupt bits 0 and 1 are local software/timer causes.",
+      "1 MHz timebase derived from the 24 MHz system clock.",
+      "64-bit time and compare are accessed as RV32 words."
+    ],
+    "paragraphs": [
+      "Tiny has one management hart and uses hart slot zero. CLINT is distinct from the external interrupt vector and does not provide a PLIC.",
+      "Read time using a coherent high/low/high retry sequence. Update compare with the documented safe word order so an intermediate value does not trigger an unintended interrupt.",
+      "The 1 MHz timebase supports timing measurements/deadlines, while peripheral dividers still use their own 24 MHz engine clock. A software busy-loop count is not this timebase."
+    ],
+    "steps": [
+      "Use slot zero and the CLINT base from the generated Tiny map.",
+      "Read coherent time through the SDK helper.",
+      "Mask/prepare the timer cause and update compare in safe word order.",
+      "Handle and rearm the appropriate local cause; do not subtract two to form an external IRQ ordinal."
+    ],
+    "nodes": [
+      "APB word accesses",
+      "64-bit time counter",
+      "Hart0 compare / MSIP",
+      "Local software / timer IRQ"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/clint.md",
+      "rtl/ip/peripheral/clint_reg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "archinfo",
+    "family": "archinfo",
+    "title": "Architecture Information (ARCHINFO)",
+    "depth": 3,
+    "regions": [
+      "APB4_ARCHINFO"
+    ],
+    "irqs": [],
+    "summary": "Read-only Tiny identity and build/configuration discovery.",
+    "features": [
+      "Tiny SOC_ID 0x54494E59; 128 KiB SRAM and 24 MHz reference clock.",
+      "Topology 0x20200001, features 0x00007FFE and technology 0x02010082.",
+      "No provisioned unique device ID is advertised."
+    ],
+    "paragraphs": [
+      "The owned Tiny adapter replaces the managed block's fixed SoC identity while retaining its register ABI. BUILD_ID, CONFIG_ID and BUILD_STATUS are supplied by generated build metadata; they must not be published as default zero values for a built image.",
+      "Read and validate Tiny identity before interpreting product-specific capabilities or selecting a firmware layout. The build/profile identity is distinct from a silicon lot/serial number.",
+      "Device-ID inputs are tied invalid/read-disabled. Their register offsets do not establish a provisioned unique identity, secure key storage or production traceability."
+    ],
+    "steps": [
+      "Read discovery through the SDK and validate the build identity.",
+      "Confirm Tiny SOC_ID, one-hart topology, 128 KiB memory and active capabilities.",
+      "Reject mismatched images/configurations before hardware initialization.",
+      "Read device ID only when qualified and enabled; this integration does not supply it."
+    ],
+    "nodes": [
+      "APB read-only ABI",
+      "Build / config metadata",
+      "Tiny identity override",
+      "Capability / device-ID gate"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+      "rtl/tiny/top/tiny_archinfo.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  }
+]

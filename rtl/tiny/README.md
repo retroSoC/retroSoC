@@ -25,3 +25,8 @@ retains the combined Mini/Tiny IHP130 matrix. `netsim-boot` uses the compact
 assembly SRAM/pad test, while `netsim` uses the full SDK acceptance image.
 See the [verification record](../../docs/ip/tiny-soc-verification.md) for
 qualification boundaries and the observed reset-distribution timing deficit.
+
+The [Tiny Gen1 datasheet](../../publications/datasheets/tiny/README.md) provides
+the source-bound product/register/software reference. Its publication build is
+separate from RTL acceptance and does not promote historical test or timing
+records into new qualification results.

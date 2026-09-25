@@ -1,0 +1,1126 @@
+{
+  "apb4": {
+    "source": {
+      "signal": [
+        {
+          "name": "pclk",
+          "wave": "p......."
+        },
+        {
+          "name": "psel",
+          "wave": "01...0.."
+        },
+        {
+          "name": "penable",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "pready",
+          "wave": "0...10.."
+        },
+        {
+          "name": "pwrite",
+          "wave": "1......."
+        },
+        {
+          "name": "paddr",
+          "wave": "x=...x..",
+          "data": [
+            "address"
+          ]
+        },
+        {
+          "name": "pwdata",
+          "wave": "x=...x..",
+          "data": [
+            "write data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "pclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pclk",
+        "meaning": "APB sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "psel": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "psel",
+        "meaning": "Select stays asserted through the wait states.",
+        "polarity": "active-high"
+      },
+      "penable": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "penable",
+        "meaning": "Access phase follows the setup phase.",
+        "polarity": "active-high"
+      },
+      "pready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pready",
+        "meaning": "High with select and enable completes this transfer.",
+        "polarity": "active-high"
+      },
+      "pwrite": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pwrite",
+        "meaning": "Write direction for the illustrated transfer.",
+        "polarity": "active-high"
+      },
+      "paddr": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "paddr",
+        "meaning": "Stable byte address across setup and access.",
+        "polarity": "data"
+      },
+      "pwdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+        "scope": "apb4_if",
+        "symbol": "pwdata",
+        "meaning": "Stable write payload until completion.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Split the former ADDR / DATA lane; retained the valid APB wait-state ordering.",
+    "parameters": {
+      "APB_ADDR_WIDTH": 32,
+      "APB_DATA_WIDTH": 32
+    },
+    "parameter_note": "The PRODUCT APB interface uses 32-bit address and data."
+  },
+  "axi4": {
+    "source": {
+      "signal": [
+        {
+          "name": "aclk",
+          "wave": "p......."
+        },
+        {
+          "name": "arvalid",
+          "wave": "01.0...."
+        },
+        {
+          "name": "arready",
+          "wave": "0.10...."
+        },
+        {
+          "name": "rvalid",
+          "wave": "0...1..0"
+        },
+        {
+          "name": "rready",
+          "wave": "0....1.."
+        },
+        {
+          "name": "rlast",
+          "wave": "0.....10"
+        },
+        {
+          "name": "rdata",
+          "wave": "x...=.=x",
+          "data": [
+            "D0",
+            "D1"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "aclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "aclk",
+        "meaning": "AXI sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "arvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arvalid",
+        "meaning": "Read-address valid held until accepted.",
+        "polarity": "active-high"
+      },
+      "arready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arready",
+        "meaning": "Address acceptance.",
+        "polarity": "active-high"
+      },
+      "rvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rvalid",
+        "meaning": "Read data valid across the stall.",
+        "polarity": "active-high"
+      },
+      "rready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rready",
+        "meaning": "Read response acceptance.",
+        "polarity": "active-high"
+      },
+      "rlast": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rlast",
+        "meaning": "Final data beat indication.",
+        "polarity": "active-high"
+      },
+      "rdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rdata",
+        "meaning": "First beat held during backpressure, then final beat.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Preserved the original two-beat read handshakes; declarations use the native data-fabric interface.",
+    "parameters": {
+      "ADDR_WIDTH": 32,
+      "DATA_WIDTH": 32,
+      "ID_WIDTH": 1,
+      "USER_WIDTH": 1
+    },
+    "parameter_note": "Tiny integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
+  },
+  "xpi": {
+    "source": {
+      "signal": [
+        {
+          "name": "nss_o[0]",
+          "wave": "10......1"
+        },
+        {
+          "name": "sck_o",
+          "wave": "0p..|..0."
+        },
+        {
+          "name": "io_oe_o",
+          "wave": "=...=....",
+          "data": [
+            "0xf",
+            "0x0"
+          ]
+        },
+        {
+          "name": "io_do_o",
+          "wave": "x=..x....",
+          "data": [
+            "cmd/addr"
+          ]
+        },
+        {
+          "name": "io_di_i",
+          "wave": "x....=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "nss_o[0]": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "nss_o",
+        "meaning": "Selected chip-select, active low.",
+        "polarity": "active-low"
+      },
+      "sck_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "sck_o",
+        "meaning": "Representative mode-0 serial clocks.",
+        "polarity": "rising-edge"
+      },
+      "io_oe_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_oe_o",
+        "meaning": "Output enable changes from transmit to receive.",
+        "polarity": "data"
+      },
+      "io_do_o": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_do_o",
+        "meaning": "Driven command/address nibbles; value immaterial when OE is zero.",
+        "polarity": "data"
+      },
+      "io_di_i": {
+        "file": "rtl/ip/storage/xpi_if.sv",
+        "scope": "xpi_if",
+        "symbol": "io_di_i",
+        "meaning": "Sampled receive nibbles after turnaround.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/xpi_core.sv",
+      "rtl/ip/storage/xpi_define.svh",
+      "rtl/ip/storage/xpi_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Removed synthetic phase/IO lanes and separated input, output and output-enable signals. Reviewed XPI core pad assignments.",
+    "parameters": {
+      "XPI_NSS_NUM": 4
+    },
+    "parameter_note": "xpi_define.svh fixes four chip selects."
+  },
+  "sram": {
+    "source": {
+      "signal": [
+        {
+          "name": "aclk",
+          "wave": "p......."
+        },
+        {
+          "name": "arvalid",
+          "wave": "01.0...."
+        },
+        {
+          "name": "arready",
+          "wave": "0.10...."
+        },
+        {
+          "name": "rvalid",
+          "wave": "0...1..0"
+        },
+        {
+          "name": "rready",
+          "wave": "0....1.."
+        },
+        {
+          "name": "rdata",
+          "wave": "x...=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "aclk": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "aclk",
+        "meaning": "AXI sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "arvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arvalid",
+        "meaning": "Read address request.",
+        "polarity": "active-high"
+      },
+      "arready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "arready",
+        "meaning": "Read address accepted.",
+        "polarity": "active-high"
+      },
+      "rvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rvalid",
+        "meaning": "Response held valid during a sink stall.",
+        "polarity": "active-high"
+      },
+      "rready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rready",
+        "meaning": "Read response sink readiness.",
+        "polarity": "active-high"
+      },
+      "rdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+        "scope": "axi4_if",
+        "symbol": "rdata",
+        "meaning": "Read data remains stable until consumed.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Split the synthetic AR-handshake into actual ARVALID/ARREADY members; retained response wait behavior.",
+    "parameters": {
+      "ADDR_WIDTH": 32,
+      "DATA_WIDTH": 32,
+      "ID_WIDTH": 1,
+      "USER_WIDTH": 1
+    },
+    "parameter_note": "Tiny integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
+  },
+  "gpio": {
+    "source": {
+      "signal": [
+        {
+          "name": "user_select_i[0]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "user_handoff_i[0]",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "s_selected_oe[0]",
+          "wave": "1......."
+        },
+        {
+          "name": "s_selected_data[0]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "open_drain_i[0]",
+          "wave": "0......."
+        },
+        {
+          "name": "oe_o[0]",
+          "wave": "1.0..1.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "user_select_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "user_select_i",
+        "meaning": "Pin 0 switches from native to user selection.",
+        "polarity": "active-high"
+      },
+      "user_handoff_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "user_handoff_i",
+        "meaning": "Handoff guard disables pin drive.",
+        "polarity": "active-high"
+      },
+      "s_selected_oe[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "s_selected_oe",
+        "meaning": "Both selected owners request output enable in this example.",
+        "polarity": "active-high"
+      },
+      "s_selected_data[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "s_selected_data",
+        "meaning": "Selected data changes with the owner.",
+        "polarity": "data"
+      },
+      "open_drain_i[0]": {
+        "file": "rtl/ip/peripheral/gpio_core.sv",
+        "scope": "gpio_core",
+        "symbol": "open_drain_i",
+        "meaning": "Push-pull mode selected.",
+        "polarity": "active-high"
+      },
+      "oe_o[0]": {
+        "file": "rtl/ip/peripheral/gpio_if.sv",
+        "scope": "gpio_if",
+        "symbol": "oe_o",
+        "meaning": "Actual pad output enable is suppressed by the handoff guard.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/gpio_core.sv",
+      "rtl/ip/peripheral/gpio_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Removed old-owner/new-owner pseudo-signals and used actual owner, guard and selected-data/enable signals. Pad behavior follows the reviewed output-enable equation.",
+    "parameters": {
+      "PinNum": 32,
+      "DataWidth": 32
+    },
+    "parameter_note": "PRODUCT has one 32-pin GPIO controller and matching gpio_if."
+  },
+  "dma": {
+    "source": {
+      "signal": [
+        {
+          "name": "start_i[0]",
+          "wave": "010......"
+        },
+        {
+          "name": "busy_o[0]",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "remaining_o[31:0]",
+          "wave": "=.=..=.=.",
+          "data": [
+            "16",
+            "16",
+            "8",
+            "0"
+          ]
+        },
+        {
+          "name": "done_o[0]",
+          "wave": "0......1."
+        },
+        {
+          "name": "error_o[0]",
+          "wave": "0........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "start_i[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "start_i",
+        "meaning": "Channel 0 software-start pulse.",
+        "polarity": "active-high"
+      },
+      "busy_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "busy_o",
+        "meaning": "Channel 0 executes a valid memory transfer.",
+        "polarity": "active-high"
+      },
+      "remaining_o[31:0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "remaining_o",
+        "meaning": "Remaining bytes for channel 0.",
+        "polarity": "data"
+      },
+      "done_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "done_o",
+        "meaning": "Channel completion state after all work finishes.",
+        "polarity": "active-high"
+      },
+      "error_o[0]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "error_o",
+        "meaning": "No channel error in this successful example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Replaced descriptor-ready, AXI/stream-work and completion-IRQ pseudo-signals with actual channel start/status/progress ports.",
+    "parameters": {
+      "NumChannels": 4,
+      "DataWidth": 32,
+      "AddrWidth": 32
+    },
+    "parameter_note": "Tiny selects four channels, 32-bit transfers and no stream endpoints."
+  },
+  "timer": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_tick",
+          "wave": "010101010"
+        },
+        {
+          "name": "value_o",
+          "wave": "=.=.=.=.=",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0"
+          ]
+        },
+        {
+          "name": "compare0_event_o",
+          "wave": "0....10.."
+        },
+        {
+          "name": "timeout_event_o",
+          "wave": "0......10"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "s_tick": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "s_tick",
+        "meaning": "Prescaler-qualified count enable.",
+        "polarity": "active-high"
+      },
+      "value_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "value_o",
+        "meaning": "Periodic up-counter value between ticks.",
+        "polarity": "data"
+      },
+      "compare0_event_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "compare0_event_o",
+        "meaning": "Compare event when the current value equals two on a tick.",
+        "polarity": "active-high"
+      },
+      "timeout_event_o": {
+        "file": "rtl/ip/peripheral/timer_core.sv",
+        "scope": "timer_core",
+        "symbol": "timeout_event_o",
+        "meaning": "Terminal event at value three.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/timer_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Replaced a fictitious core IRQ-state lane with compare0_event_o and timeout_event_o; reviewed compare-before-update behavior.",
+    "parameters": {
+      "CounterWidth": 32,
+      "PrescaleWidth": 16
+    },
+    "parameter_note": "Reference TIM0/TIM1 use 32-bit counters and 16-bit prescalers."
+  },
+  "pwm": {
+    "source": {
+      "signal": [
+        {
+          "name": "timer_counter_o[0]",
+          "wave": "=.=.=.=.=",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0"
+          ]
+        },
+        {
+          "name": "channel_duty_i[0]",
+          "wave": "=..=.....",
+          "data": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "update_i",
+          "wave": "0...10..."
+        },
+        {
+          "name": "channel_active_duty_o[0]",
+          "wave": "=....=...",
+          "data": [
+            "1",
+            "2"
+          ]
+        },
+        {
+          "name": "pwm_o[0]",
+          "wave": "10......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "timer_counter_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "timer_counter_o",
+        "meaning": "Timer 0 counter excerpt.",
+        "polarity": "data"
+      },
+      "channel_duty_i[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "channel_duty_i",
+        "meaning": "Software changes the shadow duty input.",
+        "polarity": "data"
+      },
+      "update_i": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "update_i",
+        "meaning": "Explicit update request.",
+        "polarity": "active-high"
+      },
+      "channel_active_duty_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "channel_active_duty_o",
+        "meaning": "Active duty reflects the accepted update.",
+        "polarity": "data"
+      },
+      "pwm_o[0]": {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+        "scope": "pwm_core",
+        "symbol": "pwm_o",
+        "meaning": "Channel 0 output for the shown counter/duty example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_define.svh",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Mapped counter, shadow input, update command, active duty and output ports. Replaced synthetic shadow-update/active-update signals.",
+    "parameters": {
+      "PWM_TIMER_COUNT": 2,
+      "PWM_CHANNEL_COUNT": 4
+    },
+    "parameter_note": "pwm_define.svh declares two timers and four PWM channels."
+  },
+  "rtc": {
+    "source": {
+      "signal": [
+        {
+          "name": "command_valid_i",
+          "wave": "01..0..."
+        },
+        {
+          "name": "command_ready_o",
+          "wave": "0..10..."
+        },
+        {
+          "name": "response_valid_o",
+          "wave": "01..0..."
+        },
+        {
+          "name": "response_ready_i",
+          "wave": "0..10..."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "command_valid_i": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "command_valid_i",
+        "meaning": "Command remains valid through backpressure.",
+        "polarity": "active-high"
+      },
+      "command_ready_o": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "command_ready_o",
+        "meaning": "Command ready mirrors response_ready_i.",
+        "polarity": "active-high"
+      },
+      "response_valid_o": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "response_valid_o",
+        "meaning": "Response valid directly mirrors command_valid_i.",
+        "polarity": "active-high"
+      },
+      "response_ready_i": {
+        "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+        "scope": "rtc_core",
+        "symbol": "response_ready_i",
+        "meaning": "Response sink eventually accepts the transaction.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Corrected the old artificial command-busy/response delay; reviewed the direct ready/valid assignments in rtc_core."
+  },
+  "wdg": {
+    "source": {
+      "signal": [
+        {
+          "name": "active_o",
+          "wave": "1.......0"
+        },
+        {
+          "name": "window_open_o",
+          "wave": "0.10.1..0"
+        },
+        {
+          "name": "s_service_command",
+          "wave": "0.10....."
+        },
+        {
+          "name": "warning_active_o",
+          "wave": "0.....1.0"
+        },
+        {
+          "name": "reset_req_o",
+          "wave": "0.......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "active_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "active_o",
+        "meaning": "Watchdog active through service and later timeout.",
+        "polarity": "active-high"
+      },
+      "window_open_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "window_open_o",
+        "meaning": "Service window opens, closes on reload, then opens again.",
+        "polarity": "active-high"
+      },
+      "s_service_command": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "s_service_command",
+        "meaning": "Accepted legal service command during the first open window.",
+        "polarity": "active-high"
+      },
+      "warning_active_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "warning_active_o",
+        "meaning": "Early warning before the later unserviced timeout.",
+        "polarity": "active-high"
+      },
+      "reset_req_o": {
+        "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+        "scope": "wdg_core",
+        "symbol": "reset_req_o",
+        "meaning": "Reset request asserted on terminal timeout.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Mapped actual window, accepted-service predicate, warning and reset outputs; removed abstract count-phase and valid-service names."
+  },
+  "uart": {
+    "source": {
+      "signal": [
+        {
+          "name": "tx_o",
+          "wave": "101010.101.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "tx_o": {
+        "file": "rtl/ip/serial/uart_core.sv",
+        "scope": "uart_core",
+        "symbol": "tx_o",
+        "meaning": "Transmitted serial output, idle and stop high.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_uart_tx.sv",
+      "rtl/ip/serial/uart_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Removed synthetic bit-slot clock and moved payload/configuration into the note; retained the valid TX bit sequence."
+  },
+  "i2c": {
+    "source": {
+      "signal": [
+        {
+          "name": "scl_i",
+          "wave": "1.0.1.0.1.0.1.."
+        },
+        {
+          "name": "sda_i",
+          "wave": "10.1...0.....1."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "scl_i": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "scl_i",
+        "meaning": "Observed SCL after input filtering.",
+        "polarity": "rising-edge"
+      },
+      "sda_i": {
+        "file": "rtl/ip/serial/i2c_core.sv",
+        "scope": "i2c_core",
+        "symbol": "sda_i",
+        "meaning": "Observed SDA, including START and STOP.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/i2c_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Removed phase labels and invalid multi-bit data notation on scalar SDA. Reviewed open-drain inputs and protocol transitions."
+  },
+  "clint": {
+    "source": {
+      "signal": [
+        {
+          "name": "tick_i",
+          "wave": "0101010."
+        },
+        {
+          "name": "mtime_o",
+          "wave": "=.=.=.==",
+          "data": [
+            "N-1",
+            "N",
+            "N+1",
+            "N+2",
+            "N+2"
+          ]
+        },
+        {
+          "name": "mtimecmp_i[0]",
+          "wave": "=.....=.",
+          "data": [
+            "N",
+            "N+8"
+          ]
+        },
+        {
+          "name": "timer_irq_o[0]",
+          "wave": "0..1...0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "tick_i": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "tick_i",
+        "meaning": "Qualified timebase increments.",
+        "polarity": "active-high"
+      },
+      "mtime_o": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtime_o",
+        "meaning": "MTIME advances through the programmed compare value.",
+        "polarity": "data"
+      },
+      "mtimecmp_i[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "mtimecmp_i",
+        "meaning": "Hart 0 compare is moved beyond the current time.",
+        "polarity": "data"
+      },
+      "timer_irq_o[0]": {
+        "file": "rtl/ip/peripheral/clint_core.sv",
+        "scope": "clint_core",
+        "symbol": "timer_irq_o",
+        "meaning": "Registered timer interrupt follows comparison.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/peripheral/clint_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Mapped mtime/mtimecmp aliases to ports and retained the registered comparator delay.",
+    "parameters": {
+      "HartNum": 1
+    },
+    "parameter_note": "Each LP or HP local interrupt block in this example has one hart."
+  },
+  "archinfo": {
+    "source": {
+      "signal": [
+        {
+          "name": "paddr_i",
+          "wave": "x=...x..",
+          "data": [
+            "offset"
+          ]
+        },
+        {
+          "name": "psel_i",
+          "wave": "01...0.."
+        },
+        {
+          "name": "penable_i",
+          "wave": "0.1..0.."
+        },
+        {
+          "name": "pwrite_i",
+          "wave": "0......."
+        },
+        {
+          "name": "pready_o",
+          "wave": "1......."
+        },
+        {
+          "name": "prdata_o",
+          "wave": "x=...x..",
+          "data": [
+            "value"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper PCLK domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
+    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "signals": {
+      "paddr_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "paddr_i",
+        "meaning": "Read register offset.",
+        "polarity": "data"
+      },
+      "psel_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "psel_i",
+        "meaning": "APB select.",
+        "polarity": "active-high"
+      },
+      "penable_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "penable_i",
+        "meaning": "APB access enable.",
+        "polarity": "active-high"
+      },
+      "pwrite_i": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "pwrite_i",
+        "meaning": "Read transaction.",
+        "polarity": "active-high"
+      },
+      "pready_o": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "pready_o",
+        "meaning": "Always-ready register interface.",
+        "polarity": "active-high"
+      },
+      "prdata_o": {
+        "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+        "scope": "archinfo_reg",
+        "symbol": "prdata_o",
+        "meaning": "Read value selected by address.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Used the actual combinational archinfo_reg ports; corrected the fictitious PCLK/APB-read signal labels."
+  }
+}

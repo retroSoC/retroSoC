@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "state": "frozen",
+  "ip_ids": [
+    "xpi",
+    "sram",
+    "gpio",
+    "dma",
+    "timer",
+    "pwm",
+    "rtc",
+    "wdg",
+    "uart0",
+    "uart1",
+    "i2c",
+    "sysctrl",
+    "clint",
+    "archinfo"
+  ],
+  "entries": [
+    {
+      "level": 1,
+      "title": "Product Brief",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Features",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Configuration and Scope",
+      "anchor": "tiny-configuration"
+    },
+    {
+      "level": 2,
+      "title": "Reading and Evidence Conventions",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "System Architecture",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Processor and Integration",
+      "anchor": "tiny-core"
+    },
+    {
+      "level": 2,
+      "title": "Clock, Reset and Operating State",
+      "anchor": "tiny-clock"
+    },
+    {
+      "level": 2,
+      "title": "Bus Transactions, Arbitration and Errors",
+      "anchor": "tiny-bus"
+    },
+    {
+      "level": 2,
+      "title": "Memory Map and Access Conventions",
+      "anchor": "tiny-addresses"
+    },
+    {
+      "level": 2,
+      "title": "Interrupt and DMA Request Routing",
+      "anchor": "tiny-irq"
+    },
+    {
+      "level": 2,
+      "title": "Peripherals",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "XPI Universal Controller",
+      "anchor": "xpi"
+    },
+    {
+      "level": 3,
+      "title": "On-Chip SRAM",
+      "anchor": "sram"
+    },
+    {
+      "level": 3,
+      "title": "General-Purpose Input/Output (GPIO)",
+      "anchor": "gpio"
+    },
+    {
+      "level": 3,
+      "title": "Direct Memory Access (DMA)",
+      "anchor": "dma"
+    },
+    {
+      "level": 3,
+      "title": "General-Purpose Timers (TIM0, TIM1)",
+      "anchor": "timer"
+    },
+    {
+      "level": 3,
+      "title": "Pulse Width Modulation (PWM)",
+      "anchor": "pwm"
+    },
+    {
+      "level": 3,
+      "title": "Real-Time Clock (RTC)",
+      "anchor": "rtc"
+    },
+    {
+      "level": 3,
+      "title": "Watchdog (WDG)",
+      "anchor": "wdg"
+    },
+    {
+      "level": 3,
+      "title": "Management UART (UART0)",
+      "anchor": "uart0"
+    },
+    {
+      "level": 3,
+      "title": "Second UART (UART1)",
+      "anchor": "uart1"
+    },
+    {
+      "level": 3,
+      "title": "Inter-Integrated Circuit (I2C0, I2C1)",
+      "anchor": "i2c"
+    },
+    {
+      "level": 3,
+      "title": "System Controller (SYSCTRL)",
+      "anchor": "sysctrl"
+    },
+    {
+      "level": 3,
+      "title": "Local Interrupt Controller (CLINT)",
+      "anchor": "clint"
+    },
+    {
+      "level": 3,
+      "title": "Architecture Information (ARCHINFO)",
+      "anchor": "archinfo"
+    },
+    {
+      "level": 2,
+      "title": "Pins and Board Connections",
+      "anchor": "tiny-pins"
+    },
+    {
+      "level": 2,
+      "title": "Electrical, Package and Reliability Boundaries",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Software",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Reset, Boot and Linker Layout",
+      "anchor": "tiny-boot"
+    },
+    {
+      "level": 2,
+      "title": "SDK, API Completion and Polling",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "DMA Descriptors and Buffer Lifetime",
+      "anchor": "tiny-dma-format"
+    },
+    {
+      "level": 2,
+      "title": "Acceptance and Diagnostics",
+      "anchor": "tiny-diagnostics"
+    },
+    {
+      "level": 1,
+      "title": "Implementation and Evidence",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Reproducible Development Flow",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Verification Status and Qualification Gaps",
+      "anchor": "tiny-evidence"
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Global Register Index",
+      "anchor": "tiny-register-index"
+    },
+    {
+      "level": 1,
+      "title": "Document Control",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Revision History",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Sources, License and Contact",
+      "anchor": "publication-provenance"
+    }
+  ]
+}

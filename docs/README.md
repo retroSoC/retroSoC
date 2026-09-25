@@ -4,6 +4,7 @@ This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
 - [Tiny MCU](ip/tiny-soc.md) defines the independent wired Tiny product, AXI4/APB4, SRAM-only startup and IHP130 acceptance.
+- [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the independently built product, register, software and qualification-boundary reference.
 
 - [Contributing](../CONTRIBUTING.md) describes community discussion, development,
   review, validation evidence, and maintainer responsibilities.

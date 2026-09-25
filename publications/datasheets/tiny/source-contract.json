@@ -1,0 +1,182 @@
+{
+  "regions": {
+    "FLASH": [
+      0,
+      16777216
+    ],
+    "APB4_GPIO": [
+      268435456,
+      4096
+    ],
+    "APB4_UART0": [
+      268439552,
+      4096
+    ],
+    "APB4_TIM0": [
+      268443648,
+      4096
+    ],
+    "APB4_TIM1": [
+      268447744,
+      4096
+    ],
+    "APB4_I2C0": [
+      268460032,
+      4096
+    ],
+    "APB4_XPI": [
+      268472320,
+      4096
+    ],
+    "APB4_DMA": [
+      268476416,
+      4096
+    ],
+    "APB4_SYSCTRL": [
+      268480512,
+      4096
+    ],
+    "APB4_CLINT": [
+      268566528,
+      65536
+    ],
+    "APB4_I2C1": [
+      268505088,
+      4096
+    ],
+    "APB4_GPIO_ADMIN": [
+      268517376,
+      4096
+    ],
+    "APB4_SRAM": [
+      268529664,
+      4096
+    ],
+    "APB4_UART1": [
+      268533760,
+      4096
+    ],
+    "APB4_ARCHINFO": [
+      536870912,
+      4096
+    ],
+    "APB4_PWM": [
+      536879104,
+      4096
+    ],
+    "APB4_RTC": [
+      536887296,
+      4096
+    ],
+    "APB4_WDG": [
+      536891392,
+      4096
+    ],
+    "SRAM": [
+      805306368,
+      131072
+    ],
+    "XPI": [
+      1342177280,
+      268435456
+    ]
+  },
+  "interrupts": {
+    "clint_software": 0,
+    "clint_timer": 1,
+    "uart0": 2,
+    "timer0": 3,
+    "timer1": 4,
+    "i2c0": 7,
+    "xpi": 9,
+    "pwm": 11,
+    "rtc": 13,
+    "watchdog_early_warning": 14,
+    "gpio": 18,
+    "i2c1": 19,
+    "dma": 20,
+    "uart1": 26
+  },
+  "sources": [
+    "rtl/ip/core/mgmt_core_wrapper.sv",
+    "rtl/ip/core/mgmt_debug_wrapper.sv",
+    "rtl/ip/core/mgmt_debug_reset.sv",
+    "rtl/ip/interconnect/ahbl2axi4.sv",
+    "crt/arch/riscv/startup.S",
+    "crt/linker/ld2_all_sram.lds",
+    "crt/src/hal/dma_math.c",
+    "crt/src/hal/sysctrl.c",
+    "crt/src/core/archinfo.c",
+    "app/apps/ci_smoke/tiny.c",
+    "app/apps/ci_smoke/mcu_acceptance.S",
+    "app/apps/bringup/tiny.mk",
+    "app/apps/ci_smoke/tiny.mk",
+    "scripts/generate_tiny.py",
+    "tests/test_tiny.py"
+  ],
+  "bindings": [
+    {
+      "file": "rtl/tiny/top/tiny_axi4_fabric.sv",
+      "text": [
+        "(s_selected_addr.len <= 8'd15)",
+        "(s_last_addr[31:12] == s_selected_addr.addr[31:12])",
+        "s_accept = (s_state_q == Idle) && s_selected_valid;",
+        "Response: if (s_terminal) s_state_d = Idle;",
+        "s_tgt_d = s_protocol_legal ? s_decoded_target : 3'd4;",
+        "assign s_protocol_legal = !s_selected_addr.lock && (s_selected_addr.size <= 3'd2) &&\n      ((s_selected_addr.addr & ((32'd1 << s_selected_addr.size) - 32'd1)) == 32'd0) &&\n      ((s_selected_addr.burst == 2'b01) ||\n       ((s_selected_addr.burst == 2'b00) && (s_selected_addr.len == 8'd0))) &&\n      (s_selected_addr.len <= 8'd15) && !s_last_addr[32] &&\n      (s_last_addr[31:12] == s_selected_addr.addr[31:12]) &&\n      (decode_target(\n      s_last_addr[31:0]\n  ) == s_decoded_target) && ((s_decoded_target != 3'd2) || (s_selected_addr.len == 8'd0));",
+        "assign s_terminal = (s_state_q == Response) &&\n      (s_write_q ? (s_target_bvalid[s_tgt_q] && s_bready[s_owner_q]) :\n       (s_target_rvalid[s_tgt_q] && s_rready[s_owner_q] && s_target_rlast[s_tgt_q]));"
+      ]
+    },
+    {
+      "file": "crt/src/hal/dma_math.c",
+      "text": [
+        "#ifdef RS_SOC_TINY\n    if (config->kind != RS_DMA_KIND_MM_TO_MM) {\n        return false;\n    }\n#endif"
+      ]
+    },
+    {
+      "file": "crt/arch/riscv/startup.S",
+      "text": [
+        "#ifndef RS_SOC_TINY"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": [
+        ".RTC_CLOCK_HZ(24_000_000)",
+        ".WDG_CLOCK_HZ(24_000_000)",
+        ".RESET_PULSE_CYCLES(8)",
+        "assign u_uart1_if.cts_n_i = 1'b0;"
+      ]
+    },
+    {
+      "file": "rtl/ip/peripheral/dma_reg.sv",
+      "text": [
+        "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'd3 : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
+      ]
+    },
+    {
+      "file": "crt/include/retrosoc/hal/dma.h",
+      "text": [
+        "#define RS_DMA_TCD_VALID          UINT32_C(0x00000001)",
+        "#define RS_DMA_TCD_SRC_INC        UINT32_C(0x00000002)",
+        "#define RS_DMA_TCD_DST_INC        UINT32_C(0x00000004)",
+        "#define RS_DMA_TCD_CRC_ENABLE     UINT32_C(0x00000008)",
+        "#define RS_DMA_TCD_CRC_FINAL      UINT32_C(0x00000010)",
+        "#define RS_DMA_TCD_INT_DONE       UINT32_C(0x00000020)",
+        "#define RS_DMA_TCD_INT_ERROR      UINT32_C(0x00000040)",
+        "#define RS_DMA_TCD_KIND_SHIFT     8U",
+        "#define RS_DMA_TCD_REQUEST_SHIFT  12U",
+        "#define RS_DMA_TCD_PRIORITY_SHIFT 16U",
+        "#define RS_DMA_TCD_BURST_SHIFT    20U"
+      ]
+    },
+    {
+      "file": "crt/src/hal/dma.c",
+      "text": [
+        "if (burst == UINT32_C(0)) {\n            burst = RS_DMA_MAX_BURST_BEATS;\n        }",
+        "RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = UINT32_C(1);",
+        "current = (rs_dma_tcd_t *)(uintptr_t)current->next_ptr;"
+      ]
+    }
+  ]
+}

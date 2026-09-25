@@ -1,0 +1,29 @@
+{
+  "status": "prototype",
+  "current_commit_reports": [],
+  "historical_source": "docs/ip/tiny-soc-verification.md",
+  "historical_date": "2026-09-25",
+  "boundary": "Repository-reported local results from an originally uncommitted implementation; raw matching artifacts are not supplied in this publication workspace. Not rerun or promoted to current-commit qualification.",
+  "records": [
+    [
+      "RTL and software",
+      "Repository records directed fabric/SYSCTRL tests and pin-level NOR firmware acceptance in Verilator/Icarus.",
+      "Reported historical functional evidence, not a new publication-run result."
+    ],
+    [
+      "Netlist",
+      "Compact assembly SRAM/pad boot test is recorded; the full C acceptance netlist campaign remains incomplete.",
+      "Do not substitute the compact netlist test for complete SDK acceptance."
+    ],
+    [
+      "IHP130 STA",
+      "Recorded setup WNS -455.18 ns and TNS -13,049,600 ns; dominant reset-distribution path.",
+      "24 MHz is a functional target, not timing-qualified operation."
+    ],
+    [
+      "Physical and silicon",
+      "No matching place/route, PVT/MMMC, CDC/RDC signoff, board characterization or silicon/power report.",
+      "No numerical electrical, package, thermal or safety qualification claimed."
+    ]
+  ]
+}
