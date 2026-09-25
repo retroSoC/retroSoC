@@ -2,14 +2,14 @@
 
 #let apu-release-reference() = [
   #change-start("v05-refresh-apu","Source-bound APU availability and acceptance order")
-  #minor-title("Default and P7 acceptance configurations")
+  #minor-title("Default and P9 acceptance configurations")
   #ds-table("apu-profile-capabilities",[APU capability and digest by committed configuration],
     ([Configuration],[CAPABILITY0],[ABI_DIGEST],[Software boundary]),
     data.system_reference.apu_implementation.profiles.map(r=>([#r.name \ #code(r.profile)],
       code("0x"+upper(str(r.capability,base:16))),code("0x"+upper(str(r.digest,base:16))),
       if r.enabled {[Fixed APUM KWS is enabled; APP=apu_release and CSR-enabled IRQ acceptance.]} else {[WAV/FLAC enabled; KWS discovery returns RS_ENOTSUP.]})),
     widths:(1.45fr,0.65fr,0.65fr,1.25fr))
-  The P7 digest is an *ABI identity derived from the frozen register, model and microcode*
+  The P9 digest is an *ABI identity derived from the frozen register, coefficient, model and microcode*
   interfaces. It is not a runtime accuracy result, firmware authentication or a physical
   qualification certificate. *MP3 capability remains clear* in both configurations.
   #source-note("rtl/ip/multimedia/apu_reg.sv",title:"Actual configured capability and digest values")

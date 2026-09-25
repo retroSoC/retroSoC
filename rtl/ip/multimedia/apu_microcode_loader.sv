@@ -110,9 +110,13 @@ module apu_microcode_loader #(
     PathPop,
     PathPopLoad,
     PathMemoClear,
+    PathMemoClearWait,
     PathMemoStart,
     PathMemoRead,
+    PathMemoReadWait,
     PathMemoCheck,
+    PathMemoInsert,
+    PathMemoInsertWait,
     Finish,
     CancelWait,
     DescriptorDmaRequest,
@@ -148,9 +152,9 @@ module apu_microcode_loader #(
   logic s_path_stack_cs, s_path_stack_write, s_path_stack_push;
   logic [11:0] s_path_stack_addr;
   logic [63:0] s_path_stack_write_data, s_path_stack_read_data;
-  logic [12:0] s_path_memo_addr_q, s_path_memo_probe_q, s_path_memo_clear_q;
-  logic [63:0] s_path_memo_key, s_path_memo_read_key_q;
-  logic              s_path_memo_read_valid_q;
+  logic [12:0] s_path_memo_addr_q, s_path_memo_probe_q;
+  logic [63:0] s_path_memo_key, s_path_memo_read_key;
+  logic s_path_memo_ready, s_path_memo_done, s_path_memo_read_valid;
   logic [ 2:0][63:0] s_entry_instruction_q;
   logic              s_path_stop_valid_q;
   logic [11:0]       s_path_stop_pc_q;
@@ -258,8 +262,8 @@ module apu_microcode_loader #(
   assign actual_crc_o = s_actual_crc_q;
   assign load_count_o = s_load_count_q;
   assign proof_visit_count_o = s_path_visit_q;
-  assign proof_memo_full_o = (s_state_q == PathMemoCheck) && s_path_memo_read_valid_q &&
-      (s_path_memo_read_key_q != s_path_memo_key) && (s_path_memo_probe_q == PathMemoLast);
+  assign proof_memo_full_o = (s_state_q == PathMemoCheck) && s_path_memo_read_valid &&
+      (s_path_memo_read_key != s_path_memo_key) && (s_path_memo_probe_q == PathMemoLast);
 
   for (genvar entry = 0; entry < 3; entry++) begin : gen_entry_outputs
     assign entry_pc_o[entry]             = s_header_v2 ?
@@ -522,27 +526,27 @@ module apu_microcode_loader #(
   assign s_path_visit_limit = s_header_v2 ? 19'(PathTraversalLimitV2) : 19'(PathTraversalLimitV1);
 
   if (EnableP5) begin : gen_path_memo
-    logic [63:0] s_key_mem  [0:PathMemoDepth-1];
-    logic        s_valid_mem[0:PathMemoDepth-1];
-
-    always_ff @(posedge clk_i) begin
-      if (s_state_q == PathMemoClear) begin
-        s_valid_mem[s_path_memo_clear_q] <= 1'b0;
-      end
-      if (s_state_q == PathMemoRead) begin
-        s_path_memo_read_key_q   <= s_key_mem[s_path_memo_addr_q];
-        s_path_memo_read_valid_q <= s_valid_mem[s_path_memo_addr_q];
-      end
-      if ((s_state_q == PathMemoCheck) && !s_path_memo_read_valid_q) begin
-        s_key_mem[s_path_memo_addr_q]   <= s_path_memo_key;
-        s_valid_mem[s_path_memo_addr_q] <= 1'b1;
-      end
-    end
+    apu_proof_memo #(
+        .Depth(PathMemoDepth)
+    ) u_proof_memo (
+        .clk_i       (clk_i),
+        .rst_n_i     (rst_n_i),
+        .abort_i     (resource_reset_i || abort_i),
+        .clear_i     (s_state_q == PathMemoClear),
+        .lookup_i    (s_state_q == PathMemoRead),
+        .insert_i    (s_state_q == PathMemoInsert),
+        .addr_i      (s_path_memo_addr_q),
+        .key_i       (s_path_memo_key),
+        .ready_o     (s_path_memo_ready),
+        .done_o      (s_path_memo_done),
+        .read_valid_o(s_path_memo_read_valid),
+        .read_key_o  (s_path_memo_read_key)
+    );
   end else begin : gen_no_path_memo
-    always_comb begin
-      s_path_memo_read_key_q   = 64'd0;
-      s_path_memo_read_valid_q = 1'b0;
-    end
+    assign s_path_memo_ready      = 1'b1;
+    assign s_path_memo_done       = 1'b1;
+    assign s_path_memo_read_valid = 1'b0;
+    assign s_path_memo_read_key   = 64'd0;
   end
 
 `ifdef HAVE_SRAM_MACRO
@@ -777,7 +781,6 @@ module apu_microcode_loader #(
       s_path_visit_q             <= 19'd0;
       s_path_memo_addr_q         <= 13'd0;
       s_path_memo_probe_q        <= 13'd0;
-      s_path_memo_clear_q        <= 13'd0;
       s_path_stop_valid_q        <= 1'b0;
       s_path_stop_pc_q           <= 12'd0;
       s_entry_instruction_q      <= '0;
@@ -815,7 +818,8 @@ module apu_microcode_loader #(
       if ((s_state_q inside {
             HeaderValidate, DescriptorValidate, Validate, ScanRequest, ScanWait, ScanCheck,
             PathRequest, PathWait, PathCheck, PathPop, PathPopLoad, PathMemoClear,
-            PathMemoStart, PathMemoRead, PathMemoCheck, Finish
+            PathMemoClearWait, PathMemoStart, PathMemoRead, PathMemoReadWait,
+            PathMemoCheck, PathMemoInsert, PathMemoInsertWait, Finish
           }) &&
           (resource_reset_i || abort_i)) begin
         s_state_q      <= Idle;
@@ -1119,12 +1123,11 @@ module apu_microcode_loader #(
               s_path_visit_q         <= 19'd0;
               s_path_memo_addr_q     <= 13'd0;
               s_path_memo_probe_q    <= 13'd0;
-              s_path_memo_clear_q    <= 13'd0;
               s_path_stop_valid_q    <= 1'b0;
               s_state_q              <= ScanRequest;
             end
           end
-          ScanRequest:  s_state_q <= ScanWait;
+          ScanRequest:        s_state_q <= ScanWait;
           ScanWait: begin
             if (store_valid_i) s_state_q <= ScanCheck;
           end
@@ -1190,13 +1193,9 @@ module apu_microcode_loader #(
             end
           end
           PathMemoClear: begin
-            if (s_path_memo_clear_q == PathMemoLast) begin
-              s_path_memo_clear_q <= 13'd0;
-              s_state_q           <= PathMemoStart;
-            end else begin
-              s_path_memo_clear_q <= s_path_memo_clear_q + 1'b1;
-            end
+            if (s_path_memo_ready) s_state_q <= PathMemoClearWait;
           end
+          PathMemoClearWait:  if (s_path_memo_done) s_state_q <= PathMemoStart;
           PathMemoStart: begin
             if (s_call_depth_q > 3'd2) begin
               s_state_q <= PathRequest;
@@ -1206,12 +1205,15 @@ module apu_microcode_loader #(
               s_state_q           <= PathMemoRead;
             end
           end
-          PathMemoRead: s_state_q <= PathMemoCheck;
+          PathMemoRead: begin
+            if (s_path_memo_ready) s_state_q <= PathMemoReadWait;
+          end
+          PathMemoReadWait:   if (s_path_memo_done) s_state_q <= PathMemoCheck;
           PathMemoCheck: begin
-            if (s_path_memo_read_valid_q && (s_path_memo_read_key_q == s_path_memo_key)) begin
+            if (s_path_memo_read_valid && (s_path_memo_read_key == s_path_memo_key)) begin
               s_state_q <= PathPop;
-            end else if (!s_path_memo_read_valid_q) begin
-              s_state_q <= PathRequest;
+            end else if (!s_path_memo_read_valid) begin
+              s_state_q <= PathMemoInsert;
             end else if (s_path_memo_probe_q == PathMemoLast) begin
               // A full table cannot weaken or reject the proof; traverse this state normally.
               s_state_q <= PathRequest;
@@ -1221,6 +1223,10 @@ module apu_microcode_loader #(
               s_state_q           <= PathMemoRead;
             end
           end
+          PathMemoInsert: begin
+            if (s_path_memo_ready) s_state_q <= PathMemoInsertWait;
+          end
+          PathMemoInsertWait: if (s_path_memo_done) s_state_q <= PathRequest;
           PathRequest: begin
             if (s_path_visit_q >= s_path_visit_limit) begin
               if (!s_scan_control_err_q || (entry_pc_o[s_scan_entry_q] < s_scan_control_pc_q)) begin
@@ -1394,7 +1400,7 @@ module apu_microcode_loader #(
               end
             end
           end
-          default:      s_state_q <= Idle;
+          default:            s_state_q <= Idle;
         endcase
     end
   end

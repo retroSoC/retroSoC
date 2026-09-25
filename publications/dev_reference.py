@@ -21,10 +21,11 @@ APU_CONFIGURATION_SOURCES = (
 
 APU_SOURCES = (
     "scripts/apu_mcasm.py", "scripts/apu_isa.py", "scripts/apu_p5_coefficients.py",
-    "scripts/apu_kws.py", "scripts/build_apu_p5_bundle.py",
+    "scripts/apu_kws.py", "scripts/apu_kws_coeff.py", "scripts/build_apu_p5_bundle.py",
     "rtl/ip/multimedia/apu_p5_codecs.apus", "rtl/ip/multimedia/apu_define.svh",
     "rtl/ip/multimedia/apb4_apu.sv", "rtl/ip/multimedia/apu_local_sram.sv",
-    "rtl/ip/multimedia/apu_kws_sram_client.sv",
+    "rtl/ip/multimedia/apu_kws_sram_client.sv", "rtl/ip/multimedia/apu_kws_coeff_store.sv",
+    "rtl/ip/multimedia/apu_kws_coeff_loader.sv", "rtl/ip/multimedia/apu_proof_memo.sv",
     "rtl/ip/multimedia/apu_reg.sv", "crt/include/retrosoc/hal/apu_regs.h",
     "scripts/apu_abi_digest.py", "app/apps/apu_release/main.c",
     *APU_CONFIGURATION_SOURCES,
@@ -124,7 +125,7 @@ def apu_configurations(root: Path) -> list[dict]:
     bits = constants(root, "rtl/ip/multimedia/apu_define.svh")
     rows = []
     for name, profile in (("Default PRODUCT", "configs/ci/ihp130.mk"),
-                          ("P7 acceptance", "configs/ci/ihp130-apu.mk")):
+                          ("P9 acceptance", "configs/ci/ihp130-apu.mk")):
         source = (root / profile).read_text(encoding="utf-8")
         assignments = re.findall(r"^APU_ENABLE_P7\s*[:?+]?=\s*([^\n#]+)", source, re.M)
         if len(assignments) > 1 or (assignments and assignments[0].strip() not in {"YES", "NO"}):
@@ -137,11 +138,11 @@ def apu_configurations(root: Path) -> list[dict]:
                                  for codec in ("WAV", "FLAC", "MP3", "KWS")}})
         if rows[-1]["formats"] != {"WAV": True, "FLAC": True, "MP3": False, "KWS": enabled}:
             raise ValueError("APU deployed format capability meanings changed")
-        if name == "P7 acceptance" and (re.findall(r"^APP\s*:=\s*(\w+)\s*$", source, re.M) != ["apu_release"]
+        if name == "P9 acceptance" and (re.findall(r"^APP\s*:=\s*(\w+)\s*$", source, re.M) != ["apu_release"]
                         or re.findall(r"^HAVE_CSR\s*:=\s*(\w+)\s*$", source, re.M) != ["YES"]):
-            raise ValueError("APU P7 acceptance application or IRQ configuration changed")
+            raise ValueError("APU P9 acceptance application or IRQ configuration changed")
     if [(r["enabled"], r["capability"], r["digest"]) for r in rows] != [
-            (False, 0x1BD, 0), (True, 0x1FD, 0xF5005D7C)]:
+            (False, 0x1BD, 0), (True, 0x3FD, 0x63E96066)]:
         raise ValueError("review APU configuration identities")
     values = constants(root, "crt/include/retrosoc/hal/apu_regs.h")
     if (values.get("RS_APU_DIGEST_P7_IMPLEMENTED"), values.get("RS_APU_CAPABILITY0_P5_IMPLEMENTED"),
@@ -156,11 +157,11 @@ def apu_acceptance_steps(root: Path) -> list[dict]:
     text = (root / source).read_text(encoding="utf-8")
     body = function_body(text, "rs_apu_release_run")
     stages = (
-        ("probe", "rs_apu_probe", 5, "After holding HP in reset, waiting for SDRAM and loading the HP bundle, LP checks the P7 capability and ABI digest."),
+        ("probe", "rs_apu_probe", 5, "After holding HP in reset, waiting for SDRAM and loading the HP bundle, LP checks the P9 capability and ABI digest."),
         ("quiesce", "rs_apu_release_quiesce", 6, "LP quiesces the APU resource and waits for LP ownership, asserted quiesce, reset released and engine idle."),
-        ("stage", "rs_apu_release_stage_assets", 7, "With the resource quiesced, LP stages the APUMC image, APUM model, WAV input and KWS PCM window in SDRAM."),
-        ("acl", "rs_apu_set_acl", 8, "LP configures the permitted read and write address ranges before requesting either image load."),
-        ("load", "rs_apu_release_load_images", 9, "LP loads the microcode, checks its valid/lock state and CRC, then loads the model and checks its status and CRC."),
+        ("stage", "rs_apu_release_stage_assets", 7, "With the resource quiesced, LP stages the APUMC, APUC and APUM images plus WAV input and the KWS PCM window in SDRAM."),
+        ("acl", "rs_apu_set_acl", 8, "LP configures the permitted read and write address ranges before requesting the three image loads."),
+        ("load", "rs_apu_release_load_images", 9, "LP loads and verifies APUMC, APUC and APUM in that order before publishing any KWS work."),
         ("handoff", "rs_apu_release_handoff", 10, "LP hands ownership to HP after successful image loading, then publishes the shared page and mailbox request before releasing HP."),
     )
     calls = list(re.finditer(r"\b(" + "|".join(row[1] for row in stages) + r")\s*\(", body))
@@ -172,8 +173,8 @@ def apu_acceptance_steps(root: Path) -> list[dict]:
         if failures != [str(stage[2])]:
             raise ValueError("APU acceptance failure checkpoint changed")
     loads = function_body(text, "rs_apu_release_load_images")
-    if re.findall(r"\b(rs_apu_(?:microcode|kws_model)_load)\s*\(", loads) != [
-            "rs_apu_microcode_load", "rs_apu_kws_model_load"]:
+    if re.findall(r"\b(rs_apu_(?:microcode|kws_coeff|kws_model)_load)\s*\(", loads) != [
+            "rs_apu_microcode_load", "rs_apu_kws_coeff_load", "rs_apu_kws_model_load"]:
         raise ValueError("APU acceptance image-load order changed")
     tail = body[calls[-1].end():]
     if re.findall(r"\b(rs_apu_release_fill_page|rs_hp_mailbox_clear_lp_interrupt|rs_hp_mailbox_send_to_hp|"

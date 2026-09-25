@@ -39,6 +39,17 @@ static rs_dma_tcd_t s_apu_release_tcd __attribute__((aligned(64)));
 
 _Static_assert(sizeof(rs_hp_boot_header_t) == UINT32_C(128), "HP bundle header ABI mismatch");
 
+static uint32_t rs_apu_release_cycle(void) {
+    uint32_t cycle;
+
+    __asm__ volatile("csrr %0, mcycle" : "=r"(cycle));
+    return cycle;
+}
+
+static void rs_apu_release_milestone(const char *name) {
+    printf("APU_RELEASE_CYCLE:%s:%08lx\n", name, (unsigned long)rs_apu_release_cycle());
+}
+
 static uint32_t rs_apu_release_crc32_byte(uint32_t crc, uint8_t value) {
     crc ^= value;
     for (uint32_t bit = 0U; bit < 8U; ++bit) {
@@ -232,6 +243,11 @@ static bool rs_apu_release_stage_assets(void) {
                               RS_APU_RELEASE_APUMC_SIZE, RS_APU_RELEASE_APUMC_CRC)) {
         return false;
     }
+    if (!rs_apu_release_stage((uint32_t)(uintptr_t)rs_apu_release_apuc,
+                              RS_APU_RELEASE_COEFF_ADDRESS, RS_APU_RELEASE_APUC_SIZE,
+                              RS_APU_RELEASE_APUC_CRC)) {
+        return false;
+    }
     if (!rs_apu_release_stage((uint32_t)(uintptr_t)rs_apu_release_apum,
                               RS_APU_RELEASE_MODEL_ADDRESS, RS_APU_RELEASE_APUM_SIZE,
                               RS_APU_RELEASE_APUM_CRC)) {
@@ -272,6 +288,11 @@ static uint32_t rs_apu_release_load_images(void) {
         .bytes = RS_APU_RELEASE_APUM_SIZE,
         .expected_crc = RS_APU_RELEASE_APUM_PAYLOAD_CRC,
     };
+    const rs_apu_image_t coefficient_image = {
+        .address = RS_APU_RELEASE_COEFF_ADDRESS,
+        .bytes = RS_APU_RELEASE_APUC_SIZE,
+        .expected_crc = RS_APU_RELEASE_APUC_PAYLOAD_CRC,
+    };
     uint32_t status;
     rs_status_t load_status;
 
@@ -290,20 +311,37 @@ static uint32_t rs_apu_release_load_images(void) {
         return 2U;
     }
     printf("APU_RELEASE_MC:%08lx\n", (unsigned long)RS_APU_REG(RS_APU_ABI_MC_ACTUAL_CRC));
+    rs_apu_release_milestone("MC");
+    __asm__ volatile("fence rw, rw" ::: "memory");
+    load_status = rs_apu_kws_coeff_load(&coefficient_image, RS_APU_RELEASE_LOAD_TIMEOUT);
+    if (load_status != RS_OK) {
+        printf("APU_RELEASE_COEFFERR:%d\n", (int)load_status);
+        rs_apu_release_dump_apu();
+        return 3U;
+    }
+    status = RS_APU_REG(RS_APU_ABI_KWS_COEFF_STATUS);
+    if (((status & UINT32_C(6)) != UINT32_C(6)) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC) != RS_APU_RELEASE_APUC_PAYLOAD_CRC)) {
+        rs_apu_release_dump_apu();
+        return 4U;
+    }
+    printf("APU_RELEASE_COEFF:%08lx\n", (unsigned long)RS_APU_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC));
+    rs_apu_release_milestone("COEFF");
     __asm__ volatile("fence rw, rw" ::: "memory");
     load_status = rs_apu_kws_model_load(&model_image, RS_APU_RELEASE_LOAD_TIMEOUT);
     if (load_status != RS_OK) {
         printf("APU_RELEASE_MODELERR:%d\n", (int)load_status);
         rs_apu_release_dump_apu();
-        return 3U;
+        return 5U;
     }
     status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
     if (((status & UINT32_C(6)) != UINT32_C(6)) ||
         (RS_APU_REG(RS_APU_ABI_KWS_MODEL_ACTUAL_CRC) != RS_APU_RELEASE_APUM_PAYLOAD_CRC)) {
         rs_apu_release_dump_apu();
-        return 4U;
+        return 6U;
     }
     printf("APU_RELEASE_MODEL:%08lx\n", (unsigned long)RS_APU_REG(RS_APU_ABI_KWS_MODEL_ACTUAL_CRC));
+    rs_apu_release_milestone("MODEL");
     return 0U;
 }
 
@@ -361,6 +399,7 @@ static bool rs_apu_release_handoff(void) {
             ((owner & (UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE)) == 0U) &&
             ((owner & (UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_RESET)) == 0U)) {
             printf("APU_RELEASE_HANDOFF:%u\n", (unsigned int)after.handoff_count);
+            rs_apu_release_milestone("HANDOFF");
             return true;
         }
     }
@@ -418,6 +457,7 @@ static void rs_apu_release_run(void) {
         rs_test_finish(RS_TEST_FAILED, UINT8_C(1));
     }
     printf("APU_RELEASE_BOOT\n");
+    rs_apu_release_milestone("BOOT");
     if ((rs_sysctrl_set_hp_release(false) != RS_OK) ||
         (rs_sysctrl_select_hp_debug(true) != RS_OK) ||
         (rs_sysctrl_get_hp_status(&hp_status) != RS_OK) || !hp_status.present ||
@@ -425,14 +465,17 @@ static void rs_apu_release_run(void) {
         rs_apu_release_fail(UINT8_C(2));
     }
     printf("APU_RELEASE_HP_HELD\n");
+    rs_apu_release_milestone("HP_HELD");
     if (!rs_apu_release_wait_sdram()) {
         rs_apu_release_fail(UINT8_C(3));
     }
     printf("APU_RELEASE_SDRAM\n");
+    rs_apu_release_milestone("SDRAM");
     if (!rs_apu_release_load_bundle()) {
         rs_apu_release_fail(UINT8_C(4));
     }
     printf("APU_RELEASE_BUNDLE\n");
+    rs_apu_release_milestone("BUNDLE");
     if ((rs_apu_probe(&info) != RS_OK) || (info.capability0 != RS_APU_CAPABILITY0_P7_IMPLEMENTED) ||
         (info.abi_digest != RS_APU_DIGEST_P7_IMPLEMENTED)) {
         rs_apu_release_fail(UINT8_C(5));
@@ -443,10 +486,12 @@ static void rs_apu_release_run(void) {
         rs_apu_release_fail(UINT8_C(6));
     }
     printf("APU_RELEASE_QUIESCED\n");
+    rs_apu_release_milestone("QUIESCED");
     if (!rs_apu_release_stage_assets()) {
         rs_apu_release_fail(UINT8_C(7));
     }
     printf("APU_RELEASE_STAGED\n");
+    rs_apu_release_milestone("STAGED");
     if (rs_apu_set_acl(RS_APU_RELEASE_ACL_READ_BASE, RS_APU_RELEASE_ACL_READ_LIMIT,
                        RS_APU_RELEASE_ACL_WRITE_BASE, RS_APU_RELEASE_ACL_WRITE_LIMIT) != RS_OK) {
         rs_apu_release_fail(UINT8_C(8));
@@ -471,6 +516,7 @@ static void rs_apu_release_run(void) {
         rs_apu_release_fail(UINT8_C(12));
     }
     printf("APU_RELEASE_HP_RUN\n");
+    rs_apu_release_milestone("HP_RUN");
 
     /* Wait for the HP done event; the bounded poll only exits early on a stuck
      * hart because every hardware failure path publishes its own event. */
@@ -484,6 +530,7 @@ static void rs_apu_release_run(void) {
         (event.argument != 0U)) {
         rs_apu_release_fail(UINT8_C(13));
     }
+    rs_apu_release_milestone("HP_EVENT");
     for (budget = 0U; budget < RS_APU_RELEASE_SETTLE_SPINS; ++budget) {
         __asm__ volatile("nop" ::: "memory");
     }
@@ -501,6 +548,7 @@ static void rs_apu_release_run(void) {
     printf("APU_RELEASE_TRAP:%lu:%lu\n", (unsigned long)page->fault_mcause,
            (unsigned long)page->fault_mtval);
     printf("APU_RELEASE_PASS\n");
+    rs_apu_release_milestone("PASS");
     rs_test_finish(RS_TEST_PASSED, UINT8_C(0));
 }
 

@@ -26,6 +26,35 @@ Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 
+`generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
+and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
+schema and release validator; generated assets remain below the selected
+variant's `apu/coefficients/` directory.
+`apu_p9_evidence.py` initializes or assembles the six frozen P9 evidence files;
+missing qualifying runs stay explicitly `unrun` rather than becoming passes.
+`apu_p9_memory_ab.py` performs the like-for-like inferred-memory, macro-count,
+synthesis-time and process-tree peak-RSS comparison from two explicit variant
+roots; it never creates or switches Git worktrees itself.
+
+The frozen P9 qualification entry points are explicit and do not turn smoke
+runs into release evidence:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk setup-apu-kws-reference apu-p9-coefficients apu-p9-evidence
+python3 scripts/run_apu_p7_kws_rtl.py \
+  --build-dir build/<candidate>/apu/p9/accuracy --profile ihp130-p9
+python3 scripts/run_apu_p7_concurrent_rtl.py \
+  --build-dir build/<candidate>/apu/p9/concurrent --seconds 60
+make CONFIG=configs/ci/ihp130.mk apu-p9-memory-ab \
+  APU_P9_BASELINE_ROOT=build/<baseline> APU_P9_CANDIDATE_ROOT=build/<candidate>
+```
+
+Both A/B roots must come from clean committed revisions; the baseline is the
+frozen pre-P9 revision and both configurations must enable P7 with the same
+IHP130 tool, PDK, recipe, and dependency inputs. Assemble the six final reports
+with `scripts/apu_p9_evidence.py assemble`; a `passed` input is accepted only
+when its report-specific checks and named source artifacts are complete.
+
 `setup_npu_reference.py` prepares the locked KWS/VWW inputs and the existing
 TensorFlow/gemmlowp reference sources. `npu_framework_reference.py` builds the
 host-only adapter in `tests/cpp/npu_framework_reference.cc`; its integer kernels

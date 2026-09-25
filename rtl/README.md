@@ -164,8 +164,10 @@ retained, not an enabled third codec. The P9 refreeze requires macro-backed
 coefficient/profile storage and microcode memoization instead of large inferred
 arrays/case ROMs. Its full IHP130 inventory is 76 4 KiB wrappers: the existing
 44 (including proof stack), 17 memo/bitmap and 15 coefficient/profile wrappers.
-APUC startup loading and additive APB V1.2 are future P9 implementation
-obligations; this refreeze does not claim that they are already implemented.
+The implementation provides LP APUC startup loading, bounded synchronous
+coefficient access, macro-backed proof memoization and additive APB V1.2.
+Release qualification still requires the frozen P9 evidence rather than source
+presence alone.
 The model, fixed-point results, 32/112 KiB advertised capacities and existing
 system clock/reset/IRQ/resource assignments remain fixed. Macro/init/latency
 changes must re-pass P5/P7 functional/concurrency tests and the P9 synthesis

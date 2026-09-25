@@ -33,7 +33,7 @@ remain. Strict source checks remain enabled.
 
 The preceding technical refresh retained **v0.5 DRAFT / 2026-09-22** and reviewed commit
 `b209ccedfe6f9c33078ef082a4d31580d4d1a845`. The main reference remains
-IHP130 PRODUCT / 32 KiB SRAM; the APU P7 acceptance profile is separate.
+IHP130 PRODUCT / 32 KiB SRAM; the APU P9 acceptance profile is separate.
 This is a publication refresh, not a hardware change or a new qualification campaign.
 
 That technical refresh compared against the 777-page baseline bound to
@@ -62,7 +62,7 @@ release-status policies are not retroSoC specifications.
 | --- | --- | --- | --- |
 | NPU | The existing chapter adequately covers the software-launchable eight-operator engine, private DMA/SRAM, compiler/HAL, descriptor/parameter layouts and normal/abort behavior. | Already covered; retain the chapter, geometry, static graph subset and numeric profile. No new NPU capability is introduced by this refresh. | Attach matching full-corpus and physical reports before claiming speedup, accuracy or timing closure. Distinguish the deployed burst limit from the reusable DMA default. |
 | APU formats and base programming | APUMC V1/V2, 4096-word current store, seven classes/62 opcodes, APUM model and 128-byte job format are already covered. | Already covered; retain the formats, register/HAL reference and default/P7 identity distinction. | Preserve format compatibility and separate the fixed APUM engine from NPU deployment. MP3 remains unsupported. |
-| APU summary, configuration and acceptance | Default KWS is off; P7 enables it with digest `0xF5005D7C`. The checked-in WAV/FLAC image is distinct from full production-job qualification. | Correct summary/body/table consistency while retaining the detailed formats and bare-metal acceptance reference. No native Linux ASoC support is claimed. | A smoke wrapper or missing-data early return is not the full accuracy or 60-second-per-scenario campaign. Keep actual workload, clock, source and result artifacts with any pass. |
+| APU summary, configuration and acceptance | Default KWS is off; the P9 acceptance profile enables KWS and APUC loading with digest `0x63E96066`. The checked-in WAV/FLAC image is distinct from full production-job qualification. | Correct summary/body/table consistency while retaining the detailed formats and bare-metal acceptance reference. No native Linux ASoC support is claimed. | A smoke wrapper or missing-data early return is not the full accuracy or 60-second-per-scenario campaign. Keep actual workload, clock, source and result artifacts with any pass. |
 | GA2D | Existing FILL/COPY/CONVERT/opaque BLEND/A8 programming coverage and P6 workload/evidence boundaries are adequate. | Already covered; retain functional ABI and schema-3 performance-method descriptions. | The dated composition target and 48 MHz slow-corner timing were not met. Full-product closure and current-source measurements still require matching artifacts. |
 | Fabric, memory conversion and resources | Ten masters/resources, NPU master/resource 9, Resource ABI 1.2 and fragmented 64-to-32 long-burst conversion are already described. | Already covered; retain source-bound topology, matrices, circuits, credits and lifecycle references. | Preserve permission, source-ID and boundary rules. Burst admission is not a throughput guarantee. |
 | Address/register/IRQ/pad inventories | Existing generation and field-reference mechanisms cover their declared scope, including the independent NPU chapter. | Already covered; retain inventories, instance distinctions and stable anchors. Correct mailbox-purpose summaries from the actual register offsets and HAL/RTL producer paths. | Keep chapter, feature, register, diagram and API coverage synchronized. NPU has no implied new external pins. |
@@ -76,11 +76,10 @@ release-status policies are not retroSoC specifications.
 
 ## Source/specification discrepancies and follow-up
 
-- [APU specification](../../docs/ip/apu.md) describes sixteen KWS technology-macro
-  banks, while [the SRAM client](../../rtl/ip/multimedia/apu_kws_sram_client.sv)
-  uses inferred storage with combinational reads. Preserve the logical/physical
-  distinction in the datasheet. Reconcile the engineering contract or implement
-  and verify the macro change as a separate hardware task.
+- [APU specification](../../docs/ip/apu.md) defines synchronous macro-backed KWS,
+  coefficient and proof-memo storage. The RTL exposes the frozen wrapper inventory,
+  but physical replacement, synthesis-time and peak-RSS claims remain conditional on
+  the revision-qualified P9 A/B evidence rather than on source structure alone.
 - Older NPU phase comments and some descriptions predate the enabled scheduler
   and capability returns. Keep publication claims tied to instantiated parameters,
   register logic and the compute/DMA path. Clean up stale engineering comments

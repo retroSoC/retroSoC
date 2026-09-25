@@ -135,7 +135,9 @@ def _compile_dump_tb(build_dir: Path) -> dict[str, Path | None]:
                 f"+incdir+{multimedia}",
                 str(common / "interface/axi4_stream_if.sv"),
                 str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_coeff_store.sv"),
                 str(multimedia / "apu_kws_engine.sv"),
+                str(ROOT / "tests/rtl/apu_kws_coeff_fixture.sv"),
                 str(DUMP_TB),
                 "",
             ]
@@ -209,12 +211,17 @@ def test_apu_p7_frontend_rtl_differential(tmp_path: Path) -> None:
         windows[index] = padded
         _write_hex(pcm_dir / f"pcm_{index:06d}.hex", padded)
     apum_hex = tmp_path / "kws_apum.hex"
-    _write_hex(apum_hex, import_tflite(TFLITE))
+    image = import_tflite(TFLITE)
+    _write_hex(apum_hex, image)
+    apuc_hex = tmp_path / "kws_apuc.hex"
+    apuc, _manifest = gen.build_apuc(image)
+    _write_hex(apuc_hex, apuc)
     binaries = _compile_dump_tb(tmp_path)
     dumps: dict[int, tuple[bytes, int]] = {}
     for first, count in spans:
         plusargs = [
             f"+APUM_HEX={apum_hex}",
+            f"+APUC_HEX={apuc_hex}",
             f"+PCM_DIR={pcm_dir}",
             f"+WINDOW_COUNT={count}",
             f"+FIRST_INDEX={first}",

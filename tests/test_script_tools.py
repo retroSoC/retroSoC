@@ -1726,7 +1726,7 @@ def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() 
     assert "python3 rtl/ip/setup.py" in quality
     assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
     assert "--requirement requirements/build.txt" in quality
-    assert "make setup-apu-reference setup-npu-reference" in quality
+    assert "make setup-apu-reference setup-apu-kws-reference setup-npu-reference" in quality
     for path in (
         ".cache/retrosoc/sources/apu-mlperf-tiny",
         ".cache/retrosoc/sources/apu-kws-mfcc",

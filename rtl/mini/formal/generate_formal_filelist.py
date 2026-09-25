@@ -324,6 +324,11 @@ def source_files(target: str) -> list[Path]:
             MULTIMEDIA / "apu_codec_controller.sv",
             SCRIPT_DIR / "apu_kws_formal.sv",
         ]
+    if target == "apu_p9":
+        return [
+            MULTIMEDIA / "apu_kws_coeff_loader.sv",
+            SCRIPT_DIR / "apu_p9_formal.sv",
+        ]
     if target == "apu_primitives" or target in APU_PRIMITIVE_SCENARIOS:
         return [
             COMMON_RTL / "utils/fifo.sv",
@@ -342,6 +347,7 @@ def source_files(target: str) -> list[Path]:
         return [
             ROOT / "rtl/tech/tc_sram.sv",
             MULTIMEDIA / "apu_microcode_pkg.sv",
+            MULTIMEDIA / "apu_proof_memo.sv",
             MULTIMEDIA / "apu_microcode_loader.sv",
             SCRIPT_DIR / "apu_loader_formal.sv",
         ]
@@ -453,6 +459,7 @@ def parse_args() -> argparse.Namespace:
             "apu",
             "apu_codec",
             "apu_kws",
+            "apu_p9",
             "apu_primitives",
             *APU_PRIMITIVE_SCENARIOS,
             *APU_LOADER_SCENARIOS,

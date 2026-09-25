@@ -15,7 +15,7 @@ board wiring, a technology macro or additional software. A reserved address rang
   ([Role],[Committed profile],[Boundary]),
   (([PRODUCT reference],code(doc.profile),[Fixed LP/HP topology; reference for the main register and pad inventories.]),
    ([HP boot acceptance],code(doc.hp_profile),[Same PRODUCT organization; SRAM-resident LP loader and an external HP bundle.]),
-   ([APU P7 acceptance],code("configs/ci/ihp130-apu.mk"),[32 KiB SRAM, CSR-enabled LP orchestration and a bare-metal HP audio/KWS payload.]),
+   ([APU P9 acceptance],code("configs/ci/ihp130-apu.mk"),[32 KiB SRAM, CSR-enabled LP orchestration, APUC loading and a bare-metal HP audio/KWS payload.]),
    ([MPW compatibility],code(doc.mpw_profile),[Selectable legacy user core/IP; use only the separate MPW appendix.])),
   widths:(0.75fr,1.35fr,1.6fr))
 The source revision printed in Document Control identifies the hardware/software contract.

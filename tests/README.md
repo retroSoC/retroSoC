@@ -50,6 +50,13 @@ tooling.
   every pinned official FLAC file against locked libFLAC and records matching
   released-APUMC production results from identical verification-only Icarus
   and Verilator fixtures.
+- `test_apu_p9_coefficients.py` checks the frozen APUC hashes and complete
+  logical-to-bank inverse map with an independent frozen oracle.
+  `test_apu_p9_storage.py` runs the synchronous
+  coefficient clients and macro-memo clear/insert/lookup boundary fixture;
+  the P8 quiesced-loader test covers the successful integrated APUC DMA and
+  readback path. The full corruption/retry/reset/abort lifecycle remains a
+  separate required P9 evidence matrix and is not inferred from that smoke.
 - `test_apu_p8_quiesce_load.py` drives the full `apb4_apu` shell and checks
   that MICROCODE_LOAD and MODEL_LOAD DMA fetches are admitted and complete
   while the LP quiesce is held (the APU-P8 loader-admission regression).

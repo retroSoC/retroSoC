@@ -45,6 +45,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from apu_codecs import crc8, crc16, decode_flac, decode_wav, process_pcm  # noqa: E402
 from apu_kws import APUM_PAYLOAD_CRC, APUM_SHA256  # noqa: E402
+from generate_apu_kws_rtl_constants import build_apuc  # noqa: E402
 
 PCLK_HZ = 48_000_000
 FULL_GATE_SECONDS = 60.0
@@ -175,8 +176,11 @@ def _production_sources() -> list[Path]:
         "apu_ring_scheduler.sv",
         "apu_stream_router.sv",
         "apu_control_store.sv",
+        "apu_proof_memo.sv",
         "apu_microcode_loader.sv",
         "apu_local_sram.sv",
+        "apu_kws_coeff_store.sv",
+        "apu_kws_coeff_loader.sv",
         "apu_kws_engine.sv",
         "apu_kws_sram_client.sv",
         "apu_kws_model_loader.sv",
@@ -452,6 +456,7 @@ def _run_scenario(
         compile_result["binary"],
         f"+APUMC_HEX={artifacts['apumc_hex']}",
         f"+APUM_HEX={artifacts['apum_hex']}",
+        f"+APUC_HEX={artifacts['apuc_hex']}",
         f"+WAV_HEX={scenario_dir / 'wav.hex'}",
         f"+FLAC_HEX={scenario_dir / 'flac.hex'}",
         f"+WAV_PCM_HEX={scenario_dir / 'wav_pcm.hex'}",
@@ -658,7 +663,15 @@ def main() -> int:
     _hex_words(apumc_hex, apumc_payload, 16384)
     apum_hex = build_dir / "kws-apum.hex"
     _hex_words(apum_hex, apum_payload, 8192)
-    artifacts = {"apumc_hex": str(apumc_hex), "apum_hex": str(apum_hex), "scenario_dir": ""}
+    apuc_hex = build_dir / "kws-apuc.hex"
+    apuc_payload, _layout = build_apuc(apum_payload)
+    _hex_words(apuc_hex, apuc_payload, 15376)
+    artifacts = {
+        "apumc_hex": str(apumc_hex),
+        "apum_hex": str(apum_hex),
+        "apuc_hex": str(apuc_hex),
+        "scenario_dir": "",
+    }
 
     started = time.monotonic()
     compile_result = _compile(build_dir)

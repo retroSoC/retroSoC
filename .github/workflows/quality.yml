@@ -115,7 +115,7 @@ jobs:
           tools: verilator sv2v iverilog yosys
 
       - name: Set up locked accelerator references
-        run: make setup-apu-reference setup-npu-reference
+        run: make setup-apu-reference setup-apu-kws-reference setup-npu-reference
 
       - name: Test scripts and RTL fixtures
         run: python3 -m pytest -q

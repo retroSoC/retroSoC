@@ -1828,6 +1828,14 @@
         },
         {
           "lsb": 11,
+          "msb": 11,
+          "name": "COEFFICIENT_LOAD_DONE",
+          "description": "Coefficient load reached a terminal success or error state.",
+          "reset": "Register reset applies",
+          "expression": "`APB4_APU__IRQ_COEFFICIENT_LOAD_DONE"
+        },
+        {
+          "lsb": 12,
           "msb": 31,
           "name": "Reserved",
           "description": "Reserved; write zero.",
@@ -1838,7 +1846,7 @@
       "reset": "Not retained (command/data port)"
     },
     "main.IP_VERSION": {
-      "description": "Expanded P5 uses APB interface V1.1 (0x00010001) and retains the frozen V1.0 register offsets and accepted fields."
+      "description": "P9 uses additive APB interface V1.2 (0x00010002), preserving the frozen V1.0/V1.1 offsets and accepted fields while adding coefficient discovery and loading."
     },
     "main.CAPABILITY1": {
       "description": "Expanded P5 geometry is 0x01827020: 32 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding."

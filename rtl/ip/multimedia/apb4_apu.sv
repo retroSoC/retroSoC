@@ -40,21 +40,26 @@ module apb4_apu #(
   logic [31:0] s_stream_stat, s_job_stat, s_scheduler_job_stat, s_ring_stat, s_ring_completed;
   logic [   7:0][31:0] s_job_config;
   logic [1023:0]       s_direct_descriptor;
-  logic [  10:0]       s_irq_set;
+  logic [  11:0]       s_irq_set;
   logic [   7:0]       s_mc_status;
   logic [31:0] s_mc_abi, s_mc_actual_crc, s_mc_load_count;
   logic [31:0] s_kws_status, s_kws_result, s_kws_timestamp_lo, s_kws_timestamp_hi;
   logic [31:0] s_kws_frame_count, s_kws_inference_count, s_kws_hit_count, s_kws_overrun_count;
   logic [31:0] s_kws_model_status, s_kws_model_actual_crc;
   logic [31:0] s_kws_model_addr, s_kws_model_size, s_kws_model_crc;
+  logic [31:0] s_kws_coeff_addr, s_kws_coeff_size, s_kws_coeff_crc;
+  logic [31:0] s_kws_coeff_status, s_kws_coeff_actual_crc;
+  logic [63:0] s_kws_coefficient_id;
   logic [15:0] s_kws_config;
   logic [31:0] s_kws_input_config;
   logic [ 1:0] s_kws_control;
   logic        s_kws_clear_history;
   logic        s_kws_disable_request;
   logic [10:0] s_kws_irq_set;
-  logic s_kws_model_load, s_kws_rx_ready, s_kws_busy, s_kws_idle, s_kws_disable_done;
+  logic s_kws_model_load, s_kws_coeff_load, s_kws_rx_ready, s_kws_busy, s_kws_idle;
+  logic s_kws_disable_done;
   logic s_kws_loader_busy;
+  logic s_kws_coeff_loader_busy, s_kws_coeff_valid, s_kws_coeff_lock;
   logic s_kws_config_publish;
   logic [15:0] s_kws_config_default, s_codec_kws_config;
   logic       s_codec_kws_config_valid;
@@ -78,6 +83,34 @@ module apb4_apu #(
   logic [3:0] s_kws_loader_fault_stage;
   logic [1:0] s_kws_loader_fault_resp;
   logic [31:0] s_kws_loader_fault_addr, s_kws_loader_fault_detail;
+  logic s_kws_coeff_loader_done, s_kws_coeff_loader_abort_done, s_kws_coeff_loader_fault_v;
+  logic [5:0] s_kws_coeff_loader_fault_code;
+  logic [3:0] s_kws_coeff_loader_fault_stage;
+  logic [1:0] s_kws_coeff_loader_fault_resp;
+  logic [31:0] s_kws_coeff_loader_fault_addr, s_kws_coeff_loader_fault_detail;
+  logic s_kws_coeff_dma_req, s_kws_coeff_dma_rdy, s_kws_coeff_dma_data_rdy;
+  logic [31:0] s_kws_coeff_dma_addr, s_kws_coeff_dma_bytes;
+  logic s_kws_coeff_store_active, s_kws_coeff_store_req, s_kws_coeff_store_write;
+  logic [13:0] s_kws_coeff_store_addr;
+  logic [31:0] s_kws_coeff_store_wdata;
+  logic s_kws_coeff_store_ready, s_kws_coeff_store_valid, s_kws_coeff_store_fault;
+  logic [31:0] s_kws_coeff_store_rdata;
+  logic s_kws_coeff_front_req, s_kws_coeff_front_ready;
+  logic [ 3:0] s_kws_coeff_front_kind;
+  logic [13:0] s_kws_coeff_front_index;
+  logic s_kws_coeff_front_resp_valid, s_kws_coeff_front_resp_ready;
+  logic [63:0] s_kws_coeff_front_resp_data;
+  logic s_kws_coeff_front_resp_fault;
+  logic s_kws_coeff_infer_req, s_kws_coeff_infer_ready;
+  logic [6:0] s_kws_coeff_infer_index;
+  logic s_kws_coeff_infer_resp_valid, s_kws_coeff_infer_resp_ready;
+  logic [31:0] s_kws_coeff_infer_resp_data;
+  logic s_kws_coeff_infer_resp_fault;
+  logic s_kws_coeff_profile_req, s_kws_coeff_profile_ready;
+  logic [10:0] s_kws_coeff_profile_index;
+  logic s_kws_coeff_profile_resp_valid, s_kws_coeff_profile_resp_ready;
+  logic [31:0] s_kws_coeff_profile_resp_data;
+  logic s_kws_coeff_profile_resp_fault;
   logic s_kws_engine_model_v_unused, s_kws_engine_model_lock_unused;
   logic [31:0] s_kws_engine_model_stat_unused, s_kws_engine_model_crc_unused;
   logic        s_direct_start_allowed;
@@ -238,6 +271,7 @@ module apb4_apu #(
   logic s_transport_frame_commit, s_transport_cancel;
   logic s_transport_input_pending, s_transport_output_pending, s_codec_transport_idle;
   logic s_dma_admission_block;
+  logic s_dma_quiesce, s_kws_memory_start;
   logic s_system_idle, s_resource_reset_request, s_resource_reset_apply_q;
   logic s_resource_reset_pending_q, s_resource_reset_seen_q;
   logic s_tx_route_apu, s_rx_route_apu;
@@ -331,7 +365,8 @@ module apb4_apu #(
       ((s_dma_owner_q == 3'd1) ? u_scheduler_read_axis.tready :
        ((s_dma_owner_q == 3'd2) ? u_transport_read_axis.tready :
         ((s_dma_owner_q == 3'd3) ? s_kws_loader_dma_rdy_data :
-                                   s_kws_mem_dma_data_rdy)));
+         ((s_dma_owner_q == 3'd4) ? s_kws_mem_dma_data_rdy :
+                                    s_kws_coeff_dma_data_rdy))));
   assign u_dma_write_axis.tdata = (s_dma_owner_q == 3'd2) ?
       u_transport_write_axis.tdata : u_scheduler_write_axis.tdata;
   assign u_dma_write_axis.tkeep = (s_dma_owner_q == 3'd2) ?
@@ -348,12 +383,14 @@ module apb4_apu #(
   assign u_transport_write_axis.tready = (s_dma_owner_q == 3'd2) && u_dma_write_axis.tready;
   assign u_scheduler_write_axis.tready = (s_dma_owner_q == 3'd1) && u_dma_write_axis.tready;
   assign s_irq_set = {
+    s_kws_coeff_loader_done && (s_kws_coeff_loader_fault_code != 6'd0 || s_kws_coeff_valid),
     s_seq_trap_event,
     s_xrun_evt || s_kws_irq_set[`APB4_APU__IRQ_STREAM_XRUN],
     s_fault_valid || s_kws_loader_fault_v || s_kws_fault_valid,
     s_output_watermark_evt || s_transport_event_output,
     s_input_watermark_evt || s_transport_event_input,
-    s_abort_done || s_mc_abort_done || s_seq_abort_done || s_kws_loader_abort_done,
+    s_abort_done || s_mc_abort_done || s_seq_abort_done || s_kws_loader_abort_done ||
+        s_kws_coeff_loader_abort_done,
     s_kws_loader_done,
     s_mc_load_done,
     s_kws_irq_set[`APB4_APU__IRQ_KWS_HIT],
@@ -362,13 +399,15 @@ module apb4_apu #(
   };
   assign s_tx_route_apu = s_stream_route[1:0] == 2'd1;
   assign s_rx_route_apu = s_stream_route[3:2] == 2'd1;
-  assign s_direct_start_allowed = !s_kws_loader_busy && !s_kws_disable_request &&
+  assign s_direct_start_allowed = !s_kws_loader_busy && !s_kws_coeff_loader_busy &&
+      !s_kws_disable_request &&
       s_codec_direct_allowed &&
       ((s_job_config[0][3:0] != 4'd1) ||
-       (s_kws_model_valid && s_kws_model_lock && (s_kws_control == 2'd3)));
+       (s_kws_model_valid && s_kws_model_lock && s_kws_coeff_valid && s_kws_coeff_lock &&
+        (s_kws_control == 2'd3)));
   assign s_system_idle = s_scheduler_idle && !s_dma_busy && s_stream_idle && s_mc_idle &&
       s_seq_idle && !s_primitive_busy && s_codec_idle && s_codec_transport_idle &&
-      s_kws_idle && !s_kws_busy && !s_kws_loader_busy;
+      s_kws_idle && !s_kws_busy && !s_kws_loader_busy && !s_kws_coeff_loader_busy;
   assign s_codec_kws_active = s_codec_busy && (s_codec_descriptor[3:0] == 4'd1);
   assign s_kws_disable_done = s_kws_idle && !s_codec_kws_active;
   assign idle_o = s_system_idle;
@@ -379,10 +418,15 @@ module apb4_apu #(
   assign s_dma_admission_block = (quiesce_i || s_resource_reset_request) &&
       !s_job_stat[`APB4_APU__JOB_STATUS_BUSY] &&
       !s_ring_stat[`APB4_APU__RING_STATUS_WRITEBACK_PENDING];
+  assign s_dma_quiesce = s_dma_admission_block && s_mc_idle && !s_kws_loader_busy &&
+      !s_kws_coeff_loader_busy;
+  assign s_kws_memory_start = s_codec_kws_start && s_kws_coeff_valid && s_kws_coeff_lock &&
+      !s_resource_reset_request;
   assign s_dma_select = !s_mc_idle ? 3'd0 :
-      (s_kws_loader_dma_req ? 3'd3 :
-       (s_kws_mem_dma_req ? 3'd4 :
-        (s_ring_dma_req_valid ? 3'd1 : 3'd2)));
+      (s_kws_coeff_dma_req ? 3'd5 :
+       (s_kws_loader_dma_req ? 3'd3 :
+        (s_kws_mem_dma_req ? 3'd4 :
+         (s_ring_dma_req_valid ? 3'd1 : 3'd2))));
   assign s_dma_req_valid = (s_dma_select == 3'd0) ?
       (s_mc_dma_req_valid && !s_resource_reset_request) :
       ((s_dma_select == 3'd1) ? s_ring_dma_req_valid :
@@ -392,17 +436,20 @@ module apb4_apu #(
   assign s_dma_req_addr = (s_dma_select == 3'd0) ? s_mc_dma_req_addr :
       ((s_dma_select == 3'd1) ? s_ring_dma_req_addr :
        ((s_dma_select == 3'd2) ? s_transport_dma_req_addr :
-        ((s_dma_select == 3'd3) ? s_kws_loader_dma_addr : s_kws_mem_dma_addr)));
+        ((s_dma_select == 3'd3) ? s_kws_loader_dma_addr :
+         ((s_dma_select == 3'd4) ? s_kws_mem_dma_addr : s_kws_coeff_dma_addr))));
   assign s_dma_req_bytes = (s_dma_select == 3'd0) ? s_mc_dma_req_bytes :
       ((s_dma_select == 3'd1) ? s_ring_dma_req_bytes :
        ((s_dma_select == 3'd2) ? s_transport_dma_req_bytes :
-        ((s_dma_select == 3'd3) ? s_kws_loader_dma_bytes : s_kws_mem_dma_bytes)));
+        ((s_dma_select == 3'd3) ? s_kws_loader_dma_bytes :
+         ((s_dma_select == 3'd4) ? s_kws_mem_dma_bytes : s_kws_coeff_dma_bytes))));
   assign s_ring_dma_req_ready = (s_dma_select == 3'd1) && s_dma_req_ready;
   assign s_mc_dma_req_ready = (s_dma_select == 3'd0) && s_dma_req_ready &&
       !s_resource_reset_request;
   assign s_transport_dma_req_ready = (s_dma_select == 3'd2) && s_dma_req_ready;
   assign s_kws_loader_dma_rdy = (s_dma_select == 3'd3) && s_dma_req_ready;
   assign s_kws_mem_dma_rdy = (s_dma_select == 3'd4) && s_dma_req_ready;
+  assign s_kws_coeff_dma_rdy = (s_dma_select == 3'd5) && s_dma_req_ready;
   assign s_kws_mem_data_v = u_dma_read_axis.tvalid && (s_dma_owner_q == 3'd4);
   assign s_kws_mem_dma_done = s_dma_done && (s_dma_owner_q == 3'd4);
   assign s_kws_mem_dma_error = s_dma_err && (s_dma_owner_q == 3'd4);
@@ -492,6 +539,14 @@ module apb4_apu #(
       s_fault_index  = 8'd0;
       s_fault_addr   = s_kws_loader_fault_addr;
       s_fault_detail = s_kws_loader_fault_detail;
+    end else if (!s_fault_valid && s_kws_coeff_loader_fault_v) begin
+      s_fault_valid  = 1'b1;
+      s_fault_code   = s_kws_coeff_loader_fault_code;
+      s_fault_stage  = s_kws_coeff_loader_fault_stage;
+      s_fault_resp   = s_kws_coeff_loader_fault_resp;
+      s_fault_index  = 8'd0;
+      s_fault_addr   = s_kws_coeff_loader_fault_addr;
+      s_fault_detail = s_kws_coeff_loader_fault_detail;
     end else if (!s_fault_valid && s_kws_fault_valid) begin
       s_fault_valid  = 1'b1;
       s_fault_code   = s_kws_fault_code;
@@ -532,7 +587,7 @@ module apb4_apu #(
       .core_idle_i(idle_o),
       .finite_idle_i          (s_scheduler_idle && s_codec_idle && s_codec_transport_idle &&
                                 !s_dma_busy && s_mc_idle && s_seq_idle && !s_primitive_busy &&
-                                !s_kws_loader_busy),
+                                !s_kws_loader_busy && !s_kws_coeff_loader_busy),
       .core_busy_i(!idle_o),
       .core_aborting_i(s_dma_aborting || s_scheduler_aborting || s_resource_reset_request),
       .direct_start_allowed_i(s_direct_start_allowed),
@@ -575,6 +630,9 @@ module apb4_apu #(
       .kws_overrun_count_i(s_kws_overrun_count),
       .kws_model_status_i(s_kws_model_status),
       .kws_model_actual_crc_i(s_kws_model_actual_crc),
+      .kws_coeff_status_i(s_kws_coeff_status),
+      .kws_coeff_actual_crc_i(s_kws_coeff_actual_crc),
+      .kws_coefficient_id_i(s_kws_coefficient_id),
       .kws_config_publish_i(s_kws_config_publish),
       .kws_config_default_i(s_kws_config_default),
       .kws_disable_done_i(s_kws_disable_done),
@@ -593,6 +651,7 @@ module apb4_apu #(
       .ring_kick_o(s_ring_kick),
       .microcode_load_o(s_microcode_load),
       .model_load_o(s_kws_model_load),
+      .coefficient_load_o(s_kws_coeff_load),
       .counter_clear_o(s_cnt_clear),
       .perf_enable_o(s_perf_enable),
       .xrun_clear_o(s_xrun_clear),
@@ -616,6 +675,9 @@ module apb4_apu #(
       .kws_model_address_o(s_kws_model_addr),
       .kws_model_size_o(s_kws_model_size),
       .kws_model_expected_crc_o(s_kws_model_crc),
+      .kws_coeff_address_o(s_kws_coeff_addr),
+      .kws_coeff_size_o(s_kws_coeff_size),
+      .kws_coeff_expected_crc_o(s_kws_coeff_crc),
       .kws_control_o(s_kws_control),
       .kws_config_o(s_kws_config),
       .kws_input_config_o(s_kws_input_config),
@@ -626,6 +688,99 @@ module apb4_apu #(
   );
 
   assign s_kws_loader_fault_v = s_kws_loader_done && (s_kws_loader_fault_code != 6'd0);
+  assign s_kws_coeff_loader_fault_v = s_kws_coeff_loader_done &&
+      (s_kws_coeff_loader_fault_code != 6'd0);
+
+  apu_kws_coeff_loader u_kws_coeff_loader (
+      .clk_i                   (clk_i),
+      .rst_n_i                 (rst_n_i),
+      .start_i                 (s_kws_coeff_load),
+      .abort_i                 (s_abort),
+      .soft_reset_i            (s_soft_reset),
+      .resource_reset_request_i(s_resource_reset_request),
+      .resource_reset_i        (s_resource_reset_apply_q),
+      .quiesce_i               (quiesce_i),
+      .address_i               (s_kws_coeff_addr),
+      .size_i                  (s_kws_coeff_size),
+      .expected_crc_i          (s_kws_coeff_crc),
+      .acl_base_i              (s_read_base),
+      .acl_limit_i             (s_read_limit),
+      .dma_request_valid_o     (s_kws_coeff_dma_req),
+      .dma_request_ready_i     (s_kws_coeff_dma_rdy),
+      .dma_request_address_o   (s_kws_coeff_dma_addr),
+      .dma_request_bytes_o     (s_kws_coeff_dma_bytes),
+      .dma_data_i              (u_dma_read_axis.tdata),
+      .dma_keep_i              (u_dma_read_axis.tkeep),
+      .dma_last_i              (u_dma_read_axis.tlast),
+      .dma_valid_i             (u_dma_read_axis.tvalid && (s_dma_owner_q == 3'd5)),
+      .dma_ready_o             (s_kws_coeff_dma_data_rdy),
+      .dma_done_i              (s_dma_done && (s_dma_owner_q == 3'd5)),
+      .dma_error_i             (s_dma_err && (s_dma_owner_q == 3'd5)),
+      .dma_error_code_i        (s_dma_err_code),
+      .dma_error_stage_i       (s_dma_err_stage),
+      .dma_error_resp_i        (s_dma_err_resp),
+      .dma_error_address_i     (s_dma_err_addr),
+      .store_active_o          (s_kws_coeff_store_active),
+      .store_req_o             (s_kws_coeff_store_req),
+      .store_write_o           (s_kws_coeff_store_write),
+      .store_addr_o            (s_kws_coeff_store_addr),
+      .store_data_o            (s_kws_coeff_store_wdata),
+      .store_ready_i           (s_kws_coeff_store_ready),
+      .store_valid_i           (s_kws_coeff_store_valid),
+      .store_data_i            (s_kws_coeff_store_rdata),
+      .store_fault_i           (s_kws_coeff_store_fault),
+      .busy_o                  (s_kws_coeff_loader_busy),
+      .valid_o                 (s_kws_coeff_valid),
+      .lock_o                  (s_kws_coeff_lock),
+      .actual_crc_o            (s_kws_coeff_actual_crc),
+      .coefficient_id_o        (s_kws_coefficient_id),
+      .status_o                (s_kws_coeff_status),
+      .error_code_o            (s_kws_coeff_loader_fault_code),
+      .error_stage_o           (s_kws_coeff_loader_fault_stage),
+      .error_resp_o            (s_kws_coeff_loader_fault_resp),
+      .error_address_o         (s_kws_coeff_loader_fault_addr),
+      .error_detail_o          (s_kws_coeff_loader_fault_detail),
+      .done_o                  (s_kws_coeff_loader_done),
+      .abort_done_o            (s_kws_coeff_loader_abort_done)
+  );
+
+  apu_kws_coeff_store u_kws_coeff_store (
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .abort_i               (s_abort || s_soft_reset || s_resource_reset_apply_q),
+      .valid_i               (s_kws_coeff_valid),
+      .loader_active_i       (s_kws_coeff_store_active),
+      .loader_req_i          (s_kws_coeff_store_req),
+      .loader_write_i        (s_kws_coeff_store_write),
+      .loader_addr_i         (s_kws_coeff_store_addr),
+      .loader_data_i         (s_kws_coeff_store_wdata),
+      .loader_ready_o        (s_kws_coeff_store_ready),
+      .loader_valid_o        (s_kws_coeff_store_valid),
+      .loader_data_o         (s_kws_coeff_store_rdata),
+      .loader_fault_o        (s_kws_coeff_store_fault),
+      .frontend_req_valid_i  (s_kws_coeff_front_req),
+      .frontend_req_ready_o  (s_kws_coeff_front_ready),
+      .frontend_kind_i       (s_kws_coeff_front_kind),
+      .frontend_index_i      (s_kws_coeff_front_index),
+      .frontend_resp_valid_o (s_kws_coeff_front_resp_valid),
+      .frontend_resp_ready_i (s_kws_coeff_front_resp_ready),
+      .frontend_resp_data_o  (s_kws_coeff_front_resp_data),
+      .frontend_resp_fault_o (s_kws_coeff_front_resp_fault),
+      .inference_req_valid_i (s_kws_coeff_infer_req),
+      .inference_req_ready_o (s_kws_coeff_infer_ready),
+      .inference_index_i     (s_kws_coeff_infer_index),
+      .inference_resp_valid_o(s_kws_coeff_infer_resp_valid),
+      .inference_resp_ready_i(s_kws_coeff_infer_resp_ready),
+      .inference_resp_data_o (s_kws_coeff_infer_resp_data),
+      .inference_resp_fault_o(s_kws_coeff_infer_resp_fault),
+      .profile_req_valid_i   (s_kws_coeff_profile_req),
+      .profile_req_ready_o   (s_kws_coeff_profile_ready),
+      .profile_index_i       (s_kws_coeff_profile_index),
+      .profile_resp_valid_o  (s_kws_coeff_profile_resp_valid),
+      .profile_resp_ready_i  (s_kws_coeff_profile_resp_ready),
+      .profile_resp_data_o   (s_kws_coeff_profile_resp_data),
+      .profile_resp_fault_o  (s_kws_coeff_profile_resp_fault)
+  );
 
   apu_kws_model_loader u_kws_model_loader (
       .clk_i                   (clk_i),
@@ -661,6 +816,13 @@ module apb4_apu #(
       .local_data_o            (s_kws_loader_local_data),
       .local_strb_o            (s_kws_loader_local_strb),
       .local_ready_i           (s_kws_loader_local_rdy),
+      .profile_request_valid_o (s_kws_coeff_profile_req),
+      .profile_request_ready_i (s_kws_coeff_profile_ready),
+      .profile_index_o         (s_kws_coeff_profile_index),
+      .profile_response_valid_i(s_kws_coeff_profile_resp_valid),
+      .profile_response_ready_o(s_kws_coeff_profile_resp_ready),
+      .profile_data_i          (s_kws_coeff_profile_resp_data),
+      .profile_fault_i         (s_kws_coeff_profile_resp_fault),
       .busy_o                  (s_kws_loader_busy),
       .valid_o                 (s_kws_model_valid),
       .lock_o                  (s_kws_model_lock),
@@ -678,131 +840,146 @@ module apb4_apu #(
   );
 
   apu_kws_engine u_kws_engine (
-      .clk_i                       (clk_i),
-      .rst_n_i                     (rst_n_i),
-      .soft_reset_i                (s_soft_reset),
-      .resource_reset_i            (s_resource_reset_apply_q),
-      .counter_clear_i             (s_cnt_clear),
-      .xrun_clear_i                (s_xrun_clear),
-      .abort_i                     (s_abort),
-      .quiesce_i                   (quiesce_i),
-      .disable_i                   (s_kws_disable_request),
-      .flush_busy_i                (i2s_rx_flush_busy_i),
-      .enable_i                    (s_kws_control[0]),
-      .memory_window_i             (s_kws_control[1]),
-      .clear_history_i             (s_kws_clear_history),
-      .model_valid_i               (s_kws_model_valid),
-      .model_lock_i                (s_kws_model_lock),
-      .sequencer_timeout_i         (s_sequencer_timeout),
-      .memory_start_i              (s_codec_kws_start && !s_resource_reset_request),
-      .memory_start_ready_o        (s_kws_mem_start_ready),
-      .memory_address_i            (s_codec_descriptor[(2*32)+:32]),
-      .memory_dma_request_valid_o  (s_kws_mem_dma_req),
-      .memory_dma_request_ready_i  (s_kws_mem_dma_rdy),
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
+      .soft_reset_i(s_soft_reset),
+      .resource_reset_i(s_resource_reset_apply_q),
+      .counter_clear_i(s_cnt_clear),
+      .xrun_clear_i(s_xrun_clear),
+      .abort_i(s_abort),
+      .quiesce_i(quiesce_i),
+      .disable_i(s_kws_disable_request),
+      .flush_busy_i(i2s_rx_flush_busy_i),
+      .enable_i(s_kws_control[0]),
+      .memory_window_i(s_kws_control[1]),
+      .clear_history_i(s_kws_clear_history),
+      .model_valid_i(s_kws_model_valid),
+      .model_lock_i(s_kws_model_lock),
+      .sequencer_timeout_i(s_sequencer_timeout),
+      .memory_start_i(s_kws_memory_start),
+      .memory_start_ready_o(s_kws_mem_start_ready),
+      .memory_address_i(s_codec_descriptor[(2*32)+:32]),
+      .memory_dma_request_valid_o(s_kws_mem_dma_req),
+      .memory_dma_request_ready_i(s_kws_mem_dma_rdy),
       .memory_dma_request_address_o(s_kws_mem_dma_addr),
-      .memory_dma_request_bytes_o  (s_kws_mem_dma_bytes),
-      .memory_dma_data_i           (u_dma_read_axis.tdata),
-      .memory_dma_keep_i           (u_dma_read_axis.tkeep),
-      .memory_dma_last_i           (u_dma_read_axis.tlast),
-      .memory_dma_valid_i          (s_kws_mem_data_v),
-      .memory_dma_ready_o          (s_kws_mem_dma_data_rdy),
-      .memory_dma_done_i           (s_kws_mem_dma_done),
-      .memory_dma_error_i          (s_kws_mem_dma_error),
-      .memory_dma_error_code_i     (s_dma_err_code),
-      .memory_dma_error_stage_i    (s_dma_err_stage),
-      .memory_dma_error_resp_i     (s_dma_err_resp),
-      .memory_dma_error_address_i  (s_dma_err_addr),
-      .memory_done_o               (s_kws_mem_done),
-      .memory_error_o              (s_kws_mem_err),
-      .memory_error_code_o         (s_kws_mem_err_code),
-      .memory_error_stage_o        (s_kws_mem_err_stage),
-      .memory_error_resp_o         (s_kws_mem_err_resp),
-      .memory_error_address_o      (s_kws_mem_err_addr),
-      .memory_error_detail_o       (s_kws_mem_err_detail),
-      .memory_input_used_o         (s_kws_mem_input_used),
-      .kws_config_i                (s_codec_kws_config_valid ? s_codec_kws_config : s_kws_config),
-      .input_config_i              (s_kws_input_config),
-      .storage_req_o               (s_kws_storage_req),
-      .storage_ready_i             (s_kws_storage_ready),
-      .storage_done_i              (s_kws_storage_done),
-      .storage_progress_i          (s_kws_storage_progress),
-      .storage_write_o             (s_kws_storage_write),
-      .model_read_valid_o          (s_kws_model_read_valid),
-      .model_addr_o                (s_kws_model_read_addr),
-      .model_data_i                (s_kws_model_read_data),
-      .scratch_clear_o             (s_kws_scratch_clear),
-      .scratch_read_valid_o        (s_kws_scratch_read_valid),
-      .scratch_read_addr_o         (s_kws_scratch_read_addr),
-      .scratch_read_data_i         (s_kws_scratch_read_data),
-      .scratch_write_valid_o       (s_kws_scratch_write_valid),
-      .scratch_write_addr_o        (s_kws_scratch_write_addr),
-      .scratch_write_data_o        (s_kws_scratch_write_data),
-      .scratch_write_strb_o        (s_kws_scratch_write_strb),
-      .scratch_access_err_i        (s_kws_scratch_err),
-      .stream_i                    (u_apu_rx_axis),
-      .rx_ready_o                  (s_kws_rx_ready),
-      .status_o                    (s_kws_status),
-      .result_o                    (s_kws_result),
-      .timestamp_lo_o              (s_kws_timestamp_lo),
-      .timestamp_hi_o              (s_kws_timestamp_hi),
-      .frame_count_o               (s_kws_frame_count),
-      .inference_count_o           (s_kws_inference_count),
-      .hit_count_o                 (s_kws_hit_count),
-      .overrun_count_o             (s_kws_overrun_count),
-      .model_status_o              (s_kws_engine_model_stat_unused),
-      .model_actual_crc_o          (s_kws_engine_model_crc_unused),
-      .irq_set_o                   (s_kws_irq_set),
-      .fault_valid_o               (s_kws_fault_valid),
-      .fault_code_o                (s_kws_fault_code),
-      .fault_stage_o               (s_kws_fault_stage),
-      .fault_resp_o                (s_kws_fault_resp),
-      .fault_index_o               (s_kws_fault_index),
-      .fault_addr_o                (s_kws_fault_addr),
-      .fault_detail_o              (s_kws_fault_detail),
-      .model_valid_o               (s_kws_engine_model_v_unused),
-      .model_lock_o                (s_kws_engine_model_lock_unused),
-      .busy_o                      (s_kws_busy),
-      .idle_o                      (s_kws_idle)
+      .memory_dma_request_bytes_o(s_kws_mem_dma_bytes),
+      .memory_dma_data_i(u_dma_read_axis.tdata),
+      .memory_dma_keep_i(u_dma_read_axis.tkeep),
+      .memory_dma_last_i(u_dma_read_axis.tlast),
+      .memory_dma_valid_i(s_kws_mem_data_v),
+      .memory_dma_ready_o(s_kws_mem_dma_data_rdy),
+      .memory_dma_done_i(s_kws_mem_dma_done),
+      .memory_dma_error_i(s_kws_mem_dma_error),
+      .memory_dma_error_code_i(s_dma_err_code),
+      .memory_dma_error_stage_i(s_dma_err_stage),
+      .memory_dma_error_resp_i(s_dma_err_resp),
+      .memory_dma_error_address_i(s_dma_err_addr),
+      .memory_done_o(s_kws_mem_done),
+      .memory_error_o(s_kws_mem_err),
+      .memory_error_code_o(s_kws_mem_err_code),
+      .memory_error_stage_o(s_kws_mem_err_stage),
+      .memory_error_resp_o(s_kws_mem_err_resp),
+      .memory_error_address_o(s_kws_mem_err_addr),
+      .memory_error_detail_o(s_kws_mem_err_detail),
+      .memory_input_used_o(s_kws_mem_input_used),
+      .kws_config_i(s_codec_kws_config_valid ? s_codec_kws_config : s_kws_config),
+      .input_config_i(s_kws_input_config),
+      .storage_req_o(s_kws_storage_req),
+      .storage_ready_i(s_kws_storage_ready),
+      .storage_done_i(s_kws_storage_done),
+      .storage_progress_i(s_kws_storage_progress),
+      .storage_write_o(s_kws_storage_write),
+      .model_read_valid_o(s_kws_model_read_valid),
+      .model_addr_o(s_kws_model_read_addr),
+      .model_data_i(s_kws_model_read_data),
+      .scratch_clear_o(s_kws_scratch_clear),
+      .scratch_read_valid_o(s_kws_scratch_read_valid),
+      .scratch_read_addr_o(s_kws_scratch_read_addr),
+      .scratch_read_data_i(s_kws_scratch_read_data),
+      .scratch_write_valid_o(s_kws_scratch_write_valid),
+      .scratch_write_addr_o(s_kws_scratch_write_addr),
+      .scratch_write_data_o(s_kws_scratch_write_data),
+      .scratch_write_strb_o(s_kws_scratch_write_strb),
+      .scratch_access_err_i(s_kws_scratch_err),
+      .coeff_frontend_req_valid_o(s_kws_coeff_front_req),
+      .coeff_frontend_req_ready_i(s_kws_coeff_front_ready),
+      .coeff_frontend_kind_o(s_kws_coeff_front_kind),
+      .coeff_frontend_index_o(s_kws_coeff_front_index),
+      .coeff_frontend_resp_valid_i(s_kws_coeff_front_resp_valid),
+      .coeff_frontend_resp_ready_o(s_kws_coeff_front_resp_ready),
+      .coeff_frontend_data_i(s_kws_coeff_front_resp_data),
+      .coeff_frontend_fault_i(s_kws_coeff_front_resp_fault),
+      .coeff_inference_req_valid_o(s_kws_coeff_infer_req),
+      .coeff_inference_req_ready_i(s_kws_coeff_infer_ready),
+      .coeff_inference_index_o(s_kws_coeff_infer_index),
+      .coeff_inference_resp_valid_i(s_kws_coeff_infer_resp_valid),
+      .coeff_inference_resp_ready_o(s_kws_coeff_infer_resp_ready),
+      .coeff_inference_data_i(s_kws_coeff_infer_resp_data),
+      .coeff_inference_fault_i(s_kws_coeff_infer_resp_fault),
+      .stream_i(u_apu_rx_axis),
+      .rx_ready_o(s_kws_rx_ready),
+      .status_o(s_kws_status),
+      .result_o(s_kws_result),
+      .timestamp_lo_o(s_kws_timestamp_lo),
+      .timestamp_hi_o(s_kws_timestamp_hi),
+      .frame_count_o(s_kws_frame_count),
+      .inference_count_o(s_kws_inference_count),
+      .hit_count_o(s_kws_hit_count),
+      .overrun_count_o(s_kws_overrun_count),
+      .model_status_o(s_kws_engine_model_stat_unused),
+      .model_actual_crc_o(s_kws_engine_model_crc_unused),
+      .irq_set_o(s_kws_irq_set),
+      .fault_valid_o(s_kws_fault_valid),
+      .fault_code_o(s_kws_fault_code),
+      .fault_stage_o(s_kws_fault_stage),
+      .fault_resp_o(s_kws_fault_resp),
+      .fault_index_o(s_kws_fault_index),
+      .fault_addr_o(s_kws_fault_addr),
+      .fault_detail_o(s_kws_fault_detail),
+      .model_valid_o(s_kws_engine_model_v_unused),
+      .model_lock_o(s_kws_engine_model_lock_unused),
+      .busy_o(s_kws_busy),
+      .idle_o(s_kws_idle)
   );
 
   apu_dma u_apu_dma (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .abort_i            (s_dma_abort),
-      .quiesce_i          (s_dma_admission_block && s_mc_idle && !s_kws_loader_busy),
-      .bridge_epoch_i     (bridge_epoch_i),
-      .perf_enable_i      (s_perf_enable),
-      .counter_clear_i    (s_cnt_clear),
-      .request_valid_i    (s_dma_req_valid),
-      .request_ready_o    (s_dma_req_ready),
-      .request_write_i    (s_dma_req_write),
-      .request_addr_i     (s_dma_req_addr),
-      .request_bytes_i    (s_dma_req_bytes),
-      .read_base_i        (s_read_base),
-      .read_limit_i       (s_read_limit),
-      .write_base_i       (s_write_base),
-      .write_limit_i      (s_write_limit),
-      .timeout_i          (s_dma_timeout),
-      .read_axis          (u_dma_read_axis),
-      .write_axis         (u_dma_write_axis),
-      .busy_o             (s_dma_busy),
-      .done_o             (s_dma_done),
-      .error_o            (s_dma_err),
-      .aborted_o          (s_dma_aborted),
-      .aborting_o         (s_dma_aborting),
-      .error_code_o       (s_dma_err_code),
-      .error_stage_o      (s_dma_err_stage),
-      .error_resp_o       (s_dma_err_resp),
-      .error_addr_o       (s_dma_err_addr),
-      .input_pending_o    (s_dma_input_pending),
-      .output_pending_o   (s_dma_output_pending),
-      .read_bytes_o       (s_dma_read_bytes),
-      .write_bytes_o      (s_dma_write_bytes),
-      .write_burst_done_o (s_dma_write_burst_done),
+      .clk_i(clk_i),
+      .rst_n_i(rst_n_i),
+      .abort_i(s_dma_abort),
+      .quiesce_i(s_dma_quiesce),
+      .bridge_epoch_i(bridge_epoch_i),
+      .perf_enable_i(s_perf_enable),
+      .counter_clear_i(s_cnt_clear),
+      .request_valid_i(s_dma_req_valid),
+      .request_ready_o(s_dma_req_ready),
+      .request_write_i(s_dma_req_write),
+      .request_addr_i(s_dma_req_addr),
+      .request_bytes_i(s_dma_req_bytes),
+      .read_base_i(s_read_base),
+      .read_limit_i(s_read_limit),
+      .write_base_i(s_write_base),
+      .write_limit_i(s_write_limit),
+      .timeout_i(s_dma_timeout),
+      .read_axis(u_dma_read_axis),
+      .write_axis(u_dma_write_axis),
+      .busy_o(s_dma_busy),
+      .done_o(s_dma_done),
+      .error_o(s_dma_err),
+      .aborted_o(s_dma_aborted),
+      .aborting_o(s_dma_aborting),
+      .error_code_o(s_dma_err_code),
+      .error_stage_o(s_dma_err_stage),
+      .error_resp_o(s_dma_err_resp),
+      .error_addr_o(s_dma_err_addr),
+      .input_pending_o(s_dma_input_pending),
+      .output_pending_o(s_dma_output_pending),
+      .read_bytes_o(s_dma_read_bytes),
+      .write_bytes_o(s_dma_write_bytes),
+      .write_burst_done_o(s_dma_write_burst_done),
       .write_burst_bytes_o(s_dma_write_burst_bytes),
-      .read_stalls_o      (s_dma_read_stalls),
-      .write_stalls_o     (s_dma_write_stalls),
-      .axi4               (axi4)
+      .read_stalls_o(s_dma_read_stalls),
+      .write_stalls_o(s_dma_write_stalls),
+      .axi4(axi4)
   );
 
   apu_microcode_loader #(
@@ -1137,9 +1314,10 @@ module apb4_apu #(
       .ring_result_kws_o(s_codec_ring_result_kws),
       .microcode_valid_i(s_mc_status[`APB4_APU__MC_STATUS_VALID]),
       .microcode_lock_i(s_mc_lock),
-      .kws_model_valid_i(s_kws_model_valid),
-      .kws_model_lock_i(s_kws_model_lock),
-      .kws_memory_armed_i((s_kws_control == 2'd3) && !s_kws_disable_request),
+      .kws_model_valid_i(s_kws_model_valid && s_kws_coeff_valid),
+      .kws_model_lock_i(s_kws_model_lock && s_kws_coeff_lock),
+      .kws_memory_armed_i((s_kws_control == 2'd3) && s_kws_coeff_valid &&
+                          s_kws_coeff_lock && !s_kws_disable_request),
       .entry_scratch_base_i(s_mc_entry_scratch_base),
       .entry_scratch_bytes_i(s_mc_entry_scratch_bytes),
       .sequencer_launch_o(s_codec_seq_launch),

@@ -633,7 +633,7 @@
       "rtl/ip/multimedia/apu_local_sram.sv"
     ],
     "bindings": [],
-    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The current codec/internal macro branch uses 12 four-KiB banks; the separate 64 KiB KWS client uses inferred storage and is gated off by default. Logical capacity does not establish a 28-macro physical implementation or completed PPA qualification.",
+    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The codec/internal branch uses 12 four-KiB banks and the separate 64 KiB KWS client uses 16 banks. P9 adds 15 coefficient and 17 proof-memo wrappers outside that logical data window. Wrapper inventory does not establish physical replacement or completed PPA qualification.",
     "derived": "apu-local"
   },
   {

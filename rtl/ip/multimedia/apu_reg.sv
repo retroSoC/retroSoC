@@ -41,7 +41,7 @@ module apu_reg #(
     input  logic [31:0] sequencer_status_i,
     input  logic [31:0] sequencer_retired_i,
     input  logic        sequencer_trapped_i,
-    input  logic [10:0] irq_set_i,
+    input  logic [11:0] irq_set_i,
     input  logic        fault_valid_i,
     input  logic [5:0]  fault_code_i,
     input  logic [3:0]  fault_stage_i,
@@ -59,6 +59,9 @@ module apu_reg #(
     input  logic [31:0] kws_overrun_count_i,
     input  logic [31:0] kws_model_status_i,
     input  logic [31:0] kws_model_actual_crc_i,
+    input  logic [31:0] kws_coeff_status_i,
+    input  logic [31:0] kws_coeff_actual_crc_i,
+    input  logic [63:0] kws_coefficient_id_i,
     input  logic        kws_config_publish_i,
     input  logic [15:0] kws_config_default_i,
     input  logic        kws_disable_done_i,
@@ -77,6 +80,7 @@ module apu_reg #(
     output logic        ring_kick_o,
     output logic        microcode_load_o,
     output logic        model_load_o,
+    output logic        coefficient_load_o,
     output logic        counter_clear_o,
     output logic        perf_enable_o,
     output logic        xrun_clear_o,
@@ -100,6 +104,9 @@ module apu_reg #(
     output logic [31:0] kws_model_address_o,
     output logic [31:0] kws_model_size_o,
     output logic [31:0] kws_model_expected_crc_o,
+    output logic [31:0] kws_coeff_address_o,
+    output logic [31:0] kws_coeff_size_o,
+    output logic [31:0] kws_coeff_expected_crc_o,
     output logic [1:0]  kws_control_o,
     output logic [15:0] kws_config_o,
     output logic [31:0] kws_input_config_o,
@@ -110,14 +117,15 @@ module apu_reg #(
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h4150_5530;
-  localparam logic [31:0] IpVersion = (EnableP5 || EnableP7) ? 32'h0001_0001 : 32'h0001_0000;
+  localparam logic [31:0] IpVersion = EnableP7 ? 32'h0001_0002 :
+      (EnableP5 ? 32'h0001_0001 : 32'h0001_0000);
   localparam logic [31:0] P5Capability0 = EnableP5 ? 32'h0000_01bd : 32'h0000_0198;
   // EnableP7 advertises the qualified KWS capability after the frozen release
   // gates pass; the MP3 bit 1 stays zero for the deferred P6.
-  localparam logic [31:0] Capability0 = EnableP7 ? 32'h0000_01fd : P5Capability0;
+  localparam logic [31:0] Capability0 = EnableP7 ? 32'h0000_03fd : P5Capability0;
   localparam logic [31:0] Capability1 = (EnableP5 || EnableP7) ? 32'h0182_7020 : 32'h0182_7010;
-  localparam logic [31:0] AbiDigest = EnableP7 ? 32'hf500_5d7c : 32'd0;
-  localparam logic [10:0] IrqMask = 11'h7ff;
+  localparam logic [31:0] AbiDigest = EnableP7 ? 32'h63e9_6066 : 32'd0;
+  localparam logic [11:0] IrqMask = EnableP7 ? 12'hfff : 12'h7ff;
   localparam logic [31:0] TimeoutReset = 32'h0000_ffff;
   localparam logic [31:0] RingCoalesceReset = 32'h0001_0001;
   localparam logic [31:0] KwsConfigReset = 32'h0000_0380;
@@ -143,13 +151,14 @@ module apu_reg #(
   logic        s_ring_kick;
   logic        s_microcode_load;
   logic        s_model_load;
+  logic        s_coefficient_load;
   logic        s_kws_clear_history;
   logic        s_cnt_clear;
-  logic [10:0] s_irq_clear;
-  logic [10:0] s_irq_set;
+  logic [11:0] s_irq_clear;
+  logic [11:0] s_irq_set;
 
-  logic [10:0] s_irq_state_d, s_irq_state_q;
-  logic [10:0] s_irq_en_d, s_irq_en_q;
+  logic [11:0] s_irq_state_d, s_irq_state_q;
+  logic [11:0] s_irq_en_d, s_irq_en_q;
   logic [31:0] s_err_stat_d, s_err_stat_q;
   logic [31:0] s_err_addr_d, s_err_addr_q;
   logic [31:0] s_err_detail_d, s_err_detail_q;
@@ -160,6 +169,7 @@ module apu_reg #(
   logic [7:0][31:0] s_job_cfg_d, s_job_cfg_q;
   logic [4:0][31:0] s_ring_cfg_d, s_ring_cfg_q;
   logic [2:0][31:0] s_kws_model_cfg_d, s_kws_model_cfg_q;
+  logic [2:0][31:0] s_kws_coeff_cfg_d, s_kws_coeff_cfg_q;
   logic [15:0] s_kws_cfg_d, s_kws_cfg_q;
   logic [31:0] s_kws_input_cfg_d, s_kws_input_cfg_q;
   logic [1:0] s_kws_control_d, s_kws_control_q;
@@ -171,6 +181,7 @@ module apu_reg #(
   logic              s_err_clear;
   logic              s_unused_snapshot;
   logic [32:0]       s_mc_image_end;
+  logic [32:0]       s_kws_coeff_image_end;
   logic              s_kws_disable_write;
 
   function automatic logic [31:0] apply_wstrb(
@@ -201,13 +212,14 @@ module apu_reg #(
   assign apb4.prdata = s_apb4_rdata_q;
   assign apb4.pslverr = s_apb4_resp_err_q;
   assign idle_o = core_idle_i;
-  assign irq_o = (s_irq_state_q & s_irq_en_q) != 11'd0;
+  assign irq_o = (s_irq_state_q & s_irq_en_q) != 12'd0;
   assign soft_reset_o = s_soft_reset;
   assign abort_o = s_abort;
   assign direct_start_o = s_direct_start;
   assign ring_kick_o = s_ring_kick;
   assign microcode_load_o = s_microcode_load;
   assign model_load_o = s_model_load;
+  assign coefficient_load_o = s_coefficient_load;
   assign kws_clear_history_o = s_kws_clear_history;
   assign counter_clear_o = s_cnt_clear;
   assign perf_enable_o = s_perf_en_q;
@@ -232,6 +244,9 @@ module apu_reg #(
   assign kws_model_address_o = s_kws_model_cfg_q[0];
   assign kws_model_size_o = s_kws_model_cfg_q[1];
   assign kws_model_expected_crc_o = s_kws_model_cfg_q[2];
+  assign kws_coeff_address_o = s_kws_coeff_cfg_q[0];
+  assign kws_coeff_size_o = s_kws_coeff_cfg_q[1];
+  assign kws_coeff_expected_crc_o = s_kws_coeff_cfg_q[2];
   assign kws_control_o = s_kws_control_q;
   assign kws_config_o = s_kws_cfg_q;
   assign kws_input_config_o = s_kws_input_cfg_q;
@@ -243,6 +258,7 @@ module apu_reg #(
       (s_offset == `APB4_APU__ERROR_STATUS) && s_strobed_write[0];
   assign s_unused_snapshot = ^s_perf_snapshot_q[3] ^ ^s_perf_snapshot_q[7] ^ ^s_perf_snapshot_q[8];
   assign s_mc_image_end = {1'b0, s_mc_cfg_q[0]} + {1'b0, s_mc_cfg_q[1]} - 1'b1;
+  assign s_kws_coeff_image_end = {1'b0, s_kws_coeff_cfg_q[0]} + {1'b0, s_kws_coeff_cfg_q[1]} - 1'b1;
 
   always_comb begin
     s_read_data = 32'd0;
@@ -267,8 +283,8 @@ module apu_reg #(
           kws_status_i[0],
           mc_status_i[`APB4_APU__MC_STATUS_VALID]
         };
-        `APB4_APU__IRQ_STATE: s_read_data = {21'd0, s_irq_state_q};
-        `APB4_APU__IRQ_ENABLE: s_read_data = {21'd0, s_irq_en_q};
+        `APB4_APU__IRQ_STATE: s_read_data = {20'd0, s_irq_state_q};
+        `APB4_APU__IRQ_ENABLE: s_read_data = {20'd0, s_irq_en_q};
         `APB4_APU__ERROR_STATUS: s_read_data = s_err_stat_q;
         `APB4_APU__ERROR_ADDRESS: s_read_data = s_err_addr_q;
         `APB4_APU__ERROR_DETAIL: s_read_data = s_err_detail_q;
@@ -302,6 +318,38 @@ module apu_reg #(
         `APB4_APU__KWS_OVERRUN_COUNT: s_read_data = kws_overrun_count_i;
         `APB4_APU__KWS_MODEL_STATUS: s_read_data = kws_model_status_i;
         `APB4_APU__KWS_MODEL_ACTUAL_CRC: s_read_data = kws_model_actual_crc_i;
+        `APB4_APU__KWS_COEFF_ADDRESS: begin
+          s_read_data = s_kws_coeff_cfg_q[0];
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_SIZE: begin
+          s_read_data = s_kws_coeff_cfg_q[1];
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_EXPECTED_CRC: begin
+          s_read_data = s_kws_coeff_cfg_q[2];
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_STATUS: begin
+          s_read_data = kws_coeff_status_i;
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_ACTUAL_CRC: begin
+          s_read_data = kws_coeff_actual_crc_i;
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_ID_LO: begin
+          s_read_data = kws_coefficient_id_i[31:0];
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_ID_HI: begin
+          s_read_data = kws_coefficient_id_i[63:32];
+          s_read_err  = !EnableP7;
+        end
+        `APB4_APU__KWS_COEFF_CAPACITY: begin
+          s_read_data = 32'h0000_f000;
+          s_read_err  = !EnableP7;
+        end
         `APB4_APU__STREAM_WATERMARK: s_read_data = {16'd0, s_stream_watermark_q};
         `APB4_APU__MC_IMAGE_ADDRESS: s_read_data = s_mc_cfg_q[0];
         `APB4_APU__MC_IMAGE_SIZE: s_read_data = s_mc_cfg_q[1];
@@ -358,7 +406,8 @@ module apu_reg #(
         `APB4_APU__PERF_KWS_CYCLES_LO, `APB4_APU__PERF_KWS_CYCLES_HI: s_read_data = 32'd0;
         `APB4_APU__PERF_FAULTS_LO: s_read_data = s_perf_snapshot_q[9][31:0];
         `APB4_APU__PERF_FAULTS_HI: s_read_data = s_perf_snapshot_q[9][63:32];
-        `APB4_APU__COMMAND, `APB4_APU__IRQ_TEST, `APB4_APU__RING_DOORBELL: begin
+        `APB4_APU__COMMAND, `APB4_APU__IRQ_TEST, `APB4_APU__RING_DOORBELL,
+        `APB4_APU__KWS_COEFF_COMMAND: begin
           s_read_data = 32'd0;
           s_read_err  = 1'b1;
         end
@@ -394,7 +443,8 @@ module apu_reg #(
                          (!EnableP7 || !core_idle_i || !quiesce_i || (owner_i != 2'd0) ||
                           (s_kws_model_cfg_q[0][5:0] != 6'd0) ||
                           (s_kws_model_cfg_q[1] != 32'd32768) ||
-                          kws_model_status_i[2] || s_kws_control_q[0] ||
+                          kws_model_status_i[2] || (kws_coeff_status_i[2:1] != 2'b11) ||
+                          s_kws_control_q[0] ||
                           (s_kws_model_cfg_q[0] < s_acl_q[0]) ||
                           (({1'b0, s_kws_model_cfg_q[0]} + 33'd32768 - 33'd1) >
                            {1'b0, s_acl_q[1]}))) ||
@@ -404,7 +454,7 @@ module apu_reg #(
         end
         `APB4_APU__IRQ_STATE: s_write_err = (s_strobed_write & ~32'(IrqMask)) != 32'd0;
         `APB4_APU__IRQ_ENABLE: begin
-          s_merged_write = apply_wstrb({21'd0, s_irq_en_q}, apb4.pwdata, apb4.pstrb);
+          s_merged_write = apply_wstrb({20'd0, s_irq_en_q}, apb4.pwdata, apb4.pstrb);
           s_write_err    = (s_merged_write & ~32'(IrqMask)) != 32'd0;
         end
         `APB4_APU__IRQ_TEST:
@@ -449,6 +499,25 @@ module apu_reg #(
         s_write_err = (apb4.pstrb != 4'hf) || (apb4.pwdata == 32'd0) ||
                       !core_idle_i || (owner_i != 2'd0) ||
                       ((s_offset == `APB4_APU__KWS_MODEL_SIZE) && kws_model_status_i[2]);
+        `APB4_APU__KWS_COEFF_ADDRESS:
+        s_write_err = !EnableP7 || (apb4.pstrb != 4'hf) || (apb4.pwdata[5:0] != 6'd0) ||
+                      !core_idle_i || (owner_i != 2'd0) || kws_coeff_status_i[2];
+        `APB4_APU__KWS_COEFF_SIZE:
+        s_write_err = !EnableP7 || (apb4.pstrb != 4'hf) || (apb4.pwdata != 32'd61504) ||
+                      !core_idle_i || (owner_i != 2'd0) || kws_coeff_status_i[2];
+        `APB4_APU__KWS_COEFF_EXPECTED_CRC:
+        s_write_err = !EnableP7 || (apb4.pstrb != 4'hf) || !core_idle_i ||
+                      (owner_i != 2'd0) || kws_coeff_status_i[2];
+        `APB4_APU__KWS_COEFF_COMMAND: begin
+          s_write_unsupported = !EnableP7;
+          s_write_err = s_write_unsupported || (apb4.pstrb != 4'hf) ||
+              (apb4.pwdata != 32'd1) || !core_idle_i || !quiesce_i ||
+              (owner_i != 2'd0) || s_kws_control_q[0] || kws_coeff_status_i[2] ||
+              kws_model_status_i[1] || (s_kws_coeff_cfg_q[0][5:0] != 6'd0) ||
+              (s_kws_coeff_cfg_q[1] != 32'd61504) || s_kws_coeff_image_end[32] ||
+              (s_kws_coeff_cfg_q[0] < s_acl_q[0]) ||
+              (s_kws_coeff_image_end[31:0] > s_acl_q[1]);
+        end
         `APB4_APU__JOB_CONTROL: begin
           s_merged_write = apply_wstrb(s_job_cfg_q[0], apb4.pwdata, apb4.pstrb);
           s_write_err = (s_merged_write[31:12] != 20'd0) ||
@@ -494,7 +563,8 @@ module apu_reg #(
                         (s_kws_control_q[0] &&
                          ((apb4.pwdata[1] != s_kws_control_q[1]) || apb4.pwdata[2])) ||
                         ((apb4.pwdata[0] && !s_kws_control_q[0]) &&
-                         ((kws_model_status_i[2:1] != 2'd3) || !core_idle_i)) ||
+                         ((kws_model_status_i[2:1] != 2'd3) ||
+                          (kws_coeff_status_i[2:1] != 2'd3) || !core_idle_i)) ||
                         (!core_idle_i && !s_kws_disable_write);
         end
         `APB4_APU__KWS_CONFIG: begin
@@ -530,7 +600,9 @@ module apu_reg #(
         `APB4_APU__KWS_TIMESTAMP_HI, `APB4_APU__KWS_FRAME_COUNT,
         `APB4_APU__KWS_INFERENCE_COUNT, `APB4_APU__KWS_HIT_COUNT,
         `APB4_APU__KWS_OVERRUN_COUNT, `APB4_APU__KWS_MODEL_STATUS,
-        `APB4_APU__KWS_MODEL_ACTUAL_CRC,
+        `APB4_APU__KWS_MODEL_ACTUAL_CRC, `APB4_APU__KWS_COEFF_STATUS,
+        `APB4_APU__KWS_COEFF_ACTUAL_CRC, `APB4_APU__KWS_COEFF_ID_LO,
+        `APB4_APU__KWS_COEFF_ID_HI, `APB4_APU__KWS_COEFF_CAPACITY,
         `APB4_APU__PERF_STATUS,
         `APB4_APU__PERF_ACTIVE_CYCLES_LO, `APB4_APU__PERF_ACTIVE_CYCLES_HI,
         `APB4_APU__PERF_INPUT_BYTES_LO, `APB4_APU__PERF_INPUT_BYTES_HI,
@@ -561,6 +633,7 @@ module apu_reg #(
     s_job_cfg_d             = s_job_cfg_q;
     s_ring_cfg_d            = s_ring_cfg_q;
     s_kws_model_cfg_d       = s_kws_model_cfg_q;
+    s_kws_coeff_cfg_d       = s_kws_coeff_cfg_q;
     s_kws_cfg_d             = s_kws_cfg_q;
     s_kws_input_cfg_d       = s_kws_input_cfg_q;
     s_kws_control_d         = s_kws_control_q;
@@ -574,9 +647,10 @@ module apu_reg #(
     s_ring_kick             = 1'b0;
     s_microcode_load        = 1'b0;
     s_model_load            = 1'b0;
+    s_coefficient_load      = 1'b0;
     s_kws_clear_history     = 1'b0;
     s_cnt_clear             = 1'b0;
-    s_irq_clear             = 11'd0;
+    s_irq_clear             = 12'd0;
     s_irq_set               = irq_set_i;
 
     if (s_write && !s_write_err) begin
@@ -591,9 +665,9 @@ module apu_reg #(
           s_ring_kick      = apb4.pwdata[`APB4_APU__COMMAND_RING_KICK];
         end
         `APB4_APU__RING_DOORBELL:          s_ring_kick = 1'b1;
-        `APB4_APU__IRQ_STATE:              s_irq_clear = s_strobed_write[10:0];
-        `APB4_APU__IRQ_ENABLE:             s_irq_en_d = s_merged_write[10:0];
-        `APB4_APU__IRQ_TEST:               s_irq_set = s_irq_set | apb4.pwdata[10:0];
+        `APB4_APU__IRQ_STATE:              s_irq_clear = s_strobed_write[11:0];
+        `APB4_APU__IRQ_ENABLE:             s_irq_en_d = s_merged_write[11:0];
+        `APB4_APU__IRQ_TEST:               s_irq_set = s_irq_set | apb4.pwdata[11:0];
         `APB4_APU__ERROR_STATUS: begin
           if (s_strobed_write[0]) begin
             s_err_stat_d   = 32'd0;
@@ -628,6 +702,10 @@ module apu_reg #(
         `APB4_APU__KWS_MODEL_ADDRESS:      s_kws_model_cfg_d[0] = apb4.pwdata;
         `APB4_APU__KWS_MODEL_SIZE:         s_kws_model_cfg_d[1] = apb4.pwdata;
         `APB4_APU__KWS_MODEL_EXPECTED_CRC: s_kws_model_cfg_d[2] = apb4.pwdata;
+        `APB4_APU__KWS_COEFF_ADDRESS:      s_kws_coeff_cfg_d[0] = apb4.pwdata;
+        `APB4_APU__KWS_COEFF_SIZE:         s_kws_coeff_cfg_d[1] = apb4.pwdata;
+        `APB4_APU__KWS_COEFF_EXPECTED_CRC: s_kws_coeff_cfg_d[2] = apb4.pwdata;
+        `APB4_APU__KWS_COEFF_COMMAND:      s_coefficient_load = 1'b1;
         `APB4_APU__KWS_CONTROL: begin
           if (s_kws_disable_write) begin
             if (kws_disable_done_i) begin
@@ -694,8 +772,8 @@ module apu_reg #(
     s_irq_state_d = (s_irq_state_d & ~s_irq_clear) | s_irq_set;
 
     if (s_soft_reset || resource_reset_apply_i) begin
-      s_irq_state_d           = 11'd0;
-      s_irq_en_d              = 11'd0;
+      s_irq_state_d           = 12'd0;
+      s_irq_en_d              = 12'd0;
       s_err_stat_d            = 32'd0;
       s_err_addr_d            = 32'd0;
       s_err_detail_d          = 32'd0;
@@ -706,6 +784,7 @@ module apu_reg #(
       s_job_cfg_d             = '0;
       s_ring_cfg_d            = RingReset;
       s_kws_model_cfg_d       = '0;
+      s_kws_coeff_cfg_d       = '0;
       s_kws_cfg_d             = KwsConfigReset[15:0];
       s_kws_control_d         = 2'd0;
       s_kws_input_cfg_d       = KwsInputConfigReset;
@@ -758,7 +837,7 @@ module apu_reg #(
       .dat_o  (s_apb4_rdata_q)
   );
   dffr #(
-      .DATA_WIDTH(11)
+      .DATA_WIDTH(12)
   ) u_irq_state_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -766,7 +845,7 @@ module apu_reg #(
       .dat_o  (s_irq_state_q)
   );
   dffr #(
-      .DATA_WIDTH(11)
+      .DATA_WIDTH(12)
   ) u_irq_enable_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -855,6 +934,14 @@ module apu_reg #(
       .rst_n_i(rst_n_i),
       .dat_i  (s_kws_model_cfg_d),
       .dat_o  (s_kws_model_cfg_q)
+  );
+  dffr #(
+      .DATA_WIDTH(3 * 32)
+  ) u_kws_coeff_cfg_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_kws_coeff_cfg_d),
+      .dat_o  (s_kws_coeff_cfg_q)
   );
   dffrc #(
       .DATA_WIDTH(16),

@@ -38,7 +38,7 @@ def test_apu_profiles_follow_deployed_p5_and_committed_p7_selection():
     assert ordinary["formats"] == {"WAV": True, "FLAC": True, "MP3": False, "KWS": False}
     assert acceptance["formats"] == {"WAV": True, "FLAC": True, "MP3": False, "KWS": True}
     assert (ordinary["capability"], ordinary["digest"]) == (0x1BD, 0)
-    assert (acceptance["capability"], acceptance["digest"]) == (0x1FD, 0xF5005D7C)
+    assert (acceptance["capability"], acceptance["digest"]) == (0x3FD, 0x63E96066)
 
 
 @pytest.mark.parametrize("relative,before,after,message", [
@@ -69,6 +69,7 @@ def test_apu_rendered_acceptance_is_source_ordered_and_failure_checked():
     ("if (!rs_apu_release_quiesce())", "if (!rs_apu_release_stage_assets())", "call order"),
     ("rs_apu_release_fail(UINT8_C(6));", "rs_apu_release_fail(UINT8_C(7));", "failure checkpoint"),
     ("load_status = rs_apu_microcode_load(&mc_image", "load_status = rs_apu_kws_model_load(&mc_image", "image-load order"),
+    ("load_status = rs_apu_kws_coeff_load(&coefficient_image", "load_status = rs_apu_kws_model_load(&coefficient_image", "image-load order"),
     ("rs_sysctrl_set_hp_release(true)", "rs_sysctrl_set_hp_release(false)", "publication/release order"),
 ])
 def test_changed_acceptance_cannot_retain_published_steps(tmp_path, before, after, message):

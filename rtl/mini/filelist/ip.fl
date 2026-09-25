@@ -130,8 +130,11 @@
 /ip/multimedia/apu_ring_scheduler.sv
 /ip/multimedia/apu_stream_router.sv
 /ip/multimedia/apu_control_store.sv
+/ip/multimedia/apu_proof_memo.sv
 /ip/multimedia/apu_microcode_loader.sv
 /ip/multimedia/apu_local_sram.sv
+/ip/multimedia/apu_kws_coeff_store.sv
+/ip/multimedia/apu_kws_coeff_loader.sv
 /ip/multimedia/apu_kws_engine.sv
 /ip/multimedia/apu_kws_sram_client.sv
 /ip/multimedia/apu_kws_model_loader.sv

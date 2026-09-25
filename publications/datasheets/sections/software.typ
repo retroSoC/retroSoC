@@ -11,7 +11,7 @@ The management hart starts from the reset flash alias. Normal firmware compositi
 placement depend on the committed application and linker profile. The HP acceptance example
 instead uses the *SRAM-resident `hp_boot` image* and validates an external boot bundle before
 releasing HP. It must not be assumed that every bringup image automatically boots Linux.
-The separate APU P7 acceptance profile performs LP image/model loading and bare-metal HP
+The separate APU P9 acceptance profile performs LP APUMC/APUC/APUM loading and bare-metal HP
 audio/KWS work; it is not the Linux boot profile. NPU compiler output and HP smoke payloads
 likewise do not supply a native Linux driver. See @apu and @npu for their software boundaries.
 

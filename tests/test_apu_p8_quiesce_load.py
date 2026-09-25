@@ -24,8 +24,11 @@ PRODUCTION_SOURCES = (
     "apu_ring_scheduler.sv",
     "apu_stream_router.sv",
     "apu_control_store.sv",
+    "apu_proof_memo.sv",
     "apu_microcode_loader.sv",
     "apu_local_sram.sv",
+    "apu_kws_coeff_store.sv",
+    "apu_kws_coeff_loader.sv",
     "apu_kws_engine.sv",
     "apu_kws_sram_client.sv",
     "apu_kws_model_loader.sv",
@@ -72,11 +75,16 @@ def test_apu_p8_quiesced_loader_admission(tmp_path: Path) -> None:
         pytest.skip("locked P7 model was not installed")
 
     from apu_kws_convert import import_tflite
+    from generate_apu_kws_rtl_constants import build_apuc
 
     apumc_hex = tmp_path / "apu-p5.hex"
     _hex_words(apumc_hex, bundle.read_bytes(), 16384)
     apum_hex = tmp_path / "kws-apum.hex"
-    _hex_words(apum_hex, import_tflite(KWS_MODEL), 8192)
+    apum = import_tflite(KWS_MODEL)
+    _hex_words(apum_hex, apum, 8192)
+    apuc_hex = tmp_path / "kws-apuc.hex"
+    apuc, _layout = build_apuc(apum)
+    _hex_words(apuc_hex, apuc, 15376)
 
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     multimedia = ROOT / "rtl/ip/multimedia"
@@ -125,11 +133,13 @@ def test_apu_p8_quiesced_loader_admission(tmp_path: Path) -> None:
             str(simulation),
             f"+APUMC_HEX={apumc_hex}",
             f"+APUM_HEX={apum_hex}",
+            f"+APUC_HEX={apuc_hex}",
         ],
         check=True,
         capture_output=True,
         text=True,
     )
     assert "P8_QUIESCE_MC" in result.stdout
+    assert "P8_QUIESCE_COEFF" in result.stdout
     assert "P8_QUIESCE_MODEL" in result.stdout
     assert "APU-P8 quiesced loader admission test passed" in result.stdout

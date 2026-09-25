@@ -1037,13 +1037,20 @@ static int test_apu_kws_validation(void) {
         .bytes = UINT32_C(32768),
         .expected_crc = UINT32_C(0xB9034B22),
     };
+    const rs_apu_image_t coefficient_image = {
+        .address = UINT32_C(0x10008000),
+        .bytes = RS_APU_ABI_APUC_IMAGE_BYTES,
+        .expected_crc = RS_APU_ABI_APUC_PAYLOAD_CRC,
+    };
     rs_apu_image_t bad_image = image;
     rs_apu_kws_completion_t completion;
+    rs_apu_kws_coeff_status_t coefficient_status;
 
     test_apu_mmio_reset();
     APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) = UINT32_C(0xA5A5A5A5);
     if ((rs_apu_kws_validate_job(&job) != RS_OK) ||
         (rs_apu_kws_model_load(&image, 0U) != RS_ENOTSUP) ||
+        (rs_apu_kws_coeff_load(&coefficient_image, 0U) != RS_ENOTSUP) ||
         (APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
         return 1;
     }
@@ -1072,6 +1079,25 @@ static int test_apu_kws_validation(void) {
         return 5;
     }
     APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_STATUS) = 0U;
+    if ((rs_apu_kws_coeff_load(&coefficient_image, 1U) != RS_EIO) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_COEFF_COMMAND) != UINT32_C(1))) {
+        return 11;
+    }
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_STATUS) = UINT32_C(6);
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC) = RS_APU_ABI_APUC_PAYLOAD_CRC;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ID_LO) = RS_APU_ABI_APUC_COEFFICIENT_ID_LO;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ID_HI) = RS_APU_ABI_APUC_COEFFICIENT_ID_HI;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_CAPACITY) = RS_APU_ABI_APUC_PAYLOAD_BYTES;
+    if ((rs_apu_kws_coeff_status_read(NULL) != RS_EINVAL) ||
+        (rs_apu_kws_coeff_status_read(&coefficient_status) != RS_OK) ||
+        (coefficient_status.status != UINT32_C(6)) ||
+        (coefficient_status.actual_crc != RS_APU_ABI_APUC_PAYLOAD_CRC) ||
+        (coefficient_status.coefficient_id[0] != RS_APU_ABI_APUC_COEFFICIENT_ID_LO) ||
+        (coefficient_status.coefficient_id[1] != RS_APU_ABI_APUC_COEFFICIENT_ID_HI) ||
+        (coefficient_status.capacity_bytes != RS_APU_ABI_APUC_PAYLOAD_BYTES)) {
+        return 12;
+    }
     APU_TEST_REG(RS_APU_ABI_KWS_MODEL_STATUS) = 0U;
     if ((rs_apu_kws_model_load(&image, 1U) != RS_EIO) ||
         (APU_TEST_REG(RS_APU_ABI_COMMAND) != (UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD))) {

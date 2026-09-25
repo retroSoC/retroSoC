@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import struct
 import subprocess
@@ -90,8 +91,11 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
                 str(multimedia / "apu_ring_scheduler.sv"),
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
+                str(multimedia / "apu_proof_memo.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_coeff_store.sv"),
+                str(multimedia / "apu_kws_coeff_loader.sv"),
                 str(multimedia / "apu_kws_engine.sv"),
                 str(multimedia / "apu_kws_sram_client.sv"),
                 str(multimedia / "apu_kws_model_loader.sv"),
@@ -132,6 +136,28 @@ def test_apu_p1_apb_register_shell(tmp_path: Path) -> None:
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
     assert "APU-P1 complete APB register matrix passed" in result.stdout
+
+    legacy_simulation = tmp_path / "apu_reg_legacy_tb"
+    subprocess.run(
+        [
+            iverilog,
+            "-g2012",
+            "-s",
+            "apu_reg_tb",
+            "-Papu_reg_tb.EnableP7=0",
+            "-o",
+            str(legacy_simulation),
+            str(converted),
+        ],
+        check=True,
+    )
+    legacy = subprocess.run(
+        [vvp, str(legacy_simulation), "+LEGACY_IRQ_ONLY"],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert "APU legacy APB IRQ mask passed" in legacy.stdout
 
 
 def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
@@ -180,8 +206,11 @@ def test_apu_p1_integrated_irq_ownership_topology(tmp_path: Path) -> None:
                 str(multimedia / "apu_ring_scheduler.sv"),
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
+                str(multimedia / "apu_proof_memo.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_coeff_store.sv"),
+                str(multimedia / "apu_kws_coeff_loader.sv"),
                 str(multimedia / "apu_kws_engine.sv"),
                 str(multimedia / "apu_kws_sram_client.sv"),
                 str(multimedia / "apu_kws_model_loader.sv"),
@@ -488,6 +517,7 @@ last:
                 str(ROOT / "rtl/tech/tc_sram.sv"),
                 str(multimedia / "apu_microcode_pkg.sv"),
                 str(multimedia / "apu_control_store.sv"),
+                str(multimedia / "apu_proof_memo.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_codec_sequencer.sv"),
                 str(ROOT / "tests/rtl/apu_p3_microcode_tb.sv"),
@@ -598,8 +628,11 @@ done:
                 str(multimedia / "apu_ring_scheduler.sv"),
                 str(multimedia / "apu_stream_router.sv"),
                 str(multimedia / "apu_control_store.sv"),
+                str(multimedia / "apu_proof_memo.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_kws_coeff_store.sv"),
+                str(multimedia / "apu_kws_coeff_loader.sv"),
                 str(multimedia / "apu_kws_engine.sv"),
                 str(multimedia / "apu_kws_sram_client.sv"),
                 str(multimedia / "apu_kws_model_loader.sv"),
@@ -973,6 +1006,13 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
     sv2v = shutil.which("sv2v")
     if iverilog is None or vvp is None or sv2v is None:
         return
+    feature = (
+        ROOT
+        / ".cache/retrosoc/sources/apu-kws-mfcc/datasets/kws01"
+        / "tst_000000_Stop_7.bin"
+    )
+    if not KWS_MODEL.is_file() or not feature.is_file():
+        return
     common = ROOT / "rtl/managed/clusterip/common/rtl"
     multimedia = ROOT / "rtl/ip/multimedia"
     source_list = tmp_path / "apu_kws_engine.fl"
@@ -984,8 +1024,11 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
                 f"+incdir+{common / 'interface'}",
                 f"+incdir+{multimedia}",
                 str(common / "interface/axi4_stream_if.sv"),
+                str(ROOT / "rtl/tech/tc_sram.sv"),
                 str(multimedia / "apu_kws_sram_client.sv"),
+                str(multimedia / "apu_kws_coeff_store.sv"),
                 str(multimedia / "apu_kws_engine.sv"),
+                str(ROOT / "tests/rtl/apu_kws_coeff_fixture.sv"),
                 str(ROOT / "tests/rtl/apu_kws_engine_tb.sv"),
                 "",
             ]
@@ -1005,19 +1048,46 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
         check=True,
     )
     simulation = tmp_path / "apu_kws_engine"
-    subprocess.run(
-        [iverilog, "-g2012", "-s", "apu_kws_engine_tb", "-o", str(simulation), str(converted)],
-        check=True,
-    )
-    command = [vvp, str(simulation)]
-    feature = (
-        ROOT
-        / ".cache/retrosoc/sources/apu-kws-mfcc/datasets/kws01"
-        / "tst_000000_Stop_7.bin"
-    )
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        subprocess.run(
+            [iverilog, "-g2012", "-s", "apu_kws_engine_tb", "-o", str(simulation), str(converted)],
+            check=True,
+        )
+        command = [vvp, str(simulation)]
+    else:
+        verilator_dir = tmp_path / "verilator"
+        ccache_dir = tmp_path / "ccache"
+        ccache_temp = tmp_path / "ccache-tmp"
+        ccache_dir.mkdir()
+        ccache_temp.mkdir()
+        environment = os.environ.copy()
+        environment["CCACHE_DIR"] = str(ccache_dir)
+        environment["CCACHE_TEMPDIR"] = str(ccache_temp)
+        subprocess.run(
+            [
+                verilator,
+                "--binary",
+                "--timing",
+                "-Wno-fatal",
+                "--top-module",
+                "apu_kws_engine_tb",
+                "--Mdir",
+                str(verilator_dir),
+                str(converted),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
+        command = [str(verilator_dir / "Vapu_kws_engine_tb")]
     if KWS_MODEL.is_file() and feature.is_file():
+        from generate_apu_kws_rtl_constants import build_apuc
+
         image = import_tflite(KWS_MODEL)
         apum_hex = tmp_path / "kws_apum.hex"
+        apuc_hex = tmp_path / "kws_apuc.hex"
         mfcc_hex = tmp_path / "kws_mfcc.hex"
         layers_hex = tmp_path / "kws_layers.hex"
         apum_hex.write_text(
@@ -1031,6 +1101,14 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
             "".join(f"{value:02x}\n" for value in feature.read_bytes()),
             encoding="ascii",
         )
+        apuc, _manifest = build_apuc(image)
+        apuc_hex.write_text(
+            "".join(
+                f"{int.from_bytes(apuc[offset : offset + 4], 'little'):08x}\n"
+                for offset in range(0, len(apuc), 4)
+            ),
+            encoding="ascii",
+        )
         layers = infer_apum(image, feature.read_bytes())
         layers_hex.write_text(
             "".join(f"{value & 0xff:02x}\n" for layer in layers for value in layer),
@@ -1039,6 +1117,7 @@ def test_apu_p7_kws_engine_directed(tmp_path: Path) -> None:
         command.extend(
             (
                 f"+APUM_HEX={apum_hex}",
+                f"+APUC_HEX={apuc_hex}",
                 f"+MFCC_HEX={mfcc_hex}",
                 f"+LAYERS_HEX={layers_hex}",
             )

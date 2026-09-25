@@ -564,7 +564,15 @@ Unlisted offsets are reserved and return `PSLVERR`.
 | `0x234` | `KWS_MODEL_STATUS` | RO | `0` | Busy, valid/lock, header/range/size/CRC/operator errors. |
 | `0x238` | `KWS_MODEL_ACTUAL_CRC` | RO | `0` | Observed payload CRC32. |
 | `0x23c` | `KWS_INPUT_CONFIG` | RW disabled/idle | `0x0104bb80` | P7 append: rate `[16:0]`, physical channels `[18:17]`, precision `[25:20]`; see P7 capture rules. |
-| `0x240..0x260` | `KWS_COEFF_*` | P9 only | see P9 | Additive coefficient DMA/CRC/readback/lock interface; exact fields and resets below. |
+| `0x240` | `KWS_COEFF_ADDRESS` | RW idle/LP | `0` | P9: 64-byte-aligned APUC DMA source. |
+| `0x244` | `KWS_COEFF_SIZE` | RW idle/LP | `0` | P9: exact 61504-byte APUC image size. |
+| `0x248` | `KWS_COEFF_EXPECTED_CRC` | RW idle/LP | `0` | P9: expected APUC payload CRC32. |
+| `0x24c` | `KWS_COEFF_COMMAND` | WO | `0` | P9: full-word value 1 starts coefficient loading. |
+| `0x250` | `KWS_COEFF_STATUS` | RO | `0` | P9: busy, valid, lock and terminal validation errors. |
+| `0x254` | `KWS_COEFF_ACTUAL_CRC` | RO | `0` | P9: finalized SRAM-readback CRC32. |
+| `0x258` | `KWS_COEFF_ID_LO` | RO | `0` | P9: published coefficient ID bits 31:0. |
+| `0x25c` | `KWS_COEFF_ID_HI` | RO | `0` | P9: published coefficient ID bits 63:32. |
+| `0x260` | `KWS_COEFF_CAPACITY` | RO | `0x0000f000` | P9: auxiliary coefficient payload capacity in bytes. |
 | `0x300` | `PERF_CONTROL` | RW | `0` | Enable 0, clear pulse 1, snapshot pulse 2. |
 | `0x304` | `PERF_STATUS` | RO | `0` | Snapshot valid and overflow summary. |
 | `0x308..0x354` | `PERF_*` | RO snapshot | `0` | Ten 64-bit pairs: active cycles, input/output bytes, decoded frames, DMA read/write stalls, stream stalls, sequencer instructions, KWS cycles, and faults. |
@@ -2815,16 +2823,17 @@ offsets, descriptor, APUM/APUMC versions, MP3 stub and system IRQ/resource/DMA/
 clock/reset allocations are unchanged. Earlier profiles reject these new
 offsets and bit11 IRQ writes. P9-only software tests discovery before access.
 
-| Offset | Register | Access / reset | Contract |
-| ---: | --- | --- | --- |
-| `0x240` | KWS_COEFF_ADDRESS | RW idle/LP / 0 | 64-byte-aligned DMA source. |
-| `0x244` | KWS_COEFF_SIZE | RW idle/LP / 0 | Exact 61504 bytes. |
-| `0x248` | KWS_COEFF_EXPECTED_CRC | RW idle/LP / 0 | Expected APUC payload CRC. |
-| `0x24c` | KWS_COEFF_COMMAND | WO / 0 | Full-word value 1 starts load; all other values reject. |
-| `0x250` | KWS_COEFF_STATUS | RO / 0 | Busy0, valid1, locked2; header-declared size8, other header9, CRC10, padding11 error flags. |
-| `0x254` | KWS_COEFF_ACTUAL_CRC | RO / 0 | Finalized SRAM-readback CRC, zero until a complete readback. |
-| `0x258`, `0x25c` | KWS_COEFF_ID_LO/HI | RO / 0 | Published coefficient ID; zero until success. |
-| `0x260` | KWS_COEFF_CAPACITY | RO / `0x0000f000` | Auxiliary payload bytes, not APUM scratch bytes. |
+| Offset | Register | Access | Reset | Contract |
+| ---: | --- | --- | --- | --- |
+| `0x240` | KWS_COEFF_ADDRESS | RW idle/LP | `0` | 64-byte-aligned DMA source. |
+| `0x244` | KWS_COEFF_SIZE | RW idle/LP | `0` | Exact 61504 bytes. |
+| `0x248` | KWS_COEFF_EXPECTED_CRC | RW idle/LP | `0` | Expected APUC payload CRC. |
+| `0x24c` | KWS_COEFF_COMMAND | WO | `0` | Full-word value 1 starts load; all other values reject. |
+| `0x250` | KWS_COEFF_STATUS | RO | `0` | Busy0, valid1, locked2; header-declared size8, other header9, CRC10, padding11 error flags. |
+| `0x254` | KWS_COEFF_ACTUAL_CRC | RO | `0` | Finalized SRAM-readback CRC, zero until a complete readback. |
+| `0x258` | KWS_COEFF_ID_LO | RO | `0` | Published coefficient ID bits 31:0; zero until success. |
+| `0x25c` | KWS_COEFF_ID_HI | RO | `0` | Published coefficient ID bits 63:32; zero until success. |
+| `0x260` | KWS_COEFF_CAPACITY | RO | `0x0000f000` | Auxiliary payload bytes, not APUM scratch bytes. |
 
 RW/WO writes require full-word strobes; reserved status bits read zero and
 RO writes reject. Load admission requires LP owner, globally idle/quiesced,

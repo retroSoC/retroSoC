@@ -1713,9 +1713,9 @@
     "function_sections": [],
     "software_sections": [],
     "notes": [
-      "The deployed P5 register, loader and sequencer paths enable WAV/FLAC jobs. Default PRODUCT advertises 0x000001BD with KWS disabled; the dedicated P7 acceptance profile advertises 0x000001FD with fixed-model KWS and ABI digest 0xF5005D7C. MP3 remains unsupported in both configurations.",
-      "Capability and ABI identities describe the selected implementation. Full-corpus codec/KWS accuracy, sustained-audio acceptance and production qualification require their own matching reports; none is implied by enabling the P7 configuration.",
-      "LP loads a bounded APUMC image before submitting work. Expanded P5 RTL has 4096 64-bit control-store words (32 KiB), CAPABILITY1=0x01827020 and APB version 1.1 while retaining APUMC V1 image compatibility.",
+      "The deployed P5 register, loader and sequencer paths enable WAV/FLAC jobs. Default PRODUCT advertises 0x000001BD with KWS disabled; the dedicated P9 acceptance profile advertises 0x000003FD with APUC-backed KWS and ABI digest 0x63E96066. MP3 remains unsupported in both configurations.",
+      "Capability and ABI identities describe the selected implementation. Full-corpus codec/KWS accuracy, sustained-audio acceptance and production qualification require their own matching reports; none is implied by enabling the P9 configuration.",
+      "LP loads bounded APUMC, APUC and APUM images before submitting KWS work. Expanded P5 RTL retains 4096 64-bit control-store words (32 KiB), CAPABILITY1=0x01827020 and APUMC V1 compatibility; P9 reports APB version 1.2.",
       "The loader checks header, ABI, bounds, entry descriptors and CRC before publishing valid/lock state. Rejected or aborted loads must leave stale instructions unexecutable.",
       "Direct jobs use JOB_* staging registers; ring jobs use descriptor ownership and producer/consumer rules. Buffer limits, codec entry bounds, ownership, quiesce and transport completion participate in admission and termination.",
       "The codec controller coordinates parser microcode, transport and processing primitives. Private DMA moves input/output while the stream router connects permitted audio paths. Capabilities do not waive rate, format, microcode or lifecycle checks.",

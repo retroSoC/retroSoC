@@ -136,6 +136,11 @@ APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
 APU_P7_MODEL            := $(APU_P7_DIR)/apu-p7.apum
 APU_P7_MODEL_MANIFEST   := $(APU_P7_DIR)/apu-p7-manifest.json
+APU_P9_COEFFICIENT_DIR  := $(VARIANT_ROOT)/apu/coefficients
+APU_P9_APUC             := $(APU_P9_COEFFICIENT_DIR)/apu-p9.apuc
+APU_P9_LAYOUT_MANIFEST  := $(APU_P9_COEFFICIENT_DIR)/coefficient-layout.json
+APU_P9_EVIDENCE_DIR     := $(VARIANT_ROOT)/apu/p9/evidence
+APU_P9_EVIDENCE_LAYOUT  := $(APU_P9_EVIDENCE_DIR)/coefficient-layout.json
 APU_P7_KWS_TFLITE       := $(CACHE_ROOT)/sources/apu-mlperf-tiny/benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite
 NPU_P0_DIR              := $(VARIANT_ROOT)/npu/p0
 NPU_P5_DIR              := $(VARIANT_ROOT)/npu/p5
@@ -416,7 +421,7 @@ endif
 include physical/librelane/Makefile
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -425,7 +430,7 @@ include physical/ecc/Makefile
 	apu-block-filelist apu-block-synth apu-block-sta apu-block-report apu-block-evidence apu-block-clean \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-gateway-a formal-sdio formal-clean formal-doctor \
+	  formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all vexii-generate
 .NOTPARALLEL: setup
 
@@ -458,6 +463,9 @@ help:
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
 	  '  apu-p7-model               convert the locked MLPerf Tiny KWS model to APUM' \
+	  '  apu-p9-coefficients        build the frozen APUC image and 15-bank manifest' \
+	  '  apu-p9-evidence            initialize the six fail-closed P9 evidence reports' \
+	  '  apu-p9-memory-ab           compare explicit baseline/candidate synthesis roots' \
 	  '  setup-npu-reference        install/verify locked NPU models, corpora, and oracle' \
 	  '  npu-p0-qualify             qualify full corpora against the independent oracle' \
 	  '  npu-p5-deployments         build deterministic KWS/VWW ABI-1 packages' \
@@ -497,7 +505,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-ga2d | formal-apu | formal-apu-kws | formal-gateway-a | formal-sdio run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-ga2d | formal-apu | formal-apu-kws | formal-apu-p9 | formal-gateway-a | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -757,6 +765,32 @@ $(APU_P7_MODEL): $(ROOT_PATH)/scripts/apu_kws_convert.py \
 		--model $(APU_P7_KWS_TFLITE) --output $@ --manifest $(APU_P7_MODEL_MANIFEST)
 
 apu-p7-model: $(APU_P7_MODEL)
+
+$(APU_P9_APUC) $(APU_P9_LAYOUT_MANIFEST) &: $(APU_P7_MODEL) \
+	$(ROOT_PATH)/scripts/generate_apu_kws_rtl_constants.py \
+	$(ROOT_PATH)/scripts/apu_kws_coeff.py
+	python3 $(ROOT_PATH)/scripts/generate_apu_kws_rtl_constants.py \
+		--apum $(APU_P7_MODEL) \
+		--output $(APU_P9_COEFFICIENT_DIR)/apu_kws_rom.svh \
+		--profile-output $(APU_P9_COEFFICIENT_DIR)/apu_kws_apum_profile.svh \
+		--apuc-output $(APU_P9_APUC) --manifest-output $(APU_P9_LAYOUT_MANIFEST)
+
+apu-p9-coefficients: $(APU_P9_APUC) $(APU_P9_LAYOUT_MANIFEST)
+
+$(APU_P9_EVIDENCE_LAYOUT): $(APU_P9_LAYOUT_MANIFEST) $(APU_P9_APUC) \
+	$(ROOT_PATH)/scripts/apu_p9_evidence.py
+	python3 $(ROOT_PATH)/scripts/apu_p9_evidence.py initialize \
+		--layout $(APU_P9_LAYOUT_MANIFEST) --apuc $(APU_P9_APUC) \
+		--profile $(CONFIG) \
+		--output-dir $(APU_P9_EVIDENCE_DIR)
+
+apu-p9-evidence: $(APU_P9_EVIDENCE_LAYOUT)
+
+apu-p9-memory-ab:
+	@test -n '$(APU_P9_BASELINE_ROOT)' -a -n '$(APU_P9_CANDIDATE_ROOT)'
+	python3 $(ROOT_PATH)/scripts/apu_p9_memory_ab.py \
+		--baseline-root $(APU_P9_BASELINE_ROOT) --candidate-root $(APU_P9_CANDIDATE_ROOT) \
+		--output $(APU_P9_EVIDENCE_DIR)/memory-synthesis-ab.json
 
 apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 	python3 $(ROOT_PATH)/scripts/qualify_apu_p5_corpus.py \

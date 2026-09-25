@@ -45,10 +45,11 @@ measurement evidence. APU's checked-in WAV/FLAC image is statically assembled by
 The [109-entry chapter review](datasheets/chapter-review.md) records final page
 numbers, implementation status, document completeness, sources and recommendations
 for the delivered PDF snapshot.
-MP3 remains a reserved trap entry. Default PRODUCT keeps KWS gated off; the P7
-acceptance profile advertises capability `0x1FD` and digest `0xF5005D7C`.
-APU KWS storage is described from the inferred implementation, not an unimplemented
-macro claim. NPU has eight executable operator classes, 64 KiB private SRAM and
+MP3 remains a reserved trap entry. Default PRODUCT keeps KWS gated off; the P9
+acceptance profile advertises capability `0x3FD` and digest `0x63E96066`.
+APU KWS storage includes 15 coefficient and 17 proof-memo macro wrappers in the
+qualified configuration; physical replacement remains evidence-bound. NPU has
+eight executable operator classes, 64 KiB private SRAM and
 an integrated eight-beat AXI64 DMA limit; its reusable DMA default is not the
 deployed limit. Native Linux NPU/ASoC support is not inferred from HP smoke code.
 CI workflow outcomes are a separately scoped snapshot, including failures and

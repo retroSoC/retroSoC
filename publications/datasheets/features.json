@@ -87,7 +87,7 @@
   "apu": [
     "**Coreless microcode sequencer** with private DMA and local storage.",
     "WAV/FLAC jobs and streams are enabled in the deployed P5 path; their format, image and buffer requirements still apply.",
-    "Fixed KWS is disabled in default PRODUCT and enabled by the P7 acceptance profile with its own ABI digest.",
+    "Fixed KWS is disabled in default PRODUCT and enabled with APUC loading by the P9 acceptance profile with its own ABI digest.",
     "MP3 is unsupported. Advertised capabilities do not establish full-corpus, sustained-audio or production qualification."
   ],
   "npu": [

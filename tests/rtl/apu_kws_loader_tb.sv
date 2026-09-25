@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module apu_kws_loader_tb;
+  `include "apu_kws_apum_profile.svh"
   logic          clk_i = 1'b0;
   logic          rst_n_i = 1'b0;
   logic          start_i = 1'b0;
@@ -50,6 +51,10 @@ module apu_kws_loader_tb;
   integer        abort_done_count;
   integer        cycle_count;
   integer        writes_before_success;
+  logic          profile_request_valid_o;
+  logic   [10:0] profile_index_o;
+  logic          profile_response_valid_i;
+  logic   [31:0] profile_data_i;
 
   task automatic drive_dma(input integer first_word, input integer word_count,
                            input logic [31:0] expected_address, input logic [31:0] expected_bytes);
@@ -137,6 +142,19 @@ module apu_kws_loader_tb;
       abort_done_count <= abort_done_count + 1;
     end
   end
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      profile_response_valid_i <= 1'b0;
+      profile_data_i           <= 32'd0;
+    end else begin
+      if (profile_request_valid_o) begin
+        profile_response_valid_i <= 1'b1;
+        profile_data_i           <= apu_kws_apum_fixed_word(profile_index_o);
+      end else if (profile_response_valid_i) begin
+        profile_response_valid_i <= 1'b0;
+      end
+    end
+  end
 
   apu_kws_model_loader dut (
       .clk_i                   (clk_i),
@@ -172,6 +190,13 @@ module apu_kws_loader_tb;
       .local_data_o            (),
       .local_strb_o            (),
       .local_ready_i           (1'b1),
+      .profile_request_valid_o (profile_request_valid_o),
+      .profile_request_ready_i (1'b1),
+      .profile_index_o         (profile_index_o),
+      .profile_response_valid_i(profile_response_valid_i),
+      .profile_response_ready_o(),
+      .profile_data_i          (profile_data_i),
+      .profile_fault_i         (1'b0),
       .busy_o                  (busy_o),
       .valid_o                 (valid_o),
       .lock_o                  (lock_o),

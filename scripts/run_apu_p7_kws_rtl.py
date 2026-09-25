@@ -30,6 +30,7 @@ from apu_kws import (  # noqa: E402
     parse_apum,
 )
 from apu_kws_convert import TfliteError, import_tflite  # noqa: E402
+from generate_apu_kws_rtl_constants import build_apuc  # noqa: E402
 from setup_apu_kws_reference import REQUIRED_ARCHIVE, REQUIRED_SOURCES  # noqa: E402
 
 MANIFEST = ROOT / "docs/ip/apu-kws-corpus.tsv"
@@ -220,7 +221,9 @@ def _production_sources() -> list[Path]:
     return [
         common / "interface/axi4_stream_if.sv",
         multimedia / "apu_kws_sram_client.sv",
+        multimedia / "apu_kws_coeff_store.sv",
         multimedia / "apu_kws_engine.sv",
+        ROOT / "tests/rtl/apu_kws_coeff_fixture.sv",
         FIXTURE,
     ]
 
@@ -448,6 +451,9 @@ def main() -> int:
             )
         apum_hex = build_dir / "kws_apum.hex"
         _write_hex(apum_hex, image)
+        apuc_hex = build_dir / "kws_apuc.hex"
+        apuc, _layout = build_apuc(image)
+        _write_hex(apuc_hex, apuc)
         built = _compile(build_dir, args.simulator)
     except (OSError, TfliteError, ValueError, QualificationError) as error:
         raise SystemExit(str(error)) from error
@@ -459,6 +465,7 @@ def main() -> int:
     )
     plusargs = [
         f"+APUM_HEX={apum_hex}",
+        f"+APUC_HEX={apuc_hex}",
         f"+PCM_DIR={pcm_dir}",
         f"+WINDOW_COUNT={window_count}",
         "+FIRST_INDEX=0",

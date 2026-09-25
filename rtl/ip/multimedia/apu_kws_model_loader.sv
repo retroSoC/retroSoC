@@ -40,6 +40,13 @@ module apu_kws_model_loader (
     output logic [31:0] local_data_o,
     output logic [ 3:0] local_strb_o,
     input  logic        local_ready_i,
+    output logic        profile_request_valid_o,
+    input  logic        profile_request_ready_i,
+    output logic [10:0] profile_index_o,
+    input  logic        profile_response_valid_i,
+    output logic        profile_response_ready_o,
+    input  logic [31:0] profile_data_i,
+    input  logic        profile_fault_i,
     output logic        busy_o,
     output logic        valid_o,
     output logic        lock_o,
@@ -56,8 +63,6 @@ module apu_kws_model_loader (
     output logic        abort_done_o
     // verilog_format: on
 );
-  `include "apu_kws_apum_profile.svh"
-
   localparam logic [31:0] ModelBytes = 32'd32768;
   localparam logic [31:0] ModelCrc = 32'hb903_4b22;
   localparam logic [31:0] ModelAddress = 32'hce4f_7000;
@@ -88,9 +93,12 @@ module apu_kws_model_loader (
   logic [15:0][31:0] s_header_q;
   logic              s_padding_err_q;
   logic              s_profile_err_q;
+  logic              s_profile_pending_q;
+  logic              s_dma_complete_q;
+  logic [31:0]       s_profile_word_q;
+  logic [31:0]       s_profile_offset_q;
   logic              s_receive_err_q;
   logic [31:0]       s_profile_err_addr_q;
-  logic [ 1:0]       s_profile_word_check;
   logic              s_profile_candidate;
   logic [32:0]       s_last_addr;
   logic [32:0]       s_snapshot_last_addr;
@@ -154,6 +162,33 @@ module apu_kws_model_loader (
     end
   endfunction
 
+  function automatic logic [10:0] profile_word_index(input logic [31:0] offset_i);
+    begin
+      if (offset_i <= 32'h04fc) begin
+        return 11'(offset_i >> 2);
+      end else if ((offset_i >= 32'h1000) && (offset_i <= 32'h11fc)) begin
+        return 11'd320 + 11'((offset_i - 32'h1000) >> 2);
+      end else if ((offset_i >= 32'h1540) && (offset_i <= 32'h173c)) begin
+        return 11'd448 + 11'((offset_i - 32'h1540) >> 2);
+      end else if ((offset_i >= 32'h2840) && (offset_i <= 32'h2a3c)) begin
+        return 11'd576 + 11'((offset_i - 32'h2840) >> 2);
+      end else if ((offset_i >= 32'h2d80) && (offset_i <= 32'h2f7c)) begin
+        return 11'd704 + 11'((offset_i - 32'h2d80) >> 2);
+      end else if ((offset_i >= 32'h4080) && (offset_i <= 32'h427c)) begin
+        return 11'd832 + 11'((offset_i - 32'h4080) >> 2);
+      end else if ((offset_i >= 32'h45c0) && (offset_i <= 32'h47bc)) begin
+        return 11'd960 + 11'((offset_i - 32'h45c0) >> 2);
+      end else if ((offset_i >= 32'h58c0) && (offset_i <= 32'h5abc)) begin
+        return 11'd1088 + 11'((offset_i - 32'h58c0) >> 2);
+      end else if ((offset_i >= 32'h5e00) && (offset_i <= 32'h5ffc)) begin
+        return 11'd1216 + 11'((offset_i - 32'h5e00) >> 2);
+      end else if ((offset_i >= 32'h7100) && (offset_i <= 32'h72fc)) begin
+        return 11'd1344 + 11'((offset_i - 32'h7100) >> 2);
+      end
+      return 11'd1472 + 11'((offset_i - 32'h7630) >> 2);
+    end
+  endfunction
+
   assign s_last_addr = {1'b0, address_i} + {1'b0, size_i} - 1'b1;
   assign s_admit_ok = (size_i == ModelBytes) && (address_i[5:0] == 6'd0) &&
       (address_i >= acl_base_i) && !s_last_addr[32] && (s_last_addr[31:0] <= acl_limit_i) &&
@@ -165,16 +200,18 @@ module apu_kws_model_loader (
   assign s_data_accept = dma_valid_i && dma_ready_o;
   assign s_crc_after_word = crc32_word(s_crc_q, dma_data_i, dma_keep_i);
   assign s_profile_candidate = profile_word_candidate(s_received_q);
-  assign s_profile_word_check = s_profile_candidate ? apu_kws_apum_fixed_word_check(
-      s_received_q[14:0], dma_data_i
-  ) : 2'b00;
+  assign profile_request_valid_o = (s_state_q == ReceivePayload) && dma_valid_i &&
+      local_ready_i && s_profile_candidate && !s_profile_pending_q;
+  assign profile_index_o = profile_word_index(s_received_q);
+  assign profile_response_ready_o = s_profile_pending_q;
 
   assign dma_request_valid_o = ((s_state_q == RequestHeader) ||
                                 (s_state_q == RequestPayload)) && s_snapshot_range_ok;
   assign dma_request_address_o = (s_state_q == RequestPayload) ? s_addr_q + 32'd64 : s_addr_q;
   assign dma_request_bytes_o = (s_state_q == RequestPayload) ? s_size_q - 32'd64 : 32'd64;
-  assign dma_ready_o = ((s_state_q == ReceiveHeader) ||
-                        (s_state_q == ReceivePayload)) && local_ready_i;
+  assign dma_ready_o = (s_state_q == ReceiveHeader) ||
+      ((s_state_q == ReceivePayload) && local_ready_i && !s_profile_pending_q &&
+       (!s_profile_candidate || profile_request_ready_i));
   assign local_request_o = s_data_accept;
   assign local_address_o = KwsBase[16:0] + s_received_q[16:0];
   assign local_data_o = dma_data_i;
@@ -217,6 +254,10 @@ module apu_kws_model_loader (
       s_header_q           <= '0;
       s_padding_err_q      <= 1'b0;
       s_profile_err_q      <= 1'b0;
+      s_profile_pending_q  <= 1'b0;
+      s_dma_complete_q     <= 1'b0;
+      s_profile_word_q     <= 32'd0;
+      s_profile_offset_q   <= 32'd0;
       s_receive_err_q      <= 1'b0;
       s_profile_err_addr_q <= 32'd0;
       s_addr_q             <= 32'd0;
@@ -245,6 +286,10 @@ module apu_kws_model_loader (
         s_received_q         <= 32'd0;
         s_padding_err_q      <= 1'b0;
         s_profile_err_q      <= 1'b0;
+        s_profile_pending_q  <= 1'b0;
+        s_dma_complete_q     <= 1'b0;
+        s_profile_word_q     <= 32'd0;
+        s_profile_offset_q   <= 32'd0;
         s_receive_err_q      <= 1'b0;
         s_profile_err_addr_q <= 32'd0;
         s_addr_q             <= 32'd0;
@@ -253,6 +298,13 @@ module apu_kws_model_loader (
         s_acl_base_q         <= 32'd0;
         s_acl_limit_q        <= 32'd0;
       end else begin
+        if (profile_response_valid_i && profile_response_ready_o) begin
+          s_profile_pending_q <= 1'b0;
+          if ((profile_data_i != s_profile_word_q) || profile_fault_i) begin
+            s_profile_err_q      <= 1'b1;
+            s_profile_err_addr_q <= s_addr_q + s_profile_offset_q;
+          end
+        end
         unique case (s_state_q)
           Idle: begin
             if (start_i && !s_lock_q) begin
@@ -270,6 +322,10 @@ module apu_kws_model_loader (
               s_header_q           <= '0;
               s_padding_err_q      <= 1'b0;
               s_profile_err_q      <= 1'b0;
+              s_profile_pending_q  <= 1'b0;
+              s_dma_complete_q     <= 1'b0;
+              s_profile_word_q     <= 32'd0;
+              s_profile_offset_q   <= 32'd0;
               s_receive_err_q      <= 1'b0;
               s_profile_err_addr_q <= 32'd0;
               s_addr_q             <= address_i;
@@ -475,6 +531,7 @@ module apu_kws_model_loader (
           end
           ReceivePayload: begin
             if (dma_done_i) begin
+              s_dma_complete_q <= 1'b1;
               if (dma_error_i) begin
                 s_stat_q          <= 32'd0;
                 s_err_code_q      <= dma_error_code_i;
@@ -501,15 +558,14 @@ module apu_kws_model_loader (
                   s_padding_err_q      <= 1'b1;
                   s_profile_err_addr_q <= s_addr_q + s_received_q;
                 end
-                if (s_profile_candidate && !s_profile_err_q && s_profile_word_check[1] &&
-                    !s_profile_word_check[0]) begin
-                  s_profile_err_q      <= 1'b1;
-                  s_profile_err_addr_q <= s_addr_q + s_received_q;
+                if (s_profile_candidate && !s_profile_err_q) begin
+                  s_profile_pending_q <= 1'b1;
+                  s_profile_word_q    <= dma_data_i;
+                  s_profile_offset_q  <= s_received_q;
                 end
-                s_crc_q        <= s_crc_after_word;
-                s_actual_crc_q <= ~s_crc_after_word;
-                s_received_q   <= s_received_q + 32'd4;
-                s_state_q      <= Validate;
+                s_crc_q      <= s_crc_after_word;
+                s_received_q <= s_received_q + 32'd4;
+                s_state_q    <= WaitPayload;
               end else begin
                 s_stat_q       <= 32'h0000_0200;
                 s_err_code_q   <= `APB4_APU__ERROR_CODE_KWS_MODEL;
@@ -539,10 +595,9 @@ module apu_kws_model_loader (
                   s_profile_err_addr_q <= s_addr_q + s_received_q;
                 end
                 if (s_profile_candidate && !s_profile_err_q) begin
-                  if (s_profile_word_check[1] && !s_profile_word_check[0]) begin
-                    s_profile_err_q      <= 1'b1;
-                    s_profile_err_addr_q <= s_addr_q + s_received_q;
-                  end
+                  s_profile_pending_q <= 1'b1;
+                  s_profile_word_q    <= dma_data_i;
+                  s_profile_offset_q  <= s_received_q;
                 end
                 s_crc_q      <= s_crc_after_word;
                 s_received_q <= s_received_q + 32'd4;
@@ -554,7 +609,9 @@ module apu_kws_model_loader (
           end
           WaitPayload: begin
             if (abort_i && !resource_reset_request_i) s_abort_pending_q <= 1'b1;
-            if (dma_done_i) begin
+            if (dma_done_i) s_dma_complete_q <= 1'b1;
+            if ((dma_done_i || s_dma_complete_q) && !s_profile_pending_q &&
+                !profile_response_valid_i) begin
               if (dma_error_i) begin
                 s_stat_q          <= 32'd0;
                 s_err_code_q      <= dma_error_code_i;
@@ -584,8 +641,9 @@ module apu_kws_model_loader (
                 end
                 s_state_q <= Complete;
               end else begin
-                s_actual_crc_q <= ~s_crc_q;
-                s_state_q      <= Validate;
+                s_actual_crc_q   <= ~s_crc_q;
+                s_dma_complete_q <= 1'b0;
+                s_state_q        <= Validate;
               end
             end
           end

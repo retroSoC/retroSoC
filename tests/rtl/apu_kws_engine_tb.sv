@@ -51,11 +51,20 @@ module apu_kws_engine_tb;
   logic [ 5:0][31:0] scratch_write_data;
   logic [ 5:0][ 3:0] scratch_write_strb;
   logic              scratch_access_err;
-  logic [ 7:0]       mfcc_bytes                [  0:489];
-  logic [ 7:0]       expected_layers           [0:72087];
-  logic              use_apum = 1'b0;
-  logic              check_layers = 1'b0;
-  logic [31:0]       sequencer_timeout = 32'd0;
+  logic coeff_front_req, coeff_front_ready, coeff_front_resp_valid, coeff_front_resp_ready;
+  logic [3:0] coeff_front_kind;
+  logic [13:0] coeff_front_index;
+  logic [63:0] coeff_front_data;
+  logic coeff_front_fault;
+  logic coeff_infer_req, coeff_infer_ready, coeff_infer_resp_valid, coeff_infer_resp_ready;
+  logic [ 6:0] coeff_infer_index;
+  logic [31:0] coeff_infer_data;
+  logic coeff_infer_fault, coeff_initialized;
+  logic [ 7:0] mfcc_bytes                [  0:489];
+  logic [ 7:0] expected_layers           [0:72087];
+  logic        use_apum = 1'b0;
+  logic        check_layers = 1'b0;
+  logic [31:0] sequencer_timeout = 32'd0;
 
   function automatic logic [7:0] synthetic_model_byte(input logic [14:0] address_i);
     begin
@@ -160,6 +169,27 @@ module apu_kws_engine_tb;
       .scratch_access_err_o (scratch_access_err)
   );
 
+  apu_kws_coeff_fixture u_coeff_fixture (
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .frontend_req_valid_i  (coeff_front_req),
+      .frontend_req_ready_o  (coeff_front_ready),
+      .frontend_kind_i       (coeff_front_kind),
+      .frontend_index_i      (coeff_front_index),
+      .frontend_resp_valid_o (coeff_front_resp_valid),
+      .frontend_resp_ready_i (coeff_front_resp_ready),
+      .frontend_resp_data_o  (coeff_front_data),
+      .frontend_resp_fault_o (coeff_front_fault),
+      .inference_req_valid_i (coeff_infer_req),
+      .inference_req_ready_o (coeff_infer_ready),
+      .inference_index_i     (coeff_infer_index),
+      .inference_resp_valid_o(coeff_infer_resp_valid),
+      .inference_resp_ready_i(coeff_infer_resp_ready),
+      .inference_resp_data_o (coeff_infer_data),
+      .inference_resp_fault_o(coeff_infer_fault),
+      .initialized_o         (coeff_initialized)
+  );
+
   apu_kws_engine dut (
       .clk_i                       (clk_i),
       .rst_n_i                     (rst_n_i),
@@ -222,6 +252,21 @@ module apu_kws_engine_tb;
       .scratch_write_data_o        (scratch_write_data),
       .scratch_write_strb_o        (scratch_write_strb),
       .scratch_access_err_i        (scratch_access_err),
+      .coeff_frontend_req_valid_o  (coeff_front_req),
+      .coeff_frontend_req_ready_i  (coeff_front_ready),
+      .coeff_frontend_kind_o       (coeff_front_kind),
+      .coeff_frontend_index_o      (coeff_front_index),
+      .coeff_frontend_resp_valid_i (coeff_front_resp_valid),
+      .coeff_frontend_resp_ready_o (coeff_front_resp_ready),
+      .coeff_frontend_data_i       (coeff_front_data),
+      .coeff_frontend_fault_i      (coeff_front_fault),
+      .coeff_inference_req_valid_o (coeff_infer_req),
+      .coeff_inference_req_ready_i (coeff_infer_ready),
+      .coeff_inference_index_o     (coeff_infer_index),
+      .coeff_inference_resp_valid_i(coeff_infer_resp_valid),
+      .coeff_inference_resp_ready_o(coeff_infer_resp_ready),
+      .coeff_inference_data_i      (coeff_infer_data),
+      .coeff_inference_fault_i     (coeff_infer_fault),
       .stream_i                    (stream_i),
       .rx_ready_o                  (rx_ready_o),
       .status_o                    (status_o),
@@ -258,6 +303,7 @@ module apu_kws_engine_tb;
 
     repeat (2) @(negedge clk_i);
     rst_n_i = 1'b1;
+    wait (coeff_initialized);
     @(negedge clk_i);
     if (!model_valid_o || !model_lock_o) $fatal(1, "KWS model admission was not observed");
     dut.s_frame_count_q     = 32'd11;
@@ -381,7 +427,7 @@ module apu_kws_engine_tb;
       dut.s_infer_state_q = 4'd1;
       elapsed_cycles      = 0;
       observed_operator   = 0;
-      while ((inference_count_o == 0) && (elapsed_cycles < 600000)) begin
+      while ((inference_count_o == 0) && (elapsed_cycles < 4000000)) begin
         @(negedge clk_i);
         if (check_layers && (dut.s_operator_q != observed_operator)) begin
           check_layer(observed_operator);
