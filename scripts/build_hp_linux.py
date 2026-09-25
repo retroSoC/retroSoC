@@ -19,6 +19,15 @@ LAYOUT = {
     "rootfs.cpio.gz": (0x39000000, 8 * 1024 * 1024),
 }
 
+REQUIRED_LINUX_CONFIG = (
+    "CONFIG_BINFMT_ELF",
+    "CONFIG_BINFMT_SCRIPT",
+    "CONFIG_PRINTK",
+    "CONFIG_TTY",
+    "CONFIG_HVC_RISCV_SBI",
+    "CONFIG_SERIAL_EARLYCON_RISCV_SBI",
+)
+
 
 def command(arguments: list[str], cwd: Path) -> None:
     environment = dict(os.environ)
@@ -55,6 +64,27 @@ def find_toolchain(buildroot_output: Path) -> str:
     if len(matches) != 1:
         raise RuntimeError(f"expected one RV32 Linux GCC in {buildroot_output / 'host/bin'}")
     return str(matches[0])[: -len("gcc")]
+
+
+def validate_linux_config(config: Path) -> None:
+    values: dict[str, str] = {}
+    for line in config.read_text(encoding="utf-8").splitlines():
+        if line.startswith("CONFIG_") and "=" in line:
+            symbol, value = line.split("=", 1)
+            values[symbol] = value
+        elif line.startswith("# CONFIG_") and line.endswith(" is not set"):
+            symbol = line[len("# ") : -len(" is not set")]
+            values[symbol] = "n"
+
+    invalid = [
+        f"{symbol}={values.get(symbol, 'missing')}"
+        for symbol in REQUIRED_LINUX_CONFIG
+        if values.get(symbol) != "y"
+    ]
+    if invalid:
+        raise RuntimeError(
+            "invalid HP Linux effective configuration: " + ", ".join(invalid)
+        )
 
 
 def build(args: argparse.Namespace) -> None:
@@ -94,6 +124,7 @@ def build(args: argparse.Namespace) -> None:
         ["make", f"O={linux_output}", "ARCH=riscv", f"CROSS_COMPILE={cross_compile}", "olddefconfig"],
         linux,
     )
+    validate_linux_config(linux_output / ".config")
     command(
         ["make", f"O={linux_output}", "ARCH=riscv", f"CROSS_COMPILE={cross_compile}",
          f"-j{args.jobs}", "Image"],

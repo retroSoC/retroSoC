@@ -5222,7 +5222,7 @@
       {
         "id": "kernel-sbi",
         "file": "app/ports/linux/linux/retrosoc_hp.config",
-        "text": "CONFIG_SMP=n\nCONFIG_HVC_RISCV_SBI=y\nCONFIG_SERIAL_EARLYCON_RISCV_SBI=y"
+        "text": "CONFIG_SMP=n\nCONFIG_PRINTK=y\nCONFIG_TTY=y\nCONFIG_BINFMT_ELF=y\nCONFIG_BINFMT_SCRIPT=y\nCONFIG_HVC_RISCV_SBI=y\nCONFIG_SERIAL_EARLYCON_RISCV_SBI=y"
       },
       {
         "id": "kernel-ready-support",

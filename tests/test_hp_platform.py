@@ -7,6 +7,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
+from scripts import build_hp_linux
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,7 +54,7 @@ def test_hp_linux_simulation_uses_explicit_fast_flash_acceptance() -> None:
     verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
     emulator = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
 
-    assert "HP_LINUX_SIM_TIME       ?= 7200" in makefile
+    assert "HP_LINUX_SIM_TIME       ?= 0" in makefile
     assert "hp-linux-sim: hp-bundle comp" in makefile
     assert "VERILATOR_SIM_ARGS=--fast-flash sim" in makefile
     for marker in (
@@ -155,6 +159,28 @@ def test_linux_build_uses_external_opensbi_platform_and_actual_initrd_end() -> N
     assert "s_hart_index_to_id[] = {1U}" in platform
     assert "RETROSOC_HP_UART_BASE" in platform
     assert "aclint_mtimer_cold_init" in platform
+
+
+def test_hp_linux_effective_config_is_fail_closed(tmp_path: Path) -> None:
+    fragment = (ROOT / "app/ports/linux/linux/retrosoc_hp.config").read_text(
+        encoding="utf-8"
+    )
+    for symbol in build_hp_linux.REQUIRED_LINUX_CONFIG:
+        assert f"{symbol}=y" in fragment
+
+    config = tmp_path / ".config"
+    valid = "".join(f"{symbol}=y\n" for symbol in build_hp_linux.REQUIRED_LINUX_CONFIG)
+    config.write_text(valid, encoding="utf-8")
+    build_hp_linux.validate_linux_config(config)
+
+    config.write_text(valid.replace("CONFIG_BINFMT_ELF=y", "# CONFIG_BINFMT_ELF is not set"),
+                      encoding="utf-8")
+    with pytest.raises(RuntimeError, match="CONFIG_BINFMT_ELF=n"):
+        build_hp_linux.validate_linux_config(config)
+
+    config.write_text(valid.replace("CONFIG_TTY=y\n", ""), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="CONFIG_TTY=missing"):
+        build_hp_linux.validate_linux_config(config)
 
 
 def test_hp_linux_device_tree_compiles_and_can_patch_initrd_end(tmp_path: Path) -> None:
