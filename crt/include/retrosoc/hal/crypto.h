@@ -14,6 +14,11 @@ typedef enum {
     RS_CRYPTO_AES_CTR = 2,
 } rs_crypto_aes_mode_t;
 
+/* V2 lifecycle calls serialize with operation setup and IRQ_TEST. A timeout
+ * does not certify erasure or relinquish ownership of DMA buffers. */
+rs_status_t rs_crypto_init(rs_timeout_t timeout);
+rs_status_t rs_crypto_zeroize_wait(rs_timeout_t timeout);
+
 rs_status_t rs_crypto_aes_set_key(const uint8_t *key, size_t key_bytes, rs_timeout_t timeout);
 rs_status_t rs_crypto_aes_crypt(rs_crypto_aes_mode_t mode, bool decrypt, const uint8_t iv[16],
                                 const void *input, void *output, size_t byte_count,

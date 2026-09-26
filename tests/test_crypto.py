@@ -26,9 +26,9 @@ def test_crypto_aes_and_sha_primitives(tmp_path: Path) -> None:
             "crypto_primitive_tb",
             "-o",
             str(simulation),
-            str(ROOT / "rtl/ip/security/crypto_pkg.sv"),
-            str(ROOT / "rtl/ip/security/crypto_aes_core.sv"),
-            str(ROOT / "rtl/ip/security/crypto_sha2_core.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_pkg.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_aes_core.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_sha2_core.sv"),
             str(ROOT / "tests/rtl/crypto_primitive_tb.sv"),
         ],
         check=True,
@@ -52,8 +52,8 @@ def test_crypto_rsa_montgomery_engine(tmp_path: Path) -> None:
             "crypto_rsa_tb",
             "-o",
             str(simulation),
-            str(ROOT / "rtl/ip/security/crypto_montgomery.sv"),
-            str(ROOT / "rtl/ip/security/crypto_rsa_core.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_montgomery.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_rsa_core.sv"),
             str(ROOT / "tests/rtl/crypto_rsa_tb.sv"),
         ],
         check=True,
@@ -78,11 +78,11 @@ def test_crypto_streaming_engines(tmp_path: Path) -> None:
             "-o",
             str(simulation),
             str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
-            str(ROOT / "rtl/ip/security/crypto_pkg.sv"),
-            str(ROOT / "rtl/ip/security/crypto_aes_core.sv"),
-            str(ROOT / "rtl/ip/security/crypto_aes_engine.sv"),
-            str(ROOT / "rtl/ip/security/crypto_sha2_core.sv"),
-            str(ROOT / "rtl/ip/security/crypto_sha2_engine.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_pkg.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_aes_core.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_aes_engine.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_sha2_core.sv"),
+            str(ROOT / "tests/rtl/crypto_v1/crypto_sha2_engine.sv"),
             str(ROOT / "tests/rtl/crypto_engine_tb.sv"),
         ],
         check=True,
@@ -102,18 +102,18 @@ def test_crypto_apb_register_path(tmp_path: Path) -> None:
     source_list.write_text(
         "\n".join(
             [
-                f"+incdir+{ROOT / 'rtl/ip/security'}",
+                f"+incdir+{ROOT / 'tests/rtl/crypto_v1'}",
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
                 str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
-                str(ROOT / "rtl/ip/security/crypto_pkg.sv"),
-                str(ROOT / "rtl/ip/security/crypto_aes_core.sv"),
-                str(ROOT / "rtl/ip/security/crypto_aes_engine.sv"),
-                str(ROOT / "rtl/ip/security/crypto_sha2_core.sv"),
-                str(ROOT / "rtl/ip/security/crypto_sha2_engine.sv"),
-                str(ROOT / "rtl/ip/security/crypto_montgomery.sv"),
-                str(ROOT / "rtl/ip/security/crypto_rsa_core.sv"),
-                str(ROOT / "rtl/ip/security/apb4_crypto.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_pkg.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_aes_core.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_aes_engine.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_sha2_core.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_sha2_engine.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_montgomery.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/crypto_rsa_core.sv"),
+                str(ROOT / "tests/rtl/crypto_v1/apb4_crypto.sv"),
                 str(ROOT / "tests/rtl/crypto_apb_tb.sv"),
                 "",
             ]
@@ -139,3 +139,11 @@ def test_crypto_apb_register_path(tmp_path: Path) -> None:
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
     assert "Crypto APB register tests passed" in result.stdout
+
+
+def test_crypto_v2_public_initialization_and_lifecycle(tmp_path: Path) -> None:
+    if shutil.which("verilator") is None:
+        return
+    from scripts.crypto_p1 import rtl
+
+    rtl(tmp_path, full_rsa=False, macro=False, jobs=2)

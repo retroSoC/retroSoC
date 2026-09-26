@@ -562,6 +562,13 @@ never unlock a completed image or claim a still-running scrub completed.
 LP software serializes lifecycle calls and IRQ_TEST use with operation setup;
 there is no hidden multi-client initialization or erasure owner.
 
+The HAL uses CANCEL during its load phase. During verification it uses the
+existing ZEROIZE command for timeout cleanup: verification can finish between
+a status read and the cleanup write, and CANCEL on a locked image is illegal.
+ZEROIZE either cancels the owned initialization or preserves the just-locked
+image. No engine can start while this serialized initialization owns the block.
+The returned timeout does not certify completion of the resulting scrub.
+
 Maintain all new offsets, fields, masks and public constants manually in
 `crypto_define.svh` and `crypto_regs.h`, extend their parity test, and add host
 tests for pure validation/error handling. No new MISRA deviation is authorized.
@@ -718,6 +725,139 @@ Validate focused simulations/formal first, then RTL style/lint, embedded-C
 format/policy/host tests, affected firmware and full-SoC behavioral selftest.
 Do not call the refreeze implemented merely because wrappers elaborate.
 
+The P1 implementation uses `crypto_sram_store` and `crypto_mem_pkg` for six
+independent tagged synchronous bank channels, `crypto_mem_ctrl` for CRYC1
+initialization/global maintenance, `crypto_scrubber` for write/readback, and
+`crypto_clearable_fifo` around the unchanged Common payload queues. The
+`crypto_*_sram_*` engines retain only bounded working/scalar state in flops.
+The V1 modules and tables are retained solely in `tests/rtl/crypto_v1/`.
+`scripts/data/crypto_constants.json` is the software constant source; the
+independent mathematical oracle and frozen identity remain unchanged.
+
+Run P1 evidence without invoking Pytest, with one explicit timestamp:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS BUILD_TIMESTAMP=<timestamp> \
+  crypto-p1-constants crypto-p1-rtl crypto-p1-formal crypto-p1-synth
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS BUILD_TIMESTAMP=<timestamp> \
+  CRYPTO_P0_BASELINE_ROOT=build/<p0-variant> \
+  CRYPTO_P1_LP_ROOT=build/<lp-test-variant> \
+  CRYPTO_P1_CI_ROOT=build/<ci-smoke-variant> crypto-p1-report
+```
+
+The standalone test initializes only through public APB, including the IHP
+FUNCTIONAL macro model. Hierarchical accesses are restricted to fault
+injection and post-erasure inspection, never initialization. The SRAM ports
+retire at a fixed one-cycle latency; clients reserve a response slot before
+issuing a read. APB reads consume the tagged result with a bounded wait,
+while write side effects occur only at the completed transfer. Reset clears
+response validity; canceled operations drain or ignore their retired requests.
+
+The focused LP acceptance firmware uses the real full-SoC APB and DMA path:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk BUILD_TIMESTAMP=<lp-test-timestamp> \
+  APP=bringup APP_SRCS=$PWD/tests/c/crypto_firmware.c LINK_TYPE=ld2_all_sram \
+  SIMU=VERILATOR HAVE_SVA=YES VERILATOR_SIM_ARGS=--fast-flash \
+  SOC_SIM_TIME=1800 firmware sim
+```
+
+This explicitly overrides the bringup application source with a test image;
+it is not a replacement PASS for the unmodified `ci_smoke` regression.
+The first 2026-09-25 `ci_smoke` attempt omitted `HAVE_CSR=YES` and failed
+the preceding fabric-monitor check (`SIM_TEST_FAIL code=13`): the CSR-disabled
+build replaces GA2D tests with no-ops, while the monitor requires their traffic.
+Use the CSR override below, matching `scripts/regress.py`. The ordinary verbose
+bringup attempt reached its 1800-second simulation limit while printing boot
+discovery. Both failures remain recorded. The focused image passed public
+initialization, AES/SHA selftest, AES DMA, timeout handling and physical
+zeroize with `SIM_TEST_PASS` and the unchanged 32 KiB SRAM capacity.
+
+Candidate artifacts are under
+`build/ihp130-2026-09-25-11-30-9903b3d112b7/crypto/p1/`; the focused LP
+simulation is under `build/ihp130-2026-09-25-12-50-2ff2ea5518f5/`.
+P0 inputs were archived before migration, and its evidence directory was not
+modified. P1 block reports include raw source hashes, inferred memories,
+separate register inventory, all six macro paths and unchanged-recipe timing
+and RSS. Strict isolated clean-revision A/B, full-chip synthesis/netlist/STA,
+remaining PDK mappings and physical registration stay in P2. Exhaustive
+state-by-state fault campaigns and independent review must not be inferred
+from the directed test list or a block-synthesis PASS.
+
+The CRYPTO-P1 review fixes have a separate evidence set under
+`build/ihp130-2026-09-25-15-19-9903b3d112b7/crypto/p1/`. The
+[verification mapping](crypto-verification.md) identifies the exact control
+properties, physical-data checks and fault cases. The fixes restore new-command
+DONE clearing, validate SRAM-readback padding, guard lifecycle configuration
+accesses, and retain a stalled AES output beat through a fatal local erasure
+fault. Fault handling revokes keys and computation immediately; only the
+already-presented FIFO head may drain, after which its payload is cleared.
+No register offset, public HAL signature, DMA reservation or bank allocation
+changes as part of these fixes.
+
+Capture full-SoC evidence at build/run time, using the matching manifest and
+source snapshot; report assembly cannot certify an earlier binary by hashing
+the current source tree. After creating each variant with the firmware command
+above (replace `firmware sim` with `manifest`), run:
+
+```sh
+python3 scripts/crypto_p1.py firmware --variant-root build/<lp-test-variant> --firmware-kind lp
+python3 scripts/crypto_p1.py firmware --variant-root build/<ci-smoke-variant> --firmware-kind ci
+python3 scripts/crypto_p1.py quality --variant-root build/<block-variant>
+```
+
+For the CI manifest use `APP=ci_smoke HAVE_CSR=YES`, the existing
+`ld2_all_sram`, `SIMU=VERILATOR` and `HAVE_SVA=YES` overrides. The firmware
+runner records its complete build/simulation command, per-run manifest, input
+hashes including generated VexiiRiscv and selected PDK model inputs, ELF/log/
+result hashes and command exit status. The report rejects
+missing, changed or unsuccessful runs. These helpers do not invoke Pytest.
+
+Before the review fixes, the unchanged balanced block flow measured 69.377
+seconds and 345344 KiB peak process-tree RSS on that candidate, versus P0's
+2056.928 seconds and 2011792 KiB. Initial/pre-memory inventory is six
+`RM_IHPSG13_1P_1024x32_c2_bm_bist` macros, zero inferred ROM bits, 1184
+FIFO RAM bits and 2179 generic register bits. Post-memory/SAT has 3363
+register bits including FIFO payloads. These are observed block results;
+overlapping host jobs and the uncommitted candidate prevent a strict isolated
+release-performance claim. The P1 report keeps acceptance incomplete:
+historical failed attempts remain visible, the standalone lint-warning
+baseline check fails, and repository-wide RTL format checking stops at the
+unchanged `apb4_apu.sv`. Changed Crypto files pass explicit formatting/style;
+C format/policy/host tests and the four named inductive proofs pass. No
+warning baseline or MISRA deviation was changed. Pytest remains unrun under
+the maintainer's instruction.
+
+The earlier corrected full-SoC CI invocation, including `HAVE_CSR=YES`, passed
+all peripheral tests with `SIM_TEST_PASS` on the pre-review snapshot. Its variant
+is `build/ihp130-2026-09-25-12-50-10e1102406ad/`. Its firmware occupies
+27744 bytes of `.text` and 1104 bytes of `.bss` in SRAM: 28848 of the existing
+32768 bytes, leaving 3920 bytes. The two constant symbols occupy exactly
+528 and 320 bytes. The earlier CSR-disabled failure is superseded; it is
+retained as a configuration diagnostic, not an unresolved Crypto failure.
+
+The review-fix snapshot passes all seven RTL configurations, both real-DMA
+AXI error cases and five inductive proofs, including output retention through
+abort/fatal fault with FIFO pointer/count invariants. Full RSA-2048 remains
+2887941 cycles for preparation, 949456 for public exponent 65537, and
+134047298 for both private success and bad-private-exponent rejection.
+The final unchanged-recipe block run records 68.549 seconds and 343924 KiB
+peak RSS; storage remains six macros, 0 inferred ROM bits, 1184 FIFO bits
+and 2179 pre-memory generic register bits. These are still block observations,
+not isolated clean-revision or whole-chip qualification.
+
+The new LP and CI runs are respectively
+`build/ihp130-2026-09-25-15-19-2ff2ea5518f5/` and
+`build/ihp130-2026-09-25-15-19-10e1102406ad/`; both report `SIM_TEST_PASS`.
+The CI SRAM footprint is 27792 bytes of text plus 1104 bytes of BSS, totaling
+28896 of 32768 bytes. P0 report/archive hashes remain unchanged. Focused
+format/style/readiness, C format/policy/host tests and Ruff pass. Whole-tree
+formatting still stops at the untouched APU file; the warning comparison
+retains 21 new Crypto unused/empty-port signatures without changing a baseline.
+Pytest, full-matrix regression and P2 qualification were not run. The aggregate
+keeps release acceptance incomplete pending independent review and deferred
+qualification, while reporting the focused P1 gates separately.
+
 ### Phase 2 - Synthesis and Integration Qualification
 
 ID: `CRYPTO-P2`. Depends on P1. Complete like-for-like block/SoC synthesis,
@@ -733,9 +873,9 @@ commands are added and documented by P0/P1 before use):
 make rtl-format-check rtl-style-check-all rtl-readiness-check-all
 make CONFIG=configs/ci/ihp130.mk SIMU=VERILATOR HAVE_SVA=YES rtl-lint
 make sw-format-check sw-policy-check sw-host-test
-make CONFIG=configs/ci/ihp130.mk APP=ci_smoke firmware
+make CONFIG=configs/ci/ihp130.mk APP=ci_smoke HAVE_CSR=YES firmware
 make CONFIG=configs/ci/ihp130.mk APP=ci_smoke LINK_TYPE=ld2_all_sram \
-  SIMU=VERILATOR HAVE_SVA=YES VERILATOR_SIM_ARGS=--fast-flash \
+  SIMU=VERILATOR HAVE_SVA=YES HAVE_CSR=YES VERILATOR_SIM_ARGS=--fast-flash \
   SOC_SIM_TIME=1800 firmware sim
 python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only
 make CONFIG=configs/ci/ihp130.mk librelane-doctor

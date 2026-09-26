@@ -282,14 +282,18 @@
     ],
     "rtl/ip/security": [
       "apb4_crypto.sv",
-      "crypto_aes_core.sv",
-      "crypto_aes_engine.sv",
+      "crypto_aes_sram_core.sv",
+      "crypto_aes_sram_engine.sv",
+      "crypto_clearable_fifo.sv",
       "crypto_define.svh",
-      "crypto_montgomery.sv",
+      "crypto_mem_ctrl.sv",
+      "crypto_mem_pkg.sv",
+      "crypto_montgomery_sram.sv",
       "crypto_pkg.sv",
-      "crypto_rsa_core.sv",
-      "crypto_sha2_core.sv",
-      "crypto_sha2_engine.sv"
+      "crypto_rsa_sram_core.sv",
+      "crypto_scrubber.sv",
+      "crypto_sha2_sram_engine.sv",
+      "crypto_sram_store.sv"
     ],
     "rtl/ip/storage": [
       "apb4_sdio.sv",

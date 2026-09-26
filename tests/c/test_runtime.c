@@ -9,6 +9,7 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/apu.h>
+#include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/clock.h>
 #include <retrosoc/hal/extension.h>
@@ -51,6 +52,14 @@ unsigned long long __umoddi3(unsigned long long dividend, unsigned long long div
 static uint8_t storage[32];
 static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
+volatile uint32_t rs_crypto_test_mmio[1024];
+static unsigned int rs_crypto_test_config_accesses;
+volatile uint32_t *rs_crypto_test_register(uint32_t offset) {
+    if ((offset == RS_CRYPTO_REG_AES_CFG) || (offset == RS_CRYPTO_REG_SHA_CFG)) {
+        ++rs_crypto_test_config_accesses;
+    }
+    return &rs_crypto_test_mmio[offset / 4U];
+}
 volatile uint32_t rs_ga2d_test_mmio[1024];
 uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_npu_test_mmio[1024];
@@ -2612,12 +2621,75 @@ static int test_npu_p6_reference_contract(void) {
     return 0;
 }
 
+static int test_crypto_lifecycle_contract(void) {
+    const uint32_t ready = RS_CRYPTO_MEM_STATUS_READY | RS_CRYPTO_MEM_STATUS_TABLE_VALID |
+                           RS_CRYPTO_MEM_STATUS_TABLE_LOCKED;
+
+    for (size_t index = 0U; index < 1024U; ++index) {
+        rs_crypto_test_mmio[index] = 0U;
+    }
+    if ((rs_crypto_init(1U) != RS_ENOTSUP) || (rs_crypto_zeroize_wait(1U) != RS_ENOTSUP)) {
+        return 1;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_IP_ID) = RS_CRYPTO_IP_ID_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_IP_VERSION) = RS_CRYPTO_IP_VERSION_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_TABLE_ID) = RS_CRYPTO_TABLE_ID_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_CAPABILITY0) = RS_CRYPTO_CAP_STORAGE_INIT;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = ready;
+    if ((rs_crypto_init(0U) != RS_OK) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 2;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = RS_CRYPTO_STATUS_RSA_BUSY;
+    if (rs_crypto_init(8U) != RS_EIO) {
+        return 3;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = 0U;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_LOAD_ACTIVE;
+    if ((rs_crypto_init(8U) != RS_EIO) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 4;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_SCRUB_BUSY;
+    if ((rs_crypto_init(2U) != RS_ETIMEOUT) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 5;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_FAULT;
+    rs_crypto_test_config_accesses = 0U;
+    if ((rs_crypto_init(2U) != RS_EIO) || (rs_crypto_zeroize_wait(2U) != RS_EIO)) {
+        return 6;
+    }
+    if (rs_crypto_test_config_accesses != 0U) {
+        return 10;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = ready;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = RS_CRYPTO_STATUS_AES_BUSY;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_AES_CFG) = RS_CRYPTO_AES_CFG_DMA;
+    if ((rs_crypto_zeroize_wait(8U) != RS_EIO) || (RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) != 0U)) {
+        return 7;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = 0U;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_AES_CFG) = 0U;
+    if ((rs_crypto_zeroize_wait(0U) != RS_ETIMEOUT) ||
+        (RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) != 0U)) {
+        return 8;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_SCRUB_BUSY;
+    rs_crypto_test_config_accesses = 0U;
+    if (rs_crypto_zeroize_wait(2U) != RS_ETIMEOUT) {
+        return 9;
+    }
+    if (rs_crypto_test_config_accesses != 0U) {
+        return 11;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
         test_formatter(),
         test_compiler_helpers(),
         test_wait_helper(),
+        test_crypto_lifecycle_contract(),
         test_clock_frequency_contract(),
         test_ws2812_helpers(),
         test_timer_helpers(),

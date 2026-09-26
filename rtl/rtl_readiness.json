@@ -22,6 +22,27 @@
         "pipeline": "critical pipeline boundaries are documented by the owning IP"
       },
       "waivers": []
+    },
+    {
+      "name": "crypto-p1",
+      "paths": ["rtl/ip/security"],
+      "status": "prototype",
+      "baseline_revision": "92830d963da2f1e39bb219c0d377bc4889c07755",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ihp130.mk"],
+      "required_evidence": [
+        {"kind": "simulation", "path": "tests/rtl/crypto_v2_tb.sv"},
+        {"kind": "formal", "path": "rtl/mini/formal/crypto_control_formal.sv"},
+        {"kind": "synthesis", "path": "scripts/crypto_p1.py"}
+      ],
+      "synthesis_intent": {
+        "registers": "Common scalar/control registers; only the active AES 128-bit and SHA eight-word working state remain wide. RSA operands are SRAM limbs.",
+        "reset": "Asynchronous validity reset followed by parallel write-zero/readback of banks 2-5 and explicit FIFO payload erasure; reset never initializes a SRAM array directly.",
+        "clock_enable": "PCLK only; no gated clock. Tagged fixed-latency SRAM retirements control engine progress.",
+        "memory": "Exactly six tc_sram_1024x32 banks on IHP130; explicit macro-disabled synchronous fallback; only 8x37, 8x37 and 16x37 Common FIFOs may infer production storage.",
+        "pipeline": "One access per bank/cycle. AES owns banks 0/2, SHA owns 1/3, RSA owns 4/5; APB accesses idle owners and maintenance takes priority. P2 physical qualification remains pending."
+      },
+      "waivers": []
     }
   ]
 }

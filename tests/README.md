@@ -33,7 +33,8 @@ tooling.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
   rules for new owned RTL.
 - `test_crypto.py` runs directed AES, SHA-2, RSA/Montgomery, streaming, and
-  APB4 simulations; `test_crypto_register_parity.py` checks the handwritten
+  APB4 V1 reference simulations plus the V2 public lifecycle fixture;
+  `test_crypto_register_parity.py` checks the handwritten
   RTL/C register ABI and `test_dma.py` covers DMA bursts, TCD fetch, CRC,
   tail-byte writes, and crypto endpoints.
 - `test_crypto_p0.py` checks the independent mathematical constant oracle,
@@ -44,6 +45,28 @@ tooling.
   equal-schedule private-result verification failure. The deterministic RSA
   key material is public test data. These are baseline measurements, not V2
   initialization/scrub or physical qualification.
+- `crypto-p1-rtl` exercises V2 public initialization and rejection paths,
+  AES key sizes/directions/multiblock/tails, SHA padding, full RSA-2048,
+  held-output abort, concurrent engines, reset boundaries, injected readback
+  and scrub faults, and physical FIFO/bank erasure inspection. Separate
+  `crypto_storage_tb.sv` and `crypto_dma_v2_tb.sv` fixtures check all banks,
+  masks, retirements, full-width Montgomery carries and actual DMA 4/5.
+  `c/crypto_firmware.c` is the focused full-SoC LP HAL/DMA acceptance image;
+  its explicit build invocation is in the Crypto specification. It never
+  preloads Crypto SRAM through hierarchy or replaces hardware algorithms.
+  Review-fix cases cover consecutive-command DONE, CRC-neutral padding faults,
+  initialization timeout/lock boundaries, fatal-fault output drain and real
+  DMA AXI read/write errors. `crypto_stream_formal.sv` supplements the APB,
+  lifecycle, RSA-release and scrub proofs with arbitrary output backpressure.
+  `test_crypto_p1_evidence.py` checks that stale source/logs or a failed command
+  cannot qualify an earlier firmware PASS; these Pytest cases are not run when
+  the maintainer has disabled Pytest.
+  `crypto_response_fault_tb.sv` independently checks delayed, duplicate,
+  stale-epoch and missing SRAM responses while the default product store keeps
+  its fixed one-cycle behavior.
+  `crypto_response_fault_tb.sv` independently checks delayed, duplicate,
+  stale-epoch and missing SRAM responses while the default product store keeps
+  its fixed one-cycle behavior.
 - `test_apu.py` checks the fail-closed APU APB4/IRQ shell plus the P2 private
   DMA, ring scheduler, stream router, Gateway A, and verification-only backend;
   `test_apu_register_parity.py` keeps its handwritten RTL/C ABI and matrix

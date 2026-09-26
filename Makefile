@@ -431,6 +431,27 @@ crypto-p0-baseline: manifest
 crypto-p0-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py report --variant-root $(VARIANT_ROOT)
 
+.PHONY: crypto-p1-constants crypto-p1-rtl crypto-p1-formal crypto-p1-synth crypto-p1-report
+crypto-p1-constants: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py constants --variant-root $(VARIANT_ROOT)
+crypto-p1-rtl: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --full-rsa --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_dma_v2_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_storage_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_concurrent_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_response_fault_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --simulator icarus
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --case crypto_storage_tb --jobs $(JOBS)
+crypto-p1-formal: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py formal --variant-root $(VARIANT_ROOT)
+crypto-p1-synth: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py synth --variant-root $(VARIANT_ROOT)
+crypto-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py report --variant-root $(VARIANT_ROOT) \
+	  --baseline-root $(CRYPTO_P0_BASELINE_ROOT) --lp-variant-root $(CRYPTO_P1_LP_ROOT) \
+	  $(if $(CRYPTO_P1_CI_ROOT),--ci-variant-root $(CRYPTO_P1_CI_ROOT),)
+
 .PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \

@@ -10,6 +10,11 @@
 #define RS_CRYPTO_AES_BLOCK_BYTES   16U
 #define RS_CRYPTO_STREAM_WORD_BYTES 4U
 
+static bool rs_crypto_ready(void) {
+    return (RS_CRYPTO_REG(RS_CRYPTO_REG_IP_VERSION) == RS_CRYPTO_IP_VERSION_VALUE) &&
+           ((RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) & RS_CRYPTO_MEM_STATUS_READY) != 0U);
+}
+
 static uint32_t rs_crypto_pack_word(const uint8_t *bytes, size_t byte_count) {
     uint32_t value = 0U;
     size_t index;
@@ -67,7 +72,8 @@ static rs_status_t rs_crypto_aes_configure(rs_crypto_aes_mode_t mode, bool decry
         ((mode != RS_CRYPTO_AES_ECB) && (iv == NULL))) {
         return RS_EINVAL;
     }
-    if ((RS_CRYPTO_REG(RS_CRYPTO_REG_AES_STATUS) & RS_CRYPTO_AES_STATUS_BUSY) != 0U) {
+    if (!rs_crypto_ready() ||
+        ((RS_CRYPTO_REG(RS_CRYPTO_REG_AES_STATUS) & RS_CRYPTO_AES_STATUS_BUSY) != 0U)) {
         return RS_EIO;
     }
 
@@ -107,9 +113,9 @@ rs_status_t rs_crypto_aes_set_key(const uint8_t *key, size_t key_bytes, rs_timeo
     } else {
         return RS_EINVAL;
     }
-    if ((RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) &
-         (RS_CRYPTO_STATUS_AES_BUSY | RS_CRYPTO_STATUS_SHA_BUSY | RS_CRYPTO_STATUS_RSA_BUSY)) !=
-        0U) {
+    if (!rs_crypto_ready() || ((RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) &
+                                (RS_CRYPTO_STATUS_AES_BUSY | RS_CRYPTO_STATUS_SHA_BUSY |
+                                 RS_CRYPTO_STATUS_RSA_BUSY)) != 0U)) {
         return RS_EIO;
     }
 
@@ -254,8 +260,20 @@ rs_status_t rs_crypto_aes_crypt_dma(rs_crypto_aes_mode_t mode, bool decrypt, con
     }
     if (result != RS_OK) {
         RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) = RS_CRYPTO_COMMAND_ABORT_AES;
-        (void)rs_dma_abort_wait(RS_DMA_CHANNEL_CRYPTO_IN, timeout);
-        (void)rs_dma_abort_wait(RS_DMA_CHANNEL_CRYPTO_OUT, timeout);
+        rs_status_t cleanup = rs_dma_abort_wait(RS_DMA_CHANNEL_CRYPTO_IN, timeout);
+        if (cleanup != RS_OK) {
+            return cleanup;
+        }
+        /* Keep the OUT consumer alive until any already presented beat has
+         * drained and local erasure completes. A timeout retains ownership. */
+        if (rs_wait_mask(&RS_CRYPTO_REG(RS_CRYPTO_REG_AES_STATUS), RS_CRYPTO_AES_STATUS_BUSY, 0U,
+                         timeout) != RS_OK) {
+            return RS_ETIMEOUT;
+        }
+        cleanup = rs_dma_abort_wait(RS_DMA_CHANNEL_CRYPTO_OUT, timeout);
+        if (cleanup != RS_OK) {
+            return cleanup;
+        }
     }
     return result;
 }
@@ -269,7 +287,8 @@ rs_status_t rs_crypto_sha2(bool sha256, const void *input, size_t byte_count, ui
     if ((digest == NULL) || ((byte_count != 0U) && (input == NULL))) {
         return RS_EINVAL;
     }
-    if ((RS_CRYPTO_REG(RS_CRYPTO_REG_SHA_STATUS) & RS_CRYPTO_SHA_STATUS_BUSY) != 0U) {
+    if (!rs_crypto_ready() ||
+        ((RS_CRYPTO_REG(RS_CRYPTO_REG_SHA_STATUS) & RS_CRYPTO_SHA_STATUS_BUSY) != 0U)) {
         return RS_EIO;
     }
     RS_CRYPTO_REG(RS_CRYPTO_REG_SHA_CFG) = sha256 ? RS_CRYPTO_SHA_CFG_SHA256 : 0U;
@@ -336,7 +355,8 @@ rs_status_t rs_crypto_rsa_prepare(const uint32_t modulus[RS_CRYPTO_RSA_WORDS],
         ((modulus[RS_CRYPTO_RSA_WORDS - 1U] & UINT32_C(0x80000000)) == 0U)) {
         return RS_EINVAL;
     }
-    if ((RS_CRYPTO_REG(RS_CRYPTO_REG_RSA_STATUS) & RS_CRYPTO_RSA_STATUS_BUSY) != 0U) {
+    if (!rs_crypto_ready() ||
+        ((RS_CRYPTO_REG(RS_CRYPTO_REG_RSA_STATUS) & RS_CRYPTO_RSA_STATUS_BUSY) != 0U)) {
         return RS_EIO;
     }
     for (word_index = 0U; word_index < RS_CRYPTO_RSA_WORDS; ++word_index) {
@@ -365,9 +385,9 @@ rs_status_t rs_crypto_rsa_modexp(const uint32_t base[RS_CRYPTO_RSA_WORDS],
         (!private_operation && ((exponent_bits == 0U) || (exponent_bits > 2048U)))) {
         return RS_EINVAL;
     }
-    if ((RS_CRYPTO_REG(RS_CRYPTO_REG_RSA_STATUS) &
-         (RS_CRYPTO_RSA_STATUS_BUSY | RS_CRYPTO_RSA_STATUS_PREPARED)) !=
-        RS_CRYPTO_RSA_STATUS_PREPARED) {
+    if (!rs_crypto_ready() || ((RS_CRYPTO_REG(RS_CRYPTO_REG_RSA_STATUS) &
+                                (RS_CRYPTO_RSA_STATUS_BUSY | RS_CRYPTO_RSA_STATUS_PREPARED)) !=
+                               RS_CRYPTO_RSA_STATUS_PREPARED)) {
         return RS_EIO;
     }
     for (word_index = 0U; word_index < RS_CRYPTO_RSA_WORDS; ++word_index) {
@@ -392,13 +412,6 @@ rs_status_t rs_crypto_rsa_modexp(const uint32_t base[RS_CRYPTO_RSA_WORDS],
     return RS_OK;
 }
 
-rs_status_t rs_crypto_zeroize(void) {
-    RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) = RS_CRYPTO_COMMAND_ZEROIZE;
-    return ((RS_CRYPTO_REG(RS_CRYPTO_REG_AES_KEY_STATUS) & RS_CRYPTO_AES_STATUS_KEY_VALID) == 0U)
-               ? RS_OK
-               : RS_EIO;
-}
-
 rs_status_t rs_crypto_selftest(rs_timeout_t timeout) {
     static const uint8_t Key[16] = {
         0x00U, 0x01U, 0x02U, 0x03U, 0x04U, 0x05U, 0x06U, 0x07U,
@@ -421,6 +434,10 @@ rs_status_t rs_crypto_selftest(rs_timeout_t timeout) {
     uint8_t output[32];
     rs_status_t result;
 
+    result = rs_crypto_init(timeout);
+    if (result != RS_OK) {
+        return result;
+    }
     result = rs_crypto_aes_set_key(Key, sizeof(Key), timeout);
     if (result == RS_OK) {
         result = rs_crypto_aes_crypt(RS_CRYPTO_AES_ECB, false, NULL, Plaintext, output,

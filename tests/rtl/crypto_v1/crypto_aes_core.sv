@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>
 // SPDX-License-Identifier: MulanPSL-2.0
+// Frozen V1 verification reference; never compile into a production filelist.
 
 module crypto_aes_core (
     // verilog_format: off -- crypto datapath ports are grouped by operation phase.

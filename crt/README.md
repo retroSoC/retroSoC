@@ -107,6 +107,13 @@ and 64-byte aligned TCD chains.
 
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
+V2 callers first use `rs_crypto_init(timeout)` to load and lock CRYC1. It
+streams the complete 8192-byte image from 848 meaningful bytes without a
+large RAM buffer. Selftest initializes explicitly; algorithm APIs reject an
+uninitialized device. `rs_crypto_zeroize_wait(timeout)` and the compatibility
+`rs_crypto_zeroize()` wait for physical scrub/readback. Quiesce DMA before
+zeroize; after an abort timeout, retain DMA buffer ownership until coordinated
+recovery. The HAL does not reset the SoC to recover an erase timeout.
 AES DMA reserves channels 4/5; private RSA input is write-only at the APB
 boundary and assumes public exponent 65537 for result verification. See the
 [crypto controller contract](../docs/ip/crypto.md) before handling production

@@ -15,31 +15,6 @@
 `define APB4_CRYPTO__IRQ_ENABLE            12'h01C
 `define APB4_CRYPTO__IRQ_TEST              12'h020
 `define APB4_CRYPTO__ERROR_STATUS          12'h024
-`define APB4_CRYPTO__MEM_STATUS            12'h028
-`define APB4_CRYPTO__MEM_CONTROL           12'h02C
-`define APB4_CRYPTO__TABLE_ID              12'h030
-`define APB4_CRYPTO__TABLE_WORDS           12'h034
-`define APB4_CRYPTO__TABLE_DATA            12'h038
-`define APB4_CRYPTO__TABLE_CRC             12'h03C
-`define APB4_CRYPTO__MEM_ERROR             12'h040
-`define APB4_CRYPTO__MEM_CYCLES            12'h044
-`define APB4_CRYPTO__IP_ID_VALUE          32'h43525950
-`define APB4_CRYPTO__IP_VERSION_VALUE     32'h00020000
-`define APB4_CRYPTO__TABLE_ID_VALUE       32'h43525901
-`define APB4_CRYPTO__TABLE_CRC_VALUE      32'h99CA52FE
-`define APB4_CRYPTO__TABLE_WORD_COUNT          2048
-`define APB4_CRYPTO__MEM_ERROR_CODE_MASK  32'h000000FF
-`define APB4_CRYPTO__MEM_ERROR_BANK_MASK  32'h00000700
-`define APB4_CRYPTO__MEM_ERROR_ROW_MASK   32'h001FF800
-`define APB4_CRYPTO__MEM_ERROR_VALID      32'h80000000
-`define APB4_CRYPTO__MEM_ERROR_BANK_SHIFT         8
-`define APB4_CRYPTO__MEM_ERROR_ROW_SHIFT         11
-`define APB4_CRYPTO__MEM_ERROR_SEQUENCE           1
-`define APB4_CRYPTO__MEM_ERROR_PADDING            2
-`define APB4_CRYPTO__MEM_ERROR_INPUT_CRC          3
-`define APB4_CRYPTO__MEM_ERROR_READBACK_CRC       4
-`define APB4_CRYPTO__MEM_ERROR_SCRUB_VERIFY       5
-`define APB4_CRYPTO__MEM_ERROR_WATCHDOG           6
 
 `define APB4_CRYPTO__AES_CTRL              12'h100
 `define APB4_CRYPTO__AES_CFG               12'h104
@@ -102,28 +77,11 @@
 `define APB4_CRYPTO__IRQ_RSA_DONE                2
 `define APB4_CRYPTO__IRQ_ERROR                   3
 `define APB4_CRYPTO__IRQ_ZEROIZED                4
-`define APB4_CRYPTO__IRQ_MEMORY_READY            5
-
-`define APB4_CRYPTO__MEM_STATUS_READY            0
-`define APB4_CRYPTO__MEM_STATUS_TABLE_VALID      1
-`define APB4_CRYPTO__MEM_STATUS_SCRUB_BUSY       2
-`define APB4_CRYPTO__MEM_STATUS_LOAD_ACTIVE      3
-`define APB4_CRYPTO__MEM_STATUS_VERIFY_BUSY      4
-`define APB4_CRYPTO__MEM_STATUS_TABLE_LOCKED     5
-`define APB4_CRYPTO__MEM_STATUS_FAULT            6
-`define APB4_CRYPTO__MEM_CONTROL_BEGIN           0
-`define APB4_CRYPTO__MEM_CONTROL_COMMIT          1
-`define APB4_CRYPTO__MEM_CONTROL_CANCEL          2
-`define APB4_CRYPTO__STATUS_MAINTENANCE_BUSY      3
-`define APB4_CRYPTO__STATUS_READY                 4
-`define APB4_CRYPTO__CAPABILITY0_STORAGE_INIT    24
-`define APB4_CRYPTO__CAPABILITY0_SRAM_MACRO      25
 
 `define APB4_CRYPTO__ERROR_AES                   0
 `define APB4_CRYPTO__ERROR_SHA                   1
 `define APB4_CRYPTO__ERROR_RSA                   2
 `define APB4_CRYPTO__ERROR_ACCESS                3
-`define APB4_CRYPTO__ERROR_MEMORY                4
 // verilog_format: on
 
 `endif

@@ -125,9 +125,13 @@ constants, keys, SHA schedule and RSA limb storage, with LP initialization,
 APB V2 discovery and bounded physical scrub/readback. It replaces the old
 one-round-per-cycle AES/SHA contract with bounded microsteps while preserving
 algorithms and engine concurrency. Three small stream FIFOs remain explicit
-inferred-memory exceptions. CRYPTO-P0/P1/P2 define the baseline, implementation
-and qualification work; the current RTL must not be described as already
-macro-backed on the strength of this specification.
+inferred-memory exceptions. The P1 source now implements this organization,
+with `crypto_sram_store`, `crypto_mem_ctrl`, a verified scrubber and clearable
+Common FIFO wrappers. AES/SHA/RSA use synchronous SRAM microsteps; V1 ROM
+implementations are verification-only under `tests/rtl/crypto_v1/`.
+CRYPTO-P0/P1/P2 distinguish baseline, implementation and qualification.
+Six-macro block synthesis and focused tests do not establish whole-chip
+timing, physical or release qualification.
 
 The self-owned JPEG controller provides 8-bit Baseline Sequential encode and
 decode, five raster formats, a 64-bit AXI4 2D DMA, direct and 128-byte SG-ring

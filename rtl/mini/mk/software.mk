@@ -112,6 +112,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/dma_math.c \
             $(ROOT_PATH)/crt/src/hal/dma.c \
             $(ROOT_PATH)/crt/src/hal/crypto.c \
+            $(ROOT_PATH)/crt/src/hal/crypto_lifecycle.c \
             $(ROOT_PATH)/crt/src/hal/apu.c \
             $(ROOT_PATH)/crt/src/hal/ga2d_math.c \
             $(ROOT_PATH)/crt/src/hal/ga2d.c \
@@ -192,6 +193,7 @@ SRC_PATH          := $(CRT_SRCS) $(APP_SRCS)
 LDS_PATH          := $(ROOT_PATH)/crt/linker/$(LINK_TYPE).lds
 MEMORY_REGIONS_LD := $(MEMORY_MAP_LINKER_DIR)/memory_regions.ld
 VERSION_HEADER    := $(SW_BUILD_DIR)/include/socver.h
+CRYPTO_CONSTANTS_HEADER := $(SW_BUILD_DIR)/include/crypto_constants.h
 FIRMWARE_ELF      := $(SW_BUILD_DIR)/firmware
 ASM_FIRMWARE_NAME ?= retrosoc_asm
 SW_HEADERS        := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
@@ -227,7 +229,10 @@ asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
-$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
+$(CRYPTO_CONSTANTS_HEADER): $(ROOT_PATH)/scripts/crypto_constants.py $(ROOT_PATH)/scripts/data/crypto_constants.json
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_constants.py --root $(ROOT_PATH) --output $(SW_BUILD_DIR)/include
+
+$(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(CRYPTO_CONSTANTS_HEADER) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mini/mk/software.mk
 	@mkdir -p $(SW_BUILD_DIR)
 	cd $(SW_BUILD_DIR) && $(CP) -P -o $(LINK_TYPE).lds $(LDS_PATH)

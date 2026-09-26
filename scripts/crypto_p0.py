@@ -430,6 +430,9 @@ def main() -> None:
     parser.add_argument("--case", choices=("crypto_vectors_p0_tb", "crypto_rsa2048_tb", "crypto_dma_p0_tb"))
     args = parser.parse_args()
     variant = args.variant_root.resolve()
+    if not identity(variant)["production_rtl_matches_baseline"]:
+        raise ValueError("CRYPTO-P0 requires the frozen V1 RTL checkout; use crypto-p1 targets for V2. "
+                         "No P0 artifact has been written.")
     output = variant / "crypto/p0"
     output.mkdir(parents=True, exist_ok=True)
     try:

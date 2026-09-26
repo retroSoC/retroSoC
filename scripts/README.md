@@ -163,7 +163,8 @@ without modifying them. Run `make rtl-migrate-connections`, then
 ports and interface fields are intentionally unchanged. Run
 `make rtl-migrate-names`, then format and lint the resulting diff.
 
-`crypto_constants.py` packs the frozen CRYC1 image from the V1 tables;
+`crypto_constants.py` packs the frozen CRYC1 image from
+`data/crypto_constants.json` and emits an 848-byte compact firmware header;
 `crypto_p0.py` independently checks it against the mathematical oracle in
 `tests/crypto_reference.py`. The P0 runner also executes existing V1 tests,
 full-width RSA-2048 public/private/recheck vectors, SHA padding boundaries and
@@ -174,8 +175,8 @@ that exits with code zero is still a failed test.
 The `crypto-p0-constants`, `crypto-p0-rtl`, `crypto-p0-baseline` and
 `crypto-p0-report` Make targets write below `build/<variant>/crypto/p0/`.
 Select `CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS` and one BUILD_TIMESTAMP for
-all four. P0 preserves production RTL/HAL and records V1 lifecycle limitations;
-it does not implement the six-bank V2 refreeze. Block synthesis calls the
+all four on the frozen V1 checkout. The runner rejects V2 before writing any
+P0 artifact. P0 records V1 lifecycle limitations. Block synthesis calls the
 unchanged `synth.tcl` and `abc_balanced.script`, adding JSON checkpoints and
 standalone interface elaboration only. Each new synthesis attempt uses a fresh
 `synth-*` artifact directory recorded in the report, preventing an old netlist
@@ -183,6 +184,31 @@ from masking a new failed attempt. Its 20833 ps target is derived from
 the PCLK inventory; it is not a full-chip timing result. A timeout/interruption
 retains partial checkpoints and cannot pass the aggregate report. See
 [`../docs/ip/crypto.md`](../docs/ip/crypto.md).
+
+`crypto_p1.py` owns the separate `crypto-p1-constants`, `crypto-p1-rtl`,
+`crypto-p1-formal`, `crypto-p1-synth` and `crypto-p1-report` targets. P1 artifacts are below
+`build/<variant>/crypto/p1/`; P0 artifacts are never reused as candidate
+outputs. The RTL target exercises public APB initialization, AES/SHA and full
+RSA-2048 on the IHP FUNCTIONAL model, actual DMA channels 4/5, storage masks
+and Montgomery carries, then the explicit synchronous fallback. Formal
+checks use running-clock/synchronous-response assumptions and verify control
+invariants, private-result release, bounded scrub, APB access ownership and
+AES output retention across abort/fatal faults. DMA fixtures also inject AXI
+read and write errors. The exact proof/test mapping is in
+[`../docs/ip/crypto-verification.md`](../docs/ip/crypto-verification.md).
+They do not prove the cryptographic arithmetic or physical resistance.
+The RTL target also runs `crypto_response_fault_tb.sv`, which models delayed,
+duplicate, stale-epoch and missing SRAM responses; the product store defaults
+to fixed one-cycle responses.
+Candidate synthesis preserves the P0 SAT/ABC recipe and 10800-second limit.
+The report requires `CRYPTO_P0_BASELINE_ROOT`, `CRYPTO_P1_LP_ROOT` and a
+successful `CRYPTO_P1_CI_ROOT` for its focused gates. Capture full-SoC evidence
+with `crypto_p1.py firmware --variant-root <variant> --firmware-kind lp|ci`
+after creating the corresponding committed-profile manifest. This runs the
+build/simulation and binds the actual configuration, input snapshot, ELF and
+log/result hashes. `crypto_p1.py quality --variant-root <variant>` records
+focused formatter and policy results. Report assembly rejects stale inputs
+or artifacts; it cannot qualify an earlier binary using current source hashes.
 
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the

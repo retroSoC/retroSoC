@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack the frozen CRYC1 image from the revision-qualified V1 RTL tables."""
+"""Pack CRYC1 and its compact firmware representation from public constants."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import re
 import struct
 import zlib
 
@@ -18,43 +17,30 @@ CRC32 = 0x99CA52FE
 SHA256 = "b662a0729bf85789aa9c9bd4a9f8a13ebe44e296deebda486bef2792b1e9d47f"
 
 
-def lookup(source: str, name: str, size: int, base: int) -> list[int]:
-    match = re.search(r"function automatic[^\n]*\b" + name + r"\(.*?endfunction", source, re.S)
-    if match is None:
-        raise ValueError(f"missing {name}")
-    body = match.group()
-    entries: dict[int, int] = {}
-    for key, value in re.findall(
-        r"(?:8'h|6'd)([0-9a-f]+):\s*" + name + r"\s*=\s*(?:8|32)'h([0-9a-f]+)", body
-    ):
-        index = int(key, base)
-        if index in entries:
-            raise ValueError(f"duplicate {name}[{index}]")
-        entries[index] = int(value, 16)
-    default = re.search(r"default:\s*" + name + r"\s*=\s*(?:8|32)'h([0-9a-f]+)", body)
-    if default is None or set(entries) != set(range(size - 1)):
-        raise ValueError(f"incomplete {name}")
-    return [entries[i] for i in range(size - 1)] + [int(default[1], 16)]
-
-
 def pack(root: Path) -> bytes:
-    package = (root / "rtl/ip/security/crypto_pkg.sv").read_text()
-    engine = (root / "rtl/ip/security/crypto_sha2_engine.sv").read_text()
+    source = json.loads((root / "scripts/data/crypto_constants.json").read_text())
+    aes = source["aes_bytes"]
+    sha = [int(word, 16) for word in source["sha_words"]]
+    if (int(source["layout_id"], 16) != LAYOUT_ID or len(aes) != 528 or
+            len(sha) != 80 or any(not 0 <= byte <= 255 for byte in aes)):
+        raise ValueError("invalid CRYC1 public constant source")
     words = [0] * WORDS
-    words[:256] = lookup(package, "aes_sbox", 256, 16)
-    words[256:512] = lookup(package, "aes_inverse_sbox", 256, 16)
-    # Rcon is algorithmic in V1; preserve its defined zero at indices 0 and 15.
-    rcon = 1
-    for index in range(1, 15):
-        words[512 + index] = rcon
-        rcon = ((rcon << 1) ^ (0x11B if rcon & 0x80 else 0)) & 0xFF
-    words[1024:1088] = lookup(package, "sha2_k", 64, 10)
-    initial = re.findall(r"s_hash_state_q <= 256'h([0-9a-f]{64});", engine)
-    if len(initial) != 2:
-        raise ValueError("expected SHA-256 then SHA-224 initialization")
-    for start, value in ((1088, initial[1]), (1096, initial[0])):
-        words[start:start + 8] = [int(value[i:i + 8], 16) for i in range(0, 64, 8)]
+    words[:528] = aes
+    words[1024:1104] = sha
     return struct.pack("<2048I", *words)
+
+
+def compact_header(payload: bytes) -> str:
+    """Only 848 initialized bytes; the HAL emits the reserved zero rows."""
+    validate(payload)
+    words = struct.unpack("<2048I", payload)
+    return ("/* Generated public CRYC1 constants; do not edit. */\n" +
+            "static const uint8_t rs_crypto_aes_constants[528] = {\n" +
+            "\n".join("    " + ", ".join(f"0x{x:02x}U" for x in words[i:i + 16]) + ","
+                      for i in range(0, 528, 16)) + "\n};\n" +
+            "static const uint32_t rs_crypto_sha_constants[80] = {\n" +
+            "\n".join("    " + ", ".join(f"UINT32_C(0x{x:08x})" for x in words[i:i + 4]) + ","
+                      for i in range(1024, 1104, 4)) + "\n};\n")
 
 
 def validate(payload: bytes) -> dict[str, object]:
@@ -75,6 +61,7 @@ def main() -> None:
     manifest = validate(payload)
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "crypto.cryc").write_bytes(payload)
+    (args.output / "crypto_constants.h").write_text(compact_header(payload))
     (args.output / "crypto_constants.inc").write_text(
         "/* Generated CRYC1 words; do not edit. */\n" +
         "\n".join(f"UINT32_C(0x{word:08x})," for (word,) in struct.iter_unpack("<I", payload)) + "\n"
