@@ -6,6 +6,7 @@ automation.
 - `build.txt` provides dependencies for setup, build, and regression helpers.
 - `ci.txt` provides the fast quality tools, including Python lint and test
   dependencies.
+- `rtthread.txt` pins SCons for the isolated HP RT-Thread build environment.
 
 Update requirements deliberately and keep their hashes/pins compatible with
 the repository lock policy. Validate the affected commands locally and in CI;

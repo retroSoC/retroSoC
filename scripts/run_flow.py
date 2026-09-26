@@ -210,7 +210,7 @@ def main() -> int:
         "duration_seconds": round(time.monotonic() - start_clock, 3),
         "peak_rss_kib": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
         "exit_code": returncode,
-        "status": "passed" if returncode == 0 else "failed",
+        "status": "interrupted" if returncode == 130 else ("passed" if returncode == 0 else "failed"),
         "log": str(args.log.resolve()),
     }
     if error_message:

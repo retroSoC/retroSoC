@@ -1,0 +1,8 @@
+from building import DefineGroup, GetCurrentDir
+
+group = DefineGroup('RetroSoC', ['board.c', 'selftest.c', 'start.S'], depend=[''],
+                    CPPPATH=[GetCurrentDir()], LOCAL_CFLAGS=' -Wextra -Werror')
+# PrepareBuilding extends the returned list with kernel objects. Keep it separate
+# from DefineGroup's per-group source list used for LOCAL_CFLAGS.
+objects = list(group)
+Return('objects')

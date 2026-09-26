@@ -127,10 +127,17 @@ than replace, the common `SIM_TEST_PASS` simulation verdict.
 the fixed HP core below `build/`; generated RTL is never tracked.
 `setup_hp_linux.py` installs the locked OpenSBI, Linux, and Buildroot revisions
 and can resume a checkout left without `HEAD` by an interrupted fetch.
-`build_hp_linux.py` builds the RV32 `ilp32d` image set with the repo-owned
-external OpenSBI platform. `package_hp_boot.py` creates the v1 LP/HP flash
+`build_hp_linux.py` builds the RV64 `lp64d` userspace/OpenSBI image set with the repo-owned
+external OpenSBI platform. `package_hp_boot.py` creates the V2 typed LP/HP flash
 bundle and its SHA-256/CRC manifest. `check_lp_hp_performance.py` applies the
 measured 2.5x CoreMark/MHz gate.
+
+`setup_hp_rtthread.py` installs the locked kernel, RV64 bare-metal compiler and
+isolated SCons environment. `build_hp_rtthread.py` stages only the repository BSP
+under the variant and records the source/compiler/configuration inputs.
+`hp_tools.py` checks source revisions and RV64 ELF class. `run_hp_sim.py` keeps
+Linux, smoke and RT-Thread logs/verdicts separate and checks every required
+workload marker together with a successful process exit.
 
 `run_debug_session.py` is the local Hazard3 debug acceptance driver. It starts
 the Verilator remote-bitbang endpoint, the lock-pinned OpenOCD binary, and

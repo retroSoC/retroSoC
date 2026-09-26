@@ -8,13 +8,10 @@ from pathlib import Path
 
 from publications.implementation_reference import without_comments
 from publications.api_bundle_reference import bundle_layout, validate_api, dependencies as api_bundle_dependencies
-from publications.boot_acceptance_reference import SOURCES as BOOT_SOURCES, collect_boot_acceptance, ready_mailbox
 
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
-    if spec:
-        paths.update(BOOT_SOURCES)
     paths.update(api_bundle_dependencies(spec))
     paths.update(spec.get("runtime_profiles", []))
     for row in spec.get("bindings", []):
@@ -177,11 +174,20 @@ def linux_platform(root: Path) -> dict:
         raise ValueError("CPU and UART device-tree clock declarations disagree")
     if dt_value("linux,initrd-start") != dt_value("linux,initrd-end"):
         raise ValueError("reviewed initrd template placeholder changed")
+    ready = (root / "app/ports/linux/hp_ready.c").read_text(encoding="utf-8")
+    ordered = ['puts("retroSoC HP Linux ready")', 'mailbox[8] = (error == 0U) ? 1U : 3U;',
+               'mailbox[9] = (error == 0U) ? UINT32_C(0x4C4E5801) : error;',
+               'mailbox[10] = 1U;', '"fence iorw, iorw"', 'mailbox[11] = 1U;']
+    if any(text not in ready for text in ordered) or [ready.index(text) for text in ordered] != sorted(ready.index(text) for text in ordered):
+        raise ValueError("Linux ready message/publication order changed")
+    writes = [(0x10019020, 1), (0x10019024, 0x4C4E5801), (0x10019028, 1), (0x1001902C, 1)]
+    if "descriptor, 0x10019000)" not in ready:
+        raise ValueError("Linux mailbox mapping changed")
     return {"hart_id": 1, "timebase_hz": timebase, "clock_hz": int(clocks[0]),
             "cbom_bytes": dt_value("riscv,cbom-block-size"), "memory_base": memory[0][0],
             "memory_bytes": int(memory[0][1], 0), "initrd_start": dt_value("linux,initrd-start"),
             "initrd_template_end": dt_value("linux,initrd-end"), "bootargs": bootargs[0],
-            "ready_writes": ready_mailbox(root)}
+            "ready_writes": [{"address": f"0x{a:08X}", "value": f"0x{v:08X}"} for a, v in writes]}
 
 
 def collect_software(root: Path, spec: dict) -> dict:
@@ -191,7 +197,6 @@ def collect_software(root: Path, spec: dict) -> dict:
         raise ValueError("software diagnostic application coverage changed")
     return {**copy.deepcopy(spec), "sources": sorted(dependencies(spec)), "profiles": runtime_profiles(root, spec),
             "irq": irq_support(root), "platform": linux_platform(root),
-            "boot_acceptance": collect_boot_acceptance(root, function_body),
             "api_reference": validate_api(root, spec["api_semantics"], function_body),
             "bundle_reference": bundle_layout(root, spec["boot_bundle"], function_body),
             "applications": [application_diagnostics(root, app) for app in spec["applications"]]}

@@ -6,7 +6,7 @@
 	#size-cells = <1>;
 
 	chosen {
-		bootargs = "console=hvc0 earlycon=sbi rdinit=/sbin/init";
+		bootargs = "console=hvc0 earlycon=sbi rdinit=/init";
 		linux,initrd-start = <0x39000000>;
 		/* build_hp_linux.py replaces this with the actual rootfs end. */
 		linux,initrd-end = <0x39000000>;
@@ -22,8 +22,8 @@
 			device_type = "cpu";
 			reg = <1>;
 			clock-frequency = <72000000>;
-			mmu-type = "riscv,sv32";
-			riscv,isa-base = "rv32i";
+			mmu-type = "riscv,sv39";
+			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicbom",
 					       "zicsr", "zifencei";
 			riscv,cbom-block-size = <64>;
@@ -40,6 +40,18 @@
 	memory@38000000 {
 		device_type = "memory";
 		reg = <0x38000000 0x04000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* OpenSBI remains resident for every supervisor SBI call. */
+		opensbi@38000000 {
+			reg = <0x38000000 0x00080000>;
+			no-map;
+		};
 	};
 
 	soc {

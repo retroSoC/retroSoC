@@ -41,30 +41,6 @@ static bool s_hp_boot_ga2d_owned_by_hp;
 _Static_assert(sizeof(rs_hp_boot_header_t) == RS_HP_BOOT_HEADER_SIZE,
                "HP boot bundle header ABI mismatch");
 
-static uint32_t rs_hp_boot_crc32_byte(uint32_t crc, uint8_t value) {
-    crc ^= value;
-    for (uint32_t bit = 0U; bit < 8U; ++bit) {
-        uint32_t mask = UINT32_C(0) - (crc & UINT32_C(1));
-        crc = (crc >> 1U) ^ (UINT32_C(0xEDB88320) & mask);
-    }
-    return crc;
-}
-
-static uint32_t rs_hp_boot_crc32(const uint8_t *data, uint32_t size) {
-    uint32_t crc = UINT32_C(0xFFFFFFFF);
-
-    for (uint32_t index = 0U; index < size; ++index) {
-        crc = rs_hp_boot_crc32_byte(crc, data[index]);
-    }
-    return ~crc;
-}
-
-static bool rs_hp_boot_range_valid(uint32_t address, uint32_t size, uint32_t base,
-                                   uint32_t capacity) {
-    return (size != 0U) && (address >= base) && (address < (base + capacity)) &&
-           ((size - 1U) <= ((base + capacity - 1U) - address));
-}
-
 static void rs_hp_boot_read_header(rs_hp_boot_header_t *header) {
     volatile const uint8_t *source =
         (volatile const uint8_t *)(uintptr_t)(RS_SOC_FLASH_BASE + RS_HP_BOOT_BUNDLE_OFFSET);
@@ -73,60 +49,6 @@ static void rs_hp_boot_read_header(rs_hp_boot_header_t *header) {
     for (uint32_t index = 0U; index < sizeof(*header); ++index) {
         destination[index] = source[index];
     }
-}
-
-static bool rs_hp_boot_entry_expected(const rs_hp_boot_entry_t *entry, uint32_t index,
-                                      uint32_t bundle_size) {
-    static const uint32_t types[RS_HP_BOOT_BUNDLE_ENTRY_COUNT] = {
-        RS_HP_BOOT_TYPE_OPENSBI,
-        RS_HP_BOOT_TYPE_DTB,
-        RS_HP_BOOT_TYPE_LINUX,
-        RS_HP_BOOT_TYPE_INITRAMFS,
-    };
-    static const uint32_t addresses[RS_HP_BOOT_BUNDLE_ENTRY_COUNT] = {
-        RS_HP_BOOT_OPENSBI_ADDRESS,
-        RS_HP_BOOT_DTB_ADDRESS,
-        RS_HP_BOOT_LINUX_ADDRESS,
-        RS_HP_BOOT_INITRAMFS_ADDRESS,
-    };
-    static const uint32_t maximum_sizes[RS_HP_BOOT_BUNDLE_ENTRY_COUNT] = {
-        RS_HP_BOOT_OPENSBI_MAX_SIZE,
-        RS_HP_BOOT_DTB_MAX_SIZE,
-        RS_HP_BOOT_LINUX_MAX_SIZE,
-        RS_HP_BOOT_INITRAMFS_MAX_SIZE,
-    };
-
-    return (entry->type == types[index]) && (entry->load_address == addresses[index]) &&
-           (entry->size <= maximum_sizes[index]) &&
-           ((entry->flags & RS_HP_BOOT_BUNDLE_REQUIRED) != 0U) &&
-           ((entry->flash_offset & UINT32_C(3)) == 0U) &&
-           ((entry->load_address & UINT32_C(3)) == 0U) &&
-           rs_hp_boot_range_valid(entry->flash_offset, entry->size, RS_HP_BOOT_BUNDLE_OFFSET,
-                                  bundle_size) &&
-           rs_hp_boot_range_valid(entry->load_address, entry->size, RS_SOC_SDRAM_BASE,
-                                  RS_SOC_SDRAM_SIZE);
-}
-
-static bool rs_hp_boot_header_valid(rs_hp_boot_header_t *header) {
-    uint32_t expected_crc = header->header_crc32;
-
-    header->header_crc32 = 0U;
-    if ((header->magic != RS_HP_BOOT_BUNDLE_MAGIC) ||
-        (header->version != RS_HP_BOOT_BUNDLE_VERSION) ||
-        (header->header_size != sizeof(*header)) ||
-        (header->entry_count != RS_HP_BOOT_BUNDLE_ENTRY_COUNT) ||
-        ((header->flags & RS_HP_BOOT_BUNDLE_REQUIRED) == 0U) ||
-        (header->total_size < sizeof(*header)) ||
-        (header->total_size > (RS_SOC_FLASH_SIZE - RS_HP_BOOT_BUNDLE_OFFSET)) ||
-        (rs_hp_boot_crc32((const uint8_t *)header, sizeof(*header)) != expected_crc)) {
-        return false;
-    }
-    for (uint32_t index = 0U; index < RS_HP_BOOT_BUNDLE_ENTRY_COUNT; ++index) {
-        if (!rs_hp_boot_entry_expected(&header->entries[index], index, header->total_size)) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static bool rs_hp_boot_copy_entry(const rs_hp_boot_entry_t *entry) {
@@ -263,11 +185,18 @@ static bool rs_hp_boot_wait_message(uint32_t code, uint32_t argument, uint32_t s
     rs_hp_mailbox_message_t message;
 
     for (uint32_t timeout = 0U; timeout < RS_HP_BOOT_EVENT_TIMEOUT; ++timeout) {
+        uint32_t status;
         if (rs_hp_mailbox_receive_from_hp(&message) != RS_OK) {
             return false;
         }
-        if (message.sequence == sequence) {
-            return (message.code == code) && (message.argument == argument);
+        status = rs_hp_boot_message_status(message.code, message.argument, message.sequence, code,
+                                           argument, sequence);
+        if (status == 2U) {
+            printf("HP_PAYLOAD_FAILED:%u\n", (unsigned int)message.argument);
+            return false;
+        }
+        if (status == 1U) {
+            return true;
         }
     }
     return false;
@@ -336,7 +265,7 @@ int main(void) {
     if (!rs_hp_boot_header_valid(&header)) {
         rs_hp_boot_fail(UINT8_C(4));
     }
-    for (uint32_t index = 0U; index < RS_HP_BOOT_BUNDLE_ENTRY_COUNT; ++index) {
+    for (uint32_t index = 0U; index < header.entry_count; ++index) {
         printf("HP_BOOT_LOAD:%u:%u\n", (unsigned int)header.entries[index].type,
                (unsigned int)header.entries[index].size);
         if (!rs_hp_boot_dma_copy_entry(&header.entries[index]) &&
@@ -345,20 +274,25 @@ int main(void) {
         }
     }
 
-    if ((rs_hp_mailbox_probe() != RS_OK) || !rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_LP) ||
-        (rs_resource_set_owner(RS_RESOURCE_GA2D, RS_RESOURCE_OWNER_HP, false) != RS_OK)) {
+    if (rs_hp_mailbox_probe() != RS_OK) {
         rs_hp_boot_fail(UINT8_C(9));
     }
-    s_hp_boot_ga2d_owned_by_hp = true;
+    if (header.workload == RS_HP_BOOT_WORKLOAD_SMOKE) {
+        if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_LP) ||
+            (rs_resource_set_owner(RS_RESOURCE_GA2D, RS_RESOURCE_OWNER_HP, false) != RS_OK)) {
+            rs_hp_boot_fail(UINT8_C(9));
+        }
+        s_hp_boot_ga2d_owned_by_hp = true;
+        if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
+            rs_hp_boot_fail(UINT8_C(9));
+        }
+    }
 #if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
     if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_LP) ||
         (rs_resource_set_owner(RS_RESOURCE_NPU, RS_RESOURCE_OWNER_HP, false) != RS_OK)) {
         rs_hp_boot_fail(UINT8_C(18));
     }
 #endif
-    if (!rs_hp_boot_wait_ga2d_idle(RS_RESOURCE_OWNER_HP)) {
-        rs_hp_boot_fail(UINT8_C(9));
-    }
 #if defined(RS_NPU_P5_ACCEPTANCE) || defined(RS_NPU_P6_ACCEPTANCE)
     if (!rs_hp_boot_wait_npu_idle(RS_RESOURCE_OWNER_HP)) {
         rs_hp_boot_fail(UINT8_C(18));
@@ -372,11 +306,30 @@ int main(void) {
     }
     printf("HP_BOOT_RELEASED\n");
 
+    if (header.workload == RS_HP_BOOT_WORKLOAD_RTTHREAD) {
+        if (!rs_hp_boot_wait_message(RS_HP_BOOT_READY_EVENT, RS_HP_RTTHREAD_READY_ARG, 1U)) {
+            rs_hp_boot_fail(UINT8_C(18));
+        }
+        printf("HP_RTTHREAD_READY\n");
+        message.code = RS_HP_RTTHREAD_IRQ_COMMAND;
+        message.argument = RS_HP_RTTHREAD_IRQ_ARG;
+        message.sequence = 1U;
+        if ((rs_hp_mailbox_send_to_hp(&message) != RS_OK) ||
+            !rs_hp_boot_wait_message(2U, RS_HP_RTTHREAD_READY_ARG, 2U)) {
+            rs_hp_boot_fail(UINT8_C(19));
+        }
+        printf("HP_RTTHREAD_PASS\n");
+        rs_test_finish(RS_TEST_PASSED, UINT8_C(0));
+    }
+
     if (!rs_hp_boot_wait_message(RS_HP_BOOT_READY_EVENT, RS_HP_BOOT_READY_ARG,
                                  RS_HP_BOOT_MAILBOX_READY_SEQUENCE)) {
         rs_hp_boot_fail(UINT8_C(11));
     }
     printf("HP_LINUX_READY\n");
+    if (header.workload == RS_HP_BOOT_WORKLOAD_LINUX) {
+        rs_test_finish(RS_TEST_PASSED, UINT8_C(0));
+    }
     message.code = RS_HP_BOOT_GA2D_START_COMMAND;
     message.argument = RS_HP_BOOT_GA2D_START_ARG;
     message.sequence = RS_HP_BOOT_MAILBOX_READY_SEQUENCE;

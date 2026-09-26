@@ -32,33 +32,13 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `ci_smoke` | Fast deterministic CI smoke test for UART, ARCHINFO V2, LP external IRQ dispatch when CSR-enabled, RNG, crypto AES/SHA, SDRAM mapped access, and test-status completion. |
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
-| `hp_boot` | SRAM-resident LP loader that validates the HP Linux flash bundle, loads SDRAM, releases HP, and monitors the mailbox verdict. |
-| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to HP, HP-submitted WAV/KWS jobs with Zicbom maintenance, and LP-only register fault probe. |
+| `hp_boot` | SRAM-resident LP loader that validates typed V2 Linux, smoke or RT-Thread bundles, loads SDRAM, releases HP, and monitors the workload-specific mailbox verdict. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 | `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
 The application manifest is loaded from `app/apps/<name>/app.mk`. It appends
 `APP_SRCS` and, when necessary, `APP_INC_DIRS` to the SDK sources selected by
 the central build.
-
-NPU-P5 acceptance extends existing compositions rather than adding an APP.
-`NPU_P5_ACCEPTANCE=YES` is valid only with `ci_smoke` or `hp_boot` and is part
-of the reproducible variant key. The LP path links the generated KWS plan into
-`ci_smoke`, uses the real LP completion interrupt, and writes the normal
-SYSCTRL verdict. The HP smoke bundle assigns resource 9 to hart 1, runs the
-same plan with polling and 64-byte Zicbom maintenance, then returns ownership
-before LP publishes the final verdict. The option defaults to `NO`, preserving
-normal PR firmware size and behavior.
-
-NPU-P6 likewise reuses `APP=hp_boot`; it does not add an application profile
-or public ABI. `NPU_P6_ACCEPTANCE=YES` selects a private qualification payload,
-and `NPU_P6_WORKLOAD=kws|vww` selects one frozen generated plan. The payload
-reads a CRC-protected 100-case shard from the existing HP `Image` slot, runs
-the portable C and production NPU paths through CPU Softmax, measures both
-with HP `rdcycle`, and emits fail-closed per-case records. The first ten global
-cases also overlap an identical GA2D DMA copy with both measured paths.
-Normal and P5 builds remain unchanged because P5 and P6 acceptance flags are
-mutually exclusive and both default to `NO`.
 
 Build and simulate the supported profiles from the repository root:
 
@@ -85,6 +65,10 @@ make CONFIG=configs/ci/ihp130-debug.mk SIMU=VERILATOR debug-sim
 # Build the locked OpenSBI/Linux/initramfs set and LP/HP flash bundle
 make setup-hp-linux
 make CONFIG=configs/ci/ihp130-hp.mk hp-bundle
+
+# Build and test the pinned RV64 M-mode RT-Thread payload on HP hart 1
+make setup-hp-rtthread
+make CONFIG=configs/ci/ihp130-rtthread.mk SIMU=VERILATOR hp-rtthread-sim
 
 # Build the SRAM-resident XPI NOR loader used by the host JTAG tool
 make CONFIG=configs/ci/ihp130-xpi-flash-loader.mk firmware

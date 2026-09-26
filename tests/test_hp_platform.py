@@ -7,6 +7,11 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
+from scripts import build_hp_linux
+from scripts.run_hp_sim import MARKERS
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,7 +25,7 @@ def test_hp_profile_and_locked_generator_contract() -> None:
 
     profile = (ROOT / "configs/ci/ihp130-hp.mk").read_text(encoding="utf-8")
     assert "HAVE_HP" in profile and "YES" in profile
-    assert "rv32imafdc_zicbom_max" in profile
+    assert "rv64imafdc_zicbom_max" in profile
     assert "APP" in profile and "hp_boot" in profile
     assert "LINK_TYPE" in profile and "ld2_all_sram" in profile
 
@@ -28,6 +33,8 @@ def test_hp_profile_and_locked_generator_contract() -> None:
         encoding="utf-8"
     )
     for requirement in (
+        "param.xlen = 64",
+        "param.physicalWidth = 32",
         'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")',
         "param.decoders = 2",
         "param.lanes = 2",
@@ -50,16 +57,16 @@ def test_hp_linux_simulation_uses_explicit_fast_flash_acceptance() -> None:
     verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
     emulator = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
 
-    assert "HP_LINUX_SIM_TIME       ?= 7200" in makefile
+    assert "HP_LINUX_SIM_TIME       ?= 0" in makefile
     assert "hp-linux-sim: hp-bundle comp" in makefile
-    assert "VERILATOR_SIM_ARGS=--fast-flash sim" in makefile
+    assert "--workload linux --timeout $(HP_LINUX_SIM_TIME)" in makefile
     for marker in (
         "VERILATOR_FAST_FLASH=enabled",
         "retroSoC HP Linux ready",
         "HP_LINUX_READY",
         "SIM_TEST_PASS code=0",
     ):
-        assert f"--require '{marker}'" in makefile
+        assert marker in (*MARKERS["linux"], "SIM_TEST_PASS code=0", "VERILATOR_FAST_FLASH=enabled")
     assert "VERILATOR_SIM_ARGS      ?=" in verilator_makefile
     assert "$(VERILATOR_SIM_ARGS) -t $(SOC_SIM_TIME)" in verilator_makefile
     assert '("fast-flash"' in emulator
@@ -128,8 +135,7 @@ def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() 
     target = makefile.split("hp-smoke-sim: hp-smoke-bundle comp", 1)[1].split("\nifeq", 1)[0]
 
     assert "HP_SMOKE_SIM_TIME       ?= 300" in makefile
-    assert "SOC_SIM_TIME=$(HP_SMOKE_SIM_TIME)" in target
-    assert "VERILATOR_SIM_ARGS=--fast-flash" in target
+    assert "--workload smoke --timeout $(HP_SMOKE_SIM_TIME)" in target
 
     for marker in (
         "SIM_TEST_PASS code=0",
@@ -137,7 +143,7 @@ def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() 
         "HP_GA2D_PASS",
         "HP_GA2D_CACHE_CLEAN",
     ):
-        assert f"--require '{marker}'" in target
+        assert marker in (*MARKERS["smoke"], "SIM_TEST_PASS code=0")
 
 
 def test_hp_cache_handshake_budget_covers_cbo_and_mailbox_round_trip() -> None:
@@ -170,6 +176,28 @@ def test_linux_build_uses_external_opensbi_platform_and_actual_initrd_end() -> N
     assert "s_hart_index_to_id[] = {1U}" in platform
     assert "RETROSOC_HP_UART_BASE" in platform
     assert "aclint_mtimer_cold_init" in platform
+
+
+def test_hp_linux_effective_config_is_fail_closed(tmp_path: Path) -> None:
+    fragment = (ROOT / "app/ports/linux/linux/retrosoc_hp.config").read_text(
+        encoding="utf-8"
+    )
+    for symbol in build_hp_linux.REQUIRED_LINUX_CONFIG:
+        assert f"{symbol}=y" in fragment
+
+    config = tmp_path / ".config"
+    valid = "".join(f"{symbol}=y\n" for symbol in build_hp_linux.REQUIRED_LINUX_CONFIG)
+    config.write_text(valid, encoding="utf-8")
+    build_hp_linux.validate_linux_config(config)
+
+    config.write_text(valid.replace("CONFIG_BINFMT_ELF=y", "# CONFIG_BINFMT_ELF is not set"),
+                      encoding="utf-8")
+    with pytest.raises(RuntimeError, match="CONFIG_BINFMT_ELF=n"):
+        build_hp_linux.validate_linux_config(config)
+
+    config.write_text(valid.replace("CONFIG_TTY=y\n", ""), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="CONFIG_TTY=missing"):
+        build_hp_linux.validate_linux_config(config)
 
 
 def test_hp_linux_device_tree_compiles_and_can_patch_initrd_end(tmp_path: Path) -> None:
@@ -206,6 +234,14 @@ def test_hp_linux_device_tree_compiles_and_can_patch_initrd_end(tmp_path: Path) 
     ).strip()
     assert initrd_end == "39123456"
     assert hart_id == "1"
+    reservation = subprocess.check_output(
+        [fdtget, "-t", "x", str(dtb), "/reserved-memory/opensbi@38000000", "reg"], text=True
+    ).strip()
+    assert reservation == "38000000 80000"
+    properties = subprocess.check_output(
+        [fdtget, "-p", str(dtb), "/reserved-memory/opensbi@38000000"], text=True
+    ).splitlines()
+    assert "no-map" in properties
     dts = (ROOT / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8")
     assert '"zicbom"' in dts
     assert "riscv,cbom-block-size = <64>;" in dts

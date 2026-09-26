@@ -1,30 +1,22 @@
 {
   "schema_version": 1,
-  "source_revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
+  "source_revision": "2a497ecef0b084c02f77ddfb1e94fb0197e14b02",
   "sources": [
-    "Makefile",
     "app/README.md",
-    "app/apps/apu_release/main.c",
     "app/apps/hp_boot/hp_boot_bundle.h",
     "app/apps/hp_boot/main.c",
-    "app/ports/hp-apu/main.c",
     "app/ports/linux/README.md",
     "app/ports/linux/linux/retrosoc_hp.dts",
     "app/ports/linux/opensbi/retrosoc_hp/platform.c",
     "configs/benchmark/ihp130-hazard3-coremark.mk",
-    "configs/ci/ihp130-apu.mk",
     "configs/ci/ihp130-hp.mk",
     "configs/ci/ihp130.mk",
     "configs/cluster/mini-mpw.mk",
     "crt/README.md",
-    "crt/include/retrosoc/hal/apu_regs.h",
     "crt/include/retrosoc/hal/ga2d.h",
-    "crt/include/retrosoc/hal/npu.h",
-    "crt/include/retrosoc/hal/npu_regs.h",
     "crt/include/retrosoc/hal/resource.h",
     "crt/include/retrosoc/hal/sysctrl.h",
     "crt/src/hal/ga2d.c",
-    "crt/src/hal/npu.c",
     "crt/src/hal/resource.c",
     "crt/src/hal/sysctrl.c",
     "docs/axi4-interconnect.md",
@@ -34,7 +26,6 @@
     "docs/hazard3-debug.md",
     "docs/ip/fabric-monitor.md",
     "docs/ip/ga2d.md",
-    "docs/ip/npu-verification.md",
     "docs/ip/resource-controller.md",
     "docs/lp-hp-architecture.md",
     "docs/mini-high-performance-traceability.md",
@@ -43,28 +34,17 @@
     "physical/README.md",
     "publications/datasheets/mini.json",
     "publications/datasheets/register-profiles.json",
-    "publications/examples/npu.c",
     "rtl/ip/multimedia/apb4_apu.sv",
     "rtl/ip/multimedia/apb4_ga2d.sv",
-    "rtl/ip/multimedia/apb4_npu.sv",
     "rtl/ip/multimedia/apu_define.svh",
     "rtl/ip/multimedia/apu_kws_engine.sv",
     "rtl/ip/multimedia/apu_kws_model_loader.sv",
     "rtl/ip/multimedia/apu_kws_sram_client.sv",
     "rtl/ip/multimedia/apu_local_sram.sv",
     "rtl/ip/multimedia/apu_p5_codecs.apus",
-    "rtl/ip/multimedia/apu_reg.sv",
     "rtl/ip/multimedia/ga2d_core.sv",
     "rtl/ip/multimedia/ga2d_dma.sv",
-    "rtl/ip/multimedia/npu_accumulator.sv",
-    "rtl/ip/multimedia/npu_define.svh",
-    "rtl/ip/multimedia/npu_job_decoder.sv",
-    "rtl/ip/multimedia/npu_local_sram.sv",
-    "rtl/ip/multimedia/npu_pkg.sv",
-    "rtl/ip/multimedia/npu_reg.sv",
-    "rtl/ip/multimedia/npu_scheduler.sv",
     "rtl/mini/integration/soc_topology.json",
-    "scripts/apu_abi_digest.py",
     "scripts/apu_isa.py",
     "scripts/apu_kws.py",
     "scripts/apu_mcasm.py",
@@ -72,23 +52,8 @@
     "scripts/build_apu_p5_bundle.py",
     "scripts/build_hp_linux.py",
     "scripts/check_lp_hp_performance.py",
-    "scripts/npu_compiler.py",
-    "scripts/npu_compiler_p0.py",
-    "scripts/npu_descriptors.py",
     "scripts/package_hp_boot.py",
-    "scripts/parse_performance_log.py",
-    "tests/test_lp_irq.py",
-    "rtl/mini/top/retrosoc.sv",
-    "rtl/mini/top/apb4_periph.sv",
-    "docs/development-environment.md",
-    "scripts/development_environment.py",
-    "dependencies/dependencies.lock.json",
-    "docker/Dockerfile",
-    "flake.nix",
-    ".github/workflows/development-environment.yml",
-    ".github/workflows/quality.yml",
-    "CONTRIBUTING.md",
-    "docs/git-workflow.md"
+    "tests/test_lp_irq.py"
   ],
   "support": [
     {
@@ -644,7 +609,7 @@
       "id": "resource",
       "title": "Resource Controller",
       "implementation": "Partial",
-      "scope": "Ten independently managed shared resources; resource 8 owns GA2D and resource 9 owns NPU execution, including lifecycle and LP/HP IRQ routing.",
+      "scope": "Nine independently managed shared resources; resource 8 owns the active P5 GA2D direct 2D engine and IRQ route.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -664,7 +629,7 @@
       "id": "monitor",
       "title": "Fabric Monitor",
       "implementation": "Integrated",
-      "scope": "Ten master and six target observation banks; master bank 8 observes GA2D traffic and master bank 9 observes NPU descriptor and data DMA traffic.",
+      "scope": "Nine master and six target observation banks; bank 8 observes active P5 GA2D direct 2D traffic.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
@@ -774,80 +739,23 @@
       "id": "apu",
       "title": "Audio Processing Unit",
       "implementation": "Partial",
-      "scope": "WAV/FLAC image and job/stream execution; APUC-backed KWS is enabled only in the P9 acceptance configuration. MP3 remains unsupported.",
-      "dependencies": "Load compatible APUMC V2, APUC and APUM images in order. MP3 is unsupported and KWS is gated off by default; corpus, real-time and physical qualification remain separate.",
+      "scope": "Microcode-controlled WAV/FLAC decoding with private DMA, direct/ring submission, I2S TX and local storage.",
+      "dependencies": "Load the compatible checked-in P5 APUMC V2 image. MP3 is unsupported and KWS is gated off by default; corpus, real-time and physical qualification remain separate.",
       "hal": "Published API and syntax example; see the IP chapter.",
-      "linux": "No delivered Linux ASoC integration. The LP/HP APU release image is bare-metal acceptance firmware, not a kernel driver.",
+      "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
       "sources": [
-        "Makefile",
-        "app/apps/apu_release/main.c",
-        "app/ports/hp-apu/main.c",
-        "configs/ci/ihp130-apu.mk",
         "crt/include/retrosoc/hal/apu.h",
-        "crt/include/retrosoc/hal/apu_regs.h",
         "crt/src/hal/apu.c",
         "docs/ip/apu.md",
         "publications/examples/apu.c",
         "rtl/ip/multimedia/apb4_apu.sv",
-        "rtl/ip/multimedia/apu_define.svh",
-        "rtl/ip/multimedia/apu_kws_coeff_loader.sv",
-        "rtl/ip/multimedia/apu_kws_coeff_store.sv",
-        "rtl/ip/multimedia/apu_kws_sram_client.sv",
-        "rtl/ip/multimedia/apu_local_sram.sv",
         "rtl/ip/multimedia/apu_p5_codecs.apus",
         "rtl/ip/multimedia/apu_reg.sv",
-        "rtl/ip/multimedia/apu_proof_memo.sv",
-        "scripts/apu_abi_digest.py",
-        "scripts/apu_isa.py",
-        "scripts/apu_kws.py",
-        "scripts/apu_kws_coeff.py",
-        "scripts/apu_mcasm.py",
-        "scripts/apu_p5_coefficients.py",
         "scripts/build_apu_p5_bundle.py"
       ],
       "tests": [
-        "tests/test_apu.py",
-        "tests/test_apu_p7_concurrent.py",
-        "tests/test_apu_p7_qualification.py",
-        "tests/test_apu_p8_contention.py",
-        "tests/test_apu_p8_quiesce_load.py"
-      ],
-      "reports": []
-    },
-    {
-      "id": "npu",
-      "title": "Neural Processing Unit",
-      "implementation": "Integrated",
-      "scope": "Eight INT8 operators with native HP descriptor/DMA execution and private local SRAM.",
-      "dependencies": "Static compiler-supported graphs, exclusive resource/buffer ownership and explicit cache maintenance; locked KWS/VWW references for qualification.",
-      "hal": "Eleven public NPU HAL operations and a bounded submission example.",
-      "linux": "No native Linux NPU driver ABI is established. The HP smoke payload is freestanding acceptance firmware.",
-      "verification": "Tests available",
-      "sources": [
-        "crt/include/retrosoc/hal/npu.h",
-        "crt/include/retrosoc/hal/npu_regs.h",
-        "crt/src/hal/npu.c",
-        "docs/ip/npu-verification.md",
-        "docs/ip/npu.md",
-        "publications/examples/npu.c",
-        "rtl/ip/multimedia/apb4_npu.sv",
-        "rtl/ip/multimedia/npu_accumulator.sv",
-        "rtl/ip/multimedia/npu_define.svh",
-        "rtl/ip/multimedia/npu_job_decoder.sv",
-        "rtl/ip/multimedia/npu_local_sram.sv",
-        "rtl/ip/multimedia/npu_pkg.sv",
-        "rtl/ip/multimedia/npu_reg.sv",
-        "rtl/ip/multimedia/npu_scheduler.sv",
-        "scripts/npu_compiler.py",
-        "scripts/npu_compiler_p0.py",
-        "scripts/npu_descriptors.py"
-      ],
-      "tests": [
-        "tests/test_npu_register_parity.py",
-        "tests/test_npu_rtl_p4.py",
-        "tests/test_npu_compiler.py",
-        "tests/test_npu_p6.py"
+        "tests/test_apu.py"
       ],
       "reports": []
     },
@@ -988,7 +896,7 @@
       "impact": "Stale reads or loss of dirty data across CPU/DMA ownership changes.",
       "trigger": "Concurrent cached CPU access and non-snooping DMA/LP access.",
       "workaround": "Use exclusive ownership, whole cache-block ranges, directional cache maintenance and fences.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "docs/lp-hp-architecture.md",
         "docs/ip/resource-controller.md"
@@ -996,16 +904,14 @@
     },
     {
       "id": "hp-ready-wait",
-      "title": "Linux ready service does not complete loader acceptance",
-      "impact": "The supplied rootfs publishes the initial ready checkpoint but does not provide the later GA2D result and cache-clean service required by the current hp_boot acceptance sequence.",
-      "trigger": "Using the ready-only Linux service where the loader expects the full acceptance mailbox protocol.",
-      "workaround": "Pair the loader with a matching acceptance payload or service. Current polling is bounded by iteration budgets and missing handshakes fail their stage; an initial ready message is not a terminal pass.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "title": "HP loader has no firmware-local ready timeout",
+      "impact": "LP can wait indefinitely for the expected Linux mailbox event.",
+      "trigger": "No mailbox message after HP release.",
+      "workaround": "Use the simulator deadline during acceptance. A board supervisor/watchdog policy is integration work; no automatic retry is implemented here.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "app/apps/hp_boot/main.c",
-        "configs/ci/ihp130-hp.mk",
-        "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
-        "crt/src/hal/hp_mailbox.c"
+        "configs/ci/ihp130-hp.mk"
       ]
     },
     {
@@ -1014,7 +920,7 @@
       "impact": "A CRC-valid image is not proven to come from a trusted signer.",
       "trigger": "Untrusted image or writable external boot storage.",
       "workaround": "Treat signing, key storage, rollback prevention and secure recovery as separate unimplemented system requirements.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "app/apps/hp_boot/main.c",
         "app/apps/hp_boot/hp_boot_bundle.h"
@@ -1026,7 +932,7 @@
       "impact": "A HAL or DT node does not provide a native Linux driver.",
       "trigger": "Applications attempt direct Linux use of a custom peripheral.",
       "workaround": "Use the published support matrix, retain LP ownership where needed, and validate a platform driver before handoff.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "app/ports/linux/README.md",
         "app/ports/linux/linux/retrosoc_hp.dts"
@@ -1038,7 +944,7 @@
       "impact": "Some downstream peripheral engines are not reset by the central lifecycle request.",
       "trigger": "Using Resource CONTROL.RESET as independent engine reset containment.",
       "workaround": "Drain and use each IP reset/recovery contract. APU P1 has a local reset connection; do not generalize it to all engines.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "docs/ip/resource-controller.md"
       ]
@@ -1049,7 +955,7 @@
       "impact": "Missing cache-clean acknowledgement prevents preservation of modified shared data.",
       "trigger": "HP shutdown times out before acknowledgement.",
       "workaround": "Keep a recoverable authoritative copy outside dirty HP cache; treat timed-out work as failed and reinitialize dependent queues.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "docs/lp-hp-architecture.md",
         "docs/ip/resource-controller.md"
@@ -1061,7 +967,7 @@
       "impact": "The inactive memory window returns an error and its pads are disconnected.",
       "trigger": "Accessing the inactive memory mode or attempting a live protocol change.",
       "workaround": "Select the mode at boot before use; respect the sticky lock. A live handover is not supported.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "docs/lp-hp-architecture.md"
       ]
@@ -1072,7 +978,7 @@
       "impact": "Dedicated USB2 ULPI and SDIO1 pads need board assignment and electrical/timing review.",
       "trigger": "Assuming logical pads are FPGA ball or package-pin assignments.",
       "workaround": "Supply board constraints, bank voltages, external devices and validated timing before enabling a physical route.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "fpga/README.md",
         "publications/datasheets/sections/pins.typ"
@@ -1081,10 +987,10 @@
     {
       "id": "apu-production",
       "title": "APU MP3/KWS availability and qualification limits",
-      "impact": "WAV/FLAC code and image are implemented. MP3 remains a reserved trap; default PRODUCT disables KWS, while the dedicated P7 configuration enables its fixed APUM model. These facts do not establish full-corpus, sustained real-time or physical qualification.",
+      "impact": "WAV/FLAC code and image are implemented; this does not establish complete corpus, sustained real-time or physical qualification. MP3 remains a reserved trap entry; KWS RTL exists but PRODUCT defaults to EnableP7=0 and does not advertise KWS.",
       "trigger": "Submitting MP3, assuming default KWS availability, or inferring full qualification from capability bits.",
-      "workaround": "Read the configuration-specific capability/digest. Use the supported image/model and explicit loader, cache and ownership protocol. Obtain complete revision-matched accuracy/concurrency/physical reports before wider qualification.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "workaround": "Use advertised WAV/FLAC paths with a validated APUMC image and supported formats/rates. Treat KWS as gated development functionality until its complete qualification evidence is supplied.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "publications/datasheets/ips/apu.typ",
         "rtl/ip/multimedia/apu_reg.sv"
@@ -1096,7 +1002,7 @@
       "impact": "Deterministic test data cannot supply production cryptographic entropy.",
       "trigger": "Using the current entropy stream to generate secret keys or nonces.",
       "workaround": "Keep diagnostic use separate; production entropy requires a reviewed physical source and qualification.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "publications/datasheets/ips/rng.typ",
         "rtl/mini/top/apb4_system.sv"
@@ -1108,7 +1014,7 @@
       "impact": "Configuration clocks and behavioral models are not electrical or silicon ratings.",
       "trigger": "Selecting board voltage, frequency, thermal or timing limits from RTL defaults.",
       "workaround": "Use approved technology, macro, package and board reports; leave absent specifications TBD.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "physical/README.md",
         "docs/pll-clock-control.md"
@@ -1120,7 +1026,7 @@
       "impact": "Legacy selection writes are rejected in PRODUCT.",
       "trigger": "Calling selectable user-core/IP mutators on a fixed PRODUCT configuration.",
       "workaround": "Detect mode/capabilities first and use fixed EXT-L/EXT-H APIs in PRODUCT.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
+      "applies_to": "Reviewed v0.4 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "docs/lp-hp-architecture.md",
         "docs/ip/user-ip.md"
@@ -1144,7 +1050,7 @@
       "impact": "READ_BASE and WRITE_BASE next-state assignments are not gated by the KindExtH write-legal result; an EXT-L write can change those readbacks while returning PSLVERR.",
       "trigger": "Writing READ_BASE or WRITE_BASE through the EXT-L register window.",
       "workaround": "Treat these writes as invalid and avoid them. Preserve the slot fault/address when diagnosing an error; do not assume a rejected write rolls back state. EXT-L has no connected data master, so these local outputs do not grant an EXT-L DMA path.",
-      "applies_to": "Reviewed v0.5 PRODUCT source snapshot; static RTL observation, no new simulation or hardware test.",
+      "applies_to": "Reviewed v0.4 PRODUCT source snapshot; static RTL observation, no new simulation or hardware test.",
       "sources": [
         "rtl/mini/top/extension_slot.sv",
         "rtl/mini/top/extension_subsystem.sv"
@@ -1160,20 +1066,6 @@
       "sources": [
         "crt/arch/riscv/startup.S",
         "rtl/mini/mk/software.mk"
-      ]
-    },
-    {
-      "id": "npu-deployment-scope",
-      "title": "NPU execution does not imply arbitrary model or qualified performance support",
-      "impact": "Unsupported graphs, unsafe buffer reuse or an assumed Linux driver can prevent correct deployment.",
-      "trigger": "Dynamic/arbitrary TFLite graphs, unadvertised operators, timeout without drain, or missing cache/ownership handoff.",
-      "workaround": "Use the static compiler subset and explicit CPU preprocessing/Softmax. Check capability and numeric profile, retain buffers until terminal/drained state, and require exact-revision reports for accuracy/performance claims.",
-      "applies_to": "Reviewed v0.5 PRODUCT snapshot; no MLPerf, timing-closure or silicon qualification claim.",
-      "sources": [
-        "rtl/ip/multimedia/npu_reg.sv",
-        "rtl/ip/multimedia/apb4_npu.sv",
-        "scripts/npu_compiler.py",
-        "crt/src/hal/npu.c"
       ]
     }
   ],
@@ -2656,7 +2548,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**64-byte TX and RX FIFOs**; fractional baud-rate generator.\""
+            "text": "\"64-byte TX and RX FIFOs; fractional baud-rate generator.\""
           }
         ]
       },
@@ -2680,7 +2572,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Two controller instances with **7-bit and 10-bit addressing**.\""
+            "text": "\"Two controller instances with 7-bit and 10-bit addressing.\""
           }
         ]
       },
@@ -2705,7 +2597,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**Stereo master TX/RX** with independent audio clock.\""
+            "text": "\"Stereo master TX/RX with independent audio clock.\""
           }
         ]
       },
@@ -2729,7 +2621,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Bidirectional **open-drain** host interface.\""
+            "text": "\"Bidirectional open-drain host interface.\""
           }
         ]
       },
@@ -2753,7 +2645,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**24-bit GRB** transmission on one GPIO alternate function.\""
+            "text": "\"24-bit GRB transmission on one GPIO alternate function.\""
           }
         ]
       },
@@ -2778,7 +2670,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"SD card **SPI-mode** command/data host.\""
+            "text": "\"SD card SPI-mode command/data host.\""
           }
         ]
       },
@@ -2804,7 +2696,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Native **one-bit/four-bit SDR** operation.\""
+            "text": "\"Native one-bit/four-bit SDR operation.\""
           }
         ]
       },
@@ -2829,7 +2721,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Dual-role digital controller with **external 8-bit ULPI PHY**.\""
+            "text": "\"Dual-role digital controller with external 8-bit ULPI PHY.\""
           }
         ]
       },
@@ -2854,7 +2746,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Four chip-select slots and **16 programmable LUT sequences**.\""
+            "text": "\"Four chip-select slots and 16 programmable LUT sequences.\""
           }
         ]
       },
@@ -2879,7 +2771,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Four ESP-PSRAM64H devices addressable through a **32 MiB window**.\""
+            "text": "\"Four ESP-PSRAM64H devices addressable through a 32 MiB window.\""
           }
         ]
       },
@@ -2904,7 +2796,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"One octal DDR memory interface and **one selected protocol profile**.\""
+            "text": "\"One octal DDR memory interface and one selected protocol profile.\""
           }
         ]
       },
@@ -2929,7 +2821,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"Fixed **64 MiB, x16 SDR** geometry with bank/row tracking.\""
+            "text": "\"Fixed 64 MiB, x16 SDR geometry with bank/row tracking.\""
           }
         ]
       },
@@ -2953,7 +2845,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**8-bit parallel RGB565/YUV422** capture.\""
+            "text": "\"8-bit parallel RGB565/YUV422 capture.\""
           }
         ]
       },
@@ -2965,7 +2857,7 @@
         "title": "JPEG",
         "role": "Baseline sequential codec",
         "modes": "8-bit SOF0 encode/decode and the indexed raster formats; modes are mutually exclusive.",
-        "excluded": "No progressive/lossless/arithmetic/10-12-bit modes. DMA permits one normal read and one normal write at a time.",
+        "excluded": "No progressive/lossless/arithmetic/10-12-bit modes. Native SoC DMA admission is currently blocked at slot 6.",
         "software": "Standalone codec/register behavior is distinct from end-to-end SoC payload availability.",
         "evidence": "Source-level subset; no compliance report attached",
         "sources": [
@@ -2978,7 +2870,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"8-bit **Baseline Sequential JPEG** encode or decode.\""
+            "text": "\"8-bit Baseline Sequential JPEG encode or decode.\""
           }
         ]
       },
@@ -2990,7 +2882,7 @@
         "title": "APU",
         "role": "Coreless control/transport subsystem",
         "modes": "Register/transport and bounded development codec paths described in the IP chapter.",
-        "excluded": "MP3 unsupported; KWS requires the P7-enabled configuration. No generic codec, arbitrary TFLite, Linux ASoC or complete corpus qualification is implied.",
+        "excluded": "MP3 is not supported. KWS is implemented as a gated development path and remains disabled/unadvertised by default. No generic codec or full corpus qualification is implied.",
         "software": "A HAL, microcode format or test source does not establish an enabled production audio service.",
         "evidence": "Source-level subset; no compliance report attached",
         "sources": [
@@ -3002,7 +2894,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**Coreless microcode sequencer** with private DMA and local storage.\""
+            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
           }
         ]
       },
@@ -3027,30 +2919,6 @@
             "file": "rtl/ip/multimedia/ga2d_define.svh",
             "kind": "snippet",
             "text": "`define APB4_GA2D__CAPABILITY_P5 32'h0000_07ff"
-          }
-        ]
-      },
-      {
-        "id": "npu",
-        "ips": [
-          "npu"
-        ],
-        "title": "NPU",
-        "role": "Static INT8 tensor processing",
-        "modes": "Eight operator classes, checked INT32 accumulation, double-rounding requantization and native HP descriptor DMA.",
-        "software": "Static compiler-generated C, NPU HAL and freestanding LP/HP acceptance; preprocessing and terminal Softmax run on CPU.",
-        "excluded": "No arbitrary/dynamic TFLite graphs, implicit fallback, APUM binary compatibility, dedicated camera/audio stream or native Linux driver ABI.",
-        "evidence": "Source-level subset; no compliance report attached",
-        "sources": [
-          "rtl/ip/multimedia/npu_define.svh",
-          "rtl/ip/multimedia/apb4_npu.sv",
-          "scripts/npu_compiler.py"
-        ],
-        "bindings": [
-          {
-            "file": "rtl/ip/multimedia/npu_define.svh",
-            "kind": "snippet",
-            "text": "`define APB4_NPU__CAPABILITY_P4 32'h0000_007f"
           }
         ]
       }
@@ -3326,7 +3194,7 @@
           {
             "file": "publications/datasheets/features.json",
             "kind": "snippet",
-            "text": "\"**Coreless microcode sequencer** with private DMA and local storage.\""
+            "text": "\"Coreless microcode sequencer with private DMA and local storage.\""
           }
         ]
       }
@@ -3858,22 +3726,6 @@
           "rtl/ip/multimedia/ga2d_dma.sv",
           "rtl/ip/multimedia/ga2d_pixel.sv",
           "rtl/ip/multimedia/ga2d_core.sv"
-        ]
-      },
-      {
-        "id": "apb4_npu",
-        "chapter": "npu",
-        "family": "npu",
-        "mode": "PRODUCT",
-        "region": "APB4_NPU",
-        "catalog": "npu",
-        "qualification": "Integrated native-HP NPU execution with eight operator classes, descriptor DMA and private SRAM; CAPABILITY=0x7F and OP_CAPABILITY=0x1FE. Resource 9 routes LP vector 33 / HP PLIC source 12. Use configured lifecycle, cache and descriptor admission rules; no native Linux driver, arbitrary model or current corpus/physical qualification is implied.",
-        "sources": [
-          "docs/ip/npu.md",
-          "rtl/ip/multimedia/npu_reg.sv",
-          "rtl/ip/multimedia/apb4_npu.sv",
-          "rtl/ip/multimedia/npu_control_cdc.sv",
-          "rtl/ip/multimedia/npu_core.sv"
         ]
       },
       {
@@ -5139,10 +4991,11 @@
         3,
         4,
         9,
-        18,
         9,
-        18,
+        9,
         10,
+        18,
+        19,
         11,
         12,
         13,
@@ -5150,12 +5003,11 @@
         15,
         16,
         17,
-        17,
-        19
+        17
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Ready checkpoint, GA2D acceptance result, cache-clean and ownership return completed; successful terminal status. NPU ownership checks apply only with RS_NPU_P5_ACCEPTANCE or RS_NPU_P6_ACCEPTANCE.",
+        "0": "Selected workload completed: Linux-ready, RT-Thread kernel/mailbox IRQ tests, or smoke GA2D/cache lifecycle.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -5173,8 +5025,8 @@
         "15": "The request to hold HP after P5 GA2D completion returned an unexpected error.",
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
         "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
-        "18": "NPU LP-owned idle prerequisite, handoff to HP, or HP-owned idle confirmation failed.",
-        "19": "NPU handoff back to LP or LP-owned safe-idle confirmation failed."
+        "18": "RT-Thread ready message failed validation or HP reported a test failure.",
+        "19": "LP-to-HP IRQ command failed or RT-Thread final verdict failed validation."
       }
     }
   },
@@ -5194,7 +5046,7 @@
       "app/ports/linux/linux/retrosoc_hp.config",
       "app/ports/linux/linux/retrosoc_hp.dts",
       "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-      "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+      "app/ports/linux/hp_ready.c",
       "crt/arch/riscv/startup.S",
       "crt/arch/riscv/system_irq.S",
       "crt/include/retrosoc/arch/riscv/system_csr.h",
@@ -5216,11 +5068,7 @@
       "rtl/mini/mk/software.mk",
       "scripts/build_hp_linux.py",
       "scripts/regress.py",
-      "crt/src/hal/hp_mailbox.c",
-      "crt/include/retrosoc/core/status.h",
-      "rtl/ip/peripheral/hp_mailbox_define.svh",
-      "rtl/mini/address_map/memory_map.json",
-      "rtl/ip/peripheral/apb4_hp_mailbox.sv"
+      "app/ports/linux/init"
     ],
     "bindings": [
       {
@@ -5380,7 +5228,7 @@
       {
         "id": "kernel-sbi",
         "file": "app/ports/linux/linux/retrosoc_hp.config",
-        "text": "CONFIG_SMP=n\nCONFIG_HVC_RISCV_SBI=y\nCONFIG_SERIAL_EARLYCON_RISCV_SBI=y"
+        "text": "CONFIG_SMP=n\nCONFIG_PRINTK=y\nCONFIG_TTY=y\nCONFIG_BINFMT_ELF=y\nCONFIG_BINFMT_SCRIPT=y\nCONFIG_HVC_RISCV_SBI=y\nCONFIG_SERIAL_EARLYCON_RISCV_SBI=y"
       },
       {
         "id": "kernel-ready-support",
@@ -5390,7 +5238,7 @@
       {
         "id": "initrd-patch",
         "file": "scripts/build_hp_linux.py",
-        "text": "initrd_end = LAYOUT[\"rootfs.cpio.gz\"][0] + rootfs_source.stat().st_size"
+        "text": "initrd_end = LAYOUT[\"rootfs.cpio\"][0] + rootfs_source.stat().st_size"
       },
       {
         "id": "sbi-entry",
@@ -5399,8 +5247,8 @@
       },
       {
         "id": "ready-log",
-        "file": "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
-        "text": "echo \"retroSoC HP Linux ready\""
+        "file": "app/ports/linux/hp_ready.c",
+        "text": "puts(\"retroSoC HP Linux ready\")"
       },
       {
         "id": "smoke-selection",
@@ -5606,33 +5454,6 @@
             "trigger": "rs_ci_smoke_ga2d_irq(",
             "coverage": "Discover P5 capability, submit direct single-job FILL/COPY/CONVERT/BLEND work through master 8, including A8 fixed-color foreground masks and exact equal background/destination in-place composition, verify the resource-owned LP external completion route, and inspect destinations.",
             "boundary": "Exercises the direct private-AXI64 P5 functional subset only; it does not cover transparent-background/premultiplied-alpha modes, scaling, rendering, descriptor/ring/queue submission, cache coherency, a Linux graphics driver, HP P5 composition acceptance, or physical performance."
-          },
-          {
-            "id": "ga2d-bounded-wait",
-            "title": "GA2D bounded wait and timeout ownership",
-            "kind": "test-fail",
-            "code": 15,
-            "trigger": "rs_ci_smoke_ga2d_bounded_wait(",
-            "coverage": "Force a deliberately small rs_ga2d_wait budget to expire with RS_ETIMEOUT while a real SDRAM job keeps running, prove timeout expiry does not imply safe idle or buffer reclaim, then complete the job under a normal bounded wait with exact destination and counter checks, and confirm rs_ga2d_abort_wait on the idle engine.",
-            "boundary": "Covers LP polling-budget semantics only; it does not exercise HP-side timeout handling, watchdog TIMEOUT error recovery, or abort of an in-flight job."
-          },
-          {
-            "id": "ga2d-dma-contention",
-            "title": "GA2D and central DMA concurrent progress",
-            "kind": "test-fail",
-            "code": 16,
-            "trigger": "rs_ci_smoke_ga2d_dma_contention(",
-            "coverage": "Run a central-DMA memory-to-memory transfer and a GA2D copy concurrently in disjoint SDRAM regions, verify both payloads byte-exactly, and confirm fabric-monitor request counters advance for both master 2 and master 8 during the shared window.",
-            "boundary": "Covers LP CPU, central DMA, and GA2D competition with SDRAM refresh in the behavioral product; wider peripheral-master contention is evidenced in the GA2D platform testbench, and no starvation bound is proven here."
-          },
-          {
-            "id": "npu-p2-shell-irq",
-            "title": "NPU P2 shell ownership and IRQ route",
-            "kind": "test-fail",
-            "code": 17,
-            "trigger": "rs_ci_smoke_npu_irq(",
-            "coverage": "Hand resource 9 to LP through the Resource Controller quiesce/acknowledge round trip, read back the shell identity/capability, and verify the IRQ_TEST-injected event reaches external ordinal 31 and clears by W1C.",
-            "boundary": "Covers the P2 register shell and interrupt route only; EXECUTION_READY stays clear, the private master is tied idle, and no job, DMA, or operator behavior is exercised."
           },
           {
             "id": "apu",
@@ -5860,52 +5681,43 @@
       "sources": [
         "scripts/package_hp_boot.py",
         "app/apps/hp_boot/hp_boot_bundle.h",
-        "app/apps/hp_boot/main.c"
+        "app/apps/hp_boot/main.c",
+        "app/apps/hp_boot/hp_boot_bundle.c"
       ],
       "loader_bindings": [
         {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_crc32_byte",
           "body_sha256": "b048241b3b6c9507a3d2b630af3ce8e4f2dbc0cdfbe662f76a8fce8ebe6037bc"
         },
         {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_crc32",
           "body_sha256": "ee0d898baadc9da12772f6246b2f8b4635216fe68cf67e08793865d2ca40dc90"
         },
         {
-          "source": "app/apps/hp_boot/main.c",
-          "function": "rs_hp_boot_range_valid",
-          "body_sha256": "d9bdafe55cf55481f4a4b33e5ed41e73be9cf9f18a212c8acfcf20c46e0db4ed"
-        },
-        {
-          "source": "app/apps/hp_boot/main.c",
-          "function": "rs_hp_boot_entry_expected",
-          "body_sha256": "742ab68f51e33c801d28e5df8f18302f8a0651621868fb5e6ed64762b0734938"
-        },
-        {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_header_valid",
-          "body_sha256": "2409563cb2fb7bace28215f54f83189ecbd11c2257d1959be5aed5013d7c2905"
+          "body_sha256": "cd86a399c2307681a36887647da8f3a585a0d6bbe5cb531b33bfdd84ad2e96a2"
         }
       ],
       "header_fields": {
         "magic": "Format marker written as a little-endian 32-bit word.",
         "version": "Bundle format version; distinct from the datasheet revision.",
         "header_size": "Bytes in the fixed header plus all entry descriptors.",
-        "entry_count": "Number of fixed-order artifact entries.",
+        "entry_count": "Linux uses four entries; smoke and RT-Thread use one executable entry. The remaining three slots are zero.",
         "total_size": "Bundle-relative byte extent from BUNDLE_OFFSET through the aligned image end; includes gaps and padding.",
         "header_crc32": "CRC of the complete header/entry area with this field zeroed.",
-        "flags": "Generator writes REQUIRED; loader requires its bit to be set.",
-        "reserved": "Generator writes zero; loader has no independent zero-value check for this field."
+        "flags": "Must equal REQUIRED (1); extra flag bits are rejected.",
+        "workload": "V2 workload discriminator: 1 Linux, 2 smoke, 3 RT-Thread. Unknown values and V1 are rejected."
       },
       "entry_fields": {
-        "type": "Fixed artifact type in the expected OpenSBI, DTB, Linux, initramfs order.",
+        "type": "Linux uses types 1..4 in fixed order; smoke/RT-Thread use executable type 5 at 0x38000000.",
         "flash_offset": "Absolute offset from the start of the flash image, not from the bundle header.",
         "load_address": "Fixed destination address in the selected SDRAM map.",
         "size": "Nonzero payload byte count; excludes alignment padding.",
         "crc32": "CRC of exactly size payload bytes.",
-        "flags": "Generator writes REQUIRED; loader requires its bit to be set."
+        "flags": "Must equal REQUIRED (1); extra flag bits are rejected."
       },
       "rules": [
         {
@@ -5916,8 +5728,8 @@
         },
         {
           "topic": "Entry identity",
-          "producer": "Four artifacts in fixed order, with the prescribed load address and maximum size for each.",
-          "loader": "Checks exact type/order/load address and the per-artifact maximum, plus nonzero size and mapped ranges.",
+          "producer": "Workload 1: four Linux artifacts. Workloads 2/3: one executable type 5. Unused descriptor slots are zero.",
+          "loader": "Checks workload, exact count/type/order/address, per-artifact size limits and zero unused slots.",
           "consequence": "This is not a generic relocatable image table."
         },
         {
@@ -5929,20 +5741,20 @@
         {
           "topic": "Address alignment",
           "producer": "Aligns each payload start and the final cursor to PAYLOAD_ALIGNMENT.",
-          "loader": "Checks flash_offset and load_address modulo four, not the generator's larger boundary.",
-          "consequence": "Generated layout and accepted alignment are different conditions."
+          "loader": "Requires each absolute flash offset to be 4096-byte aligned and the exact fixed load address.",
+          "consequence": "Loader and packager enforce the same payload-start alignment."
         },
         {
-          "topic": "Flags and reserved word",
-          "producer": "Writes flags=REQUIRED and fixed-header reserved=0.",
-          "loader": "Requires the REQUIRED bit in header and entries. Does not independently reject extra flag bits or nonzero reserved.",
-          "consequence": "Preserve canonical generator values; do not claim strict reserved-bit rejection."
+          "topic": "Flags and workload",
+          "producer": "Writes flags=1 and the explicit V2 workload discriminator.",
+          "loader": "Rejects additional flag bits, unknown workloads, V1 and nonzero unused descriptors.",
+          "consequence": "Rebuild old bundles; do not infer workload from placeholder payload bytes."
         },
         {
           "topic": "Payload placement and fill",
           "producer": "Places payloads sequentially without overlap, filling unused image bytes with 0xFF.",
-          "loader": "Bounds each entry within the bundle/SDRAM ranges; does not independently enforce sequential disjoint extents or padding values.",
-          "consequence": "Do not confuse deterministic output layout with stronger validation that is absent from the loader."
+          "loader": "Enforces monotonic non-overlapping flash payload extents within the bundle. Exact fixed load windows are disjoint. Padding bytes are not checked.",
+          "consequence": "Overlap is rejected; padding is neither payload data nor authenticated metadata."
         },
         {
           "topic": "Capacity and length",
@@ -6018,7 +5830,6 @@
       "rtl/ip/multimedia/apb4_apu.sv",
       "rtl/ip/multimedia/apb4_ga2d.sv",
       "rtl/ip/multimedia/apb4_jpeg.sv",
-      "rtl/ip/multimedia/apb4_npu.sv",
       "rtl/ip/multimedia/apu_control_store.sv",
       "rtl/ip/multimedia/apu_define.svh",
       "rtl/ip/multimedia/apu_local_sram.sv",
@@ -6039,15 +5850,6 @@
       "rtl/ip/multimedia/jpeg_encode_core.sv",
       "rtl/ip/multimedia/jpeg_reg.sv",
       "rtl/ip/multimedia/jpeg_table_store.sv",
-      "rtl/ip/multimedia/npu_accumulator.sv",
-      "rtl/ip/multimedia/npu_control_cdc.sv",
-      "rtl/ip/multimedia/npu_core.sv",
-      "rtl/ip/multimedia/npu_define.svh",
-      "rtl/ip/multimedia/npu_dma.sv",
-      "rtl/ip/multimedia/npu_local_sram.sv",
-      "rtl/ip/multimedia/npu_pkg.sv",
-      "rtl/ip/multimedia/npu_reg.sv",
-      "rtl/ip/multimedia/npu_scheduler.sv",
       "rtl/ip/peripheral/apb4_clint.sv",
       "rtl/ip/peripheral/apb4_dma.sv",
       "rtl/ip/peripheral/apb4_gpio.sv",
@@ -6163,9 +5965,6 @@
       "rtl/mini/top/user_ip_top.sv",
       "rtl/mini/top/user_ip_wrapper.sv",
       "scripts/apu_isa.py",
-      "scripts/npu_compiler_p0.py",
-      "scripts/npu_descriptors.py",
-      "scripts/npu_executor.py",
       "scripts/package_hp_boot.py"
     ],
     "bindings": [
@@ -7352,110 +7151,57 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
-    "checked_date": "2026-09-23",
-    "checked_at": "2026-09-23T08:26:42Z",
-    "boundary": "Observed public GitHub workflow status for this exact commit. Unfinished runs have no conclusion. Installation, environment checking and runtime regression are separate evidence; workflow outcomes do not qualify unexecuted physical or silicon stages.",
+    "revision": "2a497ecef0b084c02f77ddfb1e94fb0197e14b02",
+    "checked_date": "2026-09-17",
+    "boundary": "Public GitHub workflow/job outcomes for this exact commit. Behavioral regression success is not synthesis, netlist, STA, formal, FPGA or silicon qualification. A failed prerequisite can leave later tests unexecuted.",
     "runs": [
       {
-        "name": "quality",
-        "run_id": 35833990836,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990836",
-        "scope": "Repository quality checks and script/RTL fixture tests",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
-      },
-      {
-        "name": "regression-smoke",
-        "run_id": 35833991124,
-        "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991124",
-        "scope": "Bounded IHP130 smoke regression",
-        "note": "Selected workflow stages completed successfully. No per-IP corpus or physical qualification is inferred."
-      },
-      {
         "name": "regression-ihp130",
-        "run_id": 35833991071,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991071",
-        "scope": "IHP130 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
-      },
-      {
-        "name": "regression-sky130",
-        "run_id": 35833991199,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991199",
-        "scope": "SKY130 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "run_id": 35035899124,
+        "result": "success",
+        "scope": "IHP130 PR behavioral-only regression",
+        "note": "Run pr regression passed; formal environment step skipped. Synthesis/timing environment checks are setup checks, not physical results.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899124"
       },
       {
         "name": "regression-gf180",
-        "run_id": 35833991194,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991194",
-        "scope": "GF180 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "run_id": 35035899130,
+        "result": "success",
+        "scope": "GF180 workflow",
+        "note": "Workflow outcome only; detailed stages require their own artifacts.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899130"
       },
       {
         "name": "regression-ics55",
-        "run_id": 35833991306,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991306",
-        "scope": "ICS55 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "run_id": 35035899146,
+        "result": "success",
+        "scope": "ICS55 workflow",
+        "note": "Workflow outcome only; detailed stages require their own artifacts.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899146"
       },
       {
-        "name": "development-environment",
-        "run_id": 35833990893,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893",
-        "scope": "Docker/Nix installation, environment checks and hosted IHP130 behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred.",
-        "observations": [
-          {
-            "name": "docker: Build Docker development environment",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
-          },
-          {
-            "name": "docker: Run IHP130 regression in development environment",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null,
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
-          },
-          {
-            "name": "nix: Install Nix",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
-          },
-          {
-            "name": "nix: Check Nix flake",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
-          },
-          {
-            "name": "nix: Run IHP130 regression in development environment",
-            "scope": "runtime-regression",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
-          }
-        ]
+        "name": "regression-smoke",
+        "run_id": 35035899140,
+        "result": "success",
+        "scope": "Smoke workflow",
+        "note": "Does not qualify all peripheral use cases.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899140"
+      },
+      {
+        "name": "quality",
+        "run_id": 35035898949,
+        "result": "failure",
+        "scope": "Quality workflow",
+        "note": "Check source formatting failed. Later host tests, script tests and APU P5 acceptance were skipped.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035898949"
+      },
+      {
+        "name": "regression-sky130",
+        "run_id": 35035899137,
+        "result": "failure",
+        "scope": "SKY130 PR workflow",
+        "note": "Run pr regression failed. Do not present this platform as passing.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35035899137"
       }
     ]
   }

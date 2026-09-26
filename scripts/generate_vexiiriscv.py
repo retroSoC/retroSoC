@@ -86,7 +86,10 @@ def generate(args: argparse.Namespace) -> None:
     manifest = {
         "schema_version": 1,
         "module": GENERATED_MODULE,
-        "configuration": "rv32imafdc_zicbom_max",
+        "configuration": "rv64imafdc_zicbom_max",
+        "xlen": 64,
+        "physical_address_width": 32,
+        "mmu": "sv39",
         "vexiiriscv_revision": actual,
         "source_status": git_status(source),
         "submodules": submodules,

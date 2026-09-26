@@ -18,11 +18,10 @@ from 32 KiB on-chip SRAM, enables VexiiRiscv `Zicbom` with 64-byte blocks, and
 generates VexiiRiscv RTL only below the selected build variant. It is not part
 of the supported PR matrix until Linux boot, HP performance, synthesis, and
 timing evidence are qualified.
-`ci/ihp130-apu.mk` is the APU LP/HP evidence profile. It runs `apu_release`
-from PSRAM, stages the embedded APUMC/APUM/WAV/KWS assets through SDRAM,
-performs the LP-only image loads, hands APU ownership to the HP hart, and
-checks HP-submitted WAV/KWS jobs plus the LP-only register fault probe in the
-full-SoC Verilator simulation via `hp-apu-sim`.
+`ci/ihp130-rtthread.mk` selects the same RV64 HP hardware and LP loader for
+the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
+`make CONFIG=configs/ci/ihp130-rtthread.mk SIMU=VERILATOR hp-rtthread-sim`.
+All PRODUCT profiles use `rv64imafdc_zicbom_max`; LP compiler/ISA remain RV32.
 `ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
 by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of

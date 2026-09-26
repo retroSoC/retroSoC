@@ -88,7 +88,7 @@ profile; other profiles can depend on external memory even when Linux is not use
   [*External boot image* \ XPI-visible bundle \ Header and payload CRCs],
   [*LP loader* \ Validate and copy \ Retain root authority],
   [*External SDRAM* \ OpenSBI, DTB \ Linux and initramfs],
-  [*HP application* \ Hart 1, Sv32 \ Linux enters via OpenSBI],
+  [*HP application* \ Hart 1, Sv39 \ Linux enters via OpenSBI],
   [*SBI console / timer* \ Supplied platform path],
   [*LP supervision* \ Mailbox observation \ Resource and reset policy])),
   caption:[Supplied Linux boot composition and management responsibilities.])
