@@ -35,6 +35,13 @@ below `.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
 `VEXIIRISCV_ROOT`, but its revision is still checked before generated RTL is
 accepted. No generated CPU RTL or Linux build output belongs in Git.
 
+`rtthread_hp` pins official RT-Thread v5.3.0 at
+`99428a1e7f7447955aa860f7c969273a12095b8f`. `make setup-hp-rtthread` installs
+that source, the checksum-locked `riscv_gnu_hp` RV64 compiler, and the hashed
+SCons requirement in a local virtual environment. The BSP is copied into the
+build variant and uses the upstream kernel/CPU port without modifying it.
+The LP SDK retains its existing RV32 toolchain.
+
 The libjpeg-turbo source archive is a host-verification input for the JPEG
 accelerator. It supplies an implementation-independent interoperability oracle;
 it is not linked into firmware or synthesized RTL. The repository-owned fixed

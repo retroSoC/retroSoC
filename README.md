@@ -19,7 +19,7 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 ## Highlights
 
 - A fixed asymmetric dual-core Mini product: Hazard3 is the LP management hart
-  and generated dual-issue RV32IMAFDC VexiiRiscv is the HP application hart.
+  and generated dual-issue RV64IMAFDC VexiiRiscv is the HP application hart.
   The C0-C3 selectable cores remain only in the explicit Mini MPW profile.
 - A product [LP/HP architecture](docs/lp-hp-architecture.md) with independent
   AON, LP, HP, PCLK, memory, audio, pixel, JTAG, and ULPI clock/reset contracts,
@@ -100,9 +100,10 @@ used with commercial 32 KiB SRAM and PLL simulation models.
 | [`configs/ci/sky130.mk`](configs/ci/sky130.mk) | RV32IM | `bringup` | Firmware and behavioral regression with a 32 KiB OpenRAM SRAM; local full-flow commands support synthesis and timing. |
 | [`configs/ci/ihp130-shell.mk`](configs/ci/ihp130-shell.mk) | RV32IM | `shell` | Pull-request firmware build with CSR support enabled. |
 | [`configs/ci/ihp130-debug.mk`](configs/ci/ihp130-debug.mk) | RV32IM | `debug` | Verilator remote-bitbang acceptance of the Hazard3 JTAG DTM, Debug Module, OpenOCD, and GDB. |
-| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV32IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
-| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
-| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV32IMAFDC+Zicbom | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
+| [`configs/ci/ihp130-hp.mk`](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV64IMAFDC | `hp_boot` | Linux image/bundle flow and HP RTL validation on the fixed product topology. |
+| [`configs/ci/ihp130-rtthread.mk`](configs/ci/ihp130-rtthread.mk) | LP RV32IM / HP RV64IMAFDC | `hp_boot` | Locked RT-Thread v5.3.0 M-mode kernel/platform acceptance on HP hart 1. |
+| [`configs/benchmark/ihp130-hazard3-coremark.mk`](configs/benchmark/ihp130-hazard3-coremark.mk) | LP RV32IM / HP RV64IMAFDC+Zicbom | `coremark` | Fixed four-iteration LP SRAM CoreMark measurement with the product HP core present. |
+| [`configs/cluster/ics55.mk`](configs/cluster/ics55.mk) | LP RV32IM / HP RV64IMAFDC+Zicbom | `bringup` | Site profile with PLL/SRAM intentionally disabled for regression compatibility. |
 | [`configs/cluster/mini-mpw.mk`](configs/cluster/mini-mpw.mk) | RV32IM | `bringup` | Legacy MPW C0-C3/user-IP selection profile; not part of the Mini product ABI. |
 
 CI Verilator firmware simulations explicitly select the `ci_smoke`

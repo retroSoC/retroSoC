@@ -5,6 +5,13 @@ an English product document with a separate MPW compatibility appendix. It does
 not define or change RTL, register ABIs, build profiles or hardware quality policy.
 The canonical RTL/configuration inputs remain authoritative.
 
+The current working source includes the Mini RV64/Sv39 migration, V2 workload
+bundle checks, and minimal Linux `/init` handoff. RT-Thread's M-mode BSP and
+acceptance evidence are documented in [HP RV64 validation](../docs/hp-rv64-validation.md).
+These edits do not advance `mini.json.source_revision` or relabel an existing
+PDF. Review and commit the implementation snapshot before producing a matching
+new PDF; the source-drift check remains mandatory.
+
 ## Mini datasheet
 
 - Entry: [datasheets/retroSoC-mini-datasheet.typ](datasheets/retroSoC-mini-datasheet.typ).

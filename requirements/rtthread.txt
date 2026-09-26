@@ -1,0 +1,4 @@
+# Official RT-Thread build frontend, isolated from the SDK Python environment.
+--only-binary=:all:
+--require-hashes
+scons==4.8.1 --hash=sha256:a4c3b434330e2d7d975002fd6783284ba348bf394db94c8f83fdc5bf69cdb8d7

@@ -50,11 +50,11 @@ static void rs_print_hp_core_spec(void) {
     printf("\nHigh-Performance-Core Specification:\n");
     printf("  Identity\n");
     printf("    Core: VexiiRiscv(hart 1), dual-issue in-order\n");
-    printf("    Role: high-throughput application and Linux\n");
+    printf("    Role: application, RT-Thread and Linux\n");
     printf("    Source: https://github.com/SpinalHDL/VexiiRiscv\n");
     printf("  Hardware ISA and privilege\n");
-    printf("    Base: RV32IMAFDC_Zicbom_Zicntr_Zihpm\n");
-    printf("    Mode: M/S/U; Sv32 MMU, 9-bit ASID\n");
+    printf("    Base: RV64IMAFDC_Zicbom_Zicntr_Zihpm\n");
+    printf("    Mode: M/S/U; Sv39 MMU, 9-bit ASID\n");
     printf("    Protection: 16 PMP regions, 4 KiB granularity\n");
     printf("    IRQ: machine software/timer/external + supervisor external\n");
     printf("  Microarchitecture\n");
@@ -63,7 +63,7 @@ static void rs_print_hp_core_spec(void) {
     printf("  Cache and memory\n");
     printf("    L1: separate 16 KiB, 4-way instruction and data caches\n");
     printf("    Maintenance: 64-byte Zicbom CBO; no hardware coherency\n");
-    printf("    Bus: native AXI64 I/D + cacheless AXI32 MMIO\n");
+    printf("    Bus: native AXI64 I/D/MMIO; MMIO downsized to AXI32\n");
     printf("  Debug\n");
     printf("    Embedded RISC-V JTAG, 4 triggers\n");
     printf("  Runtime\n");

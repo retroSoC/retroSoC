@@ -44,7 +44,7 @@ SRAM_SIZE_KIB            ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV                ?= NO
 HAVE_SVA                 ?= NO
 HAVE_HP                  ?= YES
-HP_CONFIG                ?= rv32imafdc_zicbom_max
+HP_CONFIG                ?= rv64imafdc_zicbom_max
 BUILD_RELEASE            ?= NO
 JTAG_IDCODE              ?= DEADBEEF
 EXT_CLK_HZ               ?= 72000000
@@ -72,6 +72,7 @@ APP                ?= shell
 LINK_TYPE          ?= ld2_sram
 COREMARK_MODE      ?= quick
 HP_PERF_MIN_RATIO  ?= 2.5
+HP_CROSS           ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
 LP_COREMARK_REPORT ?=
 HP_COREMARK_REPORT ?=
 
@@ -139,6 +140,11 @@ HP_SMOKE_BUNDLE_NAME    ?= retrosoc_hp_smoke
 HP_SMOKE_BUNDLE_BIN     := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).bin
 HP_SMOKE_BUNDLE_HEX     := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).hex
 HP_SMOKE_MANIFEST       := $(SW_BUILD_DIR)/$(HP_SMOKE_BUNDLE_NAME).json
+HP_RTTHREAD_BUILD_DIR   := $(VARIANT_ROOT)/hp-rtthread
+HP_RTTHREAD_STAMP       := $(HP_RTTHREAD_BUILD_DIR)/images/.stamp
+HP_RTTHREAD_SIM_TIME    ?= 1800
+HP_RTTHREAD_BUNDLE_NAME ?= retrosoc_hp_rtthread
+HP_RTTHREAD_BUNDLE_BIN  := $(SW_BUILD_DIR)/$(HP_RTTHREAD_BUNDLE_NAME).bin
 HP_BUILDRT_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/buildroot-hp
 HP_LINUX_ROOT           := $(ROOT_PATH)/.cache/retrosoc/sources/linux-hp
 HP_OPENSBI_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/opensbi-hp
@@ -167,7 +173,7 @@ VALID_SYNTH_RECIPE  := balanced area speed
 VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
-VALID_HP_CONFIG     := rv32imafdc_zicbom_max
+VALID_HP_CONFIG     := rv64imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader
 VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
@@ -381,10 +387,12 @@ help:
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
-	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
+	  '  hp-linux                   build the pinned RV64 HP Linux image set' \
 	  '  hp-bundle                  package LP firmware and HP Linux images for flash' \
 	  '  hp-linux-sim               run the fast-flash HP Linux userspace acceptance test' \
 	  '  hp-smoke-sim               run LP release, HP MMIO, and mailbox RTL smoke test' \
+	  '  setup-hp-rtthread          install locked RT-Thread, RV64 compiler and SCons' \
+	  '  hp-rtthread-sim            run RV64 RT-Thread kernel/platform acceptance' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
 	  '  memory-map                 generate the selected address-map artifacts' \
@@ -533,7 +541,10 @@ apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 setup-hp-linux:
 	python3 $(ROOT_PATH)/scripts/setup_hp_linux.py
 
-$(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py \
+setup-hp-rtthread:
+	python3 $(ROOT_PATH)/scripts/setup_hp_rtthread.py
+
+$(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py $(ROOT_PATH)/scripts/hp_tools.py \
 	$(ROOT_PATH)/app/ports/linux/configs/retrosoc_hp_defconfig \
 	$(ROOT_PATH)/app/ports/linux/busybox/retrosoc_hp.config \
 	$(ROOT_PATH)/app/ports/linux/linux/retrosoc_hp.config \
@@ -542,7 +553,7 @@ $(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/configs/defconfig \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/objects.mk \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/platform.c \
-	$(ROOT_PATH)/app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp
+	$(ROOT_PATH)/app/ports/linux/init $(ROOT_PATH)/app/ports/linux/hp_ready.c
 	@test '$(HAVE_HP)' = YES
 	python3 $(ROOT_PATH)/scripts/build_hp_linux.py --root $(ROOT_PATH) \
 		--buildroot $(HP_BUILDRT_ROOT) --linux $(HP_LINUX_ROOT) --opensbi $(HP_OPENSBI_ROOT) \
@@ -565,23 +576,17 @@ hp-bundle: $(HP_BOOT_BUNDLE_BIN) $(HP_BOOT_BUNDLE_HEX)
 
 hp-linux-sim: hp-bundle comp
 	@test '$(SIMU)' = VERILATOR
-	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_BOOT_BUNDLE_NAME) \
-		SOC_SIM_TIME=$(HP_LINUX_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
-	python3 $(ROOT_PATH)/scripts/check_simulation.py \
-		--log $(SIM_BUILD_ROOT)/sim.log \
-		--result $(SIM_BUILD_ROOT)/result-hp-linux-sim-check.json \
-		--require 'VERILATOR_FAST_FLASH=enabled' \
-		--require 'retroSoC HP Linux ready' \
-		--require 'HP_LINUX_READY' \
-		--require 'SIM_TEST_PASS code=0'
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_BOOT_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-linux \
+		--workload linux --timeout $(HP_LINUX_SIM_TIME)
 
-$(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py \
+$(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py $(ROOT_PATH)/scripts/hp_tools.py \
 	$(ROOT_PATH)/app/ports/linux/smoke/start.S \
 	$(ROOT_PATH)/app/ports/linux/smoke/linker.ld
 	python3 $(ROOT_PATH)/scripts/build_hp_smoke.py \
 		--source $(ROOT_PATH)/app/ports/linux/smoke/start.S \
 		--linker $(ROOT_PATH)/app/ports/linux/smoke/linker.ld \
-		--output $(HP_SMOKE_BUILD_DIR) --cross $(CROSS)
+		--output $(HP_SMOKE_BUILD_DIR) --cross $(HP_CROSS)
 	@touch $@
 
 $(HP_SMOKE_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_SMOKE_STAMP) \
@@ -589,24 +594,45 @@ $(HP_SMOKE_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_SMOKE_STAMP) \
 	python3 $(ROOT_PATH)/scripts/package_hp_boot.py \
 		--firmware $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
 		--images $(HP_SMOKE_BUILD_DIR)/images --output $@ \
-		--manifest $(HP_SMOKE_MANIFEST)
+		--manifest $(HP_SMOKE_MANIFEST) --workload smoke
 
 $(HP_SMOKE_BUNDLE_HEX): $(HP_SMOKE_BUNDLE_BIN)
 	$(OBJC) -I binary -O verilog $< $@
 
 hp-smoke-bundle: $(HP_SMOKE_BUNDLE_BIN) $(HP_SMOKE_BUNDLE_HEX)
 
+$(HP_RTTHREAD_STAMP): $(wildcard $(ROOT_PATH)/app/ports/rtthread/*) \
+	$(ROOT_PATH)/scripts/build_hp_rtthread.py $(ROOT_PATH)/scripts/hp_tools.py \
+	$(ROOT_PATH)/app/apps/hp_boot/hp_boot_bundle.h $(ROOT_PATH)/requirements/rtthread.txt $(LOCK_FILE)
+	@test '$(HAVE_HP)' = YES
+	python3 $(ROOT_PATH)/scripts/build_hp_rtthread.py --root $(ROOT_PATH) \
+		--output $(HP_RTTHREAD_BUILD_DIR) --jobs $(JOBS)
+	@touch $@
+
+hp-rtthread: $(HP_RTTHREAD_STAMP)
+
+$(HP_RTTHREAD_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_RTTHREAD_STAMP) \
+	$(ROOT_PATH)/scripts/package_hp_boot.py
+	python3 $(ROOT_PATH)/scripts/package_hp_boot.py \
+		--firmware $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
+		--images $(HP_RTTHREAD_BUILD_DIR)/images --output $@ \
+		--manifest $(SW_BUILD_DIR)/$(HP_RTTHREAD_BUNDLE_NAME).json --workload rtthread
+
+hp-rtthread-bundle: $(HP_RTTHREAD_BUNDLE_BIN)
+
+hp-rtthread-sim: hp-rtthread-bundle comp
+	@test '$(SIMU)' = VERILATOR
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_RTTHREAD_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-rtthread \
+		--workload rtthread --timeout $(HP_RTTHREAD_SIM_TIME)
+
+.PHONY: setup-hp-rtthread hp-rtthread hp-rtthread-bundle hp-rtthread-sim
+
 hp-smoke-sim: hp-smoke-bundle comp
 	@test '$(SIMU)' = VERILATOR
-	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_SMOKE_BUNDLE_NAME) \
-		SOC_SIM_TIME=$(HP_SMOKE_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
-	python3 $(ROOT_PATH)/scripts/check_simulation.py \
-		--log $(SIM_BUILD_ROOT)/sim.log \
-		--result $(SIM_BUILD_ROOT)/result-hp-smoke-sim-check.json \
-		--require 'SIM_TEST_PASS code=0' \
-		--require 'HP_LINUX_READY' \
-		--require 'HP_GA2D_PASS' \
-		--require 'HP_GA2D_CACHE_CLEAN'
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_SMOKE_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-smoke \
+		--workload smoke --timeout $(HP_SMOKE_SIM_TIME)
 
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_vexiiriscv.py \

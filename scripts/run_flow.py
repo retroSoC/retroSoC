@@ -111,6 +111,11 @@ def main() -> int:
     args.result.parent.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
+    atomic_write(args.result, json.dumps({
+        "schema_version": 1, "tool": args.tool, "command": command,
+        "started_at": started.isoformat(), "status": "running",
+        "log": str(args.log.resolve()),
+    }, indent=2, sort_keys=True) + "\n")
     returncode = 127
     error_message = None
     process: subprocess.Popen[str] | subprocess.Popen[bytes] | None = None
@@ -183,7 +188,7 @@ def main() -> int:
         "finished_at": finished.isoformat(),
         "duration_seconds": round(time.monotonic() - start_clock, 3),
         "exit_code": returncode,
-        "status": "passed" if returncode == 0 else "failed",
+        "status": "interrupted" if returncode == 130 else ("passed" if returncode == 0 else "failed"),
         "log": str(args.log.resolve()),
     }
     if error_message:

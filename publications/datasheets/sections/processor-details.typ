@@ -12,7 +12,7 @@ ISA/CSR manuals. A software compiler option does not remove a hardware extension
    ([Execution width],[RV32 integration.],[XLEN #cpu.hp.xlen / physical address width #cpu.hp.physicalWidth.]),
    ([Configured extensions],cpu.lp_extensions.join(", "),cpu.hp_isa.filter(x=>not(x in ("s","u"))).join(", ")),
    ([Privilege],[Machine-mode configuration, U_MODE = #cpu.lp.U_MODE.],[S and U selected by the generator, in addition to machine-mode operation.]),
-   ([MMU / software platform],[No LP MMU is advertised by this integration.],[Supplied software platform declares Sv32; verify agreement with the generated core before deployment.]),
+   ([MMU / software platform],[No LP MMU is advertised by this integration.],[Supplied software platform declares Sv39; verify agreement with the generated core before deployment.]),
    ([Protection],[PMP_REGIONS = #cpu.lp.PMP_REGIONS.],[PMP entries = #cpu.hp.at("pmpParam.pmpSize") / granularity = #cpu.hp.at("pmpParam.granularity") bytes.]),
    ([Reset entry],code(data.reset_address),code(cpu.hp.resetVector.trim("L",at:end))),
    ([Trap / counter configuration],[MTVEC_INIT: #code(cpu.lp.MTVEC_INIT) \ Machine CSR: #cpu.lp.CSR_M_MANDATORY / counters: #cpu.lp.CSR_COUNTER.],[ASID width #cpu.hp.asidWidth and #cpu.hp.additionalPerformanceCounters additional performance counters. \ Time-read option: #cpu.hp.at("privParam.withRdTime").]),

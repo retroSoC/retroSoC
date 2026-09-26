@@ -78,12 +78,12 @@ def test_booter_prints_present_hp_core_specification() -> None:
     for text in (
         "High-Performance-Core Specification:",
         "Core: VexiiRiscv(hart 1), dual-issue in-order",
-        "Base: RV32IMAFDC_Zicbom_Zicntr_Zihpm",
-        "Mode: M/S/U; Sv32 MMU, 9-bit ASID",
+        "Base: RV64IMAFDC_Zicbom_Zicntr_Zihpm",
+        "Mode: M/S/U; Sv39 MMU, 9-bit ASID",
         "Protection: 16 PMP regions, 4 KiB granularity",
         "L1: separate 16 KiB, 4-way instruction and data caches",
         "Maintenance: 64-byte Zicbom CBO; no hardware coherency",
-        "Bus: native AXI64 I/D + cacheless AXI32 MMIO",
+        "Bus: native AXI64 I/D/MMIO; MMIO downsized to AXI32",
         "Embedded RISC-V JTAG, 4 triggers",
     ):
         assert text in booter

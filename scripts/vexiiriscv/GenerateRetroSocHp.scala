@@ -8,7 +8,7 @@ import vexiiriscv.misc.EmbeddedRiscvJtag
 
 import java.nio.file.{Files, Paths}
 
-/** Generates the fixed retroSoC RV32 Linux application core. */
+/** Generates the fixed retroSoC RV64 application core. */
 object GenerateRetroSocHp extends App {
   require(args.length == 1, "usage: GenerateRetroSocHp <output-directory>")
 
@@ -16,7 +16,7 @@ object GenerateRetroSocHp extends App {
   Files.createDirectories(output)
 
   val param = new ParamSimple()
-  param.xlen = 32
+  param.xlen = 64
   param.physicalWidth = 32
   param.resetVector = 0x38000000L
   param.asidWidth = 9

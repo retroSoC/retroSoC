@@ -68,6 +68,8 @@ the root README and subsystem guides.
   clock/pad/fault/performance/RTC/test contracts, HAL, and verification.
 - [ip/hp-platform.md](ip/hp-platform.md) defines the experimental HP PLIC and
   LP/HP mailbox register, interrupt, software, and verification contracts.
+- [hp-rv64-validation.md](hp-rv64-validation.md) records RV64 core, V2 bundle,
+  RT-Thread/Linux acceptance evidence and deferred gates.
 - [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4
   SRAM architecture, APB capability ABI, technology mapping, verification, and
   reliability roadmap.

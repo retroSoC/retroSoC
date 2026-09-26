@@ -33,7 +33,11 @@ The architecture report under `/nfs/share/home/miaoyuchi/plan` is the design
 input. This matrix and executable configuration are the repository status
 sources of truth.
 
-## Current verification evidence
+## Historical RV32 verification evidence
+
+The results below predate the RV64 migration and must not be used as RV64
+qualification. Current generation selects `rv64imafdc_zicbom_max`; see
+[HP RV64 validation](hp-rv64-validation.md) for migration-specific evidence.
 
 - The complete Python suite passes 308 tests, including directed AXI64
   multi-ID/ACL/QoS, target isolation, native AXI64 SRAM, Fabric Monitor,

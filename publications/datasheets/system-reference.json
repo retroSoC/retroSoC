@@ -4992,7 +4992,10 @@
         4,
         9,
         9,
+        9,
         10,
+        18,
+        19,
         11,
         12,
         13,
@@ -5004,7 +5007,7 @@
       ],
       "expected_entries": 4,
       "meanings": {
-        "0": "Linux-ready and P5 GA2D mailbox/cache-clean handoff completed; successful terminal status.",
+        "0": "Selected workload completed: Linux-ready, RT-Thread kernel/mailbox IRQ tests, or smoke GA2D/cache lifecycle.",
         "1": "UART initialization failed; terminal failure is written directly without requiring a printable console.",
         "2": "HP hold/reset/debug-selection/presence prerequisite failed.",
         "3": "SDRAM did not reach the required ready/error-free state within the firmware wait.",
@@ -5021,7 +5024,9 @@
         "14": "GA2D did not return to the expected HP-owned safe idle state after the P5 FILL/COPY-subset job.",
         "15": "The request to hold HP after P5 GA2D completion returned an unexpected error.",
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
-        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed."
+        "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
+        "18": "RT-Thread ready message failed validation or HP reported a test failure.",
+        "19": "LP-to-HP IRQ command failed or RT-Thread final verdict failed validation."
       }
     }
   },
@@ -5041,7 +5046,7 @@
       "app/ports/linux/linux/retrosoc_hp.config",
       "app/ports/linux/linux/retrosoc_hp.dts",
       "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-      "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
+      "app/ports/linux/hp_ready.c",
       "crt/arch/riscv/startup.S",
       "crt/arch/riscv/system_irq.S",
       "crt/include/retrosoc/arch/riscv/system_csr.h",
@@ -5062,7 +5067,8 @@
       "rtl/mini/integration/soc_topology.json",
       "rtl/mini/mk/software.mk",
       "scripts/build_hp_linux.py",
-      "scripts/regress.py"
+      "scripts/regress.py",
+      "app/ports/linux/init"
     ],
     "bindings": [
       {
@@ -5232,7 +5238,7 @@
       {
         "id": "initrd-patch",
         "file": "scripts/build_hp_linux.py",
-        "text": "initrd_end = LAYOUT[\"rootfs.cpio.gz\"][0] + rootfs_source.stat().st_size"
+        "text": "initrd_end = LAYOUT[\"rootfs.cpio\"][0] + rootfs_source.stat().st_size"
       },
       {
         "id": "sbi-entry",
@@ -5241,8 +5247,8 @@
       },
       {
         "id": "ready-log",
-        "file": "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp",
-        "text": "echo \"retroSoC HP Linux ready\""
+        "file": "app/ports/linux/hp_ready.c",
+        "text": "puts(\"retroSoC HP Linux ready\")"
       },
       {
         "id": "smoke-selection",
@@ -5675,52 +5681,43 @@
       "sources": [
         "scripts/package_hp_boot.py",
         "app/apps/hp_boot/hp_boot_bundle.h",
-        "app/apps/hp_boot/main.c"
+        "app/apps/hp_boot/main.c",
+        "app/apps/hp_boot/hp_boot_bundle.c"
       ],
       "loader_bindings": [
         {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_crc32_byte",
           "body_sha256": "b048241b3b6c9507a3d2b630af3ce8e4f2dbc0cdfbe662f76a8fce8ebe6037bc"
         },
         {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_crc32",
           "body_sha256": "ee0d898baadc9da12772f6246b2f8b4635216fe68cf67e08793865d2ca40dc90"
         },
         {
-          "source": "app/apps/hp_boot/main.c",
-          "function": "rs_hp_boot_range_valid",
-          "body_sha256": "d9bdafe55cf55481f4a4b33e5ed41e73be9cf9f18a212c8acfcf20c46e0db4ed"
-        },
-        {
-          "source": "app/apps/hp_boot/main.c",
-          "function": "rs_hp_boot_entry_expected",
-          "body_sha256": "742ab68f51e33c801d28e5df8f18302f8a0651621868fb5e6ed64762b0734938"
-        },
-        {
-          "source": "app/apps/hp_boot/main.c",
+          "source": "app/apps/hp_boot/hp_boot_bundle.c",
           "function": "rs_hp_boot_header_valid",
-          "body_sha256": "2409563cb2fb7bace28215f54f83189ecbd11c2257d1959be5aed5013d7c2905"
+          "body_sha256": "cd86a399c2307681a36887647da8f3a585a0d6bbe5cb531b33bfdd84ad2e96a2"
         }
       ],
       "header_fields": {
         "magic": "Format marker written as a little-endian 32-bit word.",
         "version": "Bundle format version; distinct from the datasheet revision.",
         "header_size": "Bytes in the fixed header plus all entry descriptors.",
-        "entry_count": "Number of fixed-order artifact entries.",
+        "entry_count": "Linux uses four entries; smoke and RT-Thread use one executable entry. The remaining three slots are zero.",
         "total_size": "Bundle-relative byte extent from BUNDLE_OFFSET through the aligned image end; includes gaps and padding.",
         "header_crc32": "CRC of the complete header/entry area with this field zeroed.",
-        "flags": "Generator writes REQUIRED; loader requires its bit to be set.",
-        "reserved": "Generator writes zero; loader has no independent zero-value check for this field."
+        "flags": "Must equal REQUIRED (1); extra flag bits are rejected.",
+        "workload": "V2 workload discriminator: 1 Linux, 2 smoke, 3 RT-Thread. Unknown values and V1 are rejected."
       },
       "entry_fields": {
-        "type": "Fixed artifact type in the expected OpenSBI, DTB, Linux, initramfs order.",
+        "type": "Linux uses types 1..4 in fixed order; smoke/RT-Thread use executable type 5 at 0x38000000.",
         "flash_offset": "Absolute offset from the start of the flash image, not from the bundle header.",
         "load_address": "Fixed destination address in the selected SDRAM map.",
         "size": "Nonzero payload byte count; excludes alignment padding.",
         "crc32": "CRC of exactly size payload bytes.",
-        "flags": "Generator writes REQUIRED; loader requires its bit to be set."
+        "flags": "Must equal REQUIRED (1); extra flag bits are rejected."
       },
       "rules": [
         {
@@ -5731,8 +5728,8 @@
         },
         {
           "topic": "Entry identity",
-          "producer": "Four artifacts in fixed order, with the prescribed load address and maximum size for each.",
-          "loader": "Checks exact type/order/load address and the per-artifact maximum, plus nonzero size and mapped ranges.",
+          "producer": "Workload 1: four Linux artifacts. Workloads 2/3: one executable type 5. Unused descriptor slots are zero.",
+          "loader": "Checks workload, exact count/type/order/address, per-artifact size limits and zero unused slots.",
           "consequence": "This is not a generic relocatable image table."
         },
         {
@@ -5744,20 +5741,20 @@
         {
           "topic": "Address alignment",
           "producer": "Aligns each payload start and the final cursor to PAYLOAD_ALIGNMENT.",
-          "loader": "Checks flash_offset and load_address modulo four, not the generator's larger boundary.",
-          "consequence": "Generated layout and accepted alignment are different conditions."
+          "loader": "Requires each absolute flash offset to be 4096-byte aligned and the exact fixed load address.",
+          "consequence": "Loader and packager enforce the same payload-start alignment."
         },
         {
-          "topic": "Flags and reserved word",
-          "producer": "Writes flags=REQUIRED and fixed-header reserved=0.",
-          "loader": "Requires the REQUIRED bit in header and entries. Does not independently reject extra flag bits or nonzero reserved.",
-          "consequence": "Preserve canonical generator values; do not claim strict reserved-bit rejection."
+          "topic": "Flags and workload",
+          "producer": "Writes flags=1 and the explicit V2 workload discriminator.",
+          "loader": "Rejects additional flag bits, unknown workloads, V1 and nonzero unused descriptors.",
+          "consequence": "Rebuild old bundles; do not infer workload from placeholder payload bytes."
         },
         {
           "topic": "Payload placement and fill",
           "producer": "Places payloads sequentially without overlap, filling unused image bytes with 0xFF.",
-          "loader": "Bounds each entry within the bundle/SDRAM ranges; does not independently enforce sequential disjoint extents or padding values.",
-          "consequence": "Do not confuse deterministic output layout with stronger validation that is absent from the loader."
+          "loader": "Enforces monotonic non-overlapping flash payload extents within the bundle. Exact fixed load windows are disjoint. Padding bytes are not checked.",
+          "consequence": "Overlap is rejected; padding is neither payload data nor authenticated metadata."
         },
         {
           "topic": "Capacity and length",

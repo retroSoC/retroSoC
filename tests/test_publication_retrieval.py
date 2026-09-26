@@ -129,7 +129,7 @@ def test_all_code_namespaces_and_boot_codes_are_source_checked():
     assert next(g for g in groups if g["id"] == "rib-detail")["expected"]["RIB_RESP_BURSTERR"] == 6
     assert next(g for g in groups if g["id"] == "sdio-dma-mask")["kind"] == "mask"
     assert len(next(g for g in groups if g["id"] == "jpeg-error")["rows"]) == 19
-    assert [r["value"] for r in rr.boot_status(ROOT, SPEC["boot"])["rows"]] == list(range(18))
+    assert [r["value"] for r in rr.boot_status(ROOT, SPEC["boot"])["rows"]] == list(range(20))
 
 
 @pytest.mark.parametrize("mutation", ["missing", "value", "meaning", "mask"])

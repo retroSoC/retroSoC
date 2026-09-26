@@ -1887,7 +1887,7 @@ def test_run_flow_records_interruption(tmp_path: Path) -> None:
     process.communicate(timeout=10)
     assert process.returncode == 130
     data = json.loads(result.read_text(encoding="utf-8"))
-    assert data["status"] == "failed"
+    assert data["status"] == "interrupted"
     assert data["exit_code"] == 130
     assert data["error"] == "interrupted"
 

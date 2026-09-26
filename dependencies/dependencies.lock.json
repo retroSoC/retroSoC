@@ -27,6 +27,12 @@
       "recursive": true,
       "license": "MIT"
     },
+    "rtthread_hp": {
+      "url": "https://github.com/RT-Thread/rt-thread.git",
+      "revision": "99428a1e7f7447955aa860f7c969273a12095b8f",
+      "destination": ".cache/retrosoc/sources/rtthread-hp",
+      "license": "Apache-2.0"
+    },
     "opensbi_hp": {
       "url": "https://github.com/riscv-software-src/opensbi.git",
       "revision": "cbf9f6734dd85a982c63e3cb5db7ffe09da839ca",
@@ -370,6 +376,13 @@
         "sha256": "940f22eccddb0946b69149d227948f77d5917a2c5f1ab68e5d84d614c2ceed20",
         "archive": "xpack-openocd-0.12.0-1-linux-x64.tar.gz",
         "path": "xpack-openocd-0.12.0-1/bin"
+      },
+      "riscv_gnu_hp": {
+        "version": "2025.05.01",
+        "url": "https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv64-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "sha256": "57da2f16e772674ef0202b37217ccdcba3787e1a055ca92a83c9a5b240bca7d1",
+        "archive": "riscv64-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "path": "riscv/bin"
       },
       "riscv_gnu": {
         "version": "2025.05.01",

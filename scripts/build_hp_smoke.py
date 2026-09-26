@@ -7,6 +7,11 @@ import argparse
 import subprocess
 from pathlib import Path
 
+try:
+    from scripts.hp_tools import require_rv64_elf
+except ModuleNotFoundError:
+    from hp_tools import require_rv64_elf
+
 
 def build(args: argparse.Namespace) -> None:
     output = args.output.resolve()
@@ -18,8 +23,8 @@ def build(args: argparse.Namespace) -> None:
     subprocess.run(
         [
             compiler,
-            "-march=rv32imafdc_zicbom_zicsr_zifencei",
-            "-mabi=ilp32d",
+            "-march=rv64imafdc_zicbom_zicsr_zifencei",
+            "-mabi=lp64d",
             "-nostdlib",
             "-nostartfiles",
             "-Wl,--build-id=none",
@@ -30,13 +35,11 @@ def build(args: argparse.Namespace) -> None:
         ],
         check=True,
     )
+    require_rv64_elf(elf)
     subprocess.run(
-        [objcopy, "-O", "binary", str(elf), str(images / "fw_jump.bin")],
+        [objcopy, "-O", "binary", str(elf), str(images / "hp_smoke.bin")],
         check=True,
     )
-    (images / "retrosoc_hp.dtb").write_bytes(b"SMOK")
-    (images / "Image").write_bytes(b"SMOK")
-    (images / "rootfs.cpio.gz").write_bytes(b"SMOK")
 
 
 def main() -> None:
@@ -44,7 +47,7 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--linker", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--cross", default="riscv32-unknown-elf-")
+    parser.add_argument("--cross", default="riscv64-unknown-elf-")
     build(parser.parse_args())
 
 

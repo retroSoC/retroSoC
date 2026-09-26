@@ -174,13 +174,15 @@ def linux_platform(root: Path) -> dict:
         raise ValueError("CPU and UART device-tree clock declarations disagree")
     if dt_value("linux,initrd-start") != dt_value("linux,initrd-end"):
         raise ValueError("reviewed initrd template placeholder changed")
-    ready = (root / "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp").read_text(encoding="utf-8")
-    writes = [(int(a, 0), int(v, 0)) for a, v in re.findall(r"^\s*devmem\s+(0x[\da-fA-F]+)\s+32\s+(0x[\da-fA-F]+)", ready, re.M)]
-    expected = [(0x10019020, 1), (0x10019024, 0x4C4E5801), (0x10019028, 1), (0x1001902C, 1)]
-    if writes != expected:
-        raise ValueError("Linux ready mailbox sequence changed")
-    if ready.find('echo "retroSoC HP Linux ready"') < 0 or ready.index('echo "retroSoC HP Linux ready"') > ready.index("devmem"):
+    ready = (root / "app/ports/linux/hp_ready.c").read_text(encoding="utf-8")
+    ordered = ['puts("retroSoC HP Linux ready")', 'mailbox[8] = (error == 0U) ? 1U : 3U;',
+               'mailbox[9] = (error == 0U) ? UINT32_C(0x4C4E5801) : error;',
+               'mailbox[10] = 1U;', '"fence iorw, iorw"', 'mailbox[11] = 1U;']
+    if any(text not in ready for text in ordered) or [ready.index(text) for text in ordered] != sorted(ready.index(text) for text in ordered):
         raise ValueError("Linux ready message/publication order changed")
+    writes = [(0x10019020, 1), (0x10019024, 0x4C4E5801), (0x10019028, 1), (0x1001902C, 1)]
+    if "descriptor, 0x10019000)" not in ready:
+        raise ValueError("Linux mailbox mapping changed")
     return {"hart_id": 1, "timebase_hz": timebase, "clock_hz": int(clocks[0]),
             "cbom_bytes": dt_value("riscv,cbom-block-size"), "memory_base": memory[0][0],
             "memory_bytes": int(memory[0][1], 0), "initrd_start": dt_value("linux,initrd-start"),

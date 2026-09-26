@@ -24,9 +24,9 @@ advertised for a device or PDK.
 | Tier | Product role | Compute topology | Primary software | Defining boundary |
 | --- | --- | --- | --- | --- |
 | Tiny | Low-power MCU and edge-connectivity endpoint | One Hazard3 MCU core | Bare metal or RTOS | No MMU or external DRAM dependency |
-| Mini | Low-cost heterogeneous RV32 Linux control SoC | Hazard3 management core plus one RV32 VexiiRiscv Linux core | Embedded Linux plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
+| Mini | Low-cost heterogeneous Linux control SoC | RV32 Hazard3 management plus one RV64 VexiiRiscv application core | Embedded Linux or RT-Thread plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
 | Std | Heterogeneous RV32 graphical Linux edge SoC | Hazard3 management core plus VexiiRiscv performance and efficiency cores | Graphical Linux plus RTOS firmware | Full AXI4 memory fabric, GPU, audio, and AI acceleration |
-| Pro | Highest-performance and only RV64 family tier | Hazard3 management core plus four coherent RV64 VexiiRiscv Linux cores | RV64 graphical Linux | Coherent SMP, high-bandwidth memory, GPU, NPU, and video codecs |
+| Pro | Highest-performance coherent RV64 family tier | Hazard3 management core plus four coherent RV64 VexiiRiscv Linux cores | RV64 graphical Linux | Coherent SMP, high-bandwidth memory, GPU, NPU, and video codecs |
 
 The VexiiRiscv targets rely on the upstream core's documented RV32/RV64,
 single/dual-issue, cache, Sv32/Sv39, AXI4, and Linux capabilities. The exact
@@ -176,10 +176,12 @@ responsible for clock and memory initialization, image selection, VexiiRiscv
 boot release, fault recovery, and final power-state control. Linux must not be
 able to reconfigure the management-core lifecycle controls.
 
-The initial VexiiRiscv configuration should provide:
+The frozen Mini RV64 configuration provides the following architectural target;
+validation status is recorded separately in [HP RV64 validation](hp-rv64-validation.md).
+The Std/Pro roadmap below remains independent of this implemented Mini profile.
 
-- RV32IMAFDC with machine, supervisor, and user modes.
-- Sv32 virtual memory, hardware page-table walking, and the privileged CSRs
+- RV64IMAFDC with machine, supervisor, and user modes.
+- Sv39 virtual memory, hardware page-table walking, and the privileged CSRs
   required by the supported Linux kernel.
 - LR/SC atomics, separate 16 KiB instruction and data caches, and uncached MMIO
   regions.

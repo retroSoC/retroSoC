@@ -32,7 +32,7 @@
   #set list(tight:false,spacing:rhythm.cover-list-spacing,body-indent:rhythm.cover-list-indent)
   *Compute and control*
   - Hazard3 LP: boot, clocks, resource ownership and fault recovery.
-  - Dual-issue VexiiRiscv HP: RV32IMAFDC + Zicbom, Sv32.
+  - Dual-issue VexiiRiscv HP: RV64IMAFDC + Zicbom, Sv39.
   - JTAG debug; fixed EXT-L control and EXT-H AXI64 slots.
 
   *Memory and interconnect*

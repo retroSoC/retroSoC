@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the pinned RV32 HP Buildroot, Linux, DTB, and OpenSBI images."""
+"""Build pinned RV64 Linux images with a small, static acceptance initramfs."""
 
 from __future__ import annotations
 
@@ -11,30 +11,45 @@ import shutil
 import subprocess
 from pathlib import Path
 
+try:
+    from scripts.hp_tools import require_revision, require_rv64_elf
+except ModuleNotFoundError:
+    from hp_tools import require_revision, require_rv64_elf
 
 LAYOUT = {
     "fw_jump.bin": (0x38000000, 512 * 1024),
     "retrosoc_hp.dtb": (0x38080000, 64 * 1024),
     "Image": (0x38400000, 12 * 1024 * 1024),
-    "rootfs.cpio.gz": (0x39000000, 8 * 1024 * 1024),
+    "rootfs.cpio": (0x39000000, 8 * 1024 * 1024),
 }
 
 REQUIRED_LINUX_CONFIG = (
+    "CONFIG_ARCH_RV64I",
+    "CONFIG_64BIT",
+    "CONFIG_MMU",
+    "CONFIG_OF_RESERVED_MEM",
     "CONFIG_BINFMT_ELF",
     "CONFIG_BINFMT_SCRIPT",
     "CONFIG_PRINTK",
     "CONFIG_TTY",
     "CONFIG_HVC_RISCV_SBI",
     "CONFIG_SERIAL_EARLYCON_RISCV_SBI",
+    "CONFIG_PROC_FS",
+    "CONFIG_SYSFS",
+    "CONFIG_SHMEM",
+    "CONFIG_TMPFS",
+    "CONFIG_DEVTMPFS",
+    "CONFIG_DEVMEM",
 )
 
 
-def command(arguments: list[str], cwd: Path) -> None:
+def command(arguments: list[str], cwd: Path, extra_env: dict[str, str] | None = None) -> None:
     environment = dict(os.environ)
     environment.pop("CONFIG", None)
     environment.pop("MAKEFLAGS", None)
     environment.pop("MAKEOVERRIDES", None)
     environment.pop("MFLAGS", None)
+    environment.update(extra_env or {})
     subprocess.run(arguments, cwd=cwd, check=True, env=environment)
 
 
@@ -60,10 +75,42 @@ def source_revision(path: Path) -> str:
 
 
 def find_toolchain(buildroot_output: Path) -> str:
-    matches = sorted((buildroot_output / "host/bin").glob("riscv32*-linux-*-gcc"))
+    matches = sorted((buildroot_output / "host/bin").glob("riscv64*-linux-*-gcc"))
     if len(matches) != 1:
-        raise RuntimeError(f"expected one RV32 Linux GCC in {buildroot_output / 'host/bin'}")
+        raise RuntimeError(f"expected one RV64 Linux GCC in {buildroot_output / 'host/bin'}")
     return str(matches[0])[: -len("gcc")]
+
+
+def minimal_busybox(buildroot: Path, output: Path, external: Path, jobs: int) -> str:
+    """Expand an allowlist using BusyBox's own allnoconfig, not default-y oldconfig."""
+    make = ["make", f"O={output}", f"BR2_EXTERNAL={external}", f"-j{jobs}"]
+    command([*make, "busybox-configure"], buildroot)
+    sources = [path for path in (output / "build").glob("busybox-*")
+               if (path / "scripts/kconfig/conf").is_file()]
+    if len(sources) != 1:
+        raise RuntimeError("expected one configured locked BusyBox source")
+    source = sources[0]
+    config_dir = output.parent / "busybox-config"
+    (config_dir / "include").mkdir(parents=True, exist_ok=True)
+    command([str(source / "scripts/kconfig/conf"), "-n", str(source / "Config.in")], config_dir,
+            {"srctree": str(source), "KCONFIG_NOTIMESTAMP": "1",
+             "KCONFIG_ALLCONFIG": str(external / "busybox/retrosoc_hp.config")})
+    # This BusyBox conf implementation resets booleans even when ALLCONFIG
+    # specified y. Overlay our explicit choices after its all-no expansion;
+    # Buildroot's ordinary oldconfig then resolves the real dependencies.
+    selected = dict(line.split("=", 1) for line in
+                    (external / "busybox/retrosoc_hp.config").read_text().splitlines()
+                    if line.startswith("CONFIG_") and "=" in line)
+    config = config_dir / ".config"
+    lines = []
+    for line in config.read_text().splitlines():
+        key = line[2:].split(" ", 1)[0] if line.startswith("# CONFIG_") else line.split("=", 1)[0]
+        lines.append(f"{key}={selected.pop(key)}" if key in selected else line)
+    lines.extend(f"{key}={value}" for key, value in selected.items())
+    config.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    config_arg = f"BUSYBOX_CONFIG_FILE={config_dir / '.config'}"
+    command([*make, config_arg, "busybox-reconfigure"], buildroot)
+    return config_arg
 
 
 def validate_linux_config(config: Path) -> None:
@@ -94,6 +141,9 @@ def build(args: argparse.Namespace) -> None:
     buildroot = require_source(args.buildroot, "Buildroot")
     linux = require_source(args.linux, "Linux")
     opensbi = require_source(args.opensbi, "OpenSBI")
+    for name, path in (("buildroot_hp", buildroot), ("linux_hp", linux), ("opensbi_hp", opensbi)):
+        if path != require_revision(root, name).resolve():
+            raise ValueError(f"{name} must use its locked source directory")
     external = root / "app/ports/linux"
 
     buildroot_output = output / "buildroot"
@@ -101,7 +151,16 @@ def build(args: argparse.Namespace) -> None:
         ["make", f"O={buildroot_output}", f"BR2_EXTERNAL={external}", "retrosoc_hp_defconfig"],
         buildroot,
     )
-    command(["make", f"O={buildroot_output}", f"BR2_EXTERNAL={external}", f"-j{args.jobs}"], buildroot)
+    busybox_config = minimal_busybox(buildroot, buildroot_output, external, args.jobs)
+    command(["make", f"O={buildroot_output}", f"BR2_EXTERNAL={external}",
+             busybox_config, f"-j{args.jobs}"], buildroot)
+    busybox_sources = sorted((buildroot_output / "build").glob("busybox-*/.config"))
+    if len(busybox_sources) != 1:
+        raise RuntimeError("missing effective BusyBox configuration")
+    busybox_effective = busybox_sources[0].read_text().splitlines()
+    for symbol in ("STATIC", "BUSYBOX", "ASH", "MOUNT", "TEST", "ECHO", "CAT", "TRUE"):
+        if f"CONFIG_{symbol}=y" not in busybox_effective:
+            raise RuntimeError(f"HP BusyBox requires CONFIG_{symbol}=y")
     cross_compile = find_toolchain(buildroot_output)
 
     linux_output = output / "linux"
@@ -133,10 +192,28 @@ def build(args: argparse.Namespace) -> None:
 
     image_dir = output / "images"
     image_dir.mkdir(parents=True, exist_ok=True)
-    rootfs_source = buildroot_output / "images/rootfs.cpio.gz"
-    if not rootfs_source.is_file():
-        raise FileNotFoundError(f"HP Linux build output is missing: {rootfs_source}")
-    initrd_end = LAYOUT["rootfs.cpio.gz"][0] + rootfs_source.stat().st_size
+    require_rv64_elf(linux_output / "vmlinux")
+    busybox = buildroot_output / "target/bin/busybox"
+    require_rv64_elf(busybox)
+    if "INTERP" in subprocess.check_output([cross_compile + "readelf", "-l", str(busybox)], text=True):
+        raise ValueError("HP acceptance BusyBox must be statically linked")
+    helper = output / "hp-ready"
+    command([cross_compile + "gcc", "-Os", "-static", "-Wall", "-Wextra", "-Werror",
+             "-o", str(helper), str(external / "hp_ready.c")], root)
+    require_rv64_elf(helper)
+    archive_spec = output / "initramfs.list"
+    entries = [f"dir /{name} 755 0 0" for name in ("bin", "dev", "proc", "sys", "tmp")]
+    entries += [f"file /bin/busybox {busybox} 755 0 0",
+                f"file /bin/hp-ready {helper} 755 0 0", f"file /init {external / 'init'} 755 0 0",
+                "nod /dev/console 600 0 0 c 5 1", "nod /dev/mem 600 0 0 c 1 1"]
+    entries += [f"slink /bin/{name} busybox 777 0 0" for name in
+                ("sh", "mount", "mkdir", "echo", "test", "cat", "sleep")]
+    archive_spec.write_text("\n".join(entries) + "\n", encoding="utf-8")
+    rootfs_source = image_dir / "rootfs.cpio"
+    with rootfs_source.open("wb") as archive:
+        subprocess.run([str(linux_output / "usr/gen_init_cpio"), "-t", "0", str(archive_spec)],
+                       stdout=archive, check=True)
+    initrd_end = LAYOUT["rootfs.cpio"][0] + rootfs_source.stat().st_size
     command(
         [
             "dtc",
@@ -171,9 +248,9 @@ def build(args: argparse.Namespace) -> None:
             f"CROSS_COMPILE={cross_compile}",
             "PLATFORM=retrosoc_hp",
             f"PLATFORM_DIR={external / 'opensbi'}",
-            "PLATFORM_RISCV_XLEN=32",
-            "PLATFORM_RISCV_ABI=ilp32d",
-            "PLATFORM_RISCV_ISA=rv32imafdc_zicbom_zicsr_zifencei",
+            "PLATFORM_RISCV_XLEN=64",
+            "PLATFORM_RISCV_ABI=lp64d",
+            "PLATFORM_RISCV_ISA=rv64imafdc_zicbom_zicsr_zifencei",
             "FW_TEXT_START=0x38000000",
             "FW_JUMP=y",
             "FW_JUMP_ADDR=0x38400000",
@@ -186,15 +263,18 @@ def build(args: argparse.Namespace) -> None:
     copies = {
         opensbi_output / "platform/retrosoc_hp/firmware/fw_jump.bin": image_dir / "fw_jump.bin",
         linux_output / "arch/riscv/boot/Image": image_dir / "Image",
-        rootfs_source: image_dir / "rootfs.cpio.gz",
     }
     for source, destination in copies.items():
         if not source.is_file():
             raise FileNotFoundError(f"HP Linux build output is missing: {source}")
         shutil.copy2(source, destination)
 
+    require_rv64_elf(opensbi_output / "platform/retrosoc_hp/firmware/fw_jump.elf")
     manifest: dict[str, object] = {
         "schema_version": 1,
+        "xlen": 64,
+        "abi": "lp64d",
+        "initramfs": "minimal-static-uncompressed",
         "boot_flow": "opensbi-fw_jump",
         "hart_id": 1,
         "sources": {

@@ -78,7 +78,7 @@ write_character:
     lbu     a1, 0(a0)
     beqz    a1, publish_ready
 wait_tx_space:
-    lw      a2, UART_STATUS(t0)
+    lwu     a2, UART_STATUS(t0)
     andi    a2, a2, UART_TX_FULL
     bnez    a2, wait_tx_space
     sw      a1, UART_TXDATA(t0)
@@ -100,13 +100,13 @@ wait_start_command:
     li      s1, GA2D_WAIT_POLLS
 wait_start_command_loop:
     li      t0, MAILBOX_BASE
-    lw      t1, LP_SEQUENCE(t0)
+    lwu     t1, LP_SEQUENCE(t0)
     li      t2, 1
     bne     t1, t2, wait_start_command_next
-    lw      t1, LP_COMMAND(t0)
+    lwu     t1, LP_COMMAND(t0)
     li      t2, HP_GA2D_START
     bne     t1, t2, wait_start_command_next
-    lw      t1, LP_ARG0(t0)
+    lwu     t1, LP_ARG0(t0)
     li      t2, HP_GA2D_ARG
     beq     t1, t2, start_ga2d
 wait_start_command_next:
@@ -149,7 +149,7 @@ wait_cache_request:
     li      s1, GA2D_WAIT_POLLS
 wait_cache_request_loop:
     li      t0, RESOURCE_CTRL_BASE
-    lw      t1, RESOURCE_CACHE_CONTROL(t0)
+    lwu     t1, RESOURCE_CACHE_CONTROL(t0)
     andi    t1, t1, 2
     bnez    t1, clean_cache_request
     addi    s1, s1, -1
@@ -327,7 +327,7 @@ ga2d_copy:
 ga2d_wait:
     li      t1, GA2D_WAIT_POLLS
 ga2d_wait_loop:
-    lw      t2, GA2D_STATUS(t0)
+    lwu     t2, GA2D_STATUS(t0)
     andi    t3, t2, 0x60
     bnez    t3, ga2d_wait_failed
     andi    t3, t2, 0x10
@@ -348,16 +348,16 @@ check_fill:
     li      t1, 0xff123456
     li      t2, 8
 check_fill_pixels:
-    lw      t3, 0(t0)
+    lwu     t3, 0(t0)
     bne     t3, t1, check_failed
     addi    t0, t0, 4
     addi    t2, t2, -1
     bnez    t2, check_fill_pixels
-    lw      t3, 0(t0)
+    lwu     t3, 0(t0)
     li      t1, 0xc7c7c7c7
     bne     t3, t1, check_failed
     la      t0, hp_destination_guard
-    lw      t3, 0(t0)
+    lwu     t3, 0(t0)
     li      t1, 0xd3d3d3d3
     bne     t3, t1, check_failed
     li      a0, 1
@@ -368,22 +368,22 @@ check_copy:
     la      t1, hp_destination_line
     li      t2, 8
 check_copy_pixels:
-    lw      t3, 0(t0)
-    lw      t4, 0(t1)
+    lwu     t3, 0(t0)
+    lwu     t4, 0(t1)
     bne     t3, t4, check_failed
     addi    t0, t0, 4
     addi    t1, t1, 4
     addi    t2, t2, -1
     bnez    t2, check_copy_pixels
-    lw      t3, 0(t1)
+    lwu     t3, 0(t1)
     li      t4, 0xc7c7c7c7
     bne     t3, t4, check_failed
     la      t0, hp_source_guard
-    lw      t3, 0(t0)
+    lwu     t3, 0(t0)
     li      t4, 0xa5a5a5a5
     bne     t3, t4, check_failed
     la      t0, hp_destination_guard
-    lw      t3, 0(t0)
+    lwu     t3, 0(t0)
     li      t4, 0xd3d3d3d3
     bne     t3, t4, check_failed
     li      a0, 1

@@ -24,8 +24,8 @@ halt, resume, register and system-bus access. LP retains control while HP is hel
 
 === Application Processor
 ==== VexiiRiscv
-The generated HP hart is a dual-issue RV32IMAFDC + Zicbom configuration, with supervisor/user
-modes, Sv32 virtual memory and 64-byte cache-maintenance blocks. Hart 1 uses native AXI64
+The generated HP hart is a dual-issue RV64IMAFDC + Zicbom configuration, with supervisor/user
+modes, Sv39 virtual memory and 64-byte cache-maintenance blocks. Hart 1 uses native AXI64
 instruction and data paths. Its uncached MMIO path is downsized and crosses into the LP
 control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
