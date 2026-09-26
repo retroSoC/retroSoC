@@ -882,6 +882,24 @@ make CONFIG=configs/ci/ihp130.mk librelane-doctor
 git diff --check
 ```
 
+The Crypto-specific P2 wrappers are:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS BUILD_TIMESTAMP=<candidate-timestamp> crypto-p2-synth
+make CONFIG=configs/ci/ihp130.mk BUILD_TIMESTAMP=<candidate-timestamp> crypto-p2-netlist
+make CONFIG=configs/ci/ihp130.mk SYNTH=YOSYS STA=OPENSTA BUILD_TIMESTAMP=<candidate-timestamp> crypto-p2-sta
+make CONFIG=configs/ci/ihp130.mk BUILD_TIMESTAMP=<candidate-timestamp> \
+  CRYPTO_P0_BASELINE_ROOT=build/<p0-variant> CRYPTO_P1_ROOT=build/<p1-variant> \
+  CRYPTO_P2_NETLIST_ROOT=build/<netlist-variant> CRYPTO_P2_STA_ROOT=build/<sta-variant> \
+  CRYPTO_P2_PHYSICAL_ROOT=build/<physical-variant> crypto-p2-report
+```
+
+`crypto-p2-netlist` runs the public `tests/c/crypto_firmware.c` image through
+the Icarus synthesized SoC netlist, so Crypto is exercised through LP APB/DMA
+and no RTL hierarchy or SRAM preload. The P2 report is fail-closed: a dirty
+candidate, missing netlist/STA/physical artifact, mismatched profile, stale
+P1 evidence or absent P0 report produces `incomplete`, never PASS.
+
 Use a single explicit BUILD_TIMESTAMP for commands that must consume the same
 variant; behavioral and synthesis configuration differences must be recorded.
 Python tooling changes additionally require Ruff/Pytest under repository

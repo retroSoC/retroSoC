@@ -431,7 +431,7 @@ crypto-p0-baseline: manifest
 crypto-p0-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py report --variant-root $(VARIANT_ROOT)
 
-.PHONY: crypto-p1-constants crypto-p1-rtl crypto-p1-formal crypto-p1-synth crypto-p1-report
+.PHONY: crypto-p1-constants crypto-p1-rtl crypto-p1-formal crypto-p1-synth crypto-p1-report crypto-p2-synth crypto-p2-netlist crypto-p2-sta crypto-p2-report
 crypto-p1-constants: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py constants --variant-root $(VARIANT_ROOT)
 crypto-p1-rtl: manifest
@@ -451,6 +451,25 @@ crypto-p1-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py report --variant-root $(VARIANT_ROOT) \
 	  --baseline-root $(CRYPTO_P0_BASELINE_ROOT) --lp-variant-root $(CRYPTO_P1_LP_ROOT) \
 	  $(if $(CRYPTO_P1_CI_ROOT),--ci-variant-root $(CRYPTO_P1_CI_ROOT),)
+CRYPTO_P1_ROOT ?= $(VARIANT_ROOT)
+CRYPTO_P2_NETLIST_ROOT ?= $(VARIANT_ROOT)
+CRYPTO_P2_STA_ROOT ?= $(VARIANT_ROOT)
+CRYPTO_P2_PHYSICAL_ROOT ?= $(VARIANT_ROOT)
+crypto-p2-synth: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		SYNTH=YOSYS SYNTH_RECIPE=balanced synth
+crypto-p2-netlist: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		APP=bringup APP_SRCS=$(ROOT_PATH)/tests/c/crypto_firmware.c LINK_TYPE=ld2_all_sram \
+		SIMU=IVERILOG SYNTH=YOSYS HAVE_SVA=YES firmware netcomp netsim
+crypto-p2-sta: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		SYNTH=YOSYS STA=OPENSTA synth sta
+crypto-p2-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p2.py report --variant-root $(VARIANT_ROOT) \
+	  --p0-root $(CRYPTO_P0_BASELINE_ROOT) --p1-root $(CRYPTO_P1_ROOT) \
+	  --netlist-root $(CRYPTO_P2_NETLIST_ROOT) --sta-root $(CRYPTO_P2_STA_ROOT) \
+	  --physical-root $(CRYPTO_P2_PHYSICAL_ROOT)
 
 .PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \

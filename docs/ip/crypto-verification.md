@@ -44,6 +44,9 @@ functioning macro responses and a running clock; they do not establish SRAM
 analog correctness, arbitrary silicon fault tolerance, DPA/FIA resistance or
 physical timing. P2 still owns full-chip synthesis, functional netlist
 simulation, STA, physical views and isolated clean-revision A/B measurement.
+The `crypto-p2-report` target is fail-closed on the same clean-revision and
+artifact requirements; it cannot convert a dirty worktree or missing netlist,
+STA or physical result into a qualification PASS.
 
 Run the committed `configs/ci/ihp130.mk` profile through `crypto-p1-rtl`,
 `crypto-p1-formal` and `crypto-p1-synth`, then the recorded LP/CI firmware runs

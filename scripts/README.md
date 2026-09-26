@@ -209,6 +209,9 @@ build/simulation and binds the actual configuration, input snapshot, ELF and
 log/result hashes. `crypto_p1.py quality --variant-root <variant>` records
 focused formatter and policy results. Report assembly rejects stale inputs
 or artifacts; it cannot qualify an earlier binary using current source hashes.
+`crypto_p2.py` is the fail-closed P2 aggregator. It requires a clean candidate
+revision and records whole-SoC netlist, STA, physical, metrics, warning and
+P0/P1 evidence; missing P2 artifacts remain `NOT_RUN`.
 
 Update or add tests in [`../tests`](../tests) for script behavior. Run
 `ruff check .` and `python3 -m pytest -q`; build-flow changes also require the
