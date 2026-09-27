@@ -4,6 +4,7 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
+| Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator/Icarus, lint; local Yosys, netlist and OpenSTA |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ihp130-debug.mk` | Verilator remote-bitbang JTAG DTM, Debug Module, OpenOCD, and GDB acceptance |

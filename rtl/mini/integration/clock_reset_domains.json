@@ -68,7 +68,7 @@
       "reset": "s_jtag_trst_n_sync",
       "reset_source": "jtag_trst_n_i",
       "reset_primitive": "rst_sync",
-      "path": "rtl/mini/top/mgmt_debug_wrapper.sv",
+      "path": "rtl/ip/core/mgmt_debug_wrapper.sv",
       "instance": "u_jtag_rst_sync",
       "sta": {"source_port": "jtag_tck_i_pad", "object_type": "port", "period_ns": 100.0, "async_group": "jtag"}
     },

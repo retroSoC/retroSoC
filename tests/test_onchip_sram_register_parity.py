@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RTL_DEFINE = ROOT / "rtl/mini/top/onchip_ram_define.svh"
+RTL_DEFINE = ROOT / "rtl/ip/memory/onchip_ram_define.svh"
 C_HEADER = ROOT / "crt/include/retrosoc/hal/onchip_sram_regs.h"
 
 

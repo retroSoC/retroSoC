@@ -146,9 +146,9 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     product = profiles["profile"]
     if product.get("MINI_MODE") != "PRODUCT" or product.get("HAVE_HP") != "YES":
         raise ValueError("datasheet requires the reviewed dual-hart PRODUCT profile")
-    address = load_generator("datasheet_memory", "rtl/mini/address_map/generate_memory_map.py")
+    address = load_generator("datasheet_memory", "scripts/rtl/generate_memory_map.py")
     topology = load_generator("datasheet_topology", "rtl/mini/integration/generate_soc_topology.py")
-    pinmap = load_generator("datasheet_pins", "rtl/mini/pin_map/generate_pin_map.py")
+    pinmap = load_generator("datasheet_pins", "scripts/rtl/generate_pin_map.py")
     reset, regions, _ = address.read_map(ROOT / MAP, int(product["SRAM_SIZE_KIB"]))
     _, _, _, gpio, _, _, irqs, policies = topology.read_topology(ROOT / TOPOLOGY, ROOT / MAP)
     pads, _ = pinmap.read_map(ROOT / PINS)

@@ -48,7 +48,7 @@ endif
 # active DEF_LIST but without the SoC generated-include chain, so the block
 # flow does not depend on the HP/pin-map generation stamps.
 $(GA2D_BLOCK_FL_DIR)/.stamp: $(RTL_PATH)/script/generate_filelist.py \
-	$(RTL_PATH)/script/filelist.py \
+	$(ROOT_PATH)/scripts/rtl/filelist.py \
 	$(sort $(wildcard $(ROOT_PATH)/rtl/filelist/pdk_*.fl) \
 	$(wildcard $(RTL_PATH)/filelist/*.fl) $(RTL_PATH)/lint.msg)
 	$(FLOW_PYTHON) $(RTL_PATH)/script/generate_filelist.py \
@@ -57,11 +57,11 @@ $(GA2D_BLOCK_FL_DIR)/.stamp: $(RTL_PATH)/script/generate_filelist.py \
 	@touch $@
 
 $(GA2D_BLOCK_FLIST): $(GA2D_BLOCK_FL_DIR)/.stamp $(MEMORY_MAP_STAMP)
-	@python3 $(RTL_PATH)/script/comb.py \
+	@python3 $(ROOT_PATH)/scripts/rtl/comb.py \
 		-f $(GA2D_BLOCK_FL_DIR)/def.fl \
 		-f $(MEMORY_MAP_FILELIST) \
 		-f $(GA2D_BLOCK_FL_DIR)/ga2d_block.fl --output $@
-	@python3 $(RTL_PATH)/script/filelist_deps.py -f $@ \
+	@python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $@ \
 		--extra $(MEMORY_MAP_FILELIST) \
 		--target $(GA2D_BLOCK_NETLIST) --output $(GA2D_BLOCK_DEPFILE)
 

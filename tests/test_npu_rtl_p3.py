@@ -137,7 +137,7 @@ def _build_iverilog(tools: dict[str, str], tmp_path: Path, name: str, top: str,
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",

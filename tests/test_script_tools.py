@@ -18,16 +18,12 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FILELIST_SCRIPT_DIR = ROOT / "rtl/mini/script"
-FORMAL_SCRIPT_DIR = ROOT / "rtl/mini/formal"
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(FILELIST_SCRIPT_DIR))
-sys.path.insert(0, str(FORMAL_SCRIPT_DIR))
 
-from filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
-from generate_filelist import generate_all  # noqa: E402
-from generate_formal_filelist import generate as generate_formal_filelist  # noqa: E402
-from generate_sby_config import render as render_sby_config  # noqa: E402
+from scripts.rtl.filelist import atomic_write, parse_filelists, write_filelist  # noqa: E402
+from rtl.mini.script.generate_filelist import generate_all  # noqa: E402
+from rtl.mini.formal.generate_formal_filelist import generate as generate_formal_filelist  # noqa: E402
+from rtl.mini.formal.generate_sby_config import render as render_sby_config  # noqa: E402
 from scripts.bitwuzla_smt2 import translate_arguments  # noqa: E402
 from scripts.analyze_warnings import normalize  # noqa: E402
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
@@ -870,7 +866,7 @@ def test_prepare_norflash_and_missing_firmware(tmp_path: Path) -> None:
     firmware = tmp_path / "firmware.hex"
     firmware.write_text("00\n", encoding="utf-8")
     sim_dir = tmp_path / "sim"
-    script = ROOT / "rtl/mini/script/prepare_norflash.py"
+    script = ROOT / "scripts/rtl/prepare_norflash.py"
 
     run(
         sys.executable,
@@ -1043,7 +1039,7 @@ def test_make_dry_run_and_validation_do_not_write_filelists(tmp_path: Path) -> N
         line.startswith("MGMT_CPU_CLK_HZ") and line.rstrip().endswith("72000000")
         for line in mpw_config.splitlines()
     )
-    software_makefile = (ROOT / "rtl/mini/mk/software.mk").read_text(encoding="utf-8")
+    software_makefile = (ROOT / "rtl/mk/software.mk").read_text(encoding="utf-8")
     assert "-DRS_CPU_CLOCK_HZ=$(MGMT_CPU_CLK_HZ)U" in software_makefile
 
     removed_debug = subprocess.run(
@@ -1278,13 +1274,16 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
     assert "--assert --Wall" in verilator_source
 
     regression_commands = (*SMOKE_COMMANDS, *PR_COMMANDS, *NIGHTLY_COMMANDS)
-    for _, values in regression_commands:
+    for profile, values in regression_commands:
         if "SIMU=VERILATOR" in values:
             simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
             if "APP=ci_smoke" in values and "sim" in values:
                 assert simulation_timeout == ["SOC_SIM_TIME=1800"]
                 assert "LINK_TYPE=ld2_all_sram" in values
-                assert "VERILATOR_SIM_ARGS=--fast-flash" in values
+                if profile == "configs/ci/ihp130-tiny.mk":
+                    assert not any(value.startswith("VERILATOR_SIM_ARGS=") for value in values)
+                else:
+                    assert "VERILATOR_SIM_ARGS=--fast-flash" in values
                 assert "HAVE_CSR=YES" in values
             elif "coremark-report" in values:
                 assert simulation_timeout == ["SOC_SIM_TIME=7200"]
@@ -1320,7 +1319,7 @@ def test_systemverilog_testbench_starts_in_reset_with_known_clocks() -> None:
 
 
 def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
-    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/ip/core/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
     assert "CORE has been removed" in makefile
@@ -1328,7 +1327,8 @@ def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
     assert "CORE_$(CORE)" not in makefile
     assert "`ifdef CORE_" not in wrapper
     assert "`ifdef HAVE_DEBUG" not in wrapper
-    assert "ahbl2axi4 u_ahbl2axi4" in wrapper
+    assert re.search(r"ahbl2axi4\s*(?:#\([\s\S]*?\)\s*)?u_ahbl2axi4", wrapper)
+    assert re.search(r"TwoCycleBusErrors\s*=\s*1'b0", wrapper)
     assert ".RESET_VECTOR       (`SOC_CPU_RESET_ADDR)" in wrapper
     assert ".DEBUG_SUPPORT      (1)" in wrapper
 
@@ -1336,8 +1336,8 @@ def test_management_core_is_fixed_to_hazard3_with_debug() -> None:
 def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
     lock = load_lock(ROOT / "dependencies/dependencies.lock.json")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
-    wrapper = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
-    debug_wrapper = (ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")
+    wrapper = (ROOT / "rtl/ip/core/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    debug_wrapper = (ROOT / "rtl/ip/core/mgmt_debug_wrapper.sv").read_text(encoding="utf-8")
     verilator_makefile = (ROOT / "rtl/mini/mk/verilator.mk").read_text(encoding="utf-8")
     driver = (ROOT / "scripts/run_debug_session.py").read_text(encoding="utf-8")
     openocd = (ROOT / "rtl/mini/dv/verilator/openocd/retrosoc_hazard3.cfg").read_text(
@@ -1466,7 +1466,7 @@ def test_rtl_regression_excludes_synthesis_and_timing() -> None:
     commands, profiles = select_regression("rtl", "IHP130")
 
     assert commands == RTL_COMMANDS
-    assert profiles == ("configs/ci/ihp130.mk",)
+    assert profiles == ("configs/ci/ihp130.mk", "configs/ci/ihp130-tiny.mk")
     values = [value for _, command_values in commands for value in command_values]
     assert "sim" in values
     assert "sim-asm" in values
@@ -1535,7 +1535,7 @@ def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
 def test_hosted_smoke_formal_check_is_doctor_only() -> None:
     workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
     smoke = (ROOT / ".github/workflows/regression-smoke.yml").read_text(encoding="utf-8")
-    software_makefile = (ROOT / "rtl/mini/mk/software.mk").read_text(encoding="utf-8")
+    software_makefile = (ROOT / "rtl/mk/software.mk").read_text(encoding="utf-8")
 
     assert "timeout_minutes: 60" in smoke
     assert "formal_checks: true" in smoke
@@ -1586,7 +1586,7 @@ def test_nightly_regression_runs_optional_yosys_recipes() -> None:
     commands, profiles = select_regression("nightly", "IHP130")
 
     assert commands == NIGHTLY_COMMANDS
-    assert profiles == ("configs/ci/ihp130.mk",)
+    assert profiles == ("configs/ci/ihp130.mk", "configs/ci/ihp130-tiny.mk")
     assert (
         "configs/ci/ihp130.mk",
         ("SYNTH=YOSYS", "SYNTH_RECIPE=area", "synth"),

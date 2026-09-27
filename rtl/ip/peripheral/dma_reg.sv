@@ -12,6 +12,7 @@
 
 module dma_reg #(
     parameter int NumChannels       = 4,
+    parameter bit EnableStreams     = 1'b1,
     parameter int ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
     parameter int DataWidth         = 32,
     parameter int MaxBurstBeats     = 16
@@ -350,7 +351,15 @@ module dma_reg #(
       `APB4_DMA__IP_ID: s_read_data = IpId;
       `APB4_DMA__IP_VERSION: s_read_data = IpVersion;
       `APB4_DMA__CAPABILITY:
-      s_read_data = {1'b0, 3'd3, 4'(MaxBurstBeats), 8'(DataWidth), 8'(NumChannels), 7'd0, 1'b1};
+      s_read_data = {
+        1'b0,
+        (EnableStreams ? 3'd3 : 3'd0),
+        4'(MaxBurstBeats),
+        8'(DataWidth),
+        8'(NumChannels),
+        7'd0,
+        1'b1
+      };
       `APB4_DMA__GLOBAL_CTRL: s_read_data = 32'd0;
       `APB4_DMA__GLOBAL_STATUS: s_read_data = {31'd0, |busy_i};
       `APB4_DMA__IRQ_STATE: s_read_data = {{(32 - NumChannels) {1'b0}}, s_irq_state};

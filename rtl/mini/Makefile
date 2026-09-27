@@ -1,6 +1,6 @@
 GENERATED_FL_DIR           := $(FLOW_FILELIST_DIR)
 MEMORY_MAP_SOURCE          := $(RTL_PATH)/address_map/memory_map.json
-MEMORY_MAP_SCRIPT          := $(RTL_PATH)/address_map/generate_memory_map.py
+MEMORY_MAP_SCRIPT          := $(ROOT_PATH)/scripts/rtl/generate_memory_map.py
 MEMORY_MAP_DIR             := $(VARIANT_ROOT)/generated/memory_map
 MEMORY_MAP_STAMP           := $(MEMORY_MAP_DIR)/.stamp
 MEMORY_MAP_RTL_DIR         := $(MEMORY_MAP_DIR)/rtl
@@ -8,7 +8,7 @@ MEMORY_MAP_C_DIR           := $(MEMORY_MAP_DIR)/include
 MEMORY_MAP_LINKER_DIR      := $(MEMORY_MAP_DIR)/linker
 MEMORY_MAP_FILELIST        := $(MEMORY_MAP_DIR)/memory_map.fl
 PIN_MAP_SOURCE             := $(RTL_PATH)/pin_map/pin_map.json
-PIN_MAP_SCRIPT             := $(RTL_PATH)/pin_map/generate_pin_map.py
+PIN_MAP_SCRIPT             := $(ROOT_PATH)/scripts/rtl/generate_pin_map.py
 PIN_MAP_DIR                := $(VARIANT_ROOT)/generated/pin_map
 PIN_MAP_STAMP              := $(PIN_MAP_DIR)/.stamp
 PIN_MAP_FILELIST           := $(PIN_MAP_DIR)/pin_map.fl
@@ -132,7 +132,7 @@ check-clock-reset-domains:
 	$(FLOW_PYTHON) $(CLOCK_RESET_DOMAINS_SCRIPT) --map $(CLOCK_RESET_DOMAINS_SOURCE) --root $(ROOT_PATH)
 
 $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py $(LOCAL_RTL_FILES) \
-	$(RTL_PATH)/script/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
+	$(ROOT_PATH)/scripts/rtl/filelist.py $(MEMORY_MAP_STAMP) $(PIN_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) \
 	$(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) \
 	$(if $(filter MPW,$(MINI_MODE)),$(MPW_VARIANT_STAMP)) \
 	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_STAMP))
@@ -146,7 +146,7 @@ $(FILELIST_STAMP): $(FILELIST_TEMPLATES) $(RTL_PATH)/script/generate_filelist.py
 generate_filelist: $(FILELIST_STAMP)
 
 # software
-include $(RTL_PATH)/mk/software.mk
+include $(ROOT_PATH)/rtl/mk/software.mk
 
 #====================== filelist ======================
 ifeq ($(PDK), IHP130)

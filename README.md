@@ -66,6 +66,19 @@ under the [Mulan Permissive Software License, Version 2](LICENSE).
 
 ## Repository Layout
 
+**Mini and Tiny have independent integration flows.** Mini combines a
+low-power Hazard3 management hart and a VexiiRiscv application hart; its separate
+MPW profile retains selectable-core compatibility. [Tiny](docs/ip/tiny-soc.md)
+is a wired MCU with one Hazard3 RV32IMC hart, 128 KiB SRAM, AXI4/APB4 and no
+wireless IP. Tiny first targets IHP130; [Std and Pro](docs/soc-family-positioning.md)
+remain roadmap products. Qualification is determined by each profile's retained
+verification and physical reports.
+
+The [Tiny Gen1 datasheet](publications/datasheets/tiny/README.md) provides the
+independent product, register, software and evidence reference using the
+established publication layout. Its build does not require Mini's HP or
+multimedia inputs.
+
 | Path | Contents |
 | --- | --- |
 | [`rtl/`](rtl) | SoC RTL, CPU integration, peripherals, interfaces, testbenches, and technology wrappers. |
@@ -208,6 +221,40 @@ Select the interactive shell application without editing source files:
 ```sh
 make CONFIG=configs/ci/ihp130-shell.mk firmware
 ```
+
+### Build and simulate Tiny
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk setup
+make CONFIG=configs/ci/ihp130-tiny.mk doctor
+make CONFIG=configs/ci/ihp130-tiny.mk firmware sim
+make CONFIG=configs/ci/ihp130-tiny.mk SIMU=IVERILOG firmware sim
+```
+
+Tiny uses its own source lists and product maps under `rtl/tiny`. Its firmware
+loads into on-chip SRAM without PSRAM/SDRAM initialization. The first release
+uses a fixed 24 MHz clock and disables atomic instructions. Wireless, external
+RAM, HP cores, accelerators and advanced low-power modes remain deferred.
+
+## Configurations and common flows
+
+Start from a [committed profile](configs/README.md). These are selected entry
+points, not the complete profile or application inventory.
+
+| Profile | Purpose |
+| --- | --- |
+| [IHP130 Tiny](configs/ci/ihp130-tiny.mk) | Single-hart wired MCU, 128 KiB SRAM, pin-level Flash boot and automated acceptance. |
+| [IHP130 Mini](configs/ci/ihp130.mk) | Manual bring-up with 32 KiB macro-backed SRAM. |
+| [GF180](configs/ci/gf180.mk) / [SKY130](configs/ci/sky130.mk) | Alternative PDK profiles with 32 KiB macro-backed SRAM. |
+| [ICS55](configs/ci/ics55.mk) | Regression-compatible profile with SRAM and PLL disabled. |
+| [Interactive shell](configs/ci/ihp130-shell.mk) | Shell firmware with CSR support enabled. |
+| [Hazard3 debug](configs/ci/ihp130-debug.mk) | JTAG acceptance using Verilator, OpenOCD, and GDB. |
+| [HP Linux](configs/ci/ihp130-hp.mk) | HP image/bundle flow; outside the supported PR matrix. |
+| [APU LP/HP](configs/ci/ihp130-apu.mk) | Audio and KWS evidence flow with ownership handoff to HP. |
+| [CoreMark](configs/benchmark/ihp130-hazard3-coremark.mk) | Fixed LP SRAM benchmark with the product HP core present. |
+| [Mini MPW](configs/cluster/mini-mpw.mk) | Legacy C0-C3/user-IP compatibility, separate from the product ABI. |
+
+After the corresponding setup, use these common commands:
 
 ## Common Flows
 

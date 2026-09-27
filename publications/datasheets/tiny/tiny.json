@@ -1,0 +1,17 @@
+{
+  "title": "retroSoC Tiny Gen1",
+  "document_id": "RS-TINY-DS",
+  "brand_name": "Rill",
+  "brand_name_zh": "清溪",
+  "version": "0.1",
+  "status": "DRAFT",
+  "date": "2026-09-25",
+  "author": "Yuchi Miao",
+  "author_email": "miaoyuchi@ict.ac.cn",
+  "maintainer": "ECOS Team, ICT, CAS",
+  "source_revision": "9c706ba0ff1da1028c299cfff573010a86dfd7ce",
+  "profile": "configs/ci/ihp130-tiny.mk",
+  "change_prefix": "tiny-v01-",
+  "entrypoint": "publications/datasheets/tiny/datasheet.typ",
+  "filename": "retrosoc-tiny-gen1-datasheet.pdf"
+}

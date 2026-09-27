@@ -1,7 +1,8 @@
 # Canonical SoC Pin Map
 
 `pin_map.json` is the single source for the Mini SoC logical pad ABI and its
-ASIC, FPGA, Verilator, and RTL-testbench bindings. The generator emits
+ASIC, FPGA, Verilator, and RTL-testbench bindings. The shared
+[generator](../../../scripts/rtl/generate_pin_map.py) emits
 temporary SystemVerilog include files below the selected build variant; do not
 edit generated files.
 

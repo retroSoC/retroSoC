@@ -217,7 +217,7 @@ def _verification_sources() -> dict[str, str]:
         ROOT / "scripts/apu_codecs.py",
         ROOT / "scripts/apu_kws.py",
         ROOT / "scripts/apu_kws_convert.py",
-        ROOT / "rtl/mini/script/convt_sv2v.py",
+        ROOT / "scripts/rtl/convt_sv2v.py",
         Path(__file__).resolve(),
     ]
     return {
@@ -346,7 +346,7 @@ def _compile(build_dir: Path) -> dict[str, Any]:
     conversion = _run_command(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",

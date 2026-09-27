@@ -9,7 +9,7 @@
 /clusterip/common/rtl/interface/ram_if.sv
 /top/rib_if.sv
 /clusterip/common/rtl/utils/register.sv
-/top/soc_common_fifo.sv
+/ip/util/soc_common_fifo.sv
 /clusterip/common/rtl/utils/spill_register.sv
 /clusterip/common/rtl/stream/round_robin_arbiter.sv
 /clusterip/common/rtl/utils/lfsr.sv
@@ -20,7 +20,7 @@
 /clusterip/common/rtl/cdc/cdc_sync.sv
 /clusterip/common/rtl/cdc/cdc_rst_ctrlr.sv
 /clusterip/common/rtl/cdc/cdc_2phase.sv
-/top/soc_common_cdc.sv
+/ip/util/soc_common_cdc.sv
 /clusterip/common/rtl/clkrst/clk_int_div.sv
 /clusterip/common/rtl/clock/safe_clock_mux.sv
 /clusterip/common/rtl/clkrst/rst_sync.sv

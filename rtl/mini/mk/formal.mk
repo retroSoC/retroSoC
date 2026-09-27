@@ -178,8 +178,8 @@ FORMAL_SOURCE_FILES              := $(RTL_PATH)/formal/bus_formal.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_pkg.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_axi4.sv \
                              $(ROOT_PATH)/rtl/ip/memory/psram_phy.sv \
-                             $(RTL_PATH)/top/onchip_ram_reg.sv \
-                             $(RTL_PATH)/top/onchip_ram.sv \
+                             $(ROOT_PATH)/rtl/ip/memory/onchip_ram_reg.sv \
+                             $(ROOT_PATH)/rtl/ip/memory/onchip_ram.sv \
                              $(ROOT_PATH)/rtl/tech/tc_sram.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/register.sv \
                              $(ROOT_PATH)/rtl/managed/clusterip/common/rtl/utils/xchecker.sv \
@@ -242,11 +242,11 @@ $(FORMAL_DIR)/%/formal.fl: $(FORMAL_FILELIST_GENERATOR) $(FORMAL_SOURCE_FILES) \
 		--memory-map-dir $(MEMORY_MAP_DIR) --soc-topology-dir $(SOC_TOPOLOGY_DIR) \
 		--user-extensions-dir $(USER_EXTENSIONS_DIR)
 
-$(FORMAL_DIR)/%/design.v: $(FORMAL_DIR)/%/formal.fl $(RTL_PATH)/script/convt_sv2v.py \
-	$(RTL_PATH)/script/filelist.py $(FORMAL_SOURCE_FILES)
+$(FORMAL_DIR)/%/design.v: $(FORMAL_DIR)/%/formal.fl $(ROOT_PATH)/scripts/rtl/convt_sv2v.py \
+	$(ROOT_PATH)/scripts/rtl/filelist.py $(FORMAL_SOURCE_FILES)
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool formal-sv2v \
 		--log $(@D)/sv2v.log --result $(@D)/result-sv2v.json \
-		-- python3 $(RTL_PATH)/script/convt_sv2v.py -f $< --output $@
+		-- python3 $(ROOT_PATH)/scripts/rtl/convt_sv2v.py -f $< --output $@
 
 $(FORMAL_DIR)/%/prove.sby: $(FORMAL_DIR)/%/design.v \
 	$(FORMAL_SBY_GENERATOR)

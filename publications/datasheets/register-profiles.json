@@ -1430,10 +1430,10 @@
   "sram": {
     "document": "docs/ip/onchip-sram.md",
     "defines": [
-      "rtl/mini/top/onchip_ram_define.svh"
+      "rtl/ip/memory/onchip_ram_define.svh"
     ],
     "rtl": [
-      "rtl/mini/top/onchip_ram_reg.sv"
+      "rtl/ip/memory/onchip_ram_reg.sv"
     ],
     "parameters": {
       "Present": 1,

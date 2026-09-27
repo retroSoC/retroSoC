@@ -12,6 +12,15 @@ These edits do not advance `mini.json.source_revision` or relabel an existing
 PDF. Review and commit the implementation snapshot before producing a matching
 new PDF; the source-drift check remains mandatory.
 
+## Tiny Gen1 datasheet
+
+The independent [Tiny Gen1 publication](datasheets/tiny/README.md) uses the same
+visual language with Tiny-only configuration, register/IRQ/pad extraction,
+fourteen IP chapters and its own source/structure/evidence checks. Run
+`python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.
+Its output and `latest-tiny` record are separate; the existing Mini entrypoint,
+templates, configuration, review and delivered PDF are unchanged.
+
 ## Mini datasheet
 
 The prototype chip brand is **Rill（清溪）**. Its bilingual label replaces the

@@ -259,7 +259,7 @@ def test_owned_style_audit_matches_current_inventory() -> None:
     }
     actual_paths = {
         str(path.relative_to(ROOT))
-        for root in (ROOT / "rtl/ip", ROOT / "rtl/mini/top")
+        for root in (ROOT / "rtl/ip", ROOT / "rtl/mini/top", ROOT / "rtl/tiny/top")
         for path in root.rglob("*")
         if path.is_file() and path.suffix in {".sv", ".svh"}
     }

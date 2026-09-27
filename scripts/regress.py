@@ -70,7 +70,16 @@ PR_COMMANDS = (
     ),
     ("configs/ci/ihp130.mk", ("STA=OPENSTA", "sta")),
 )
-RTL_COMMANDS = PR_COMMANDS[:6]
+TINY_PR_COMMANDS = (
+    ("configs/ci/ihp130-tiny.mk", RTL_LINT_VALUES),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "LINK_TYPE=ld2_all_sram", "SIMU=VERILATOR", "SOC_SIM_TIME=1800", "HAVE_CSR=YES", "HAVE_SVA=YES", "firmware", "sim")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SIMU=IVERILOG", "firmware", "sim")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SYNTH=YOSYS", "synth")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SIMU=IVERILOG", "netsim-boot")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "STA=OPENSTA", "sta")),
+)
+RTL_COMMANDS = (*PR_COMMANDS[:6], *TINY_PR_COMMANDS[:3])
+PR_COMMANDS = (*PR_COMMANDS, *TINY_PR_COMMANDS)
 SMOKE_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
     ("configs/ci/ihp130.mk", (CI_SMOKE_APP_VALUE, "firmware")),
@@ -106,7 +115,7 @@ NIGHTLY_COMMANDS = (
     *PR_COMMANDS,
     *NIGHTLY_EXTRA_COMMANDS,
 )
-PR_PROFILES = ("configs/ci/ihp130.mk",)
+PR_PROFILES = ("configs/ci/ihp130.mk", "configs/ci/ihp130-tiny.mk")
 SMOKE_PROFILES: tuple[str, ...] = ()
 NIGHTLY_PROFILES = PR_PROFILES
 
@@ -161,7 +170,7 @@ def select_regression(
     if suite == "nightly-extra":
         if pdk is not None and pdk != "IHP130":
             raise ValueError("nightly-extra regression supports only --pdk IHP130")
-        return NIGHTLY_EXTRA_COMMANDS, NIGHTLY_PROFILES
+        return NIGHTLY_EXTRA_COMMANDS, ("configs/ci/ihp130.mk",)
     if pdk:
         if suite == "nightly":
             if pdk != "IHP130":
@@ -259,6 +268,7 @@ def main() -> int:
         "--suite", choices=("smoke", "rtl", "pr", "nightly", "nightly-extra"), required=True
     )
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
+    parser.add_argument("--soc", choices=("MINI", "TINY"), help="run one product only")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--netsim-boot-only",
@@ -275,6 +285,17 @@ def main() -> int:
         commands, profiles = select_regression(args.suite, args.pdk)
     except ValueError as error:
         parser.error(str(error))
+    if args.soc is not None:
+        tiny_profile = "configs/ci/ihp130-tiny.mk"
+        if args.soc == "TINY" and args.suite == "smoke":
+            commands, profiles = TINY_PR_COMMANDS[:2], (tiny_profile,)
+        else:
+            commands = tuple((profile, values) for profile, values in commands
+                             if (profile == tiny_profile) == (args.soc == "TINY"))
+            profiles = tuple(profile for profile in profiles
+                             if (profile == tiny_profile) == (args.soc == "TINY"))
+        if not commands:
+            parser.error(f"suite {args.suite} has no {args.soc} configuration for this PDK")
     if args.netsim_boot_only:
         commands = with_netsim_boot_only(commands)
     if args.behavioral_only:

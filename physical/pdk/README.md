@@ -30,7 +30,8 @@ the locked HD library submodule; OpenRAM's build-space and Ciel inputs are
 recorded in the macro artifact rather than added to the SoC PDK checkout.
 
 The IHP130 dependency is also the technology source for the independent
-`physical/librelane/` core-hardening and full-chip pad-ring flows. The locked
+`physical/librelane/{mini,tiny}/` core-hardening and full-chip pad-ring flows.
+The locked
 checkout includes the upstream `libs.tech/librelane` standard-cell, pad,
 extraction, DRC, LVS, filler, bondpad, and seal-ring configuration; LibreLane
 consumes it directly in manual-PDK mode. The other three open PDKs do not yet

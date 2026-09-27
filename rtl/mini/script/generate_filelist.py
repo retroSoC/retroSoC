@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
 
-from filelist import atomic_write
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT))
+from scripts.rtl.filelist import atomic_write  # noqa: E402
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent

@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--synth", required=True)
     parser.add_argument("--sta", required=True)
     parser.add_argument("--pdk", required=True)
+    parser.add_argument("--soc", choices=("MINI", "TINY"), default="MINI")
     parser.add_argument("--have-sram-macro", choices=("YES", "NO"), default="NO")
     parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
     parser.add_argument("--require-debug-tools", action="store_true")
@@ -73,6 +74,9 @@ def main() -> int:
         tools.extend(("openocd", "riscv32-unknown-elf-gdb"))
 
     source_names = ["mpw", "hazard3", "cluster_common", "third_party_ip"]
+    if args.soc == "TINY":
+        from scripts.setup_tiny import TINY_SOURCES
+        source_names = [name for name in TINY_SOURCES if not name.startswith("pdk_")]
     pdk_names = {
         "IHP130": "pdk_ihp130",
         "ICS55": "pdk_ics55",

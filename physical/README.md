@@ -7,7 +7,9 @@ drivers.
 - `pdk/` contains the locked PDK setup helpers and managed PDK checkouts.
 - `smoke/syn/` contains Yosys synthesis and source-export integration.
 - `smoke/sta/` contains OpenSTA constraints and timing integration.
-- `librelane/` contains the open-source IHP130 core-hardening and full-chip pad-ring flows.
+- `librelane/` contains the open-source IHP130 implementation flows, organized
+  per product line: `librelane/mini/` (core hardening and full-chip pad ring)
+  and `librelane/tiny/` (Tiny full-chip pad ring).
 - `ecc/` contains the open-source ICS55 padless-core hardening flow backed by
   the locked ECOS Chip Compiler release.
 - `commercial/` contains licensed-tool orchestration and flow logic. PDKs,

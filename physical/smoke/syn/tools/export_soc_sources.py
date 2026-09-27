@@ -13,13 +13,10 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-SCRIPT_DIR = REPO_ROOT / "rtl/mini/script"
-INTEGRATION_DIR = REPO_ROOT / "rtl/mini/integration"
-sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(INTEGRATION_DIR))
-from filelist import FileList, atomic_write, parse_filelists  # noqa: E402
-from generate_filelist import generate_all  # noqa: E402
-from generate_user_extensions import generate as generate_user_extensions  # noqa: E402
+sys.path.insert(0, str(REPO_ROOT))
+from scripts.rtl.filelist import FileList, atomic_write, parse_filelists  # noqa: E402
+from rtl.mini.script.generate_filelist import generate_all  # noqa: E402
+from rtl.mini.integration.generate_user_extensions import generate as generate_user_extensions  # noqa: E402
 
 
 INCLUDE_RE = re.compile(r'^\s*`include\s+"([^"]+)"')
@@ -69,6 +66,20 @@ def configured_filelist(
     *,
     require_files: bool = True,
 ) -> FileList:
+    if getattr(args, "soc", "MINI") == "TINY":
+        directory = getattr(args, "source_filelist_dir", None)
+        if directory is None:
+            raise ValueError("Tiny export requires --source-filelist-dir")
+        names = ("def.fl", "inc.fl", "commonip.fl", "clusterip.fl", "ip.fl",
+                 "tech.fl", "core_hazard3.fl", "top.fl")
+        filelist = parse_filelists((directory / name for name in names), require_files=require_files)
+        if "+define+RETROSOC_SOC__TINY" not in filelist.defines:
+            raise ValueError("Tiny export requires Tiny source lists")
+        if "+define+SYNTHESIS" not in filelist.defines:
+            filelist.defines.append("+define+SYNTHESIS")
+        return filelist
+    if args.dynamic_core_filelist is None or args.dynamic_ip_filelist is None:
+        raise ValueError("Mini export requires dynamic core and IP filelists")
     names: list[str | Path] = []
     for name in (
         "memory_map_filelist",
@@ -271,7 +282,7 @@ def metadata_file(value: str) -> tuple[Path, Path]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export configured retroSoC RTL sources")
     parser.add_argument("mode", choices=("tar", "sv"))
-    parser.add_argument("--soc", default="MINI", choices=("MINI",))
+    parser.add_argument("--soc", default="MINI", choices=("MINI", "TINY"))
     parser.add_argument("--pdk", default="IHP130", choices=("IHP130", "ICS55", "SKY130", "GF180"))
     parser.add_argument("--simu", default="VCS", choices=("VCS", "VERILATOR", "IVERILOG"))
     parser.add_argument("--have-pll", action="store_true")
@@ -285,18 +296,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dynamic-core-filelist",
         type=Path,
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--dynamic-ip-filelist",
         type=Path,
-        required=True,
+        required=False,
     )
     parser.add_argument("--memory-map-filelist", type=Path)
     parser.add_argument("--soc-topology-filelist", type=Path)
     parser.add_argument("--user-extensions-filelist", type=Path)
     parser.add_argument("--pin-map-filelist", type=Path)
     parser.add_argument("--archinfo-incdir", type=Path)
+    parser.add_argument("--source-filelist-dir", type=Path)
     parser.add_argument("--librelane-safe", action="store_true")
     parser.add_argument("--metadata-file", type=metadata_file, action="append", default=[])
     parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "export")
@@ -312,15 +324,16 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="retrosoc-filelists-") as temporary:
         generated_dir = Path(temporary)
         user_extensions_dir = generated_dir / "user_extensions"
-        generate_all(generated_dir, build_defines(args))
-        if args.user_extensions_filelist is None:
+        if args.soc == "MINI":
+            generate_all(generated_dir, build_defines(args))
+        if args.soc == "MINI" and args.user_extensions_filelist is None:
             generate_user_extensions(
                 REPO_ROOT / "rtl/mini/integration/user_extensions.json",
                 user_extensions_dir,
             )
         filelist = configured_filelist(args, generated_dir, user_extensions_dir)
         if args.mode == "sv":
-            output = export_dir / "retrosoc_asic_sources.sv"
+            output = export_dir / ("retrosoc_tiny_asic_sources.sv" if args.soc == "TINY" else "retrosoc_asic_sources.sv")
             write_single_sv(filelist, output, librelane_safe=args.librelane_safe)
         else:
             output = write_tar(filelist, export_dir, args.soc, dict(args.metadata_file))

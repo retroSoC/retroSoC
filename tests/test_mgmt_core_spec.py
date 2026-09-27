@@ -1,14 +1,15 @@
 """Keep the boot display aligned with the fixed Hazard3 management-core integration."""
 
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOTER = ROOT / "crt/src/service/booter.c"
-SOFTWARE_MAKE = ROOT / "rtl/mini/mk/software.mk"
-MGMT_CORE = ROOT / "rtl/mini/top/mgmt_core_wrapper.sv"
-MGMT_DEBUG = ROOT / "rtl/mini/top/mgmt_debug_wrapper.sv"
-AHBL_TO_AXI4 = ROOT / "rtl/mini/top/ahbl2axi4.sv"
+SOFTWARE_MAKE = ROOT / "rtl/mk/software.mk"
+MGMT_CORE = ROOT / "rtl/ip/core/mgmt_core_wrapper.sv"
+MGMT_DEBUG = ROOT / "rtl/ip/core/mgmt_debug_wrapper.sv"
+AHBL_TO_AXI4 = ROOT / "rtl/ip/interconnect/ahbl2axi4.sv"
 VEXII_CONFIG = ROOT / "scripts/vexiiriscv/GenerateRetroSocHp.scala"
 
 
@@ -41,7 +42,7 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
     assert "exact execute-address hardware breakpoints" not in booter
 
     for parameter in (
-        ".EXTENSION_A        (1)",
+        ".EXTENSION_A        (EnableAtomics)",
         ".EXTENSION_C        (1)",
         ".EXTENSION_M        (1)",
         ".EXTENSION_ZBA      (1)",
@@ -57,12 +58,13 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
         ".U_MODE             (0)",
         ".PMP_REGIONS        (0)",
         ".BREAKPOINT_TRIGGERS(2)",
-        "parameter int ExternalIrqCount = 30",
         ".NUM_IRQS           (ExternalIrqCount)",
         ".IRQ_PRIORITY_BITS  (2)",
     ):
         assert parameter in management_core
 
+    assert re.search(r"parameter int ExternalIrqCount\s*= 30", management_core)
+    assert re.search(r"parameter bit EnableAtomics\s*= 1'b1", management_core)
     assert ".HAVE_SBA(0)" in management_debug
     assert "ahbl.htrans == AHBL_TRANS_NSEQ" in ahbl_to_axi4
     assert "axi4.awlen    = 8'd0;" in ahbl_to_axi4

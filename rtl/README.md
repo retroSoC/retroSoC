@@ -1,10 +1,11 @@
 # RTL Design and Simulation
 
 This directory contains retroSoC SystemVerilog RTL, CPU/IP integration,
-peripheral and technology wrappers, filelists, testbench support, and the Mini
+peripheral and technology wrappers, filelists, testbench support, and the Mini/Tiny
 SoC build entry points.
 
-`mini/` is the active SoC integration flow. `managed/` contains locked or
+`mini/` and `tiny/` own independent product integrations. Tiny is the single-hart
+AXI32/APB4 wired MCU described in [its contract](../docs/ip/tiny-soc.md). `managed/` contains locked or
 vendored integration inputs, `ip/` contains self-owned IP and experiments, and
 `model/` contains committed device simulation models with preserved upstream
 notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains

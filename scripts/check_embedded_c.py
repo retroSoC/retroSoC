@@ -66,7 +66,11 @@ def policy_issues(root: Path, path: Path, policy: dict[str, object]) -> list[str
     text = path.read_text(encoding="utf-8")
     issues: list[str] = []
 
-    if TINY_TOKEN.search(text):
+    # Product names in comments/string literals are prose, not retired SDK
+    # identifiers. Legacy include paths are still checked against the raw text.
+    code = re.sub(r'/\*.*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+                  " ", text, flags=re.DOTALL)
+    if TINY_TOKEN.search(code):
         issues.append("contains a retired tiny-prefixed identifier or label")
     if LEGACY_INCLUDE.search(text):
         issues.append("contains a retired legacy include path")

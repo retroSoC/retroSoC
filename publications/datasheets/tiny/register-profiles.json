@@ -1,0 +1,746 @@
+{
+  "xpi": {
+    "document": "docs/ip/xpi.md",
+    "defines": [
+      "rtl/ip/storage/xpi_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/storage/xpi_reg.sv",
+      "rtl/ip/storage/xpi_pkg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Global XPI registers",
+        "pattern": "APB4_XPI__(?!SLOT_|LUT_).+",
+        "strip": "^APB4_XPI__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      },
+      {
+        "id": "slot",
+        "title": "Chip-select slots",
+        "pattern": "APB4_XPI__SLOT_.+",
+        "strip": "^APB4_XPI__SLOT_",
+        "base": 256,
+        "stride": 32,
+        "count": 4,
+        "exclude": [
+          "APB4_XPI__SLOT_BASE",
+          "APB4_XPI__SLOT_STRIDE"
+        ]
+      },
+      {
+        "id": "lut",
+        "title": "LUT words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 512,
+        "stride": 4,
+        "count": 64
+      }
+    ],
+    "field_aliases": {
+      "IRQ_STATE": [
+        "APB4_XPI__IRQ_"
+      ],
+      "IRQ_ENABLE": [
+        "APB4_XPI__IRQ_"
+      ],
+      "IRQ_TEST": [
+        "APB4_XPI__IRQ_"
+      ],
+      "INTR_STATE": [
+        "XPI_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "XPI_INTR_"
+      ],
+      "INTR_STATUS": [
+        "XPI_INTR_"
+      ]
+    },
+    "extra": [
+      {
+        "group": "lut",
+        "name": "LUT_WORD",
+        "offset": 0,
+        "access": "RW / locked",
+        "reset": "Boot LUT; other sequences STOP",
+        "description": "Two 16-bit instructions. Sequence n begins at word 4*n; PC7 must terminate or jump on CS. Bits 9:8 of each halfword are reserved.",
+        "fields": [
+          {
+            "name": "OPERAND0",
+            "lsb": 0,
+            "msb": 7,
+            "description": "Instruction operand.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "Reserved",
+            "lsb": 8,
+            "msb": 9,
+            "description": "Reserved; preserve zero when writing.",
+            "reset": "0",
+            "expression": "reserved"
+          },
+          {
+            "name": "PADS0",
+            "lsb": 10,
+            "msb": 11,
+            "description": "0 = one pad, 1 = two pads, 2 = four pads; 3 is invalid.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "OPCODE0",
+            "lsb": 12,
+            "msb": 15,
+            "description": "0 STOP, 1 CMD, 2 ADDR, 3 MODE, 4 DUMMY, 5 TX, 6 RX, 7 JUMP_ON_CS.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "OPERAND1",
+            "lsb": 16,
+            "msb": 23,
+            "description": "Instruction operand.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "Reserved",
+            "lsb": 24,
+            "msb": 25,
+            "description": "Reserved; preserve zero when writing.",
+            "reset": "0",
+            "expression": "reserved"
+          },
+          {
+            "name": "PADS1",
+            "lsb": 26,
+            "msb": 27,
+            "description": "0 = one pad, 1 = two pads, 2 = four pads; 3 is invalid.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "OPCODE1",
+            "lsb": 28,
+            "msb": 31,
+            "description": "0 STOP, 1 CMD, 2 ADDR, 3 MODE, 4 DUMMY, 5 TX, 6 RX, 7 JUMP_ON_CS.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/storage/apb4_xpi.sv",
+      "rtl/ip/storage/xpi_clkgen.sv",
+      "rtl/ip/storage/xpi_core.sv",
+      "rtl/ip/storage/xpi_if.sv",
+      "rtl/ip/storage/xpi_indirect.sv",
+      "rtl/ip/storage/xpi_mm.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "sram": {
+    "document": "docs/ip/onchip-sram.md",
+    "defines": [
+      "rtl/ip/memory/onchip_ram_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/memory/onchip_ram_reg.sv"
+    ],
+    "parameters": {
+      "Present": 1,
+      "CapacityKiB": 128,
+      "BankCount": 32,
+      "BankBytes": 4096,
+      "DataBytes": 4
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "SRAM management",
+        "pattern": "APB4_ONCHIP_RAM__.+",
+        "strip": "^APB4_ONCHIP_RAM__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "default_access": "RO",
+    "support": [],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "gpio": {
+    "document": "docs/ip/gpio.md",
+    "defines": [
+      "rtl/ip/peripheral/gpio_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/peripheral/gpio_reg.sv"
+    ],
+    "parameters": {
+      "PinNum": 32,
+      "NumPins": 32,
+      "GPIO_NUM": 32
+    },
+    "groups": [
+      {
+        "id": "user",
+        "title": "User window",
+        "pattern": "APB4_GPIO_USER_.+",
+        "strip": "^APB4_GPIO_USER_",
+        "base": 0,
+        "stride": 0,
+        "count": 1,
+        "section": "User window"
+      },
+      {
+        "id": "admin",
+        "title": "Management window",
+        "pattern": "APB4_GPIO_ADMIN_.+",
+        "strip": "^APB4_GPIO_ADMIN_",
+        "base": 0,
+        "stride": 0,
+        "count": 1,
+        "section": "Management window"
+      },
+      {
+        "id": "common",
+        "title": "Common discovery registers",
+        "pattern": "APB4_GPIO_(PAD_CAPABILITY|IP_VERSION|CAPABILITY)",
+        "strip": "^APB4_GPIO_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "support": [
+      "rtl/ip/peripheral/apb4_gpio.sv",
+      "rtl/ip/peripheral/gpio_core.sv",
+      "rtl/ip/peripheral/gpio_if.sv",
+      "rtl/ip/peripheral/user_gpio_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "dma": {
+    "document": "docs/ip/dma.md",
+    "defines": [
+      "rtl/ip/peripheral/dma_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/peripheral/dma_reg.sv",
+      "rtl/ip/peripheral/dma_pkg.sv"
+    ],
+    "parameters": {
+      "NumChannels": 4,
+      "ChannelIndexWidth": 2,
+      "EnableStreams": 0,
+      "DataWidth": 32,
+      "MaxBurstBeats": 16
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_DMA__(?!CH_).+",
+        "strip": "^APB4_DMA__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      },
+      {
+        "id": "ch",
+        "title": "DMA channel registers",
+        "pattern": "APB4_DMA__CH_.+",
+        "strip": "^APB4_DMA__CH_",
+        "base": 256,
+        "stride": 128,
+        "count": 4,
+        "exclude": [
+          "APB4_DMA__CH_BASE",
+          "APB4_DMA__CH_STRIDE",
+          "APB4_DMA__CH_BASE_OFFSET"
+        ],
+        "doc_name_prefix": "CH_"
+      }
+    ],
+    "field_aliases": {
+      "EVENT_ENABLE": [
+        "APB4_DMA__EVENT_"
+      ],
+      "EVENT_STATUS": [
+        "APB4_DMA__EVENT_"
+      ],
+      "STATUS": [
+        "APB4_DMA__STATUS_"
+      ]
+    },
+    "support": [
+      "rtl/ip/peripheral/apb4_dma.sv",
+      "rtl/ip/peripheral/dma_axi4_master.sv",
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/ip/peripheral/dma_req_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "timer": {
+    "document": "docs/ip/timer.md",
+    "defines": [
+      "rtl/ip/peripheral/timer_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/peripheral/timer_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_TIMER_.+",
+        "strip": "^APB4_TIMER_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "TIMER_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "TIMER_INTR_"
+      ],
+      "INTR_STATUS": [
+        "TIMER_INTR_"
+      ],
+      "INTR_TEST": [
+        "TIMER_INTR_"
+      ],
+      "ERROR_STATUS": [
+        "TIMER_ERROR_"
+      ]
+    },
+    "support": [
+      "rtl/ip/peripheral/apb4_timer.sv",
+      "rtl/ip/peripheral/timer_core.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "pwm": {
+    "document": "rtl/managed/clusterip/pwm/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_pkg.sv"
+    ],
+    "parameters": {
+      "PCLK_HZ": 24000000,
+      "RTC_CLOCK_HZ": 24000000,
+      "WDG_CLOCK_HZ": 24000000,
+      "FIFO_DEPTH": 8
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "PWM_(?!TIMER_)(?!CHANNEL_)(?!OPERATOR_).+_OFFSET",
+        "strip": "^PWM_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      },
+      {
+        "id": "timer",
+        "title": "TIMER registers",
+        "pattern": "PWM_TIMER_.+",
+        "strip": "^PWM_TIMER_",
+        "base": 256,
+        "stride": 64,
+        "count": 2,
+        "exclude": [
+          "PWM_TIMER_BASE",
+          "PWM_TIMER_STRIDE",
+          "PWM_TIMER_BASE_OFFSET"
+        ],
+        "section": "Timer Blocks"
+      },
+      {
+        "id": "channel",
+        "title": "CHANNEL registers",
+        "pattern": "PWM_CHANNEL_.+",
+        "strip": "^PWM_CHANNEL_",
+        "base": 512,
+        "stride": 64,
+        "count": 4,
+        "exclude": [
+          "PWM_CHANNEL_BASE",
+          "PWM_CHANNEL_STRIDE",
+          "PWM_CHANNEL_BASE_OFFSET"
+        ],
+        "section": "Channel Blocks"
+      },
+      {
+        "id": "operator",
+        "title": "OPERATOR registers",
+        "pattern": "PWM_OPERATOR_.+",
+        "strip": "^PWM_OPERATOR_",
+        "base": 768,
+        "stride": 64,
+        "count": 2,
+        "exclude": [
+          "PWM_OPERATOR_BASE",
+          "PWM_OPERATOR_STRIDE",
+          "PWM_OPERATOR_BASE_OFFSET"
+        ],
+        "section": "Operator Blocks"
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "PWM_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "PWM_INTR_"
+      ],
+      "INTR_TEST": [
+        "PWM_INTR_"
+      ],
+      "CAPTURE0_CTRL": [
+        "PWM_CAPTURE_CH_"
+      ],
+      "CAPTURE1_CTRL": [
+        "PWM_CAPTURE_CH_"
+      ]
+    },
+    "support": [
+      "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_carrier.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_channel.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_deadtime.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_if.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_tickgen.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_timer.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "rtc": {
+    "document": "rtl/managed/clusterip/rtc/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/rtc/rtl/rtc_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv",
+      "rtl/managed/clusterip/rtc/rtl/rtc_pkg.sv"
+    ],
+    "parameters": {
+      "PCLK_HZ": 24000000,
+      "RTC_CLOCK_HZ": 24000000,
+      "WDG_CLOCK_HZ": 24000000,
+      "FIFO_DEPTH": 8
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "RTC_.+_OFFSET",
+        "strip": "^RTC_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "RTC_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "RTC_INTR_"
+      ],
+      "INTR_TEST": [
+        "RTC_INTR_"
+      ]
+    },
+    "support": [
+      "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+      "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+      "rtl/managed/clusterip/rtc/rtl/rtc_if.sv",
+      "rtl/managed/clusterip/rtc/rtl/rtc_tickgen.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "wdg": {
+    "document": "rtl/managed/clusterip/wdg/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/wdg/rtl/wdg_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv",
+      "rtl/managed/clusterip/wdg/rtl/wdg_pkg.sv"
+    ],
+    "parameters": {
+      "PCLK_HZ": 24000000,
+      "RTC_CLOCK_HZ": 24000000,
+      "WDG_CLOCK_HZ": 24000000,
+      "FIFO_DEPTH": 8
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "WDG_.+_OFFSET",
+        "strip": "^WDG_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "WDG_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "WDG_INTR_"
+      ],
+      "INTR_TEST": [
+        "WDG_INTR_"
+      ]
+    },
+    "support": [
+      "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+      "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
+      "rtl/managed/clusterip/wdg/rtl/wdg_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "uart": {
+    "document": "docs/ip/uart.md",
+    "defines": [
+      "rtl/ip/serial/apb4_uart_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/serial/uart_reg.sv"
+    ],
+    "parameters": {
+      "TxFifoDepth": 64,
+      "RxFifoDepth": 64,
+      "TxFifoLogDepth": 6,
+      "RxFifoLogDepth": 6
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_UART_.+",
+        "strip": "^APB4_UART_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "LINE_CTRL": [
+        "UART_LINE_"
+      ],
+      "CTRL": [
+        "UART_CTRL_"
+      ],
+      "STATUS": [
+        "UART_STATUS_"
+      ],
+      "FIFO_CTRL": [
+        "UART_FIFO_CTRL_"
+      ],
+      "RXDATA": [
+        "UART_RXDATA_"
+      ],
+      "ERROR_STATUS": [
+        "UART_ERROR_"
+      ],
+      "INTR_STATE": [
+        "UART_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "UART_INTR_"
+      ],
+      "INTR_STATUS": [
+        "UART_INTR_"
+      ],
+      "INTR_TEST": [
+        "UART_INTR_"
+      ],
+      "DMA_CTRL": [
+        "UART_DMA_"
+      ],
+      "FLOW_CTRL": [
+        "UART_FLOW_"
+      ]
+    },
+    "support": [
+      "rtl/ip/serial/apb4_uart.sv",
+      "rtl/ip/serial/apb4_uart_rx.sv",
+      "rtl/ip/serial/apb4_uart_tx.sv",
+      "rtl/ip/serial/uart_baudgen.sv",
+      "rtl/ip/serial/uart_core.sv",
+      "rtl/ip/serial/uart_flow_ctrl.sv",
+      "rtl/ip/serial/uart_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "i2c": {
+    "document": "docs/ip/i2c.md",
+    "defines": [
+      "rtl/ip/serial/apb4_i2c_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/serial/i2c_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_I2C_.+",
+        "strip": "^APB4_I2C_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "I2C_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "I2C_INTR_"
+      ],
+      "INTR_STATUS": [
+        "I2C_INTR_"
+      ],
+      "INTR_TEST": [
+        "I2C_INTR_"
+      ],
+      "ERROR_STATUS": [
+        "I2C_ERROR_"
+      ]
+    },
+    "support": [
+      "rtl/ip/serial/apb4_i2c.sv",
+      "rtl/ip/serial/i2c_core.sv",
+      "rtl/ip/serial/i2c_filter.sv",
+      "rtl/ip/serial/i2c_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "clint": {
+    "document": "docs/ip/clint.md",
+    "defines": [
+      "rtl/ip/peripheral/clint_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/peripheral/clint_reg.sv"
+    ],
+    "parameters": {
+      "HartNum": 1
+    },
+    "groups": [
+      {
+        "id": "msip",
+        "title": "Per-hart software interrupt",
+        "pattern": "APB4_CLINT_MSIP",
+        "strip": "^APB4_CLINT_",
+        "base": 0,
+        "stride": 4,
+        "count": 1
+      },
+      {
+        "id": "compare",
+        "title": "Per-hart timer comparator",
+        "pattern": "APB4_CLINT_MTIMECMP",
+        "strip": "^APB4_CLINT_",
+        "base": 0,
+        "stride": 8,
+        "count": 1
+      },
+      {
+        "id": "main",
+        "title": "Shared 64-bit time",
+        "pattern": "APB4_CLINT_MTIMEH?",
+        "strip": "^APB4_CLINT_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "extra": [
+      {
+        "group": "compare",
+        "name": "MTIMECMP_HI",
+        "offset": 16388,
+        "access": "RW",
+        "reset": "0xFFFFFFFF",
+        "description": "High word of the per-hart 64-bit machine timer comparator.",
+        "fields": [
+          {
+            "name": "VALUE",
+            "lsb": 0,
+            "msb": 31,
+            "description": "Comparator bits 63:32.",
+            "reset": "Register reset applies",
+            "expression": "reviewed field"
+          }
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/peripheral/apb4_clint.sv",
+      "rtl/ip/peripheral/clint_core.sv",
+      "rtl/ip/peripheral/clint_if.sv",
+      "rtl/ip/peripheral/clint_timebase.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "archinfo": {
+    "document": "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv"
+    ],
+    "parameters": {
+      "REFERENCE_CLOCK_HZ": 24000000,
+      "SRAM_BYTES": 131072,
+      "TOPOLOGY": 538968065,
+      "FEATURES0": 32766,
+      "TECHNOLOGY": 33620098
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "ARCHINFO_.+_OFFSET",
+        "strip": "^ARCHINFO_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "default_access": "RO",
+    "support": [
+      "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  }
+}

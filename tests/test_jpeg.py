@@ -182,7 +182,7 @@ def test_jpeg_apb_register_path(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -226,7 +226,7 @@ def test_jpeg_2d_axi_dma(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -302,7 +302,7 @@ def test_jpeg_apb_ring_descriptor_path(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -410,7 +410,7 @@ def test_jpeg_byte_unpacker_and_bit_reader(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -590,7 +590,7 @@ def test_jpeg_mcu_reconstructor(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -640,7 +640,7 @@ def test_jpeg_mcu_builder(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -754,7 +754,7 @@ def test_jpeg_byte_joiner(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -847,7 +847,7 @@ def test_jpeg_encode_core_complete_file(tmp_path: Path) -> None:
     )
     converted = tmp_path / "jpeg_encode_core_tb.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(source_list),
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(source_list),
          "--output", str(converted)],
         check=True,
     )
@@ -943,7 +943,7 @@ def test_jpeg_decode_core_complete_file(tmp_path: Path) -> None:
     )
     converted = tmp_path / "jpeg_decode_core_tb.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(source_list),
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(source_list),
          "--output", str(converted)],
         check=True,
     )

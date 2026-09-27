@@ -10,10 +10,9 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parents[2]
-FILELIST_DIR = ROOT / "rtl/mini/script"
-sys.path.insert(0, str(FILELIST_DIR))
+sys.path.insert(0, str(ROOT))
 
-from filelist import FileList, write_filelist  # noqa: E402
+from scripts.rtl.filelist import FileList, write_filelist  # noqa: E402
 
 
 COMMON_RTL = ROOT / "rtl/managed/clusterip/common/rtl"
@@ -249,8 +248,8 @@ def source_files(target: str) -> list[Path]:
             COMMON_RTL / "utils/register.sv",
             COMMON_RTL / "utils/xchecker.sv",
             ROOT / "rtl/tech/tc_sram.sv",
-            TOP / "onchip_ram_reg.sv",
-            TOP / "onchip_ram.sv",
+            ROOT / "rtl/ip/memory/onchip_ram_reg.sv",
+            ROOT / "rtl/ip/memory/onchip_ram.sv",
             SCRIPT_DIR / "onchip_ram_formal.sv",
         ]
     if target == "opipsram":

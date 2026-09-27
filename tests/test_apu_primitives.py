@@ -1279,7 +1279,7 @@ def test_p4_production_primitives_icarus_and_verilator(tmp_path: Path) -> None:
         subprocess.run(
             [
                 sys.executable,
-                str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+                str(ROOT / "scripts/rtl/convt_sv2v.py"),
                 "-f",
                 str(source_list),
                 "--output",
@@ -1404,7 +1404,7 @@ def test_p4_loader_publishes_control_and_table_atomically(tmp_path: Path) -> Non
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1457,7 +1457,7 @@ def test_p4_sequencer_kernel_pending_and_wait(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

@@ -194,7 +194,7 @@ def _compile(build_dir: Path, bundle: Path) -> tuple[dict[str, Path], dict[str, 
     conversion = _run_command(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",

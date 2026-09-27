@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
+GENERATOR = ROOT / "scripts/rtl/generate_memory_map.py"
 MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
 USER_EXTENSIONS = ROOT / "rtl/mini/integration/user_extensions.json"
 USER_GENERATOR = ROOT / "rtl/mini/integration/generate_user_extensions.py"
@@ -242,7 +242,7 @@ def test_bus_fault_responder_handles_reserved_and_unmapped_addresses(tmp_path: P
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -320,7 +320,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -349,7 +349,7 @@ def test_pll_controller_reconfigures_and_falls_back_to_the_safe_clock(tmp_path: 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(unsupported_list),
             "--output",

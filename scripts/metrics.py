@@ -17,7 +17,7 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
 AREA_RE = re.compile(r"Chip area for top module[^:]*:\s*([0-9.eE+-]+)")
-HIERARCHY_RE = re.compile(r"^\s*(\d+)\s+[0-9.eE+-]+\s+retrosoc_asic\s*$", re.MULTILINE)
+HIERARCHY_RE = re.compile(r"^\s*(\d+)\s+[0-9.eE+-]+\s+retrosoc_(?:tiny_)?asic\s*$", re.MULTILINE)
 
 
 def collect(args: argparse.Namespace) -> int:
@@ -35,10 +35,18 @@ def collect(args: argparse.Namespace) -> int:
     for binary in sorted((root / "sw").glob("*.bin")):
         metrics["firmware"][binary.name] = {"bytes": binary.stat().st_size}
 
-    area_json = synth_root / "rpt/retrosoc_asic_area.json"
-    area_report = synth_root / "rpt/retrosoc_asic_area.rpt"
+    manifest_path = root / "meta/manifest.json"
+    soc = "MINI"
+    if manifest_path.is_file():
+        soc = json.loads(manifest_path.read_text())["configuration"].get("SOC", "MINI")
+    top = "retrosoc_tiny_asic" if soc == "TINY" else "retrosoc_asic"
+    area_json = synth_root / "rpt" / f"{top}_area.json"
+    area_report = synth_root / "rpt" / f"{top}_area.rpt"
     if area_json.is_file():
-        design = json.loads(area_json.read_text(encoding="utf-8"))["design"]
+        # Yosys -t also prefixes tee report lines in some locked tool builds.
+        contents = re.sub(r"^\[\d+\.\d+\]\s?", "", area_json.read_text(encoding="utf-8"),
+                          flags=re.MULTILINE)
+        design = json.loads(contents)["design"]
         metrics["synthesis"]["top_area"] = float(design["area"])
         metrics["synthesis"]["top_cells"] = int(design["num_cells"])
     elif area_report.is_file():
