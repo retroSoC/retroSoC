@@ -1,8 +1,16 @@
 # Tiny MCU Verification Record
 
-This record accompanies the [frozen Tiny contract](tiny-soc.md). It describes
-local implementation evidence from 2026-09-25, not a release or silicon signoff.
-The working tree is uncommitted and the readiness status remains `prototype`.
+This record accompanies the [Tiny Gen1 contract](tiny-soc.md). It describes
+local implementation evidence from 2026-09-25 for the initial 24 MHz/no-PLL
+baseline, not a release or silicon signoff. The working tree was uncommitted
+when that evidence was collected; its recorded readiness remains `prototype`.
+
+The baseline has two UARTs, two I2C controllers and the legacy pad mapping.
+These results do not validate the QFN64 Gen1 product/package refreeze approved
+on 2026-09-26: the 144 MHz processor target, crystal/PLL, one-UART/one-I2C
+configuration, I2S/SDIO integration, new pinmux and power/bonding plan require
+separate current-revision evidence. The historical results below are retained
+without being promoted to Gen1 qualification.
 
 ## Configuration and artifact roots
 

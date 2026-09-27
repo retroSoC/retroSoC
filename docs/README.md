@@ -3,8 +3,13 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
-- [Tiny MCU](ip/tiny-soc.md) defines the independent wired Tiny product, AXI4/APB4, SRAM-only startup and IHP130 acceptance.
-- [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the independently built product, register, software and qualification-boundary reference.
+- [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes the product/package target, 144 MHz
+  processor target with a 24 MHz crystal and bypassable PLL, pin/power budget
+  and GPIO alternate functions; it retains the separate 24 MHz implementation
+  baseline and identifies the deferred integration ABI.
+- [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
+  current 24 MHz implementation, registers, software and qualification boundary;
+  it does not yet describe the QFN64 Gen1 target.
 
 - [Contributing](../CONTRIBUTING.md) describes community discussion, development,
   review, validation evidence, and maintainer responsibilities.

@@ -47,14 +47,20 @@ nodes, protocol bridges, and smart-home edge endpoints. It is MCU-first: boot
 latency, sleep behavior, deterministic I/O, security, package cost, and usable
 energy per event take precedence over Linux compatibility.
 
-The first executable product is **Tiny-MCU**, an independent wired MCU
+The initial executable baseline is **Tiny-MCU**, an independent wired MCU
 integration in `rtl/tiny`, selected with `configs/ci/ihp130-tiny.mk`. It has no
 wireless IP, wireless protocol stack, or radio-specific companion integration.
 Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 
-### First-release Architecture
+The committed baseline still uses 24 MHz, no PLL, two UARTs, two I2C
+controllers and legacy pad routing. The QFN64 Gen1 product/package target
+below was approved on 2026-09-26; its PLL, I2S, SDIO and new pinmux require
+separate integration and verification. Existing generated datasheets describe
+the baseline, not completed implementation of this target.
 
-| Area | Tiny MCU baseline |
+### Gen1 Product and Package Target
+
+| Area | Tiny Gen1 target |
 | --- | --- |
 | CPU | One Hazard3 RV32IMC hart; A extension disabled until atomic bus semantics are qualified |
 | On-chip memory | 128 KiB macro-backed SRAM; 256–512 KiB and retention SRAM deferred |
@@ -62,15 +68,25 @@ Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 | Memory model | No MMU, HP hart, or external DRAM/PSRAM dependency |
 | Interconnect | 32-bit AXI4 data plane and APB4 control; no RIB/RIBP |
 | Software | Existing freestanding SDK, RV32IM compiler target, CSR/IRQ-enabled acceptance firmware |
-| Clock/reset | 24 MHz system clock, no PLL, 1 MHz CLINT timebase, watchdog and JTAG reset |
-| Edge I/O | 32 GPIO, two UARTs, two I2C controllers, two timers, four DMA channels, PWM, RTC, watchdog and XPI |
+| Clock/reset | 24 MHz crystal and bypassable PLL; maximum processor target 144 MHz; 1 MHz CLINT timebase, watchdog and JTAG reset; bus/peripheral rates require integration freeze |
+| Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S, one 3.3 V 1-bit/4-bit SDIO host, two timers, four central DMA channels, four PWM outputs, RTC, watchdog and XPI |
+| Package | QFN64 plus separate EP: 48 signal and 16 power/ground terminals; preferred 9 x 9 mm, 0.5 mm pitch pending physical review |
+| Dedicated signals | Six boot XPI pins and five JTAG pins outside the 32 GPIO; XPI CS1-3 use GPIO29-31 |
+| Power | One 3.3 V digital IO rail; IHP130 Core planned at 1.2 V; clock analog supply and EP connection require macro/package confirmation |
 
-The normative [Tiny MCU contract](ip/tiny-soc.md) defines the AXI subset,
-address/interrupt ABI, startup, errors and phased acceptance. Independent
-low-power clocks, clock/power gating, retention, secure boot, RTOS ports, USB,
-SDIO, standalone general SPI, CAN and ADC remain future work. No measured
-frequency ceiling, power-current, wake-latency or security claim follows from
-this initial functional profile.
+The normative [Tiny Gen1 contract](ip/tiny-soc.md) defines the complete QFN64
+pinout, power/reset requirements and GPIO/ALT0/ALT1 table. Default SDIO,
+full-duplex I2S with MCLK, UART0 and I2C0 use 15 non-overlapping GPIO, leaving
+17; independent boot Flash and JTAG remain available. New address/IRQ/DMA
+allocations, PLL/routing controls and detailed clock/reset behavior await the
+Gen1 integration-contract freeze. The existing AXI/ABI and verification
+sections explicitly apply to the initial 24 MHz baseline.
+
+Independent low-power clocks, clock/power gating, retention, secure boot, RTOS
+ports, USB, standalone general SPI, CAN and ADC remain future product work.
+I2S and SDIO are required Gen1 capabilities awaiting implementation. Neither
+the initial functional profile nor the product/package freeze establishes a
+measured frequency ceiling, power-current, wake-latency or security claim.
 
 ### Commercial Reference Points
 
@@ -407,7 +423,7 @@ software quality.
 
 | Tier | Claim gate |
 | --- | --- |
-| Tiny | First release: wired-MCU boot, AXI/APB/DMA/IRQ and IHP130 evidence; future low-power/security claims require separate measurements and qualification |
+| Tiny | Gen1 target: QFN64 pinmux, PLL/bypass, I2S/SDIO, wired-MCU boot, AXI/APB/DMA/IRQ and IHP130/144 MHz evidence; low-power/security claims require separate measurements and qualification |
 | Mini | Repeatable Linux boot, at least 64 MiB usable main memory, native memory bursts, and management-controlled start/stop recovery |
 | Std | Full AXI4 ordering tests, coherent accelerator traffic, 1080p60 graphical desktop, audio playback, and NPU inference under concurrent DMA load |
 | Pro | Four-hart coherent SMP stress, RV64 distribution boot, more-than-4-GiB memory validation, and concurrent GPU/NPU/video operation |
