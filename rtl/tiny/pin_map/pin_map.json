@@ -1,5 +1,11 @@
 {
   "schema_version": 1,
+  "power_pads": {
+    "vdd": 8,
+    "vss": 8,
+    "iovdd": 8,
+    "iovss": 8
+  },
   "pads": [
     {
       "kind": "tri_input",

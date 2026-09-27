@@ -183,6 +183,52 @@ def test_pin_map_requires_explicit_bidirectional_peripheral_signals(tmp_path: Pa
     assert "requires input, output, and output_enable" in result.stderr
 
 
+def test_pin_map_tiny_power_pads_override(tmp_path: Path) -> None:
+    subprocess.run(
+        [
+            sys.executable,
+            str(GENERATOR),
+            "--map",
+            str(ROOT / "rtl/tiny/pin_map/pin_map.json"),
+            "--output-dir",
+            str(tmp_path),
+        ],
+        check=True,
+    )
+    pads = (tmp_path / "rtl/retrosoc_asic_pad_bindings.svh").read_text(encoding="utf-8")
+
+    assert "for (genvar i = 0; i < 8; i++) begin : vdd_pads" in pads
+    assert "for (genvar i = 0; i < 8; i++) begin : vss_pads" in pads
+    assert "for (genvar i = 0; i < 8; i++) begin : iovdd_pads" in pads
+    assert "for (genvar i = 0; i < 8; i++) begin : iovss_pads" in pads
+    assert "i < 24" not in pads
+    assert "i < 16" not in pads
+
+
+def test_pin_map_rejects_incomplete_power_pads(tmp_path: Path) -> None:
+    document = json.loads(PIN_MAP.read_text(encoding="utf-8"))
+    document["power_pads"] = {"vdd": 24, "vss": 24, "iovdd": 16}
+    invalid_map = tmp_path / "incomplete-power-pads.json"
+    invalid_map.write_text(json.dumps(document), encoding="utf-8")
+
+    result = validate(invalid_map)
+
+    assert result.returncode != 0
+    assert "power_pads" in result.stderr
+
+
+def test_pin_map_rejects_non_positive_power_pads(tmp_path: Path) -> None:
+    document = json.loads(PIN_MAP.read_text(encoding="utf-8"))
+    document["power_pads"] = {"vdd": 0, "vss": 24, "iovdd": 16, "iovss": 16}
+    invalid_map = tmp_path / "non-positive-power-pads.json"
+    invalid_map.write_text(json.dumps(document), encoding="utf-8")
+
+    result = validate(invalid_map)
+
+    assert result.returncode != 0
+    assert "power_pads.vdd" in result.stderr
+
+
 def test_fpga_constraints_reference_declared_top_ports() -> None:
     top_ports = set(
         re.findall(

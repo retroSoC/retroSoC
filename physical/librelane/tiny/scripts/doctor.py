@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the local LibreLane/IHP130 full-chip environment and configuration."""
+"""Validate the local LibreLane/IHP130 environment and Tiny chip configuration."""
 
 from __future__ import annotations
 
@@ -11,16 +11,16 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 from librelane.flows import Flow  # noqa: E402
-from scripts.rtl.generate_pin_map import IHP130_POWER_PAD_COUNTS  # noqa: E402
+from scripts.rtl.generate_pin_map import read_power_pad_counts  # noqa: E402
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
 EXPECTED_LIBRELANE_VERSION = "LibreLane v3.0.5"
 EXPECTED_OPENSTA_VERSION = "3.0.0"
-EXPECTED_SIGNAL_PADS = 111
+EXPECTED_SIGNAL_PADS = 52
 
 
 def command_output(command: list[str]) -> str:
@@ -32,6 +32,7 @@ def main() -> int:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--lock", type=Path, required=True)
+    parser.add_argument("--pin-map", type=Path, required=True)
     parser.add_argument("--pdk-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -85,6 +86,12 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"required LibreLane/IHP file is missing: {path}")
 
+    try:
+        power_counts = read_power_pad_counts(args.pin_map)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        power_counts = None
+        errors.append(f"failed to read power PAD counts: {error}")
+
     config: dict[str, object] = {}
     flow_name = ""
     if args.config.is_file():
@@ -119,20 +126,25 @@ def main() -> int:
             errors.append(f"LibreLane {flow_name or 'unknown'} configuration failed to load: {error}")
 
     if config:
+        if details.get("config_design") not in (None, "retrosoc_tiny_asic"):
+            errors.append(
+                f"Tiny chip flow expects DESIGN_NAME retrosoc_tiny_asic, "
+                f"found {details['config_design']}"
+            )
         placed = [
             item
             for side in ("PAD_SOUTH", "PAD_EAST", "PAD_NORTH", "PAD_WEST")
             for item in config.get(side, [])
         ]
         details["placed_pad_count"] = len(placed)
-        if flow_name == "Chip":
-            expected = EXPECTED_SIGNAL_PADS + sum(IHP130_POWER_PAD_COUNTS.values())
+        if flow_name == "Chip" and power_counts is not None:
+            expected = EXPECTED_SIGNAL_PADS + sum(power_counts.values())
             if len(placed) != expected or len(placed) != len(set(placed)):
                 errors.append(
                     f"expected {expected} unique placed signal/power PADs, found {len(placed)}"
                 )
-        elif flow_name == "Classic" and placed:
-            errors.append("core hardening configuration must not define pad-ring placement")
+        elif flow_name != "Chip":
+            errors.append(f"Tiny supports only the Chip flow, found {flow_name}")
 
     result = {
         "schema_version": 1,

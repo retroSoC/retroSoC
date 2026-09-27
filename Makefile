@@ -431,7 +431,11 @@ ifeq ($(STA), OPENSTA)
     include physical/smoke/sta/opensta/opensta.mk
 endif
 
-include physical/librelane/Makefile
+ifeq ($(SOC),TINY)
+include physical/librelane/tiny/Makefile
+else
+include physical/librelane/mini/Makefile
+endif
 include physical/ecc/Makefile
 
 .PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report
