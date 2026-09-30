@@ -1,0 +1,7 @@
+interface:
+  display_name: "retroSoC Physical Flow"
+  short_description: "Run supported physical flows with traceable PPA evidence"
+  default_prompt: "Use $retrosoc-physical-flow. Mode: preflight. Target SoCs: TINY. Profile: configs/ci/ihp130-tiny.mk. Flow: librelane. Stage: chip. Do not launch tools or modify files."
+
+policy:
+  allow_implicit_invocation: true

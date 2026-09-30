@@ -85,6 +85,13 @@ configuration, or start a broad refactor. Route confirmed fixes to
 `$retrosoc-feature-implementation` with the exact root cause and
 acceptance test.
 
+When diagnosing regression failures or checking acceptance evidence, read the
+[regression reference](../retrosoc-feature-implementation/references/regression.md).
+For a style/naming/structural migration diff, also read the
+[behavior-preserving migration reference](../retrosoc-feature-implementation/references/rtl-migration.md).
+Use their evidence criteria in read-only mode; neither reference authorizes
+running the implementation workflow, rewriting sources, or regenerating results.
+
 ## Diagnose mode
 
 Identify:

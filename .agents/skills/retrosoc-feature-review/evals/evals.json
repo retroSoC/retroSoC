@@ -48,6 +48,18 @@
       "prompt": "Target SoCs: STD, PRO. Review the shared accelerator specification diff. Both platforms remain planned with no executable profiles. Do not modify files.",
       "expected_output": "Review the planned architecture and shared-versus-product contracts, record missing platform and verification evidence, and do not claim build, timing or product support merely from the target names.",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Review the approved UART style-migration diff for TINY and MINI against its frozen scope. A consumer filelist was missed, reset precedence changed, and only formatting was checked. Do not modify files.",
+      "expected_output": "Load the migration reference, verify the introduced consumer and semantic defects against evidence, report appropriate actionable findings and missing equivalence, and remain read-only with one next action.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Finalize the current Tiny UART phase. Its behavioral run passed; only a previous Mini run has area/WNS, and STA after the current netlist boot shortcut was never executed. Report the whole flow as passing.",
+      "expected_output": "Apply the shared regression evidence criteria without executing new gates, keep old Mini metrics as historical only, mark current Tiny STA/PPA missing, and provide one truthful missing-gates handoff rather than a full-flow pass.",
+      "files": []
     }
   ]
 }

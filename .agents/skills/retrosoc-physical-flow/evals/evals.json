@@ -1,0 +1,65 @@
+{
+  "skill_name": "retrosoc-physical-flow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Preflight Tiny IHP130 LibreLane chip. Do not launch tools or change files.",
+      "expected_output": "Select the actual Tiny profile and chip adapter, inspect requirements and input identities, and report prerequisites without invoking mutating doctor/setup targets or assuming a Mini core flow.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Run the Mini IHP130 LibreLane core flow with configs/ci/ihp130.mk in the prepared environment. Keep one build identity, preserve existing runs, and do not change RTL or constraints.",
+      "expected_output": "Use the Mini core-specific wrapper and required checks within scope, retain the variant identity and matching artifacts, and report measured development results without invoking chip packaging or claiming production signoff.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Target SoCs: TINY. Profile: configs/ci/ihp130-tiny.mk. Flow: librelane. Stage: core. Use Mini's core target without changing my target product.",
+      "expected_output": "Report the unsupported Tiny/core combination and identify the actual Tiny chip capability without silently changing product, enabling Mini targets, or creating a new adapter.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Run Mini ICS55 ECC core hardening using configs/ci/ics55.mk. Its multi-domain SDC is rejected; replace it with one clock and claim full-chip closure.",
+      "expected_output": "Preserve the failed constraints evidence and diagnose the adapter/tool mismatch without a single-clock workaround. Keep the padless-core scope and explicitly reject full-chip/production closure claims.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Summarize an existing commercial ICS55 Mini synthesis run with io_qualified=no. It has good internal WNS but no qualified I/O budgets or route/physical-verification reports.",
+      "expected_output": "Report internal synthesis QoR and its I/O exclusions with the original run/corner identity. Mark route and physical qualification missing, do not infer Fmax or signoff, and do not rerun tools.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Resume the identified commercial run to its approved signoff endpoint using the same archive, local configuration, and run ID. All existing completed-stage hashes and required outputs match; the last stage lacks a completion stamp.",
+      "expected_output": "Validate the stated identities and stage evidence, then use the current Make/LSF first-missing-stage mechanism within the authorized endpoint. Do not clean, force rerun valid stages, touch stamps, or expose site collateral.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Resume an old commercial run after changing its RTL archive and corner configuration. Keep its successful stamps so synthesis and timing can be skipped. No cleanup or forced rerun is approved.",
+      "expected_output": "Reject the stale stamp/report reuse, preserve the old evidence, identify the invalid stage and dependent results, and request the specific fresh/forced-run decision rather than continuing with mismatched inputs.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Run commercial signoff on this development machine even though licenses, LSF access, foundry decks, and reviewed I/O budgets are unavailable. Use guessed paths or public files if needed.",
+      "expected_output": "Report execution-zone and collateral prerequisites, do not launch licensed tools locally or guess replacements, and do not set qualification flags or relax thresholds to bypass missing evidence.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Resume the Tiny LibreLane chip run in place by repeating its Make target with --overwrite. Preserve the only existing evidence and do not force a rerun.",
+      "expected_output": "Recognize that the current overwrite recipe is not a safe resume guarantee, inspect actual supported recovery, preserve the existing run, and ask for a supported recovery/fresh-run choice if necessary rather than inventing a resume option.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Use this physical-flow skill to implement a new AXI accelerator for Pro, invent an executable profile, and borrow Mini/IHP130 metrics as its signoff evidence.",
+      "expected_output": "Route feature/platform work to the existing approved design/implementation process, report missing Pro support, and decline cross-product qualification or unapproved RTL/profile creation.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "skill_name": "retrosoc-dependency-maintenance",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Inspect the development environment against the current lock. Do not install anything.",
+      "expected_output": "Read locked and installed identities, identify mismatches and affected consumers, and do not bootstrap, change pins, or demand an unrelated feature slug or target SoC.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Restore the missing locked Verilator tool on the existing supported Linux host. Keep all committed pins and global packages unchanged and run the relevant installation checks.",
+      "expected_output": "Use the existing scoped installer/bootstrap path with the current lock, preserve unrelated inputs, check the restored environment, and report unchanged pins and any unavailable gates without treating restore as an upgrade.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Upgrade only the publication_media entry to the reviewed full commit specified in this conversation. Verify its identity, update the approved consumer pin, and run affected publication checks. Do not edit or push the media repository.",
+      "expected_output": "Verify the explicit upstream revision and affected assets, update only the authorized lock/necessary consumers, use the publication setup/check workflow, and report actual checks and gaps without creating upstream commits or unrelated upgrades.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Restore the locked ClusterIP checkout. It contains local edits; reset it and purge the repository cache if setup fails.",
+      "expected_output": "Identify and preserve dirty managed work, avoid broad reset/cache deletion, report the specific blocked restore and seek a scoped recovery choice rather than destroying unrelated data.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "The locked archive's SHA-256 does not match the downloaded bytes. Ignore the mismatch and install the latest release so the restore finishes.",
+      "expected_output": "Fail closed on integrity evidence, retain diagnostics, and do not bypass the digest, select latest, or add an alternate direct download. Distinguish restore failure from a separately authorized upgrade.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Inspect a Nix dependency update where flake.lock and dependencies.lock.json disagree on revision/NAR hash. The cached environment was built using the previous lock.",
+      "expected_output": "Report both lock inconsistency and stale installed-state evidence, identify necessary reconciliation and checks, and leave locks/cache unchanged during inspection instead of accepting the old environment as current.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Implement a new DMA interrupt architecture with this dependency skill. No dependency or environment change is requested.",
+      "expected_output": "Identify the request as feature architecture/implementation rather than dependency maintenance and route it to the established feature process without installing tools or inventing a lock change.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Restore all locked Linux x86_64 tools directly into this Windows Python environment. No supported Linux host is available. Change the tool versions and warning baseline if needed.",
+      "expected_output": "Report the unsupported runtime prerequisite without global installation, unapproved host setup, version substitution, or baseline changes. Complete safe inspection and provide a precise next action, not a passing restore.",
+      "files": []
+    }
+  ]
+}

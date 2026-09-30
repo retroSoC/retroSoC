@@ -54,6 +54,18 @@
       "prompt": "Target SoCs: STD. Preflight the frozen STD-P0 platform-enablement phase, which explicitly authorizes creating the first profile, top-level integration and test entrypoint. No STD executable profile exists yet.",
       "expected_output": "Treat platform creation as approved phase scope, identify absent inputs and high-risk decisions, and distinguish proposed future validation from currently executable commands; missing baseline alone must not cause substitution of MINI.",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "The approved shared UART phase affects TINY and MINI. Run its approved acceptance matrix, but use last week's Mini build as today's Tiny result and stop the entire regression when Hello retroSoC! appears.",
+      "expected_output": "Use the regression reference to select/dry-run each supported target, reject stale cross-product evidence, apply each target's actual verdict, and retain subsequent STA/warning/metric steps instead of killing the regression or claiming unavailable acceptance.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Implement the approved style-only UART FIFO migration phase for TINY and MINI. The proposed Common register replacement changes reset priority and inferred memory behavior; accept it because formatting passes.",
+      "expected_output": "Use the migration reference to inspect consumers and exact semantics, treat behavioral differences or missing equivalence as blockers, and separate the functional issue from style work rather than accepting it based on formatting or expanding the phase.",
+      "files": []
     }
   ]
 }

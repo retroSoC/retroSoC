@@ -5,6 +5,10 @@ before starting product-specific work; a series name is not proof that an
 executable platform exists. The root [agent contract](../AGENTS.md) and current
 build configuration govern validation.
 
+For datasheets, locked dependencies, or physical implementation runs, use the
+[engineering workflow prompts](engineering-workflow-prompts.md). Those tasks
+do not require an IP feature slug, frozen phase, or design-freeze ceremony.
+
 ## Contents
 
 - [Inputs and target selection](#common-fields-and-target-selection)

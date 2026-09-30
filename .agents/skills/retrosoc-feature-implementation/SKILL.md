@@ -111,6 +111,11 @@ reset, ECC, and utility modules only when their exact reset, enable, latency,
 and backpressure semantics fit. Never edit a managed subtree as an ordinary
 project source.
 
+For an approved style/naming/structural migration, read the
+[behavior-preserving migration reference](references/rtl-migration.md) before
+planning or editing. It adds consumer and equivalence checks without expanding
+the frozen phase or granting permission for unrelated cleanup.
+
 ## Preflight stage
 
 Run `preflight` in Plan mode or under a read-only permission profile. Do not
@@ -181,6 +186,10 @@ protocol violations, FIFO conservation, DMA tail/alignment cases, interrupt
 races, error containment, and synthesis hazards.
 
 ## Validation and long-running tools
+
+Read the [regression reference](references/regression.md) when mapping or
+executing an acceptance matrix. During preflight use its planning and evidence
+rules only; execution still requires the existing implementation approval.
 
 Derive the minimum gates from `AGENTS.md`; do not preserve command lines copied
 from an older conversation when executable configuration differs. Run focused

@@ -7,7 +7,10 @@ guides remain authoritative; skills route work through those sources rather
 than replacing them.
 
 See [Manual Feature Development Prompts](feature-development-prompts.md) for
-copyable English prompts covering every human-triggered stage.
+IP phases and [Engineering Workflow Prompts](engineering-workflow-prompts.md)
+for publication, dependency, and physical-flow tasks. Both contain copyable
+English prompts. Skills reuse existing scripts; they are not a new build or
+execution framework.
 
 ## Available Skills
 
@@ -16,6 +19,9 @@ copyable English prompts covering every human-triggered stage.
 | [retrosoc-feature-design](skills/retrosoc-feature-design/SKILL.md) | ChatGPT Work | Research and freeze the common IP contract and selected products' integration. |
 | [retrosoc-feature-implementation](skills/retrosoc-feature-implementation/SKILL.md) | Codex | Preflight and implement one phase with target-specific validation. |
 | [retrosoc-feature-review](skills/retrosoc-feature-review/SKILL.md) | ChatGPT Work or Codex | Diagnose failures, review changes, and report evidence separately by target. |
+| [retrosoc-datasheet](skills/retrosoc-datasheet/SKILL.md) | Codex | Inspect, update, or validate source-bound Typst publications and PDFs. |
+| [retrosoc-dependency-maintenance](skills/retrosoc-dependency-maintenance/SKILL.md) | Codex | Inspect, restore, or upgrade locked inputs without confusing restoration with a version change. |
+| [retrosoc-physical-flow](skills/retrosoc-physical-flow/SKILL.md) | Codex | Preflight, run, resume, or summarize supported physical implementation flows. |
 
 Invoke a skill explicitly when handing work between stages:
 
@@ -25,7 +31,7 @@ $retrosoc-feature-implementation Preflight TINY-P4 of tiny-soc for TINY. Do not 
 $retrosoc-feature-review Review the tiny-soc diff for TINY against docs/ip/tiny-soc.md.
 ```
 
-These names replace the former Mini-specific entrypoints; update older saved
+The three feature names replace the former Mini-specific entrypoints; update older saved
 prompts to the corresponding name above. There are no legacy alias skills.
 
 ## Target selection
@@ -33,7 +39,8 @@ prompts to the corresponding name above. There are no legacy alias skills.
 Use `Target SoCs: TINY` or an explicit list such as `Target SoCs: TINY, MINI`.
 An unambiguous specification, selected profile, or approved hand-off can supply
 this field; the skills do not default to Mini. Each hand-off carries the target
-SoCs, specifications, stable phase IDs, and profile/PDK mapping. Existing IDs
+SoCs and applicable configuration/evidence identities. Feature hand-offs also
+carry specifications, stable phase IDs, and profile/PDK mapping. Existing IDs
 such as `TINY-P4` remain valid without renaming.
 
 [Product positioning](../docs/soc-family-positioning.md) distinguishes Tiny/Mini
@@ -52,7 +59,7 @@ specification. Codex uses Plan mode or a read-only permission profile for
 `preflight`; `implement` runs outside Plan mode and handles one approved phase.
 Review and diagnosis are read-only. Fixes return to the implementation skill.
 
-## Human Gates
+## Feature Human Gates
 
 1. A maintainer reviews the research and freezes `docs/ip/<feature>.md`.
 2. A maintainer resolves or approves any `ARCH_CHANGE_REQUIRED`,
@@ -60,8 +67,34 @@ Review and diagnosis are read-only. Fixes return to the implementation skill.
 3. A maintainer reviews P0/P1 findings, CI, and local full-flow evidence before
    merge.
 
-Every Work and Codex stage is started manually. The skills do not create pull
+Feature stages retain their manual hand-offs. The skills do not create pull
 requests, post review comments, or advance a human gate on their own.
+
+## Engineering workflows
+
+Start an engineering task with its relevant skill and the requested mode.
+Inspection, preflight, and report-only requests remain read-only. An explicit
+update, restore, upgrade, run, or resume request proceeds through its in-scope
+checks and delivery without per-step confirmation. Ask only for a missing
+decision, permission, scope change, or recovery action that needs approval.
+Plan mode never authorizes mutations, regardless of the mode in the prompt.
+
+Maintenance tasks do not require feature slugs, frozen specifications, or phase
+IDs. Resolve targets from explicit inputs or unambiguous publication/profile
+context; global tool maintenance needs product selection only where affected
+consumers require it. Publication adapters and physical flows are usable only
+for configurations they actually support, not every planned series.
+
+Restore keeps the current lock; upgrade changes approved pins. A doctor, status,
+or package target may have mutating prerequisites: inspect the recipe before
+treating it as a read-only check. Preserve existing artifacts on resume and do
+not substitute another product, weaken checks, or infer missing evidence.
+
+Keep regression and behavior-preserving RTL migration inside the existing
+implementation/review responsibilities through their linked references.
+Ordinary prose edits, small script fixes, and Git tasks do not require a new
+skill or an IP design freeze. No workflow here introduces a scheduled trigger
+or an automatic commit, push, or publication step.
 
 ## Product-specific validation
 
@@ -83,3 +116,7 @@ Skill metadata, references, and eval corpora are checked by Pytest. Changes to
 this directory require the applicable documentation, JSON, Pytest, and
 whitespace checks listed in the root agent contract. Hardware gates remain
 proportionate to the feature work performed through the skills.
+
+Corpus validation checks structure and referenced fixtures, not agent behavior.
+Run workflow execution or independent behavioral evals only when requested;
+do not describe a static corpus check as a completed hardware/publication run.

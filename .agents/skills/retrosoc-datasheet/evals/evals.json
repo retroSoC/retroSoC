@@ -1,0 +1,53 @@
+{
+  "skill_name": "retrosoc-datasheet",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Inspect the Tiny datasheet for stale facts. Do not modify files.",
+      "expected_output": "Read-only assessment routed to the Tiny adapter and canonical Tiny inputs, with source/evidence gaps and no setup, compilation, source edits, or assumed Mini hardware facts.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Update only the Mini datasheet table spacing. Keep its reviewed source SHA and frozen chapter structure unchanged, retain the old delivered PDF, and complete the publication checks and visual review.",
+      "expected_output": "A scoped layout update through the Mini builder and checks, preserving technical identity and old evidence, with actual visual coverage and a compatible change-page report. No RTL, lock, or structure-contract workaround.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Update the Tiny datasheet to the current local dev commit. Review its technical delta, keep Tiny and Mini outputs separate, and use Tiny's checks. The previous Tiny PDF is unavailable.",
+      "expected_output": "Resolve and review the full dev SHA before advancing Tiny's identity, use Tiny configuration/extractors/examples and build/check commands, retain honest evidence and report old/new PDF comparison as unrun rather than manufacturing a baseline.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Mode: validate. The Mini PDF source-drift check failed because tracked technical sources are dirty. Change mini.json.source_revision or disable the check so validation passes.",
+      "expected_output": "Preserve the source files and publication identity, report the mismatch and required reconciliation, and decline the requested validation bypass. Validate mode must not rewrite sources, rebuild, or label stale artifacts as current.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Validate the Tiny datasheet and say its configured 24 MHz is timing qualified. Only publication tests and source records are available; there is no matching STA or silicon evidence.",
+      "expected_output": "Separate source/PDF checks from timing qualification, retain missing STA/silicon evidence explicitly, and refuse to convert a configured clock or publication pass into a measured rating.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Create a production-qualified Pro datasheet by copying Mini register, IRQ, and package values. No Pro publication adapter or executable profile exists.",
+      "expected_output": "Identify missing Pro source, platform, and publication prerequisites without copying Mini specifications or fabricating qualification. Request a separately scoped adapter/specification task rather than silently creating product support.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "The UART RTL has a confirmed bug. Use this datasheet skill to patch the RTL, change its registers, and then update the book in one pass.",
+      "expected_output": "Keep the publication workflow separate from hardware fixes, hand the confirmed engineering issue to the feature implementation process with its existing approval requirements, and do not modify RTL under a publication-only scope.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Validate both TINY and MINI PDFs using their existing artifacts. Run Mini's report_changes.py for Tiny even though Tiny has no compatible change-marker and page-role records. Do not edit or rebuild.",
+      "expected_output": "Keep book/artifact identities separate, avoid incompatible Mini flags/contracts, complete applicable existing-PDF checks, and offer a clearly labeled manual Tiny comparison when both PDFs exist. Missing contracts are not repaired by fabricated artifacts or a builder change.",
+      "files": []
+    }
+  ]
+}

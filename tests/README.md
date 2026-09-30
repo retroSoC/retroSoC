@@ -26,8 +26,11 @@ tooling.
   synthesized-block, physical and regression evidence.
 - `test_script_tools.py` covers setup, dependency, filelist, warning, metric,
   archive, and regression-helper behavior.
-- `test_agent_skills.py` checks the repository feature-skill metadata,
-  references, eval corpora, and manual hand-off policy.
+- `test_agent_skills.py` checks feature and engineering-workflow skill metadata,
+  local references, eval corpora, default invocation contracts, and documented
+  entrypoints. Run it with `python3 -m pytest -q tests/test_agent_skills.py`.
+  These are static checks; the eval corpus is reusable scenario data, not proof
+  that an agent executed publication, dependency, or hardware workflows.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

@@ -1,0 +1,7 @@
+interface:
+  display_name: "retroSoC Dependency Maintenance"
+  short_description: "Inspect and maintain reproducible dependencies and tools"
+  default_prompt: "Use $retrosoc-dependency-maintenance. Mode: inspect. Scope: development environment. Compare locked and installed inputs without modifying files."
+
+policy:
+  allow_implicit_invocation: true
