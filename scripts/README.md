@@ -63,6 +63,8 @@ Only raw model parsing is shared with the NPU compiler. Run
 `make CONFIG=configs/ci/ihp130.mk npu-p0-qualify` after
 `make CONFIG=configs/ci/ihp130.mk setup-npu-reference` to compare both complete
 1000-input corpora against the Python graph reference and compiled executor.
+The VWW archive is fetched from the ordered HTTPS URLs in the dependency lock;
+every mirror must produce the same locked SHA-256 before extraction.
 The selected variant's `npu/p0/` directory retains oracle build provenance,
 per-input golden tensors, three-way hashes, logs and `qualification-p0.json`.
 The runner uses at most 16 workers (`JOBS`); missing sources/tools, numerical
