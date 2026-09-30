@@ -1397,12 +1397,13 @@
       }
     ],
     "support": [
-      "rtl/ip/security/crypto_aes_core.sv",
-      "rtl/ip/security/crypto_aes_engine.sv",
-      "rtl/ip/security/crypto_montgomery.sv",
-      "rtl/ip/security/crypto_rsa_core.sv",
-      "rtl/ip/security/crypto_sha2_core.sv",
-      "rtl/ip/security/crypto_sha2_engine.sv"
+      "rtl/ip/security/crypto_aes_sram_core.sv",
+      "rtl/ip/security/crypto_aes_sram_engine.sv",
+      "rtl/ip/security/crypto_mem_ctrl.sv",
+      "rtl/ip/security/crypto_montgomery_sram.sv",
+      "rtl/ip/security/crypto_rsa_sram_core.sv",
+      "rtl/ip/security/crypto_sha2_sram_engine.sv",
+      "rtl/ip/security/crypto_sram_store.sv"
     ]
   },
   "mailbox": {

@@ -186,7 +186,7 @@ CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/muldi3.S
 CRT_SRCS += $(ROOT_PATH)/crt/arch/riscv/libgcc/mulsi3.c
 endif
 
-INC_PATH          := -I$(SW_BUILD_DIR)/include \
+INC_PATH                := -I$(SW_BUILD_DIR)/include \
             -I$(MEMORY_MAP_C_DIR) \
             -I$(SOC_TOPOLOGY_INCLUDE_DIR) \
             -I$(USER_EXTENSIONS_DIR)/include \
@@ -200,28 +200,28 @@ INC_PATH          := -I$(SW_BUILD_DIR)/include \
             -I$(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
             -I$(ROOT_PATH)/crt/include \
             $(addprefix -I,$(APP_INC_DIRS))
-SRC_PATH          := $(CRT_SRCS) $(APP_SRCS)
-LDS_PATH          := $(ROOT_PATH)/crt/linker/$(LINK_TYPE).lds
-MEMORY_REGIONS_LD := $(MEMORY_MAP_LINKER_DIR)/memory_regions.ld
-VERSION_HEADER    := $(SW_BUILD_DIR)/include/socver.h
+SRC_PATH                := $(CRT_SRCS) $(APP_SRCS)
+LDS_PATH                := $(ROOT_PATH)/crt/linker/$(LINK_TYPE).lds
+MEMORY_REGIONS_LD       := $(MEMORY_MAP_LINKER_DIR)/memory_regions.ld
+VERSION_HEADER          := $(SW_BUILD_DIR)/include/socver.h
 CRYPTO_CONSTANTS_HEADER := $(SW_BUILD_DIR)/include/crypto_constants.h
-FIRMWARE_ELF      := $(SW_BUILD_DIR)/firmware
-ASM_FIRMWARE_NAME ?= retrosoc_asm
-SW_HEADERS        := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
+FIRMWARE_ELF            := $(SW_BUILD_DIR)/firmware
+ASM_FIRMWARE_NAME       ?= retrosoc_asm
+SW_HEADERS              := $(shell find $(ROOT_PATH)/crt/include $(ROOT_PATH)/app -type f \
                       \( -name '*.h' -o -name '*.hpp' \) 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/archinfo/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/crc/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/crc/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rng/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/rtc/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/wdg/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/wdg/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/pwm/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/pwm/sw/include \
                       -type f -name '*.h' 2>/dev/null)
-SW_HEADERS        += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
+SW_HEADERS              += $(shell find $(ROOT_PATH)/rtl/managed/clusterip/ps2/sw/include \
                       -type f -name '*.h' 2>/dev/null)
 
 $(VERSION_HEADER): FORCE_VERSION $(ROOT_PATH)/crt/ver.py $(ROOT_PATH)/crt/ver.tmpl

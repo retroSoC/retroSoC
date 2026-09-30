@@ -4198,6 +4198,135 @@
     }
   },
   "crypto": {
+    "main.MEM_STATUS": {
+      "access": "RO",
+      "description": "Storage initialization, verification, scrub, lock and fault state.",
+      "reset": "0x00000004",
+      "fields": [
+        {"lsb": 0, "msb": 0, "name": "READY", "description": "Constants are valid and locked, erasure is complete, and no memory fault is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_READY"},
+        {"lsb": 1, "msb": 1, "name": "TABLE_VALID", "description": "The committed constants image passed validation.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_VALID"},
+        {"lsb": 2, "msb": 2, "name": "SCRUB_BUSY", "description": "Reset or zeroize scrubbing is active.", "reset": "1", "expression": "`APB4_CRYPTO__MEM_STATUS_SCRUB_BUSY"},
+        {"lsb": 3, "msb": 3, "name": "LOAD_ACTIVE", "description": "A TABLE_DATA loading transaction is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_LOAD_ACTIVE"},
+        {"lsb": 4, "msb": 4, "name": "VERIFY_BUSY", "description": "Full storage readback and CRC verification is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_VERIFY_BUSY"},
+        {"lsb": 5, "msb": 5, "name": "TABLE_LOCKED", "description": "The verified constants banks remain locked until hard/PCLK reset; zeroize does not unlock them.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_LOCKED"},
+        {"lsb": 6, "msb": 6, "name": "FAULT", "description": "A sticky storage lifecycle fault is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_FAULT"},
+        {"lsb": 7, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "25'd0"}
+      ]
+    },
+    "main.MEM_CONTROL": {
+      "access": "WO",
+      "description": "One-hot storage lifecycle command; zero is a no-op.",
+      "reset": "Not retained (command/data port)",
+      "fields": [
+        {"lsb": 0, "msb": 0, "name": "BEGIN", "description": "Begin a new ordered constants load.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_BEGIN"},
+        {"lsb": 1, "msb": 1, "name": "COMMIT", "description": "Commit the complete image and start readback verification.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_COMMIT"},
+        {"lsb": 2, "msb": 2, "name": "CANCEL", "description": "Cancel an unlocked load attempt and start cleanup.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_CANCEL"},
+        {"lsb": 3, "msb": 31, "name": "Reserved", "description": "Reserved; write zero.", "reset": "Not retained", "expression": "29'd0"}
+      ]
+    },
+    "main.TABLE_ID": {
+      "access": "RO",
+      "description": "Frozen CRYC1 constants-image identity.",
+      "reset": "0x43525901",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "ID", "description": "CRYC1 image identifier.", "reset": "0x43525901", "expression": "`APB4_CRYPTO__TABLE_ID_VALUE"}
+      ]
+    },
+    "main.TABLE_WORDS": {
+      "access": "RO",
+      "description": "Accepted ordered payload word count; BEGIN, CANCEL and reset clear it.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 11, "name": "WORDS", "description": "Accepted word count from 0 through 2048.", "reset": "0", "expression": "s_table_words"},
+        {"lsb": 12, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "20'd0"}
+      ]
+    },
+    "main.TABLE_DATA": {
+      "access": "WO",
+      "description": "Auto-incrementing full-word constants loader input.",
+      "reset": "Not retained (command/data port)",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "DATA", "description": "Next constants-image word; full PSTRB is required.", "reset": "Not retained", "expression": "write data"}
+      ]
+    },
+    "main.TABLE_CRC": {
+      "access": "RO",
+      "description": "CRC from the last complete full-storage readback.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "CRC", "description": "Readback CRC; zero until verification completes.", "reset": "0", "expression": "s_table_crc"}
+      ]
+    },
+    "main.MEM_ERROR": {
+      "access": "RO",
+      "description": "First storage lifecycle error with physical bank and row context.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 7, "name": "CODE", "description": "First lifecycle error code; values 1 through 6 are defined.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_CODE_MASK"},
+        {"lsb": 8, "msb": 10, "name": "BANK", "description": "Physical bank index; non-addressed errors report zero.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_BANK_MASK"},
+        {"lsb": 11, "msb": 20, "name": "ROW", "description": "Physical row index; non-addressed errors report zero.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_ROW_MASK"},
+        {"lsb": 21, "msb": 30, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "10'd0"},
+        {"lsb": 31, "msb": 31, "name": "VALID", "description": "The first-error record is valid.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_VALID"}
+      ]
+    },
+    "main.MEM_CYCLES": {
+      "access": "RO",
+      "description": "Active PCLK cycles in the current or last verify/scrub operation.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Maintenance cycle count, excluding loader inter-write gaps.", "reset": "0", "expression": "s_mem_cycles"}
+      ]
+    },
+    "main.AES_BYTES_IN": {
+      "access": "RO",
+      "description": "Accepted AES input byte count.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "COUNT", "description": "Bytes accepted for the current or last AES operation.", "reset": "0", "expression": "s_aes_bytes_in"}
+      ]
+    },
+    "main.AES_BYTES_OUT": {
+      "access": "RO",
+      "description": "Consumed AES output byte count.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "COUNT", "description": "Bytes consumed from the current or last AES operation.", "reset": "0", "expression": "s_aes_bytes_out"}
+      ]
+    },
+    "main.AES_CYCLES": {
+      "access": "RO",
+      "description": "AES operation cycle count.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last AES operation.", "reset": "0", "expression": "s_aes_cycles"}
+      ]
+    },
+    "main.SHA_CYCLES": {
+      "access": "RO",
+      "description": "SHA operation cycle count.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last SHA operation.", "reset": "0", "expression": "s_sha_cycles"}
+      ]
+    },
+    "main.RSA_CYCLES": {
+      "access": "RO",
+      "description": "RSA operation cycle count.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last RSA operation.", "reset": "0", "expression": "s_rsa_cycles"}
+      ]
+    },
+    "main.RSA_PROGRESS": {
+      "access": "RO",
+      "description": "RSA private-operation flag and exponent position.",
+      "reset": "0",
+      "fields": [
+        {"lsb": 0, "msb": 0, "name": "PRIVATE", "description": "The active operation uses the private exponent path.", "reset": "0", "expression": "s_regs_q.private_operation"},
+        {"lsb": 1, "msb": 11, "name": "EXPONENT_INDEX", "description": "Current exponent bit position.", "reset": "0", "expression": "s_regs_q.exponent_index"},
+        {"lsb": 12, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "20'd0"}
+      ]
+    },
     "main.COMMAND": {
       "fields": [
         {
@@ -4287,11 +4416,19 @@
         },
         {
           "lsb": 5,
+          "msb": 5,
+          "name": "MEMORY_READY",
+          "description": "Writing one injects MEMORY_READY into sticky IRQ state for interrupt-path testing; it is not initialization or physical-erasure completion evidence.",
+          "reset": "Register reset applies",
+          "expression": "`APB4_CRYPTO__IRQ_MEMORY_READY"
+        },
+        {
+          "lsb": 6,
           "msb": 31,
           "name": "Reserved",
           "description": "Reserved; write zero.",
           "reset": "Not retained",
-          "expression": "32'd0"
+          "expression": "26'd0"
         }
       ],
       "reset": "Not retained (command/data port)"

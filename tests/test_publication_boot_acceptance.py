@@ -58,9 +58,8 @@ def test_mailbox_purposes_follow_registers_in_the_actual_write_order():
      "message->code = *rs_hp_mailbox_register(RS_HP_MAILBOX_HP_ARG0_OFFSET);", "field semantics"),
     (br.MAILBOX_SOURCE, "`APB4_HP_MAILBOX__HP_DOORBELL: s_lp_intr_state_d = 1'b1;",
      "`APB4_HP_MAILBOX__HP_DOORBELL: s_hp_intr_state_d = 1'b1;", "LP interrupt"),
-    (br.READY_SOURCE, "0x10019024 32 0x4C4E5801", "0x10019024 32 0x4C4E5802", "sequence"),
-    (br.READY_SOURCE, "        ;;", "        start_ga2d_responder\n        ;;", "ready-only"),
-    (br.READY_SOURCE, "        ;;", "        devmem 0x10019020 32 2\n        ;;", "sequence"),
+    (br.READY_SOURCE, "for (;;) {", "return 0;\n    for (;;) {", "ready-only"),
+    (br.READY_SOURCE, "mailbox[11] = 1U;", "mailbox[8] = 2U;\n    mailbox[11] = 1U;", "sequence"),
 ])
 def test_mailbox_or_service_drift_requires_new_review(source_tree, relative, old, new, match):
     replace(source_tree, relative, old, new)
@@ -68,9 +67,54 @@ def test_mailbox_or_service_drift_requires_new_review(source_tree, relative, old
         br.ready_mailbox(source_tree)
 
 
+@pytest.mark.parametrize("old,new", [
+    ("mailbox[8] = (error == 0U) ? 1U : 3U;", "mailbox[8] = (error == 0U) ? 2U : 3U;"),
+    ("UINT32_C(0x4C4E5801) : error", "UINT32_C(0x4C4E5802) : error"),
+    ("mailbox[10] = 1U;", "mailbox[10] = 2U;"),
+    ("mailbox[11] = 1U;", "mailbox[11] = 2U;"),
+])
+def test_each_linux_ready_value_must_match_the_lp_contract(source_tree, old, new):
+    replace(source_tree, br.READY_SOURCE, old, new)
+    with pytest.raises(ValueError, match="values differ"):
+        br.ready_mailbox(source_tree)
+
+
+@pytest.mark.parametrize("old,new", [
+    ("RS_HP_BOOT_READY_EVENT             UINT32_C(1)",
+     "RS_HP_BOOT_READY_EVENT             UINT32_C(2)"),
+    ("RS_HP_BOOT_READY_ARG               UINT32_C(0x4C4E5801)",
+     "RS_HP_BOOT_READY_ARG               UINT32_C(0x4C4E5802)"),
+    ("RS_HP_BOOT_MAILBOX_READY_SEQUENCE  UINT32_C(1)",
+     "RS_HP_BOOT_MAILBOX_READY_SEQUENCE  UINT32_C(2)"),
+])
+def test_each_lp_ready_constant_must_match_the_linux_helper(source_tree, old, new):
+    replace(source_tree, br.BOOT_SOURCE, old, new)
+    with pytest.raises(ValueError, match="values differ"):
+        br.ready_mailbox(source_tree)
+
+
+def test_coordinated_hal_rtl_offset_change_cannot_hide_a_stale_linux_helper(source_tree):
+    replace(source_tree, br.HAL_SOURCE,
+            "RS_HP_MAILBOX_HP_EVENT_OFFSET       UINT32_C(0x020)",
+            "RS_HP_MAILBOX_HP_EVENT_OFFSET       UINT32_C(0x024)")
+    replace(source_tree, br.REGISTER_SOURCE,
+            "`define APB4_HP_MAILBOX__HP_EVENT        12'h020",
+            "`define APB4_HP_MAILBOX__HP_EVENT        12'h024")
+    with pytest.raises(ValueError, match="addresses differ"):
+        br.ready_mailbox(source_tree)
+
+
+def test_rtl_doorbell_offset_change_cannot_hide_a_stale_linux_helper(source_tree):
+    replace(source_tree, br.REGISTER_SOURCE,
+            "`define APB4_HP_MAILBOX__HP_DOORBELL     12'h02C",
+            "`define APB4_HP_MAILBOX__HP_DOORBELL     12'h050")
+    with pytest.raises(ValueError, match="addresses differ"):
+        br.ready_mailbox(source_tree)
+
+
 @pytest.mark.parametrize("old,new,match", [
     ("timeout < RS_HP_BOOT_EVENT_TIMEOUT; ++timeout", "; ++timeout", "bounded poll"),
-    ("if (message.sequence == sequence)", "if (message.sequence != sequence)", "token/error"),
+    ("if (status == 1U)", "if (status != 1U)", "token/error"),
     ("if (!s_hp_boot_ga2d_owned_by_hp)", "if (s_hp_boot_ga2d_owned_by_hp)", "reset ownership"),
     ("rs_hp_boot_fail(UINT8_C(13));", "rs_hp_boot_fail(UINT8_C(11));", "completion condition"),
     ("cache_clean_completed = true;", "cache_clean_completed = false;", "phase or ordering"),
@@ -144,7 +188,7 @@ def test_mailbox_address_is_derived_from_the_memory_map(source_tree):
     mailbox = next(row for row in source["regions"] if row["symbol"] == "APB4_HP_MAILBOX")
     mailbox["base"] = "0x1001A000"
     path.write_text(json.dumps(source), encoding="utf-8")
-    replace(source_tree, br.READY_SOURCE, "0x100190", "0x1001A0")
+    replace(source_tree, br.READY_SOURCE, "0x10019000", "0x1001A000")
     rows = br.ready_mailbox(source_tree)
     assert rows[0]["address"] == "0x1001A020"
     assert rows[0]["purpose"] == "Linux-ready event"

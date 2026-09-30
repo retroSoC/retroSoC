@@ -474,9 +474,9 @@ crypto-p1-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py report --variant-root $(VARIANT_ROOT) \
 	  --baseline-root $(CRYPTO_P0_BASELINE_ROOT) --lp-variant-root $(CRYPTO_P1_LP_ROOT) \
 	  $(if $(CRYPTO_P1_CI_ROOT),--ci-variant-root $(CRYPTO_P1_CI_ROOT),)
-CRYPTO_P1_ROOT ?= $(VARIANT_ROOT)
-CRYPTO_P2_NETLIST_ROOT ?= $(VARIANT_ROOT)
-CRYPTO_P2_STA_ROOT ?= $(VARIANT_ROOT)
+CRYPTO_P1_ROOT          ?= $(VARIANT_ROOT)
+CRYPTO_P2_NETLIST_ROOT  ?= $(VARIANT_ROOT)
+CRYPTO_P2_STA_ROOT      ?= $(VARIANT_ROOT)
 CRYPTO_P2_PHYSICAL_ROOT ?= $(VARIANT_ROOT)
 crypto-p2-synth: manifest
 	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \

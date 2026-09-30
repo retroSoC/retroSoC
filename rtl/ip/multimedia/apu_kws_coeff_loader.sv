@@ -78,8 +78,8 @@ module apu_kws_coeff_loader (
     CancelWait
   } loader_state_e;
 
-  loader_state_e s_state_q;
-  logic [15:0][31:0] s_header_q;
+  loader_state_e              s_state_q;
+  logic          [15:0][31:0] s_header_q;
   logic [31:0] s_addr_q, s_size_q, s_expected_crc_q, s_acl_base_q, s_acl_limit_q;
   logic [31:0] s_received_q;
   logic [31:0] s_crc_q, s_readback_crc_q;
@@ -129,10 +129,10 @@ module apu_kws_coeff_loader (
       s_bank = word_i[13:10];
       s_row  = word_i[9:0];
       unique case (s_bank)
-        4'd0: payload_word_is_padding = s_row >= 10'd1006;
-        4'd1: payload_word_is_padding = s_row >= 10'd769;
-        4'd2: payload_word_is_padding = s_row >= 10'd768;
-        4'd14: payload_word_is_padding = s_row >= 10'd637;
+        4'd0:    payload_word_is_padding = s_row >= 10'd1006;
+        4'd1:    payload_word_is_padding = s_row >= 10'd769;
+        4'd2:    payload_word_is_padding = s_row >= 10'd768;
+        4'd14:   payload_word_is_padding = s_row >= 10'd637;
         default: payload_word_is_padding = 1'b0;
       endcase
     end
@@ -152,7 +152,7 @@ module apu_kws_coeff_loader (
 
   always_comb begin
     s_header_size_err = 1'b0;
-    s_header_err = 1'b0;
+    s_header_err      = 1'b0;
     s_header_err_addr = s_addr_q;
     if (s_header_q[2] != ImageBytes) begin
       s_header_size_err = 1'b1;

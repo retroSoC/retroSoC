@@ -183,11 +183,20 @@ def linux_platform(root: Path) -> dict:
     writes = [(0x10019020, 1), (0x10019024, 0x4C4E5801), (0x10019028, 1), (0x1001902C, 1)]
     if "descriptor, 0x10019000)" not in ready:
         raise ValueError("Linux mailbox mapping changed")
+    registers = ("HP_EVENT", "HP_ARG0", "HP_SEQUENCE", "HP_DOORBELL")
+    purposes = ("Linux-ready event", "Ready-state argument", "Publication sequence",
+                "LP interrupt request")
     return {"hart_id": 1, "timebase_hz": timebase, "clock_hz": int(clocks[0]),
             "cbom_bytes": dt_value("riscv,cbom-block-size"), "memory_base": memory[0][0],
             "memory_bytes": int(memory[0][1], 0), "initrd_start": dt_value("linux,initrd-start"),
             "initrd_template_end": dt_value("linux,initrd-end"), "bootargs": bootargs[0],
-            "ready_writes": [{"address": f"0x{a:08X}", "value": f"0x{v:08X}"} for a, v in writes]}
+            "ready_writes": [
+                {"address": f"0x{address:08X}", "value": f"0x{value:08X}",
+                 "register": register, "purpose": purpose}
+                for (address, value), register, purpose in zip(
+                    writes, registers, purposes, strict=True
+                )
+            ]}
 
 
 def collect_software(root: Path, spec: dict) -> dict:

@@ -22,17 +22,17 @@ module apu_p9_formal_design (
     output logic        store_write,
     output logic [13:0] store_addr
 );
-  logic s_start_q;
-  (* anyseq *) logic s_abort;
-  (* anyseq *) logic s_dma_request_ready;
-  (* anyseq *) logic s_dma_valid;
-  (* anyseq *) logic s_dma_done;
-  (* anyseq *) logic s_dma_error;
-  (* anyseq *) logic [31:0] s_dma_data;
-  (* anyseq *) logic s_store_ready;
-  (* anyseq *) logic s_store_valid;
-  (* anyseq *) logic [31:0] s_store_data;
-  (* anyseq *) logic s_store_fault;
+  logic        s_start_q;
+  (* anyseq *)logic        s_abort;
+  (* anyseq *)logic        s_dma_request_ready;
+  (* anyseq *)logic        s_dma_valid;
+  (* anyseq *)logic        s_dma_done;
+  (* anyseq *)logic        s_dma_error;
+  (* anyseq *)logic [31:0] s_dma_data;
+  (* anyseq *)logic        s_store_ready;
+  (* anyseq *)logic        s_store_valid;
+  (* anyseq *)logic [31:0] s_store_data;
+  (* anyseq *)logic        s_store_fault;
 
   apu_kws_coeff_loader u_dut (
       .clk_i                   (clk_i),

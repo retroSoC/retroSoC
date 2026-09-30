@@ -37,6 +37,7 @@ from scripts.development_environment import (  # noqa: E402
     write_stamp,
 )
 from scripts.generate_mpw import render_active_manifest, validate_extension_bindings  # noqa: E402
+from scripts import generate_vexiiriscv  # noqa: E402
 from scripts.install_toolchain import make_tree_world_readable, safe_extract  # noqa: E402
 from scripts.package import make_sbom  # noqa: E402
 from scripts.prepare_mpw import patch_serv  # noqa: E402
@@ -1097,10 +1098,10 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
     assert lock["container_images"]["ubuntu_22_04"]["image"] == "ubuntu"
     assert lock["nix_inputs"]["nixpkgs"]["revision"] == "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
     assert lock["toolchains"]["ubuntu-22.04"]["sbt"] == {
-        "version": "1.10.0",
-        "url": "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz",
-        "sha256": "154b7de6c19207c73d0a304f901c8c4b6ead9a9c3a99a98a9d72ac19419d2640",
-        "archive": "sbt-1.10.0.tgz",
+        "version": "2.0.5",
+        "url": "https://github.com/sbt/sbt/releases/download/v2.0.5/sbt-2.0.5.tgz",
+        "sha256": "2a53c95403cb7fccd5da05d48cfe03ff4be573a3f3d0295a41963b109e756a18",
+        "archive": "sbt-2.0.5.tgz",
         "path": "sbt/bin",
         "download_timeout_seconds": 600,
         "resume": True,
@@ -1527,7 +1528,7 @@ def test_behavioral_only_excludes_synthesis_and_netlist_consumers() -> None:
 def test_hosted_regression_keeps_tools_but_skips_synthesis_execution() -> None:
     workflow = (ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
 
-    assert "default: verilator sv2v iverilog yosys opensta openocd riscv_gnu" in workflow
+    assert "default: verilator sv2v iverilog yosys opensta openocd sbt riscv_gnu" in workflow
     assert "SIMU=IVERILOG SYNTH=YOSYS STA=NONE doctor" in workflow
     assert "--behavioral-only" in workflow
 
@@ -1538,11 +1539,29 @@ def test_hosted_smoke_formal_check_is_doctor_only() -> None:
     software_makefile = (ROOT / "rtl/mk/software.mk").read_text(encoding="utf-8")
 
     assert "timeout_minutes: 60" in smoke
+    assert "toolset: verilator sv2v iverilog yosys sby bitwuzla sbt riscv_gnu" in smoke
     assert "formal_checks: true" in smoke
     assert "make CONFIG=${{ inputs.profile }} formal-doctor" in workflow
     assert "make CONFIG=${{ inputs.profile }} formal\n" not in workflow
     assert "$(DUMP) -d $(@F) > $(FIRMWARE_NAME).txt" in software_makefile
     assert "$(DUMP) -D" not in software_makefile
+
+
+@pytest.mark.parametrize("revision,status,match", [
+    ("different", [], "revision mismatch"),
+    ("expected", [" M tracked.scala", "?? local/"], "local changes"),
+])
+def test_vexii_generation_rejects_unlocked_or_dirty_sources(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    revision: str,
+    status: list[str],
+    match: str,
+) -> None:
+    monkeypatch.setattr(generate_vexiiriscv, "git_revision", lambda _source: revision)
+    monkeypatch.setattr(generate_vexiiriscv, "git_status", lambda _source: status)
+    with pytest.raises(ValueError, match=match):
+        generate_vexiiriscv.validate_locked_source(tmp_path, "expected")
 
 
 def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> None:
@@ -1564,7 +1583,7 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
         else:
             assert "LINK_TYPE=ld2_sdram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
-            assert "SOC_SIM_TIME=1800" in verilator_values
+            assert "SOC_SIM_TIME=3600" in verilator_values
         assert "HAVE_CSR=YES" in verilator_values
         assert any("SIMU=IVERILOG" in values and "sim-asm" in values for values in command_values)
         assert any("SYNTH=YOSYS" in values and "synth" in values for values in command_values)

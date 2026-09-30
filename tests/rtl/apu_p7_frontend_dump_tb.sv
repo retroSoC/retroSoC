@@ -61,16 +61,16 @@ module apu_p7_frontend_dump_tb;
   logic [ 5:0][ 3:0] scratch_write_strb;
   logic              scratch_access_err;
   logic coeff_front_req, coeff_front_ready, coeff_front_resp_valid, coeff_front_resp_ready;
-  logic [3:0] coeff_front_kind;
+  logic [ 3:0] coeff_front_kind;
   logic [13:0] coeff_front_index;
   logic [63:0] coeff_front_data;
-  logic coeff_front_fault;
+  logic        coeff_front_fault;
   logic coeff_infer_req, coeff_infer_ready, coeff_infer_resp_valid, coeff_infer_resp_ready;
   logic [ 6:0] coeff_infer_index;
   logic [31:0] coeff_infer_data;
   logic coeff_infer_fault, coeff_initialized;
-  int unsigned debug_commit_count;
-  logic [31:0] pcm_mem[0:PcmWords-1];
+  int unsigned        debug_commit_count;
+  logic        [31:0] pcm_mem            [0:PcmWords-1];
 
   always #5 clk_i = ~clk_i;
 

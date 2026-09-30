@@ -5342,7 +5342,7 @@
       },
       {
         "id": "aes",
-        "title": "AES engine\nkey schedule / modes",
+      "title": "AES SRAM engine\nkey schedule / modes",
         "x": 0.0,
         "y": 3.5,
         "w": 4.0,
@@ -5369,18 +5369,18 @@
         ],
         "sources": [
           "rtl/ip/security/apb4_crypto.sv",
-          "rtl/ip/security/crypto_aes_engine.sv"
+          "rtl/ip/security/crypto_aes_sram_engine.sv"
         ],
-        "instance_source": {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "name": "u_crypto_aes_engine",
-          "module": "crypto_aes_engine",
-          "declaration_file": "rtl/ip/security/crypto_aes_engine.sv"
-        }
+      "instance_source": {
+        "file": "rtl/ip/security/apb4_crypto.sv",
+        "name": "u_aes",
+        "module": "crypto_aes_sram_engine",
+        "declaration_file": "rtl/ip/security/crypto_aes_sram_engine.sv"
+      }
       },
       {
         "id": "sha",
-        "title": "SHA-224 / SHA-256\nschedule / compression",
+      "title": "SHA SRAM engine\nschedule / compression",
         "x": 6.3,
         "y": 3.5,
         "w": 4.0,
@@ -5401,18 +5401,18 @@
         ],
         "sources": [
           "rtl/ip/security/apb4_crypto.sv",
-          "rtl/ip/security/crypto_sha2_engine.sv"
+          "rtl/ip/security/crypto_sha2_sram_engine.sv"
         ],
-        "instance_source": {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "name": "u_crypto_sha2_engine",
-          "module": "crypto_sha2_engine",
-          "declaration_file": "rtl/ip/security/crypto_sha2_engine.sv"
-        }
+      "instance_source": {
+        "file": "rtl/ip/security/apb4_crypto.sv",
+        "name": "u_sha",
+        "module": "crypto_sha2_sram_engine",
+        "declaration_file": "rtl/ip/security/crypto_sha2_sram_engine.sv"
+      }
       },
       {
         "id": "rsa",
-        "title": "RSA Montgomery core\nprepare / exponentiation",
+      "title": "RSA SRAM core\nprepare / exponentiation",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -5425,22 +5425,22 @@
             "side": "north"
           },
           {
-            "id": "p6",
-            "direction": "out",
-            "width": 2048,
+          "id": "p6",
+          "direction": "out",
+          "width": 32,
             "side": "south"
           }
         ],
         "sources": [
           "rtl/ip/security/apb4_crypto.sv",
-          "rtl/ip/security/crypto_rsa_core.sv"
+          "rtl/ip/security/crypto_rsa_sram_core.sv"
         ],
-        "instance_source": {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "name": "u_crypto_rsa_core",
-          "module": "crypto_rsa_core",
-          "declaration_file": "rtl/ip/security/crypto_rsa_core.sv"
-        }
+      "instance_source": {
+        "file": "rtl/ip/security/apb4_crypto.sv",
+        "name": "u_rsa",
+        "module": "crypto_rsa_sram_core",
+        "declaration_file": "rtl/ip/security/crypto_rsa_sram_core.sv"
+      }
       },
       {
         "id": "stream",
@@ -5488,16 +5488,16 @@
       },
       {
         "id": "rsa_words",
-        "title": "APB operand / result\n2048-bit vectors",
+      "title": "APB storage portals\nresult / progress status",
         "x": 12.6,
         "y": 0.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
           {
-            "id": "p6",
-            "direction": "in",
-            "width": 2048,
+          "id": "p6",
+          "direction": "in",
+          "width": 32,
             "side": "north"
           }
         ],
@@ -5513,27 +5513,19 @@
         "kind": "control",
         "label": "START",
         "style": "zigzag",
-        "bindings": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".start_i(s_aes_start)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_aes_start",
-            "bits": 1
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "aes",
-            "port": "start_i",
-            "expression": "s_aes_start"
-          }
-        ],
+      "bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": ".start_i(s_start[0])"
+        }
+      ],
+      "instance_ports": [
+        {
+          "node": "aes",
+          "port": "start_i",
+          "expression": "s_start[0]"
+        }
+      ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5542,27 +5534,19 @@
         "kind": "control",
         "label": "START",
         "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".start_i(s_sha_start)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_sha_start",
-            "bits": 1
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "sha",
-            "port": "start_i",
-            "expression": "s_sha_start"
-          }
-        ],
+      "bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": ".start_i(s_start[1])"
+        }
+      ],
+      "instance_ports": [
+        {
+          "node": "sha",
+          "port": "start_i",
+          "expression": "s_start[1]"
+        }
+      ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5571,27 +5555,19 @@
         "kind": "control",
         "label": "START",
         "style": "zigzag",
-        "bindings": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".start_i(s_rsa_start)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_rsa_start",
-            "bits": 1
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "rsa",
-            "port": "start_i",
-            "expression": "s_rsa_start"
-          }
-        ],
+      "bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": ".start_i(s_start[2])"
+        }
+      ],
+      "instance_ports": [
+        {
+          "node": "rsa",
+          "port": "start_i",
+          "expression": "s_start[2]"
+        }
+      ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5600,27 +5576,19 @@
         "kind": "data",
         "label": "INPUT / 32",
         "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".input_data_i(s_aes_input_data)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_aes_input_data",
-            "bits": 32
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "aes",
-            "port": "input_data_i",
-            "expression": "s_aes_input_data"
-          }
-        ],
+      "bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": ".input_data_i(s_aes_dma_active ? crypto_in_axis.tdata : s_wdata)"
+        }
+      ],
+      "instance_ports": [
+        {
+          "node": "aes",
+          "port": "input_data_i",
+          "expression": "s_aes_dma_active ? crypto_in_axis.tdata : s_wdata"
+        }
+      ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5658,60 +5626,44 @@
         "kind": "data",
         "label": "INPUT / 32",
         "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".input_data_i(s_sha_input_data)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_sha_input_data",
-            "bits": 32
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "sha",
-            "port": "input_data_i",
-            "expression": "s_sha_input_data"
-          }
-        ],
-        "zigzag-dir": "horizontal"
+      "bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": ".input_data_i(s_sha_dma_active ? crypto_in_axis.tdata : s_wdata)"
+        }
+      ],
+      "instance_ports": [
+        {
+          "node": "sha",
+          "port": "input_data_i",
+          "expression": "s_sha_dma_active ? crypto_in_axis.tdata : s_wdata"
+        }
+      ],
+      "zigzag-dir": "horizontal"
       },
       {
         "from": "rsa.p6",
         "to": "rsa_words.p6",
         "kind": "data",
-        "label": "RESULT / 2048",
+        "label": "PROGRESS / 32",
         "style": "direct",
         "bindings": [
           {
             "file": "rtl/ip/security/apb4_crypto.sv",
-            "text": ".result_o(s_rsa_result)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/security/apb4_crypto.sv",
-            "scope": "apb4_crypto",
-            "symbol": "s_rsa_result",
-            "bits": 2048
+            "text": ".progress_o(s_rsa_progress)"
           }
         ],
         "instance_ports": [
           {
             "node": "rsa",
-            "port": "result_o",
-            "expression": "s_rsa_result"
+            "port": "progress_o",
+            "expression": "s_rsa_progress"
           }
         ],
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "AES and SHA consume PIO or selected stream words; RSA uses operand windows. Keys and operands reside in ordinary state and follow zeroize/abort rules. These are independent engines, not an invented descriptor queue or secure key store."
+    "note": "AES and SHA consume PIO or selected stream words. AES/SHA constants and work state plus RSA operands/results reside in the six private SRAM banks behind the wrapper's storage controller. The engines remain independently sequenced; no descriptor queue or readable secret-key aperture is implied."
   },
   "i2s": {
     "nodes": [

@@ -32,6 +32,6 @@ def development_environment(root: Path) -> dict:
     return {
         "platform": "Linux x86_64", "ubuntu": ubuntu[0],
         "python": ".".join(python[0]), "java": java_nix[0],
-        "sbt": lock["toolchains"]["ubuntu-22.04"]["sbt"]["version"],
+        "sbt_launcher": lock["toolchains"]["ubuntu-22.04"]["sbt"]["version"],
         "sources": list(ENVIRONMENT_SOURCES),
     }

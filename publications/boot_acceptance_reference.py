@@ -10,13 +10,25 @@ from publications.implementation_reference import without_comments
 
 
 BOOT_SOURCE = "app/apps/hp_boot/main.c"
-READY_SOURCE = "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp"
+BUNDLE_SOURCE = "app/apps/hp_boot/hp_boot_bundle.c"
+INIT_SOURCE = "app/ports/linux/init"
+READY_SOURCE = "app/ports/linux/hp_ready.c"
 HAL_SOURCE = "crt/src/hal/hp_mailbox.c"
 STATUS_SOURCE = "crt/include/retrosoc/core/status.h"
 REGISTER_SOURCE = "rtl/ip/peripheral/hp_mailbox_define.svh"
 MAILBOX_SOURCE = "rtl/ip/peripheral/apb4_hp_mailbox.sv"
 MAP_SOURCE = "rtl/mini/address_map/memory_map.json"
-SOURCES = {BOOT_SOURCE, READY_SOURCE, HAL_SOURCE, STATUS_SOURCE, REGISTER_SOURCE, MAILBOX_SOURCE, MAP_SOURCE}
+SOURCES = {
+    BOOT_SOURCE,
+    BUNDLE_SOURCE,
+    INIT_SOURCE,
+    READY_SOURCE,
+    HAL_SOURCE,
+    STATUS_SOURCE,
+    REGISTER_SOURCE,
+    MAILBOX_SOURCE,
+    MAP_SOURCE,
+}
 NPU_DEFINES = ("RS_NPU_P5_ACCEPTANCE", "RS_NPU_P6_ACCEPTANCE")
 
 
@@ -29,8 +41,18 @@ def uint_constants(source: str) -> dict[str, int]:
         r"^#define\s+(\w+)\s+UINT32_C\((0x[\da-fA-F]+|\d+)\)\s*$", source, re.M)}
 
 
+def c_uint_literal(expression: str) -> int:
+    wrapper = re.fullmatch(r"UINT32_C\((0x[\da-fA-F]+|\d+)\)", expression.strip())
+    if wrapper:
+        return int(wrapper[1], 0)
+    literal = re.fullmatch(r"(0x[\da-fA-F]+|\d+)[uUlL]*", expression.strip())
+    if literal:
+        return int(literal[1], 0)
+    raise ValueError("Linux ready mailbox value expression changed")
+
+
 def ready_mailbox(root: Path) -> list[dict]:
-    """Resolve rootfs writes to register purposes, rather than positional labels."""
+    """Resolve the Linux helper writes to register purposes and source order."""
     hal = (root / HAL_SOURCE).read_text(encoding="utf-8")
     rtl = (root / REGISTER_SOURCE).read_text(encoding="utf-8")
     offsets = {name: int(value, 16) for name, value in re.findall(
@@ -63,27 +85,59 @@ def ready_mailbox(root: Path) -> list[dict]:
     expected_values = [boot_constants[key] for key in (
         "RS_HP_BOOT_READY_EVENT", "RS_HP_BOOT_READY_ARG", "RS_HP_BOOT_MAILBOX_READY_SEQUENCE")] + [1]
     ready = (root / READY_SOURCE).read_text(encoding="utf-8")
-    writes = [(int(address, 0), int(value, 0)) for address, value in re.findall(
-        r"^\s*devmem\s+(0x[\da-fA-F]+)\s+32\s+(0x[\da-fA-F]+)\s*$", ready, re.M)]
-    expected = [(base + offsets[register], value)
-                for register, value in zip(registers, expected_values, strict=True)]
-    if writes != expected or sum(line.lstrip().startswith("devmem ") for line in ready.splitlines()) != len(writes):
+    mappings = re.findall(r"\bmmap\([^;]*,\s*(0x[\da-fA-F]+)\s*\);", ready)
+    if len(mappings) != 1 or int(mappings[0], 0) != base:
+        raise ValueError("Linux ready mailbox mapping changed")
+    writes = list(re.finditer(r"mailbox\[(\d+)\]\s*=\s*([^;]+);", ready))
+    if [match[1] for match in writes] != ["8", "9", "10", "11"]:
         raise ValueError("Linux ready mailbox sequence changed")
-    message = 'echo "retroSoC HP Linux ready"'
-    if message not in ready or ready.index(message) > ready.index("devmem"):
-        raise ValueError("Linux ready message/publication order changed")
-    # A newly added responder invalidates the documented ready-only service gap.
-    shell_lines = [line.strip() for line in ready.splitlines()
-                   if line.strip() and not line.lstrip().startswith("#")]
-    scaffold = ['case "$1" in', "start)", message, ";;", "esac"]
-    if [line for line in shell_lines if not line.startswith("devmem ")] != scaffold:
+    literal = r"(?:UINT32_C\((?:0x[\da-fA-F]+|\d+)\)|(?:0x[\da-fA-F]+|\d+)[uUlL]*)"
+    expressions = [match[2].strip() for match in writes]
+    event = re.fullmatch(
+        rf"\(\s*error\s*==\s*0U\s*\)\s*\?\s*({literal})\s*:\s*3U", expressions[0]
+    )
+    argument = re.fullmatch(
+        rf"\(\s*error\s*==\s*0U\s*\)\s*\?\s*({literal})\s*:\s*error", expressions[1]
+    )
+    direct = [re.fullmatch(literal, expression) for expression in expressions[2:]]
+    if event is None or argument is None or any(match is None for match in direct):
+        raise ValueError("Linux ready mailbox value expression changed")
+    actual_values = [
+        c_uint_literal(event[1]),
+        c_uint_literal(argument[1]),
+        *(c_uint_literal(match[0]) for match in direct if match is not None),
+    ]
+    if actual_values != expected_values:
+        raise ValueError("Linux ready mailbox values differ from LP acceptance contract")
+    expected_addresses = [base + offsets[register] for register in registers]
+    actual_addresses = [base + (int(match[1]) * 4) for match in writes]
+    if actual_addresses != expected_addresses:
+        raise ValueError("Linux ready mailbox addresses differ from RTL register offsets")
+    message = '(void)puts("retroSoC HP Linux ready");'
+    fence = '__asm__ volatile("fence iorw, iorw" ::: "memory");'
+    if message not in ready or fence not in ready:
+        raise ValueError("Linux ready message/publication sequence changed")
+    ordered_positions = [
+        ready.index(message),
+        *(match.start() for match in writes[:3]),
+        ready.index(fence),
+        writes[3].start(),
+    ]
+    if ordered_positions != sorted(ordered_positions):
+        raise ValueError("Linux ready message/publication sequence changed")
+    init = (root / INIT_SOURCE).read_text(encoding="utf-8")
+    init_lines = [line.strip() for line in init.splitlines() if line.strip()]
+    if not init_lines or init_lines[-1] != "exec /bin/hp-ready":
+        raise ValueError("Linux minimal init no longer terminates in the ready helper")
+    if not compact(ready).endswith("mailbox[11]=1U;for(;;){(void)pause();}}"):
         raise ValueError("Linux ready-only service changed; review its acceptance coverage")
+    actual = list(zip(actual_addresses, actual_values, strict=True))
     purposes = {"HP_EVENT": "Linux-ready event", "HP_ARG0": "Ready-state argument",
                 "HP_SEQUENCE": "Publication sequence", "HP_DOORBELL": "LP interrupt request"}
-    register_by_address = {base + offsets[register]: register for register in registers}
+    register_by_address = dict(zip(actual_addresses, registers, strict=True))
     return [{"address": f"0x{address:08X}", "value": f"0x{value:08X}",
              "register": register_by_address[address], "purpose": purposes[register_by_address[address]]}
-            for address, value in writes]
+            for address, value in actual]
 
 
 def split_npu_conditions(body: str) -> tuple[str, list[tuple[str, str]]]:
@@ -222,10 +276,27 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
             raise ValueError(f"HP boot {name} wait is no longer the reviewed bounded poll")
         if not body.endswith("returnfalse;") or "while(" in body or "do{" in body:
             raise ValueError(f"HP boot {name} wait termination changed")
-    wait_body = compact(function_body(source, "rs_hp_boot_wait_message"))
-    if ("if(message.sequence==sequence){return(message.code==code)&&(message.argument==argument);}" not in wait_body
-            or "if(rs_hp_mailbox_receive_from_hp(&message)!=RS_OK){returnfalse;}" not in wait_body):
+    bundle = (root / BUNDLE_SOURCE).read_text(encoding="utf-8")
+    expected_status = compact("""
+        if ((sequence > expected_sequence) || ((sequence != 0U) && (code == 3U))) {
+            return 2U;
+        }
+        if (sequence == expected_sequence) {
+            return ((code == expected_code) && (argument == expected_argument)) ? 1U : 2U;
+        }
+        return 0U;
+    """)
+    if compact(function_body(bundle, "rs_hp_boot_message_status")) != expected_status:
         raise ValueError("HP boot mailbox token/error matching changed")
+    wait_body = compact(function_body(source, "rs_hp_boot_wait_message"))
+    for binding in (
+        "if(rs_hp_mailbox_receive_from_hp(&message)!=RS_OK){returnfalse;}",
+        "status=rs_hp_boot_message_status(message.code,message.argument,message.sequence,code,argument,sequence);",
+        "if(status==2U){printf(\"HP_PAYLOAD_FAILED:%u\\n\",(unsignedint)message.argument);returnfalse;}",
+        "if(status==1U){returntrue;}",
+    ):
+        if binding not in wait_body:
+            raise ValueError("HP boot mailbox token/error matching changed")
     main, gated = split_npu_conditions(function_body(source, "main"))
     main = compact(main)
     phases = (
@@ -257,7 +328,14 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
         if position < 0:
             raise ValueError(f"HP boot required phase or ordering changed: {phase}")
         cursor = position + len(phase)
-    if (main.count("rs_test_finish(RS_TEST_PASSED,") != 1 or not main.endswith(phases[-1])
+    workload_branches = (
+        "if(header.workload==RS_HP_BOOT_WORKLOAD_SMOKE){",
+        "if(header.workload==RS_HP_BOOT_WORKLOAD_RTTHREAD){",
+        "if(header.workload==RS_HP_BOOT_WORKLOAD_LINUX){",
+    )
+    if any(main.count(branch) != 1 for branch in workload_branches):
+        raise ValueError("HP boot workload selection changed")
+    if (main.count("rs_test_finish(RS_TEST_PASSED,") != 3 or not main.endswith(phases[-1])
             or re.findall(r"cache_clean_completed=(true|false);", main) != ["false", "true"]
             or re.findall(r"s_hp_boot_ga2d_owned_by_hp=(true|false);", main) != ["true", "false"]):
         raise ValueError("HP boot terminal pass or cache completion changed")

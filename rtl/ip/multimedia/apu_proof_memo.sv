@@ -71,10 +71,10 @@ module apu_proof_memo #(
       s_bitmap_cs             = 1'b1;
       s_bitmap_addr           = {2'd0, addr_i[12:5]};
     end else if ((s_state_q == Idle) && insert_i) begin
-      s_key_cs[addr_i[12:10]] = 1'b1;
+      s_key_cs[addr_i[12:10]]   = 1'b1;
       s_key_wren[addr_i[12:10]] = 1'b1;
-      s_bitmap_cs = 1'b1;
-      s_bitmap_addr = {2'd0, addr_i[12:5]};
+      s_bitmap_cs               = 1'b1;
+      s_bitmap_addr             = {2'd0, addr_i[12:5]};
     end else if (s_state_q == InsertBitmapWrite) begin
       s_bitmap_cs    = 1'b1;
       s_bitmap_wren  = 1'b1;
@@ -119,8 +119,8 @@ module apu_proof_memo #(
       .data_o(s_bitmap_rdata)
   );
 `else
-  logic [63:0] s_key_mem   [0:Depth-1];
-  logic [31:0] s_bitmap_mem[0:BitmapRows-1];
+  logic [63:0] s_key_mem         [     0:Depth-1];
+  logic [31:0] s_bitmap_mem      [0:BitmapRows-1];
   logic [12:0] s_key_access_addr;
   logic [63:0] s_key_access_data;
 

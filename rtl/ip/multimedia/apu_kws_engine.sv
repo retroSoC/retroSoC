@@ -483,8 +483,8 @@ module apu_kws_engine (
     log_lookup_t s_lookup;
     logic [95:0] fraction_scaled, fraction_quotient, fraction_remainder;
     begin
-      numerator = 96'd1000000 * mel_i + 96'd16 * peak_i;
-      denominator = 96'd16000000 * peak_i;
+      numerator         = 96'd1000000 * mel_i + 96'd16 * peak_i;
+      denominator       = 96'd16000000 * peak_i;
       s_lookup.exponent = 0;
       if (numerator >= denominator) begin
         normalized_denominator = denominator;
@@ -498,7 +498,7 @@ module apu_kws_engine (
         normalized_denominator = denominator;
         for (int iteration = 0; iteration < 95; iteration++) begin
           if (numerator < normalized_denominator) begin
-            numerator = numerator << 1;
+            numerator         = numerator << 1;
             s_lookup.exponent = s_lookup.exponent - 1'b1;
           end
         end
@@ -1049,13 +1049,13 @@ module apu_kws_engine (
       end
     endcase
 
-    s_infer_coeff_needed = 1'b0;
+    s_infer_coeff_needed    = 1'b0;
     coeff_inference_index_o = 7'd0;
     if (s_infer_state_q == InferSoftmaxSum) begin
-      s_infer_coeff_needed = !s_coeff_operand_ready || (s_softmax_sum_diff >= -9'sd124);
+      s_infer_coeff_needed    = !s_coeff_operand_ready || (s_softmax_sum_diff >= -9'sd124);
       coeff_inference_index_o = 7'(-s_softmax_sum_diff);
     end else if ((s_infer_state_q == InferSoftmaxScale) && (s_softmax_index_q != 4'd0)) begin
-      s_infer_coeff_needed = !s_coeff_operand_ready || (s_softmax_scale_diff >= -9'sd124);
+      s_infer_coeff_needed    = !s_coeff_operand_ready || (s_softmax_scale_diff >= -9'sd124);
       coeff_inference_index_o = 7'(-s_softmax_scale_diff);
     end
   end

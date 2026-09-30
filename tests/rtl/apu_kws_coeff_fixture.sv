@@ -68,7 +68,7 @@ module apu_kws_coeff_fixture (
   );
 
   initial begin
-    initialized_o  = 1'b0;
+    initialized_o   = 1'b0;
     s_loader_active = 1'b0;
     s_loader_req    = 1'b0;
     s_loader_addr   = 14'd0;

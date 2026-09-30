@@ -123,8 +123,9 @@ SRAM CoreMark quick report into `meta/coremark.json`; it requires one valid
 `COREMARK_RESULT` record and `COREMARK_PASS`. Both reports complement, rather
 than replace, the common `SIM_TEST_PASS` simulation verdict.
 
-`generate_vexiiriscv.py` verifies the locked VexiiRiscv revision and generates
-the fixed HP core below `build/`; generated RTL is never tracked.
+`generate_vexiiriscv.py` verifies the locked VexiiRiscv revision, rejects local
+source changes before and after generation, and generates the fixed HP core
+below `build/`; generated RTL is never tracked.
 `setup_hp_linux.py` installs the locked OpenSBI, Linux, and Buildroot revisions
 and can resume a checkout left without `HEAD` by an interrupted fetch.
 `build_hp_linux.py` builds the RV64 `lp64d` userspace/OpenSBI image set with the repo-owned

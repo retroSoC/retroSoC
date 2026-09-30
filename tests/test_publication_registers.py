@@ -114,9 +114,12 @@ def test_composite_fields_and_multiline_capability_keep_the_real_layout(referenc
     assert next(f for f in apu["fields"] if f["name"] == "CODE")["msb"] == 6
     for item in reference.values():
         for register in item["registers"]:
-            assert all(
-                "BEGIN" not in f["name"] and ";" not in f["name"] for f in register["fields"]
-            )
+            for field in register["fields"]:
+                assert ";" not in field["name"]
+                if "BEGIN" in field["name"]:
+                    assert (item["id"], register["key"], field["name"]) == (
+                        "crypto", "main.MEM_CONTROL", "BEGIN"
+                    )
 
 
 def test_read_predicate_is_not_mistaken_for_a_field_assignment():
@@ -131,6 +134,33 @@ def test_secret_apertures_do_not_claim_readback(reference):
         if entry["group"] in {"aes_key", "rsa_exponent"}:
             assert entry["access"].startswith("WO")
             assert "PSLVERR" in entry["description"]
+
+
+def test_crypto_interrupt_registers_publish_all_six_events(reference):
+    registers = {entry["key"]: entry for entry in reference["crypto"]["registers"]}
+    expected = ["AES_DONE", "SHA_DONE", "RSA_DONE", "ERROR", "ZEROIZED", "MEMORY_READY"]
+    for key in ("main.IRQ_STATE", "main.IRQ_ENABLE", "main.IRQ_TEST"):
+        fields = registers[key]["fields"]
+        assert [field["name"] for field in fields[:6]] == expected
+        assert [(field["lsb"], field["msb"]) for field in fields[:6]] == [
+            (bit, bit) for bit in range(6)
+        ]
+        assert (fields[6]["name"], fields[6]["lsb"], fields[6]["msb"]) == (
+            "Reserved", 6, 31
+        )
+
+
+def test_crypto_lifecycle_annotations_preserve_security_boundaries(reference):
+    registers = {entry["key"]: entry for entry in reference["crypto"]["registers"]}
+    mem_status = {field["name"]: field for field in registers["main.MEM_STATUS"]["fields"]}
+    lock_description = mem_status["TABLE_LOCKED"]["description"]
+    assert "hard/PCLK reset" in lock_description
+    assert "zeroize does not unlock" in lock_description
+
+    irq_test = {field["name"]: field for field in registers["main.IRQ_TEST"]["fields"]}
+    test_description = irq_test["MEMORY_READY"]["description"]
+    assert "interrupt-path testing" in test_description
+    assert "not initialization or physical-erasure completion evidence" in test_description
 
 
 def test_exact_register_description_wins_over_grouped_name_fragments(reference):

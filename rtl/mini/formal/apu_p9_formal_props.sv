@@ -2,24 +2,24 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 
 module apu_p9_formal;
-  (* anyseq *) (* gclk *) reg clk_i;
-  wire rst_n_i;
-  wire f_past_valid;
-  wire busy;
-  wire valid;
-  wire lock;
+  (* anyseq *) (* gclk *)reg         clk_i;
+  wire        rst_n_i;
+  wire        f_past_valid;
+  wire        busy;
+  wire        valid;
+  wire        lock;
   wire [31:0] actual_crc;
   wire [63:0] coefficient_id;
   wire [31:0] status;
-  wire [5:0] error_code;
-  wire done;
-  wire abort_done;
-  wire dma_request_valid;
+  wire [ 5:0] error_code;
+  wire        done;
+  wire        abort_done;
+  wire        dma_request_valid;
   wire [31:0] dma_request_address;
   wire [31:0] dma_request_bytes;
-  wire store_active;
-  wire store_req;
-  wire store_write;
+  wire        store_active;
+  wire        store_req;
+  wire        store_write;
   wire [13:0] store_addr;
 
   apu_p9_formal_design u_design (.*);

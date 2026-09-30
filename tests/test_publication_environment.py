@@ -9,11 +9,21 @@ from publications.environment_reference import ENVIRONMENT_SOURCES, development_
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_environment_reports_current_locked_runtime_versions():
+def test_environment_reports_current_locked_launcher_and_runtime_versions():
     result = development_environment(ROOT)
-    assert (result["platform"], result["ubuntu"], result["python"], result["java"], result["sbt"]) == (
-        "Linux x86_64", "22.04", "3.10", "17", "1.10.0")
+    assert (result["platform"], result["ubuntu"], result["python"], result["java"],
+            result["sbt_launcher"]) == (
+        "Linux x86_64", "22.04", "3.10", "17", "2.0.5")
     assert not {"passed", "qualified", "performance"} & result.keys()
+
+
+def test_environment_labels_sbt_as_a_launcher():
+    section = (ROOT / "publications/datasheets/sections/development-environment.typ").read_text(
+        encoding="utf-8"
+    )
+    assert "SBT launcher #environment.sbt_launcher" in section
+    assert "version is not an engine-version claim" in section
+    assert "#environment.sbt toolchain" not in section
 
 
 @pytest.mark.parametrize("path,old,new,reason", [

@@ -46,14 +46,22 @@ def locked_revision(lock_path: Path) -> str:
     return source["revision"]
 
 
+def validate_locked_source(source: Path, expected: str) -> str:
+    actual = git_revision(source)
+    if actual != expected:
+        raise ValueError(f"VexiiRiscv revision mismatch: expected {expected}, found {actual}")
+    status = git_status(source)
+    if status:
+        raise ValueError("VexiiRiscv source has local changes:\n" + "\n".join(status))
+    return actual
+
+
 def generate(args: argparse.Namespace) -> None:
     root = args.root.resolve()
     source = args.source.resolve()
     output = args.output.resolve()
     expected = locked_revision(args.lock.resolve())
-    actual = git_revision(source)
-    if actual != expected:
-        raise ValueError(f"VexiiRiscv revision mismatch: expected {expected}, found {actual}")
+    actual = validate_locked_source(source, expected)
 
     scala_dir = root / "scripts" / "vexiiriscv"
     output.mkdir(parents=True, exist_ok=True)
@@ -81,6 +89,7 @@ def generate(args: argparse.Namespace) -> None:
     generated = output / "vexii_riscv_hp_generated.v"
     if not generated.is_file():
         raise FileNotFoundError(f"VexiiRiscv generator did not create {generated}")
+    validate_locked_source(source, expected)
 
     submodules = run(["git", "submodule", "status", "--recursive"], source).splitlines()
     manifest = {
@@ -91,7 +100,7 @@ def generate(args: argparse.Namespace) -> None:
         "physical_address_width": 32,
         "mmu": "sv39",
         "vexiiriscv_revision": actual,
-        "source_status": git_status(source),
+        "source_status": [],
         "submodules": submodules,
         "generator": str((scala_dir / "GenerateRetroSocHp.scala").relative_to(root)),
         "files": {generated.name: sha256(generated)},

@@ -116,6 +116,7 @@ def test_storage_geometry_preserves_product_overrides_and_sidebands(diagrams):
     assert [(s["depth"], s["bits"]) for s in stores["dma-channel-fifos"]["stores"]] == [(32, 32)]
     assert [(s["depth"], s["bits"]) for s in stores["sdio-pio"]["stores"]] == [(4, 36), (1, 32)]
     assert [(s["depth"], s["bits"]) for s in stores["apu-fifos"]["stores"]] == [(64, 41), (64, 41)]
+    assert [(s["depth"], s["bits"]) for s in stores["rsa-vectors"]["stores"]] == [(64, 32)] * 4
     assert [(s["depth"], s["bits"]) for s in stores["opi-lines"]["stores"]] == [(4, 256)]
     assert sum(row["bytes"] for row in stores["apu-local"]["ranges"]) == 114688
     assert stores["linker-ld2_psram"]["stack_region"] == "PSRAM"

@@ -27,7 +27,7 @@ module crypto_aes_sram_engine (
     output logic                             [ 3:0] output_keep_o,
     output logic                                    output_last_o,
     output logic                                    busy_o,
-    done_o,
+    output logic                                    done_o,
     error_o,
     output logic                             [31:0] bytes_in_o,
     bytes_out_o,

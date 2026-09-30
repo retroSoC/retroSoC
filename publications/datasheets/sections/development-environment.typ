@@ -7,8 +7,10 @@
 The supported open-source tool environment targets #environment.platform. The Docker image,
 Nix application and manual Ubuntu #environment.ubuntu bootstrap share the repository's locked
 installer. Docker and Nix use Python #environment.python to match the pinned requirement sets;
-both provide Java #environment.java for the locked SBT #environment.sbt toolchain. These are
-development prerequisites, *not additional SoC functions* or a statement of target performance.
+both provide Java #environment.java for the locked SBT launcher #environment.sbt_launcher.
+Each project selects its SBT engine through its own pinned build properties; the launcher
+version is not an engine-version claim. These are development prerequisites,
+*not additional SoC functions* or a statement of target performance.
 
 #ds-table("development-entrypoints",[Development entrypoints and their boundaries],
   ([Entrypoint],[Reproducible input],[Use and evidence boundary]),

@@ -303,8 +303,8 @@ module apu_kws_coeff_store (
       end
 
       if (s_loader_accept) begin
-        s_loader_fault_q <= loader_addr_i >= 14'd15360;
-        s_loader_bank_q <= loader_addr_i[13:10];
+        s_loader_fault_q   <= loader_addr_i >= 14'd15360;
+        s_loader_bank_q    <= loader_addr_i[13:10];
         s_loader_pending_q <= !loader_write_i;
       end else begin
         s_loader_pending_q <= 1'b0;
