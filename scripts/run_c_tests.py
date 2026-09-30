@@ -32,6 +32,7 @@ TEST_SOURCES = (
     "crt/src/hal/spisd_math.c",
     "crt/src/hal/i2s_math.c",
     "crt/src/hal/dma_math.c",
+    "crt/src/hal/crypto_lifecycle.c",
     "crt/src/hal/jpeg_math.c",
     "crt/src/hal/apu.c",
     "crt/src/hal/ga2d_math.c",
@@ -72,7 +73,7 @@ def main() -> int:
         subprocess.run(
             [
                 sys.executable,
-                str(root / "rtl/mini/address_map/generate_memory_map.py"),
+                str(root / "scripts/rtl/generate_memory_map.py"),
                 "--map",
                 str(root / "rtl/mini/address_map/memory_map.json"),
                 "--output-dir",
@@ -92,6 +93,11 @@ def main() -> int:
             check=True,
         )
         executable = temporary_root / "runtime_tests"
+        crypto_constants_root = temporary_root / "crypto_constants"
+        subprocess.run([
+            sys.executable, str(root / "scripts/crypto_constants.py"),
+            "--root", str(root), "--output", str(crypto_constants_root),
+        ], check=True)
         command = [
             compiler,
             "-std=c11",
@@ -100,6 +106,9 @@ def main() -> int:
             "-Werror",
             "-fno-builtin",
             "-DRS_APU_TEST_MMIO",
+            "-DRS_CRYPTO_TEST_MMIO",
+            "-I",
+            str(crypto_constants_root),
             "-DRS_GA2D_TEST_MMIO",
             "-DRS_NPU_TEST_MMIO",
             "-DRS_FABRIC_MONITOR_TEST_MMIO",
@@ -122,6 +131,17 @@ def main() -> int:
             str(executable),
             *(str(root / source) for source in TEST_SOURCES),
         ]
+        tiny_object = temporary_root / "tiny_dma_math.o"
+        subprocess.run([
+            compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-DRS_SOC_TINY",
+            "-Drs_dma_config_validate=rs_tiny_dma_config_validate",
+            "-Drs_dma_tcd_validate=rs_tiny_dma_tcd_validate",
+            "-I", str(memory_map_root / "include"),
+            "-I", str(user_extensions_root / "include"),
+            "-I", str(root / "crt/include"), "-c", str(root / "crt/src/hal/dma_math.c"),
+            "-o", str(tiny_object),
+        ], check=True)
+        command.append(str(tiny_object))
         subprocess.run(command, check=True)
         subprocess.run([str(executable)], check=True)
     return 0

@@ -228,12 +228,12 @@ int main(int argc, char **argv) {
         bool expected=true;
         switch(scenario) {
         case 30: break;
-        case 31: header.reserved=0x1234; header.flags|=0x80; header.entries[0].flags|=0x80; break;
-        case 32: header.entries[0].flash_offset+=4; break;
+        case 31: header.workload=0x1234; header.flags|=0x80; header.entries[0].flags|=0x80; expected=false; break;
+        case 32: header.entries[0].flash_offset+=4; expected=false; break;
         case 33: header.entries[0].flash_offset+=1; expected=false; break;
         case 34: header.entries[0].flags=0; expected=false; break;
         case 35: header.header_crc32^=1; assert(!rs_hp_boot_header_valid(&header)); return 0;
-        case 36: header.entries[1].flash_offset=header.entries[0].flash_offset; break;
+        case 36: header.entries[1].flash_offset=header.entries[0].flash_offset; expected=false; break;
         case 37: header.entries[0].size=0; expected=false; break;
         case 38: header.header_size+=4; expected=false; break;
         case 39: header.entry_count=3; expected=false; break;
@@ -281,8 +281,8 @@ def c_behavior(tmp_path_factory):
     }
     for family, names in selections.items():
         extracted += "\n".join(real_definition(sources[family], name) for name in names)
-    boot = (ROOT / "app/apps/hp_boot/main.c").read_text(encoding="utf-8")
-    extracted += "\n".join(real_definition(boot, row["function"]) for row in SPEC["boot_bundle"]["loader_bindings"])
+    extracted += "\n".join(real_definition((ROOT / row["source"]).read_text(encoding="utf-8"), row["function"])
+                            for row in SPEC["boot_bundle"]["loader_bindings"])
     source = folder / "behavior.c"
     source.write_text(constants + "\n" + HARNESS.replace("/* REAL_FUNCTIONS */", extracted), encoding="utf-8")
     exe = folder / "behavior"

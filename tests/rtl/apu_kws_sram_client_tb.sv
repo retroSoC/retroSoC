@@ -9,10 +9,15 @@ module apu_kws_sram_client_tb;
   logic [31:0] data_i = 32'd0;
   logic [ 3:0] strb_i = 4'd0;
   logic ready_o, valid_o, access_err_o;
-  logic [31:0]       data_o;
+  logic [31:0] data_o;
+  logic        access_req_i = 1'b0;
+  logic access_ready_o, access_done_o, access_progress_o;
+  logic              access_write_i = 1'b0;
+  logic [15:0]       model_read_valid_i = 16'd0;
   logic [15:0][14:0] model_addr_i = '0;
   logic [15:0][ 7:0] model_data_o;
   logic              scratch_clear_i = 1'b0;
+  logic [19:0]       scratch_read_valid_i = 20'd0;
   logic [19:0][15:0] scratch_read_addr_i = '0;
   logic [19:0][31:0] scratch_read_data_o;
   logic [ 5:0]       scratch_write_valid_i = 6'd0;
@@ -39,9 +44,16 @@ module apu_kws_sram_client_tb;
       .data_o               (data_o),
       .valid_o              (valid_o),
       .access_err_o         (access_err_o),
+      .access_req_i         (access_req_i),
+      .access_ready_o       (access_ready_o),
+      .access_done_o        (access_done_o),
+      .access_progress_o    (access_progress_o),
+      .access_write_i       (access_write_i),
+      .model_read_valid_i   (model_read_valid_i),
       .model_addr_i         (model_addr_i),
       .model_data_o         (model_data_o),
       .scratch_clear_i      (scratch_clear_i),
+      .scratch_read_valid_i (scratch_read_valid_i),
       .scratch_read_addr_i  (scratch_read_addr_i),
       .scratch_read_data_o  (scratch_read_data_o),
       .scratch_write_valid_i(scratch_write_valid_i),
@@ -88,6 +100,20 @@ module apu_kws_sram_client_tb;
     end
   endtask
 
+  task automatic run_access(input logic write_access_i);
+    begin
+      @(negedge clk_i);
+      access_write_i = write_access_i;
+      access_req_i   = 1'b1;
+      if (!access_ready_o) $fatal(1, "KWS SRAM transaction was not accepted");
+      @(negedge clk_i);
+      access_req_i = 1'b0;
+      wait (access_done_o);
+      @(negedge clk_i);
+      access_write_i = 1'b0;
+    end
+  endtask
+
   task automatic write_scratch(input logic [15:0] address_i, input logic [31:0] value_i,
                                input logic [3:0] strobe_i);
     begin
@@ -96,11 +122,13 @@ module apu_kws_sram_client_tb;
       scratch_write_addr_i[0]  = address_i;
       scratch_write_data_i[0]  = value_i;
       scratch_write_strb_i[0]  = strobe_i;
-      @(negedge clk_i);
+      run_access(1'b1);
       scratch_write_valid_i[0] = 1'b0;
       scratch_write_strb_i[0]  = 4'd0;
       scratch_read_addr_i[0]   = address_i;
-      #1;
+      scratch_read_valid_i[0]  = 1'b1;
+      run_access(1'b0);
+      scratch_read_valid_i[0] = 1'b0;
       if (scratch_read_data_o[0] != value_i) begin
         $fatal(1, "scratch layout write mismatch at %04x", address_i);
       end
@@ -126,25 +154,29 @@ module apu_kws_sram_client_tb;
     rst_n_i = 1'b1;
 
     write_model(`APB4_APU__LOCAL_KWS_BASE, 32'h4433_2211);
-    model_addr_i[0] = 15'd0;
-    model_addr_i[1] = 15'd1;
-    model_addr_i[2] = 15'd2;
-    model_addr_i[3] = 15'd3;
-    #1;
+    model_addr_i[0]         = 15'd0;
+    model_addr_i[1]         = 15'd1;
+    model_addr_i[2]         = 15'd2;
+    model_addr_i[3]         = 15'd3;
+    model_read_valid_i[3:0] = 4'hf;
+    run_access(1'b0);
+    model_read_valid_i = 16'd0;
     if ({model_data_o[3], model_data_o[2], model_data_o[1], model_data_o[0]} != 32'h4433_2211) begin
       $fatal(1, "banks10..17 model readback mismatch");
     end
     write_model(17'h1_0000, 32'h8877_6655);
     write_model(`APB4_APU__LOCAL_KWS_BASE + `RETROSOC_APU_KWS__MODEL_BYTES - 4, 32'hccbb_aa99);
-    model_addr_i[0] = 15'h6000;
-    model_addr_i[1] = 15'h6001;
-    model_addr_i[2] = 15'h6002;
-    model_addr_i[3] = 15'h6003;
-    model_addr_i[4] = 15'h7ffc;
-    model_addr_i[5] = 15'h7ffd;
-    model_addr_i[6] = 15'h7ffe;
-    model_addr_i[7] = 15'h7fff;
-    #1;
+    model_addr_i[0]         = 15'h6000;
+    model_addr_i[1]         = 15'h6001;
+    model_addr_i[2]         = 15'h6002;
+    model_addr_i[3]         = 15'h6003;
+    model_addr_i[4]         = 15'h7ffc;
+    model_addr_i[5]         = 15'h7ffd;
+    model_addr_i[6]         = 15'h7ffe;
+    model_addr_i[7]         = 15'h7fff;
+    model_read_valid_i[7:0] = 8'hff;
+    run_access(1'b0);
+    model_read_valid_i = 16'd0;
     if ({model_data_o[3], model_data_o[2], model_data_o[1], model_data_o[0]} != 32'h8877_6655) begin
       $fatal(1, "APUM model address crossing 0x10000 did not map to bank16");
     end
@@ -161,8 +193,10 @@ module apu_kws_sram_client_tb;
     write_scratch(`RETROSOC_APU_KWS__SCRATCH_PEAK_BASE, 32'h6162_6364, 4'hf);
     write_scratch(16'h7ffc, 32'h7172_7374, 4'hf);
 
-    model_addr_i[0] = 15'd0;
-    #1;
+    model_addr_i[0]       = 15'd0;
+    model_read_valid_i[0] = 1'b1;
+    run_access(1'b0);
+    model_read_valid_i = 16'd0;
     if (model_data_o[0] != 8'h11) $fatal(1, "scratch write corrupted APUM storage");
 
     @(negedge clk_i);
@@ -185,12 +219,16 @@ module apu_kws_sram_client_tb;
     @(negedge clk_i);
     scratch_clear_i = 1'b1;
     @(negedge clk_i);
-    scratch_clear_i        = 1'b0;
-    scratch_read_addr_i[0] = `RETROSOC_APU_KWS__SCRATCH_FIR_BASE;
-    #1;
+    scratch_clear_i         = 1'b0;
+    scratch_read_addr_i[0]  = `RETROSOC_APU_KWS__SCRATCH_FIR_BASE;
+    scratch_read_valid_i[0] = 1'b1;
+    run_access(1'b0);
+    scratch_read_valid_i[0] = 1'b0;
     if (scratch_read_data_o[0] != 32'd0) $fatal(1, "FIR lifecycle clear exposed stale data");
-    scratch_read_addr_i[0] = `RETROSOC_APU_KWS__SCRATCH_A_BASE;
-    #1;
+    scratch_read_addr_i[0]  = `RETROSOC_APU_KWS__SCRATCH_A_BASE;
+    scratch_read_valid_i[0] = 1'b1;
+    run_access(1'b0);
+    scratch_read_valid_i[0] = 1'b0;
     if (scratch_read_data_o[0] != 32'h0102_0304) begin
       $fatal(1, "history clear corrupted non-history scratch");
     end
@@ -203,5 +241,5 @@ module apu_kws_sram_client_tb;
   end
 
   logic s_unused;
-  assign s_unused = valid_o ^ ^data_o ^ codec_valid_o ^ ^codec_data_o;
+  assign s_unused = valid_o ^ ^data_o ^ codec_valid_o ^ ^codec_data_o ^ access_progress_o;
 endmodule

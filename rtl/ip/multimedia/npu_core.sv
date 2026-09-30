@@ -131,26 +131,26 @@ module npu_core #(
     logic s_epoch_restart;
     logic s_unused;
 
-    assign launch_ready_o       = 1'b1;
-    assign result_valid_o       = 1'b0;
-    assign result_data_o        = '0;
-    assign busy_o               = 1'b0;
-    assign draining_o           = 1'b0;
-    assign flush_busy_o         = 1'b0;
-    assign snapshot_resp_data_o = '0;
+    assign launch_ready_o         = 1'b1;
+    assign result_valid_o         = 1'b0;
+    assign result_data_o          = '0;
+    assign busy_o                 = 1'b0;
+    assign draining_o             = 1'b0;
+    assign flush_busy_o           = 1'b0;
+    assign snapshot_resp_data_o   = '0;
 
     // With zero accepted AXI obligations and no internal work, the
     // clock-pause acknowledge is immediate and the HP idle contribution
     // follows the platform formula !block_new_i || clock_pause_ack_o.
-    assign clock_pause_ack_o    = block_new_i;
-    assign pause_active_o       = block_new_i && clock_pause_ack_o;
-    assign idle_o               = !block_new_i || clock_pause_ack_o;
+    assign clock_pause_ack_o      = block_new_i;
+    assign pause_active_o         = block_new_i && clock_pause_ack_o;
+    assign idle_o                 = !block_new_i || clock_pause_ack_o;
 
-    assign epoch_ack_o          = s_epoch_ack_q;
-    assign quiesce_ack_o        = s_quiesce_ack_q;
+    assign epoch_ack_o            = s_epoch_ack_q;
+    assign quiesce_ack_o          = s_quiesce_ack_q;
 
-    assign s_epoch_restart      = (epoch_req_i != s_epoch_ack_q);
-    assign s_unused             = ^{launch_data_i, result_ready_i, flush_i, 1'b0};
+    assign s_epoch_restart        = (epoch_req_i != s_epoch_ack_q);
+    assign s_unused               = ^{launch_data_i, result_ready_i, flush_i, 1'b0};
 
     assign dma_clear_o            = 1'b0;
     assign dma_read_req_valid_o   = 1'b0;
@@ -259,7 +259,7 @@ module npu_core #(
     snap_state_e s_snap_state_d, s_snap_state_q;
     logic [EpochWidth-1:0] s_epoch_ack_d, s_epoch_ack_q;
     logic s_quiesce_ack_d, s_quiesce_ack_q;
-    logic s_epoch_restart;
+    logic        s_epoch_restart;
     // job context
     logic [31:0] s_job_base_q;
     logic [31:0] s_job_id_q;
@@ -267,26 +267,26 @@ module npu_core #(
     logic [15:0] s_job_count_q;
     logic [31:0] s_term_job_id_q;
     // first-fault record
-    logic        s_fault_seen_d, s_fault_seen_q;
-    logic [ 3:0] s_fault_code_d, s_fault_code_q;
+    logic s_fault_seen_d, s_fault_seen_q;
+    logic [3:0] s_fault_code_d, s_fault_code_q;
     logic [31:0] s_fault_addr_d, s_fault_addr_q;
     logic [31:0] s_fault_info_d, s_fault_info_q;
     logic [31:0] s_fault_desc_d, s_fault_desc_q;
     // terminal record
-    logic [ 2:0] s_res_code_d, s_res_code_q;
-    logic [ 2:0] s_res_irq_d, s_res_irq_q;
+    logic [2:0] s_res_code_d, s_res_code_q;
+    logic [2:0] s_res_irq_d, s_res_irq_q;
     logic [31:0] s_res_completed_d, s_res_completed_q;
     // snapshot capture
     logic [SnapshotPayloadWidth-1:0] s_snap_payload_d, s_snap_payload_q;
-    logic s_launch_accept;
-    logic s_job_busy;
-    logic s_dec_busy;
-    logic s_sch_busy;
-    logic s_sch_drained;
-    logic s_drained;
-    logic s_compose_terminal;
-    logic s_stop;
-    logic s_clear;
+    logic        s_launch_accept;
+    logic        s_job_busy;
+    logic        s_dec_busy;
+    logic        s_sch_busy;
+    logic        s_sch_drained;
+    logic        s_drained;
+    logic        s_compose_terminal;
+    logic        s_stop;
+    logic        s_clear;
     // decoder wires
     logic        s_dec_job_start;
     logic        s_dec_read_req_valid;
@@ -314,51 +314,52 @@ module npu_core #(
     logic [31:0] s_rec_input0_base, s_rec_output_base;
     logic [31:0] s_rec_weight_base, s_rec_param_base;
     logic [31:0] s_rec_irow, s_rec_orow;
-    logic [ 7:0] s_rec_kh, s_rec_kw, s_rec_sh, s_rec_sw;
-    logic [ 7:0] s_rec_pad_top, s_rec_pad_left, s_rec_in0_zero;
-    logic [ 7:0] s_rec_tile_h, s_rec_tile_w;
+    logic [7:0] s_rec_kh, s_rec_kw, s_rec_sh, s_rec_sw;
+    logic [7:0] s_rec_pad_top, s_rec_pad_left, s_rec_in0_zero;
+    logic [7:0] s_rec_tile_h, s_rec_tile_w;
     logic [15:0] s_rec_k_slice;
     logic [31:0] s_rec_input1_base, s_rec_input1_row_bytes;
-    logic [ 7:0] s_rec_in1_zero, s_rec_out_zero, s_rec_act_min, s_rec_act_max;
+    logic [7:0] s_rec_in1_zero, s_rec_out_zero, s_rec_act_min, s_rec_act_max;
     logic [31:0] s_rec_weight_bytes, s_rec_param_bytes;
-    logic [15:0] s_rec_desc_index;
+    logic [ 15:0] s_rec_desc_index;
     // scheduler wires
-    logic        s_sch_launch;
-    logic        s_sch_retired;
-    logic [31:0] s_sch_completed;
-    logic        s_sch_read_req_valid;
-    logic        s_sch_read_req_ready;
-    logic [31:0] s_sch_read_addr;
-    logic [31:0] s_sch_read_bytes;
-    logic        s_sch_read_data_valid;
-    logic        s_sch_read_data_ready;
-    logic        s_sch_write_req_valid;
-    logic [31:0] s_sch_write_addr;
-    logic [31:0] s_sch_write_bytes;
-    logic        s_sch_write_data_valid;
-    logic [63:0] s_sch_write_data;
-    logic [ 7:0] s_sch_write_keep;
-    logic        s_sch_write_last;
-    logic        s_sch_pause_ok;
-    logic        s_sch_terminal;
+    logic         s_sch_launch;
+    logic         s_sch_retired;
+    logic [ 31:0] s_sch_completed;
+    logic         s_sch_read_req_valid;
+    logic         s_sch_read_req_ready;
+    logic [ 31:0] s_sch_read_addr;
+    logic [ 31:0] s_sch_read_bytes;
+    logic         s_sch_read_data_valid;
+    logic         s_sch_read_data_ready;
+    logic         s_sch_write_req_valid;
+    logic [ 31:0] s_sch_write_addr;
+    logic [ 31:0] s_sch_write_bytes;
+    logic         s_sch_write_data_valid;
+    logic [ 63:0] s_sch_write_data;
+    logic [  7:0] s_sch_write_keep;
+    logic         s_sch_write_last;
+    logic         s_sch_pause_ok;
+    logic         s_sch_terminal;
     logic [639:0] s_sch_counters;
     logic [639:0] s_sch_term_counters;
-    logic        s_sch_fault_req;
-    logic [ 3:0] s_sch_fault_code;
-    logic [31:0] s_sch_fault_addr;
-    logic [31:0] s_sch_fault_info;
-    logic [31:0] s_sch_fault_desc;
+    logic         s_sch_fault_req;
+    logic [  3:0] s_sch_fault_code;
+    logic [ 31:0] s_sch_fault_addr;
+    logic [ 31:0] s_sch_fault_info;
+    logic [ 31:0] s_sch_fault_desc;
     // fault arbitration
-    logic        s_evt_dec;
-    logic        s_evt_sch;
-    logic        s_evt_cmd_err;
-    logic [ 3:0] s_evt_code;
-    logic [31:0] s_evt_addr;
-    logic [31:0] s_evt_info;
-    logic [31:0] s_evt_desc;
-    logic        s_evt_any;
+    logic         s_evt_dec;
+    logic         s_evt_sch;
+    logic         s_evt_cmd_err;
+    logic [  3:0] s_evt_code;
+    logic [ 31:0] s_evt_addr;
+    logic [ 31:0] s_evt_info;
+    logic [ 31:0] s_evt_desc;
+    logic         s_evt_any;
 
     // Deterministic same-cycle first-fault priority: lower rank wins.
+    // verilog_format: off -- preserve macro case labels that Verible misclassifies as item tokens
     function automatic logic [3:0] fault_rank(input logic [3:0] code_i);
       logic [3:0] rank;
       begin
@@ -377,6 +378,7 @@ module npu_core #(
         return rank;
       end
     endfunction
+    // verilog_format: on
 
     assign s_evt_dec = s_dec_fault_req;
     assign s_evt_sch = s_sch_fault_req;
@@ -396,8 +398,11 @@ module npu_core #(
         s_evt_info = s_dec_fault_info;
         s_evt_desc = s_dec_fault_desc;
       end
-      if (s_evt_sch && (!s_evt_dec ||
-                        (fault_rank(s_sch_fault_code) <= fault_rank(s_dec_fault_code)))) begin
+      if (s_evt_sch && (!s_evt_dec || (fault_rank(
+              s_sch_fault_code
+          ) <= fault_rank(
+              s_dec_fault_code
+          )))) begin
         s_evt_code = s_sch_fault_code;
         s_evt_addr = s_sch_fault_addr;
         s_evt_info = s_sch_fault_info;
@@ -405,6 +410,7 @@ module npu_core #(
         // phase) belongs to the descriptor the decoder holds.
         s_evt_desc = s_dec_busy ? {16'd0, s_dec_cur_index} : s_sch_fault_desc;
       end
+      // verilog_format: off -- preserve macro argument tokens that Verible misclassifies
       if (s_evt_cmd_err && (!s_evt_dec && !s_evt_sch ||
                             (fault_rank(`APB4_NPU__FAULT_CODE_LOCAL_STATE) <=
                              fault_rank(s_evt_code)))) begin
@@ -413,6 +419,7 @@ module npu_core #(
         s_evt_info = {16'd0, 8'd255, 4'd0, 2'd0, 2'd0};
         s_evt_desc = s_dec_busy ? {16'd0, s_dec_cur_index} : s_sch_fault_desc;
       end
+      // verilog_format: on
     end
 
     assign s_job_busy = (s_state_q != CoreIdle);
@@ -439,8 +446,7 @@ module npu_core #(
         (s_state_q == CoreDrainReset);
     assign flush_busy_o = 1'b0;
     assign idle_o = !block_new_i || clock_pause_ack_o;
-    assign clock_pause_ack_o = block_new_i && dma_pause_ack_i && s_dec_pause_ok &&
-        s_sch_pause_ok;
+    assign clock_pause_ack_o = block_new_i && dma_pause_ack_i && s_dec_pause_ok && s_sch_pause_ok;
     assign pause_active_o = block_new_i && clock_pause_ack_o;
     assign epoch_ack_o = s_epoch_ack_q;
     assign quiesce_ack_o = s_quiesce_ack_q;
@@ -475,20 +481,20 @@ module npu_core #(
     // Core FSM
     // -------------------------------------------------------------
     always_comb begin
-      s_state_d = s_state_q;
-      s_epoch_ack_d = s_epoch_ack_q;
-      s_quiesce_ack_d = s_quiesce_ack_q;
-      s_snap_state_d = s_snap_state_q;
-      s_snap_payload_d = s_snap_payload_q;
-      s_fault_seen_d = s_fault_seen_q;
-      s_fault_code_d = s_fault_code_q;
-      s_fault_addr_d = s_fault_addr_q;
-      s_fault_info_d = s_fault_info_q;
-      s_fault_desc_d = s_fault_desc_q;
-      s_res_code_d = s_res_code_q;
-      s_res_irq_d = s_res_irq_q;
-      s_res_completed_d = s_res_completed_q;
-      snapshot_req_ready_o = 1'b0;
+      s_state_d             = s_state_q;
+      s_epoch_ack_d         = s_epoch_ack_q;
+      s_quiesce_ack_d       = s_quiesce_ack_q;
+      s_snap_state_d        = s_snap_state_q;
+      s_snap_payload_d      = s_snap_payload_q;
+      s_fault_seen_d        = s_fault_seen_q;
+      s_fault_code_d        = s_fault_code_q;
+      s_fault_addr_d        = s_fault_addr_q;
+      s_fault_info_d        = s_fault_info_q;
+      s_fault_desc_d        = s_fault_desc_q;
+      s_res_code_d          = s_res_code_q;
+      s_res_irq_d           = s_res_irq_q;
+      s_res_completed_d     = s_res_completed_q;
+      snapshot_req_ready_o  = 1'b0;
       snapshot_resp_valid_o = 1'b0;
 
       // snapshot endpoint: atomic capture of the live or retained bank
@@ -532,14 +538,14 @@ module npu_core #(
           if (s_evt_any && !s_fault_seen_q) begin
             s_state_d = CoreDrainFault;
           end else if (s_all_done_q) begin
-            s_res_code_d = 3'(`APB4_NPU__RESULT_CODE_DONE);
-            s_res_irq_d = 3'b001;
+            s_res_code_d      = 3'(`APB4_NPU__RESULT_CODE_DONE);
+            s_res_irq_d       = 3'b001;
             s_res_completed_d = {16'd0, s_job_count_q};
-            s_fault_code_d = 4'(`APB4_NPU__FAULT_CODE_NONE);
-            s_fault_desc_d = 32'hffff_ffff;
-            s_fault_addr_d = 32'd0;
-            s_fault_info_d = 32'd0;
-            s_state_d = CorePublish;
+            s_fault_code_d    = 4'(`APB4_NPU__FAULT_CODE_NONE);
+            s_fault_desc_d    = 32'hffff_ffff;
+            s_fault_addr_d    = 32'd0;
+            s_fault_info_d    = 32'd0;
+            s_state_d         = CorePublish;
           end else if (abort_i) begin
             s_state_d = CoreDrainAbort;
           end else if (quiesce_req_i) begin
@@ -550,17 +556,17 @@ module npu_core #(
           if (s_drained) begin
             if (s_fault_seen_q) begin
               s_res_code_d = 3'(`APB4_NPU__RESULT_CODE_ERROR);
-              s_res_irq_d = 3'b010;
+              s_res_irq_d  = 3'b010;
             end else begin
-              s_res_code_d = 3'(`APB4_NPU__RESULT_CODE_ABORTED);
-              s_res_irq_d = 3'b100;
+              s_res_code_d   = 3'(`APB4_NPU__RESULT_CODE_ABORTED);
+              s_res_irq_d    = 3'b100;
               s_fault_code_d = 4'(`APB4_NPU__FAULT_CODE_NONE);
               s_fault_desc_d = 32'hffff_ffff;
               s_fault_addr_d = 32'd0;
               s_fault_info_d = 32'd0;
             end
             s_res_completed_d = s_sch_completed;
-            s_state_d = CorePublish;
+            s_state_d         = CorePublish;
           end
         end
         CoreDrainReset: begin
@@ -570,17 +576,17 @@ module npu_core #(
             s_epoch_ack_d = epoch_req_i;
             if (s_fault_seen_q) begin
               s_res_code_d = 3'(`APB4_NPU__RESULT_CODE_ERROR);
-              s_res_irq_d = 3'b010;
+              s_res_irq_d  = 3'b010;
             end else begin
-              s_res_code_d = 3'(`APB4_NPU__RESULT_CODE_RESET_CANCELLED);
-              s_res_irq_d = 3'b010;
+              s_res_code_d   = 3'(`APB4_NPU__RESULT_CODE_RESET_CANCELLED);
+              s_res_irq_d    = 3'b010;
               s_fault_code_d = 4'(`APB4_NPU__FAULT_CODE_RESET_CANCELLED);
               s_fault_desc_d = 32'hffff_ffff;
               s_fault_addr_d = 32'd0;
               s_fault_info_d = 32'd0;
             end
             s_res_completed_d = s_sch_completed;
-            s_state_d = CorePublish;
+            s_state_d         = CorePublish;
           end
         end
         CorePublish: begin
@@ -618,46 +624,54 @@ module npu_core #(
     end
 
     assign result_valid_o = (s_state_q == CorePublish);
-    assign result_data_o = {s_res_irq_q, s_fault_code_q, s_res_code_q, s_fault_info_q,
-                            s_fault_addr_q, s_fault_desc_q, s_res_completed_q, s_job_id_q};
+    assign result_data_o = {
+      s_res_irq_q,
+      s_fault_code_q,
+      s_res_code_q,
+      s_fault_info_q,
+      s_fault_addr_q,
+      s_fault_desc_q,
+      s_res_completed_q,
+      s_job_id_q
+    };
     assign snapshot_resp_data_o = s_snap_payload_q;
 
     always_ff @(posedge clk_hp_i or negedge rst_hp_n_i) begin
       if (!rst_hp_n_i) begin
-        s_state_q <= CoreIdle;
-        s_snap_state_q <= SnapIdle;
-        s_job_base_q <= '0;
-        s_job_id_q <= '0;
-        s_timeout_q <= '0;
-        s_job_count_q <= '0;
-        s_term_job_id_q <= '0;
-        s_fault_seen_q <= 1'b0;
-        s_fault_code_q <= '0;
-        s_fault_addr_q <= '0;
-        s_fault_info_q <= '0;
-        s_fault_desc_q <= `APB4_NPU__FAULT_DESCRIPTOR_RESET;
-        s_res_code_q <= '0;
-        s_res_irq_q <= '0;
+        s_state_q         <= CoreIdle;
+        s_snap_state_q    <= SnapIdle;
+        s_job_base_q      <= '0;
+        s_job_id_q        <= '0;
+        s_timeout_q       <= '0;
+        s_job_count_q     <= '0;
+        s_term_job_id_q   <= '0;
+        s_fault_seen_q    <= 1'b0;
+        s_fault_code_q    <= '0;
+        s_fault_addr_q    <= '0;
+        s_fault_info_q    <= '0;
+        s_fault_desc_q    <= `APB4_NPU__FAULT_DESCRIPTOR_RESET;
+        s_res_code_q      <= '0;
+        s_res_irq_q       <= '0;
         s_res_completed_q <= '0;
-        s_snap_payload_q <= '0;
-        s_all_done_q <= 1'b0;
+        s_snap_payload_q  <= '0;
+        s_all_done_q      <= 1'b0;
       end else begin
-        s_state_q <= s_state_d;
-        s_snap_state_q <= s_snap_state_d;
-        s_snap_payload_q <= s_snap_payload_d;
-        s_fault_seen_q <= s_fault_seen_d;
-        s_fault_code_q <= s_fault_code_d;
-        s_fault_addr_q <= s_fault_addr_d;
-        s_fault_info_q <= s_fault_info_d;
-        s_fault_desc_q <= s_fault_desc_d;
-        s_res_code_q <= s_res_code_d;
-        s_res_irq_q <= s_res_irq_d;
+        s_state_q         <= s_state_d;
+        s_snap_state_q    <= s_snap_state_d;
+        s_snap_payload_q  <= s_snap_payload_d;
+        s_fault_seen_q    <= s_fault_seen_d;
+        s_fault_code_q    <= s_fault_code_d;
+        s_fault_addr_q    <= s_fault_addr_d;
+        s_fault_info_q    <= s_fault_info_d;
+        s_fault_desc_q    <= s_fault_desc_d;
+        s_res_code_q      <= s_res_code_d;
+        s_res_irq_q       <= s_res_irq_d;
         s_res_completed_q <= s_res_completed_d;
         if (s_launch_accept) begin
-          s_job_base_q <= launch_data_i[`APB4_NPU__LAUNCH_JOB_BASE+:32];
-          s_job_id_q <= launch_data_i[`APB4_NPU__LAUNCH_JOB_ID+:32];
-          s_timeout_q <= launch_data_i[`APB4_NPU__LAUNCH_TIMEOUT_CYCLES+:32];
-          s_job_count_q <= launch_data_i[`APB4_NPU__LAUNCH_JOB_COUNT+:16];
+          s_job_base_q   <= launch_data_i[`APB4_NPU__LAUNCH_JOB_BASE+:32];
+          s_job_id_q     <= launch_data_i[`APB4_NPU__LAUNCH_JOB_ID+:32];
+          s_timeout_q    <= launch_data_i[`APB4_NPU__LAUNCH_TIMEOUT_CYCLES+:32];
+          s_job_count_q  <= launch_data_i[`APB4_NPU__LAUNCH_JOB_COUNT+:16];
           s_fault_seen_q <= 1'b0;
           s_fault_desc_q <= `APB4_NPU__FAULT_DESCRIPTOR_RESET;
         end
@@ -693,160 +707,160 @@ module npu_core #(
     );
 
     npu_job_decoder u_job_decoder (
-        .clk_hp_i          (clk_hp_i),
-        .rst_hp_n_i        (rst_hp_n_i),
-        .clear_i           (s_stop),
-        .block_new_i       (block_new_i),
-        .pause_ok_o        (s_dec_pause_ok),
-        .job_start_i       (s_dec_job_start),
-        .job_base_i        (launch_data_i[`APB4_NPU__LAUNCH_JOB_BASE+:32]),
-        .job_count_i       (launch_data_i[`APB4_NPU__LAUNCH_JOB_COUNT+:16]),
-        .read_req_valid_o  (s_dec_read_req_valid),
-        .read_req_ready_i  (s_dec_read_req_ready),
-        .read_addr_o       (s_dec_read_addr),
-        .read_bytes_o      (s_dec_read_bytes),
-        .read_data_valid_i (s_dec_read_data_valid),
-        .read_data_ready_o (s_dec_read_data_ready),
-        .read_data_i       (dma_read_data_i),
-        .read_last_i       (dma_read_last_i),
-        .dma_read_busy_i   (dma_read_busy_i),
-        .dma_fault_i       (dma_fault_i),
-        .dma_fault_code_i  (dma_fault_code_i),
-        .dma_fault_addr_i  (dma_fault_addr_i),
-        .dma_fault_resp_i  (dma_fault_resp_i),
-        .rec_valid_o       (s_rec_valid),
-        .rec_ready_i       (s_rec_ready),
-        .rec_opcode_o      (s_rec_opcode),
-        .rec_h_o           (s_rec_h),
-        .rec_w_o           (s_rec_w),
-        .rec_cin_o         (s_rec_cin),
-        .rec_cout_o        (s_rec_cout),
-        .rec_oh_o          (s_rec_oh),
-        .rec_ow_o          (s_rec_ow),
-        .rec_input0_base_o (s_rec_input0_base),
-        .rec_output_base_o (s_rec_output_base),
-        .rec_weight_base_o (s_rec_weight_base),
-        .rec_param_base_o  (s_rec_param_base),
+        .clk_hp_i              (clk_hp_i),
+        .rst_hp_n_i            (rst_hp_n_i),
+        .clear_i               (s_stop),
+        .block_new_i           (block_new_i),
+        .pause_ok_o            (s_dec_pause_ok),
+        .job_start_i           (s_dec_job_start),
+        .job_base_i            (launch_data_i[`APB4_NPU__LAUNCH_JOB_BASE+:32]),
+        .job_count_i           (launch_data_i[`APB4_NPU__LAUNCH_JOB_COUNT+:16]),
+        .read_req_valid_o      (s_dec_read_req_valid),
+        .read_req_ready_i      (s_dec_read_req_ready),
+        .read_addr_o           (s_dec_read_addr),
+        .read_bytes_o          (s_dec_read_bytes),
+        .read_data_valid_i     (s_dec_read_data_valid),
+        .read_data_ready_o     (s_dec_read_data_ready),
+        .read_data_i           (dma_read_data_i),
+        .read_last_i           (dma_read_last_i),
+        .dma_read_busy_i       (dma_read_busy_i),
+        .dma_fault_i           (dma_fault_i),
+        .dma_fault_code_i      (dma_fault_code_i),
+        .dma_fault_addr_i      (dma_fault_addr_i),
+        .dma_fault_resp_i      (dma_fault_resp_i),
+        .rec_valid_o           (s_rec_valid),
+        .rec_ready_i           (s_rec_ready),
+        .rec_opcode_o          (s_rec_opcode),
+        .rec_h_o               (s_rec_h),
+        .rec_w_o               (s_rec_w),
+        .rec_cin_o             (s_rec_cin),
+        .rec_cout_o            (s_rec_cout),
+        .rec_oh_o              (s_rec_oh),
+        .rec_ow_o              (s_rec_ow),
+        .rec_input0_base_o     (s_rec_input0_base),
+        .rec_output_base_o     (s_rec_output_base),
+        .rec_weight_base_o     (s_rec_weight_base),
+        .rec_param_base_o      (s_rec_param_base),
         .rec_input0_row_bytes_o(s_rec_irow),
         .rec_output_row_bytes_o(s_rec_orow),
-        .rec_kh_o          (s_rec_kh),
-        .rec_kw_o          (s_rec_kw),
-        .rec_sh_o          (s_rec_sh),
-        .rec_sw_o          (s_rec_sw),
-        .rec_pad_top_o     (s_rec_pad_top),
-        .rec_pad_left_o    (s_rec_pad_left),
-        .rec_input0_zero_o (s_rec_in0_zero),
-        .rec_tile_h_o      (s_rec_tile_h),
-        .rec_tile_w_o      (s_rec_tile_w),
-        .rec_k_slice_o     (s_rec_k_slice),
-        .rec_input1_base_o (s_rec_input1_base),
+        .rec_kh_o              (s_rec_kh),
+        .rec_kw_o              (s_rec_kw),
+        .rec_sh_o              (s_rec_sh),
+        .rec_sw_o              (s_rec_sw),
+        .rec_pad_top_o         (s_rec_pad_top),
+        .rec_pad_left_o        (s_rec_pad_left),
+        .rec_input0_zero_o     (s_rec_in0_zero),
+        .rec_tile_h_o          (s_rec_tile_h),
+        .rec_tile_w_o          (s_rec_tile_w),
+        .rec_k_slice_o         (s_rec_k_slice),
+        .rec_input1_base_o     (s_rec_input1_base),
         .rec_input1_row_bytes_o(s_rec_input1_row_bytes),
-        .rec_input1_zero_o (s_rec_in1_zero),
-        .rec_output_zero_o (s_rec_out_zero),
-        .rec_act_min_o     (s_rec_act_min),
-        .rec_act_max_o     (s_rec_act_max),
-        .rec_weight_bytes_o(s_rec_weight_bytes),
-        .rec_param_bytes_o (s_rec_param_bytes),
-        .rec_desc_index_o  (s_rec_desc_index),
-        .retired_i         (s_dec_retired),
-        .all_done_o        (s_dec_all_done),
-        .busy_o            (s_dec_busy),
-        .cur_desc_index_o  (s_dec_cur_index),
-        .progress_o        (s_dec_progress),
-        .fault_req_o       (s_dec_fault_req),
-        .fault_code_o      (s_dec_fault_code),
-        .fault_addr_o      (s_dec_fault_addr),
-        .fault_info_o      (s_dec_fault_info),
-        .fault_desc_o      (s_dec_fault_desc)
+        .rec_input1_zero_o     (s_rec_in1_zero),
+        .rec_output_zero_o     (s_rec_out_zero),
+        .rec_act_min_o         (s_rec_act_min),
+        .rec_act_max_o         (s_rec_act_max),
+        .rec_weight_bytes_o    (s_rec_weight_bytes),
+        .rec_param_bytes_o     (s_rec_param_bytes),
+        .rec_desc_index_o      (s_rec_desc_index),
+        .retired_i             (s_dec_retired),
+        .all_done_o            (s_dec_all_done),
+        .busy_o                (s_dec_busy),
+        .cur_desc_index_o      (s_dec_cur_index),
+        .progress_o            (s_dec_progress),
+        .fault_req_o           (s_dec_fault_req),
+        .fault_code_o          (s_dec_fault_code),
+        .fault_addr_o          (s_dec_fault_addr),
+        .fault_info_o          (s_dec_fault_info),
+        .fault_desc_o          (s_dec_fault_desc)
     );
 
     npu_scheduler u_scheduler (
-        .clk_hp_i            (clk_hp_i),
-        .rst_hp_n_i          (rst_hp_n_i),
-        .clear_i             (s_clear),
-        .stop_i              (s_stop),
-        .block_new_i         (block_new_i),
-        .pause_ok_o          (s_sch_pause_ok),
-        .launch_i            (s_sch_launch),
-        .timeout_cycles_i    (launch_data_i[`APB4_NPU__LAUNCH_TIMEOUT_CYCLES+:32]),
-        .job_active_i        (s_state_q == CoreRun),
-        .pause_active_i      (pause_active_o),
-        .rec_valid_i         (s_rec_valid),
-        .rec_ready_o         (s_rec_ready),
-        .rec_opcode_i        (s_rec_opcode),
-        .rec_h_i             (s_rec_h),
-        .rec_w_i             (s_rec_w),
-        .rec_cin_i           (s_rec_cin),
-        .rec_cout_i          (s_rec_cout),
-        .rec_oh_i            (s_rec_oh),
-        .rec_ow_i            (s_rec_ow),
-        .rec_input0_base_i   (s_rec_input0_base),
-        .rec_output_base_i   (s_rec_output_base),
-        .rec_weight_base_i   (s_rec_weight_base),
-        .rec_param_base_i    (s_rec_param_base),
+        .clk_hp_i              (clk_hp_i),
+        .rst_hp_n_i            (rst_hp_n_i),
+        .clear_i               (s_clear),
+        .stop_i                (s_stop),
+        .block_new_i           (block_new_i),
+        .pause_ok_o            (s_sch_pause_ok),
+        .launch_i              (s_sch_launch),
+        .timeout_cycles_i      (launch_data_i[`APB4_NPU__LAUNCH_TIMEOUT_CYCLES+:32]),
+        .job_active_i          (s_state_q == CoreRun),
+        .pause_active_i        (pause_active_o),
+        .rec_valid_i           (s_rec_valid),
+        .rec_ready_o           (s_rec_ready),
+        .rec_opcode_i          (s_rec_opcode),
+        .rec_h_i               (s_rec_h),
+        .rec_w_i               (s_rec_w),
+        .rec_cin_i             (s_rec_cin),
+        .rec_cout_i            (s_rec_cout),
+        .rec_oh_i              (s_rec_oh),
+        .rec_ow_i              (s_rec_ow),
+        .rec_input0_base_i     (s_rec_input0_base),
+        .rec_output_base_i     (s_rec_output_base),
+        .rec_weight_base_i     (s_rec_weight_base),
+        .rec_param_base_i      (s_rec_param_base),
         .rec_input0_row_bytes_i(s_rec_irow),
         .rec_output_row_bytes_i(s_rec_orow),
-        .rec_kh_i            (s_rec_kh),
-        .rec_kw_i            (s_rec_kw),
-        .rec_sh_i            (s_rec_sh),
-        .rec_sw_i            (s_rec_sw),
-        .rec_pad_top_i       (s_rec_pad_top),
-        .rec_pad_left_i      (s_rec_pad_left),
-        .rec_input0_zero_i   (s_rec_in0_zero),
-        .rec_tile_h_i        (s_rec_tile_h),
-        .rec_tile_w_i        (s_rec_tile_w),
-        .rec_k_slice_i       (s_rec_k_slice),
-        .rec_input1_base_i   (s_rec_input1_base),
+        .rec_kh_i              (s_rec_kh),
+        .rec_kw_i              (s_rec_kw),
+        .rec_sh_i              (s_rec_sh),
+        .rec_sw_i              (s_rec_sw),
+        .rec_pad_top_i         (s_rec_pad_top),
+        .rec_pad_left_i        (s_rec_pad_left),
+        .rec_input0_zero_i     (s_rec_in0_zero),
+        .rec_tile_h_i          (s_rec_tile_h),
+        .rec_tile_w_i          (s_rec_tile_w),
+        .rec_k_slice_i         (s_rec_k_slice),
+        .rec_input1_base_i     (s_rec_input1_base),
         .rec_input1_row_bytes_i(s_rec_input1_row_bytes),
-        .rec_input1_zero_i   (s_rec_in1_zero),
-        .rec_output_zero_i   (s_rec_out_zero),
-        .rec_act_min_i       (s_rec_act_min),
-        .rec_act_max_i       (s_rec_act_max),
-        .rec_weight_bytes_i  (s_rec_weight_bytes),
-        .rec_param_bytes_i   (s_rec_param_bytes),
-        .rec_desc_index_i    (s_rec_desc_index),
-        .retired_o           (s_sch_retired),
-        .completed_o         (s_sch_completed),
-        .read_req_valid_o    (s_sch_read_req_valid),
-        .read_req_ready_i    (s_sch_read_req_ready),
-        .read_addr_o         (s_sch_read_addr),
-        .read_bytes_o        (s_sch_read_bytes),
-        .read_data_valid_i   (s_sch_read_data_valid),
-        .read_data_ready_o   (s_sch_read_data_ready),
-        .read_data_i         (dma_read_data_i),
-        .read_keep_i         (dma_read_keep_i),
-        .read_last_i         (dma_read_last_i),
-        .write_req_valid_o   (s_sch_write_req_valid),
-        .write_req_ready_i   (dma_write_req_ready_i),
-        .write_addr_o        (s_sch_write_addr),
-        .write_bytes_o       (s_sch_write_bytes),
-        .write_data_valid_o  (s_sch_write_data_valid),
-        .write_data_ready_i  (dma_write_data_ready_i),
-        .write_data_o        (s_sch_write_data),
-        .write_keep_o        (s_sch_write_keep),
-        .write_last_o        (s_sch_write_last),
-        .write_done_i        (dma_write_done_i),
-        .dma_read_busy_i     (dma_read_busy_i),
-        .dma_write_busy_i    (dma_write_busy_i),
-        .dma_pause_ack_i     (dma_pause_ack_i),
-        .dma_fault_i         (dma_fault_i),
-        .dma_fault_code_i    (dma_fault_code_i),
-        .dma_fault_addr_i    (dma_fault_addr_i),
-        .dma_fault_resp_i    (dma_fault_resp_i),
-        .dma_read_bytes_i    (dma_read_bytes_i),
-        .dma_write_bytes_i   (dma_write_bytes_i),
-        .dma_stall_cycles_i  (dma_stall_cycles_i),
-        .progress_i          (s_dec_progress),
-        .terminal_i          (s_sch_terminal),
-        .counters_o          (s_sch_counters),
-        .term_counters_o     (s_sch_term_counters),
-        .fault_req_o         (s_sch_fault_req),
-        .fault_code_o        (s_sch_fault_code),
-        .fault_addr_o        (s_sch_fault_addr),
-        .fault_info_o        (s_sch_fault_info),
-        .fault_desc_o        (s_sch_fault_desc),
-        .busy_o              (s_sch_busy),
-        .drained_o           (s_sch_drained)
+        .rec_input1_zero_i     (s_rec_in1_zero),
+        .rec_output_zero_i     (s_rec_out_zero),
+        .rec_act_min_i         (s_rec_act_min),
+        .rec_act_max_i         (s_rec_act_max),
+        .rec_weight_bytes_i    (s_rec_weight_bytes),
+        .rec_param_bytes_i     (s_rec_param_bytes),
+        .rec_desc_index_i      (s_rec_desc_index),
+        .retired_o             (s_sch_retired),
+        .completed_o           (s_sch_completed),
+        .read_req_valid_o      (s_sch_read_req_valid),
+        .read_req_ready_i      (s_sch_read_req_ready),
+        .read_addr_o           (s_sch_read_addr),
+        .read_bytes_o          (s_sch_read_bytes),
+        .read_data_valid_i     (s_sch_read_data_valid),
+        .read_data_ready_o     (s_sch_read_data_ready),
+        .read_data_i           (dma_read_data_i),
+        .read_keep_i           (dma_read_keep_i),
+        .read_last_i           (dma_read_last_i),
+        .write_req_valid_o     (s_sch_write_req_valid),
+        .write_req_ready_i     (dma_write_req_ready_i),
+        .write_addr_o          (s_sch_write_addr),
+        .write_bytes_o         (s_sch_write_bytes),
+        .write_data_valid_o    (s_sch_write_data_valid),
+        .write_data_ready_i    (dma_write_data_ready_i),
+        .write_data_o          (s_sch_write_data),
+        .write_keep_o          (s_sch_write_keep),
+        .write_last_o          (s_sch_write_last),
+        .write_done_i          (dma_write_done_i),
+        .dma_read_busy_i       (dma_read_busy_i),
+        .dma_write_busy_i      (dma_write_busy_i),
+        .dma_pause_ack_i       (dma_pause_ack_i),
+        .dma_fault_i           (dma_fault_i),
+        .dma_fault_code_i      (dma_fault_code_i),
+        .dma_fault_addr_i      (dma_fault_addr_i),
+        .dma_fault_resp_i      (dma_fault_resp_i),
+        .dma_read_bytes_i      (dma_read_bytes_i),
+        .dma_write_bytes_i     (dma_write_bytes_i),
+        .dma_stall_cycles_i    (dma_stall_cycles_i),
+        .progress_i            (s_dec_progress),
+        .terminal_i            (s_sch_terminal),
+        .counters_o            (s_sch_counters),
+        .term_counters_o       (s_sch_term_counters),
+        .fault_req_o           (s_sch_fault_req),
+        .fault_code_o          (s_sch_fault_code),
+        .fault_addr_o          (s_sch_fault_addr),
+        .fault_info_o          (s_sch_fault_info),
+        .fault_desc_o          (s_sch_fault_desc),
+        .busy_o                (s_sch_busy),
+        .drained_o             (s_sch_drained)
     );
   end
 endmodule

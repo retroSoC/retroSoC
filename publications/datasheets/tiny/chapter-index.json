@@ -1,0 +1,86 @@
+[
+  {
+    "id": "xpi",
+    "family": "xpi",
+    "title": "XPI Universal Controller",
+    "depth": 3
+  },
+  {
+    "id": "sram",
+    "family": "sram",
+    "title": "On-Chip SRAM",
+    "depth": 3
+  },
+  {
+    "id": "gpio",
+    "family": "gpio",
+    "title": "General-Purpose Input/Output (GPIO)",
+    "depth": 3
+  },
+  {
+    "id": "dma",
+    "family": "dma",
+    "title": "Direct Memory Access (DMA)",
+    "depth": 3
+  },
+  {
+    "id": "timer",
+    "family": "timer",
+    "title": "General-Purpose Timers (TIM0, TIM1)",
+    "depth": 3
+  },
+  {
+    "id": "pwm",
+    "family": "pwm",
+    "title": "Pulse Width Modulation (PWM)",
+    "depth": 3
+  },
+  {
+    "id": "rtc",
+    "family": "rtc",
+    "title": "Real-Time Clock (RTC)",
+    "depth": 3
+  },
+  {
+    "id": "wdg",
+    "family": "wdg",
+    "title": "Watchdog (WDG)",
+    "depth": 3
+  },
+  {
+    "id": "uart0",
+    "family": "uart",
+    "title": "Management UART (UART0)",
+    "depth": 3
+  },
+  {
+    "id": "uart1",
+    "family": "uart",
+    "title": "Second UART (UART1)",
+    "depth": 3
+  },
+  {
+    "id": "i2c",
+    "family": "i2c",
+    "title": "Inter-Integrated Circuit (I2C0, I2C1)",
+    "depth": 3
+  },
+  {
+    "id": "sysctrl",
+    "family": "sysctrl",
+    "title": "System Controller (SYSCTRL)",
+    "depth": 3
+  },
+  {
+    "id": "clint",
+    "family": "clint",
+    "title": "Local Interrupt Controller (CLINT)",
+    "depth": 3
+  },
+  {
+    "id": "archinfo",
+    "family": "archinfo",
+    "title": "Architecture Information (ARCHINFO)",
+    "depth": 3
+  }
+]

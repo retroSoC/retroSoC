@@ -3,7 +3,7 @@
 #let npu-functional() = [
   #let n=data.system_reference.npu_implementation
   #minor-title("Deployed configuration and arithmetic")
-  The default PRODUCT integration contains an executable NPU. The control registers use PCLK;
+  The default PRODUCT integration contains an *executable NPU*. The control registers use PCLK;
   computation, private SRAM and payload DMA use HP. Launch, completion, snapshot and lifecycle
   state cross through explicit control mailboxes. There is no payload CDC or AXI width converter
   on the NPU master. The NPU is independent of the APU's fixed KWS engine.
@@ -16,9 +16,9 @@
      ([Transport],[AXI64; up to #n.max_burst_beats beats],[One read and one write may overlap; source ID zero.]),
      ([Job records],[#n.descriptor_bytes bytes],[Linear descriptor list; one active job token.])),widths:(0.9fr,1.1fr,2fr))
 
-  Tensor elements are signed INT8. Subtracting the input zero point produces signed nine-bit
-  activations; multiplication uses signed 9-by-8 operands. Accumulation uses checked INT32
-  arithmetic. Bias is applied once per output, while K slices preserve the partial sum. Overflow
+  Tensor elements are *signed INT8*. Subtracting the input zero point produces signed nine-bit
+  activations; multiplication uses signed 9-by-8 operands. Accumulation uses *checked INT32
+  arithmetic*. Bias is applied once per output, while K slices preserve the partial sum. Overflow
   is a reported arithmetic fault, not silent wraparound. Numeric profile 1 uses the implemented
   double-rounding multiplier/shift rules, then output zero point and activation clamp.
   Preserve tie handling and negative values; a host floating-point rescale is not bit equivalent.
@@ -26,7 +26,7 @@
   #source-note("rtl/ip/multimedia/npu_requantizer.sv",title:"Implemented integer requantization")
 
   #minor-title("Supported operator subset")
-  The compiler uses static batch-one NHWC tensors. Each dimension is within 1…#n.max_dimension;
+  The compiler uses *static batch-one NHWC tensors*. Each dimension is within 1…#n.max_dimension;
   a spatial tile contains at most eight output positions and each K slice is at most #n.max_k_slice.
   These individual maxima do not imply that every combination fits local storage or a valid job.
   Padding, allocation spans, packing, alignment and overlap are checked before execution.
@@ -39,9 +39,9 @@
      ([6],[Average pool],[Same geometry restrictions as max pool; integer rounding follows profile 1.]),
      ([7],[Global average pool],[One output position per channel; input/output zero point preserved.]),
      ([8],[Clamp],[Shape, channels and zero point preserved; no weights or parameter payload.])),widths:(0.4fr,0.95fr,2.65fr))
-  Unused descriptor fields and reserved words must be zero. Conv/pool output geometry must
+  Unused descriptor fields and *reserved words must be zero*. Conv/pool output geometry must
   match kernel, stride and padding; Add/Clamp are not implicit reshape operations. The compiler
-  can remove storage-preserving reshapes, but unknown operators fail compilation. Only the
+  can remove storage-preserving reshapes, but *unknown operators fail compilation*. Only the
   explicitly supported terminal Softmax becomes a CPU finalizer; this is not arbitrary CPU fallback.
   #source-note("rtl/ip/multimedia/npu_job_decoder.sv",title:"Descriptor and operator admission checks")
   #source-note("scripts/npu_compiler_p0.py",title:"Static lowering and explicit CPU boundary")
@@ -49,8 +49,8 @@
   #minor-title("Local memory and parameter ownership")
   The sixteen 4 KiB banks are partitioned into raw gather, packed activation, packed weights,
   output staging and descriptor/parameter regions. The bank-backed implementation has synchronous
-  reads and byte write strobes. Reset invalidates ownership and control metadata; it does not
-  erase SRAM contents. Software cannot treat that reset as sanitization. Input packing, local-bank
+  reads and byte write strobes. Reset invalidates ownership and control metadata; it *does not
+  erase SRAM contents*. Software cannot treat that reset as sanitization. Input packing, local-bank
   conflicts and scalar requantization can limit useful throughput below the dense-MAC ceiling.
   Descriptor, weight and parameter bases are 64-byte aligned. Tensor payload edges may use
   narrower reads or write strobes, but the declared allocation and stride bounds still apply.

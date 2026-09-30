@@ -58,7 +58,7 @@ def test_i2s_controller_abi_and_clocking(tmp_path: Path) -> None:
     source_list.write_text("\n".join([*defines, *source, ""]), encoding="utf-8")
     converted = tmp_path / "i2s.v"
     subprocess.run(
-        [sys.executable, str(ROOT / "rtl/mini/script/convt_sv2v.py"), "-f", str(source_list), "--output", str(converted)],
+        [sys.executable, str(ROOT / "scripts/rtl/convt_sv2v.py"), "-f", str(source_list), "--output", str(converted)],
         check=True,
     )
     simulation = tmp_path / "i2s_tb"

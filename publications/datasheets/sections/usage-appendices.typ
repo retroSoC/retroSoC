@@ -1,11 +1,12 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-usage-appendices","Selected body emphasis: usage appendices")
 #import "../diagram-packages.typ": storage-figures
 
 = Appendix: Software Memory and Buffer Requirements <software-memory-budget>
 Memory-map capacity, image allocation, linked image size and peak runtime use are different
 quantities. This appendix supplies source-based layouts and illustrative budgets. No matching
 ELF/MAP files or measured stack/runtime high-water report were available for this update;
-actual firmware occupation remains unprovided.
+*actual firmware occupation remains unprovided*.
 
 == Linker Layout and Runtime Accounting
 #ds-table("software-memory-accounting",[Memory quantities and the evidence needed to publish them],
@@ -15,7 +16,7 @@ actual firmware occupation remains unprovided.
    ([Runtime static memory],[VMA for code/rodata/data/BSS in the chosen linker layout.],[Actual section sizes not supplied. Placement differs between SRAM, SDRAM and PSRAM layouts.]),
    ([Stack / working space],[Linker constraints plus reviewed worst-case or measured runtime demand.],[A stack-top symbol does not reserve or measure a safe stack budget.]),
    ([Boot artifacts],[Loader header allocation bounds and actual package entries.],[Maximum allocations are already listed in the boot chapter; actual image lengths must come from the bundle.]),
-   ([DMA and media buffers],[Packing, alignment, lifetime, descriptor count and buffer multiplicity.],[The examples below are calculations, not measured allocations.])),
+   ([DMA and media buffers],[Packing, alignment, lifetime, descriptor count and buffer multiplicity.],[The examples below are calculations, *not measured allocations*.])),
   widths:(1fr,1.7fr,1.5fr))
 
 The all-SRAM script places the main code/rodata/data/BSS in SRAM with initialized content
@@ -38,7 +39,7 @@ Each diagram preserves its actual linker regions and selected startup boundary.
 
 == Worked Buffer Budgets
 The examples use 64-byte allocation alignment for shared HP cache-block ownership. This does
-not replace the peripheral's minimum alignment. Each independent buffer receives its own aligned
+*not replace the peripheral's minimum alignment*. Each independent buffer receives its own aligned
 stride so a maintenance operation does not include another owner's boundary bytes.
 
 #storage-figures("software-memory-budget",section:"software")
@@ -115,18 +116,20 @@ qualification. Reserved, unsupported and TBD are different states; use the speci
 rather than assuming that an absent value is zero or that an address window guarantees a device.
 
 == Document and Evidence Navigation
+#change-start("v05-refresh-document-map", "Link the existing task rows to their detailed references", category: "cross-reference")
 #ds-table("document-navigation",[Where to find an authoritative answer],
   ([Question],[Primary reference],[How to use this datasheet]),
-  (([Addresses, routes and pins],[Canonical memory/topology/pin inputs and generated bindings.],[Use the generated tables and cross-IP route/conflict summaries.]),
-   ([Register behavior],[Current RTL, handwritten C definitions and reviewed IP contract.],[Use Register Programming plus the individual register exceptions.]),
-   ([Driver sequence],[SDK implementation, platform source and the IP's software contract.],[Follow the supported path and its error/ownership boundaries.]),
-   ([LP startup / traps],[Selected CRT, linker and conditional IRQ implementation.],[Use Runtime, SDK and Shell; separate pre-main stalls from application results.]),
-   ([Linux readiness],[OpenSBI, generated DTB and rootfs mailbox publisher.],[Follow the platform handoff and distinguish console, ready event and terminal verdict.]),
-   ([Diagnostic coverage],[Selected application's actual checks and result branches.],[Use Applications and Firmware Application Results; retain stage logs for repeated codes.]),
-   ([Board connection],[Approved board constraints/schematic and selected device/pad specifications.],[Use connection/compatibility tables to identify prerequisites and missing evidence.]),
-   ([Validation or performance],[Matching source/profile report, tool versions, device/model and conditions.],[Use the support and characterization sections without promoting source presence to a pass.]),
-   ([Publication identity],[This PDF's manifest and matching publication source set.],[Use Sources and Reproducibility for publication-only metadata links.])),
+  (([Addresses, routes and pins],[Canonical memory/topology/pin inputs and generated bindings.],[Use @global-register-index, @dma-routing and @gpio-mux; check @resource-conflicts.]),
+   ([Register behavior],[Current RTL, handwritten C definitions and reviewed IP contract.],[Use @register-programming and the owning register's exceptions.]),
+   ([Driver sequence],[SDK implementation, platform source and the IP's software contract.],[Start at @software-support; follow @api-completion and @multicore-operation.]),
+   ([LP startup / traps],[Selected CRT, linker and conditional IRQ implementation.],[Use @lp-runtime and @irq-runtime; separate pre-main stalls from application results.]),
+   ([Linux readiness],[OpenSBI, generated DTB and rootfs mailbox publisher.],[Use @linux-runtime; distinguish console, ready event and terminal verdict.]),
+   ([Diagnostic coverage],[Selected application's actual checks and result branches.],[Use @application-diagnostics and @firmware-application-results; retain stage logs for repeated codes.]),
+   ([Board connection],[Approved board constraints/schematic and selected device/pad specifications.],[Use @connection-constraints and @device-compatibility for prerequisites and missing evidence.]),
+   ([Validation or performance],[Matching source/profile report, tool versions, device/model and conditions.],[Use @release-verification and @performance-characterization; source presence is not a pass.]),
+   ([Publication identity],[This PDF's manifest and matching publication source set.],[Use @publication-provenance for publication-only metadata links.])),
   widths:(0.85fr,1.75fr,1.55fr))
+#change-end("v05-refresh-document-map")
 The datasheet presents the reviewed snapshot for integration. Detailed IP contracts explain
 local behavior; SDK sources show the implemented calling sequence; board guides define a
 particular physical system; result reports establish only the scope actually tested. Where
@@ -134,3 +137,5 @@ an old narrative conflicts with current executable integration, use the current 
 and record the discrepancy rather than silently copying the older statement.
 #source-note("publications/datasheets/system-reference.json",title:"Publication content and evidence index")
 #source-note("docs/README.md",title:"Engineering document map")
+
+#change-end("v05-emphasis-usage-appendices")

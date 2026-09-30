@@ -1,10 +1,11 @@
 # RTL Design and Simulation
 
 This directory contains retroSoC SystemVerilog RTL, CPU/IP integration,
-peripheral and technology wrappers, filelists, testbench support, and the Mini
+peripheral and technology wrappers, filelists, testbench support, and the Mini/Tiny
 SoC build entry points.
 
-`mini/` is the active SoC integration flow. `managed/` contains locked or
+`mini/` and `tiny/` own independent product integrations. Tiny is the single-hart
+AXI32/APB4 wired MCU described in [its contract](../docs/ip/tiny-soc.md). `managed/` contains locked or
 vendored integration inputs, `ip/` contains self-owned IP and experiments, and
 `model/` contains committed device simulation models with preserved upstream
 notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains
@@ -120,6 +121,19 @@ RSA-2048 Montgomery exponentiation. Its register ABI, key/zeroize boundary,
 commercial survey, and verification roadmap are documented in
 [AES/SHA-2/RSA Crypto Controller](../docs/ip/crypto.md).
 
+The Crypto storage refreeze requires six private `tc_sram_1024x32` banks for
+constants, keys, SHA schedule and RSA limb storage, with LP initialization,
+APB V2 discovery and bounded physical scrub/readback. It replaces the old
+one-round-per-cycle AES/SHA contract with bounded microsteps while preserving
+algorithms and engine concurrency. Three small stream FIFOs remain explicit
+inferred-memory exceptions. The P1 source now implements this organization,
+with `crypto_sram_store`, `crypto_mem_ctrl`, a verified scrubber and clearable
+Common FIFO wrappers. AES/SHA/RSA use synchronous SRAM microsteps; V1 ROM
+implementations are verification-only under `tests/rtl/crypto_v1/`.
+CRYPTO-P0/P1/P2 distinguish baseline, implementation and qualification.
+Six-macro block synthesis and focused tests do not establish whole-chip
+timing, physical or release qualification.
+
 The self-owned JPEG controller provides 8-bit Baseline Sequential encode and
 decode, five raster formats, a 64-bit AXI4 2D DMA, direct and 128-byte SG-ring
 jobs, four encoder table contexts, interrupts, and LP/HP transferable resource
@@ -145,9 +159,12 @@ store, primitive FIFOs, and class-2 through class-5 bitstream, entropy, local,
 and fixed-point DSP engines plus production WAV/FLAC microprogram transport to
 the APB4 shell at `APB4_APU`.
 Resource Controller index 7 and exclusive LP IRQ31/HP PLIC source10 routing
-remain fixed. Direct/ring WAV/FLAC jobs and the TX stream route are available;
-MP3, KWS, and the RX route remain disabled. The complete ABI, phase order, and evidence gates
-are defined in [Mini Audio Processing Unit](../docs/ip/apu.md).
+remain fixed. P5 provides direct/ring WAV/FLAC jobs and the TX stream route;
+the source now also contains the independent P7 KWS model/frontend/inference
+path, RX integration and the banked KWS SRAM client. Their acceptance requires
+current-revision evidence, not this source inventory. The complete ABI, phase
+order and evidence gates are defined in
+[Mini Audio Processing Unit](../docs/ip/apu.md).
 
 The P5 capacity refreeze specifies a 4096x64 (32 KiB) control store, 12-bit
 PC/branch paths, APUMC V2 with V1 compatibility, and APB V1.1 PC-high discovery.
@@ -156,12 +173,19 @@ data store. This is an implementation requirement: full WAV/FLAC resampling
 and long-Rice coverage plus a complete image fitting 4096 words are still
 required before claiming P5 completion.
 
-The P6 specification enables MP3 through a regenerated three-format APUMC V2
-bundle and the existing production pipeline. Its 4096-word/112 KiB limits,
-MP3 metadata/reservoir/CRC behavior, dual-reference PSNR and timed AXI/xrun
-qualification are normative design requirements, not evidence of delivered
-MP3 RTL or microcode. P5 compatibility and the complete-image packing gate
-remain prerequisites; KWS and RX stay deferred.
+P6 MP3 remains deferred; its stable format ID and unsupported trap entry are
+retained, not an enabled third codec. The P9 refreeze requires macro-backed
+coefficient/profile storage and microcode memoization instead of large inferred
+arrays/case ROMs. Its full IHP130 inventory is 76 4 KiB wrappers: the existing
+44 (including proof stack), 17 memo/bitmap and 15 coefficient/profile wrappers.
+The implementation provides LP APUC startup loading, bounded synchronous
+coefficient access, macro-backed proof memoization and additive APB V1.2.
+Release qualification still requires the frozen P9 evidence rather than source
+presence alone.
+The model, fixed-point results, 32/112 KiB advertised capacities and existing
+system clock/reset/IRQ/resource assignments remain fixed. Macro/init/latency
+changes must re-pass P5/P7 functional/concurrency tests and the P9 synthesis
+memory/time/RSS comparison before final P8 physical acceptance.
 
 SystemCtrl uses `sysctrl_if.sv`, `sysctrl_define.svh`, `sysctrl_reg.sv`, and
 `sysctrl_core.sv` behind the stable `apb4_sysctrl` integration wrapper. Its

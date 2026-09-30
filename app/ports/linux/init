@@ -1,0 +1,15 @@
+#!/bin/sh
+# This bounded acceptance image deliberately has no service manager or getty.
+export PATH=/bin
+mount -t proc proc /proc || exec /bin/hp-ready 11
+mount -t sysfs sysfs /sys || exec /bin/hp-ready 12
+mount -t devtmpfs devtmpfs /dev || exec /bin/hp-ready 13
+mount -t tmpfs tmpfs /tmp || exec /bin/hp-ready 14
+test -c /dev/mem || exec /bin/hp-ready 15
+test -r /proc/meminfo || exec /bin/hp-ready 16
+test -d /sys/devices || exec /bin/hp-ready 17
+echo rv64-initramfs > /tmp/probe || exec /bin/hp-ready 17
+test "$(cat /tmp/probe)" = rv64-initramfs || exec /bin/hp-ready 17
+/bin/busybox true || exec /bin/hp-ready 17
+echo "HP_LINUX_INIT_PASS"
+exec /bin/hp-ready

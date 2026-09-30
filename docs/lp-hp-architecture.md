@@ -15,7 +15,7 @@ Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:
 | --- | --- | --- |
 | Core | Hazard3 | generated VexiiRiscv |
 | Hart ID | 0 | 1 |
-| ISA | profile RV32I/RV32IM | RV32IMAFDC + Zicbom, S/U mode, Sv32 |
+| ISA | profile RV32I/RV32IM | RV64IMAFDC + Zicbom, S/U mode, Sv39 |
 | Reset clock | REF24 at 24 MHz | external 72 MHz safe clock |
 | Role | boot, control, diagnostics, recovery | high-throughput application/Linux |
 | JTAG | reset owner | selectable while HP is held in reset |

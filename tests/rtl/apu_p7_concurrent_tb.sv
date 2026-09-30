@@ -16,6 +16,7 @@ module apu_p7_concurrent_tb;
   localparam logic [31:0] WavBase = 32'h3002_0000;
   localparam logic [31:0] FlacBase = 32'h3003_0000;
   localparam logic [31:0] WriteBase = 32'h3004_0000;
+  localparam logic [31:0] CoeffBase = 32'h3005_0000;
 
   logic        clk_i = 1'b0;
   logic        rst_n_i = 1'b0;
@@ -24,6 +25,7 @@ module apu_p7_concurrent_tb;
   logic [31:0] model            [ 0:8191];
   logic [31:0] wav_image        [ 0:8191];
   logic [31:0] flac_image       [ 0:1023];
+  logic [31:0] coefficient_image[0:15375];
   logic [31:0] wav_pcm          [0:16383];
   logic [31:0] flac_pcm         [0:16383];
   logic        read_active_q;
@@ -33,7 +35,7 @@ module apu_p7_concurrent_tb;
   logic [31:0] s_value;
 
   // Scenario plusarg state.
-  string apumc_path, apum_path, wav_path, flac_path, wav_pcm_path, flac_pcm_path;
+  string apumc_path, apum_path, apuc_path, wav_path, flac_path, wav_pcm_path, flac_pcm_path;
   logic [31:0] wav_bytes, wav_frames, wav_out_words;
   logic [31:0] flac_bytes, flac_frames, flac_out_words;
   logic [31:0] rate_hz, precision_bits, seconds_ms, seed_value, workload_mask, job_log;
@@ -115,10 +117,12 @@ module apu_p7_concurrent_tb;
   // Ready-memory AXI read model: no injected stalls, back-to-back beats.
   assign axi4.arready = !read_active_q;
   assign axi4.rid = 1'b0;
-  assign axi4.rdata = (read_addr_q >= FlacBase) ? flac_image[(read_addr_q-FlacBase)>>2] :
+  assign axi4.rdata = (read_addr_q >= CoeffBase) ?
+      coefficient_image[(read_addr_q-CoeffBase)>>2] :
+      ((read_addr_q >= FlacBase) ? flac_image[(read_addr_q-FlacBase)>>2] :
       ((read_addr_q >= WavBase) ? wav_image[(read_addr_q-WavBase)>>2] :
        ((read_addr_q >= ModelBase) ? model[(read_addr_q-ModelBase)>>2] :
-        image[(read_addr_q-ImageBase)>>2]));
+        image[(read_addr_q-ImageBase)>>2])));
   assign axi4.rresp = 2'd0;
   assign axi4.rlast = read_beat_q == read_len_q;
   assign axi4.ruser = 1'b0;
@@ -479,6 +483,7 @@ module apu_p7_concurrent_tb;
     wav_source_rate = 32'd0;
     if (!$value$plusargs("APUMC_HEX=%s", apumc_path)) $fatal(1, "APUMC_HEX plusarg missing");
     if (!$value$plusargs("APUM_HEX=%s", apum_path)) $fatal(1, "APUM_HEX plusarg missing");
+    if (!$value$plusargs("APUC_HEX=%s", apuc_path)) $fatal(1, "APUC_HEX plusarg missing");
     if (!$value$plusargs("WAV_HEX=%s", wav_path)) $fatal(1, "WAV_HEX plusarg missing");
     if (!$value$plusargs("FLAC_HEX=%s", flac_path)) $fatal(1, "FLAC_HEX plusarg missing");
     if (!$value$plusargs("WAV_PCM_HEX=%s", wav_pcm_path)) $fatal(1, "WAV_PCM_HEX missing");
@@ -508,6 +513,7 @@ module apu_p7_concurrent_tb;
 
     $readmemh(apumc_path, image);
     $readmemh(apum_path, model);
+    $readmemh(apuc_path, coefficient_image);
     $readmemh(wav_path, wav_image);
     $readmemh(flac_path, flac_image);
     $readmemh(wav_pcm_path, wav_pcm);
@@ -542,7 +548,7 @@ module apu_p7_concurrent_tb;
     repeat (2) @(posedge clk_i);
 
     apb_write(`APB4_APU__READ_BASE, ImageBase);
-    apb_write(`APB4_APU__READ_LIMIT, FlacBase + 32'd4095);
+    apb_write(`APB4_APU__READ_LIMIT, CoeffBase + 32'd61503);
     apb_write(`APB4_APU__WRITE_BASE, WriteBase);
     apb_write(`APB4_APU__WRITE_LIMIT, WriteBase + 32'd255);
     apb_write(`APB4_APU__MC_IMAGE_ADDRESS, ImageBase);
@@ -558,14 +564,24 @@ module apu_p7_concurrent_tb;
     if (!s_value[`APB4_APU__MC_STATUS_VALID]) $fatal(1, "P7 concurrent microcode load timeout");
     $display("CONCURRENT_SETUP microcode loaded crc=%h", image[11]);
 
+    apb_write(`APB4_APU__KWS_COEFF_ADDRESS, CoeffBase);
+    apb_write(`APB4_APU__KWS_COEFF_SIZE, 32'd61504);
+    apb_write(`APB4_APU__KWS_COEFF_EXPECTED_CRC, `APB4_APU__APUC_PAYLOAD_CRC);
+    apb_write(`APB4_APU__KWS_COEFF_COMMAND, 32'd1);
+    for (int poll = 0; poll < 200000; poll++) begin
+      apb_read(`APB4_APU__KWS_COEFF_STATUS, s_value);
+      if (!s_value[`APB4_APU__KWS_COEFF_STATUS_BUSY]) break;
+    end
+    if (s_value[2:1] != 2'b11) begin
+      apb_read(`APB4_APU__ERROR_DETAIL, s_value);
+      $fatal(1, "P7 concurrent coefficient load failed detail=%h", s_value);
+    end
+    $display("CONCURRENT_SETUP coefficients loaded status=%h", s_value);
+
     apb_write(`APB4_APU__KWS_MODEL_ADDRESS, ModelBase);
     apb_write(`APB4_APU__KWS_MODEL_SIZE, 32'd32768);
     apb_write(`APB4_APU__KWS_MODEL_EXPECTED_CRC, `APB4_APU__APUM_PAYLOAD_CRC);
     apb_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_MODEL_LOAD);
-    // The model load is admitted under quiesce, but its DMA only runs once
-    // quiesce deasserts (apu_dma blocks new requests while quiesced and the
-    // microcode loader is idle).
-    apb4.pprot = 3'd0;
     for (int poll = 0; poll < 500000; poll++) begin
       apb_read(`APB4_APU__KWS_MODEL_STATUS, s_value);
       if (!s_value[0]) break;
@@ -577,6 +593,7 @@ module apu_p7_concurrent_tb;
       $fatal(1, "P7 concurrent model load failed detail=%h", s_value);
     end
     $display("CONCURRENT_SETUP model loaded status=%h", s_value);
+    apb4.pprot = 3'd0;
 
     apb_write(`APB4_APU__KWS_INPUT_CONFIG, kws_input_config);
     apb_write(`APB4_APU__KWS_CONFIG, 32'h0000_0180);

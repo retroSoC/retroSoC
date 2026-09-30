@@ -10,6 +10,7 @@ from publications.implementation_reference import collect_details, dependencies 
 from publications.retrieval_reference import dependencies as retrieval_dependencies
 from publications.software_reference import collect_software, dependencies as software_dependencies
 from publications.diagram_reference import dependencies as diagram_dependencies
+from publications.environment_reference import ENVIRONMENT_SOURCES, development_environment
 from publications.dev_reference import (
     APU_SOURCES, NPU_SOURCES, apu_implementation, npu_implementation,
     validate_accelerator_claims, validate_ci_snapshot,
@@ -97,6 +98,9 @@ def collect_system_reference(root: Path, revision: str) -> dict:
     reference["programming"] = collect_programming(root, reference["programming"], {row["id"] for row in index}, revision)
     reference["product_details"] = collect_details(root, reference["product_details"], {row["id"] for row in index}, {row["id"] for row in reference["limitations"]})
     reference["software"] = collect_software(root, reference["software"])
+    if not set(ENVIRONMENT_SOURCES) <= source_paths(reference):
+        raise ValueError("development environment dependencies missing from publication sources")
+    reference["development_environment"] = development_environment(root)
     if not set(APU_SOURCES) <= source_paths(reference):
         raise ValueError("APU implementation dependencies missing from publication sources")
     reference["apu_implementation"] = apu_implementation(root)

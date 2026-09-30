@@ -18,6 +18,11 @@ static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool in
 }
 
 static bool rs_dma_request_valid(const rs_dma_config_t *config) {
+#ifdef RS_SOC_TINY
+    if (config->kind != RS_DMA_KIND_MM_TO_MM) {
+        return false;
+    }
+#endif
     switch (config->kind) {
     case RS_DMA_KIND_MM_TO_MM:
         return (config->request == RS_DMA_REQUEST_SOFTWARE) ||
@@ -91,6 +96,11 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
     kind = (tcd->control >> RS_DMA_TCD_KIND_SHIFT) & UINT32_C(0x7);
     request = (tcd->control >> RS_DMA_TCD_REQUEST_SHIFT) & UINT32_C(0xF);
     burst = (tcd->control >> RS_DMA_TCD_BURST_SHIFT) & UINT32_C(0x1F);
+#ifdef RS_SOC_TINY
+    if (kind != (uint32_t)RS_DMA_KIND_MM_TO_MM) {
+        return RS_ENOTSUP;
+    }
+#endif
     if ((kind > (uint32_t)RS_DMA_KIND_STREAM_TO_MM) ||
         (request > (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT) || (burst > RS_DMA_MAX_BURST_BEATS) ||
         ((tcd->source & UINT32_C(0x3)) != UINT32_C(0)) ||

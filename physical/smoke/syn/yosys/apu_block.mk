@@ -98,7 +98,7 @@ APU_BLOCK_STA_RESULT  := $(APU_BLOCK_STA)/result-sta.json
 APU_BLOCK_SYN_RESULT  := $(APU_BLOCK_SYN)/result-synth.json
 
 $(APU_BLOCK_FL): $(APU_BLOCK_EXPORTER) $(FILELIST_TEMPLATES) \
-		$(RTL_PATH)/script/generate_filelist.py $(RTL_PATH)/script/filelist.py
+		$(RTL_PATH)/script/generate_filelist.py $(ROOT_PATH)/scripts/rtl/filelist.py
 	@mkdir -p $(APU_BLOCK_FL_DIR)
 	python3 $(APU_BLOCK_EXPORTER) --output-dir $(APU_BLOCK_FL_DIR) \
 		$(foreach define,$(DEF_LIST),--define $(define))
@@ -120,7 +120,8 @@ $(APU_BLOCK_NETLIST): $(APU_BLOCK_FL) $(APU_BLOCK_YOSYS_SCRIPTS)
 		--env PROJ_NAME=$(APU_BLOCK_TOP) --env WORK=$(APU_BLOCK_TMP) \
 		--env BUILD=$(APU_BLOCK_OUT) --env REPORTS=$(APU_BLOCK_RPT) \
 		--env NETLIST=$(APU_BLOCK_NETLIST) -- \
-		yosys -c $(APU_BLOCK_SYNTH_TCL)
+		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
+		yosys -t --perffile $(APU_BLOCK_SYN)/yosys-perf.json -c $(APU_BLOCK_SYNTH_TCL)
 
 apu-block-synth: $(APU_BLOCK_NETLIST)
 

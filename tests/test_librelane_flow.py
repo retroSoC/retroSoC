@@ -12,7 +12,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 PIN_MAP = ROOT / "rtl/mini/pin_map/pin_map.json"
 DOMAINS = ROOT / "rtl/mini/integration/clock_reset_domains.json"
-FLOW_ROOT = ROOT / "physical/librelane"
+FLOW_ROOT = ROOT / "physical/librelane/mini"
 
 
 def load_module(name: str, path: Path):
@@ -83,11 +83,11 @@ def test_chip_config_places_every_signal_and_power_pad_once(tmp_path: Path) -> N
     assert config["EXTRA_EXCLUDED_CELLS"] == ["sg13g2_IOPad*"]
     assert config["VDD_NETS"] == ["VDD"]
     assert config["GND_NETS"] == ["VSS"]
-    assert config["PAD_CFG"].endswith("physical/librelane/pad_cfg.tcl")
+    assert config["PAD_CFG"].endswith("physical/librelane/mini/pad_cfg.tcl")
     assert config["PDN_ENABLE_PINS"] is True
     assert config["ERROR_ON_PDN_VIOLATIONS"] is True
     assert config["STA_EXTRA_CORNER_TCL_FILE"].endswith(
-        "physical/librelane/sta_report_limit.tcl"
+        "physical/librelane/mini/sta_report_limit.tcl"
     )
     assert set(config["MACROS"]) == {
         "RM_IHPSG13_1P_4096x16_c3_bm_bist",
@@ -200,7 +200,7 @@ def test_librelane_flow_exposes_core_and_chip_targets() -> None:
     assert "--skip OpenROAD.STAMidPNR" in makefile
     assert "--librelane-safe" in makefile
     assert "librelane-all" not in makefile
-    assert "include physical/librelane/Makefile" in top_makefile
+    assert "include physical/librelane/mini/Makefile" in top_makefile
     ihp_filelist = (ROOT / "rtl/filelist/pdk_ihp130.fl").read_text(encoding="utf-8")
     assert ihp_filelist.index("sg13g2_udp.v") < ihp_filelist.index("sg13g2_stdcell.v")
     assert lock["sources"]["pdk_ihp130"]["revision"] == ("970a7688e7dcce2a6172797df9ef47bde2f60f9f")
@@ -209,7 +209,7 @@ def test_librelane_flow_exposes_core_and_chip_targets() -> None:
 
 
 def test_bondpad_lef_matches_the_generated_master_contract() -> None:
-    lef = (FLOW_ROOT / "bondpad/bondpad_70x70.lef").read_text(encoding="utf-8")
+    lef = (ROOT / "physical/librelane/bondpad/bondpad_70x70.lef").read_text(encoding="utf-8")
 
     assert "MACRO bondpad_70x70" in lef
     assert "CLASS COVER" in lef

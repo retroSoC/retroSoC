@@ -36,8 +36,8 @@ IVERILOG_SIM_OPTS    := +sim_timeout=$(RTL_SIM_TIMEOUT) +wave_$(WAVE)
 
 $(CONVERTED_SOC): $(if $(filter MPW,$(MINI_MODE)),$(MPW_VARIANT_STAMP)) $(FILELIST_STAMP)
 	@mkdir -p $(@D)
-	python3 $(RTL_PATH)/script/convt_sv2v.py $(RTL_FLIST) --output $@
-	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) --target $@ \
+	python3 $(ROOT_PATH)/scripts/rtl/convt_sv2v.py $(RTL_FLIST) --output $@
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py $(RTL_FLIST) --target $@ \
 		--output $(CONVERTED_DEPFILE)
 
 $(IVERILOG_BEHV_FLIST): $(FILELIST_STAMP) $(CONVERTED_SOC) $(IVERILOG_FILELIST_GEN)
@@ -88,7 +88,7 @@ $(IVERILOG_BEHV_SIMV): $(IVERILOG_BEHV_FLIST)
 		--log $(IVERILOG_BEHV_DIR)/compile.log --result $(IVERILOG_BEHV_DIR)/result-compile.json \
 		--cwd $(IVERILOG_BEHV_DIR) -- $(IVERILOG) $(IVERILOG_COMMON_OPTS) \
 		$(IVERILOG_TIME_OPTS) -f $< -o simv -s $(RTL_TOP)
-	python3 $(RTL_PATH)/script/filelist_deps.py -f $(IVERILOG_BEHV_FLIST) \
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $(IVERILOG_BEHV_FLIST) \
 		--target $@ --output $(IVERILOG_BEHV_DEPFILE)
 
 $(IVERILOG_NETL_SIMV): $(IVERILOG_NETL_FLIST)
@@ -97,7 +97,7 @@ $(IVERILOG_NETL_SIMV): $(IVERILOG_NETL_FLIST)
 		--log $(IVERILOG_NETL_DIR)/compile.log --result $(IVERILOG_NETL_DIR)/result-compile.json \
 		--cwd $(IVERILOG_NETL_DIR) -- $(IVERILOG) $(IVERILOG_COMMON_OPTS) \
 		$(IVERILOG_TIME_OPTS) -f $< -o simv -s $(RTL_TOP)
-	python3 $(RTL_PATH)/script/filelist_deps.py -f $(IVERILOG_NETL_FLIST) \
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $(IVERILOG_NETL_FLIST) \
 		--target $@ --output $(IVERILOG_NETL_DEPFILE)
 
 $(IVERILOG_POST_SIMV): $(IVERILOG_POST_FLIST)
@@ -106,7 +106,7 @@ $(IVERILOG_POST_SIMV): $(IVERILOG_POST_FLIST)
 		--log $(IVERILOG_POST_DIR)/compile.log --result $(IVERILOG_POST_DIR)/result-compile.json \
 		--cwd $(IVERILOG_POST_DIR) -- $(IVERILOG) $(IVERILOG_COMMON_OPTS) \
 		$(IVERILOG_POST_OPTS) -f $< -o simv -s $(RTL_TOP) -s retrosoc_sdf_annotator
-	python3 $(RTL_PATH)/script/filelist_deps.py -f $(IVERILOG_POST_FLIST) \
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $(IVERILOG_POST_FLIST) \
 		--target $@ --output $(IVERILOG_POST_DEPFILE)
 
 comp: $(IVERILOG_BEHV_SIMV)
@@ -114,7 +114,7 @@ netcomp: $(IVERILOG_NETL_SIMV)
 postcomp: $(IVERILOG_POST_SIMV)
 
 sim: comp
-	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_BEHV_DIR) \
+	python3 $(ROOT_PATH)/scripts/rtl/prepare_norflash.py --sim-dir $(IVERILOG_BEHV_DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
 		--log $(IVERILOG_BEHV_DIR)/sim.log --result $(IVERILOG_BEHV_DIR)/result-sim.json \
@@ -123,7 +123,7 @@ sim: comp
 		--result $(IVERILOG_BEHV_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
 netsim: netcomp
-	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
+	python3 $(ROOT_PATH)/scripts/rtl/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
 		--log $(IVERILOG_NETL_DIR)/sim.log --result $(IVERILOG_NETL_DIR)/result-sim.json \
@@ -132,7 +132,7 @@ netsim: netcomp
 		--result $(IVERILOG_NETL_DIR)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
 netsim-boot: netcomp
-	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
+	python3 $(ROOT_PATH)/scripts/rtl/prepare_norflash.py --sim-dir $(IVERILOG_NETL_DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
 		--log $(IVERILOG_NETL_DIR)/sim.log --result $(IVERILOG_NETL_DIR)/result-sim.json \
@@ -142,7 +142,7 @@ netsim-boot: netcomp
 		--result $(IVERILOG_NETL_DIR)/result-sim-check.json --require 'Hello retroSoC!'
 
 postsim: postcomp
-	python3 $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(IVERILOG_POST_DIR) \
+	python3 $(ROOT_PATH)/scripts/rtl/prepare_norflash.py --sim-dir $(IVERILOG_POST_DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
 		--log $(IVERILOG_POST_DIR)/sim.log --result $(IVERILOG_POST_DIR)/result-sim.json \

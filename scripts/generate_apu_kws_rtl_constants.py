@@ -1,19 +1,40 @@
 #!/usr/bin/env python3
-"""Generate the frozen APU-P7 frontend ROM and APUM validation constants."""
+"""Generate frozen APU-P7 references and the APU-P9 coefficient image."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import struct
+import subprocess
+import zlib
 from decimal import Decimal, ROUND_HALF_EVEN, getcontext
 from pathlib import Path
+
+from apu_kws_coeff import (
+    APUC_ABI,
+    APUC_APUM_PAYLOAD_CRC,
+    APUC_BANK_COUNT,
+    APUC_BYTES,
+    APUC_COEFFICIENT_ID,
+    APUC_HEADER_BYTES,
+    APUC_LAYOUT_ID,
+    APUC_LOGICAL_SHA256,
+    APUC_MAGIC,
+    APUC_PAYLOAD_BYTES,
+    APUC_PAYLOAD_CRC,
+    APUC_PAYLOAD_SHA256,
+    APUC_PROFILE,
+    APUC_SHA256,
+    APUC_TABLE_COUNT,
+)
 
 getcontext().prec = 100
 
 ZERO = Decimal(0)
 ONE = Decimal(1)
 TWO = Decimal(2)
-
 
 def _atan(value: Decimal) -> Decimal:
     square = value * value
@@ -224,6 +245,160 @@ def _fixed_apum_words(image: bytes) -> tuple[list[int], list[int]]:
     return offsets, [struct.unpack_from("<I", image, offset)[0] for offset in offsets]
 
 
+def _word_bytes(words: list[int]) -> bytes:
+    return b"".join(struct.pack("<I", value & 0xFFFFFFFF) for value in words)
+
+
+def _coefficient_tables(image: bytes) -> tuple[list[tuple[str, list[int]]], list[int], list[int]]:
+    fixed_offsets, fixed_words = _fixed_apum_words(image)
+    twiddle_real, twiddle_imag = _twiddle()
+    tables = [
+        ("hann", _hann()),
+        ("twiddle_real", twiddle_real),
+        ("twiddle_imag", twiddle_imag),
+        ("mel", _mel_weights()),
+        ("dct", _dct()),
+        ("log", _log_rom()),
+        ("fir3", _fir(3)),
+        ("fir6", _fir(6)),
+        ("softmax", _softmax_exp()),
+        ("apum_profile", fixed_words),
+    ]
+    return tables, fixed_offsets, fixed_words
+
+
+def _pack_coefficient_banks(image: bytes) -> tuple[list[list[int]], dict[str, list[tuple[int, int]]]]:
+    tables, _fixed_offsets, fixed_words = _coefficient_tables(image)
+    by_name = dict(tables)
+    banks = [[0] * 1024 for _ in range(APUC_BANK_COUNT)]
+    inverse: dict[str, list[tuple[int, int]]] = {name: [] for name, _values in tables}
+
+    def place(name: str, index: int, bank: int, row: int) -> None:
+        banks[bank][row] = by_name[name][index] & 0xFFFFFFFF
+        inverse[name].append((bank, row))
+
+    for index in range(480):
+        place("hann", index, 0, index)
+    for index in range(400):
+        place("dct", index, 0, 480 + index)
+    for index in range(63):
+        place("fir3", index, 0, 880 + index)
+        place("fir6", index, 0, 943 + index)
+    for index in range(256):
+        place("twiddle_real", index, 1, index)
+        place("twiddle_imag", index, 2, index)
+    for index in range(1025):
+        bank = 1 + (index & 1)
+        place("log", index, bank, 256 + (index >> 1))
+    for index in range(10280):
+        if index < 10240:
+            place("mel", index, 3 + (index >> 10), index & 1023)
+        else:
+            place("mel", index, 13, index - 10240)
+    for index in range(len(fixed_words)):
+        if index < 984:
+            place("apum_profile", index, 13, 40 + index)
+        else:
+            place("apum_profile", index, 14, index - 984)
+    for index in range(125):
+        place("softmax", index, 14, 512 + index)
+    return banks, inverse
+
+
+def build_apuc(image: bytes) -> tuple[bytes, dict[str, object]]:
+    """Build the exact APUC 1.0 image and its reviewable layout manifest."""
+
+    if len(image) != 32768:
+        raise ValueError("APUM image must be exactly 32768 bytes")
+    tables, fixed_offsets, _fixed_words = _coefficient_tables(image)
+    banks, inverse = _pack_coefficient_banks(image)
+    logical = b"".join(_word_bytes(values) for _name, values in tables)
+    payload = b"".join(_word_bytes(bank) for bank in banks)
+    payload_crc = zlib.crc32(payload) & 0xFFFFFFFF
+    ln2_q24 = _rne(TWO.ln() * Decimal(1 << 24))
+    header = struct.pack(
+        "<16I",
+        APUC_MAGIC,
+        APUC_ABI,
+        APUC_BYTES,
+        APUC_HEADER_BYTES,
+        APUC_PAYLOAD_BYTES,
+        APUC_PROFILE,
+        APUC_LAYOUT_ID,
+        APUC_BANK_COUNT,
+        APUC_TABLE_COUNT,
+        payload_crc,
+        APUC_COEFFICIENT_ID[0],
+        APUC_COEFFICIENT_ID[1],
+        APUC_APUM_PAYLOAD_CRC,
+        ln2_q24,
+        0,
+        0,
+    )
+    apuc = header + payload
+    logical_sha = hashlib.sha256(logical).hexdigest()
+    payload_sha = hashlib.sha256(payload).hexdigest()
+    apuc_sha = hashlib.sha256(apuc).hexdigest()
+    if payload_crc != APUC_PAYLOAD_CRC:
+        raise ValueError(f"APUC payload CRC drift: 0x{payload_crc:08x}")
+    if logical_sha != APUC_LOGICAL_SHA256:
+        raise ValueError(f"APUC logical SHA-256 drift: {logical_sha}")
+    if payload_sha != APUC_PAYLOAD_SHA256:
+        raise ValueError(f"APUC payload SHA-256 drift: {payload_sha}")
+    if apuc_sha != APUC_SHA256:
+        raise ValueError(f"APUC image SHA-256 drift: {apuc_sha}")
+
+    populated = sum(len(locations) for locations in inverse.values())
+    generator_path = Path(__file__).resolve()
+    generator_sha = hashlib.sha256(generator_path.read_bytes()).hexdigest()
+    revision = subprocess.run(
+        ["git", "-C", str(generator_path.parents[1]), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    repository_commit = revision.stdout.strip() if revision.returncode == 0 else ""
+    manifest: dict[str, object] = {
+        "schema_version": 1,
+        "generator": {
+            "path": "scripts/generate_apu_kws_rtl_constants.py",
+            "revision": f"sha256:{generator_sha}",
+            "sha256": generator_sha,
+            "repository_commit": repository_commit,
+        },
+        "container": {
+            "magic": f"0x{APUC_MAGIC:08x}",
+            "abi": f"0x{APUC_ABI:08x}",
+            "bytes": len(apuc),
+            "header_bytes": APUC_HEADER_BYTES,
+            "payload_bytes": len(payload),
+            "payload_crc32": f"0x{payload_crc:08x}",
+            "coefficient_id": [f"0x{word:08x}" for word in APUC_COEFFICIENT_ID],
+            "associated_apum_crc32": f"0x{APUC_APUM_PAYLOAD_CRC:08x}",
+            "logical_sha256": logical_sha,
+            "payload_sha256": payload_sha,
+            "sha256": apuc_sha,
+        },
+        "layout": {
+            "geometry": "tc_sram_1024x32",
+            "banks": APUC_BANK_COUNT,
+            "words_per_bank": 1024,
+            "populated_words": populated,
+            "zero_padding_words": APUC_BANK_COUNT * 1024 - populated,
+        },
+        "tables": {
+            name: {
+                "words": len(values),
+                "sha256_le32": hashlib.sha256(_word_bytes(values)).hexdigest(),
+                "locations": [[bank, row] for bank, row in inverse[name]],
+            }
+            for name, values in tables
+        },
+        "apum_profile_offsets": fixed_offsets,
+    }
+    return apuc, manifest
+
+
 def _emit_profile_words(offsets: list[int], values: list[int]) -> str:
     ranges: list[tuple[int, int, int]] = []
     range_start = offsets[0]
@@ -284,10 +459,18 @@ def _emit_profile_words(offsets: list[int], values: list[int]) -> str:
     return "\n".join(lines)
 
 
-def generate(apum: Path, output: Path, profile_output: Path) -> None:
+def generate(
+    apum: Path,
+    output: Path,
+    profile_output: Path,
+    apuc_output: Path | None = None,
+    manifest_output: Path | None = None,
+) -> None:
     image = apum.read_bytes()
     if len(image) != 32768:
         raise ValueError("APUM image must be exactly 32768 bytes")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    profile_output.parent.mkdir(parents=True, exist_ok=True)
     fixed_offsets, fixed_words = _fixed_apum_words(image)
     text = [
         "// Copyright (c) 2026 Yuchi Miao <miaoyuchi@ict.ac.cn>",
@@ -328,6 +511,14 @@ def generate(apum: Path, output: Path, profile_output: Path) -> None:
         ),
         encoding="ascii",
     )
+    if (apuc_output is None) != (manifest_output is None):
+        raise ValueError("APUC output and manifest output must be requested together")
+    if apuc_output is not None and manifest_output is not None:
+        apuc, manifest = build_apuc(image)
+        apuc_output.parent.mkdir(parents=True, exist_ok=True)
+        manifest_output.parent.mkdir(parents=True, exist_ok=True)
+        apuc_output.write_bytes(apuc)
+        manifest_output.write_text(json.dumps(manifest, indent=2) + "\n", encoding="ascii")
 
 
 def main() -> int:
@@ -335,11 +526,13 @@ def main() -> int:
     parser.add_argument("--apum", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--profile-output", type=Path)
+    parser.add_argument("--apuc-output", type=Path)
+    parser.add_argument("--manifest-output", type=Path)
     args = parser.parse_args()
     profile_output = args.profile_output
     if profile_output is None:
         profile_output = args.output.with_name("apu_kws_apum_profile.svh")
-    generate(args.apum, args.output, profile_output)
+    generate(args.apum, args.output, profile_output, args.apuc_output, args.manifest_output)
     return 0
 
 

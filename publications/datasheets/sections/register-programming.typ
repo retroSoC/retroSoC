@@ -1,8 +1,9 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-register-programming","Selected body emphasis: register programming")
 
 == Register Access and Programming Conventions <register-programming>
-The following conventions explain how to read the IP register chapters. They do not override
-an individual register's access width, strobe, reset or side-effect contract. Use the current
+The following conventions explain how to read the IP register chapters. They *do not override
+an individual register*'s access width, strobe, reset or side-effect contract. Use the current
 IP version and capability before interpreting a familiar offset from another device or revision.
 
 For an address-first lookup, use @global-register-index. Its instance-qualified formulas
@@ -14,7 +15,7 @@ lead back to the same register definitions used in this chapter's access convent
   (([RO],[Hardware supplies a value; software writes are not part of the interface.],[Do not assume a write is harmless; an IP can reject it.]),
    ([RW],[Software can update documented writable fields.],[Read-modify-write is valid only when reads and writes have no conflicting side effects.]),
    ([WO / command],[A write submits an action or value; reads need not return the last write.],[Use the command encoding and required state; do not read it to construct another command.]),
-   ([W1C / RW1C],[Writing one clears the selected documented status bit.],[Write an explicit acknowledgement mask; a read-modify-write can clear unrelated pending events.]),
+   ([W1C / RW1C],[Writing one clears the selected documented status bit.],[Write an *explicit acknowledgement mask*; a read-modify-write can clear unrelated pending events.]),
    ([Set / clear / toggle alias],[A specific IP provides a dedicated operation.],[Use only that IP's documented address/mask; there is no global SoC alias scheme.]),
    ([Read/pop or clear-on-read],[Reading consumes data or changes state.],[Avoid speculative reads, repeated debugger watches and reads used only for display.]),
    ([Live / snapshot],[A live value can change between accesses; a snapshot is captured by a defined operation.],[Use the register's snapshot/latch sequence before combining multiple words.]),
@@ -27,8 +28,8 @@ all peripherals. Clear only events already captured by the handler and re-check 
 using the documented sequence before reenabling interrupts.
 
 === Access width, byte lanes and alignment
-Use naturally aligned 32-bit register operations unless the IP explicitly supports another
-width. APB4 PSTRB support is per register and per instance. A data window can require all four
+Use *naturally aligned 32-bit register operations* unless the IP explicitly supports another
+width. APB4 PSTRB support is *per register and per instance*. A data window can require all four
 byte strobes while adjacent configuration registers accept partial updates. The bus fabric's
 supported beat sizes do not imply that a byte store is meaningful for every peripheral.
 
@@ -84,3 +85,5 @@ describe the result as separate samples rather than claiming an atomic 64-bit re
 #source-note("docs/ip/dvp.md",title:"DVP PIO/stream exclusion and frame semantics")
 #source-note("docs/ip/gpio.md",title:"GPIO-specific atomic operations and pad control")
 #source-note("rtl/ip/peripheral/dma_reg.sv",title:"DMA register legality and busy-state handling")
+
+#change-end("v05-emphasis-register-programming")

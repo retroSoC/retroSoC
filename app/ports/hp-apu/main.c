@@ -309,6 +309,21 @@ static void hp_report(const char *marker, uint32_t value) {
     hp_uart_puts("\n");
 }
 
+static uint32_t hp_cycle(void) {
+    uint32_t cycle;
+
+    __asm__ volatile("csrr %0, mcycle" : "=r"(cycle));
+    return cycle;
+}
+
+static void hp_milestone(const char *name) {
+    hp_uart_puts("HP_APU_CYCLE:");
+    hp_uart_puts(name);
+    hp_uart_puts(":");
+    hp_uart_puthex(hp_cycle());
+    hp_uart_puts("\n");
+}
+
 void main(void) {
     volatile rs_apu_release_page_t *page =
         (volatile rs_apu_release_page_t *)(uintptr_t)RS_APU_RELEASE_PAGE_ADDRESS;
@@ -318,11 +333,13 @@ void main(void) {
 
     hp_uart_init();
     hp_uart_puts("HP_APU_BOOT\n");
+    hp_milestone("BOOT");
     if (!hp_mailbox_wait(&code, &argument)) {
         hp_uart_puts("HP_APU_NO_MAILBOX\n");
         for (;;) {
         }
     }
+    hp_milestone("MAILBOX");
     hp_cbo_inval(RS_APU_RELEASE_PAGE_ADDRESS, RS_APU_RELEASE_PAGE_BYTES);
     page->hp_steps = RS_APU_RELEASE_STEP_MAILBOX;
     if ((code != RS_APU_RELEASE_JOB_RUN) || (argument != RS_APU_RELEASE_PAGE_ADDRESS) ||
@@ -343,6 +360,7 @@ void main(void) {
         }
     }
     hp_report("HP_APU_WAV_DONE", page->wav_output_bytes);
+    hp_milestone("WAV_DONE");
     if (!hp_submit_kws(page)) {
         hp_report("HP_APU_KWS_STOP", page->kws_status);
         page->hp_error = 4U;
@@ -351,12 +369,15 @@ void main(void) {
         }
     }
     hp_report("HP_APU_KWS_DONE", page->kws_class_id);
+    hp_milestone("KWS_DONE");
     hp_probe_lp_only(page);
     hp_report("HP_APU_TRAP_SEEN", page->fault_mcause);
+    hp_milestone("TRAP");
     summary = (page->hp_steps == RS_APU_RELEASE_STEP_ALL) ? 0U : 5U;
     page->hp_error = summary;
     hp_publish(page, summary);
     hp_uart_puts("HP_APU_DONE\n");
+    hp_milestone("DONE");
     for (;;) {
     }
 }

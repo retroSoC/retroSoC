@@ -19,6 +19,23 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def validate_change_scope(markers: list[dict], document: dict) -> None:
+    """Apply this edition's change namespace without reclassifying earlier work."""
+    prefix = document.get("change_prefix")
+    if prefix is None:
+        return  # Historical manifests predate explicit change namespaces.
+    if not isinstance(prefix, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*-", prefix):
+        raise ValueError("invalid publication change prefix")
+    navigation = {"contents", "table-directory", "figure-directory"}
+    for marker in markers:
+        identifier = marker["id"]
+        if identifier in navigation:
+            if marker["kind"] == "publication-change-start" and marker.get("category") != "navigation":
+                raise ValueError("shared navigation marker cannot claim substantive content")
+        elif not identifier.startswith(prefix):
+            raise ValueError(f"change marker belongs to an earlier publication round: {identifier}")
+
+
 def page_ranges(markers: list[dict], page_count: int) -> list[dict]:
     starts, ends, rows = {}, {}, []
     for marker in markers:
@@ -68,6 +85,16 @@ def repository_footer_pages(reader) -> list[int]:
     return pages
 
 
+def printed_page_number(text: str, page_count: int) -> int:
+    """Read the canonical footer, excluding nearby body ratios such as CAS 2/3."""
+    _, separator, footer = text.rpartition(REPOSITORY_URL)
+    found = re.findall(r"\b(\d+)\s*/\s*(\d+)\b", footer)
+    if (not separator or len(found) != 1 or int(found[0][1]) != page_count
+            or not 1 <= int(found[0][0]) <= page_count):
+        raise ValueError("missing or ambiguous printed footer")
+    return int(found[0][0])
+
+
 def report_changes(pdf: Path, baseline: Path) -> dict:
     reader, final_hash = verified_pdf(pdf)
     old, baseline_hash = verified_pdf(baseline)
@@ -79,6 +106,7 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
     if manifest["change_markers_sha256"] != digest(marker_file):
         raise ValueError("change markers do not match the delivered manifest")
     markers = json.loads(marker_file.read_text(encoding="utf-8"))
+    validate_change_scope(markers, manifest.get("document", {}))
     ranges = page_ranges(markers, len(reader.pages))
     if not ranges:
         raise ValueError("no tracked changes in this publication")
@@ -92,10 +120,10 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
                 labels[page] = None
                 continue
             text = reader.pages[page - 1].extract_text() or ""
-            found = re.findall(r"\b(\d+)\s*/\s*(\d+)\b", text[-200:])
-            if len(found) != 1 or int(found[0][1]) != len(reader.pages):
-                raise ValueError(f"missing or ambiguous printed footer on page {page}")
-            labels[page] = int(found[0][0])
+            try:
+                labels[page] = printed_page_number(text, len(reader.pages))
+            except ValueError as error:
+                raise ValueError(f"missing or ambiguous printed footer on page {page}") from error
         row["printed_start"] = labels[row["start_page"]]
         row["printed_end"] = labels[row["end_page"]]
         row["numbering"] = ("unprinted" if all(page in unnumbered for page in range(row["start_page"], row["end_page"] + 1))

@@ -398,7 +398,7 @@
       "rtl/ip/multimedia/apu_reg.sv",
       "rtl/ip/multimedia/apb4_apu.sv"
     ],
-    "summary": "Partially implemented coreless audio subsystem; production codec jobs remain disabled."
+    "summary": "Coreless audio subsystem with enabled WAV/FLAC jobs; fixed KWS is P7-configured, MP3 is unsupported, and production qualification remains incomplete."
   },
   {
     "id": "crypto",

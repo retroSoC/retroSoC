@@ -19,6 +19,7 @@ module apu_p8_quiesce_load_tb;
   localparam logic [31:0] ImageBase = 32'h3000_0000;
   localparam logic [31:0] ModelBase = 32'h3001_0000;
   localparam logic [31:0] ModelBytes = 32'd32768;
+  localparam logic [31:0] CoeffBase = 32'h3002_0000;
   localparam logic [63:0] MaxCycles = 64'd2000000;
 
   logic        clk_i = 1'b0;
@@ -26,6 +27,7 @@ module apu_p8_quiesce_load_tb;
   logic        quiesce_q;
   logic [31:0] image          [0:16383];
   logic [31:0] model          [ 0:8191];
+  logic [31:0] coefficient    [0:15375];
   logic        read_active_q;
   logic [31:0] read_addr_q;
   logic [7:0] read_len_q, read_beat_q;
@@ -34,7 +36,7 @@ module apu_p8_quiesce_load_tb;
   logic [63:0] beats_before;
   logic [31:0] s_value;
 
-  string apumc_path, apum_path;
+  string apumc_path, apum_path, apuc_path;
 
   apb4_if apb4 (
       .pclk   (clk_i),
@@ -79,8 +81,9 @@ module apu_p8_quiesce_load_tb;
   // Ready-memory AXI read model: no injected stalls, back-to-back beats.
   assign axi4.arready = !read_active_q;
   assign axi4.rid = 1'b0;
-  assign axi4.rdata   = (read_addr_q >= ModelBase) ? model[(read_addr_q-ModelBase)>>2] :
-      image[(read_addr_q-ImageBase)>>2];
+  assign axi4.rdata = (read_addr_q >= CoeffBase) ? coefficient[(read_addr_q-CoeffBase)>>2] :
+      ((read_addr_q >= ModelBase) ? model[(read_addr_q-ModelBase)>>2] :
+       image[(read_addr_q-ImageBase)>>2]);
   assign axi4.rresp = 2'd0;
   assign axi4.rlast = read_beat_q == read_len_q;
   assign axi4.ruser = 1'b0;
@@ -206,8 +209,10 @@ module apu_p8_quiesce_load_tb;
   initial begin
     if (!$value$plusargs("APUMC_HEX=%s", apumc_path)) $fatal(1, "APUMC_HEX plusarg missing");
     if (!$value$plusargs("APUM_HEX=%s", apum_path)) $fatal(1, "APUM_HEX plusarg missing");
+    if (!$value$plusargs("APUC_HEX=%s", apuc_path)) $fatal(1, "APUC_HEX plusarg missing");
     $readmemh(apumc_path, image);
     $readmemh(apum_path, model);
+    $readmemh(apuc_path, coefficient);
 
     apb4.paddr   = 32'd0;
     apb4.pprot   = 3'd0;
@@ -232,7 +237,7 @@ module apu_p8_quiesce_load_tb;
     if (!s_value[`APB4_APU__STATUS_IDLE]) $fatal(1, "P8 quiesce load core not idle %h", s_value);
 
     apb_write(`APB4_APU__READ_BASE, ImageBase);
-    apb_write(`APB4_APU__READ_LIMIT, ModelBase + ModelBytes - 32'd1);
+    apb_write(`APB4_APU__READ_LIMIT, CoeffBase + 32'd61503);
 
     // MICROCODE_LOAD under quiesce: the microcode loader was always exempt
     // from the DMA quiesce while it is itself busy; this leg must keep working.
@@ -261,6 +266,26 @@ module apu_p8_quiesce_load_tb;
           quiesced_beats_q - beats_before
       );
     $display("P8_QUIESCE_MC crc=%h beats=%0d", s_value, quiesced_beats_q - beats_before);
+
+    apb_write(`APB4_APU__KWS_COEFF_ADDRESS, CoeffBase);
+    apb_write(`APB4_APU__KWS_COEFF_SIZE, 32'd61504);
+    apb_write(`APB4_APU__KWS_COEFF_EXPECTED_CRC, `APB4_APU__APUC_PAYLOAD_CRC);
+    beats_before = quiesced_beats_q;
+    apb_write(`APB4_APU__KWS_COEFF_COMMAND, 32'd1);
+    for (int poll = 0; poll < 200000; poll++) begin
+      apb_read(`APB4_APU__KWS_COEFF_STATUS, s_value);
+      if (!s_value[`APB4_APU__KWS_COEFF_STATUS_BUSY]) break;
+    end
+    if (s_value[2:1] != 2'b11) begin
+      apb_read(`APB4_APU__ERROR_DETAIL, s_value);
+      $fatal(1, "P8 quiesce load coefficient load failed detail=%h", s_value);
+    end
+    apb_read(`APB4_APU__KWS_COEFF_ACTUAL_CRC, s_value);
+    if (s_value != `APB4_APU__APUC_PAYLOAD_CRC)
+      $fatal(1, "P8 quiesce load coefficient CRC mismatch actual=%h", s_value);
+    if (quiesced_beats_q - beats_before < 64'd15376)
+      $fatal(1, "P8 quiesce load coefficient bytes did not cross AXI under quiesce");
+    $display("P8_QUIESCE_COEFF crc=%h beats=%0d", s_value, quiesced_beats_q - beats_before);
 
     apb_read(`APB4_APU__STATUS, s_value);
     if (!s_value[`APB4_APU__STATUS_IDLE])

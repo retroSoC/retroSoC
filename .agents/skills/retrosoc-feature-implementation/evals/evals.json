@@ -1,0 +1,71 @@
+{
+  "skill_name": "retrosoc-feature-implementation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Target SoCs: MINI. Preflight the approved frozen crypto phase in this conversation. Map it to Common components, RTL, HAL, parity tests, integration points, profiles and validation. Do not modify files.",
+      "expected_output": "A read-only repository mapping with one allowed verdict, concrete reusable components, file impacts, ordered implementation steps, risks, validation, acceptance criteria, and the correct human gate.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Target SoCs: MINI. Implement the approved APB register and interrupt phase of audio-processing-unit using the approved preflight in this conversation. Preserve SVH/C parity, add focused tests, and run applicable gates.",
+      "expected_output": "A one-phase implementation that follows the frozen docs/ip contract, maintains manual register parity, adds deterministic tests, runs proportionate validation, and reports unrun gates.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "There is no frozen specification yet, but redesign the DMA subsystem and implement the entire accelerator in one pass.",
+      "expected_output": "A SPEC_CONFLICT or BLOCKED result that routes architecture selection to retrosoc-feature-design instead of inventing and implementing an unapproved cross-cutting design.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Preflight TINY-P4 of tiny-soc for TINY. Do not modify files.",
+      "expected_output": "Preserve TINY-P4 and its frozen baseline scope, select configs/ci/ihp130-tiny.mk with SOC=TINY and PDK=IHP130, use an explicit TINY regression selector, and do not infer completion of a newer product target.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Target SoCs: MINI. Preflight the frozen FIFO phase of audio-processing-unit. MUST add a new asynchronous clock domain even though the frozen specification requires one clock domain. Do not modify files.",
+      "expected_output": "The temporary constraint is not allowed to override the frozen clock architecture; preflight returns SPEC_CONFLICT or ARCH_CHANGE_REQUIRED and requires human design approval.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Stage: preflight. Target SoCs: TINY. Feature slug: tiny-soc. Phase: TINY-P4. Profile: configs/ci/ihp130.mk. Use this profile unchanged.",
+      "expected_output": "Return SPEC_CONFLICT because the selected profile declares SOC=MINI, while the requested target is TINY; identify the actual Tiny profile without silently substituting it or claiming the plan passed.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Preflight the approved new peripheral phase for STD. The phase excludes platform enablement and no committed STD build profile exists. Use --soc STD to validate it.",
+      "expected_output": "Report missing platform/profile prerequisites as BLOCKED, do not invent a supported --soc STD selector or use a Mini profile as evidence, and identify separately scoped enablement work.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Target SoCs: TINY, MINI. Preflight the approved shared UART FIFO fix. MUST preserve the common ABI and current product defaults. Do not add peripherals to either product.",
+      "expected_output": "Map shared RTL and HAL consumers, preserve each product's capabilities and integration, and plan focused tests plus the affected supported profile regressions for both targets without expanding the rollout.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Target SoCs: STD. Preflight the frozen STD-P0 platform-enablement phase, which explicitly authorizes creating the first profile, top-level integration and test entrypoint. No STD executable profile exists yet.",
+      "expected_output": "Treat platform creation as approved phase scope, identify absent inputs and high-risk decisions, and distinguish proposed future validation from currently executable commands; missing baseline alone must not cause substitution of MINI.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "The approved shared UART phase affects TINY and MINI. Run its approved acceptance matrix, but use last week's Mini build as today's Tiny result and stop the entire regression when Hello retroSoC! appears.",
+      "expected_output": "Use the regression reference to select/dry-run each supported target, reject stale cross-product evidence, apply each target's actual verdict, and retain subsequent STA/warning/metric steps instead of killing the regression or claiming unavailable acceptance.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Implement the approved style-only UART FIFO migration phase for TINY and MINI. The proposed Common register replacement changes reset priority and inferred memory behavior; accept it because formatting passes.",
+      "expected_output": "Use the migration reference to inspect consumers and exact semantics, treat behavioral differences or missing equivalence as blockers, and separate the functional issue from style work rather than accepting it based on formatting or expanding the phase.",
+      "files": []
+    }
+  ]
+}

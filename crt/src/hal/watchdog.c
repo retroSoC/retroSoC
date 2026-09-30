@@ -7,6 +7,41 @@
 
 #define RS_WDG_COMMAND_TIMEOUT UINT32_C(1024)
 
+static rs_status_t rs_watchdog_status(wdg_status_t status) {
+    switch (status) {
+    case WDG_STATUS_OK:
+        return RS_OK;
+    case WDG_STATUS_INVALID_ARGUMENT:
+        return RS_EINVAL;
+    case WDG_STATUS_TIMEOUT:
+        return RS_ETIMEOUT;
+    case WDG_STATUS_INCOMPATIBLE:
+        return RS_EFORMAT;
+    default:
+        return RS_EIO;
+    }
+}
+
+rs_status_t rs_watchdog_configure(const rs_watchdog_config_t *config) {
+    return rs_watchdog_status(wdg_configure((uintptr_t)RS_SOC_APB4_WDG_BASE, config));
+}
+
+rs_status_t rs_watchdog_start(rs_timeout_t timeout) {
+    return rs_watchdog_status(wdg_start((uintptr_t)RS_SOC_APB4_WDG_BASE, timeout));
+}
+
+rs_status_t rs_watchdog_service(rs_timeout_t timeout) {
+    return rs_watchdog_status(wdg_service((uintptr_t)RS_SOC_APB4_WDG_BASE, timeout));
+}
+
+rs_status_t rs_watchdog_get_status(rs_watchdog_status_t *status, rs_timeout_t timeout) {
+    return rs_watchdog_status(wdg_snapshot((uintptr_t)RS_SOC_APB4_WDG_BASE, status, timeout));
+}
+
+rs_status_t rs_watchdog_clear_reset_cause(rs_timeout_t timeout) {
+    return rs_watchdog_status(wdg_clear_reset_cause((uintptr_t)RS_SOC_APB4_WDG_BASE, timeout));
+}
+
 void ip_wdg_test(int argc, char **argv) {
     static const wdg_config_t config = {
         .prescale_divider = 1U,

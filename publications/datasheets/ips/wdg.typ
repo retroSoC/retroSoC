@@ -13,8 +13,8 @@
 #ip-reference("wdg","wdg",4,legacy:[
 The watchdog remains clocked independently of the APB register domain. Early-warning IRQ14
 allows software intervention before the reset request. Software starts the watchdog once and
-services it with a two-key sequence. Timeout, early-window service and malformed service
-sequences request reset. An APB reset does not stop the running watchdog core. The integrated
+services it with a *two-key sequence*. Timeout, early-window service and malformed service
+sequences request reset. An *APB reset does not stop the running watchdog core*. The integrated
 reset-request pulse parameter is eight watchdog cycles.
 ])
 

@@ -167,8 +167,28 @@ def test_p4_local_sram_has_macro_and_inferred_profiles() -> None:
         encoding="utf-8"
     )
     compact_engine = "".join(engine_source.split())
-    assert "KwsWordCount=ModelWordCount+ScratchWordCount" in "".join(kws_source.split())
-    assert "`RETROSOC_APU_KWS__SCRATCH_BYTES/4" in "".join(kws_source.split())
+    compact_kws = "".join(kws_source.split())
+    assert "localparamintunsignedBankCount=16" in compact_kws
+    assert "tc_sram_1024x32u_kws_sram" in compact_kws
+    assert "logic[31:0]mem[0:16383]" in compact_kws
+    assert "`ifdefHAVE_SRAM_MACRO" in compact_kws
+
+    coefficient_source = (
+        ROOT / "rtl/ip/multimedia/apu_kws_coeff_store.sv"
+    ).read_text(encoding="utf-8")
+    compact_coefficient = "".join(coefficient_source.split())
+    assert "localparamintunsignedBankCount=15" in compact_coefficient
+    assert "tc_sram_1024x32u_coefficient_sram" in compact_coefficient
+    assert "logics_storage_q[0:1023]" not in compact_coefficient
+    assert "logic[31:0]s_storage_q[0:1023]" in compact_coefficient
+
+    memo_source = (ROOT / "rtl/ip/multimedia/apu_proof_memo.sv").read_text(
+        encoding="utf-8"
+    )
+    compact_memo = "".join(memo_source.split())
+    assert "tc_sram_1024x32u_key_low_sram" in compact_memo
+    assert "tc_sram_1024x32u_key_high_sram" in compact_memo
+    assert "tc_sram_1024x32u_valid_bitmap_sram" in compact_memo
     assert "logicsigned[7:0]s_tensor_a_q[" not in compact_engine
     assert "logicsigned[7:0]s_tensor_b_q[" not in compact_engine
     assert "logic[31:0]s_mel_q[" not in compact_engine
@@ -1259,7 +1279,7 @@ def test_p4_production_primitives_icarus_and_verilator(tmp_path: Path) -> None:
         subprocess.run(
             [
                 sys.executable,
-                str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+                str(ROOT / "scripts/rtl/convt_sv2v.py"),
                 "-f",
                 str(source_list),
                 "--output",
@@ -1372,6 +1392,7 @@ def test_p4_loader_publishes_control_and_table_atomically(tmp_path: Path) -> Non
                 str(multimedia / "apu_microcode_pkg.sv"),
                 str(multimedia / "apu_control_store.sv"),
                 str(multimedia / "apu_local_sram.sv"),
+                str(multimedia / "apu_proof_memo.sv"),
                 str(multimedia / "apu_microcode_loader.sv"),
                 str(ROOT / "tests/rtl/apu_p4_loader_tb.sv"),
                 "",
@@ -1383,7 +1404,7 @@ def test_p4_loader_publishes_control_and_table_atomically(tmp_path: Path) -> Non
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -1436,7 +1457,7 @@ def test_p4_sequencer_kernel_pending_and_wait(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

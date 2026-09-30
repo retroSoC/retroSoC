@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-bus-programming","Selected body emphasis: bus programming")
 #let programming = data.system_reference.programming
 
 === Bus Transaction Rules and Arbitration <bus-programming>
-The usable transaction set is the intersection of the issuing master, fabric, adapters and
-destination. A 64-bit fabric does not make every target a 64-bit register interface. Keep
+The usable transaction set is the *intersection of the issuing master, fabric, adapters and
+destination*. A 64-bit fabric does not make every target a 64-bit register interface. Keep
 device/MMIO accesses within the target's register contract even when a bus path accepts a wider request.
 
 #ds-table("bus-path-rules",[Transaction rules by path in the reviewed implementation],
@@ -30,9 +31,9 @@ transfers and the narrower documented target limits. See @register-programming f
       {[No normal address admission through this slot.]} else {[Subject to target credits, ID and lifecycle gates.]})),
   widths:(1.5fr,0.55fr,0.6fr,1.65fr))
 SRAM and SDRAM have separate four-read/two-write target limits; serial and error targets use
-one read/one write. Target credits and master credits both constrain admission. The source
+one read/one write. *Target credits and master credits both constrain admission*. The source
 identity receives a fixed master prefix, and the same source ID is blocked while its earlier
-transaction remains active. Multiple IDs do not remove ordering requirements imposed by software.
+transaction remains active. *Multiple IDs do not remove ordering requirements* imposed by software.
 
 The JPEG private path is connected to slot 6 in #code("soc_data_plane") and receives one normal
 read credit plus one normal write credit. Normal JPEG payload addresses remain subject to target
@@ -71,3 +72,5 @@ original request. This conversion does not remove source/target alignment, 4 KiB
 permission or length restrictions. It also does not raise the NPU's independently configured
 eight-beat maximum. Verify the source master, converter and final memory contract together.
 #source-note("rtl/mini/top/axi4_downsizer_64to32.sv",title:"Implemented fragmentation, read reassembly and write response aggregation")
+
+#change-end("v05-emphasis-bus-programming")

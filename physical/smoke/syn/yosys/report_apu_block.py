@@ -33,15 +33,18 @@ SRAM_WRAPPER_PREFIX = "tc_sram"
 CLOCK_GATE_RE = re.compile(r"^sg13g2_(s)?lgcp_\d+$")
 
 MACRO_CLASS_BY_ANCESTOR = {
+    "u_proof_memo": "verifier_memo",
+    "u_kws_coeff_store": "coefficient_store",
+    "u_kws_sram_client": "kws_model_scratch",
     "u_control_store": "control_store",
-    "u_local_sram": "local_data",
+    "u_local_sram": "codec_common_data",
     "u_microcode_loader": "loader_path_stack",
 }
 
 LOCAL_SRAM_RTL = REPO_ROOT / "rtl/ip/multimedia/apu_local_sram.sv"
 APU_TOP_RTL = REPO_ROOT / "rtl/ip/multimedia/apb4_apu.sv"
 APU_DEFINE_RTL = REPO_ROOT / "rtl/ip/multimedia/apu_define.svh"
-DOC_REFERENCE = "docs/ip/apu.md:3536-3541"
+DOC_REFERENCE = "docs/ip/apu.md:2698-2714"
 
 MODULE_DEF_RE = re.compile(r"^module\s+\\?([^\s(]+)", re.MULTILINE)
 WORST_BLOCK_RE = re.compile(r"(?=^Startpoint: )", re.MULTILINE)
@@ -502,6 +505,15 @@ def storage_accounting(synths: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "wrappers": control_kib // wrapper_kib + constants["local_data_logical_banks"],
             "kib": control_kib + data_kib,
         },
+        "p9_physical": {
+            "control_store": {"wrappers": 8, "kib": 32},
+            "codec_common_data": {"wrappers": 12, "kib": 48},
+            "kws_model_scratch": {"wrappers": 16, "kib": 64},
+            "loader_path_stack": {"wrappers": 8, "kib": 32},
+            "verifier_memo": {"wrappers": 17, "kib": 68},
+            "coefficient_store": {"wrappers": 15, "kib": 60},
+            "total": {"wrappers": 76, "kib": 304},
+        },
         "rtl_artifacts": [str(LOCAL_SRAM_RTL), str(APU_TOP_RTL), str(APU_DEFINE_RTL)],
         "per_configuration": {},
     }
@@ -513,6 +525,22 @@ def storage_accounting(synths: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "by_type": macros["by_type"],
             "unclassified": macros["by_class"].get("unclassified", 0),
         }
+    expected_p9 = {
+        "control_store": 8,
+        "codec_common_data": 12,
+        "kws_model_scratch": 16,
+        "loader_path_stack": 8,
+        "verifier_memo": 17,
+        "coefficient_store": 15,
+    }
+    expanded = result["per_configuration"]["expanded"]
+    observed = {name: expanded["by_class"].get(name, 0) for name in expected_p9}
+    if observed != expected_p9 or expanded["physical_macro_instances"] != 76:
+        raise SystemExit(
+            "P9 expanded macro inventory mismatch: "
+            f"observed {observed}, total {expanded['physical_macro_instances']}; "
+            f"expected {expected_p9}, total 76"
+        )
     return result
 
 
@@ -597,31 +625,31 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"{storage['control_store']['wrappers']} wrappers, {storage['control_store']['kib']} KiB",
         f"- local data: {storage['local_data']['logical_banks']} logical banks -> "
         f"{storage['local_data']['kib']} KiB "
-        f"(macro-backed {storage['local_data']['macro_backed_kib']} KiB + "
-        f"KWS register-file window {storage['local_data']['kws_window_kib']} KiB)",
+        f"(codec/common {storage['local_data']['macro_backed_kib']} KiB + "
+        f"KWS model/scratch {storage['local_data']['kws_window_kib']} KiB)",
         f"- combined logical: {storage['combined_logical']['wrappers']} wrappers, "
         f"{storage['combined_logical']['kib']} KiB",
         "",
-        "| configuration | control-store macros | local-data macros | loader path-stack macros | total physical macros |",
-        "| --- | --- | --- | --- | --- |",
+        "| configuration | control | codec/common | KWS | path stack | memo/bitmap | coefficients | total physical |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for name in ("baseline", "expanded"):
         per = storage["per_configuration"][name]
         lines.append(
             f"| {name} | {per['by_class'].get('control_store', 0)} | "
-            f"{per['by_class'].get('local_data', 0)} | "
+            f"{per['by_class'].get('codec_common_data', 0)} | "
+            f"{per['by_class'].get('kws_model_scratch', 0)} | "
             f"{per['by_class'].get('loader_path_stack', 0)} | "
+            f"{per['by_class'].get('verifier_memo', 0)} | "
+            f"{per['by_class'].get('coefficient_store', 0)} | "
             f"{per['physical_macro_instances']} |"
         )
     lines += [
         "",
-        f"Capacity reference ({DOC_REFERENCE}): 8 control-store + 28 local-data = 36 logical",
-        "wrappers (144 KiB combined) vs the pre-expansion P5 baseline of 4 + 28 = 32",
-        "(128 KiB). The loader path-stack macros above are the verifier workspace and",
-        "are reported separately as required. Note: on the current RTL the control-store",
-        "Depth is fixed at 4096 for both EnableP7 values, so both configurations measure",
-        "36 logical wrappers; the 32-wrapper P5 baseline is the pre-expansion RTL, not",
-        "EnableP7=0 of the current RTL.",
+        f"P9 physical reference ({DOC_REFERENCE}): 76 wrappers / 304 KiB. The software",
+        "capacity remains 8 control-store + 28 local-data wrappers / 144 KiB; path stack,",
+        "memo/bitmap and coefficient banks are auxiliary physical storage. The inspected",
+        "pre-P9 source inventory was 44 wrappers, so P9 adds exactly 32 wrappers.",
         "",
         "## Per-block cell/macro/area accounting (hierarchy subtree totals)",
         "",
@@ -641,8 +669,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "Cells are leaf standard cells plus macro cells inside the kept hierarchy;",
         "areas are the sums of the Liberty cell areas inside each subtree. The",
-        "KWS register-file window lives in `u_kws_sram_client` flops, not in",
-        "SRAM macros, so it appears as standard-cell area above.",
+        "All six P9 storage classes above must resolve to SRAM macros in the IHP130 flow;",
+        "a register-file or giant mux implementation is not accepted as physical storage.",
         "",
         "## Worst max-delay paths (top 5 per configuration)",
         "",
@@ -727,10 +755,12 @@ def main() -> int:
         "storage_accounting": storage_accounting(synths),
         "documentation_reference": {
             "source": DOC_REFERENCE,
-            "expanded_logical_wrappers": 36,
-            "baseline_logical_wrappers": 32,
-            "expanded_combined_kib": 144,
-            "baseline_combined_kib": 128,
+            "p9_physical_wrappers": 76,
+            "p9_physical_kib": 304,
+            "pre_p9_source_wrappers": 44,
+            "added_wrappers": 32,
+            "advertised_capacity_wrappers": 36,
+            "advertised_capacity_kib": 144,
         },
     }
     report["blocks"] = block_table(synths)

@@ -202,7 +202,7 @@ rs_status_t rs_apu_probe(rs_apu_info_t *info) {
     if ((info->ip_id != RS_APU_IP_ID_VALUE) ||
         ((info->version & RS_APU_IP_VERSION_MAJOR_MASK) !=
          (RS_APU_IP_VERSION_VALUE & RS_APU_IP_VERSION_MAJOR_MASK)) ||
-        ((info->version & UINT32_C(0xFFFF)) > 1U)) {
+        ((info->version & UINT32_C(0xFFFF)) > 2U)) {
         return RS_ENOTSUP;
     }
     return RS_OK;
@@ -620,6 +620,26 @@ static rs_status_t rs_apu_kws_discover(void) {
     return (rs_apu_bit(info.capability0, RS_APU_ABI_CAPABILITY0_KWS) != 0U) ? RS_OK : RS_ENOTSUP;
 }
 
+static rs_status_t rs_apu_kws_coeff_ready_if_required(void) {
+    rs_apu_info_t info;
+    uint32_t status;
+
+    if (rs_apu_probe(&info) != RS_OK) {
+        return RS_ENOTSUP;
+    }
+    if (rs_apu_bit(info.capability0, RS_APU_ABI_CAPABILITY0_COEFFICIENT_LOAD) == 0U) {
+        return RS_OK;
+    }
+    status = RS_APU_REG(RS_APU_ABI_KWS_COEFF_STATUS);
+    if (((status & UINT32_C(6)) != UINT32_C(6)) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC) != RS_APU_ABI_APUC_PAYLOAD_CRC) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_LO) != RS_APU_ABI_APUC_COEFFICIENT_ID_LO) ||
+        (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_HI) != RS_APU_ABI_APUC_COEFFICIENT_ID_HI)) {
+        return RS_EINVAL;
+    }
+    return RS_OK;
+}
+
 static rs_status_t rs_apu_kws_admission(const rs_apu_kws_job_t *job) {
     uint32_t model_status;
 
@@ -629,7 +649,8 @@ static rs_status_t rs_apu_kws_admission(const rs_apu_kws_job_t *job) {
         return RS_EINVAL;
     }
     model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
-    if ((model_status & UINT32_C(6)) != UINT32_C(6) ||
+    if ((rs_apu_kws_coeff_ready_if_required() != RS_OK) ||
+        (model_status & UINT32_C(6)) != UINT32_C(6) ||
         (RS_APU_REG(RS_APU_ABI_KWS_CONTROL) != UINT32_C(3)) ||
         (rs_apu_bit(RS_APU_REG(RS_APU_ABI_KWS_STATUS), RS_APU_ABI_KWS_STATUS_LISTENING) != 0U)) {
         return RS_EINVAL;
@@ -654,6 +675,9 @@ rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t time
     }
     if (rs_apu_kws_discover() != RS_OK) {
         return RS_ENOTSUP;
+    }
+    if (rs_apu_kws_coeff_ready_if_required() != RS_OK) {
+        return RS_EINVAL;
     }
     if ((rs_apu_lp_quiesced() == 0U) ||
         (rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U) ||
@@ -680,6 +704,73 @@ rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t time
         }
     }
     return RS_ETIMEOUT;
+}
+
+rs_status_t rs_apu_kws_coeff_load(const rs_apu_image_t *image, rs_timeout_t timeout) {
+    rs_apu_info_t info;
+    uint32_t polls;
+    uint32_t status;
+
+    if ((image == NULL) || ((image->address & UINT32_C(63)) != 0U) ||
+        (image->bytes != RS_APU_ABI_APUC_IMAGE_BYTES) ||
+        (image->expected_crc != RS_APU_ABI_APUC_PAYLOAD_CRC) ||
+        (image->address > (UINT32_MAX - (RS_APU_ABI_APUC_IMAGE_BYTES - 1U)))) {
+        return RS_EINVAL;
+    }
+    if ((rs_apu_probe(&info) != RS_OK) ||
+        (rs_apu_bit(info.capability0, RS_APU_ABI_CAPABILITY0_COEFFICIENT_LOAD) == 0U)) {
+        return RS_ENOTSUP;
+    }
+    status = RS_APU_REG(RS_APU_ABI_KWS_COEFF_STATUS);
+    if ((rs_apu_lp_quiesced() == 0U) ||
+        (rs_apu_bit(RS_APU_REG(RS_APU_ABI_STATUS), RS_APU_ABI_STATUS_IDLE) == 0U) ||
+        (rs_apu_range_in_acl(image->address, image->bytes, RS_APU_REG(RS_APU_ABI_READ_BASE),
+                             RS_APU_REG(RS_APU_ABI_READ_LIMIT)) == 0U) ||
+        ((RS_APU_REG(RS_APU_ABI_KWS_CONTROL) & UINT32_C(1)) != 0U) ||
+        ((status & UINT32_C(4)) != 0U) ||
+        ((RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS) & UINT32_C(2)) != 0U)) {
+        return RS_EINVAL;
+    }
+    RS_APU_REG(RS_APU_ABI_KWS_COEFF_ADDRESS) = image->address;
+    RS_APU_REG(RS_APU_ABI_KWS_COEFF_SIZE) = image->bytes;
+    RS_APU_REG(RS_APU_ABI_KWS_COEFF_EXPECTED_CRC) = image->expected_crc;
+    rs_apu_fence();
+    RS_APU_REG(RS_APU_ABI_KWS_COEFF_COMMAND) = UINT32_C(1);
+    polls = rs_apu_poll_count(timeout);
+    while (polls-- != 0U) {
+        status = RS_APU_REG(RS_APU_ABI_KWS_COEFF_STATUS);
+        if ((status & UINT32_C(1)) == 0U) {
+            if (((status & UINT32_C(6)) == UINT32_C(6)) &&
+                (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC) == image->expected_crc) &&
+                (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_LO) == RS_APU_ABI_APUC_COEFFICIENT_ID_LO) &&
+                (RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_HI) == RS_APU_ABI_APUC_COEFFICIENT_ID_HI)) {
+                return RS_OK;
+            }
+            if ((status & UINT32_C(0x0B00)) != 0U) {
+                return RS_EFORMAT;
+            }
+            return RS_EIO;
+        }
+    }
+    return RS_ETIMEOUT;
+}
+
+rs_status_t rs_apu_kws_coeff_status_read(rs_apu_kws_coeff_status_t *status) {
+    rs_apu_info_t info;
+
+    if (status == NULL) {
+        return RS_EINVAL;
+    }
+    if ((rs_apu_probe(&info) != RS_OK) ||
+        (rs_apu_bit(info.capability0, RS_APU_ABI_CAPABILITY0_COEFFICIENT_LOAD) == 0U)) {
+        return RS_ENOTSUP;
+    }
+    status->status = RS_APU_REG(RS_APU_ABI_KWS_COEFF_STATUS);
+    status->actual_crc = RS_APU_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC);
+    status->coefficient_id[0] = RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_LO);
+    status->coefficient_id[1] = RS_APU_REG(RS_APU_ABI_KWS_COEFF_ID_HI);
+    status->capacity_bytes = RS_APU_REG(RS_APU_ABI_KWS_COEFF_CAPACITY);
+    return RS_OK;
 }
 
 rs_status_t rs_apu_kws_configure(const rs_apu_kws_config_t *config) {
@@ -716,7 +807,8 @@ rs_status_t rs_apu_kws_enable(uint32_t memory_window) {
         return RS_ENOTSUP;
     }
     model_status = RS_APU_REG(RS_APU_ABI_KWS_MODEL_STATUS);
-    if ((rs_apu_owner_unblocked() == 0U) || ((model_status & UINT32_C(6)) != UINT32_C(6)) ||
+    if ((rs_apu_owner_unblocked() == 0U) || (rs_apu_kws_coeff_ready_if_required() != RS_OK) ||
+        ((model_status & UINT32_C(6)) != UINT32_C(6)) ||
         (RS_APU_REG(RS_APU_ABI_KWS_CONTROL) != 0U)) {
         return RS_EINVAL;
     }

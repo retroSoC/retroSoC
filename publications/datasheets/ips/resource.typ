@@ -11,7 +11,7 @@
 #ip("resource")
 
 #ip-reference("resource","resource",4,legacy:[
-Ten resources are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
+*Ten resources* are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
 APU, GA2D and NPU. Resource ABI 1.2 reports ten slots. Resource 9 owns the native-HP
 NPU, including LP vector 33 / HP PLIC 12 steering. Resource 8 routes the GA2D
 its IRQ according to its current owner and controls its private AXI64 lifecycle.
@@ -21,8 +21,8 @@ RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is BLEND
 foreground-only. Snapshots, pitch, and byte edges remain available. It does not
 provide transparent-background/premultiplied-alpha modes, scaling, rendering,
 descriptor/ring/queue submission, hardware cache coherency, or a Linux graphics driver.
-Ownership changes require quiesce, completion of accepted traffic and cache-maintenance
-handoff. HP can inspect allowed status but cannot take over root writes. An ownership grant
+Ownership changes require *quiesce, completion of accepted traffic and cache-maintenance
+handoff*. HP can inspect allowed status but *cannot take over root writes*. An ownership grant
 does not bypass the target access policy or EXT-H address bounds.
 ])
 

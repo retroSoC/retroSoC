@@ -1,0 +1,20 @@
+import os
+import sys
+import rtconfig
+
+RTT_ROOT = os.environ['RTT_ROOT']
+sys.path.insert(0, os.path.join(RTT_ROOT, 'tools'))
+from building import PrepareBuilding, DoBuilding
+
+DefaultEnvironment(tools=[])
+env = Environment(tools=['gcc', 'g++', 'gnulink', 'ar', 'gas'],
+                  CC=rtconfig.CC, CXX=rtconfig.CXX, AS=rtconfig.AS, AR=rtconfig.AR,
+                  LINK=rtconfig.LINK, CFLAGS=rtconfig.CFLAGS, ASFLAGS=rtconfig.AFLAGS,
+                  LINKFLAGS=rtconfig.LFLAGS, LIBS=['gcc'])
+env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
+env.Append(CPPPATH=[Dir('.').abspath,
+                   os.path.join(os.environ['RETROSOC_ROOT'], 'app/apps/hp_boot')])
+env['ASCOM'] = env['ASPPCOM']
+Export('RTT_ROOT', 'rtconfig')
+objects = PrepareBuilding(env, RTT_ROOT)
+DoBuilding('rtthread.elf', objects)

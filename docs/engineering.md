@@ -4,6 +4,7 @@
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
+| Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator/Icarus, lint; local Yosys, netlist and OpenSTA |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ihp130-debug.mk` | Verilator remote-bitbang JTAG DTM, Debug Module, OpenOCD, and GDB acceptance |
@@ -17,12 +18,12 @@ Regression Verilator firmware simulations override the profiles' manual
 `bringup` default with `APP=ci_smoke`. The IHP130 PR simulation also uses the
 32 KiB `ld2_all_sram` layout, the explicit Verilator `--fast-flash` backend,
 and an 1800-second wall-clock budget. GF180, ICS55, and SKY130 use the common
-`ld2_sdram` execution layout, the same fast-flash backend, and an 1800-second
-budget for the GA2D acceptance workload while LP instruction traffic shares
-the SDRAM target. The broad smoke therefore does not execute from the serial
-PSRAM model. The full serial XPI and PSRAM path remains covered by the Icarus
-assembly self-test and directed memory-model tests. This application verifies
-UART output,
+`ld2_sdram` execution layout, the same fast-flash backend, and a 3600-second
+budget for the peripheral acceptance workload while LP instruction traffic
+shares the SDRAM target. The broad smoke therefore does not execute from the
+serial PSRAM model. The full serial XPI and PSRAM path remains covered by the
+Icarus assembly self-test and directed memory-model tests. This application
+verifies UART output,
 archinfo APB readback, on-chip SRAM first/last-word and 8/16/32-bit access,
 Fabric Monitor collection through the PCLK-to-HP APB path, truthful extension
 capabilities, RNG integration, SDRAM 8/16/32-bit access in a reserved tail
@@ -171,6 +172,18 @@ duration, warning signatures, and netlist simulation verdict together. The
 `area` recipe is area-first and the `speed` recipe is timing-first; a single
 improved metric is not sufficient to replace `balanced`. Metrics policy remains
 in `observe` mode while recipe baselines are collected and reviewed.
+
+Every Yosys run writes `yosys-perf.json`, `<top>_pre_memory.rpt`, and
+`<top>_pre_memory.json` immediately before memory lowering. These reports are
+the authoritative pass-timing and inferred-memory inventory for memories that
+would otherwise be expanded into registers and muxes. Structured flow results
+also record `peak_rss_kib`, the operating system's maximum resident-set
+observation for the child tool. Keep both artifacts when a synthesis run times
+out or is interrupted; a missing final netlist is never a successful synthesis
+result.
+The full and block Yosys flows enforce `YOSYS_TIMEOUT=10800` seconds by
+default. Override it only for an explicitly reviewed diagnostic run; timeout
+exit 124 remains a failed synthesis verdict.
 
 Generated filelists and MPW output are flow-local. Make depfiles track expanded RTL sources and
 included headers. The shared MPW generator is protected by a file lock. Default tool parallelism is

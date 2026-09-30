@@ -68,6 +68,10 @@ yosys booth
 yosys alumacc
 yosys share
 yosys opt
+# Capture the hierarchy and inferred-memory inventory immediately before the
+# memory lowering pass. This report survives a later timeout or resource abort.
+yosys tee -q -o "${report_dir}/${proj_name}_pre_memory.rpt" stat
+yosys tee -q -o "${report_dir}/${proj_name}_pre_memory.json" stat -json
 yosys memory
 yosys opt -fast
 

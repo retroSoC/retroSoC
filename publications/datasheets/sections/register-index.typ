@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-register-index","Selected body emphasis: register index")
 #import "../ip-reference.typ": inline
 
 = Appendix: Global Register and Address Index <global-register-index>
@@ -10,15 +11,15 @@ separate PRODUCT and selected MPW contexts. A shared definition can therefore ap
 more than one instance base without creating another register ABI.
 
 Use the absolute address to identify a bank, then follow its register-name link for fields,
-side effects and software requirements. The offset column is relative to that instance's
-base for element zero, including the register-group base. An array row denotes
-#code("first address + n * stride") only for its printed index range; gaps between elements
-are not additional registers. All accesses shown are 32 bits, subject to the individual
+side effects and software requirements. The offset column is *relative to that instance's
+base* for element zero, including the register-group base. An array row denotes
+#code("first address + n * stride") only for its printed index range; *gaps between elements
+are not additional registers*. All accesses shown are 32 bits, subject to the individual
 byte-strobe and permission rules in @register-programming.
 
 Reset text preserves fixed, conditional, dynamic and non-retained meanings from the detailed
 reference. It does not promise the value of a later live status read. Register addressability
-also does not grant an initiator access or establish that an optional feature is available.
+also *does not grant an initiator access* or establish that an optional feature is available.
 
 #let index = data.system_reference.retrieval.register_index
 #let bank-table(bank) = {
@@ -62,3 +63,5 @@ individual chapters. Mapping, exclusions and instance qualifications are reviewe
 the canonical topology and the selected register decoder.
 #source-note("publications/datasheets/register-profiles.json",title:"Shared register families and repeated-bank geometry")
 #source-note("publications/datasheets/system-reference.json",title:"Register-window mapping and reviewed instance qualifications")
+
+#change-end("v05-emphasis-register-index")

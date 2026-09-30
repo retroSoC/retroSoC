@@ -49,7 +49,10 @@ module apu_p7_frontend_dump_tb;
   logic [31:0] fault_addr_o, fault_detail_o;
   logic [15:0][14:0] model_addr_o;
   logic [15:0][ 7:0] model_store_data;
+  logic storage_req, storage_ready, storage_done, storage_progress, storage_write;
+  logic [15:0]       model_read_valid;
   logic              scratch_clear;
+  logic [19:0]       scratch_read_valid;
   logic [19:0][15:0] scratch_read_addr;
   logic [19:0][31:0] scratch_read_data;
   logic [ 5:0]       scratch_write_valid;
@@ -57,9 +60,36 @@ module apu_p7_frontend_dump_tb;
   logic [ 5:0][31:0] scratch_write_data;
   logic [ 5:0][ 3:0] scratch_write_strb;
   logic              scratch_access_err;
-  logic [31:0]       pcm_mem             [0:PcmWords-1];
+  logic coeff_front_req, coeff_front_ready, coeff_front_resp_valid, coeff_front_resp_ready;
+  logic [ 3:0] coeff_front_kind;
+  logic [13:0] coeff_front_index;
+  logic [63:0] coeff_front_data;
+  logic        coeff_front_fault;
+  logic coeff_infer_req, coeff_infer_ready, coeff_infer_resp_valid, coeff_infer_resp_ready;
+  logic [ 6:0] coeff_infer_index;
+  logic [31:0] coeff_infer_data;
+  logic coeff_infer_fault, coeff_initialized;
+  int unsigned        debug_commit_count;
+  logic        [31:0] pcm_mem            [0:PcmWords-1];
 
   always #5 clk_i = ~clk_i;
+
+  always_ff @(posedge clk_i) begin
+    if (rst_n_i && $test$plusargs(
+            "DEBUG_P9"
+        ) && dut.s_commit_valid && (debug_commit_count < 5)) begin
+      $display("P9_COMMIT index=%0d sample=%0d next_peak=%0d wait=%0b ready=%0b",
+               debug_commit_count, $signed(dut.s_commit_sample), dut.s_next_peak,
+               dut.s_storage_wait_q, storage_ready);
+      debug_commit_count <= debug_commit_count + 1'b1;
+    end
+    if (rst_n_i && $test$plusargs(
+            "DEBUG_P9"
+        ) && dut.s_commit_valid && (dut.s_block_samples_q == 8'd159) &&
+            (dut.s_peak_write_q == 7'd0)) begin
+      $display("P9_PEAK_WRITE value=%0d", dut.s_next_peak);
+    end
+  end
 
   axi4_stream_if #(
       .DATA_WIDTH(32)
@@ -89,9 +119,16 @@ module apu_p7_frontend_dump_tb;
       .data_o               (),
       .valid_o              (),
       .access_err_o         (),
+      .access_req_i         (storage_req),
+      .access_ready_o       (storage_ready),
+      .access_done_o        (storage_done),
+      .access_progress_o    (storage_progress),
+      .access_write_i       (storage_write),
+      .model_read_valid_i   (model_read_valid),
       .model_addr_i         (model_addr_o),
       .model_data_o         (model_store_data),
       .scratch_clear_i      (scratch_clear),
+      .scratch_read_valid_i (scratch_read_valid),
       .scratch_read_addr_i  (scratch_read_addr),
       .scratch_read_data_o  (scratch_read_data),
       .scratch_write_valid_i(scratch_write_valid),
@@ -99,6 +136,27 @@ module apu_p7_frontend_dump_tb;
       .scratch_write_data_i (scratch_write_data),
       .scratch_write_strb_i (scratch_write_strb),
       .scratch_access_err_o (scratch_access_err)
+  );
+
+  apu_kws_coeff_fixture u_coeff_fixture (
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .frontend_req_valid_i  (coeff_front_req),
+      .frontend_req_ready_o  (coeff_front_ready),
+      .frontend_kind_i       (coeff_front_kind),
+      .frontend_index_i      (coeff_front_index),
+      .frontend_resp_valid_o (coeff_front_resp_valid),
+      .frontend_resp_ready_i (coeff_front_resp_ready),
+      .frontend_resp_data_o  (coeff_front_data),
+      .frontend_resp_fault_o (coeff_front_fault),
+      .inference_req_valid_i (coeff_infer_req),
+      .inference_req_ready_o (coeff_infer_ready),
+      .inference_index_i     (coeff_infer_index),
+      .inference_resp_valid_o(coeff_infer_resp_valid),
+      .inference_resp_ready_i(coeff_infer_resp_ready),
+      .inference_resp_data_o (coeff_infer_data),
+      .inference_resp_fault_o(coeff_infer_fault),
+      .initialized_o         (coeff_initialized)
   );
 
   apu_kws_engine dut (
@@ -146,9 +204,16 @@ module apu_p7_frontend_dump_tb;
       .memory_input_used_o         (memory_input_used_o),
       .kws_config_i                (KwsConfig),
       .input_config_i              (InputConfig),
+      .storage_req_o               (storage_req),
+      .storage_ready_i             (storage_ready),
+      .storage_done_i              (storage_done),
+      .storage_progress_i          (storage_progress),
+      .storage_write_o             (storage_write),
+      .model_read_valid_o          (model_read_valid),
       .model_addr_o                (model_addr_o),
       .model_data_i                (model_store_data),
       .scratch_clear_o             (scratch_clear),
+      .scratch_read_valid_o        (scratch_read_valid),
       .scratch_read_addr_o         (scratch_read_addr),
       .scratch_read_data_i         (scratch_read_data),
       .scratch_write_valid_o       (scratch_write_valid),
@@ -156,6 +221,21 @@ module apu_p7_frontend_dump_tb;
       .scratch_write_data_o        (scratch_write_data),
       .scratch_write_strb_o        (scratch_write_strb),
       .scratch_access_err_i        (scratch_access_err),
+      .coeff_frontend_req_valid_o  (coeff_front_req),
+      .coeff_frontend_req_ready_i  (coeff_front_ready),
+      .coeff_frontend_kind_o       (coeff_front_kind),
+      .coeff_frontend_index_o      (coeff_front_index),
+      .coeff_frontend_resp_valid_i (coeff_front_resp_valid),
+      .coeff_frontend_resp_ready_o (coeff_front_resp_ready),
+      .coeff_frontend_data_i       (coeff_front_data),
+      .coeff_frontend_fault_i      (coeff_front_fault),
+      .coeff_inference_req_valid_o (coeff_infer_req),
+      .coeff_inference_req_ready_i (coeff_infer_ready),
+      .coeff_inference_index_o     (coeff_infer_index),
+      .coeff_inference_resp_valid_i(coeff_infer_resp_valid),
+      .coeff_inference_resp_ready_o(coeff_infer_resp_ready),
+      .coeff_inference_data_i      (coeff_infer_data),
+      .coeff_inference_fault_i     (coeff_infer_fault),
       .stream_i                    (stream_i),
       .rx_ready_o                  (rx_ready_o),
       .status_o                    (status_o),
@@ -286,9 +366,11 @@ module apu_p7_frontend_dump_tb;
       max_window_cycles = 4000000;
     end
     if (window_count == 0) $fatal(1, "WINDOW_COUNT must be positive");
+    debug_commit_count = 0;
 
     repeat (4) @(negedge clk_i);
     rst_n_i = 1'b1;
+    wait (coeff_initialized);
     @(negedge clk_i);
     if (!model_valid_o || !model_lock_o) $fatal(1, "KWS model admission was not observed");
     $readmemh(apum_hex, u_kws_sram_client.mem, 0, ModelWords - 1);

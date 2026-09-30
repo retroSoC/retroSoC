@@ -39,7 +39,20 @@ rs_status_t rs_archinfo_validate_build(const rs_archinfo_t *info) {
         .config_id = ARCHINFO_INTEGRATION_CONFIG_ID,
     };
 
+#ifdef RS_SOC_TINY
+    if ((info == NULL) || (info->soc_id != RS_SOC_ID) ||
+        (info->component_id != ARCHINFO_COMPONENT_ID_VALUE) ||
+        (info->ip_version != ARCHINFO_IP_VERSION_VALUE) ||
+        (((info->capability & ARCHINFO_CAPABILITY_ABI_MASK) >> ARCHINFO_CAPABILITY_ABI_SHIFT) !=
+         ARCHINFO_ABI_VERSION) ||
+        (expectation.check_build_id && (info->build_id != expectation.build_id)) ||
+        (info->config_id != expectation.config_id)) {
+        return RS_EFORMAT;
+    }
+    return RS_OK;
+#else
     return rs_archinfo_status(archinfo_validate(info, &expectation));
+#endif
 }
 
 rs_status_t rs_archinfo_read_device_id(uint32_t device_id[4]) {

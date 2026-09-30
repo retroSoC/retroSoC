@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Generate the embedded APU release-evidence assets for the apu_release app.
 
-Reads the deterministic P5 APUMC microcode bundle, the frozen P7 APUM KWS
-model, and one locked KWS corpus utterance; synthesizes a small deterministic
+Reads the deterministic P5 APUMC microcode bundle, the frozen P9 APUC
+coefficient image, the P7 APUM KWS model, and one locked KWS corpus utterance;
+synthesizes a small deterministic
 mono 48 kHz S16 WAV fixture; computes the frozen expected PCM through the
 bit-accurate codec model; and emits a C header with every byte array and CRC
 the LP/HP evidence flow needs. The generator is deterministic: no network, no
@@ -24,6 +25,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from apu_codecs import decode_wav, process_pcm  # noqa: E402
 from apu_kws import APUM_ABI, APUM_BYTES, APUM_MAGIC, APUM_PAYLOAD_CRC, APUM_SHA256  # noqa: E402
+from apu_kws_coeff import APUC_PAYLOAD_CRC, validate_apuc  # noqa: E402
 
 APUMC_MAGIC = 0x41504D43
 APUMC_ABI_VERSIONS = (0x00010000, 0x00020000)
@@ -79,6 +81,12 @@ def _load_apum(path: Path) -> tuple[bytes, int]:
     payload_crc = struct.unpack_from("<I", image, 0x24)[0]
     _require(payload_crc == APUM_PAYLOAD_CRC, f"APUM payload CRC mismatch in {path}")
     _require(_sha256(image) == APUM_SHA256, f"APUM image SHA-256 mismatch in {path}")
+    return image, _crc32(image)
+
+
+def _load_apuc(path: Path) -> tuple[bytes, int]:
+    image = path.read_bytes()
+    validate_apuc(image)
     return image, _crc32(image)
 
 
@@ -150,6 +158,7 @@ def _format_array(name: str, data: bytes) -> str:
 
 def _emit(args: argparse.Namespace) -> str:
     apumc, apumc_crc, apumc_payload_crc = _load_apumc(args.apumc)
+    apuc, apuc_crc = _load_apuc(args.apuc)
     apum, apum_crc = _load_apum(args.apum)
     wav = _synthesize_wav()
     pcm_crc, pcm_bytes, pcm_frames = _expected_pcm(wav)
@@ -165,6 +174,9 @@ def _emit(args: argparse.Namespace) -> str:
         f"#define RS_APU_RELEASE_APUMC_SIZE        UINT32_C({len(apumc)})",
         f"#define RS_APU_RELEASE_APUMC_CRC         UINT32_C(0x{apumc_crc:08X})",
         f"#define RS_APU_RELEASE_APUMC_PAYLOAD_CRC UINT32_C(0x{apumc_payload_crc:08X})",
+        f"#define RS_APU_RELEASE_APUC_SIZE         UINT32_C({len(apuc)})",
+        f"#define RS_APU_RELEASE_APUC_CRC          UINT32_C(0x{apuc_crc:08X})",
+        f"#define RS_APU_RELEASE_APUC_PAYLOAD_CRC  UINT32_C(0x{APUC_PAYLOAD_CRC:08X})",
         f"#define RS_APU_RELEASE_APUM_SIZE         UINT32_C({len(apum)})",
         f"#define RS_APU_RELEASE_APUM_CRC          UINT32_C(0x{apum_crc:08X})",
         f"#define RS_APU_RELEASE_APUM_PAYLOAD_CRC UINT32_C(0x{APUM_PAYLOAD_CRC:08X})",
@@ -184,6 +196,8 @@ def _emit(args: argparse.Namespace) -> str:
         "",
         _format_array("rs_apu_release_apumc", apumc),
         "",
+        _format_array("rs_apu_release_apuc", apuc),
+        "",
         _format_array("rs_apu_release_apum", apum),
         "",
         _format_array("rs_apu_release_wav", wav),
@@ -199,6 +213,7 @@ def _emit(args: argparse.Namespace) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apumc", type=Path, required=True, help="P5 APUMC bundle path")
+    parser.add_argument("--apuc", type=Path, required=True, help="P9 APUC coefficient image path")
     parser.add_argument("--apum", type=Path, required=True, help="P7 APUM KWS model path")
     parser.add_argument(
         "--kws-corpus",

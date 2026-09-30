@@ -12,7 +12,7 @@
 
 #ip-reference("clint","clint",4,legacy:[
 CLINT supplies machine software and timer interrupts for the management hart. The committed
-timebase is 1 MHz. It is separate from the HP local-interrupt window and from the PLIC external
+*timebase is 1 MHz*. It is *separate from the HP local-interrupt window* and from the PLIC external
 interrupt controller.
 ])
 

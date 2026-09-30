@@ -2505,54 +2505,54 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: crypto_aes_engine. Clock: clk_i; AES processing intervals omitted. AES engine example with key expansion complete and valid parameters. The final output waits for output_ready_i; internal block processing and earlier words are omitted. SHA/RSA have separate engine sequencing.",
+    "note": "Scope: crypto_aes_sram_engine. Clock: clk_i; AES processing intervals omitted. AES engine example with key expansion complete and valid parameters. The final output waits for output_ready_i; internal block processing and earlier words are omitted. SHA/RSA have separate engine sequencing.",
     "clock_domain": "clk_i; AES processing intervals omitted",
     "signals": {
       "key_valid_o": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "key_valid_o",
         "meaning": "A committed expanded key is valid before start.",
         "polarity": "active-high"
       },
       "start_i": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "start_i",
         "meaning": "Start a configured AES job.",
         "polarity": "active-high"
       },
       "busy_o": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "busy_o",
         "meaning": "AES engine active.",
         "polarity": "active-high"
       },
       "output_valid_o": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "output_valid_o",
         "meaning": "Final output word offered and retained until accepted.",
         "polarity": "active-high"
       },
       "output_ready_i": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "output_ready_i",
         "meaning": "Output consumer readiness.",
         "polarity": "active-high"
       },
       "done_o": {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "scope": "crypto_aes_engine",
+        "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+        "scope": "crypto_aes_sram_engine",
         "symbol": "done_o",
         "meaning": "Job completion after the final accepted output.",
         "polarity": "active-high"
       }
     },
     "review_sources": [
-      "rtl/ip/security/crypto_aes_engine.sv"
+      "rtl/ip/security/crypto_aes_sram_engine.sv"
     ],
     "review_note": "Replaced generic accelerator lanes with the AES engine ready/valid and completion contract; no cipher throughput claim."
   },

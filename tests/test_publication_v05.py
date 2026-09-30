@@ -34,7 +34,7 @@ def test_npu_deployed_geometry_dma_and_wire_layout(data):
 
 def test_apu_capability_and_digest_remain_profile_specific(data):
     rows = data["system_reference"]["apu_implementation"]["profiles"]
-    assert [(r["enabled"], r["capability"], r["digest"]) for r in rows] == [(False, 0x1BD, 0), (True, 0x1FD, 0xF5005D7C)]
+    assert [(r["enabled"], r["capability"], r["digest"]) for r in rows] == [(False, 0x1BD, 0), (True, 0x3FD, 0x63E96066)]
     assert all(r["capability"] & 2 == 0 for r in rows)  # MP3 remains clear.
 
 

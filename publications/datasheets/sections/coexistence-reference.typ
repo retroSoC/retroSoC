@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-coexistence-reference","Selected body emphasis: coexistence reference")
 
 == Peripheral Coexistence and Resource Conflicts <resource-conflicts>
 This matrix describes shared resources and integration constraints. Hardware exclusions,
 software conventions and bandwidth competition require different decisions. Allowed combinations
-still require workload-specific validation.
+still require *workload-specific validation*.
 
 #ds-table("coexistence-matrix",[Shared-resource constraints across IP boundaries],
   ([Shared resource],[Constraint class],[Condition / integration action]),
@@ -13,8 +14,8 @@ still require workload-specific validation.
 === Choosing a coexistence configuration
 + Start from the generated GPIO alternate-function table and memory-pad mode. A single pad
   cannot be driven by two independent peripheral outputs; identify the complete pin group.
-+ Allocate software DMA contexts and check endpoint exclusivity. Reserve the entire buffer
-  lifetime, not just the interval needed to program the channel.
++ Allocate software DMA contexts and check endpoint exclusivity. Reserve the *entire buffer
+  lifetime*, not just the interval needed to program the channel.
 + Check the central Resource Controller's owner. Its DMA resource represents the shared engine,
   not an independent LP/HP owner bit for each software channel convention.
 + Account for gateway sharing, memory target credits and conservative drain/block behavior.
@@ -28,7 +29,7 @@ but it does not change a shared endpoint, stream-switch mode or target bandwidth
 pad exclusion cannot be solved by choosing another DMA channel.
 
 === Failure handling and evidence
-Reject a conflicting request without overwriting active state. Capture the context, owner,
+Reject a conflicting request *without overwriting active state*. Capture the context, owner,
 pad mode and fault. Complete recovery before reassignment. An admission error is not permission
 to widen an ACL; simultaneous-workload qualification remains separate.
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
@@ -37,3 +38,5 @@ to widen an ACL; simultaneous-workload qualification remains separate.
   #source("rtl/mini/top/soc_data_plane.sv",title:"Gateway/lifecycle wiring") ·
   #source("docs/ip/resource-controller.md",title:"Ownership and drain contract")
 ]
+
+#change-end("v05-emphasis-coexistence-reference")

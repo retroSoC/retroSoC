@@ -115,14 +115,14 @@ int main(void) {
 
 def test_phase1_wrapper_and_backend_contracts() -> None:
     wrapper = (ROOT / "rtl/mini/top/core_wrapper.sv").read_text(encoding="utf-8")
-    management = (ROOT / "rtl/mini/top/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
+    management = (ROOT / "rtl/ip/core/mgmt_core_wrapper.sv").read_text(encoding="utf-8")
     top = (ROOT / "rtl/mini/top/retrosoc.sv").read_text(encoding="utf-8")
     handler = (ROOT / "crt/src/core/system_irq_handler.c").read_text(encoding="utf-8")
     csr = (ROOT / "crt/include/retrosoc/arch/riscv/system_csr.h").read_text(encoding="utf-8")
     firmware = (ROOT / "app/apps/ci_smoke/main.c").read_text(encoding="utf-8")
 
     assert "parameter int ExternalIrqCount = 30" in wrapper
-    assert "parameter int ExternalIrqCount = 30" in management
+    assert re.search(r"parameter int ExternalIrqCount\s*= 30", management)
     assert ".NUM_IRQS           (ExternalIrqCount)" in management
     assert ".IRQ_INPUT_BYPASS   ({ExternalIrqCount{1'b0}})" in management
     assert "localparam int ManagementExternalIrqCount = `SOC_IRQ_VECTOR_WIDTH - 2" in top

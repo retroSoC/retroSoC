@@ -114,6 +114,13 @@ typedef struct {
 
 typedef struct {
     uint32_t status;
+    uint32_t actual_crc;
+    uint32_t coefficient_id[2];
+    uint32_t capacity_bytes;
+} rs_apu_kws_coeff_status_t;
+
+typedef struct {
+    uint32_t status;
     uint32_t address;
     uint32_t detail;
 } rs_apu_error_t;
@@ -199,6 +206,8 @@ rs_status_t rs_apu_irq_read(uint32_t *state);
 rs_status_t rs_apu_irq_enable(uint32_t mask);
 rs_status_t rs_apu_irq_ack(uint32_t mask);
 rs_status_t rs_apu_kws_model_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_coeff_load(const rs_apu_image_t *image, rs_timeout_t timeout);
+rs_status_t rs_apu_kws_coeff_status_read(rs_apu_kws_coeff_status_t *status);
 rs_status_t rs_apu_kws_configure(const rs_apu_kws_config_t *config);
 rs_status_t rs_apu_kws_enable(uint32_t memory_window);
 rs_status_t rs_apu_kws_disable(rs_timeout_t timeout);

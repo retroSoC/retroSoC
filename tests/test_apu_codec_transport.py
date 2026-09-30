@@ -350,7 +350,7 @@ def test_p5_production_transport_matches_icarus_and_verilator(tmp_path: Path) ->
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",
@@ -486,6 +486,7 @@ def test_p5_v2_4096_word_loader_store_and_sequencer(tmp_path: Path) -> None:
     multimedia = ROOT / "rtl/ip/multimedia"
     sources = [
         multimedia / "apu_microcode_pkg.sv",
+        multimedia / "apu_proof_memo.sv",
         multimedia / "apu_microcode_loader.sv",
         multimedia / "apu_control_store.sv",
         multimedia / "apu_codec_sequencer.sv",
@@ -507,7 +508,7 @@ def test_p5_v2_4096_word_loader_store_and_sequencer(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",
@@ -662,8 +663,11 @@ def test_p5_direct_wav_uses_product_loader_dma_sequencer_and_tx(tmp_path: Path) 
                 "apu_ring_scheduler.sv",
                 "apu_stream_router.sv",
                 "apu_control_store.sv",
+                "apu_proof_memo.sv",
                 "apu_microcode_loader.sv",
                 "apu_local_sram.sv",
+                "apu_kws_coeff_store.sv",
+                "apu_kws_coeff_loader.sv",
                 "apu_kws_engine.sv",
                 "apu_kws_sram_client.sv",
                 "apu_kws_model_loader.sv",
@@ -701,7 +705,7 @@ def test_p5_direct_wav_uses_product_loader_dma_sequencer_and_tx(tmp_path: Path) 
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(filelist),
             "--output",

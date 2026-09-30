@@ -11,9 +11,9 @@
 #ip("spisd")
 
 #ip-reference("spisd","spisd",5,legacy:[
-The host controls SD cards in SPI mode and moves payloads through a private AXI4 master, routed
+The host controls SD cards in *SPI mode* and moves payloads through a private AXI4 master, routed
 through I/O gateway B. Resource ownership determines which hart receives its interrupt.
-The former 1 GiB memory-mapped card aperture is reserved; software must use command/data
+The *former 1 GiB memory-mapped card aperture is reserved*; software must use command/data
 operations. Card initialization, capacity discovery and supported transfer details belong to
 the SPI-SD contract, rather than fixed card-size claims in the feature list.
 ])

@@ -57,7 +57,7 @@ def test_profile_rejects_make_evaluation_and_duplicate_assignment(tmp_path):
 def test_reviewed_profile_resolves_sram_instead_of_using_decoder_maximum():
     config = ds.read_json(ds.CONFIG)
     profile = ds.profile_values(ROOT / config["profile"])
-    generator = ds.load_generator("test_datasheet_memory", "rtl/mini/address_map/generate_memory_map.py")
+    generator = ds.load_generator("test_datasheet_memory", "scripts/rtl/generate_memory_map.py")
     _, regions, _ = generator.read_map(ROOT / ds.MAP, int(profile["SRAM_SIZE_KIB"]))
     sram = next(r for r in regions if r["symbol"] == "SRAM")
     assert sram["size"] == 32768

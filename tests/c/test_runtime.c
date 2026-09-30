@@ -9,6 +9,7 @@
 #include <retrosoc/core/status.h>
 #include <retrosoc/core/wait.h>
 #include <retrosoc/hal/apu.h>
+#include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/clock.h>
 #include <retrosoc/hal/extension.h>
@@ -51,6 +52,14 @@ unsigned long long __umoddi3(unsigned long long dividend, unsigned long long div
 static uint8_t storage[32];
 static uint32_t image_call_count;
 volatile uint32_t rs_apu_test_mmio[1024];
+volatile uint32_t rs_crypto_test_mmio[1024];
+static unsigned int rs_crypto_test_config_accesses;
+volatile uint32_t *rs_crypto_test_register(uint32_t offset) {
+    if ((offset == RS_CRYPTO_REG_AES_CFG) || (offset == RS_CRYPTO_REG_SHA_CFG)) {
+        ++rs_crypto_test_config_accesses;
+    }
+    return &rs_crypto_test_mmio[offset / 4U];
+}
 volatile uint32_t rs_ga2d_test_mmio[1024];
 uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_npu_test_mmio[1024];
@@ -730,6 +739,41 @@ static int test_gpio_helpers(void) {
     return 0;
 }
 
+/* The runner compiles the same validator with Tiny's capability selection. */
+rs_status_t rs_tiny_dma_config_validate(uint32_t channel, const rs_dma_config_t *config);
+rs_status_t rs_tiny_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
+
+static int test_tiny_dma_config_validation(void) {
+    rs_dma_config_t config = {
+        .kind = RS_DMA_KIND_MM_TO_MM, .request = RS_DMA_REQUEST_SOFTWARE,
+        .source = (uintptr_t)UINT32_C(0x30000000),
+        .destination = (uintptr_t)UINT32_C(0x30001000), .byte_count = 259U,
+        .width = RS_DMA_WIDTH_32, .source_increment = true, .destination_increment = true,
+        .burst_beats = 16U,
+    };
+    static _Alignas(64) rs_dma_tcd_t descriptor;
+    if ((rs_tiny_dma_config_validate(3U, &config) != RS_OK) ||
+        (rs_tiny_dma_config_validate(4U, &config) != RS_EINVAL)) {
+        return 1;
+    }
+    config.kind = RS_DMA_KIND_MM_TO_STREAM;
+    config.request = RS_DMA_REQUEST_I2S_TX;
+    config.byte_count = 256U;
+    if (rs_tiny_dma_config_validate(0U, &config) != RS_EINVAL) {
+        return 2;
+    }
+    descriptor.source = UINT32_C(0x30000000);
+    descriptor.byte_count = 256U;
+    descriptor.y_count = 1U;
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
+        ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+        ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(0U, &descriptor) != RS_ENOTSUP) {
+        return 3;
+    }
+    return 0;
+}
+
 static int test_dma_config_validation(void) {
     static rs_dma_tcd_t tcd __attribute__((aligned(64)));
     rs_dma_config_t config = {
@@ -1037,13 +1081,20 @@ static int test_apu_kws_validation(void) {
         .bytes = UINT32_C(32768),
         .expected_crc = UINT32_C(0xB9034B22),
     };
+    const rs_apu_image_t coefficient_image = {
+        .address = UINT32_C(0x10008000),
+        .bytes = RS_APU_ABI_APUC_IMAGE_BYTES,
+        .expected_crc = RS_APU_ABI_APUC_PAYLOAD_CRC,
+    };
     rs_apu_image_t bad_image = image;
     rs_apu_kws_completion_t completion;
+    rs_apu_kws_coeff_status_t coefficient_status;
 
     test_apu_mmio_reset();
     APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) = UINT32_C(0xA5A5A5A5);
     if ((rs_apu_kws_validate_job(&job) != RS_OK) ||
         (rs_apu_kws_model_load(&image, 0U) != RS_ENOTSUP) ||
+        (rs_apu_kws_coeff_load(&coefficient_image, 0U) != RS_ENOTSUP) ||
         (APU_TEST_REG(RS_APU_ABI_KWS_MODEL_ADDRESS) != UINT32_C(0xA5A5A5A5))) {
         return 1;
     }
@@ -1072,6 +1123,25 @@ static int test_apu_kws_validation(void) {
         return 5;
     }
     APU_TEST_REG(RS_APU_ABI_OWNER_STATUS) = UINT32_C(1) << RS_APU_ABI_OWNER_STATUS_QUIESCE;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_STATUS) = 0U;
+    if ((rs_apu_kws_coeff_load(&coefficient_image, 1U) != RS_EIO) ||
+        (APU_TEST_REG(RS_APU_ABI_KWS_COEFF_COMMAND) != UINT32_C(1))) {
+        return 11;
+    }
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_STATUS) = UINT32_C(6);
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ACTUAL_CRC) = RS_APU_ABI_APUC_PAYLOAD_CRC;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ID_LO) = RS_APU_ABI_APUC_COEFFICIENT_ID_LO;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_ID_HI) = RS_APU_ABI_APUC_COEFFICIENT_ID_HI;
+    APU_TEST_REG(RS_APU_ABI_KWS_COEFF_CAPACITY) = RS_APU_ABI_APUC_PAYLOAD_BYTES;
+    if ((rs_apu_kws_coeff_status_read(NULL) != RS_EINVAL) ||
+        (rs_apu_kws_coeff_status_read(&coefficient_status) != RS_OK) ||
+        (coefficient_status.status != UINT32_C(6)) ||
+        (coefficient_status.actual_crc != RS_APU_ABI_APUC_PAYLOAD_CRC) ||
+        (coefficient_status.coefficient_id[0] != RS_APU_ABI_APUC_COEFFICIENT_ID_LO) ||
+        (coefficient_status.coefficient_id[1] != RS_APU_ABI_APUC_COEFFICIENT_ID_HI) ||
+        (coefficient_status.capacity_bytes != RS_APU_ABI_APUC_PAYLOAD_BYTES)) {
+        return 12;
+    }
     APU_TEST_REG(RS_APU_ABI_KWS_MODEL_STATUS) = 0U;
     if ((rs_apu_kws_model_load(&image, 1U) != RS_EIO) ||
         (APU_TEST_REG(RS_APU_ABI_COMMAND) != (UINT32_C(1) << RS_APU_ABI_COMMAND_MODEL_LOAD))) {
@@ -2586,12 +2656,75 @@ static int test_npu_p6_reference_contract(void) {
     return 0;
 }
 
+static int test_crypto_lifecycle_contract(void) {
+    const uint32_t ready = RS_CRYPTO_MEM_STATUS_READY | RS_CRYPTO_MEM_STATUS_TABLE_VALID |
+                           RS_CRYPTO_MEM_STATUS_TABLE_LOCKED;
+
+    for (size_t index = 0U; index < 1024U; ++index) {
+        rs_crypto_test_mmio[index] = 0U;
+    }
+    if ((rs_crypto_init(1U) != RS_ENOTSUP) || (rs_crypto_zeroize_wait(1U) != RS_ENOTSUP)) {
+        return 1;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_IP_ID) = RS_CRYPTO_IP_ID_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_IP_VERSION) = RS_CRYPTO_IP_VERSION_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_TABLE_ID) = RS_CRYPTO_TABLE_ID_VALUE;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_CAPABILITY0) = RS_CRYPTO_CAP_STORAGE_INIT;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = ready;
+    if ((rs_crypto_init(0U) != RS_OK) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 2;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = RS_CRYPTO_STATUS_RSA_BUSY;
+    if (rs_crypto_init(8U) != RS_EIO) {
+        return 3;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = 0U;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_LOAD_ACTIVE;
+    if ((rs_crypto_init(8U) != RS_EIO) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 4;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_SCRUB_BUSY;
+    if ((rs_crypto_init(2U) != RS_ETIMEOUT) || (RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) != 0U)) {
+        return 5;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_FAULT;
+    rs_crypto_test_config_accesses = 0U;
+    if ((rs_crypto_init(2U) != RS_EIO) || (rs_crypto_zeroize_wait(2U) != RS_EIO)) {
+        return 6;
+    }
+    if (rs_crypto_test_config_accesses != 0U) {
+        return 10;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = ready;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = RS_CRYPTO_STATUS_AES_BUSY;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_AES_CFG) = RS_CRYPTO_AES_CFG_DMA;
+    if ((rs_crypto_zeroize_wait(8U) != RS_EIO) || (RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) != 0U)) {
+        return 7;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_STATUS) = 0U;
+    RS_CRYPTO_REG(RS_CRYPTO_REG_AES_CFG) = 0U;
+    if ((rs_crypto_zeroize_wait(0U) != RS_ETIMEOUT) ||
+        (RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) != 0U)) {
+        return 8;
+    }
+    RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_STATUS) = RS_CRYPTO_MEM_STATUS_SCRUB_BUSY;
+    rs_crypto_test_config_accesses = 0U;
+    if (rs_crypto_zeroize_wait(2U) != RS_ETIMEOUT) {
+        return 9;
+    }
+    if (rs_crypto_test_config_accesses != 0U) {
+        return 11;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
         test_formatter(),
         test_compiler_helpers(),
         test_wait_helper(),
+        test_crypto_lifecycle_contract(),
         test_clock_frequency_contract(),
         test_ws2812_helpers(),
         test_timer_helpers(),
@@ -2605,6 +2738,7 @@ int main(void) {
         test_spisd_helpers(),
         test_gpio_helpers(),
         test_dma_config_validation(),
+        test_tiny_dma_config_validation(),
         test_opipsram_helpers(),
         test_user_ip_validation(),
         test_extension_validation(),

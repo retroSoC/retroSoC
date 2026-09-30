@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TOPOLOGY = ROOT / "rtl/mini/integration/soc_topology.json"
 GENERATOR = ROOT / "rtl/mini/integration/generate_soc_topology.py"
 MEMORY_MAP = ROOT / "rtl/mini/address_map/memory_map.json"
-MEMORY_MAP_GENERATOR = ROOT / "rtl/mini/address_map/generate_memory_map.py"
+MEMORY_MAP_GENERATOR = ROOT / "scripts/rtl/generate_memory_map.py"
 
 
 def generate(output_dir: Path) -> None:
@@ -574,7 +574,7 @@ def test_generated_rib_routes_select_and_return_the_expected_target(tmp_path: Pa
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

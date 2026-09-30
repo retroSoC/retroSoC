@@ -15,7 +15,7 @@ def _write_memory_map(generated: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -72,7 +72,7 @@ def test_sdram_controller_preserves_full_and_masked_writes(tmp_path: Path) -> No
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -103,7 +103,7 @@ def test_sdram_controller_preserves_data_with_micron_timing_model(tmp_path: Path
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

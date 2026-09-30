@@ -27,16 +27,16 @@ def reference():
     return collect_registers()
 
 
-def test_current_apu_interface_declares_p5_default_and_p7_release(reference):
+def test_current_apu_interface_declares_p5_default_and_p9_release(reference):
     registers = {r["name"]: r for r in reference["apu"]["registers"]}
     constants = (ROOT / "crt/include/retrosoc/hal/apu_regs.h").read_text(
         encoding="utf-8"
     )
-    assert re.search(r"RS_APU_IP_VERSION_VALUE\s+UINT32_C\(0x00010001\)", constants)
+    assert re.search(r"RS_APU_IP_VERSION_VALUE\s+UINT32_C\(0x00010002\)", constants)
     assert re.search(r"RS_APU_CAPABILITY0_P5_IMPLEMENTED\s+UINT32_C\(0x000001BD\)", constants)
-    assert re.search(r"RS_APU_CAPABILITY0_P7_IMPLEMENTED\s+UINT32_C\(0x000001FD\)", constants)
+    assert re.search(r"RS_APU_CAPABILITY0_P7_IMPLEMENTED\s+UINT32_C\(0x000003FD\)", constants)
     assert re.search(r"RS_APU_CAPABILITY1_IMPLEMENTED\s+UINT32_C\(0x01827020\)", constants)
-    assert "V1.1" in registers["IP_VERSION"]["description"]
+    assert "V1.2" in registers["IP_VERSION"]["description"]
     assert "32 KiB" in registers["CAPABILITY1"]["description"]
 
 
@@ -95,6 +95,9 @@ def test_reset_disagreement_and_field_overflow_are_rejected(reference):
 
 def test_constant_reader_does_not_execute_source_text():
     assert number("8'(DEPTH / 2)", {"DEPTH": 16}) == 8
+    assert number("4'(MaxBurstBeats)", {"MaxBurstBeats": 16}) == 0
+    assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 1}) == 3
+    assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 0}) == 0
     assert number("(DEPTH > 4) ? 32'd4 : DEPTH - 1", {"DEPTH": 16}) == 4
     assert number("(32'd1 << 0) |\n (32'd1 << 8)") == 0x101
     with pytest.raises(ValueError):
@@ -111,9 +114,12 @@ def test_composite_fields_and_multiline_capability_keep_the_real_layout(referenc
     assert next(f for f in apu["fields"] if f["name"] == "CODE")["msb"] == 6
     for item in reference.values():
         for register in item["registers"]:
-            assert all(
-                "BEGIN" not in f["name"] and ";" not in f["name"] for f in register["fields"]
-            )
+            for field in register["fields"]:
+                assert ";" not in field["name"]
+                if "BEGIN" in field["name"]:
+                    assert (item["id"], register["key"], field["name"]) == (
+                        "crypto", "main.MEM_CONTROL", "BEGIN"
+                    )
 
 
 def test_read_predicate_is_not_mistaken_for_a_field_assignment():
@@ -128,6 +134,33 @@ def test_secret_apertures_do_not_claim_readback(reference):
         if entry["group"] in {"aes_key", "rsa_exponent"}:
             assert entry["access"].startswith("WO")
             assert "PSLVERR" in entry["description"]
+
+
+def test_crypto_interrupt_registers_publish_all_six_events(reference):
+    registers = {entry["key"]: entry for entry in reference["crypto"]["registers"]}
+    expected = ["AES_DONE", "SHA_DONE", "RSA_DONE", "ERROR", "ZEROIZED", "MEMORY_READY"]
+    for key in ("main.IRQ_STATE", "main.IRQ_ENABLE", "main.IRQ_TEST"):
+        fields = registers[key]["fields"]
+        assert [field["name"] for field in fields[:6]] == expected
+        assert [(field["lsb"], field["msb"]) for field in fields[:6]] == [
+            (bit, bit) for bit in range(6)
+        ]
+        assert (fields[6]["name"], fields[6]["lsb"], fields[6]["msb"]) == (
+            "Reserved", 6, 31
+        )
+
+
+def test_crypto_lifecycle_annotations_preserve_security_boundaries(reference):
+    registers = {entry["key"]: entry for entry in reference["crypto"]["registers"]}
+    mem_status = {field["name"]: field for field in registers["main.MEM_STATUS"]["fields"]}
+    lock_description = mem_status["TABLE_LOCKED"]["description"]
+    assert "hard/PCLK reset" in lock_description
+    assert "zeroize does not unlock" in lock_description
+
+    irq_test = {field["name"]: field for field in registers["main.IRQ_TEST"]["fields"]}
+    test_description = irq_test["MEMORY_READY"]["description"]
+    assert "interrupt-path testing" in test_description
+    assert "not initialization or physical-erasure completion evidence" in test_description
 
 
 def test_exact_register_description_wins_over_grouped_name_fragments(reference):

@@ -1,9 +1,11 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-product-use","Selected body emphasis: product use")
 #change-start("dev-product-availability","Current IP availability and media-composition limits")
 #import "../system-figures.typ": *
+#change-start("v05-refresh-product-use","Current resource summaries and Linux acceptance boundary")
 
 == Product Configuration and Feature Availability <product-configuration>
-This publication describes one reviewed integration, not every combination of build options.
+This publication describes *one reviewed integration*, not every combination of build options.
 Use the configuration identity with the IP capability registers before selecting a firmware
 image, external component or operating-system driver. An integrated controller may still need
 board wiring, a technology macro or additional software. A reserved address range is not an IP.
@@ -13,7 +15,7 @@ board wiring, a technology macro or additional software. A reserved address rang
   ([Role],[Committed profile],[Boundary]),
   (([PRODUCT reference],code(doc.profile),[Fixed LP/HP topology; reference for the main register and pad inventories.]),
    ([HP boot acceptance],code(doc.hp_profile),[Same PRODUCT organization; SRAM-resident LP loader and an external HP bundle.]),
-   ([APU P7 acceptance],code("configs/ci/ihp130-apu.mk"),[32 KiB SRAM, CSR-enabled LP orchestration and a bare-metal HP audio/KWS payload.]),
+   ([APU P9 acceptance],code("configs/ci/ihp130-apu.mk"),[32 KiB SRAM, CSR-enabled LP orchestration, APUC loading and a bare-metal HP audio/KWS payload.]),
    ([MPW compatibility],code(doc.mpw_profile),[Selectable legacy user core/IP; use only the separate MPW appendix.])),
   widths:(0.75fr,1.35fr,1.6fr))
 The source revision printed in Document Control identifies the hardware/software contract.
@@ -25,7 +27,7 @@ profile. Other committed technology profiles must be checked independently for a
 The following rows cover every actual IP chapter, including the two MPW-only examples.
 Repeated instances have separate rows where their routing differs; shared functional blocks
 such as the dual timer and dual I2C retain their documented instance counts in the scope column.
-"Integrated" describes the documented digital block, not a qualified silicon feature.
+"Integrated" describes the documented digital block, *not a qualified silicon feature*.
 "Partial" identifies an explicit implementation or qualification boundary.
 #ds-table("feature-availability",[IP availability and system dependencies],
   ([IP / status],[Implemented scope],[Integration dependency]),
@@ -48,7 +50,7 @@ does not establish all optional modes in a standard or a compliance certificate.
 + Match the firmware or Linux path to the support matrix in @software-support. Keep unsupported
   resources under LP control until an appropriate driver and handoff protocol are supplied.
 
-On a probe mismatch, stop initialization and report the image/profile and diagnostic identity.
+On a probe mismatch, *stop initialization* and report the image/profile and diagnostic identity.
 Reserved or disabled registers do not prove compatibility; see @known-limitations.
 #block(above:5pt,below:0pt)[
   #text(9pt)[#source("publications/datasheets/mini.json",title:"Configuration identity") ·
@@ -86,7 +88,7 @@ profile; other profiles can depend on external memory even when Linux is not use
   [*External boot image* \ XPI-visible bundle \ Header and payload CRCs],
   [*LP loader* \ Validate and copy \ Retain root authority],
   [*External SDRAM* \ OpenSBI, DTB \ Linux and initramfs],
-  [*HP application* \ Hart 1, Sv32 \ Linux enters via OpenSBI],
+  [*HP application* \ Hart 1, Sv39 \ Linux enters via OpenSBI],
   [*SBI console / timer* \ Supplied platform path],
   [*LP supervision* \ Mailbox observation \ Resource and reset policy])),
   caption:[Supplied Linux boot composition and management responsibilities.])
@@ -96,9 +98,11 @@ SBI-based, even though OpenSBI accesses UART1 underneath. Native custom peripher
 and an application resource-handoff service are separate work.
 
 Before boot, validate the external memory configuration and the exact bundle generated for
-the selected snapshot. After boot, an expected mailbox event provides the acceptance marker;
-it does not establish that all peripheral drivers or workloads have been validated. Follow
-@boot-configuration for failure handling, including the unbounded firmware-local ready wait.
+the selected snapshot. The Linux rootfs publishes an initial ready event. The current HP
+acceptance loader also requires GA2D result, cache-clean and resource-return checkpoints;
+the rootfs ready service does not implement those later exchanges. Follow @boot-configuration
+for the bounded polling budgets, matching acceptance payload and failure/ownership policy.
+Neither an initial event nor a complete acceptance pass establishes all Linux peripheral drivers.
 
 === Camera and audio data paths
 #change-start("system-media", "Camera and audio circuit composition")
@@ -128,3 +132,6 @@ the conditions in @performance-characterization rather than adding individual IP
 #source-note("app/README.md",title:"Application and middleware ownership")
 #source-note("app/ports/linux/README.md",title:"Current HP Linux composition")
 #source-note("docs/axi4-stream.md",title:"DMA, audio and camera stream integration")
+#change-end("v05-refresh-product-use")
+
+#change-end("v05-emphasis-product-use")

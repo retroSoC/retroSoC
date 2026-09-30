@@ -83,11 +83,21 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
     ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1", "APUMC_MAX_INSTRUCTIONS = 4096"),
     ("app/ports/linux/linux/retrosoc_hp.dts", "riscv,cbom-block-size = <64>", "riscv,cbom-block-size = <128>"),
+    ("rtl/ip/security/apb4_crypto.sv", "logic [31:0] s_wdata;", "logic [63:0] s_wdata;"),
 ])
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):
     replace(source_tree, relative, old, new)
     with pytest.raises(ValueError):
         dr.collect_diagrams(source_tree, SPEC, data["regions"], data["system_reference"])
+
+
+def test_rsa_limb_width_is_independent_of_dma_alignment(source_tree, data):
+    replace(source_tree, "crt/include/retrosoc/hal/crypto_regs.h",
+            "RS_CRYPTO_DMA_ALIGNMENT           4U", "RS_CRYPTO_DMA_ALIGNMENT           8U")
+    diagrams = dr.collect_diagrams(source_tree, SPEC, data["regions"], data["system_reference"])
+    assert [(row["depth"], row["bits"]) for row in diagrams["storage"]["rsa-vectors"]["stores"]] == [
+        (64, 32), (64, 32), (64, 32), (64, 32)
+    ]
 
 
 @pytest.mark.parametrize("mutation", ["node", "port", "endpoint", "direction", "width", "binding", "duplicate-edge"])

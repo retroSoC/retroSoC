@@ -1,0 +1,9 @@
+interface:
+  display_name: "retroSoC Feature Implementation"
+  short_description: "Preflight and implement a target-specific SoC phase"
+  default_prompt: "Use $retrosoc-feature-implementation. Stage: preflight.
+    Target SoCs: TINY. Feature slug: tiny-soc. Phase: TINY-P4.
+    Do not modify files."
+
+policy:
+  allow_implicit_invocation: true

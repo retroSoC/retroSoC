@@ -279,7 +279,7 @@ rs_status_t rs_uart_irq_test(uint32_t mask) {
 }
 
 rs_status_t rs_uart_write_dma(const uint32_t *words, size_t count, rs_timeout_t timeout) {
-    rs_dma_config_t config;
+    rs_dma_config_t config = {0};
     size_t index;
     rs_status_t status;
 
@@ -314,7 +314,7 @@ rs_status_t rs_uart_write_dma(const uint32_t *words, size_t count, rs_timeout_t 
 }
 
 rs_status_t rs_uart_read_dma(uint32_t *words, size_t count, rs_timeout_t timeout) {
-    rs_dma_config_t config;
+    rs_dma_config_t config = {0};
     rs_status_t status;
 
     if ((words == NULL) || (count == 0U) || (count > (UINT32_MAX / sizeof(*words)))) {

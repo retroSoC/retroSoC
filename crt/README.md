@@ -107,6 +107,13 @@ and 64-byte aligned TCD chains.
 
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
+V2 callers first use `rs_crypto_init(timeout)` to load and lock CRYC1. It
+streams the complete 8192-byte image from 848 meaningful bytes without a
+large RAM buffer. Selftest initializes explicitly; algorithm APIs reject an
+uninitialized device. `rs_crypto_zeroize_wait(timeout)` and the compatibility
+`rs_crypto_zeroize()` wait for physical scrub/readback. Quiesce DMA before
+zeroize; after an abort timeout, retain DMA buffer ownership until coordinated
+recovery. The HAL does not reset the SoC to recover an erase timeout.
 AES DMA reserves channels 4/5; private RSA input is write-only at the APB
 boundary and assumes public exponent 65537 for result verification. See the
 [crypto controller contract](../docs/ip/crypto.md) before handling production
@@ -160,7 +167,7 @@ on it.
 ## Build Integration
 
 The central software build assembles the runtime sources in
-[`../rtl/mini/mk/software.mk`](../rtl/mini/mk/software.mk). It selects the
+[`../rtl/mk/software.mk`](../rtl/mk/software.mk). It selects the
 RISC-V ISA, optional CSR interrupt support, linker layout, and the application
 profile. Applications add their own sources after the common runtime is
 selected.
@@ -219,3 +226,17 @@ hardware validation.
 
 For the complete firmware, simulation, synthesis, and timing flow, see the
 [repository README](../README.md).
+
+## Product composition
+
+Tiny uses the same `rs_` SDK and selects its generated memory, IRQ and capability
+headers through the committed profile. The generated memory-map header includes
+Tiny capability metadata, so public DMA headers report four channels without
+requiring an application to reproduce private compiler flags. Unavailable IP
+drivers are omitted; Tiny SYSCTRL rejects unsupported lifecycle/PLL operations
+before MMIO. Startup skips external-RAM initialization and loads into SRAM.
+
+`<retrosoc/hal/watchdog.h>` provides `rs_watchdog_configure`, `rs_watchdog_start`,
+`rs_watchdog_service`, `rs_watchdog_get_status` and `rs_watchdog_clear_reset_cause`,
+with SDK status values and bounded command waits. These wrappers preserve the
+locked watchdog register ABI.

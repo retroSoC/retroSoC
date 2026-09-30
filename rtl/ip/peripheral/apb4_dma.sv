@@ -9,11 +9,13 @@
 // See the Mulan PSL v2 for more details.
 
 module apb4_dma #(
-    parameter int AddrWidth     = 32,
-    parameter int DataWidth     = 32,
-    parameter int NumChannels   = 4,
-    parameter int MaxBurstBeats = 16,
-    parameter int FifoDepth     = 16
+    parameter int          AddrWidth     = 32,
+    parameter int          DataWidth     = 32,
+    parameter int          NumChannels   = 4,
+    parameter int          MaxBurstBeats = 16,
+    parameter int          FifoDepth     = 16,
+    parameter logic [15:0] RequestMask   = 16'h3fff,
+    parameter bit          EnableStreams = 1'b1
 ) (
     // verilog_format: off -- integration ports retain established peripheral endpoint names.
     input  logic          clk_i,
@@ -72,7 +74,8 @@ module apb4_dma #(
   dma_reg #(
       .NumChannels  (NumChannels),
       .DataWidth    (DataWidth),
-      .MaxBurstBeats(MaxBurstBeats)
+      .MaxBurstBeats(MaxBurstBeats),
+      .EnableStreams(EnableStreams)
   ) u_dma_reg (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
@@ -119,6 +122,8 @@ module apb4_dma #(
   );
 
   dma_core #(
+      .RequestMask  (RequestMask),
+      .EnableStreams(EnableStreams),
       .AddrWidth    (AddrWidth),
       .DataWidth    (DataWidth),
       .NumChannels  (NumChannels),

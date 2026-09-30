@@ -1,17 +1,18 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-operating-states","Selected body emphasis: operating states")
 #import "../system-figures.typ": sequence-diagram
 
 === System Operating States and Reset Effects <operating-states>
-The states below describe the digital control contract. They are not voltage states or
+The states below describe the digital control contract. They are *not voltage states* or
 qualified Sleep/Stop/Standby modes. In particular, stopping the HP leaf clock leaves the
 fabric and stable memory clock available for management recovery and other masters.
 
 #ds-table("operating-states",[System operating states and transition responsibilities],
   ([State],[Available activity],[Required transition condition]),
   (([LP management; HP held],[LP root control, memory initialization and diagnostics.],[Prepare HP memory and software before release.]),
-   ([LP + HP running],[Asymmetric firmware/Linux operation with explicit resource ownership.],[Stop new work before transferring resources or shutting down HP.]),
+   ([LP + HP running],[Asymmetric firmware/Linux operation with explicit resource ownership.],[*Stop new work before transferring resources* or shutting down HP.]),
    ([Clock transition],[AON sequences quiesce, drain, safe source and qualification.],[Run the software transition from safe memory; obey timeout and capability.]),
-   ([HP cache / drain phase],[HP receives a cache-clean window before admission is blocked.],[Complete shared-range maintenance and acknowledge before drain.]),
+   ([HP cache / drain phase],[HP receives a cache-clean window before admission is blocked.],[Complete shared-range maintenance and *acknowledge before drain*.]),
    ([HP stopped / reset],[LP retains recovery authority; fabric and memory remain separately controlled.],[Check actual hardware status before selecting debug or reinitializing HP.]),
    ([Fault recovery],[Sticky status identifies clock, access, drain or target errors.],[Capture evidence, stop affected producers and follow the relevant reset/isolation contract.])),
   widths:(0.9fr,1.55fr,1.65fr))
@@ -19,7 +20,7 @@ fabric and stable memory clock available for management recovery and other maste
 ==== Controlled clock changes
 + Inspect the current clock status and capability. The publication reference profile keeps
   the PLL disabled; the generic eight-selector model does not establish eight silicon speed grades.
-+ Place the transition routine and required state in a safe memory region. Disable affected
++ Place the transition routine and required state in a *safe memory region*. Disable affected
   interrupts and quiesce frequency-sensitive transfers, DMA and external serial transactions.
 + Use #code("rs_clock_set_frequency()") with a bounded timeout. Let the hardware controller
   perform its safe-source and lock qualification sequence; do not write raw PLL fields in parallel.
@@ -66,3 +67,5 @@ before accessing a serial-memory aperture.
 #source-note("docs/lp-hp-architecture.md",title:"AON lifecycle, warm flush and memory-pad retention")
 #source-note("docs/hazard3-debug.md",title:"Management debug-reset scope")
 #source-note("crt/src/hal/sysctrl.c",title:"Requested and actual HP status exposed by the HAL")
+
+#change-end("v05-emphasis-operating-states")

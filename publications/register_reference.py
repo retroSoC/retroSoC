@@ -21,6 +21,22 @@ LITERAL = re.compile(r"(?P<w>\d+)?'[sS]?(?P<base>[hHbBdDoO])(?P<digits>[0-9a-fA-
 def number(expression: str, constants: dict[str, int] | None = None) -> int:
     constants = constants or {}
     expression = " ".join(expression.split()).replace("`", "")
+    # Preserve sized-cast truncation and unwrap a complete parenthesized
+    # expression before looking for an SV conditional at its top level.
+    while expression.startswith("(") and expression.endswith(")"):
+        depth = 0
+        enclosed = True
+        for index, character in enumerate(expression):
+            depth += (character == "(") - (character == ")")
+            if depth == 0 and index != len(expression) - 1:
+                enclosed = False
+                break
+        if not enclosed or depth != 0:
+            break
+        expression = expression[1:-1].strip()
+    sized_cast = re.fullmatch(r"(\d+)'\(([^()]*)\)", expression)
+    if sized_cast:
+        return number(sized_cast[2], constants) & ((1 << int(sized_cast[1])) - 1)
     expression = LITERAL.sub(
         lambda m: str(
             int(m["digits"].replace("_", ""), {"h": 16, "b": 2, "d": 10, "o": 8}[m["base"].lower()])
@@ -125,10 +141,11 @@ def named_argument(text: str, name: str) -> str | None:
     raise ValueError(f"unclosed {name} argument")
 
 
-def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, dict]:
+def parse_definitions(paths: list[str], extra: dict[str, int],
+                      memory_map: str = "rtl/mini/address_map/memory_map.json") -> tuple[dict, dict]:
     definitions = {}
     constants = dict(extra)
-    memory = json.loads((ROOT / "rtl/mini/address_map/memory_map.json").read_text())
+    memory = json.loads((ROOT / memory_map).read_text(encoding="utf-8"))
     constants.update(
         {
             f"SOC_SYSCTRL_{r['symbol']}_OFFSET": int(r["offset"], 0)
@@ -139,7 +156,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
         key = f"SOC_SYSCTRL_{register['symbol']}_OFFSET"
         definitions[key] = {
             "expression": f"16'h{int(register['offset'], 0):04x}",
-            "source": "rtl/mini/address_map/memory_map.json",
+            "source": memory_map,
             "line": 1,
         }
     for path in paths:
@@ -151,7 +168,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
                 "line": text.count("\n", 0, match.start()) + 1,
             }
         for match in re.finditer(
-            r"\b(?:localparam|parameter)\s+(?:(?:int(?:\s+unsigned)?|logic(?:\s*\[[^]]+\])?|\w+_t)\s+)?"
+            r"\b(?:localparam|parameter)\s+(?:(?:int(?:\s+unsigned)?|bit|logic(?:\s*\[[^]]+\])?|\w+_t)\s+)?"
             r"(\w+)\s*=\s*([^;\n]+)",
             text,
         ):
@@ -165,7 +182,7 @@ def parse_definitions(paths: list[str], extra: dict[str, int]) -> tuple[dict, di
                 },
             )
         for match in re.finditer(
-            r"\blocalparam\s+(?:int(?:\s+unsigned)?|logic(?:\s*\[[^]]+\])?|\w+_t)\s+(\w+)\s*=\s*([^;]+);",
+            r"\blocalparam\s+(?:int(?:\s+unsigned)?|bit|logic(?:\s*\[[^]]+\])?|\w+_t)\s+(\w+)\s*=\s*([^;]+);",
             text,
         ):
             definitions[match[1]] = {
@@ -694,7 +711,8 @@ def refine_fields(record: dict, spec: dict, definitions: dict, model: dict) -> l
 
 def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
     paths = list(dict.fromkeys(spec.get("defines", []) + spec["rtl"]))
-    definitions, constants = parse_definitions(paths, spec.get("parameters", {}))
+    memory_map = spec.get("memory_map", "rtl/mini/address_map/memory_map.json")
+    definitions, constants = parse_definitions(paths, spec.get("parameters", {}), memory_map)
     text = "\n".join(strip_comments((ROOT / p).read_text(encoding="utf-8")) for p in spec["rtl"])
     model = source_model(text, constants)
     model["definitions"] = definitions
@@ -712,7 +730,7 @@ def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
         if support_module is None:
             continue
         _, support_constants = parse_definitions(
-            spec.get("defines", []) + [source], spec.get("parameters", {})
+            spec.get("defines", []) + [source], spec.get("parameters", {}), memory_map
         )
         support_model = source_model(support_text, support_constants)
         support_model["module"] = support_module[1]

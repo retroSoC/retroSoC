@@ -1,5 +1,12 @@
 # Third-party attribution
 
+The optional HP RT-Thread kernel is official RT-Thread v5.3.0, commit
+`99428a1e7f7447955aa860f7c969273a12095b8f`, from
+[RT-Thread/rt-thread](https://github.com/RT-Thread/rt-thread). It is licensed
+under Apache-2.0. Its original copyright/license files remain in the locked
+managed checkout; only the retroSoC BSP is repository-owned. Redistribution of
+built RT-Thread images must retain the applicable upstream notices.
+
 This repository contains RTL source files that retain copyright and attribution information from third-party open-source projects in their original file headers. The following projects are explicitly referenced in the RTL sources currently present in this repository.
 
 ## 1. ETH Zurich and University of Bologna

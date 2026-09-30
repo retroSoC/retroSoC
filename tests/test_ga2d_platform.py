@@ -111,7 +111,7 @@ def test_ga2d_p5_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Pat
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -156,8 +156,8 @@ def test_ga2d_p5_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Pat
             str(common / "cdc/cdc_rst_ctrlr.sv"),
             str(common / "cdc/cdc_2phase.sv"),
             str(common / "clkrst/rst_sync.sv"),
-            str(top / "soc_common_cdc.sv"),
-            str(top / "axi4_connector.sv"),
+            str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
+            str(ROOT / "rtl/ip/interconnect/axi4_connector.sv"),
             str(top / "axi4_master_idle.sv"),
             str(top / "axi4_async_bridge.sv"),
             str(top / "axi4_address_gate.sv"),
@@ -166,7 +166,7 @@ def test_ga2d_p5_preserves_p2_bridge_prefix_lifecycle_and_recovery(tmp_path: Pat
             str(top / "axi4_data_crossbar.sv"),
             str(top / "axi4_target_guard.sv"),
             str(top / "fabric_monitor.sv"),
-            str(top / "axi4_error_slave.sv"),
+            str(ROOT / "rtl/ip/interconnect/axi4_error_slave.sv"),
             str(top / "axi4_downsizer_64to32.sv"),
             str(top / "hp_axi4_mux3.sv"),
             str(top / "soc_data_plane.sv"),

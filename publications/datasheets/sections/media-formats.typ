@@ -1,10 +1,11 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-media-formats","Selected body emphasis: media formats")
 
 ==== Data Formats and Peripheral Interoperability <media-interoperability>
 #change-start("dev-media-formats","Current format compatibility and transport qualifications")
 Matching names such as RGB565, YUV422 or PCM are only the beginning of an interoperability
-check. Compare the exact byte order, container width, stride, alignment, stream boundary and
-software lifetime. A shared address space does not convert formats or make an unavailable
+check. Compare the *exact byte order, container width, stride, alignment, stream boundary and
+software lifetime*. A shared address space does not convert formats or make an unavailable
 transport usable.
 
 #ds-table("media-format-layouts",[Media representations and their storage/stream boundaries],
@@ -25,7 +26,7 @@ with bounded normal SoC private-DMA admission through master 6 as documented in
 @bus-programming; this is not full-system workload qualification. GA2D adds explicit color-format
 conversion and opaque composition as described in @ga2d; it does not supply RGB/YUV conversion.
 NPU tensors follow a separate static INT8 layout and quantization contract. A camera frame or
-audio PCM buffer is not directly an NPU model input: CPU preprocessing must produce the
+audio PCM buffer is *not directly an NPU model input*: *CPU preprocessing must produce* the
 compiler's expected features, byte layout and zero points. NPU receives memory jobs, not a
 dedicated camera/audio stream, and its model format is not the APU APUM container.
 
@@ -69,3 +70,5 @@ buffer rather than passing partially valid data onward.
 #source-note("docs/ip/jpeg.md",title:"JPEG raster formats, strides and alignment")
 #source-note("docs/ip/apu.md",title:"APU transport and production availability boundary")
 #change-end("dev-media-formats")
+
+#change-end("v05-emphasis-media-formats")

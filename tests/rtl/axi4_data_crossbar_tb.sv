@@ -120,6 +120,54 @@ module axi4_data_crossbar_tb;
     end
   endtask
 
+  task automatic issue_master1_read_burst(input logic [6:0] id, input logic [31:0] addr);
+    begin
+      @(negedge clk_i);
+      masters[1].arid    = id;
+      masters[1].araddr  = addr;
+      masters[1].arlen   = 8'd7;
+      masters[1].arsize  = 3'd3;
+      masters[1].arburst = 2'b01;
+      masters[1].arvalid = 1'b1;
+      do @(posedge clk_i); while (!masters[1].arready);
+      @(negedge clk_i);
+      masters[1].arvalid = 1'b0;
+      masters[1].arlen   = '0;
+    end
+  endtask
+
+  task automatic return_target0_burst(input logic [6:0] id, input logic [63:0] data_base);
+    begin
+      for (int unsigned beat = 0; beat < 8; beat++) begin
+        @(negedge clk_i);
+        targets[0].rid    = id;
+        targets[0].rdata  = data_base + beat;
+        targets[0].rresp  = 2'b00;
+        targets[0].rlast  = (beat == 7);
+        targets[0].rvalid = 1'b1;
+        do @(posedge clk_i); while (!targets[0].rready);
+        @(negedge clk_i);
+        targets[0].rvalid = 1'b0;
+      end
+    end
+  endtask
+
+  task automatic return_target1_burst(input logic [6:0] id, input logic [63:0] data_base);
+    begin
+      for (int unsigned beat = 0; beat < 8; beat++) begin
+        @(negedge clk_i);
+        targets[1].rid    = id;
+        targets[1].rdata  = data_base + beat;
+        targets[1].rresp  = 2'b00;
+        targets[1].rlast  = (beat == 7);
+        targets[1].rvalid = 1'b1;
+        do @(posedge clk_i); while (!targets[1].rready);
+        @(negedge clk_i);
+        targets[1].rvalid = 1'b0;
+      end
+    end
+  endtask
+
   task automatic return_target0_read(input logic [6:0] id, input logic [63:0] data);
     begin
       @(negedge clk_i);
@@ -426,6 +474,69 @@ module axi4_data_crossbar_tb;
     @(negedge clk_i);
     if (!idle_o || (outstanding_read_o != 8'd0)) begin
       $fatal(1, "same-target reads did not drain the crossbar");
+    end
+
+    read_burst_target_lock : begin
+      logic [ 6:0] first_id;
+      logic [ 6:0] second_id;
+      logic [63:0] first_base;
+      logic [63:0] second_base;
+      logic [ 6:0] expected_id;
+      logic [63:0] expected_data;
+
+      issue_master1_read_burst(6'b001_100, 32'h3000_0200);
+      issue_master1_read_burst(6'b001_101, 32'h3800_0200);
+      if (outstanding_read_o != 8'd2) begin
+        $fatal(1, "read bursts were not tracked concurrently");
+      end
+
+      fork
+        return_target0_burst(6'b001_100, 64'hAAAA_0000_0000_0000);
+        return_target1_burst(6'b001_101, 64'hBBBB_0000_0000_0000);
+        begin
+          for (int unsigned beat = 0; beat < 16; beat++) begin
+            do begin
+              @(negedge clk_i);
+              #1;
+            end while (!masters[1].rvalid);
+
+            if (beat == 0) begin
+              first_id = masters[1].rid;
+              if (first_id == 6'b001_100) begin
+                first_base  = 64'hAAAA_0000_0000_0000;
+                second_id   = 6'b001_101;
+                second_base = 64'hBBBB_0000_0000_0000;
+              end else if (first_id == 6'b001_101) begin
+                first_base  = 64'hBBBB_0000_0000_0000;
+                second_id   = 6'b001_100;
+                second_base = 64'hAAAA_0000_0000_0000;
+              end else begin
+                $fatal(1, "read burst returned an unexpected ID");
+              end
+            end
+
+            if (beat < 8) begin
+              expected_id   = first_id;
+              expected_data = first_base + beat;
+            end else begin
+              expected_id   = second_id;
+              expected_data = second_base + (beat - 8);
+            end
+            if ((masters[1].rid != expected_id) || (masters[1].rdata != expected_data) ||
+                (masters[1].rlast != (beat == 7 || beat == 15))) begin
+              $fatal(
+                  1,
+                  "read response burst was interleaved or malformed at beat %0d rid=%h expected_id=%h data=%h expected_data=%h last=%b expected_last=%b",
+                  beat, masters[1].rid, expected_id, masters[1].rdata, expected_data,
+                  masters[1].rlast, (beat == 7 || beat == 15));
+            end
+          end
+        end
+      join
+      @(negedge clk_i);
+      if (!idle_o || (outstanding_read_o != 8'd0)) begin
+        $fatal(1, "read burst target lock did not drain the crossbar");
+      end
     end
 
     jpeg_master_admission_credit_priority_and_acl : begin

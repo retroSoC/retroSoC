@@ -3,9 +3,16 @@
 #import "diagram-packages.typ": circuit-diagram, binary-figures, storage-figures
 
 #let inline(value) = {
-  let parts=value.split("`")
-  for (i,part) in parts.enumerate() {
-    if calc.rem(i,2)==1 { code(part) } else { part.replace("**","") }
+  // A deliberately limited inline grammar: explicit strong spans and raw code.
+  // Code is opaque, including any literal asterisks it contains.
+  let bold = false
+  for (i,part) in value.split("`").enumerate() {
+    if calc.rem(i,2)==1 { code(part) } else {
+      for (j,piece) in part.split("**").enumerate() {
+        if j>0 { bold = not bold }
+        if bold { strong(piece) } else { piece }
+      }
+    }
   }
 }
 
@@ -113,6 +120,7 @@
 }
 
 #let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none, functional-note:none, protocol-note:none) = {
+  change-start("v05-emphasis-ip-"+id,"Selected feature, programming and limitation emphasis: "+upper(id))
   let chapter=data.chapters.at(family)
   let revised=id in ("sysctrl","resource","monitor","apu","i2s")
   if revised {change-start("dev-ip-"+id,chapter.title+" current implementation and register reference")}
@@ -179,4 +187,5 @@
     source-note(chapter.reference,title:"Detailed interface contract and source provenance")
   }
   if revised {change-end("dev-ip-"+id)}
+  change-end("v05-emphasis-ip-"+id)
 }

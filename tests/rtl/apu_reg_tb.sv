@@ -2,9 +2,11 @@
 
 `include "apu_define.svh"
 
-module apu_reg_tb;
+module apu_reg_tb #(
+    parameter bit EnableP7 = 1'b1
+);
   localparam logic [31:0] ApuBase = 32'h1001_3000;
-  localparam int unsigned RegisterCount = 97;
+  localparam int unsigned RegisterCount = 106;
   localparam logic [1:0] AccessRo = 2'd0;
   localparam logic [1:0] AccessWo = 2'd1;
   localparam logic [1:0] AccessRw = 2'd2;
@@ -98,7 +100,7 @@ module apu_reg_tb;
   always #5 clk_i = ~clk_i;
 
   apb4_apu #(
-      .EnableP7(1'b1)
+      .EnableP7(EnableP7)
   ) u_dut (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
@@ -122,7 +124,7 @@ module apu_reg_tb;
 
   function automatic logic [31:0] legal_write_value(input logic [11:0] offset_i);
     case (offset_i)
-      `APB4_APU__IRQ_STATE:              legal_write_value = 32'h0000_07ff;
+      `APB4_APU__IRQ_STATE:              legal_write_value = 32'h0000_0fff;
       `APB4_APU__IRQ_ENABLE:             legal_write_value = 32'h0000_0005;
       `APB4_APU__ERROR_STATUS:           legal_write_value = 32'h0000_0001;
       `APB4_APU__SEQUENCER_TIMEOUT:      legal_write_value = 32'h1234_5678;
@@ -155,6 +157,9 @@ module apu_reg_tb;
       `APB4_APU__KWS_CONTROL:            legal_write_value = 32'h0000_0004;
       `APB4_APU__KWS_CONFIG:             legal_write_value = 32'h0000_0590;
       `APB4_APU__KWS_INPUT_CONFIG:       legal_write_value = 32'h0104_bb80;
+      `APB4_APU__KWS_COEFF_ADDRESS:      legal_write_value = 32'd0;
+      `APB4_APU__KWS_COEFF_SIZE:         legal_write_value = 32'd61504;
+      `APB4_APU__KWS_COEFF_EXPECTED_CRC: legal_write_value = 32'h25e7_c27d;
       `APB4_APU__PERF_CONTROL:           legal_write_value = 32'h0000_0001;
       default:                           legal_write_value = 32'd0;
     endcase
@@ -194,8 +199,8 @@ module apu_reg_tb;
     begin
       s_reg_count = 0;
       add_register(`APB4_APU__IP_ID, AccessRo, 32'h4150_5530, 1'b0);
-      add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0001, 1'b0);
-      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_01fd, 1'b0);
+      add_register(`APB4_APU__IP_VERSION, AccessRo, 32'h0001_0002, 1'b0);
+      add_register(`APB4_APU__CAPABILITY0, AccessRo, 32'h0000_03fd, 1'b0);
       add_register(`APB4_APU__CAPABILITY1, AccessRo, 32'h0182_7020, 1'b0);
       add_register(`APB4_APU__COMMAND, AccessWo, 32'd0, 1'b1);
       add_register(`APB4_APU__STATUS, AccessRo, 32'h0000_0100, 1'b0);
@@ -214,7 +219,7 @@ module apu_reg_tb;
       add_register(`APB4_APU__WRITE_BASE, AccessRw, 32'hffff_ffff, 1'b1);
       add_register(`APB4_APU__WRITE_LIMIT, AccessRw, 32'd0, 1'b1);
       add_register(`APB4_APU__DMA_TIMEOUT, AccessRw, 32'h0000_ffff, 1'b0);
-      add_register(`APB4_APU__ABI_DIGEST, AccessRo, 32'hf500_5d7c, 1'b0);
+      add_register(`APB4_APU__ABI_DIGEST, AccessRo, 32'h63e9_6066, 1'b0);
       add_register(`APB4_APU__SEQUENCER_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__SEQUENCER_RETIRED, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__STREAM_WATERMARK, AccessRw, 32'd0, 1'b0);
@@ -268,6 +273,15 @@ module apu_reg_tb;
       add_register(`APB4_APU__KWS_MODEL_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_MODEL_ACTUAL_CRC, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__KWS_INPUT_CONFIG, AccessRw, 32'h0104_bb80, 1'b0);
+      add_register(`APB4_APU__KWS_COEFF_ADDRESS, AccessRw, 32'd0, 1'b1);
+      add_register(`APB4_APU__KWS_COEFF_SIZE, AccessRw, 32'd0, 1'b1);
+      add_register(`APB4_APU__KWS_COEFF_EXPECTED_CRC, AccessRw, 32'd0, 1'b1);
+      add_register(`APB4_APU__KWS_COEFF_COMMAND, AccessWo, 32'd0, 1'b1);
+      add_register(`APB4_APU__KWS_COEFF_STATUS, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__KWS_COEFF_ACTUAL_CRC, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__KWS_COEFF_ID_LO, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__KWS_COEFF_ID_HI, AccessRo, 32'd0, 1'b0);
+      add_register(`APB4_APU__KWS_COEFF_CAPACITY, AccessRo, 32'h0000_f000, 1'b0);
       add_register(`APB4_APU__PERF_CONTROL, AccessRw, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_STATUS, AccessRo, 32'd0, 1'b0);
       add_register(`APB4_APU__PERF_ACTIVE_CYCLES_LO, AccessRo, 32'd0, 1'b0);
@@ -448,7 +462,8 @@ module apu_reg_tb;
       hard_reset();
       apb_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'h1234_5678, 4'hf, 1'b0);
       if ((offset_i != `APB4_APU__COMMAND) && (offset_i != `APB4_APU__IRQ_TEST) &&
-          (offset_i != `APB4_APU__RING_DOORBELL)) begin
+          (offset_i != `APB4_APU__RING_DOORBELL) &&
+          (offset_i != `APB4_APU__KWS_COEFF_COMMAND)) begin
         apb_read(offset_i, s_before, 1'b0);
       end else begin
         s_before = 32'd0;
@@ -458,7 +473,9 @@ module apu_reg_tb;
       expect_read(`APB4_APU__ERROR_STATUS, 32'd1 | (32'(error_code_i) << 1));
       expect_read(`APB4_APU__ERROR_ADDRESS, ApuBase + offset_i);
       if ((offset_i != `APB4_APU__COMMAND) && (offset_i != `APB4_APU__IRQ_TEST) &&
-          (offset_i != `APB4_APU__RING_DOORBELL) && (offset_i != `APB4_APU__IRQ_STATE) &&
+          (offset_i != `APB4_APU__RING_DOORBELL) &&
+          (offset_i != `APB4_APU__KWS_COEFF_COMMAND) &&
+          (offset_i != `APB4_APU__IRQ_STATE) &&
           (offset_i != `APB4_APU__ERROR_STATUS) && (offset_i != `APB4_APU__ERROR_ADDRESS) &&
           (offset_i != `APB4_APU__ERROR_DETAIL)) begin
         expect_read(offset_i, s_before);
@@ -487,6 +504,22 @@ module apu_reg_tb;
     drive_apb_idle();
     hard_reset();
     if (!idle_o || irq_o) $fatal(1, "APU reset lifecycle outputs mismatch");
+
+    if ($test$plusargs("LEGACY_IRQ_ONLY")) begin
+      s_phase = "legacy IRQ mask";
+      expect_read(`APB4_APU__IP_VERSION, 32'h0001_0001);
+      check_rejected_write(`APB4_APU__IRQ_STATE, 32'd1 << `APB4_APU__IRQ_COEFFICIENT_LOAD_DONE,
+                           `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+      check_rejected_write(`APB4_APU__IRQ_ENABLE, 32'd1 << `APB4_APU__IRQ_COEFFICIENT_LOAD_DONE,
+                           `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+      check_rejected_write(`APB4_APU__IRQ_TEST, 32'd1 << `APB4_APU__IRQ_COEFFICIENT_LOAD_DONE,
+                           `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+      hard_reset();
+      apb_write(`APB4_APU__IRQ_TEST, 32'd1 << `APB4_APU__IRQ_SEQUENCER_TRAP, 4'hf, 1'b0);
+      expect_read(`APB4_APU__IRQ_STATE, 32'd1 << `APB4_APU__IRQ_SEQUENCER_TRAP);
+      $display("APU legacy APB IRQ mask passed");
+      $finish;
+    end
 
     s_phase = "access matrix";
     for (int unsigned register_index = 0; register_index < RegisterCount; register_index++) begin
@@ -566,10 +599,10 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__COMMAND, 32'd1 << `APB4_APU__COMMAND_MODEL_LOAD,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__COMMAND, 32'h0000_0010, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
-    check_rejected_write(`APB4_APU__IRQ_STATE, 32'h0000_0800, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
-    check_rejected_write(`APB4_APU__IRQ_ENABLE, 32'h0000_0800,
+    check_rejected_write(`APB4_APU__IRQ_STATE, 32'h0000_1000, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__IRQ_ENABLE, 32'h0000_1000,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
-    check_rejected_write(`APB4_APU__IRQ_TEST, 32'h0000_0800, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__IRQ_TEST, 32'h0000_1000, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__ERROR_STATUS, 32'h0000_0002,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__SEQUENCER_TIMEOUT, 32'd0, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
@@ -605,6 +638,10 @@ module apu_reg_tb;
     check_rejected_write(`APB4_APU__KWS_MODEL_ADDRESS, 32'h3005_0001,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__KWS_MODEL_SIZE, 32'd0, `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__KWS_COEFF_ADDRESS, 32'h3005_0001,
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
+    check_rejected_write(`APB4_APU__KWS_COEFF_SIZE, 32'd61440,
+                         `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     check_rejected_write(`APB4_APU__KWS_CONTROL, 32'h0000_0001,
                          `APB4_APU__ERROR_CODE_INVALID_CONFIG);
     hard_reset();
@@ -620,7 +657,7 @@ module apu_reg_tb;
     s_phase = "set over clear";
     hard_reset();
     apb_write(`APB4_APU__IRQ_TEST, 32'h0000_0001, 4'hf, 1'b0);
-    force u_dut.u_apu_reg.s_irq_set = 11'h001;
+    force u_dut.u_apu_reg.s_irq_set = 12'h001;
     apb_write(`APB4_APU__IRQ_STATE, 32'h0000_0001, 4'h1, 1'b0);
     release u_dut.u_apu_reg.s_irq_set;
     expect_read(`APB4_APU__IRQ_STATE, 32'h0000_0001);
@@ -790,7 +827,7 @@ module apu_reg_tb;
                 (32'd1 << `APB4_APU__IRQ_MODEL_LOAD_DONE) | (32'd1 << `APB4_APU__IRQ_FIRST_ERROR));
     expect_read(`APB4_APU__ERROR_ADDRESS, 32'h3005_1234);
     expect_read(`APB4_APU__ERROR_DETAIL, 32'd0);
-    apb_write(`APB4_APU__IRQ_STATE, 32'h0000_07ff, 4'hf, 1'b0);
+    apb_write(`APB4_APU__IRQ_STATE, 32'h0000_0fff, 4'hf, 1'b0);
     release u_dut.s_kws_loader_done;
     force u_dut.s_kws_loader_abort_done = 1'b1;
     @(posedge clk_i);
@@ -844,6 +881,8 @@ module apu_reg_tb;
     force u_dut.u_apu_reg.s_kws_control_q = 2'd3;
     force u_dut.s_kws_model_valid = 1'b1;
     force u_dut.s_kws_model_lock = 1'b1;
+    force u_dut.s_kws_coeff_valid = 1'b1;
+    force u_dut.s_kws_coeff_lock = 1'b1;
     force u_dut.s_kws_disable_request = 1'b1;
     @(negedge clk_i);
     u_dut.u_codec_controller.s_descriptor_q[(0*32)+:32] = 32'd1;
@@ -862,6 +901,8 @@ module apu_reg_tb;
     release u_dut.s_kws_disable_request;
     release u_dut.s_kws_model_lock;
     release u_dut.s_kws_model_valid;
+    release u_dut.s_kws_coeff_lock;
+    release u_dut.s_kws_coeff_valid;
     release u_dut.u_apu_reg.s_kws_control_q;
 
     s_phase = "KWS model default publication";

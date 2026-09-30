@@ -74,7 +74,7 @@ $(VERILATOR_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURC
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool verilator \
 		--log $(BUILD_DIR)/verilating.log --result $(BUILD_DIR)/result-verilate.json \
 		-- $(VERILATOR) $(VERILATOR_FLAGS)
-	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) \
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py $(RTL_FLIST) \
 		$(foreach source,$(VERILATOR_EXTRA_SOURCES),--extra $(source)) \
 		--target $@ --output $(VERILATOR_DEPFILE)
 	@touch $@
@@ -90,7 +90,7 @@ $(RTL_LINT_STAMP): $(MPW_VARIANT_DEP) $(FILELIST_STAMP) $(VERILATOR_EXTRA_SOURCE
 	python3 $(ROOT_PATH)/scripts/run_flow.py --tool rtl-lint \
 		--log $(RTL_LINT_DIR)/lint.log --result $(RTL_LINT_DIR)/result-rtl-lint.json \
 		-- $(VERILATOR) $(RTL_LINT_FLAGS)
-	python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) \
+	python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py $(RTL_FLIST) \
 		$(foreach source,$(VERILATOR_EXTRA_SOURCES),--extra $(source)) \
 		--target $@ --output $(RTL_LINT_DEPFILE)
 	@touch $@

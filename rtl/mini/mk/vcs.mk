@@ -99,13 +99,13 @@ $(VCS_BEHV_SIMV) $(VCS_NETL_SIMV) $(VCS_POST_SIMV): $(MPW_VARIANT_DEP) $(FILELIS
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool vcs --log $(DIR)/driver-compile.log \
 		--result $(DIR)/result-compile.json --cwd $(DIR) -- \
 		$(SIM_TOOL) $(COMMON_OPTS) $(OPTS) $(FLIST) -top $(RTL_TOP) $(COMP_LOG)
-	$(FLOW_PYTHON) $(RTL_PATH)/script/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/rtl/filelist_deps.py $(DEPS_ARGS) --target $@ --output $(DEPFILE)
 
 $(VCS_NETL_SIMV): $(SYN_BUILD_ROOT)/out/retrosoc_asic_yosys.v
 $(VCS_POST_SIMV): $(ROOT_PATH)/physical/sdf/retrosoc_asic.v $(ROOT_PATH)/physical/sdf/retrosoc_asic_CTS_MIN.sdf.gz
 
 sim netsim postsim:
-	$(FLOW_PYTHON) $(RTL_PATH)/script/prepare_norflash.py --sim-dir $(DIR) \
+	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/rtl/prepare_norflash.py --sim-dir $(DIR) \
 		--firmware $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex
 	$(FLOW_PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool vcs-sim --stream-bytes \
 		--log $(DIR)/driver-sim.log \

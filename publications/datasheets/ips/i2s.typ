@@ -17,9 +17,9 @@
 #ip("i2s")
 
 #ip-reference("i2s","i2s",4,legacy:[
-The stereo master supports 16/24-bit and 48/96 kHz presets plus programmable clock dividers.
+The *stereo master* supports 16/24-bit and 48/96 kHz presets plus programmable clock dividers.
 TX/RX streams use 32-bit words and 128-word FIFOs. Configuration and sample CDC handle the
-independent audio clock. Slave, TDM and PDM modes are not advertised. A codec/DAC/ADC and
+independent audio clock. *Slave, TDM and PDM modes are not advertised*. A codec/DAC/ADC and
 board-level audio-clock qualification are external requirements.
 The wrapper exports the synchronized RX warm-flush state as #code("rx_flush_busy_o") to
 the APU integration. The internal KWS receive route and its flush/lifecycle coordination are

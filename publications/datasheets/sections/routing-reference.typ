@@ -1,9 +1,10 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-routing-reference","Selected body emphasis: routing reference")
 #let programming = data.system_reference.programming
 
 == DMA Request, Interrupt and Event Routing <dma-routing>
 Request selectors describe pacing or stream endpoints. Channel numbers describe software
-contexts, and interrupt numbers describe completion delivery. None can be inferred from another.
+contexts, and interrupt numbers describe completion delivery. *None can be inferred from another*.
 Central DMA channel conventions are not independent hardware ownership or privilege domains.
 
 === Central DMA request map
@@ -17,7 +18,7 @@ the other paced clients use peripheral data windows through the MM-to-MM path. S
 selector zero has no dedicated peripheral request wire. WS2812 uses that software-paced path.
 
 The endpoint IRQ column identifies the peripheral's own event line where one exists; it is
-not the DMA transfer-completion interrupt. Central DMA channel events aggregate at the DMA
+*not the DMA transfer-completion interrupt*. Central DMA channel events aggregate at the DMA
 resource's LP IRQ or HP PLIC source according to the central resource owner. Crypto has no
 separate LP vector entry in this integration; inspect its register status and DMA completion path.
 
@@ -26,7 +27,7 @@ separate LP vector entry in this integration; inspect its register status and DM
   ([Channel],[Client / convention],[Basis]),
   programming.channels.map(r=>(str(r.number),r.label,source(r.sources.last(),title:"Driver / allocation source"))),
   widths:(0.5fr,2.7fr,0.9fr))
-The bulk convention is shared and must be serialized by the application. XPI accepts an
+The bulk convention is *shared and must be serialized* by the application. XPI accepts an
 explicit channel argument, but selecting another number does not bypass an active stream
 endpoint, resource ownership or buffer-lifetime restriction. Crypto uses separate input/output
 contexts. The HP boot loader uses its declared boot context; channel 7 remains reserved.
@@ -65,3 +66,5 @@ PIO handling or a separately implemented extension; do not discard the partial-w
 #source-note("crt/include/retrosoc/hal/dma.h",title:"SDK selectors, contexts and descriptor type")
 #source-note("rtl/mini/top/apb4_periph.sv",title:"Request, stream and PLIC wiring")
 #source-note("rtl/ip/peripheral/dma_core.sv",title:"Start validation, endpoint exclusion and stream acceptance")
+
+#change-end("v05-emphasis-routing-reference")

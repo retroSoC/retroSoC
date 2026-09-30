@@ -421,30 +421,34 @@
     "section": "functional",
     "stores": [
       {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "instance": "u_input_fifo",
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {"Depth": 8},
         "title": "AES input FIFO",
         "depth": 8,
         "bits": 37
       },
       {
-        "file": "rtl/ip/security/crypto_aes_engine.sv",
-        "instance": "u_output_fifo",
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {"Depth": 8},
         "title": "AES output FIFO",
         "depth": 8,
         "bits": 37
       },
       {
-        "file": "rtl/ip/security/crypto_sha2_engine.sv",
-        "instance": "u_input_fifo",
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {"Depth": 16},
         "title": "SHA input FIFO",
         "depth": 16,
         "bits": 37
       }
     ],
     "sources": [
-      "rtl/ip/security/crypto_aes_engine.sv",
-      "rtl/ip/security/crypto_sha2_engine.sv"
+      "rtl/ip/security/crypto_aes_sram_engine.sv",
+      "rtl/ip/security/crypto_clearable_fifo.sv",
+      "rtl/ip/security/crypto_sha2_sram_engine.sv"
     ],
     "bindings": [],
     "note": "Entries carry data and valid-byte/LAST metadata. AES has independent input/output FIFOs; SHA has an input FIFO and separate digest state. Zeroize/abort and ownership rules remain mandatory."
@@ -633,7 +637,7 @@
       "rtl/ip/multimedia/apu_local_sram.sv"
     ],
     "bindings": [],
-    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The current codec/internal macro branch uses 12 four-KiB banks; the separate 64 KiB KWS client uses inferred storage and is gated off by default. Logical capacity does not establish a 28-macro physical implementation or completed PPA qualification.",
+    "note": "Offsets address the 112 KiB logical local-data space, distinct from the 32 KiB control store and SoC SRAM. The codec/internal branch uses 12 four-KiB banks and the separate 64 KiB KWS client uses 16 banks. P9 adds 15 coefficient and 17 proof-memo wrappers outside that logical data window. Wrapper inventory does not establish physical replacement or completed PPA qualification.",
     "derived": "apu-local"
   },
   {
@@ -645,51 +649,42 @@
     "section": "functional",
     "stores": [
       {
-        "file": "rtl/ip/security/crypto_rsa_core.sv",
-        "symbols": [
-          "modulus_i"
-        ],
-        "word_view": 32,
+        "depth_ref": {"file": "crt/include/retrosoc/hal/crypto_regs.h", "constant": "RS_CRYPTO_RSA_WORDS"},
+        "bits_ref": {"file": "rtl/ip/security/apb4_crypto.sv", "symbol": "s_wdata"},
         "title": "Modulus",
         "depth": 64,
         "bits": 32
       },
       {
-        "file": "rtl/ip/security/crypto_rsa_core.sv",
-        "symbols": [
-          "exponent_i"
-        ],
-        "word_view": 32,
+        "depth_ref": {"file": "crt/include/retrosoc/hal/crypto_regs.h", "constant": "RS_CRYPTO_RSA_WORDS"},
+        "bits_ref": {"file": "rtl/ip/security/apb4_crypto.sv", "symbol": "s_wdata"},
         "title": "Exponent",
         "depth": 64,
         "bits": 32
       },
       {
-        "file": "rtl/ip/security/crypto_rsa_core.sv",
-        "symbols": [
-          "base_i"
-        ],
-        "word_view": 32,
+        "depth_ref": {"file": "crt/include/retrosoc/hal/crypto_regs.h", "constant": "RS_CRYPTO_RSA_WORDS"},
+        "bits_ref": {"file": "rtl/ip/security/apb4_crypto.sv", "symbol": "s_wdata"},
         "title": "Base",
         "depth": 64,
         "bits": 32
       },
       {
-        "file": "rtl/ip/security/crypto_rsa_core.sv",
-        "symbols": [
-          "result_o"
-        ],
-        "word_view": 32,
+        "depth_ref": {"file": "crt/include/retrosoc/hal/crypto_regs.h", "constant": "RS_CRYPTO_RSA_WORDS"},
+        "bits_ref": {"file": "rtl/ip/security/apb4_crypto.sv", "symbol": "s_wdata"},
         "title": "Result",
         "depth": 64,
         "bits": 32
       }
     ],
     "sources": [
-      "rtl/ip/security/crypto_rsa_core.sv"
+      "crt/include/retrosoc/hal/crypto_regs.h",
+      "rtl/ip/security/apb4_crypto.sv",
+      "rtl/ip/security/crypto_rsa_sram_core.sv",
+      "rtl/ip/security/crypto_sram_store.sv"
     ],
     "bindings": [],
-    "note": "Each 2,048-bit vector is shown as 64 little-endian 32-bit limb positions. These interfaces represent logical operand state, not secure SRAM, persistent keys or a key-slot service."
+    "note": "Each logical 2,048-bit APB aperture is shown as 64 little-endian 32-bit limb positions. P1 stores the live values in the shared private SRAM banks; the diagram does not imply separate arrays, persistent keys or a key-slot service."
   },
   {
     "id": "xpi-windows",

@@ -3,6 +3,14 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
+- [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes the product/package target, 144 MHz
+  processor target with a 24 MHz crystal and bypassable PLL, pin/power budget
+  and GPIO alternate functions; it retains the separate 24 MHz implementation
+  baseline and identifies the deferred integration ABI.
+- [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
+  current 24 MHz implementation, registers, software and qualification boundary;
+  it does not yet describe the QFN64 Gen1 target.
+
 - [Contributing](../CONTRIBUTING.md) describes community discussion, development,
   review, validation evidence, and maintainer responsibilities.
 - [git-workflow.md](git-workflow.md) defines branch and commit conventions,
@@ -44,7 +52,13 @@ the root README and subsystem guides.
   register ABI, SDK API, scheduling, error, IRQ, and stream contracts.
 - [ip/crypto.md](ip/crypto.md) records the commercial AES/SHA/RSA survey and
   defines the Mini SoC crypto architecture, APB/DMA ABI, security boundary,
-  HAL, verification evidence, and commercialization roadmap.
+  HAL, verification evidence, and commercialization roadmap. Its approved
+  storage refreeze specifies six private SRAM banks, LP-loaded/locked constants,
+  synchronous AES/SHA/RSA access, APB V2 and verified scrub completion;
+  P0 baseline and P1 implementation/evidence entry points are recorded there;
+  [ip/crypto-verification.md](ip/crypto-verification.md) maps P1 review fixes
+  to control proofs, physical-data checks and firmware/error-path evidence.
+  P2 integration and physical qualification remain separate gates.
 - [ip/usb2.md](ip/usb2.md) defines the ULPI USB 2.0 dual-role architecture,
   AXI4 descriptor DMA, APB4 ABI, dedicated pads, HAL, and release gates.
 - [ip/jpeg.md](ip/jpeg.md) records the commercial JPEG IP/SoC survey and
@@ -60,7 +74,11 @@ the root README and subsystem guides.
   APUMC V2 with V1 compatibility. P6 MP3 is deferred. The P7 refreeze fixes
   APUM wire/numerical/HAL contracts and the content-hashed
   [1000-waveform input manifest](ip/apu-kws-corpus.tsv); P7 starts from reviewed
-  P5 and retains the MP3 unsupported stub. Physical closure remains P8 work.
+  P5 and retains the MP3 unsupported stub. The P9 macro-first refreeze moves
+  coefficient/profile tables and proof memoization to dedicated SRAMs, fixes
+  APUC loading and APB V1.2, and requires memory/time/RSS A/B evidence before
+  final P8 physical closure; it does not reduce KWS numerical accuracy or
+  advertised workspace capacity.
 - [ip/npu.md](ip/npu.md) freezes the independent 64-MAC Mini NPU, 64 KiB
   private SRAM, AXI64 DMA, APB4/job/HAL ABI, resource and clock/reset contracts,
   and stable Phases 0-6. [Its verification contract](ip/npu-verification.md)
@@ -76,6 +94,8 @@ the root README and subsystem guides.
   clock/pad/fault/performance/RTC/test contracts, HAL, and verification.
 - [ip/hp-platform.md](ip/hp-platform.md) defines the experimental HP PLIC and
   LP/HP mailbox register, interrupt, software, and verification contracts.
+- [hp-rv64-validation.md](hp-rv64-validation.md) records RV64 core, V2 bundle,
+  RT-Thread/Linux acceptance evidence and deferred gates.
 - [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4
   SRAM architecture, APB capability ABI, technology mapping, verification, and
   reliability roadmap.

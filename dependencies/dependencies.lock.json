@@ -3,7 +3,7 @@
   "sources": {
     "publication_media": {
       "url": "https://github.com/retroSoC/media.git",
-      "revision": "773154ba6825f7878a0fee05cc6f2222efc1ca26",
+      "revision": "0405410177d22b93bd657f7895cb154e83646df0",
       "destination": "publications/media",
       "license": "MulanPSL-2.0 AND OFL-1.1",
       "purpose": "Publication fonts, licenses and original artwork"
@@ -26,6 +26,12 @@
       "destination": ".cache/retrosoc/sources/vexiiriscv",
       "recursive": true,
       "license": "MIT"
+    },
+    "rtthread_hp": {
+      "url": "https://github.com/RT-Thread/rt-thread.git",
+      "revision": "99428a1e7f7447955aa860f7c969273a12095b8f",
+      "destination": ".cache/retrosoc/sources/rtthread-hp",
+      "license": "Apache-2.0"
     },
     "opensbi_hp": {
       "url": "https://github.com/riscv-software-src/opensbi.git",
@@ -233,7 +239,10 @@
       "license": "CC-BY-4.0"
     },
     "npu_vww_dataset": {
-      "url": "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz",
+      "url": "https://github.com/retroSoC/artifact/releases/download/npu-vww-dataset-f8746b9e44f8/vw_coco2014_96.tar.gz",
+      "fallback_urls": [
+        "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz"
+      ],
       "sha256": "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58",
       "destination": ".cache/retrosoc/downloads/npu/vw-coco2014-96.tar.gz",
       "license": "NOASSERTION"
@@ -378,13 +387,20 @@
         "path": "xpack-openocd-0.12.0-1/bin"
       },
       "sbt": {
-        "version": "1.10.0",
-        "url": "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz",
-        "sha256": "154b7de6c19207c73d0a304f901c8c4b6ead9a9c3a99a98a9d72ac19419d2640",
-        "archive": "sbt-1.10.0.tgz",
+        "version": "2.0.5",
+        "url": "https://github.com/sbt/sbt/releases/download/v2.0.5/sbt-2.0.5.tgz",
+        "sha256": "2a53c95403cb7fccd5da05d48cfe03ff4be573a3f3d0295a41963b109e756a18",
+        "archive": "sbt-2.0.5.tgz",
         "path": "sbt/bin",
         "download_timeout_seconds": 600,
         "resume": true
+      },
+      "riscv_gnu_hp": {
+        "version": "2025.05.01",
+        "url": "https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2025.05.01/riscv64-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "sha256": "57da2f16e772674ef0202b37217ccdcba3787e1a055ca92a83c9a5b240bca7d1",
+        "archive": "riscv64-elf-ubuntu-22.04-gcc-nightly-2025.05.01-nightly.tar.xz",
+        "path": "riscv/bin"
       },
       "riscv_gnu": {
         "version": "2025.05.01",

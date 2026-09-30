@@ -1,8 +1,9 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-image-maintenance","Selected body emphasis: image maintenance")
 
 == Programming, Image Maintenance and Service Procedures <image-maintenance>
 The existing flow programs external NOR using an SRAM-resident XPI loader and an already
-configured OpenOCD/GDB connection. It does not add a hardware JTAG-to-flash master, automatic
+configured OpenOCD/GDB connection. It *does not add a hardware JTAG-to-flash master*, automatic
 OTA service or authenticated update chain. This chapter documents the operation; the publication
 build does not connect a debugger or erase/program a device.
 
@@ -16,8 +17,8 @@ build does not connect a debugger or erase/program a device.
    ([System state],[HP and other masters cannot fetch/use the affected NOR region; relevant interrupts and transfers are quiesced.],[A management halt alone does not establish these system-wide conditions.])),
   widths:(0.8fr,2.05fr,1.3fr))
 The committed loader profile is #code("configs/ci/ihp130-xpi-flash-loader.mk"), using the
-#code("jtag_sram") linker layout. The ELF and its state must remain in SRAM because the boot
-NOR is unavailable during erase/program. A matching loader artifact was not newly built by
+#code("jtag_sram") linker layout. The ELF and its state *must remain in SRAM* because the boot
+NOR is *unavailable during erase/program*. A matching loader artifact was not newly built by
 this publication task; supply one from a reviewed build before using the host command.
 
 The current algorithm is specialized for the documented 16 MiB Winbond-compatible flash
@@ -94,3 +95,5 @@ from records of actual device operations.
 #source-note("app/apps/xpi_flash_loader/main.c",title:"SRAM loader and sector/page verification algorithm")
 #source-note("crt/linker/jtag_sram.lds",title:"Loader placement and retained debugger entry points")
 #source-note("docs/hazard3-debug.md",title:"Management debug scope and reset boundary")
+
+#change-end("v05-emphasis-image-maintenance")

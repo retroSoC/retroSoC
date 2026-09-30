@@ -30,7 +30,7 @@ from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
-from publications.report_changes import page_ranges, repository_footer_pages  # noqa: E402
+from publications.report_changes import page_ranges, repository_footer_pages, validate_change_scope  # noqa: E402
 from publications.page_reference import (  # noqa: E402
     CLOSING_TITLE, PAGE_ROLES_FILE, collect_page_roles, read_page_roles,
     validate_footer_pages, validate_footer_text, validate_page_roles,
@@ -146,9 +146,9 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     product = profiles["profile"]
     if product.get("MINI_MODE") != "PRODUCT" or product.get("HAVE_HP") != "YES":
         raise ValueError("datasheet requires the reviewed dual-hart PRODUCT profile")
-    address = load_generator("datasheet_memory", "rtl/mini/address_map/generate_memory_map.py")
+    address = load_generator("datasheet_memory", "scripts/rtl/generate_memory_map.py")
     topology = load_generator("datasheet_topology", "rtl/mini/integration/generate_soc_topology.py")
-    pinmap = load_generator("datasheet_pins", "rtl/mini/pin_map/generate_pin_map.py")
+    pinmap = load_generator("datasheet_pins", "scripts/rtl/generate_pin_map.py")
     reset, regions, _ = address.read_map(ROOT / MAP, int(product["SRAM_SIZE_KIB"]))
     _, _, _, gpio, _, _, irqs, policies = topology.read_topology(ROOT / TOPOLOGY, ROOT / MAP)
     pads, _ = pinmap.read_map(ROOT / PINS)
@@ -433,6 +433,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     change_markers = [item for item in layout_items if isinstance(item, dict)
                       and item.get("kind") in {"publication-change-start", "publication-change-end"}]
     # Pair/validate here; the final report also checks actual PDF pages and printed footers.
+    validate_change_scope(change_markers, config)
     page_ranges(change_markers, max(item["page"] for item in change_markers))
     write_json(out / "change-markers.json", change_markers)
     manifest = {
@@ -585,6 +586,7 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     marker_path = pdf.parent / "change-markers.json"
     if not marker_path.is_file() or manifest.get("change_markers_sha256") != sha256(marker_path):
         raise ValueError("PDF change markers missing or changed; rebuild before checking")
+    validate_change_scope(read_json(marker_path), manifest["document"])
     page_ranges(read_json(marker_path), len(reader.pages))
     structure_path = pdf.parent / "document-structure.json"
     if not structure_path.is_file() or manifest.get("document_structure_sha256") != sha256(structure_path):

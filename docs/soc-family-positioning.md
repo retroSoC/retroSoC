@@ -3,9 +3,9 @@
 ## Status and Scope
 
 This document defines the intended Tiny, Mini, Std, and Pro product ladder.
-It is a product roadmap, not a statement of implemented repository support.
-The current build system accepts only `SOC=MINI`, and the committed Mini
-profiles remain the executable source of truth.
+Tiny and Mini have executable build profiles; Std and Pro remain roadmap
+targets. Committed product profiles and retained validation evidence define
+implemented support. Tiny first targets IHP130 as a wired MCU.
 
 Mini is the family anchor. It establishes the common product model: an open
 RISC-V SoC in which a small, always-available Hazard3 management core owns
@@ -14,8 +14,8 @@ add application processors and accelerators without transferring final
 lifecycle control to Linux. Tiny reduces this model to an MCU-class device and
 does not require a separate application processor.
 
-All frequencies, memory sizes, bus widths, accelerator rates, and software
-features below are product targets. They require separate RTL integration,
+Except for the explicitly identified executable baselines, frequencies, memory
+sizes, bus widths, accelerator rates, and software features below are product targets. They require separate RTL integration,
 driver enablement, verification, and physical qualification before they can be
 advertised for a device or PDK.
 
@@ -24,9 +24,9 @@ advertised for a device or PDK.
 | Tier | Product role | Compute topology | Primary software | Defining boundary |
 | --- | --- | --- | --- | --- |
 | Tiny | Low-power MCU and edge-connectivity endpoint | One Hazard3 MCU core | Bare metal or RTOS | No MMU or external DRAM dependency |
-| Mini | Low-cost heterogeneous RV32 Linux control SoC | Hazard3 management core plus one RV32 VexiiRiscv Linux core | Embedded Linux plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
+| Mini | Low-cost heterogeneous Linux control SoC | RV32 Hazard3 management plus one RV64 VexiiRiscv application core | Embedded Linux or RT-Thread plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
 | Std | Heterogeneous RV32 graphical Linux edge SoC | Hazard3 management core plus VexiiRiscv performance and efficiency cores | Graphical Linux plus RTOS firmware | Full AXI4 memory fabric, GPU, audio, and AI acceleration |
-| Pro | Highest-performance and only RV64 family tier | Hazard3 management core plus four coherent RV64 VexiiRiscv Linux cores | RV64 graphical Linux | Coherent SMP, high-bandwidth memory, GPU, NPU, and video codecs |
+| Pro | Highest-performance coherent RV64 family tier | Hazard3 management core plus four coherent RV64 VexiiRiscv Linux cores | RV64 graphical Linux | Coherent SMP, high-bandwidth memory, GPU, NPU, and video codecs |
 
 The VexiiRiscv targets rely on the upstream core's documented RV32/RV64,
 single/dual-issue, cache, Sv32/Sv39, AXI4, and Linux capabilities. The exact
@@ -47,45 +47,52 @@ nodes, protocol bridges, and smart-home edge endpoints. It is MCU-first: boot
 latency, sleep behavior, deterministic I/O, security, package cost, and usable
 energy per event take precedence over Linux compatibility.
 
-Tiny has two productization profiles:
+The initial executable baseline is **Tiny-MCU**, an independent wired MCU
+integration in `rtl/tiny`, selected with `configs/ci/ihp130-tiny.mk`. It has no
+wireless IP, wireless protocol stack, or radio-specific companion integration.
+Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 
-- **Tiny-MCU** contains no radio and targets wired control or products that do
-  not need connectivity on every unit.
-- **Tiny-Connect** provides Bluetooth Low Energy and IEEE 802.15.4 capability.
-  The open digital-RTL baseline should expose a qualified SPI or SDIO host,
-  interrupt, reset, wake, and power-sequencing interface to a certified radio.
-  On-die or co-packaged RF becomes a product option only after suitable RF IP,
-  analog integration, PDK support, and regulatory qualification exist.
+The committed baseline still uses 24 MHz, no PLL, two UARTs, two I2C
+controllers and legacy pad routing. The QFN64 Gen1 product/package target
+below was approved on 2026-09-26; its PLL, I2S, SDIO and new pinmux require
+separate integration and verification. Existing generated datasheets describe
+the baseline, not completed implementation of this target.
 
-Wi-Fi 6 is an optional upper Tiny-Connect SKU rather than a baseline
-requirement. This avoids imposing its RF, memory, and active-power costs on
-802.15.4 and Bluetooth endpoint products.
+### Gen1 Product and Package Target
 
-### Recommended Architecture
-
-| Area | Product target |
+| Area | Tiny Gen1 target |
 | --- | --- |
-| CPU | One Hazard3 RV32IMAC core at 64-160 MHz, subject to PDK qualification |
-| On-chip memory | 256-512 KiB banked SRAM, boot ROM, and 8-32 KiB retention SRAM |
-| Code storage | QSPI flash with execute-in-place and authenticated recovery boot |
-| Memory model | No MMU and no external DRAM dependency |
-| Interconnect | 32-bit RIB; bounded `INCR4` support for DMA and XIP, without a full AXI4 fabric |
-| Software | Freestanding SDK, bare metal, and Zephyr- or FreeRTOS-class RTOS ports |
-| Low power | Clock gating, switchable SRAM banks, RTC/event wake, retention, and a separately measured deep-sleep state |
-| Security | Immutable boot root, signed boot, OTP key material, PMP, TRNG, and symmetric/hash acceleration |
-| Edge I/O | UART, SPI, I2C, PWM, ADC, I2S/PDM, USB full speed, and CAN FD selected by package profile |
+| CPU | One Hazard3 RV32IMC hart; A extension disabled until atomic bus semantics are qualified |
+| On-chip memory | 128 KiB macro-backed SRAM; 256–512 KiB and retention SRAM deferred |
+| Code storage | XPI NOR boot, loaded into SRAM; authenticated recovery boot deferred |
+| Memory model | No MMU, HP hart, or external DRAM/PSRAM dependency |
+| Interconnect | 32-bit AXI4 data plane and APB4 control; no RIB/RIBP |
+| Software | Existing freestanding SDK, RV32IM compiler target, CSR/IRQ-enabled acceptance firmware |
+| Clock/reset | 24 MHz crystal and bypassable PLL; maximum processor target 144 MHz; 1 MHz CLINT timebase, watchdog and JTAG reset; bus/peripheral rates require integration freeze |
+| Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S, one 3.3 V 1-bit/4-bit SDIO host, two timers, four central DMA channels, four PWM outputs, RTC, watchdog and XPI |
+| Package | QFN64 plus separate EP: 48 signal and 16 power/ground terminals; preferred 9 x 9 mm, 0.5 mm pitch pending physical review |
+| Dedicated signals | Six boot XPI pins and five JTAG pins outside the 32 GPIO; XPI CS1-3 use GPIO29-31 |
+| Power | One 3.3 V digital IO rail; IHP130 Core planned at 1.2 V; clock analog supply and EP connection require macro/package confirmation |
 
-No power-current number should be published until it is measured on a
-qualified physical implementation with the wake sources and retention state
-specified. Tiny's acceptance criteria should include sleep-to-active latency,
-energy per sensing/reporting cycle, and certified-radio interoperability, not
-only CPU benchmarks.
+The normative [Tiny Gen1 contract](ip/tiny-soc.md) defines the complete QFN64
+pinout, power/reset requirements and GPIO/ALT0/ALT1 table. Default SDIO,
+full-duplex I2S with MCLK, UART0 and I2C0 use 15 non-overlapping GPIO, leaving
+17; independent boot Flash and JTAG remain available. New address/IRQ/DMA
+allocations, PLL/routing controls and detailed clock/reset behavior await the
+Gen1 integration-contract freeze. The existing AXI/ABI and verification
+sections explicitly apply to the initial 24 MHz baseline.
+
+Independent low-power clocks, clock/power gating, retention, secure boot, RTOS
+ports, USB, standalone general SPI, CAN and ADC remain future product work.
+I2S and SDIO are required Gen1 capabilities awaiting implementation. Neither
+the initial functional profile nor the product/package freeze establishes a
+measured frequency ceiling, power-current, wake-latency or security claim.
 
 ### Commercial Reference Points
 
 | Commercial SoC | Relevant axis | Position relative to Tiny |
 | --- | --- | --- |
-| [Espressif ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2) | Low-power RV32 MCU with Bluetooth LE and IEEE 802.15.4 | Primary Tiny-Connect endpoint and Thread/Zigbee market reference |
+| [Espressif ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2) | Low-power RV32 MCU with Bluetooth LE and IEEE 802.15.4 | Deferred Tiny-Connect research reference |
 | [Espressif ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6) | RV32 high- and low-power cores with Wi-Fi 6, Bluetooth LE, and IEEE 802.15.4 | Upper connectivity reference; RF and protocol integration are well beyond a radio-companion Tiny baseline |
 | [Raspberry Pi RP2350](https://www.raspberrypi.com/products/rp2350/) | Dual Hazard3 option, 520 KiB SRAM, security, USB, and programmable I/O | Closest open-core MCU and deterministic-I/O reference, without integrated radio |
 | [ST STM32U5](https://www.st.com/en/microcontrollers-microprocessors/stm32u5-series.html) | Ultra-low-power secure MCU family with large embedded memory and graphics options | Energy-efficiency, security, and industrial MCU ecosystem reference rather than an ISA-equivalent peer |
@@ -177,10 +184,12 @@ responsible for clock and memory initialization, image selection, VexiiRiscv
 boot release, fault recovery, and final power-state control. Linux must not be
 able to reconfigure the management-core lifecycle controls.
 
-The initial VexiiRiscv configuration should provide:
+The frozen Mini RV64 configuration provides the following architectural target;
+validation status is recorded separately in [HP RV64 validation](hp-rv64-validation.md).
+The Std/Pro roadmap below remains independent of this implemented Mini profile.
 
-- RV32IMAFDC with machine, supervisor, and user modes.
-- Sv32 virtual memory, hardware page-table walking, and the privileged CSRs
+- RV64IMAFDC with machine, supervisor, and user modes.
+- Sv39 virtual memory, hardware page-table walking, and the privileged CSRs
   required by the supported Linux kernel.
 - LR/SC atomics, separate 16 KiB instruction and data caches, and uncached MMIO
   regions.
@@ -414,7 +423,7 @@ software quality.
 
 | Tier | Claim gate |
 | --- | --- |
-| Tiny | Measured active and sleep power, bounded wake latency, secure-boot validation, and qualified edge-connectivity operation |
+| Tiny | Gen1 target: QFN64 pinmux, PLL/bypass, I2S/SDIO, wired-MCU boot, AXI/APB/DMA/IRQ and IHP130/144 MHz evidence; low-power/security claims require separate measurements and qualification |
 | Mini | Repeatable Linux boot, at least 64 MiB usable main memory, native memory bursts, and management-controlled start/stop recovery |
 | Std | Full AXI4 ordering tests, coherent accelerator traffic, 1080p60 graphical desktop, audio playback, and NPU inference under concurrent DMA load |
 | Pro | Four-hart coherent SMP stress, RV64 distribution boot, more-than-4-GiB memory validation, and concurrent GPU/NPU/video operation |

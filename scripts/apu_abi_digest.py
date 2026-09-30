@@ -51,6 +51,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import apu_kws  # noqa: E402
+import apu_kws_coeff  # noqa: E402
 from apu_isa import (  # noqa: E402
     APUMC_ABI_V2,
     ControlOpcode,
@@ -73,6 +74,7 @@ SECTION_ORDER = (
     "formats",
     "apumc",
     "apum",
+    "apuc",
     "isa",
     "mp3_stub",
 )
@@ -147,16 +149,26 @@ def _rtl_discovery_values() -> dict[str, int]:
     """Extract the release-selected discovery localparams from apu_reg.sv."""
 
     text = RTL_REGISTER.read_text(encoding="utf-8")
-    branch = r"localparam logic \[31:0\] %s = (?:\([^)]*\)|\w+) \? 32'h([0-9a-fA-F_]+) :"
     return {
         "IP_ID_VALUE": _hex_literal(
             r"localparam logic \[31:0\] IpId = 32'h([0-9a-fA-F_]+);", text
         ),
-        "IP_VERSION_VALUE": _hex_literal(branch % "IpVersion", text),
-        "CAPABILITY0_IMPLEMENTED": _hex_literal(branch % "Capability0", text),
-        "CAPABILITY1_IMPLEMENTED": _hex_literal(branch % "Capability1", text),
+        "IP_VERSION_VALUE": _hex_literal(
+            r"localparam logic \[31:0\] IpVersion = EnableP7 \? 32'h([0-9a-fA-F_]+) :",
+            text,
+        ),
+        "CAPABILITY0_IMPLEMENTED": _hex_literal(
+            r"localparam logic \[31:0\] Capability0 = EnableP7 \? 32'h([0-9a-fA-F_]+) :",
+            text,
+        ),
+        "CAPABILITY1_IMPLEMENTED": _hex_literal(
+            r"localparam logic \[31:0\] Capability1 = \(EnableP5 \|\| EnableP7\) \? "
+            r"32'h([0-9a-fA-F_]+) :",
+            text,
+        ),
         "IRQ_ALL": _hex_literal(
-            r"localparam logic \[10:0\] IrqMask = 11'h([0-9a-fA-F_]+);", text
+            r"localparam logic \[11:0\] IrqMask = EnableP7 \? 12'h([0-9a-fA-F_]+) :",
+            text,
         ),
     }
 
@@ -350,6 +362,32 @@ def canonical_inventory() -> dict[str, dict[str, int]]:
         {name: apb[name] for name in ("APUM_MAGIC", "APUM_ABI", "APUM_IMAGE_BYTES",
                                       "APUM_PAYLOAD_CRC")},
     )
+    _require_equal(
+        "APUC container/SVH",
+        {
+            "APUC_MAGIC": apu_kws_coeff.APUC_MAGIC,
+            "APUC_ABI": apu_kws_coeff.APUC_ABI,
+            "APUC_IMAGE_BYTES": apu_kws_coeff.APUC_BYTES,
+            "APUC_HEADER_BYTES": apu_kws_coeff.APUC_HEADER_BYTES,
+            "APUC_PAYLOAD_BYTES": apu_kws_coeff.APUC_PAYLOAD_BYTES,
+            "APUC_PAYLOAD_CRC": apu_kws_coeff.APUC_PAYLOAD_CRC,
+            "APUC_COEFFICIENT_ID_LO": apu_kws_coeff.APUC_COEFFICIENT_ID[0],
+            "APUC_COEFFICIENT_ID_HI": apu_kws_coeff.APUC_COEFFICIENT_ID[1],
+        },
+        {
+            name: apb[name]
+            for name in (
+                "APUC_MAGIC",
+                "APUC_ABI",
+                "APUC_IMAGE_BYTES",
+                "APUC_HEADER_BYTES",
+                "APUC_PAYLOAD_BYTES",
+                "APUC_PAYLOAD_CRC",
+                "APUC_COEFFICIENT_ID_LO",
+                "APUC_COEFFICIENT_ID_HI",
+            )
+        },
+    )
     discovery_c = _c_discovery_defines()
     discovery_rtl = _rtl_discovery_values()
     _require_equal("discovery C/RTL", discovery_rtl,
@@ -400,6 +438,22 @@ def canonical_inventory() -> dict[str, dict[str, int]]:
         "parameter_end": apu_kws.APUM_PARAMETER_END,
         "payload_crc": apu_kws.APUM_PAYLOAD_CRC,
     }
+    apuc = {
+        "magic": apu_kws_coeff.APUC_MAGIC,
+        "abi": apu_kws_coeff.APUC_ABI,
+        "image_bytes": apu_kws_coeff.APUC_BYTES,
+        "header_bytes": apu_kws_coeff.APUC_HEADER_BYTES,
+        "payload_bytes": apu_kws_coeff.APUC_PAYLOAD_BYTES,
+        "profile": apu_kws_coeff.APUC_PROFILE,
+        "layout_id": apu_kws_coeff.APUC_LAYOUT_ID,
+        "bank_count": apu_kws_coeff.APUC_BANK_COUNT,
+        "table_count": apu_kws_coeff.APUC_TABLE_COUNT,
+        "payload_crc": apu_kws_coeff.APUC_PAYLOAD_CRC,
+        "coefficient_id_low": apu_kws_coeff.APUC_COEFFICIENT_ID[0],
+        "coefficient_id_high": apu_kws_coeff.APUC_COEFFICIENT_ID[1],
+        "associated_apum_crc": apu_kws_coeff.APUC_APUM_PAYLOAD_CRC,
+        "ln2_q24": apu_kws_coeff.APUC_LN2_Q24,
+    }
 
     discovery = {
         "ip_id": discovery_c["IP_ID_VALUE"],
@@ -425,6 +479,7 @@ def canonical_inventory() -> dict[str, dict[str, int]]:
         "formats": format_section,
         "apumc": apumc,
         "apum": apum,
+        "apuc": apuc,
         "isa": isa,
         "mp3_stub": _mp3_stub_section(apb),
     }
@@ -465,16 +520,16 @@ def rtl_implemented_digest() -> int:
 
 
 def c_implemented_digest() -> int:
-    """Extract the handwritten P7 release digest from apu_regs.h."""
+    """Extract the handwritten P9 release digest from apu_regs.h."""
 
     text = C_HEADER.read_text(encoding="utf-8")
     match = re.search(
-        r"^#define\s+RS_APU_DIGEST_P7_IMPLEMENTED\s+UINT32_C\((0[xX][0-9a-fA-F]+)\)\s*$",
+        r"^#define\s+RS_APU_DIGEST_P9_IMPLEMENTED\s+UINT32_C\((0[xX][0-9a-fA-F]+)\)\s*$",
         text,
         re.MULTILINE,
     )
     if match is None:
-        raise ValueError(f"RS_APU_DIGEST_P7_IMPLEMENTED not found in {C_HEADER.name}")
+        raise ValueError(f"RS_APU_DIGEST_P9_IMPLEMENTED not found in {C_HEADER.name}")
     return int(match.group(1), 16)
 
 

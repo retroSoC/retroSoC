@@ -19,17 +19,19 @@
 
 # Directories
 # directory of the path to the last called Makefile (this one)
-YOSYS_DIR   := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-YOSYS_BUILD := $(SYN_BUILD_ROOT)
-YOSYS_OUT   := $(YOSYS_BUILD)/out
-YOSYS_TMP   := $(YOSYS_BUILD)/tmp
-YOSYS_RPT   := $(YOSYS_BUILD)/rpt
+YOSYS_DIR     := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+YOSYS_BUILD   := $(SYN_BUILD_ROOT)
+YOSYS_OUT     := $(YOSYS_BUILD)/out
+YOSYS_TMP     := $(YOSYS_BUILD)/tmp
+YOSYS_RPT     := $(YOSYS_BUILD)/rpt
+YOSYS_TIMEOUT ?= 10800
 
 include $(YOSYS_DIR)/synth_config.mk
 
 ifeq ($(origin YOSYS_TARGET_PERIOD_PS),undefined)
 YOSYS_TARGET_PERIOD_PS := $(shell python3 $(ROOT_PATH)/scripts/yosys_period.py \
-	--domains $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json)
+	--domains $(RTL_PATH)/integration/clock_reset_domains.json \
+	--domain $(if $(filter TINY,$(SOC)),system,hp))
 ifeq ($(strip $(YOSYS_TARGET_PERIOD_PS)),)
 $(error Failed to derive YOSYS_TARGET_PERIOD_PS from the clock/reset inventory)
 endif
@@ -48,8 +50,8 @@ YOSYS_SCRIPTS  := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk
 -include $(YOSYS_DEPFILE)
 
 $(SV_FLIST): $(MPW_VARIANT_STAMP) $(FILELIST_STAMP)
-	@python3 $(RTL_PATH)/script/comb.py $(RTL_FLIST) --output $(SV_FLIST)
-	@python3 $(RTL_PATH)/script/filelist_deps.py $(RTL_FLIST) --target $(NETLIST) \
+	@python3 $(ROOT_PATH)/scripts/rtl/comb.py $(RTL_FLIST) --output $(SV_FLIST)
+	@python3 $(ROOT_PATH)/scripts/rtl/filelist_deps.py $(RTL_FLIST) --target $(NETLIST) \
 		--output $(YOSYS_DEPFILE)
 
 gen_synth_filelist: $(SV_FLIST)
@@ -69,7 +71,8 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
-		yosys -c $(YOSYS_DIR)/script/synth.tcl
+		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
+		yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
 
 $(NETLIST_DEBUG): $(NETLIST)
 	@test -f $@

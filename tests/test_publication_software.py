@@ -61,7 +61,7 @@ def test_function_extraction_rejects_unsupported_definitions(source):
 
 
 @pytest.mark.parametrize("relative,old,new", [
-    ("rtl/mini/mk/software.mk", "CRT_SRCS := $(APP_CRT_SRCS)", "CRT_SRCS += $(APP_CRT_SRCS)"),
+    ("rtl/mk/software.mk", "CRT_SRCS := $(APP_CRT_SRCS)", "CRT_SRCS += $(APP_CRT_SRCS)"),
     ("crt/arch/riscv/startup.S", "beqz t1, PSRAM_READY_WAIT", "beqz t1, main_start"),
     ("crt/arch/riscv/startup.S", "call     _premain_init", "call     other_premain"),
     ("crt/arch/riscv/system_irq.S", "SAVE_CSR_CONTEXT\n", "SAVE_CHANGED_CONTEXT\n"),
@@ -135,7 +135,10 @@ def test_linux_platform_uses_source_values_and_order():
     data = sr.linux_platform(ROOT)
     assert (data["hart_id"], data["timebase_hz"], data["cbom_bytes"]) == (1, 1000000, 64)
     assert data["initrd_start"] == data["initrd_template_end"] == 0x39000000
-    assert data["ready_writes"][-1] == {"address": "0x1001902C", "value": "0x00000001"}
+    assert data["ready_writes"][-1] == {
+        "address": "0x1001902C", "value": "0x00000001",
+        "register": "HP_DOORBELL", "purpose": "LP interrupt request",
+    }
     assert data["ready_writes"][1]["value"] == "0x4C4E5801"
 
 
@@ -143,7 +146,7 @@ def test_linux_platform_uses_source_values_and_order():
     ("app/ports/linux/linux/retrosoc_hp.dts", "cpu@1", "cpu@0"),
     ("app/ports/linux/linux/retrosoc_hp.dts", "linux,initrd-end = <0x39000000>", "linux,initrd-end = <0x39100000>"),
     ("app/ports/linux/opensbi/retrosoc_hp/platform.c", ".mtime_freq = 1000000UL", ".mtime_freq = 2000000UL"),
-    ("app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp", "0x10019024 32 0x4C4E5801", "0x10019024 32 0x4C4E5802"),
+    ("app/ports/linux/hp_ready.c", "0x4C4E5801", "0x4C4E5802"),
 ])
 def test_linux_consistency_and_ready_event_drift_fail(source_tree, relative, old, new):
     replace(source_tree, relative, old, new)
@@ -152,20 +155,21 @@ def test_linux_consistency_and_ready_event_drift_fail(source_tree, relative, old
 
 
 def test_ready_request_cannot_move_before_payload(source_tree):
-    path = source_tree / "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp"
+    path = source_tree / "app/ports/linux/hp_ready.c"
     lines = path.read_text().splitlines()
-    first = next(i for i, line in enumerate(lines) if "devmem" in line)
-    lines[first], lines[first + 3] = lines[first + 3], lines[first]
+    first = next(i for i, line in enumerate(lines) if "mailbox[8]" in line)
+    last = next(i for i, line in enumerate(lines) if "mailbox[11]" in line)
+    lines[first], lines[last] = lines[last], lines[first]
     path.write_text("\n".join(lines))
-    with pytest.raises(ValueError, match="sequence"):
+    with pytest.raises(ValueError, match="publication"):
         sr.linux_platform(source_tree)
 
 
 def test_ready_text_order_cannot_be_silently_reversed(source_tree):
-    path = source_tree / "app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp"
+    path = source_tree / "app/ports/linux/hp_ready.c"
     text = path.read_text()
-    message = '        echo "retroSoC HP Linux ready"'
-    lines = [line for line in text.splitlines() if 'echo "retroSoC HP Linux ready"' not in line]
+    message = '        (void)puts("retroSoC HP Linux ready");'
+    lines = [line for line in text.splitlines() if 'puts("retroSoC HP Linux ready")' not in line]
     lines.append(message)
     path.write_text("\n".join(lines))
     with pytest.raises(ValueError, match="message/publication"):

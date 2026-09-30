@@ -1,0 +1,7 @@
+interface:
+  display_name: "retroSoC Datasheet"
+  short_description: "Maintain source-bound Typst datasheets and PDF evidence"
+  default_prompt: "Use $retrosoc-datasheet. Mode: inspect. Target SoCs: TINY. Assess the current datasheet and its update gaps without modifying files."
+
+policy:
+  allow_implicit_invocation: true

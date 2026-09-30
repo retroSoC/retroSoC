@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import importlib.util
 import re
 import struct
+import subprocess
 import zlib
 from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGER = ROOT / "scripts/package_hp_boot.py"
@@ -48,7 +51,7 @@ def test_hp_boot_bundle_layout_crc_and_payloads(tmp_path: Path) -> None:
 
     image = output.read_bytes()
     header_values = module.HEADER.unpack_from(image, module.BUNDLE_OFFSET)
-    magic, version, header_size, entry_count, total_size, header_crc, flags, reserved = (
+    magic, version, header_size, entry_count, total_size, header_crc, flags, workload = (
         header_values
     )
     assert magic == module.MAGIC
@@ -57,7 +60,7 @@ def test_hp_boot_bundle_layout_crc_and_payloads(tmp_path: Path) -> None:
     assert entry_count == len(module.ARTIFACTS) == 4
     assert total_size == len(image) - module.BUNDLE_OFFSET
     assert flags == module.REQUIRED
-    assert reserved == 0
+    assert workload == 1
 
     header = bytearray(image[module.BUNDLE_OFFSET : module.BUNDLE_OFFSET + header_size])
     struct.pack_into("<I", header, 20, 0)
@@ -72,6 +75,62 @@ def test_hp_boot_bundle_layout_crc_and_payloads(tmp_path: Path) -> None:
         assert image[flash_offset : flash_offset + size] == expected[name]
         assert zlib.crc32(expected[name]) & 0xFFFFFFFF == crc32
         assert entry_flags == module.REQUIRED
+
+
+@pytest.fixture(scope="module")
+def loader(tmp_path_factory):
+    library = tmp_path_factory.mktemp("hp-loader") / "loader.so"
+    subprocess.run(["cc", "-Wall", "-Wextra", "-Werror", "-shared", "-fPIC",
+                    str(ROOT / "app/apps/hp_boot/hp_boot_bundle.c"), "-o", str(library)], check=True)
+    result = ctypes.CDLL(str(library))
+    result.rs_hp_boot_header_valid.argtypes = [ctypes.c_void_p]
+    result.rs_hp_boot_header_valid.restype = ctypes.c_bool
+    result.rs_hp_boot_message_status.argtypes = [ctypes.c_uint32] * 6
+    result.rs_hp_boot_message_status.restype = ctypes.c_uint32
+    return result
+
+
+@pytest.mark.parametrize("workload", ["linux", "smoke", "rtthread"])
+def test_v2_loader_accepts_canonical_bundle_and_rejects_bad_headers(tmp_path, loader, workload):
+    module = load_packager()
+    firmware = tmp_path / "lp.bin"
+    firmware.write_bytes(b"LP")
+    images = tmp_path / "images"
+    images.mkdir()
+    for _, name, _, _ in module.artifacts_for(workload):
+        (images / name).write_bytes(b"payload")
+    output = tmp_path / "bundle.bin"
+    module.package(argparse.Namespace(firmware=firmware, images=images, output=output,
+                                      manifest=tmp_path / "bundle.json", workload=workload))
+    header = output.read_bytes()[module.BUNDLE_OFFSET:module.BUNDLE_OFFSET + 128]
+    assert loader.rs_hp_boot_header_valid(ctypes.create_string_buffer(header))
+    # Every mutation has a corrected CRC, so structural checks are exercised.
+    mutations = [(4, 1), (8, 64), (12, 0), (16, 0xFFFFFFFF), (24, 3), (28, 99),
+                 (32, 99), (36, 0x100000), (36, 0xFFFFFFFF), (40, 0x38000004),
+                 (44, 0), (44, 0x80001), (52, 3)]
+    mutations += [(60, 0x101000)] if workload == "linux" else [(56, 1)]
+    for offset, value in mutations:
+        changed = bytearray(header)
+        struct.pack_into("<I", changed, offset, value)
+        struct.pack_into("<I", changed, 20, 0)
+        struct.pack_into("<I", changed, 20, zlib.crc32(changed))
+        assert not loader.rs_hp_boot_header_valid(ctypes.create_string_buffer(bytes(changed))), (offset, value)
+    changed = bytearray(header)
+    changed[20] ^= 1
+    assert not loader.rs_hp_boot_header_valid(ctypes.create_string_buffer(bytes(changed)))
+
+
+def test_mailbox_verdict_rejects_bad_codes_arguments_and_sequences(loader):
+    status = loader.rs_hp_boot_message_status
+    assert status(1, 0x52545401, 1, 1, 0x52545401, 1) == 1
+    assert status(2, 0x52545401, 2, 2, 0x52545401, 2) == 1
+    assert status(0, 0, 0, 1, 0x52545401, 1) == 0
+    assert status(1, 0x52545401, 1, 2, 0x52545401, 2) == 0
+    assert status(3, 7, 1, 2, 0x52545401, 2) == 2
+    assert status(3, 0, 2, 1, 0x52545401, 1) == 2
+    assert status(1, 0x52545401, 2, 1, 0x52545401, 1) == 2
+    assert status(2, 0x52545401, 1, 1, 0x52545401, 1) == 2
+    assert status(1, 0x4C4E5801, 1, 1, 0x52545401, 1) == 2
 
 
 def test_mailbox_c_offsets_match_handwritten_rtl() -> None:

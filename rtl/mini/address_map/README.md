@@ -1,6 +1,7 @@
 # Canonical Address Map
 
-memory_map.json is the sole source for Mini SoC address ranges. Its generator
+`memory_map.json` is the sole source for Mini SoC address ranges. The shared
+[generator](../../../scripts/rtl/generate_memory_map.py)
 emits RTL include definitions, SDK headers, linker memory regions, and the
 filelist include path into the selected build variant.
 

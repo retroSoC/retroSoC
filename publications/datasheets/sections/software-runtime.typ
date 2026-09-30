@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-software-runtime","Selected body emphasis: software runtime")
 #import "../system-figures.typ": sequence-diagram
 #import "../diagram-packages.typ": storage-figures
 #let sw = data.system_reference.software
@@ -6,8 +7,8 @@
 === LP ordinary startup <lp-runtime>
 The firmware's startup implementation is selected before its application entry point. The
 generic CRT is used unless the application's manifest supplies an explicit CRT replacement.
-Selecting another linker layout changes placement; it does not by itself replace the startup
-instructions. The reference bringup build therefore has a different initialization contract
+Selecting another linker layout changes placement; it *does not by itself replace the startup
+instructions*. The reference bringup build therefore has a different initialization contract
 from the dedicated debug and flash-loader images.
 
 #figure(sequence-diagram((
@@ -22,11 +23,11 @@ from the dedicated debug and flash-loader images.
 With CSR support selected, the generic entry disables global and individual interrupt enables
 and installs a direct-mode trap vector before the later register/stack initialization. It then
 configures the PSRAM alternate-function group, requests initialization and waits for READY.
-The loop contains no software timeout. If it does not finish, neither main nor that application's
+The loop contains *no software timeout*. If it does not finish, neither main nor that application's
 TEST_STATUS writer has run; an external simulator or debugger may still observe a timeout.
 
 This PSRAM initialization precedes the LMA/VMA comparisons. An in-place image or an SRAM linker
-layout does not skip it when using this generic CRT. Check the actual startup selection before
+layout *does not skip it* when using this generic CRT. Check the actual startup selection before
 assuming that an SRAM-resident image is independent of external-memory initialization. See
 @known-limitations and @connection-constraints for the associated readiness and pad constraints.
 
@@ -40,7 +41,7 @@ The debug replacement sets the stack and calls main, without the generic PSRAM i
 relocation or BSS loop. The XPI flash-loader replacement sets the stack, clears BSS and calls
 main; if main returns it executes EBREAK and loops. Those compact entries are tied to their
 application/linker assumptions and do not establish a universal alternative startup sequence.
-#source-note("rtl/mini/mk/software.mk",title:"Generic CRT, conditional IRQ objects and application CRT replacement")
+#source-note("rtl/mk/software.mk",title:"Generic CRT, conditional IRQ objects and application CRT replacement")
 #source-note("crt/arch/riscv/startup.S",title:"Actual generic LP entry and PSRAM-ready loop")
 #source-note("app/apps/debug/startup.S",title:"Dedicated debug entry")
 #source-note("app/apps/xpi_flash_loader/startup.S",title:"Dedicated SRAM flash-loader entry")
@@ -107,3 +108,5 @@ hardware routes and @fault-code-reference for interpreting captured results.
 #source-note("crt/src/core/system_irq_handler.c",title:"Registration, supported enables and default dispatch behavior")
 #source-note("crt/src/core/irq.c",title:"Machine timer/software IRQ example")
 #include "api-semantics.typ"
+
+#change-end("v05-emphasis-software-runtime")

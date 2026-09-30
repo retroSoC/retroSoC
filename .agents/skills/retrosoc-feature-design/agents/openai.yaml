@@ -1,0 +1,8 @@
+interface:
+  display_name: "retroSoC Feature Design"
+  short_description: "Research and freeze features for any SoC series"
+  default_prompt: "Use $retrosoc-feature-design. Stage: research.
+    Target SoCs: TINY, MINI. Feature slug: uart. Do not modify files."
+
+policy:
+  allow_implicit_invocation: true

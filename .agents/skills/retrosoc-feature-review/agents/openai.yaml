@@ -1,0 +1,9 @@
+interface:
+  display_name: "retroSoC Feature Review"
+  short_description: "Review feature changes and evidence by SoC target"
+  default_prompt: "Use $retrosoc-feature-review. Mode: review.
+    Target SoCs: TINY. Feature slug: tiny-soc. Review range: uncommitted changes.
+    Do not modify files."
+
+policy:
+  allow_implicit_invocation: true

@@ -17,9 +17,9 @@
     #source-note("rtl/ip/storage/sdio_command.sv",title:"Command assembly and most-significant-bit-first transmission")
   ]
 ],legacy:[
-SDIO0 provides native SD command/data transfers and descriptor-driven DMA through I/O gateway A.
+SDIO0 provides *native SD command/data transfers* and descriptor-driven DMA through I/O gateway A.
 Its signals share the GPIO alternate-function matrix. The card, pull-ups, bus voltage and board
-timing are external integration requirements. Do not equate protocol support with a qualified
+timing are *external integration requirements*. Do not equate protocol support with a qualified
 card-speed grade. SDIO1 uses the same controller family with a separate instance and pad group.
 ])
 

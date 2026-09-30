@@ -40,7 +40,10 @@ module apu_kws_engine_tb;
   logic [31:0] fault_addr_o, fault_detail_o;
   logic [15:0][14:0] model_addr_o;
   logic [15:0][7:0] model_data_i, model_store_data;
+  logic storage_req, storage_ready, storage_done, storage_progress, storage_write;
+  logic [15:0]       model_read_valid;
   logic              scratch_clear;
+  logic [19:0]       scratch_read_valid;
   logic [19:0][15:0] scratch_read_addr;
   logic [19:0][31:0] scratch_read_data;
   logic [ 5:0]       scratch_write_valid;
@@ -48,11 +51,20 @@ module apu_kws_engine_tb;
   logic [ 5:0][31:0] scratch_write_data;
   logic [ 5:0][ 3:0] scratch_write_strb;
   logic              scratch_access_err;
-  logic [ 7:0]       mfcc_bytes                [  0:489];
-  logic [ 7:0]       expected_layers           [0:72087];
-  logic              use_apum = 1'b0;
-  logic              check_layers = 1'b0;
-  logic [31:0]       sequencer_timeout = 32'd0;
+  logic coeff_front_req, coeff_front_ready, coeff_front_resp_valid, coeff_front_resp_ready;
+  logic [ 3:0] coeff_front_kind;
+  logic [13:0] coeff_front_index;
+  logic [63:0] coeff_front_data;
+  logic        coeff_front_fault;
+  logic coeff_infer_req, coeff_infer_ready, coeff_infer_resp_valid, coeff_infer_resp_ready;
+  logic [ 6:0] coeff_infer_index;
+  logic [31:0] coeff_infer_data;
+  logic coeff_infer_fault, coeff_initialized;
+  logic [ 7:0] mfcc_bytes                [  0:489];
+  logic [ 7:0] expected_layers           [0:72087];
+  logic        use_apum = 1'b0;
+  logic        check_layers = 1'b0;
+  logic [31:0] sequencer_timeout = 32'd0;
 
   function automatic logic [7:0] synthetic_model_byte(input logic [14:0] address_i);
     begin
@@ -138,9 +150,16 @@ module apu_kws_engine_tb;
       .data_o               (),
       .valid_o              (),
       .access_err_o         (),
+      .access_req_i         (storage_req),
+      .access_ready_o       (storage_ready),
+      .access_done_o        (storage_done),
+      .access_progress_o    (storage_progress),
+      .access_write_i       (storage_write),
+      .model_read_valid_i   (model_read_valid),
       .model_addr_i         (model_addr_o),
       .model_data_o         (model_store_data),
       .scratch_clear_i      (scratch_clear),
+      .scratch_read_valid_i (scratch_read_valid),
       .scratch_read_addr_i  (scratch_read_addr),
       .scratch_read_data_o  (scratch_read_data),
       .scratch_write_valid_i(scratch_write_valid),
@@ -148,6 +167,27 @@ module apu_kws_engine_tb;
       .scratch_write_data_i (scratch_write_data),
       .scratch_write_strb_i (scratch_write_strb),
       .scratch_access_err_o (scratch_access_err)
+  );
+
+  apu_kws_coeff_fixture u_coeff_fixture (
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .frontend_req_valid_i  (coeff_front_req),
+      .frontend_req_ready_o  (coeff_front_ready),
+      .frontend_kind_i       (coeff_front_kind),
+      .frontend_index_i      (coeff_front_index),
+      .frontend_resp_valid_o (coeff_front_resp_valid),
+      .frontend_resp_ready_i (coeff_front_resp_ready),
+      .frontend_resp_data_o  (coeff_front_data),
+      .frontend_resp_fault_o (coeff_front_fault),
+      .inference_req_valid_i (coeff_infer_req),
+      .inference_req_ready_o (coeff_infer_ready),
+      .inference_index_i     (coeff_infer_index),
+      .inference_resp_valid_o(coeff_infer_resp_valid),
+      .inference_resp_ready_i(coeff_infer_resp_ready),
+      .inference_resp_data_o (coeff_infer_data),
+      .inference_resp_fault_o(coeff_infer_fault),
+      .initialized_o         (coeff_initialized)
   );
 
   apu_kws_engine dut (
@@ -195,9 +235,16 @@ module apu_kws_engine_tb;
       .memory_error_detail_o       (memory_error_detail_o),
       .memory_input_used_o         (memory_input_used_o),
       .input_config_i              (32'h01043e80),
+      .storage_req_o               (storage_req),
+      .storage_ready_i             (storage_ready),
+      .storage_done_i              (storage_done),
+      .storage_progress_i          (storage_progress),
+      .storage_write_o             (storage_write),
+      .model_read_valid_o          (model_read_valid),
       .model_addr_o                (model_addr_o),
       .model_data_i                (model_data_i),
       .scratch_clear_o             (scratch_clear),
+      .scratch_read_valid_o        (scratch_read_valid),
       .scratch_read_addr_o         (scratch_read_addr),
       .scratch_read_data_i         (scratch_read_data),
       .scratch_write_valid_o       (scratch_write_valid),
@@ -205,6 +252,21 @@ module apu_kws_engine_tb;
       .scratch_write_data_o        (scratch_write_data),
       .scratch_write_strb_o        (scratch_write_strb),
       .scratch_access_err_i        (scratch_access_err),
+      .coeff_frontend_req_valid_o  (coeff_front_req),
+      .coeff_frontend_req_ready_i  (coeff_front_ready),
+      .coeff_frontend_kind_o       (coeff_front_kind),
+      .coeff_frontend_index_o      (coeff_front_index),
+      .coeff_frontend_resp_valid_i (coeff_front_resp_valid),
+      .coeff_frontend_resp_ready_o (coeff_front_resp_ready),
+      .coeff_frontend_data_i       (coeff_front_data),
+      .coeff_frontend_fault_i      (coeff_front_fault),
+      .coeff_inference_req_valid_o (coeff_infer_req),
+      .coeff_inference_req_ready_i (coeff_infer_ready),
+      .coeff_inference_index_o     (coeff_infer_index),
+      .coeff_inference_resp_valid_i(coeff_infer_resp_valid),
+      .coeff_inference_resp_ready_o(coeff_infer_resp_ready),
+      .coeff_inference_data_i      (coeff_infer_data),
+      .coeff_inference_fault_i     (coeff_infer_fault),
       .stream_i                    (stream_i),
       .rx_ready_o                  (rx_ready_o),
       .status_o                    (status_o),
@@ -241,6 +303,7 @@ module apu_kws_engine_tb;
 
     repeat (2) @(negedge clk_i);
     rst_n_i = 1'b1;
+    wait (coeff_initialized);
     @(negedge clk_i);
     if (!model_valid_o || !model_lock_o) $fatal(1, "KWS model admission was not observed");
     dut.s_frame_count_q     = 32'd11;
@@ -364,7 +427,7 @@ module apu_kws_engine_tb;
       dut.s_infer_state_q = 4'd1;
       elapsed_cycles      = 0;
       observed_operator   = 0;
-      while ((inference_count_o == 0) && (elapsed_cycles < 600000)) begin
+      while ((inference_count_o == 0) && (elapsed_cycles < 4000000)) begin
         @(negedge clk_i);
         if (check_layers && (dut.s_operator_q != observed_operator)) begin
           check_layer(observed_operator);
@@ -474,15 +537,22 @@ module apu_kws_engine_tb;
     enable_i         = 1'b1;
     accepted_samples = 0;
     elapsed_cycles   = 0;
-    while ((accepted_samples < 16000) && (elapsed_cycles < 2000000)) begin
+    while ((accepted_samples < 16000) && (elapsed_cycles < 4000000)) begin
       @(posedge clk_i);
       if (stream_i.tvalid && stream_i.tready) accepted_samples++;
       elapsed_cycles++;
     end
-    if (accepted_samples != 16000) $fatal(1, "KWS did not consume exactly one diagnostic window");
+    if (accepted_samples != 16000) begin
+      $fatal(
+          1,
+          "KWS input timeout accepted=%0d front=%0d infer=%0d wait=%0b req=%0b ready=%0b done=%0b",
+          accepted_samples, dut.s_front_state_q, dut.s_infer_state_q, dut.s_storage_wait_q,
+          storage_req, storage_ready, storage_done);
+    end
     @(negedge clk_i);
-    enable_i = 1'b0;
-    while ((inference_count_o == 0) && (elapsed_cycles < 3000000)) begin
+    enable_i       = 1'b0;
+    elapsed_cycles = 0;
+    while ((inference_count_o == 0) && (elapsed_cycles < 4000000)) begin
       @(negedge clk_i);
       elapsed_cycles++;
     end

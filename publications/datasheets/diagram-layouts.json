@@ -1969,7 +1969,7 @@
     "section": "protocol",
     "sources": [
       "docs/ip/crypto.md",
-      "rtl/ip/security/crypto_sha2_engine.sv"
+      "rtl/ip/security/crypto_sha2_sram_engine.sv"
     ],
     "note": "Digest word 0 is the most significant digest word. SHA-256 uses eight words; SHA-224 uses seven meaningful words and returns zero in word 7. This word significance differs from RSA limb significance.",
     "bindings": [
@@ -2049,7 +2049,7 @@
     "section": "protocol",
     "sources": [
       "docs/ip/crypto.md",
-      "rtl/ip/security/crypto_rsa_core.sv"
+      "rtl/ip/security/crypto_rsa_sram_core.sv"
     ],
     "note": "64 little-endian 32-bit limbs; word 0 is least significant and word 63 is most significant. The middle 60 words are collapsed in this schematic. Public/private exponent rules and operand validity remain those of the RSA contract.",
     "bindings": [

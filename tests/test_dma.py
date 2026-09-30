@@ -21,7 +21,7 @@ def test_dma_reports_native_axi4_errors_bursts_and_streams(tmp_path: Path) -> No
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -61,7 +61,7 @@ def test_dma_reports_native_axi4_errors_bursts_and_streams(tmp_path: Path) -> No
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -88,7 +88,7 @@ def test_dma_apb_registers_and_irq(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -130,7 +130,7 @@ def test_dma_apb_registers_and_irq(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",
@@ -157,7 +157,7 @@ def test_dma_crypto_stream_endpoints(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/address_map/generate_memory_map.py"),
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
             "--map",
             str(ROOT / "rtl/mini/address_map/memory_map.json"),
             "--output-dir",
@@ -195,7 +195,7 @@ def test_dma_crypto_stream_endpoints(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(ROOT / "rtl/mini/script/convt_sv2v.py"),
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
             "-f",
             str(source_list),
             "--output",

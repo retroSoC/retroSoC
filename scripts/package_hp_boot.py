@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package LP firmware and the fixed HP Linux image set into one flash image."""
+"""Package LP firmware and a typed RV64 HP workload into a V2 flash image."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ FLASH_SIZE = 16 * 1024 * 1024
 BUNDLE_OFFSET = 1 * 1024 * 1024
 PAYLOAD_ALIGNMENT = 4096
 MAGIC = 0x50485352
-VERSION = 1
+VERSION = 2
 REQUIRED = 1
 HEADER = struct.Struct("<8I")
 ENTRY = struct.Struct("<6I")
@@ -23,9 +23,19 @@ ARTIFACTS = (
     (1, "fw_jump.bin", 0x38000000, 512 * 1024),
     (2, "retrosoc_hp.dtb", 0x38080000, 64 * 1024),
     (3, "Image", 0x38400000, 12 * 1024 * 1024),
-    (4, "rootfs.cpio.gz", 0x39000000, 8 * 1024 * 1024),
+    (4, "rootfs.cpio", 0x39000000, 8 * 1024 * 1024),
 )
 HEADER_SIZE = HEADER.size + (ENTRY.size * len(ARTIFACTS))
+WORKLOADS = {"linux": 1, "smoke": 2, "rtthread": 3}
+
+
+def artifacts_for(workload: str) -> tuple[tuple[int, str, int, int], ...]:
+    if workload == "linux":
+        return ARTIFACTS
+    if workload not in WORKLOADS:
+        raise ValueError(f"unsupported HP workload: {workload}")
+    name = "hp_smoke.bin" if workload == "smoke" else "rtthread.bin"
+    return ((5, name, 0x38000000, 512 * 1024),)
 
 
 def align_up(value: int, alignment: int) -> int:
@@ -37,6 +47,8 @@ def sha256(data: bytes) -> str:
 
 
 def package(args: argparse.Namespace) -> None:
+    workload = getattr(args, "workload", "linux")
+    artifacts = artifacts_for(workload)
     firmware = args.firmware.read_bytes()
     if len(firmware) > BUNDLE_OFFSET:
         raise ValueError(
@@ -48,7 +60,7 @@ def package(args: argparse.Namespace) -> None:
     payloads: list[tuple[int, bytes]] = []
     artifact_manifest: dict[str, object] = {}
     cursor = payload_offset
-    for kind, name, load_address, maximum in ARTIFACTS:
+    for kind, name, load_address, maximum in artifacts:
         data = (args.images / name).read_bytes()
         if not data or len(data) > maximum:
             raise ValueError(f"{name} size {len(data)} is outside 1..{maximum} bytes")
@@ -75,8 +87,8 @@ def package(args: argparse.Namespace) -> None:
         total_size,
         0,
         REQUIRED,
-        0,
-    ) + b"".join(entries)
+        WORKLOADS[workload],
+    ) + b"".join(entries).ljust(HEADER_SIZE - HEADER.size, b"\0")
     header_crc32 = zlib.crc32(header) & 0xFFFFFFFF
     header = HEADER.pack(
         MAGIC,
@@ -86,8 +98,8 @@ def package(args: argparse.Namespace) -> None:
         total_size,
         header_crc32,
         REQUIRED,
-        0,
-    ) + b"".join(entries)
+        WORKLOADS[workload],
+    ) + b"".join(entries).ljust(HEADER_SIZE - HEADER.size, b"\0")
 
     image = bytearray(b"\xFF" * cursor)
     image[: len(firmware)] = firmware
@@ -99,7 +111,9 @@ def package(args: argparse.Namespace) -> None:
     args.output.write_bytes(image)
     manifest = {
         "schema_version": 1,
-        "format": "retrosoc-hp-boot-bundle-v1",
+        "format": "retrosoc-hp-boot-bundle-v2",
+        "workload": workload,
+        "xlen": 64,
         "bundle_offset": f"0x{BUNDLE_OFFSET:08X}",
         "flash_capacity_bytes": FLASH_SIZE,
         "header_crc32": f"0x{header_crc32:08X}",
@@ -120,6 +134,7 @@ def main() -> None:
     parser.add_argument("--images", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--workload", choices=WORKLOADS, default="linux")
     package(parser.parse_args())
 
 

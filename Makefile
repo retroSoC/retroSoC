@@ -29,7 +29,7 @@ $(error HAVE_DEBUG has been removed; the Hazard3 Debug Module is always enabled)
 endif
 
 SOC          ?= MINI
-MINI_MODE    ?= PRODUCT
+MINI_MODE    ?= $(if $(filter MINI,$(SOC)),PRODUCT,NONE)
 SIMU         ?= VCS
 SYNTH        ?= NONE
 SYNTH_RECIPE ?= balanced
@@ -44,8 +44,8 @@ SRAM_SIZE_KIB     ?= $(if $(filter ICS55,$(PDK)),128,32)
 PDK_BEHAV         ?= NO
 HAVE_SVA          ?= NO
 APU_ENABLE_P7     ?= NO
-HAVE_HP           ?= YES
-HP_CONFIG         ?= rv32imafdc_zicbom_max
+HAVE_HP           ?= $(if $(filter TINY,$(SOC)),NO,YES)
+HP_CONFIG         ?= rv64imafdc_zicbom_max
 BUILD_RELEASE     ?= NO
 JTAG_IDCODE       ?= DEADBEEF
 EXT_CLK_HZ        ?= 72000000
@@ -65,7 +65,7 @@ RTL_SIM_TIMEOUT    ?= -1
 SIM_FIRMWARE_NAME  ?= $(FIRMWARE_NAME)
 SIM_SUCCESS_MARKER ?= SIM_TEST_PASS
 
-RTL_PATH := $(ROOT_PATH)/rtl/mini
+RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lower:]')
 
 RTL_TOP ?= retrosoc_tb
 
@@ -80,6 +80,7 @@ NPU_P5_ACCEPTANCE  ?= NO
 NPU_P6_ACCEPTANCE  ?= NO
 NPU_P6_WORKLOAD    ?= kws
 HP_PERF_MIN_RATIO  ?= 2.5
+HP_CROSS           ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
 LP_COREMARK_REPORT ?=
 HP_COREMARK_REPORT ?=
 
@@ -136,6 +137,11 @@ APU_P5_CORPUS_RTL_DIR   := $(APU_P5_DIR)/corpus-rtl
 APU_P7_DIR              := $(VARIANT_ROOT)/apu/kws
 APU_P7_MODEL            := $(APU_P7_DIR)/apu-p7.apum
 APU_P7_MODEL_MANIFEST   := $(APU_P7_DIR)/apu-p7-manifest.json
+APU_P9_COEFFICIENT_DIR  := $(VARIANT_ROOT)/apu/coefficients
+APU_P9_APUC             := $(APU_P9_COEFFICIENT_DIR)/apu-p9.apuc
+APU_P9_LAYOUT_MANIFEST  := $(APU_P9_COEFFICIENT_DIR)/coefficient-layout.json
+APU_P9_EVIDENCE_DIR     := $(VARIANT_ROOT)/apu/p9/evidence
+APU_P9_EVIDENCE_LAYOUT  := $(APU_P9_EVIDENCE_DIR)/coefficient-layout.json
 APU_P7_KWS_TFLITE       := $(CACHE_ROOT)/sources/apu-mlperf-tiny/benchmark/training/keyword_spotting/trained_models/kws_ref_model.tflite
 NPU_P0_DIR              := $(VARIANT_ROOT)/npu/p0
 NPU_P5_DIR              := $(VARIANT_ROOT)/npu/p5
@@ -173,7 +179,7 @@ HP_BOOT_BUNDLE_NAME     ?= retrosoc_hp_linux
 HP_BOOT_BUNDLE_BIN      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).bin
 HP_BOOT_BUNDLE_HEX      := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).hex
 HP_BOOT_BUNDLE_MANIFEST := $(SW_BUILD_DIR)/$(HP_BOOT_BUNDLE_NAME).json
-HP_LINUX_SIM_TIME       ?= 7200
+HP_LINUX_SIM_TIME       ?= 0
 HP_SMOKE_SIM_TIME       ?= 300
 HP_SMOKE_BUILD_DIR      := $(VARIANT_ROOT)/hp-smoke
 HP_SMOKE_STAMP          := $(HP_SMOKE_BUILD_DIR)/images/.stamp
@@ -187,6 +193,11 @@ HP_APU_BUNDLE_NAME      ?= retrosoc_hp_apu
 HP_APU_BUNDLE_BIN       := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).bin
 HP_APU_BUNDLE_HEX       := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).hex
 HP_APU_MANIFEST         := $(SW_BUILD_DIR)/$(HP_APU_BUNDLE_NAME).json
+HP_RTTHREAD_BUILD_DIR   := $(VARIANT_ROOT)/hp-rtthread
+HP_RTTHREAD_STAMP       := $(HP_RTTHREAD_BUILD_DIR)/images/.stamp
+HP_RTTHREAD_SIM_TIME    ?= 1800
+HP_RTTHREAD_BUNDLE_NAME ?= retrosoc_hp_rtthread
+HP_RTTHREAD_BUNDLE_BIN  := $(SW_BUILD_DIR)/$(HP_RTTHREAD_BUNDLE_NAME).bin
 HP_BUILDRT_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/buildroot-hp
 HP_LINUX_ROOT           := $(ROOT_PATH)/.cache/retrosoc/sources/linux-hp
 HP_OPENSBI_ROOT         := $(ROOT_PATH)/.cache/retrosoc/sources/opensbi-hp
@@ -207,15 +218,15 @@ else
 FLOW_FILELIST_DIR := $(SIM_BUILD_ROOT)/filelists
 endif
 
-VALID_SOC           := MINI
-VALID_MINI_MODE     := PRODUCT MPW
+VALID_SOC           := MINI TINY
+VALID_MINI_MODE     := PRODUCT MPW NONE
 VALID_SIMU          := VCS VERILATOR IVERILOG
 VALID_SYNTH         := NONE YOSYS
 VALID_SYNTH_RECIPE  := balanced area speed
 VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
-VALID_HP_CONFIG     := rv32imafdc_zicbom_max
+VALID_HP_CONFIG     := rv64imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader apu_release
 VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
@@ -271,10 +282,17 @@ $(error NPU_P5_ACCEPTANCE and NPU_P6_ACCEPTANCE are mutually exclusive)
 endif
 endif
 
+ifeq ($(SOC),MINI)
+ifeq ($(MINI_MODE),NONE)
+$(error SOC=MINI requires MINI_MODE=PRODUCT or MPW)
+endif
 ifeq ($(MINI_MODE),PRODUCT)
 ifneq ($(HAVE_HP),YES)
 $(error MINI_MODE=PRODUCT requires HAVE_HP=YES)
 endif
+endif
+else
+include $(ROOT_PATH)/rtl/tiny/mk/config.mk
 endif
 
 MISSING_LOCAL_RTL_FILES := $(filter-out $(wildcard $(LOCAL_RTL_FILES)),$(LOCAL_RTL_FILES))
@@ -384,7 +402,9 @@ ifeq ($(APU_ENABLE_P7), YES)
     DEF_LIST += +define+APU_ENABLE_P7
 endif
 
-ifeq ($(MINI_MODE), PRODUCT)
+ifeq ($(SOC), TINY)
+    DEF_LIST += +define+RETROSOC_SOC__TINY
+else ifeq ($(MINI_MODE), PRODUCT)
     DEF_LIST += +define+MINI_PRODUCT
 else
     DEF_LIST += +define+MINI_MPW
@@ -394,8 +414,10 @@ ifeq ($(SYNTH), YOSYS)
     DEF_LIST += +define+SYNTHESIS
 endif
 
-include rtl/mini/Makefile
+include $(RTL_PATH)/Makefile
+ifeq ($(SOC),MINI)
 include rtl/mini/mk/formal.mk
+endif
 
 ifeq ($(SIMU),IVERILOG)
 PERF_LOG ?= $(IVERILOG_BEHV_DIR)/sim.log
@@ -405,18 +427,74 @@ endif
 
 ifeq ($(SYNTH), YOSYS)
 include physical/smoke/syn/yosys/yosys.mk
+ifeq ($(SOC),MINI)
 include physical/smoke/syn/yosys/ga2d_block.mk
 include physical/smoke/syn/yosys/apu_block.mk
+endif
 endif
 
 ifeq ($(STA), OPENSTA)
     include physical/smoke/sta/opensta/opensta.mk
 endif
 
-include physical/librelane/Makefile
+ifeq ($(SOC),TINY)
+include physical/librelane/tiny/Makefile
+else
+include physical/librelane/mini/Makefile
+endif
 include physical/ecc/Makefile
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
+.PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report
+crypto-p0-constants: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py constants --variant-root $(VARIANT_ROOT)
+crypto-p0-rtl: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py rtl --variant-root $(VARIANT_ROOT) --jobs $(JOBS)
+crypto-p0-baseline: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py synth --variant-root $(VARIANT_ROOT)
+crypto-p0-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py report --variant-root $(VARIANT_ROOT)
+
+.PHONY: crypto-p1-constants crypto-p1-rtl crypto-p1-formal crypto-p1-synth crypto-p1-report crypto-p2-synth crypto-p2-netlist crypto-p2-sta crypto-p2-report
+crypto-p1-constants: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py constants --variant-root $(VARIANT_ROOT)
+crypto-p1-rtl: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --full-rsa --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_dma_v2_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_storage_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_concurrent_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --case crypto_response_fault_tb --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --macro --simulator icarus
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --jobs $(JOBS)
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py rtl --variant-root $(VARIANT_ROOT) --case crypto_storage_tb --jobs $(JOBS)
+crypto-p1-formal: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py formal --variant-root $(VARIANT_ROOT)
+crypto-p1-synth: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py synth --variant-root $(VARIANT_ROOT)
+crypto-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p1.py report --variant-root $(VARIANT_ROOT) \
+	  --baseline-root $(CRYPTO_P0_BASELINE_ROOT) --lp-variant-root $(CRYPTO_P1_LP_ROOT) \
+	  $(if $(CRYPTO_P1_CI_ROOT),--ci-variant-root $(CRYPTO_P1_CI_ROOT),)
+CRYPTO_P1_ROOT          ?= $(VARIANT_ROOT)
+CRYPTO_P2_NETLIST_ROOT  ?= $(VARIANT_ROOT)
+CRYPTO_P2_STA_ROOT      ?= $(VARIANT_ROOT)
+CRYPTO_P2_PHYSICAL_ROOT ?= $(VARIANT_ROOT)
+crypto-p2-synth: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		SYNTH=YOSYS SYNTH_RECIPE=balanced synth
+crypto-p2-netlist: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		APP=bringup APP_SRCS=$(ROOT_PATH)/tests/c/crypto_firmware.c LINK_TYPE=ld2_all_sram \
+		SIMU=IVERILOG SYNTH=YOSYS HAVE_SVA=YES firmware netcomp netsim
+crypto-p2-sta: manifest
+	$(MAKE) CONFIG=$(ROOT_PATH)/configs/ci/ihp130.mk BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		SYNTH=YOSYS STA=OPENSTA synth sta
+crypto-p2-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p2.py report --variant-root $(VARIANT_ROOT) \
+	  --p0-root $(CRYPTO_P0_BASELINE_ROOT) --p1-root $(CRYPTO_P1_ROOT) \
+	  --netlist-root $(CRYPTO_P2_NETLIST_ROOT) --sta-root $(CRYPTO_P2_STA_ROOT) \
+	  --physical-root $(CRYPTO_P2_PHYSICAL_ROOT)
+
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -425,13 +503,17 @@ include physical/ecc/Makefile
 	apu-block-filelist apu-block-synth apu-block-sta apu-block-report apu-block-evidence apu-block-clean \
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
-	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-gateway-a formal-sdio formal-clean formal-doctor \
+	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all vexii-generate
 .NOTPARALLEL: setup
 
 help:
 	@printf '%s\n' \
 	  'retroSoC build targets:' \
+	  '  crypto-p0-constants        verify and package the independent CRYC1 baseline' \
+	  '  crypto-p0-rtl              run V1 Crypto, RSA-2048 and real DMA evidence' \
+	  '  crypto-p0-baseline         run unchanged balanced Crypto block synthesis' \
+	  '  crypto-p0-report           check and aggregate CRYPTO-P0 evidence' \
 	  '  firmware | asm             build firmware' \
 	  '  comp | sim                 behavioral simulation' \
 	  '  sim-asm                    build/run the assembly self-test' \
@@ -458,6 +540,9 @@ help:
 	  '  apu-p5-bundle              build the deterministic WAV/FLAC APUMC bundle' \
 	  '  apu-p5-corpus              qualify pinned FLAC with BAM/libFLAC and production RTL' \
 	  '  apu-p7-model               convert the locked MLPerf Tiny KWS model to APUM' \
+	  '  apu-p9-coefficients        build the frozen APUC image and 15-bank manifest' \
+	  '  apu-p9-evidence            initialize the six fail-closed P9 evidence reports' \
+	  '  apu-p9-memory-ab           compare explicit baseline/candidate synthesis roots' \
 	  '  setup-npu-reference        install/verify locked NPU models, corpora, and oracle' \
 	  '  npu-p0-qualify             qualify full corpora against the independent oracle' \
 	  '  npu-p5-deployments         build deterministic KWS/VWW ABI-1 packages' \
@@ -477,12 +562,14 @@ help:
 	  '  npu-p6-qualify             execute all required P6 qualification gates' \
 	  '  setup-regression           install pinned dependencies for all PR PDK profiles' \
 	  '  setup-hp-linux             install pinned Buildroot, Linux, and OpenSBI sources' \
-	  '  hp-linux                   build the pinned RV32 HP Linux image set' \
+	  '  hp-linux                   build the pinned RV64 HP Linux image set' \
 	  '  hp-bundle                  package LP firmware and HP Linux images for flash' \
 	  '  hp-linux-sim               run the fast-flash HP Linux userspace acceptance test' \
 	  '  hp-smoke-sim               run LP release, HP MMIO, and mailbox RTL smoke test' \
 	  '  hp-apu-bundle              package the APU release LP firmware and HP payload' \
 	  '  hp-apu-sim                 run the LP/HP APU ownership evidence simulation' \
+	  '  setup-hp-rtthread          install locked RT-Thread, RV64 compiler and SCons' \
+	  '  hp-rtthread-sim            run RV64 RT-Thread kernel/platform acceptance' \
 	  '  doctor                     check tools, paths, and selected configuration' \
 	  '  config | manifest          print/write the effective configuration' \
 	  '  memory-map                 generate the selected address-map artifacts' \
@@ -497,7 +584,7 @@ help:
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
 	  '  formal | formal-bus | formal-rib-adapter | formal-rib2apb run SBY protocol proofs' \
-	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-ga2d | formal-apu | formal-apu-kws | formal-gateway-a | formal-sdio run peripheral proofs' \
+	  'formal-sysctrl | formal-pll-rcu | formal-gpio | formal-ws2812 | formal-uart | formal-i2c | formal-timer | formal-clint | formal-dvp | formal-i2s | formal-onchip-ram | formal-opipsram | formal-dma | formal-ga2d | formal-apu | formal-apu-kws | formal-apu-p9 | formal-gateway-a | formal-sdio run peripheral proofs' \
 	  '  formal-doctor              check the SBY, Yosys, sv2v, and Bitwuzla formal toolchain' \
 	  '  benchmark-report           run the memory/DMA profile and write meta/performance.json' \
 	  '  coremark-report            run the quick CoreMark profile and write meta/coremark.json' \
@@ -549,7 +636,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --have-sram-macro $(HAVE_SRAM_MACRO) \
+	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) \
 	  --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
@@ -571,7 +658,13 @@ hp-performance-check:
 		--lp $(LP_COREMARK_REPORT) --hp $(HP_COREMARK_REPORT) \
 		--minimum-ratio $(HP_PERF_MIN_RATIO) --output $(META_DIR)/lp-hp-performance.json
 
+ifeq ($(SOC),TINY)
+setup: setup-tiny
+setup-tiny:
+	python3 $(ROOT_PATH)/scripts/setup_tiny.py
+else
 setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
+endif
 
 setup-regression:
 	$(MAKE) CONFIG=configs/ci/ihp130.mk setup
@@ -758,6 +851,32 @@ $(APU_P7_MODEL): $(ROOT_PATH)/scripts/apu_kws_convert.py \
 
 apu-p7-model: $(APU_P7_MODEL)
 
+$(APU_P9_APUC) $(APU_P9_LAYOUT_MANIFEST) &: $(APU_P7_MODEL) \
+	$(ROOT_PATH)/scripts/generate_apu_kws_rtl_constants.py \
+	$(ROOT_PATH)/scripts/apu_kws_coeff.py
+	python3 $(ROOT_PATH)/scripts/generate_apu_kws_rtl_constants.py \
+		--apum $(APU_P7_MODEL) \
+		--output $(APU_P9_COEFFICIENT_DIR)/apu_kws_rom.svh \
+		--profile-output $(APU_P9_COEFFICIENT_DIR)/apu_kws_apum_profile.svh \
+		--apuc-output $(APU_P9_APUC) --manifest-output $(APU_P9_LAYOUT_MANIFEST)
+
+apu-p9-coefficients: $(APU_P9_APUC) $(APU_P9_LAYOUT_MANIFEST)
+
+$(APU_P9_EVIDENCE_LAYOUT): $(APU_P9_LAYOUT_MANIFEST) $(APU_P9_APUC) \
+	$(ROOT_PATH)/scripts/apu_p9_evidence.py
+	python3 $(ROOT_PATH)/scripts/apu_p9_evidence.py initialize \
+		--layout $(APU_P9_LAYOUT_MANIFEST) --apuc $(APU_P9_APUC) \
+		--profile $(CONFIG) \
+		--output-dir $(APU_P9_EVIDENCE_DIR)
+
+apu-p9-evidence: $(APU_P9_EVIDENCE_LAYOUT)
+
+apu-p9-memory-ab:
+	@test -n '$(APU_P9_BASELINE_ROOT)' -a -n '$(APU_P9_CANDIDATE_ROOT)'
+	python3 $(ROOT_PATH)/scripts/apu_p9_memory_ab.py \
+		--baseline-root $(APU_P9_BASELINE_ROOT) --candidate-root $(APU_P9_CANDIDATE_ROOT) \
+		--output $(APU_P9_EVIDENCE_DIR)/memory-synthesis-ab.json
+
 apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 	python3 $(ROOT_PATH)/scripts/qualify_apu_p5_corpus.py \
 		--flac $(APU_P5_REFERENCE_DIR)/src/flac/flac \
@@ -772,7 +891,10 @@ apu-p5-corpus: setup-apu-reference $(APU_P5_BUNDLE)
 setup-hp-linux:
 	python3 $(ROOT_PATH)/scripts/setup_hp_linux.py
 
-$(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py \
+setup-hp-rtthread:
+	python3 $(ROOT_PATH)/scripts/setup_hp_rtthread.py
+
+$(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py $(ROOT_PATH)/scripts/hp_tools.py \
 	$(ROOT_PATH)/app/ports/linux/configs/retrosoc_hp_defconfig \
 	$(ROOT_PATH)/app/ports/linux/busybox/retrosoc_hp.config \
 	$(ROOT_PATH)/app/ports/linux/linux/retrosoc_hp.config \
@@ -781,7 +903,7 @@ $(HP_LINUX_STAMP): $(ROOT_PATH)/scripts/build_hp_linux.py \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/configs/defconfig \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/objects.mk \
 	$(ROOT_PATH)/app/ports/linux/opensbi/retrosoc_hp/platform.c \
-	$(ROOT_PATH)/app/ports/linux/rootfs-overlay/etc/init.d/S99retrosoc-hp
+	$(ROOT_PATH)/app/ports/linux/init $(ROOT_PATH)/app/ports/linux/hp_ready.c
 	@test '$(HAVE_HP)' = YES
 	python3 $(ROOT_PATH)/scripts/build_hp_linux.py --root $(ROOT_PATH) \
 		--buildroot $(HP_BUILDRT_ROOT) --linux $(HP_LINUX_ROOT) --opensbi $(HP_OPENSBI_ROOT) \
@@ -804,15 +926,9 @@ hp-bundle: $(HP_BOOT_BUNDLE_BIN) $(HP_BOOT_BUNDLE_HEX)
 
 hp-linux-sim: hp-bundle comp
 	@test '$(SIMU)' = VERILATOR
-	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_BOOT_BUNDLE_NAME) \
-		SOC_SIM_TIME=$(HP_LINUX_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
-	python3 $(ROOT_PATH)/scripts/check_simulation.py \
-		--log $(SIM_BUILD_ROOT)/sim.log \
-		--result $(SIM_BUILD_ROOT)/result-hp-linux-sim-check.json \
-		--require 'VERILATOR_FAST_FLASH=enabled' \
-		--require 'retroSoC HP Linux ready' \
-		--require 'HP_LINUX_READY' \
-		--require 'SIM_TEST_PASS code=0'
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_BOOT_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-linux \
+		--workload linux --timeout $(HP_LINUX_SIM_TIME)
 
 HP_SMOKE_NPU_DEPS :=
 HP_SMOKE_NPU_ARGS :=
@@ -850,13 +966,14 @@ HP_SMOKE_NPU_ARGS      += --define=-DRS_NPU_P6_ACCEPTANCE \
 endif
 
 $(HP_SMOKE_STAMP): $(ROOT_PATH)/scripts/build_hp_smoke.py \
+	$(ROOT_PATH)/scripts/hp_tools.py \
 	$(ROOT_PATH)/app/ports/linux/smoke/start.S \
 	$(ROOT_PATH)/app/ports/linux/smoke/linker.ld $(HP_SMOKE_NPU_DEPS) \
 	$(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP) $(SOC_TOPOLOGY_STAMP)
 	python3 $(ROOT_PATH)/scripts/build_hp_smoke.py \
 		--source $(ROOT_PATH)/app/ports/linux/smoke/start.S \
 		--linker $(ROOT_PATH)/app/ports/linux/smoke/linker.ld \
-		--output $(HP_SMOKE_BUILD_DIR) --cross $(CROSS) $(HP_SMOKE_NPU_ARGS)
+		--output $(HP_SMOKE_BUILD_DIR) --cross $(HP_CROSS) $(HP_SMOKE_NPU_ARGS)
 	@touch $@
 
 $(HP_SMOKE_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_SMOKE_STAMP) \
@@ -864,24 +981,45 @@ $(HP_SMOKE_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_SMOKE_STAMP) \
 	python3 $(ROOT_PATH)/scripts/package_hp_boot.py \
 		--firmware $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
 		--images $(HP_SMOKE_BUILD_DIR)/images --output $@ \
-		--manifest $(HP_SMOKE_MANIFEST)
+		--manifest $(HP_SMOKE_MANIFEST) --workload smoke
 
 $(HP_SMOKE_BUNDLE_HEX): $(HP_SMOKE_BUNDLE_BIN)
 	$(OBJC) -I binary -O verilog $< $@
 
 hp-smoke-bundle: $(HP_SMOKE_BUNDLE_BIN) $(HP_SMOKE_BUNDLE_HEX)
 
+$(HP_RTTHREAD_STAMP): $(wildcard $(ROOT_PATH)/app/ports/rtthread/*) \
+	$(ROOT_PATH)/scripts/build_hp_rtthread.py $(ROOT_PATH)/scripts/hp_tools.py \
+	$(ROOT_PATH)/app/apps/hp_boot/hp_boot_bundle.h $(ROOT_PATH)/requirements/rtthread.txt $(LOCK_FILE)
+	@test '$(HAVE_HP)' = YES
+	python3 $(ROOT_PATH)/scripts/build_hp_rtthread.py --root $(ROOT_PATH) \
+		--output $(HP_RTTHREAD_BUILD_DIR) --jobs $(JOBS)
+	@touch $@
+
+hp-rtthread: $(HP_RTTHREAD_STAMP)
+
+$(HP_RTTHREAD_BUNDLE_BIN): $(FIRMWARE_ELF) $(HP_RTTHREAD_STAMP) \
+	$(ROOT_PATH)/scripts/package_hp_boot.py
+	python3 $(ROOT_PATH)/scripts/package_hp_boot.py \
+		--firmware $(SW_BUILD_DIR)/$(FIRMWARE_NAME).bin \
+		--images $(HP_RTTHREAD_BUILD_DIR)/images --output $@ \
+		--manifest $(SW_BUILD_DIR)/$(HP_RTTHREAD_BUNDLE_NAME).json --workload rtthread
+
+hp-rtthread-bundle: $(HP_RTTHREAD_BUNDLE_BIN)
+
+hp-rtthread-sim: hp-rtthread-bundle comp
+	@test '$(SIMU)' = VERILATOR
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_RTTHREAD_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-rtthread \
+		--workload rtthread --timeout $(HP_RTTHREAD_SIM_TIME)
+
+.PHONY: setup-hp-rtthread hp-rtthread hp-rtthread-bundle hp-rtthread-sim
+
 hp-smoke-sim: hp-smoke-bundle comp
 	@test '$(SIMU)' = VERILATOR
-	$(MAKE) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) SIM_FIRMWARE_NAME=$(HP_SMOKE_BUNDLE_NAME) \
-		SOC_SIM_TIME=$(HP_SMOKE_SIM_TIME) VERILATOR_SIM_ARGS=--fast-flash sim
-	python3 $(ROOT_PATH)/scripts/check_simulation.py \
-		--log $(SIM_BUILD_ROOT)/sim.log \
-		--result $(SIM_BUILD_ROOT)/result-hp-smoke-sim-check.json \
-		--require 'SIM_TEST_PASS code=0' \
-		--require 'HP_LINUX_READY' \
-		--require 'HP_GA2D_PASS' \
-		--require 'HP_GA2D_CACHE_CLEAN'
+	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
+		--image $(HP_SMOKE_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-smoke \
+		--workload smoke --timeout $(HP_SMOKE_SIM_TIME)
 $(HP_APU_STAMP): $(ROOT_PATH)/scripts/build_hp_apu.py \
 	$(ROOT_PATH)/app/ports/hp-apu/start.S \
 	$(ROOT_PATH)/app/ports/hp-apu/main.c \
@@ -1043,19 +1181,22 @@ commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-rtl:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+ifneq ($(SOC),TINY)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk ICS55 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 
+endif
+
 regress-nightly:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY)
 
 sim-asm: asm
 	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) sim

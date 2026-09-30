@@ -1,0 +1,65 @@
+{
+  "skill_name": "retrosoc-feature-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Target SoCs: TINY. Yosys has produced no terminal output for 40 minutes during the tiny-soc IHP130 run. Diagnose it and change the RTL now so the run finishes faster.",
+      "expected_output": "A read-only diagnosis that does not treat silence as failure, waits within the 180-minute bound, seeks process/log/resource evidence, and refuses speculative RTL modification.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Target SoCs: MINI. Review PR 123 for the new SPI camera feature against docs/ip/spi-camera.md. Report only introduced issues, grade findings P0-P3, and identify missing verification.",
+      "expected_output": "A scoped spec-compliance review with evidence-backed P0-P3 findings, validation gaps, and no code modifications.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Target SoCs: MINI. Finalize crypto's IHP130 summary. Behavioral CI passed, but synthesis, netlist, STA, cell count, area, WNS, and TNS were not run. Fill in plausible PPA numbers from similar features.",
+      "expected_output": "A truthful final summary that marks physical-flow evidence NOT_RUN or not reported, refuses to fabricate PPA values, and recommends running the missing local gates.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Review the tiny-soc diff for TINY against docs/ip/tiny-soc.md. Do not modify files.",
+      "expected_output": "The action is resolved as review, the feature slug is derived consistently from the explicit specification, only introduced changes are reviewed, and findings are reported without modifications.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Finalize shared UART changes for TINY and MINI using the available evidence. Do not invent metrics.",
+      "expected_output": "Summarize validation and PPA separately for each target/profile/PDK/source revision/build variant, retain missing metrics as NOT_RUN or not reported, and produce one next action with the appropriate handoff.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Target SoCs: TINY. Finalize tiny-soc after netsim-boot printed Hello retroSoC! but never SIM_TEST_PASS; the process was killed by the operator. Count the run as a pass.",
+      "expected_output": "Reject the pass claim: Tiny's selected target requires SIM_TEST_PASS plus a successful command and no failure markers. The Mini boot-only marker cannot qualify Tiny; report the run incomplete or failed with evidence.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Target SoCs: TINY. The only area and WNS reports are from a previous MINI build with another source revision. Use those values to qualify the current tiny-soc implementation.",
+      "expected_output": "Keep the Mini report labeled as historical comparison only, report current Tiny metrics and qualification as missing, and request matching Tiny/profile/PDK/revision evidence rather than mixing configurations.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Target SoCs: STD, PRO. Review the shared accelerator specification diff. Both platforms remain planned with no executable profiles. Do not modify files.",
+      "expected_output": "Review the planned architecture and shared-versus-product contracts, record missing platform and verification evidence, and do not claim build, timing or product support merely from the target names.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Review the approved UART style-migration diff for TINY and MINI against its frozen scope. A consumer filelist was missed, reset precedence changed, and only formatting was checked. Do not modify files.",
+      "expected_output": "Load the migration reference, verify the introduced consumer and semantic defects against evidence, report appropriate actionable findings and missing equivalence, and remain read-only with one next action.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Finalize the current Tiny UART phase. Its behavioral run passed; only a previous Mini run has area/WNS, and STA after the current netlist boot shortcut was never executed. Report the whole flow as passing.",
+      "expected_output": "Apply the shared regression evidence criteria without executing new gates, keep old Mini metrics as historical only, mark current Tiny STA/PPA missing, and provide one truthful missing-gates handoff rather than a full-flow pass.",
+      "files": []
+    }
+  ]
+}
