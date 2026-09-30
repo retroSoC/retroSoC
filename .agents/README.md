@@ -1,9 +1,10 @@
 # Repository Agent Skills
 
-This directory owns repository-scoped agent skills for the retroSoC Mini
-engineering workflow. The root [`AGENTS.md`](../AGENTS.md), executable build
-configuration, and subsystem guides remain authoritative; skills route work
-through those sources rather than replacing them.
+This directory owns repository-scoped agent skills for all retroSoC series:
+Tiny, Mini, Std, Pro, and future products. The root
+[`AGENTS.md`](../AGENTS.md), executable build configuration, and subsystem
+guides remain authoritative; skills route work through those sources rather
+than replacing them.
 
 See [Manual Feature Development Prompts](feature-development-prompts.md) for
 copyable English prompts covering every human-triggered stage.
@@ -12,17 +13,38 @@ copyable English prompts covering every human-triggered stage.
 
 | Skill | Primary host | Responsibility |
 | --- | --- | --- |
-| `retrosoc-mini-feature-design` | ChatGPT Work | Research commercial references, define the Mini architecture, and freeze an implementation-ready IP specification. |
-| `retrosoc-mini-feature-implementation` | Codex | Map one approved phase onto the repository, implement it, and run proportionate validation. |
-| `retrosoc-mini-feature-review` | ChatGPT Work or Codex | Diagnose failures, review a diff against the frozen specification, and produce the evidence-based final hand-off. |
+| [retrosoc-feature-design](skills/retrosoc-feature-design/SKILL.md) | ChatGPT Work | Research and freeze the common IP contract and selected products' integration. |
+| [retrosoc-feature-implementation](skills/retrosoc-feature-implementation/SKILL.md) | Codex | Preflight and implement one phase with target-specific validation. |
+| [retrosoc-feature-review](skills/retrosoc-feature-review/SKILL.md) | ChatGPT Work or Codex | Diagnose failures, review changes, and report evidence separately by target. |
 
 Invoke a skill explicitly when handing work between stages:
 
 ```text
-@retrosoc-mini-feature-design Research and freeze the audio-processing-unit architecture.
-$retrosoc-mini-feature-implementation Preflight Phase 1 of audio-processing-unit.
-$retrosoc-mini-feature-review Review PR 123 against docs/ip/audio-processing-unit.md.
+@retrosoc-feature-design Research gpio-filter for TINY. Do not modify files.
+$retrosoc-feature-implementation Preflight TINY-P4 of tiny-soc for TINY. Do not modify files.
+$retrosoc-feature-review Review the tiny-soc diff for TINY against docs/ip/tiny-soc.md.
 ```
+
+These names replace the former Mini-specific entrypoints; update older saved
+prompts to the corresponding name above. There are no legacy alias skills.
+
+## Target selection
+
+Use `Target SoCs: TINY` or an explicit list such as `Target SoCs: TINY, MINI`.
+An unambiguous specification, selected profile, or approved hand-off can supply
+this field; the skills do not default to Mini. Each hand-off carries the target
+SoCs, specifications, stable phase IDs, and profile/PDK mapping. Existing IDs
+such as `TINY-P4` remain valid without renaming.
+
+[Product positioning](../docs/soc-family-positioning.md) distinguishes Tiny/Mini
+executable baselines from the currently planned Std/Pro targets. Recheck
+[committed profiles](../configs/README.md) and executable configuration each
+time. Planned series can be researched, specified, and preflighted; platform
+creation must be part of the approved scope before it is implemented.
+
+For shared IP, keep a common functional contract and explicit per-series
+integration differences. Verify affected existing consumers without treating
+that as permission to add the feature to other products.
 
 ChatGPT Work uses Plan mode for the design `research` stage. After a maintainer
 approves the design, run the `freeze` stage outside Plan mode to write the
@@ -40,16 +62,20 @@ Review and diagnosis are read-only. Fixes return to the implementation skill.
 
 Every Work and Codex stage is started manually. The skills do not create pull
 requests, post review comments, or advance a human gate on their own.
-GitHub-hosted regression remains behavioral-only. A hardware-facing final
-acceptance run uses:
 
-```sh
-python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only
-```
+## Product-specific validation
 
-The boot-only option may stop the Icarus netlist simulation only after
-`Hello retroSoC!` is observed; the runner continues the remaining STA, warning,
-and metric stages.
+Select supported regressions and success markers from each product's executable
+configuration. The [prompt handbook](feature-development-prompts.md) gives
+separate Tiny/Mini IHP130 examples with explicit SoC selectors. Do not treat
+those examples as the acceptance matrix for every series or PDK.
+
+Tiny `netsim-boot` currently requires `SIM_TEST_PASS`; the applicable Mini
+assembly boot-only target uses `Hello retroSoC!`. Check exit codes, failure
+markers, and completion of subsequent STA/warning/metric stages. Discover CI
+coverage from the current workflow and invocation, and never credit a
+behavioral-only run as physical-flow evidence. Keep reported results tied to
+the target, profile, PDK, source revision, and build variant.
 
 ## Validation
 

@@ -1,16 +1,16 @@
 ---
-name: retrosoc-mini-feature-review
-description: Diagnose a retroSoC Mini build, simulation, synthesis, timing, or CI failure; review a feature diff or pull request against its frozen docs/ip contract; or produce the final evidence-based IHP130 hand-off. Use this skill whenever the user asks for root cause, spec compliance, P0-P3 findings, verification gaps, PPA results, or merge readiness. Keep diagnosis and review read-only and return fixes to the implementation skill.
+name: retrosoc-feature-review
+description: Diagnose failures, review SoC/IP changes against frozen specifications, and summarize validation or PPA evidence for any retroSoC series. Use for root cause, spec compliance, P0-P3 findings, and delivery readiness. Keep review read-only and distinguish target-specific evidence.
 ---
 
-# retroSoC Mini Feature Review
+# retroSoC Feature Review
 
 Produce an evidence-backed verdict without turning review into an unapproved
 implementation or architecture change.
 
 ## Inputs and modes
 
-Require a feature slug and one mode:
+Require a feature slug, `Target SoCs` (one series or an explicit list), and one mode:
 
 - `diagnose`: locate the first failing step and establish root cause;
 - `review`: compare one PR or diff with its frozen specification;
@@ -36,6 +36,33 @@ one interpretation remains. Derive the feature slug from an explicit field or
 specification path and keep its frozen lowercase kebab-case value. Do not infer
 approval, a diff range, or a failure artifact when multiple candidates exist.
 
+## Resolve target SoCs and evidence
+
+Resolve `Target SoCs` from the current request, approved hand-off, frozen
+specification, or selected committed profiles. Do not default to Mini or
+expand an ambiguous request to all products. Inspect the current product
+contracts, profiles, and build/regression rules; ask only for unresolved target
+ambiguity. Report a target/profile/specification conflict without silently
+substituting another series.
+
+Read `docs/soc-family-positioning.md` to distinguish supported baselines from
+roadmap targets, and verify executable support in the repository. Std/Pro
+planning can be reviewed without an executable platform, but missing profiles
+and validation must remain explicit gaps. Do not infer support from a family
+name or a proposed configuration.
+
+Resolve each target's architecture, topology/address map, filelist, and software
+composition. Mini LP/HP assumptions, bus widths, DMA/IRQ allocations, and
+clock/reset behavior apply only where that product's contract requires them.
+For shared-IP changes, inspect compatibility of affected existing consumers
+as well as the requested integration; do not demand an unrelated feature rollout.
+
+Bind every evidence claim to its target SoC, profile, PDK, source revision, and
+build variant. Reports for another product, an older revision, or a different
+configuration may provide labeled baseline comparisons but cannot prove the
+current target passes. Preserve frozen phase IDs/titles, including `TINY-P4`,
+and relate findings to the applicable target and phase where available.
+
 ## Additional constraints
 
 Normalize prompt-specific constraints as `MUST`, `MUST NOT`, `PREFER`,
@@ -55,7 +82,7 @@ debt and a regression introduced by the change.
 
 All modes are read-only. Do not patch files, regenerate baselines, change
 configuration, or start a broad refactor. Route confirmed fixes to
-`$retrosoc-mini-feature-implementation` with the exact root cause and
+`$retrosoc-feature-implementation` with the exact root cause and
 acceptance test.
 
 ## Diagnose mode
@@ -83,6 +110,7 @@ diagnostic. Do not modify the design speculatively.
 Review only the changes introduced by the selected range. Check:
 
 - frozen requirements and explicit non-goals;
+- target/profile consistency, shared-IP compatibility, and product-specific integration;
 - AXI4/APB4 protocol and software-visible register semantics;
 - DMA, interrupt, FIFO, timeout, abort, and error corner cases;
 - clock/reset, unilateral reset, CDC/RDC, lifecycle, and isolation;
@@ -116,9 +144,11 @@ Read [`references/final-summary-template.md`](references/final-summary-template.
 completely and use it for the hand-off. Report the committed profile and exact
 commands. Separate code, configuration, and public-interface changes.
 
-For IHP130, extract only measured values from named artifacts:
+For every target/profile/PDK in scope, extract only measured values from matching
+artifacts. Do not restrict the summary to IHP130 or merge different series into
+one PPA result:
 
-- clock target and recipe/profile;
+- target SoC, source revision, build variant, clock target, and recipe/profile;
 - synthesis status, cell count, and area;
 - STA status, WNS, and TNS;
 - netlist simulation verdict and success marker;
@@ -129,16 +159,18 @@ Use `not reported` or `NOT_RUN` for absent values. Do not claim timing closure,
 CDC/RDC signoff, physical signoff, silicon qualification, or commercial IP
 equivalence without the corresponding evidence.
 
-GitHub-hosted regression currently uses `--behavioral-only`; it is not
-synthesis, netlist, STA, or synthesis-recipe metric evidence. A local full
-IHP130 acceptance run normally uses:
+Inspect the current workflows and exact invocation before crediting CI
+coverage. A run using `--behavioral-only` is not synthesis, netlist, STA, or
+synthesis-recipe metric evidence. Derive required local acceptance commands
+from each supported product/profile/PDK and its frozen verification contract.
+See the [prompt handbook](../../feature-development-prompts.md) for examples.
 
-```sh
-python3 scripts/regress.py --root . --suite pr --pdk IHP130 --netsim-boot-only
-```
-
-Confirm that boot-only stopped the netlist simulation only after
-`Hello retroSoC!` and that the remaining stages completed.
+Check the selected simulation target's own verdict. Tiny's current
+`netsim-boot` requires `SIM_TEST_PASS`; `Hello retroSoC!` is only sufficient
+for the applicable Mini assembly boot-only target. Respect command exit status
+and failure markers, confirm any early stop follows that target's rule, and
+verify subsequent regression stages completed. Never treat boot smoke as the
+full SDK, DMA, IRQ, or feature acceptance campaign.
 
 ## Handoff
 
@@ -153,6 +185,7 @@ End with one next action:
 Never combine a review verdict with an unreviewed patch. After the next action,
 include one complete, copyable, single-stage English prompt for implementation,
 diagnosis, review, missing gates, or specification refreeze. Include the
-feature slug, exact phase when applicable, specification path, diff range, and
-evidence paths. For `MERGE`, provide a human-only merge checklist instead of an
-agent execution prompt; do not merge or push.
+feature slug, target SoCs, exact phase when applicable, specification path,
+profile/PDK mapping, diff range, and matching evidence paths. For `MERGE`,
+provide a human-only merge checklist instead of an agent execution prompt;
+do not merge or push.

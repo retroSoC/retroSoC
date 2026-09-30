@@ -1,0 +1,53 @@
+{
+  "skill_name": "retrosoc-feature-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Research a commercial-grade audio processing unit for retroSoC Mini. Compare active SoCs and IP, then recommend an AXI4 data/APB4 control architecture with DMA, interrupts, an MVP, and a commercial roadmap. Do not modify RTL.",
+      "expected_output": "A read-only, repository-grounded research plan that separates repository evidence, external evidence, recommendations, assumptions, and open questions and does not implement code.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Target SoCs: MINI. The camera-scaler architecture in this conversation has been approved. Freeze it into the repository specification and hand its first frozen phase to Codex without implementing RTL.",
+      "expected_output": "A docs/ip/camera-scaler.md contract with MINI integration limits and stable phase IDs, plus docs index updates and a preflight handoff carrying the target and profile/PDK mapping.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The USB2 netlist simulation failed in CI. Use this design skill to patch the RTL until it passes.",
+      "expected_output": "A refusal to patch or diagnose through the design skill and a route to retrosoc-feature-review for evidence-based diagnosis, followed by the implementation skill only after root cause confirmation.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Research gpio-filter for TINY. Do not modify files.",
+      "expected_output": "Resolve research and target TINY, retain the feature slug, inspect Tiny product and GPIO contracts instead of assuming Mini LP/HP behavior, and leave files unchanged.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Target SoCs: STD. Freeze the approved video-scaler design as docs/ip/video-scaler.md. MUST keep the register window within 4 KiB; DEFER chroma resampling. The platform is still planned. Do not implement RTL.",
+      "expected_output": "Freeze approved constraints and stable phases, mark STD platform/profile prerequisites and planned capabilities explicitly, and provide a preflight prompt without claiming a runnable STD configuration.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Target SoCs: PRO. Research a coherent accelerator interface for the planned product. Do not assume a Mini memory map or generate a build profile.",
+      "expected_output": "Research PRO requirements from product positioning and primary references, separate proposed coherence and software contracts from implemented support, and identify platform enablement and evidence gaps.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Research a uart extension. Both TINY and MINI use this shared IP, and this task has no selected target, profile, or prior handoff.",
+      "expected_output": "Ask which product or explicit target list is intended after inspecting the shared contract; do not default to MINI or silently authorize both integrations.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Target SoCs: TINY, MINI. Design a shared UART filtering extension. MUST retain the register ABI; ACCEPTANCE preserve existing product behavior and document their integration differences.",
+      "expected_output": "Separate the common UART contract from each target's clocks, capabilities, DMA/IRQ routing, configuration and validation mapping, without enabling unrelated features or duplicating divergent register contracts.",
+      "files": []
+    }
+  ]
+}

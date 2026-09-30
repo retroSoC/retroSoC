@@ -1,9 +1,9 @@
 ---
-name: retrosoc-mini-feature-design
-description: Research, architect, and freeze a new or substantially extended retroSoC Mini SoC/IP feature before RTL implementation. Use this skill whenever a request asks for commercial SoC/IP comparison, technology selection, AXI4/APB4/DMA/interrupt architecture, MVP definition, commercial-grade roadmap, or an authoritative docs/ip specification. Do not use it to implement RTL, fix CI, or review an existing diff.
+name: retrosoc-feature-design
+description: Research, architect, and freeze SoC/IP features for any retroSoC series, including Tiny, Mini, Std, and Pro. Use for commercial comparisons, architecture choices, shared-IP integration contracts, MVPs, and phased specifications; not RTL implementation or diff review.
 ---
 
-# retroSoC Mini Feature Design
+# retroSoC Feature Design
 
 Create repository-grounded feature architecture without allowing research or a
 generic reference design to override the current retroSoC contract.
@@ -14,7 +14,8 @@ Require:
 
 - a lowercase feature slug;
 - the requested stage: `research` or `freeze`;
-- the product scope, normally retroSoC Mini;
+- `Target SoCs`: one series or an explicit list of series;
+- the corresponding specifications, profiles, and PDKs when already selected;
 - user requirements that are stricter than repository defaults;
 - the approved research result for `freeze`.
 
@@ -43,6 +44,35 @@ Once `docs/ip/<feature>.md` is frozen, derive the slug from that path and do not
 create aliases. Never infer design approval merely because a research result
 exists.
 
+## Resolve target SoCs
+
+Resolve `Target SoCs` from the current request, approved hand-off, frozen
+specification, or an explicitly selected committed profile. Normalize series
+names such as Tiny/Mini/Std/Pro to TINY/MINI/STD/PRO for the hand-off; this does
+not make those names valid build arguments. Do not default to Mini or interpret
+an unspecified target as every series. Ask only if the target remains missing
+or ambiguous; surface conflicting target, specification, or profile values.
+
+Read `docs/soc-family-positioning.md` and the selected product contracts to
+distinguish implemented baselines from planned targets. Tiny and Mini currently
+have executable profiles; Std and Pro are roadmap targets. Recheck this status
+in committed profiles and build rules rather than treating it as permanent.
+Research and freeze remain useful without an executable platform: identify
+missing integration, software, dependencies, and validation work explicitly.
+Do not claim the proposed profile or platform already exists.
+
+For each target, identify its product RTL, topology/address map, filelists,
+SDK/application composition, and available configurations. Read Mini LP/HP
+guidance only when Mini or that architecture is involved. Do not carry CPU
+topology, bus widths, DMA channels, IRQ allocation, clocks, or memory assumptions
+from one series into another.
+
+For shared IP, separate the reusable IP contract from each series' integration
+and capability differences. Freeze the requested target list and explicitly
+deferred targets, without enlarging a single-series task into a family rollout.
+Keep existing specification paths; do not clone a shared register contract into
+conflicting per-series documents.
+
 ## Additional constraints
 
 Normalize prompt-specific constraints as:
@@ -66,7 +96,7 @@ feature boundary. At minimum, inspect:
 
 - `docs/README.md`, `docs/engineering.md`, `docs/rtl-coding-style.md`, and
   relevant `docs/ip/*.md` contracts;
-- `docs/lp-hp-architecture.md`, the active interconnect and DMA documents, and
+- the selected product's architecture, interconnect and DMA documents, and
   topology/address-map sources when the feature touches them;
 - relevant `rtl/README.md`, subsystem README files, filelists, tests, committed
   profiles, and executable CI/regression definitions;
@@ -95,7 +125,7 @@ For each useful reference, record:
 - clock/reset, CDC/RDC, memory, coherency, and security dependencies;
 - documented performance, area, power, and verification evidence;
 - current activity and product support status;
-- ideas worth reusing and ideas that do not fit retroSoC Mini.
+- ideas worth reusing and ideas that do not fit the selected target SoCs.
 
 Separate statements into these evidence classes:
 
@@ -105,7 +135,8 @@ Separate statements into these evidence classes:
 - `ASSUMPTION`
 - `OPEN QUESTION`
 
-Then compare feasible alternatives and recommend one Mini architecture. Keep
+Then compare feasible alternatives and recommend an architecture for the target
+SoCs, with explicit shared-IP and product-specific boundaries. Keep
 feasibility separate from recommendation. Define the MVP and show how it can
 evolve into a commercial-quality target without silently expanding the MVP.
 Do not modify repository files in this stage.
@@ -124,7 +155,9 @@ does not block the approved phase.
 The frozen contract must define:
 
 - requirements and non-goals;
-- AXI4 data access and APB4 configuration semantics;
+- target SoCs, implementation status, profiles/PDKs or missing platform inputs;
+- AXI4 data access and APB4 configuration semantics for the selected products,
+  including supported subsets and widths rather than inferred family defaults;
 - DMA, interrupt, register, reset, and error behavior;
 - clock domains, reset ownership, CDC/RDC, and lifecycle behavior;
 - software-visible ABI and handwritten RTL/C register parity;
@@ -133,19 +166,21 @@ The frozen contract must define:
 - verification, firmware, synthesis, timing, and physical evidence required;
 - post-MVP commercial alignment and delivery gaps.
 
+Preserve existing frozen phase IDs and titles verbatim, including identifiers
+such as `TINY-P4`. `Phase N - Title` is a convention for new phases, not a
+requirement to rename existing ones. State each phase's target SoCs and record
+platform-enablement prerequisites for targets without executable profiles.
+
 Update `docs/README.md` and any relevant subsystem guide when adding a new
 document. Verify links and commands, then run `git diff --check`. Do not modify
 RTL, firmware, build configuration, warning baselines, or metrics policy.
 
 ## Handoff
 
-End with:
-
-- the frozen document paths;
-- the exact approved phase names;
-- unresolved deferred work;
-- the first implementation phase;
-- a complete, copyable, single-stage English prompt that invokes
-  `$retrosoc-mini-feature-implementation` in `preflight` mode and includes the
-  feature slug, exact phase ID/title, specification path, and approved extra
-  constraints.
+Report the target SoCs, feature slug, specification paths, selected
+profiles/PDKs or missing inputs, stable phase IDs/titles, and deferred work.
+After research, provide a design decision package and a `freeze` prompt for use
+after approval; do not imply the specification is already frozen. After freeze,
+provide a complete English `$retrosoc-feature-implementation` preflight prompt
+for the first approved phase. Carry the target SoCs, exact phase, specification,
+profile/PDK mapping, and approved extra constraints into that prompt.

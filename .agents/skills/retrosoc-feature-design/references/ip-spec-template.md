@@ -1,4 +1,4 @@
-# retroSoC Mini IP Specification Template
+# retroSoC IP Specification Template
 
 Use this structure for `docs/ip/<feature>.md`. Merge sections only when doing
 so improves clarity; do not omit a contract area merely because the MVP defers
@@ -8,8 +8,22 @@ its implementation.
 
 ## Purpose and Research Boundary
 
-State the problem, intended Mini product role, evidence date, authoritative
+State the problem, intended product roles, evidence date, authoritative
 repository inputs, and claims that the document does not make.
+
+## Target SoCs and Integration Scope
+
+List the explicit target SoCs and the baseline or product revision addressed.
+For each, identify the product specification, implemented versus planned
+capabilities, committed profile/PDK if available, product RTL/topology/filelist,
+and software entrypoints. Mark missing inputs as prerequisites; a proposed
+Std/Pro profile is not executable support. Do not derive every series from Mini.
+
+Separate the common IP contract from per-series integration: CPU and bus widths,
+protocol subsets, addresses, DMA/IRQ allocation, memory and clock/reset/CDC
+boundaries, supported options, and excluded targets. For shared changes,
+identify existing consumers whose compatibility requires verification without
+implicitly enabling the feature on them.
 
 ## Commercial References
 
@@ -29,9 +43,10 @@ ownership, concurrency, backpressure, and recovery boundaries.
 
 ## Interfaces
 
-Define the AXI4 data interface, APB4 configuration interface, external pads or
-streams, protocol subsets, widths, ordering, alignment, bursts, errors, and
-backpressure.
+Define the approved data and configuration interfaces, including AXI4/APB4
+where used by the target, external pads or streams, protocol subsets, widths,
+ordering, alignment, bursts, errors, and backpressure. Record series-specific
+integration limits separately from an IP's native capabilities.
 
 ## DMA and Interrupt Contract
 
@@ -70,23 +85,35 @@ protocol, error-injection, and long-duration evidence. Link a separate
 `<feature>-verification.md` only when the evidence matrix would dominate this
 document.
 
+Map required checks to each target/profile/PDK and any affected shared-IP
+consumers. State configured simulation verdicts, supported regression selectors,
+and evidence gaps. Do not apply another series' boot marker or CI coverage.
+
 ## Synthesis, Timing, and Physical Evidence
 
-Define the committed profile, clock target, counters or workloads, synthesis
-and STA reports, cell/area metrics, CDC/RDC, DFT/MBIST, power/activity, PVT/MMMC,
-and post-layout evidence required. Distinguish measured data from targets.
+For each target/profile/PDK, define the clock target, counters or workloads,
+synthesis and STA reports, cell/area metrics, CDC/RDC, DFT/MBIST, power/activity,
+PVT/MMMC, and post-layout evidence required. Tie measurements to the source
+revision and build variant; distinguish them from planned targets or results
+from another configuration.
 
 ## Development Order
 
-Split the work into small approved phases. Give every phase a stable unique
-heading in the form `Phase N - Title`. Do not rename, renumber, or reuse a phase
-ID after design freeze; add a new phase when later work must be inserted.
+Split the work into small approved phases with stable unique IDs and titles.
+Preserve existing frozen identifiers verbatim, including `TINY-P4` or a
+feature-specific scheme. `Phase N - Title` is an example for new phases, not
+a migration requirement. Do not rename, renumber, or reuse a phase ID after
+design freeze; add a new phase when later work must be inserted.
 
-For each phase define scope, dependencies, expected RTL/software/test/doc
+For each phase define target SoCs, scope, dependencies, expected RTL/software/test/doc
 changes, integration requirements, validation commands, and objective
 completion criteria. State explicitly when a phase changes a public interface,
 register ABI, address map, DMA/interrupt allocation, clock/reset boundary, or
 CDC/RDC behavior.
+
+If a target lacks executable support, distinguish approved platform-enablement
+phases from work that depends on those prerequisites. Do not substitute a
+different product's profile to make a phase appear implementable or validated.
 
 ## Commercial Delivery Gaps
 
