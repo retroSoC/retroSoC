@@ -36,10 +36,12 @@ Authoritative repository inputs are:
 - the [verification contract](npu-verification.md), which is normative for
   qualification but cannot change the architecture or ABI below.
 
-CONFIRMED FROM REPOSITORY: the current product has nine AXI64 masters,
-seven-bit global IDs, 32 KiB system SRAM, a 72 MHz initial HP fabric clock,
-and no hardware cache coherence. SDRAM already has a burst-capable frontend.
-The private NPU store is additional to system SRAM. The earlier
+CONFIRMED FROM REPOSITORY AT THE 2026-09-16 FREEZE: the product baseline had
+nine AXI64 masters, seven-bit global IDs, 32 KiB system SRAM, a 72 MHz initial
+HP fabric clock, and no hardware cache coherence. The implemented NPU phases
+now append the frozen master/resource index 9, producing the ten-master
+topology specified below without renumbering an earlier identity. SDRAM already
+has a burst-capable frontend. The private NPU store is additional to system SRAM. The earlier
 [Mini NPU survey](mini-npu.md) remains historical research; its AXI32 and
 128 KiB baseline and stream-first recommendation do not govern this feature.
 

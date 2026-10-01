@@ -38,6 +38,22 @@ def test_apu_capability_and_digest_remain_profile_specific(data):
     assert all(r["capability"] & 2 == 0 for r in rows)  # MP3 remains clear.
 
 
+def test_merge_recovery_preserves_publication_contracts(data):
+    root = ROOT / "publications/datasheets"
+    overview = (root / "sections/overview.typ").read_text(encoding="utf-8")
+    architecture = (root / "sections/architecture.typ").read_text(encoding="utf-8")
+    software = data["system_reference"]["software"]
+
+    assert '(name:"Functional",fill:"left-half")' in overview
+    assert "v05-rill-cover" in overview
+    assert "64 dense MACs" in overview
+    assert "fixed KWS in the P7 configuration" in overview
+    assert "Ten-master fabric" in architecture
+    assert "GA2D slot 8 and NPU slot 9" in architecture
+    assert software["boot_acceptance"]["linux_ready_is_terminal"]
+    assert software["boot_acceptance"]["smoke_terminal_requires_cache_handoff"]
+
+
 @pytest.mark.parametrize("kind", ["npu-shell", "apu-blanket", "npu-counter", "npu-qualified", "npu-profile"])
 def test_stale_live_accelerator_prose_is_not_accepted(data, kind):
     catalog, features, content, annotations, profiles = [

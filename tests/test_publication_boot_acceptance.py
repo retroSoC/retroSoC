@@ -37,7 +37,9 @@ def test_actual_boot_requires_bounded_complete_acceptance():
     assert [(row["event"], row["argument"], row["sequence"]) for row in result["messages"]] == [
         (1, 0x4C4E5801, 1), (2, 0x47413244, 2), (4, 0x43424F4B, 3)]
     assert result["rootfs_ready_only"]
-    assert result["terminal_requires_cache_handoff"]
+    assert result["linux_ready_is_terminal"]
+    assert result["smoke_terminal_requires_cache_handoff"]
+    assert result["npu_p6_reuses_linux_transport"]
     assert result["failure_reset_requires_no_hp_ga2d_owner"]
 
 

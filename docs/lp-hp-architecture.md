@@ -7,6 +7,12 @@ PCLK-to-HP AXI64/ID3 bridge as a direct single-job private-AXI64 2D engine
 controlled at `APB4_GA2D`, with resource-owned IRQ. Existing hart,
 memory, and source identities remain fixed.
 
+The frozen [NPU specification](ip/npu.md) subsequently appends AXI64
+master/prefix 9 and Resource Controller entry 9, expanding the implemented
+PRODUCT data plane to ten masters without renumbering the preceding entries.
+Its APB4 shell is at `APB4_NPU`; the resource-owned interrupt routes to LP
+vector 33 or HP PLIC source 12.
+
 ## Product contract
 
 Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:
@@ -79,7 +85,7 @@ same memory admission, inactive-pad, ACL, and fault path as HP and DMA.
 
 ## Native AXI64 data plane
 
-`soc_data_plane` contains a 9-master, 6-target AXI64 crossbar. Read and write
+`soc_data_plane` contains a 10-master, 6-target AXI64 crossbar. Read and write
 channels progress independently, and different source IDs may be active against
 the same or different targets. The same source ID is blocked until completion.
 SRAM and SDRAM accept four reads and two writes; serial memories and the error
@@ -97,6 +103,7 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 | JPEG | PCLK-to-HP AXI64 async bridge, ID prefix 6; one normal read and one normal write credit, class 8 |
 | EXT-H | PCLK-to-HP AXI64 async bridge, ID prefix 7 |
 | GA2D | dedicated PCLK-to-HP AXI64/ID3 async bridge; direct single-job FILL/COPY/CONVERT/BLEND engine |
+| NPU | HP-native AXI64 master/prefix 9 with one read and one write outstanding; production descriptor and tensor DMA |
 
 Targets are SRAM, SDRAM, QPI PSRAM, OPI/HyperBus PSRAM, XPI/flash, and a
 finite-latency error slave. SRAM is a native AXI64, seven-bit-ID target in HP and
@@ -155,7 +162,7 @@ Its IRQ is delivered to LP IRQ 28 or HP PLIC source 3 according to owner,
 never both. Software discovers it through `<retrosoc/hal/extension.h>`.
 
 The Resource Controller at `0x2000_A000` is the central owner and IRQ authority
-for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, APU, and the P5 GA2D engine.
+for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, JPEG, APU, the P5 GA2D engine, and NPU.
 Resource 8 routes its raw IRQ exclusively to LP vector 32/external ordinal 30
 or HP PLIC source 11 according to owner, while its associated AXI bridge carries
 only that engine's direct FILL/COPY/CONVERT/BLEND traffic. The existing HP
@@ -163,7 +170,9 @@ smoke workload remains a FILL/COPY subset; it is not P5 composition or cache
 coherency evidence.
 Handoff requires idle, owner lock is sticky, and rejected handoffs raise LP IRQ
 29. APU index 7 routes exclusively to LP IRQ31 or HP PLIC source10. The
-controller also carries the AON cache request/clean acknowledgement used before
+NPU at index 9 routes exclusively to LP vector 33/external ordinal 31 or HP
+PLIC source 12; its AXI master carries only production descriptor/tensor traffic.
+The controller also carries the AON cache request/clean acknowledgement used before
 HP drain. See
 [`ip/resource-controller.md`](ip/resource-controller.md).
 Resource 8 qualifies its HP block acknowledgement with a fresh synchronized

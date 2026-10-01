@@ -96,6 +96,12 @@ static int8_t s_npu_output[RS_NPU_P6_OUTPUT_BYTES];
 static bool s_uart_ok;
 
 static uint64_t rs_npu_p6_cycles(void) {
+#if defined(__riscv_xlen) && (__riscv_xlen == 64)
+    uint64_t cycle;
+
+    __asm__ volatile("rdcycle %0" : "=r"(cycle));
+    return cycle;
+#else
     uint32_t high_before;
     uint32_t low;
     uint32_t high_after;
@@ -106,6 +112,7 @@ static uint64_t rs_npu_p6_cycles(void) {
         __asm__ volatile("rdcycleh %0" : "=r"(high_after));
     } while (high_before != high_after);
     return ((uint64_t)high_before << 32U) | low;
+#endif
 }
 
 static void rs_npu_p6_uart_character(char character) {
@@ -182,11 +189,14 @@ static bool rs_npu_p6_equal(const uint8_t *left, const uint8_t *right, uint32_t 
     return equal;
 }
 
+static void rs_npu_p6_invalidate_range(const void *pointer, uint32_t bytes);
+
 static bool rs_npu_p6_parse_shard(rs_npu_p6_shard_t *shard) {
     const uint8_t *image = (const uint8_t *)(uintptr_t)RS_NPU_P6_SHARD_BASE;
     const uint32_t *words = (const uint32_t *)(const void *)image;
     uint32_t payload_bytes;
 
+    rs_npu_p6_invalidate_range(image, RS_NPU_P6_HEADER_BYTES);
     if ((shard == NULL) || (words[0] != RS_NPU_P6_SHARD_MAGIC) ||
         (words[1] != RS_NPU_P6_SHARD_SCHEMA) || (words[2] != RS_NPU_P6_WORKLOAD_ID) ||
         (words[4] != UINT32_C(10)) || (words[6] != RS_NPU_P6_CASES_PER_SHARD) ||
@@ -201,6 +211,7 @@ static bool rs_npu_p6_parse_shard(rs_npu_p6_shard_t *shard) {
         return false;
     }
     payload_bytes = words[6] * words[9];
+    rs_npu_p6_invalidate_range(&image[RS_NPU_P6_HEADER_BYTES], payload_bytes);
     if (rs_npu_p6_crc32(&image[RS_NPU_P6_HEADER_BYTES], payload_bytes) != words[10]) {
         return false;
     }
@@ -262,6 +273,15 @@ static void rs_npu_p6_field_u64(const char *name, uint64_t value) {
     rs_npu_p6_uart_u64(value);
 }
 
+static void rs_npu_p6_stage(uint32_t case_index, const char *stage, uint64_t cycles) {
+    rs_npu_p6_uart_text("NPU_P6_STAGE workload=" RS_NPU_P6_WORKLOAD_NAME);
+    rs_npu_p6_field_u32("index", case_index);
+    rs_npu_p6_uart_text(" stage=");
+    rs_npu_p6_uart_text(stage);
+    rs_npu_p6_field_u64("cycles", cycles);
+    rs_npu_p6_uart_character('\n');
+}
+
 static bool rs_npu_p6_case_fail(uint32_t case_index, const char *stage) {
     rs_npu_p6_uart_text("NPU_P6_CASE_FAIL workload=" RS_NPU_P6_WORKLOAD_NAME);
     rs_npu_p6_field_u32("index", case_index);
@@ -301,7 +321,7 @@ static void rs_npu_p6_case_log(uint32_t shard_index, uint32_t case_index, uint32
 }
 
 static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, uint32_t shard_index,
-                               bool cold_cache) {
+                               bool cold_cache, bool trace_case) {
     const uint32_t *header = (const uint32_t *)(const void *)record;
     const int8_t *input = (const int8_t *)(const void *)&record[RS_NPU_P6_CASE_HEADER_BYTES];
     const uint8_t *expected_terminal = &record[RS_NPU_P6_CASE_HEADER_BYTES + RS_NPU_P6_INPUT_BYTES];
@@ -313,7 +333,12 @@ static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, u
     uint64_t started;
     uint64_t reference_cycles;
     uint64_t npu_cycles;
+    rs_status_t status;
     bool contention = expected_index < UINT32_C(10);
+
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "case-start", UINT64_C(0));
+    }
 
     if ((header[0] != expected_index) ||
         (rs_npu_p6_default_regions(&s_workspace, &regions) != RS_OK) ||
@@ -341,16 +366,38 @@ static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, u
     if (contention && !rs_npu_p6_start_contention()) {
         return rs_npu_p6_case_fail(expected_index, "contention-reference-start");
     }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "reference-start", UINT64_C(0));
+    }
     started = rs_npu_p6_cycles();
-    if ((rs_npu_p6_reference_execute(&s_workspace.descriptors[0][0], RS_NPU_P6_DESCRIPTOR_COUNT,
-                                     &memory) != RS_OK) ||
-        (rs_npu_p6_softmax((const int8_t *)&s_workspace.arena[terminal_offset],
-                           s_reference_output) != RS_OK)) {
+    status = rs_npu_p6_reference_execute(&s_workspace.descriptors[0][0], RS_NPU_P6_DESCRIPTOR_COUNT,
+                                         &memory);
+    if (status != RS_OK) {
         return rs_npu_p6_case_fail(expected_index, "reference-execute");
     }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "reference-compute-done", rs_npu_p6_cycles() - started);
+    }
+    if (rs_npu_p6_softmax((const int8_t *)&s_workspace.arena[terminal_offset],
+                          s_reference_output) != RS_OK) {
+        return rs_npu_p6_case_fail(expected_index, "reference-softmax");
+    }
     reference_cycles = rs_npu_p6_cycles() - started;
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "softmax-done", reference_cycles);
+    }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "ga2d-reference-start", UINT64_C(0));
+    }
+    started = rs_npu_p6_cycles();
     if (contention && (rs_ga2d_wait(RS_TIMEOUT_DEFAULT * UINT32_C(64)) != RS_OK)) {
+        if (trace_case) {
+            rs_npu_p6_stage(expected_index, "ga2d-reference-timeout", rs_npu_p6_cycles() - started);
+        }
         return rs_npu_p6_case_fail(expected_index, "contention-reference-wait");
+    }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "ga2d-reference-done", rs_npu_p6_cycles() - started);
     }
     if (!rs_npu_p6_equal(&s_workspace.arena[terminal_offset], expected_terminal,
                          RS_NPU_P6_OUTPUT_BYTES) ||
@@ -364,14 +411,30 @@ static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, u
     if (contention && !rs_npu_p6_start_contention()) {
         return rs_npu_p6_case_fail(expected_index, "contention-npu-start");
     }
-    if (rs_npu_p6_execute(&s_workspace, (RS_NPU_P6_WORKLOAD_ID << 24U) | expected_index,
-                          RS_TIMEOUT_DEFAULT * UINT32_C(64), s_npu_output, RS_NPU_P6_OUTPUT_BYTES,
-                          &s_profile) != RS_OK) {
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "npu-start", UINT64_C(0));
+    }
+    status = rs_npu_p6_execute(&s_workspace, (RS_NPU_P6_WORKLOAD_ID << 24U) | expected_index,
+                               RS_TIMEOUT_DEFAULT * UINT32_C(64), s_npu_output,
+                               RS_NPU_P6_OUTPUT_BYTES, &s_profile);
+    if (status != RS_OK) {
         return rs_npu_p6_case_fail(expected_index, "npu-execute");
     }
     npu_cycles = s_profile.npu_wait_cycles + s_profile.softmax_cycles;
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "npu-done", npu_cycles);
+        rs_npu_p6_stage(expected_index, "ga2d-npu-start", UINT64_C(0));
+    }
+    started = rs_npu_p6_cycles();
     if (contention && (rs_ga2d_wait(RS_TIMEOUT_DEFAULT * UINT32_C(64)) != RS_OK)) {
+        if (trace_case) {
+            rs_npu_p6_stage(expected_index, "ga2d-npu-timeout", rs_npu_p6_cycles() - started);
+        }
         return rs_npu_p6_case_fail(expected_index, "contention-npu-wait");
+    }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "ga2d-npu-done", rs_npu_p6_cycles() - started);
+        rs_npu_p6_stage(expected_index, "golden-start", UINT64_C(0));
     }
     if ((reference_cycles == 0U) || (npu_cycles == 0U) ||
         (s_profile.counters.retired_descriptors != RS_NPU_P6_DESCRIPTOR_COUNT) ||
@@ -381,7 +444,13 @@ static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, u
                          RS_NPU_P6_OUTPUT_BYTES) ||
         !rs_npu_p6_equal((const uint8_t *)(const void *)s_reference_output,
                          (const uint8_t *)(const void *)s_npu_output, RS_NPU_P6_OUTPUT_BYTES)) {
+        if (trace_case) {
+            rs_npu_p6_stage(expected_index, "golden-fail", UINT64_C(0));
+        }
         return rs_npu_p6_case_fail(expected_index, "npu-golden");
+    }
+    if (trace_case) {
+        rs_npu_p6_stage(expected_index, "golden-done", UINT64_C(0));
     }
     rs_npu_p6_case_log(shard_index, expected_index, header[1], cold_cache, contention,
                        reference_cycles, npu_cycles);
@@ -390,10 +459,21 @@ static bool rs_npu_p6_run_case(const uint8_t *record, uint32_t expected_index, u
 
 int rs_hp_npu_p6_acceptance(void) {
     rs_npu_p6_shard_t shard;
+    rs_status_t status;
 
     s_uart_ok = true;
-    if ((rs_npu_irq_ack(RS_NPU_IRQ_ALL) != RS_OK) || (rs_npu_irq_enable(0U) != RS_OK) ||
-        !rs_npu_p6_parse_shard(&shard)) {
+    status = rs_npu_irq_ack(RS_NPU_IRQ_ALL);
+    if (status != RS_OK) {
+        rs_npu_p6_uart_text("NPU_P6_FAIL stage=irq-ack\n");
+        return 0;
+    }
+    status = rs_npu_irq_enable(0U);
+    if (status != RS_OK) {
+        rs_npu_p6_uart_text("NPU_P6_FAIL stage=irq-enable\n");
+        return 0;
+    }
+    if (!rs_npu_p6_parse_shard(&shard)) {
+        rs_npu_p6_uart_text("NPU_P6_FAIL stage=shard-parse\n");
         return 0;
     }
     rs_npu_p6_uart_text("NPU_P6_BEGIN workload=" RS_NPU_P6_WORKLOAD_NAME);
@@ -406,7 +486,8 @@ int rs_hp_npu_p6_acceptance(void) {
     for (uint32_t index = 0U; index < shard.case_count; ++index) {
         const uint8_t *record = &shard.payload[index * shard.record_bytes];
 
-        if (!rs_npu_p6_run_case(record, shard.first_case + index, shard.shard_index, index == 0U)) {
+        if (!rs_npu_p6_run_case(record, shard.first_case + index, shard.shard_index, index == 0U,
+                                index == 0U)) {
             return 0;
         }
     }
@@ -425,6 +506,17 @@ static void rs_npu_p6_clean_range(const void *pointer, uint32_t bytes) {
         __asm__ volatile("cbo.clean 0(%0)" : : "r"(cursor) : "memory");
         cursor += UINT32_C(64);
     }
+}
+
+static void rs_npu_p6_invalidate_range(const void *pointer, uint32_t bytes) {
+    uintptr_t cursor = (uintptr_t)pointer & ~(uintptr_t)UINT32_C(63);
+    uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
+
+    while (cursor < end) {
+        __asm__ volatile("cbo.inval 0(%0)" : : "r"(cursor) : "memory");
+        cursor += UINT32_C(64);
+    }
+    __asm__ volatile("fence r, r" : : : "memory");
 }
 
 void rs_hp_npu_p6_cache_clean(void) {

@@ -163,6 +163,31 @@ model substitution or faster reference/NPU memory placement is allowed to
 obscure the comparison. Record first-run and steady-state behavior using the
 same declared cache initialization policy for both paths.
 
+### Reference Baseline Freeze Decision (2026-10-01)
+
+The P6 reference baseline remains the pinned, independently implemented
+portable-C INT8 path defined above. A host-framework implementation, a
+precomputed result source, a different memory placement, or an otherwise
+faster reference path MUST NOT replace it in a qualification run. Such a
+replacement would change the measured denominator and requires an explicit
+verification-contract refreeze before implementation.
+
+The stage-instrumented Mini IHP130 diagnostic run at root revision
+`d084002bfe99`, using `configs/ci/ihp130.mk` and the locked VexiiRiscv revision,
+entered `reference-start` for both a contention KWS shard and a non-contention
+KWS shard, but did not reach `reference-compute-done` within the bounded host
+run. This establishes a portable-C reference runtime/evidence gap, not an NPU
+completion failure: neither run reached GA2D wait or NPU submit/wait. P6 stays
+incomplete until the pinned reference completes the required corpora and the
+architectural cycle intervals are recorded. Host elapsed time remains
+diagnostic only and cannot be substituted for the required HP cycle evidence.
+
+The stage markers are diagnostic observability only and do not alter the NPU
+ABI, case record schema, workload corpus, cache policy, or performance formula.
+Any future reference optimization must preserve the independent arithmetic,
+layer outputs, memory placement and cycle-accounting contract, and must be
+reviewed as a separate implementation change before P6 execution resumes.
+
 Performance uses architecturally visible HP cycle intervals and frozen NPU
 counters, not Verilator host elapsed time, simulator throughput or a
 peak-MAC-derived estimate. The reference and NPU intervals MUST execute in the

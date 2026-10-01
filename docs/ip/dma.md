@@ -1,9 +1,17 @@
 # DMA V2
 
-The Mini SoC DMA is a parameterized 32-bit AXI4 transfer engine with direct
+The shared DMA is a parameterized 32-bit AXI4 transfer engine with direct
 register and linked-list TCD operation. It is an APB4 configuration target at
 `RS_SOC_APB4_DMA_BASE` and an aggregate management-core interrupt source on
 IRQ20. DMA does not use RIB or a RIB-to-AXI4 adapter.
+
+The register ABI, IP implementation and HAL are shared across products.
+The [Tiny Gen1 target](tiny-soc.md) keeps `0x1000A000`, IRQ20 and eight
+channels, but assigns channel 2 to general transfers, 3 to XPI/WS2812/CRC,
+4/5 to Crypto and 6/7 to I2S TX/RX; 0/1 remain UART0/I2C0. Its streams and
+DMA engine share PCLK, with an AXI CDC into SYS. Product capability/routing
+data must reject absent endpoints without a blanket Tiny stream prohibition.
+These are frozen Tiny requirements, not implemented Tiny or timing evidence.
 
 ## Scope and limits
 
@@ -31,7 +39,8 @@ rejects an unsupported data width at elaboration rather than implying that a
 ## Channel ownership
 
 Firmware uses deterministic channels so unrelated drivers never silently
-share a context:
+share a context. This table describes the current Mini allocation; Tiny's
+target allocation is defined by its product contract above:
 
 | Channel | Owner |
 | --- | --- |

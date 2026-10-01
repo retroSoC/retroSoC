@@ -24,8 +24,19 @@ static musl/BusyBox and a small uncompressed CPIO with a dedicated `/init`.
 V2 flash bundles discriminate Linux (1, four entries), smoke (2, one executable)
 and RT-Thread (3, one executable). Rebuild V1 bundles. The loader checks strict
 flags, workload/count/types, fixed addresses, bounds, non-overlap, unused slots
-and CRC. Only smoke enters the GA2D/cache lifecycle protocol. LP alone owns
-the final SYSCTRL TEST_STATUS write for all workloads.
+and CRC. In ordinary builds only smoke enters the GA2D/cache lifecycle
+protocol. LP alone owns the final SYSCTRL TEST_STATUS write for all workloads.
+
+The private NPU-P6 acceptance build reuses workload 1's four-entry transport so
+the frozen corpus shard occupies the existing `Image` slot. Its compile-time
+`RS_NPU_P6_ACCEPTANCE` path deliberately continues beyond the Linux-ready
+checkpoint into the same GA2D/cache lifecycle protocol; an ordinary Linux
+build still terminates at Linux-ready. This does not add a workload number or
+change the V2 header ABI.
+
+The `ihp130-apu` evidence profile likewise uses workload 1 only as the existing
+four-entry transport. Its application-specific `apu_release` LP loader owns the
+APU acceptance semantics; that bundle label does not claim a Linux boot result.
 
 ## Measured runs
 

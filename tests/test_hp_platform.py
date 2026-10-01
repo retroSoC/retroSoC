@@ -128,6 +128,40 @@ def test_hp_smoke_p5_npu_payload_has_stack_cache_and_polling_plan() -> None:
     assert "rs_npu_irq_enable(0U)" in acceptance
     assert "rs_npu_irq_ack(RS_NPU_IRQ_ALL)" in acceptance
     assert '"--extra-source"' in builder and '"--include"' in builder
+    assert '"-march=rv64imafdc_zicbom_zicsr_zifencei"' in builder
+    assert '"-mabi=lp64d"' in builder
+    assert "require_rv64_elf(elf)" in builder
+    assert 'images / "hp_smoke.bin"' in builder
+    assert 'images / "fw_jump.bin"' not in builder
+
+
+def test_hp_apu_profile_and_payload_use_the_rv64_product_contract() -> None:
+    profile = (ROOT / "configs/ci/ihp130-apu.mk").read_text(encoding="utf-8")
+    builder = (ROOT / "scripts/build_hp_apu.py").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert "HP_CONFIG          := rv64imafdc_zicbom_max" in profile
+    assert '"-march=rv64imafdc_zicbom_zicsr_zifencei"' in builder
+    assert '"-mabi=lp64d"' in builder
+    assert "require_rv64_elf(elf)" in builder
+    assert 'images / "rootfs.cpio"' in builder
+    assert "--output $(HP_APU_BUILD_DIR) --cross $(HP_CROSS)" in makefile
+
+    completed = subprocess.run(
+        [
+            "make",
+            "-s",
+            "CONFIG=configs/ci/ihp130-apu.mk",
+            "BUILD_TIMESTAMP=2026-09-30-18-40",
+            "config",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "HP_CONFIG          rv64imafdc_zicbom_max" in completed.stdout
 
 
 def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() -> None:
@@ -144,6 +178,16 @@ def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() 
         "HP_GA2D_CACHE_CLEAN",
     ):
         assert marker in (*MARKERS["smoke"], "SIM_TEST_PASS code=0")
+
+
+def test_npu_p6_linux_transport_does_not_take_the_normal_ready_exit() -> None:
+    source = (ROOT / "app/apps/hp_boot/main.c").read_text(encoding="utf-8")
+    linux_branch = source.split(
+        "if (header.workload == RS_HP_BOOT_WORKLOAD_LINUX) {", 1
+    )[1].split("}", 1)[0]
+
+    assert "#if !defined(RS_NPU_P6_ACCEPTANCE)" in linux_branch
+    assert "rs_test_finish(RS_TEST_PASSED" in linux_branch
 
 
 def test_hp_cache_handshake_budget_covers_cbo_and_mailbox_round_trip() -> None:

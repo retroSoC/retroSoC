@@ -10,6 +10,14 @@ and MCLK dividers. Host and audio clocks are independent; configuration uses
 
 ## Integration
 
+The following allocation describes the current Mini integration. The
+[Tiny Gen1 target](tiny-soc.md) preserves the common IP/host ABI and address,
+uses core IRQ8 and central DMA channels 6/7 for TX/RX, and keeps host streams
+in PCLK while audio uses the separate pad-provided clock. Its GPIO routing
+and slave-mode requirement do not imply that the shared master-only RTL
+already implements them. A slave extension must update the common contract
+and driver rather than create a Tiny-only register interpretation.
+
 | Property | Value |
 | --- | --- |
 | APB4 base address | `0x10007000` |
@@ -96,7 +104,7 @@ DMA asserts `TLAST` on the final programmed TX word.
 
 ## HAL Sequence
 
-Applications should use `rs_i2s_configure()`, `rs_i2s_enable()`, and either
+Mini applications should use `rs_i2s_configure()`, `rs_i2s_enable()`, and either
 `rs_i2s_write()`/`rs_i2s_read()` or a channel-3 DMA stream configuration.
 DMA stream configurations use `RS_DMA_KIND_MM_TO_STREAM` with `I2S_TX` or
 `RS_DMA_KIND_STREAM_TO_MM` with `I2S_RX`; the unused address is zero. Program

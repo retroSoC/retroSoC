@@ -54,22 +54,24 @@ Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 
 The committed baseline still uses 24 MHz, no PLL, two UARTs, two I2C
 controllers and legacy pad routing. The QFN64 Gen1 product/package target
-below was approved on 2026-09-26; its PLL, I2S, SDIO and new pinmux require
-separate integration and verification. Existing generated datasheets describe
-the baseline, not completed implementation of this target.
+was established on 2026-09-26 and extended on 2026-09-30 with shared IP,
+eight-channel DMA and explicit no-PLL/PLL clock and reset trees. P7-P9 must
+implement and qualify that target. Existing generated datasheets describe
+the baseline, not completed implementation of the refreeze.
 
 ### Gen1 Product and Package Target
 
 | Area | Tiny Gen1 target |
 | --- | --- |
 | CPU | One Hazard3 RV32IMC hart; A extension disabled until atomic bus semantics are qualified |
-| On-chip memory | 128 KiB macro-backed SRAM; 256–512 KiB and retention SRAM deferred |
+| On-chip memory | 128 KiB user SRAM plus six private Crypto banks (24 KiB); larger user SRAM and retention deferred |
 | Code storage | XPI NOR boot, loaded into SRAM; authenticated recovery boot deferred |
 | Memory model | No MMU, HP hart, or external DRAM/PSRAM dependency |
-| Interconnect | 32-bit AXI4 data plane and APB4 control; no RIB/RIBP |
-| Software | Existing freestanding SDK, RV32IM compiler target, CSR/IRQ-enabled acceptance firmware |
-| Clock/reset | 24 MHz crystal and bypassable PLL; maximum processor target 144 MHz; 1 MHz CLINT timebase, watchdog and JTAG reset; bus/peripheral rates require integration freeze |
-| Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S, one 3.3 V 1-bit/4-bit SDIO host, two timers, four central DMA channels, four PWM outputs, RTC, watchdog and XPI |
+| Interconnect | AXI32 with CPU, central DMA and SDIO private-DMA masters; APB4 control and explicit domain bridges; no RIB/RIBP |
+| Software | Shared peripheral specifications, addresses and HAL source; product-specific RCU/SYSCTRL backend and routing/clock configuration; RV32IM compiler target |
+| Clock/reset | Safe REF24 boot; external-XIN no-PLL up to 96 MHz or a 24 MHz reference/single-output PLL up to 240 MHz; MEM up to 120 MHz, PCLK up to 60 MHz, fixed 1 MHz CLINT tick; no independent safety RC |
+| Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S target, one 3.3 V 1-bit/4-bit SDIO host, two timers, eight central DMA channels, four PWM outputs, RTC, watchdog and XPI |
+| Shared services | RNG V2, CRC V2, WS2812 and Crypto V2 at Mini-compatible addresses; entropy and security claims require separate qualification |
 | Package | QFN64 plus separate EP: 48 signal and 16 power/ground terminals; preferred 9 x 9 mm, 0.5 mm pitch pending physical review |
 | Dedicated signals | Six boot XPI pins and five JTAG pins outside the 32 GPIO; XPI CS1-3 use GPIO29-31 |
 | Power | One 3.3 V digital IO rail; IHP130 Core planned at 1.2 V; clock analog supply and EP connection require macro/package confirmation |
@@ -77,16 +79,22 @@ the baseline, not completed implementation of this target.
 The normative [Tiny Gen1 contract](ip/tiny-soc.md) defines the complete QFN64
 pinout, power/reset requirements and GPIO/ALT0/ALT1 table. Default SDIO,
 full-duplex I2S with MCLK, UART0 and I2C0 use 15 non-overlapping GPIO, leaving
-17; independent boot Flash and JTAG remain available. New address/IRQ/DMA
-allocations, PLL/routing controls and detailed clock/reset behavior await the
-Gen1 integration-contract freeze. The existing AXI/ABI and verification
-sections explicitly apply to the initial 24 MHz baseline.
+17; adding WS2812 on GPIO26 ALT0 leaves 16. Independent boot Flash and JTAG
+remain available. The shared-IP addresses, DMA/IRQ allocations, Tiny RCU bank
+and clock/reset behavior are frozen targets, with implementation in P7/P8 and
+physical acceptance in P9. SDIO reaches target clocks of 48 MHz at SYS96/192
+and 40 MHz at SYS240 using the existing integer divider. XIN loss stops the
+reference/watchdog domain too; recovery requires the external source and
+RESET_N. The historical AXI/ABI and verification sections still describe the
+initial 24 MHz implementation.
 
-Independent low-power clocks, clock/power gating, retention, secure boot, RTOS
-ports, USB, standalone general SPI, CAN and ADC remain future product work.
-I2S and SDIO are required Gen1 capabilities awaiting implementation. Neither
-the initial functional profile nor the product/package freeze establishes a
-measured frequency ceiling, power-current, wake-latency or security claim.
+Independent low-power clocks, power gating, retention, secure boot, RTOS ports,
+USB, standalone general SPI, CAN and ADC remain future product work. Controlled
+CPU/peripheral clock gating is part of the new RCU target. Shared PWM dynamic
+clock reporting and I2S slave support require common-IP work; missing macros,
+Pad timing and physical evidence remain explicit gates. Neither the initial
+functional profile nor this specification establishes a measured frequency
+ceiling, power-current, wake-latency or security claim.
 
 ### Commercial Reference Points
 
@@ -423,7 +431,7 @@ software quality.
 
 | Tier | Claim gate |
 | --- | --- |
-| Tiny | Gen1 target: QFN64 pinmux, PLL/bypass, I2S/SDIO, wired-MCU boot, AXI/APB/DMA/IRQ and IHP130/144 MHz evidence; low-power/security claims require separate measurements and qualification |
+| Tiny | Gen1 target: unchanged QFN64, shared IP/eight-channel DMA, product RCU/CDC/reset, no-PLL 96 MHz and PLL 240 MHz evidence; low-power, entropy and security claims require separate qualification |
 | Mini | Repeatable Linux boot, at least 64 MiB usable main memory, native memory bursts, and management-controlled start/stop recovery |
 | Std | Full AXI4 ordering tests, coherent accelerator traffic, 1080p60 graphical desktop, audio playback, and NPU inference under concurrent DMA load |
 | Pro | Four-hart coherent SMP stress, RV64 distribution boot, more-than-4-GiB memory validation, and concurrent GPU/NPU/video operation |

@@ -98,11 +98,12 @@ SBI-based, even though OpenSBI accesses UART1 underneath. Native custom peripher
 and an application resource-handoff service are separate work.
 
 Before boot, validate the external memory configuration and the exact bundle generated for
-the selected snapshot. The Linux rootfs publishes an initial ready event. The current HP
-acceptance loader also requires GA2D result, cache-clean and resource-return checkpoints;
-the rootfs ready service does not implement those later exchanges. Follow @boot-configuration
-for the bounded polling budgets, matching acceptance payload and failure/ownership policy.
-Neither an initial event nor a complete acceptance pass establishes all Linux peripheral drivers.
+the selected snapshot. The Linux rootfs publishes a ready event that terminates the ordinary
+Linux workload. Smoke and the dedicated NPU-P6 build additionally require GA2D result,
+cache-clean and resource-return checkpoints; the Linux ready service does not implement those
+later exchanges. Follow @boot-configuration for the bounded polling budgets, matching
+acceptance payload and failure/ownership policy. Neither the Linux-ready verdict nor a complete
+freestanding acceptance pass establishes all Linux peripheral drivers.
 
 === Camera and audio data paths
 #change-start("system-media", "Camera and audio circuit composition")

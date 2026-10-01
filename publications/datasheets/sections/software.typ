@@ -15,15 +15,16 @@ The separate APU P9 acceptance profile performs LP APUMC/APUC/APUM loading and b
 audio/KWS work; it is not the Linux boot profile. NPU compiler output and HP smoke payloads
 likewise do not supply a native Linux driver. See @apu and @npu for their software boundaries.
 
-#figure(boot-diagram(), caption:[Linux image loading and initial ready checkpoint. The loader's complete acceptance protocol continues below.])<boot-flow>
+#figure(boot-diagram(), caption:[Linux image loading and ready checkpoint. Smoke and NPU-P6 acceptance continue through the later protocol.])<boot-flow>
 
 The HP bundle contains locked OpenSBI, Linux, device-tree and initramfs inputs. LP validates
 the header and payload bounds, attempts transfer with the boot DMA context and CRC, and
 falls back to a software copy/CRC if that attempt fails. It fences memory, clears the LP
 mailbox interrupt and requests HP release. It then waits for the expected readiness event;
-it does not publish entry/DTB addresses through a boot mailbox before release. The same loader
-also serves freestanding HP acceptance payloads. Its later GA2D/cache-clean protocol is required
-before a successful TEST_STATUS write; the *initial ready message alone does not complete it*.
+it does not publish entry/DTB addresses through a boot mailbox before release. For an ordinary
+Linux workload the checked userspace ready event is terminal. The same loader also serves
+freestanding HP acceptance payloads: smoke and the dedicated NPU-P6 build continue through the
+later GA2D/cache-clean protocol, where the *initial ready message alone does not complete it*.
 #source-note("docs/lp-hp-architecture.md", title:"Boot-bundle ABI, lifecycle and failure handling")
 
 === Prerequisites and image layout
@@ -62,7 +63,8 @@ port guide for the generated output layout and boot packaging commands.
 + Apply the memory fence, clear the LP mailbox interrupt, request release, and check the
   immediate HP status result. Observe #code("HP_BOOT_RELEASED") only as a release checkpoint.
 + Wait for the exact ready event, argument and sequence. #code("HP_LINUX_READY") marks this
-  checkpoint; a freestanding acceptance payload uses the same marker without booting Linux.
+  checkpoint. Ordinary Linux terminates successfully here; smoke continues, and the dedicated
+  NPU-P6 build reuses the four-entry Linux transport but also continues.
 + Send the GA2D start command and wait for the result message with its distinct sequence.
   Confirm GA2D safe idle before requesting HP hold.
 + Observe the cache-clean request, receive the cache message, acknowledge clean state and
@@ -79,11 +81,10 @@ The budget is *not a duration in milliseconds*, and a stalled MMIO access can pr
 progress. A different sequence remains pending until the budget expires; matching the sequence
 with a wrong event or argument fails immediately. A mailbox API error also fails the wait.
 
-The supplied Linux rootfs service sends *only the initial ready message*. It contains no GA2D
-command responder or cache-clean service. A Linux init checkpoint therefore does not satisfy
-the complete current acceptance loader. A matching HP acceptance payload supplies those later
-responses; deploying a Linux service that does so is additional integration work, not a native
-graphics-driver capability established by this publication. See @linux-runtime.
+The supplied Linux rootfs service sends *only the ready message*. That is sufficient for the
+ordinary Linux workload's terminal checkpoint. It contains no GA2D command responder or
+cache-clean service and therefore cannot substitute for the smoke or NPU-P6 acceptance payloads,
+which supply those later responses. See @linux-runtime.
 
 The software fallback computes CRC from bytes read from the source while copying. It performs
 full destination readback only for entries up to the loader's small-entry threshold; it must
@@ -101,8 +102,9 @@ or buffer reuse. No automatic image retry or signed recovery image selection is 
 A board supervisor/watchdog remains a separate protection against stalled accesses or software.
 
 For target acceptance, capture profile/image hashes, enabled acceptance options, LP load/release
-checkpoints, ready/result/cache messages, final ownership and the simulator verdict. Do not treat
-UART startup or the ready marker alone as success. Linux peripheral qualification requires
+checkpoints, ready/result/cache messages where applicable, final ownership and the simulator
+verdict. Do not treat UART startup as success or apply the Linux-ready terminal rule to smoke or
+NPU-P6. Linux peripheral qualification requires
 the separate support matrix and matching platform evidence.
 
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[

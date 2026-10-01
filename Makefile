@@ -1020,7 +1020,7 @@ hp-smoke-sim: hp-smoke-bundle comp
 	python3 $(ROOT_PATH)/scripts/run_hp_sim.py --emulator $(VERILATOR_EMU) \
 		--image $(HP_SMOKE_BUNDLE_BIN) --output $(SIM_BUILD_ROOT)/hp-smoke \
 		--workload smoke --timeout $(HP_SMOKE_SIM_TIME)
-$(HP_APU_STAMP): $(ROOT_PATH)/scripts/build_hp_apu.py \
+$(HP_APU_STAMP): $(ROOT_PATH)/scripts/build_hp_apu.py $(ROOT_PATH)/scripts/hp_tools.py \
 	$(ROOT_PATH)/app/ports/hp-apu/start.S \
 	$(ROOT_PATH)/app/ports/hp-apu/main.c \
 	$(ROOT_PATH)/app/ports/hp-apu/linker.ld \
@@ -1029,7 +1029,7 @@ $(HP_APU_STAMP): $(ROOT_PATH)/scripts/build_hp_apu.py \
 	$(MEMORY_MAP_STAMP) $(USER_EXTENSIONS_STAMP)
 	python3 $(ROOT_PATH)/scripts/build_hp_apu.py \
 		--source-dir $(ROOT_PATH)/app/ports/hp-apu \
-		--output $(HP_APU_BUILD_DIR) --cross $(CROSS) \
+		--output $(HP_APU_BUILD_DIR) --cross $(HP_CROSS) \
 		--include $(MEMORY_MAP_C_DIR) \
 		--include $(USER_EXTENSIONS_DIR)/include \
 		--include $(ROOT_PATH)/crt/include \

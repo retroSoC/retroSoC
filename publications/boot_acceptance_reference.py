@@ -146,6 +146,7 @@ def split_npu_conditions(body: str) -> tuple[str, list[tuple[str, str]]]:
     condition = None
     allowed = {f"defined({name})" for name in NPU_DEFINES}
     allowed.add("||".join(f"defined({name})" for name in NPU_DEFINES))
+    allowed.add(f"!defined({NPU_DEFINES[1]})")
     for line in body.splitlines():
         directive = line.strip()
         if directive.startswith("#if "):
@@ -335,7 +336,11 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
     )
     if any(main.count(branch) != 1 for branch in workload_branches):
         raise ValueError("HP boot workload selection changed")
-    if (main.count("rs_test_finish(RS_TEST_PASSED,") != 3 or not main.endswith(phases[-1])
+    linux_exit_condition = f"!defined({NPU_DEFINES[1]})"
+    linux_exit_blocks = [compact(body) for condition, body in gated if condition == linux_exit_condition]
+    if linux_exit_blocks != ["rs_test_finish(RS_TEST_PASSED,UINT8_C(0));"]:
+        raise ValueError("HP boot Linux-ready terminal guard changed")
+    if (main.count("rs_test_finish(RS_TEST_PASSED,") != 2 or not main.endswith(phases[-1])
             or re.findall(r"cache_clean_completed=(true|false);", main) != ["false", "true"]
             or re.findall(r"s_hp_boot_ga2d_owned_by_hp=(true|false);", main) != ["true", "false"]):
         raise ValueError("HP boot terminal pass or cache completion changed")
@@ -375,5 +380,7 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
     return {"default_poll_iterations": int(default[0]), "event_poll_multiplier": int(multiplier[0]),
             "event_poll_iterations": iterations, "npu_defines": list(NPU_DEFINES),
             "messages": messages, "ready_writes": ready_writes,
-            "rootfs_ready_only": True, "terminal_requires_cache_handoff": True,
+            "rootfs_ready_only": True, "linux_ready_is_terminal": True,
+            "smoke_terminal_requires_cache_handoff": True,
+            "npu_p6_reuses_linux_transport": True,
             "failure_reset_requires_no_hp_ga2d_owner": True}

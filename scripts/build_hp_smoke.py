@@ -7,6 +7,11 @@ import argparse
 import subprocess
 from pathlib import Path
 
+try:
+    from scripts.hp_tools import require_rv64_elf
+except ModuleNotFoundError:
+    from hp_tools import require_rv64_elf
+
 
 def build(args: argparse.Namespace) -> None:
     output = args.output.resolve()
@@ -16,35 +21,33 @@ def build(args: argparse.Namespace) -> None:
     compiler = f"{args.cross}gcc"
     objcopy = f"{args.cross}objcopy"
     command = [
-            compiler,
-            "-march=rv32imafdc_zicbom_zicsr_zifencei",
-            "-mabi=ilp32d",
-            "-nostdlib",
-            "-nostartfiles",
-            "-ffreestanding",
-            "-O3",
-            "-Wall",
-            "-Wextra",
-            "-Werror=implicit-function-declaration",
-            "-Werror=return-type",
-            "-Wl,--build-id=none",
-            f"-Wl,-T,{args.linker.resolve()}",
-            "-o",
-            str(elf),
-            str(args.source.resolve()),
+        compiler,
+        "-march=rv64imafdc_zicbom_zicsr_zifencei",
+        "-mabi=lp64d",
+        "-nostdlib",
+        "-nostartfiles",
+        "-ffreestanding",
+        "-O3",
+        "-Wall",
+        "-Wextra",
+        "-Werror=implicit-function-declaration",
+        "-Werror=return-type",
+        "-Wl,--build-id=none",
+        f"-Wl,-T,{args.linker.resolve()}",
+        "-o",
+        str(elf),
+        str(args.source.resolve()),
     ]
     for include in args.include:
         command.append(f"-I{include.resolve()}")
     command.extend(str(source.resolve()) for source in args.extra_source)
     command.extend(args.define)
     subprocess.run(command, check=True)
+    require_rv64_elf(elf)
     subprocess.run(
-        [objcopy, "-O", "binary", str(elf), str(images / "fw_jump.bin")],
+        [objcopy, "-O", "binary", str(elf), str(images / "hp_smoke.bin")],
         check=True,
     )
-    (images / "retrosoc_hp.dtb").write_bytes(b"SMOK")
-    (images / "Image").write_bytes(b"SMOK")
-    (images / "rootfs.cpio.gz").write_bytes(b"SMOK")
 
 
 def main() -> None:
@@ -52,7 +55,7 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--linker", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--cross", default="riscv32-unknown-elf-")
+    parser.add_argument("--cross", default="riscv64-unknown-elf-")
     parser.add_argument("--extra-source", type=Path, action="append", default=[])
     parser.add_argument("--include", type=Path, action="append", default=[])
     parser.add_argument("--define", action="append", default=[])

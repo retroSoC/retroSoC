@@ -257,6 +257,10 @@ def test_reproducible_package_and_generated_c(tmp_path, name, model, digest, log
                          for entry in a["report"]["operators"])
     assert a["report"]["totals"]["descriptor_read_bytes"] == descriptor_bytes
     assert a["report"]["totals"]["dma_read_bytes"] == descriptor_bytes + operator_reads
+    generated_source = (first / f"{name}_npu.c").read_text(encoding="utf-8")
+    assert "#if defined(__riscv_xlen) && (__riscv_xlen == 64)" in generated_source
+    assert '__asm__ volatile("rdcycle %0" : "=r"(cycle));' in generated_source
+    assert '#elif defined(__riscv)\n    uint32_t high0;' in generated_source
     compiler = shutil.which("cc")
     if compiler is None:
         pytest.fail("host C compiler is required")

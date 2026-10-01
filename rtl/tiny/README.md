@@ -1,7 +1,7 @@
 # Tiny MCU Integration
 
-Tiny is the independent single-Hazard3 wired MCU product. Its frozen contract
-is [Tiny MCU](../../docs/ip/tiny-soc.md). Use
+Tiny is the independent single-Hazard3 wired MCU product. Its frozen target
+contract is [Tiny Gen1 QFN64](../../docs/ip/tiny-soc.md). Use
 `make CONFIG=configs/ci/ihp130-tiny.mk setup` followed by
 `make CONFIG=configs/ci/ihp130-tiny.mk firmware sim`.
 
@@ -18,6 +18,14 @@ and RV32IMC without atomics. Wireless, external RAM, HP cores and accelerators
 are outside this release. Run both Icarus and Verilator, the Tiny directed
 tests, and the IHP130 regression before claiming qualification. Synthesis and
 STA use the Tiny top and clock inventory, not Mini constraints.
+
+The 2026-09-30 P6 target adds shared RNG/CRC/WS2812/Crypto, eight-channel DMA
+and a Tiny-owned RCU/SYSCTRL, with no-PLL 96 MHz and single-output-PLL
+240 MHz limits. It preserves QFN64 and adds WS2812 on GPIO26 ALT0. The
+committed RTL/profile still describes the initial 24 MHz/no-PLL implementation;
+P7-P9 must implement and qualify the new addresses, streams, clock domains,
+reset barriers and shared-driver compatibility. No PLL macro/timing support
+is implied by the new specification or the `HAVE_PLL` selector alone.
 
 `make CONFIG=configs/ci/ihp130-tiny.mk regress-pr` runs only Tiny's IHP130
 matrix. The regression runner also accepts `--soc TINY`; leaving it unset

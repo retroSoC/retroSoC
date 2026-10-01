@@ -3,10 +3,10 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
-- [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes the product/package target, 144 MHz
-  processor target with a 24 MHz crystal and bypassable PLL, pin/power budget
-  and GPIO alternate functions; it retains the separate 24 MHz implementation
-  baseline and identifies the deferred integration ABI.
+- [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
+  eight-channel DMA and Tiny-owned RCU, no-PLL 96 MHz / PLL 240 MHz clock and
+  reset trees, and the unchanged package budget. It distinguishes these
+  targets from the existing 24 MHz implementation and physical evidence.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.
@@ -48,8 +48,9 @@ the root README and subsystem guides.
   roadmap that stays inside the phase-separated 16-bit / 64 MiB contract.
 - [axi4-stream.md](axi4-stream.md) defines the DMA, I2S, and DVP AXI4-Stream
   data paths, PIO fallback, register controls, and backpressure contract.
-- [ip/dma.md](ip/dma.md) defines the native-AXI4 six-channel Mini DMA direct-mode
-  register ABI, SDK API, scheduling, error, IRQ, and stream contracts.
+- [ip/dma.md](ip/dma.md) defines the shared native-AXI4 DMA register/SDK,
+  scheduling, error, IRQ and stream contracts, with product-specific channel
+  assignments for Mini and the Tiny target.
 - [ip/crypto.md](ip/crypto.md) records the commercial AES/SHA/RSA survey and
   defines the Mini SoC crypto architecture, APB/DMA ABI, security boundary,
   HAL, verification evidence, and commercialization roadmap. Its approved
