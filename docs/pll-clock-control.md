@@ -1,5 +1,13 @@
 # PLL Dynamic Clock Control
 
+This document describes the Mini LP/HP RCU and its product-specific software
+backend. The [Tiny Gen1 contract](ip/tiny-soc.md) owns a different RCU bank,
+driver backend, clock/reset tree and fault-recovery policy in the same SYSCTRL
+window. Shared peripheral drivers consume platform clock context; they must
+not assume that these Mini register offsets/control semantics apply to Tiny.
+Both products retain the existing `HAVE_PLL` selector and may reuse qualified
+technology/Common primitives without sharing product RCU implementation.
+
 The system powers up on the `extclk_i_pad` external safe clock. After software
 submits a PLL frequency request through SYSCTRL, the RCU switches to the safe
 source, configures the PLL, waits for lock, and switches back in the external

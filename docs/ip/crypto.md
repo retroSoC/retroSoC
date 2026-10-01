@@ -2,11 +2,20 @@
 
 ## Scope and Sources of Truth
 
-The Mini SoC crypto controller is a management-only APB4 peripheral at
+The shared crypto controller is a management-only APB4 peripheral at
 `0x1000c000..0x1000cfff`. It provides AES-128/192/256, SHA-224/256, raw
 RSA-2048 modular exponentiation, a combined interrupt, PIO access, and central
 DMA streaming. The implementation consistently uses `RSA`, not the common
 `RAS` transposition.
+
+The common register ABI, algorithms, storage lifecycle and HAL also govern
+the [Tiny Gen1 target](tiny-soc.md). Tiny preserves this address, IRQ23,
+Crypto DMA channels 4/5 and request IDs 12/13, and all six private V2 SRAM
+banks in addition to its 128 KiB user SRAM. Its Crypto/stream clock is PCLK;
+the Tiny RCU must prevent gating during initialization or physical scrub.
+Mini-specific ownership/clock integration and dated results below remain
+scoped to Mini. This cross-reference freezes Tiny integration requirements;
+it does not qualify a Tiny implementation or permit a separate Tiny crypto ABI.
 
 This document records the commercial reference survey and the 2026-09-25
 macro-first storage refreeze. The refreeze is an approved implementation

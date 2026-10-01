@@ -4,10 +4,10 @@ This directory owns architecture, register ABI, software contract, and
 verification documentation for self-owned retroSoC peripheral IP and platform
 extension interfaces.
 
-- [Tiny Gen1 QFN64](tiny-soc.md) freezes the product/package target, 144 MHz
-  processor target with a 24 MHz crystal and bypassable PLL, pin/power budget
-  and GPIO alternate functions. It distinguishes the current 24 MHz baseline
-  from the deferred Gen1 integration ABI and physical qualification.
+- [Tiny Gen1 QFN64](tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
+  eight-channel DMA, Tiny-specific RCU and no-PLL 96 MHz / PLL 240 MHz clock
+  and reset trees while preserving the package/pad budget. The current
+  24 MHz implementation and its evidence remain explicitly separate.
 
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.

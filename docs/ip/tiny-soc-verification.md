@@ -6,11 +6,38 @@ baseline, not a release or silicon signoff. The working tree was uncommitted
 when that evidence was collected; its recorded readiness remains `prototype`.
 
 The baseline has two UARTs, two I2C controllers and the legacy pad mapping.
-These results do not validate the QFN64 Gen1 product/package refreeze approved
-on 2026-09-26: the 144 MHz processor target, crystal/PLL, one-UART/one-I2C
-configuration, I2S/SDIO integration, new pinmux and power/bonding plan require
-separate current-revision evidence. The historical results below are retained
-without being promoted to Gen1 qualification.
+These results do not validate the 2026-09-26 QFN64 package refreeze or the
+2026-09-30 shared-IP/clock/reset refreeze. The no-PLL 96 MHz / PLL 240 MHz
+targets, eight-channel DMA, RNG/CRC/WS2812/Crypto, Tiny RCU, I2S/SDIO and new
+clock/reset/pad integration require separate current-revision evidence. The
+historical results below are retained without promotion to Gen1 qualification.
+
+## P6 freeze and pending Gen1 verification
+
+P6 is documentation-only. The matrix below specifies required P7-P9 coverage;
+it records no newly executed RTL, firmware, formal, synthesis or timing result.
+The existing committed IHP130 Tiny profile remains the 24 MHz baseline until
+the implementation phases introduce reviewed configurations.
+
+| Area | Required cases / acceptance | Evidence status |
+| --- | --- | --- |
+| Addresses and software | Match Mini bases for RNG/CRC/WS2812/Crypto and the SYSCTRL control entry; one RCU decode; handwritten register parity; common drivers with product-selected clock/routing context. | Pending P7/P8 |
+| Package and pinmux | Exactly 64 unique perimeter pins, 32 GPIO and 16 power/ground terminals; only GPIO26 ALT0 added for WS2812; GPIO26 alternate I2C exclusion; pad-safe reset and default-interface concurrency. | Document consistency in P6; RTL/Pad evidence pending |
+| DMA and fabric | Eight channels, Crypto 4/5 and I2S 6/7 concurrently, serialized channel-3 clients, three AXI32 masters, target/page/alignment errors, backpressure, abort drain, omitted endpoint rejection and IRQ propagation. | Pending P7 |
+| Shared IP lifecycle | RNG unqualified/fault/duplicate handling, CRC tails and FINISH after DMA, WS2812 pulse/reset timing, Crypto six-bank init/readback/lock, AES/SHA/RSA vectors, reset/abort/zeroize and no early erasure acknowledgement. | Pending Tiny P7/P9; standalone results remain separately scoped |
+| Clock profiles | Safe24, external XIN24/48/96, PLL192/240 model cases; SYS/MEM/PCLK rates; 1 MHz CLINT continuity; SDIO init at <=400 kHz and 48/48/40 MHz target rates. | Pending P8 |
+| Clock commands and failures | Invalid/unsupported profile, partial/unmapped access, busy rejection, drain/CDC timeout, lock timeout, PLL stopped high/low, no mixed profile commit and consistent safe fallback. | Pending P8 |
+| Reference loss | Stop XIN and observe loss of REF24/WDG progress; restore the external source and RESET_N before restart; no autonomous recovery claim. | Pending P8/board evidence |
+| Reset and gating | Cold/warm/watchdog/hart/peripheral reset; five-edge local release, CPU-last ordering, WFI/IRQ/debug ungating, gated MMIO error, unilateral CDC reset, missing AUDIO clock and Crypto READY not blocking CPU startup. | Pending P8 |
+| Timing-aware shared software | UART/I2C/WS2812 configuration at PCLK24/48/60; PWM CLOCK_HZ matches committed rate; shared-IP upgrade and Mini consumer compatibility; no managed-tree patch or Tiny HAL fork. | Pending shared upgrade/P8 |
+| Physical and security qualification | Characterized 96 MHz input receiver, oscillator/PLL/backend, SYS240/MEM120/PCLK60 timing, CDC/RDC, reset fanout, SRAM macros, PVT/post-layout, supply/package/IO integrity and qualified entropy source. | Pending P9; no current qualified PLL profile |
+
+Each implementation result must identify its source revision, exact profile,
+PDK/library corner and build variant. Use both supported RTL simulators with
+the strict SIM_TEST_PASS/result-file policy, then the relevant netlist and
+physical gates. Run affected Mini regressions for shared changes without
+using those results as Tiny evidence. Do not remove PLL/STA guards or revise
+warning/metric baselines to relabel an unsupported or failing flow as passing.
 
 ## Configuration and artifact roots
 
