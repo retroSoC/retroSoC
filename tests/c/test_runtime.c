@@ -2656,6 +2656,75 @@ static int test_npu_p6_reference_contract(void) {
     return 0;
 }
 
+static int test_npu_p6_reference_edge_ops(void) {
+    uint32_t descriptors[RS_NPU_DESCRIPTOR_WORDS] = {0U};
+    uint8_t depthwise_arena[64] = {5U};
+    uint8_t depthwise_weights[72] = {0U};
+    int32_t depthwise_parameters[4] = {1, INT32_C(1073741824), 1, 0};
+    rs_npu_p6_memory_t depthwise_memory = {
+        .arena = {.base = UINT32_C(0x1000), .bytes = sizeof(depthwise_arena), .data = depthwise_arena},
+        .weights =
+            {.base = UINT32_C(0x3000), .bytes = sizeof(depthwise_weights), .data = depthwise_weights},
+        .params =
+            {
+                .base = UINT32_C(0x2000),
+                .bytes = sizeof(depthwise_parameters),
+                .data = (uint8_t *)(void *)depthwise_parameters,
+            },
+    };
+
+    depthwise_weights[UINT32_C(4) * UINT32_C(8)] = 2U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_VERSION_OPCODE] =
+        (RS_NPU_DESCRIPTOR_ABI_VERSION << 16U) | RS_NPU_OPCODE_DEPTHWISE3X3;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BASE] = UINT32_C(0x1000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BASE] = UINT32_C(0x1020);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_PARAM_BASE] = UINT32_C(0x2000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT_HW] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_CHANNELS] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_HW] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_ROW_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_ROW_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_KERNEL_STRIDE] = UINT32_C(0x01010303);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_PADDING] = UINT32_C(0x00010001);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BYTES] = 1U;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_PARAM_BYTES] = RS_NPU_PARAM_RECORD_BYTES;
+    descriptors[RS_NPU_DESCRIPTOR_WORD_ACTIVATION_BOUNDS] = UINT32_C(0x00007F80);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_WEIGHT_BASE] = UINT32_C(0x3000);
+    descriptors[RS_NPU_DESCRIPTOR_WORD_WEIGHT_BYTES] = sizeof(depthwise_weights);
+    if ((rs_npu_p6_reference_execute(descriptors, 1U, &depthwise_memory) != RS_OK) ||
+        (depthwise_arena[UINT32_C(0x20)] != 11U)) {
+        return 1;
+    }
+
+    {
+        uint8_t average_arena[16] = {1U, 2U, 3U, 4U};
+        rs_npu_p6_memory_t average_memory = {
+            .arena = {.base = UINT32_C(0x4000), .bytes = sizeof(average_arena), .data = average_arena},
+            .weights = {.base = UINT32_C(0x5000), .bytes = 1U, .data = average_arena},
+            .params = {.base = UINT32_C(0x6000), .bytes = 1U, .data = average_arena},
+        };
+
+        descriptors[RS_NPU_DESCRIPTOR_WORD_VERSION_OPCODE] =
+            (RS_NPU_DESCRIPTOR_ABI_VERSION << 16U) | RS_NPU_OPCODE_GLOBAL_AVERAGE_POOL;
+        descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BASE] = UINT32_C(0x4000);
+        descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BASE] = UINT32_C(0x4008);
+        descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT_HW] = UINT32_C(0x00020002);
+        descriptors[RS_NPU_DESCRIPTOR_WORD_CHANNELS] = UINT32_C(0x00010001);
+        descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_HW] = UINT32_C(0x00010001);
+        descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_ROW_BYTES] = 2U;
+        descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_ROW_BYTES] = 1U;
+        descriptors[RS_NPU_DESCRIPTOR_WORD_INPUT0_BYTES] = 4U;
+        descriptors[RS_NPU_DESCRIPTOR_WORD_OUTPUT_BYTES] = 1U;
+        descriptors[RS_NPU_DESCRIPTOR_WORD_ACTIVATION_BOUNDS] = UINT32_C(0x00007F80);
+        if ((rs_npu_p6_reference_execute(descriptors, 1U, &average_memory) != RS_OK) ||
+            (average_arena[UINT32_C(8)] != 3U)) {
+            return 2;
+        }
+    }
+    return 0;
+}
+
 static int test_crypto_lifecycle_contract(void) {
     const uint32_t ready = RS_CRYPTO_MEM_STATUS_READY | RS_CRYPTO_MEM_STATUS_TABLE_VALID |
                            RS_CRYPTO_MEM_STATUS_TABLE_LOCKED;
@@ -2759,6 +2828,7 @@ int main(void) {
         test_npu_snapshot_contract(),
         test_npu_reset_contract(),
         test_npu_p6_reference_contract(),
+        test_npu_p6_reference_edge_ops(),
         test_jpeg_validation(),
         test_ps2_decoders(),
         test_wav_parser(),

@@ -193,28 +193,57 @@ static rs_status_t rs_npu_p6_dense(const uint32_t *words, const rs_npu_p6_memory
     }
     for (uint32_t oy = 0U; oy < oh; ++oy) {
         for (uint32_t ox = 0U; ox < ow; ++ox) {
+            const int32_t output_y = (int32_t)(oy * sh) - (int32_t)pad_top;
+            const int32_t output_x = (int32_t)(ox * sw) - (int32_t)pad_left;
+
             for (uint32_t channel = 0U; channel < cout; ++channel) {
-                uint32_t group = channel / UINT32_C(8);
-                uint32_t lane = channel % UINT32_C(8);
+                const uint32_t group = channel / UINT32_C(8);
+                const uint32_t lane = channel % UINT32_C(8);
+                const uint32_t weight_base = group * full_k * UINT32_C(8) + lane;
                 int32_t accumulator = rs_npu_p6_param(params, channel, 0U);
+                uint32_t weight_offset = weight_base;
 
-                for (uint32_t k = 0U; k < full_k; ++k) {
-                    uint32_t ci = k % cin;
-                    uint32_t kernel_index = k / cin;
-                    int32_t iy = (int32_t)(oy * sh + (kernel_index / kw)) - (int32_t)pad_top;
-                    int32_t ix = (int32_t)(ox * sw + (kernel_index % kw)) - (int32_t)pad_left;
-                    int32_t activation = 0;
-                    int32_t weight =
-                        (int8_t)weights[(group * full_k * UINT32_C(8)) + (k * UINT32_C(8)) + lane];
+                if (opcode == RS_NPU_OPCODE_CONV2D) {
+                    for (uint32_t ky = 0U; ky < kh; ++ky) {
+                        const int32_t iy = output_y + (int32_t)ky;
+                        for (uint32_t kx = 0U; kx < kw; ++kx) {
+                            const int32_t ix = output_x + (int32_t)kx;
+                            for (uint32_t ci = 0U; ci < cin; ++ci) {
+                                int32_t activation = 0;
+                                const int32_t weight = (int8_t)weights[weight_offset];
 
-                    if ((iy >= 0) && (iy < (int32_t)h) && (ix >= 0) && (ix < (int32_t)w)) {
-                        activation =
-                            (int8_t)input[((uint32_t)iy * input_row) + ((uint32_t)ix * cin) + ci] -
-                            input_zero;
+                                if ((iy >= 0) && (iy < (int32_t)h) && (ix >= 0) &&
+                                    (ix < (int32_t)w)) {
+                                    activation = (int8_t)input[((uint32_t)iy * input_row) +
+                                                               ((uint32_t)ix * cin) + ci] -
+                                                 input_zero;
+                                }
+                                status =
+                                    rs_npu_p6_add(accumulator, activation * weight, &accumulator);
+                                if (status != RS_OK) {
+                                    return status;
+                                }
+                                weight_offset += UINT32_C(8);
+                            }
+                        }
                     }
-                    status = rs_npu_p6_add(accumulator, activation * weight, &accumulator);
-                    if (status != RS_OK) {
-                        return status;
+                } else {
+                    const bool input_in_range = (output_y >= 0) && (output_y < (int32_t)h) &&
+                                                (output_x >= 0) && (output_x < (int32_t)w);
+                    for (uint32_t ci = 0U; ci < cin; ++ci) {
+                        int32_t activation = 0;
+                        const int32_t weight = (int8_t)weights[weight_offset];
+
+                        if (input_in_range) {
+                            activation = (int8_t)input[((uint32_t)output_y * input_row) +
+                                                       ((uint32_t)output_x * cin) + ci] -
+                                         input_zero;
+                        }
+                        status = rs_npu_p6_add(accumulator, activation * weight, &accumulator);
+                        if (status != RS_OK) {
+                            return status;
+                        }
+                        weight_offset += UINT32_C(8);
                     }
                 }
                 status = rs_npu_p6_multiply(accumulator, rs_npu_p6_param(params, channel, 1U),
@@ -278,26 +307,32 @@ static rs_status_t rs_npu_p6_depthwise(const uint32_t *words, const rs_npu_p6_me
     }
     for (uint32_t oy = 0U; oy < oh; ++oy) {
         for (uint32_t ox = 0U; ox < ow; ++ox) {
+            const int32_t output_y = (int32_t)(oy * sh) - (int32_t)pad_top;
+            const int32_t output_x = (int32_t)(ox * sw) - (int32_t)pad_left;
+
             for (uint32_t channel = 0U; channel < channels; ++channel) {
-                uint32_t group = channel / UINT32_C(8);
-                uint32_t lane = channel % UINT32_C(8);
+                const uint32_t group = channel / UINT32_C(8);
+                const uint32_t lane = channel % UINT32_C(8);
                 int32_t accumulator = rs_npu_p6_param(params, channel, 0U);
+                uint32_t weight_offset = group * UINT32_C(72) + lane;
 
-                for (uint32_t k = 0U; k < UINT32_C(9); ++k) {
-                    int32_t iy = (int32_t)(oy * sh + (k / UINT32_C(3))) - (int32_t)pad_top;
-                    int32_t ix = (int32_t)(ox * sw + (k % UINT32_C(3))) - (int32_t)pad_left;
-                    int32_t activation = 0;
-                    int32_t weight =
-                        (int8_t)weights[(group * UINT32_C(72)) + (k * UINT32_C(8)) + lane];
+                for (uint32_t ky = 0U; ky < UINT32_C(3); ++ky) {
+                    const int32_t iy = output_y + (int32_t)ky;
+                    for (uint32_t kx = 0U; kx < UINT32_C(3); ++kx) {
+                        const int32_t ix = output_x + (int32_t)kx;
+                        int32_t activation = 0;
+                        const int32_t weight = (int8_t)weights[weight_offset];
 
-                    if ((iy >= 0) && (iy < (int32_t)h) && (ix >= 0) && (ix < (int32_t)w)) {
-                        activation = (int8_t)input[((uint32_t)iy * input_row) +
-                                                   ((uint32_t)ix * channels) + channel] -
-                                     input_zero;
-                    }
-                    status = rs_npu_p6_add(accumulator, activation * weight, &accumulator);
-                    if (status != RS_OK) {
-                        return status;
+                        if ((iy >= 0) && (iy < (int32_t)h) && (ix >= 0) && (ix < (int32_t)w)) {
+                            activation = (int8_t)input[((uint32_t)iy * input_row) +
+                                                       ((uint32_t)ix * channels) + channel] -
+                                         input_zero;
+                        }
+                        status = rs_npu_p6_add(accumulator, activation * weight, &accumulator);
+                        if (status != RS_OK) {
+                            return status;
+                        }
+                        weight_offset += UINT32_C(8);
                     }
                 }
                 status = rs_npu_p6_multiply(accumulator, rs_npu_p6_param(params, channel, 1U),
@@ -340,14 +375,18 @@ static rs_status_t rs_npu_p6_global_average(const uint32_t *words,
     }
     for (uint32_t channel = 0U; channel < channels; ++channel) {
         int32_t total = 0;
+        const uint8_t *sample = &input[channel];
+
         for (uint32_t y = 0U; y < h; ++y) {
+            const uint8_t *row_sample = sample;
             for (uint32_t x = 0U; x < w; ++x) {
-                status = rs_npu_p6_add(
-                    total, (int8_t)input[(y * input_row) + (x * channels) + channel], &total);
+                status = rs_npu_p6_add(total, (int8_t)*row_sample, &total);
                 if (status != RS_OK) {
                     return status;
                 }
+                row_sample += channels;
             }
+            sample += input_row;
         }
         {
             uint32_t magnitude = total < 0 ? UINT32_C(0) - (uint32_t)total : (uint32_t)total;
