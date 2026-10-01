@@ -64,8 +64,9 @@ one application. Preserve application identity, execution order and preceding lo
 These result codes belong to the supplied HP boot application. TEST_STATUS's result byte is
 application-defined; other firmware can assign different meanings. Code 1 can be written
 before a reliable console exists. The ready, result and cache-clean waits have bounded polling
-budgets and distinct failure stages. The initial ready marker precedes the remaining GA2D
-acceptance/cache handoff; it does not itself write a successful TEST_STATUS value.
+budgets and distinct failure stages. Ordinary Linux terminates after the checked ready message;
+for smoke and the dedicated NPU-P6 build, that marker precedes the remaining GA2D
+acceptance/cache handoff and does not itself write a successful TEST_STATUS value.
 
 #ds-table("boot-result-codes",[HP boot application terminal result codes],
   ([Code],[Meaning / producing stage]),
@@ -74,8 +75,9 @@ acceptance/cache handoff; it does not itself write a successful TEST_STATUS valu
 The #code("HP_BOOT_FAILED:<code>") diagnostic is emitted by the failure helper before its
 terminal status write; UART initialization failure uses the direct terminal path. Entry-copy
 failure is reported only after both the DMA attempt and software copy/CRC fallback fail.
-After copying, HP release, initial readiness, job result and cache-clean handoff are distinct
-checkpoints. NPU resource handoff is conditional on its acceptance build options. The failure
+After copying, HP release and workload-specific terminal checkpoints remain distinct. Smoke and
+NPU-P6 additionally require job result and cache-clean handoff. NPU resource handoff is
+conditional on its acceptance build options. The failure
 helper preserves HP state after GA2D ownership moves to HP; a failed verdict does not guarantee
 a completed reset or DMA drain. See @boot-configuration for prerequisites/recovery and
 @image-maintenance for separate programming-tool result semantics.

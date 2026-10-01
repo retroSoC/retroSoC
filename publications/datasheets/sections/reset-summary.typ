@@ -42,8 +42,9 @@ separate universal IRQ-enable policy. Check each producer's local reset, cause a
 An initialization dependency is not a fixed delay specification. Prefer documented ready,
 idle, lock and error observations with bounded software waits. The HP loader bounds its
 ready/result/cache-clean polls by iteration counts, not fixed elapsed time; stalled MMIO can
-still prevent progress. Its initial ready event is separate from complete acceptance and
-ownership return. The generic LP CRT's earlier PSRAM-ready loop remains unbounded; see
+still prevent progress. Linux-ready is terminal for the ordinary Linux workload, while smoke
+and NPU-P6 continue through acceptance and ownership return. The generic LP CRT's earlier
+PSRAM-ready loop remains unbounded; see
 @lp-runtime and @boot-configuration for the distinct startup stages.
 #change-end("v05-refresh-reset-waits")
 

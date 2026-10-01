@@ -1,22 +1,23 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-architecture","Selected body emphasis: architecture")
 #import "../figures.typ": *
 #import "../waveforms.typ": timing
 #import "../diagram-packages.typ": memory-window-diagram
 #import "../soc-architecture.typ": soc-functional-diagram
 
 = System Architecture
-#change-start("dev-architecture","Nine-master fabric, address map, LP IRQ and lifecycle reference")
+#change-start("dev-architecture","Ten-master fabric, address map, LP IRQ and lifecycle reference")
 == Introduction
 === SoC Architecture
-Mini PRODUCT contains two fixed harts, an LP-owned control plane, a native HP data fabric and
-two APB4 register islands. There is no hardware cache coherency. Software transfers shared
+Mini PRODUCT contains *two fixed harts*, an LP-owned control plane, a native HP data fabric and
+two APB4 register islands. There is *no hardware cache coherency*. Software transfers shared
 buffer ownership explicitly and performs the required fences and cache maintenance.
 
 #figure(soc-functional-diagram(), caption:[Mini PRODUCT functional architecture and clock domains.])<soc-functional-overview>
 
 === Management Processor
 ==== Hazard3
-Hazard3 is hart 0 and the root-management processor. The reference profile selects RV32IM
+Hazard3 is hart 0 and the *root-management processor*. The reference profile selects RV32IM
 firmware. Its AHB-Lite interface is adapted to AXI32 for control access; memory transactions
 are directed through the LP gateway to the shared data plane. The management JTAG path provides
 halt, resume, register and system-bus access. LP retains control while HP is held in reset.
@@ -25,7 +26,7 @@ halt, resume, register and system-bus access. LP retains control while HP is hel
 === Application Processor
 ==== VexiiRiscv
 The generated HP hart is a dual-issue RV64IMAFDC + Zicbom configuration, with supervisor/user
-modes, Sv39 virtual memory and 64-byte cache-maintenance blocks. Hart 1 uses native AXI64
+modes, Sv39 virtual memory and *64-byte cache-maintenance blocks*. Hart 1 uses native AXI64
 instruction and data paths. Its uncached MMIO path is downsized and crosses into the LP
 control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
@@ -60,7 +61,8 @@ byte strobes, burst limits, access permissions and IP-specific side effects rema
 === Interconnect Matrix
 The #data.policies.len() initiator identities access #data.targets.len() memory targets. The crossbar arbitrates reads and
 writes separately for each target. I/O gateway A combines USB2, SDIO0 and the APU private
-master; gateway B combines SDIO1 and SPI-SD. JPEG occupies slot 6 and GA2D slot 8; EXT-H uses slot 7.
+master; gateway B combines SDIO1 and SPI-SD. JPEG occupies slot 6, EXT-H slot 7,
+GA2D slot 8 and NPU slot 9.
 
 #note[The matrix on the next page is generated from the RTL access policy. R/W permission is
 subject to active memory-pad mode, resource ownership, target readiness and EXT-H address bounds.
@@ -69,7 +71,7 @@ An allowed entry does not guarantee throughput.]
 #pagebreak()
 #figure(matrix-diagram(), caption:[AXI64 memory access matrix: R = read, W = write, - = denied.])<bus-matrix>
 The I-cache is the only instruction-permitted initiator. HP cache attributes are preserved;
-DMA, I/O gateways, LP gateway, JPEG, EXT-H and GA2D require non-cacheable transactions. XPI is read-only
+DMA, I/O gateways, LP gateway, JPEG, EXT-H, GA2D and NPU require non-cacheable transactions. XPI is read-only
 on this data plane; indirect writes use its APB-controlled command engine.
 
 Denied accesses return a finite error response with source attribution. EXT-H has additional
@@ -157,9 +159,11 @@ within an aggregate source. Resource-controlled interrupts are routed according 
 )
 
 HP has local software/timer interrupts and a 32-source, two-context PLIC. Source 0 is
-reserved; sources 1-11 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU
-and GA2D. Sources 12-31 are reserved. GA2D uses LP vector bit 32 (external ordinal 30),
-which is distinct from HP PLIC source 11. The contexts drive machine and supervisor external interrupts.
+reserved; sources 1-12 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU,
+GA2D and NPU. Sources 13-31 are reserved. GA2D uses LP vector bit 32 (external ordinal 30),
+which is distinct from HP PLIC source 11; NPU uses LP vector bit 33 (external ordinal 31)
+or HP PLIC source 12 according to Resource Controller ownership. The contexts drive machine
+and supervisor external interrupts.
 Claim/complete and priority rules are defined in the HP platform contract.
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
@@ -170,3 +174,5 @@ Claim/complete and priority rules are defined in the HP platform contract.
 #include "register-programming.typ"
 #include "interface-subsets.typ"
 #change-end("dev-architecture")
+
+#change-end("v05-emphasis-architecture")

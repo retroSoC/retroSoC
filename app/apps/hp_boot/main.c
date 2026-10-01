@@ -328,7 +328,9 @@ int main(void) {
     }
     printf("HP_LINUX_READY\n");
     if (header.workload == RS_HP_BOOT_WORKLOAD_LINUX) {
+#if !defined(RS_NPU_P6_ACCEPTANCE)
         rs_test_finish(RS_TEST_PASSED, UINT8_C(0));
+#endif
     }
     message.code = RS_HP_BOOT_GA2D_START_COMMAND;
     message.argument = RS_HP_BOOT_GA2D_START_ARG;

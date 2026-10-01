@@ -261,7 +261,11 @@ static const rs_{prefix}_reloc_t rs_{prefix}_npu_relocations[{len(job.relocation
 {_c_bytes(f'rs_{prefix}_npu_params', job.params)}
 
 static uint64_t rs_{prefix}_cycles(void) {{
-#if defined(__riscv)
+#if defined(__riscv_xlen) && (__riscv_xlen == 64)
+    uint64_t cycle;
+    __asm__ volatile("rdcycle %0" : "=r"(cycle));
+    return cycle;
+#elif defined(__riscv)
     uint32_t high0; uint32_t low; uint32_t high1;
     do {{ __asm__ volatile("rdcycleh %0" : "=r"(high0));
          __asm__ volatile("rdcycle %0" : "=r"(low));

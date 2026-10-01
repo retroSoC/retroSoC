@@ -21,6 +21,36 @@ import run_npu_p6_netlist as netlist  # noqa: E402
 import run_npu_p6_verilator as verilator  # noqa: E402
 
 
+def test_p6_cycle_counter_supports_rv64_and_rv32() -> None:
+    runner = (ROOT / "app/benchmark/npu/npu_p6_runner.c").read_text(encoding="utf-8")
+    assert "#if defined(__riscv_xlen) && (__riscv_xlen == 64)" in runner
+    assert '__asm__ volatile("rdcycle %0" : "=r"(cycle));' in runner
+    assert '__asm__ volatile("rdcycleh %0" : "=r"(high_before));' in runner
+
+
+def test_p6_shard_parser_invalidates_image_before_header_and_payload_reads() -> None:
+    runner = (ROOT / "app/benchmark/npu/npu_p6_runner.c").read_text(encoding="utf-8")
+    assert "rs_npu_p6_invalidate_range(image, RS_NPU_P6_HEADER_BYTES);" in runner
+    assert "rs_npu_p6_invalidate_range(&image[RS_NPU_P6_HEADER_BYTES], payload_bytes);" in runner
+    assert '"cbo.inval 0(%0)"' in runner
+
+
+def test_p6_first_case_has_bounded_stage_markers_without_changing_case_schema() -> None:
+    runner = (ROOT / "app/benchmark/npu/npu_p6_runner.c").read_text(encoding="utf-8")
+    assert '"NPU_P6_STAGE workload="' in runner
+    for stage in (
+        '"reference-start"',
+        '"softmax-done"',
+        '"ga2d-reference-start"',
+        '"npu-start"',
+        '"npu-done"',
+        '"golden-done"',
+    ):
+        assert stage in runner
+    assert "index == 0U))" in runner
+    assert '"NPU_P6_CASE workload="' in runner
+
+
 def _case(index: int, workload: str = "kws") -> corpus.CorpusCase:
     input_data = bytes([index & 0xFF]) * corpus.INPUT_BYTES[workload]
     terminal_data = bytes([(index + 1) & 0xFF]) * corpus.OUTPUT_BYTES[workload]
@@ -118,6 +148,70 @@ def test_verilator_case_parser_is_exact_and_cycle_accounted() -> None:
     broken = _case_line().replace("npu_cycles=0x100", "npu_cycles=0x101")
     with pytest.raises(ValueError, match="wait plus Softmax"):
         verilator.parse_case_line(broken)
+
+
+def test_verilator_report_uses_matching_variant_manifests(tmp_path: Path) -> None:
+    variants = {name: tmp_path / name for name in ("kws", "vww")}
+    configuration = {
+        "MINI_MODE": "PRODUCT",
+        "APP": "hp_boot",
+        "SIMU": "VERILATOR",
+        "HP_CONFIG": "rv64imafdc_zicbom_max",
+        "EXT_CLK_HZ": "72000000",
+    }
+    for variant in variants.values():
+        (variant / "meta").mkdir(parents=True)
+        (variant / "meta/manifest.json").write_text(
+            json.dumps({"configuration": configuration}), encoding="utf-8"
+        )
+
+    assert verilator.qualification_configuration(variants) == {
+        **configuration,
+        "EXT_CLK_HZ": 72_000_000,
+    }
+
+    mismatched = {**configuration, "HP_CONFIG": "rv32imafdc_zicbom_max"}
+    (variants["vww"] / "meta/manifest.json").write_text(
+        json.dumps({"configuration": mismatched}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="different PRODUCT configurations"):
+        verilator.qualification_configuration(variants)
+
+    (variants["kws"] / "meta/manifest.json").write_text(
+        json.dumps({"configuration": mismatched}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="frozen target"):
+        verilator.qualification_configuration(variants)
+
+
+def test_verilator_shard_reuses_v2_linux_transport(tmp_path: Path) -> None:
+    variant = tmp_path / "variant"
+    (variant / "hp-smoke/images").mkdir(parents=True)
+    (variant / "sw").mkdir()
+    hp_payload = b"rv64-hp-payload"
+    shard_payload = b"npu-p6-shard"
+    (variant / "hp-smoke/images/hp_smoke.bin").write_bytes(hp_payload)
+    (variant / "sw/retrosoc_fw.bin").write_bytes(b"lp")
+    shard_file = tmp_path / "shard.bin"
+    shard_file.write_bytes(shard_payload)
+
+    bundle, manifest = verilator.package_shard(
+        "kws",
+        {"index": 0, "file": {"path": str(shard_file)}},
+        variant,
+        tmp_path / "packages",
+    )
+    record = json.loads(manifest.read_text(encoding="utf-8"))
+
+    assert bundle.is_file()
+    assert record["workload"] == "linux"
+    assert record["xlen"] == 64
+    assert record["artifacts"]["fw_jump.bin"]["sha256"] == hashlib.sha256(
+        hp_payload
+    ).hexdigest()
+    assert record["artifacts"]["Image"]["sha256"] == hashlib.sha256(
+        shard_payload
+    ).hexdigest()
 
 
 def test_compiler_comparison_explains_material_cycle_difference() -> None:

@@ -12,6 +12,14 @@ profiles. The `ihp130-hazard3-coremark.mk` profile is the automated SRAM
 CoreMark quick measurement; its `-standard` counterpart is reserved for a
 10-second hardware run. The nightly workflow reuses the IHP130 CI profile and
 runs the quick CoreMark profile.
+`ci/ihp130.mk` is the Mini PRODUCT IHP130 profile used by the NPU-P6 flow. At
+root revision `d084002bfe99`, P0 numerical qualification and KWS/VWW corpus
+generation passed, and the RV64 KWS/VWW bundles passed payload/header
+validation. Stage-instrumented KWS shard 0 and shard 1 both stop in the pinned
+portable-C reference at `reference-start`; no `NPU_P6_CASE` or P6
+qualification report is claimed. See the [NPU verification contract](../docs/ip/npu-verification.md)
+and retained logs under
+`build/ihp130-2026-10-01-10-30-b2e490436ac7/npu/p6/`.
 `ci/ihp130-hp.mk` is the asymmetric Linux application profile. It starts HP
 from the external 72 MHz safe clock and LP from REF24, runs `hp_boot` entirely
 from 32 KiB on-chip SRAM, enables VexiiRiscv `Zicbom` with 64-byte blocks, and
@@ -21,6 +29,11 @@ timing evidence are qualified.
 `ci/ihp130-rtthread.mk` selects the same RV64 HP hardware and LP loader for
 the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
 `make CONFIG=configs/ci/ihp130-rtthread.mk SIMU=VERILATOR hp-rtthread-sim`.
+`ci/ihp130-apu.mk` is the RV64 APU LP/HP evidence profile. It runs
+`apu_release` from PSRAM, stages the embedded APUMC/APUM/WAV/KWS assets through
+SDRAM, performs the LP-only image loads, hands APU ownership to HP, and checks
+HP-submitted WAV/KWS jobs plus the LP-only register fault probe in the full-SoC
+Verilator simulation via `hp-apu-sim`.
 All PRODUCT profiles use `rv64imafdc_zicbom_max`; LP compiler/ISA remain RV32.
 `ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
 by GDB/OpenOCD; it is a programming utility, not a normal boot application.

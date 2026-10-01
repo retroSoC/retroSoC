@@ -1,15 +1,16 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-boot-bundle-format","Selected body emphasis: boot bundle format")
 #import "../diagram-packages.typ": binary-figures, storage-figures
 #let bundle = data.system_reference.software.bundle_reference
 #let hex(value) = code("0x"+upper(str(value,base:16)))
 
 === HP Boot Bundle Binary Format <boot-bundle-format>
 
-The supplied V2 format is a typed workload bundle, serialized as little-endian 32-bit words.
+The supplied V2 format is a typed workload bundle, serialized as *little-endian 32-bit words*.
 Linux uses four artifacts; smoke and RT-Thread use one executable descriptor at
 0x38000000 with the remaining three descriptor slots zero. Workload values are 1, 2 and 3
 respectively. V1 bundles must be rebuilt.
-The format version is #bundle.version; it is independent of the datasheet's v0.4 revision.
+The format version is #bundle.version; it is independent of the datasheet's v0.5 revision.
 The bundle starts at Flash offset #hex(bundle.bundle_offset), after the LP firmware area.
 Its fixed header is #bundle.fixed_header_bytes bytes, each descriptor is #bundle.entry_bytes
 bytes and the complete header including #bundle.entry_count descriptors is #bundle.header_bytes bytes.
@@ -17,8 +18,8 @@ bytes and the complete header including #bundle.entry_count descriptors is #bund
 The following offsets are relative to the beginning of the named structure. The descriptor
 array starts immediately after the fixed header, so descriptor n begins at
 #code(str(bundle.fixed_header_bytes)+" + n * "+str(bundle.entry_bytes)), for n = 0…#(bundle.entry_count - 1).
-All listed fields occupy four bytes. Use the explicit serialization, not an arbitrary host
-structure layout. The existing load addresses and maximum allocations remain in the preceding
+All listed fields occupy four bytes. Use the *explicit serialization, not an arbitrary host
+structure layout*. The existing load addresses and maximum allocations remain in the preceding
 image-layout table.
 
 #binary-figures("software-boot","software")
@@ -91,3 +92,5 @@ The example values are recalculated from the actual packager rather than maintai
 #source-note("tests/test_hp_boot_bundle.py",title:"Existing package layout/CRC test boundary")
 
 #storage-figures("software-boot",section:"software")
+
+#change-end("v05-emphasis-boot-bundle-format")

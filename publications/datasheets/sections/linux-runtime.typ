@@ -1,16 +1,17 @@
 #import "../style.typ": *
+#change-start("v05-emphasis-linux-runtime","Selected body emphasis: linux runtime")
 #import "../system-figures.typ": sequence-diagram
 #let platform = data.system_reference.software.platform
 
 === OpenSBI platform and console path <linux-runtime>
-The supplied OpenSBI platform exposes one application hart, with hart ID #platform.hart_id.
+The supplied OpenSBI platform exposes *one application hart*, with hart ID #platform.hart_id.
 LP remains the separate management firmware processor. The platform's ACLINT descriptor covers
 two hart-indexed register positions beginning at zero so it can address hart 1; that storage
-range is not a declaration that Linux runs on both harts. The kernel configuration disables SMP.
+range is not a declaration that Linux runs on both harts. The *kernel configuration disables SMP*.
 
 The early platform setup programs UART1, registers its polled console and initializes machine
 software-interrupt support. Timer initialization uses the ACLINT machine timer. Console writes
-wait while TX is full; this loop has no local timeout. These implemented callbacks do not
+wait while TX is full; this loop has *no local timeout*. These implemented callbacks do not
 establish that all optional SBI services or all peripherals have native Linux drivers.
 
 #figure(sequence-diagram((
@@ -57,6 +58,7 @@ apply the generic OpenSBI FDT fixups.
 #source-note("scripts/build_hp_linux.py",title:"Actual initrd-end patch and FW_JUMP build arguments")
 
 === Kernel and rootfs ready handoff
+#change-start("v05-refresh-linux-mailbox","HAL-derived mailbox purposes and RV64 ready-only userspace boundary")
 The dedicated /init mounts procfs, sysfs, devtmpfs and tmpfs, checks file I/O and child execution,
 then runs the static hp-ready helper. It prints its ready message and publishes through 32-bit
 mailbox writes with an I/O fence before the doorbell. This is a userspace checkpoint, not proof of all drivers, networking,
@@ -66,7 +68,7 @@ alone is not the LP's readiness condition.
 #ds-table("linux-ready-writes",[Userspace helper mailbox publication order],
   ([Order],[Address],[Written value],[Purpose]),
   platform.ready_writes.enumerate().map(((i,row))=>(str(i+1),code(row.address),code(row.value),
-    ([Linux-ready event],[Argument / ready state],[Sequence],[Interrupt request]).at(i))),
+    [#code(row.register) \ #row.purpose])),
   widths:(0.4fr,1.1fr,1.1fr,1.85fr))
 
 The helper checks open/mmap errors for /dev/mem and reports init failures through event 3
@@ -79,4 +81,8 @@ Resource ownership and non-coherent buffer rules still apply after Linux starts.
 transactions. This description adds no new successful boot or board-validation claim.
 #source-note("app/ports/linux/hp_ready.c",title:"Ready message and actual mailbox write order")
 #source-note("app/ports/linux/init",title:"Minimal userspace acceptance checks")
+#source-note("crt/src/hal/hp_mailbox.c",title:"Event, argument and sequence register purposes")
 #source-note("app/apps/hp_boot/main.c",title:"LP sequence/event checks and final terminal result")
+#change-end("v05-refresh-linux-mailbox")
+
+#change-end("v05-emphasis-linux-runtime")

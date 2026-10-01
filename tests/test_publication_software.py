@@ -42,6 +42,9 @@ def test_real_software_records_separate_startup_and_irq_selections():
     assert rows["xpi_flash_loader"]["startup"] == "app/apps/xpi_flash_loader/startup.S"
     assert result["irq"]["enabled_core_causes"] == ["IRQ_M_SOFT", "IRQ_M_TIMER"]
     assert result["irq"]["counts"]["RS_EXTERNAL_IRQ_COUNT"] == 62
+    assert result["boot_acceptance"]["event_poll_iterations"] == 64000000
+    assert result["boot_acceptance"]["linux_ready_is_terminal"]
+    assert result["boot_acceptance"]["smoke_terminal_requires_cache_handoff"]
     assert sr.dependencies(result) == sr.dependencies(SPEC)
 
 
@@ -161,7 +164,7 @@ def test_ready_request_cannot_move_before_payload(source_tree):
     last = next(i for i, line in enumerate(lines) if "mailbox[11]" in line)
     lines[first], lines[last] = lines[last], lines[first]
     path.write_text("\n".join(lines))
-    with pytest.raises(ValueError, match="publication"):
+    with pytest.raises(ValueError, match="mailbox sequence"):
         sr.linux_platform(source_tree)
 
 

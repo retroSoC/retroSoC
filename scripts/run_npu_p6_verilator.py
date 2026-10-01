@@ -110,6 +110,32 @@ def build_variants(timestamp: str, log_dir: Path) -> dict[str, Path]:
     return roots
 
 
+def qualification_configuration(variants: dict[str, Path]) -> dict[str, object]:
+    selected = ("MINI_MODE", "APP", "SIMU", "HP_CONFIG", "EXT_CLK_HZ")
+    configurations: dict[str, dict[str, str]] = {}
+    for workload, variant in variants.items():
+        manifest = json.loads((variant / "meta/manifest.json").read_text(encoding="utf-8"))
+        configuration = manifest.get("configuration")
+        if not isinstance(configuration, dict) or any(
+            not isinstance(configuration.get(name), str) for name in selected
+        ):
+            raise ValueError(f"P6 {workload} manifest lacks its PRODUCT configuration")
+        configurations[workload] = {name: configuration[name] for name in selected}
+    if set(configurations) != {"kws", "vww"} or configurations["kws"] != configurations["vww"]:
+        raise ValueError("P6 workload manifests use different PRODUCT configurations")
+    configuration = configurations["kws"]
+    expected = {
+        "MINI_MODE": "PRODUCT",
+        "APP": "hp_boot",
+        "SIMU": "VERILATOR",
+        "HP_CONFIG": "rv64imafdc_zicbom_max",
+        "EXT_CLK_HZ": "72000000",
+    }
+    if configuration != expected:
+        raise ValueError(f"P6 manifest configuration differs from the frozen target: {configuration}")
+    return {**configuration, "EXT_CLK_HZ": int(configuration["EXT_CLK_HZ"])}
+
+
 def parse_case_line(line: str) -> dict[str, Any]:
     if not line.startswith(CASE_PREFIX):
         raise ValueError("not an NPU-P6 case record")
@@ -168,10 +194,10 @@ def package_shard(
     shard_dir = output / workload / f"shard-{shard_index:03d}"
     images = shard_dir / "images"
     images.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(variant / "hp-smoke/images/fw_jump.bin", images / "fw_jump.bin")
+    shutil.copy2(variant / "hp-smoke/images/hp_smoke.bin", images / "fw_jump.bin")
     shutil.copy2(Path(shard["file"]["path"]), images / "Image")
     (images / "retrosoc_hp.dtb").write_bytes(b"SMOK")
-    (images / "rootfs.cpio.gz").write_bytes(b"SMOK")
+    (images / "rootfs.cpio").write_bytes(b"SMOK")
     bundle = shard_dir / "retrosoc_npu_p6.bin"
     manifest = shard_dir / "bundle.json"
     completed = run(
@@ -396,6 +422,7 @@ def main() -> int:
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     variants = build_variants(args.build_timestamp, output / "build-logs")
+    configuration = qualification_configuration(variants)
     emulator = variants["kws"] / "sim/verilator/emu"
     if not emulator.is_file():
         raise ValueError("P6 PRODUCT Verilator emulator is missing")
@@ -441,13 +468,7 @@ def main() -> int:
             ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
         ).strip(),
         "profile": "configs/ci/ihp130.mk",
-        "configuration": {
-            "MINI_MODE": "PRODUCT",
-            "APP": "hp_boot",
-            "SIMU": "VERILATOR",
-            "HP_CONFIG": "rv32imafdc_zicbom_max",
-            "EXT_CLK_HZ": 72_000_000,
-        },
+        "configuration": configuration,
         "measurement": {
             "counter": "HP rdcycle",
             "reference": "portable INT8 C through CPU Softmax",

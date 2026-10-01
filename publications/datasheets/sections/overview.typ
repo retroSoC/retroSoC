@@ -3,13 +3,16 @@
 
 // Publication status is explicit; successful build/tests do not change these marks.
 #let artifact-status = (
-  (name:"Available",selected:true),
-  (name:"Functional",selected:false),
-  (name:"Reproduced",selected:false),
-  (name:"Tapedout",selected:false),
+  (name:"Available",fill:"full"),
+  (name:"Functional",fill:"left-half"),
+  (name:"Reproduced",fill:"empty"),
+  (name:"Tapedout",fill:"empty"),
 )
 
 #cover(evaluation:artifact-status)[
+#change-start("v05-rill-cover","Rill bilingual prototype brand in the existing cover metadata row")
+#change-start("v05-emphasis-cover","Cover contact, partial Functional mark and selected feature emphasis")
+#change-start("v05-product-brief","v0.5 document identity and implemented accelerator features")
 #text(9pt, weight: "semibold", fill: gold)[PRODUCT DATASHEET / #doc.status]
 #v(rhythm.cover-gap)
 #text(30pt, weight: "semibold")[retroSoC Mini]
@@ -18,9 +21,10 @@
 #v(rhythm.cover-gap)
 #text(13pt)[An Open-Source, Linux-Capable Asymmetric Dual-Core SoC]
 #v(rhythm.cover-meta-gap)
+// Inter's 1490/2048 em cap edge keeps CJK fallback from increasing this row.
 #grid(columns: (1fr, 1fr),
-  [*#doc.document_id* · v#doc.version \ #doc.date],
-  align(right)[#doc.author \ #doc.maintainer],
+  [#text(font:("Inter","Noto Sans CJK SC"),weight:"bold",top-edge:0.7275390625em)[#doc.brand_name（#doc.brand_name_zh）] · v#doc.version \ #doc.date],
+  align(right)[#doc.author#link("mailto:"+doc.author_email)[(#doc.author_email)] \ #doc.maintainer],
 )
 #v(rhythm.cover-rule-gap)
 #line(length:100%, stroke:1.1pt + gold)
@@ -33,14 +37,15 @@
   *Compute and control*
   - Hazard3 LP: boot, clocks, resource ownership and fault recovery.
   - Dual-issue VexiiRiscv HP: RV64IMAFDC + Zicbom, Sv39.
+  - NPU: *64 dense MACs*, eight INT8 operator classes and 64 KiB private SRAM.
   - JTAG debug; fixed EXT-L control and EXT-H AXI64 slots.
 
   *Memory and interconnect*
-  - 32 KiB banked SRAM in this profile; 4/16/32/64/128 KiB build options.
+  - *32 KiB banked SRAM* in this profile; 4/16/32/64/128 KiB build options.
   - AXI32 control, native AXI64 data paths and APB4 registers.
   - SDRAM, QPI PSRAM and OPI/HyperBus-style external-memory controllers.
   - XPI: four chip selects, 16 LUT sequences, 1/2/4-bit SDR transfers.
-  - Eight DMA channels; linked-list TCDs, 16-beat bursts and stream endpoints.
+  - *Eight DMA channels*; linked-list TCDs, 16-beat bursts and stream endpoints.
 
   *Platform services*
   - Two 32-bit timers with 16-bit prescalers; four-channel PWM.
@@ -51,8 +56,8 @@
 
   #colbreak()
   *Connectivity*
-  - 32 GPIOs: atomic outputs, pin interrupts and two alternate-function selections.
-  - Two UARTs with 64-byte TX/RX FIFOs; UART0 DMA and RTS/CTS.
+  - *32 GPIOs*: atomic outputs, pin interrupts and two alternate-function selections.
+  - Two UARTs with *64-byte TX/RX FIFOs*; UART0 DMA and RTS/CTS.
   - Two I2C controllers: 7/10-bit addressing and 16-entry command/RX FIFOs.
   - SPI-SD, two 1/4-bit SDR SDIO hosts and bidirectional PS/2.
   - USB2: 8 endpoints, 16 host channels, 16 KiB packet RAM; external ULPI PHY.
@@ -62,7 +67,7 @@
   - Stereo 16/24-bit I2S master; 8-bit RGB565/YUV422 DVP with crop/snapshot capture.
   - Baseline JPEG encode/decode up to 2048 × 2048, with private DMA.
   - GA2D fill/copy/convert/opaque blend and A8 masks.
-  - APU WAV/FLAC decode; MP3/KWS not advertised.
+  - APU WAV/FLAC decode; fixed KWS in the P7 configuration; MP3 unsupported.
   - AES-128/192/256, SHA-224/256 and raw RSA-2048; programmable CRC.
   - RNG source remains unqualified for production entropy.
 
@@ -74,10 +79,15 @@
 #note(below: 0pt)[This draft describes a reviewed RTL/configuration snapshot. It does not establish silicon
 speed grades, electrical limits, production availability or certification. Gen2/Gen2+ is the
 retained document title; no separate derivative specifications are inferred.]
+#change-end("v05-product-brief")
+#change-end("v05-emphasis-cover")
+#change-end("v05-rill-cover")
 ]
 
 #pagebreak()
 == Overview
+#change-start("v05-emphasis-overview","Cover-adjacent overview and evidence context")
+#change-start("v05-overview","NPU-inclusive functional inventory and configuration reference")
 retroSoC Mini combines a small management processor with an application processor and shared
 memory and I/O. Hazard3 retains authority over startup, clock transitions, resource ownership
 and fault recovery. VexiiRiscv supplies the application-side compute and Linux integration.
@@ -86,6 +96,7 @@ experimentation, education and ASIC prototyping.
 
 #figure(product-diagram(), caption:[Integrated Mini PRODUCT IP inventory, organized by function.])<product-diagram>
 
+#change-start("v05-refresh-identity","Reviewed source identity for this same-version revision")
 #ds-table("profile", [Document reference configuration],
   ([Property], [Reference]),
   (
@@ -98,3 +109,7 @@ experimentation, education and ASIC prototyping.
     ([MPW compatibility], code(doc.mpw_profile)),
   ), widths:(0.8fr,1.9fr),
 )
+#change-end("v05-overview")
+#change-end("v05-refresh-identity")
+
+#change-end("v05-emphasis-overview")
