@@ -59,7 +59,11 @@ from scripts.regress import (  # noqa: E402
 )
 from scripts import setup_helpers  # noqa: E402
 from scripts import setup_apu_reference  # noqa: E402
-from scripts.setup_helpers import download_file, ensure_git_repo  # noqa: E402
+from scripts.setup_helpers import (  # noqa: E402
+    download_file,
+    download_file_from_urls,
+    ensure_git_repo,
+)
 
 
 def run(*command: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
@@ -935,6 +939,22 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     assert not partial.exists()
 
 
+def test_dependency_helper_uses_fallback_url(tmp_path: Path) -> None:
+    payload = tmp_path / "payload.bin"
+    payload.write_bytes(b"verified fallback")
+    digest = hashlib.sha256(payload.read_bytes()).hexdigest()
+    downloaded = tmp_path / "downloaded.bin"
+
+    download_file_from_urls(
+        ((tmp_path / "missing.bin").as_uri(), payload.as_uri()),
+        downloaded,
+        digest,
+        retries=1,
+    )
+
+    assert downloaded.read_bytes() == payload.read_bytes()
+
+
 def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Path) -> None:
     commands: list[tuple[str, ...]] = []
     revision = "a" * 40
@@ -1163,6 +1183,18 @@ def test_dependency_lock_and_config_key_include_a_fixed_timestamp(tmp_path: Path
         assert "download_timeout_seconds must be positive" in str(error)
     else:
         raise AssertionError("invalid toolchain download timeout was accepted")
+
+    invalid_fallback = json.loads(json.dumps(lock))
+    invalid_fallback["archives"]["npu_vww_dataset"]["fallback_urls"] = [
+        "http://example.com/vww.tar.gz"
+    ]
+    broken.write_text(json.dumps(invalid_fallback), encoding="utf-8")
+    try:
+        load_lock(broken)
+    except LockError as error:
+        assert "fallback_urls[0] URL must use HTTPS" in str(error)
+    else:
+        raise AssertionError("invalid archive fallback URL was accepted")
 
 
 def test_development_environment_contract_is_lock_pinned(tmp_path: Path) -> None:

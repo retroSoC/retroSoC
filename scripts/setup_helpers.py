@@ -148,6 +148,38 @@ def download_file(
     raise RuntimeError(f"failed to download {url}: {last_error}")
 
 
+def download_file_from_urls(
+    urls: Iterable[str],
+    destination: Path,
+    expected_sha256: str,
+    *,
+    update: bool = False,
+    retries: int = 3,
+    timeout: int = 30,
+    resume: bool = False,
+) -> None:
+    candidates = tuple(urls)
+    if not candidates:
+        raise ValueError("at least one download URL is required")
+    failures: list[str] = []
+    for url in candidates:
+        try:
+            download_file(
+                url,
+                destination,
+                expected_sha256,
+                update=update,
+                retries=retries,
+                timeout=timeout,
+                resume=resume,
+            )
+            return
+        except RuntimeError as error:
+            failures.append(str(error))
+            print(f"[dependency] mirror failed: {url}: {error}")
+    raise RuntimeError("all download mirrors failed: " + "; ".join(failures))
+
+
 def atomic_write(path: Path, content: str) -> bool:
     path = path.resolve()
     if path.exists() and path.read_text(encoding="utf-8") == content:

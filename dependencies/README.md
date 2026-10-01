@@ -55,3 +55,8 @@ verification inputs. Install them with `make setup-apu-reference`; neither is
 linked into firmware, RTL, or the shipped APUMC bundle. Run
 `make CONFIG=configs/ci/ihp130.mk apu-p5-corpus` to produce the checksum-pinned
 per-file profile and independent PCM manifest.
+
+The NPU Visual Wake Words archive is mirrored as an unmodified release asset in
+`retroSoC/artifact`, with the original Silicon Labs URL retained as a fallback.
+Both locations resolve to the same required SHA-256; setup accepts neither a
+different archive nor a fallback with a non-HTTPS URL.

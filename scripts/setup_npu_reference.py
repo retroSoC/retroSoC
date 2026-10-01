@@ -14,7 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.dependency_lock import archive, source  # noqa: E402
-from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, sha256  # noqa: E402
+from scripts.setup_helpers import (  # noqa: E402
+    atomic_write,
+    download_file_from_urls,
+    ensure_git_repo,
+    sha256,
+)
 
 MLCOMMONS_TINY = "apu_mlperf_tiny"
 KWS_MFCC = "apu_kws_mfcc"
@@ -151,7 +156,10 @@ def install(build_dir: Path, *, update: bool) -> dict[str, object]:
         ensure_git_repo(spec["url"], ROOT / spec["destination"], spec["revision"], update=update)
     dataset = archive(VWW_DATASET)
     archive_path = ROOT / dataset["destination"]
-    download_file(dataset["url"], archive_path, dataset["sha256"], update=update, timeout=600)
+    urls = (dataset["url"], *dataset.get("fallback_urls", ()))
+    download_file_from_urls(
+        urls, archive_path, dataset["sha256"], update=update, timeout=600
+    )
 
     models = verify_models(tiny)
     kws_names = verify_kws_features(mfcc)

@@ -239,7 +239,10 @@
       "license": "CC-BY-4.0"
     },
     "npu_vww_dataset": {
-      "url": "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz",
+      "url": "https://github.com/retroSoC/artifact/releases/download/npu-vww-dataset-f8746b9e44f8/vw_coco2014_96.tar.gz",
+      "fallback_urls": [
+        "https://www.silabs.com/public/files/github/machine_learning/benchmarks/datasets/vw_coco2014_96.tar.gz"
+      ],
       "sha256": "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58",
       "destination": ".cache/retrosoc/downloads/npu/vw-coco2014-96.tar.gz",
       "license": "NOASSERTION"

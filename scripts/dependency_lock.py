@@ -82,6 +82,16 @@ def _validate_archive(kind: str, name: str, value: dict[str, Any]) -> None:
     _require_fields(kind, name, value, ("url", "sha256", "destination", "license"))
     _validate_sha(f"{kind} {name}", value["sha256"])
     _validate_url(f"{kind} {name}", value["url"])
+    fallback_urls = value.get("fallback_urls", [])
+    if not isinstance(fallback_urls, list):
+        raise LockError(f"{kind} {name} fallback_urls must be a list")
+    for index, url in enumerate(fallback_urls):
+        if not isinstance(url, str):
+            raise LockError(f"{kind} {name} fallback_urls must contain URLs")
+        _validate_url(f"{kind} {name} fallback_urls[{index}]", url)
+    urls = [value["url"], *fallback_urls]
+    if len(set(urls)) != len(urls):
+        raise LockError(f"{kind} {name} download URLs must be unique")
     _validate_relative_path(f"{kind} {name} destination", value["destination"])
 
 

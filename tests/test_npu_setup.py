@@ -22,7 +22,14 @@ def test_lock_carries_npu_vww_dataset_entry() -> None:
         dataset["sha256"]
         == "f8746b9e44f8a7a4293f73be9ba6e8da9239fe69798d42364aae62b915cfab58"
     )
-    assert dataset["url"].endswith("vw_coco2014_96.tar.gz")
+    assert dataset["url"] == (
+        "https://github.com/retroSoC/artifact/releases/download/"
+        "npu-vww-dataset-f8746b9e44f8/vw_coco2014_96.tar.gz"
+    )
+    assert dataset["fallback_urls"] == [
+        "https://www.silabs.com/public/files/github/machine_learning/benchmarks/"
+        "datasets/vw_coco2014_96.tar.gz"
+    ]
 
 
 def test_model_hash_constants_match_extraction_module() -> None:
