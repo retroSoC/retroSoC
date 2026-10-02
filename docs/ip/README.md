@@ -6,8 +6,10 @@ extension interfaces.
 
 - [Tiny Gen1 QFN64](tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
   eight-channel DMA, Tiny-specific RCU and no-PLL 96 MHz / PLL 240 MHz clock
-  and reset trees while preserving the package/pad budget. The current
-  24 MHz implementation and its evidence remain explicitly separate.
+  and reset trees while preserving the package/pad budget. P10 adds unchanged
+  DVP V2, GPIO12-23 ALT1 and optional XPI NSS1 PSRAM frame buffers; the execution
+  order is P10 -> P7 -> P8 -> P11 -> P12 -> P9 without renumbering old phases.
+  The current 24 MHz implementation and its evidence remain explicitly separate.
 
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.

@@ -5,8 +5,10 @@ the root README and subsystem guides.
 
 - [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
   eight-channel DMA and Tiny-owned RCU, no-PLL 96 MHz / PLL 240 MHz clock and
-  reset trees, and the unchanged package budget. It distinguishes these
-  targets from the existing 24 MHz implementation and physical evidence.
+  reset trees, DVP V2 camera routing and optional XPI PSRAM frame buffers,
+  with the unchanged package budget. P10 -> P7 -> P8 -> P11 -> P12 -> P9 is
+  the remaining execution order; P0-P9 IDs/titles are preserved. These targets
+  remain separate from the existing 24 MHz implementation and physical evidence.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.
