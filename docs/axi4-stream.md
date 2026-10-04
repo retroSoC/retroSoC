@@ -13,6 +13,12 @@ implemented or enabled on Mini by this document. The historical I2S/DVP rules
 below do not substitute for PIO-lite's packing, ownership or reset contract;
 the existing [Crypto](ip/crypto.md) streams retain their own framing rules.
 
+The separately frozen [Tiny SPI master](ip/spi.md) uses DMA V2.2 paced fixed
+MMIO requests16/17, not new AXI4-Stream ports. Its source-qualified admission,
+credits, R/B drain and exact serial-frame completion must not be substituted
+with stream VALID/TLAST rules. PIO14/15 and the stream-direction count remain
+unchanged by that SPI extension.
+
 ## Interface Contract
 
 All three links use `DATA_WIDTH=32`, one-bit ID, destination, and user fields,

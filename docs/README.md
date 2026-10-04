@@ -17,6 +17,12 @@ the root README and subsystem guides.
   requests 14/15. Its `PIOLITE-P0..P5` phases preserve the historical
   performance-only R2 boundary; the [verification ledger](ip/piolite-verification.md)
   retains all implementation, application and physical evidence gaps.
+- [Independent SPI/display master](ip/spi.md) freezes the separately approved
+  future Tiny controller, four Gen1 GPIO ALT additions, segmented CS/D/C,
+  packed 8/16-bit frames and DMA V2.2 requests16/17. Its stable `SPI-P0..P5`
+  order and [verification ledger](ip/spi-verification.md) distinguish sequential
+  snapshot/display/SD requirements from implementation and physical evidence;
+  the legacy XPI LCD path and prior R2/PIO phases remain separate.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.

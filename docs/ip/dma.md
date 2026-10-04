@@ -34,6 +34,14 @@ are requirements for subsequent implementation, not delivered capabilities.
 Mini is an affected compatibility consumer of shared DMA changes, not a
 PIO-lite rollout target. Existing phase IDs and evidence remain unchanged.
 
+The [SPI contract](spi.md) freezes the separate **TINY-only standard-product
+SPI integration target** and the additive DMA V2.2 extension below. V2.2 adds
+paced fixed-MMIO requests, not AXI4-Stream endpoints or an AXI master. It
+preserves the V2.1 PIO request allocation and lifecycle obligations without
+requiring the PIO block to be integrated before SPI. Neither extension is
+implemented by the current V2.0 RTL/HAL. SPI phases own V2.2 implementation
+and evidence; Mini remains a compatibility consumer with SPI disabled.
+
 ## Scope and limits
 
 - Eight independent channel contexts share one AXI4 master (`ID=0`) in the
@@ -89,7 +97,7 @@ compares both definitions.
 | Offset | Register | Access | Description |
 | ---: | --- | --- | --- |
 | `000` | `IP_ID` | RO | `DMA4` identification |
-| `004` | `IP_VERSION` | RO | Current V2.0 `0x00020000`; frozen V2.1 target `0x00020001` |
+| `004` | `IP_VERSION` | RO | Current V2.0 `0x00020000`; frozen V2.1 `0x00020001` and V2.2 `0x00020002` targets |
 | `008` | `CAPABILITY` | RO | channel count, data width, maximum burst, stream count, descriptor=1 |
 | `00c` | `GLOBAL_CTRL` | WO | bit 0 global reset |
 | `010` | `GLOBAL_STATUS` | RO | any channel busy |
@@ -97,8 +105,8 @@ compares both definitions.
 | `018` | `IRQ_ENABLE` | RW | one enable bit per channel |
 | `01c` | `IRQ_TEST` | RW | software interrupt test bits |
 | `020` | `ERROR_SUMMARY` | RO/W1C | bit 0 valid/W1C, bits 3:1 channel, bits 15:7 status, bits 31:16 error-address upper half |
-| `024` | `REQUEST_STATUS` | RO | peripheral pacing availability |
-| `028` | `SUPPORTED_REQUESTS` | RO | V2.1 target only: static implemented request bitmap; absent in V2.0 |
+| `024` | `REQUEST_STATUS` | RO | live peripheral pacing availability; V2.2 extends the bitmap to 32 bits |
+| `028` | `SUPPORTED_REQUESTS` | RO | V2.1/V2.2 targets: static implemented request bitmap; absent in V2.0 |
 
 Each channel occupies `0x80` bytes beginning at `0x100 + channel * 0x80`.
 
@@ -108,7 +116,7 @@ Each channel occupies `0x80` bytes beginning at `0x100 + channel * 0x80`.
 | `04` | `CH_CFG` | RW idle | kind, width, increment bits, priority |
 | `08`, `0c` | `SRC_ADDR`, `DST_ADDR` | RW idle | source and destination addresses |
 | `10` | `BYTE_COUNT` | RW idle | byte length; MM-to-MM permits a partial final beat, stream requests are word based |
-| `14` | `REQUEST_SEL` | RW idle | software or peripheral selector |
+| `14` | `REQUEST_SEL` | RW idle | software or peripheral selector; V2.0/V2.1 use bits 3:0, V2.2 uses bits 4:0 |
 | `18` | `BURST_CFG` | RW idle | requested 1–16 beat maximum |
 | `1c` | `EVENT_ENABLE` | RW | done, half, error interrupt enables |
 | `20` | `STATUS` | RO | busy, suspended, done, aborted, error, incoming stream `TLAST` seen |
@@ -199,6 +207,10 @@ must be in DMA-visible uncached/shared memory. Callers issue `fence rw,rw`
 before start and after completion; no cache snoop or IOMMU is implied.
 
 ## Frozen V2.1 PIO-lite extension
+
+This section preserves the V2.1 contract. V2.2 extends only its request
+encoding and bitmap width as specified below; PIO endpoint IDs, transfer
+kinds, binding and cancellation rules remain unchanged.
 
 ### Scope and discovery
 
@@ -336,6 +348,195 @@ Run the affected DMA/GPIO host, register-parity, RTL and formal checks plus
 Tiny end-to-end and affected Mini regressions for the implemented phase. The
 existing verification described below is baseline coverage; it does not
 establish these new V2.1 properties or a new PIO frequency/physical result.
+
+## Frozen V2.2 SPI extension
+
+### Scope and compatibility
+
+V2.2 MUST report `IP_VERSION=0x00020002`. It retains the `DMA4` identity,
+4 KiB register aperture, all register offsets, 32-bit data path, eight-channel
+Tiny target, one AXI master, aggregate IRQ20 and existing completion/error
+semantics. Existing request IDs 0-15 and their transfer kinds MUST NOT change.
+In particular, PIO-lite keeps 14/15; omitted I2C1 requests 9/10 remain
+unsupported on the future Tiny integration and MUST NOT be reassigned.
+
+| Request | ID | Transfer kind | Peripheral address and increments |
+| --- | ---: | --- | --- |
+| `SPI_TX` | 16 | MM-to-MM | Incrementing memory source to fixed SPI DMA-only TX FIFO address |
+| `SPI_RX` | 17 | MM-to-MM | Fixed SPI DMA-only RX FIFO address to incrementing memory destination |
+
+The SPI specification owns the exact FIFO offsets, segment configuration,
+serial framing and pin lifecycle. SPI and its DMA request/admission interface
+run in PCLK; the existing central-DMA AXI crossing to SYS is retained. No new
+asynchronous stream, cyclic descriptor, narrow DMA width or private master is
+introduced. Shared SPI ports and grants MUST default disabled. Mini keeps
+SPI support bits clear, its current channel owners and its existing endpoints.
+
+V2.2 MUST preserve valid legacy direct jobs and TCDs with the new request bit
+clear. This compatibility does not make an extended job safe on older
+hardware: current V2.0 hardware truncates direct request 16 to request 0 and
+ignores the new TCD request bit. Software MUST check DMA identity/version,
+product metadata, static request support and the SPI block capability before
+programming a SPI job or publishing an extended TCD to DMA. An old version or
+absent endpoint returns `RS_ENOTSUP` before channel programming; V2.0 MUST
+also be rejected before reading its nonexistent `SUPPORTED_REQUESTS` offset.
+Only V2.2 or an explicitly compatible later contract permits requests 16/17.
+
+V2.2 inherits the V2.1 complete-job ownership and descriptor cancellation
+requirements, including abort/error precedence over fetch and activation.
+Implementing those shared-DMA obligations does not require a PIO instance;
+PIO support bits remain clear until its own complete integration is present.
+Existing PIO phase IDs and evidence requirements remain unchanged.
+
+### Selector and discovery ABI
+
+`REQUEST_SEL[4:0]` is the V2.2 request ID. Bits 31:5 are reserved zero and
+MUST be checked before narrowing; a nonzero reserved field or unsupported ID
+causes a channel configuration error without issuing its payload transaction.
+IDs 18-31 are unassigned and MUST fail validation in this version.
+
+TCD control bit 25 supplies request bit 4, while bits 15:12 retain request
+bits 3:0. The request is `{control[25], control[15:12]}`. Kind 10:8, priority
+17:16, burst 24:20, all other defined fields, and the 64-byte TCD
+size/alignment are unchanged. Words 14/15 remain reserved. HAL request
+encoding/decoding and validation MUST use this split field consistently;
+shifting a five-bit ID into bit 12 would corrupt priority and is forbidden.
+
+`RequestMask`, `REQUEST_STATUS` and `SUPPORTED_REQUESTS` use 32-bit request
+bitmaps. Bits 16/17 describe SPI TX/RX; bits 31:18 read zero for V2.2. Static
+support uses effective implementation, direction logic and actual wiring,
+not a reservation or tied-off port. `SUPPORTED_REQUESTS` remains read-only
+and static across runtime binding/closing; `REQUEST_STATUS` reports live
+pacing availability and cannot establish support or ownership. Reset clears
+SPI bindings and credits, so its live readiness bits are initially zero.
+
+`CAPABILITY[30:28]` retains V2.1's exact population count of implemented
+stream requests 1, 2, 11, 12, 13, 14 and 15, at most seven. SPI requests 16/17
+are fixed-MMIO requests and MUST NOT increase that count. No extended
+capability register or reinterpretation of this field is introduced. The
+remaining capability fields keep their layout and encoding. Handwritten
+SVH/C register constants, request values and TCD masks require parity checks.
+
+### Endpoint admission and FIFO credits
+
+The SPI block owns one explicit binding per DMA direction. Two enabled
+bindings MUST select distinct implemented channels, reserved by the product
+application profile. A binding owns the entire direct transfer or finite
+TCD chain, including descriptor fetch/parse, non-SPI descriptors, suspension
+and all accepted work through abort/error drain. No driver may steal a
+binding during a FIFO-service gap. Rebind, disable, reset and new START
+admission follow the V2.1 registered-binding and pending-START precedence
+rules, independently of unrelated channels.
+
+Direct START and every TCD activation MUST validate static request support,
+the matching enabled channel binding, MM-to-MM kind, 32-bit DMA width, the
+correct SPI DMA-only FIFO address, fixed peripheral address, incrementing
+memory address, alignment, padded byte count and the armed segment's remaining
+word budget. SPI requests used with another address, reversed increments or
+a stream kind MUST fail before payload access. Descriptor reads needed to
+identify an invalid job still drain normally. Enabling a binding alone does
+not authorize FIFO access before its segment is armed. Conversely, any DMA
+request or channel attempting the SPI DMA-only FIFO addresses without the
+matching SPI request and binding MUST fail before issuing that access. This
+includes SOFTWARE request 0 and non-SPI descriptors in a mixed chain.
+
+CPU and DMA use separate FIFO access ports defined by the SPI specification.
+While a DMA direction is bound, CPU FIFO service in that direction MUST be
+rejected. A DMA-only port requires its matching admitted DMA transaction and
+credit; a CPU access to that address MUST NOT consume the reservation.
+Tiny's target fabric/bridge MUST carry a private latched DMA-origin qualifier
+to the SPI APB wrapper through the same admission, CDC and response lifecycle
+as the transaction. CPU and SDIO-private-DMA accesses to these ports return
+an error. APB address and a live credit alone do not identify the initiator.
+This private qualification adds no AXI master/ID and does not reinterpret
+APB `PPROT` or introduce a general access-control subsystem. Ordinary SPI
+control/status accesses remain subject to their documented access rules.
+
+Each peripheral FIFO transaction reserves one TX slot or one RX word when
+the DMA admits that transaction, before its AXI address is offered. The
+reservation remains associated with the channel, direction, segment and
+transaction through its terminal response. FIFO commit consumes that credit
+exactly once. Pending admissions MUST be included in available capacity and
+word-budget accounting; readiness is not an unreserved snapshot of `!full`
+or `!empty`. Closing rejects further admissions. Existing reservations cannot
+be stolen by another channel, CPU access, rebind or FIFO reset.
+
+An admitted peripheral transaction MUST finish through bounded APB service
+without waiting for SCK edges, FIFO production/consumption or a later CPU
+action. Invalid/uncredited accesses return `PSLVERR` without FIFO mutation.
+The SPI implementation supplies the local bound and the product verifies
+its bridge/CDC behavior. No software/DMA FIFO loop may retain the DMA's sole
+AXI write transaction while awaiting serial progress and thereby prevent
+unrelated channels from draining.
+
+### Packing, counts and completion
+
+SPI DMA uses aligned full 32-bit words and full FIFO write strobes. For a
+logical segment of `N` bytes, software validates checked arithmetic and
+DMA-visible padded capacity for `4 * ceil(N / 4)` transport bytes. Zero
+length, unsupported frame sizes or insufficient capacity fail before launch.
+The SPI block unpacks four 8-bit frames or two 16-bit frames per FIFO word,
+low lane first, with bit order defined by the SPI contract. Its exact logical
+frame count suppresses padded tail lanes; DMA padding MUST NOT create extra
+serial clocks, frames or CS transitions. RX pads the unused final lanes as
+defined by SPI and writes only within the validated padded buffer. Arbitrary
+short CPU packets use the CPU ports and do not imply narrow DMA support.
+
+DMA `BYTE_COUNT`, progress, half and DONE count transport bytes. TX DMA DONE
+means the FIFO writes and their responses completed, not that the final
+serial frame left the shifter. RX DMA DONE requires the memory write
+responses. SPI separately owns segment/transaction completion, exact frame
+counts, D/C transitions and CS release after the final edge and hold interval.
+Neither DMA DONE nor a TCD boundary may directly terminate CS. SPI completion
+and DMA completion/error must both agree before successful session release.
+
+Both the incrementing memory leg and fixed FIFO leg retain the current
+single-beat scheduling for these requests. FIFO accesses use one-beat FIXED
+transactions; memory accesses retain their proper incrementing addresses.
+The MVP MUST measure this path, especially mapped-PSRAM command overhead,
+rather than claim burst memory reads. A later, separately approved scheduling
+optimization may decouple memory bursts from paced FIFO beats; it is not an
+implicit part of V2.2. Native SPI AXI4-Stream endpoints remain deferred.
+
+### Close, abort and reset
+
+Closing first blocks new SPI admissions and new STARTs on the bound channels,
+retains their bindings and records the SPI terminal error/abort state. The
+SPI contract defines safe serial stop and CS timing. Every already admitted
+FIFO operation must receive its terminal response: an operation committed
+before closing retains its result; a pending uncommitted operation is
+error-completed without changing FIFO contents. A closing endpoint MUST NOT
+wait for serial progress or withdraw an accepted bus transaction.
+
+Software aborts the bound channels and uses a bounded complete-job drain.
+Accepted payload and descriptor reads drain through RLAST, writes through B;
+canceled queued fetch/parse work cannot activate a descriptor or clear abort.
+Only after those responses, all admission credits and complete ownership have
+drained may the integration acknowledge endpoint reset, flush residual data,
+change binding or gate clocks. A timeout retains the closed bindings and
+buffer ownership and reports failure. It MUST NOT turn into successful reset,
+memory reuse or a global DMA reset that disrupts unrelated channels.
+
+### Required implementation evidence
+
+The [SPI development order](spi.md) owns V2.2 gates. It starts with the
+committed `configs/ci/ihp130-tiny.mk` / IHP130 baseline and explicitly enables
+the future integration only in its applicable phase. Required checks include
+legacy direct/TCD compatibility; old-version rejection before programming;
+ID, version, register and TCD parity; request 16/17 and reserved-ID rejection;
+truthful masks/counts; default-disabled Mini ports; correct FIFO addresses,
+directions and bindings; and full-word packing with every legal tail length.
+
+Exercise delayed FIFO requests/responses, CPU attempts on both port classes,
+credit exhaustion, simultaneous START/rebind/reset, mixed TCD chains, suspend,
+abort during fetch/parse/activation, close before/after FIFO commit, stopped
+serial progress, timeout retention and unrelated-channel progress. Assertions
+must cover stable accepted AXI payloads, exactly-once credit/word consumption,
+no uncredited FIFO mutation, bounded endpoint response and no premature
+binding/buffer release. Verify DMA DONE before final SPI edge without early
+CS release and no padding on the wire. Reuse the shared-DMA host/parity/RTL/
+formal checks and affected Tiny/Mini regressions; a reserved endpoint or a
+passing old regression is not V2.2 evidence.
 
 ## Validation boundary
 

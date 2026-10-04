@@ -15,6 +15,10 @@ reset values, ALT0/ALT1 assignments and lock semantics. This is not an ALT2,
 new-pad, QFN64 change or a Mini PIO integration. Existing evidence and Tiny R2
 phase IDs remain unchanged; PIO-lite has its own development order.
 
+The separately frozen [SPI master](spi.md) adds four reserved Gen1 ALT routes
+and native-owner readiness/session requirements below. This is also a future
+Tiny integration, not a change to GPIO V2.0 register offsets or a Mini rollout.
+
 ## Integration
 
 | Property | Value |
@@ -107,8 +111,10 @@ a change to a locked bit complete with `resp_err` and do not update state.
 
 Software output and output-enable aliases avoid read-modify-write races. ALT0
 and ALT1 outputs are selected per pin. Setting `USER_SELECT` changes the source
-to `user_gpio_if`; every ownership transition forces the physical output
-enable low for one complete SoC clock before the new owner can drive. Open
+to `user_gpio_if`; every `USER_SELECT` transition forces the physical output
+enable low for one complete SoC clock before the new owner can drive. Native
+GPIO/ALT0/ALT1 changes do not receive that automatic handoff: disable the old
+and new peripheral output drivers before changing those routes. Open
 drain is applied after this mux: logical zero drives low, while logical one
 releases the pad.
 
@@ -245,6 +251,68 @@ that handoff, disabled-but-armed sessions, claim rewrites and block reset
 cannot hide selected pins from the RCU veto or restart a stale transport.
 Check unrelated pins and affected Mini consumers throughout. The existing tests
 below remain baseline evidence and do not establish these new PIO properties.
+
+## Frozen Tiny SPI native ownership
+
+The [SPI contract](spi.md) fills GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30 ALT1
+MISO and GPIO31 ALT1 CS_N after the approved Gen1 migration. In the display
+personality GPIO30 is ordinary software D/C output, not MISO. All other Gen1
+ALT definitions and dedicated boot/debug pads remain unchanged. Current
+executable GPIO30/31 PWM capture routing is superseded only by the separately
+approved R2-P6 Gen1 mapping, not by pretending it was unused.
+
+SPI remains an ALT owner; PIO remains the sole USER owner and has mux priority.
+SPI acquisition must reserve its complete session mask, check USER_LOCK and
+CONFIG_LOCK, stop/drain conflicting native/PIO clients, and prepare safe
+software GPIO fallback levels and disabled output drivers before changing
+ALT. GPIO OUTPUT_ENABLE controls software output only; clearing it does not
+stop an ALT peripheral's OE. Keep SPI OE0 until all native guards pass.
+
+Export read-only USER handoff, ALT_ENABLE/ALT_SELECT and relevant pad/OE state
+alongside USER_SELECT and GPIO lifecycle readiness to the Tiny SPI guard.
+No new GPIO APB offsets or version are introduced. Native-ready requires
+`USER_SELECT=0` and `handoff=0` on each session pin, the exact selected ALT or
+D/C software mode, supported electrical configuration and running/released
+GPIO. USER_STATUS=0 alone cannot establish readiness immediately after user
+release. Guard the prospective mask before ENABLE and the latched mask after
+it; unrelated PIO-owned pads do not block SPI.
+
+SCK/MOSI/CS_N and D/C require push-pull mode, not OPEN_DRAIN, which GPIO applies
+after mux selection. DISPLAY_DC reserves GPIO30 software-output mode and OE,
+but permits its DATA_OUT level to change between clean segments. The HAL must
+order/read back that write and honor setup/hold before clocking the next
+segment. SPI never receives MISO from a D/C-configured pin. GPIO interrupts
+and electrical changes on session pins require explicit coordination.
+
+SPI receives the existing raw ALT MISO route and owns its synchronous external
+capture timing; it does not use or change the USER input synchronizer/filter
+pipeline. Input filtering therefore cannot be presented as SPI sampling-delay
+compensation. Loss of active native routing/readiness suppresses SPI OE and
+sampling, invalidates its transaction and closes DMA admission; restoring the
+guard does not resume old data. Another owner may drive the pads, so this
+does not grant SPI authority to clamp PIO or another peripheral's outputs.
+
+SPI latches its session ownership from ENABLE through checked RELEASE, including
+prefill, armed, held-CS, closing and disabled-awaiting-handback. DISABLE and
+RECOVER retain that reservation. GPIO gate/reset veto is the OR of actual PIO
+USER_SELECT ownership and latched SPI session ownership, including multi-target
+commands. Resetting or clearing SPI configuration cannot conceal an unreleased
+session. A whole-system reset remains the separate all-domain traffic reset.
+
+Normal handback stops/drains the SPI segment and bound DMA, disables SPI OE,
+prepares native software OE0/ALT-disabled state on the mask, verifies locks,
+readback and handoff, then issues SPI RELEASE. Intentional handback while
+SPI is safely DISABLED is allowed; it is not an active-route fault. On failure
+retain the safe reservation and report the error. Do not reset GPIO to clear
+locks or reactivate the old client automatically. Restore another peripheral
+only through its explicit owner restart.
+
+Required tests include all four routes, unchanged non-SPI rows, native versus
+USER handoff, false USER_STATUS readiness, source driver OE sequencing,
+pre-existing locks, D/C changes only at clean boundaries, raw MISO timing,
+open-drain rejection, lost routing during DMA prefill, recovery ledger
+retention, GPIO gate/reset veto and unchanged Mini/PIO behavior. These are
+future requirements, not coverage supplied by historical GPIO tests.
 
 ## Pad capabilities
 

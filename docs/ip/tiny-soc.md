@@ -21,6 +21,13 @@ main SRAM, eight-channel DMA target and three external AXI owners. Its
 phase sequence. PIO-lite is required by the extended product target but is
 not implemented or qualified by this documentation freeze.
 
+The separately approved 2026-10-04 [SPI extension](spi.md), feature slug
+`spi`, adds SPI0 to the future standard Tiny product. Its master-only
+8/16-bit engine and display transaction service use existing GPIO alternates,
+PCLK and borrowed central-DMA channels. `SPI-P0` through `SPI-P5` preserve
+all legacy, R2 and PIO-lite phase IDs/titles. This is documentation approval;
+SPI0, DMA V2.2 pacing and the display application remain unimplemented.
+
 The clock contract retains the 96 MHz no-PLL and 192/240 MHz PLL targets,
 now requiring the main SRAM to qualify at those same rates. Both variants
 boot from REF24. XPI remains in the divided MEM domain with a 120 MHz ceiling;
@@ -50,6 +57,11 @@ PIO-lite integration in `PIOLITE-P3` requires the applicable accepted R2-P6
 DMA/shared-integration and R2-P7 RCU functionality. `PIOLITE-P5` may share a
 physical run with R2-P11 only on the same PIO-inclusive source revision and
 configuration, with both contracts' evidence requirements satisfied.
+SPI integration in `SPI-P3` likewise requires accepted R2-P6 frozen GPIO/DMA
+integration and R2-P7 clock/reset behavior. Camera/PSRAM application
+qualification in `SPI-P4` requires R2-P8/R2-P9. Final standard-product
+qualification must identify the same SPI- and PIO-inclusive source,
+configuration and netlist; an earlier R2 or PIO-only result is insufficient.
 
 ### Commercial references and reuse boundary
 
@@ -240,22 +252,50 @@ no commercial implementation or qualification is reused.
   requests, IRQ and RCU support MUST remain absent until their complete paths
   exist. Functional, DMA/contention and physical evidence MUST identify the
   actual PIO-inclusive source, profile and PDK; old R2 results do not qualify it.
+- TINY-041: the standard Tiny target MUST include [SPI0](spi.md), an
+  8/16-bit, four-mode, master-only controller with separate 8 x 32-bit TX and
+  RX FIFOs in PCLK. SPI0 uses APB4 `0x1001D000..0x1001DFFF`, CPU IRQ25 and
+  Tiny RCU target bit 16; all remain unsupported until fully integrated.
+- TINY-042: SPI0 MUST use GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30 ALT1
+  MISO and GPIO31 ALT1 CS_N. Write-only display mode uses GPIO30 as ordinary
+  GPIO D/C instead of MISO. Preserve the other Gen1 alternates, all QFN64
+  terminals and the dedicated boot/debug/control pads. R2-P6 first applies
+  the already approved Gen1 migration of legacy PWM captures to GPIO24/25.
+- TINY-043: [DMA V2.2](dma.md) MUST provide `SPI_TX=16` and `SPI_RX=17`
+  as paced fixed-MMIO requests. Default SPI TX borrows channel 3 and RX
+  borrows channel 2 only after prior owners fully drain and release them.
+  PIO-lite requests 14/15 and existing channel reservations remain unchanged;
+  no extra DMA channel, AXI owner or user SRAM is added. SPI payload accesses
+  retain the existing single-beat MMIO transport contract.
+- TINY-044: GPIO gate/reset MUST be rejected while actual PIO USER ownership
+  or a latched SPI session remains. The SPI reservation includes prefills,
+  retained CS and closing/drain state; mutable configuration cannot release
+  it. SPI gate/reset and clock changes require inactive CS, completed wire
+  timing and complete accepted DMA/MMIO/descriptor drain. Guard loss faults
+  the session and cannot automatically resume it after routing recovers.
+- TINY-045: `SPI-P0` through `SPI-P5` are a separate approved extension.
+  Display acceptance MUST use bounded transactions; camera/display acceptance
+  uses the sequential capture, verify, display, then SD-save workflow. Continuous double-buffer
+  camera/display operation is deferred. Final qualification MUST use the
+  actual SPI- and PIO-inclusive source/profile/PDK and netlist, not historical
+  baseline or performance-only evidence.
 
 Deferred: RV32 A atomics, RTOS ports, authenticated boot, retention/power gating,
-independent sleep clock, 256-512 KiB SRAM, USB, standalone general SPI, CAN, ADC,
+independent sleep clock, 256-512 KiB SRAM, USB, SPI slave operation, CAN, ADC,
 multimedia accelerators beyond the selected DVP capture path and other PDK
-qualification. I2S, SDIO, DVP and the approved PIO-lite extension are standard
-Tiny requirements awaiting integration, not deferred product features. XPI
+qualification. I2S, SDIO, DVP and the approved PIO-lite and SPI extensions
+are standard Tiny requirements awaiting integration, not deferred product features. XPI
 retains four chip selects: CS0_N is dedicated to boot NOR, while CS1_N through CS3_N
 use GPIO29 through GPIO31. Additional XPI device configurations still require
 their own qualification.
 
 The original performance-only R2 scope MUST NOT add SPI, PIO-lite, a recovery
 Boot ROM, caches, atomics, new accelerators or another PDK rollout. That
-historical scope boundary remains in force for its phase work. PIO-lite is
-now a separately approved standard-product extension governed by
-[piolite.md](piolite.md); its phases do not become hidden prerequisites of
-R2-P0 through R2-P10. The other listed research ideas remain deferred.
+historical scope boundary remains in force for its phase work. PIO-lite and
+SPI are separately approved standard-product extensions governed by
+[piolite.md](piolite.md) and [spi.md](spi.md); their phases do not become
+hidden prerequisites of R2-P0 through R2-P10. The other listed research ideas
+remain deferred.
 
 ## QFN64 package and power planning
 
@@ -397,11 +437,18 @@ peripheral functions are unavailable on each pad while PIO-lite owns it.
 | GPIO24 | 51 | PWM_CAP0 | UART0_TX | PWM capture 0 or alternate UART TX |
 | GPIO25 | 52 | PWM_CAP1 | UART0_RX | PWM capture 1 or alternate UART RX |
 | GPIO26 | 11 | WS2812_OUT | I2C0_SCL | LED output or alternate open-drain I2C clock with readback |
-| GPIO27 | 12 | Reserved | I2C0_SDA | Alternate open-drain I2C data with readback |
-| GPIO28 | 13 | CLKOUT | Reserved | Divided clock observation output |
+| GPIO27 | 12 | SPI0_SCK | I2C0_SDA | SPI clock or alternate open-drain I2C data with readback |
+| GPIO28 | 13 | CLKOUT | SPI0_MOSI | Divided clock observation or SPI data output |
 | GPIO29 | 14 | XPI_CS1_N | Reserved | Second XPI chip select |
-| GPIO30 | 15 | XPI_CS2_N | Reserved | Third XPI chip select |
-| GPIO31 | 16 | XPI_CS3_N | Reserved | Fourth XPI chip select |
+| GPIO30 | 15 | XPI_CS2_N | SPI0_MISO | Third XPI chip select or SPI input; ordinary GPIO D/C in write-only display mode |
+| GPIO31 | 16 | XPI_CS3_N | SPI0_CS_N | Fourth XPI chip select or SPI chip select |
+
+Only these four formerly reserved Gen1 cells are assigned by the SPI freeze.
+The committed legacy map still has PWM_CAP0/1 on GPIO30/31 ALT1; R2-P6 MUST
+first apply the approved Gen1 GPIO24/25 ALT0 capture routes. SPI integration
+does not silently replace the executable baseline's capture ABI. GPIO27's
+alternate I2C input, GPIO28 CLKOUT and XPI CS2/3 are mutually exclusive with
+SPI on their respective pads. GPIO29 NSS1 remains available.
 
 UART and I2C alternate locations connect to the same UART0 and I2C0 instances.
 Repeated PWM names are routes for the same four channels, not extra channels.
@@ -485,6 +532,41 @@ assembly, or provide external isolation. An internal pinmux cannot prevent
 two external devices from driving a shared net. Camera and PSRAM voltage/load
 requirements must match the fixed 3.3 V IO rail or use qualified board-level
 translation; this profile does not add supplies or pads.
+
+### SPI and display profile ownership
+
+The approved SPI extension uses the four remaining camera-profile GPIO:
+GPIO27 SCK, GPIO28 MOSI, GPIO31 CS_N and either GPIO30 MISO or ordinary GPIO
+D/C. Write-only display mode therefore consumes all 32 GPIO in the complete
+camera/SDIO/UART/I2C/WS2812/NSS1 profile with optional controls. It adds no
+package terminal. Separate display RESET_N, backlight/PWM, TE or readback
+requires an explicit board solution or release of an optional function;
+these controls are not implied spare pins. A board must document compatible
+reset/bias/control circuitry and preserve inactive-device isolation.
+
+PIO-lite remains the sole `USER_SELECT` owner. SPI uses native ALT routes and
+must acquire its native session after USER ownership of every participating
+pin is released and its one-clock handoff completes. Zero `USER_STATUS`
+alone is insufficient: native-ready requires USER_SELECT and handoff clear
+on the SPI session mask, GPIO lifecycle ready and the expected ALT/electrical
+configuration. PIO may retain unrelated pads. The display session also
+reserves the ordinary GPIO D/C role. Do not change PIO's synchronized-input
+contract or its GPIO gate/reset veto to accommodate SPI.
+
+SPI MISO uses the raw alternate-input route with capture timing owned by the
+SPI controller. It does not reuse the GPIO two-stage synchronizer plus
+registered filter/bypass path. Full-duplex acceptance must qualify the entire
+SCK launch, board/device response and MISO setup/hold path at each operating
+point. SPI guard loss suppresses unauthorized outputs and input sampling,
+invalidates queued/prefilled work and requires explicit drain/reacquisition.
+Retained CS and closing sessions keep their hardware-latched pad reservation.
+
+The HAL owns complete display transactions: wait for the preceding wire
+segment, update D/C with ordered/readback-checked GPIO access, observe setup
+time, then start the next segment. FIFO-empty or DMA done is not wire done.
+Command/data CS retention, release and errors follow [SPI](spi.md), including
+CS setup/hold/inactive timing. CS_N requires external inactive-high bias when
+reset or GPIO handoff makes the pad high impedance.
 
 ## Shared IP and product-specific integration
 
@@ -608,6 +690,7 @@ linked common contract; do not generate a second set of IP registers.
 | SDIO0 | `0x1000F000` | 10 | [SDIO](sdio.md), one host and its private AXI32 DMA master |
 | Central DMA | `0x1000A000` | 20 | [DMA V2](dma.md), eight channels and supported request discovery |
 | PIO-lite | `0x1001C000` | 24 | [PIO-lite](piolite.md), 4 KiB APB4 window, two state machines in PCLK; separately approved standard-product extension |
+| SPI0 | `0x1001D000` | 25 | [SPI](spi.md), 4 KiB APB4 window, master-only 8/16-bit engine in PCLK; separately approved standard-product extension |
 
 Mini's RCU has no separate MMIO region: its software controls are in SYSCTRL
 at `0x1000B000`. Tiny retains this base and uses the private bank below for
@@ -623,6 +706,8 @@ All other unallocated IRQ bits are zero. CRC has no fabricated interrupt or
 private DMA request; software finishes the CRC session after DMA completion.
 PIO-lite's window is `0x1001C000..0x1001CFFF`; IRQ24 remains zero and its
 capability absent until the block and complete interrupt path are integrated.
+SPI0's window is `0x1001D000..0x1001DFFF`; IRQ25 remains zero and its
+capability absent until the block and complete interrupt path are integrated.
 
 ### DMA and bus behavior
 
@@ -630,8 +715,8 @@ capability absent until the block and complete interrupt path are integrated.
 | ---: | --- |
 | 0 | UART0 |
 | 1 | I2C0 |
-| 2 | DVP receive; PIO-lite RX or general memory transfers only after camera ownership is released |
-| 3 | Serialized bulk clients: XPI, WS2812, CRC and PIO-lite TX |
+| 2 | DVP receive; PIO-lite RX, SPI RX or general memory transfers only after camera ownership is released |
+| 3 | Serialized bulk clients: XPI, WS2812, CRC, PIO-lite TX and SPI TX |
 | 4 | Crypto input |
 | 5 | Crypto output |
 | 6 | I2S transmit |
@@ -640,6 +725,9 @@ capability absent until the block and complete interrupt path are integrated.
 Retain Crypto request IDs 12/13, I2S request IDs 1/2 and DVP request ID 11.
 The PIO-lite extension adds requests `PIOLITE_TX=14` and `PIOLITE_RX=15` without
 renumbering existing requests or increasing the eight-channel target.
+The separate SPI extension adds DMA V2.2 paced fixed-MMIO requests
+`SPI_TX=16` / `SPI_RX=17`, preserving existing request meanings and the
+64-byte TCD layout. Selector/ABI and capability changes follow [DMA](dma.md).
 Channel ownership is product integration data, not a different DMA register
 ABI. In particular,
 Tiny channel 6 is not Mini's HP-boot reservation. Shared drivers use product
@@ -657,6 +745,22 @@ writes have completed and camera ownership is released. Failure to acquire
 either channel returns boundedly without stealing another client's channel.
 PIO-lite has no private AXI master. CPU/FIFO and central-DMA access, selected
 state machine, request readiness and completion follow [PIO-lite](piolite.md).
+
+SPI likewise borrows TX channel 3 or RX channel 2 only after the existing
+owner fully drains and releases it. SPI and PIO cannot independently own the
+same channel or pad. Crypto4/5 and I2S6/7 are not implicit fallback channels.
+SPI's central-DMA payload path is paced fixed-MMIO to its APB FIFO ports,
+with one MMIO beat per AXI transaction; it is not a new AXI master or a
+multi-beat FIXED-burst bridge feature. The memory leg also retains the existing
+single-beat behavior for SPI paced-MMIO jobs; burst-prefetch optimization is
+deferred. Direction grants, FIFO ownership, admission and complete
+descriptor/response drain are defined by [SPI](spi.md) and [DMA V2.2](dma.md).
+Requests 16/17 remain unsupported until their complete integration exists.
+The SPI wrapper requires transaction-latched CPU/central-DMA/other-origin
+qualification through target admission and CDC, so only matching reserved DMA
+transactions can consume DMA FIFO credits. CPU and central-DMA FIFO aliases
+cannot bypass each other's ownership. This private path changes no AXI master
+count, ID or APB PPROT meaning and is not a new general firewall.
 
 Retain the common DMA direct/TCD ABI, 32-bit Tiny datapath, at-most-16-beat
 memory bursts, completion/error/W1C and abort-drain behavior. Replace the
@@ -999,6 +1103,14 @@ capture/FPS, a chosen physical sensor/PSRAM part and board timing are deferred
 qualification items. This buffer path adds no memory protection, IOMMU,
 authenticated image source or security/safety certification.
 
+The separate SPI display extension keeps this single-buffer boundary:
+capture into qualified PSRAM, finish and verify the complete frame, release
+camera transport ownership, display the verified frame through SPI, then
+save through SDIO. Use bounded staging/transaction buffers within existing
+SRAM when needed; do not require a whole-frame SRAM copy. Measure the entire
+sequence and its source/data-format conversion costs. Continuous capture
+with double-buffer display/save is not enabled by the new SPI interface.
+
 ## Gen1 clock, reset and board requirements
 
 ### Sources, domains and operating profiles
@@ -1050,7 +1162,7 @@ remain clocked while XIN runs and MUST NOT be software-gated.
 | AON / REF24 | RCU, CLINT, ArchInfo; RTC/WDG functional clocks | 24 MHz | 24 MHz | 24 MHz | 24 MHz |
 | SYS | CPU I/D and slow adapter, actual main-SRAM macros, four bank frontends/control, AXI32 fabric, SDIO including its APB and private DMA | 24 MHz | 96 MHz | 192 MHz | 240 MHz |
 | MEM | XPI, including its control interface | 24 MHz | 96 MHz | 96 MHz | 120 MHz |
-| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts, PIO-lite engine/APB/DMA endpoints; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
+| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts, PIO-lite and SPI engines/APB/DMA endpoints; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
 | AUDIO | I2S audio PHY and existing audio-side FIFOs | External | External | External | External |
 | PIXCLK | DVP pixel path and existing pixel-side FIFO | External | External | External | External |
 | JTAG | TAP/DTM | Separate TCK | Separate TCK | Separate TCK | Separate TCK |
@@ -1087,6 +1199,13 @@ Before a PCLK change, software MUST quiesce PIO state machines, drain accepted
 DMA/APB work and satisfy the lifecycle in [PIO-lite](piolite.md). Restart uses
 the new committed rate and explicitly initialized timing state; a clock change
 does not transparently preserve an in-flight protocol waveform.
+
+SPI shares PCLK and uses integer half-period enables, with
+`SCK_HZ = PCLK_HZ / (2 * N)`, `N >= 1`; SCK is not an internal logic clock.
+At PCLK24/48/60 the arithmetic ceilings are SCK12/24/30 MHz, respectively.
+They are not qualified pad rates or sustained payload guarantees. A clock
+change requires SPI wire completion, inactive CS and full transport drain;
+software explicitly reinitializes timing from the committed new PCLK rate.
 
 CLINT's counter/control stays in AON with a synchronous 1 MHz tick enable.
 Its timebase does not change or lose ticks during SYS transitions. CLINT
@@ -1169,8 +1288,8 @@ are not ordinary software-gate targets.
 
 1. The product clock service runs from SRAM and disables/quiesces all
    frequency-sensitive clients. DMA streams, SDIO/XPI, UART/I2C, I2S/DVP/PWM,
-   WS2812, CRC sessions, RNG source handshakes and Crypto maintenance must
-   be idle. Pending GPIO/filter use must be made safe by its owner.
+   WS2812, SPI sessions, CRC sessions, RNG source handshakes and Crypto
+   maintenance must be idle. Pending GPIO/filter use must be made safe by its owner.
 2. Accept and acknowledge the RCU command before blocking new target admissions
    on both CPU local I/D paths and external AXI paths.
    Drain accepted reads, writes, local I/D memory operations, all four bank
@@ -1288,6 +1407,7 @@ flow and affected consumer validation, not a patch inside a managed checkout.
 | JTAG | Dedicated debug access remains available | Application pinmux must not disconnect the debug path |
 | GPIO7 / SD_PWR_EN | External pull-down keeps card power disabled | Drives a load-switch enable, never the SD card supply directly |
 | GPIO29 / XPI_CS1_N | High impedance until selected; PSRAM remains deselected | External pull-up; no PSRAM dependency during NOR boot |
+| GPIO31 / SPI0_CS_N | High impedance until SPI ALT selection and valid native session | External pull-up keeps the SPI/display device deselected during reset and ownership handoff |
 | GPIO23 / CAM_XCLK and GPIO24/25 controls | No clock output after reset; ordinary GPIO high impedance | Board-defined sensor reset/power-down bias and inactive-device isolation |
 
 The current IHP GPIO binding provides no internal pull-up/down capability;
@@ -1336,7 +1456,7 @@ reachable through an acknowledged APB bridge while the system is running.
 | `0x14C` | `MEM_HZ` | RO / 24000000 | Committed divided XPI MEM-domain frequency, not main-SRAM frequency |
 | `0x150` | `PCLK_HZ` | RO / 24000000 | Committed peripheral frequency |
 | `0x154` | `CLINT_HZ` | RO / 1000000 | CLINT tick rate |
-| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; full sets are `0x00003FFF` before DVP/PIO, `0x00007FFF` with DVP but no PIO, and `0x0000FFFF` with DVP and PIO; absent target bits stay clear; reset excludes CPU bit 0 |
+| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; full sets are `0x00003FFF` before DVP/PIO/SPI, `0x00007FFF` with DVP only, `0x0000FFFF` with DVP/PIO, and `0x0001FFFF` with DVP/PIO/SPI; absent target bits stay clear; reset excludes CPU bit 0 |
 | `0x15C` | `CLKOUT_CONTROL` | RW / 0 | Source `[2:0]`; half-period divisor `[23:8]`; output is off after reset |
 
 Clock profile 0 is SAFE24. Profile 1 is external XIN at its declared frequency
@@ -1352,14 +1472,17 @@ identity and manifest must identify the model rather than physical qualification
 
 The target-mask bits are Tiny integration identifiers, not Mini register ABI:
 0 CPU, 1 GPIO, 2 UART0, 3 I2C0, 4 timer0, 5 timer1, 6 PWM, 7 I2S, 8 SDIO,
-9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto, 14 DVP and 15 PIO-lite.
-Bits 16-31 are reserved. Bits 14/15 are additive target allocations; existing
-offsets/bits and RCU ABI 1.0 semantics remain unchanged. R2-P7 may reserve the
-control plumbing
+9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto, 14 DVP, 15 PIO-lite
+and 16 SPI0. Bits 17-31 are reserved. Bits 14/15/16 are additive target
+allocations; existing offsets/bits and RCU ABI 1.0 semantics remain unchanged.
+R2-P7 may reserve the control plumbing
 but MUST report bit 14 clear and reject its commands until R2-P9 instantiates
 the complete DVP idle/reset/CDC path. It MUST report bit 15 clear and reject
 its commands until `PIOLITE-P3` instantiates the complete PIO-lite idle/reset
 path. No capability is inferred from a tie-off.
+SPI target bit 16 MUST stay clear and its commands MUST fail until `SPI-P3`
+connects the complete idle/reset/pad-session and DMA drain path. SPI reset
+does not release or hide its reservation before accepted work is drained.
 CPU gating means permission to gate only while WFI/idle with no pending IRQ or
 debug request; it is not an immediate software stop. RCU/REF24, AXI, main
 SRAM, XPI, CLINT, ArchInfo and RTC/WDG functional clocks cannot be gated or
@@ -1375,6 +1498,17 @@ stop/drain PIO-lite and explicitly release its pins, then issue the GPIO
 command. PIO target-15 gate/reset and CLOCK_APPLY require the PIO-lite
 quiesce/drain checks defined in [piolite.md](piolite.md); preserve bounded
 failure and continued control access when a machine is stalled on input/FIFO.
+The GPIO veto is the OR of actual PIO `USER_SELECT` ownership and any latched
+SPI session reservation. SPI reservations include prefilled/armed, active,
+CS-held and closing sessions until complete drain and checked release;
+configuration changes or temporary guard loss cannot hide that reservation.
+This veto also rejects a combined GPIO/SPI or GPIO/PIO/SPI mask without
+partial commit. SPI target-16 gate/reset and CLOCK_APPLY require inactive CS,
+disabled SPI with its session released, completed final serial edge/setup/hold
+timing, and complete accepted
+FIFO-MMIO, DMA, descriptor and response drain. Recheck ownership/readiness at
+commit. Ordinary reset/gating cannot forcibly discard accepted work or
+silently release pads; coordinated system reset remains a separate operation.
 After draining associated DMA and accesses, hold each local reset for at
 least five running local cycles and apply the five-edge release/barrier
 sequence. RESET_DONE acknowledges the reset sequence, not Crypto erasure or
@@ -1520,6 +1654,31 @@ Counters and terminal-test status permit firmware and simulation diagnosis.
 Watchdog provides whole-system recovery from a nonresponsive target; this
 baseline makes no unrestricted AXI liveness, secure-boot, production-entropy,
 isolation, or safety-certification claim.
+
+## SPI extension development and acceptance
+
+The separately approved [SPI contract](spi.md) owns the following phases;
+Target SoCs is `TINY` for every phase. Mini receives only shared-consumer
+compatibility checks, not a SPI product rollout. Documentation freeze closes
+no implementation or physical gate. The detailed matrix and actual evidence
+belong in [SPI verification](spi-verification.md).
+
+| Phase | Tiny integration boundary |
+| --- | --- |
+| SPI-P0 - Contract and DMA Extension Freeze | Freeze the SPI/transaction ABI, DMA V2.2 paced fixed-MMIO contract, product routes, ownership and qualification boundaries. |
+| SPI-P1 - SPI Core and Register Implementation | Implement and verify the PCLK master engine, 8/16-bit words, TX/RX FIFOs, CS timing, errors and register parity. |
+| SPI-P2 - DMA V2.2 Paced FIFO Integration | Implement requests 16/17, single-beat MMIO pacing, exclusive grants and complete accepted-transfer/descriptor drain while preserving existing requests. |
+| SPI-P3 - Tiny GPIO RCU and SDK Integration | Require accepted R2-P6 frozen Gen1 routes/eight-channel integration and R2-P7 lifecycle behavior; integrate APB/IRQ/RCU16, native/USER guards, transaction-latched source qualification, bounded HAL and software-managed segments. |
+| SPI-P4 - Display and Snapshot Application Qualification | Require R2-P8 PSRAM and R2-P9 camera acceptance for capture/verify/display/SD cases; qualify display transactions, channel handback, source conversion and bounded contention. |
+| SPI-P5 - IHP130 Timing and Physical Qualification | Qualify the actual SPI- and PIO-inclusive netlist, PCLK/IO timing, CDC/RDC, reset/gating, area, power and package conditions with the corresponding R2-P11/PIO evidence. |
+
+Do not renumber or rewrite historical `TINY-P0..P12`, active
+`TINY-R2-P0..P11` or `PIOLITE-P0..P5` titles or evidence. Their original
+performance-only exclusions remain historical scope boundaries; SPI is
+required only through this separate standard-product approval. Joint final
+runs must satisfy each applicable contract on the same source revision,
+configuration, physical inputs and netlist. SPI-only, PIO-only or earlier R2
+results cannot qualify the completed standard product.
 
 ## Development order and acceptance
 

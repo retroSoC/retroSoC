@@ -72,6 +72,14 @@ PIO-inclusive application, timing and physical evidence. Other products remain
 outside this feature scope; the [verification ledger](ip/piolite-verification.md)
 records the unimplemented and unqualified boundary.
 
+The separately approved 2026-10-04 [SPI extension](ip/spi.md) adds one future
+standard Tiny master/display controller using four previously reserved Gen1
+ALT routes without adding package pins. It uses packed 8/16-bit transfers,
+DMA V2.2 pacing and a separate `SPI-P0..P5` roadmap. Its initial application
+is sequential capture/verify/display/SD save, not simultaneous video. The
+existing XPI LCD path is unchanged; the [SPI evidence ledger](ip/spi-verification.md)
+keeps implementation and qualification gaps explicit alongside R2 and PIO.
+
 ### Gen1 Product and Package Target
 
 | Area | Tiny Gen1 target |

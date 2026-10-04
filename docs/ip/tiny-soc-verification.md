@@ -17,12 +17,16 @@ frozen IO/power-pad budget are outside the original performance-only R2
 refreeze. PIO-lite is now a separately approved standard-product extension
 under [piolite.md](piolite.md), with its own pending evidence matrix below;
 it does not renumber or retroactively expand the R2 phase results.
+SPI is also a separately approved standard-product extension under
+[spi.md](spi.md), with pending evidence below. The original performance-only
+exclusions remain in force for historical R2 work; the separate SPI approval
+does not turn older results into SPI acceptance.
 
 The executed historical sections describe the 2026-09-25 initial baseline,
 with two UARTs, two I2C controllers and the legacy pad mapping. The working
 tree was uncommitted when that evidence was collected and its readiness
 remains `prototype`. Those results do not validate the later package,
-shared-IP/clock/reset, DVP/framebuffer, R2 performance or PIO-lite freezes.
+shared-IP/clock/reset, DVP/framebuffer, R2 performance, PIO-lite or SPI freezes.
 
 ## PIO-lite planned extension evidence
 
@@ -66,6 +70,54 @@ introduced; a skipped/no-op RTL test or reserved request ID is not evidence.
 Firmware uses SYSCTRL `TEST_STATUS` and the strict `SIM_TEST_PASS`/result-file
 policy. Hardware, pad-speed and PPA claims remain pending until the specific
 source/profile/PDK evidence passes.
+
+## SPI planned extension evidence
+
+Target SoCs: `TINY`; feature slug: `spi`; approval date: 2026-10-04.
+The future standard product adds SPI0: an 8/16-bit PCLK master with separate
+8 x 32-bit TX/RX FIFOs, a bounded display transaction queue and DMA V2.2
+paced fixed-MMIO requests. Slave operation and continuous double-buffer
+camera/display are deferred. The committed IHP130 24 MHz/no-PLL profile has
+no SPI implementation; every implementation, simulator, proof, firmware,
+workload, synthesis, timing, physical and silicon result below is pending.
+The detailed matrix and documentation checks belong to the
+[SPI verification ledger](spi-verification.md).
+
+| SPI phase / area | Required evidence and completion boundary | Status |
+| --- | --- | --- |
+| SPI-P0 - Contract and DMA Extension Freeze | Approved SPI/transaction ABI and DMA V2.2 contract; only the four reserved Gen1 ALT cells added; all 64 perimeter assignments, existing assigned alternates and legacy/R2/PIO phase IDs/titles preserved; linked address/IRQ/RCU/request values and documentation checks. | Documentation freeze only; no implementation result |
+| SPI-P1 - SPI Core and Register Implementation | All CPOL/CPHA and 8/16-bit cases, first/last bits, TX/RX FIFO boundaries, partial words, timing changes, CS setup/hold/inactive and retained-CS behavior; invalid register access, W1C races, timeout/abort, stale-session isolation and handwritten register parity. | Pending |
+| SPI-P2 - DMA V2.2 Paced FIFO Integration | Requests 16/17 and truthful capability support, stable grants, single-beat FIFO MMIO, memory-side bursts/boundaries, TX/RX tails, no FIFO double-pop/push, complete descriptor/accepted-response drain and no stale restart; regress existing PIO14/15 and other consumers. | Pending |
+| SPI-P3 - Tiny GPIO RCU and SDK Integration | Accepted R2-P6 frozen Gen1/eight-channel routing and R2-P7 lifecycle prerequisites; APB `0x1001D000..0x1001DFFF`, IRQ25, target16, native-ready/USER handoff, raw MISO capture, complete HAL queue/error/recovery behavior and truthful absent capabilities. | Pending |
+| SPI-P3 / GPIO and lifecycle | Preserve sole PIO USER ownership and its synchronizer/filter path. Reject GPIO gate/reset while PIO USER_SELECT or latched SPI sessions remain, including prefill, CS-held and closing state and combined masks; no native-ready inference from zero USER_STATUS; guard loss closes admissions, invalidates work and requires explicit recovery. Gate/reset/PCLK changes need inactive CS and complete wire/DMA/MMIO/descriptor drain. | Pending |
+| SPI-P4 - Display and Snapshot Application Qualification | Pin-level display command/data checks, D/C ordering and setup, source/pixel conversion, exact counts/guards/readback, zero early wire completion, deterministic error recovery and explicit board reset/backlight/TE solution. Camera/PSRAM cases require R2-P8/R2-P9 and execute capture, verify, display, then SD save. | Pending |
+| SPI-P4 / shared ownership and throughput | TX3 only after bulk/PIO release and RX2 only after full DVP/PIO release; no theft of Crypto4/5 or I2S6/7. Measure actual wire rate, source conversion/staging, payload throughput and worst admitted service gaps; strict Tiny terminal verdict in Icarus and Verilator. Nominal PCLK/SCK or double-buffer assumptions are insufficient. | Pending |
+| SPI-P5 - IHP130 Timing and Physical Qualification | Same SPI- and PIO-inclusive source/profile/PDK/corner/netlist as applicable final product gates; actual PCLK STA, SCK/MOSI/CS/D-C output and MISO round-trip setup/hold, GPIO guard/handoff, CDC/RDC, local reset, gate behavior, area/power/IO/package and board evidence. | Pending |
+
+SPI0 is allocated at `0x1001D000..0x1001DFFF`, IRQ25 and RCU target16;
+`SPI_TX=16` and `SPI_RX=17` are DMA request IDs, not new channels. Keep those
+capabilities absent until complete implementation. Planned RCU support is
+the actual implemented target mask; `0x0001FFFF` is valid only when every
+target0-16 path exists. GPIO gate/reset veto is based on actual PIO ownership
+OR the hardware-latched SPI session, not mutable claims or FIFO-empty alone.
+
+The four changed Gen1 rows are GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30
+ALT1 MISO and GPIO31 ALT1 CS_N. GPIO30 ordinary D/C replaces MISO in the
+write-only display profile. R2-P6 first migrates the legacy executable PWM
+capture routes from GPIO30/31 ALT1 to the already frozen GPIO24/25 ALT0.
+The complete camera profile plus display consumes all 32 GPIO and preserves
+GPIO29 NSS1. Board control pins and external CS/reset bias need explicit
+evidence; changing the internal mux cannot prevent external contention.
+
+`SPI-P5` can share physical runs with `PIOLITE-P5` and `TINY-R2-P11` only
+when all applicable contracts are satisfied on the same SPI- and
+PIO-inclusive source revision, configuration, physical inputs and netlist.
+Earlier baseline/R2 or PIO-only evidence does not qualify the new product.
+PCLK24/48/60 and arithmetic SCK12/24/30 MHz are target cases, not measured
+payload rates or qualified pad operation. Preserve the existing 128 KiB
+CPU-rate main SRAM, eight DMA channels, three external AXI owners and fixed
+QFN64/power budget. Record documentation validation separately from these
+pending implementation gates.
 
 ## R2 pending phase acceptance
 

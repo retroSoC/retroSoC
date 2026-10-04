@@ -65,6 +65,38 @@ require pin-level XPI PSRAM and full-frame readback, not fast-flash or
 separate-controller evidence.
 No camera/PSRAM rate is qualified by this freeze.
 
+The separately approved [SPI extension](../../docs/ip/spi.md) adds SPI0 to the
+future standard Tiny product, with its own `SPI-P0` through `SPI-P5` phases.
+It is a PCLK master-only 8/16-bit controller with separate 8 x 32-bit TX/RX
+FIFOs, APB4 `0x1001D000..0x1001DFFF`, IRQ25 and RCU target16. DMA V2.2 adds
+paced fixed-MMIO requests `SPI_TX=16` / `SPI_RX=17`; payload MMIO retains
+single-beat transactions. TX borrows channel3 and RX channel2 only after
+prior owners fully drain and release them. No extra AXI master, DMA channel,
+SRAM capacity or pad is added. None of these paths exists in the current
+24 MHz/no-PLL/four-channel RTL/profile.
+
+The frozen Gen1 routes add only GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30
+ALT1 MISO and GPIO31 ALT1 CS_N. Write-only display mode uses ordinary GPIO30
+as D/C instead of MISO. Other Gen1 alternates, GPIO29 NSS1 and QFN64 terminal
+assignments remain unchanged. `SPI-P3` depends on R2-P6 applying the approved
+Gen1 routes, including moving legacy GPIO30/31 PWM capture to GPIO24/25 ALT0,
+and on R2-P7 clock/reset behavior. PIO-lite remains the sole USER owner;
+SPI native-ready requires USER_SELECT and handoff clear on its session mask
+plus valid ALT and GPIO lifecycle state; PIO may retain unrelated pads.
+Zero USER_STATUS alone does not prove native readiness.
+GPIO gate/reset is rejected while actual PIO ownership or a latched SPI
+session remains, including prefill, retained CS and closing/drain state.
+SPI gate/reset and PCLK changes require inactive CS and complete wire/DMA drain.
+
+`SPI-P4` camera/PSRAM acceptance depends on R2-P8/R2-P9 and follows capture,
+full-frame verification, display, then SD save. It does not add continuous
+double-buffer capture/display. The complete camera profile plus display uses
+all 32 GPIO; separate display reset/backlight/TE needs an explicit board
+solution. `SPI-P5`, PIOLITE-P5 and final R2 physical acceptance must identify
+the same SPI- and PIO-inclusive source, configuration and netlist. PCLK24/48/60
+and arithmetic SCK12/24/30 MHz ceilings are not qualified pad rates. See the
+[SPI evidence ledger](../../docs/ip/spi-verification.md) for pending gates.
+
 `make CONFIG=configs/ci/ihp130-tiny.mk regress-pr` runs only Tiny's IHP130
 matrix. The regression runner also accepts `--soc TINY`; leaving it unset
 retains the combined Mini/Tiny IHP130 matrix. `netsim-boot` uses the compact
