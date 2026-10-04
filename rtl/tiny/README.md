@@ -1,7 +1,7 @@
 # Tiny MCU Integration
 
 Tiny is the independent single-Hazard3 wired MCU product. Its frozen target
-contract is [Tiny Gen1 QFN64](../../docs/ip/tiny-soc.md). Use
+contract is [Tiny Gen1 QFN64 R2](../../docs/ip/tiny-soc.md). Use
 `make CONFIG=configs/ci/ihp130-tiny.mk setup` followed by
 `make CONFIG=configs/ci/ihp130-tiny.mk firmware sim`.
 
@@ -19,24 +19,33 @@ are outside this release. Run both Icarus and Verilator, the Tiny directed
 tests, and the IHP130 regression before claiming qualification. Synthesis and
 STA use the Tiny top and clock inventory, not Mini constraints.
 
-The 2026-09-30 P6 target adds shared RNG/CRC/WS2812/Crypto, eight-channel DMA
-and a Tiny-owned RCU/SYSCTRL, with no-PLL 96 MHz and single-output-PLL
-240 MHz limits. It preserves QFN64 and adds WS2812 on GPIO26 ALT0. The
-committed RTL/profile still describes the initial 24 MHz/no-PLL implementation;
-P7/P8 must implement the new addresses, streams, clock domains,
-reset barriers and shared-driver compatibility. No PLL macro/timing support
-is implied by the new specification or the `HAVE_PLL` selector alone.
+The 2026-10-04 R2 target preserves QFN64, the existing peripheral contracts,
+eight-channel DMA, Tiny RCU and the DVP/XPI framebuffer target. It adds dual
+CPU I/D paths to four contiguous 32 KiB main-SRAM arbitration groups, each with
+independent request/response state and an external AXI frontend. CPU and all
+main-SRAM macros share SYS at the selected 24/96/192/240 MHz target; no SRAM
+CDC or slower SRAM divider is introduced. Only non-SRAM CPU I/D requests merge
+into the external path, preserving three external owners with central DMA and
+SDIO. Per-target arbitration replaces the global transaction lock. XPI stays
+in MEM at 24/96/96/120 MHz and Crypto's six private banks remain PCLK.
 
-The 2026-10-01 P10 documentation refreeze adds the existing DVP V2 contract,
-camera GPIO12-23 ALT1 (mutually exclusive with I2S), DMA2/request 11 and
-optional XPI NSS1 PSRAM at `0x54000000` through GPIO29. Whole-frame external
-storage does not change the 128 KiB SRAM, NOR boot, QFN64/power budget or
-three-master/eight-channel target. CAM_XCLK shares RCU CLKOUT; RCU target 14
-and DVP endpoint capabilities remain unsupported until actual integration.
-The remaining order is P10 -> P7 -> P8 -> P11 (PSRAM transport) -> P12
-(camera capture) -> P9 (system/physical qualification). P11/P12 require real
-pin-level XPI PSRAM and full-frame readback, not fast-flash or the separate
-PSRAM controller's tests. No camera/PSRAM rate is qualified by this freeze.
+The active execution order is sequential `TINY-R2-P0` through `TINY-R2-P11`
+in the linked contract. Software/DMA scheduling is `TINY-R2-P3`, local CPU/SRAM
+`TINY-R2-P4`, concurrent fabric `TINY-R2-P5`, shared-IP/eight-channel integration
+`TINY-R2-P6`, RCU `TINY-R2-P7`, XPI PSRAM `TINY-R2-P8`, camera capture
+`TINY-R2-P9`, system qualification `TINY-R2-P10` and IHP130 physical
+qualification `TINY-R2-P11`. Legacy `TINY-P0` through `TINY-P12` remain in
+the contract history. The committed RTL/profile still implements the initial
+24 MHz/no-PLL/four-channel design; no faster CPU/SRAM or PLL timing support
+follows from this freeze or the `HAVE_PLL` selector alone.
+
+Camera GPIO12-23 ALT1 remains mutually exclusive with I2S. DMA2/request 11,
+optional XPI NSS1 PSRAM at `0x54000000` through GPIO29 and shared CAM_XCLK
+retain their existing target contracts. RCU target 14 and DVP capabilities
+stay unsupported until actual integration. `TINY-R2-P8` and `TINY-R2-P9`
+require pin-level XPI PSRAM and full-frame readback, not fast-flash or
+separate-controller evidence.
+No camera/PSRAM rate is qualified by this freeze.
 
 `make CONFIG=configs/ci/ihp130-tiny.mk regress-pr` runs only Tiny's IHP130
 matrix. The regression runner also accepts `--soc TINY`; leaving it unset

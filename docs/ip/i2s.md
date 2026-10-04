@@ -11,12 +11,15 @@ and MCLK dividers. Host and audio clocks are independent; configuration uses
 ## Integration
 
 The following allocation describes the current Mini integration. The
-[Tiny Gen1 target](tiny-soc.md) preserves the common IP/host ABI and address,
+[Tiny Gen1 R2 target](tiny-soc.md) preserves the common IP/host ABI and address,
 uses core IRQ8 and central DMA channels 6/7 for TX/RX, and keeps host streams
 in PCLK while audio uses the separate pad-provided clock. Its GPIO routing
 and slave-mode requirement do not imply that the shared master-only RTL
-already implements them. A slave extension must update the common contract
-and driver rather than create a Tiny-only register interpretation.
+already implements them. `TINY-R2-P6` integrates the shared master path and
+`TINY-R2-P7` supplies its clock/reset context. The product contract defines
+DMA scheduling and contention acceptance without changing sample packing,
+FIFO depth or stream semantics. A slave extension must update the common
+contract and driver rather than create a Tiny-only register interpretation.
 
 | Property | Value |
 | --- | --- |

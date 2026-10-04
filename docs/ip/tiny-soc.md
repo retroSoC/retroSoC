@@ -1,18 +1,21 @@
-# retroSoC Tiny Gen1 Product, Shared IP, Camera and Clock/Reset Contract
+# retroSoC Tiny Gen1 Product, Performance and Clock/Reset Contract
 
 ## Purpose and research boundary
 
-This contract incorporates the DVP/XPI-framebuffer design approved on
-2026-10-01 for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the
-QFN64 package and pad allocation approved on 2026-09-26 and the 2026-09-30
-shared-IP/clock/reset freeze: RNG, CRC, WS2812, Crypto, Tiny-specific RCU and
-eight-channel central DMA. The added camera profile reuses DVP V2 unchanged
-and permits whole-frame buffers in optional XPI-connected PSRAM. It does not
-add pads, a DMA channel, a memory controller or an AXI master.
+This contract freezes the performance-only R2 design approved on 2026-10-04
+for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the QFN64
+package and pad allocation approved on 2026-09-26, the shared peripherals
+approved on 2026-09-30, and the DVP/XPI-framebuffer contract of 2026-10-01.
+R2 adds independent CPU I/D local paths, four independently arbitrated main
+SRAM groups, per-target concurrency and bounded data-movement policies.
+CPU and the actual main-SRAM macros share SYS at the same active frequency.
+No pad, peripheral, user-SRAM capacity, DMA channel or external AXI owner is
+added. `R2` identifies the development-roadmap revision, not an IP ABI version.
 
-The clock contract supersedes the earlier 144 MHz target with a maximum
-SYS/processor target of 96 MHz without PLL and 240 MHz with PLL. Both variants boot from a
-24 MHz reference-derived safe clock. No independent safety RC is added.
+The clock contract retains the 96 MHz no-PLL and 192/240 MHz PLL targets,
+now requiring the main SRAM to qualify at those same rates. Both variants
+boot from REF24. XPI remains in the divided MEM domain with a 120 MHz ceiling;
+Crypto's private SRAM remains in PCLK. No independent safety RC is added.
 
 This is a specification freeze, not evidence of implemented or qualified
 96/240 MHz silicon. Mini is a compatibility consumer of shared IP, not an
@@ -28,15 +31,18 @@ contract and must not be read as the new Gen1 integration or clock qualification
 
 Product RTL, address/pin/topology inputs and filelists remain under `rtl/tiny`;
 the SDK and application composition retain their existing `crt/` and `app/`
-ownership. The remaining execution order is P10 (this documentation freeze),
-P7, P8, P11, P12, then P9; stable phase numbers are not dependency order.
+ownership. The active execution order is `TINY-R2-P0` through `TINY-R2-P11`,
+with prerequisites pointing only to earlier R2 phases. Legacy `TINY-P0`
+through `TINY-P12` keep their original headings and evidence in the archive;
+their former non-monotonic schedule is not the current execution plan.
 The current profile still selects four DMA channels and forbids PLL/non-24-MHz
 Tiny configurations. New configurations require explicit platform enablement.
 
 ### Commercial references and reuse boundary
 
 The following primary references were reviewed during the 2026-09-30 research;
-the camera references were checked on 2026-10-01.
+camera references were checked on 2026-10-01 and the R2 bus/memory references
+on 2026-10-04.
 Vendor frequencies, power figures and security qualifications are not Tiny
 PPA or signoff evidence; no proprietary implementation is copied.
 
@@ -46,6 +52,8 @@ PPA or signoff evidence; no proprietary implementation is copied.
 | [STM32H573 datasheet](https://www.st.com/resource/en/datasheet/stm32h573vi.pdf) | DS14121 Rev 5 (May 2025) describes a production 250 MHz MCU with domain controls, CRC/RNG/crypto and a parallel camera interface supporting snapshot/continuous capture and cropping. | Reuse the snapshot/crop programming pattern and separate product clock control. Do not import its wider camera bus, JPEG support, TrustZone, protected-key, independent-watchdog-clock or TRNG certification claims. |
 | [Espressif camera driver](https://github.com/espressif/esp32-camera) | The official ESP32/ESP32-S2/ESP32-S3 driver documents PSRAM frame buffers and PSRAM DMA on S2/S3; it warns that raw RGB/YUV writes can lose data when bandwidth is insufficient. Single-buffer capture and multiple-buffer continuous capture have different memory/bandwidth costs. | Use external RAM capacity with explicit throughput and worst-stall checks. Tiny selects one-frame capture/readback first, not a descriptor ring, compression path or guaranteed continuous frame rate. The maintained driver is a software reference, not Tiny silicon, power or timing evidence. |
 | [GD32F450 datasheet](https://gd32mcu.com/data/documents/datasheet/GD32F450xx_Datasheet_Rev2.3.pdf) | Rev 2.3 describes 200 MHz AHB domains, 50/100 MHz APB domains and RCU-managed clocks/resets. | Use explicit domain ceilings and dividers rather than assigning the processor frequency to every peripheral. No analog macro, process-specific voltage or measured PPA is reused. |
+| [RP2350 architecture documentation](https://www.raspberrypi.com/documentation/microcontrollers/microcontroller-chips.html) | Current official documentation describes a multi-master crossbar and independently accessible SRAM banks for CPU/DMA concurrency. | Adopt independent target/bank service and explicit contention analysis. Tiny remains single-hart with 128 KiB, no new cache, PIO, USB or imported frequency/power claim. |
+| [STM32H573 RM0481](https://www.st.com/resource/en/reference_manual/rm0481-stm32h563h573-and-stm32h562-armbased-32bit-mcus-stmicroelectronics.pdf) | The reference manual describes CPU, general-DMA and SDMMC-DMA paths, multiple SRAM targets and round-robin bus-matrix arbitration. | Use target-local arbitration and separate control/data traffic. Do not infer Cortex-M33 timing, cache/coherency, TrustZone or zero-wait behavior for Tiny. |
 
 The [RP2350](https://www.raspberrypi.com/products/rp2350/) is a Hazard3-based MCU
 reference for software, SRAM, and deterministic I/O. Its dual-core, security,
@@ -58,9 +66,10 @@ no commercial implementation or qualification is reused.
 
 - TINY-001: one Hazard3 hart, RV32IMC with A disabled, mandatory debug support;
   existing RV32IM firmware remains the default compiler target.
-- TINY-002: native 32-bit AXI4 data and APB4 control. The CPU's native AHB-Lite
-  terminates at a direct AXI adapter. No RIB/RIBP source or interface is part of
-  Tiny's compilation or elaboration closure.
+- TINY-002: native 32-bit AXI4 external data and APB4 control. The CPU's
+  separate native I/D AHB ports reach main SRAM through local synchronous
+  paths; only non-SRAM slow paths merge into the CPU AXI adapter. No RIB/RIBP
+  source or interface is part of Tiny's compilation or elaboration closure.
 - TINY-003: 128 KiB technology-backed SRAM and XPI NOR boot. Boot and baseline
   firmware MUST NOT depend on external RAM. Reset vector is `0x00000000`;
   SRAM begins at `0x30000000`. Optional initialized XPI PSRAM may hold frame
@@ -73,9 +82,11 @@ no commercial implementation or qualification is reused.
 - TINY-005: retain `HAVE_PLL` as the single PLL build selector. With no PLL,
   use an external XIN clock up to 96 MHz; with PLL, use a 24 MHz reference and
   the single-output PLL interface for a maximum 240 MHz SYS/processor target.
-  Both variants start on REF24 and retain a 1 MHz CLINT timebase. MEM and
-  PCLK have separate 120 MHz and 60 MHz target ceilings. None is a qualified
-  operating frequency until the corresponding physical evidence passes.
+  The actual 128 KiB main-SRAM macro clocks MUST share SYS with the CPU at
+  every active operating point, including 192/240 MHz. Both variants start on
+  REF24 and retain a 1 MHz CLINT timebase. MEM is the XPI domain, with a
+  120 MHz ceiling; PCLK has a 60 MHz ceiling. None is a qualified operating
+  frequency until joint macro and system physical evidence passes.
 - TINY-006: Tiny must build independently of MPW, HP CPU generation and
   multimedia inputs. Shared SDK APIs retain the `rs_` namespace.
 - TINY-007: no wireless IP, radio-specific host integration, or wireless stack.
@@ -154,6 +165,42 @@ no commercial implementation or qualification is reused.
   each supported profile. Fast read-only NOR or separate-controller tests
   MUST NOT substitute for this evidence; no supported PIXCLK/FPS is inferred
   from CAM_XCLK, CPU frequency or external RAM capacity alone.
+- TINY-028: MUST use the locked official dual-port Hazard3 with independent
+  local I/D paths, preserved debug and disabled A atomics. Only non-SRAM
+  requests may merge into the CPU slow path; MUST NOT recombine local I/D
+  before SRAM arbitration. The uncontended local acceptance-to-completion
+  budget is at most three SYS cycles under the conditions defined below.
+- TINY-029: MUST preserve the flat 128 KiB main-SRAM aperture as four
+  contiguous, independently serviceable 32 KiB arbitration groups backed by
+  the existing 32 single-port 4 KiB macros. No common transaction lock, cache,
+  alias or interleaving is added. Physical bank discovery keeps its old meaning.
+- TINY-030: MUST replace global transaction serialization with independent
+  target ownership, preserve central DMA's one-read/one-write concurrency,
+  and isolate fast control access from FIFO-waiting APB paths. Same-target
+  service remains bounded in structure, not unconditionally in elapsed time.
+- TINY-031: MUST preserve CPU data ordering, two-cycle AHB errors, correct
+  instruction visibility, AXI owner/response routing and accepted-work drain.
+  Concurrent fault events MUST be counted without loss while preserving the
+  existing first-fault, saturating-count, W1C and raw-response semantics.
+- TINY-032: MUST define per-application DMA ownership and service budgets,
+  including active WS2812 refill and TCD fetch interference. Use exclusive,
+  occupancy-bounded WS2812 batches; MUST NOT rely on priority to preempt an
+  admitted serial/APB transaction or imply cyclic/2D DMA support.
+- TINY-033: ordinary FIFO payload-reset reduction requires equivalence of
+  empty/flush/reset visibility and restart barriers. MUST NOT weaken Crypto
+  physical erasure, key/result invalidation or verified zero readback.
+- TINY-034: preserve the compatible firmware build and add a separately
+  validated performance build and bank-aware placement policy. Hardware ISA,
+  compiler flags, firmware size and linker budgets MUST be independently
+  checked; upstream benchmark scores are not Tiny performance evidence.
+- TINY-035: main-SRAM, CPU and fabric timing MUST be qualified jointly at SYS.
+  A failing rate is lowered or disabled for CPU and main SRAM together;
+  MUST NOT restore a half-rate main-SRAM fallback. Extra response wait states
+  do not repair a macro's minimum-clock-period violation.
+- TINY-036: ACCEPTANCE separates functional, workload-performance, synthesis/
+  netlist and physical evidence. The active R2 roadmap MUST retain the legacy
+  phase IDs/titles and evidence as history, with explicit obligation mapping;
+  no historical phase or timing gap is closed merely by this refreeze.
 
 Deferred: RV32 A atomics, RTOS ports, authenticated boot, retention/power gating,
 independent sleep clock, 256-512 KiB SRAM, USB, standalone general SPI, CAN, ADC,
@@ -163,6 +210,10 @@ not deferred product features. XPI retains
 four chip selects: CS0_N is dedicated to boot NOR, while CS1_N through CS3_N
 use GPIO29 through GPIO31. Additional XPI device configurations still require
 their own qualification.
+
+This R2 scope MUST NOT add SPI, PIO-lite, a recovery Boot ROM, caches, atomics,
+new accelerators or another PDK rollout. Those research ideas are explicitly
+deferred rather than hidden prerequisites of the performance work.
 
 ## QFN64 package and power planning
 
@@ -386,10 +437,105 @@ translation; this profile does not add supplies or pads.
 ## Shared IP and product-specific integration
 
 The selected hierarchy is `retrosoc_tiny` plus a Tiny-owned RCU/SYSCTRL,
-three-master AXI32 fabric, domain bridges, SRAM/XPI, shared peripherals and
-product pad routing. `retrosoc_tiny_asic` owns the unchanged QFN64 pad budget.
+dual-port CPU/local-SRAM routing, four bank services, a per-target AXI32 fabric
+with three external owners, domain bridges, XPI, shared peripherals and product
+pad routing. `retrosoc_tiny_asic` owns the unchanged QFN64 pad budget.
 Common provides register, FIFO, synchronizer, handshake, clock and reset
 primitives; Mini product RTL is not a dependency of Tiny's source closure.
+
+### R2 CPU and four-bank main SRAM
+
+Use the official `hazard3_cpu_2port` from the locked Hazard3 dependency; it is
+already present in Tiny's source list. The [upstream integration manual](https://wren.wtf/hazard3/doc/)
+describes separate nonburst instruction and data AHB ports. This freeze does
+not update the dependency or claim that enabling two ports makes CPU accesses
+AXI bursts. Keep the single hart, debug integration, Tiny's disabled A
+extension and full two-cycle AHB error completion.
+
+Both CPU ports and the physical main-SRAM macro clocks use SYS. Instruction
+access is word-read-only; the data path retains aligned byte/halfword/word
+access with byte write masks. Decode main SRAM before the slow-path merge.
+Local I and D requests remain independent through bank arbitration. Only
+non-SRAM I/D requests share one tagged CPU AXI ingress, whose saved origin
+selects the correct response. The instruction path supports SRAM and the
+NOR boot/executable NSS0 apertures; a fetch from a peripheral/control region
+must fail before any read side effect. Absent regions retain decode errors.
+
+| Logical arbitration group | Address range | IHP130 storage | Example performance layout |
+| --- | --- | --- | --- |
+| B0 | `0x30000000..0x30007FFF` | Eight existing 4 KiB single-port macros | Hot code and interrupt/exception entry |
+| B1 | `0x30008000..0x3000FFFF` | Eight existing 4 KiB single-port macros | Remaining code and read-only tables |
+| B2 | `0x30010000..0x30017FFF` | Eight existing 4 KiB single-port macros | CPU data, stack and working area |
+| B3 | `0x30018000..0x3001FFFF` | Eight existing 4 KiB single-port macros | DMA buffers and descriptors |
+
+The four groups do not change the 128 KiB aperture, reset vector, permissions
+or address aliases. Every group is available to all permitted access paths;
+the example layout is a software placement policy, not a hardware partition.
+The 32 physical macro instances remain separate from Crypto's six private
+macros. Four groups do not mean four physical macros or a fourfold speedup.
+
+Each group has its own external AXI request/response frontend and local bank
+state. Decode DMA/SDIO addresses before these frontends; a combined SRAM
+transaction FSM ahead of all four groups is prohibited. Central DMA read B2
+and write B3 may progress while CPU I uses B0 and D uses B1. SDIO competes
+only for the addressed group. Actual throughput depends on the request mix,
+macro/response timing and arbitration, not the count of interfaces alone.
+
+At each bank, round-robin arbitration chooses eligible I, D or external
+memory beats and advances only when an operation is issued to a macro.
+The external frontend retains its selected DMA/SDIO transaction owner until
+B/RLAST, with fair read-versus-write selection when both directions contend.
+It does not reserve the macro for the whole burst: an external write becomes
+eligible only after data/strobes are captured, and a read only after response
+storage is reserved. Save the response source tag and capture read data before
+issuing another operation that can change the macro output. Backpressure on
+W, R or B must not prevent unrelated local accesses from using the bank.
+
+A continuously eligible local requester waits for at most two other eligible
+macro issues in the three-way round robin, plus residual pipeline delay.
+DMA/SDIO external ownership alternates at completed transaction boundaries;
+an eligible owner waits for at most one other completed external burst at
+that bank. These are service-count bounds, conditional on clocks and peer
+progress, not wall-clock guarantees for a stopped clock or withheld response.
+AXI bursts are not atomic; interleaving local memory beats is legal while
+software buffer ownership still governs data-race correctness.
+
+The local latency budget is at most three SYS cycles from an accepted AHB
+address phase to its terminal data-phase completion, with clocks running,
+an uncontended bank, response capacity available and no lifecycle stall.
+Implement and verify the request-capture, macro-issue and returned-completion
+pipeline at the actual macro timing. Admission waiting and contention are
+reported separately; withholding acceptance must not conceal those delays.
+This is a frozen engineering acceptance budget, not a measured result or a
+claim of single-cycle SRAM. No main-SRAM CDC or ratio bridge is permitted.
+
+Keep one accepted CPU D operation across the local groups and slow path.
+A store is complete only after the addressed byte writes commit; switching
+targets must not reorder CPU data operations. `FENCE` orders older CPU data
+work, not arbitrary independent DMA traffic. DMA buffer handoff first waits
+for the corresponding DMA completion, then applies the software ordering
+barrier. Boot copies, DMA-written executable code and debugger code patches
+must establish write visibility and execute `FENCE.I` before entry/resume.
+Preserve the core's speculative-fetch cancellation and response-order rules.
+
+Debug remains the existing halted-hart abstract-command path, not a new
+independent system-bus master. Hart reset stops new CPU admissions and drains
+accepted I-local, D-local and merged slow-path work plus their responses;
+unrelated DMA and SRAM service remain active. A system reset may invalidate a
+session but must prevent old requests/responses from being replayed. Main
+SRAM payload contents are not cleared by reset.
+
+Reuse the shared SRAM register definitions and technology wrappers. Tiny
+owns its routing/arbitration integration; shared changes must preserve default
+Mini behavior and pass affected consumer regressions. For Tiny/IHP130,
+`BANK_COUNT=32` and `BANK_BYTES=4096` continue describing physical storage,
+not four 32 KiB arbitration groups. Group placement is published in build
+and linker information without repurposing those fields or adding a new
+register map. Existing AXI request/beat counters aggregate external frontend
+events; they do not silently become local-CPU counters. A stall-cycle counter
+counts a cycle with any applicable external stall, not four accumulated bank
+stalls. New local wait/grant/conflict measurements use separately identified
+verification instrumentation rather than changing the public counter meanings.
 
 ### Address and interrupt allocations
 
@@ -450,20 +596,56 @@ XPI indirect TX request or a CPU whole-frame staging buffer.
 Retain the common DMA direct/TCD ABI, 32-bit Tiny datapath, at-most-16-beat
 memory bursts, completion/error/W1C and abort-drain behavior. Replace the
 baseline's blanket Tiny stream rejection with truthful endpoint capabilities;
-omitted I2C1 requests remain unsupported. P7 reserves DVP routing but MUST NOT
-advertise request 11 until P12 connects the IP and stream. Enable implemented
+omitted I2C1 requests remain unsupported. R2-P6 reserves DVP routing but MUST
+NOT advertise request 11 until R2-P9 connects the IP and stream. Enable implemented
 Crypto, I2S and DVP host streams in PCLK, without adding CDC inside the shared
 stream contracts. Existing request thresholds and cross-domain XPI
 completion/request signals require
 proper synchronization/handshake at the product boundary.
 
-CPU and the two DMA masters share Tiny's globally active read-or-write
-transaction contract. Extend round-robin ownership to all three masters;
-preserve accepted W ownership through B and read ownership through RLAST.
-Keep aligned 1/2/4-byte memory accesses, 1-16-beat INCR memory transfers,
-single-beat FIXED/INCR MMIO, 4 KiB/target boundaries and existing SLVERR/DECERR
-drain rules. Register slices/CDC must preserve this subset, not silently admit
-Mini's wider buses or greater outstanding counts.
+R2 replaces the global read-or-write lock with independent target admission,
+owner state and response storage. The external owners remain merged CPU slow
+access, central DMA and SDIO private DMA. The CPU slow ingress admits one
+combined transaction; central DMA preserves one outstanding read and one
+write across targets. The SDIO ingress preserves its native one-read/one-write
+capacity without claiming its current transfer scheduler issues both at once.
+Each external target admits only one combined read-or-write transaction in
+this version; no deep queue, same-direction reordering or new AXI ID scheme
+is required. Different targets may progress concurrently.
+
+Arbitrate target ownership round-robin across eligible external owners, with
+fair direction selection for one owner's competing read/write requests. An
+address handshake reserves that ingress direction and target; accepted address
+buffers count as outstanding work. W-before-AW is backpressured until saved
+AW ownership exists. Route the whole W stream using that saved owner/target,
+not a changing address, and retain ownership through B or RLAST. VALID payloads
+and response origin remain stable under backpressure. Preserve aligned
+1/2/4-byte memory accesses, 1-16-beat INCR memory transfers, single-beat
+FIXED/INCR MMIO, 4 KiB/target boundaries and existing SLVERR/DECERR drain
+rules. The 32 KiB group boundaries align with 4 KiB boundaries, so a legal
+burst cannot newly cross a group. Do not import Mini's wider buses or
+unbounded outstanding traffic.
+
+Fast control accesses, including DMA and RCU control, must not sit behind a
+FIFO-waiting WS2812 or XPI indirect-data access on one shared APB bridge.
+Use independent target branches and the existing domain ownership rather than
+a single product-wide APB transaction lock; accesses to one peripheral remain
+serialized by its unchanged APB contract. A stalled XPI memory transaction
+must not block a CPU workload confined to main SRAM and independent controls.
+
+Independent targets can complete errors simultaneously. Count each failed
+transaction once with a wide saturating increment, including errors observed
+before the final read beat; retain the first failing beat's metadata until
+completion. Preserve the first-fault snapshot while valid. On same-cycle ties
+use ascending owner, then path order (CPU I before D, read before write), so
+selection is deterministic. Keep CPU owner 0 and central DMA owner 1; SDIO
+uses the additive owner value 2. Local and slow CPU faults retain owner 0.
+`FAULT_DETAIL` remains the raw AXI response (2/3), not an I/D-origin field.
+Local CPU-path errors use the corresponding SLVERR/DECERR representation;
+do not count a propagated CPU response again after its external fault event.
+W1C clears validity rather than the event count, and a concurrent hardware
+event wins over clear. The existing saturating count and terminal-test ABI
+must not lose events merely because the old fabric emitted one fault at a time.
 
 ### Shared software and storage
 
@@ -494,6 +676,94 @@ stable under backpressure. A separate source clock requires CDC outside the
 controller. The deterministic regression source remains `qualified=0`;
 security-facing reads retain the shared HAL's unsupported/fail-closed result
 until a physical source and its qualification are supplied.
+
+### R2 scheduling and software performance
+
+DMA channel count, request selectors and default owners remain those above.
+Define explicit application ownership for camera, audio and general/bulk
+sessions; do not silently borrow Crypto, I2S or DVP channels. An application
+budget includes source/consumer deadlines, maximum admitted bursts, descriptor
+fetch traffic and nonpreemptible target time. DVP, audio and a running WS2812
+frame all require timely service. Background CRC/memory work uses bounded
+chunks and available service slots; a configuration whose simultaneous
+deadlines cannot be met must not be advertised as supported concurrency.
+
+The shared DMA already has priority, round-robin data scheduling and finite
+one-dimensional TCD chains. It is not necessary to add linked-list DMA.
+Descriptor fetches can interfere with ordinary read selection, including a
+16-beat fetch, and must appear in latency measurements. Priority cannot
+preempt an accepted AXI write, a waiting APB FIFO write or an active XPI
+serial command. True cyclic rings, 2D stride and new autonomous peripheral
+credit/request interfaces remain outside this freeze.
+
+For WS2812, use the existing 16-word FIFO and register/HAL interfaces:
+
+Here `remaining` means caller-owned source words not yet enqueued or submitted,
+excluding preloaded words and prior batches. It is not the hardware
+`REMAINING_WORDS` count, which also includes queued but unserialized words.
+
+1. Reserve channel 3 and the transmitter for the frame, configure FIFO low
+   watermark 8, preload at most the available FIFO capacity, and start the
+   exact frame length. Keep one software/DMA producer.
+2. On low-watermark service, read occupancy `L` with no other writer active.
+   Submit a finite DMA batch of at most `min(remaining, 16 - L)` words; a
+   zero-capacity observation does not start a transfer.
+3. Do not push CPU words during that batch. The consumer only frees entries,
+   so the recorded free space is sufficient for the admitted words. Wait for
+   DMA completion, including write responses, before reprogramming the channel.
+4. Continue nonblocking interrupt/event-driven service using existing
+   `rs_ws2812_*` and `rs_dma_*` operations. Channel 3 stays owned by the frame
+   across refill batches and is released after transmitter DONE or bounded
+   error/abort cleanup; another bulk client must not steal its refill window.
+
+At the default 1.25 us bit period, eight queued 24-bit words represent about
+240 us of nominal payload time. The measured service deadline must include
+interrupt, scheduling, source-memory and target latency, not just DMA start.
+Underflow invalidates the frame and follows the existing reset-low/error
+contract. This policy does not change WS2812's full-FIFO APB behavior or claim
+that an unpaced full-frame DMA transfer is nonblocking. Shared helper changes
+must preserve its public contract and Mini compatibility; no Tiny driver fork
+or new hardware request line is authorized here.
+
+Keep compatible RV32IM firmware as the baseline. A separate committed
+performance configuration must validate the following candidate against the
+locked compiler, actual CPU extension settings, disassembly and ISA tests:
+
+```text
+-march=rv32imc_zicsr_zifencei_zba_zbb_zbc_zbkb_zbkx_zbs -mabi=ilp32
+```
+
+Do not add A, Zilsd, Zcb or Zcmp to that compiler target merely because an
+upstream core supports them. Hardware capability, firmware ISA and configured
+compiler switches are distinct facts. The current CPU already enables fast
+multiply and branch prediction; preserve their defaults rather than counting
+them as new gains. `MUL_FASTER=0` is a separately identified timing/application
+experiment, not an automatic replacement for the default value 1.
+
+Compare `-O2`, `-O3`, `-Os` and LTO with recorded code size, stack/buffer budget
+and workload time. A proposed configuration is not executable support until
+its build guards, startup, runtime and selected applications pass. Keep the
+baseline build compiling when adding explicit instruction-visibility barriers.
+Use the existing application/SDK layering and freestanding bounded `rs_` APIs;
+no hosted allocation, new application-name convention or OS is required.
+
+Add an explicit bank-aware linker configuration alongside the flat layout.
+Its starting placement is B0/B1 code and read-only data, B2 CPU data/stack,
+and B3 DMA buffers/descriptors, with linker overflow assertions, alignment and
+map-file evidence. Correctly initialize each placed section; do not assume
+the old contiguous-copy startup automatically handles a split layout. Keep
+hot code, interrupt paths and XPI-reconfiguration code in main SRAM. Buffer
+ownership and `fence rw,rw` remain required even without a cache.
+
+First compare architectures using identical binaries, clocks and workloads;
+then vary compiler options or placement separately. Record cycles, retired
+instructions, CPI, admission/service waits, bank conflicts, DMA payload bytes,
+longest observed backpressure, firmware footprint and synthesized area. Bind
+each result to source/configuration/tool identity. Testbench monitors may
+observe internal bank/FIFO state without creating a new public register ABI;
+mark observations unavailable in hardware rather than inventing counters.
+Do not multiply an upstream CoreMark/MHz result by a target clock to claim
+Tiny performance, or predeclare a fixed speedup from the new topology.
 
 ## DVP capture and XPI framebuffer contract
 
@@ -539,12 +809,12 @@ SCK/D0-3 wires with boot NOR on NSS0. The NSS1 aperture is
 `0x54000000..0x57FFFFFF` (64 MiB), not a promise of fitted RAM capacity. The
 reference verification geometry is the existing 8 MiB ESP-PSRAM64H model,
 currently `rtl/mini/dv/model/ESP_PSRAM64H.sv`: its valid mapped data range is
-`0x54000000..0x547FFFFF`. P11 must place any reused device model under shared
+`0x54000000..0x547FFFFF`. R2-P8 must place any reused device model under shared
 or Tiny-owned verification ownership without importing Mini product RTL or
 copying the separate `apb4_psram` controller. Model reuse alone does not
 qualify a physical part, board or XPI path.
 
-P11 MUST validate the selected device identity, actual geometry, SPI/QPI SDR
+R2-P8 MUST validate the selected device identity, actual geometry, SPI/QPI SDR
 initialization and reset commands, mapped read/write LUTs, dummy cycles, SCK,
 CS setup/hold/high times, maximum active-CS duration and serial boundaries.
 Publish a supported device/profile only after CPU and central-DMA readback
@@ -599,7 +869,7 @@ capture. Do not add stride, descriptors or rings to bypass these checks.
 
 The shared HAL currently binds its convenience helper to bulk channel 3,
 uses maximum bursts, and programs `word_capacity * 4` as the transfer length.
-P12 must supply channel 2 and validated memory/burst limits through product
+R2-P9 must supply channel 2 and validated memory/burst limits through product
 configuration/shared transport code, retaining Mini's channel-3 default and
 the public DVP ABI. It may compose the existing `rs_dvp_*`/`rs_dma_*` APIs;
 it MUST NOT copy a Tiny-only DVP driver or silently change capacity semantics.
@@ -617,7 +887,7 @@ of the following agree: DVP frame-done/statistics, DMA done with exact
 error. A frame IRQ or final input pixel alone is not completion.
 
 On success, keep the stream/FIFO available until the final DMA word drains.
-The current helper calls abort before waiting for DMA after frame-done; P12
+The current helper calls abort before waiting for DMA after frame-done; R2-P9
 must test delayed final-word/write-response cases and correct shared ordering
 if necessary before claiming integration acceptance. Do not redefine the IP's
 abort/flush behavior to conceal a transport issue. Clear/rearm only after a
@@ -632,8 +902,8 @@ the shared lifecycle. Never claim a valid partial image or successful reset
 when a required clock/barrier acknowledgement is missing. Recovery that needs
 a system reset must mark the session lost, not silently resume stale data.
 
-P11 must measure mapped-write payload throughput and longest backpressure at
-each supported clock/device profile. P12 selects sensor prescalers/PIXCLK
+R2-P8 must measure mapped-write payload throughput and longest backpressure at
+each supported clock/device profile. R2-P9 selects sensor prescalers/PIXCLK
 against those results, blanking behavior and the existing 512-byte payload
 FIFO. CAM_XCLK defaults to REF24 divided by two (12 MHz), but the sensor's
 PIXCLK need not equal XCLK and 12 MHz PIXCLK is not prequalified. During MVP
@@ -641,6 +911,18 @@ capture, exclude NOR program/erase, XPI indirect/polling/reconfiguration and
 other traffic whose blocking time exceeds the tested budget. Read back or save
 the completed frame through SDIO only after capture; add contention/error
 stress to verification without promising unrestricted concurrent throughput.
+
+For occupancy `Q` bytes, safety margin `M` bytes and the active input byte rate,
+the admitted no-service interval must be less than
+`(512 - Q - M) / active_byte_rate`. Validate that `Q + M < 512`, include
+in-flight/CDC effects in the margin, and separately prove sufficient drain
+over the selected line/blanking pattern. Do not count central-DMA buffering
+as additional slack without a verified credit/occupancy argument. At an
+illustrative 12 MHz active PIXCLK, an entirely empty FIFO takes only about
+42.7 us to fill with no drain; this is not a qualified operating point.
+Cropping reduces output volume but not necessarily instantaneous input rate.
+Capture configurations must record FIFO high-water observations and longest
+backpressure using available counters or explicitly identified test monitors.
 
 The MVP is single-buffer snapshot/crop with full readback and guard checks.
 Existing continuous-mode capability remains unchanged, but lossless continuous
@@ -678,8 +960,9 @@ flowchart TD
     ref --> mux["Safe / external / PLL SYS selection"]
     xin -->|"No-PLL external profile"| mux
     pll --> mux
-    mux --> sys["SYS: CPU, AXI32, SDIO"]
-    sys --> mem["MEM divider: SRAM and XPI"]
+    mux --> sys["SYS: CPU, main SRAM, AXI32, SDIO"]
+    sys --> banks["Same SYS: I/D local paths and four SRAM groups"]
+    sys --> mem["MEM divider: XPI only"]
     sys --> pclk["PCLK divider: central DMA and shared peripherals"]
     ref --> tick["/24 enable: 1 MHz CLINT timebase"]
     audio["GPIO17 reference or codec clocks"] --> i2s["AUDIO: I2S PHY"]
@@ -696,8 +979,8 @@ remain clocked while XIN runs and MUST NOT be software-gated.
 | Domain | Consumers | Safe boot | No-PLL fast | PLL I/O | PLL peak |
 | --- | --- | ---: | ---: | ---: | ---: |
 | AON / REF24 | RCU, CLINT, ArchInfo; RTC/WDG functional clocks | 24 MHz | 24 MHz | 24 MHz | 24 MHz |
-| SYS | CPU/AHB adapter, AXI32 fabric, SDIO including its APB and private DMA | 24 MHz | 96 MHz | 192 MHz | 240 MHz |
-| MEM | Main SRAM and XPI, including their control interfaces | 24 MHz | 96 MHz | 96 MHz | 120 MHz |
+| SYS | CPU I/D and slow adapter, actual main-SRAM macros, four bank frontends/control, AXI32 fabric, SDIO including its APB and private DMA | 24 MHz | 96 MHz | 192 MHz | 240 MHz |
+| MEM | XPI, including its control interface | 24 MHz | 96 MHz | 96 MHz | 120 MHz |
 | PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
 | AUDIO | I2S audio PHY and existing audio-side FIFOs | External | External | External | External |
 | PIXCLK | DVP pixel path and existing pixel-side FIFO | External | External | External | External |
@@ -710,6 +993,23 @@ MEM divides by 1 up to 120 MHz and otherwise by 2. PCLK divides by 1 up to
 software-programmable. The approved PLL profiles are 192 and 240 MHz, using
 existing `tc_pll` selectors 5 and 7; additional PLL rates require a reviewed
 profile extension, not an undocumented register value.
+
+MEM division now applies to XPI only. The main-SRAM macro clock pins, bank
+arbiters, local I/D paths and four external SRAM frontends share the same SYS
+source and active rate as the CPU; no independent main-SRAM divider, clock
+ratio bridge or CPU-to-main-SRAM CDC is permitted. This explicitly supersedes
+the P6/P10 main-SRAM-in-MEM assignment, not the XPI MEM ceiling. The common
+clock does not imply zero-cycle arbitration or one-cycle CPU memory service.
+
+Qualify CPU and main SRAM jointly at every supported rate. In particular,
+192 MHz requires approximately a 5.208 ns period and 240 MHz a 4.167 ns period at the
+actual SRAM macro clocks. Check macro minimum period, pulse widths,
+setup/hold and clock-to-output together with bank decode, arbitration and
+return paths. Extra bus wait cycles alone cannot repair a macro internal
+minimum-period violation. If a candidate fails, disable that CPU/SRAM point
+or lower both together through an explicitly reviewed profile; never restore
+CPU240/SRAM120 as a fallback. The target frequencies remain unqualified until
+the required physical evidence passes.
 
 CLINT's counter/control stays in AON with a synchronous 1 MHz tick enable.
 Its timebase does not change or lose ticks during SYS transitions. CLINT
@@ -751,7 +1051,9 @@ the pixel domain may stay in reset until its clock and restart barriers return.
 | Crossing | Required mechanism |
 | --- | --- |
 | Central DMA PCLK AXI to SYS | Complete AXI channel CDC with preserved payload/ordering and reset barriers |
-| SYS to SRAM/XPI MEM | AXI request/response CDC; control access uses the MEM-domain APB endpoint |
+| CPU I/D and external SYS fabric to main SRAM | Same SYS domain and actual macro rate; independent synchronous bank paths, no CDC |
+| SDIO private DMA to SYS targets | Native SYS; no additional main-SRAM crossing |
+| SYS to XPI MEM | AXI request/response CDC; XPI control access uses the MEM-domain APB endpoint |
 | SYS control to PCLK/AON/MEM APB | Stable full request/response handshakes, byte strobes and propagated errors |
 | Crypto/I2S/DVP host streams to central DMA | Same PCLK; no added internal stream CDC |
 | I2S host to AUDIO | Shared IP configuration handshake and warm-flush sample FIFOs |
@@ -775,8 +1077,11 @@ and with the same meaning. Supply the value atomically in the PCLK domain;
 adapt existing Mini consumers and validate their behavior. Use the locked
 dependency maintenance flow; do not hand-edit managed PWM or fork its driver.
 
-Only the CPU leaf may stop automatically for WFI; AXI, AON and required DMA
-clocks remain running. Pending interrupts and debug requests ungate the CPU.
+Only the CPU leaf may stop automatically for WFI; main SRAM, its bank
+frontends, AXI, AON and required DMA clocks remain running. Same-frequency
+CPU/SRAM operation means equal active SYS rate, not a requirement to stop
+shared SRAM whenever the CPU sleeps. Pending interrupts and debug requests
+ungate the CPU.
 Per-IP gates require a completed idle/drain handshake, and their APB front-end
 must remain reachable to return PSLVERR for accesses while gated/reset.
 Do not gate an active serial transfer, DMA transaction, RNG handshake or
@@ -789,20 +1094,24 @@ are not ordinary software-gate targets.
    frequency-sensitive clients. DMA streams, SDIO/XPI, UART/I2C, I2S/DVP/PWM,
    WS2812, CRC sessions, RNG source handshakes and Crypto maintenance must
    be idle. Pending GPIO/filter use must be made safe by its owner.
-2. Accept and acknowledge the RCU command before blocking new AXI admissions.
-   Drain accepted reads, writes, APB responses and CDC traffic. Busy or drain
+2. Accept and acknowledge the RCU command before blocking new target admissions
+   on both CPU local I/D paths and external AXI paths.
+   Drain accepted reads, writes, local I/D memory operations, all four bank
+   frontends and pending responses, APB responses and CDC traffic. Busy or drain
    timeout leaves the committed profile/gates unchanged and records an error.
    Blocked, not-yet-accepted CPU fetches or master requests may remain VALID
    with stable payload; they are not outstanding transactions to drain. Do not
    deadlock by requiring a blocked request to retire before switching clocks.
 3. Switch SYS to REF24 while both mux inputs run. Program conservative
    divisors before increasing any source frequency; all transient MEM/PCLK
-   frequencies must remain below their ceilings.
+   frequencies must remain below their ceilings. CPU and main SRAM change
+   their shared SYS rate together; XPI alone follows MEM division.
 4. Reconfigure the PLL only from the safe path, and wait for qualified lock
    and clock activity with a bounded REF24 timeout. Select the target only
    after the source is valid. No command relies on a stopped SYS clock to finish.
-5. Commit the selected profile, MEM/PCLK rates and shared clock-reporting
-   state together, then unblock transactions. Software reprograms dependent
+5. Commit the selected profile, CPU/main-SRAM SYS rate, XPI MEM rate,
+   peripheral PCLK rate and shared clock-reporting state together, then unblock transactions.
+   Software reprograms dependent
    timing before re-enabling the clients.
 
 Before changing camera routes, PIXCLK sampling polarity, PCLK, DVP gating or
@@ -834,12 +1143,12 @@ flowchart TD
     ext["Board RESET_N"] --> aon["Cold reset: RCU / REF control"]
     ext --> system["System reset fanout"]
     warm["Software / WDG / PLL fault"] --> system
-    system --> domains["SYS, MEM, PCLK and CDC barriers"]
+    system --> domains["SYS including SRAM banks, XPI MEM, PCLK and barriers"]
     system --> time["CLINT, RTC and WDG functional state"]
     domains --> release["Local clocks valid: five-edge synchronous release"]
     release --> ready["Fabric / boot-memory / CDC ready"]
     ready --> cpu["CPU release"]
-    debug["Hart reset: wait CPU bridge idle"] --> cpu
+    debug["Hart reset: drain CPU I/D local and slow paths"] --> cpu
     local["Peripheral request: idle and drain"] --> peripheral["Selected IP / CDC reset"]
     trst["JTAG_TRST_N"] --> tap["TAP / DTM reset"]
 ```
@@ -847,16 +1156,18 @@ flowchart TD
 | Source | Scope | State and recovery boundary |
 | --- | --- | --- |
 | External RESET_N | Cold RCU/control and all functional domains | Board holds reset until supplies/input are stable; no qualified internal POR is assumed |
-| Software system reset / watchdog | CPU, fabric, MEM/PCLK and CLINT/RTC/WDG functional state | Preserve RCU reset causes and separate debug state; return clock/gate configuration to safe boot; no RTC retention claim |
+| Software system reset / watchdog | CPU, SYS bank/fabric control, XPI MEM/PCLK and CLINT/RTC/WDG functional state | Preserve RCU reset causes and separate debug state; return clock/gate configuration to safe boot; main-SRAM contents are not cleared; no RTC retention claim |
 | PLL loss/stall | Whole affected system/CDC session | Asynchronous safety reset before forced safe-source recovery; partial transfers are invalidated |
-| Debug hart reset | CPU only | Wait for the CPU adapter's accepted transfer to retire; leave other DMA/peripherals operating |
+| Debug hart reset | CPU and its request/response frontends only | Drain accepted I-local, D-local and merged slow-path work and responses; leave SRAM service and unrelated DMA/peripherals operating |
 | Peripheral reset / gating | Selected IP and associated CDC endpoints | Quiesce associated DMA and accepted accesses first; busy timeout reports failure |
 | JTAG_TRST_N | TAP/DTM | Not a system reset or an application pinmux control |
 
 Use asynchronous assertion and five valid destination-clock edges for each
 reset synchronizer's release. On system reset, force pad-safe states and
-block new traffic; release REF24/RCU, then validated SYS/MEM/PCLK domains and
-their bus/reset barriers, and only then release the CPU. Keep a missing-clock
+block new traffic; release REF24/RCU, then validated SYS bank/fabric control,
+XPI MEM and PCLK domains and their bus/reset barriers, and only then release
+the CPU. All four SRAM frontends must be ready without clearing memory payloads.
+Keep a missing-clock
 AUDIO or PIXCLK domain in reset without blocking the CPU or the corresponding
 host register bank.
 Source/destination reset acknowledgements must prevent stale CDC data from
@@ -875,6 +1186,17 @@ Warm reset preserves debug configuration separately, but debug system-bus
 requests into reset domains must be cancelled/reported as errors, not replayed
 into the new session. Retained debug state must not wait forever for an AXI
 response that system reset deliberately discarded.
+
+R2-P2 must audit the actual reset endpoints and fanout before changing storage
+reset policy. Ordinary FIFO payload arrays may omit reset only when pointers,
+counts and validity remain correctly reset, empty reads and flush retain their
+specified behavior, and stale payloads cannot become valid after restart.
+Prove these properties with directed/equivalence or formal evidence; do not
+apply broad timing exceptions merely to hide a reset-distribution problem.
+Crypto's private storage and sensitive FIFO erasure remain subject to physical
+clear and zero-readback requirements; clearing validity alone is insufficient.
+Managed Common primitive changes require the normal upstream/lock integration
+flow and affected consumer validation, not a patch inside a managed checkout.
 
 ### Reset states and external bias
 
@@ -933,8 +1255,8 @@ reachable through an acknowledged APB bridge while the system is running.
 | `0x13C` | `RCU_IRQ_ENABLE` | RW / 0 | Enables for the two IRQ-state bits; reduction OR drives CPU IRQ31 |
 | `0x140` | `XIN_HZ` | RO / profile input | Configured nominal input frequency |
 | `0x144` | `REF_HZ` | RO / 24000000 | REF24 frequency |
-| `0x148` | `SYS_HZ` | RO / 24000000 | Committed SYS frequency |
-| `0x14C` | `MEM_HZ` | RO / 24000000 | Committed MEM frequency |
+| `0x148` | `SYS_HZ` | RO / 24000000 | Committed CPU and actual main-SRAM SYS frequency |
+| `0x14C` | `MEM_HZ` | RO / 24000000 | Committed divided XPI MEM-domain frequency, not main-SRAM frequency |
 | `0x150` | `PCLK_HZ` | RO / 24000000 | Committed peripheral frequency |
 | `0x154` | `CLINT_HZ` | RO / 1000000 | CLINT tick rate |
 | `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; `0x00003FFF` before DVP integration, `0x00007FFF` when all Gen1 targets exist; reset excludes CPU bit 0 |
@@ -955,8 +1277,8 @@ The target-mask bits are Tiny integration identifiers, not Mini register ABI:
 0 CPU, 1 GPIO, 2 UART0, 3 I2C0, 4 timer0, 5 timer1, 6 PWM, 7 I2S, 8 SDIO,
 9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto and 14 DVP. Bits 15-31
 are reserved. Bit 14 is an additive target allocation; existing offsets/bits
-and RCU ABI 1.0 semantics remain unchanged. P8 may reserve the control plumbing
-but MUST report bit 14 clear and reject its commands until P12 instantiates
+and RCU ABI 1.0 semantics remain unchanged. R2-P7 may reserve the control plumbing
+but MUST report bit 14 clear and reject its commands until R2-P9 instantiates
 the complete DVP idle/reset/CDC path. No capability is inferred from a tie-off.
 CPU gating means permission to gate only while WFI/idle with no pending IRQ or
 debug request; it is not an immediate software stop. RCU/REF24, AXI, main
@@ -1000,22 +1322,28 @@ offsets. A running hardware clock is still required for any software timeout.
 
 ## Deferred physical and shared-IP prerequisites
 
-Addresses, DMA/IRQ assignments and the clock/reset behavior above are frozen
-targets. Implementation proceeds through P7/P8/P11/P12 and physical acceptance
-remains P9 work. P10 is documentation-only. The following prerequisites are
-not evidence of completed platform support:
+Addresses, DMA/IRQ assignments and the R2 clock/reset behavior above are frozen
+targets. `TINY-R2-P0` is documentation-only; implementation and qualification
+follow R2-P1 through R2-P11. The following prerequisites are not evidence of
+completed platform support:
 
 | Item | Required follow-up and boundary |
 | --- | --- |
 | Clock and Pad technology | Qualify the 96 MHz XIN bypass receiver, 24 MHz oscillator and single-output PLL, lock/fault behavior, supplies, generated clocks and all domain ceilings. Current IHP130 has no qualified PLL binding for this target. |
+| CPU/main-SRAM same-frequency operation | R2-P2 audits actual macro timing views and representative SYS paths; R2-P4 updates the 32-macro hierarchy/binding and constraints; R2-P11 qualifies routed/PVT CPU and main SRAM together at each supported rate. No half-rate SRAM fallback or macro-period waiver through added bus wait states is allowed. |
 | Shared PWM clock reporting | Upgrade through the locked upstream flow, preserving CLOCK_HZ meaning and common HAL, and adapt/test existing consumers before variable PCLK is enabled. |
-| I2S slave extension | Freeze the common IP/driver extension before implementing slave mode. P7 may integrate the existing master path; no completed slave-mode or full Gen1 release claim follows from that subset. |
+| I2S slave extension | Freeze the common IP/driver extension before implementing slave mode. R2-P6 may integrate the existing master path; no completed slave-mode or full Gen1 release claim follows from that subset. |
 | Alternate input routing | Preserve the P5 exclusive UART/I2C route requirement. Product route-register encoding and conflict reporting must be frozen before those remaps are implemented; no OR of competing pad inputs is allowed. |
-| XPI PSRAM transport | P11 must validate NSS1 geometry, initialization/LUT, CPU/DMA mapped writes, serial/CS boundaries, recovery and throughput with a real pin-level model. The separate PSRAM-controller tests and fast NOR backend are not this evidence. |
-| DVP integration and board profile | P12 must connect the shared IP unchanged, bind DMA2, verify final-word drain and missing-clock recovery, and isolate inactive camera/audio board drivers. Select physical sensor/PSRAM parts and qualify 3.3 V compatibility/Pad timing before rate claims. |
+| XPI PSRAM transport | R2-P8 must validate NSS1 geometry, initialization/LUT, CPU/DMA mapped writes, serial/CS boundaries, recovery and throughput with a real pin-level model. The separate PSRAM-controller tests and fast NOR backend are not this evidence. |
+| DVP integration and board profile | R2-P9 must connect the shared IP unchanged, bind DMA2, verify final-word drain and missing-clock recovery, and isolate inactive camera/audio board drivers. Select physical sensor/PSRAM parts and qualify 3.3 V compatibility/Pad timing before rate claims. |
 | Boot and manufacturing test | Nonzero BOOT_MODE behavior, detailed strap sampling and TEST_MODE manufacturing entry remain a separate contract; no UART download ROM is implied. |
 | Entropy and security | Supply and characterize the physical entropy source before qualified RNG use; crypto acceleration does not establish secure boot or side-channel certification. |
 | Package and physical release | Confirm EP connection, analog supply/loop-filter assumptions, outline/bonding, IO drive/load, power integrity and PVT/post-layout timing without changing the QFN64 pad budget. |
+
+Historical physical-flow material describing a different die-pad population
+does not qualify the frozen QFN64 package. The package-to-die-pad binding,
+actual macro instance paths and clock constraints must be checked for the R2
+source revision; do not change the pad budget to fit a legacy flow artifact.
 
 These deferred items do not reopen the selected external-clock source,
 eight-channel DMA, single-output PLL or external-reset recovery decisions.
@@ -1107,6 +1435,250 @@ baseline makes no unrestricted AXI liveness, secure-boot, production-entropy,
 isolation, or safety-certification claim.
 
 ## Development order and acceptance
+
+The active roadmap is `TINY-R2-P0` through `TINY-R2-P11`. R2 is a roadmap
+revision, not a new feature slug, register ABI, product series or PDK. All
+phases target TINY/IHP130 and preserve affected Mini consumers of shared code.
+Unless a phase explicitly narrows its scope below, each phase depends on the
+preceding R2 phase; no active prerequisite points to a higher phase number.
+Legacy IDs below identify provenance only, not an additional execution order.
+
+| Active phase | Principal delivery | Legacy obligation mapping |
+| --- | --- | --- |
+| TINY-R2-P0 | Performance contract and roadmap freeze | Preserve P5/P6/P10 approved constraints; this document refines performance/clock ownership |
+| TINY-R2-P1 | Reproducible baseline, constraints and measurements | Revalidate relevant P0-P4 records and early P9 evidence requirements |
+| TINY-R2-P2 | Reset distribution and CPU/SRAM clock feasibility | P4 timing gap and early reset/physical parts of P8/P9 |
+| TINY-R2-P3 | Software and DMA scheduling | New performance work; shared transport obligations retained |
+| TINY-R2-P4 | Dual-port Hazard3 and four-bank local SRAM | New architecture; preserve baseline boot/debug/memory invariants |
+| TINY-R2-P5 | Per-target concurrent fabric | Replace the global-serialization assumption; preserve AXI/APB subset |
+| TINY-R2-P6 | Shared IP and eight-channel DMA integration | P7, including its named shared-IP prerequisites |
+| TINY-R2-P7 | Tiny RCU and dual-mode clock/reset integration | P8 with main SRAM moved to CPU SYS |
+| TINY-R2-P8 | XPI PSRAM framebuffer bring-up | P11 |
+| TINY-R2-P9 | DVP camera profile and frame capture integration | P12 |
+| TINY-R2-P10 | System performance and regression qualification | Functional/performance/synthesis/netlist portions of P9 |
+| TINY-R2-P11 | IHP130 physical and product qualification | Remaining P9 physical/release obligations |
+
+P0-P4 historical evidence does not establish complete qualification. P5/P6/P10
+were documentation milestones, not hardware passes. The pending work of legacy
+P7/P8/P11/P12 and outstanding P9 obligations move to this active plan without
+rewriting their original headings, dates or results. New implementation prompts,
+indexes and acceptance records must use the full R2 IDs. The archive below
+retains the old schedule for interpretation of older records only.
+
+### TINY-R2-P0 - Performance Contract and Roadmap Freeze
+
+Freeze TINY-028 through TINY-036 and the revised TINY-002/005 contracts:
+same-frequency CPU/main SRAM, dual I/D local paths, four independent banks,
+per-target external concurrency, ordered completion/fault handling, bounded
+DMA service, software experiments and the R2 phase mapping. Preserve QFN64,
+all assigned alternate functions, 128 KiB user SRAM, private Crypto memory,
+eight channels, three external owners and shared peripheral register ABIs.
+Update the verification matrix, indexes and relevant integration guides only.
+
+Acceptance is documentation-only: check every protected package/pin table,
+bank range/capacity, clock/divider value, register meaning and phase dependency;
+verify all legacy phase headings and historical results remain attributable;
+verify links/commands and run `git diff --check`. No RTL, firmware, linker,
+configuration, dependency, baseline, metric-policy or generated-publication
+change is part of this phase. The first subsequent step is R2-P1 preflight.
+
+### TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements
+
+Start from `configs/ci/ihp130-tiny.mk`, IHP130, at 24 MHz/no PLL. Record the
+source revision, configuration, locked tools/inputs and actual macro bindings.
+Reproduce existing boot, memory, DMA, interrupt and debug checks and establish
+deterministic CPU/memory/contention workloads with retained binaries and logs.
+Audit generated clocks, reset endpoints, timing exceptions and report provenance.
+The old negative-reset-path report is historical motivation, not a fresh result.
+
+This phase creates the measurement/evidence baseline, not the R2 hardware.
+Acceptance requires reproducible commands and verdicts for attempted gates,
+an explicit list of missing inputs or failing checks, and a usable workload
+baseline for subsequent comparisons. Missing evidence stays a prerequisite
+for the downstream claim that needs it; do not infer a pass or promote policy.
+Use the baseline commands and the R2 validation entrypoints below.
+
+### TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility
+
+Audit and improve local reset distribution and ordinary FIFO reset load only
+where behavior and stale-data isolation are proved. Preserve five-edge release,
+CPU-last boot, warm-flush barriers and the Crypto erasure exception. Check the
+actual IHP130 macro timing views, minimum period/pulse widths, setup/hold,
+clock-to-output and representative CPU/bank/reset paths at candidate joint rates.
+
+Acceptance combines focused reset/protocol/equivalence checks, the affected
+firmware/simulators, and source-bound synthesis/STA feasibility records. Identify
+the safe-frequency branch and every unsupported or unverified higher rate.
+High-rate blockers do not prohibit continuing the safe-frequency branch, but
+do prohibit advertising that operating point. Early feasibility is not final
+routed/PVT signoff and does not authorize half-rate main SRAM.
+
+### TINY-R2-P3 - Software and DMA Scheduling
+
+Add the separate performance compiler configuration, verified instruction
+selection, flat-versus-bank-aware placement experiments and explicit DMA
+ownership/service budgets. Implement the occupancy-bounded WS2812 service
+policy through shared interfaces and include descriptor-fetch interference.
+Preserve compatible builds, public register/request semantics and the freestanding
+SDK; retain default CPU acceleration settings while identifying experiments.
+
+Acceptance covers host tests, assembly/disassembly/ISA checks, linker maps,
+software quality gates, deterministic workloads and available target paths.
+Only implemented capabilities may be exercised or advertised. Audio/WS and
+camera application acceptance is completed after R2-P6/R2-P9 respectively;
+standalone or Mini compatibility results must not be relabeled Tiny integration.
+
+### TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM
+
+Implement the official dual-port integration and independent same-SYS I/D
+paths, four 32 KiB group services and four external bank frontends. Preserve
+the slow-path owner merge, flat aperture, byte masks, physical bank discovery
+and existing CPU/debug semantics. Update source lists, topology/clock inventory,
+macro instance paths, physical manifests and SDC endpoints with the changed
+hierarchy rather than leaving physical tooling to find stale instance names.
+
+Acceptance includes all bank/macro boundaries, same-bank versus different-bank
+traffic, byte lanes, back-to-back requests, compressed instruction fetch across
+a group boundary, instruction-side MMIO rejection, two-cycle errors, FENCE.I,
+code-copy/debug patch execution and hart reset during traffic. Prove the local
+latency budget and beat-level fairness at the safe clock; future functional
+high-rate tests do not replace macro timing evidence. Preserve the compatible
+external attachment until R2-P5 supplies complete target concurrency.
+
+### TINY-R2-P5 - Per-Target Concurrent Fabric
+
+Replace global external serialization with target-local admission, ownership
+and responses. Independently expose the four bank frontends; preserve central
+DMA read/write overlap and the three external owners. Separate fast control
+paths from FIFO-waiting APB traffic, retain the protocol subset and implement
+lossless concurrent-fault accounting without changing legacy register meanings.
+
+Acceptance proves useful CPU/local-SRAM progress while XPI is stalled,
+simultaneous different-bank DMA read/write, same-target fairness, W-before-AW,
+stable VALID/response payloads, correct R/B routing, errors on nonfinal read
+beats, simultaneous terminal faults, abort drain and reset isolation. Use
+directed/randomized simulation and focused formal protocol properties; report
+area/latency changes without importing a wider Mini fabric or new masters.
+
+### TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration
+
+Carry the legacy P7 obligations into the optimized safe-clock platform:
+RNG/CRC/WS2812/Crypto, six private Crypto macros, I2S/SDIO, eight central DMA
+channels, address/IRQ/capability generation, common HAL composition and frozen
+GPIO routes. Reserve DVP2/request 11 but keep it unsupported until R2-P9.
+Test audio plus paced WS2812 and background transfers with explicit ownership.
+
+Acceptance includes the affected firmware in both simulators, source/register
+parity, SDK gates, shared-consumer compatibility, RNG fail-closed behavior,
+Crypto init/vectors/erasure and measured real-time service. The shared PWM
+rate-reporting upgrade is required before R2-P7 variable PCLK. I2S slave and
+alternate-input extensions must have separately approved common/product
+contracts before they are enabled; a master-only subset cannot close full
+Gen1 release requirements. Do not invent unsupported modes to complete a phase.
+
+### TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration
+
+Carry legacy P8 into the R2 topology. Implement the Tiny RCU/backend, safe
+REF24 boot, external 24/48/96 inputs and PLL192/240 functional cases, common
+CPU/main-SRAM SYS transitions, XPI MEM and peripheral PCLK division, rate
+reporting, clock gates and complete accepted-work/reset barriers. Preserve
+CAM_XCLK sharing and reserve DVP target 14 without advertising an absent IP.
+
+Add reviewed committed configurations through the normal flow. Acceptance
+tests all declared source/profile transitions, local-bank traffic drain,
+busy/invalid requests, lock/drain timeout, PLL/XIN loss, WFI/debug wake,
+preserved CLINT ticks and PCLK-dependent timing. Behavioral PLL evidence is
+explicitly functional; absent macro/backend support must fail physical setup,
+not silently synthesize a bypass or SRAM divider. Main SRAM follows SYS_HZ.
+
+### TINY-R2-P8 - XPI PSRAM Framebuffer Bring-up
+
+Carry legacy P11: optional NSS1/GPIO29 device initialization, actual geometry,
+LUT/timing, mapped CPU/DMA access, bounds, recovery and NOR/SRAM-only boot
+preservation. Reuse the reference device model under appropriate ownership,
+not the separate PSRAM controller or Mini product integration.
+
+Acceptance requires CPU/DMA full readback and guards through actual XPI pins
+in both simulators, first/last addresses, 4 KiB/serial/CS limits, absent-device
+and timeout recovery, plus per-profile payload throughput and longest
+backpressure. The fast read-only NOR backend is not this evidence. Record the
+transport budget for R2-P9; physical part/rate qualification remains R2-P11.
+
+### TINY-R2-P9 - DVP Camera Profile and Frame Capture Integration
+
+Carry legacy P12: unchanged DVP V2, raw pixel-domain routing/CDC, DMA2/request
+11, GPIO12-23 ALT1, IRQ15, shared CAM_XCLK, RCU target 14 and shared HAL product
+binding. Preserve camera/audio exclusion, exact frame length and tail drain.
+Advertise capabilities only after the complete routes/lifecycle are connected.
+
+Acceptance covers RGB565/YUV422, repeated snapshots/crops, full QVGA/VGA
+external buffers at measured safe input rates, complete readback/guards,
+even-width DMA/odd-width PIO, insufficient-capacity rejection, delayed final
+word/B response, overflow/backpressure, missing/stopped PIXCLK, mode changes
+and reset/rearm. Keep capture-then-readback/save as the first workflow and
+validate the FIFO/transport deadline rather than claiming a continuous FPS.
+
+### TINY-R2-P10 - System Performance and Regression Qualification
+
+Run matched-binary architecture comparisons before separate compiler/layout
+experiments. Combine audio with bounded WS2812 service and allowed background
+traffic; separately exercise DVP-to-PSRAM capture, CPU processing and SDIO
+save. Camera and audio are not simultaneous pad profiles. Add no excluded
+display/PIO/Boot ROM feature merely to construct a benchmark.
+
+Acceptance is source/profile-bound correctness, useful target/bank concurrency,
+latency/service-budget compliance, complete supported regressions, relevant
+synthesis/netlist checks and measured cycles/instructions/stalls/bytes/size/
+area. Report every failed or unrun case; FIFO/counter testbench observations
+are not fabricated hardware registers. Metrics remain observations under
+the unchanged policy, and no predetermined speedup substitutes for evidence.
+
+### TINY-R2-P11 - IHP130 Physical and Product Qualification
+
+Complete final CTS/reset distribution, extracted timing, actual SRAM/PLL/input
+macro checks, PVT/MMMC, CDC/RDC, IO/board timing, power/activity and package
+binding for each supported point. CPU and main SRAM qualify together; XPI
+MEM and PCLK retain their separate ceilings. Verify 32 main-SRAM and six
+private Crypto macro bindings, source hierarchy and intended clock pins.
+
+Acceptance requires current-revision physical evidence and closure or explicit
+unsupported status for each operating point, device and product requirement.
+Legacy pad-ring runs, behavioral clocks and historical reset-fanout results
+are not QFN64/192/240 MHz signoff. Do not reduce the fixed pad budget, waive
+macro period failures through wait states, promote warning/metric policy, or
+claim complete Gen1 while named shared-IP or physical prerequisites remain open.
+
+### R2 validation entrypoints
+
+Use the committed baseline commands below plus directed tests and each new
+reviewed profile introduced by the relevant phase. These are future required
+checks, not R2-P0 executed hardware results:
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk setup doctor
+make sw-format-check sw-policy-check sw-host-test
+ruff check .
+python3 -m pytest -q
+make CONFIG=configs/ci/ihp130-tiny.mk firmware sim
+make CONFIG=configs/ci/ihp130-tiny.mk SIMU=IVERILOG firmware sim
+make CONFIG=configs/ci/ihp130-tiny.mk regress-pr
+make CONFIG=configs/ci/ihp130-tiny.mk regress-nightly
+```
+
+R2-P2/P4/P5 require their affected synthesis/STA and focused protocol/reset
+tests; R2-P10/P11 require the relevant synthesis/netlist/physical flows in
+addition to these entrypoints. The validation matrix identifies each phase's
+evidence class. Record exact directed/formal commands when those cases are
+introduced; do not assume a nonexistent target, a skipped RTL test or another
+product's result satisfies Tiny acceptance.
+
+## Archived P0-P12 development order and acceptance
+
+This section preserves the legacy phase headings and planning text as history.
+Its non-monotonic schedule, old implementation handoffs and earlier clock or
+fabric assumptions are superseded by the active R2 contract above. Pending
+obligations are mapped into R2 rather than erased; historical completion and
+qualification boundaries remain exactly scoped to their original records.
 
 TINY-P0 through TINY-P4 retain their original IDs/titles and apply to the
 initial 24 MHz implementation approved on 2026-09-25. They do not establish
@@ -1374,11 +1946,25 @@ test that returns without executing RTL is unrun coverage, not a pass. For
 shared changes, also run the affected Mini profile/tests without treating
 Mini results as Tiny qualification.
 
-## Verification requirements for the refreeze
+## R2 verification requirements
 
-The [verification record](tiny-soc-verification.md) separates the new required
-matrix from historical executed results. It must cover:
+The [verification record](tiny-soc-verification.md) separates the active R2
+matrix from archived planning and historical executed results. It must cover:
 
+- CPU/main-SRAM physical clock equality and SYS ownership at every supported
+  profile, no main-SRAM CDC/half-rate fallback, CPU-only WFI gating, and
+  independent XPI MEM/Crypto PCLK behavior.
+- Four independently reachable 32 KiB groups with 32 physical 4 KiB macros,
+  first/last words and every macro/group boundary, byte masks, simultaneous
+  CPU I/D and DMA read/write, same-bank beat fairness and no upstream SRAM lock.
+- Accepted-address local latency within the three-SYS-cycle budget under its
+  declared conditions, with admission/contention waits measured separately;
+  instruction-side MMIO errors, boundary-crossing compressed fetch, FENCE.I,
+  boot/code-update and debugger patch/resume behavior.
+- Per-target admission/response ownership, W-before-AW, independent DMA R/W,
+  AXI errors before the final beat, simultaneous faults and preserved
+  saturating/W1C semantics; stalled XPI/FIFO paths must not stop unrelated
+  SRAM/control work.
 - Exact Mini-compatible common addresses, target IRQs, reserved-region errors,
   eight-channel capabilities, handwritten register parity and common HAL use.
 - Unchanged QFN64 perimeter/power counts and safe reset states; preserved
@@ -1403,6 +1989,12 @@ matrix from historical executed results. It must cover:
 - Snapshot/crop repeated capture, odd-width DMA rejection/PIO fallback,
   overflow/backpressure, clock loss/reset/recovery, measured transport budgets,
   optional-memory boot independence and board-level inactive-device isolation.
+- WS2812 watermark-8 finite refill batches, producer exclusivity, source/DMA
+  response latency and underflow recovery; include descriptor-fetch and other
+  allowed traffic rather than relying on nominal priority alone.
+- Flat versus bank-aware memory placement, supported performance ISA,
+  optimization/LTO experiments and matched-binary architecture comparisons;
+  distinguish actual cycles/stalls/bytes from target-clock or upstream scores.
 
 Directed/formal results do not replace physical clock-tree/reset-tree timing,
 IO electrical, PLL, entropy, power or package evidence. Keep these gates tied
@@ -1455,25 +2047,36 @@ of a 96/240 MHz Gen1 operating point.
 Current-revision verification and physical reports govern readiness. Reusable
 VIP, coverage closure, full CDC/RDC, DFT/MBIST, PVT/MMMC, post-layout timing,
 power characterization, regulatory and silicon qualification remain separate.
-Gen1 additionally requires P7/P8/P11/P12 implementation, shared PWM reporting and I2S
-extension closure, oscillator/PLL and 96 MHz XIN characterization, package/
+Gen1 additionally requires the R2 implementation and qualification phases,
+shared PWM reporting and I2S extension closure, oscillator/PLL and 96 MHz
+XIN characterization, package/
 bonding and power-integrity review, pad-level I2S/SDIO/WS2812/DVP validation,
 actual sensor and XPI PSRAM device/timing qualification, and
-96/240 MHz processor, MEM120 and PCLK60 timing evidence before these targets
+joint CPU/main-SRAM SYS96/192/240, XPI MEM120 and PCLK60 timing evidence before these targets
 may be advertised as supported operating conditions. The current IHP130 PLL
 binding and PLL OpenSTA profile remain qualification prerequisites. Do not
 claim new measurements or change policy based on the product target alone.
 
+The selected SRAM timing collateral must be restored and inspected through
+the locked setup flow before a high-rate feasibility conclusion. No new
+macro minimum-period or operating-frequency measurement is supplied by this
+documentation freeze. Early reset/clock feasibility, useful cycle-level
+concurrency and final physical product qualification are different claims.
+
 ## Implementation handoff
 
-The first implementation step after this P10 freeze is the P7 preflight below.
-The remaining sequence is P7 -> P8 -> P11 -> P12 -> P9. P10 does not start
-implementation, rename any P0-P9 phase or close historical physical gaps.
+The first implementation step after this R2-P0 freeze is the R2-P1 preflight
+below. Subsequent work advances through R2-P2 to R2-P11. The archived legacy
+IDs remain valid evidence references, not current implementation instructions.
+This freeze starts no hardware work and closes no historical physical gap.
 
 ```text
 Use $retrosoc-feature-implementation in preflight mode for feature tiny-soc.
 Target SoCs: TINY.
-Phase: TINY-P7 - Shared IP and Eight-Channel DMA Integration.
+Phase: TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements.
 Specification: docs/ip/tiny-soc.md; evidence: docs/ip/tiny-soc-verification.md.
-Start from configs/ci/ihp130-tiny.mk, PDK IHP130, at the existing 24 MHz safe-clock baseline. Map the frozen shared-IP addresses/ABI/HAL, eight DMA channels, three AXI32 masters, Crypto private banks and GPIO26 ALT0 to repository sources. Preserve QFN64, 32 GPIO, 128 KiB user SRAM, all P6-assigned Gen1 alternate routes and shared-IP ownership. Reserve channel 2/request 11 for the unchanged DVP V2 at 0x1000E000/IRQ15, but keep its capability unsupported until P12. Do not implement P11/P12 as part of P7: camera ALT1 GPIO12-23, shared CAM_XCLK, RCU target 14 and optional XPI NSS1 PSRAM at 0x54000000/GPIO29 are frozen later-phase constraints, not current support. Preserve NOR boot, SRAM-only operation, exact-frame/tail-drain requirements, camera/I2S exclusion and the P10 -> P7 -> P8 -> P11 -> P12 -> P9 dependency order. Identify the shared PWM dynamic-clock and I2S/remap prerequisites; keep Tiny RCU/dual-clock work in P8 and do not claim unsupported modes. Validate affected Mini consumers and retain warning/metric policy. Do not assume a 96 MHz or qualified PLL profile already exists. Produce the single-phase preflight, file ownership map, public-interface changes and profile-specific validation mapping before RTL/HAL implementation.
+Start from configs/ci/ihp130-tiny.mk, PDK IHP130, at the existing 24 MHz/no-PLL executable baseline. Map the reviewed source, configuration, locked tools, physical macro inputs, clock/reset constraints and historical evidence before proposing changes. Identify deterministic CPU/memory/DMA contention workloads, retained comparison binaries and the exact functional/performance/synthesis/physical evidence each can provide. Report missing inputs and failed or unrun gates explicitly; do not reuse historical timing values as current measurements.
+Preserve QFN64/IO pads, 128 KiB user SRAM, private Crypto storage, boot/debug behavior and shared-IP ownership. Carry the frozen R2 targets into the preflight: actual CPU/main-SRAM macros share SYS at 96/192/240 MHz targets, XPI remains divided in MEM, Crypto remains PCLK and CPU-only WFI gating leaves SRAM live. No half-rate main-SRAM fallback is allowed; each operating point needs joint macro/system qualification.
+R2-P1 establishes the baseline and measurement plan only. Do not implement R2-P2 or later reset, dual-port CPU, four-bank SRAM, concurrent fabric, compiler-profile, shared-IP, camera or clock changes in this phase. Keep the compatible executable profile and warning/metric policy unchanged unless a separately approved change is necessary. Do not add SPI, PIO-lite, Boot ROM, caches, atomics, SRAM capacity or PDK scope.
+Produce the single-phase preflight with file ownership, reproducibility inputs, workload/measurement definitions, validation commands, blockers and acceptance boundaries before implementation. Use R2 phase IDs for new work and preserve the archived legacy IDs/evidence mapping. Validate affected Mini consumers whenever shared code is subsequently changed; no 96/192/240 MHz or physical-release claim follows from this preflight.
 ```

@@ -21,14 +21,17 @@ capture, and rectangular cropping.
 | DMA request selector | `DVP_RX=11`; Mini default bulk DMA channel 3 |
 | ABI version | `0x00020000` |
 
-The [Tiny Gen1 target](tiny-soc.md) reuses this IP specification and ABI
+The [Tiny Gen1 R2 target](tiny-soc.md) reuses this IP specification and ABI
 unchanged at the same base/core IRQ, with product-selected DMA channel 2,
 PCLK host/stream, GPIO12-23 ALT1 camera routing and optional XPI NSS1 PSRAM
-frame buffers. Camera and I2S profiles are mutually exclusive. Its P12
-integration must validate exact transfer length, shared HAL channel/burst
-binding and final-word drain without changing the DVP registers, formats,
-FIFO or stream semantics. Tiny support remains a frozen target, not existing
-end-to-end or physical evidence; Mini's channel-3 default remains unchanged.
+frame buffers. Camera and I2S profiles are mutually exclusive. Its
+`TINY-R2-P9` integration must validate exact transfer length, shared HAL
+channel/burst binding and final-word drain without changing the DVP registers,
+formats, FIFO or stream semantics. The product contract requires measuring
+the existing 512-byte FIFO's stall budget and qualifying PSRAM transport in
+`TINY-R2-P8` before capture integration.
+Tiny support remains a frozen target, not existing end-to-end or physical
+evidence; Mini's channel-3 default remains unchanged.
 
 The pixel clock is buffered and can be inverted before the pixel-domain reset
 synchronizer. Configuration and frame statistics cross between the system and

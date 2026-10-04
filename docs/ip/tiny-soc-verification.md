@@ -1,27 +1,216 @@
 # Tiny MCU Verification Record
 
-This record accompanies the [Tiny Gen1 contract](tiny-soc.md). It describes
-local implementation evidence from 2026-09-25 for the initial 24 MHz/no-PLL
-baseline, not a release or silicon signoff. The working tree was uncommitted
-when that evidence was collected; its recorded readiness remains `prototype`.
+This record accompanies the [Tiny Gen1 contract](tiny-soc.md). The active R2
+verification plan below covers Target SoCs: `TINY`, feature `tiny-soc`, and
+the approved performance refreeze. `R2` is a roadmap revision, not a new IP
+or register ABI version. The selected executable baseline remains
+`configs/ci/ihp130-tiny.mk`, IHP130, 24 MHz/no PLL; faster configurations and
+their physical acceptance do not exist merely because this plan names them.
 
-The baseline has two UARTs, two I2C controllers and the legacy pad mapping.
-These results do not validate the 2026-09-26 QFN64 package refreeze or the
-2026-09-30 shared-IP/clock/reset or 2026-10-01 DVP/XPI-framebuffer refreezes.
-The no-PLL 96 MHz / PLL 240 MHz targets, eight-channel DMA,
-RNG/CRC/WS2812/Crypto, Tiny RCU, I2S/SDIO and new
-clock/reset/pad integration, DVP and optional XPI PSRAM require separate
-current-revision evidence. The historical results below are retained without
-promotion to Gen1 qualification.
+The R2 freeze changes documentation only. All R2 firmware, RTL/formal,
+performance, synthesis/netlist, timing and physical results are **pending**.
+Historical `TINY-P0` through `TINY-P12` identifiers and evidence are preserved
+under their original scope; the mapping in the main contract transfers
+outstanding obligations without renaming old results or declaring them passed.
+Other PDK qualification, new SPI/PIO/BootROM IP and changes to QFN64 or the
+frozen IO/power-pad budget are outside this refreeze.
 
-## P6/P10 freezes and pending Gen1 verification
+The executed historical sections describe the 2026-09-25 initial baseline,
+with two UARTs, two I2C controllers and the legacy pad mapping. The working
+tree was uncommitted when that evidence was collected and its readiness
+remains `prototype`. Those results do not validate the later package,
+shared-IP/clock/reset, DVP/framebuffer or R2 performance refreezes.
 
-P6 and P10 are documentation-only. The remaining execution order is
+## R2 pending phase acceptance
+
+The following is the active monotonically increasing sequence. Every phase
+uses the preceding accepted R2 contract and its declared prerequisites; the
+old P10 -> P7 execution order below is historical. Documentation approval is
+not implementation acceptance. Final physical qualification is R2-P11 work,
+not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
+
+| Active phase | Required evidence and completion boundary | Status |
+| --- | --- | --- |
+| TINY-R2-P0 - Performance Contract and Roadmap Freeze | Reviewable requirements, exact old/new phase mapping, invariant package/IO counts, same-frequency CPU/main-SRAM ownership, explicit performance budgets, links and commands. Record actual documentation checks separately. | Documentation freeze only; no hardware result |
+| TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Pending |
+| TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Pending |
+| TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling, WS2812 refill budget and workload correctness on the available platform. | Pending |
+| TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
+| TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
+| TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration | Legacy P7 obligations; shared PWM reporting, I2S slave and alternate-input-route prerequisites; common ABI/HAL parity; Crypto banks/lifecycle; truthful capabilities and affected Mini compatibility. | Pending |
+| TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration | Legacy P8 obligations with main SRAM in SYS and XPI in MEM; atomic rate changes, all actual CDC/reset barriers, clock failures, WFI leaf gating and reserved DVP controls. | Pending |
+| TINY-R2-P8 - XPI PSRAM Framebuffer Bring-up | Legacy P11 obligations: real pin-level NSS1 device transport, CPU/DMA mapped-write readback, boundaries/recovery, payload rate and worst backpressure. | Pending |
+| TINY-R2-P9 - DVP Camera Profile and Frame Capture Integration | Legacy P12 obligations: unchanged DVP ABI/FIFO, DMA2/request 11, exact frame length, final-tail drain, snapshots/crops, missing-clock recovery and camera/audio exclusion. | Pending |
+| TINY-R2-P10 - System Performance and Regression Qualification | Complete current-profile functional regression and workload/contention A/B, measured real-time budgets, synthesis/macro mapping, netlist checks and explicit missing coverage. | Pending |
+| TINY-R2-P11 - IHP130 Physical and Product Qualification | Final joint CPU/main-SRAM timing, CTS/reset distribution, extracted PVT/IO/package/power evidence, qualified clock/PLL inputs and device operating points; close remaining legacy P9 obligations. | Pending |
+
+### R2 clock, reset and macro evidence
+
+The main 128 KiB SRAM includes its actual physical macro clock pins. It MUST
+use the same SYS source and active frequency as the CPU, with no hidden
+main-SRAM divider, CPU/main-SRAM CDC or half-rate fallback. The old P6/P10
+assignment of main SRAM to MEM is historical and is superseded for R2.
+Four logical 32 KiB banks do not mean four physical macros: verify the real
+IHP130 mapping and preserve the complete 128 KiB capacity. Crypto's six
+private banks remain additional storage in PCLK and retain their own lifecycle.
+
+| Target profile | CPU and actual main SRAM / SYS | XPI / MEM | Shared peripherals and Crypto / PCLK |
+| --- | ---: | ---: | ---: |
+| Safe boot | 24 MHz | 24 MHz | 24 MHz |
+| No-PLL fast, XIN96 | 96 MHz | 96 MHz | 48 MHz |
+| PLL I/O | 192 MHz | 96 MHz | 48 MHz |
+| PLL peak | 240 MHz | 120 MHz | 60 MHz |
+
+Also test external XIN24 and XIN48 at the declared 24/24/24 and 48/48/48 MHz
+SYS/MEM/PCLK rates. These are target cases, not qualified operating points.
+At 192/240 MHz the actual main-SRAM clock periods are approximately
+5.208/4.167 ns. R2-P2 must inspect the locked macro timing views, minimum
+period/pulse widths, setup/hold, clock-to-output and representative bank paths.
+Wait states or a registered response do not repair a violated macro minimum
+clock period. An unsupported target remains an explicit delivery gap; lowering
+the common CPU/SRAM rate requires a reviewed profile/contract change and must
+not silently restore CPU240/SRAM120. R2-P11 adds CTS, extracted parasitics,
+skew/uncertainty and actual macro/standard-cell PVT evidence before rate claims.
+
+R2-P1 audits the existing clock/reset inventory. R2-P4 updates it, the local
+path constraints and physical macro instance bindings as soon as the new bank
+hierarchy exists; it must not postpone those updates until RCU integration.
+R2-P7 adds dynamic SYS lifecycle, XPI MEM division and the actual domain
+bridges. CPU/main-SRAM accesses remain within SYS; DMA PCLK-to-SYS and
+SYS-to-XPI MEM crossings retain complete request/response and reset barriers.
+Main-SRAM control access follows SYS ownership. Rate reporting must make
+`SYS_HZ` authoritative for CPU/main SRAM and `MEM_HZ` authoritative for XPI.
+
+For clock transitions, acknowledge the RCU command before blocking new target
+admissions on both local CPU I/D and external AXI paths. Exercise continuing
+instruction fetch and data requests while draining all accepted bank operations,
+frontend responses and crossing state. Blocked-but-unaccepted requests must
+remain stable rather than refill the drain set; no accepted request may be
+lost, replayed or completed twice across the common SYS clock change.
+
+The existing WFI exception gates only the idle CPU leaf after its accepted
+work drains. It does not divide SYS or gate the main SRAM, fabric or DMA
+service paths. Verify IRQ/debug wake and ongoing DMA access while the CPU
+leaf is stopped. Cold/warm/watchdog/hart/peripheral reset, asynchronous
+assertion, five valid local release edges and CPU-last release all require
+directed evidence. Missing AUDIO/PIXCLK or software Crypto READY must not
+block CPU startup. A reset-done indication is not Crypto READY or ZEROIZED.
+
+For ordinary FIFOs, removing payload reset is permitted only after proving
+the existing observable empty/reset/flush behavior, no stale-word visibility,
+correct validity/pointer state and restart barriers. Main SRAM remains
+uncleared by reset. Crypto is not an ordinary payload-reset optimization:
+retain immediate invalidation, scalar clearing, full required SRAM
+write-zero/readback-zero sweeps and physical FIFO-payload erasure. Test late
+responses, stalled outputs, interrupted scrub and no early erasure success.
+
+### R2 functional and performance matrix
+
+Every row is pending and must identify its requirement, R2 phase, exact
+implementation, profile and executed test. Keep functional correctness and
+cycle-level performance distinct from physical frequency qualification.
+
+| Area / phases | Required cases and objective evidence |
+| --- | --- |
+| Independent banks and I/D paths, R2-P4/P5 | Exercise simultaneous I and D traffic to different banks plus DMA/SDIO traffic; prove each of the four 32 KiB banks has its own frontend and can serve independently. A bank decoder behind one serialized controller is insufficient. Cover every bank boundary, byte lane, first/last word and full-capacity/alias checks. |
+| Local service and fairness, R2-P4/P5 | Measure from accepted CPU AHB address phase to terminal data-phase completion, with clocks running, an uncontended bank, response capacity available and no lifecycle stall. The engineering budget is <=3 SYS cycles; report reads/writes and I/D separately. Report admission waiting separately so delayed acceptance cannot conceal latency. Same-frequency operation alone does not prove zero-wait service. Under contention, exercise beat-level bank grant fairness, maximum legal bursts and bounded service opportunities without violating AXI transaction ownership. |
+| Per-target admission, R2-P5 | Each target permits at most one combined read-or-write transaction until its B or RLAST response handshake. Independent targets may progress together. Cover all requester/target combinations, same-target serialization, backpressure and target/page/alignment errors; preserve VALID payload and response identity. |
+| DMA read/write overlap and AW/W, R2-P5/P6 | Central DMA may hold one outstanding read and one outstanding write; different targets overlap while same-target requests obey the combined target limit. Test W-before-AW, delayed W, stalled B/R, rejected writes and interleaved unrelated traffic. Bind every accepted W beat to the correct accepted AW owner/length; no reassignment or untagged write interleaving. |
+| Faults and counters, R2-P1/P5/P10 | Inject simultaneous faults and completions on different targets. Verify deterministic first-fault retention, correct requester/address/response, no lost independent fault events, correct aggregate count and source attribution. Backpressure must not recount a held event; concurrent events must not collapse into one boolean increment. Check clear/snapshot precedence and the frozen counter overflow semantics. |
+| CPU ordering and lifecycle, R2-P4/P5/P7 | Verify FENCE.I after data writes to executable SRAM, required store/response drain and instruction refetch. Exercise interrupts, debug halt/resume and hart reset with both I/D paths active; hart reset waits for accepted CPU work while unrelated DMA remains usable. Cold/system reset must discard the old session consistently, and graceful drains must retain all accepted responses. |
+| Compiler and placement A/B, R2-P3/P4/P10 | Use identical workloads, input/checksum, compiler identity, ISA/ABI and recorded flags. Separate compiler-only, bank-placement-only and combined comparisons; retain linker map, text/data/BSS/stack sizes and bank assignment. Compare cycles/instructions, I/D stalls, DMA throughput and latency against a reviewed baseline, not an unrelated historical build. Validate bank-aware code, data, stack and DMA-buffer placement and instruction synchronization. |
+| WS2812 finite refill, R2-P3/P6/P10 | Keep the existing register ABI and fixed-MMIO DMA path. With exclusive producer ownership, use watermark 8 and an observed FIFO level L to schedule at most min(remaining, 16-L) words. Exercise empty/full levels, short final chunks, stale observation with only consumer draining, timeout, abort and ownership release. Competing CPU/DMA producers must not invalidate the credit calculation; ownership and the submitted transfer remain finite. |
+| Real-time service budgets, R2-P3/P8/P9/P10 | Account for software/IRQ delay, arbitration, DMA, bridge/APB or serial service, maximum backpressure and margin. Prove the refill/service deadline against available FIFO slack under the declared competing traffic. Record WS2812 underrun/reset-gap behavior and DVP overflow invalidation; average throughput or bank count alone is not a worst-case guarantee. Unsupported traffic combinations must be explicit. |
+| Gen1 shared integration, R2-P6/P7 | Eight DMA channels and frozen channel/request bindings; RNG qualification rejection; CRC tails/FINISH; Crypto initialization/readback/lock, vectors and erasure; I2S/SDIO contention; dynamic PWM rate reporting, slave-audio and exclusive alternate-input prerequisites. Run affected Mini consumers without treating their results as Tiny evidence. |
+| XPI/DVP retained acceptance, R2-P8/P9/P10 | Execute the archived transport/frame cases below under the R2 phase mapping. Retain pin-level NSS1 PSRAM, measured write backpressure, exact frame length and guard/readback checks. DVP frame-done does not complete the final DMA word or AXI write response: never flush the undrained tail or publish a valid frame early. Preserve the DVP ABI/FIFO, DMA2/request 11 and capture-then-readback/save scope. |
+| Clock/reset, package and ABI, R2-P4/P7/P11 | Test the R2 domain ownership and lifecycle above, truthful staged capabilities, SRAM-only boot, fixed QFN64/32 GPIO/16 power-ground budget and unchanged frozen alternates. Maintain common addresses, IRQs, register/HAL parity and documented fault semantics; no new SPI/PIO/BootROM or extra IO is implied. |
+
+### R2 evidence classes and required validation
+
+| Evidence class | Required record | Claim boundary |
+| --- | --- | --- |
+| Functional | Actual Icarus and Verilator executions, strict terminal markers and result files, focused protocol/reset/error tests, and applicable formal/host tests separately identified | Does not establish performance or qualified clock rate |
+| Performance | Reproducible workload/compiler/placement A/B, cycle and instruction counts, service latency, throughput, contention and worst observed backpressure with stated workload bounds | A simulated clock assumption is not physical frequency evidence; observed maxima alone are not a universal bound |
+| Synthesis and netlist | Current IHP130 mapping of every main-SRAM/Crypto bank, area/cells, reset fanout, critical paths, netlist boot and applicable full-function checks | Library area is not die area; compact netlist boot does not replace full firmware or routed timing |
+| Physical | Actual source/profile/tool/PDK/corner/SDC identity; macro checks, CTS and reset distribution, extracted setup/hold and recovery/removal, CDC/RDC, IO/package/power and device timing | Behavioral PLL and pre-layout STA do not qualify an operating point or constitute foundry signoff |
+
+Each result must preserve commands, full logs, source revision, configuration
+digest, build variant, dependency/tool identity, library corners, simulator
+mode, workload and firmware identity. Record failures, skipped/no-op tests and
+missing artifacts explicitly. The historical -455.18 ns WNS below belongs to
+the original 2026-09-25 run; it is not the current R2 WNS or proof that any
+new rate is achievable. Physical feasibility and final qualification require
+new evidence for the actual CPU/main-SRAM clocks and reset distribution.
+
+Use the implementation validation entrypoints and baseline commands in the
+[main contract](tiny-soc.md), with directed R2 cases and any new committed
+profiles added through the normal flow. The current IHP130 Tiny profile
+remains the starting point. Register integrated cases in normal regression;
+`tests/test_xpi_io.py`, `tests/test_dvp.py`, fast-flash and host-only tests do
+not replace the complete required hardware route. Preserve strict
+`SIM_TEST_PASS`/result-file verdicts and run affected Mini compatibility for
+shared changes. Do not remove unsupported PLL/STA guards, alter dependencies,
+or change warning/metric policy to manufacture a pass. Metrics remain observe
+mode; synthesis, simulation and timing failures remain recorded failures.
+
+No R2 test, benchmark or PPA result is claimed by this verification-plan edit.
+Actual documentation-only validation is recorded separately after execution.
+
+## R2-P0 documentation checks (2026-10-04)
+
+The working-tree documentation checks passed:
+
+- Package, power and GPIO tables match the preceding contract; all 64
+  perimeter numbers remain unique and the 32 GPIO assignments are unchanged.
+- All 13 legacy phase headings and planning bodies are preserved, while the
+  12 approved R2 headings are unique and sequential. Requirement identifiers
+  TINY-001 through TINY-036 are unique and ordered.
+- The four contiguous 32 KiB ranges total 128 KiB and retain 32 physical
+  4 KiB macros. SYS and XPI MEM table values match the same-frequency contract.
+- The initial 24 MHz architecture block and the executed historical record
+  from "Configuration and artifact roots" onward match the preceding revision.
+- All 119 local Markdown links across the 13 changed documents resolve;
+  referenced profile, CPU/device-model sources and test entrypoints exist.
+- The local-admission clock-change rule and three-cycle latency measurement
+  endpoints were cross-checked between the main contract and this matrix.
+
+The selected executable profile remains `configs/ci/ihp130-tiny.mk`, IHP130,
+24 MHz/no PLL. The following commands passed; Windows used the installed
+`python` entrypoint for the two command-list checks:
+
+```sh
+python scripts/regress.py --root . --suite pr --pdk IHP130 --soc TINY --dry-run
+python scripts/regress.py --root . --suite nightly --soc TINY --dry-run
+git diff --check
+```
+
+These are documentation and command-selection checks, not R2 hardware
+results. No RTL, firmware, configuration, dependency, warning-baseline or
+metrics-policy file is changed. No C/MISRA deviation is introduced. Firmware
+compilation, RTL/formal simulation, full quality/regression suites, synthesis,
+netlist, STA and physical qualification were not run in this documentation
+phase. Actual main-SRAM macro timing and joint high-frequency qualification
+remain pending; no SRAM or CPU maximum frequency is established here.
+
+## Archived P6/P10 planning and documentation evidence
+
+The remainder of this section preserves the prior planning and P10 document
+checks under their original phase identifiers. Its P7/P8/P11/P12/P9 labels,
+three-master topology and main-SRAM-in-MEM clock assumptions are historical,
+not the active R2 architecture or order. R2-P6/P7/P8/P9 retain the applicable
+shared-IP, RCU, XPI and DVP acceptance obligations, while R2-P1/P2/P10/P11
+carry the outstanding baseline and qualification work. Apply the R2
+clock/fabric requirements above when executing those retained tests.
+
+### Archived P6/P10 pending Gen1 verification
+
+P6 and P10 were documentation-only. Their recorded execution order was
 P10 -> P7 -> P8 -> P11 -> P12 -> P9, preserving all P0-P9 phase IDs/titles.
-The matrix below specifies required implementation and qualification coverage;
-it records no newly executed RTL, firmware, formal, synthesis or timing result.
-The existing committed IHP130 Tiny profile remains the 24 MHz baseline until
-the implementation phases introduce reviewed configurations.
+The matrix below recorded required implementation and qualification coverage;
+it recorded no newly executed RTL, firmware, formal, synthesis or timing result.
+The existing committed IHP130 Tiny profile remained the 24 MHz baseline until
+implementation introduced reviewed configurations. Pending entries below are
+historical status, not new R2 results.
 
 | Area | Required cases / acceptance | Evidence status |
 | --- | --- | --- |

@@ -12,6 +12,20 @@ The data aperture starts at
 physical capacity. A management-only APB4 window at `0x1001_7000` reports the
 configuration and saturating performance counters.
 
+The [Tiny Gen1 R2 target](tiny-soc.md) has a separate product integration
+contract: 128 KiB at `0x30000000..0x3001FFFF`, organized as four contiguous
+32 KiB arbitration groups with independent external AXI frontends and local
+CPU I/D paths. All main-SRAM physical macros and access/control logic share
+the CPU's SYS clock; no SRAM CDC or slower memory divider is introduced.
+The 24/96/192/240 MHz profiles are targets subject to macro and path timing
+qualification, not evidence that this shared module already implements the
+new topology. `TINY-R2-P4` owns that integration and preserves Mini's current
+datapath. Tiny retains `BANK_COUNT=32` and `BANK_BYTES=4096` as physical bank
+discovery; the four arbitration groups do not redefine the register ABI.
+Crypto's six private 4 KiB banks remain separate, additional PCLK storage.
+The linked product contract defines bank arbitration, performance accounting,
+clock/reset and verification requirements without adding shared MMIO registers.
+
 This release is a protocol and performance MVP. It is not a safety-certified,
 silicon-proven, or tapeout-ready memory subsystem. ECC, autonomous scrubbing,
 MBIST, redundancy repair, power gating, retention, and independently licensed

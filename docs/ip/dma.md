@@ -6,18 +6,25 @@ register and linked-list TCD operation. It is an APB4 configuration target at
 IRQ20. DMA does not use RIB or a RIB-to-AXI4 adapter.
 
 The register ABI, IP implementation and HAL are shared across products.
-The [Tiny Gen1 target](tiny-soc.md) keeps `0x1000A000`, IRQ20 and eight
+The [Tiny Gen1 R2 target](tiny-soc.md) keeps `0x1000A000`, IRQ20 and eight
 channels, but assigns channel 2 to DVP receive (general transfers only after
 camera ownership is released), 3 to XPI/WS2812/CRC,
 4/5 to Crypto and 6/7 to I2S TX/RX; 0/1 remain UART0/I2C0. Its streams and
-DMA engine share PCLK, with an AXI CDC into SYS. Product capability/routing
-data must reject absent endpoints without a blanket Tiny stream prohibition.
-Tiny DVP keeps request selector 11 and remains unsupported until its P12
-integration; a reserved/tied-off stream port is not support. The DVP stream
-can target XPI NSS1 mapped PSRAM using ordinary AXI writes without selecting
+DMA engine share PCLK, with an AXI CDC into SYS that preserves one outstanding
+read and one write. Main SRAM and its independent bank frontends run in SYS;
+there is no further SRAM CDC. Product capability/routing data must reject
+absent endpoints without a blanket Tiny stream prohibition.
+Tiny DVP keeps request selector 11 and remains unsupported until
+`TINY-R2-P9` integration; a reserved/tied-off stream port is not support. The
+DVP stream can target XPI NSS1 mapped PSRAM using ordinary AXI writes without selecting
 XPI's indirect DMA request or creating another master. Device capacity and
 serial-burst limits come from the initialized product memory configuration.
-These are frozen Tiny requirements, not implemented Tiny or timing evidence.
+Tiny's per-target concurrency and planned credit-bounded WS2812 batches are
+defined by the linked product contract. They retain this IP's direct/TCD,
+priority, abort-drain and completion ABI; finite TCD chains are not cyclic
+rings. `TINY-R2-P3` prepares scheduling and `TINY-R2-P6` integrates the eight
+channels. These are frozen Tiny requirements, not implemented Tiny or timing
+evidence; the committed Tiny baseline still has four channels.
 
 ## Scope and limits
 

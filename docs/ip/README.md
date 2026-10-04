@@ -4,12 +4,14 @@ This directory owns architecture, register ABI, software contract, and
 verification documentation for self-owned retroSoC peripheral IP and platform
 extension interfaces.
 
-- [Tiny Gen1 QFN64](tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
-  eight-channel DMA, Tiny-specific RCU and no-PLL 96 MHz / PLL 240 MHz clock
-  and reset trees while preserving the package/pad budget. P10 adds unchanged
-  DVP V2, GPIO12-23 ALT1 and optional XPI NSS1 PSRAM frame buffers; the execution
-  order is P10 -> P7 -> P8 -> P11 -> P12 -> P9 without renumbering old phases.
-  The current 24 MHz implementation and its evidence remain explicitly separate.
+- [Tiny Gen1 QFN64 R2](tiny-soc.md) freezes dual CPU I/D paths, four
+  independent 32 KiB main-SRAM groups at the CPU's SYS frequency, per-target
+  AXI32 concurrency and eight-channel DMA scheduling while preserving the
+  package/pad budget and shared-IP ABIs. XPI retains MEM; Crypto retains PCLK.
+  DVP V2 and optional NSS1 PSRAM remain the camera target. The active sequence
+  is `TINY-R2-P0` through `TINY-R2-P11`; legacy `TINY-P0` through `TINY-P12`
+  remain in the linked contract history. The current 24 MHz/four-channel
+  implementation and its evidence remain explicitly separate.
 
 - [timer.md](timer.md) defines the dual APB4 general timer.
 - [sysctrl.md](sysctrl.md) defines the APB4 SystemCtrl register ABI, control-plane contracts, HAL, and verification.
@@ -47,6 +49,8 @@ extension interfaces.
 - [mini-npu.md](mini-npu.md) retains historical commercial NPU research;
   its old platform assumptions and architecture direction are superseded.
 - [sdram.md](sdram.md) defines the AXI4 SDRAM data controller and APB4 configuration window.
+- [onchip-sram.md](onchip-sram.md) defines the shared SRAM ABI and technology
+  boundary, with a separate integration note for Tiny R2's planned bank groups.
 - [xpi.md](xpi.md) defines the native-AXI4/APB4 XPI V2 controller, commercial reference survey, LUT and PHY contracts, HAL, JTAG NOR programming, and delivery boundary.
 
 The corresponding RTL and HAL implementations remain the executable sources

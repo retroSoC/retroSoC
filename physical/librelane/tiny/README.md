@@ -5,6 +5,13 @@ entry point: `librelane-chip` implements the bare-die `retrosoc_tiny_asic`
 MCU, including its pad ring, bondpads, fillers, corners, seal ring, and the
 32 on-chip SRAM bank macros.
 
+The pad counts, 24 MHz constraints and observations below describe the
+committed initial implementation. The [Tiny Gen1 R2 target](../../../docs/ip/tiny-soc.md)
+preserves the frozen QFN64 package. `TINY-R2-P4` updates macro hierarchy and
+SYS-clock constraints, `TINY-R2-P7` updates dynamic clock/reset inputs, and
+`TINY-R2-P11` performs final CPU/main-SRAM physical qualification. This guide and an existing flow run
+do not qualify the R2 pad mapping or faster CPU/SRAM profiles.
+
 The flow consumes the committed `configs/ci/ihp130-tiny.mk` profile, the
 canonical Tiny pin map (`rtl/tiny/pin_map/pin_map.json`), the Tiny clock/reset
 inventory (`rtl/tiny/integration/clock_reset_domains.json`), and the
