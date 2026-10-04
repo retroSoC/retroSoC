@@ -62,6 +62,16 @@ order with sequential `TINY-R2-P0` through `TINY-R2-P11`; the original
 Existing generated datasheets describe the baseline, not completed R2
 implementation or qualification.
 
+The separately approved 2026-10-04 [PIO-lite extension](ip/piolite.md) is a
+future standard Tiny feature, not part of the historical performance-only R2
+approval or current RTL baseline. Its two PCLK state machines share 32x16
+instructions, use the existing 32 GPIO through USER ownership and borrow central
+DMA requests 14/15 without adding pads, user-SRAM capacity or an AXI master.
+Its independent `PIOLITE-P0..P5` gates preserve all R2 IDs and require fresh
+PIO-inclusive application, timing and physical evidence. Other products remain
+outside this feature scope; the [verification ledger](ip/piolite-verification.md)
+records the unimplemented and unqualified boundary.
+
 ### Gen1 Product and Package Target
 
 | Area | Tiny Gen1 target |

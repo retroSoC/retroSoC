@@ -13,13 +13,59 @@ Historical `TINY-P0` through `TINY-P12` identifiers and evidence are preserved
 under their original scope; the mapping in the main contract transfers
 outstanding obligations without renaming old results or declaring them passed.
 Other PDK qualification, new SPI/PIO/BootROM IP and changes to QFN64 or the
-frozen IO/power-pad budget are outside this refreeze.
+frozen IO/power-pad budget are outside the original performance-only R2
+refreeze. PIO-lite is now a separately approved standard-product extension
+under [piolite.md](piolite.md), with its own pending evidence matrix below;
+it does not renumber or retroactively expand the R2 phase results.
 
 The executed historical sections describe the 2026-09-25 initial baseline,
 with two UARTs, two I2C controllers and the legacy pad mapping. The working
 tree was uncommitted when that evidence was collected and its readiness
 remains `prototype`. Those results do not validate the later package,
-shared-IP/clock/reset, DVP/framebuffer or R2 performance refreezes.
+shared-IP/clock/reset, DVP/framebuffer, R2 performance or PIO-lite freezes.
+
+## PIO-lite planned extension evidence
+
+Target SoCs: `TINY`; feature slug: `piolite`; approval date: 2026-10-04.
+The standard-product target adds two state machines sharing 32 x 16-bit
+program storage, 32-bit ISR/OSR, 16-bit X/Y counters and separate 8 x 32-bit
+TX/RX FIFOs per state machine. The engine, APB and host DMA endpoints use
+PCLK at the existing 24/48/60 MHz targets. This section records required
+future evidence only; no assembler/model, RTL, firmware, DMA, simulation,
+formal, synthesis, timing, physical or silicon acceptance has been executed
+for PIO-lite by the freeze. Four-state-machine expansion is not MVP support.
+
+The committed `configs/ci/ihp130-tiny.mk` IHP130 24 MHz/no-PLL profile has no
+PIO-lite integration. New address/IRQ/request/RCU allocations remain planned
+until their complete executable paths and truthful capabilities exist. The
+authoritative phase titles and requirements remain in [piolite.md](piolite.md).
+The detailed case matrix and documentation-check record are maintained in the
+[PIO-lite verification ledger](piolite-verification.md).
+
+| PIO-lite phase / area | Required evidence and completion boundary | Status |
+| --- | --- | --- |
+| PIOLITE-P0 / contract | Approved ISA/ABI, resources, pin ownership and lifecycle; consistent linked product/GPIO/DMA allocations; preserved legacy/R2 phase IDs/titles and unchanged QFN64 terminals; documentation links and commands. | Documentation freeze only; no implementation result |
+| PIOLITE-P1 / model and assembler | Deterministic encoding and model traces; valid/invalid opcodes, operands, labels, branches, wrap and program-size boundaries; shared 32-word allocation; software error handling and generated program metadata against the frozen ISA. | Pending |
+| PIOLITE-P2 / core and registers | Both independent SMs, divider/delay/branch/shift/counter boundaries, TX/RX full/empty and stalled-instruction behavior; illegal accesses, W1C races, stop/abort/reset, stale-data isolation, program-write restrictions and configuration conflicts; directed/randomized model comparison and focused formal properties. | Pending |
+| PIOLITE-P3 / Tiny integration and HAL | APB `0x1001C000..0x1001CFFF`, IRQ24, RCU target15, requests `PIOLITE_TX=14` / `PIOLITE_RX=15`, actual capability discovery, handwritten register parity, freestanding bounded HAL and actual R2-P6/P7 prerequisites; no fourth AXI master or ninth DMA channel. | Pending |
+| PIOLITE-P3 / pad and lifecycle ownership | `USER_SELECT` reach to all GPIO0-31; unchanged ALT0/ALT1 and dedicated boot/debug/control pads; conflicts, high-impedance reset, existing GPIO synchronizer plus registered bypass/filter stage with `FILTER_ENABLE=0`, input latency and release; no new PIO synchronizer/raw-pad bypass; reject GPIO gate/reset while PIO owns any pad, including multi-target commands; clock-change and PIO gate/reset drain/restart barriers. | Pending |
+| PIOLITE-P4 / DMA and protocol programs | Approved pin-level acceptance programs in Icarus and Verilator; independently checked data, edge/bit timing, first/last transfer, short frames, FIFO starvation/overflow, bounded recovery and strict Tiny terminal verdict; source-bound throughput and worst observed service gaps. | Pending |
+| PIOLITE-P4 / system contention | TX channel3 only after bulk-owner release, RX channel2 only after complete camera release; no theft of Crypto4/5 or I2S6/7, correct abort/final-response drain and backpressure; CPU/control progress and real FIFO service budgets with actual permitted background traffic. | Pending |
+| PIOLITE-P5 / physical product | PIO-inclusive netlist and source/profile/PDK/corner identity; area/reset load, PCLK STA, GPIO ownership paths, input synchronizers, pad setup/hold/turnaround, simultaneous switching, package/power and CDC/RDC evidence; declared engine rate distinguished from external interface rate. | Pending |
+
+`PIOLITE-P3` depends on the applicable accepted R2-P6/R2-P7 platform behavior.
+`PIOLITE-P5` may share a run with `TINY-R2-P11` only when the same PIO-inclusive
+source revision, configuration and physical inputs satisfy both contracts.
+An earlier R2 netlist, standalone PIO test or another SoC's result cannot
+qualify the extended standard Tiny product. Preserve 128 KiB main SRAM on
+the same SYS source and rate as the CPU, three external AXI owners, eight
+central DMA channels and all QFN64/power assignments in every integration run.
+
+Record exact commands and executed simulator/proof coverage when tests are
+introduced; a skipped/no-op RTL test or reserved request ID is not evidence.
+Firmware uses SYSCTRL `TEST_STATUS` and the strict `SIM_TEST_PASS`/result-file
+policy. Hardware, pad-speed and PPA claims remain pending until the specific
+source/profile/PDK evidence passes.
 
 ## R2 pending phase acceptance
 

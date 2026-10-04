@@ -5,6 +5,14 @@ does not need an address on every word. APB4 remains the register configuration
 plane. The active stream endpoints are DMA to I2S TX, I2S RX to DMA, and DVP RX
 to DMA. UART, I2C, and WS2812 retain their existing APB4 FIFO data registers.
 
+The separately frozen [Tiny PIO-lite](ip/piolite.md) extension adds a planned
+central-DMA TX/RX pair at requests 14/15 through [DMA V2.1](ip/dma.md).
+Its PCLK 32-bit streams use full-word keep/strobe, one selected SM per direction,
+exclusive channel-bound sessions and explicit abort/drain/isolation. It is not
+implemented or enabled on Mini by this document. The historical I2S/DVP rules
+below do not substitute for PIO-lite's packing, ownership or reset contract;
+the existing [Crypto](ip/crypto.md) streams retain their own framing rules.
+
 ## Interface Contract
 
 All three links use `DATA_WIDTH=32`, one-bit ID, destination, and user fields,

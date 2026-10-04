@@ -2,15 +2,24 @@
 
 ## Purpose and research boundary
 
-This contract freezes the performance-only R2 design approved on 2026-10-04
-for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the QFN64
+The R2 portion of this contract freezes the performance-only design approved
+on 2026-10-04 for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the QFN64
 package and pad allocation approved on 2026-09-26, the shared peripherals
 approved on 2026-09-30, and the DVP/XPI-framebuffer contract of 2026-10-01.
 R2 adds independent CPU I/D local paths, four independently arbitrated main
 SRAM groups, per-target concurrency and bounded data-movement policies.
 CPU and the actual main-SRAM macros share SYS at the same active frequency.
 No pad, peripheral, user-SRAM capacity, DMA channel or external AXI owner is
-added. `R2` identifies the development-roadmap revision, not an IP ABI version.
+added by that performance refreeze. `R2` identifies the development-roadmap
+revision, not an IP ABI version.
+
+The separately approved 2026-10-04 [PIO-lite extension](piolite.md), feature
+slug `piolite`, adds a programmable I/O block to the future standard Tiny
+product. It preserves QFN64, all existing ALT0/ALT1 assignments, the 128 KiB
+main SRAM, eight-channel DMA target and three external AXI owners. Its
+`PIOLITE-P0` through `PIOLITE-P5` phases remain separate from the unchanged R2
+phase sequence. PIO-lite is required by the extended product target but is
+not implemented or qualified by this documentation freeze.
 
 The clock contract retains the 96 MHz no-PLL and 192/240 MHz PLL targets,
 now requiring the main SRAM to qualify at those same rates. Both variants
@@ -31,12 +40,16 @@ contract and must not be read as the new Gen1 integration or clock qualification
 
 Product RTL, address/pin/topology inputs and filelists remain under `rtl/tiny`;
 the SDK and application composition retain their existing `crt/` and `app/`
-ownership. The active execution order is `TINY-R2-P0` through `TINY-R2-P11`,
+ownership. The active R2 execution order is `TINY-R2-P0` through `TINY-R2-P11`,
 with prerequisites pointing only to earlier R2 phases. Legacy `TINY-P0`
 through `TINY-P12` keep their original headings and evidence in the archive;
 their former non-monotonic schedule is not the current execution plan.
 The current profile still selects four DMA channels and forbids PLL/non-24-MHz
 Tiny configurations. New configurations require explicit platform enablement.
+PIO-lite integration in `PIOLITE-P3` requires the applicable accepted R2-P6
+DMA/shared-integration and R2-P7 RCU functionality. `PIOLITE-P5` may share a
+physical run with R2-P11 only on the same PIO-inclusive source revision and
+configuration, with both contracts' evidence requirements satisfied.
 
 ### Commercial references and reuse boundary
 
@@ -52,12 +65,14 @@ PPA or signoff evidence; no proprietary implementation is copied.
 | [STM32H573 datasheet](https://www.st.com/resource/en/datasheet/stm32h573vi.pdf) | DS14121 Rev 5 (May 2025) describes a production 250 MHz MCU with domain controls, CRC/RNG/crypto and a parallel camera interface supporting snapshot/continuous capture and cropping. | Reuse the snapshot/crop programming pattern and separate product clock control. Do not import its wider camera bus, JPEG support, TrustZone, protected-key, independent-watchdog-clock or TRNG certification claims. |
 | [Espressif camera driver](https://github.com/espressif/esp32-camera) | The official ESP32/ESP32-S2/ESP32-S3 driver documents PSRAM frame buffers and PSRAM DMA on S2/S3; it warns that raw RGB/YUV writes can lose data when bandwidth is insufficient. Single-buffer capture and multiple-buffer continuous capture have different memory/bandwidth costs. | Use external RAM capacity with explicit throughput and worst-stall checks. Tiny selects one-frame capture/readback first, not a descriptor ring, compression path or guaranteed continuous frame rate. The maintained driver is a software reference, not Tiny silicon, power or timing evidence. |
 | [GD32F450 datasheet](https://gd32mcu.com/data/documents/datasheet/GD32F450xx_Datasheet_Rev2.3.pdf) | Rev 2.3 describes 200 MHz AHB domains, 50/100 MHz APB domains and RCU-managed clocks/resets. | Use explicit domain ceilings and dividers rather than assigning the processor frequency to every peripheral. No analog macro, process-specific voltage or measured PPA is reused. |
-| [RP2350 architecture documentation](https://www.raspberrypi.com/documentation/microcontrollers/microcontroller-chips.html) | Current official documentation describes a multi-master crossbar and independently accessible SRAM banks for CPU/DMA concurrency. | Adopt independent target/bank service and explicit contention analysis. Tiny remains single-hart with 128 KiB, no new cache, PIO, USB or imported frequency/power claim. |
+| [RP2350 architecture documentation](https://www.raspberrypi.com/documentation/microcontrollers/microcontroller-chips.html) | Current official documentation describes a multi-master crossbar and independently accessible SRAM banks for CPU/DMA concurrency. | Adopt independent target/bank service and explicit contention analysis. The performance-only R2 scope retains one hart and 128 KiB without adding cache, PIO or USB. The separately approved PIO-lite contract supplies its own scope; no vendor frequency/power claim is imported. |
 | [STM32H573 RM0481](https://www.st.com/resource/en/reference_manual/rm0481-stm32h563h573-and-stm32h562-armbased-32bit-mcus-stmicroelectronics.pdf) | The reference manual describes CPU, general-DMA and SDMMC-DMA paths, multiple SRAM targets and round-robin bus-matrix arbitration. | Use target-local arbitration and separate control/data traffic. Do not infer Cortex-M33 timing, cache/coherency, TrustZone or zero-wait behavior for Tiny. |
 
 The [RP2350](https://www.raspberrypi.com/products/rp2350/) is a Hazard3-based MCU
 reference for software, SRAM, and deterministic I/O. Its dual-core, security,
-USB, and PIO features are not Tiny requirements. The
+and USB features are not Tiny requirements. The separate [PIO-lite](piolite.md)
+contract uses programmable-I/O references without RP ISA or SDK compatibility.
+The
 [CAST SRAM controller](https://www.cast-inc.com/peripherals/memory-controllers/sram-ctrl)
 illustrates native AXI synchronous SRAM and documented verification delivery;
 no commercial implementation or qualification is reused.
@@ -77,8 +92,8 @@ no commercial implementation or qualification is reused.
 - TINY-004: 32 bidirectional user GPIO, one UART, one I2C controller, one
   full-duplex I2S controller, one SDIO host, two general timers, CLINT, eight
   central DMA channels, four PWM outputs, RTC, watchdog, RNG V2, CRC V2,
-  WS2812, Crypto V2, DVP V2, Tiny RCU/SYSCTRL and architecture info. UART1 and
-  I2C1 are absent from the Gen1 target.
+  WS2812, Crypto V2, DVP V2, PIO-lite, Tiny RCU/SYSCTRL and architecture info.
+  UART1 and I2C1 are absent from the Gen1 target.
 - TINY-005: retain `HAVE_PLL` as the single PLL build selector. With no PLL,
   use an external XIN clock up to 96 MHz; with PLL, use a 24 MHz reference and
   the single-output PLL interface for a maximum 240 MHz SYS/processor target.
@@ -99,8 +114,11 @@ no commercial implementation or qualification is reused.
   return must meet the selected oscillator/PLL macro requirements. Position
   labels on supply pins do not create independently powered IO banks.
 - TINY-010: GPIO retains the `ALT_ENABLE`/`ALT_SELECT` model with GPIO, ALT0
-  and ALT1 modes. The Gen1 table below defines the logical mapping. UART/I2C
-  alternate input locations must have one selected route, never an OR of
+  and ALT1 modes. The separately approved PIO-lite extension uses `USER_SELECT`
+  for exclusive ownership of any of GPIO0-31 without replacing ALT0/ALT1
+  assignments or reaching dedicated boot/debug/control pads. The Gen1 table
+  below defines the logical mapping. UART/I2C alternate input locations must
+  have one selected route, never an OR of
   competing inputs. I2C must preserve open-drain drive and input readback.
 - TINY-011: reset must leave user GPIO as high-impedance inputs with alternate
   functions disabled, preserve dedicated boot/debug access, and meet the
@@ -201,19 +219,43 @@ no commercial implementation or qualification is reused.
   netlist and physical evidence. The active R2 roadmap MUST retain the legacy
   phase IDs/titles and evidence as history, with explicit obligation mapping;
   no historical phase or timing gap is closed merely by this refreeze.
+- TINY-037: the standard Tiny target MUST include [PIO-lite](piolite.md) with
+  two state machines, one shared 32 x 16-bit program store, 32-bit ISR/OSR,
+  16-bit X/Y counters and independent 8 x 32-bit TX and RX FIFOs per machine.
+  Four-state-machine expansion is reserved by the IP contract, not an MVP
+  capability. PIO-lite uses PCLK and integer clock enables, with the existing
+  24/48/60 MHz PCLK targets subject to source-bound qualification.
+- TINY-038: PIO-lite MUST use APB4 `0x1001C000..0x1001CFFF`, CPU IRQ24,
+  Tiny RCU target bit 15 and central-DMA requests `PIOLITE_TX=14` / `PIOLITE_RX=15`.
+  Default TX borrows channel 3 after bulk-client release; default RX borrows
+  channel 2 only after complete camera release. No additional DMA channel,
+  AXI master, user-SRAM capacity or package pad is introduced.
+- TINY-039: GPIO gating or peripheral reset MUST be rejected while PIO-lite
+  owns any user pad, even when a command also selects PIO-lite. Software MUST
+  stop/drain PIO-lite and release pad ownership before that GPIO operation.
+  Clock changes and PIO gate/reset follow the linked PIO-lite lifecycle;
+  system reset still releases all user pads to high impedance.
+- TINY-040: `PIOLITE-P0` through `PIOLITE-P5` MUST remain a separately approved
+  feature extension without renaming legacy or R2 phases. PIO capabilities,
+  requests, IRQ and RCU support MUST remain absent until their complete paths
+  exist. Functional, DMA/contention and physical evidence MUST identify the
+  actual PIO-inclusive source, profile and PDK; old R2 results do not qualify it.
 
 Deferred: RV32 A atomics, RTOS ports, authenticated boot, retention/power gating,
 independent sleep clock, 256-512 KiB SRAM, USB, standalone general SPI, CAN, ADC,
 multimedia accelerators beyond the selected DVP capture path and other PDK
-qualification. I2S, SDIO and DVP are Gen1 requirements awaiting integration,
-not deferred product features. XPI retains
-four chip selects: CS0_N is dedicated to boot NOR, while CS1_N through CS3_N
+qualification. I2S, SDIO, DVP and the approved PIO-lite extension are standard
+Tiny requirements awaiting integration, not deferred product features. XPI
+retains four chip selects: CS0_N is dedicated to boot NOR, while CS1_N through CS3_N
 use GPIO29 through GPIO31. Additional XPI device configurations still require
 their own qualification.
 
-This R2 scope MUST NOT add SPI, PIO-lite, a recovery Boot ROM, caches, atomics,
-new accelerators or another PDK rollout. Those research ideas are explicitly
-deferred rather than hidden prerequisites of the performance work.
+The original performance-only R2 scope MUST NOT add SPI, PIO-lite, a recovery
+Boot ROM, caches, atomics, new accelerators or another PDK rollout. That
+historical scope boundary remains in force for its phase work. PIO-lite is
+now a separately approved standard-product extension governed by
+[piolite.md](piolite.md); its phases do not become hidden prerequisites of
+R2-P0 through R2-P10. The other listed research ideas remain deferred.
 
 ## QFN64 package and power planning
 
@@ -322,6 +364,9 @@ Every row supports ordinary bidirectional GPIO mode. `Reserved` means no
 assigned alternate function; it does not remove the GPIO capability. This
 table supersedes the legacy Mini-derived Tiny routing for the Gen1 target,
 but is not yet implemented by the current Tiny canonical maps.
+The PIO-lite `USER_SELECT` route is an independent ownership selection for all
+32 user GPIO; it does not occupy or change an ALT0/ALT1 table entry. Existing
+peripheral functions are unavailable on each pad while PIO-lite owns it.
 
 | GPIO | QFN pin | ALT0 | ALT1 | Direction or use |
 | --- | ---: | --- | --- | --- |
@@ -394,6 +439,13 @@ Adding WS2812 on GPIO26 to the four default interfaces uses 16 GPIO and
 leaves 16. Including SD card detection/power and four PWM outputs uses 22 and
 leaves 10. WS2812 and the alternate I2C SCL route on GPIO26 are mutually
 exclusive; the default I2C route on GPIO10/11 remains available.
+
+These counts assume PIO-lite has not claimed the listed peripheral pads.
+PIO-lite may claim any otherwise released GPIO through `USER_SELECT`; it
+does not increase the number of simultaneously available pads. Its ownership
+and conflict checks follow [PIO-lite](piolite.md) and [GPIO](gpio.md). Input
+sampling uses the existing GPIO synchronizer plus its registered bypass/filter
+stage with `FILTER_ENABLE=0`; no PIO-lite synchronizer or raw-pad bypass is added.
 
 ### Camera profile and board ownership
 
@@ -555,6 +607,7 @@ linked common contract; do not generate a second set of IP registers.
 | DVP V2 | `0x1000E000` | 15 | [DVP](dvp.md), existing APB4/32-bit stream ABI, `DVP_RX=11`, Tiny DMA channel 2 |
 | SDIO0 | `0x1000F000` | 10 | [SDIO](sdio.md), one host and its private AXI32 DMA master |
 | Central DMA | `0x1000A000` | 20 | [DMA V2](dma.md), eight channels and supported request discovery |
+| PIO-lite | `0x1001C000` | 24 | [PIO-lite](piolite.md), 4 KiB APB4 window, two state machines in PCLK; separately approved standard-product extension |
 
 Mini's RCU has no separate MMIO region: its software controls are in SYSCTRL
 at `0x1000B000`. Tiny retains this base and uses the private bank below for
@@ -568,6 +621,8 @@ base addresses. Retain CPU IRQ bits 0/1 for CLINT, 2 UART0, 3/4 timers,
 I2C1 windows have no successful decode, and their IRQ bits 26/19 are zero.
 All other unallocated IRQ bits are zero. CRC has no fabricated interrupt or
 private DMA request; software finishes the CRC session after DMA completion.
+PIO-lite's window is `0x1001C000..0x1001CFFF`; IRQ24 remains zero and its
+capability absent until the block and complete interrupt path are integrated.
 
 ### DMA and bus behavior
 
@@ -575,14 +630,16 @@ private DMA request; software finishes the CRC session after DMA completion.
 | ---: | --- |
 | 0 | UART0 |
 | 1 | I2C0 |
-| 2 | DVP receive; general memory transfers only when camera ownership is released |
-| 3 | Serialized bulk clients: XPI, WS2812 and CRC |
+| 2 | DVP receive; PIO-lite RX or general memory transfers only after camera ownership is released |
+| 3 | Serialized bulk clients: XPI, WS2812, CRC and PIO-lite TX |
 | 4 | Crypto input |
 | 5 | Crypto output |
 | 6 | I2S transmit |
 | 7 | I2S receive |
 
 Retain Crypto request IDs 12/13, I2S request IDs 1/2 and DVP request ID 11.
+The PIO-lite extension adds requests `PIOLITE_TX=14` and `PIOLITE_RX=15` without
+renumbering existing requests or increasing the eight-channel target.
 Channel ownership is product integration data, not a different DMA register
 ABI. In particular,
 Tiny channel 6 is not Mini's HP-boot reservation. Shared drivers use product
@@ -593,6 +650,14 @@ drain; memory clients must not steal it. DVP is a stream source, not a fourth
 AXI master. Writing its stream to XPI mapped RAM still uses `DVP_RX`, not an
 XPI indirect TX request or a CPU whole-frame staging buffer.
 
+PIO-lite uses explicit, exclusive application ownership: default TX borrows
+channel 3 only after the current bulk client has drained and released it;
+default RX borrows channel 2 only after camera capture and all accepted DMA
+writes have completed and camera ownership is released. Failure to acquire
+either channel returns boundedly without stealing another client's channel.
+PIO-lite has no private AXI master. CPU/FIFO and central-DMA access, selected
+state machine, request readiness and completion follow [PIO-lite](piolite.md).
+
 Retain the common DMA direct/TCD ABI, 32-bit Tiny datapath, at-most-16-beat
 memory bursts, completion/error/W1C and abort-drain behavior. Replace the
 baseline's blanket Tiny stream rejection with truthful endpoint capabilities;
@@ -602,6 +667,10 @@ Crypto, I2S and DVP host streams in PCLK, without adding CDC inside the shared
 stream contracts. Existing request thresholds and cross-domain XPI
 completion/request signals require
 proper synchronization/handshake at the product boundary.
+PIO-lite's engine, APB and host-side DMA endpoints remain in PCLK. Requests
+14/15 MUST stay unsupported until `PIOLITE-P3` connects their complete paths;
+an allocation or tie-off is not a capability. The existing PCLK-to-SYS
+central-DMA bridge retains its request/response and reset responsibilities.
 
 R2 replaces the global read-or-write lock with independent target admission,
 owner state and response storage. The external owners remain merged CPU slow
@@ -981,7 +1050,7 @@ remain clocked while XIN runs and MUST NOT be software-gated.
 | AON / REF24 | RCU, CLINT, ArchInfo; RTC/WDG functional clocks | 24 MHz | 24 MHz | 24 MHz | 24 MHz |
 | SYS | CPU I/D and slow adapter, actual main-SRAM macros, four bank frontends/control, AXI32 fabric, SDIO including its APB and private DMA | 24 MHz | 96 MHz | 192 MHz | 240 MHz |
 | MEM | XPI, including its control interface | 24 MHz | 96 MHz | 96 MHz | 120 MHz |
-| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
+| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts, PIO-lite engine/APB/DMA endpoints; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
 | AUDIO | I2S audio PHY and existing audio-side FIFOs | External | External | External | External |
 | PIXCLK | DVP pixel path and existing pixel-side FIFO | External | External | External | External |
 | JTAG | TAP/DTM | Separate TCK | Separate TCK | Separate TCK | Separate TCK |
@@ -1010,6 +1079,14 @@ minimum-period violation. If a candidate fails, disable that CPU/SRAM point
 or lower both together through an explicitly reviewed profile; never restore
 CPU240/SRAM120 as a fallback. The target frequencies remain unqualified until
 the required physical evidence passes.
+
+PIO-lite inherits the committed PCLK rate and divides execution using integer
+clock enables; it introduces no independent clock, PLL or external pin clock.
+Its 24/48/60 MHz engine targets are not pad toggle or serial bit-rate claims.
+Before a PCLK change, software MUST quiesce PIO state machines, drain accepted
+DMA/APB work and satisfy the lifecycle in [PIO-lite](piolite.md). Restart uses
+the new committed rate and explicitly initialized timing state; a clock change
+does not transparently preserve an in-flight protocol waveform.
 
 CLINT's counter/control stays in AON with a synchronous 1 MHz tick enable.
 Its timebase does not change or lose ticks during SYS transitions. CLINT
@@ -1259,7 +1336,7 @@ reachable through an acknowledged APB bridge while the system is running.
 | `0x14C` | `MEM_HZ` | RO / 24000000 | Committed divided XPI MEM-domain frequency, not main-SRAM frequency |
 | `0x150` | `PCLK_HZ` | RO / 24000000 | Committed peripheral frequency |
 | `0x154` | `CLINT_HZ` | RO / 1000000 | CLINT tick rate |
-| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; `0x00003FFF` before DVP integration, `0x00007FFF` when all Gen1 targets exist; reset excludes CPU bit 0 |
+| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; full sets are `0x00003FFF` before DVP/PIO, `0x00007FFF` with DVP but no PIO, and `0x0000FFFF` with DVP and PIO; absent target bits stay clear; reset excludes CPU bit 0 |
 | `0x15C` | `CLKOUT_CONTROL` | RW / 0 | Source `[2:0]`; half-period divisor `[23:8]`; output is off after reset |
 
 Clock profile 0 is SAFE24. Profile 1 is external XIN at its declared frequency
@@ -1275,11 +1352,14 @@ identity and manifest must identify the model rather than physical qualification
 
 The target-mask bits are Tiny integration identifiers, not Mini register ABI:
 0 CPU, 1 GPIO, 2 UART0, 3 I2C0, 4 timer0, 5 timer1, 6 PWM, 7 I2S, 8 SDIO,
-9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto and 14 DVP. Bits 15-31
-are reserved. Bit 14 is an additive target allocation; existing offsets/bits
-and RCU ABI 1.0 semantics remain unchanged. R2-P7 may reserve the control plumbing
+9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto, 14 DVP and 15 PIO-lite.
+Bits 16-31 are reserved. Bits 14/15 are additive target allocations; existing
+offsets/bits and RCU ABI 1.0 semantics remain unchanged. R2-P7 may reserve the
+control plumbing
 but MUST report bit 14 clear and reject its commands until R2-P9 instantiates
-the complete DVP idle/reset/CDC path. No capability is inferred from a tie-off.
+the complete DVP idle/reset/CDC path. It MUST report bit 15 clear and reject
+its commands until `PIOLITE-P3` instantiates the complete PIO-lite idle/reset
+path. No capability is inferred from a tie-off.
 CPU gating means permission to gate only while WFI/idle with no pending IRQ or
 debug request; it is not an immediate software stop. RCU/REF24, AXI, main
 SRAM, XPI, CLINT, ArchInfo and RTC/WDG functional clocks cannot be gated or
@@ -1288,6 +1368,13 @@ individually reset through these masks. System reset owns their reset.
 GATE_APPLY commits all selected gate changes only after the corresponding
 idle/drain checks; a timeout preserves the previous gate configuration.
 PERIPHERAL_RESET requires a nonzero supported mask and ungated targets.
+GPIO target-1 gate or peripheral-reset commands MUST be rejected while any
+PIO-lite pad ownership remains, with no partial gate/reset commit. This veto
+also applies to multi-target commands naming both GPIO and PIO-lite: first
+stop/drain PIO-lite and explicitly release its pins, then issue the GPIO
+command. PIO target-15 gate/reset and CLOCK_APPLY require the PIO-lite
+quiesce/drain checks defined in [piolite.md](piolite.md); preserve bounded
+failure and continued control access when a machine is stalled on input/FIFO.
 After draining associated DMA and accesses, hold each local reset for at
 least five running local cycles and apply the five-edge release/barrier
 sequence. RESET_DONE acknowledges the reset sequence, not Crypto erasure or
@@ -1647,6 +1734,14 @@ Legacy pad-ring runs, behavioral clocks and historical reset-fanout results
 are not QFN64/192/240 MHz signoff. Do not reduce the fixed pad budget, waive
 macro period failures through wait states, promote warning/metric policy, or
 claim complete Gen1 while named shared-IP or physical prerequisites remain open.
+
+The separately approved PIO-lite standard-product extension has its own
+`PIOLITE-P0` through `PIOLITE-P5` development order in [piolite.md](piolite.md).
+R2-P6/P7 supply platform prerequisites for `PIOLITE-P3`; they do not implement
+PIO-lite merely by reserving its identifiers. `PIOLITE-P5` and R2-P11 may
+share evidence only when it covers the same PIO-inclusive source revision,
+configuration, PDK/corners and all requirements from both contracts. An R2
+run without PIO-lite cannot close the extended standard-product release.
 
 ### R2 validation entrypoints
 

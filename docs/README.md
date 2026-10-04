@@ -11,6 +11,12 @@ the root README and subsystem guides.
   remain in the linked contract history. CPU/main-SRAM rates up to 240 MHz
   require qualification. These targets remain separate from the existing
   24 MHz/four-channel implementation and physical evidence.
+- [PIO-lite](ip/piolite.md) freezes the separately approved future Tiny
+  standard programmable-I/O block: two state machines, shared 32x16 program
+  store, existing GPIO USER ownership, PCLK execution and central DMA V2.1
+  requests 14/15. Its `PIOLITE-P0..P5` phases preserve the historical
+  performance-only R2 boundary; the [verification ledger](ip/piolite-verification.md)
+  retains all implementation, application and physical evidence gaps.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.

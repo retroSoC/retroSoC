@@ -10,6 +10,13 @@ in `core`, AXI adapters in `interconnect`, and native AXI SRAM in `memory`.
 Both products reference these shared files directly in their own filelists.
 Tiny does not select any RIB/RIBP module.
 
+The [PIO-lite contract](../../docs/ip/piolite.md) specifies a future owned
+programmable-I/O block for Tiny, with shared GPIO ownership and DMA V2.1
+integration changes. Its planned hierarchy is not present in the active
+filelists yet. The [verification ledger](../../docs/ip/piolite-verification.md)
+keeps model, RTL, integration and physical gates separate from design freeze;
+shared DMA/GPIO changes must preserve Mini behavior without enabling PIO there.
+
 experimental contains retained inactive RTL. It is not included by any active
 filelist and must not become a build dependency without an explicit integration
 change and matching validation.

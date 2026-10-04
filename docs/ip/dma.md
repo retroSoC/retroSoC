@@ -26,6 +26,14 @@ rings. `TINY-R2-P3` prepares scheduling and `TINY-R2-P6` integrates the eight
 channels. These are frozen Tiny requirements, not implemented Tiny or timing
 evidence; the committed Tiny baseline still has four channels.
 
+The [PIO-lite contract](piolite.md) freezes an additional **TINY-only product
+integration target**, using the shared DMA V2.1 extension below. This is a
+separate feature from Tiny's performance-only R2 roadmap. Current DMA RTL/HAL
+still implement V2.0; the V2.1 register, ports, discovery and lifecycle rules
+are requirements for subsequent implementation, not delivered capabilities.
+Mini is an affected compatibility consumer of shared DMA changes, not a
+PIO-lite rollout target. Existing phase IDs and evidence remain unchanged.
+
 ## Scope and limits
 
 - Eight independent channel contexts share one AXI4 master (`ID=0`) in the
@@ -81,7 +89,7 @@ compares both definitions.
 | Offset | Register | Access | Description |
 | ---: | --- | --- | --- |
 | `000` | `IP_ID` | RO | `DMA4` identification |
-| `004` | `IP_VERSION` | RO | V2.0 |
+| `004` | `IP_VERSION` | RO | Current V2.0 `0x00020000`; frozen V2.1 target `0x00020001` |
 | `008` | `CAPABILITY` | RO | channel count, data width, maximum burst, stream count, descriptor=1 |
 | `00c` | `GLOBAL_CTRL` | WO | bit 0 global reset |
 | `010` | `GLOBAL_STATUS` | RO | any channel busy |
@@ -90,6 +98,7 @@ compares both definitions.
 | `01c` | `IRQ_TEST` | RW | software interrupt test bits |
 | `020` | `ERROR_SUMMARY` | RO/W1C | bit 0 valid/W1C, bits 3:1 channel, bits 15:7 status, bits 31:16 error-address upper half |
 | `024` | `REQUEST_STATUS` | RO | peripheral pacing availability |
+| `028` | `SUPPORTED_REQUESTS` | RO | V2.1 target only: static implemented request bitmap; absent in V2.0 |
 
 Each channel occupies `0x80` bytes beginning at `0x100 + channel * 0x80`.
 
@@ -188,6 +197,145 @@ final, interrupt enables, kind/request, priority, and burst fields. CRC uses
 CRC-32/ISO-HDLC (`0xEDB88320`, init/xorout `0xffffffff`). Descriptors and data
 must be in DMA-visible uncached/shared memory. Callers issue `fence rw,rw`
 before start and after completion; no cache snoop or IOMMU is implied.
+
+## Frozen V2.1 PIO-lite extension
+
+### Scope and discovery
+
+V2.1 MUST retain the existing direct-register offsets, four-bit request
+selector, 64-byte TCD size/alignment and TCD request field `[15:12]`. Existing
+request IDs 0-13 and their transfer kinds remain unchanged. In particular,
+omitted Tiny I2C1 requests 9/10 MUST NOT be reused. No channel, AXI master,
+cyclic descriptor, asynchronous stream clock or narrow-transfer mode is added.
+
+| Request | ID | Transfer kind | Meaning |
+| --- | ---: | --- | --- |
+| `PIOLITE_TX` | 14 | MM-to-stream | Memory words into the selected SM TX FIFO |
+| `PIOLITE_RX` | 15 | Stream-to-MM | Selected SM RX FIFO words into memory |
+
+These are two block-level stream endpoints, not per-SM request pairs. One TX
+SM and one RX SM may receive DMA service simultaneously; they may be the same
+SM. Two concurrent RX DMA streams or two concurrent TX DMA streams are not
+supported. Future four-SM configurations keep this endpoint limit unless a
+separate extension changes the contract. Both endpoints use full 32-bit words,
+`TKEEP/TSTRB=4'hf`, PCLK and the existing AXI master. Programmed byte count
+terminates DMA; TX `TLAST` marks its final word and RX `TLAST` does not replace
+the programmed count or terminate a PIO program. DMA completion confirms FIFO
+transfer/memory-write completion, not completion of a waveform at the pins.
+
+`SUPPORTED_REQUESTS` at `0x028` MUST return bits 0-15 for request IDs 0-15 and
+zero in bits 31-16. Its cold-reset value is the build's effective implemented
+mask: combine the request mask, supported transfer logic, stream-enable
+parameters and actual product wiring. A reserved port, tied-off endpoint or
+disabled stream MUST report zero. The value is static integration capability,
+not FIFO readiness, current channel ownership or whether a PIO binding is
+enabled. Writes return `PSLVERR` without changing state. `REQUEST_STATUS`
+retains live pacing semantics and MUST NOT be interpreted as support discovery.
+
+V2.1 `CAPABILITY[30:28]` MUST report the population count of implemented
+stream-direction requests 1, 2, 11, 12, 13, 14 and 15 in that effective mask.
+Seven is the maximum and fits the existing field. Other capability fields
+retain their existing layout/encoding. The current V2.0 implementation's
+hard-coded stream value 3 is historical behavior, not a reliable endpoint
+inventory. V2.1 corrects the reported count without moving the field.
+
+The two PIO ports and their grants MUST default disabled in shared-IP
+instantiations. Mini keeps bits 14/15 clear and its current owners and endpoints;
+updating the shared implementation does not enable PIO on Mini. Tiny asserts
+each support bit only when the complete corresponding endpoint is integrated.
+The product capability metadata, hardware mask and software checks MUST agree.
+
+Software MUST check DMA identity/version before accessing `0x028`, which is
+an invalid offset on V2.0. PIO DMA requires the V2.1 contract and both the
+requested DMA support bit and the PIO block's capability/probe result. Product
+metadata prevents probes of an absent PIO address. Absent, old-version or
+unimplemented support returns `RS_ENOTSUP` before channel programming; live
+readiness cannot substitute for these checks. CPU FIFO access remains a
+separate PIO capability. The SVH/C register constants remain handwritten and
+covered by register-parity checks.
+
+### Endpoint binding and channel ownership
+
+The PIO block owns one binding per direction: selected SM, exclusive DMA
+channel and enable. The two enabled bindings MUST name distinct implemented
+channels. Product application profiles reserve these channels explicitly;
+Tiny's R2 default owners are not silently displaced. A bound mixed TCD chain
+belongs entirely to that PIO session, including descriptors that use another
+request. Aborting the session aborts that whole bound job.
+
+The shared DMA receives default-disabled one-hot allowed-channel grants for
+each PIO endpoint and a closing/admission guard for the reserved channels.
+Direct START and every TCD activation MUST validate the transfer direction,
+static request support and matching enabled channel grant before moving data.
+Malformed, unsupported or unbound PIO requests report a channel configuration
+error without issuing their payload transaction. TCD fetches needed to discover
+an invalid descriptor still follow the normal accepted-read drain rules.
+
+DMA exports complete job ownership and pending admission to the PIO integration.
+Ownership spans the whole direct transfer or finite TCD chain, including
+descriptor fetch/parse, non-PIO descriptors, suspension, accepted payload
+transactions and abort/error drain. It MUST NOT be inferred from the currently
+selected request or stream `TVALID`. Unrelated DMA channels continue running.
+
+A binding enable, disable, channel/SM change or endpoint reset MUST be rejected
+while either its old or proposed channel owns a job or has a pending START.
+It also requires no unresolved endpoint beat/session. A same-cycle accepted
+DMA START takes precedence over a conflicting binding change/reset, using the
+current registered binding; rejected commands leave the old binding intact.
+This rule applies even when the first/current descriptor does not use PIO.
+Do not require global DMA idleness or restrict this extension to direct mode.
+
+### Cancellation and stream cleanup
+
+Abort is distinct from immediate endpoint reset. The PIO session first enters
+closing state, disables pin output enables and stops new SM execution. Closing
+MUST reject new STARTs on its reserved channels and prevent further descriptor
+activation; it retains the old binding while accepted work drains. The TX
+endpoint remains able to handshake/discard an already-present DMA beat even
+when the SM FIFO was full. RX stops producing new words but preserves any
+already-asserted `TVALID` and payload through the stream cleanup boundary.
+
+The V2.1 DMA cancellation path MUST give abort/error cancellation priority over
+new descriptor-fetch issue and descriptor activation, including simultaneous
+commands. Accepted descriptor AXI reads, as well as payload reads/writes, must
+complete through their terminal responses. Canceled fetched descriptors MUST
+NOT activate or clear an abort request. Clear canceled queued fetch/parse work
+without issuing it. Complete job ownership is released only after these
+conditions hold; the current payload-only ownership test is not sufficient.
+
+Software aborts only the bound DMA channels and waits with a bounded timeout
+for complete job drain. Then the integration isolates the affected stream
+endpoint and acknowledges a local stream-session reset on both sides before
+flushing its residual FIFO/held RX word or changing its route. Channel idle
+alone does not permit withdrawing a held RX `VALID`: a transfer can reach its
+programmed byte count with residual source data. This local cleanup MUST NOT
+reset the common DMA or disturb other channels. Normal, non-reset stream
+operation preserves VALID and payload until handshake.
+
+A timeout leaves outputs high impedance and the old binding closed/owned;
+it does not acknowledge reset, reassign a channel or reuse memory still owned
+by DMA. Recovery retries bounded drain/isolation under the product lifecycle
+policy. Clock gating and endpoint reset require that complete handshake;
+FIFO empty, SM stopped or a read of channel BUSY alone is insufficient.
+
+### Required implementation evidence
+
+The PIO-lite development order owns this extension's implementation gates.
+Required evidence includes V2.0 rejection without reading `0x028`, V2.1
+identity/parity/RO errors, accurate masks/counts at each staged integration,
+default-disabled Mini ports, direct and finite mixed TCD transfers, endpoint
+direction/channel rejection, and full-duplex use of distinct bound channels.
+Exercise START versus rebind/reset, later PIO descriptors in an active chain,
+suspension, descriptor-fetch backpressure, abort during fetch/parse/activation,
+full TX FIFO, residual RX VALID after count completion, isolation/reset,
+timeout retention and unrelated-channel progress. Formal/RTL checks must
+cover route stability, no stale descriptor activation, accepted-transaction
+drain and source stability outside the acknowledged local reset interval.
+
+Run the affected DMA/GPIO host, register-parity, RTL and formal checks plus
+Tiny end-to-end and affected Mini regressions for the implemented phase. The
+existing verification described below is baseline coverage; it does not
+establish these new V2.1 properties or a new PIO frequency/physical result.
 
 ## Validation boundary
 
