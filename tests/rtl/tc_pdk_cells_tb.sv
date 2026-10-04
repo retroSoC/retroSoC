@@ -301,6 +301,36 @@ module tc_pdk_cells_tb;
     #5;
     expect_bit(full_pad, 1'b1, "full pad output");
 
+    full_c2p_en = 1'b0;
+`ifdef PDK_GF180
+    full_pu = 1'b1;
+    #5;
+    expect_bit(full_pad, 1'b1, "GF180 full pad pull-up");
+    full_pu = 1'b0;
+    full_pd = 1'b1;
+    #5;
+    expect_bit(full_pad, 1'b0, "GF180 full pad pull-down");
+    full_pd = 1'b0;
+`elsif PDK_ICS55
+    full_pu = 1'b1;
+    #5;
+    expect_bit(full_pad, 1'b1, "ICS55 full pad pull-up");
+    full_pu = 1'b0;
+    full_pd = 1'b1;
+    #5;
+    expect_bit(full_pad, 1'b0, "ICS55 full pad pull-down");
+    full_pd = 1'b0;
+`else
+    full_pu = 1'b1;
+    #5;
+    if (full_pad !== 1'bz) $fatal(1, "unsupported full pad pull-up drove the line");
+    full_pu = 1'b0;
+    full_pd = 1'b1;
+    #5;
+    if (full_pad !== 1'bz) $fatal(1, "unsupported full pad pull-down drove the line");
+    full_pd = 1'b0;
+`endif
+
     #5;
     expect_bit(clk_inv_o, 1'b1, "clock inverter");
     expect_bit(clk_buf_o, 1'b0, "clock buffer");

@@ -1,6 +1,6 @@
 # GPIO Controller
 
-The Mini SoC GPIO block controls 32 bidirectional pads. It provides
+The Mini and Tiny SoC GPIO block controls 32 bidirectional pads. It provides
 software, alternate-function, and user-IP ownership modes, atomic output and
 output-enable commands, open-drain operation, synchronized and optionally
 filtered inputs, per-pin interrupts, irreversible configuration locks, and
@@ -121,6 +121,11 @@ remains active. The output interrupt is the reduction OR of
 
 Digital functionality is identical for every PDK, but pad electrical controls
 are reported rather than emulated when a technology lacks a matching cell.
+The `pu_o` and `pd_o` signals remain available on the shared GPIO interface so
+supported technologies can reach their native IO cells. Unsupported technology
+branches do not connect those signals to the IO primitive and do not emulate a
+pull in the behavioral model; writes requesting an unsupported pull return
+`resp_err`, and the HAL returns `RS_ENOTSUP`.
 
 | PDK | CMOS input select | Pull-up | Pull-down |
 | --- | --- | --- | --- |

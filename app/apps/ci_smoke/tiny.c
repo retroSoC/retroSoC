@@ -119,6 +119,18 @@ static bool rs_mcu_io(void) {
         .trigger = RS_GPIO_TRIGGER_NONE,
         .output_high = false,
     };
+    const rs_gpio_config_t pull_up = {
+        .mode = RS_GPIO_MODE_INPUT,
+        .pull = RS_GPIO_PULL_UP,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+    };
+    const rs_gpio_config_t pull_down = {
+        .mode = RS_GPIO_MODE_INPUT,
+        .pull = RS_GPIO_PULL_DOWN,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+    };
     const rs_uart_config_t loopback = {
         .source_clock_hz = RS_CPU_CLOCK_HZ,
         .baud_rate = UART_BPS,
@@ -133,6 +145,7 @@ static bool rs_mcu_io(void) {
     };
     const uint32_t transmit[4] = {UINT32_C(0x54), UINT32_C(0x49), UINT32_C(0x4e), UINT32_C(0x59)};
     uint32_t receive[4] = {0U};
+    rs_gpio_capabilities_t capabilities;
     rs_uart_timing_t timing;
     bool high;
     uint32_t timeout = UINT32_C(10000);
@@ -144,7 +157,12 @@ static bool rs_mcu_io(void) {
     };
     rs_i2c_status_t status;
 
-    if ((rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
+    if ((rs_gpio_get_capabilities(&capabilities) != RS_OK) ||
+        ((capabilities.pad_features & (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)) !=
+         0U) ||
+        (rs_gpio_configure(15U, &pull_up) != RS_ENOTSUP) ||
+        (rs_gpio_configure(15U, &pull_down) != RS_ENOTSUP) ||
+        (rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || !high || (rs_gpio_write(15U, false) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || high) {
         return false;

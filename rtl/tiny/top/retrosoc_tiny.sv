@@ -220,7 +220,11 @@ rst_sync u_por_rst_sync (
       .rst_n_i(s_rst_n),
       .apb4   (u_archinfo_apb4_if)
   );
-  apb4_gpio u_gpio (
+  apb4_gpio #(
+      .HasInputCmos(gpio_pad_caps_pkg::HasInputCmos),
+      .HasPullUp   (gpio_pad_caps_pkg::HasPullUp),
+      .HasPullDown (gpio_pad_caps_pkg::HasPullDown)
+  ) u_gpio (
       .clk_i    (clk_i),
       .rst_n_i  (s_rst_n),
       .apb4     (u_gpio_apb4_if),

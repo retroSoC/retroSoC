@@ -251,6 +251,7 @@
       "gpio_define.svh",
       "gpio_if.sv",
       "gpio_pad_bridge.sv",
+      "gpio_pad_caps_pkg.sv",
       "gpio_reg.sv",
       "hp_mailbox_define.svh",
       "pll_ctrl_if.sv",

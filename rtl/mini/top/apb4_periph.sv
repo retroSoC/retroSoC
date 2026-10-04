@@ -225,24 +225,6 @@ axi4_stream_if #(
   logic [ 1:0] s_hp_plic_context_irq;
   logic [ 3:0] s_unused_optional_status;
 
-`ifdef PDK_GF180
-  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
-  localparam bit GPIO_HAS_PULL_UP = 1'b1;
-  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
-`elsif PDK_ICS55
-  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
-  localparam bit GPIO_HAS_PULL_UP = 1'b1;
-  localparam bit GPIO_HAS_PULL_DOWN = 1'b1;
-`elsif PDK_SKY130
-  localparam bit GPIO_HAS_INPUT_CMOS = 1'b1;
-  localparam bit GPIO_HAS_PULL_UP = 1'b0;
-  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
-`else
-  localparam bit GPIO_HAS_INPUT_CMOS = 1'b0;
-  localparam bit GPIO_HAS_PULL_UP = 1'b0;
-  localparam bit GPIO_HAS_PULL_DOWN = 1'b0;
-`endif
-
   axi42apb4_periph u_axi42apb4_periph (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -368,9 +350,9 @@ axi4_stream_if #(
   apb4_gpio #(
       .UserBaseAddr (`SOC_ADDR_APB4_GPIO_BASE),
       .AdminBaseAddr(`SOC_ADDR_APB4_GPIO_ADMIN_BASE),
-      .HasInputCmos (GPIO_HAS_INPUT_CMOS),
-      .HasPullUp    (GPIO_HAS_PULL_UP),
-      .HasPullDown  (GPIO_HAS_PULL_DOWN)
+      .HasInputCmos (gpio_pad_caps_pkg::HasInputCmos),
+      .HasPullUp    (gpio_pad_caps_pkg::HasPullUp),
+      .HasPullDown  (gpio_pad_caps_pkg::HasPullDown)
   ) u_apb4_gpio (
       .clk_i     (clk_i),
       .rst_n_i   (rst_n_i),
