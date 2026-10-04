@@ -18,8 +18,17 @@ capture, and rectangular cropping.
 | Input interface | 8-bit parallel data, PCLK, HREF, VSYNC |
 | AXI4-Stream data width | 32 bits |
 | AXI4-Stream frame markers | `TUSER[0]` SOF, `TLAST` EOL |
-| DMA request selector | `DVP_RX` on bulk DMA channel 3 |
+| DMA request selector | `DVP_RX=11`; Mini default bulk DMA channel 3 |
 | ABI version | `0x00020000` |
+
+The [Tiny Gen1 target](tiny-soc.md) reuses this IP specification and ABI
+unchanged at the same base/core IRQ, with product-selected DMA channel 2,
+PCLK host/stream, GPIO12-23 ALT1 camera routing and optional XPI NSS1 PSRAM
+frame buffers. Camera and I2S profiles are mutually exclusive. Its P12
+integration must validate exact transfer length, shared HAL channel/burst
+binding and final-word drain without changing the DVP registers, formats,
+FIFO or stream semantics. Tiny support remains a frozen target, not existing
+end-to-end or physical evidence; Mini's channel-3 default remains unchanged.
 
 The pixel clock is buffered and can be inverted before the pixel-domain reset
 synchronizer. Configuration and frame statistics cross between the system and
@@ -111,10 +120,13 @@ The DMA MVP treats each full AXI4-Stream word as one 32-bit memory write.
 It accepts only `TKEEP=4'hf`; an odd-pixel DVP line produces a partial final
 word and therefore requires PIO handling or a future narrow-transfer/DRE DMA
 extension. Software should configure the frame and crop dimensions, clear
-stale error and interrupt state, program the channel-3 `DVP_RX` destination
+stale error and interrupt state, program the product-selected `DVP_RX` destination
 and capacity, enable stream output, and then start DVP capture. A frame that
 reports overflow, synchronization, partial, DMA, or abort errors must not be
 consumed by software.
+The existing convenience helper uses Mini's channel-3 binding; Tiny must
+supply its product transport configuration as specified in its integration
+contract before that helper is advertised as supported there.
 
 The public HAL exposes structured configuration, bounded status polling,
 command and interrupt control, capability discovery, and a convenience API
