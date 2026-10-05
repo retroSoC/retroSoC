@@ -23,6 +23,12 @@ the root README and subsystem guides.
   order and [verification ledger](ip/spi-verification.md) distinguish sequential
   snapshot/display/SD requirements from implementation and physical evidence;
   the legacy XPI LCD path and prior R2/PIO phases remain separate.
+- [PPALite streaming pixels](ip/ppalite.md) freezes the separately approved
+  future Tiny camera-inline Y extraction, RGB565 ordering, fixed sampling and
+  row-aligned packing. RAW/PROCESS shares existing DVP_RX11/DMA2 without new
+  pins or memory masters. Its `PPALITE-P0..P5` stages and
+  [verification ledger](ip/ppalite-verification.md) retain source-correctness,
+  integration, stride-aware consumer and physical qualification gaps.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.

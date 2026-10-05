@@ -33,6 +33,14 @@ the existing 512-byte FIFO's stall budget and qualifying PSRAM transport in
 Tiny support remains a frozen target, not existing end-to-end or physical
 evidence; Mini's channel-3 default remains unchanged.
 
+The separately approved [PPALite extension](ppalite.md) inserts an optional
+processing route after this existing CDC FIFO in the future standard Tiny
+product. RAW remains reset-default and preserves this DVP V2 stream/ABI.
+PROCESS performs pixel/line selection and row-aligned output packing before
+the same DVP_RX request11/DMA2 destination path. It adds no source format,
+Pad, FIFO depth, central-DMA request or private memory master to DVP.
+Mini retains RAW integration. No PPALite path is implemented by this freeze.
+
 The pixel clock is buffered and can be inverted before the pixel-domain reset
 synchronizer. Configuration and frame statistics cross between the system and
 pixel domains through the common `cdc_2phase` primitive. Captured payloads use
@@ -94,7 +102,8 @@ same change.
 
 ## AXI4-Stream and Capture Semantics
 
-Two 8-bit input samples are packed into one 32-bit stream word. The first
+Two 16-bit pixels, each formed from two 8-bit sensor samples, are packed into
+one 32-bit stream word. The first
 pixel occupies `TDATA[15:0]` and the second pixel occupies `TDATA[31:16]`.
 `TUSER[0]` is asserted on the first word of a frame, and `TLAST` is asserted
 on the last word of each line. `TID` and `TDEST` are tied to zero.
@@ -137,6 +146,60 @@ for one-frame DMA capture. Applications should use `rs_dvp_configure()`,
 `rs_dma_configure()`, `rs_dma_start()`, `rs_dvp_start()`, and
 `rs_dvp_capture_dma()` rather than
 accessing the registers directly.
+
+## Frozen PPALite Source and Route Contract
+
+The [PPALite contract](ppalite.md) owns the processed pixel formats, derived
+geometry, padded row pitch and buffer metadata. In PROCESS, DVP cropping stays
+here, BYTE_SWAP/PIXEL_SWAP are zero, and the processor interprets the explicit
+sensor byte order. Raw DVP still exposes two16-bit pixels per full stream word,
+or a final halfword for an odd-width row. A legal halfword row tail must not be
+confused with an invalid incomplete sensor pixel.
+
+RAW DMA retains its even-active-width requirement. PROCESS may consume the
+legal halfword tail and emit full padded words; that is a new downstream
+operation, not a retroactive change to this source stream or a narrow-DMA mode.
+Raw helpers on PPALite-capable Tiny must reject PROCESS before programming
+capture, and the PPALite HAL must use its derived length rather than raw
+`2 * width * height`. The unchanged Mini default channel3 is not copied to Tiny.
+
+Route changes require stopped/acknowledged DVP configuration and cleanup,
+empty source/processor endpoints and the full central-DMA barrier defined by
+PPALite. The route is locked through capture/failed cleanup. Fixed PROCESS
+may be retained between frames without stopping unrelated DMA clients.
+The Tiny source guard freezes geometry/format/crop while owned, verifies
+actual configuration/command CDC completion, and admits only the ordered
+source start, non-flushing snapshot stop and isolated cleanup operations.
+Diagnostic reads and the DVP register map remain unchanged.
+
+Before processed capture is qualified, PPALITE-P2 must close or reuse current
+R2 evidence for source correctness: real SYNC/SIZE/PARTIAL detection, exact
+statistics beyond65535 words, coherent host-side active/configuration/status,
+every repeated frame event, error epochs and snapshot stop/rearm behavior.
+Current `dvp_core.sv` leaves three error paths reserved and uses a16-bit word
+counter/status payload. A downstream image/checksum cannot establish those
+unimplemented source guarantees. Minimal shared correctness fixes must retain
+register offsets/meanings, the512 B payload FIFO and Mini compatibility.
+
+Valid processed completion requires this source's full-frame/statistic/error
+verdict, a checked non-flushing stop, processor counts and exact DMA length
+including final memory write responses. PPALite PIPE_DONE or a last EOL is
+not source-frame validity. Continue monitoring late source faults until the
+capturing HAL finalizes its result; do not publish a plausible prefix.
+
+The current ABORT command also requests source FIFO clearing. Failed processed
+capture therefore closes admission, drains/aborts its DMA, acknowledges old
+stream isolation, and only then issues source ABORT/FLUSH and processor cleanup.
+Ordinary stream VALID cannot be withdrawn while a live consumer still owns
+the beat. Missing PIXCLK or flush/reset acknowledgement retains failed-session
+ownership; no fabricated padding or common-DMA reset substitutes for recovery.
+The existing helper's early success-path abort must be corrected/avoided with
+shared checked lifecycle helpers before either route is advertised as complete.
+
+The original FIFO still receives raw sensor bytes. Its overflow budget is
+not enlarged simply by dividing final image width or extracting Y. Preserve
+raw-rate occupancy/margin calculations and validate any extra downstream
+buffer credit explicitly. These new obligations have no passing evidence yet.
 
 ## Verification and Current Scope
 

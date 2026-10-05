@@ -19,6 +19,15 @@ credits, R/B drain and exact serial-frame completion must not be substituted
 with stream VALID/TLAST rules. PIO14/15 and the stream-direction count remain
 unchanged by that SPI extension.
 
+The separately frozen [Tiny PPALite](ip/ppalite.md) route inserts processing
+after DVP's existing CDC FIFO and before the same request11/DMA2 endpoint.
+RAW preserves all source words/sidebands; PROCESS accepts legal halfword line
+tails, selects/converts pixels and zero-pads each output row to full-word
+KEEP/STRB. No stream endpoint or request is added. SOF marks the first emitted
+word, TLAST remains EOL, and exact padded byte count plus source/processor/
+DMA response checks determine validity. Route changes and failure isolation
+must obey the full linked contract; FRAME_DONE/PIPE_DONE is not memory completion.
+
 ## Interface Contract
 
 All three links use `DATA_WIDTH=32`, one-bit ID, destination, and user fields,
@@ -32,7 +41,10 @@ is consumed only on a `TVALID && TREADY` clock edge.
 DMA asserts `TLAST` on the final programmed I2S TX word. I2S RX and DVP do not
 currently provide a packet boundary to DMA, so DMA terminates their transfers
 using its programmed `XFERLEN`; incoming `TLAST` is informational and ignored.
-IDs, destinations, and user sidebands are currently zero.
+IDs and destinations are zero. I2S user sidebands are zero; DVP uses
+`TUSER[0]` for SOF as defined by its current [source contract](ip/dvp.md).
+Processed PPALite output relocates that marker to its first retained output
+word without redefining TLAST as end-of-frame.
 
 ## Configuration and PIO Fallback
 

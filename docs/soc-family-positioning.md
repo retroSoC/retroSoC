@@ -80,6 +80,15 @@ is sequential capture/verify/display/SD save, not simultaneous video. The
 existing XPI LCD path is unchanged; the [SPI evidence ledger](ip/spi-verification.md)
 keeps implementation and qualification gaps explicit alongside R2 and PIO.
 
+The separately approved 2026-10-05 [PPALite extension](ip/ppalite.md) adds
+camera-inline format normalization, Y extraction, fixed1/2/4 pixel/line
+selection and padded row packing. It is a future standard Tiny feature, not
+Mini GA2D or a memory-to-memory graphics engine. It preserves RAW DVP and
+shares request11/DMA2 without new pins, main SRAM, channels or AXI owners.
+Its [ledger](ip/ppalite-verification.md) and `PPALITE-P0..P5` gates distinguish
+source correctness, source-bound application evidence and final physical
+qualification from the unchanged executable baseline.
+
 ### Gen1 Product and Package Target
 
 | Area | Tiny Gen1 target |

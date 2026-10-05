@@ -28,6 +28,14 @@ PCLK and borrowed central-DMA channels. `SPI-P0` through `SPI-P5` preserve
 all legacy, R2 and PIO-lite phase IDs/titles. This is documentation approval;
 SPI0, DMA V2.2 pacing and the display application remain unimplemented.
 
+The separately approved 2026-10-05 [PPALite extension](ppalite.md), feature
+slug `ppalite`, adds camera-inline Y extraction, RGB565 ordering, fixed pixel/
+line sampling and row packing to the future standard product. RAW bypass and
+PROCESS share existing DVP_RX11/DMA2 after the DVP CDC FIFO; no Pad, pinmux,
+memory capacity, DMA request/channel or AXI master is added. Its independent
+`PPALITE-P0..P5` gates preserve all previous phases. Implementation and source,
+application and physical qualification remain pending.
+
 The clock contract retains the 96 MHz no-PLL and 192/240 MHz PLL targets,
 now requiring the main SRAM to qualify at those same rates. Both variants
 boot from REF24. XPI remains in the divided MEM domain with a 120 MHz ceiling;
@@ -62,6 +70,10 @@ integration and R2-P7 clock/reset behavior. Camera/PSRAM application
 qualification in `SPI-P4` requires R2-P8/R2-P9. Final standard-product
 qualification must identify the same SPI- and PIO-inclusive source,
 configuration and netlist; an earlier R2 or PIO-only result is insufficient.
+PPALite's full qualification extends that same-source requirement to the
+processor and its route/source guards. PPALITE-P3 depends on applicable R2-P6/P7;
+camera/memory acceptance uses R2-P8/P9, and preview uses the relevant SPI stages.
+Earlier R2, PIO or SPI results cannot qualify newly added PPALite logic.
 
 ### Commercial references and reuse boundary
 
@@ -104,7 +116,8 @@ no commercial implementation or qualification is reused.
 - TINY-004: 32 bidirectional user GPIO, one UART, one I2C controller, one
   full-duplex I2S controller, one SDIO host, two general timers, CLINT, eight
   central DMA channels, four PWM outputs, RTC, watchdog, RNG V2, CRC V2,
-  WS2812, Crypto V2, DVP V2, PIO-lite, Tiny RCU/SYSCTRL and architecture info.
+  WS2812, Crypto V2, DVP V2, PIO-lite, SPI0, PPALite, Tiny RCU/SYSCTRL and
+  architecture info.
   UART1 and I2C1 are absent from the Gen1 target.
 - TINY-005: retain `HAVE_PLL` as the single PLL build selector. With no PLL,
   use an external XIN clock up to 96 MHz; with PLL, use a 24 MHz reference and
@@ -279,11 +292,35 @@ no commercial implementation or qualification is reused.
   camera/display operation is deferred. Final qualification MUST use the
   actual SPI- and PIO-inclusive source/profile/PDK and netlist, not historical
   baseline or performance-only evidence.
+- TINY-046: standard Tiny MUST include [PPALite](ppalite.md), one PCLK camera
+  stream processor after the existing DVP CDC FIFO. Preserve QFN64/pinmux,
+  CPU-rate main SRAM, all DMA channels/requests and the three AXI owners.
+- TINY-047: PPALite MUST use APB4 `0x1001E000..0x1001EFFF`, CPU IRQ27 and
+  RCU target17. It performs YUV422 Y extraction, gray RGB565 output, RGB565
+  ordering, independent step1/2/4 sampling and row-aligned packing; RGB-to-gray,
+  memory replay, interpolation and larger graphics operations remain deferred.
+- TINY-048: RAW remains the default DVP route and retains the original stream
+  and even-width DMA contract. PROCESS exclusively feeds the same DVP_RX11
+  endpoint and exact direct DMA2 job; its padded stride/length metadata MUST
+  govern allocation and consumers. No simultaneous RAW/processed fanout.
+- TINY-049: changing RAW/PROCESS MUST wait for source/CDC/FIFO quiescence and
+  every central-DMA job/pending admission/descriptor/response to drain. Fixed
+  PROCESS may serve repeated frames while unrelated DMA runs. Capture ownership
+  persists through errors and cleanup; PIPE_DONE alone never validates memory.
+- TINY-050: PPALite integration MUST qualify DVP source errors, full-width
+  statistics, coherent host status and snapshot stop/drain. Reuse accepted R2
+  fixes or perform minimal shared correctness work without changing DVP V2
+  register meanings, the512 B payload FIFO or Mini compatibility. Raw input
+  byte rate, not reduced image rate, determines upstream overflow budget.
+- TINY-051: `PPALITE-P0..P5` are a separate approved roadmap; no earlier phase
+  is renamed or retroactively accepted. Only fully wired/qualified source,
+  route and admission paths may advertise PROCESS capability. Final product
+  evidence MUST use the same PPALite/PIO/SPI-inclusive source and netlist.
 
 Deferred: RV32 A atomics, RTOS ports, authenticated boot, retention/power gating,
 independent sleep clock, 256-512 KiB SRAM, USB, SPI slave operation, CAN, ADC,
-multimedia accelerators beyond the selected DVP capture path and other PDK
-qualification. I2S, SDIO, DVP and the approved PIO-lite and SPI extensions
+multimedia accelerators beyond the selected DVP/PPALite path and other PDK
+qualification. I2S, SDIO, DVP and the approved PIO-lite, SPI and PPALite extensions
 are standard Tiny requirements awaiting integration, not deferred product features. XPI
 retains four chip selects: CS0_N is dedicated to boot NOR, while CS1_N through CS3_N
 use GPIO29 through GPIO31. Additional XPI device configurations still require
@@ -291,9 +328,9 @@ their own qualification.
 
 The original performance-only R2 scope MUST NOT add SPI, PIO-lite, a recovery
 Boot ROM, caches, atomics, new accelerators or another PDK rollout. That
-historical scope boundary remains in force for its phase work. PIO-lite and
-SPI are separately approved standard-product extensions governed by
-[piolite.md](piolite.md) and [spi.md](spi.md); their phases do not become
+historical scope boundary remains in force for its phase work. PIO-lite, SPI
+and PPALite are separately approved standard-product extensions governed by
+[piolite.md](piolite.md), [spi.md](spi.md) and [ppalite.md](ppalite.md); their phases do not become
 hidden prerequisites of R2-P0 through R2-P10. The other listed research ideas
 remain deferred.
 
@@ -691,6 +728,7 @@ linked common contract; do not generate a second set of IP registers.
 | Central DMA | `0x1000A000` | 20 | [DMA V2](dma.md), eight channels and supported request discovery |
 | PIO-lite | `0x1001C000` | 24 | [PIO-lite](piolite.md), 4 KiB APB4 window, two state machines in PCLK; separately approved standard-product extension |
 | SPI0 | `0x1001D000` | 25 | [SPI](spi.md), 4 KiB APB4 window, master-only 8/16-bit engine in PCLK; separately approved standard-product extension |
+| PPALite | `0x1001E000` | 27 | [PPALite](ppalite.md), PCLK inline pixel processing after DVP CDC, exclusive RAW/PROCESS route to existing request11/DMA2 |
 
 Mini's RCU has no separate MMIO region: its software controls are in SYSCTRL
 at `0x1000B000`. Tiny retains this base and uses the private bank below for
@@ -708,6 +746,9 @@ PIO-lite's window is `0x1001C000..0x1001CFFF`; IRQ24 remains zero and its
 capability absent until the block and complete interrupt path are integrated.
 SPI0's window is `0x1001D000..0x1001DFFF`; IRQ25 remains zero and its
 capability absent until the block and complete interrupt path are integrated.
+PPALite's window is `0x1001E000..0x1001EFFF`; IRQ27, RCU17 and PROCESS
+capability remain absent until the corresponding complete source/route,
+interrupt and lifecycle/admission paths exist.
 
 ### DMA and bus behavior
 
@@ -761,6 +802,16 @@ qualification through target admission and CDC, so only matching reserved DMA
 transactions can consume DMA FIFO credits. CPU and central-DMA FIFO aliases
 cannot bypass each other's ownership. This private path changes no AXI master
 count, ID or APB PPROT meaning and is not a new general firewall.
+
+PPALite adds no request or descriptor encoding. RAW and processed camera
+streams exclusively share DVP_RX11/DMA2; processed captures use one direct
+STREAM_TO_MM job with the exact row-padded byte count. Private route/armed/
+channel/length validation rejects unsupported processed jobs before payload.
+Route changes wait for all central-DMA jobs and pending work, including TCDs
+that could later select11. An accepted START wins the conflicting route write.
+This barrier does not apply to every frame once PROCESS is fixed; unrelated
+channels may continue. Preserve source/stream stability through abort/drain
+and require acknowledged isolation before source or processor FIFO flush.
 
 Retain the common DMA direct/TCD ABI, 32-bit Tiny datapath, at-most-16-beat
 memory bursts, completion/error/W1C and abort-drain behavior. Replace the
@@ -949,6 +1000,12 @@ polarity controls and sampling-edge selection. CPU IRQ15 carries its enabled
 interrupt level. Do not duplicate or reinterpret the shared register map in
 Tiny; preserve the handwritten RTL/C definition parity and Mini compatibility.
 
+The raw transport in this section remains the R2 contract and reset-default
+route. The separately approved [PPALite](ppalite.md) PROCESS route follows the
+source CDC FIFO and changes only its selected downstream processing/layout.
+It does not alter the DVP wire format, allocate a second camera stream or
+reinterpret the raw helper's byte count.
+
 The existing `axi4s_dvp` owns the 8-bit pixel input, RGB565/YUV422 packing,
 configuration/command/statistic handshakes and 128-entry CDC FIFO. Payload
 capacity is 512 bytes; sidebands do not provide additional pixel storage.
@@ -1097,6 +1154,38 @@ Cropping reduces output volume but not necessarily instantaneous input rate.
 Capture configurations must record FIFO high-water observations and longest
 backpressure using available counters or explicitly identified test monitors.
 
+### PPALite processed capture extension
+
+PROCESS accepts the same two-pixel DVP words and legal halfword line tails,
+with source BYTE_SWAP/PIXEL_SWAP disabled. DVP retains ROI cropping; the
+processor operates in post-crop coordinates and derives retained geometry
+from step1/2/4 and phase. YUV422 may produce raw GRAY8 or gray RGB565; RGB565
+is ordered/selected only, without RGB luminance arithmetic. Per-row zero
+padding makes output KEEP/STRB full-word. TLAST remains EOL, not frame length.
+
+Allocation uses `stride=align_up(output_width * bytes_per_pixel, 4)` and
+`transport_bytes=stride * output_height`, with checked arithmetic, real
+capacity and target limits. Use format/byte-order/stride metadata for storage
+and SPI rows; padding is not a pixel. RAW still rejects odd-width DMA, while
+PROCESS may repack valid odd-width source rows. A320x240 Y capture becomes
+76800 B in GRAY8, or19200 B after step2 on both axes; those are byte budgets,
+not FPS or automatic SRAM-allocation guarantees.
+
+Keep consuming/validating discarded input even if the smaller output DMA
+finishes first. Valid capture requires coherent source frame/statistics/errors,
+processor input/output counts, exact DMA length and final target responses.
+Stop a successful snapshot without flushing its tail. Failed cleanup closes
+admission, drains/aborts DMA and acknowledges stream isolation before source
+ABORT/FLUSH; missing PIXCLK acknowledgement retains closed ownership.
+
+Source qualification must close current DVP error/statistic/CDC/snapshot gaps
+with minimal shared fixes or current accepted R2 evidence, preserving ABI and
+FIFO. The upstream512 B FIFO still fills at raw input rate; reduced output
+volume does not multiply its unserviced-time budget. PPALITE-P4 uses the
+sequential memory-check/save/preview workflow and retains the existing camera/
+audio and memory-traffic restrictions. Full rules and cases are in
+[the processor contract](ppalite.md) and [its ledger](ppalite-verification.md).
+
 The MVP is single-buffer snapshot/crop with full readback and guard checks.
 Existing continuous-mode capability remains unchanged, but lossless continuous
 capture/FPS, a chosen physical sensor/PSRAM part and board timing are deferred
@@ -1162,7 +1251,7 @@ remain clocked while XIN runs and MUST NOT be software-gated.
 | AON / REF24 | RCU, CLINT, ArchInfo; RTC/WDG functional clocks | 24 MHz | 24 MHz | 24 MHz | 24 MHz |
 | SYS | CPU I/D and slow adapter, actual main-SRAM macros, four bank frontends/control, AXI32 fabric, SDIO including its APB and private DMA | 24 MHz | 96 MHz | 192 MHz | 240 MHz |
 | MEM | XPI, including its control interface | 24 MHz | 96 MHz | 96 MHz | 120 MHz |
-| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts, PIO-lite and SPI engines/APB/DMA endpoints; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
+| PCLK | Eight-channel DMA, GPIO, UART0, I2C0, timers, PWM, RNG, CRC, WS2812, Crypto, I2S/DVP hosts, PIO-lite/SPI/PPALite engines, APB and route/admission logic; RTC/WDG APB | 24 MHz | 48 MHz | 48 MHz | 60 MHz |
 | AUDIO | I2S audio PHY and existing audio-side FIFOs | External | External | External | External |
 | PIXCLK | DVP pixel path and existing pixel-side FIFO | External | External | External | External |
 | JTAG | TAP/DTM | Separate TCK | Separate TCK | Separate TCK | Separate TCK |
@@ -1206,6 +1295,12 @@ At PCLK24/48/60 the arithmetic ceilings are SCK12/24/30 MHz, respectively.
 They are not qualified pad rates or sustained payload guarantees. A clock
 change requires SPI wire completion, inactive CS and full transport drain;
 software explicitly reinitializes timing from the committed new PCLK rate.
+
+PPALite adds no PIXCLK domain or generated clock. Its upstream DVP CDC remains
+authoritative and its processing/route/control logic uses PCLK. Clock changes
+must quiesce the full owned camera/processor/DMA path; a smaller output image
+or PIPE_DONE is not a reset/gate permission. Preserve coherent source status
+and input-stream reset isolation at the existing clock boundary.
 
 CLINT's counter/control stays in AON with a synchronous 1 MHz tick enable.
 Its timebase does not change or lose ticks during SYS transitions. CLINT
@@ -1456,7 +1551,7 @@ reachable through an acknowledged APB bridge while the system is running.
 | `0x14C` | `MEM_HZ` | RO / 24000000 | Committed divided XPI MEM-domain frequency, not main-SRAM frequency |
 | `0x150` | `PCLK_HZ` | RO / 24000000 | Committed peripheral frequency |
 | `0x154` | `CLINT_HZ` | RO / 1000000 | CLINT tick rate |
-| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; full sets are `0x00003FFF` before DVP/PIO/SPI, `0x00007FFF` with DVP only, `0x0000FFFF` with DVP/PIO, and `0x0001FFFF` with DVP/PIO/SPI; absent target bits stay clear; reset excludes CPU bit 0 |
+| `0x158` | `TARGET_CAPABILITY` | RO / build-dependent | Implemented gate targets; full sets are `0x00003FFF` before DVP/PIO/SPI/PPALite, `0x00007FFF` with DVP, `0x0000FFFF` with DVP/PIO, `0x0001FFFF` with DVP/PIO/SPI, and `0x0003FFFF` with PPALite as well; absent target bits stay clear; reset excludes CPU bit 0 |
 | `0x15C` | `CLKOUT_CONTROL` | RW / 0 | Source `[2:0]`; half-period divisor `[23:8]`; output is off after reset |
 
 Clock profile 0 is SAFE24. Profile 1 is external XIN at its declared frequency
@@ -1472,8 +1567,8 @@ identity and manifest must identify the model rather than physical qualification
 
 The target-mask bits are Tiny integration identifiers, not Mini register ABI:
 0 CPU, 1 GPIO, 2 UART0, 3 I2C0, 4 timer0, 5 timer1, 6 PWM, 7 I2S, 8 SDIO,
-9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto, 14 DVP, 15 PIO-lite
-and 16 SPI0. Bits 17-31 are reserved. Bits 14/15/16 are additive target
+9 central DMA, 10 WS2812, 11 RNG, 12 CRC, 13 Crypto, 14 DVP, 15 PIO-lite,
+16 SPI0 and 17 PPALite. Bits 18-31 are reserved. Bits 14/15/16/17 are additive target
 allocations; existing offsets/bits and RCU ABI 1.0 semantics remain unchanged.
 R2-P7 may reserve the control plumbing
 but MUST report bit 14 clear and reject its commands until R2-P9 instantiates
@@ -1483,6 +1578,9 @@ path. No capability is inferred from a tie-off.
 SPI target bit 16 MUST stay clear and its commands MUST fail until `SPI-P3`
 connects the complete idle/reset/pad-session and DMA drain path. SPI reset
 does not release or hide its reservation before accepted work is drained.
+PPALite target bit17 MUST stay clear until PPALITE-P3 provides its complete
+source/route/DMA idle and reset path. Its source qualification gate is not
+established by adding an address or tie-off; unsupported commands fail.
 CPU gating means permission to gate only while WFI/idle with no pending IRQ or
 debug request; it is not an immediate software stop. RCU/REF24, AXI, main
 SRAM, XPI, CLINT, ArchInfo and RTC/WDG functional clocks cannot be gated or
@@ -1509,6 +1607,14 @@ timing, and complete accepted
 FIFO-MMIO, DMA, descriptor and response drain. Recheck ownership/readiness at
 commit. Ordinary reset/gating cannot forcibly discard accepted work or
 silently release pads; coordinated system reset remains a separate operation.
+An owned processed capture also vetoes source DVP/GPIO/CAM_XCLK changes and
+central-DMA/PPALite gate/reset operations that would break the session. A
+multi-target command cannot flush the source ahead of DMA isolation. PPALite
+local reset/gating requires RAW, released capture ownership and source/endpoint
+quiescence; a route change additionally requires all central-DMA jobs and
+pending work idle. These are setup/lifecycle barriers, not a global fabric
+lock while ordinary processed capture runs. Whole-system reset remains the
+explicit all-domain epoch-discard case.
 After draining associated DMA and accesses, hold each local reset for at
 least five running local cycles and apply the five-edge release/barrier
 sequence. RESET_DONE acknowledges the reset sequence, not Crypto erasure or
@@ -1679,6 +1785,26 @@ required only through this separate standard-product approval. Joint final
 runs must satisfy each applicable contract on the same source revision,
 configuration, physical inputs and netlist. SPI-only, PIO-only or earlier R2
 results cannot qualify the completed standard product.
+
+## PPALite extension development and acceptance
+
+The separate [PPALite contract](ppalite.md) and
+[verification ledger](ppalite-verification.md) own this future standard feature.
+All phases target TINY; shared Mini testing preserves RAW behavior only.
+
+| Phase | Completion boundary |
+| --- | --- |
+| PPALITE-P0 - Contract and Camera Route Freeze | Freeze formats/layout, RAW-compatible route, source validity, ownership/drain and linked product requirements; documentation only. |
+| PPALITE-P1 - Stream Pixel Core and Reference Model | Verify pixel selection/conversion/packing, small buffers, APB/parity and independent models without claiming integrated support. |
+| PPALITE-P2 - DVP Route and Source Qualification | Qualify source errors/statistics/snapshot/CDC and RAW/PROCESS isolation; minimal shared corrections preserve DVP V2 and Mini. |
+| PPALITE-P3 - Tiny DMA RCU and SDK Integration | Depend on applicable R2-P6/P7; wire APB/IRQ27/target17, exact direct DMA2 guard, lifecycle/capability and bounded HAL. |
+| PPALITE-P4 - Camera Memory and Display Qualification | Depend on R2-P8/P9 and applicable SPI stages; validate source/pixels/padding/stride, memory/save/preview and measured service budgets. |
+| PPALITE-P5 - IHP130 Timing and Physical Qualification | Qualify the complete PPALite/PIO/SPI-inclusive source/netlist and corresponding product timing, reset, power, Pad and physical conditions. |
+
+Keep every existing TINY/R2/PIOLITE/SPI ID, title and historical evidence under
+its original scope. Final joint runs must use the same complete source,
+configuration, PDK/corners and netlist. Earlier raw DVP or SPI/PIO-only results
+cannot close the additional PPALite product requirements.
 
 ## Development order and acceptance
 

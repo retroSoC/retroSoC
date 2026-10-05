@@ -21,12 +21,15 @@ SPI is also a separately approved standard-product extension under
 [spi.md](spi.md), with pending evidence below. The original performance-only
 exclusions remain in force for historical R2 work; the separate SPI approval
 does not turn older results into SPI acceptance.
+PPALite is the separately approved 2026-10-05 standard-product extension in
+[ppalite.md](ppalite.md). Its RAW-compatible inline processing and source
+qualification have independent pending gates; no earlier result covers them.
 
 The executed historical sections describe the 2026-09-25 initial baseline,
 with two UARTs, two I2C controllers and the legacy pad mapping. The working
 tree was uncommitted when that evidence was collected and its readiness
 remains `prototype`. Those results do not validate the later package,
-shared-IP/clock/reset, DVP/framebuffer, R2 performance, PIO-lite or SPI freezes.
+shared-IP/clock/reset, DVP/framebuffer, R2 performance, PIO-lite, SPI or PPALite freezes.
 
 ## PIO-lite planned extension evidence
 
@@ -118,6 +121,43 @@ payload rates or qualified pad operation. Preserve the existing 128 KiB
 CPU-rate main SRAM, eight DMA channels, three external AXI owners and fixed
 QFN64/power budget. Record documentation validation separately from these
 pending implementation gates.
+
+## PPALite planned extension evidence
+
+Target SoCs: `TINY`; feature slug: `ppalite`; approval date: 2026-10-05.
+The [processor contract](ppalite.md) and [case ledger](ppalite-verification.md)
+own formats, exact row layout and source/route/lifecycle acceptance. The
+current IHP130 24 MHz/no-PLL profile has no PPALite. No model/core, source
+repair, integration, firmware, simulator, proof, performance or physical result
+is supplied by this documentation freeze.
+
+| Phase | Required evidence | Status |
+| --- | --- | --- |
+| PPALITE-P0 - Contract and Camera Route Freeze | Approved processing/RAW route, source correctness predicates, exact metadata/ABI, unchanged package/pinmux/phase IDs, linked resources and documentation checks | Documentation freeze only |
+| PPALITE-P1 - Stream Pixel Core and Reference Model | Exact RGB/YUV ordering, Y-only grayscale, step1/2/4 and phases, odd dimensions/row padding, input markers and backpressure, counters, APB/parity and independent reference evidence | Pending |
+| PPALITE-P2 - DVP Route and Source Qualification | RAW byte/sideband parity, coherent source controls/statistics/errors, full word counts, repeated snapshots, source stop/tail ordering, route barrier and isolated abort/flush; preserve DVP V2/FIFO/Mini | Pending |
+| PPALITE-P3 - Tiny DMA RCU and SDK Integration | Applicable R2-P6/P7, APB `0x1001E000..0x1001EFFF`, IRQ27/target17, exact direct DMA2/request11 admission, source guards, truthful capabilities, bounded HAL and no new DMA request/master | Pending |
+| PPALITE-P4 - Camera Memory and Display Qualification | R2-P8/P9 and applicable SPI prerequisites; QVGA gray/decimated patterns, SRAM/PSRAM pixel/padding/canary checks, stride-aware SD/display, delayed responses/errors/recovery and both simulators | Pending |
+| PPALITE-P5 - IHP130 Timing and Physical Qualification | Same complete PPALite/PIO/SPI-inclusive source/profile/PDK/netlist for all shared gates; actual clock, reset/CDC/RDC, storage, area/power, DVP/memory/Pad and physical evidence | Pending |
+
+PPALite adds no Pad or alternate-function assignment. RAW remains reset-default;
+processed direct DMA uses the existing DVP_RX11 endpoint and camera channel2,
+with padded row size rather than raw `2*W*H`. The global all-DMA barrier applies
+to RAW/PROCESS route changes, not every capture in a fixed processing route.
+Retain existing SPI/PIO request meanings and other channel owners.
+
+Source SYNC/SIZE/PARTIAL detection and current16-bit word statistics require
+explicit closure; PPA counts cannot validate bytes the source discarded. Test
+legal odd-pixel halfword tails separately from incomplete sensor pixels, source
+counts above65535 words, coherent repeated EOF/error epochs and no premature
+success-path flush. PIPE_DONE can precede source EOF or target B responses;
+final valid data needs every predicate. Missing PIXCLK/cleanup acknowledgement
+keeps the failed session closed and owned, not reset or buffer-reusable.
+
+The upstream512 B FIFO still fills at raw byte rate. Processing reduces output
+volume but not sensor clock or the raw no-service budget. New buffering counts
+as extra slack only with proven occupancy/credit coverage. No measured FPS,
+physical rate or complete extended-product qualification is implied here.
 
 ## R2 pending phase acceptance
 

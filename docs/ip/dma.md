@@ -538,6 +538,72 @@ CS release and no padding on the wire. Reuse the shared-DMA host/parity/RTL/
 formal checks and affected Tiny/Mini regressions; a reserved endpoint or a
 passing old regression is not V2.2 evidence.
 
+## Frozen PPALite Camera Route Integration
+
+The [PPALite contract](ppalite.md) adds a future Tiny-only inline pixel route
+after DVP, not a new DMA engine or transfer kind. RAW and PROCESS exclusively
+feed the existing `DVP_RX=11` stream endpoint. Channel2 remains the Tiny camera
+owner; Mini retains its RAW channel/profile conventions. No DMA request number,
+channel, register offset/version, descriptor encoding or stream-count field is
+added or reassigned. PIO14/15, SPI16/17 and reserved18-31 remain unchanged.
+
+RAW preserves existing data/sideband/packing and direct/TCD behavior, including
+rejection of a partial DVP word. PROCESS normalizes each retained row to full
+32-bit words with zero padding, SOF on its first output and TLAST per row.
+Its stride/transport length comes from PPALite, not raw pixel count. DMA still
+terminates by exact programmed byte count and waits for memory responses;
+TLAST does not become frame completion. Ordinary aligned memory bursts and
+target/boundary limits remain available; SPI's fixed-MMIO single-beat policy
+does not apply to this stream endpoint.
+
+A RAW/PROCESS route change MUST wait for DVP stopped/configuration/cleanup
+acknowledgement, empty route/processor endpoints and **all** central-DMA jobs,
+pending admissions, descriptors and accepted responses to drain. This avoids
+a latent TCD selecting the shared camera request after its interpretation
+changes. An accepted START wins a same-edge route-write race, leaving the old
+route unchanged and rejecting that write. The camera route must be stable
+throughout an accepted job and any abort/error drain.
+
+This global barrier applies only to route changes. Within fixed PROCESS,
+capture uses a guarded single direct STREAM_TO_MM job on channel2, request11,
+32-bit width, incrementing aligned destination and exact derived padded byte
+count. A private armed/route/channel/length guard validates START before
+payload; processed TCDs, wrong kind/count/direction or another channel using
+the endpoint are rejected. The current job's admission/completion identity
+must be distinguished from stale DONE. No capture may steal another owner's
+channel2. Other unrelated DMA jobs may run after routing is established.
+Configure/reset the idle channel before PPALite ARM; ARM validates that shadow
+configuration and rejects pending channel2 admission. Once armed, channel2 is
+reserved through capture finalization and RELEASE/RECOVER, including the gap
+after DMA payload DONE. Reject other requests, reconfiguration or reuse of
+that reserved channel/completion state; allow only its matching one-time START,
+diagnostics/IRQ and prescribed closing ABORT/drained RESET. These private
+reservation rules do not change RAW jobs or unowned channel2 clients.
+
+The guard applies to the processing camera owner, not every use of channel2
+while no capture is reserved. SPI/PIO/general clients retain their existing
+properly acquired uses. Product metadata and PPALite capability must remain
+absent until the complete guard, RAW compatibility and source qualification
+exist. Static request11 support is not a route/format query; software must
+read the processor's mode/discovery rather than infer it from REQUEST_STATUS.
+
+Processing completion may precede DVP physical frame end or DMA B responses;
+DMA output may also finish before discarded input rows have drained. Valid
+capture requires all source/processor/memory predicates, not any one DONE.
+Closing blocks new admissions and retains route/ownership/held source payload.
+Abort the bound DMA and complete accepted transactions/descriptors before
+acknowledging old-stream isolation and permitting source/processor flush.
+This inherits V2.1 cancellation correctness and the product's V2.2 compatibility
+obligations, without a new public DMA ABI. Timeout cannot release buffers or
+reset unrelated channels.
+
+Required evidence includes RAW parity, direct/TCD legacy jobs, processed exact
+counts and padding, wrong-channel/length rejection, pending START versus route
+change, hidden later request11 in a TCD chain, stale DONE, early DMA completion
+with trailing discarded rows, delayed final B, held VALID, source isolation,
+descriptor cancellation, missing-clock recovery and unaffected Mini/PIO/SPI.
+These are PPALITE-P2/P3 requirements, not existing verification results.
+
 ## Validation boundary
 
 `tests/rtl/dma_error_tb.sv` uses a native AXI4 BFM for exact counts, 4 KiB

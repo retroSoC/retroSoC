@@ -294,9 +294,12 @@ does not grant SPI authority to clamp PIO or another peripheral's outputs.
 
 SPI latches its session ownership from ENABLE through checked RELEASE, including
 prefill, armed, held-CS, closing and disabled-awaiting-handback. DISABLE and
-RECOVER retain that reservation. GPIO gate/reset veto is the OR of actual PIO
-USER_SELECT ownership and latched SPI session ownership, including multi-target
-commands. Resetting or clearing SPI configuration cannot conceal an unreleased
+RECOVER retain that reservation. Tiny GPIO gate/reset veto includes actual PIO
+USER_SELECT ownership, latched SPI session ownership and any owned processed
+camera session under [PPALite](ppalite.md), including multi-target commands.
+PPALite protects the existing DVP source lifecycle; it adds no GPIO register,
+pinmux assignment or USER owner. Resetting or clearing SPI configuration cannot
+conceal an unreleased
 session. A whole-system reset remains the separate all-domain traffic reset.
 
 Normal handback stops/drains the SPI segment and bound DMA, disables SPI OE,
