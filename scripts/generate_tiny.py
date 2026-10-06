@@ -91,15 +91,18 @@ def generate_bindings(document: dict, output: Path) -> None:
                          f"assign u_gpio_if.{mode}_oe_i[{pin}] = {value['oe']};"))
     atomic_write(output / "rtl/tiny_gpio.svh", "\n".join(gpio) + "\n")
     ports, declarations, routes, decode = [], [comment], [comment], [comment]
+    reset_assignments = []
     for index, target in enumerate(document["apb_targets"]):
         name = target["name"]
         ports.append(f"apb4_if.master {name}")
-        declarations.append(f"apb4_if u_{name}_apb4_if (.pclk(clk_i), .presetn(s_rst_n));")
+        declarations.append(f"logic s_{name}_rst_n;")
+        declarations.append(f"apb4_if u_{name}_apb4_if (.pclk(clk_i), .presetn(s_{name}_rst_n));")
+        reset_assignments.append(f"assign s_{name}_rst_n = s_leaf_rst_n[{index + 1}];")
         routes.append(f".{name}(u_{name}_apb4_if)")
         decode.append(f"if ({' || '.join(f'`SOC_ADDR_IS_{r}(s_addr_q)' for r in target['regions'])}) "
                       f"s_select = {len(document['apb_targets'])}'b{1 << index:016b};")
     atomic_write(output / "rtl/tiny_apb_ports.svh", ",\n".join(ports) + "\n")
-    atomic_write(output / "rtl/tiny_apb_interfaces.svh", "\n".join(declarations) + "\n")
+    atomic_write(output / "rtl/tiny_apb_interfaces.svh", "\n".join(declarations + reset_assignments) + "\n")
     atomic_write(output / "rtl/tiny_apb_connections.svh", ",\n".join(routes[1:]) + "\n")
     atomic_write(output / "rtl/tiny_apb_decode.svh", "\n".join(decode) + "\n")
     wiring = [comment]

@@ -13,7 +13,8 @@
 module mgmt_core_wrapper #(
     parameter int ExternalIrqCount  = 30,
     parameter bit EnableAtomics     = 1'b1,
-    parameter bit TwoCycleBusErrors = 1'b0
+    parameter bit TwoCycleBusErrors = 1'b0,
+    parameter int ResetSyncStages   = 3
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
@@ -68,7 +69,8 @@ module mgmt_core_wrapper #(
   // verilog_format: on
 
   mgmt_debug_wrapper #(
-      .JtagIdcode(`SOC_JTAG_IDCODE)
+      .JtagIdcode     (`SOC_JTAG_IDCODE),
+      .ResetSyncStages(ResetSyncStages)
   ) u_mgmt_debug_wrapper (
       .clk_i                       (clk_i),
       .rst_n_i                     (rst_n_i),

@@ -31,6 +31,11 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     document = read_topology(TINY / "integration/soc_topology.json",
                              TINY / "address_map/memory_map.json")
     generate_bindings(document, output)
+    interfaces = (output / "rtl/tiny_apb_interfaces.svh").read_text()
+    for index, target in enumerate(document["apb_targets"], start=1):
+        name = target["name"]
+        assert f".presetn(s_{name}_rst_n)" in interfaces
+        assert f"assign s_{name}_rst_n = s_leaf_rst_n[{index}];" in interfaces
     generate_filelists(filelists, output, ["+define+RETROSOC_SOC__TINY"])
     generate_memory_map(TINY / "address_map/memory_map.json", output / "memory_map", "YES", 128)
     resolved = parse_filelists(filelists / name for name in

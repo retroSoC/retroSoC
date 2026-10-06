@@ -11,7 +11,9 @@
 // Converts Debug Module reset requests into a management-hart-only reset.
 // The request is retained until the AHB-Lite bridge has completed its current
 // AXI4 transfer, so a debugger cannot discard an accepted management access.
-module mgmt_debug_reset (
+module mgmt_debug_reset #(
+    parameter int ResetSyncStages = 3
+) (
     input  logic clk_i,
     input  logic rst_n_i,
     input  logic reset_req_i,
@@ -55,7 +57,9 @@ module mgmt_debug_reset (
       .dat_i  (s_reset_active_d),
       .dat_o  (s_reset_active_q)
   );
-  rst_sync u_core_rst_sync (
+  rst_sync #(
+      .STAGE(ResetSyncStages)
+  ) u_core_rst_sync (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i && !s_reset_active_q),
       .rst_n_o(core_rst_n_o)

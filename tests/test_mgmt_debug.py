@@ -6,11 +6,13 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_management_debug_reset_waits_for_the_ahbl_bridge(tmp_path: Path) -> None:
+@pytest.mark.parametrize("stages", [3, 5])
+def test_management_debug_reset_waits_for_the_ahbl_bridge(tmp_path: Path, stages: int) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
     if iverilog is None or vvp is None:
@@ -31,6 +33,7 @@ def test_management_debug_reset_waits_for_the_ahbl_bridge(tmp_path: Path) -> Non
             f"-I{ROOT / 'rtl/managed/clusterip/common/rtl'}",
             "-s",
             "mgmt_debug_reset_tb",
+            f"-Pmgmt_debug_reset_tb.ResetSyncStages={stages}",
             "-o",
             str(simulation),
             *(str(source) for source in sources),

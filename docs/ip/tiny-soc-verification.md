@@ -8,8 +8,10 @@ or register ABI version. The selected executable baseline remains
 their physical acceptance do not exist merely because this plan names them.
 
 The R2 freeze itself changed documentation only. Separately authorized
-R2-P1 implementation and validation are recorded below; the other R2
-implementation and qualification phases remain **pending**.
+R2-P1 implementation and validation are recorded below. Its functional and
+measurement baseline was accepted with the explicit R2-P2 implementation
+approval on 2026-10-06; the recorded physical gaps remain open. R2-P2 work is
+recorded separately below; later implementation and qualification remain pending.
 Historical `TINY-P0` through `TINY-P12` identifiers and evidence are preserved
 under their original scope; the mapping in the main contract transfers
 outstanding obligations without renaming old results or declaring them passed.
@@ -171,8 +173,8 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | Active phase | Required evidence and completion boundary | Status |
 | --- | --- | --- |
 | TINY-R2-P0 - Performance Contract and Roadmap Freeze | Reviewable requirements, exact old/new phase mapping, invariant package/IO counts, same-frequency CPU/main-SRAM ownership, explicit performance budgets, links and commands. Record actual documentation checks separately. | Documentation freeze only; no hardware result |
-| TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Implementation and baseline evidence ready for review; timing and warning failures recorded; phase acceptance pending human review |
-| TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Pending |
+| TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Functional/measurement baseline accepted by explicit P2 approval on 2026-10-06; timing, warning and physical gaps retained |
+| TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Implementation and evidence ready for review; all analyzed rates retain timing failures; phase acceptance pending human review |
 | TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling, WS2812 refill budget and workload correctness on the available platform. | Pending |
 | TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
 | TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
@@ -536,6 +538,152 @@ Production RTL, testbench, firmware, Make targets, selected profile, dependency
 versions, warning baselines and metrics policy are unchanged by this repair.
 The earlier failed timing qualification and all unrun physical/debug/PVT gates
 remain open. No phase acceptance or subsequent-phase authorization is implied.
+
+## R2-P2 implementation evidence (2026-10-06)
+
+The approved starting revision is `f06c039e790e38ccaf336ff21b68619010e7cc9e`
+on `dev`, clean before work. Target `TINY`, profile `configs/ci/ihp130-tiny.mk`,
+PDK `IHP130`, 24 MHz/no PLL remain fixed. The
+[reset/feasibility runbook](tiny-soc-r2-reset-feasibility.md) owns the commands,
+reset-leaf mapping, measurement endpoints and qualification boundaries.
+
+Before editing RTL, fresh firmware, Yosys and STA completed under
+`build/ihp130-tiny-2026-10-06-09-33-19f1e9c571ee/` (`APP=ci_smoke`).
+`meta/tiny-r2-p2/baseline-inputs/identity.json` retains the clean source/tools;
+`baseline-artifacts.json` additionally binds generated inputs, netlist/config,
+SDC and native flow results. The source input digest is
+`336aa85c3f213104d0d4b875ae18a427a403bb829c775904784311fd865cbfd0` and netlist
+SHA-256 is `7caefc1d53aeec3d506efea6d90a7dc3845dd8177a6bba262e9fbd3814d34631`.
+Fresh setup WNS/TNS are -455.18/-13049600 ns, hold WNS/TNS zero. These new
+records do not change the attribution of the equal P1 timing values.
+
+The implementation partitions reset across the existing 16 APB targets and
+one fabric leaf, with five-edge local releases and CPU-last startup. Shared
+debug wrappers retain default three-stage behavior and Tiny selects five.
+No FIFO/CDC managed source, Crypto erasure, memory capacity, clock operating
+point, register/HAL ABI, dependency version or quality policy changes.
+
+Development checks passed both simulators' reset/FIFO fixtures, shared
+three/five-stage hart reset, Tiny protocol/generator checks, I2C recovery,
+clock metadata and 128 KiB SRAM protocol/reset readback. The first four-state
+fixtures lacked a post-elaboration reset edge; their startup failures were
+fixed in test initialization, not by changing the design. RTL format/style and
+readiness passed. Common's FIFO and warm-flush fixtures passed in both
+simulators with output redirected below the candidate build tree.
+
+The initial candidate under `build/ihp130-tiny-2026-10-06-10-05-19f1e9c571ee/`
+completed synthesis/STA at aggregate max-delay WNS -94.28 ns and TNS
+-1594880 ns; min-delay WNS/TNS zero. These native metrics include recovery
+checks, rather than only data setup. Timing still fails. The worst path is the XPI leaf
+reset driver's recovery path. The first multi-point audit stopped because
+Yosys renamed a leaf wire to its APB interface alias. The audit was
+corrected to resolve actual mapped leaf registers and consumed nets; this
+partial campaign is not complete feasibility acceptance. A subsequent probe
+also rejected an invalid Tcl name-escaping expression. The final audit resolves
+the preserved leaf instances, their actual output-register pins and consumed
+interface nets without relying on source-level aliases or unsafe name escaping.
+
+Final synthesis/analysis evidence uses
+`build/ihp130-tiny-2026-10-06-10-25-19f1e9c571ee/meta/tiny-r2-p2/`.
+`feasibility-rke9efn7/report.json` completed all 24 source-bound points: two
+netlists, three corners, and four common SYS periods. Every point retains
+the exact libraries/SDC, commands, metrics, reset loads/endpoints, CPU/SRAM
+paths and constraint/coverage reports. No frequency point passed timing.
+
+| Corner | Baseline aggregate WNS at 24 MHz (ns) | Candidate aggregate WNS at 24 MHz (ns) | Candidate SYS data setup slack (ns) | Candidate SYS data hold slack (ns) |
+| --- | ---: | ---: | ---: | ---: |
+| Slow | -455.18 | -94.28 | -87.78 | 0.22 |
+| Typical | -299.07 | -51.46 | -48.16 | 0.11 |
+| Fast | -185.71 | -19.94 | -19.18 | 0.02 |
+
+| Candidate corner | SYS96 aggregate WNS (ns) | SYS192 aggregate WNS (ns) | SYS240 aggregate WNS (ns) |
+| --- | ---: | ---: | ---: |
+| Slow | -125.53 | -130.74 | -131.78 |
+| Typical | -82.71 | -87.91 | -88.96 |
+| Fast | -51.19 | -56.39 | -57.44 |
+
+The baseline root reset directly drives 17211 loads; the candidate root drives
+85 leaf-synchronizer reset pins. All 17 leaf instances and output-register
+drivers remain distinct. Largest leaf loads are XPI 4710, PWM 4193 and DMA
+3212. These residual loads and their recovery/data-path violations remain
+explicit early feasibility limits, not a routed reset-tree pass. Both netlists
+retain exactly 32 main macros driven directly by SYS. The fast SRAM/standard-cell
+temperature mismatch, missing explicit macro minimum period, and ideal-clock,
+unextracted analysis limitations remain as documented in the runbook.
+
+The fresh baseline reports 207695 cells and 9107192.081398 square micrometers
+of library area; the final candidate reports 208551 cells and 9109365.619198
+square micrometers. These are native balanced-synthesis observations, including
+normal build-identity constants, not extracted die area or a power claim.
+Final metric collection retains the unchanged observe policy. Synthetic
+negative-test result JSONs were initially found by the generic collector below
+the full-Pytest scratch directory. After tests completed, that directory was
+moved to the separate `ihp130-tiny-2026-10-06-12-38-19f1e9c571ee` build variant,
+with its original path preserved as a symlink. `test-fixture-relocation.json`
+records the move and the original metric file; final native firmware, synthesis
+and timing values are unchanged, and synthetic test flows are excluded.
+
+OpenOCD 0.12.0-1 and the SBT 2.0.5 launcher bundle are restored through the existing locked helper
+in `.cache/retrosoc/development/tiny-r2-p2-debug`; P1's environment is unchanged.
+The initial OpenOCD download's sandbox DNS failure and the initial Mini debug
+attempt's SBT local-socket permission failure are retained separately. These
+are environment failures, not hardware acceptance. The retry with locked tools
+and local-socket permission passed `DEBUG_GDB_PASS` in 47.323 seconds under
+`build/ihp130-debug-2026-10-06-10-15-b4a322720e40/sim/verilator/debug/`.
+The locked VexiiRiscv project selected sbt 1.10.0 on Ubuntu Java 17.0.18,
+as recorded in the generation log; its project tool selection was not changed.
+This validates shared-wrapper default compatibility, not Tiny external JTAG.
+
+The final focused suite passed 45 cases; source format/style/readiness and
+Ruff passed. The Tiny PR campaign completed with exit zero in 2185.548 seconds
+under `BUILD_TIMESTAMP=2026-10-06-10-26`. Both ordinary RTL simulations passed
+at 3744281 cycles; Icarus took 1603.291 seconds. Netlist boot passed at 29373
+cycles in 147.240 seconds. The PR synthesis and STA commands completed, while
+warning observations and timing failures retain their existing policy boundary.
+This is not a full-C netlist or physical pass.
+
+The first full Pytest run recorded 1500 passed, 2 failed, 10 fixture errors and
+one skipped PDF test. Both root causes were static consumers of the approved
+reset parameter change: the Tiny publication collector required the old exact
+three-parameter CPU dictionary, and the debug-flow test required the old
+unparameterized instance spelling. The collector now explicitly requires
+`ResetSyncStages=5` and includes the reset tree in source tracking; its negative
+tests reject a wrong stage count and preserve the reviewed-snapshot check.
+The debug test checks actual parameter forwarding and unchanged default three
+stages. These compatibility updates do not alter RTL or publication identity;
+no PDF or publication snapshot is refreshed. The focused consumer suite passed
+31 tests. Final full Pytest passed 1517 tests with one skipped PDF retrieval
+test (`pypdf` unavailable) in 3624.06 seconds. The initial failed run remains
+recorded separately; focused and full-suite counts overlap.
+
+`consumer-inputs-rv35_5et/identity.json` in the final analysis root retains the
+post-flow consumer/test increment and verifies that every archived RTL,
+generator, STA and workload source input is unchanged. Original timing inputs
+and reports are preserved, rather than relabeled with these later test changes.
+
+P1-image Verilator replay passed all three runs under
+`build/ihp130-tiny-2026-10-06-10-27-fa1c4ce1e303/meta/tiny-r2-p1/workloads/verilator/attempt-88f2f259/`.
+All measured records match the original P1 image baseline; terminal cycles
+increase from 18458948 to 18458959, separately recording the intentional
+11-cycle reset-startup change. Icarus attempt
+`workloads/iverilog/attempt-e147iu49` under the same workload root passed all
+three runs at 18458959 cycles, in 11275.215, 11254.774 and 11341.696 wall
+seconds. All three logs satisfy command success, TEST_STATUS/SIM_TEST_PASS
+and forbidden-marker checks. The workload root's `meta/tiny-r2-p1/baseline-report.json`
+passed cross-simulator aggregation with the unchanged original HEX and identical
+measured records. This directory/record retains the P1 measurement protocol
+identity; its separate RTL-source snapshot identifies the P2 candidate.
+
+Implementation and reproducible P2 evidence are ready for human review.
+Timing qualification still fails at all analyzed rates, including 24 MHz;
+the current executable branch is functionally validated, not physically qualified.
+Full C netlist execution, routed/PVT/IO/package/silicon qualification, exhaustive
+CDC/RDC and Tiny external-JTAG qualification remain unrun. No standalone formal
+qualification is claimed; this phase used directed reset/protocol checks and
+an independent FIFO scoreboard with unchanged Common implementations.
+No Required-rule MISRA deviation was added. Publication PDF rebuilding and
+snapshot advancement were not part of the consumer-compatibility repair.
+No P2 acceptance or later-phase authorization is claimed.
 
 ## Archived P6/P10 planning and documentation evidence
 

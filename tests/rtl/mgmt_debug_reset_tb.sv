@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 
-module mgmt_debug_reset_tb;
+module mgmt_debug_reset_tb #(
+    parameter int ResetSyncStages = 3
+);
   logic s_clk;
   logic s_rst_n;
   logic s_reset_req;
@@ -10,7 +12,9 @@ module mgmt_debug_reset_tb;
 
   always #5 s_clk = ~s_clk;
 
-  mgmt_debug_reset u_mgmt_debug_reset (
+  mgmt_debug_reset #(
+      .ResetSyncStages(ResetSyncStages)
+  ) u_mgmt_debug_reset (
       .clk_i        (s_clk),
       .rst_n_i      (s_rst_n),
       .reset_req_i  (s_reset_req),
@@ -27,7 +31,7 @@ module mgmt_debug_reset_tb;
 
     repeat (2) @(posedge s_clk);
     s_rst_n = 1'b1;
-    repeat (4) @(posedge s_clk);
+    repeat (ResetSyncStages + 1) @(posedge s_clk);
     #1;
     assert (s_core_rst_n && s_reset_done)
     else $fatal(1, "initial reset release failed");
@@ -46,7 +50,7 @@ module mgmt_debug_reset_tb;
     #1;
     assert (!s_core_rst_n && !s_reset_done)
     else $fatal(1, "core reset did not assert");
-    repeat (4) @(posedge s_clk);
+    repeat (ResetSyncStages + 1) @(posedge s_clk);
     #1;
     assert (s_core_rst_n && s_reset_done)
     else $fatal(1, "core reset did not release");
@@ -62,7 +66,7 @@ module mgmt_debug_reset_tb;
     else $fatal(1, "held reset released too early");
 
     s_reset_req = 1'b0;
-    repeat (4) @(posedge s_clk);
+    repeat (ResetSyncStages + 1) @(posedge s_clk);
     #1;
     assert (s_core_rst_n && s_reset_done)
     else $fatal(1, "held reset did not release");

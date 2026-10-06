@@ -1384,7 +1384,9 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
     assert ".BRANCH_PREDICTOR   (1)" in wrapper
     assert ".BREAKPOINT_TRIGGERS(2)" in wrapper
     assert ".HAVE_SBA(0)" in debug_wrapper
-    assert "mgmt_debug_reset u_mgmt_debug_reset" in debug_wrapper
+    assert re.search(r"mgmt_debug_reset\s*#\(\s*\.ResetSyncStages\(ResetSyncStages\)\s*\)\s+u_mgmt_debug_reset", debug_wrapper)
+    assert re.search(r"parameter\s+int\s+ResetSyncStages\s*=\s*3", wrapper)
+    assert re.search(r"parameter\s+int\s+ResetSyncStages\s*=\s*3", debug_wrapper)
     assert "--timeout $(SOC_SIM_TIME)" in verilator_makefile
     assert "--require-debug-tools" in verilator_makefile
     assert "HAVE_DEBUG" not in verilator_makefile

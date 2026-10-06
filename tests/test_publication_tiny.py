@@ -25,6 +25,8 @@ def test_tiny_configuration_and_inventory_are_derived(data):
     assert data["facts"]["dma"]["NumChannels"] == 4
     assert data["facts"]["dma"]["RequestMask"] == 0x7F9
     assert data["facts"]["dma"]["EnableStreams"] == 0
+    assert data["facts"]["cpu"]["ResetSyncStages"] == 5
+    assert tiny.RESET_TREE in data["source_paths"]
     assert len(data["catalog"]) == 14 and len(data["regions"]) == 20 and len(data["pads"]) == 52
     assert len(data["interrupts"]) == 14 and len(data["gpio"]) == 32
     assert not any(p.startswith("rtl/mini/") for p in data["source_paths"])
@@ -49,9 +51,26 @@ def test_common_register_default_remains_mini_compatible():
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET" in constants
 
 
+def test_reset_update_does_not_bypass_reviewed_snapshot(monkeypatch):
+    original = tiny.subprocess.check_output
+    checked = []
+
+    def changed_snapshot(command, **kwargs):
+        if command[:3] == ["git", "diff", "--name-only"]:
+            assert tiny.RESET_TREE in command
+            checked.append(command)
+            return tiny.RESET_TREE + "\n"
+        return original(command, **kwargs)
+
+    monkeypatch.setattr(tiny.subprocess, "check_output", changed_snapshot)
+    with pytest.raises(ValueError, match="technical sources differ from reviewed snapshot"):
+        tiny.collect(tiny.read(ROOT / tiny.BOOK / "tiny.json"))
+    assert len(checked) == 1
+
+
 @pytest.fixture
 def source_tree(tmp_path):
-    sources = [tiny.TOP, tiny.ARCHINFO, tiny.SYSCTRL, "rtl/ip/core/mgmt_core_wrapper.sv", "configs/ci/ihp130-tiny.mk",
+    sources = [tiny.TOP, tiny.RESET_TREE, tiny.ARCHINFO, tiny.SYSCTRL, "rtl/ip/core/mgmt_core_wrapper.sv", "configs/ci/ihp130-tiny.mk",
                tiny.MAP, tiny.TOPOLOGY, (tiny.BOOK / "source-contract.json").as_posix()]
     for relative in sources:
         target = tmp_path / relative
@@ -66,6 +85,7 @@ def source_tree(tmp_path):
     (tiny.TOP, ".NumChannels  (4)", ".NumChannels  (8)"),
     (tiny.TOP, ".EnableStreams(1'b0)", ".EnableStreams(1'b1)"),
     (tiny.TOP, ".EnableAtomics    (1'b0)", ".EnableAtomics    (1'b1)"),
+    (tiny.TOP, ".ResetSyncStages  (5)", ".ResetSyncStages  (3)"),
     ("configs/ci/ihp130-tiny.mk", "ISA               := RV32IM", "ISA               := RV32IMC"),
     (tiny.ARCHINFO, "32'h5449_4e59", "32'h4d49_4e49"),
     (tiny.SYSCTRL, "!s_test_q[31] && apb4.pwdata[31]", "s_test_q[31] && apb4.pwdata[31]"),

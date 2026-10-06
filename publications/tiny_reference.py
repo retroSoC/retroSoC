@@ -23,6 +23,7 @@ TOPOLOGY = "rtl/tiny/integration/soc_topology.json"
 PINS = "rtl/tiny/pin_map/pin_map.json"
 CLOCKS = "rtl/tiny/integration/clock_reset_domains.json"
 TOP = "rtl/tiny/top/retrosoc_tiny.sv"
+RESET_TREE = "rtl/tiny/top/tiny_reset_tree.sv"
 SYSCTRL = "rtl/tiny/top/tiny_sysctrl.sv"
 ARCHINFO = "rtl/tiny/top/tiny_archinfo.sv"
 FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo"}
@@ -71,8 +72,9 @@ def facts(root: Path = ROOT) -> dict:
         raise ValueError("Tiny SRAM parameters changed")
     if dma != {"NumChannels": 4, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x7F9, "EnableStreams": 0}:
         raise ValueError("Tiny DMA parameters changed")
-    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "TwoCycleBusErrors": 1}:
+    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "TwoCycleBusErrors": 1, "ResetSyncStages": 5}:
         raise ValueError("Tiny CPU integration changed")
+    require_snippets(root, RESET_TREE, [".STAGE(5)", "assign cpu_ready_rst_n_o = &leaf_rst_n_o;"])
     require_snippets(root, "rtl/ip/core/mgmt_core_wrapper.sv", [".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
     require_snippets(root, TOP, ["u_masters_axi4_if[2]", ".axi4(u_masters_axi4_if[0])",
                                ".axi4(u_masters_axi4_if[1])", ".cfg_apb4(u_sram_apb4_if)",
@@ -225,7 +227,7 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     evidence = read(ROOT / BOOK / "evidence.json")
     validate_evidence(evidence)
     lock = read(ROOT / "dependencies/dependencies.lock.json")
-    paths = {MAP, TOPOLOGY, PINS, CLOCKS, TOP, SYSCTRL, ARCHINFO, config["profile"],
+    paths = {MAP, TOPOLOGY, PINS, CLOCKS, TOP, RESET_TREE, SYSCTRL, ARCHINFO, config["profile"],
              "docs/ip/tiny-soc.md", "docs/ip/tiny-soc-verification.md", "dependencies/dependencies.lock.json", "LICENSE"}
     paths.update(contract["sources"])
     paths.update(b["file"] for b in contract["bindings"])

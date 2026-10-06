@@ -39,6 +39,14 @@ the contract history. The committed RTL/profile still implements the initial
 24 MHz/no-PLL/four-channel design; no faster CPU/SRAM or PLL timing support
 follows from this freeze or the `HAVE_PLL` selector alone.
 
+The R2-P2 candidate keeps that executable clock/memory configuration and adds
+five-edge local reset release, separate reset leaves for the existing targets,
+and CPU-last startup. Shared debug-wrapper defaults remain unchanged for Mini.
+The [reset/feasibility runbook](../../docs/ip/tiny-soc-r2-reset-feasibility.md)
+defines the source-bound audit and analysis-only frequency sweep. Results and
+phase acceptance remain in the verification ledger; this is not routed timing
+or high-frequency qualification.
+
 The separately approved [PIO-lite extension](../../docs/ip/piolite.md) is part
 of the future standard Tiny product, with its own `PIOLITE-P0` through
 `PIOLITE-P5` phases. It adds two state machines, shared 32 x 16-bit program

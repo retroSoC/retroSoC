@@ -381,6 +381,26 @@ module onchip_ram_tb #(
       $fatal(1, "performance counters did not record the directed traffic");
     end
 
+    // System reset cancels a held response but must preserve SRAM payload.
+    write_single(SramBase + 32'h300, `AXI4_BURST_SIZE_4BYTES, 32'h5A36_C9E7, 4'hf, `AXI4_RESP_OKAY);
+    @(negedge clk_i);
+    mem_axi4.araddr  = SramBase + 32'h300;
+    mem_axi4.arvalid = 1'b1;
+    do @(posedge clk_i); while (!mem_axi4.arready);
+    @(negedge clk_i);
+    mem_axi4.arvalid = 1'b0;
+    mem_axi4.rready  = 1'b0;
+    wait (mem_axi4.rvalid);
+    @(negedge clk_i);
+    rst_n_i = 1'b0;
+    #1;
+    if (mem_axi4.rvalid || mem_axi4.bvalid) $fatal(1, "reset retained a stale SRAM response");
+    repeat (3) @(posedge clk_i);
+    @(negedge clk_i);
+    rst_n_i = 1'b1;
+    repeat (2) @(negedge clk_i);
+    read_single(SramBase + 32'h300, `AXI4_BURST_SIZE_4BYTES, 32'h5A36_C9E7, `AXI4_RESP_OKAY);
+
     $display("on-chip SRAM AXI4 test passed capacity_kib=%0d", CapacityKiB);
     $finish;
   end

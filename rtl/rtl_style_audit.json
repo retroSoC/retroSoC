@@ -437,6 +437,7 @@
       "tiny_archinfo.sv",
       "tiny_axi42apb4.sv",
       "tiny_axi4_fabric.sv",
+      "tiny_reset_tree.sv",
       "tiny_sysctrl.sv"
     ]
   },
