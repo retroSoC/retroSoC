@@ -7,8 +7,9 @@ or register ABI version. The selected executable baseline remains
 `configs/ci/ihp130-tiny.mk`, IHP130, 24 MHz/no PLL; faster configurations and
 their physical acceptance do not exist merely because this plan names them.
 
-The R2 freeze changes documentation only. All R2 firmware, RTL/formal,
-performance, synthesis/netlist, timing and physical results are **pending**.
+The R2 freeze itself changed documentation only. Separately authorized
+R2-P1 implementation and validation are recorded below; the other R2
+implementation and qualification phases remain **pending**.
 Historical `TINY-P0` through `TINY-P12` identifiers and evidence are preserved
 under their original scope; the mapping in the main contract transfers
 outstanding obligations without renaming old results or declaring them passed.
@@ -170,7 +171,7 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | Active phase | Required evidence and completion boundary | Status |
 | --- | --- | --- |
 | TINY-R2-P0 - Performance Contract and Roadmap Freeze | Reviewable requirements, exact old/new phase mapping, invariant package/IO counts, same-frequency CPU/main-SRAM ownership, explicit performance budgets, links and commands. Record actual documentation checks separately. | Documentation freeze only; no hardware result |
-| TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Pending |
+| TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Implementation and baseline evidence ready for review; timing and warning failures recorded; phase acceptance pending human review |
 | TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Pending |
 | TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling, WS2812 refill budget and workload correctness on the available platform. | Pending |
 | TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
@@ -329,6 +330,212 @@ compilation, RTL/formal simulation, full quality/regression suites, synthesis,
 netlist, STA and physical qualification were not run in this documentation
 phase. Actual main-SRAM macro timing and joint high-frequency qualification
 remain pending; no SRAM or CPU maximum frequency is established here.
+
+## R2-P1 implementation evidence (2026-10-05)
+
+Target SoCs: `TINY`; profile `configs/ci/ihp130-tiny.mk`; PDK `IHP130`,
+24 MHz/no PLL. The approved source parent is
+`bfdc3ffaf6cb0a134314272ac1b0f8b504d0b09c`. These are uncommitted implementation
+runs, identified by retained source/input hashes and archives in addition to
+the Git parent. They must not be presented as clean-commit release evidence.
+The [baseline runbook](tiny-soc-r2-baseline.md) specifies workloads, observation
+endpoints, retained-image replay, commands and the clock/reset/constraint audit.
+
+The implementation adds a separate finite measurement image, optional
+testbench observers and fail-closed evidence collection. Normal Tiny
+acceptance firmware, hardware, register/SDK ABI, profile, dependency versions,
+warning baselines and metrics policy are unchanged. The existing flat SRAM
+layout is retained; no compiler or banking experiment belongs to these results.
+
+Environment restoration uses
+`.cache/retrosoc/development/tiny-r2-p1/activate.sh`. The original local
+Verilator/Icarus/OpenSTA archives did not match the lock. The new isolated
+installation verifies all seven selected tool archives against the unchanged
+lock; the original installations are preserved. A sandbox DNS failure and a
+Yosys download timeout are retained as failed attempts; the successful restore
+reused the checksum-matching local Yosys/GCC archives. Locked Python packages
+and both behavioral/full-flow doctor checks passed.
+
+Initial development evidence is under
+`build/ihp130-tiny-2026-10-05-11-19-fa1c4ce1e303/meta/tiny-r2-p1/`.
+The PR campaign uses `BUILD_TIMESTAMP=2026-10-05-12-15`; the final workload
+campaign uses `BUILD_TIMESTAMP=2026-10-05-12-30`. Each configuration retains
+its own variant. Workload attempts preserve the
+binary's original identity separately from the simulator source. Early failed
+instrumentation attempts are not acceptance: a comment interpreted as a tool
+pragma and an incorrectly formatted AXI observation record were corrected in
+the testbench without modifying production RTL. An intermediate Icarus
+measurement attempt was explicitly interrupted to strengthen artifact and
+repeat-consistency revalidation; its outer result records exit 130 and cannot
+qualify the baseline. Independent normal acceptance and PR runs were preserved.
+
+Current completed checks:
+
+| Gate | Retained result and boundary |
+| --- | --- |
+| Lock and configuration | Dependency lock, Tiny address/pin/topology/clock-reset checks and selected tool doctors passed. |
+| Focused tests | Initial 58-case Tiny/protocol/reset/SRAM/parity/collector set passed. The final collector's 41 unit tests also passed, including modified-image, mixed-repeat and mismatched-verdict rejection. Counts overlap and are not additive coverage. |
+| Software and source policy | Software format/policy/host tests, Make/RTL format, owned RTL style, readiness and Ruff passed. SVA ASIC lint completed; warnings retain the unchanged observation policy. |
+| Normal firmware, Verilator | Command and terminal checks passed at 3,744,261 cycles. |
+| Normal firmware, Icarus | Command and terminal checks passed at the same 3,744,261 cycles; wall duration 1522.098 seconds. This is full SDK/IRQ/DMA/watchdog acceptance, not netlist or physical evidence. |
+| Final workload, Verilator | Three independent cold-reset runs passed with identical records at 18,458,948 terminal cycles. |
+| Final workload, Icarus | All three retry runs passed strict command/terminal/log acceptance at the same 18,458,948 cycles; wall durations 10878.451, 10851.610 and 10832.133 seconds. The earlier 10800-second attempts remain failed. |
+| Cross-simulator baseline | Final report passed: all six cold-reset runs use the same retained HEX and agree on every parsed workload/observer record; source, model, firmware, log and verdict integrity checks passed. This is functional/measurement evidence, not physical qualification. |
+| Regression selection | Explicit TINY/IHP130 PR and nightly dry-runs passed and select the same current Tiny matrix. Nightly adds no distinct Tiny execution. |
+| Full Pytest | 1476 passed, 1 skipped in 3574.13 seconds. The skipped PDF retrieval test requires `pypdf`. The suite began before final collector hardening; the 41-case collector suite was run after that hardening. |
+| PR runner | Completed with exit zero, including SVA Verilator, full-firmware Icarus, synthesis, netlist boot and STA. Warning observations failed and timing did not close; runner completion is not a physical acceptance verdict. |
+| Yosys, balanced | Completed in 311.874 seconds, 207697 cells, 9107224.664998 square micrometers of library area, 32 main-SRAM macros. These are current baseline values, not a like-for-like improvement over historical results. |
+| Icarus netlist boot | Strict command/terminal/checker success at 29362 cycles, 151.389 seconds. Full C firmware netlist execution remains unrun. |
+| OpenSTA | Command completed in 13.521 seconds. Setup WNS -455.18 ns and TNS -13049600 ns; hold WNS/TNS zero. **Timing qualification failed.** |
+| Clock/reset netlist audit | 32 direct flat main-SRAM A_CLK loads of `u_clock_buffer/clk_o`; 29605 structural reset-reachable endpoints using all arcs. This is not CDC/RDC or reset-tree timing closure. |
+
+The retained workload image is
+`build/ihp130-tiny-2026-10-05-12-30-fa1c4ce1e303/meta/tiny-r2-p1/binaries/image-ozwo38_b/`.
+BIN SHA-256 is
+`b98b981f397af5f3a1d9cc15157726e77a8d7f21c68c1691cdc9b1beecbf4293`;
+HEX SHA-256 is
+`ba24c2dfd727a905f39b644df254e47262c39ab4960ff2614be44402020758b2`.
+Its `.text` is 9836 bytes, `.bss` is 76736 bytes, BIN is 10080 bytes and
+remaining SRAM above `_ebss` is 44480 bytes. The normal flat linker still
+reports its existing RWX LOAD-segment warning; it is not hidden by a linker
+or warning-policy change.
+
+The final Verilator attempt `workloads/verilator/attempt-vvytd6pz` and Icarus
+retry `workloads/iverilog/attempt-yu79tkc8` produced the following identical
+raw measurements in all six accepted runs. No partial or timed-out run
+contributes to this table. Cycles and instructions cover the specified workload envelope,
+including submission/polling overhead but excluding initialization, readback
+and UART. Empty-window overhead is reported without subtraction.
+
+| Case | Cycles | Retired instructions | Payload bytes | CPU kernel cycles | CPU / DMA admission-wait cycles |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| empty | 137 | 12 | 0 | 0 | 0 / 0 |
+| cpu | 98663 | 32830 | 0 | 98343 | 0 / 0 |
+| memory | 754159 | 213076 | 65536 | 0 | 0 / 0 |
+| dma1 | 258772 | 32594 | 65536 | 0 | 114688 / 105056 |
+| dma16 | 71444 | 7601 | 65536 | 0 | 37888 / 6416 |
+| contention | 1638244 | 530481 | 65536 | 1603696 | 37888 / 5520 |
+| tcd | 1639540 | 530498 | 65536 | 1604848 | 39040 / 6208 |
+
+The contention cases each execute 16 CPU kernels; the CPU-only case executes
+one. Each TCD case additionally reads 4096 descriptor bytes. Full per-owner
+latency, backpressure, outstanding-transaction and SRAM records are retained
+in the attempt JSON/logs. Payload-per-cycle is payload bytes divided by the
+whole workload envelope; contention-case values include the concurrent CPU
+work and must not be labeled isolated DMA bandwidth or physical throughput.
+
+The synthesis/netlist/STA variant is
+`build/ihp130-tiny-2026-10-05-12-15-19f1e9c571ee/` (`APP=ci_smoke`).
+Its netlist SHA-256 is
+`69195dc4050725d5cdbb9fedc213f675cedc6470492c84b2704f8ba535b4a29f`.
+The fresh STA command consumes that netlist and its generated core SDC at the
+slow corner; the netlist hash differs from the inspected October 2 run.
+The equal historical/current WNS values therefore remain separately attributed.
+The current worst path is `u_soc.s_rst_n_reg/Q` through the reset-dependent
+I2C0 FIFO data path to `u_soc.u_i2c0/u_i2c_reg.u_rx_fifo.r_storage[4]_0__reg/D`.
+No reset optimization or new timing exception was used to hide that result.
+
+The final workload variant's `meta/tiny-r2-p1/constraints/` contains
+`source-audit.json`, the generated `reset-clock-audit.tcl` and its command
+result, clock/reset endpoint reports, and `synthesis-sta-evidence.json` binding
+the consumed libraries, netlist, SDC, reports and compact boot binaries. The
+query reuses the completed netlist and unchanged SDC; it does not run PnR or
+alter constraints. Synthesis uses typical 1.20 V/25 C libraries, while STA
+uses the selected slow 1.08 V/125 C views and IO 3.0 V corner.
+
+There is no committed `quality/warnings/ihp130-tiny/` baseline. Consequently
+the ASIC lint observation reports 399 new signatures; the actual CI variant
+reports one Icarus and 14 Yosys signatures. Icarus reports unsupported
+edge-sensitive `ifnone` model paths. Yosys observations include asynchronous
+load-value warnings, combinational-network messages and the temporary SCL-cache
+rename/conversion fallback to Liberty. The standalone warning commands fail;
+the regression preserves its existing non-blocking observation behavior.
+No warning signature or metrics policy was edited. Explicit CI-variant metrics
+were collected because the runner's final default-APP observation targets do
+not select its CI synthesis variant.
+
+The first final-source Icarus campaign
+(`workloads/iverilog/attempt-cwvkmh4t`) reached the 10800-second host timeout
+in all three runs (exit 124). Each log contains all 28 observer records and
+reaches the last UART case result. Since the firmware prints these records
+only after every case and complete memory readback succeeds, this establishes
+continued functional progress, but the missing final terminal marker still
+prevents acceptance. No RTL error or cycle-limit timeout was reported.
+`validation/iverilog-timeout-diagnosis.json` retains the failed results, logs
+and host-stdio tool hashes. The previously observed 22 complete observer rows
+matched Verilator in all three runs; partial output was never promoted to PASS.
+
+The retry uses the identical retained image and production RTL with
+`SOC_SIM_TIME=14400` and host line-buffered output. It does not change the
+100000000-cycle bound or verdict rules. All three runs completed successfully
+between 18:46:45 and 18:47:31 Asia/Shanghai. The final cross-simulator
+aggregation also passed. Its result is
+`build/ihp130-tiny-2026-10-05-12-30-fa1c4ce1e303/meta/tiny-r2-p1/baseline-report.json`;
+the exact aggregation command and exit-zero result are retained under the same
+root in `validation/baseline-report.log` and `validation/baseline-report.json`.
+Implementation and reproducible baseline evidence are ready for human review;
+this record does not automatically accept P1 or authorize another phase.
+P1 does not qualify 24 MHz timing, the QFN64 package, external Tiny JTAG,
+96/192/240 MHz operation, or any later R2/PIO/SPI/PPALite phase. No additional
+MISRA deviation is introduced; the automated software gates remain partial
+checks rather than certification. Historical records below retain their
+original source, dates, stage IDs and qualification boundaries.
+
+### R2-P1 evidence-tool repair (2026-10-05 through 2026-10-06)
+
+The read-only review of the seven-file implementation found two issues:
+the selected `VVP` executable was not bound to the recorded locked Icarus
+installation (P1), and `image.json.compiler_command` was overwritten by the
+last post-processing command (P2). The original image's hashed `compile.json`
+still contains the actual GCC invocation. Neither finding changes the
+previously recorded simulation results or establishes a hardware failure.
+
+The separately approved repair changes only `scripts/tiny_r2_baseline.py`,
+its focused tests, this ledger and the baseline runbook. The runner validates
+the selected runtime before compilation, launches its verified absolute path,
+retains its version/binary/archive identity, and rechecks it with actual run
+commands at aggregation. The image producer preserves the compiler command
+separately from its post-processing commands. Historical artifacts are not
+rewritten to add provenance that they did not originally record.
+
+Repair evidence uses
+`build/ihp130-tiny-2026-10-05-20-02-fa1c4ce1e303/meta/tiny-r2-p1/`.
+The focused suite passed 55 cases, including rejection before compilation for
+external/missing runtimes and invalid installation markers, retained-runtime
+and launch-command checks, and compiler-command preservation. Full Pytest
+passed 1492 cases with one skipped PDF retrieval test (`pypdf` unavailable),
+in 3539.14 seconds. Ruff and explicit TINY/IHP130 PR/nightly dry-runs passed.
+These are local results; no new hosted CI or physical run is claimed.
+
+The new metadata-validation image is `binaries/image-watrhx9n/`. Its retained
+`compiler_command` equals the actual GCC command in `compile.json`; the
+independent check is retained as `validation/compiler-metadata.json` and its
+log. This image does not replace the original matched binary.
+Verilator attempt `workloads/verilator/attempt-86h7qnqw` passed all three
+cold-reset repetitions using the explicit original
+`image-ozwo38_b/tiny_baseline.hex`. Icarus attempt
+`workloads/iverilog/attempt-axv8qwr6` also passed all three repetitions at
+18,458,948 cycles; wall durations were 10858.884, 10844.051 and 10923.896
+seconds. All completed between 00:10:02 and 00:11:22 Asia/Shanghai on October 6.
+The recorded runtime is Icarus vvp 13.0 from the isolated locked installation,
+binary SHA-256
+`7b5521fbaf86c519603e824e189c767790424ea6914f3dadeda438136d5eaba7`.
+Each retained flow command launches that absolute executable. Runtime binary,
+archive and launch-command checks passed after simulation and at aggregation.
+
+The repair root's `baseline-report.json` passed all six runs, with original HEX
+SHA-256 `ba24c2dfd727a905f39b644df254e47262c39ab4960ff2614be44402020758b2`.
+`validation/previous-baseline-comparison.json` additionally checks that both
+simulators retain the original image manifest and identical measurements to
+the preceding campaign. Only the evidence collector changed among the
+archived executable inputs; the old image, old attempts and old report remain
+unmodified. Both review fixes now have focused and end-to-end evidence ready
+for human re-review, not automatic phase acceptance.
+
+Production RTL, testbench, firmware, Make targets, selected profile, dependency
+versions, warning baselines and metrics policy are unchanged by this repair.
+The earlier failed timing qualification and all unrun physical/debug/PVT gates
+remain open. No phase acceptance or subsequent-phase authorization is implied.
 
 ## Archived P6/P10 planning and documentation evidence
 

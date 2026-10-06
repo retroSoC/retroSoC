@@ -149,3 +149,27 @@ netsim-boot: netcomp tiny-boot-image | manifest
 		--result $(NETLIST_SIM_ROOT)/result-sim-check.json --require 'SIM_TEST_PASS'
 
 .PHONY: tiny-boot-image
+
+# R2-P1 verification image: normal APP selection and the flat linker stay intact.
+# Image creation always compiles and snapshots inputs before retaining a binary.
+# Simulation rebuilds its model once, then replays the same image three times.
+TINY_BASELINE_TOOL       := $(ROOT_PATH)/scripts/tiny_r2_baseline.py
+TINY_BASELINE_HEX        ?=
+TINY_BASELINE_MAX_CYCLES ?= 100000000
+
+tiny-r2-baseline-image: firmware
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) image \
+		--objcopy $(OBJC) --objdump $(DUMP) --nm $(CROSS)nm --size $(CROSS)size -- \
+		$(CC) $(CFLAGS) $(INC_PATH) $(CRT_SRCS) $(ROOT_PATH)/app/apps/ci_smoke/tiny_baseline.c
+
+tiny-r2-baseline-sim: | manifest
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) simulate \
+		--simulator $(SIM_TOOL_NAME) --vvp $(VVP) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		--max-cycles $(TINY_BASELINE_MAX_CYCLES) $(if $(TINY_BASELINE_HEX),--hex $(TINY_BASELINE_HEX)) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-baseline-report:
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
+
+.PHONY: tiny-r2-baseline-image tiny-r2-baseline-sim tiny-r2-baseline-report
