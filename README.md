@@ -125,7 +125,7 @@ points, not the complete profile or application inventory.
 | [IHP130 Tiny](configs/ci/ihp130-tiny.mk) | Single-hart wired MCU, 128 KiB SRAM, pin-level Flash boot and automated acceptance. |
 | [IHP130 Mini](configs/ci/ihp130.mk) | Manual bring-up with 32 KiB macro-backed SRAM. |
 | [GF180](configs/ci/gf180.mk) / [SKY130](configs/ci/sky130.mk) | Alternative PDK profiles with 32 KiB macro-backed SRAM. |
-| [ICS55](configs/ci/ics55.mk) | Regression-compatible profile with SRAM and PLL disabled. |
+| [ICS55 Mini](configs/ci/ics55.mk) | Regression-compatible Mini profile with locked SRAM and PLL disabled. |
 | [Interactive shell](configs/ci/ihp130-shell.mk) | Shell firmware with CSR support enabled. |
 | [Hazard3 debug](configs/ci/ihp130-debug.mk) | JTAG acceptance using Verilator, OpenOCD, and GDB. |
 | [HP Linux](configs/ci/ihp130-hp.mk) | LP RV32IM / HP RV64IMAFDC Linux image/bundle flow and HP RTL validation; outside the supported PR matrix. |
@@ -133,6 +133,13 @@ points, not the complete profile or application inventory.
 | [APU LP/HP](configs/ci/ihp130-apu.mk) | Audio and KWS evidence flow with ownership handoff to HP. |
 | [CoreMark](configs/benchmark/ihp130-hazard3-coremark.mk) | Fixed LP SRAM benchmark with the RV64 product HP core present. |
 | [Mini MPW](configs/cluster/mini-mpw.mk) | Legacy MPW C0-C3/user-IP compatibility, separate from the product ABI. |
+
+Tiny's [2026-10-07 target refreeze](docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+selects ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the future default.
+Its new profile and RTL binding await TINY-ICS55-P1; the IHP130 Tiny entry above
+remains the executable compatibility baseline. Locked PLL views can be acquired
+with `python3 physical/pdk/setup.py --pdk ICS55 --component pll` independently
+of platform implementation or timing qualification.
 
 After the corresponding setup, use these common commands:
 

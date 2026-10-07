@@ -1,5 +1,38 @@
 # Tiny MCU Verification Record
 
+## ICS55 default and final timing policy refreeze (2026-10-07)
+
+The [2026-10-07 normative policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+selects TINY/ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the default target.
+`configs/ci/ics55-tiny.mk` and TINY-ICS55-P1 platform implementation are pending;
+`configs/ci/ihp130-tiny.mk` remains the current executable compatibility baseline.
+The existing 614fa623 commit adds shared ICS55 SRAM inputs, not Tiny enablement.
+
+All pre-final post-synthesis timing results are observations rather than phase
+completion gates. Keep applicable analysis attempts, macro mapping, netlist
+function, reset/protocol evidence and explicit FAIL/NOT_RUN attribution.
+Functional tests, accepted-work barriers, real-time deadlines and strict Tiny
+command/TEST_STATUS/SIM_TEST_PASS/forbidden-error checks remain mandatory.
+No warning baseline, metric policy or RTL maturity state is promoted.
+
+The sole final timing campaign combines TINY-R2-P11, SPI-P5, PIOLITE-P5 and
+PPALITE-P5 after Tiny foundation, SPI, PIO-lite and PPALite functional work.
+Their checklists require the same complete-product source/config/PDK/netlist;
+none is an intermediate physical dependency of another feature's functionality.
+Phase titles containing IHP130 remain historical identifiers; ICS55 is the new
+default and IHP130 compatibility results must remain separately attributed.
+
+PLL dependency: `pdk_ics55_pll`, revision
+`6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`, upstream `PLL_V02p1`.
+Its managed checkout is `.cache/retrosoc/sources/ics55_ecos_pll`.
+Cell/pin-only Liberty, absence of a LOCK output and unresolved upstream license
+remain explicit integration/release gaps. Acquisition is not hardware evidence.
+Refreeze validation and downloaded-view hashes are recorded separately below.
+
+The previous freeze and all executed R2-P0/P1/P2 and legacy records below retain
+their original dates, profiles, source identities, measurements and verdicts.
+They do not qualify ICS55 or satisfy the new platform-enablement phase.
+
 This record accompanies the [Tiny Gen1 contract](tiny-soc.md). The active R2
 verification plan below covers Target SoCs: `TINY`, feature `tiny-soc`, and
 the approved performance refreeze. `R2` is a roadmap revision, not a new IP
@@ -187,12 +220,16 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 
 ### R2 clock, reset and macro evidence
 
+For new work apply the default ICS55 binding and timing policy above. The
+following matrix retains frequency and functional obligations for both
+explicitly selected PDKs; historical measurements remain IHP130-only.
 The main 128 KiB SRAM includes its actual physical macro clock pins. It MUST
 use the same SYS source and active frequency as the CPU, with no hidden
 main-SRAM divider, CPU/main-SRAM CDC or half-rate fallback. The old P6/P10
 assignment of main SRAM to MEM is historical and is superseded for R2.
 Four logical 32 KiB banks do not mean four physical macros: verify the real
-IHP130 mapping and preserve the complete 128 KiB capacity. Crypto's six
+selected-PDK mapping (32 OpenECOS 1024x32 macros for ICS55) and preserve the
+complete 128 KiB capacity. Crypto's six
 private banks remain additional storage in PCLK and retain their own lifecycle.
 
 | Target profile | CPU and actual main SRAM / SYS | XPI / MEM | Shared peripherals and Crypto / PCLK |
@@ -272,8 +309,8 @@ cycle-level performance distinct from physical frequency qualification.
 | --- | --- | --- |
 | Functional | Actual Icarus and Verilator executions, strict terminal markers and result files, focused protocol/reset/error tests, and applicable formal/host tests separately identified | Does not establish performance or qualified clock rate |
 | Performance | Reproducible workload/compiler/placement A/B, cycle and instruction counts, service latency, throughput, contention and worst observed backpressure with stated workload bounds | A simulated clock assumption is not physical frequency evidence; observed maxima alone are not a universal bound |
-| Synthesis and netlist | Current IHP130 mapping of every main-SRAM/Crypto bank, area/cells, reset fanout, critical paths, netlist boot and applicable full-function checks | Library area is not die area; compact netlist boot does not replace full firmware or routed timing |
-| Physical | Actual source/profile/tool/PDK/corner/SDC identity; macro checks, CTS and reset distribution, extracted setup/hold and recovery/removal, CDC/RDC, IO/package/power and device timing | Behavioral PLL and pre-layout STA do not qualify an operating point or constitute foundry signoff |
+| Synthesis and netlist | Current selected-PDK mapping of every main-SRAM/Crypto bank, area/cells, reset fanout, critical paths, netlist boot and applicable full-function checks | Pre-final timing is observational; library area is not die area and compact netlist boot does not replace full firmware or routed timing |
+| Physical | Final combined complete-product campaign: source/profile/tool/PDK/corner/SDC identity; macro checks, CTS/reset distribution, extracted setup/hold/recovery/removal, CDC/RDC, IO/package/power and device timing | Mandatory final closure; behavioral PLL and pre-layout STA do not qualify an operating point or constitute foundry signoff |
 
 Each result must preserve commands, full logs, source revision, configuration
 digest, build variant, dependency/tool identity, library corners, simulator
@@ -296,6 +333,45 @@ mode; synthesis, simulation and timing failures remain recorded failures.
 
 No R2 test, benchmark or PPA result is claimed by this verification-plan edit.
 Actual documentation-only validation is recorded separately after execution.
+
+## 2026-10-07 refreeze execution record
+
+Scope: specification/ledger/guide changes and locked PLL acquisition only.
+The starting source was `614fa6237b6be5a14f51b39d1012a3ca79e1ad52`; the existing
+ECC work was subsequently committed as `14a253a49aa477e82f71bdbeb752280fff99b535`
+without changing the protected working-file contents. No Tiny profile, RTL,
+firmware, SDC, warning baseline or metric policy was changed by this refreeze.
+
+Validation artifacts are under
+[`build/ihp130-tiny-2026-10-07-18-10-414a31ff29aa/meta/tiny-refreeze-ics55-pll/`](../../build/ihp130-tiny-2026-10-07-18-10-414a31ff29aa/meta/tiny-refreeze-ics55-pll/).
+The existing IHP130 profile supplies the artifact namespace only; these are
+dependency/document/tooling checks, not new IHP130 or ICS55 hardware evidence.
+The proposed ICS55 Tiny profile remains absent.
+
+| Check | Result / artifact |
+| --- | --- |
+| Dependency lock | PASS; `lock.json`, 31 sources and 22 archives; only the approved PLL source was added to the existing working lock |
+| PLL restore and repetition | PASS; `setup.json`, `setup-repeat.json`; both logs record full SHA and all seven view hashes; checkout clean |
+| Focused dependency tests | PASS; `focused.json`, 19 tests including missing/wrong views, wrong revision, dirty checkout, idempotence and component isolation |
+| Ruff | PASS; `ruff.json` |
+| Full Pytest | PASS; `pytest.json`, 1541 passed / 1 skipped in 3593.34 s; the optional PDF retrieval test lacks `pypdf`, not a Tiny hardware gate |
+| Existing regression definitions | PASS; `tiny-pr-dry.json`, `tiny-nightly-dry.json`, `mini-ics55-pr-dry.json`; dry-runs only |
+| Documentation/source audit | PASS; `audit-delivery.json`; unchanged original phase titles, package/pinmux/RCU tables, historical R2/legacy evidence and unrelated ECC contents; added local links and PLL interface checked |
+
+The first clone failed with an HTTP/2 transport error before checkout. The
+same SHA was fetched with a command-local HTTP/1.1 override, then both ordinary
+helper runs passed without a version change. An initial test fixture inherited
+host Git signing; the fixture now disables signing/hooks for its own temporary
+commits only. No repository commit or global Git setting was made by this task.
+
+`evidence.json` indexes the successful gates and final source/input snapshot.
+The downloaded behavioral/blackbox views agree on 15 ports; min/typ/max Liberty
+contains no timing arcs. No LOCK output, characterized PLL timing or resolved
+upstream license was discovered. These remain pending integration/release gaps.
+SoC firmware/regression executions, full-SoC synthesis/netlist/STA, physical
+flows and generated publications are NOT_RUN by this documentation/dependency
+scope. Full Pytest's existing isolated fixtures are not product qualification.
+TINY-ICS55-P1 remains pending explicit preflight/implementation approval.
 
 ## R2-P0 documentation checks (2026-10-04)
 

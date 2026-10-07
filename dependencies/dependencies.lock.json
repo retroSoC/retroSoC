@@ -125,6 +125,12 @@
       "recursive": true,
       "license": "Apache-2.0"
     },
+    "pdk_ics55_pll": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_pll.git",
+      "revision": "6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b",
+      "destination": ".cache/retrosoc/sources/ics55_ecos_pll",
+      "license": "NOASSERTION"
+    },
     "pdk_gf180": {
       "url": "https://github.com/google/gf180mcu-pdk.git",
       "revision": "de3240d7529a6970437ac3344820aaae7839f215",

@@ -8,6 +8,17 @@ Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 
 ## Configuration and Identity
 
+- Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
+  [2026-10-07 Tiny policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07).
+  TINY-ICS55-P1 and its planned `configs/ci/ics55-tiny.mk` are pending;
+  the starting profile below remains executable IHP130 compatibility only.
+- Before final qualification, post-synthesis timing is observational and all
+  failures/NOT_RUN cases remain attributed. Functional/source/protocol and
+  synthesis/mapping/netlist-function gates remain mandatory. SPI-P5 joins
+  R2-P11/PIOLITE-P5/PPALITE-P5 after all functional phases on the identical
+  complete-product source/config/PDK/netlist. No intermediate timing closure
+  is required to proceed; final timing closure remains mandatory.
+
 - Starting profile: `configs/ci/ihp130-tiny.mk`, TINY, IHP130, 24 MHz/no PLL,
   current four-channel DMA and no SPI.
 - Target: SPI0 at `0x1001D000`, IRQ25, RCU16; modes 0-3, 8/16-bit frames,
@@ -20,8 +31,8 @@ Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 - Artifacts belong below the existing timestamped configuration-hash build
   root. A dry-run, tied-off capability or skipped fixture is not evidence.
 - Mini tests validate shared-DMA/GPIO compatibility with SPI support disabled.
-  Full qualification must use the same SPI/PIO-inclusive source and netlist
-  as any shared R2-P11/PIOLITE-P5 campaign.
+  Final qualification must use the same SPI/PIO/PPALite-inclusive source and
+  netlist as the mandatory R2-P11/PIOLITE-P5/PPALITE-P5 campaign.
 
 ## Required Case Matrix
 
@@ -88,7 +99,8 @@ all four modes; the display profile uses GPIO30 D/C and validates its own mode.
 
 Record actual configured/readable SCK, frame time, CPU cycles, DMA stalls,
 FIFO high/low watermarks and qualified device limits. Run PCLK 24 first;
-PCLK 48/60 cases await executable R2 profiles and physical inputs. Ideal
+PCLK 48/60 functional cases await executable R2 profiles and appropriate
+functional device models; their physical timing is a final-campaign gate. Ideal
 12/24/30 MHz ceilings and pixel-only timing arithmetic are not measured FPS.
 Legacy LCD/LVGL behavior, PIO14/15 and unaffected Tiny/Mini users must remain
 separate compatibility checks, not silently moved to SPI.

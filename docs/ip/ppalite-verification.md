@@ -8,6 +8,17 @@ evidence under its original scope.
 
 ## Configuration and Evidence Identity
 
+- Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
+  [2026-10-07 Tiny policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07).
+  TINY-ICS55-P1 and `configs/ci/ics55-tiny.mk` are pending; existing IHP130
+  commands and historical records are compatibility evidence only.
+- Pre-final post-synthesis timing is observational; failed/missing timing does
+  not become a PASS or a hardware-frequency claim. Source correctness,
+  functionality, synthesis/mapping and netlist-function requirements remain.
+  PPALITE-P5 joins R2-P11/SPI-P5/PIOLITE-P5 after all functional phases on the
+  same complete-product source/config/PDK/netlist, with final timing closure
+  mandatory. Preserve every phase ID/title and prior evidence attribution.
+
 - Starting profile: `configs/ci/ihp130-tiny.mk`, TINY, IHP130, 24 MHz/no PLL,
   four-channel current DMA and no PPALite integration.
 - Future target: APB `0x1001E000`, IRQ27, RCU17, PCLK pixel processing after
@@ -135,8 +146,9 @@ firmware, simulator and regression entrypoints. Both Verilator and Icarus
 exercise the relevant stream/camera/memory paths. Tiny success requires exit 0,
 TEST_STATUS/`SIM_TEST_PASS` and no `FAILED`, `FATAL`, `assertion failed`,
 `%Error`, `SIM_TEST_FAIL` or `SIM_TEST_TIMEOUT`. UART is diagnostic only.
-Preserve each Mini test's own configured verdict. P5 uses the existing
-source-bound IHP130 physical workflow and declared collateral.
+Preserve each Mini test's own configured verdict. P5 joins the source-bound
+selected-PDK complete-product physical campaign. The ICS55 Tiny full-chip
+adapter and qualification remain pending; IHP130 results retain their own PDK.
 
 ## Freeze Record and Remaining Gaps
 

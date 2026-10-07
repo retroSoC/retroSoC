@@ -35,6 +35,25 @@ Liberty views are materialized below `.cache/retrosoc/pdk/ics55/sram/`; the
 `tc_sram_1024x32` and `tc_sram_4096x32` connect the release byte-write macros
 directly. No local commercial ICS55 SRAM model is required.
 
+ICS55 setup also restores `sources.pdk_ics55_pll` (`PLL_V02p1`, full revision
+`6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`) to
+`.cache/retrosoc/sources/ics55_ecos_pll`. To acquire just the PLL without
+touching other PDK inputs, run:
+
+```sh
+python3 physical/pdk/setup.py --pdk ICS55 --component pll
+```
+
+The default `--component all` retains existing PDK setup and adds PLL
+acquisition for ICS55. Other PDK/component combinations with `pll` are rejected.
+The helper checks the README, behavioral/blackbox Verilog, LEF and three
+Liberty views and prints their hashes. No profile or RTL binding is changed.
+The views have no characterized timing arcs or LOCK output; licensing is
+undetermined. Functional modeling, actual lock/loss detection, supply binding
+and final timing characterization remain separate integration/release work.
+Tiny's new default ICS55/PLL specification still requires TINY-ICS55-P1;
+current executable Tiny configurations remain IHP130/no PLL.
+
 The IHP130 dependency is also the technology source for the independent
 `physical/librelane/{mini,tiny}/` core-hardening and full-chip pad-ring flows.
 The locked

@@ -77,8 +77,11 @@ README that states its ownership, source of truth, and validation expectations.
   `bringup`, `debug`, and `shell`; each profile is declared in
   `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
   acceptance image, not a user-facing firmware profile.
-- Tiny is a distinct wired MCU product under `rtl/tiny`; `SOC=TINY` selects its
-  IHP130 profile and AXI4/APB4 integration.
+- Tiny is a distinct wired MCU product under `rtl/tiny` with AXI4/APB4 integration.
+  Its 2026-10-07 specification default is ICS55 with `HAVE_PLL=YES` and SAFE24
+  boot; TINY-ICS55-P1 executable integration is pending. The current committed
+  Tiny profile remains IHP130/no PLL. Do not confuse target defaults with
+  implemented configuration or change Mini defaults.
 - Do not add new dependencies on `crt/inc`, retired SDK `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,
@@ -172,6 +175,14 @@ warning checks, and metric collection.
   the verdict; delayed terminal UART display is a known operational condition,
   not evidence that the simulation has failed.
 ## Before Hand-off
+
+For Tiny/SPI/PIO-lite/PPALite, apply the 2026-10-07 policy in
+`docs/ip/tiny-soc.md`: pre-final post-synthesis timing is observational, with
+attempted/failed/unrun evidence retained. Functional, protocol, source-integrity,
+synthesis/mapping and netlist-function checks remain required. Timing closure
+is mandatory in the final combined complete-product campaign only. This does
+not alter global warning/metric policy, waive missing physical evidence, or
+permit advertising an unqualified operating point.
 
 1. State the selected profile and commands run.
 2. Summarize code, configuration, and public-interface changes separately.

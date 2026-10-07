@@ -22,9 +22,21 @@ PPALite. Source qualification gaps below remain explicit prerequisites.
 
 ## Target SoCs and Integration Scope
 
+The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+selects default TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot, retaining IHP130
+compatibility. `configs/ci/ics55-tiny.mk` is planned, not executable until
+TINY-ICS55-P1. Existing commands below retain their IHP130 scope. Pre-final
+post-synthesis timing is observational; source integrity, functionality,
+protocol, synthesis/mapping and netlist-function gates are unchanged.
+PPALITE-P5 joins R2-P11, SPI-P5 and PIOLITE-P5 after all functional stages on
+one complete-product netlist. Phase IDs/titles, including historical IHP130
+titles, and prior evidence remain intact. No processor integration is delivered
+by this platform/timing refreeze.
+
 | Item | Frozen boundary |
 | --- | --- |
 | Target / deferred products | TINY future standard product; MINI/STD/PRO integration deferred |
+| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk`, IHP130, existing 24 MHz/no-PLL baseline |
 | Product ownership | `rtl/tiny/top`, `rtl/tiny/integration/soc_topology.json`, `rtl/tiny/integration/clock_reset_domains.json`, `rtl/tiny/address_map/memory_map.json` and existing product filelists |
 | Shared source | `rtl/ip/multimedia/axi4s_dvp.sv`, `dvp_core.sv`, `dvp_reg.sv`; DVP V2 APB/stream contract and existing 512 B payload CDC FIFO |
@@ -662,20 +674,22 @@ source gaps and unavailable tools/models remain visible failures or unrun gates.
 
 ## Synthesis, Timing, and Physical Evidence
 
-Bind every result to source SHA, dependency/configuration digests, TINY/IHP130
+Bind every result to source SHA, dependency/configuration digests, default
+TINY/ICS55 or explicit TINY/IHP130 compatibility
 variant, PCLK/SYS/MEM/PIXCLK, geometry/format/phase, source/target models,
 burst limits and board assumptions. Require block/full synthesis, actual small
 storage mapping, area/cells, activity-based power, reset release/fanout,
 netlist simulation, CDC/RDC, PVT/MMMC and extracted timing.
 
 PCLK24 is the baseline environment, not existing PPALite timing proof. PCLK48/60
-requires R2 clock/platform qualification; PPALite does not qualify CPU/main-SRAM
+functional tests require R2 clock/platform implementation, not intermediate
+physical qualification; PPALite does not qualify CPU/main-SRAM
 192/240 MHz. DVP input Pad timing, camera clock/lifecycle and XPI/PSRAM source-
 bound performance remain separate gates even though no new Pad is added.
 Review DFT/local-storage test coverage without inventing SRAM MBIST/ECC claims.
 
-PPALITE-P5 may join R2-P11, PIOLITE-P5 and SPI-P5 only on the same complete
-PPALite-inclusive source/netlist/configuration and all required evidence.
+PPALITE-P5 must join the final R2-P11, PIOLITE-P5 and SPI-P5 campaign on the
+same complete-product source/netlist/configuration with all required evidence.
 Earlier netlists do not cover new routing, storage, reset or timing load.
 Missing macro/Pad/clock/vendor/board inputs remain explicit qualification gaps;
 metrics stay observe-mode and warning baselines are not waived by this freeze.
@@ -692,14 +706,14 @@ PPALite there. IDs and titles are stable and do not replace earlier roadmaps.
 | PPALITE-P2 - DVP Route and Source Qualification | P1; coherent source guards, RAW bypass, route/barrier/epoch behavior and DVP correctness prerequisites. Close minimal shared error/statistic/snapshot/CDC/drain defects or reuse accepted fixes, retaining DVP ABI/FIFO and Mini behavior. Source integrity must be proved, not inferred from PPA output. |
 | PPALITE-P3 - Tiny DMA RCU and SDK Integration | P2 plus applicable R2-P6/P7; APB/IRQ27/RCU17/topology/filelists, exact direct DMA2 admission, complete-job drain, capability and bounded HAL. Existing DMA cancellation obligations are prerequisites; no new DMA encoding/master/channel. Target firmware and affected Tiny/Mini tests pass. |
 | PPALITE-P4 - Camera Memory and Display Qualification | P3 plus R2-P8/P9 and display's applicable SPI stages; SRAM/PSRAM captures, pixel/padding/canary checks, SD/stride-aware preview, repeated/error recovery, both simulators, full regressions and measurements. No continuous-video or FPS guarantee without separate evidence. |
-| PPALITE-P5 - IHP130 Timing and Physical Qualification | P4 plus applicable complete-product prerequisites; source-bound full synthesis/netlist/STA/CDC/RDC/physical/power/Pad campaign, optionally shared with existing final gates on the identical inclusive design. |
+| PPALITE-P5 - IHP130 Timing and Physical Qualification | Historical title; default ICS55. P4 plus all product functional prerequisites; mandatory final campaign with R2-P11/SPI-P5/PIOLITE-P5 on the identical complete-product design, closing source-bound synthesis/netlist/STA/CDC/RDC/physical/power/Pad gates. |
 
 ### Next-phase preflight handoff
 
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: ppalite. Target SoCs: TINY.
 Phase: PPALITE-P1 - Stream Pixel Core and Reference Model.
-Read docs/ip/ppalite.md and docs/ip/ppalite-verification.md. The executable starting profile is configs/ci/ihp130-tiny.mk, PDK IHP130, 24 MHz/no PLL; it has no PPALite integration yet.
+Read docs/ip/ppalite.md and docs/ip/ppalite-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no PPALite. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
 Plan only the frozen standalone pixel/stream core, input validation, 1/2/4 sampling, exact format/row packing, small buffers, APB1.0 and handwritten SVH/C parity, scalar reference, independent stream BFM and focused tests. Preserve Y-only grayscale, RAW contract, resource limits and all earlier phase IDs.
 Do not implement DVP source repairs, Tiny routing/DMA/RCU integration, the complete SDK/display application or later phases. Do not add memory replay, RGB-to-gray arithmetic, interpolation, row/frame SRAM, DMA requests/masters, dependencies, profiles or quality-policy changes. Return SPEC_CONFLICT rather than weakening an unmet contract, and provide the scoped preflight/validation plan for explicit approval. Do not commit or push.
 ```

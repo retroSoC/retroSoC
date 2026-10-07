@@ -2,6 +2,14 @@
 
 ## Purpose and research boundary
 
+The 2026-10-07 refreeze selects **ICS55 as the default target PDK with
+`HAVE_PLL=YES`** and moves blocking post-synthesis timing acceptance to the
+complete-product final qualification campaign. The
+[platform and timing policy](#ics55-default-platform-and-final-timing-gate-2026-10-07)
+below supersedes earlier target-PDK and intermediate timing-gate wording.
+It does not relabel historical IHP130 results or make the planned ICS55 profile
+executable. This refreeze includes locked PLL acquisition, not RTL integration.
+
 The R2 portion of this contract freezes the performance-only design approved
 on 2026-10-04 for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the QFN64
 package and pad allocation approved on 2026-09-26, the shared peripherals
@@ -55,8 +63,9 @@ contract and must not be read as the new Gen1 integration or clock qualification
 
 Product RTL, address/pin/topology inputs and filelists remain under `rtl/tiny`;
 the SDK and application composition retain their existing `crt/` and `app/`
-ownership. The active R2 execution order is `TINY-R2-P0` through `TINY-R2-P11`,
-with prerequisites pointing only to earlier R2 phases. Legacy `TINY-P0`
+ownership. The R2 phase identifiers remain `TINY-R2-P0` through `TINY-R2-P11`;
+the current product execution order is defined by the 2026-10-07 policy below.
+Legacy `TINY-P0`
 through `TINY-P12` keep their original headings and evidence in the archive;
 their former non-monotonic schedule is not the current execution plan.
 The current profile still selects four DMA channels and forbids PLL/non-24-MHz
@@ -74,6 +83,120 @@ PPALite's full qualification extends that same-source requirement to the
 processor and its route/source guards. PPALITE-P3 depends on applicable R2-P6/P7;
 camera/memory acceptance uses R2-P8/P9, and preview uses the relevant SPI stages.
 Earlier R2, PIO or SPI results cannot qualify newly added PPALite logic.
+
+## ICS55 default platform and final timing gate (2026-10-07)
+
+This approved refreeze applies to Tiny and its SPI, PIO-lite and PPALite
+integration contracts. It adds ICS55 platform enablement to the former
+performance-only scope; unrelated SoCs and PDK rollouts remain excluded.
+
+- TINY-052: the default **target** is TINY/ICS55, `HAVE_PLL=YES`, 128 KiB main
+  SRAM and SAFE24 boot. The planned committed entrypoint is
+  `configs/ci/ics55-tiny.mk`; it does not exist yet. The current executable
+  entrypoint remains `configs/ci/ihp130-tiny.mk`, IHP130, 24 MHz/no PLL.
+  IHP130 remains an explicit compatibility option, not the future default.
+  Mini profiles and defaults are unchanged.
+- TINY-053: before final complete-product qualification, post-synthesis timing
+  closure is **observational, not a phase-completion gate**. Negative WNS/TNS,
+  setup/hold, recovery/removal, minimum-period/pulse-width and electrical
+  constraint violations do not alone block functional implementation phases.
+  Retain applicable synthesis, mapping, netlist-function and protocol checks,
+  STA attempts, exact inputs, reports and failure attribution. Missing timing
+  views remain `NOT_RUN`/unsupported evidence; script errors, unconstrained
+  paths and failed timing must never be relabeled as passing analysis.
+- TINY-054: timing closure remains mandatory in the final complete-product
+  campaign on the same SPI/PIO-lite/PPALite-inclusive source, configuration,
+  PDK and netlist. Qualify each advertised point with characterized libraries,
+  CTS/reset distribution, extracted PVT/MMMC, CDC/RDC, IO/board/package and
+  power evidence. An unsupported point is a delivery gap, not a waiver or
+  completion of the full target. Earlier functional high-rate simulations
+  are permitted but are not physical operating-frequency claims.
+- TINY-055: acquire the single-output integration of the locked OpenECOS
+  `PLL_TOP` described below. `HAVE_PLL=YES` means macro presence, not selection
+  at reset, qualified lock or qualified timing. Missing macro views must not
+  silently synthesize a bypass. The default PLL-present design boots on REF24
+  and enables fast operation only through the accepted lifecycle protocol.
+
+The execution order is ICS55 platform enablement, remaining Tiny foundation
+through R2-P10, SPI-P1..P4, PIOLITE-P1..P4, PPALITE-P1..P4, then one final
+campaign combining **TINY-R2-P11, SPI-P5, PIOLITE-P5 and PPALITE-P5**. Their
+individual checklists remain mandatory; none is an early physical prerequisite
+for the other features' functional phases. Existing phase IDs and titles,
+including titles containing `IHP130`, are preserved as historical identifiers;
+their active target is now default ICS55 and explicitly selected IHP130
+compatibility. Evidence is never transferable between PDKs. No earlier phase
+is automatically reopened, passed or advanced by this policy.
+
+QFN64, every IO/power terminal, the main-SRAM aperture and 128 KiB capacity,
+Crypto's six private banks, boot/debug and register ABI remain unchanged.
+The default main-SRAM binding is 32 `ics55_ecos_sram_1024x32_m8` macros from
+the existing locked SRAM releases; IHP130 retains its 32 corresponding macros.
+CPU and actual main SRAM share SYS at the same active frequency. There is no
+half-rate SRAM fallback or minimum-period waiver via bus wait states.
+Higher PCLK/SYS functional profiles require implemented clock/platform support,
+not an intermediate physical signoff. Hardware frequency claims still require
+the final campaign. This policy does not relax functional correctness,
+reset/CDC protocols, real-time service budgets, source qualification or Tiny's
+strict command/TEST_STATUS/SIM_TEST_PASS/forbidden-error verdict rules.
+Warning baselines, global metric policy and RTL maturity labels are unchanged.
+
+### Locked ICS55 PLL integration contract
+
+Use [OpenECOS ICS55 PLL, PLL_V02p1](https://github.com/openecos-projects/ics55_ecos_pll/tree/6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b),
+locked as `sources.pdk_ics55_pll` at full revision
+`6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`. Its managed checkout is
+`.cache/retrosoc/sources/ics55_ecos_pll`, separate from replaceable PDK Liberty
+caches. The upstream license is to be determined; record `NOASSERTION` and
+retain licensing as a release gap rather than inferring an open-source license.
+
+Use the behavioral Verilog only for functional simulation and the blackbox
+for physical elaboration, with LEF and the min/typ/max Liberty views retained.
+The supplied Liberty has cell/pin information **without timing arcs**. It is
+not characterized PLL timing or signoff evidence; the final campaign requires
+qualified replacement/additional characterization and generated-clock inputs.
+Do not remove existing physical-flow guards merely because the views exist.
+
+For a 24 MHz reference, preserve `tc_pll` selectors 5 and 7:
+
+| Profile | N | SELECT | OD encoding / divisor | VCO | CKOUT1 |
+| --- | ---: | ---: | --- | ---: | ---: |
+| PLL192 / selector 5 | 32 | 0 | 2 / 4 | 768 MHz | 192 MHz |
+| PLL240 / selector 7 | 40 | 0 | 2 / 4 | 960 MHz | 240 MHz |
+
+Both use `BP=0`; only CKOUT1 supplies the functional PLL clock. CKOUT2 and
+CKTST add no clock domain or package pin. Keep SAFE24 startup, the existing
+no-PLL external-input option and the SYS/MEM/PCLK ratios below. These are
+configuration targets, not measured frequencies or physical qualification.
+
+The macro has no LOCK output. The integration must qualify clock activity,
+rate/stability and loss through observable signals and bounded reference-domain
+control; it must not access the behavioral model's internal `pll_ready` or
+equate a fixed delay with analog lock. Upstream's typical startup is not a
+PVT bound. The existing ICS55 adapter's `N=2` and four-reference-edge lock
+counter are incompatible with this integration and require later repair.
+Connect all six supply/ground pins explicitly, including in simulation;
+physical rail/ground mapping requires the unchanged package power plan.
+Preserve the existing XIN-loss/external-reset recovery boundary without adding
+an independent oscillator. PLL functional modeling supplies neither analog
+lock/jitter proof nor final frequency qualification.
+
+### TINY-ICS55-P1 - Default PDK and PLL Platform Enablement
+
+This is a new, pending implementation prerequisite before remaining R2 work,
+not a renaming of R2-P1/P2. Introduce the default ICS55 Tiny profile and explicit
+PDK selection, reuse the locked SRAM and PLL inputs, adapt filelists, technology
+bindings and observation endpoints, and establish SAFE24 PLL-present boot,
+memory/DMA/interrupt/debug regression plus IHP130/shared-Mini compatibility.
+Retain 128 KiB, all package assignments and the original comparison binaries.
+Record the PLL backend's standalone 192/240 functional capability; full Tiny
+RCU transitions, gating, fault recovery and rate reporting remain R2-P7.
+Do not advertise unimplemented RCU capability or force an early high-rate boot.
+
+Acceptance requires an executable source-bound platform, actual macro binding,
+both simulators and strict Tiny verdicts, dependency/model identity, relevant
+synthesis/netlist checks and observational timing with explicit gaps. Physical
+timing closure is deferred to the combined final campaign. This refreeze
+implements only documentation and dependency acquisition, not this phase.
 
 ### Commercial references and reuse boundary
 
@@ -236,8 +359,11 @@ no commercial implementation or qualification is reused.
   validated performance build and bank-aware placement policy. Hardware ISA,
   compiler flags, firmware size and linker budgets MUST be independently
   checked; upstream benchmark scores are not Tiny performance evidence.
-- TINY-035: main-SRAM, CPU and fabric timing MUST be qualified jointly at SYS.
-  A failing rate is lowered or disabled for CPU and main SRAM together;
+- TINY-035: final physical release MUST qualify main-SRAM, CPU and fabric
+  timing jointly at SYS. Before the final campaign, timing is observational
+  under TINY-053 and does not block functional testing at modeled target rates.
+  For physical release, a failing rate is lowered by reviewed profile change
+  or disabled for CPU and main SRAM together;
   MUST NOT restore a half-rate main-SRAM fallback. Extra response wait states
   do not repair a macro's minimum-clock-period violation.
 - TINY-036: ACCEPTANCE separates functional, workload-performance, synthesis/
@@ -632,7 +758,7 @@ selects the correct response. The instruction path supports SRAM and the
 NOR boot/executable NSS0 apertures; a fetch from a peripheral/control region
 must fail before any read side effect. Absent regions retain decode errors.
 
-| Logical arbitration group | Address range | IHP130 storage | Example performance layout |
+| Logical arbitration group | Address range | ICS55 / IHP130 storage | Example performance layout |
 | --- | --- | --- | --- |
 | B0 | `0x30000000..0x30007FFF` | Eight existing 4 KiB single-port macros | Hot code and interrupt/exception entry |
 | B1 | `0x30008000..0x3000FFFF` | Eight existing 4 KiB single-port macros | Remaining code and read-only tables |
@@ -698,7 +824,8 @@ SRAM payload contents are not cleared by reset.
 
 Reuse the shared SRAM register definitions and technology wrappers. Tiny
 owns its routing/arbitration integration; shared changes must preserve default
-Mini behavior and pass affected consumer regressions. For Tiny/IHP130,
+Mini behavior and pass affected consumer regressions. For default Tiny/ICS55
+and explicit Tiny/IHP130 compatibility,
 `BANK_COUNT=32` and `BANK_BYTES=4096` continue describing physical storage,
 not four 32 KiB arbitration groups. Group placement is published in build
 and linker information without repurposing those fields or adding a new
@@ -1207,7 +1334,7 @@ with double-buffer display/save is not enabled by the new SPI interface.
 `HAVE_PLL=YES` emits the existing `HAVE_PLL` condition and instantiates the
 single-output `tc_pll` boundary. Do not add a second Tiny-specific PLL-presence
 macro or assume an extra 96/48 MHz PLL output. `HAVE_PLL=NO` removes the PLL
-and reports its profiles unsupported. A physical PLL configuration requires
+and reports its profiles unsupported. A physical-release PLL configuration requires
 a qualified backend; a behavioral model is not an analog implementation.
 
 Without PLL, the supported external XIN inputs are 24, 48 and 96 MHz. Fixed
@@ -1271,13 +1398,15 @@ ratio bridge or CPU-to-main-SRAM CDC is permitted. This explicitly supersedes
 the P6/P10 main-SRAM-in-MEM assignment, not the XPI MEM ceiling. The common
 clock does not imply zero-cycle arbitration or one-cycle CPU memory service.
 
-Qualify CPU and main SRAM jointly at every supported rate. In particular,
+At final qualification, qualify CPU and main SRAM jointly at every supported rate. In particular,
 192 MHz requires approximately a 5.208 ns period and 240 MHz a 4.167 ns period at the
 actual SRAM macro clocks. Check macro minimum period, pulse widths,
 setup/hold and clock-to-output together with bank decode, arbitration and
 return paths. Extra bus wait cycles alone cannot repair a macro internal
-minimum-period violation. If a candidate fails, disable that CPU/SRAM point
-or lower both together through an explicitly reviewed profile; never restore
+minimum-period violation. Before final qualification, retain a failing candidate
+as observational evidence without blocking functional phase progression or
+claiming physical support. For physical release, disable a failing CPU/SRAM
+point or lower both together through an explicitly reviewed profile; never restore
 CPU240/SRAM120 as a fallback. The target frequencies remain unqualified until
 the required physical evidence passes.
 
@@ -1810,7 +1939,11 @@ cannot close the additional PPALite product requirements.
 
 The active roadmap is `TINY-R2-P0` through `TINY-R2-P11`. R2 is a roadmap
 revision, not a new feature slug, register ABI, product series or PDK. All
-phases target TINY/IHP130 and preserve affected Mini consumers of shared code.
+phases now target TINY/ICS55 by default, retaining explicitly selected IHP130
+compatibility and affected Mini consumers of shared code. The 2026-10-07
+platform/timing policy inserts TINY-ICS55-P1 before remaining foundation work
+and moves R2-P11 into the final combined product campaign after all three
+extensions' functional phases. Historical phase titles remain unchanged.
 Unless a phase explicitly narrows its scope below, each phase depends on the
 preceding R2 phase; no active prerequisite points to a higher phase number.
 Legacy IDs below identify provenance only, not an additional execution order.
@@ -1834,7 +1967,8 @@ P0-P4 historical evidence does not establish complete qualification. P5/P6/P10
 were documentation milestones, not hardware passes. The pending work of legacy
 P7/P8/P11/P12 and outstanding P9 obligations move to this active plan without
 rewriting their original headings, dates or results. New implementation prompts,
-indexes and acceptance records must use the full R2 IDs. The archive below
+indexes and acceptance records must use the applicable full R2 or new
+TINY-ICS55-P1 ID. The archive below
 retains the old schedule for interpretation of older records only.
 
 ### TINY-R2-P0 - Performance Contract and Roadmap Freeze
@@ -1875,14 +2009,14 @@ Use the baseline commands and the R2 validation entrypoints below.
 Audit and improve local reset distribution and ordinary FIFO reset load only
 where behavior and stale-data isolation are proved. Preserve five-edge release,
 CPU-last boot, warm-flush barriers and the Crypto erasure exception. Check the
-actual IHP130 macro timing views, minimum period/pulse widths, setup/hold,
+actual selected-PDK macro timing views, minimum period/pulse widths, setup/hold,
 clock-to-output and representative CPU/bank/reset paths at candidate joint rates.
 
 Acceptance combines focused reset/protocol/equivalence checks, the affected
 firmware/simulators, and source-bound synthesis/STA feasibility records. Identify
 the safe-frequency branch and every unsupported or unverified higher rate.
-High-rate blockers do not prohibit continuing the safe-frequency branch, but
-do prohibit advertising that operating point. Early feasibility is not final
+Timing failures at any analyzed rate do not prohibit functional phase acceptance,
+but prohibit advertising that physical operating point. Early feasibility is not final
 routed/PVT signoff and does not authorize half-rate main SRAM.
 
 ### TINY-R2-P3 - Software and DMA Scheduling
@@ -2007,6 +2141,11 @@ the unchanged policy, and no predetermined speedup substitutes for evidence.
 
 ### TINY-R2-P11 - IHP130 Physical and Product Qualification
 
+The title is retained for historical traceability. Under the 2026-10-07
+refreeze this is the final default-ICS55 complete-product campaign, jointly
+closing SPI-P5, PIOLITE-P5 and PPALITE-P5 on the identical inclusive netlist.
+Explicit IHP130 compatibility qualification uses its own inputs and evidence.
+
 Complete final CTS/reset distribution, extracted timing, actual SRAM/PLL/input
 macro checks, PVT/MMMC, CDC/RDC, IO/board timing, power/activity and package
 binding for each supported point. CPU and main SRAM qualify together; XPI
@@ -2023,10 +2162,14 @@ claim complete Gen1 while named shared-IP or physical prerequisites remain open.
 The separately approved PIO-lite standard-product extension has its own
 `PIOLITE-P0` through `PIOLITE-P5` development order in [piolite.md](piolite.md).
 R2-P6/P7 supply platform prerequisites for `PIOLITE-P3`; they do not implement
-PIO-lite merely by reserving its identifiers. `PIOLITE-P5` and R2-P11 may
-share evidence only when it covers the same PIO-inclusive source revision,
-configuration, PDK/corners and all requirements from both contracts. An R2
-run without PIO-lite cannot close the extended standard-product release.
+PIO-lite merely by reserving its identifiers. `PIOLITE-P5`, SPI-P5, PPALITE-P5
+and R2-P11 now form the mandatory combined final campaign on the same
+complete-product source revision, configuration and PDK/corners, satisfying
+every component contract. An earlier partial-product run cannot close release.
+The default ICS55 Tiny full-chip adapter, package binding and characterized
+PLL timing remain implementation prerequisites of this final campaign. The
+existing Mini padless ECC flow and IHP130 Tiny physical runs do not supply
+those ICS55 complete-product results.
 
 ### R2 validation entrypoints
 
@@ -2045,12 +2188,15 @@ make CONFIG=configs/ci/ihp130-tiny.mk regress-pr
 make CONFIG=configs/ci/ihp130-tiny.mk regress-nightly
 ```
 
-R2-P2/P4/P5 require their affected synthesis/STA and focused protocol/reset
+R2-P2/P4/P5 retain their affected synthesis/STA attempts and focused protocol/reset
 tests; R2-P10/P11 require the relevant synthesis/netlist/physical flows in
 addition to these entrypoints. The validation matrix identifies each phase's
 evidence class. Record exact directed/formal commands when those cases are
 introduced; do not assume a nonexistent target, a skipped RTL test or another
-product's result satisfies Tiny acceptance.
+product's result satisfies Tiny acceptance. Before the combined final campaign,
+post-synthesis timing is observational under TINY-053. The commands above
+remain the existing IHP130 executable baseline; the proposed ICS55 Tiny profile
+and its commands must be introduced and verified by TINY-ICS55-P1.
 
 ## Archived P0-P12 development order and acceptance
 
@@ -2445,18 +2591,19 @@ concurrency and final physical product qualification are different claims.
 
 ## Implementation handoff
 
-The first implementation step after this R2-P0 freeze is the R2-P1 preflight
-below. Subsequent work advances through R2-P2 to R2-P11. The archived legacy
-IDs remain valid evidence references, not current implementation instructions.
-This freeze starts no hardware work and closes no historical physical gap.
+The next platform step after the 2026-10-07 refreeze is TINY-ICS55-P1 preflight.
+Historical R2-P1/P2 evidence remains IHP130-only. After platform enablement,
+resume the remaining Tiny foundation, then SPI, PIO-lite and PPALite functional
+phases, followed by the combined final qualification campaign. This handoff
+authorizes no implementation or automatic phase advancement.
 
 ```text
 Use $retrosoc-feature-implementation in preflight mode for feature tiny-soc.
 Target SoCs: TINY.
-Phase: TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements.
+Phase: TINY-ICS55-P1 - Default PDK and PLL Platform Enablement.
 Specification: docs/ip/tiny-soc.md; evidence: docs/ip/tiny-soc-verification.md.
-Start from configs/ci/ihp130-tiny.mk, PDK IHP130, at the existing 24 MHz/no-PLL executable baseline. Map the reviewed source, configuration, locked tools, physical macro inputs, clock/reset constraints and historical evidence before proposing changes. Identify deterministic CPU/memory/DMA contention workloads, retained comparison binaries and the exact functional/performance/synthesis/physical evidence each can provide. Report missing inputs and failed or unrun gates explicitly; do not reuse historical timing values as current measurements.
-Preserve QFN64/IO pads, 128 KiB user SRAM, private Crypto storage, boot/debug behavior and shared-IP ownership. Carry the frozen R2 targets into the preflight: actual CPU/main-SRAM macros share SYS at 96/192/240 MHz targets, XPI remains divided in MEM, Crypto remains PCLK and CPU-only WFI gating leaves SRAM live. No half-rate main-SRAM fallback is allowed; each operating point needs joint macro/system qualification.
-R2-P1 establishes the baseline and measurement plan only. Do not implement R2-P2 or later reset, dual-port CPU, four-bank SRAM, concurrent fabric, compiler-profile, shared-IP, camera or clock changes in this phase. Keep the compatible executable profile and warning/metric policy unchanged unless a separately approved change is necessary. Do not add SPI, PIO-lite, Boot ROM, caches, atomics, SRAM capacity or PDK scope.
-Produce the single-phase preflight with file ownership, reproducibility inputs, workload/measurement definitions, validation commands, blockers and acceptance boundaries before implementation. Use R2 phase IDs for new work and preserve the archived legacy IDs/evidence mapping. Validate affected Mini consumers whenever shared code is subsequently changed; no 96/192/240 MHz or physical-release claim follows from this preflight.
+Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Planned default: configs/ci/ics55-tiny.mk, ICS55, HAVE_PLL=YES, SAFE24 boot; do not pretend this profile already exists. Map the current source/worktree, locked OpenECOS SRAM and pdk_ics55_pll inputs, models, technology bindings and tools. PLL pin: 6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b. Its Liberty has no timing arcs and its interface has no LOCK output; retain those qualification gaps.
+Plan the smallest platform/profile/filelist/PLL-backend integration and source-bound functional baseline. Preserve QFN64 and IO/power assignments, 128 KiB CPU-rate main SRAM, private Crypto storage, boot/debug, original workload binaries and IHP130/shared-Mini compatibility. No half-rate SRAM fallback. Preserve selector 5/7 mappings for PLL192/240 and reject the old N=2/four-cycle lock assumption.
+Full Tiny RCU transitions and dynamic rate reporting remain R2-P7; do not implement later CPU/banking/fabric/DMA/peripheral phases. Preserve dependency versions, warning baselines and metrics policy. Retain required synthesis/mapping/netlist-functional checks and observational STA, with failures and missing inputs explicit. No intermediate post-synthesis timing closure gate; final timing and physical qualification occur only on the complete SPI/PIO-lite/PPALite-inclusive product.
+Return a single-phase preflight with exact proposed changes, ownership, validation commands, blockers and acceptance boundaries. Read-only preflight only: no edits, dependency restoration, builds, simulations or STA. Do not commit, push, create a PR or advance a phase. Stop for explicit implementation approval.
 ```

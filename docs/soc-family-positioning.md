@@ -5,7 +5,9 @@
 This document defines the intended Tiny, Mini, Std, and Pro product ladder.
 Tiny and Mini have executable build profiles; Std and Pro remain roadmap
 targets. Committed product profiles and retained validation evidence define
-implemented support. Tiny first targets IHP130 as a wired MCU.
+implemented support. Tiny's 2026-10-07 specification selects ICS55/PLL as its
+default wired-MCU target; current executable Tiny remains IHP130/no PLL until
+TINY-ICS55-P1. IHP130 remains explicit compatibility, and Mini defaults are unchanged.
 
 Mini is the family anchor. It establishes the common product model: an open
 RISC-V SoC in which a small, always-available Hazard3 management core owns
@@ -40,6 +42,15 @@ verification requirements differ materially.
 
 ## Tiny: Low-Power MCU and Edge Connectivity
 
+The [2026-10-07 refreeze](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+requires ICS55 with `HAVE_PLL=YES`, SAFE24 startup and unchanged CPU-rate
+128 KiB SRAM. The planned `configs/ci/ics55-tiny.mk` is not executable yet.
+After platform enablement, the order is remaining Tiny foundation, SPI,
+PIO-lite, PPALite, then one complete-product final physical campaign. Earlier
+post-synthesis timing is observational; functionality and source-bound evidence
+remain required. R2-P11 and the extensions' P5 IDs/titles are retained and
+closed jointly on the same final design. This does not qualify a frequency.
+
 ### Position
 
 Tiny serves battery-powered sensors, actuators, metering, low-power industrial
@@ -57,7 +68,9 @@ UARTs, two I2C controllers and legacy pad routing. The QFN64 Gen1 target was
 established on 2026-09-26, extended with shared IP and clock/reset requirements
 on 2026-09-30, and with DVP/XPI frame buffers on 2026-10-01. The 2026-10-04
 [R2 performance contract](ip/tiny-soc.md) replaces the remaining execution
-order with sequential `TINY-R2-P0` through `TINY-R2-P11`; the original
+order with `TINY-R2-P0` through `TINY-R2-P11`; the 2026-10-07 refreeze adds
+ICS55 platform enablement and defers R2-P11 to the complete-product final
+campaign after SPI, PIO-lite and PPALite functionality. The original
 `TINY-P0` through `TINY-P12` IDs/titles remain in that contract's history.
 Existing generated datasheets describe the baseline, not completed R2
 implementation or qualification.
@@ -99,12 +112,12 @@ qualification from the unchanged executable baseline.
 | Memory model | No MMU, HP hart or external RAM boot dependency; optional initialized XPI NSS1 PSRAM for whole-frame data, bounded by actual device capacity |
 | Interconnect | Per-target concurrent AXI32 with three external owners: CPU non-SRAM I/D merge, central DMA and SDIO private DMA; independent local SRAM I/D paths, APB4 control and explicit domain bridges; no RIB/RIBP |
 | Software | Shared peripheral specifications, addresses and HAL source; product-specific RCU/SYSCTRL backend and routing/clock configuration; compatible RV32IM build plus separately validated performance compiler/linker configuration |
-| Clock/reset | CPU and main SRAM share SYS at 24/96/192/240 MHz targets; XPI MEM at 24/96/96/120 MHz; PCLK at 24/48/48/60 MHz; no main-SRAM CDC, fixed 1 MHz CLINT tick, no independent safety RC; all faster profiles require qualification |
+| Clock/reset | Default ICS55/HAVE_PLL=YES with SAFE24 boot; CPU and main SRAM share SYS at 24/96/192/240 MHz targets; XPI MEM at 24/96/96/120 MHz; PCLK at 24/48/48/60 MHz; no main-SRAM CDC, fixed 1 MHz CLINT tick, no independent safety RC; physical rate claims require final qualification |
 | Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S target, alternate 8-bit DVP V2 camera profile, one 3.3 V 1-bit/4-bit SDIO host, two timers, eight central DMA channels, four PWM outputs, RTC, watchdog and XPI |
 | Shared services | RNG V2, CRC V2, WS2812 and Crypto V2 at Mini-compatible addresses; entropy and security claims require separate qualification |
 | Package | QFN64 plus separate EP: 48 signal and 16 power/ground terminals; preferred 9 x 9 mm, 0.5 mm pitch pending physical review |
 | Dedicated signals | Six boot XPI pins and five JTAG pins outside the 32 GPIO; XPI CS1-3 use GPIO29-31 |
-| Power | One 3.3 V digital IO rail; IHP130 Core planned at 1.2 V; clock analog supply and EP connection require macro/package confirmation |
+| Power | One 3.3 V digital IO rail; ICS55 default and IHP130 compatibility Core nominally 1.2 V; clock analog supply/ground and EP binding require macro/package confirmation without changing terminal assignments |
 
 The normative [Tiny Gen1 contract](ip/tiny-soc.md) defines the complete QFN64
 pinout, power/reset requirements and GPIO/ALT0/ALT1 table. Default SDIO,

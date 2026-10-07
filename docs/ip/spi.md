@@ -24,9 +24,22 @@ GUI framework or replace the legacy XPI LCD transport.
 
 ## Target SoCs and Integration Scope
 
+The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+supersedes the original platform and timing-gate scope: default TINY/ICS55,
+`HAVE_PLL=YES`, SAFE24 boot; IHP130 remains explicit compatibility. The planned
+`configs/ci/ics55-tiny.mk` awaits TINY-ICS55-P1, so the existing commands below
+remain IHP130-only executable references. All pre-final post-synthesis timing
+is observational; functional/protocol, synthesis/mapping and netlist-function
+requirements remain. SPI-P5 joins R2-P11, PIOLITE-P5 and PPALITE-P5 only after
+all functional stages, on the same complete-product netlist. Preserve all
+phase IDs/titles and original evidence; a title containing IHP130 does not
+limit the new default target. This adds no SPI implementation or dependency
+upgrade beyond the separately approved Tiny PLL acquisition.
+
 | Item | Frozen contract |
 | --- | --- |
 | Target / status | TINY future standard product; MINI/STD/PRO integration deferred |
+| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk` / IHP130, existing 24 MHz/no-PLL baseline |
 | Product sources | `rtl/tiny/top`, `rtl/tiny/integration/soc_topology.json`, `clock_reset_domains.json`, `rtl/tiny/address_map/memory_map.json`, `rtl/tiny/pin_map/pin_map.json` |
 | Filelists | Existing `rtl/tiny/filelist` ownership, especially `ip.fl`, `inc.fl`, `top.fl` and `tb.fl` |
@@ -647,7 +660,8 @@ explicit gaps, not substituted products or passing tests.
 
 ## Synthesis, Timing, and Physical Evidence
 
-Record source SHA, lock/config digests, TINY/IHP130 variant, PCLK/SYS/MEM,
+Record source SHA, lock/config digests, selected TINY/ICS55 (default) or
+TINY/IHP130 compatibility variant, PCLK/SYS/MEM,
 serial divider/mode/direction, Pad/board/slave loads and payloads for every
 measurement. Require block/full synthesis, register/FIFO mapping, area/cells,
 reset fanout/release, netlist simulation, CDC/RDC, PVT/MMMC and extracted STA.
@@ -656,10 +670,11 @@ external CS bias, QFN64 routing and power. Review DFT/storage-test coverage;
 no inferred-FIFO MBIST/ECC or production silicon status is implied.
 
 PCLK 24 is the executable starting frequency, not existing SPI timing evidence;
-48/60 require the corresponding R2 platform and physical inputs. Keep CPU/main
+48/60 functional tests require the corresponding R2 platform and device models,
+while physical inputs and timing closure belong to the final campaign. Keep CPU/main
 SRAM same-frequency qualification and existing XPI MEM constraints intact.
-SPI-P5 may share a campaign with TINY-R2-P11 and PIOLITE-P5 only when the same
-complete source/netlist/configuration satisfies all contracts. Missing Pad,
+SPI-P5 must join the final campaign with TINY-R2-P11, PIOLITE-P5 and PPALITE-P5
+only when the same complete source/netlist/configuration satisfies all contracts. Missing Pad,
 SRAM, clock, vendor or board evidence remains blocking for the affected claim.
 Do not alter observe-mode metrics or warning baselines through this freeze.
 
@@ -675,14 +690,14 @@ Stable IDs/titles below do not rename, reuse or advance R2/PIO phases.
 | SPI-P2 - DMA V2.2 Paced FIFO Integration | P1 and V2.1 cancellation/compatibility obligations, implemented here if not already delivered;5-bit encoding, port/source-qualified credit interfaces, exact packing/counts, jobs/drain and old-Mini regression. Retain single-beat MMIO policy; no PIO peripheral completion prerequisite or hidden burst optimization. |
 | SPI-P3 - Tiny GPIO RCU and SDK Integration | P2 plus applicable TINY-R2-P6/P7; topology/address/IRQ/RCU/filelists, four Gen1 ALT additions, latched source qualifier through fabric/CDC, GPIO readiness/ownership, bounded HAL. Firmware/simulations and unaffected Mini/PIO compatibility; no layout/source swap of legacy LCD. |
 | SPI-P4 - Display and Snapshot Application Qualification | P3; board display adapter, independent panel/data oracle and three stages of display patterns, PSRAM-source display and sequential camera/verify/display/SD. Camera/PSRAM cases require R2-P8/P9. Both simulators, host boundaries, error recovery and current-source regression/measurements pass. |
-| SPI-P5 - IHP130 Timing and Physical Qualification | P4 and applicable R2 system/PIO-inclusive product prerequisites; complete-netlist synthesis/netlist/STA/CDC/RDC/physical/Pad campaign. Publish only measured qualified operating points with residual gaps, optionally joint R2-P11/PIOLITE-P5. |
+| SPI-P5 - IHP130 Timing and Physical Qualification | Historical title; default ICS55. P4 and all product functional prerequisites; mandatory final campaign with R2-P11/PIOLITE-P5/PPALITE-P5 on the same complete netlist. Close synthesis/netlist/STA/CDC/RDC/physical/Pad gates; publish only qualified operating points. |
 
 ### Next-phase preflight handoff
 
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: spi. Target SoCs: TINY.
 Phase: SPI-P1 - SPI Core and Register Implementation.
-Read docs/ip/spi.md and docs/ip/spi-verification.md. The executable starting profile is configs/ci/ihp130-tiny.mk, PDK IHP130, 24 MHz/no PLL; it has no SPI integration yet.
+Read docs/ip/spi.md and docs/ip/spi-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no SPI. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
 Plan only the frozen standalone master/APB1.0 core, packing/phase/lifecycle and source-qualified interface contracts, handwritten SVH/C parity, reference behavior, independent pin BFM and focused tests. Preserve all modes/8-16-bit packing, FIFO sizes, exact quotas, CS/D-C boundaries and bounded close/recovery semantics.
 Do not implement DMA V2.2, Tiny routing/RCU/fabric integration, the SDK/display application, new profiles or later phases. Do not change the frozen ABI, increase storage/pads, alter the legacy XPI LCD path, upgrade dependencies, change quality policy, commit or push. Return SPEC_CONFLICT rather than weakening an unmet contract, and provide the scoped preflight and validation plan for explicit approval before implementation.
 ```

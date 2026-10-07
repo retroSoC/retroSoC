@@ -1,7 +1,10 @@
 # Tiny MCU Integration
 
 Tiny is the independent single-Hazard3 wired MCU product. Its frozen target
-contract is [Tiny Gen1 QFN64 R2](../../docs/ip/tiny-soc.md). Use
+contract is [Tiny Gen1 QFN64 R2](../../docs/ip/tiny-soc.md). The 2026-10-07
+specification default is ICS55, `HAVE_PLL=YES`, SAFE24 boot; TINY-ICS55-P1
+platform integration and `configs/ci/ics55-tiny.mk` are pending. IHP130 remains
+explicit compatibility. For the current executable baseline, use
 `make CONFIG=configs/ci/ihp130-tiny.mk setup` followed by
 `make CONFIG=configs/ci/ihp130-tiny.mk firmware sim`.
 
@@ -29,12 +32,16 @@ into the external path, preserving three external owners with central DMA and
 SDIO. Per-target arbitration replaces the global transaction lock. XPI stays
 in MEM at 24/96/96/120 MHz and Crypto's six private banks remain PCLK.
 
-The active execution order is sequential `TINY-R2-P0` through `TINY-R2-P11`
-in the linked contract. Software/DMA scheduling is `TINY-R2-P3`, local CPU/SRAM
+The active order inserts TINY-ICS55-P1 before remaining R2 foundation through
+P10, followed by SPI, PIO-lite and PPALite functional stages, then a combined
+R2-P11/SPI-P5/PIOLITE-P5/PPALITE-P5 complete-product campaign. Existing IDs and
+titles remain intact; pre-final post-synthesis timing is observational while
+final timing closure is mandatory. Software/DMA scheduling is `TINY-R2-P3`, local CPU/SRAM
 `TINY-R2-P4`, concurrent fabric `TINY-R2-P5`, shared-IP/eight-channel integration
 `TINY-R2-P6`, RCU `TINY-R2-P7`, XPI PSRAM `TINY-R2-P8`, camera capture
-`TINY-R2-P9`, system qualification `TINY-R2-P10` and IHP130 physical
-qualification `TINY-R2-P11`. Legacy `TINY-P0` through `TINY-P12` remain in
+`TINY-R2-P9`, system qualification `TINY-R2-P10` and complete-product physical
+qualification `TINY-R2-P11` (historical IHP130 title; now default ICS55).
+Legacy `TINY-P0` through `TINY-P12` remain in
 the contract history. The committed RTL/profile still implements the initial
 24 MHz/no-PLL/four-channel design; no faster CPU/SRAM or PLL timing support
 follows from this freeze or the `HAVE_PLL` selector alone.

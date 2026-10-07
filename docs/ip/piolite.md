@@ -20,9 +20,21 @@ firmware, configuration, dependency, warning baseline or quality-policy change.
 
 ## Target SoCs and Integration Scope
 
+The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+selects default TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot, retaining explicit
+IHP130 compatibility. `configs/ci/ics55-tiny.mk` remains planned until
+TINY-ICS55-P1; commands below are existing IHP130 references. Pre-final
+post-synthesis timing is observational, while functionality, protocol,
+synthesis/mapping and netlist-function checks remain required. PIOLITE-P5
+joins R2-P11, SPI-P5 and PPALITE-P5 after all functional stages on the same
+complete-product netlist. Preserve phase IDs/titles and historical evidence;
+titles containing IHP130 retain their names with this updated default scope.
+PIO implementation and unrelated dependency changes remain outside this refreeze.
+
 | Item | Frozen boundary |
 | --- | --- |
 | Target | TINY, future standard QFN64 product feature |
+| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk` / IHP130; existing 24 MHz, no-PLL baseline |
 | Product integration | `rtl/tiny/top/retrosoc_tiny.sv`, `rtl/tiny/integration/soc_topology.json`, `rtl/tiny/address_map/memory_map.json`, `rtl/tiny/pin_map/pin_map.json`, `rtl/tiny/integration/clock_reset_domains.json` |
 | Filelists | `rtl/tiny/filelist/ip.fl`, `inc.fl`, `top.fl`, `tb.fl` and their existing build flow |
@@ -31,7 +43,7 @@ firmware, configuration, dependency, warning baseline or quality-policy change.
 | Interrupt / RCU target | Tiny CPU IRQ24 / Tiny RCU target 15; not a family-wide assignment |
 | DMA | Requests 14/TX and 15/RX through central DMA V2.1; no new memory master |
 | Pads | Existing GPIO0..31 through GPIO `USER_SELECT`; no new ALT encoding, Pad or package terminal |
-| Clocks | PCLK 24 baseline, PCLK 48/60 targets after applicable R2 enablement and qualification |
+| Clocks | PCLK 24 baseline, PCLK 48/60 functional targets after R2 platform enablement; physical qualification only in the final campaign |
 | Deferred products | MINI, STD, PRO and any four-SM product configuration |
 
 Mini requires compatibility testing of shared DMA/GPIO changes but does not
@@ -536,7 +548,8 @@ in PCLK. SM division is an enable, not a generated-clock constraint. GPIO
 already owns input synchronization; CPU APB and DMA memory domain crossings
 remain the existing Tiny bridges. No additional CDC is hidden in a PIO route.
 PIO consumes the actual RCU PCLK rate; CPU/main SRAM SYS and XPI MEM are not
-substitutes. PCLK 24 is the starting environment;48/60 require R2 qualification.
+substitutes. PCLK 24 is the starting environment; 48/60 functional tests require
+R2 clock/platform implementation, not intermediate physical qualification.
 
 | Operation/state | Required behavior |
 | --- | --- |
@@ -693,7 +706,8 @@ need their own reviewed record. Existing excluded/managed code remains excluded.
 
 ## Synthesis, Timing, and Physical Evidence
 
-For TINY/IHP130, record source SHA, lock/config digest, variant, PCLK/SYS/MEM,
+For default TINY/ICS55 or explicit IHP130 compatibility, record source SHA,
+lock/config digest, variant, PCLK/SYS/MEM,
 program binaries, pin loads and enabled endpoints for every result. Required
 evidence includes block and full-SoC synthesis, register/IMEM/FIFO mapping,
 area/cell count, activity-based power, WNS/TNS, reset fanout and release,
@@ -707,8 +721,9 @@ simultaneous switching, board constraints and QFN64 routing. Structural DFT
 and local-storage test coverage must be reviewed; no SRAM MBIST/ECC or silicon
 qualification is claimed for these register arrays.
 
-P5 may share a campaign with TINY-R2-P11 after applicable R2 system tests, but
-both must identify the same PIO-inclusive source/netlist/configuration. Earlier
+P5 must join TINY-R2-P11, SPI-P5 and PPALITE-P5 in the final campaign after all
+applicable functional/system tests. All must identify the same complete-product
+source/netlist/configuration. Earlier
 R2 qualification does not cover added storage, routing, reset load or pads.
 Missing macro/Pad views, vendor models, licensed tools and board/silicon access
 remain explicit gaps, not waived requirements.
@@ -726,14 +741,14 @@ authorized or marked complete by approval of this document.
 | PIOLITE-P2 - Core and Register Implementation | P1; implement owned hierarchy/APB/ISA, FIFOs, guard/adapters at standalone interfaces, handwritten SVH/C parity and testbench/assertions. Model-differential, directed/random/formal, lint/style and block-synthesis evidence; no false integrated capability. |
 | PIOLITE-P3 - Tiny GPIO and DMA Integration | P2 plus applicable TINY-R2-P6/P7 and inherited fabric prerequisites; change topology/address/IRQ/RCU/filelists, GPIO sidebands and HAL, DMA V2.1 capability/grants/cancellation. Validate clock/reset ownership, full drain/recovery and unaffected Mini using targeted tests, SDK checks and affected firmware/simulations. |
 | PIOLITE-P4 - SDK and Application Qualification | P3; finish freestanding loader/session/example library and all three bringup groups, exact counts/tails, independent BFMs, contention/long-duration/error recovery and complete Tiny regressions. No rate claim without current-program evidence. |
-| PIOLITE-P5 - IHP130 Timing and Physical Qualification | P4 plus applicable R2-P10 system evidence; full-source synthesis/netlist/STA/CDC/RDC/physical/pad campaign, optionally joint R2-P11. Close or explicitly block each release gate; report measured rates/area/power, not vendor-derived values. |
+| PIOLITE-P5 - IHP130 Timing and Physical Qualification | Historical title; default ICS55. P4 plus all product functional prerequisites; mandatory final campaign with R2-P11/SPI-P5/PPALITE-P5 on one complete netlist. Close or explicitly block synthesis/netlist/STA/CDC/RDC/physical/pad gates; report measured rates/area/power. |
 
 ### Next-phase preflight handoff
 
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: piolite. Target SoCs: TINY.
 Phase: PIOLITE-P1 - ISA Reference Model and Assembler.
-Read docs/ip/piolite.md and docs/ip/piolite-verification.md. The executable starting profile is configs/ci/ihp130-tiny.mk, PDK IHP130, 24 MHz/no PLL; it has no PIO integration yet.
+Read docs/ip/piolite.md and docs/ip/piolite-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no PIO. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
 Plan only the frozen ISA reference model, deterministic assembler, program metadata/relocation and focused tests, including actual 32-word application and dual-SM footprints. Preserve the two-SM architecture, PCLK tick/packing semantics, GPIO/DMA lifecycle contracts and all R2 phase identifiers.
 Do not implement RTL, HAL integration, DMA V2.1, GPIO/RCU wiring, new profiles or later phases. Do not alter the ISA/ABI, expand memory or package scope, download new dependencies, change quality policy, commit or push. Report SPEC_CONFLICT if a frozen requirement cannot be met; do not weaken it. Return the scoped preflight and validation plan for explicit approval before implementation.
 ```

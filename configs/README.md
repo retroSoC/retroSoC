@@ -43,10 +43,10 @@ variables on the command line.
 `SRAM_SIZE_KIB` selects 4, 16, 32, 64, or 128 KiB of on-chip SRAM and is part
 of the build variant key. IHP130, GF180, and SKY130 CI profiles select eight
 4 KiB banks for 32 KiB total and enable both the interface and technology
-macro. The committed ICS55 profile now uses the locked OpenECOS SRAM release;
-its PLL remains absent. All committed
-product and benchmark profiles use 32 KiB; larger capacities remain valid
-manual values but are not selected by the product profiles.
+macro. The committed ICS55 Mini profile now uses the locked OpenECOS SRAM
+release; its PLL remains absent. Capacity is selected by each committed
+profile: the executable IHP130 Tiny profile uses 128 KiB. Do not infer a
+Tiny capacity or PLL setting from a Mini profile.
 
 `local/ics55.example.mk` remains available for an optional PLL experiment.
 The committed ICS55 SRAM models are downloaded and verified by the PDK setup
@@ -65,6 +65,12 @@ For supported profiles and commands, see the root [README](../README.md) and
 [agent contract](../AGENTS.md).
 
 ## Tiny MCU
+
+The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+sets the **target** default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
+`ci/ics55-tiny.mk` is planned for TINY-ICS55-P1 and is not yet an executable
+profile. IHP130 remains explicit compatibility; do not substitute the Mini
+`ci/ics55.mk` profile for Tiny or bypass current configuration guards.
 
 `ci/ihp130-tiny.mk` selects `SOC=TINY`, one RV32IMC Hazard3 (A disabled),
 128 KiB SRAM, AXI32/APB4, four DMA channels and the wired peripheral subset.

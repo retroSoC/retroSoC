@@ -2,6 +2,15 @@
 
 ## Supported Profiles
 
+Tiny's [2026-10-07 specification default](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+is ICS55/PLL with SAFE24 boot; platform enablement and its new profile remain
+pending. The table describes executable profiles, not planned support.
+For Tiny and its SPI/PIO-lite/PPALite extensions only, pre-final post-synthesis
+timing closure is observational. Retain STA attempts/failures and all required
+functional, synthesis/mapping and netlist-function evidence. The combined
+complete-product final campaign retains hard timing/physical acceptance.
+This does not change warning/metrics policy or another product's gates.
+
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
 | Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator/Icarus, lint; local Yosys, netlist and OpenSTA |

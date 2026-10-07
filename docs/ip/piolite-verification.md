@@ -9,6 +9,16 @@ automatically cover the new feature.
 
 ## Configuration and Evidence Identity
 
+- Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
+  [2026-10-07 Tiny policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07).
+  TINY-ICS55-P1 and `configs/ci/ics55-tiny.mk` are pending. The profile below
+  remains executable IHP130 compatibility, not an ICS55 test result.
+- All pre-final post-synthesis timing is observational. Retain failed/unrun
+  measurements and functional/protocol, synthesis/mapping and netlist-function
+  gates. PIOLITE-P5 joins R2-P11/SPI-P5/PPALITE-P5 only after all functional
+  stages, with mandatory final timing closure on one complete-product netlist.
+  Existing phase names and historical evidence retain their original identity.
+
 - Starting profile: `configs/ci/ihp130-tiny.mk`, TINY, IHP130, 24 MHz/no PLL,
   current four-channel DMA and no PIO-lite.
 - Planned integration: two SMs, shared 32x16 IMEM, per-SM TX/RX 8x32, PCLK
@@ -21,8 +31,8 @@ automatically cover the new feature.
   logs, structured verdict and observed gaps. Artifacts belong below the
   repository's `build/<profile>-<date-time>-<config-hash>/` layout.
 - Shared Mini regressions validate compatibility only: PIO ports and support
-  bits remain disabled there. Full-chip P5 and R2-P11 evidence can be shared
-  only for the same PIO-inclusive source/netlist/configuration.
+  bits remain disabled there. P5, R2-P11, SPI-P5 and PPALITE-P5 close together
+  only on the same complete-product source/netlist/configuration.
 
 ## Requirement Matrix
 
@@ -110,8 +120,10 @@ P1 uses Ruff and Pytest for the new model/assembler. P2 adds discovered tests
 and the existing lint/style/formal/synthesis mechanisms; test names and build
 entries are created in that implementation phase, not invented as working
 commands here. P3/P4 use the main contract's SDK/firmware/regression commands
-and focused DMA/GPIO/PIO tests. P5 follows the existing IHP130 physical-flow
-procedure with the frozen full-source variant and required collateral.
+and focused DMA/GPIO/PIO tests. P5 joins the selected-PDK complete-product
+physical campaign with frozen full-source inputs and required collateral;
+the ICS55 Tiny full-chip adapter remains pending, and existing IHP130 flows
+are compatibility-only evidence.
 
 For Tiny firmware, success requires command exit 0, the configured
 `SIM_TEST_PASS`, and no `FAILED`, `FATAL`, `assertion failed`, `%Error`,
