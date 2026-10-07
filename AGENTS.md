@@ -120,6 +120,9 @@ README that states its ownership, source of truth, and validation expectations.
   controlled by `dependencies/dependencies.lock.json`. Do not add direct downloads to
   workflows or setup scripts. Use the shared dependency helpers and review a
   full Git revision or SHA-256 checksum when updating the lock.
+  Exception: `make ecc-setup` streams the official ECC `latest` installer with
+  `--with-toolchain`. ECC and its private toolchain use upstream installation
+  defaults and checksum checks, outside the repository dependency lock.
 - Do not hand-edit warning baseline signatures. Regenerate only an affected
   baseline from a successful flow, review every normalized signature, and keep
   baseline changes separate from the implementation change they approve.

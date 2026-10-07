@@ -60,3 +60,9 @@ The NPU Visual Wake Words archive is mirrored as an unmodified release asset in
 `retroSoC/artifact`, with the original Silicon Labs URL retained as a fallback.
 Both locations resolve to the same required SHA-256; setup accepts neither a
 different archive nor a fallback with a non-HTTPS URL.
+
+ECC is an explicit exception to the lock policy. `make ecc-setup` streams the
+official `latest` installer with `--with-toolchain`; upstream manages versions,
+archive checksums, installation directories and download caches. No ECC CLI or
+private toolchain archive is pinned here. Shared PDK and tool dependencies used
+by other flows remain locked. See [ECC setup](../physical/ecc/README.md).

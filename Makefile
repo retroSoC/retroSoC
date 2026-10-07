@@ -530,7 +530,7 @@ help:
 	  '  librelane-openroad         open the current Chip run in OpenROAD' \
 	  '  librelane-klayout          open the current Chip run in KLayout' \
 	  '  librelane-package          package full-chip views and evidence' \
-	  '  ecc-setup                   install the pinned ECC CLI and ICS55 inputs' \
+	  '  ecc-setup                   install latest ECC and toolchain via the official installer' \
 	  '  ecc-doctor                  validate the padless ICS55 ECC hardening flow' \
 	  '  ecc-core                    run the padless ICS55 ECC hardening flow' \
 	  '  ecc-package                 package ECC core views and evidence' \
