@@ -49,11 +49,11 @@ qualification. Current generation selects `rv64imafdc_zicbom_max`; see
   passes ARCHINFO, SRAM, Fabric Monitor HAL/APB, extensions, RNG, CLINT,
   timers, GPIO, SDRAM, crypto, and USB2, then reports `SIM_TEST_PASS code=0`
   after 4,540,766 cycles.
-- The committed ICS55 no-PLL/no-SRAM PRODUCT profile reports Icarus
-  `SIM_TEST_PASS` at 3.532422647 ms. Both ignored local ICS55 variants with
-  32 KiB commercial SRAM and PLL respectively off and on pass at the same
-  time. The PLL-on log identifies SYSCTRL PLL clock control; local commercial
-  SRAM and PLL sources remain outside Git.
+- The historical ICS55 no-PLL/no-SRAM PRODUCT result predates the locked
+  OpenECOS SRAM integration. A fresh ICS55 PRODUCT run with the committed
+  32 KiB OpenECOS SRAM profile is required before claiming current timing or
+  simulation evidence; ignored local commercial SRAM variants are no longer
+  part of the supported flow.
 - Strict IHP130 PRODUCT Verilator lint/elaboration completes successfully.
   Repository format, full RTL style audit/readiness, clock/reset inventory,
   embedded-C format/policy/host, Ruff, YAML, Actions, regression dry-runs, and

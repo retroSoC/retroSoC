@@ -162,6 +162,32 @@ def main() -> int:
                 ),
                 check=True,
             )
+            for sram_name, directory_name in (
+                ("pdk_ics55_sram_1024x32_m8", "ics55_ecos_sram_1024x32_m8"),
+                ("pdk_ics55_sram_4096x32_m8", "ics55_ecos_sram_4096x32_m8"),
+            ):
+                sram = archive(sram_name)
+                sram_archive = ROOT / sram["destination"]
+                download_file(
+                    sram["url"],
+                    sram_archive,
+                    sram["sha256"],
+                    update=args.update,
+                    timeout=120,
+                )
+                subprocess.run(
+                    (
+                        sys.executable,
+                        str(PDK_DIR / "prepare_ics55_sram.py"),
+                        "--archive",
+                        str(sram_archive),
+                        "--output-dir",
+                        str(ROOT / ".cache/retrosoc/pdk/ics55/sram" / directory_name),
+                        "--archive-sha256",
+                        sram["sha256"],
+                    ),
+                    check=True,
+                )
             subprocess.run(
                 (
                     sys.executable,

@@ -26,6 +26,11 @@ endif
 else ifeq ($(PDK),ICS55)
 OPENSTA_LIBERTY   := $(ROOT_PATH)/.cache/retrosoc/pdk/ics55/ics55_h7cr_ss.lib
 OPENSTA_LINK_LIBS := $(ROOT_PATH)/physical/pdk/icsprout55-pdk/IP/IO/ICsprout_55LLULP1233_IO_251013/liberty/ICSIOA_N55_3P3_ss_1p08_2p97_125c.lib
+ifeq ($(HAVE_SRAM_MACRO),YES)
+OPENSTA_SRAM_LIBS := \
+    $(ROOT_PATH)/.cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x32_m8/lib/ics55_ecos_sram_1024x32_m8_ss1p08v125ccmax.lib \
+    $(ROOT_PATH)/.cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_4096x32_m8/lib/ics55_ecos_sram_4096x32_m8_ss1p08v125ccmax.lib
+endif
 else
 $(error OpenSTA core-STA does not support PDK=$(PDK))
 endif

@@ -1434,7 +1434,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert sram_size_bytes - (benchmark_offset + benchmark_bytes) >= 7 * 1024
 
 
-def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:
+def test_open_pdk_profiles_enable_32kib_macro_sram_including_ics55() -> None:
     for pdk in ("ihp130", "gf180", "sky130"):
         profile = (ROOT / f"configs/ci/{pdk}.mk").read_text(encoding="utf-8")
         assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", profile, re.MULTILINE)
@@ -1442,8 +1442,8 @@ def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> N
         assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
 
     ics55 = (ROOT / "configs/ci/ics55.mk").read_text(encoding="utf-8")
-    assert re.search(r"^HAVE_SRAM_IF\s*:= NO$", ics55, re.MULTILINE)
-    assert re.search(r"^HAVE_SRAM_MACRO\s*:= NO$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", ics55, re.MULTILINE)
 
     for name in ("ihp130-hazard3", "ihp130-hazard3-coremark"):
         benchmark = (ROOT / f"configs/benchmark/{name}.mk").read_text(encoding="utf-8")

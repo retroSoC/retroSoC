@@ -43,19 +43,18 @@ variables on the command line.
 `SRAM_SIZE_KIB` selects 4, 16, 32, 64, or 128 KiB of on-chip SRAM and is part
 of the build variant key. IHP130, GF180, and SKY130 CI profiles select eight
 4 KiB banks for 32 KiB total and enable both the interface and technology
-macro. Committed ICS55 profiles keep the memory and PLL absent. All committed
+macro. The committed ICS55 profile now uses the locked OpenECOS SRAM release;
+its PLL remains absent. All committed
 product and benchmark profiles use 32 KiB; larger capacities remain valid
 manual values but are not selected by the product profiles.
 
-`local/ics55.example.mk` is the only tracked local-profile artifact. Copy it to
-the ignored `local/ics55.mk`, set `HAVE_PLL`, `HAVE_SRAM_IF`, and
-`HAVE_SRAM_MACRO` to `YES`, and list the commercial SRAM model plus a local
-`PLL_TOP` simulation adapter in `LOCAL_RTL_FILES`. Both the copied profile and
-local `.sv` model are ignored so absolute commercial paths never enter Git.
+`local/ics55.example.mk` remains available for an optional PLL experiment.
+The committed ICS55 SRAM models are downloaded and verified by the PDK setup
+flow from the dependency lock; no local commercial SRAM path is needed.
 
 `HAVE_SRAM_MACRO=YES` requires `HAVE_SRAM_IF=YES`. The generic manual defaults
-enable 32 KiB for IHP130, GF180, and SKY130 and keep ICS55 disabled; committed
-profiles remain the supported reproducible entry points.
+enable 32 KiB for IHP130, GF180, SKY130, and ICS55; committed profiles remain
+the supported reproducible entry points.
 
 `PDK_BEHAV=YES` selects technology-wrapper functional models for behavioral
 simulation. It is a simulation-only setting, participates in the build variant

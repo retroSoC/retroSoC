@@ -85,7 +85,7 @@ command timing while Verilator provides fast functional coverage.
 
 The Mini SoC on-chip SRAM is a synthesis-time selectable 4/16/32/64/128 KiB
 native 32-bit AXI4 target. Product profiles select 32 KiB; ICS55 assembles it
-from two 16 KiB `SRAM_4096X32_M8_BW` macros while other mappings retain their
+from two 16 KiB OpenECOS `ics55_ecos_sram_4096x32_m8` macros while other mappings retain their
 technology-bank geometry. Its read-only
 APB capability/performance ABI, technology mapping, verification evidence, and
 ECC/MBIST roadmap are documented in

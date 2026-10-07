@@ -29,6 +29,12 @@ logical geometry, generated-file hashes, TT 1.8 V/25 C Liberty, and SS
 the locked HD library submodule; OpenRAM's build-space and Ciel inputs are
 recorded in the macro artifact rather than added to the SoC PDK checkout.
 
+ICS55 setup also downloads the locked OpenECOS `1024x32_m8` and
+`4096x32_m8` single-port SRAM releases. Their Verilog core/stub models and
+Liberty views are materialized below `.cache/retrosoc/pdk/ics55/sram/`; the
+`tc_sram_1024x32` and `tc_sram_4096x32` connect the release byte-write macros
+directly. No local commercial ICS55 SRAM model is required.
+
 The IHP130 dependency is also the technology source for the independent
 `physical/librelane/{mini,tiny}/` core-hardening and full-chip pad-ring flows.
 The locked
