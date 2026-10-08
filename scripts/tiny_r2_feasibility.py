@@ -44,7 +44,7 @@ def require_variant(root: Path, variant: Path) -> dict:
         raise ValueError("evidence must remain below repository build variants")
     manifest = baseline.configuration(variant)
     config = manifest["configuration"]
-    if config["APP"] != "ci_smoke" or config["MGMT_CPU_CLK_HZ"] != "24000000":
+    if config["PDK"] != "IHP130" or config["APP"] != "ci_smoke" or config["MGMT_CPU_CLK_HZ"] != "24000000":
         raise ValueError("feasibility requires the 24 MHz Tiny ci_smoke variant")
     return manifest
 

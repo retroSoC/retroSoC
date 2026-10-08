@@ -22,8 +22,9 @@ firmware, configuration, dependency, warning baseline or quality-policy change.
 
 The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 selects default TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot, retaining explicit
-IHP130 compatibility. `configs/ci/ics55-tiny.mk` remains planned until
-TINY-ICS55-P1; commands below are existing IHP130 references. Pre-final
+IHP130 compatibility. `configs/ci/ics55-tiny.mk` now exists with its PLL parked
+off; platform acceptance is tracked in the Tiny ledger. Commands below remain
+IHP130 references and do not validate PIO-lite. Pre-final
 post-synthesis timing is observational, while functionality, protocol,
 synthesis/mapping and netlist-function checks remain required. PIOLITE-P5
 joins R2-P11, SPI-P5 and PPALITE-P5 after all functional stages on the same
@@ -34,7 +35,7 @@ PIO implementation and unrelated dependency changes remain outside this refreeze
 | Item | Frozen boundary |
 | --- | --- |
 | Target | TINY, future standard QFN64 product feature |
-| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
+| Default target / platform profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk`, PLL parked off; no PIO-lite integration |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk` / IHP130; existing 24 MHz, no-PLL baseline |
 | Product integration | `rtl/tiny/top/retrosoc_tiny.sv`, `rtl/tiny/integration/soc_topology.json`, `rtl/tiny/address_map/memory_map.json`, `rtl/tiny/pin_map/pin_map.json`, `rtl/tiny/integration/clock_reset_domains.json` |
 | Filelists | `rtl/tiny/filelist/ip.fl`, `inc.fl`, `top.fl`, `tb.fl` and their existing build flow |
@@ -748,7 +749,7 @@ authorized or marked complete by approval of this document.
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: piolite. Target SoCs: TINY.
 Phase: PIOLITE-P1 - ISA Reference Model and Assembler.
-Read docs/ip/piolite.md and docs/ip/piolite-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no PIO. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
+Read docs/ip/piolite.md and docs/ip/piolite-verification.md. Default platform: configs/ci/ics55-tiny.mk, ICS55/HAVE_PLL=YES with external SAFE24 and a parked PLL; verify TINY-ICS55-P1 acceptance in the Tiny ledger before integrated default-platform work. Compatibility: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Neither platform implements PIO-lite. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not relabel historical results.
 Plan only the frozen ISA reference model, deterministic assembler, program metadata/relocation and focused tests, including actual 32-word application and dual-SM footprints. Preserve the two-SM architecture, PCLK tick/packing semantics, GPIO/DMA lifecycle contracts and all R2 phase identifiers.
 Do not implement RTL, HAL integration, DMA V2.1, GPIO/RCU wiring, new profiles or later phases. Do not alter the ISA/ABI, expand memory or package scope, download new dependencies, change quality policy, commit or push. Report SPEC_CONFLICT if a frozen requirement cannot be met; do not weaken it. Return the scoped preflight and validation plan for explicit approval before implementation.
 ```

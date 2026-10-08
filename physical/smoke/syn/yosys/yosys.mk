@@ -67,12 +67,17 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 		--log $(YOSYS_BUILD)/$(RTL_NAME).log --result $(YOSYS_BUILD)/result-synth.json \
 		--env PDK=$(PDK) --env SOC=$(SOC) --env SYNTH_RECIPE=$(SYNTH_RECIPE) \
 		--env HAVE_SRAM_MACRO=$(HAVE_SRAM_MACRO) --env SRAM_SIZE_KIB=$(SRAM_SIZE_KIB) \
+		--env HAVE_PLL=$(HAVE_PLL) --env CONFIG_DIGEST=$(CONFIG_DIGEST) \
 		--env YOSYS_TARGET_PERIOD_PS=$(YOSYS_TARGET_PERIOD_PS) \
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
 		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
 		yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
+ifeq ($(SOC)-$(PDK),TINY-ICS55)
+	python3 $(ROOT_PATH)/scripts/tiny_ics55_platform.py --variant-root $(VARIANT_ROOT) audit-netlist \
+		--netlist $(NETLIST) --config $(NETLIST_CONFIG) --output $(YOSYS_BUILD)/tiny-ics55-netlist.json
+endif
 
 $(NETLIST_DEBUG): $(NETLIST)
 	@test -f $@

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 `include "archinfo_integration_metadata.svh"
 `include "archinfo_define.svh"
+`include "tiny_platform.svh"
 
 // The locked ArchInfo V2 has a fixed Mini SOC_ID. This owned adapter changes
 // only that read-only identity, retaining the managed ABI and build metadata.
@@ -29,8 +30,8 @@ module tiny_archinfo (
       .REFERENCE_CLOCK_HZ(24_000_000),
       .SRAM_BYTES        (131072),
       .TOPOLOGY          (32'h2020_0001),
-      .FEATURES0         (32'h0000_7ffe),
-      .TECHNOLOGY        (32'h0201_0082),
+      .FEATURES0         (`RETROSOC_TINY__FEATURES0),
+      .TECHNOLOGY        (`RETROSOC_TINY__TECHNOLOGY),
       .BUILD_ID          (`ARCHINFO_INTEGRATION_BUILD_ID),
       .CONFIG_ID         (`ARCHINFO_INTEGRATION_CONFIG_ID),
       .BUILD_STATUS      (`ARCHINFO_INTEGRATION_BUILD_STATUS)

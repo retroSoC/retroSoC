@@ -17,15 +17,17 @@ AXI64/two-dimensional DMA architecture is not imported.
 
 This freeze changes documentation only. It does not change RTL, firmware,
 configuration, dependencies, warning baselines, metrics policy or readiness.
-The executable Tiny baseline remains 24 MHz/no PLL, four DMA channels and no
-PPALite. Source qualification gaps below remain explicit prerequisites.
+The IHP130 reference remains 24 MHz/no PLL, four DMA channels and no PPALite;
+the ICS55 SAFE24 platform likewise has no PPALite integration. Source
+qualification gaps below remain explicit prerequisites.
 
 ## Target SoCs and Integration Scope
 
 The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 selects default TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot, retaining IHP130
-compatibility. `configs/ci/ics55-tiny.mk` is planned, not executable until
-TINY-ICS55-P1. Existing commands below retain their IHP130 scope. Pre-final
+compatibility. `configs/ci/ics55-tiny.mk` now exists with its PLL parked off;
+platform acceptance is tracked in the Tiny ledger. Existing commands below
+retain their IHP130 scope and do not validate PPALite. Pre-final
 post-synthesis timing is observational; source integrity, functionality,
 protocol, synthesis/mapping and netlist-function gates are unchanged.
 PPALITE-P5 joins R2-P11, SPI-P5 and PIOLITE-P5 after all functional stages on
@@ -36,7 +38,7 @@ by this platform/timing refreeze.
 | Item | Frozen boundary |
 | --- | --- |
 | Target / deferred products | TINY future standard product; MINI/STD/PRO integration deferred |
-| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
+| Default target / platform profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk`, PLL parked off; no PPALite integration |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk`, IHP130, existing 24 MHz/no-PLL baseline |
 | Product ownership | `rtl/tiny/top`, `rtl/tiny/integration/soc_topology.json`, `rtl/tiny/integration/clock_reset_domains.json`, `rtl/tiny/address_map/memory_map.json` and existing product filelists |
 | Shared source | `rtl/ip/multimedia/axi4s_dvp.sv`, `dvp_core.sv`, `dvp_reg.sv`; DVP V2 APB/stream contract and existing 512 B payload CDC FIFO |
@@ -713,7 +715,7 @@ PPALite there. IDs and titles are stable and do not replace earlier roadmaps.
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: ppalite. Target SoCs: TINY.
 Phase: PPALITE-P1 - Stream Pixel Core and Reference Model.
-Read docs/ip/ppalite.md and docs/ip/ppalite-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no PPALite. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
+Read docs/ip/ppalite.md and docs/ip/ppalite-verification.md. Default platform: configs/ci/ics55-tiny.mk, ICS55/HAVE_PLL=YES with external SAFE24 and a parked PLL; verify TINY-ICS55-P1 acceptance in the Tiny ledger before integrated default-platform work. Compatibility: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Neither platform implements PPALite. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not relabel historical results.
 Plan only the frozen standalone pixel/stream core, input validation, 1/2/4 sampling, exact format/row packing, small buffers, APB1.0 and handwritten SVH/C parity, scalar reference, independent stream BFM and focused tests. Preserve Y-only grayscale, RAW contract, resource limits and all earlier phase IDs.
 Do not implement DVP source repairs, Tiny routing/DMA/RCU integration, the complete SDK/display application or later phases. Do not add memory replay, RGB-to-gray arithmetic, interpolation, row/frame SRAM, DMA requests/masters, dependencies, profiles or quality-policy changes. Return SPEC_CONFLICT rather than weakening an unmet contract, and provide the scoped preflight/validation plan for explicit approval. Do not commit or push.
 ```

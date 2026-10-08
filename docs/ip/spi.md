@@ -16,7 +16,8 @@ PSRAM still use XPI and contend there; a separate screen clock/data bus does
 not eliminate framebuffer-memory cost. The first application is sequential
 capture, verify, display and SD save, not simultaneous double-buffer video.
 
-The committed profile remains 24 MHz/no PLL, four-channel DMA and no SPI.
+The IHP130 reference remains 24 MHz/no PLL, four-channel DMA and no SPI;
+the ICS55 SAFE24 platform likewise has no SPI integration.
 Eight DMA channels, the Gen1 pin map, faster PCLK and new IP are target
 contracts. This freeze does not change RTL, firmware, profiles, dependencies,
 warning baselines, metrics policy or readiness. It does not implement a new
@@ -26,9 +27,10 @@ GUI framework or replace the legacy XPI LCD transport.
 
 The [2026-10-07 Tiny refreeze](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 supersedes the original platform and timing-gate scope: default TINY/ICS55,
-`HAVE_PLL=YES`, SAFE24 boot; IHP130 remains explicit compatibility. The planned
-`configs/ci/ics55-tiny.mk` awaits TINY-ICS55-P1, so the existing commands below
-remain IHP130-only executable references. All pre-final post-synthesis timing
+`HAVE_PLL=YES`, SAFE24 boot; IHP130 remains explicit compatibility. The
+`configs/ci/ics55-tiny.mk` platform now exists with its PLL parked off; its
+acceptance is tracked in the Tiny ledger. Existing commands below retain
+their IHP130 scope and do not validate SPI. All pre-final post-synthesis timing
 is observational; functional/protocol, synthesis/mapping and netlist-function
 requirements remain. SPI-P5 joins R2-P11, PIOLITE-P5 and PPALITE-P5 only after
 all functional stages, on the same complete-product netlist. Preserve all
@@ -39,7 +41,7 @@ upgrade beyond the separately approved Tiny PLL acquisition.
 | Item | Frozen contract |
 | --- | --- |
 | Target / status | TINY future standard product; MINI/STD/PRO integration deferred |
-| Default target / planned profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk` pending TINY-ICS55-P1 |
+| Default target / platform profile | ICS55, `HAVE_PLL=YES`, SAFE24 boot; `configs/ci/ics55-tiny.mk`, PLL parked off; no SPI integration |
 | Starting profile / PDK | `configs/ci/ihp130-tiny.mk` / IHP130, existing 24 MHz/no-PLL baseline |
 | Product sources | `rtl/tiny/top`, `rtl/tiny/integration/soc_topology.json`, `clock_reset_domains.json`, `rtl/tiny/address_map/memory_map.json`, `rtl/tiny/pin_map/pin_map.json` |
 | Filelists | Existing `rtl/tiny/filelist` ownership, especially `ip.fl`, `inc.fl`, `top.fl` and `tb.fl` |
@@ -697,7 +699,7 @@ Stable IDs/titles below do not rename, reuse or advance R2/PIO phases.
 ```text
 Use $retrosoc-feature-implementation. Stage: preflight. Feature slug: spi. Target SoCs: TINY.
 Phase: SPI-P1 - SPI Core and Register Implementation.
-Read docs/ip/spi.md and docs/ip/spi-verification.md. Default target: ICS55/HAVE_PLL=YES with SAFE24 boot and planned configs/ci/ics55-tiny.mk; require accepted TINY-ICS55-P1 before integrated default-platform work. Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL, no SPI. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not invent an executable profile or relabel historical results.
+Read docs/ip/spi.md and docs/ip/spi-verification.md. Default platform: configs/ci/ics55-tiny.mk, ICS55/HAVE_PLL=YES with external SAFE24 and a parked PLL; verify TINY-ICS55-P1 acceptance in the Tiny ledger before integrated default-platform work. Compatibility: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Neither platform implements SPI. Apply the 2026-10-07 observational pre-final timing policy and mandatory complete-product final campaign; do not relabel historical results.
 Plan only the frozen standalone master/APB1.0 core, packing/phase/lifecycle and source-qualified interface contracts, handwritten SVH/C parity, reference behavior, independent pin BFM and focused tests. Preserve all modes/8-16-bit packing, FIFO sizes, exact quotas, CS/D-C boundaries and bounded close/recovery semantics.
 Do not implement DMA V2.2, Tiny routing/RCU/fabric integration, the SDK/display application, new profiles or later phases. Do not change the frozen ABI, increase storage/pads, alter the legacy XPI LCD path, upgrade dependencies, change quality policy, commit or push. Return SPEC_CONFLICT rather than weakening an unmet contract, and provide the scoped preflight and validation plan for explicit approval before implementation.
 ```

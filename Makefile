@@ -6,6 +6,12 @@ ROOT_PATH ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 CONFIG    ?=
 LOCK_FILE ?= $(ROOT_PATH)/dependencies/dependencies.lock.json
 
+ifeq ($(strip $(CONFIG)),)
+ifeq ($(SOC),TINY)
+CONFIG := configs/ci/$(if $(filter IHP130,$(PDK)),ihp130,ics55)-tiny.mk
+endif
+endif
+
 ifneq ($(strip $(CONFIG)),)
 CONFIG_PATH := $(if $(filter /%,$(CONFIG)),$(CONFIG),$(ROOT_PATH)/$(CONFIG))
 ifeq ($(wildcard $(CONFIG_PATH)),)
@@ -357,7 +363,9 @@ endif
 
 ifeq ($(STA),OPENSTA)
 ifeq ($(HAVE_PLL),YES)
+ifneq ($(SOC):$(PDK):$(TINY_SAFE24_PLL_OFF),TINY:ICS55:YES)
 $(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
+endif
 endif
 endif
 
@@ -636,7 +644,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) \
+	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) --have-pll $(HAVE_PLL) \
 	  --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
@@ -661,7 +669,7 @@ hp-performance-check:
 ifeq ($(SOC),TINY)
 setup: setup-tiny
 setup-tiny:
-	python3 $(ROOT_PATH)/scripts/setup_tiny.py
+	python3 $(ROOT_PATH)/scripts/setup_tiny.py --pdk $(PDK)
 else
 setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
 endif
@@ -1181,13 +1189,13 @@ commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-rtl:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 ifneq ($(SOC),TINY)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
@@ -1196,7 +1204,7 @@ ifneq ($(SOC),TINY)
 endif
 
 regress-nightly:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY --pdk $(PDK))
 
 sim-asm: asm
 	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) sim

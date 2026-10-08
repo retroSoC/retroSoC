@@ -10,9 +10,12 @@ module retrosoc_tiny_tb;
   wire s_uart0_tx, s_uart1_tx;
   wire           s_uart0_rx = 1'b1;
   wire           s_uart1_rx = 1'b1;
-  wire           s_jtag_tck = 1'b0;
-  wire           s_jtag_tms = 1'b1;
-  wire           s_jtag_tdi = 1'b0;
+  logic          s_jtag_tck_driver = 1'b0;
+  logic          s_jtag_tms_driver = 1'b1;
+  logic          s_jtag_tdi_driver = 1'b0;
+  wire           s_jtag_tck = s_jtag_tck_driver;
+  wire           s_jtag_tms = s_jtag_tms_driver;
+  wire           s_jtag_tdi = s_jtag_tdi_driver;
   wire           s_jtag_trst_n = s_rst_n;
   wire           s_jtag_tdo;
   tri1    [31:0] s_gpio;
@@ -23,6 +26,7 @@ module retrosoc_tiny_tb;
   integer        s_max_cycles = 20000000;
   integer        s_done_cycles = 0;
   logic   [ 7:0] s_uart_byte;
+  `include "tiny_jtag_smoke.svh"
 
 `ifdef RETROSOC_SOC__TINY_NETLIST
   wire [7:0] s_test_code = {
@@ -51,7 +55,7 @@ module retrosoc_tiny_tb;
       if (u_dut.s_test_done) begin
         if (!u_dut.s_test_pass) $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
         s_done_cycles = s_done_cycles + 1;
-        if (s_done_cycles == 128) begin
+        if (s_done_cycles >= 128 && s_jtag_checks_done) begin
           $display("SIM_TEST_PASS Tiny cycles=%0d", s_cycles);
           $finish;
         end

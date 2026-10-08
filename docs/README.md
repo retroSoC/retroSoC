@@ -6,11 +6,16 @@ the root README and subsystem guides.
 - [Tiny Gen1 QFN64 R2](ip/tiny-soc.md) freezes dual CPU I/D paths, four
   independent 32 KiB main-SRAM groups on the CPU's SYS clock, per-target AXI32
   concurrency, eight-channel DMA scheduling and the existing shared-IP/camera
-  target without changing the package budget. The active roadmap is sequential
-  `TINY-R2-P0` through `TINY-R2-P11`; legacy `TINY-P0` through `TINY-P12`
+  target without changing the package budget. After `TINY-ICS55-P1`, the active
+  roadmap completes remaining Tiny foundation, SPI, PIO-lite and PPALite, then
+  jointly qualifies the complete product. `TINY-R2-P0..P11` and legacy
+  `TINY-P0` through `TINY-P12`
   remain in the linked contract history. CPU/main-SRAM rates up to 240 MHz
   require qualification. These targets remain separate from the existing
   24 MHz/four-channel implementation and physical evidence.
+- [Tiny ICS55 platform](ip/tiny-ics55-platform.md) defines the default SAFE24
+  profile, parked PLL, locked 32-macro SRAM mapping, validation commands and
+  source-bound platform evidence; PLL-driven SYS remains later work.
 - [PIO-lite](ip/piolite.md) freezes the separately approved future Tiny
   standard programmable-I/O block: two state machines, shared 32x16 program
   store, existing GPIO USER ownership, PCLK execution and central DMA V2.1

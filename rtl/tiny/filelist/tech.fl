@@ -1,3 +1,5 @@
 /tech/tc_io.sv
 /tech/tc_clk.sv
+/tech/tc_pll.sv
+/tech/tc_pll_ics55_ecos.sv
 /tech/tc_sram.sv

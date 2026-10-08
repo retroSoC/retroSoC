@@ -165,6 +165,9 @@ yosys tee -q -o "${report_dir}/${proj_name}_area_logic.rpt" stat -top $top_desig
 
 # final netlist
 yosys write_verilog -noattr -noexpr -nohex -nodec $netlist
+if {$soc == "TINY" && $pdk == "ICS55"} {
+    yosys write_json ${netlist}.json
+}
 
 # Record the configuration only after the netlist has been written successfully.
 set config_tmp "${config}.tmp"
@@ -176,5 +179,7 @@ puts $config_file "SYNTH_RECIPE=$synth_recipe"
 puts $config_file "PERIOD_PS=$period_ps"
 puts $config_file "HAVE_SRAM_MACRO=$::env(HAVE_SRAM_MACRO)"
 puts $config_file "SRAM_SIZE_KIB=$::env(SRAM_SIZE_KIB)"
+if {[info exists ::env(HAVE_PLL)]} { puts $config_file "HAVE_PLL=$::env(HAVE_PLL)" }
+if {[info exists ::env(CONFIG_DIGEST)]} { puts $config_file "CONFIG_DIGEST=$::env(CONFIG_DIGEST)" }
 close $config_file
 file rename -force $config_tmp $config

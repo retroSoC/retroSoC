@@ -271,7 +271,7 @@ def render_core_ports(pads: list[Pad]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_pad_instance(pad: Pad) -> str | None:
+def render_pad_instance(pad: Pad, read_while_driving: bool = False) -> str | None:
     instance = f"u_{pad.name}"
     if pad.kind == "tri_input":
         return (
@@ -297,8 +297,9 @@ def render_pad_instance(pad: Pad) -> str | None:
             f".c2p_en({pad.output_enable_signal}), .p2c({pad.input_signal}));"
         )
     if pad.kind == "full":
+        parameters = " #(.ReadWhileDriving(1'b1))" if read_while_driving else ""
         return (
-            f"  tc_io_tri_full_pad {instance} ({POWER_CONNECTIONS}.pad({pad.name}), "
+            f"  tc_io_tri_full_pad{parameters} {instance} ({POWER_CONNECTIONS}.pad({pad.name}), "
             f".c2p({pad.interface}.do_o[{pad.index}]), "
             f".c2p_en({pad.interface}.oe_o[{pad.index}]), .p2c({pad.interface}.di_i[{pad.index}]), "
             f".cs({pad.interface}.cs_o[{pad.index}]), .pu({pad.interface}.pu_o[{pad.index}]), "
@@ -325,7 +326,7 @@ def render_pad_instance(pad: Pad) -> str | None:
 
 
 def render_pad_bindings(
-    pads: list[Pad], power_counts: dict[str, int] | None = None
+    pads: list[Pad], power_counts: dict[str, int] | None = None, read_while_driving: bool = False
 ) -> str:
     counts = IHP130_POWER_PAD_COUNTS if power_counts is None else power_counts
     lines = [
@@ -358,7 +359,7 @@ def render_pad_bindings(
         ]
     )
     for pad in pads:
-        line = render_pad_instance(pad)
+        line = render_pad_instance(pad, read_while_driving)
         if line is not None:
             lines.extend(wrap_feature(pad, line))
     lines.append("`undef RETROSOC_PAD_POWER_CONNECTIONS")
@@ -461,13 +462,13 @@ def render_profile_bindings(pads: list[Pad], bindings: dict[str, str | None]) ->
     return "\n".join(lines) + "\n"
 
 
-def generate(map_path: Path, output_dir: Path) -> None:
+def generate(map_path: Path, output_dir: Path, *, read_while_driving: bool = False) -> None:
     pads, profiles = read_map(map_path)
     power_counts = read_power_pad_counts(map_path)
     rtl_dir = output_dir / "rtl"
     atomic_write(rtl_dir / "retrosoc_asic_ports.svh", render_ports(pads))
     atomic_write(
-        rtl_dir / "retrosoc_asic_pad_bindings.svh", render_pad_bindings(pads, power_counts)
+        rtl_dir / "retrosoc_asic_pad_bindings.svh", render_pad_bindings(pads, power_counts, read_while_driving)
     )
     atomic_write(rtl_dir / "retrosoc_core_ports.svh", render_core_ports(pads))
     atomic_write(rtl_dir / "retrosoc_core_bindings.svh", render_core_bindings(pads))

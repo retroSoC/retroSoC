@@ -1,15 +1,26 @@
-# Tiny's first qualified integration is deliberately a fixed MCU profile.
+# Both Tiny integrations remain SAFE24; PLL presence is not SYS selection.
 ifneq ($(MINI_MODE),NONE)
 $(error SOC=TINY requires MINI_MODE=NONE)
 endif
-ifneq ($(PDK),IHP130)
-$(error SOC=TINY currently supports only PDK=IHP130)
+ifeq ($(filter $(PDK),IHP130 ICS55),)
+$(error SOC=TINY supports only PDK=IHP130 or ICS55)
 endif
 ifneq ($(HAVE_HP),NO)
 $(error SOC=TINY requires HAVE_HP=NO)
 endif
+ifeq ($(PDK),ICS55)
+ifneq ($(HAVE_PLL),YES)
+$(error SOC=TINY PDK=ICS55 requires HAVE_PLL=YES with the PLL held off)
+endif
+ifeq ($(PDK_BEHAV),YES)
+$(error SOC=TINY PDK=ICS55 requires the locked technology models, PDK_BEHAV=NO)
+endif
+override TINY_SAFE24_PLL_OFF := YES
+else
 ifneq ($(HAVE_PLL),NO)
-$(error SOC=TINY requires HAVE_PLL=NO)
+$(error SOC=TINY PDK=IHP130 requires HAVE_PLL=NO)
+endif
+override TINY_SAFE24_PLL_OFF := NO
 endif
 ifneq ($(HAVE_SRAM_IF),YES)
 $(error SOC=TINY requires HAVE_SRAM_IF=YES)

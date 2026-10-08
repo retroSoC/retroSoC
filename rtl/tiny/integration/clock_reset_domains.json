@@ -1,5 +1,13 @@
 {
   "schema_version": 2,
+  "inactive_macros": {
+    "ics55_pll": {
+      "cell": "PLL_TOP",
+      "scope": "TINY-ICS55-P1: present, EN=0, no SYS connection",
+      "active_clock_domain": false,
+      "qualification": "no characterized timing arcs; full RCU remains R2-P7"
+    }
+  },
   "reset_ports": [
     "ext_rst_n_i_pad",
     "jtag_trst_n_i_pad"

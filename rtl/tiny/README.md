@@ -2,11 +2,12 @@
 
 Tiny is the independent single-Hazard3 wired MCU product. Its frozen target
 contract is [Tiny Gen1 QFN64 R2](../../docs/ip/tiny-soc.md). The 2026-10-07
-specification default is ICS55, `HAVE_PLL=YES`, SAFE24 boot; TINY-ICS55-P1
-platform integration and `configs/ci/ics55-tiny.mk` are pending. IHP130 remains
-explicit compatibility. For the current executable baseline, use
-`make CONFIG=configs/ci/ihp130-tiny.mk setup` followed by
-`make CONFIG=configs/ci/ihp130-tiny.mk firmware sim`.
+default is ICS55, `HAVE_PLL=YES`, SAFE24 boot, with the PLL macro parked off.
+Use `make CONFIG=configs/ci/ics55-tiny.mk setup` followed by
+`make CONFIG=configs/ci/ics55-tiny.mk firmware sim`. IHP130/no PLL remains
+explicit compatibility through `configs/ci/ihp130-tiny.mk`. See the
+[platform runbook](../../docs/ip/tiny-ics55-platform.md) for source-bound
+validation; backend frequency tests are not SYS switching or timing qualification.
 
 `top` owns product integration, `address_map`, `pin_map` and `integration` own
 canonical address, pad, IRQ and clock/reset inputs, `filelist` selects sources,

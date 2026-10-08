@@ -6,8 +6,9 @@ This document defines the intended Tiny, Mini, Std, and Pro product ladder.
 Tiny and Mini have executable build profiles; Std and Pro remain roadmap
 targets. Committed product profiles and retained validation evidence define
 implemented support. Tiny's 2026-10-07 specification selects ICS55/PLL as its
-default wired-MCU target; current executable Tiny remains IHP130/no PLL until
-TINY-ICS55-P1. IHP130 remains explicit compatibility, and Mini defaults are unchanged.
+default wired-MCU target. Its executable profile keeps SYS on external SAFE24
+and the PLL parked off. IHP130 remains explicit compatibility, and Mini
+defaults are unchanged.
 
 Mini is the family anchor. It establishes the common product model: an open
 RISC-V SoC in which a small, always-available Hazard3 management core owns
@@ -44,7 +45,8 @@ verification requirements differ materially.
 
 The [2026-10-07 refreeze](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 requires ICS55 with `HAVE_PLL=YES`, SAFE24 startup and unchanged CPU-rate
-128 KiB SRAM. The planned `configs/ci/ics55-tiny.mk` is not executable yet.
+128 KiB SRAM. `configs/ci/ics55-tiny.mk` implements that SAFE24 platform;
+PLL192/240 backend tests do not qualify those frequencies as SoC operating points.
 After platform enablement, the order is remaining Tiny foundation, SPI,
 PIO-lite, PPALite, then one complete-product final physical campaign. Earlier
 post-synthesis timing is observational; functionality and source-bound evidence

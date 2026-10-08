@@ -10,8 +10,9 @@ Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
   [2026-10-07 Tiny policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07).
-  TINY-ICS55-P1 and its planned `configs/ci/ics55-tiny.mk` are pending;
-  the starting profile below remains executable IHP130 compatibility only.
+  `configs/ci/ics55-tiny.mk` now exists with a parked PLL; platform acceptance
+  belongs to the Tiny ledger. The profile below remains IHP130 compatibility;
+  neither platform implements SPI.
 - Before final qualification, post-synthesis timing is observational and all
   failures/NOT_RUN cases remain attributed. Functional/source/protocol and
   synthesis/mapping/netlist-function gates remain mandatory. SPI-P5 joins

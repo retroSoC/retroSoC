@@ -4,5 +4,6 @@
 /tech/tc_clk.sv
 /tech/tc_opipsram_delay.sv
 /tech/tc_pll.sv
+/tech/tc_pll_ics55_ecos.sv
 /tech/tc_sram.sv
 /tech/tc_usb2_packet_ram.sv

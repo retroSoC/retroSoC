@@ -281,7 +281,7 @@ def test_invalid_runtime_fails_before_compilation_or_simulation(locked_icarus, m
     image_path.write_text("{}")
     image = {"source": {}, "artifacts": {"tiny_baseline.hex": {"sha256": "fixture"}}}
     monkeypatch.setattr(baseline, "retained_image", lambda *_: (image_path, image))
-    monkeypatch.setattr(baseline, "configuration", lambda *_: {})
+    monkeypatch.setattr(baseline, "configuration", lambda *_: {"configuration": {"PDK": "IHP130"}})
     monkeypatch.setattr(baseline, "execute", lambda *_args, **_kwargs: pytest.fail("tool execution preceded rejection"))
     args = argparse.Namespace(root=root, variant_root=root / "build/variant", simulator="iverilog",
                               hex=None, vvp=selected, command=["unexpected-build"])
@@ -322,7 +322,7 @@ def test_runtime_retention_and_actual_launch_are_rechecked(locked_icarus, mutati
 
 def test_image_retains_compiler_command_after_postprocessing(tmp_path: Path, monkeypatch) -> None:
     variant = tmp_path / "build/variant"
-    monkeypatch.setattr(baseline, "configuration", lambda *_: {})
+    monkeypatch.setattr(baseline, "configuration", lambda *_: {"configuration": {"PDK": "IHP130"}})
     monkeypatch.setattr(baseline, "tools_identity", lambda *_: {})
     monkeypatch.setattr(baseline, "source_inputs", lambda *_: {})
     monkeypatch.setattr(baseline, "snapshot", lambda *_: {})

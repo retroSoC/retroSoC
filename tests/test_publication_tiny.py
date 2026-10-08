@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 import shutil
 
@@ -81,6 +82,7 @@ def source_tree(tmp_path):
 
 @pytest.mark.parametrize("path,before,after", [
     (tiny.TOP, ".CapacityKiB(128)", ".CapacityKiB(32)"),
+    (tiny.TOP, ".Ics55SmallBanks(1'b1)", ".Ics55SmallBanks(1'b0)"),
     (tiny.TOP, ".DataWidth  (32)", ".DataWidth  (64)"),
     (tiny.TOP, ".NumChannels  (4)", ".NumChannels  (8)"),
     (tiny.TOP, ".EnableStreams(1'b0)", ".EnableStreams(1'b1)"),
@@ -93,8 +95,11 @@ def source_tree(tmp_path):
 def test_changed_hardware_or_isa_cannot_retain_publication_claim(source_tree, path, before, after):
     file = source_tree / path
     text = file.read_text(encoding="utf-8")
-    assert before in text
-    file.write_text(text.replace(before, after, 1), encoding="utf-8")
+    # Parameter alignment is formatting, while the altered value must still
+    # fail the source-bound publication contract.
+    pattern = r"\s*".join(re.escape(char) for char in before if not char.isspace())
+    assert re.search(pattern, text)
+    file.write_text(re.sub(pattern, lambda _: after, text, count=1), encoding="utf-8")
     with pytest.raises(ValueError):
         tiny.facts(source_tree)
 

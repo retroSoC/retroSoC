@@ -79,6 +79,14 @@ TINY_PR_COMMANDS = (
     ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "STA=OPENSTA", "sta")),
 )
 RTL_COMMANDS = (*PR_COMMANDS[:6], *TINY_PR_COMMANDS[:3])
+TINY_PROFILES = {"IHP130": "configs/ci/ihp130-tiny.mk", "ICS55": "configs/ci/ics55-tiny.mk"}
+
+
+def tiny_commands(pdk: str) -> tuple:
+    return tuple((TINY_PROFILES[pdk], (*values, "TINY_SIM_ARGS=+tiny_jtag_smoke")
+                  if "sim" in values else values) for _, values in TINY_PR_COMMANDS)
+
+
 PR_COMMANDS = (*PR_COMMANDS, *TINY_PR_COMMANDS)
 SMOKE_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
@@ -179,6 +187,8 @@ def select_regression(
         if pdk == "IHP130":
             return PR_COMMANDS, PR_PROFILES
         profile = PDK_PR_PROFILES[pdk]
+        if pdk == "ICS55":
+            return (*pdk_pr_commands(profile), *tiny_commands(pdk)), (profile, TINY_PROFILES[pdk])
         return pdk_pr_commands(profile), (profile,)
     if suite == "pr":
         return PR_COMMANDS, PR_PROFILES
@@ -282,18 +292,24 @@ def main() -> int:
     )
     args = parser.parse_args()
     try:
-        commands, profiles = select_regression(args.suite, args.pdk)
+        if args.soc == "TINY":
+            pdk = args.pdk or "ICS55"
+            if pdk not in TINY_PROFILES or args.suite == "nightly-extra":
+                raise ValueError("Tiny supports IHP130/ICS55 smoke, rtl, pr and nightly suites")
+            commands = tiny_commands(pdk)
+            if args.suite == "smoke":
+                commands = commands[:2]
+            elif args.suite == "rtl":
+                commands = commands[:3]
+            profiles = (TINY_PROFILES[pdk],)
+        else:
+            commands, profiles = select_regression(args.suite, args.pdk)
     except ValueError as error:
         parser.error(str(error))
-    if args.soc is not None:
-        tiny_profile = "configs/ci/ihp130-tiny.mk"
-        if args.soc == "TINY" and args.suite == "smoke":
-            commands, profiles = TINY_PR_COMMANDS[:2], (tiny_profile,)
-        else:
-            commands = tuple((profile, values) for profile, values in commands
-                             if (profile == tiny_profile) == (args.soc == "TINY"))
-            profiles = tuple(profile for profile in profiles
-                             if (profile == tiny_profile) == (args.soc == "TINY"))
+    if args.soc == "MINI":
+        commands = tuple((profile, values) for profile, values in commands
+                         if profile not in TINY_PROFILES.values())
+        profiles = tuple(profile for profile in profiles if profile not in TINY_PROFILES.values())
         if not commands:
             parser.error(f"suite {args.suite} has no {args.soc} configuration for this PDK")
     if args.netsim_boot_only:

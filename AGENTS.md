@@ -78,10 +78,11 @@ README that states its ownership, source of truth, and validation expectations.
   `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
   acceptance image, not a user-facing firmware profile.
 - Tiny is a distinct wired MCU product under `rtl/tiny` with AXI4/APB4 integration.
-  Its 2026-10-07 specification default is ICS55 with `HAVE_PLL=YES` and SAFE24
-  boot; TINY-ICS55-P1 executable integration is pending. The current committed
-  Tiny profile remains IHP130/no PLL. Do not confuse target defaults with
-  implemented configuration or change Mini defaults.
+  Its default profile is `configs/ci/ics55-tiny.mk`: ICS55, `HAVE_PLL=YES`,
+  SAFE24 boot with the PLL macro parked off. IHP130/no PLL remains explicit
+  compatibility. PLL presence does not enable SYS switching; Tiny RCU remains
+  R2-P7. Keep implementation, observed timing and physical qualification distinct,
+  and do not change Mini defaults.
 - Do not add new dependencies on `crt/inc`, retired SDK `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,

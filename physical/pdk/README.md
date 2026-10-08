@@ -51,8 +51,10 @@ Liberty views and prints their hashes. No profile or RTL binding is changed.
 The views have no characterized timing arcs or LOCK output; licensing is
 undetermined. Functional modeling, actual lock/loss detection, supply binding
 and final timing characterization remain separate integration/release work.
-Tiny's new default ICS55/PLL specification still requires TINY-ICS55-P1;
-current executable Tiny configurations remain IHP130/no PLL.
+Tiny's default `configs/ci/ics55-tiny.mk` instantiates one disabled PLL and
+32 locked 4 KiB SRAM macros at external SAFE24. Its digital backend tests and
+core STA observations do not qualify analog PLL behavior or PLL-driven SYS.
+IHP130/no PLL remains explicit Tiny compatibility.
 
 The IHP130 dependency is also the technology source for the independent
 `physical/librelane/{mini,tiny}/` core-hardening and full-chip pad-ring flows.

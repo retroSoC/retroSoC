@@ -38,7 +38,7 @@ TOOL_PROGRAMS = {"verilator": "verilator", "verible": "verible-verilog-format",
 SOURCE_PATHS = ("Makefile", "configs/ci/ihp130-tiny.mk", "dependencies/dependencies.lock.json",
                 "requirements", "rtl/tiny", "rtl/ip", "rtl/tech", "rtl/mk/software.mk",
                 "crt", "app/apps/ci_smoke", "app/apps/bringup", "scripts",
-                "physical/smoke", "physical/librelane/tiny")
+                "physical/smoke", "physical/librelane/tiny", "physical/pdk")
 CASE_FIELDS = {"id", "name", "cycles", "instructions", "kernel_cycles", "kernel_calls",
                "payload_bytes", "checksum", "cpu_wait", "dma_wait", "sram_reads",
                "sram_writes", "sram_rbeats", "sram_wbeats", "sram_stalls", "sram_errors"}
@@ -75,7 +75,7 @@ def digest_map(value: dict) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
-def source_inputs(root: Path) -> dict[str, str]:
+def source_inputs(root: Path, pdk: str = "IHP130") -> dict[str, str]:
     names = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", "--",
          *SOURCE_PATHS], cwd=root,
@@ -83,7 +83,14 @@ def source_inputs(root: Path) -> dict[str, str]:
     paths = {root / name for name in names if name and not name.endswith(
         (".md", ".png", ".jpg", ".svg", ".pdf"))}
     lock = read_json(root / "dependencies/dependencies.lock.json")
-    for name in TINY_SOURCES:
+    selected_sources = list(TINY_SOURCES)
+    if pdk == "ICS55":
+        selected_sources = [name if name != "pdk_ihp130" else "pdk_ics55" for name in selected_sources]
+        selected_sources.append("pdk_ics55_pll")
+        paths.add(root / "configs/ci/ics55-tiny.mk")
+        paths.update(p for p in (root / ".cache/retrosoc/pdk/ics55").rglob("*")
+                     if p.is_file() and p.suffix in (".v", ".lib"))
+    for name in selected_sources:
         spec = lock["sources"][name]
         checkout = root / spec["destination"]
         revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=checkout,
@@ -100,7 +107,7 @@ def source_inputs(root: Path) -> dict[str, str]:
             paths.update((base / "sg13g2_stdcell/lib").glob("*slow_1p08V_125C.lib"))
             paths.update((base / "sg13g2_io/lib").glob("*slow_1p08V_3p0V_125C.lib"))
         else:
-            for suffix in ("*.v", "*.sv", "*.vh", "*.svh", "*.c", "*.h"):
+            for suffix in ("*.v", "*.sv", "*.vh", "*.svh", "*.c", "*.h", "*.lib", "*.lef"):
                 paths.update(checkout.rglob(suffix))
     return {str(path.relative_to(root)): sha256(path) for path in sorted(paths) if path.is_file()}
 
@@ -126,11 +133,20 @@ def runtime_inputs(root: Path, variant: Path, simulator: str) -> dict[str, str]:
 def configuration(variant: Path) -> dict:
     manifest = read_json(variant / "meta/manifest.json")
     config = manifest["configuration"]
-    if manifest["profile"] != "ihp130-tiny" or any(
-        config.get(key) != expected for key, expected in COMPATIBILITY.items()
+    expected = dict(COMPATIBILITY)
+    if manifest["profile"] == "ics55-tiny":
+        expected.update(PDK="ICS55", HAVE_PLL="YES")
+    if manifest["profile"] not in ("ihp130-tiny", "ics55-tiny") or any(
+        config.get(key) != value for key, value in expected.items()
     ):
-        raise ValueError("baseline requires the committed Tiny/IHP130 24 MHz macro profile")
+        raise ValueError("baseline requires an explicit Tiny 24 MHz macro profile")
     return manifest
+
+
+def variant_source_inputs(root: Path, variant: Path) -> dict:
+    if configuration(variant)["configuration"]["PDK"] == "ICS55":
+        return source_inputs(root, "ICS55")
+    return source_inputs(root)
 
 
 def tools_identity(root: Path) -> dict:
@@ -325,7 +341,7 @@ def build_image(args: argparse.Namespace) -> int:
     try:
         manifest = configuration(variant)
         tools = tools_identity(root)
-        before = source_inputs(root)
+        before = variant_source_inputs(root, variant)
         # Archive generated C headers and the preprocessed flat linker input too.
         generated = {str(path.relative_to(root)): sha256(path)
                      for path in (variant / "generated/tiny").rglob("*") if path.is_file()}
@@ -355,7 +371,7 @@ def build_image(args: argparse.Namespace) -> int:
         ebss = re.search(r"^([0-9a-f]+)(?: [0-9a-f]+)? [A-Za-z] _ebss$", symbols, re.MULTILINE)
         if ebss is None or not 0x30000000 <= int(ebss[1], 16) <= 0x3001F000:
             raise ValueError("image does not preserve at least 4 KiB of stack headroom")
-        if before != source_inputs(root):
+        if before != variant_source_inputs(root, variant):
             raise ValueError("source changed while compiling the retained image")
         if any(not (root / name).is_file() or sha256(root / name) != digest
                for name, digest in generated.items()):
@@ -421,12 +437,12 @@ def simulate(args: argparse.Namespace) -> int:
                       firmware_source=image["source"], manifest=configuration(variant), tools=tools_identity(root))
         if args.simulator == "iverilog":
             record["runtime_tool"] = vvp_identity(args.vvp, record["tools"]["iverilog"])
-        before = source_inputs(root)
+        before = variant_source_inputs(root, variant)
         command = args.command[1:] if args.command[:1] == ["--"] else args.command
         if not command:
             raise ValueError("a fresh simulator compilation command is required")
         execute(root, directory, "compile-model", command, quiet=True)
-        if before != source_inputs(root):
+        if before != variant_source_inputs(root, variant):
             raise ValueError("source changed while compiling the simulator")
         runtime = runtime_inputs(root, variant, args.simulator)
         record["rtl_source"] = snapshot(root, directory / "inputs", before | runtime)
@@ -472,7 +488,7 @@ def simulate(args: argparse.Namespace) -> int:
                 dump(output, record)
         if errors:
             raise ValueError("; ".join(errors))
-        if before != source_inputs(root) or runtime != runtime_inputs(root, variant, args.simulator):
+        if before != variant_source_inputs(root, variant) or runtime != runtime_inputs(root, variant, args.simulator):
             raise ValueError("source or generated inputs changed during simulation")
         validate_runs(record["runs"])
         validate_runtime_tool(root, record)
@@ -511,7 +527,7 @@ def report(args: argparse.Namespace) -> int:
             check_artifact(attempt["model"])
             source = attempt["rtl_source"]
             inputs = read_json(check_artifact(source["inputs"]))
-            if inputs != source_inputs(root) | runtime_inputs(root, variant, simulator):
+            if inputs != variant_source_inputs(root, variant) | runtime_inputs(root, variant, simulator):
                 raise ValueError(f"stale {simulator} source inputs")
             check_artifact(source["snapshot"])
             validate_runs(attempt["runs"])

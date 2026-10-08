@@ -1,11 +1,165 @@
 # Tiny MCU Verification Record
 
+## TINY-ICS55-P1 implementation (2026-10-07–08)
+
+Implementation is based on committed source
+`ecac3559b0ba67fa2630003ad718657969c78af4` plus the retained working-tree diff.
+The worktree was clean at entry. The preflight specification/ledger Git blobs
+were `713f3d5a0d04a7b2fc4c66838e9ceaf6c7551263` and
+`87bc267759d863d98f200e2740abcaa0dcba28a5`. This record is separate from the
+earlier documentation/dependency refreeze and IHP130 R2 measurements.
+Implementation and validation are complete for review; human phase acceptance
+is still pending by this entry.
+
+The [platform runbook](tiny-ics55-platform.md) defines ownership and commands.
+The default `configs/ci/ics55-tiny.mk` selects TINY/ICS55, HAVE_PLL=YES,
+128 KiB main SRAM and external 24 MHz SYS. The PLL is physically represented
+but disabled; standalone PLL192/240 tests do not enable those SoC rates.
+IHP130 remains an explicit no-PLL profile, and Mini defaults are unchanged.
+
+Changes are limited to platform/profile selection, generated identity and
+filelists, technology adapters, the standalone PLL digital backend, native
+pad readback, JTAG smoke, netlist/STA evidence and matching publication-source
+parsing. Tiny explicitly selects 32 locked 1024x32 SRAM macros through a
+default-off shared parameter; this is not R2-P4 logical SRAM banking. Tiny's
+GPIO input remains enabled while driving, with the legacy Mini default intact.
+No register/API, address, IRQ, DMA channel/request, package assignment or
+private Crypto storage change is introduced. No new MISRA deviation applies.
+Dependency versions, warning signatures and metrics policy are unchanged.
+
+Final validation uses `BUILD_TIMESTAMP=2026-10-07-23-22`:
+
+- Primary CI/evidence variant: `build/ics55-tiny-2026-10-07-23-22-42d5beccb726/`.
+  Commands, logs and results are in `meta/tiny-ics55-p1/validation/`; the
+  captured source/tools/views are selected by `meta/tiny-ics55-p1/latest-inputs.json`.
+- Matched workload variant: `build/ics55-tiny-2026-10-07-23-22-b4aa59f3e5d9/`,
+  APP=bringup. Each simulator runs three cold starts of the original retained
+  P1 HEX, SHA-256 `ba24c2dfd727a905f39b644df254e47262c39ab4960ff2614be44402020758b2`.
+  Its original image/source manifest remains under
+  `build/ihp130-tiny-2026-10-05-12-30-fa1c4ce1e303/meta/tiny-r2-p1/binaries/image-ozwo38_b/`.
+  The seven fixed workloads are empty-window calibration, CPU, memory, DMA
+  burst 1, DMA burst 16, CPU/DMA contention and descriptor-chain DMA. There
+  is no recompilation or layout experiment in this comparison.
+
+| Gate | Current result / retained evidence |
+| --- | --- |
+| Focused checks after the JTAG correction | PASS; 178 platform/provenance/baseline/build tests; earlier memory/debug/clock and publication checks also passed |
+| Final policy and formatting | PASS; `validation/policy.json` and `rtl-format-retry.json`; C format/policy/host tests, Ruff, locked dependency schema, RTL style/readiness and changed-file formatting |
+| Regression definitions | PASS; `validation/dry-runs.json`; Tiny ICS55 PR/nightly are identical, plus IHP130 Tiny and ICS55 Mini PR expansion |
+| Tiny ICS55 PR | PASS; `validation/tiny-ics55-pr.json`; firmware, Verilator SVA/JTAG, native Icarus/JTAG, Yosys, strict Tiny netlist boot and OpenSTA execution |
+| Tiny IHP130 PR | PASS; `validation/tiny-ihp130-pr.json`; separate compatibility artifacts, not relabeled ICS55 evidence |
+| Shared Mini compatibility | PASS for firmware, memory/pin/topology/clock-domain checks and Verilator SVA lint; `validation/mini-compatibility.json`, `mini-rtl-lint-retry.json`; full Mini PR not run |
+| Source / macro audit | PASS; `meta/tiny-ics55-p1/report.json`, `syn/yosys/tiny-ics55-netlist.json`; 32 SRAM macros, 2177 CPU clocked cells on direct SYS, one PLL with constant EN=0 |
+| Matched Verilator workload | PASS, three identical samples, same original HEX; all seven workload samples also equal the historical IHP130 reference |
+| Matched Icarus workload | PASS after timeout recovery; runs 1/2 at 13862.428/14242.835 s and recovered run 3 at 15379.18 s. All three samples match Verilator and historical IHP130; original exit-124 attempt is retained, with per-run budgets in `matched-report.json` |
+| Full Pytest | PASS; 1568 passed / 1 skipped in 3769.75 s on final source; `validation/pytest.json`; the optional publication retrieval test lacks `pypdf` |
+| Warning comparison | Non-blocking FAIL observations retained; no signatures regenerated or waived |
+| Metrics | Collected on the actual APP=ci_smoke variants; `validation/ics55-ci-metrics.json`, `ihp130-ci-metrics.json`; policy remains observe |
+
+In this table `validation/` is relative to the primary variant's
+`meta/tiny-ics55-p1/`. Verilator SVA CI variants use suffixes `2eb98c0e1fae`
+(ICS55) and `39ea34c082ac` (IHP130); IHP130's ordinary CI variant uses
+`bff91e3529ba`, all with the same fixed timestamp. Tiny netlist `netsim-boot`
+uses a retained 220-byte assembly image and TEST_STATUS/SIM_TEST_PASS; it is
+not the Mini UART-only boot target or full C netlist qualification.
+
+The native source/input digest is
+`9566b3f2c06b21b3e06a4513d0163cc9ffcb63e6d68dd665a31f61be6c1e9def`.
+The report rechecks consumed Verilog/JSON/configuration and audit-script hashes,
+source snapshots, locked tools and post-capture execution timestamps. The
+seven locked Tiny tools and PDK/model inputs retain their existing versions.
+Mini's first lint attempt failed at SBT's local Unix socket in the sandbox;
+the same source/configuration command passed with that environment restriction
+removed. The initial multi-file formatter invocation was unsupported; individual
+read-only verification passed without changing source.
+
+The original Icarus attempt is retained as failed at
+`meta/tiny-r2-p1/workloads/iverilog/attempt-_fqxpoam/attempt.json` below the
+matched variant. Runs 1/2 each completed all seven cases and strict Tiny
+TEST_STATUS/SIM_TEST_PASS, with samples identical to Verilator. Run 3 printed
+part of its final TCD record before host timeout; the missing completion marker
+prevents acceptance. The generated recovery driver
+`meta/tiny-ics55-p1/retry_icarus_run3.py` below the primary variant checks original
+source/generated-input/model/tool/image hashes, preserves the two completed
+run records, and launches a new cold start for repetition 3 only. It retains
+the failed attempt and individual per-run timeout values. The recovered run 3
+passed in 15379.18 seconds with the same seven samples and strict markers. HEX,
+simulator model,
+workload parameters and the 100000000-cycle limit are unchanged; this is an
+execution-budget recovery, not a compiler, layout or architecture experiment.
+The first recovery launch stopped during provenance validation before starting
+simulation: the stock runtime validator requires a common timeout for all runs.
+The generated recovery adapter now invokes that unchanged validator separately
+with each original command's declared budget. The final phase join uses
+`collect_matched_report.py` and writes `meta/tiny-ics55-p1/matched-report.json`
+below the primary variant, explicitly preserving per-run budgets and the failed
+attempt. It does not claim that the ordinary homogeneous-budget baseline report
+command accepts a mixed-budget record. Project implementation/validator sources
+and all original run records remain unchanged by this operational recovery.
+
+Final SAFE24 core STA observations, in ns:
+
+| PDK | WNS max | TNS max | WNS min / TNS min | Verdict |
+| --- | ---: | ---: | --- | --- |
+| ICS55 | -41.14 | -508669.53 | 0.00 / 0.00 | Timing FAIL; observational in this phase |
+| IHP130 | -94.28 | -1594880.00 | 0.00 / 0.00 | Timing FAIL; compatibility observation |
+
+ICS55 `sta/opensta/sys-setup.rpt` starts at the XPI reset leaf, fanout 4707,
+and ends at RX FIFO storage; its SYS hold report's worst reported slack is
++0.08 ns. `coverage.rpt` records 43 inputs without input delays, 52 outputs
+without output delays and 93 unconstrained endpoints. These are the retained
+core-only analysis boundary, not full-chip IO closure. The clock report has
+SYS 41.666666667 ns and JTAG 100 ns; no active PLL generated clock is claimed.
+The electrical/recovery/removal/pulse-width/minimum-period and SRAM input/return
+reports remain under the same `sta/opensta/` directory.
+
+Direct warning checks on the CI variants report 21 new Yosys signatures for
+ICS55, and 14 Yosys plus one Icarus signature for IHP130, relative to the
+stored baselines. Lint comparisons report 459/403 signatures respectively.
+Neither Tiny profile has a stored RTL-lint baseline, so every normalized
+lint signature is classified as new. The reports include unused parameters,
+empty ports, vendor model limitations and ABC's Liberty-cache fallback; they are
+not counts of defects introduced by this phase. The regression preserves
+their failed observation status while its functional commands pass.
+
+The earlier development variant
+`build/ics55-tiny-2026-10-07-21-00-42d5beccb726/` retains failed attempts:
+missing unused SRAM interface, wrong 16 KiB macro selection, GPIO readback
+failure and insufficient constant-disabled PLL proof. Corrected development
+Verilator/JTAG, mapped-netlist audit and SAFE24 STA subsequently ran, but those
+results are not substituted for the fresh final campaign. NFS clock-skew
+warnings are retained; final variants and forced workload compilation avoid
+reuse of those earlier simulator outputs.
+
+The intermediate `2026-10-07-23-06` campaign exposed an IHP130 Icarus JTAG
+testbench reset-initialization failure. Four-state waveform inspection showed
+internal TRST remaining X until release because TCK started after reset. The
+opt-in test now clocks TCK during asserted external reset before its TAP/DMI
+sequence; no reset RTL changed. A bounded Icarus probe then completed
+halt/resume. Ongoing simulations in that campaign were explicitly interrupted
+before final source recapture; partial workload passes are not final evidence.
+The initial full Pytest was also interrupted and restarted on final source;
+its interrupted record stays in that earlier directory. After the correction,
+178 focused platform, provenance, baseline and build tests passed.
+
+The required acceptance remains command success, valid sticky TEST_STATUS,
+SIM_TEST_PASS and no forbidden error marker. UART alone is insufficient.
+Boot-only netlist checks are narrower than full C netlist acceptance. Timing
+violations remain failures under the observational pre-final policy; no
+behavioral result qualifies physical timing, analog PLL lock, PVT, power,
+package or silicon. The PLL has no LOCK output, no characterized timing arcs
+and an unresolved upstream license. Its ideal digital supply ties do not
+define physical rail integration. Full RCU/source switching remains R2-P7.
+
+The next action is read-only feature review followed by explicit human phase
+acceptance. No commit, push, PR or next-phase advancement is authorized here.
+
 ## ICS55 default and final timing policy refreeze (2026-10-07)
 
 The [2026-10-07 normative policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 selects TINY/ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the default target.
-`configs/ci/ics55-tiny.mk` and TINY-ICS55-P1 platform implementation are pending;
-`configs/ci/ihp130-tiny.mk` remains the current executable compatibility baseline.
+At refreeze, `configs/ci/ics55-tiny.mk` and TINY-ICS55-P1 platform implementation
+were pending; `configs/ci/ihp130-tiny.mk` was the executable compatibility baseline.
 The existing 614fa623 commit adds shared ICS55 SRAM inputs, not Tiny enablement.
 
 All pre-final post-synthesis timing results are observations rather than phase

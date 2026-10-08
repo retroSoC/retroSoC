@@ -10,8 +10,9 @@ evidence under its original scope.
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
   [2026-10-07 Tiny policy](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07).
-  TINY-ICS55-P1 and `configs/ci/ics55-tiny.mk` are pending; existing IHP130
-  commands and historical records are compatibility evidence only.
+  `configs/ci/ics55-tiny.mk` now exists with a parked PLL; platform acceptance
+  belongs to the Tiny ledger. Existing IHP130 commands and historical records
+  are compatibility evidence only; no PPALite integration is delivered.
 - Pre-final post-synthesis timing is observational; failed/missing timing does
   not become a PASS or a hardware-frequency claim. Source correctness,
   functionality, synthesis/mapping and netlist-function requirements remain.

@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pdk", required=True)
     parser.add_argument("--soc", choices=("MINI", "TINY"), default="MINI")
     parser.add_argument("--have-sram-macro", choices=("YES", "NO"), default="NO")
+    parser.add_argument("--have-pll", choices=("YES", "NO"), default="NO")
     parser.add_argument("--formal", choices=("YES", "NO"), default="NO")
     parser.add_argument("--require-debug-tools", action="store_true")
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
@@ -85,7 +86,23 @@ def main() -> int:
     }
     if args.pdk in pdk_names:
         source_names.append(pdk_names[args.pdk])
+    if args.pdk == "ICS55" and args.soc == "TINY" and args.have_pll == "YES":
+        source_names.append("pdk_ics55_pll")
     paths = {name: root / lock["sources"][name]["destination"] for name in source_names}
+    if args.pdk == "ICS55":
+        for corner in ("tt", "ss"):
+            paths[f"ics55_cells_{corner}"] = root / f".cache/retrosoc/pdk/ics55/ics55_h7cr_{corner}.lib"
+        if args.have_sram_macro == "YES":
+            for size in ("1024", "4096"):
+                name = f"ics55_ecos_sram_{size}x32_m8"
+                for view in (f"verilog/{name}_core.v", f"verilog/{name}_stub.v",
+                             f"lib/{name}_tt1p2v25cctyp.lib", f"lib/{name}_ss1p08v125ccmax.lib"):
+                    paths[f"{name}/{view}"] = root / ".cache/retrosoc/pdk/ics55/sram" / name / view
+        if args.soc == "TINY" and args.have_pll == "YES":
+            from physical.pdk.setup import PLL_VIEWS
+            pll = root / lock["sources"]["pdk_ics55_pll"]["destination"]
+            for view in PLL_VIEWS:
+                paths[f"pll/{view}"] = pll / view
     if args.pdk == "SKY130" and args.have_sram_macro == "YES":
         paths["sky130_openram_sram"] = root / ".cache/retrosoc/pdk/sky130/openram"
     tool_results = {
@@ -97,6 +114,17 @@ def main() -> int:
     }
     failures = sum(value["path"] is None for value in tool_results.values())
     failures += sum(not value["exists"] for value in path_results.values())
+    if "pdk_ics55_pll" in paths and paths["pdk_ics55_pll"].exists():
+        try:
+            revision = subprocess.check_output(["git", "-C", str(paths["pdk_ics55_pll"]),
+                                                "rev-parse", "HEAD"], text=True).strip()
+            dirty = subprocess.check_output(["git", "-C", str(paths["pdk_ics55_pll"]),
+                                             "status", "--porcelain"], text=True).strip()
+            matching = revision == lock["sources"]["pdk_ics55_pll"]["revision"] and not dirty
+        except subprocess.CalledProcessError:
+            matching = False
+        path_results["pdk_ics55_pll"]["locked_clean_checkout"] = bool(matching)
+        failures += int(not matching)
     report = {
         "schema_version": 1,
         "ok": failures == 0,

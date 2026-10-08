@@ -7,8 +7,9 @@ The 2026-10-07 refreeze selects **ICS55 as the default target PDK with
 complete-product final qualification campaign. The
 [platform and timing policy](#ics55-default-platform-and-final-timing-gate-2026-10-07)
 below supersedes earlier target-PDK and intermediate timing-gate wording.
-It does not relabel historical IHP130 results or make the planned ICS55 profile
-executable. This refreeze includes locked PLL acquisition, not RTL integration.
+It does not relabel historical IHP130 results. The refreeze itself included
+locked PLL acquisition only; the subsequent TINY-ICS55-P1 implementation is
+described in the [platform runbook](tiny-ics55-platform.md) and verification ledger.
 
 The R2 portion of this contract freezes the performance-only design approved
 on 2026-10-04 for Target SoCs: `TINY`, feature slug `tiny-soc`. It preserves the QFN64
@@ -54,12 +55,12 @@ This is a specification freeze, not evidence of implemented or qualified
 additional product rollout; Std/Pro integration is outside this change.
 
 Tiny owns its integration in `rtl/tiny`; Mini remains a separate product. The
-committed `configs/ci/ihp130-tiny.mk` profile still describes the initial
-2026-09-25 implementation: 24 MHz external clock, no PLL, two UARTs and two I2C
-controllers. Its RTL, canonical maps, SDK, configuration, generated datasheet
-and verification evidence remain the executable baseline until separate
-integration work updates them. The baseline sections below retain that
-contract and must not be read as the new Gen1 integration or clock qualification.
+`configs/ci/ics55-tiny.mk` default implements SAFE24 with a present, explicitly
+disabled PLL; `configs/ci/ihp130-tiny.mk` preserves the 24 MHz/no-PLL compatibility
+profile. Both retain two UARTs, two I2C controllers and the legacy executable
+integration. The original generated datasheet and historical evidence remain
+IHP130-specific. The baseline sections below must not be read as completed
+Gen1 integration or clock qualification.
 
 Product RTL, address/pin/topology inputs and filelists remain under `rtl/tiny`;
 the SDK and application composition retain their existing `crt/` and `app/`
@@ -68,8 +69,9 @@ the current product execution order is defined by the 2026-10-07 policy below.
 Legacy `TINY-P0`
 through `TINY-P12` keep their original headings and evidence in the archive;
 their former non-monotonic schedule is not the current execution plan.
-The current profile still selects four DMA channels and forbids PLL/non-24-MHz
-Tiny configurations. New configurations require explicit platform enablement.
+Current profiles still select four DMA channels and require 24 MHz external
+SYS. ICS55 PLL presence does not enable PLL-driven SYS; new operating points
+require later clock/reset integration and qualification.
 PIO-lite integration in `PIOLITE-P3` requires the applicable accepted R2-P6
 DMA/shared-integration and R2-P7 RCU functionality. `PIOLITE-P5` may share a
 physical run with R2-P11 only on the same PIO-inclusive source revision and
@@ -91,9 +93,9 @@ integration contracts. It adds ICS55 platform enablement to the former
 performance-only scope; unrelated SoCs and PDK rollouts remain excluded.
 
 - TINY-052: the default **target** is TINY/ICS55, `HAVE_PLL=YES`, 128 KiB main
-  SRAM and SAFE24 boot. The planned committed entrypoint is
-  `configs/ci/ics55-tiny.mk`; it does not exist yet. The current executable
-  entrypoint remains `configs/ci/ihp130-tiny.mk`, IHP130, 24 MHz/no PLL.
+  SRAM and SAFE24 boot. The default entrypoint is `configs/ci/ics55-tiny.mk`,
+  with its PLL explicitly parked off in P1. The compatibility entrypoint is
+  `configs/ci/ihp130-tiny.mk`, IHP130, 24 MHz/no PLL.
   IHP130 remains an explicit compatibility option, not the future default.
   Mini profiles and defaults are unchanged.
 - TINY-053: before final complete-product qualification, post-synthesis timing
@@ -182,7 +184,7 @@ lock/jitter proof nor final frequency qualification.
 
 ### TINY-ICS55-P1 - Default PDK and PLL Platform Enablement
 
-This is a new, pending implementation prerequisite before remaining R2 work,
+This is the platform implementation prerequisite before remaining R2 work,
 not a renaming of R2-P1/P2. Introduce the default ICS55 Tiny profile and explicit
 PDK selection, reuse the locked SRAM and PLL inputs, adapt filelists, technology
 bindings and observation endpoints, and establish SAFE24 PLL-present boot,
@@ -196,7 +198,9 @@ Acceptance requires an executable source-bound platform, actual macro binding,
 both simulators and strict Tiny verdicts, dependency/model identity, relevant
 synthesis/netlist checks and observational timing with explicit gaps. Physical
 timing closure is deferred to the combined final campaign. This refreeze
-implements only documentation and dependency acquisition, not this phase.
+implemented only documentation and dependency acquisition. The subsequent
+implementation and its source-bound acceptance status are recorded separately
+in the ledger; neither enables R2-P7 clock switching or final physical qualification.
 
 ### Commercial references and reuse boundary
 
@@ -2195,8 +2199,9 @@ evidence class. Record exact directed/formal commands when those cases are
 introduced; do not assume a nonexistent target, a skipped RTL test or another
 product's result satisfies Tiny acceptance. Before the combined final campaign,
 post-synthesis timing is observational under TINY-053. The commands above
-remain the existing IHP130 executable baseline; the proposed ICS55 Tiny profile
-and its commands must be introduced and verified by TINY-ICS55-P1.
+retain the historical IHP130 compatibility entrypoint. The default ICS55
+platform's explicit commands and evidence boundaries are documented in
+[the platform runbook](tiny-ics55-platform.md).
 
 ## Archived P0-P12 development order and acceptance
 
@@ -2591,19 +2596,19 @@ concurrency and final physical product qualification are different claims.
 
 ## Implementation handoff
 
-The next platform step after the 2026-10-07 refreeze is TINY-ICS55-P1 preflight.
-Historical R2-P1/P2 evidence remains IHP130-only. After platform enablement,
+The current handoff is review of TINY-ICS55-P1 implementation and its retained
+evidence. Historical R2-P1/P2 evidence remains IHP130-only. After acceptance,
 resume the remaining Tiny foundation, then SPI, PIO-lite and PPALite functional
 phases, followed by the combined final qualification campaign. This handoff
 authorizes no implementation or automatic phase advancement.
 
 ```text
-Use $retrosoc-feature-implementation in preflight mode for feature tiny-soc.
+Use $retrosoc-feature-review in read-only review mode for feature tiny-soc.
 Target SoCs: TINY.
 Phase: TINY-ICS55-P1 - Default PDK and PLL Platform Enablement.
 Specification: docs/ip/tiny-soc.md; evidence: docs/ip/tiny-soc-verification.md.
-Current executable reference: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Planned default: configs/ci/ics55-tiny.mk, ICS55, HAVE_PLL=YES, SAFE24 boot; do not pretend this profile already exists. Map the current source/worktree, locked OpenECOS SRAM and pdk_ics55_pll inputs, models, technology bindings and tools. PLL pin: 6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b. Its Liberty has no timing arcs and its interface has no LOCK output; retain those qualification gaps.
-Plan the smallest platform/profile/filelist/PLL-backend integration and source-bound functional baseline. Preserve QFN64 and IO/power assignments, 128 KiB CPU-rate main SRAM, private Crypto storage, boot/debug, original workload binaries and IHP130/shared-Mini compatibility. No half-rate SRAM fallback. Preserve selector 5/7 mappings for PLL192/240 and reject the old N=2/four-cycle lock assumption.
+Default platform: configs/ci/ics55-tiny.mk, ICS55, HAVE_PLL=YES, external SAFE24 with the PLL explicitly parked off. Compatibility: configs/ci/ihp130-tiny.mk, IHP130, 24 MHz/no PLL. Read docs/ip/tiny-ics55-platform.md and the implementation ledger; distinguish the worktree based on ecac3559b0ba67fa2630003ad718657969c78af4 from historical results. Audit actual source, locked macro/model inputs and retained command verdicts. PLL pin: 6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b; Liberty has no timing arcs and no LOCK output.
+Review default selection, truthful ARCHINFO, 32 x 4 KiB SRAM mapping at CPU SYS, constant-disabled PLL binding, selector 5/7 backend qualification, native and functional pad readback, JTAG halt/resume, strict dual-simulator firmware/netlist results and original matched workload HEX. Preserve QFN64, private Crypto storage, boot/debug and IHP130/shared-Mini compatibility. No half-rate SRAM fallback. Check source/input/tool hashes and distinguish digital PLL rate observation from analog lock.
 Full Tiny RCU transitions and dynamic rate reporting remain R2-P7; do not implement later CPU/banking/fabric/DMA/peripheral phases. Preserve dependency versions, warning baselines and metrics policy. Retain required synthesis/mapping/netlist-functional checks and observational STA, with failures and missing inputs explicit. No intermediate post-synthesis timing closure gate; final timing and physical qualification occur only on the complete SPI/PIO-lite/PPALite-inclusive product.
-Return a single-phase preflight with exact proposed changes, ownership, validation commands, blockers and acceptance boundaries. Read-only preflight only: no edits, dependency restoration, builds, simulations or STA. Do not commit, push, create a PR or advance a phase. Stop for explicit implementation approval.
+Return prioritized findings with file/line evidence and phase readiness; identify failed, unrun or historical gates. Read-only review only: no edits, restoration, builds, simulations or STA. Do not commit, push, create a PR or advance a phase. Stop for human acceptance and separate approval before any next-phase implementation.
 ```

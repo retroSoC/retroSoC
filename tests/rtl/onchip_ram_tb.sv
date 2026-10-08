@@ -5,7 +5,8 @@
 `include "onchip_ram_define.svh"
 
 module onchip_ram_tb #(
-    parameter int unsigned CapacityKiB = 128
+    parameter bit          Ics55SmallBanks = 1'b0,
+    parameter int unsigned CapacityKiB     = 128
 );
   localparam logic [31:0] SramBase = `SOC_ADDR_SRAM_BASE;
   localparam logic [31:0] SramEnd = `SOC_ADDR_SRAM_END;
@@ -34,8 +35,9 @@ module onchip_ram_tb #(
   always #5 clk_i = ~clk_i;
 
   onchip_ram #(
-      .Present    (1'b1),
-      .CapacityKiB(CapacityKiB)
+      .Ics55SmallBanks(Ics55SmallBanks),
+      .Present        (1'b1),
+      .CapacityKiB    (CapacityKiB)
   ) u_dut (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),

@@ -31,7 +31,8 @@ $(ARCHINFO_METADATA_STAMP): $(LOCK_FILE) $(wildcard $(ARCHINFO_METADATA_SCRIPT))
 
 $(FILELIST_STAMP): $(ROOT_PATH)/Makefile $(RTL_PATH)/Makefile $(TINY_MAPS) $(TINY_TEMPLATES) $(TINY_TOOLS) $(ARCHINFO_METADATA_STAMP)
 	$(PYTHON) $(ROOT_PATH)/scripts/generate_tiny.py --output $(TINY_GENERATED_DIR) \
-		--filelists $(GENERATED_FL_DIR) $(foreach define,$(DEF_LIST),--define $(define))
+		--filelists $(GENERATED_FL_DIR) --pdk $(PDK) --simulator $(SIMU) --synthesis $(SYNTH) \
+		$(foreach define,$(DEF_LIST),--define $(define))
 	@touch $@
 
 $(SOC_IRQ_METADATA): $(FILELIST_STAMP)
@@ -50,7 +51,7 @@ check-clock-reset-domains:
 
 RTL_FILELISTS    := $(addprefix $(GENERATED_FL_DIR)/,def.fl inc.fl commonip.fl clusterip.fl ip.fl tech.fl core_hazard3.fl top.fl)
 RTL_FLIST        := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
-PDK_FILELIST     := $(GENERATED_FL_DIR)/pdk_ihp130.fl
+PDK_FILELIST     := $(GENERATED_FL_DIR)/pdk_selected.fl
 TINY_TB_FLIST    := -f $(GENERATED_FL_DIR)/tb.fl
 TOP_DESIGN       := retrosoc_tiny_asic
 RTL_NAME         := retrosoc_tiny_asic
@@ -62,6 +63,7 @@ TINY_DEPFILE     := $(SIM_BUILD_ROOT)/sources.d
 TINY_LINT_LOG    := $(VARIANT_ROOT)/lint/verilator/lint.log
 SOC_SIM_TIME     ?= 1800
 TINY_SIM_TIMEOUT ?= 20000000
+TINY_SIM_ARGS    ?=
 VERILATOR        ?= verilator
 IVERILOG         ?= iverilog
 VVP              ?= vvp
@@ -110,7 +112,7 @@ check-rtl-lint: rtl-lint
 sim: comp firmware | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool $(SIM_TOOL_NAME)-sim \
 		--log $(SIM_BUILD_ROOT)/sim.log --result $(SIM_BUILD_ROOT)/result-sim.json -- \
-		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT)
+		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT) $(TINY_SIM_ARGS)
 	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(SIM_BUILD_ROOT)/sim.log \
 		--result $(SIM_BUILD_ROOT)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 

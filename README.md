@@ -22,7 +22,8 @@ An open-source RISC-V SoC platform, from SystemVerilog RTL and firmware to repro
 low-power Hazard3 management hart and a VexiiRiscv application hart; its separate
 MPW profile retains selectable-core compatibility. [Tiny](docs/ip/tiny-soc.md)
 is a wired MCU with one Hazard3 RV32IMC hart, 128 KiB SRAM, AXI4/APB4 and no
-wireless IP. Tiny first targets IHP130; [Std and Pro](docs/soc-family-positioning.md)
+wireless IP. Tiny defaults to ICS55 SAFE24 with a parked PLL and retains
+IHP130 compatibility; [Std and Pro](docs/soc-family-positioning.md)
 remain roadmap products. Qualification is determined by each profile's retained
 verification and physical reports.
 
@@ -122,7 +123,8 @@ points, not the complete profile or application inventory.
 
 | Profile | Purpose |
 | --- | --- |
-| [IHP130 Tiny](configs/ci/ihp130-tiny.mk) | Single-hart wired MCU, 128 KiB SRAM, pin-level Flash boot and automated acceptance. |
+| [ICS55 Tiny](configs/ci/ics55-tiny.mk) | Default Tiny platform: 128 KiB SRAM, SAFE24 boot, PLL present but held off. |
+| [IHP130 Tiny](configs/ci/ihp130-tiny.mk) | Explicit Tiny compatibility, 128 KiB SRAM, 24 MHz/no PLL. |
 | [IHP130 Mini](configs/ci/ihp130.mk) | Manual bring-up with 32 KiB macro-backed SRAM. |
 | [GF180](configs/ci/gf180.mk) / [SKY130](configs/ci/sky130.mk) | Alternative PDK profiles with 32 KiB macro-backed SRAM. |
 | [ICS55 Mini](configs/ci/ics55.mk) | Regression-compatible Mini profile with locked SRAM and PLL disabled. |
@@ -135,9 +137,10 @@ points, not the complete profile or application inventory.
 | [Mini MPW](configs/cluster/mini-mpw.mk) | Legacy MPW C0-C3/user-IP compatibility, separate from the product ABI. |
 
 Tiny's [2026-10-07 target refreeze](docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
-selects ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the future default.
-Its new profile and RTL binding await TINY-ICS55-P1; the IHP130 Tiny entry above
-remains the executable compatibility baseline. Locked PLL views can be acquired
+selects ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the default.
+The profile instantiates a parked PLL; dynamic SYS switching remains R2-P7 and
+physical qualification is pending. IHP130 remains explicit compatibility.
+Locked PLL views can be acquired
 with `python3 physical/pdk/setup.py --pdk ICS55 --component pll` independently
 of platform implementation or timing qualification.
 

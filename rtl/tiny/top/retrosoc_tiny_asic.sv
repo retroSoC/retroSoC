@@ -14,6 +14,22 @@ module retrosoc_tiny_asic (
   /* verilator lint_on UNUSEDSIGNAL */
   gpio_if u_gpio_if ();
   xpi_if u_xpi_if ();
+`ifdef HAVE_PLL
+  // P1 preserves the macro but supplies no request or reset release. SYS is
+  // always the external SAFE24 path; RCU source switching belongs to R2-P7.
+  tc_pll #(
+      .UseIcs55EcosPll(1'b1),
+      .Ics55Parked    (1'b1)
+  ) u_pll (
+      .fref_i       (s_ext_clk),
+      .rst_n_i      (1'b0),
+      .cfg_sel_i    (3'd5),
+      .cfg_apply_i  (1'b0),
+      .pll_capable_o(),
+      .pll_lock_o   (),
+      .pll_clk_o    ()
+  );
+`endif
   `include "retrosoc_asic_pad_bindings.svh"
 tc_clk_buf u_clock_buffer (
       .clk_i(s_ext_clk),

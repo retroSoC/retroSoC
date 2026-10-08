@@ -67,10 +67,12 @@ For supported profiles and commands, see the root [README](../README.md) and
 ## Tiny MCU
 
 The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
-sets the **target** default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
-`ci/ics55-tiny.mk` is planned for TINY-ICS55-P1 and is not yet an executable
-profile. IHP130 remains explicit compatibility; do not substitute the Mini
-`ci/ics55.mk` profile for Tiny or bypass current configuration guards.
+sets the default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
+`ci/ics55-tiny.mk` implements that entrypoint with the PLL held off; standalone
+PLL backend tests do not enable RCU/SYS switching. `make SOC=TINY` selects this
+committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
+Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in
+the Tiny ledger, and physical qualification remains pending.
 
 `ci/ihp130-tiny.mk` selects `SOC=TINY`, one RV32IMC Hazard3 (A disabled),
 128 KiB SRAM, AXI32/APB4, four DMA channels and the wired peripheral subset.

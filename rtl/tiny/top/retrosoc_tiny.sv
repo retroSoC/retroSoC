@@ -168,9 +168,10 @@ uart_if u_uart0_if ();
       .dma_wait_o    (s_dma_wait)
   );
   onchip_ram #(
-      .CapacityKiB(128),
-      .DataWidth  (32),
-      .IdWidth    (1)
+      .CapacityKiB    (128),
+      .DataWidth      (32),
+      .IdWidth        (1),
+      .Ics55SmallBanks(1'b1)
   ) u_sram (
       .clk_i        (clk_i),
       .rst_n_i      (s_sram_rst_n),

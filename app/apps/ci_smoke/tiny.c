@@ -159,9 +159,12 @@ static bool rs_mcu_io(void) {
 
     if ((rs_gpio_get_capabilities(&capabilities) != RS_OK) ||
         ((capabilities.pad_features & (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)) !=
-         0U) ||
-        (rs_gpio_configure(15U, &pull_up) != RS_ENOTSUP) ||
-        (rs_gpio_configure(15U, &pull_down) != RS_ENOTSUP) ||
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)
+                                        : 0U)) ||
+        (rs_gpio_configure(15U, &pull_up) !=
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
+        (rs_gpio_configure(15U, &pull_down) !=
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
         (rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || !high || (rs_gpio_write(15U, false) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || high) {
@@ -256,6 +259,8 @@ int main(void) {
     }
     if ((rs_archinfo_read(&info) != RS_OK) || (rs_archinfo_validate_build(&info) != RS_OK) ||
         (info.soc_id != RS_SOC_ID) || (info.topology != UINT32_C(0x20200001)) ||
+        (info.technology != RS_SOC_TECHNOLOGY_ID) ||
+        ((info.features0 & UINT32_C(1)) != RS_SOC_PLL_PRESENT) ||
         (rs_onchip_sram_probe(&memory) != RS_OK) || (memory.memory_bytes != UINT32_C(131072)) ||
         (memory.data_bytes != 4U) || (memory.bank_count != 32U)) {
         rs_mcu_finish(false, 3U);
