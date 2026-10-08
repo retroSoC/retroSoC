@@ -9,7 +9,9 @@
 # See the Mulan PSL v2 for more details.
 
 namespace eval flow {
-    variable top [expr {[info exists ::env(TOP)] ? $::env(TOP) : "retrosoc_asic"}]
+    variable top [expr {[info exists ::env(TOP)] ? $::env(TOP) : ""}]
+    variable soc [expr {[info exists ::env(SOC)] ? [string toupper $::env(SOC)] : "MINI"}]
+    variable technology [expr {[info exists ::env(TECHNOLOGY)] ? [string toupper $::env(TECHNOLOGY)] : "ICS55"}]
     variable root [file normalize [file join [file dirname [info script]] ../..]]
     variable run_root [expr {[info exists ::env(RUN_ROOT)] ? $::env(RUN_ROOT) : ""}]
 }
@@ -209,49 +211,6 @@ proc flow::report_has_failure {path patterns} {
     if {![file isfile $path]} {
         flow::fail "required report was not written: $path"
     }
-
-    proc flow::count_report_matches {path pattern} {
-        if {![file isfile $path]} {
-            flow::fail "required report was not written: $path"
-        }
-        set handle [open $path r]
-        set text [read $handle]
-        close $handle
-        return [regexp -all -nocase -- $pattern $text]
-    }
-
-    proc flow::require_qualified_synthesis {} {
-        variable run_root
-        set summary [file join $run_root syn output synthesis.summary.tsv]
-        if {![file isfile $summary]} {
-            flow::fail "qualified synthesis summary is missing: $summary"
-        }
-        array set values {}
-        set handle [open $summary r]
-        while {[gets $handle line] >= 0} {
-            if {[regexp {^([^\t]+)\t([^\t]+)$} $line unused name value]} {
-                set values($name) $value
-            }
-        }
-
-        proc flow::require_commercial_clock_inventory {} {
-            set expected {
-                clk_external clk_audio clk_jtag clk_dvp clk_usb2_ulpi
-                clk_xtal clk_pll clk_system_ext clk_system_pll
-            }
-            foreach name $expected {
-                if {[sizeof_collection [get_clocks -quiet $name]] != 1} {
-                    flow::fail "commercial clock is missing or ambiguous: $name"
-                }
-            }
-        }
-        close $handle
-        foreach name {flow_pass constraints_complete io_qualified} {
-            if {![info exists values($name)] || $values($name) ne "yes"} {
-                flow::fail "synthesis is not qualified for implementation: $name"
-            }
-        }
-    }
     set handle [open $path r]
     set text [read $handle]
     close $handle
@@ -262,3 +221,51 @@ proc flow::report_has_failure {path patterns} {
     }
     return 0
 }
+
+proc flow::count_report_matches {path pattern} {
+    if {![file isfile $path]} {
+        flow::fail "required report was not written: $path"
+    }
+    set handle [open $path r]
+    set text [read $handle]
+    close $handle
+    return [regexp -all -nocase -- $pattern $text]
+}
+
+proc flow::require_commercial_clock_inventory {} {
+    foreach name [product::clock_names] {
+        if {[sizeof_collection [get_clocks -quiet $name]] != 1} {
+            flow::fail "commercial clock is missing or ambiguous: $name"
+        }
+    }
+}
+
+proc flow::require_qualified_synthesis {} {
+    variable run_root
+    set summary [file join $run_root syn output synthesis.summary.tsv]
+    if {![file isfile $summary]} {
+        flow::fail "qualified synthesis summary is missing: $summary"
+    }
+    array set values {}
+    set handle [open $summary r]
+    while {[gets $handle line] >= 0} {
+        if {[regexp {^([^\t]+)\t([^\t]+)$} $line unused name value]} {
+            set values($name) $value
+        }
+    }
+    close $handle
+    foreach name {flow_pass constraints_complete io_qualified} {
+        if {![info exists values($name)] || $values($name) ne "yes"} {
+            flow::fail "synthesis is not qualified for implementation: $name"
+        }
+    }
+}
+
+set flow_product_tcl [file join $flow::root tcl common products \
+    [string tolower $flow::soc].tcl]
+if {![file isfile $flow_product_tcl]} {
+    puts stderr \
+        "COMMERCIAL_FLOW_ERROR: unsupported SOC=$flow::soc (missing $flow_product_tcl)"
+    exit 2
+}
+source $flow_product_tcl

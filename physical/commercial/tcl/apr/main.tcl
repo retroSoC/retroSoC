@@ -33,14 +33,60 @@ proc restore_previous {run_root top stage} {
     restoreDesign $database $top
 }
 
+proc connect_pin_map {map type} {
+    foreach group $map {
+        set fields [split $group :]
+        if {[llength $fields] != 2} {
+            flow::fail "invalid APR pin map group (expect NET:pin1,pin2): $group"
+        }
+        set net [string trim [lindex $fields 0]]
+        set pins [string trim [lindex $fields 1]]
+        if {$net eq "" || $pins eq ""} {
+            flow::fail "invalid APR pin map group (expect NET:pin1,pin2): $group"
+        }
+        # Create the physical net when the netlist does not carry it, mirroring
+        # legacy CL1/user_add_pg.tcl:4-15.
+        if {[dbGet top.nets.name $net] eq "0x0"} {
+            if {$type eq "power"} {
+                addNet $net -physical -power
+            } else {
+                addNet $net -physical -ground
+            }
+            setNet -type special -net $net
+        }
+        foreach pin [split $pins ,] {
+            set pin [string trim $pin]
+            if {$pin eq ""} {
+                continue
+            }
+            globalNetConnect $net -type pgpin -pin $pin -all -verbose
+        }
+    }
+}
+
+# Legacy CL1/user_add_pg.tcl connects every power domain to its own pin group
+# (independent PLL_AVDD/PLL_AVSS pairs for the PLL macro at lines 22-23 and
+# 32-33). APR_POWER_PIN_MAP / APR_GROUND_PIN_MAP express the same grouping as
+# "NET:pin1,pin2 NET2:pin3"; when a map is empty every configured pin joins
+# the single APR_POWER_NET / APR_GROUND_NET as before.
 proc connect_power_nets {} {
     set power [flow::env APR_POWER_NET]
     set ground [flow::env APR_GROUND_NET]
-    foreach pin [flow::env APR_POWER_PINS] {
-        globalNetConnect $power -type pgpin -pin $pin -all -verbose
+    set power_map [string trim [flow::env APR_POWER_PIN_MAP ""]]
+    set ground_map [string trim [flow::env APR_GROUND_PIN_MAP ""]]
+    if {$power_map ne ""} {
+        connect_pin_map $power_map power
+    } else {
+        foreach pin [flow::env APR_POWER_PINS] {
+            globalNetConnect $power -type pgpin -pin $pin -all -verbose
+        }
     }
-    foreach pin [flow::env APR_GROUND_PINS] {
-        globalNetConnect $ground -type pgpin -pin $pin -all -verbose
+    if {$ground_map ne ""} {
+        connect_pin_map $ground_map ground
+    } else {
+        foreach pin [flow::env APR_GROUND_PINS] {
+            globalNetConnect $ground -type pgpin -pin $pin -all -verbose
+        }
     }
     globalNetConnect $power -type tiehi -all -verbose
     globalNetConnect $ground -type tielo -all -verbose
@@ -140,6 +186,113 @@ proc write_io_side {handle side signals power_records offset pitch length} {
     puts $handle "    )"
 }
 
+# Innovus engine modes from legacy setting/common_setting.tcl (lines 17 and
+# 21-22). Session modes are not preserved across restoreDesign, so every
+# stage re-applies them; the APR stages run in a fresh Innovus process, so the
+# legacy "-reset" prelude is not needed.
+proc apply_engine_settings {} {
+    setDesignMode -process [flow::env APR_DESIGN_PROCESS 55]
+    setAnalysisMode -cppr both -analysisType onChipVariation
+}
+
+# Placement modes from legacy setting/place_setting.tcl (effective lines 1-11).
+proc apply_place_settings {} {
+    setPlaceMode -timingDriven true
+    setPlaceMode -place_global_clock_gate_aware true
+    setPlaceMode -place_global_place_io_pins false
+    setPlaceMode -honorSoftBlockage true
+    setPlaceMode -place_detail_honor_inst_pad true
+    setPlaceMode -place_global_uniform_density true
+    setPlaceMode -place_global_clock_power_driven true
+    setPlaceMode -place_global_cong_effort auto
+    setPlaceMode -place_detail_legalization_inst_gap 1
+}
+
+# Routing modes from legacy setting/route_setting.tcl (effective lines 1-16).
+# Layer bounds stay name-based through APR_SIGNAL_MIN_LAYER/MAX_LAYER; the
+# legacy numeric earlyGlobal window (lines 5-6) applies only when the optional
+# APR_EARLY_GLOBAL_MIN_LAYER / APR_EARLY_GLOBAL_MAX_LAYER indexes are set.
+proc apply_route_settings {} {
+    setNanoRouteMode -routeBottomRoutingLayer [flow::env APR_SIGNAL_MIN_LAYER]
+    setNanoRouteMode -routeTopRoutingLayer [flow::env APR_SIGNAL_MAX_LAYER]
+    setNanoRouteMode -drouteEndIteration 20
+    setNanoRouteMode -routeWithSiDriven true
+    setNanoRouteMode -routeWithTimingDriven true
+    setNanoRouteMode -drouteNoTaperOnoutputPin false
+    setTrialRouteMode -skipTracks {}
+    setTrialRouteMode -ignoreAbutted2TermNet true
+    setOptMode -maxLength 500
+    set early_min [string trim [flow::env APR_EARLY_GLOBAL_MIN_LAYER ""]]
+    if {$early_min ne ""} {
+        setRouteMode -earlyGlobalMinRouteLayer $early_min
+    }
+    set early_max [string trim [flow::env APR_EARLY_GLOBAL_MAX_LAYER ""]]
+    if {$early_max ne ""} {
+        setRouteMode -earlyGlobalMaxRouteLayer $early_max
+    }
+}
+
+# Per-stage timing tightening: derate plus setup uncertainty from legacy
+# CL1/set_derate_uncertainty.tcl, and the design-rule limits from legacy
+# CL1/update_sdc.tcl:3-10 (max_fanout 32, max_transition 0.08 ns,
+# max_capacitance 0.15 pF). MMMC constraint modes are read-only until enabled
+# interactively (legacy place.tcl:19-25).
+proc apply_stage_constraints {stage} {
+    set_interactive_constraint_modes [all_constraint_modes]
+    flow::apply_apr_derate
+    flow::apply_apr_stage_uncertainty $stage
+    set_max_fanout [flow::env APR_MAX_FANOUT 32] [current_design]
+    set_max_transition [flow::env APR_MAX_TRANSITION_NS 0.08] [current_design]
+    set_max_capacitance [flow::env APR_MAX_CAPACITANCE_PF 0.15] [current_design]
+    set_interactive_constraint_mode {}
+}
+
+# 2x-width 2x-spacing clock NDR across the configured clock routing layers
+# (legacy setting/cts_setting.tcl:21-23: CLKNDR on MET3:MET5 with
+# width/spacing 0.2/0.2 um).
+proc create_clock_ndr {} {
+    set name retrosoc_clock_ndr
+    if {[dbGet head.rules.name $name] eq "0x0"} {
+        set layers [flow::env APR_CLOCK_ROUTING_LAYERS]
+        set range "[lindex $layers 0]:[lindex $layers end]"
+        add_ndr -name $name \
+            -width [list $range [flow::env APR_CTS_NDR_WIDTH_UM 0.2]] \
+            -spacing [list $range [flow::env APR_CTS_NDR_SPACING_UM 0.2]]
+    }
+    return $name
+}
+
+# Legacy generate_ccopt_spec.tcl:17-27 binds every clock route type to the
+# NDR and shields the top route type with the ground net (VSS, line 22). The
+# legacy trunk and top types share the same layer window, so the single
+# retrosoc trunk route type carries both the NDR and the ground shield.
+proc create_clock_trunk_route_type {ndr} {
+    set name retrosoc_clock_trunk
+    if {[dbGet head.routeTypes.name $name] eq "0x0"} {
+        create_route_type -name $name \
+            -top_preferred_layer [lindex [flow::env APR_CLOCK_ROUTING_LAYERS] end] \
+            -bottom_preferred_layer [lindex [flow::env APR_CLOCK_ROUTING_LAYERS] 0] \
+            -non_default_rule $ndr \
+            -shield_net [flow::env APR_GROUND_NET]
+    }
+    set_ccopt_property -net_type trunk route_type $name
+}
+
+# ccopt targets from legacy setting/cts_setting.tcl:1-12 and
+# generate_ccopt_spec.tcl:29-36: skew 0.08 ns, leaf/trunk transition 0.78 ns
+# (max_sink_tran/max_buf_tran), insertion delay 0.05 ns (cts_max_delay),
+# fanout 4.
+proc configure_ccopt_targets {} {
+    set_ccopt_property target_skew [flow::env APR_CTS_TARGET_SKEW_NS 0.08]
+    set_ccopt_property target_max_trans -net_type leaf \
+        [flow::env APR_CTS_TARGET_MAX_TRANS_LEAF_NS 0.78]
+    set_ccopt_property target_max_trans -net_type trunk \
+        [flow::env APR_CTS_TARGET_MAX_TRANS_TRUNK_NS 0.78]
+    set_ccopt_property target_insertion_delay \
+        [flow::env APR_CTS_TARGET_INSERTION_DELAY_NS 0.05]
+    set_ccopt_property max_fanout [flow::env APR_CTS_MAX_FANOUT 4]
+}
+
 proc write_apr_reports {report_dir stage} {
     redirect [file join $report_dir ${stage}.summary.rpt] { summaryReport }
     redirect [file join $report_dir ${stage}.timing.rpt] {
@@ -165,12 +318,25 @@ proc verify_route {report_dir} {
 proc write_data_out {run_root top stage output_dir report_dir} {
     set prefix [file join $output_dir ${top}.${stage}]
     defOut -floorplan -netlist -routing ${prefix}.def
-    saveNetlist ${prefix}.v
-    saveNetlist -includePowerGround ${prefix}.pg.v
+    # Legacy dataOut.tcl:15,19 drop pad and seal-ring instances from the
+    # netlists; APR_NETLIST_EXCLUDE_CELLS carries the same exclusion list.
+    set exclude [string trim [flow::env APR_NETLIST_EXCLUDE_CELLS ""]]
+    if {$exclude eq ""} {
+        saveNetlist ${prefix}.v
+        saveNetlist -includePowerGround ${prefix}.pg.v
+    } else {
+        saveNetlist ${prefix}.v -excludeCellInst $exclude
+        saveNetlist -includePowerGround ${prefix}.pg.v -excludeCellInst $exclude
+    }
     write_sdc ${prefix}.sdc
     write_sdf -version 3.0 ${prefix}.sdf
+    # Legacy dataOut.tcl:26-35 stream-out contract.
+    setStreamOutMode -virtualConnection false
     streamOut ${prefix}.gds -mapFile [flow::env STREAM_MAP] \
-        -structureName $top -mode ALL
+        -structureName $top -mode ALL \
+        -stripes 1 -units 1000 \
+        -attachInstanceName 2 -attachNetName 2 \
+        -dieAreaAsBoundary
     verify_route $report_dir
 }
 
@@ -208,6 +374,11 @@ proc run_apr {} {
 
     switch -- $stage {
         initialize {
+            # MMMC is ready once init_design completes; apply the engine modes
+            # (legacy setting/common_setting.tcl) and derate every delay
+            # corner (legacy CL1/set_derate_uncertainty.tcl:1-3).
+            apply_engine_settings
+            flow::apply_apr_derate
             checkDesign -all
         }
         floorplan {
@@ -215,11 +386,39 @@ proc run_apr {} {
                 [flow::env DIE_WIDTH] [flow::env DIE_HEIGHT] \
                 [flow::env CORE_MARGIN_LEFT] [flow::env CORE_MARGIN_BOTTOM] \
                 [flow::env CORE_MARGIN_RIGHT] [flow::env CORE_MARGIN_TOP]
-            set io_file [file join $work_dir ${top}.io]
-            write_io_ring $io_file
+            # Legacy floorplan.tcl:6 loads a reviewed IO order file; the
+            # generated round-robin ring stays the default fallback.
+            set io_order_file [string trim [flow::env APR_IO_ORDER_FILE ""]]
+            if {$io_order_file ne ""} {
+                if {![file isfile $io_order_file] || \
+                        ![file readable $io_order_file]} {
+                    flow::fail "APR_IO_ORDER_FILE is not readable: $io_order_file"
+                }
+                set io_file [file normalize $io_order_file]
+                set io_order file
+            } else {
+                set io_file [file join $work_dir ${top}.io]
+                write_io_ring $io_file
+                set io_order round_robin
+            }
             loadIoFile $io_file
             fixAllIos
+            puts "APR floorplan io_order=$io_order io_file=$io_file"
+            flow::write_text [file join $output_dir floorplan.io.json] \
+                "{\n    \"stage\": \"floorplan\",\n    \"io_order\": \"$io_order\",\n    \"io_file\": \"$io_file\"\n}\n"
             addIoFiller -cell [flow::env APR_IO_FILLERS] -prefix IOFILL
+            # Optional macro pre-placement (legacy floorplan.tcl:11 sources
+            # CL1/<design>_macro_loc.tcl; the file carries
+            # placeInstance/place_macro/createPlaceBlockage commands) plus a
+            # uniform macro placement halo (legacy prePlace.tcl:9 uses
+            # "addHaloToBlock -allMacro 2 2 2 2"; CL1/add_mem_blk.tcl instead
+            # extends every SRAM by 1.5 um as a pgnet route blockage).
+            set macro_loc [string trim [flow::env APR_MACRO_LOC_FILE ""]]
+            if {$macro_loc ne ""} {
+                flow::source_hook APR_MACRO_LOC_FILE
+                set halo [flow::env APR_MACRO_HALO_UM 5]
+                addHaloToBlock -allMacro $halo $halo $halo $halo
+            }
             flow::source_hook APR_FLOORPLAN_HOOK
             connect_power_nets
             set ring_layers [flow::env APR_RING_LAYERS]
@@ -251,20 +450,33 @@ proc run_apr {} {
             checkFPlan -reportUtil
         }
         place {
+            # Legacy place.tcl:7-23 re-sources every setting file plus the
+            # per-stage constraint updates after restoreDesign.
+            apply_engine_settings
+            apply_place_settings
+            apply_route_settings
+            apply_stage_constraints place
+            # Legacy place_setting.tcl:1 fixes density at 0.7; the retroSoC
+            # product policy keeps it driven by CORE_UTILIZATION.
             setPlaceMode -place_global_max_density [flow::env CORE_UTILIZATION]
             placeDesign -concurrent_macros
             optDesign -preCTS
             flow::source_hook APR_PLACE_HOOK
         }
         cts {
+            # Legacy CTS.tcl:7-25 applies the same settings and constraints.
+            apply_engine_settings
+            apply_place_settings
+            apply_route_settings
+            apply_stage_constraints cts
             set_ccopt_property buffer_cells [flow::env APR_CTS_BUFFER_CELLS]
             set_ccopt_property inverter_cells [flow::env APR_CTS_INVERTER_CELLS]
-            set_ccopt_property route_type -net_type trunk \
-                -route_type_name retrosoc_clock_trunk
-            create_route_type -name retrosoc_clock_trunk \
-                -top_preferred_layer [lindex [flow::env APR_CLOCK_ROUTING_LAYERS] end] \
-                -bottom_preferred_layer [lindex [flow::env APR_CLOCK_ROUTING_LAYERS] 0]
+            # Legacy generate_ccopt_spec.tcl: snapshot the tree spec, then
+            # bind the NDR route type and targets before ccopt_design.
             create_ccopt_clock_tree_spec -file [file join $work_dir ccopt.spec]
+            set clock_ndr [create_clock_ndr]
+            create_clock_trunk_route_type $clock_ndr
+            configure_ccopt_targets
             source [file join $work_dir ccopt.spec]
             ccopt_design
             optDesign -postCTS
@@ -272,8 +484,14 @@ proc run_apr {} {
             flow::source_hook APR_CTS_HOOK
         }
         route {
-            setNanoRouteMode -routeBottomRoutingLayer [flow::env APR_SIGNAL_MIN_LAYER]
-            setNanoRouteMode -routeTopRoutingLayer [flow::env APR_SIGNAL_MAX_LAYER]
+            # Legacy route.tcl:6-25 applies the same settings and constraints.
+            apply_engine_settings
+            apply_place_settings
+            apply_route_settings
+            apply_stage_constraints route
+            # Legacy setting/common_setting.tcl:29-33 enables coupled
+            # postRoute extraction once the route step starts.
+            setExtractRCMode -engine postRoute -effortLevel medium -couples true
             routeDesign -globalDetail
             optDesign -postRoute
             optDesign -postRoute -hold

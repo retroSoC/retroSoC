@@ -66,6 +66,13 @@ def main():
     filelist = os.path.join(output_dir, "rtl", "filelist.fl")
     if not os.path.isfile(filelist):
         parser.error("RTL archive does not contain rtl/filelist.fl")
+    contract = os.path.join(
+        output_dir, "rtl", "contracts", "commercial_timing_contract.tcl"
+    )
+    if not os.path.isfile(contract):
+        parser.error(
+            "RTL archive does not contain rtl/contracts/commercial_timing_contract.tcl"
+        )
     # Tar extraction preserves the development-zone timestamp. Refresh the
     # staged entry point so the stage runner can distinguish this extraction
     # from output left by an earlier run.

@@ -15,17 +15,46 @@ SHELL := /bin/sh
 FLOW_ROOT := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 ROOT_PATH := $(abspath $(FLOW_ROOT)/../..)
 
-LOCAL_CONFIG ?= $(FLOW_ROOT)/local/ics55-production.mk
+LOCAL_CONFIG ?=
+
+SOC         ?= MINI
+TECHNOLOGY  ?= ICS55
+SOC_LOWER   := $(shell echo '$(SOC)' | tr 'A-Z' 'a-z')
+TECH_LOWER  := $(shell echo '$(TECHNOLOGY)' | tr 'A-Z' 'a-z')
+
+TECH_CONFIG    := $(FLOW_ROOT)/config/technology/$(TECH_LOWER).mk
+PRODUCT_CONFIG := $(FLOW_ROOT)/config/products/$(SOC_LOWER).mk
+ifeq ($(wildcard $(TECH_CONFIG)),)
+$(error unsupported TECHNOLOGY=$(TECHNOLOGY): missing $(TECH_CONFIG))
+endif
+ifeq ($(wildcard $(PRODUCT_CONFIG)),)
+$(error unsupported SOC=$(SOC): missing $(PRODUCT_CONFIG))
+endif
+include $(TECH_CONFIG)
+include $(PRODUCT_CONFIG)
+
+ifeq ($(LOCAL_CONFIG),)
+LOCAL_CONFIG := $(FLOW_ROOT)/local/$(TECH_LOWER)-$(SOC_LOWER).mk
+endif
 -include $(LOCAL_CONFIG)
 
-TOP         ?= retrosoc_asic
-TECHNOLOGY  ?= ICS55
 FLOW_PYTHON ?= python
 TCLSH       ?= tclsh
 DOCTOR_ARGS ?=
 RUN_ID      ?= current
 BUILD_ROOT  ?= $(ROOT_PATH)/build
-RUN_ROOT    ?= $(abspath $(BUILD_ROOT))/commercial/ics55/$(RUN_ID)
+RUN_ROOT    ?= $(abspath $(BUILD_ROOT))/commercial/$(TECH_LOWER)/$(SOC_LOWER)/$(RUN_ID)
+
+# Optional ECO subflows and Calibre LVS controls; the local configuration may
+# override them. All optional subflows default off (legacy
+# pd_data/pteco/scr/flow/{swap,size_down,remove_buffer}.tcl semantics).
+ECO_ENABLE_VT_SWAP       ?= NO
+ECO_ENABLE_SIZE_DOWN     ?= NO
+ECO_ENABLE_REMOVE_BUFFER ?= NO
+ECO_PBA_MODE             ?= none
+ECO_VT_PATTERN_PRIORITY  ?=
+MACRO_LVS_CELLS          ?=
+CALIBRE_LVS_ARGS         ?=
 
 INPUT_DIR := $(RUN_ROOT)/input
 META_DIR  := $(RUN_ROOT)/meta
@@ -47,10 +76,11 @@ ECO_STAMP        := $(STAMP_DIR)/eco.stamp
 APR_ECO_STAMP    := $(STAMP_DIR)/apr-eco.stamp
 REEXTRACT_STAMP  := $(STAMP_DIR)/reextract.stamp
 RESTA_STAMP      := $(STAMP_DIR)/resta.stamp
-PV_MERGE_STAMP   := $(STAMP_DIR)/pv-merge.stamp
-PV_DRC_STAMP     := $(STAMP_DIR)/pv-drc.stamp
-PV_ANT_STAMP     := $(STAMP_DIR)/pv-antenna.stamp
-PV_LVS_STAMP     := $(STAMP_DIR)/pv-lvs.stamp
+PV_MERGE_STAMP      := $(STAMP_DIR)/pv-merge.stamp
+PV_DRC_STAMP        := $(STAMP_DIR)/pv-drc.stamp
+PV_ANT_STAMP        := $(STAMP_DIR)/pv-antenna.stamp
+PV_LVS_STAMP        := $(STAMP_DIR)/pv-lvs.stamp
+PV_MACRO_LVS_STAMP  := $(STAMP_DIR)/pv-macro-lvs.stamp
 
 RUN_STAGE  := $(FLOW_PYTHON) $(FLOW_ROOT)/scripts/run_stage.py
 SUBMIT_JOB := $(FLOW_PYTHON) $(FLOW_ROOT)/scripts/submit_job.py
@@ -66,7 +96,7 @@ export
 .PHONY: help check-config doctor doctor-syn boundary-check input syn fm-rtl2syn \
 	apr-initialize apr-floorplan apr-preplace apr-place apr-cts apr-route \
 	fm-syn2pr extract sta eco apr-eco reextract resta pv-merge pv-drc \
-	pv-antenna pv-lvs signoff clean-stage list-stages
+	pv-antenna pv-lvs pv-macro-lvs signoff clean-stage list-stages
 
 help:
 	@printf '%s\n' \
@@ -83,25 +113,29 @@ help:
 	  '  apr-eco         apply ECO changes and incrementally route' \
 	  '  reextract       extract the ECO design' \
 	  '  resta           sign off the ECO design' \
-	  '  pv-*            merge GDS and run Calibre DRC/antenna/LVS' \
+	  '  pv-*            merge GDS and run Calibre DRC/antenna/LVS/macro-LVS' \
 	  '  signoff         run the complete strict stage graph' \
 	  '  clean-stage     remove STAGE and all downstream stage results' \
 	  '' \
-	  'Set LOCAL_CONFIG=local/ics55-production.mk and optionally RUN_ID=<id>.'
+	  'Set SOC=MINI|TINY (default MINI) and TECHNOLOGY=ICS55, point' \
+	  'LOCAL_CONFIG at the ignored local configuration (default' \
+	  'local/<technology>-<soc>.mk), and optionally set RUN_ID=<id>.'
 
 list-stages:
 	@printf '%s\n' input syn fm-rtl2syn apr-initialize apr-floorplan \
 	  apr-preplace apr-place apr-cts apr-route fm-syn2pr extract sta eco \
-	  apr-eco reextract resta pv-merge pv-drc pv-antenna pv-lvs
+	  apr-eco reextract resta pv-merge pv-drc pv-antenna pv-lvs pv-macro-lvs
 
 check-config:
 	@test -f '$(LOCAL_CONFIG)' || { \
 	  echo "missing ignored local configuration: $(LOCAL_CONFIG)" >&2; \
-	  echo "copy config/ics55.example.mk to local/ics55-production.mk" >&2; \
+	  echo "copy config/$(TECH_LOWER)-$(SOC_LOWER).example.mk to $(LOCAL_CONFIG)" >&2; \
 	  exit 2; \
 	  }
-	@test '$(TECHNOLOGY)' = ICS55
-	@test '$(TOP)' = retrosoc_asic
+	@test -n '$(TOP)' || { \
+	  echo "TOP is not set by config/products/$(SOC_LOWER).mk" >&2; \
+	  exit 2; \
+	  }
 
 doctor: check-config
 	@mkdir -p $(META_DIR)
@@ -394,8 +428,20 @@ $(PV_LVS_STAMP): $(PV_ANT_STAMP)
 
 pv-lvs: $(PV_LVS_STAMP)
 
+$(PV_MACRO_LVS_STAMP): $(PV_LVS_STAMP)
+	@mkdir -p $(RUN_ROOT)/pv/macro_lvs/work $(RUN_ROOT)/pv/macro_lvs/log $(RUN_ROOT)/pv/macro_lvs/reports $(RUN_ROOT)/pv/macro_lvs/output
+	PV_MODE=macro_lvs $(TCLSH) $(FLOW_ROOT)/tcl/pv/generate.tcl
+	$(RUN_STAGE) --stage pv-macro-lvs --cwd $(RUN_ROOT)/pv/macro_lvs/work \
+	  --log $(RUN_ROOT)/pv/macro_lvs/log/lsf.log \
+	  --result $(RUN_ROOT)/pv/macro_lvs/result.json --stamp $@ \
+	  --expect $(RUN_ROOT)/pv/macro_lvs/output/verdict.pass -- \
+	  $(call submit-job,LSF_PV_ARGS,$(RUN_ROOT)/pv/macro_lvs/log/tool.log) \
+	  $(TCLSH) $(RUN_ROOT)/pv/macro_lvs/work/macro_lvs_driver.tcl
+
+pv-macro-lvs: $(PV_MACRO_LVS_STAMP)
+
 signoff: doctor
-	$(MAKE) pv-lvs LOCAL_CONFIG=$(LOCAL_CONFIG) RUN_ID=$(RUN_ID)
+	$(MAKE) pv-macro-lvs LOCAL_CONFIG=$(LOCAL_CONFIG) RUN_ID=$(RUN_ID)
 	@printf 'commercial signoff passed: %s\n' '$(RUN_ROOT)'
 
 clean-stage:

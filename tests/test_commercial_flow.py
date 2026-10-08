@@ -57,13 +57,60 @@ def test_translate_eco_accepts_only_reviewed_operations(tmp_path: Path) -> None:
         translator.translate([str(unsupported)])
 
 
+def test_translate_eco_merges_scenarios_and_drops_duplicates(tmp_path: Path) -> None:
+    translator = load_script("translate_eco")
+    first = tmp_path / "func_TYP_TYP_25.icc2.tcl"
+    first.write_text(
+        "current_instance {u_core}\n"
+        "size_cell {u_reg} {DFFQX2H7R}\n"
+        "insert_buffer [get_pins {u_src/Q}] BUFX2H7R "
+        "-new_net_names {eco_net} -new_cell_names {eco_buf}\n",
+        encoding="utf-8",
+    )
+    second = tmp_path / "func_MIN_Cworst_m40.icc2.tcl"
+    second.write_text(
+        "current_instance {u_core}\n"
+        "size_cell {u_reg} {DFFQX2H7R}\n"
+        "size_cell {u_hold} {DFFQX1H7R}\n",
+        encoding="utf-8",
+    )
+    assert translator.translate([str(first), str(second)]) == [
+        "ecoChangeCell -inst {u_core/u_reg} -cell {DFFQX2H7R}",
+        "ecoAddRepeater -term {u_core/u_src/Q} -cell {BUFX2H7R} "
+        "-newNetName {eco_net} -name {eco_buf}",
+        "ecoChangeCell -inst {u_core/u_hold} -cell {DFFQX1H7R}",
+    ]
+
+
+def test_translate_eco_supports_removal_and_placed_insert(tmp_path: Path) -> None:
+    translator = load_script("translate_eco")
+    source = tmp_path / "changes.icc2.tcl"
+    source.write_text(
+        "current_instance {u_core}\n"
+        "remove_buffer [get_cells {u_buf}]\n"
+        "insert_buffer [get_pins {u_src/Q}] BUFX2H7R -new_net_names {eco_net} "
+        "-new_cell_names {eco_buf} -location {10.5 20.25}\n",
+        encoding="utf-8",
+    )
+    assert translator.translate([str(source)]) == [
+        "ecoDeleteRepeater -inst {u_core/u_buf}",
+        "ecoAddRepeater -term {u_core/u_src/Q} -cell {BUFX2H7R} "
+        "-newNetName {eco_net} -name {eco_buf} -loc {10.5 20.25}",
+    ]
+
+    ambiguous = tmp_path / "ambiguous.icc2.tcl"
+    ambiguous.write_text("remove_buffer [get_cells {u_a u_b}]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="unsupported PrimeTime ECO command"):
+        translator.translate([str(ambiguous)])
+
+
 def test_spef_checker_requires_every_named_corner(tmp_path: Path) -> None:
     checker = load_script("check_outputs")
-    for corner in checker.SPEF_CORNERS:
+    for corner in checker.spef_corners():
         (tmp_path / f"retrosoc_asic.{corner}.spef.gz").write_bytes(b"spef")
     assert checker.apply_check("spef", str(tmp_path), 0, "retrosoc_asic") is None
     (tmp_path / "retrosoc_asic.TYP_25.spef.gz").unlink()
-    assert "missing ICS55 SPEF corners" in checker.apply_check(
+    assert "missing SPEF corners" in checker.apply_check(
         "spef", str(tmp_path), 0, "retrosoc_asic"
     )
 
@@ -116,11 +163,16 @@ def test_prepare_input_rejects_archive_escape(tmp_path: Path) -> None:
 def test_prepare_input_refreshes_archived_filelist(tmp_path: Path) -> None:
     archive_path = tmp_path / "rtl.tar"
     payload = b"rtl/top.sv\n"
+    contract = b"# contract\n"
     with tarfile.open(archive_path, "w") as archive:
         member = tarfile.TarInfo("rtl/filelist.fl")
         member.size = len(payload)
         member.mtime = 1
         archive.addfile(member, io.BytesIO(payload))
+        member = tarfile.TarInfo("rtl/contracts/commercial_timing_contract.tcl")
+        member.size = len(contract)
+        member.mtime = 1
+        archive.addfile(member, io.BytesIO(contract))
     output = tmp_path / "output"
     manifest = tmp_path / "manifest.json"
     started = archive_path.stat().st_mtime
@@ -303,6 +355,8 @@ def test_commercial_timing_contract_covers_canonical_domains(tmp_path: Path) -> 
         [
             sys.executable,
             str(FLOW / "scripts/generate_timing_contract.py"),
+            "--soc",
+            "MINI",
             "--domains",
             str(ROOT / "rtl/mini/integration/clock_reset_domains.json"),
             "--pin-map",
@@ -336,6 +390,67 @@ def test_commercial_timing_contract_covers_canonical_domains(tmp_path: Path) -> 
     assert "observation {s_sys_clk}" in output.read_text(encoding="utf-8")
 
 
+def test_commercial_timing_contract_supports_tiny(tmp_path: Path) -> None:
+    output = tmp_path / "commercial_timing_contract.tcl"
+    subprocess.run(
+        [
+            sys.executable,
+            str(FLOW / "scripts/generate_timing_contract.py"),
+            "--soc",
+            "TINY",
+            "--domains",
+            str(ROOT / "rtl/tiny/integration/clock_reset_domains.json"),
+            "--pin-map",
+            str(ROOT / "rtl/tiny/pin_map/pin_map.json"),
+            "--output",
+            str(output),
+        ],
+        check=True,
+    )
+    script = (
+        "namespace eval flow {}\n"
+        f"source {{{output}}}\n"
+        "puts [join [lsort [dict keys $flow::canonical_clock_domains]] ,]\n"
+        "puts [join $flow::canonical_reset_ports ,]\n"
+    )
+    result = subprocess.run(
+        ["tclsh"],
+        input=script,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert result.stdout.splitlines() == [
+        "jtag,system",
+        "ext_rst_n_i_pad,jtag_trst_n_i_pad",
+    ]
+    assert "observation {u_clock_buffer/clk_o}" in output.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_commercial_timing_contract_rejects_domain_drift(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(FLOW / "scripts/generate_timing_contract.py"),
+            "--soc",
+            "TINY",
+            "--domains",
+            str(ROOT / "rtl/mini/integration/clock_reset_domains.json"),
+            "--pin-map",
+            str(ROOT / "rtl/mini/pin_map/pin_map.json"),
+            "--output",
+            str(tmp_path / "drift.tcl"),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "differ from the canonical set" in result.stderr
+
+
 def test_commercial_constraints_do_not_apply_global_io_delays() -> None:
     constraints = "\n".join(
         path.read_text(encoding="utf-8")
@@ -352,7 +467,7 @@ def test_commercial_constraints_do_not_apply_global_io_delays() -> None:
 def test_dc_uses_typ_link_set_and_svt_lvt_target_subset() -> None:
     synthesis = (FLOW / "tcl/syn/main.tcl").read_text(encoding="utf-8")
     common = (FLOW / "tcl/common/common.tcl").read_text(encoding="utf-8")
-    example = (FLOW / "config/ics55.example.mk").read_text(encoding="utf-8")
+    example = (FLOW / "config/ics55-mini.example.mk").read_text(encoding="utf-8")
     assert "flow::synthesis_library_files" in synthesis
     assert "flow::all_library_files" not in synthesis
     assert "return [flow::library_files TYP]" in common
@@ -396,8 +511,10 @@ def test_internal_qor_doctor_does_not_require_backend_collateral(
     archive = touch("rtl.tar.gz")
     environment = {
         "PATH": os.environ["PATH"],
+        "SOC": "MINI",
         "TOP": "retrosoc_asic",
         "TECHNOLOGY": "ICS55",
+        "PRODUCT_PLL_MODE": "qualified",
         "RTL_ARCHIVE": archive,
         "LSF_MODE": "batch",
         "LSF_SYN_ARGS": "-q synth",
@@ -468,10 +585,158 @@ def test_ics55_pll_wrapper(tmp_path: Path) -> None:
 
 
 def test_local_production_configuration_is_ignored() -> None:
-    local = FLOW / "local/ics55-production.mk"
-    result = subprocess.run(
-        ["git", "check-ignore", str(local.relative_to(ROOT))],
-        cwd=ROOT,
-        check=False,
+    for name in ("ics55-production.mk", "ics55-mini.mk", "ics55-tiny.mk"):
+        local = FLOW / "local" / name
+        result = subprocess.run(
+            ["git", "check-ignore", str(local.relative_to(ROOT))],
+            cwd=ROOT,
+            check=False,
+        )
+        assert result.returncode == 0
+
+
+CONSTRAINT_SMOKE_TCL = r"""
+set soc [lindex $argv 0]
+set ::env(SOC) $soc
+set ::env(TOP) [expr {$soc eq "TINY" ? "retrosoc_tiny_asic" : "retrosoc_asic"}]
+set ::env(RUN_ROOT) [lindex $argv 1]
+set ::env(CLOCK_SETUP_UNCERTAINTY_NS) 0.2
+set ::env(CLOCK_HOLD_UNCERTAINTY_NS) 0.1
+set ::env(CLOCK_TRANSITION_NS) 0.1
+set ::env(IO_TIMING_QUALIFIED) NO
+set ::env(MAX_TRANSITION_NS) 0.5
+set ::env(MAX_FANOUT) 32
+if {$soc eq "MINI"} { set ::env(PLL_OUTPUT_PERIOD_NS) 13.888888889 }
+
+set ::created_clocks_named {}
+set ::generated_clocks {}
+set ::clock_groups {}
+set ::false_paths 0
+
+proc get_ports {args} { return [lindex $args end] }
+proc get_pins {args} { return [list pin_[string map {/ _} [lindex $args end]]] }
+proc get_nets {args} { return [list net_[lindex $args end]] }
+proc filter_collection {args} { return [list driver] }
+proc sizeof_collection {c} { return [llength $c] }
+proc get_clocks {args} { return [lindex $args end] }
+proc create_clock {args} {
+    lappend ::created_clocks_named [lindex $args [expr {[lsearch $args -name] + 1}]]
+}
+proc create_generated_clock {args} {
+    lappend ::generated_clocks [lindex $args [expr {[lsearch $args -name] + 1}]]
+}
+proc set_clock_groups {args} { lappend ::clock_groups $args }
+proc set_clock_uncertainty {args} {}
+proc set_clock_transition {args} {}
+proc set_false_path {args} { incr ::false_paths }
+proc all_inputs {} { return {} }
+proc all_outputs {} { return {} }
+proc current_design {args} { return {} }
+proc set_max_transition {args} {}
+proc set_max_fanout {args} {}
+
+source [file join $::env(FLOW_ROOT) tcl common common.tcl]
+source [file join $::env(FLOW_ROOT) tcl common constraints.tcl]
+flow::apply_constraints
+puts "masters=$::created_clocks_named"
+puts "generated=$::generated_clocks"
+puts "groups=[llength $::clock_groups]"
+puts "false_paths=$::false_paths"
+flow::require_commercial_clock_inventory
+puts "inventory-ok"
+"""
+
+CONSTRAINT_SMOKE_CASES = {
+    "MINI": {
+        "domains": "rtl/mini/integration/clock_reset_domains.json",
+        "pin_map": "rtl/mini/pin_map/pin_map.json",
+        "masters": (
+            "clk_aon clk_hp clk_memory clk_audio clk_jtag clk_dvp "
+            "clk_usb2_ulpi clk_pll"
+        ),
+        "generated": "clk_lp_ext clk_lp_pll clk_pclk_ext clk_pclk_pll",
+        "groups": "2",
+    },
+    "TINY": {
+        "domains": "rtl/tiny/integration/clock_reset_domains.json",
+        "pin_map": "rtl/tiny/pin_map/pin_map.json",
+        "masters": "clk_system clk_jtag",
+        "generated": "",
+        "groups": "1",
+    },
+}
+
+
+@pytest.mark.parametrize("soc", sorted(CONSTRAINT_SMOKE_CASES))
+def test_constraint_stack_models_product_clocks(tmp_path: Path, soc: str) -> None:
+    case = CONSTRAINT_SMOKE_CASES[soc]
+    run_root = tmp_path / soc.lower()
+    contract = run_root / "input/rtl/contracts/commercial_timing_contract.tcl"
+    contract.parent.mkdir(parents=True)
+    subprocess.run(
+        [
+            sys.executable,
+            str(FLOW / "scripts/generate_timing_contract.py"),
+            "--soc",
+            soc,
+            "--domains",
+            str(ROOT / case["domains"]),
+            "--pin-map",
+            str(ROOT / case["pin_map"]),
+            "--output",
+            str(contract),
+        ],
+        check=True,
     )
-    assert result.returncode == 0
+    environment = dict(os.environ)
+    environment["FLOW_ROOT"] = str(FLOW)
+    script = CONSTRAINT_SMOKE_TCL.replace(
+        "set soc [lindex $argv 0]", f"set soc {soc}"
+    ).replace(
+        "set ::env(RUN_ROOT) [lindex $argv 1]", f"set ::env(RUN_ROOT) {run_root}"
+    )
+    result = subprocess.run(
+        ["tclsh"],
+        input=script,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=environment,
+    )
+    assert result.returncode == 0, result.stderr
+    lines = dict(
+        line.split("=", 1)
+        for line in result.stdout.strip().splitlines()
+        if "=" in line
+    )
+    assert lines["masters"] == case["masters"]
+    assert lines["generated"].strip("-") == case["generated"]
+    assert lines["groups"] == case["groups"]
+    assert "inventory-ok" in result.stdout
+
+
+def test_commercial_make_graph_covers_both_products(tmp_path: Path) -> None:
+    stub = tmp_path / "local.mk"
+    stub.write_text("", encoding="utf-8")
+    for soc in ("MINI", "TINY"):
+        result = subprocess.run(
+            [
+                "make",
+                "-C",
+                str(FLOW),
+                "-n",
+                "signoff",
+                f"SOC={soc}",
+                f"LOCAL_CONFIG={stub}",
+                "RUN_ID=pytest",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert f"build/commercial/ics55/{soc.lower()}/pytest" in result.stdout
+        for stage in ("syn", "apr-route", "extract", "sta", "pv-lvs", "pv-macro-lvs"):
+            assert f"--stage {stage} " in result.stdout or f"--stage {stage}\n" in (
+                result.stdout + "\n"
+            )

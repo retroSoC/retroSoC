@@ -15,13 +15,29 @@ proc quote_svrf {value} {
     return "\"[string map {\" \\\"} $value]\""
 }
 
+proc optional_files {name} {
+    set result {}
+    foreach item [flow::env $name ""] {
+        if {[regexp {[*?\[]} $item]} {
+            flow::fail "$name contains a wildcard: $item"
+        }
+        if {![file isfile $item] || ![file readable $item]} {
+            flow::fail "$name is not readable: $item"
+        }
+        lappend result [file normalize $item]
+    }
+    return $result
+}
+
 proc write_merge {run_root top} {
     set base [flow::stage_dirs pv merge]
     set input [file join $run_root apr eco output ${top}.eco.gds]
     set output [file join $base output ${top}.merged.gds]
     set verdict [file join $base output verdict.pass]
+    # OTHER_GDS carries optional extra layouts such as seal rings (legacy
+    # pd_data/pv/scr/CL1/core.merge merges project_config(physical,gds,other)).
     set gds [concat [flow::env_list STD_GDS] [flow::env_list IO_GDS] \
-        [flow::env_list MACRO_GDS]]
+        [flow::env_list MACRO_GDS] [optional_files OTHER_GDS]]
     set handle [open [file join $base work merge.tcl] w]
     puts $handle [list set input_gds $input]
     puts $handle [list set output_gds $output]
@@ -124,6 +140,7 @@ proc write_lvs {run_root top} {
     puts $handle [list set runset $runset]
     puts $handle [list set report [file join $base reports ${top}.lvs.rpt]]
     puts $handle [list set verdict $verdict]
+    puts $handle [list set lvs_args [flow::env CALIBRE_LVS_ARGS ""]]
     puts $handle {if {[file exists $verdict]} {
     file delete -force $verdict
 }
@@ -133,7 +150,7 @@ if {[catch {exec {*}$convert >@ stdout 2>@ stderr} message]} {
     puts stderr $message
     exit 2
 }
-set verify [concat $calibre [list -64 -lvs -hier -hcell $hcells $runset]]
+set verify [concat $calibre [list -64 -lvs] $lvs_args [list -hier -hcell $hcells $runset]]
 if {[catch {exec {*}$verify >@ stdout 2>@ stderr} message]} {
     puts stderr $message
     exit 2
@@ -167,6 +184,101 @@ close $marker}
     close $handle
 }
 
+# Macro-level LVS/ERC (legacy pd_data/pv/scr/CL1/_calibre_PLL_lvs.rul_ and
+# PLL.lvs.cmd run a standalone hierarchical Calibre LVS+ERC per hard macro and
+# keep reports such as PLL_TOP_lvs.full.rpt). MACRO_LVS_CELLS lists the macro
+# primary cells; an empty list is a harmless skip with a passing verdict.
+proc write_macro_lvs {run_root top} {
+    set base [flow::stage_dirs pv macro_lvs]
+    set verdict [file join $base output verdict.pass]
+    set driver [file join $base work macro_lvs_driver.tcl]
+    set cells {}
+    foreach cell [flow::env MACRO_LVS_CELLS ""] {
+        if {![regexp {^[A-Za-z0-9_]+$} $cell]} {
+            flow::fail "MACRO_LVS_CELLS contains an invalid cell name: $cell"
+        }
+        lappend cells $cell
+    }
+    if {[llength $cells] == 0} {
+        flow::write_text $driver {puts "MACRO_LVS_CELLS is empty; macro-level LVS is skipped"
+}
+        flow::write_pass $verdict
+        puts "MACRO_LVS_CELLS is empty; macro-level LVS is skipped"
+        return
+    }
+    set deck [lindex [flow::env_list CALIBRE_LVS_DECK] 0]
+    set layouts {}
+    foreach path [flow::env_list MACRO_GDS] {
+        lappend layouts [quote_svrf $path]
+    }
+    set sources {}
+    foreach path [flow::env_list MACRO_CDL] {
+        lappend sources [quote_svrf $path]
+    }
+    set jobs {}
+    foreach cell $cells {
+        set runset [file join $base work ${cell}.lvs.runset]
+        set report [file join $base reports ${cell}.lvs.rpt]
+        set handle [open $runset w]
+        puts $handle "LAYOUT PATH [join $layouts { }]"
+        puts $handle "LAYOUT PRIMARY [quote_svrf $cell]"
+        puts $handle "LAYOUT SYSTEM GDSII"
+        puts $handle "SOURCE PATH [join $sources { }]"
+        puts $handle "SOURCE PRIMARY [quote_svrf $cell]"
+        puts $handle "SOURCE SYSTEM SPICE"
+        puts $handle "LVS REPORT [quote_svrf $report]"
+        puts $handle "LVS REPORT MAXIMUM ALL"
+        puts $handle "MASK SVDB DIRECTORY [quote_svrf [file join $base work svdb_${cell}]] QUERY"
+        puts $handle "LVS SPICE CULL PRIMITIVE SUBCIRCUITS YES"
+        puts $handle "LVS SPICE OVERRIDE GLOBALS YES"
+        puts $handle "LVS RECOGNIZE GATES NONE"
+        puts $handle "LVS EXECUTE ERC YES"
+        puts $handle "ERC RESULTS DATABASE [quote_svrf [file join $base work ${cell}.erc.db]]"
+        puts $handle "ERC SUMMARY REPORT [quote_svrf [file join $base reports ${cell}.erc.rpt]]"
+        puts $handle "ERC MAXIMUM RESULTS ALL"
+        puts $handle "INCLUDE [quote_svrf $deck]"
+        close $handle
+        lappend jobs $cell $runset $report
+    }
+    set handle [open $driver w]
+    puts $handle [list set calibre [flow::env CALIBRE]]
+    puts $handle [list set lvs_args [flow::env CALIBRE_LVS_ARGS ""]]
+    puts $handle [list set checker [list [flow::env FLOW_PYTHON python] \
+        [file join $::flow::root scripts check_outputs.py]]]
+    puts $handle [list set reports [file join $base reports]]
+    puts $handle [list set verdict $verdict]
+    puts $handle [list set jobs $jobs]
+    puts $handle {if {[file exists $verdict]} {
+    file delete -force $verdict
+}
+set started [clock seconds]
+foreach {cell runset report} $jobs {
+    if {[file exists $report]} {
+        file delete -force $report
+    }
+    set command [concat $calibre [list -64 -lvs] $lvs_args [list -hier $runset]]
+    if {[catch {exec {*}$command >@ stdout 2>@ stderr} message]} {
+        puts stderr $message
+        exit 2
+    }
+    if {![file isfile $report]} {
+        puts stderr "missing macro LVS report: $report"
+        exit 2
+    }
+    if {[file mtime $report] < ($started - 2)} {
+        puts stderr "macro LVS report was not refreshed: $report"
+        exit 2
+    }
+}
+set check [concat $checker [list --kind calibre-lvs --root $reports \
+    --verdict $verdict]]
+if {[catch {exec {*}$check >@ stdout 2>@ stderr} message]} {
+    puts stderr $message
+    exit 2
+}}
+    close $handle
+}
+
 proc generate_pv {} {
     set run_root [flow::env RUN_ROOT]
     set top [flow::env TOP]
@@ -175,6 +287,7 @@ proc generate_pv {} {
         merge { write_merge $run_root $top }
         drc - antenna { write_drc $run_root $top $mode }
         lvs { write_lvs $run_root $top }
+        macro_lvs { write_macro_lvs $run_root $top }
         default { flow::fail "unsupported PV mode: $mode" }
     }
 }

@@ -282,6 +282,8 @@ def test_package_forwards_manifest_jtag_idcode() -> None:
         assert f'"{option}"' in package_source
     assert "generate_timing_contract.py" in package_source
     assert "commercial_timing_contract.tcl" in package_source
+    assert '"--soc"' in package_source
+    assert "tiny_core.sdc" in package_source
 
 
 def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> None:

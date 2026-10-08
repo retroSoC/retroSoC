@@ -22,17 +22,21 @@ def read_text(path):
         return handle.read()
 
 
-SPEF_CORNERS = (
-    "Cworst_m40",
-    "Cworst_125",
-    "RCworst_m40",
-    "RCworst_125",
-    "Cbest_m40",
-    "Cbest_125",
-    "RCbest_m40",
-    "RCbest_125",
-    "TYP_25",
-)
+def spef_corners():
+    configured = os.environ.get("COMMERCIAL_EXTRACTION_CORNERS", "").split()
+    if configured:
+        return configured
+    return [
+        "Cworst_m40",
+        "Cworst_125",
+        "RCworst_m40",
+        "RCworst_125",
+        "Cbest_m40",
+        "Cbest_125",
+        "RCbest_m40",
+        "RCbest_125",
+        "TYP_25",
+    ]
 
 
 def find_files(root, suffixes):
@@ -63,15 +67,15 @@ def apply_check(kind, root, limit, top=None, minimum_mtime=None):
         else:
             files = [
                 os.path.join(root, "{0}.{1}.spef.gz".format(top, corner))
-                for corner in SPEF_CORNERS
+                for corner in spef_corners()
             ]
             missing = [path for path in files if not os.path.isfile(path)]
             if missing:
-                error = "missing ICS55 SPEF corners: {0}".format(
+                error = "missing SPEF corners: {0}".format(
                     ", ".join(os.path.basename(path) for path in missing)
                 )
             elif any(os.path.getsize(path) == 0 for path in files):
-                error = "an ICS55 SPEF corner is empty"
+                error = "an SPEF corner is empty"
     elif kind in ("calibre-drc", "calibre-antenna"):
         reports = find_files(root, (".summary", ".sum", ".rpt"))
         files = reports

@@ -257,3 +257,13 @@ for its current reporting information.
 Thanks to everyone contributing to retroSoC.
 
 [![retroSoC contributors](https://contrib.rocks/image?repo=retroSoC/retroSoC)](https://github.com/retroSoC/retroSoC/graphs/contributors)
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=retrosoc%2Fretrosoc&type=date&logscale=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=retrosoc/retrosoc&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=retrosoc/retrosoc&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=retrosoc/retrosoc&type=date&legend=bottom-right" />
+ </picture>
+</a>

@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -68,6 +69,18 @@ SYNTHESIS_FILE_VARIABLES = (
     "PLL_DB",
 )
 
+# Optional file lists are validated only when the local configuration sets
+# them; they never become required.
+OPTIONAL_FILE_LIST_VARIABLES = (
+    "OTHER_GDS",
+)
+
+OPTIONAL_SWITCH_VARIABLES = (
+    "ECO_ENABLE_VT_SWAP",
+    "ECO_ENABLE_SIZE_DOWN",
+    "ECO_ENABLE_REMOVE_BUFFER",
+)
+
 VALUE_VARIABLES = (
     "TOP", "TECHNOLOGY", "RTL_ARCHIVE", "LSF_MODE", "APR_SITE", "APR_CORE_FILLERS",
     "APR_IO_FILLERS", "APR_SIGNAL_PAD_CELLS", "APR_IO_CORNER_CELL",
@@ -98,32 +111,7 @@ SYNTHESIS_VALUE_VARIABLES = (
     "SYN_OPERATING_CONDITION",
 )
 
-IO_BUDGET_VARIABLES = (
-    "JTAG_INPUT_DELAY_MAX_NS", "JTAG_INPUT_DELAY_MIN_NS",
-    "JTAG_INPUT_TRANSITION_NS", "JTAG_OUTPUT_DELAY_MAX_NS",
-    "JTAG_OUTPUT_DELAY_MIN_NS", "JTAG_OUTPUT_LOAD_PF",
-    "DVP_INPUT_DELAY_MAX_NS", "DVP_INPUT_DELAY_MIN_NS",
-    "DVP_INPUT_TRANSITION_NS",
-    "ULPI_INPUT_DELAY_MAX_NS", "ULPI_INPUT_DELAY_MIN_NS",
-    "ULPI_INPUT_TRANSITION_NS", "ULPI_OUTPUT_DELAY_MAX_NS",
-    "ULPI_OUTPUT_DELAY_MIN_NS", "ULPI_OUTPUT_LOAD_PF",
-    "SDRAM_CLOCK_PERIOD_NS", "SDRAM_INPUT_DELAY_MAX_NS",
-    "SDRAM_INPUT_DELAY_MIN_NS", "SDRAM_INPUT_TRANSITION_NS",
-    "SDRAM_OUTPUT_DELAY_MAX_NS", "SDRAM_OUTPUT_DELAY_MIN_NS",
-    "SDRAM_OUTPUT_LOAD_PF",
-    "SDIO_CLOCK_PERIOD_NS", "SDIO_INPUT_DELAY_MAX_NS",
-    "SDIO_INPUT_DELAY_MIN_NS", "SDIO_INPUT_TRANSITION_NS",
-    "SDIO_OUTPUT_DELAY_MAX_NS", "SDIO_OUTPUT_DELAY_MIN_NS",
-    "SDIO_OUTPUT_LOAD_PF",
-    "XPI_CLOCK_PERIOD_NS", "XPI_INPUT_DELAY_MAX_NS",
-    "XPI_INPUT_DELAY_MIN_NS", "XPI_INPUT_TRANSITION_NS",
-    "XPI_OUTPUT_DELAY_MAX_NS", "XPI_OUTPUT_DELAY_MIN_NS",
-    "XPI_OUTPUT_LOAD_PF",
-    "ASYNC_CLOCK_PERIOD_NS", "ASYNC_INPUT_DELAY_MAX_NS",
-    "ASYNC_INPUT_DELAY_MIN_NS", "ASYNC_INPUT_TRANSITION_NS",
-    "ASYNC_OUTPUT_DELAY_MAX_NS", "ASYNC_OUTPUT_DELAY_MIN_NS",
-    "ASYNC_OUTPUT_LOAD_PF",
-)
+IO_BUDGET_VARIABLES = ()
 
 H7C_PVT_TOKENS = {
     "MAX": "_ss_rcworst_1p08_125",
@@ -208,18 +196,24 @@ def main():
         if name in required_values and (not value or value == "REQUIRED"):
             errors.append("{0} is not configured".format(name))
 
-    qualified_pll = {
-        "ICS55_PLL_SUPPORTED_SEL": "0",
-        "ICS55_PLL_N": "2",
-        "ICS55_PLL_OD": "2",
-    }
-    for name, expected in qualified_pll.items():
-        value = os.environ.get(name, "").strip()
-        values[name] = value
-        if value != expected:
-            errors.append(
-                "{0} must match the qualified value {1}".format(name, expected)
-            )
+    pll_mode = os.environ.get("PRODUCT_PLL_MODE", "").strip().lower()
+    if pll_mode == "qualified":
+        qualified_pll = {
+            "ICS55_PLL_SUPPORTED_SEL": "0",
+            "ICS55_PLL_N": "2",
+            "ICS55_PLL_OD": "2",
+        }
+        for name, expected in qualified_pll.items():
+            value = os.environ.get(name, "").strip()
+            values[name] = value
+            if value != expected:
+                errors.append(
+                    "{0} must match the qualified value {1}".format(name, expected)
+                )
+    elif pll_mode == "parked":
+        pass
+    else:
+        errors.append("PRODUCT_PLL_MODE must be qualified or parked")
     if not args.allow_internal_qor:
         for name in (
             "MAX_SETUP_VIOLATIONS",
@@ -236,14 +230,46 @@ def main():
                 raise ValueError
         except ValueError:
             errors.append("ECO_MAX_PROCESSES must be a positive integer")
-        if values.get("ECO_PHYSICAL_MODE") not in ("open_site", "occupied_site"):
-            errors.append("ECO_PHYSICAL_MODE must be open_site or occupied_site")
+        if values.get("ECO_PHYSICAL_MODE") not in (
+            "open_site",
+            "occupied_site",
+            "freeze_silicon",
+        ):
+            errors.append(
+                "ECO_PHYSICAL_MODE must be open_site, occupied_site, or freeze_silicon"
+            )
+        for name in OPTIONAL_SWITCH_VARIABLES:
+            value = os.environ.get(name, "").strip().upper()
+            if value and value not in ("YES", "NO"):
+                errors.append("{0} must be YES or NO".format(name))
+        if (
+            os.environ.get("ECO_ENABLE_VT_SWAP", "").strip().upper() == "YES"
+            and not split_value(os.environ.get("ECO_VT_PATTERN_PRIORITY", ""))
+        ):
+            errors.append(
+                "ECO_VT_PATTERN_PRIORITY is required when ECO_ENABLE_VT_SWAP is YES"
+            )
+        pba_mode = os.environ.get("ECO_PBA_MODE", "").strip().lower()
+        if pba_mode and pba_mode not in ("none", "path", "exhaustive"):
+            errors.append("ECO_PBA_MODE must be none, path, or exhaustive")
+        for cell in split_value(os.environ.get("MACRO_LVS_CELLS", "")):
+            if re.match(r"^[A-Za-z0-9_]+$", cell) is None:
+                errors.append(
+                    "MACRO_LVS_CELLS contains an invalid cell name: {0}".format(cell)
+                )
     if values.get("LSF_MODE") not in ("batch", "interactive"):
         errors.append("LSF_MODE must be batch or interactive")
 
     io_mode = os.environ.get("IO_TIMING_QUALIFIED", "").strip().upper()
     if io_mode == "YES":
-        for name in IO_BUDGET_VARIABLES:
+        budget_variables = split_value(
+            os.environ.get("COMMERCIAL_IO_BUDGET_VARIABLES", "")
+        )
+        if not budget_variables:
+            errors.append(
+                "COMMERCIAL_IO_BUDGET_VARIABLES is not set by the product configuration"
+            )
+        for name in budget_variables:
             value = os.environ.get(name, "").strip()
             if not value or value == "REQUIRED":
                 errors.append("{0} is not configured".format(name))
@@ -252,10 +278,15 @@ def main():
                 float(value)
             except ValueError:
                 errors.append("{0} must be numeric".format(name))
+        hook_required = (
+            os.environ.get("PRODUCT_REQUIRES_IO_MODE_HOOK", "").strip().upper() == "YES"
+        )
         io_hook = os.environ.get("TIMING_IO_MODE_HOOK", "").strip()
-        if not io_hook or io_hook == "REQUIRED":
+        if hook_required and (not io_hook or io_hook == "REQUIRED"):
             errors.append("TIMING_IO_MODE_HOOK is required for qualified I/O")
-        elif not os.path.isfile(io_hook) or not os.access(io_hook, os.R_OK):
+        elif io_hook and io_hook != "REQUIRED" and (
+            not os.path.isfile(io_hook) or not os.access(io_hook, os.R_OK)
+        ):
             errors.append("TIMING_IO_MODE_HOOK is not readable: {0}".format(io_hook))
     elif io_mode == "NO" and args.allow_internal_qor:
         pass
@@ -291,6 +322,18 @@ def main():
                 errors.append("{0} is not configured".format(name))
             continue
         if name not in required_files:
+            continue
+        for path in paths:
+            if any(token in path for token in ("*", "?", "[")):
+                errors.append("{0} contains a wildcard: {1}".format(name, path))
+            elif not os.path.isfile(path) or not os.access(path, os.R_OK):
+                errors.append("{0} is not readable: {1}".format(name, path))
+
+    for name in OPTIONAL_FILE_LIST_VARIABLES:
+        value = os.environ.get(name, "").strip()
+        paths = split_value(value) if value and value != "REQUIRED" else []
+        checked_files[name] = paths
+        if args.allow_internal_qor:
             continue
         for path in paths:
             if any(token in path for token in ("*", "?", "[")):
@@ -394,6 +437,8 @@ def main():
     result = {
         "schema_version": 1,
         "status": "failed" if errors else "passed",
+        "soc": os.environ.get("SOC", ""),
+        "technology": os.environ.get("TECHNOLOGY", ""),
         "runtime": runtime,
         "tools": tools,
         "checked_file_variables": checked_files,

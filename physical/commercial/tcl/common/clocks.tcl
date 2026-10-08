@@ -9,6 +9,8 @@ namespace eval flow {
     variable canonical_clock_domains {}
     variable canonical_reset_ports {}
     variable commercial_clock_names {}
+    variable commercial_clock_groups
+    array set commercial_clock_groups {}
 }
 
 proc flow::required_ports {label names} {
@@ -53,6 +55,13 @@ proc flow::domain_object {domain} {
     return [flow::required_pins "clock $domain" $observation]
 }
 
+proc flow::register_clock {name async_group} {
+    variable commercial_clock_names
+    variable commercial_clock_groups
+    lappend commercial_clock_names $name
+    lappend commercial_clock_groups($async_group) $name
+}
+
 proc flow::load_canonical_timing_contract {} {
     variable canonical_clock_domains
     variable canonical_reset_ports
@@ -62,69 +71,58 @@ proc flow::load_canonical_timing_contract {} {
         flow::fail "canonical commercial timing contract is missing: $contract"
     }
     source $contract
-    set expected {external system audio jtag dvp usb2_ulpi}
+    set expected [product::expected_clock_domains]
     if {[lsort [dict keys $canonical_clock_domains]] ne [lsort $expected]} {
-        flow::fail "canonical commercial clock-domain set is invalid"
+        flow::fail "canonical commercial clock-domain set is invalid for $flow::soc"
     }
     if {[llength $canonical_reset_ports] == 0} {
         flow::fail "canonical reset-port list is empty"
     }
 }
 
-proc flow::create_canonical_master_clock {domain} {
-    variable canonical_clock_domains
-    set values [dict get $canonical_clock_domains $domain]
-    set name clk_$domain
-    create_clock -name $name -period [dict get $values period_ns] \
-        [flow::domain_object $domain]
-    return $name
-}
-
 proc flow::apply_clock_constraints {} {
     variable canonical_clock_domains
     variable canonical_reset_ports
     variable commercial_clock_names
+    variable commercial_clock_groups
 
     set commercial_clock_names {}
-    foreach domain {external audio jtag dvp usb2_ulpi} {
-        lappend commercial_clock_names [flow::create_canonical_master_clock $domain]
+    array set commercial_clock_groups {}
+    set custom [product::custom_clock_domains]
+
+    array set objects {}
+    foreach domain [dict keys $canonical_clock_domains] {
+        set objects($domain) [flow::domain_object $domain]
     }
-
-    set xtal_pin [flow::required_pins crystal_clock u_rcu/u_xtal_buf/clk_o]
-    create_clock -name clk_xtal -period [flow::env XTAL_CLK_PERIOD_NS] $xtal_pin
-    lappend commercial_clock_names clk_xtal
-
-    set pll_pin [flow::required_pins pll_clock u_rcu/u_tc_pll/u_PLL_TOP/CKOUT1]
-    create_clock -name clk_pll -period [flow::env PLL_OUTPUT_PERIOD_NS] $pll_pin
-    lappend commercial_clock_names clk_pll
-
-    set ext_pin [flow::domain_object external]
-    set sys_pin [flow::domain_object system]
-    create_generated_clock -name clk_system_ext -master_clock clk_external \
-        -source $ext_pin -divide_by 1 $sys_pin
-    create_generated_clock -name clk_system_pll -master_clock clk_pll \
-        -source $pll_pin -divide_by 1 -add $sys_pin
-    lappend commercial_clock_names clk_system_ext clk_system_pll
-
-    set ext_group [get_clocks {clk_external clk_system_ext}]
-    set pll_group [get_clocks {clk_pll clk_system_pll}]
-    set_clock_groups -name retrosoc_system_sources -physically_exclusive \
-        -group $ext_group -group $pll_group
-
-    set system_group [get_clocks \
-        {clk_external clk_system_ext clk_pll clk_system_pll}]
-    set async_groups [list \
-        $system_group \
-        [get_clocks clk_audio] \
-        [get_clocks clk_xtal] \
-        [get_clocks clk_jtag] \
-        [get_clocks clk_dvp] \
-        [get_clocks clk_usb2_ulpi]]
-    set command [list set_clock_groups -name retrosoc_async -asynchronous]
-    foreach group $async_groups {
-        lappend command -group $group
+    foreach domain [dict keys $canonical_clock_domains] {
+        if {$domain in $custom} {
+            continue
+        }
+        set values [dict get $canonical_clock_domains $domain]
+        set name clk_$domain
+        set source_domain [dict get $values source_domain]
+        if {$source_domain eq ""} {
+            create_clock -name $name -period [dict get $values period_ns] \
+                $objects($domain)
+        } else {
+            if {$source_domain in $custom} {
+                flow::fail "domain $domain derives from the product-managed \
+                    domain $source_domain"
+            }
+            create_generated_clock -name $name -source $objects($source_domain) \
+                -divide_by 1 $objects($domain)
+        }
+        flow::register_clock $name [dict get $values async_group]
     }
-    eval $command
+    product::apply_clock_overlays
+
+    if {[array size commercial_clock_groups] > 1} {
+        set command [list set_clock_groups -name retrosoc_async -asynchronous]
+        foreach group [array names commercial_clock_groups] {
+            lappend command -group [get_clocks $commercial_clock_groups($group)]
+        }
+        eval $command
+    }
 
     set clocks [get_clocks $commercial_clock_names]
     if {[sizeof_collection $clocks] != [llength $commercial_clock_names]} {

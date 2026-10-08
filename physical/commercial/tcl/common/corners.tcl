@@ -52,3 +52,76 @@ proc flow::rc_cap_table {corner} {
 proc flow::spef_name {top corner} {
     return "${top}.${corner}.spef.gz"
 }
+
+# CX55 OCV policy for PrimeTime signoff (legacy bes_data/common/
+# signoff_table.tcl:364-390, expanded by bes_data/sta/scr/flow_com/
+# transform_signoff_table.tcl:10-25; command forms verified in legacy PT logs
+# bes_data/sta/log/asic_top_V2026_1_CTS_MIN_CWORST.log and
+# asic_top_CTS_TYP_TYP.log:2672-2673):
+#   MAX/WCL: clock-path early derate 0.95 (cell and net), all other arcs unity
+#   MIN/ML:  clock-path early derate 0.90 (cell and net), all other arcs unity
+#   TYP:     unqualified "set_timing_derate -early 0.95" with unity late (the
+#            legacy "default default" entry)
+# The legacy DC synthesis run linked the TYP library and applied no timing
+# derate at all (bes_data/syn/scr/flow_com/syn_common_flow.tcl never sources
+# signoff_table.tcl; bes_data/syn/log/asic_top.log contains no
+# set_timing_derate), so the synthesis flow does not call this helper.
+proc flow::apply_signoff_derate {pvt} {
+    switch -glob -- $pvt {
+        MAX - WCL {
+            set cell_early [flow::env TIMING_DERATE_SETUP_CELL_CLOCK_EARLY 0.95]
+            set net_early [flow::env TIMING_DERATE_SETUP_NET_CLOCK_EARLY 0.95]
+        }
+        MIN - ML {
+            set cell_early [flow::env TIMING_DERATE_HOLD_CELL_CLOCK_EARLY 0.90]
+            set net_early [flow::env TIMING_DERATE_HOLD_NET_CLOCK_EARLY 0.90]
+        }
+        default {
+            set early [flow::env TIMING_DERATE_DEFAULT_EARLY 0.95]
+            if {$early != 1.0} {
+                set_timing_derate -late 1.0
+                set_timing_derate -early $early
+            }
+            return
+        }
+    }
+    set_timing_derate -cell_delay -clock -early $cell_early
+    set_timing_derate -cell_delay -clock -late 1.0
+    set_timing_derate -cell_delay -data -early 1.0
+    set_timing_derate -cell_delay -data -late 1.0
+    set_timing_derate -net_delay -clock -early $net_early
+    set_timing_derate -net_delay -clock -late 1.0
+    set_timing_derate -net_delay -data -early 1.0
+    set_timing_derate -net_delay -data -late 1.0
+}
+
+# Innovus derate and per-stage setup uncertainty (legacy
+# pd_data/pr/scr/CL1/set_derate_uncertainty.tcl).
+proc flow::apply_apr_derate {} {
+    set clock_early [flow::env APR_DERATE_CLOCK_EARLY 1.0]
+    set clock_late [flow::env APR_DERATE_CLOCK_LATE 1.0]
+    set data_late [flow::env APR_DERATE_DATA_LATE 1.0]
+    if {$clock_early != 1.0} {
+        set_timing_derate -early $clock_early -clock \
+            -delay_corner [all_delay_corners]
+    }
+    if {$clock_late != 1.0} {
+        set_timing_derate -late $clock_late -clock \
+            -delay_corner [all_delay_corners]
+    }
+    if {$data_late != 1.0} {
+        set_timing_derate -late $data_late -data -delay_corner [all_delay_corners]
+    }
+}
+
+proc flow::apply_apr_stage_uncertainty {stage} {
+    switch -- $stage {
+        place { set value [flow::env APR_SETUP_UNCERTAINTY_PLACE_NS ""] }
+        cts { set value [flow::env APR_SETUP_UNCERTAINTY_CTS_NS ""] }
+        route { set value [flow::env APR_SETUP_UNCERTAINTY_ROUTE_NS ""] }
+        default { set value "" }
+    }
+    if {$value ne ""} {
+        set_clock_uncertainty -setup $value [all_clocks]
+    }
+}

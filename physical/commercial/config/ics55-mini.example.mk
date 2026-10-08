@@ -8,11 +8,11 @@
 # MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v2 for more details.
 
-# Copy this file to ../local/ics55-production.mk and replace every REQUIRED
-# value there. The local copy is ignored by Git.
+# Mini/ICS55 local configuration template. Copy this file to
+# ../local/ics55-mini.mk and replace every REQUIRED value there. The local
+# copy is ignored by Git. Product and technology policy defaults come from
+# ../config/products/mini.mk and ../config/technology/ics55.mk.
 
-TOP         := retrosoc_asic
-TECHNOLOGY  := ICS55
 RTL_ARCHIVE := REQUIRED
 BUILD_ROOT  := $(ROOT_PATH)/build
 
@@ -104,6 +104,7 @@ STARRC_MAP     := REQUIRED
 STD_GDS          := REQUIRED
 IO_GDS           := REQUIRED
 MACRO_GDS        := REQUIRED
+OTHER_GDS        :=
 STD_CDL          := REQUIRED
 IO_CDL           := REQUIRED
 MACRO_CDL        := REQUIRED
@@ -149,21 +150,20 @@ ECO_HOLD_MARGIN_NS       := 0.0
 ECO_MAX_PROCESSES        := 8
 ECO_PHYSICAL_MODE        := open_site
 
-# Non-sensitive design intent. Units are micrometres and nanoseconds.
-DIE_WIDTH                  := 2400
-DIE_HEIGHT                 := 2400
-CORE_MARGIN_LEFT           := 120
-CORE_MARGIN_BOTTOM         := 120
-CORE_MARGIN_RIGHT          := 120
-CORE_MARGIN_TOP            := 120
-CORE_UTILIZATION           := 0.60
-XTAL_CLK_PERIOD_NS         := 41.666666667
-PLL_OUTPUT_PERIOD_NS       := 13.888888889
-CLOCK_SETUP_UNCERTAINTY_NS := 0.20
-CLOCK_HOLD_UNCERTAINTY_NS  := 0.10
-CLOCK_TRANSITION_NS        := 0.10
-MAX_TRANSITION_NS          := 0.50
-MAX_FANOUT                 := 32
+# Optional product-intent overrides (defaults in ../config/products/mini.mk).
+# DIE_WIDTH                  := 2400
+# DIE_HEIGHT                 := 2400
+# CORE_MARGIN_LEFT           := 258
+# CORE_MARGIN_BOTTOM         := 258
+# CORE_MARGIN_RIGHT          := 258
+# CORE_MARGIN_TOP            := 258
+# CORE_UTILIZATION           := 0.60
+# PLL_OUTPUT_PERIOD_NS       := 13.888888889
+# CLOCK_SETUP_UNCERTAINTY_NS := 0.20
+# CLOCK_HOLD_UNCERTAINTY_NS  := 0.10
+# CLOCK_TRANSITION_NS        := 0.10
+# MAX_TRANSITION_NS          := 0.50
+# MAX_FANOUT                 := 32
 
 # Board/device timing is local qualification data. Set YES only when every
 # interface budget below is taken from reviewed board and component timing.
@@ -219,10 +219,9 @@ ASYNC_OUTPUT_DELAY_MAX_NS := REQUIRED
 ASYNC_OUTPUT_DELAY_MIN_NS := REQUIRED
 ASYNC_OUTPUT_LOAD_PF      := REQUIRED
 
-# The qualified ICS55 PLL mode is fixed. Other runtime selections fail to lock.
-ICS55_PLL_SUPPORTED_SEL := 0
-ICS55_PLL_N             := 2
-ICS55_PLL_OD            := 2
+# The qualified ICS55 PLL mode for Mini is fixed by
+# ../config/products/mini.mk (SEL=0, N=2, OD=2). Other runtime selections
+# fail to lock.
 
 # TIMING_IO_MODE_HOOK is required when IO_TIMING_QUALIFIED=YES. It must select
 # the reviewed GPIO10-20 DVP mode and cut invalid bidirectional pad feedback.
@@ -234,6 +233,27 @@ APR_CTS_HOOK          :=
 APR_ROUTE_HOOK        :=
 TIMING_IO_MODE_HOOK   := REQUIRED
 TIMING_EXCEPTION_HOOK :=
+
+# Optional flow behavior slots (technology defaults live in
+# ../config/technology/ics55.mk; see README.md for the full reference).
+# STA_SAIF_FILE                 :=   # SAIF for per-scenario report_power
+# STA_SDF_SCENARIO              := func_TYP_TYP_25
+# SYN_CLOCK_GATING_EXCLUDE_PATTERNS := # clock-gating exclusion name globs
+# APR_IO_ORDER_FILE             :=   # reviewed pad order; default round-robin
+# APR_MACRO_LOC_FILE            :=   # fixed macro coordinates (place_macro)
+# APR_MACRO_HALO_UM             := 5
+# APR_NETLIST_EXCLUDE_CELLS     :=   # e.g. seal-ring cells excluded from netlist
+# APR_POWER_PIN_MAP             :=   # "PLL_AVDD:AVDD PLL_AVDD_DRV:DVDD_DRV"
+# APR_GROUND_PIN_MAP            :=   # "PLL_AVSS:AVSS PLL_AVSS_DRV:DVSS_DRV"
+# APR_EARLY_GLOBAL_MIN_LAYER    :=
+# APR_EARLY_GLOBAL_MAX_LAYER    :=
+# ECO_ENABLE_VT_SWAP            := NO
+# ECO_VT_PATTERN_PRIORITY       :=   # required when ECO_ENABLE_VT_SWAP=YES
+# ECO_ENABLE_SIZE_DOWN          := NO
+# ECO_ENABLE_REMOVE_BUFFER      := NO
+# ECO_PBA_MODE                  := none
+# MACRO_LVS_CELLS               := PLL_TOP   # macro-level LVS/ERC (legacy CX55 practice)
+# CALIBRE_LVS_ARGS              := -turbo -hyper
 
 # Required strict thresholds.
 MAX_SETUP_VIOLATIONS := 0

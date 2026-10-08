@@ -12,9 +12,12 @@ drivers.
   and `librelane/tiny/` (Tiny full-chip pad ring).
 - `ecc/` contains the ICS55 padless-core adapter and the official ECC `latest`
   installer entrypoint. Installation does not qualify physical-flow compatibility.
-- `commercial/` contains licensed-tool orchestration and flow logic. PDKs,
-  foundry decks, commercial libraries, site configuration, and results remain
-  outside Git.
+- `commercial/` contains licensed-tool orchestration and flow logic for the
+  ICS55 implementation flow, parameterized per product line (`SOC=MINI` and
+  `SOC=TINY`, extensible to future series). PDKs, foundry decks, commercial
+  libraries, site configuration, and results remain outside Git; see
+  [commercial/README.md](commercial/README.md) for the three-layer
+  configuration model and stage graph.
 - `sdf/`, when supplied by an implementation flow, contains post-layout
   netlist and SDF collateral consumed by post-layout simulation.
 

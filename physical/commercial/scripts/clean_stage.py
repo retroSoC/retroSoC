@@ -38,6 +38,7 @@ STAGES = (
     ("pv-drc", "pv/drc"),
     ("pv-antenna", "pv/antenna"),
     ("pv-lvs", "pv/lvs"),
+    ("pv-macro-lvs", "pv/macro_lvs"),
 )
 
 
