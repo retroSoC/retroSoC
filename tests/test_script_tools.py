@@ -1800,6 +1800,22 @@ def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() 
     )
 
 
+def test_quality_prepares_required_ics55_inputs_even_on_cache_miss() -> None:
+    import yaml
+
+    quality = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    steps = quality["jobs"]["scripts"]["steps"]
+    command = "make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 setup-pdk"
+    setup = next(step for step in steps if step.get("run") == command)
+    pytest_step = next(step for step in steps if step.get("run") == "python3 -m pytest -q")
+    assert steps.index(setup) < steps.index(pytest_step)
+    assert "if" not in setup and not setup.get("continue-on-error", False)
+    cache = next(step for step in steps if step.get("name") == "Restore locked source dependencies")
+    assert "physical/pdk/icsprout55-pdk" in cache["with"]["path"].splitlines()
+    assert ".cache/retrosoc/sources/ics55_ecos_pll" in cache["with"]["path"].splitlines()
+    assert cache["with"]["key"].startswith("quality-sources-")
+
+
 def test_regression_observations_do_not_block_or_skip_metrics(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:

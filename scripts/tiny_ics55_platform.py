@@ -20,6 +20,53 @@ PHASE = "TINY-ICS55-P1"
 RAM = "ics55_ecos_sram_1024x32_m8"
 
 
+def inspect_clock_source(leaves: list[dict], system: str, reference: str,
+                         constants: dict) -> list[dict]:
+    """Prove the supported SAFE24 pad/buffer path, rejecting unknown logic.
+
+    This deliberately recognizes only the selected ICS55 input receiver and
+    non-inverting clock buffer. A future clock mux/gate needs its own review.
+    Inout drivers are included so a second driver on REF24 cannot be hidden.
+    """
+    drivers = {}
+    for cell in leaves:
+        for port, bits in cell["ports"].items():
+            if cell["directions"].get(port) in ("output", "inout"):
+                for bit in bits:
+                    drivers.setdefault(bit, []).append((cell, port))
+
+    def scalar(cell, port):
+        bits = cell["ports"].get(port, [])
+        if len(bits) != 1:
+            raise ValueError(f"missing scalar clock-path pin: {cell['path']}/{port}")
+        return bits[0]
+
+    trace, seen = [], set()
+    cursor = system
+    while True:
+        if cursor in constants or cursor in ("x", "z") or cursor in seen:
+            raise ValueError("constant, unknown or cyclic SYS clock source")
+        seen.add(cursor)
+        candidates = drivers.get(cursor, [])
+        if len(candidates) != 1:
+            raise ValueError("SYS clock source has missing or multiple drivers")
+        cell, port = candidates[0]
+        trace.append({"path": cell["path"], "type": cell["type"], "output": port})
+        if cell["type"] == "BUFX0P7H7R" and port == "Y":
+            cursor = scalar(cell, "A")
+        elif cell["type"] == "P65_1233_PBMUX" and port == "C":
+            if scalar(cell, "PAD") != reference:
+                raise ValueError("SYS input receiver is not connected to external REF24")
+            if any(constants.get(scalar(cell, pin)) != value
+                   for pin, value in (("IE", 1), ("OE", 0), ("CS", 1))):
+                raise ValueError("REF24 pad is not a constant-enabled CMOS input")
+            if drivers.get(reference) != [(cell, "PAD")]:
+                raise ValueError("external REF24 has an additional internal driver")
+            return trace
+        else:
+            raise ValueError(f"unsupported SYS clock source: {cell['type']}/{port}")
+
+
 def verify_locked_views(root: Path) -> dict:
     """Check derived cache bytes against the unchanged locked archives."""
     lock = b.read_json(root / "dependencies/dependencies.lock.json")
@@ -114,7 +161,11 @@ def inspect_netlist(document: dict) -> dict:
             if kind in modules and not int(str(attrs.get("blackbox", "0")), 2):
                 visit(kind, path, ports)
             else:
-                leaves.append({"path": path, "type": kind, "ports": ports})
+                directions = cell.get("port_directions", {
+                    p: decl["direction"] for p, decl in modules.get(kind, {}).get("ports", {}).items()
+                })
+                leaves.append({"path": path, "type": kind, "ports": ports,
+                               "directions": directions})
 
     visit(top, top, {})
     for c in leaves:
@@ -139,6 +190,15 @@ def inspect_netlist(document: dict) -> dict:
         if c["type"] in ("TIELOH7R", "TIEHIH7R"):
             for bit in c["ports"]["Z"]:
                 constants[bit] = int(c["type"] == "TIEHIH7R")
+    ref_port = modules[top]["ports"].get("extclk_i_pad", {})
+    ref_bits = ref_port.get("bits", [])
+    if (ref_port.get("direction") not in ("input", "inout") or len(ref_bits) != 1
+            or not isinstance(ref_bits[0], int)):
+        raise ValueError("missing live external REF24 input port")
+    reference = canonical(f"{top}:{ref_bits[0]}")
+    if reference in constants or reference in ("x", "z"):
+        raise ValueError("external REF24 input is tied off or unknown")
+    clock_path = inspect_clock_source(leaves, system, reference, constants)
     enable = pll[0]["ports"].get("EN", [])
     if len(enable) != 1 or constants.get(enable[0]) != 0:
         raise ValueError("PLL enable is not proven constant zero")
@@ -149,7 +209,9 @@ def inspect_netlist(document: dict) -> dict:
     pll_outputs = {bit for name in ("CKOUT1", "CKOUT2", "CKTST") for bit in pll[0]["ports"].get(name, [])}
     if system in pll_outputs:
         raise ValueError("PLL drives SYS")
-    return {"system_net": system, "cpu_clocked_cells": len(cpu),
+    return {"system_net": system,
+            "system_clock_source": {"port": "extclk_i_pad", "net": reference, "path": clock_path},
+            "cpu_clocked_cells": len(cpu),
             "sram": [{"path": c["path"], "clock": c["ports"]["CLK"]} for c in ram],
             "pll": pll[0], "pll_enable": 0, "qualification": "SAFE24 digital connectivity only"}
 

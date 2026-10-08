@@ -11,6 +11,30 @@ earlier documentation/dependency refreeze and IHP130 R2 measurements.
 Implementation and validation are complete for review; human phase acceptance
 is still pending by this entry.
 
+## TINY-ICS55-P1 review fixes (2026-10-08)
+
+The read-only review found two implementation issues and both are corrected in
+the current working tree:
+
+- The quality workflow now restores the locked ICS55 PDK, SRAM views and PLL
+  checkout before the mandatory Pytest step. A fresh checkout with no ICS55
+  cache restored all inputs through `setup-pdk`; lock revisions and archive
+  hashes were unchanged.
+- The SAFE24 audit now traces SYS backwards through the selected ICS55
+  `P65_1233_PBMUX` input receiver and `BUFX0P7H7R` clock buffer to
+  `extclk_i_pad`, verifies constant CMOS input enables and rejects constant,
+  unknown, wrong-source, inverter, mux and multiple-driver paths. It records
+  the source trace in the structural report.
+
+Focused review-fix tests pass (`128 passed`), including negative clock-source
+mutations and the quality-workflow cache-miss ordering assertion. Ruff,
+yamllint, actionlint, dependency-lock validation, regression dry-runs and
+`git diff --check` pass. A fresh source capture, Yosys synthesis and OpenSTA
+run at
+`build/ics55-tiny-2026-10-08-10-05-42d5beccb726/` produce a current
+`meta/tiny-ics55-p1/report.json`; this remains SAFE24 synthesis/STA observation,
+not physical qualification. Human review and phase acceptance remain required.
+
 The [platform runbook](tiny-ics55-platform.md) defines ownership and commands.
 The default `configs/ci/ics55-tiny.mk` selects TINY/ICS55, HAVE_PLL=YES,
 128 KiB main SRAM and external 24 MHz SYS. The PLL is physically represented

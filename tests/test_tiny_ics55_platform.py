@@ -103,19 +103,90 @@ def test_consumed_netlist_provenance(tmp_path, monkeypatch, changed):
 @pytest.fixture
 def mapped_netlist():
     def cell(kind, **ports):
-        return {"type": kind, "connections": {k: [v] for k, v in ports.items()}}
-    cells = {"u_clock_buffer": cell("BUF", clk_o=2),
+        return {"type": kind, "connections": {k: [v] for k, v in ports.items()},
+                "port_directions": {k: "inout" if k == "PAD" else "output"
+                                    if k in ("Y", "Z", "C", "CKOUT1", "CKOUT2", "CKTST")
+                                    else "input" for k in ports}}
+    cells = {"u_clock_buffer": cell("clock_buffer", clk_i=7, clk_o=2),
+             "receiver": cell("P65_1233_PBMUX", PAD=1, C=7, IE="1", OE="0", CS="1"),
              "u_soc.u_cpu.u_hazard3_cpu_1port.core.pc_reg": cell("DFF", CK=2),
              "pll": cell("PLL_TOP", EN=3, CKOUT1=4, CKOUT2=5, CKTST=6),
              "low": cell("TIELOH7R", Z=3)}
     cells.update({f"bank{i}": cell(RAM, CLK=2) for i in range(32)})
-    return {"modules": {"retrosoc_tiny_asic": {"ports": {}, "cells": cells}}}
+    return {"modules": {
+        "retrosoc_tiny_asic": {"ports": {"extclk_i_pad": {"direction": "inout", "bits": [1]},
+                                         "jtag_tck_i_pad": {"direction": "inout", "bits": [11]}},
+                               "cells": cells},
+        "clock_buffer": {"ports": {"clk_i": {"direction": "input", "bits": [100]},
+                                    "clk_o": {"direction": "output", "bits": [101]}},
+                         "cells": {"u_buf": cell("BUFX0P7H7R", A=100, Y=101)}}}}
 
 
 def test_safe24_structural_binding(mapped_netlist):
     result = inspect_netlist(mapped_netlist)
     assert len(result["sram"]) == 32 and result["cpu_clocked_cells"] == 1
     assert result["pll_enable"] == 0
+    assert result["system_clock_source"]["port"] == "extclk_i_pad"
+    assert [c["type"] for c in result["system_clock_source"]["path"]] == [
+        "BUFX0P7H7R", "P65_1233_PBMUX"]
+
+
+@pytest.mark.parametrize("source", ["0", "1", "x", "z", 99, 11, 4, 2])
+def test_clock_buffer_cannot_hide_invalid_source(mapped_netlist, source):
+    # Constants, undriven nets, JTAG, PLL output and feedback all leave the
+    # output-side CPU/SRAM net unchanged. The old audit accepted these cases.
+    mapped_netlist["modules"]["retrosoc_tiny_asic"]["cells"]["u_clock_buffer"]["connections"]["clk_i"] = [source]
+    with pytest.raises(ValueError):
+        inspect_netlist(mapped_netlist)
+
+
+@pytest.mark.parametrize("mutation", ["missing_ref", "wrong_pad", "disabled_input",
+                                      "unknown_enable", "driven_pad", "unknown_mode",
+                                      "duplicate_sys_driver", "driven_ref", "inverter", "mux"])
+def test_ref24_path_must_be_unambiguous_and_enabled(mapped_netlist, mutation):
+    modules = mapped_netlist["modules"]
+    top = modules["retrosoc_tiny_asic"]
+    cells = top["cells"]
+    pad = cells["receiver"]["connections"]
+    if mutation == "missing_ref":
+        del top["ports"]["extclk_i_pad"]
+    elif mutation == "wrong_pad":
+        pad["PAD"] = [11]
+    elif mutation == "disabled_input":
+        pad["IE"] = ["0"]
+    elif mutation == "unknown_enable":
+        pad["IE"] = ["x"]
+    elif mutation == "driven_pad":
+        pad["OE"] = ["1"]
+    elif mutation == "unknown_mode":
+        pad["CS"] = ["x"]
+    elif mutation == "duplicate_sys_driver":
+        cells["second_driver"] = {"type": "BUFX0P7H7R", "connections": {"A": [7], "Y": [2]},
+                                  "port_directions": {"A": "input", "Y": "output"}}
+    elif mutation == "driven_ref":
+        cells["pll"]["connections"]["CKOUT1"] = [1]
+    else:
+        modules["clock_buffer"]["cells"]["u_buf"]["type"] = (
+            "INVX0P5H7R" if mutation == "inverter" else "MUX2X1H7R")
+    with pytest.raises(ValueError):
+        inspect_netlist(mapped_netlist)
+
+
+def test_ref24_path_accepts_hierarchical_receiver_and_tie_cells(mapped_netlist):
+    modules = mapped_netlist["modules"]
+    cells = modules["retrosoc_tiny_asic"]["cells"]
+    receiver = cells.pop("receiver")
+    receiver["connections"].update(PAD=[100], C=[101], IE=[102], CS=[102], OE=[103])
+    cells["receiver"] = {"type": "input_receiver", "connections": {
+        "pad": [1], "data": [7], "high": [8], "low": [3]}}
+    cells["high"] = {"type": "TIEHIH7R", "connections": {"Z": [8]},
+                     "port_directions": {"Z": "output"}}
+    modules["input_receiver"] = {"ports": {
+        "pad": {"direction": "inout", "bits": [100]},
+        "data": {"direction": "output", "bits": [101]},
+        "high": {"direction": "input", "bits": [102]},
+        "low": {"direction": "input", "bits": [103]}}, "cells": {"u_pad": receiver}}
+    assert inspect_netlist(mapped_netlist)["system_clock_source"]["port"] == "extclk_i_pad"
 
 
 def test_hierarchical_constant_output_is_resolved(mapped_netlist):

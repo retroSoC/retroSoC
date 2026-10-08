@@ -33,10 +33,12 @@ jobs:
         with:
           path: |
             physical/pdk/IHP-Open-PDK
+            physical/pdk/icsprout55-pdk
+            .cache/retrosoc/sources/ics55_ecos_pll
             rtl/managed/third_party
             .cache/retrosoc/pdk
             .cache/retrosoc/stamps
-          key: sources-IHP130-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+          key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Restore locked toolchains
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
@@ -87,6 +89,9 @@ jobs:
 
       - name: Set up locked IHP130 PDK
         run: make CONFIG=configs/ci/ihp130.mk setup-pdk
+
+      - name: Set up locked Tiny ICS55 PDK and PLL
+        run: make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 setup-pdk
 
       - name: Validate SoC integration topology
         run: make check-soc-topology check-user-extensions check-clock-reset-domains
