@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
 
 def real_definition(source: str, name: str) -> str:
     body = function_body(source, name)
-    signature = re.search(r"\b((?:static\s+)?(?:bool|uint32_t|rs_status_t)\s+" + re.escape(name)
+    signature = re.search(r"\b((?:static\s+)?(?:bool|uint32_t|rs_status_t|void)\s+" + re.escape(name)
                           + r"\s*\([^;{}]*\))\s*\{", source)
     assert signature is not None
     return signature[1] + " {" + body + "}\n"
@@ -274,9 +274,14 @@ def c_behavior(tmp_path_factory):
     constants += "\n" + "\n".join(line for line in sources["uart"].splitlines()
                                    if re.match(r"#define RS_UART_STATUS_(?:TX_FULL|RX_EMPTY)\s", line))
     extracted = ""
+    extracted += "static const rs_dma_session_t *rs_dma_owners[RS_DMA_CHANNEL_COUNT] = {0};\n"
     selections = {
         "uart": ["rs_uart_write", "rs_uart_read"],
-        "dma": ["rs_dma_channel_valid", "rs_dma_start", "rs_dma_abort", "rs_dma_get_status", "rs_dma_abort_wait", "rs_dma_wait"],
+        "dma": [
+            "rs_dma_lock", "rs_dma_unlock", "rs_dma_fence", "rs_dma_channel_valid",
+            "rs_dma_command", "rs_dma_start", "rs_dma_abort", "rs_dma_get_status",
+            "rs_dma_abort_wait", "rs_dma_wait",
+        ],
         "timer": ["rs_timer_id_valid", "rs_timer_ctrl_from_config", "rs_timer_config_valid", "rs_timer_configure", "rs_timer_start", "rs_timer_stop", "rs_timer_delay_ms"],
     }
     for family, names in selections.items():
