@@ -76,23 +76,23 @@ RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lo
 RTL_TOP ?= retrosoc_tb
 
 # SW
-ISA                ?= RV32IM
-HAVE_CSR           ?= NO
-FIRMWARE_NAME      ?= retrosoc_fw
-APP                ?= shell
-LINK_TYPE          ?= ld2_sram
-SW_ISA_PROFILE     ?= COMPAT
-SW_OPT             ?= APP
-SW_LTO             ?= NO
+ISA                  ?= RV32IM
+HAVE_CSR             ?= NO
+FIRMWARE_NAME        ?= retrosoc_fw
+APP                  ?= shell
+LINK_TYPE            ?= ld2_sram
+SW_ISA_PROFILE       ?= COMPAT
+SW_OPT               ?= APP
+SW_LTO               ?= NO
 WS2812_P3_ACCEPTANCE ?= NO
-COREMARK_MODE      ?= quick
-NPU_P5_ACCEPTANCE  ?= NO
-NPU_P6_ACCEPTANCE  ?= NO
-NPU_P6_WORKLOAD    ?= kws
-HP_PERF_MIN_RATIO  ?= 2.5
-HP_CROSS           ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
-LP_COREMARK_REPORT ?=
-HP_COREMARK_REPORT ?=
+COREMARK_MODE        ?= quick
+NPU_P5_ACCEPTANCE    ?= NO
+NPU_P6_ACCEPTANCE    ?= NO
+NPU_P6_WORKLOAD      ?= kws
+HP_PERF_MIN_RATIO    ?= 2.5
+HP_CROSS             ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
+LP_COREMARK_REPORT   ?=
+HP_COREMARK_REPORT   ?=
 
 BUILD_ROOT         ?= $(ROOT_PATH)/build
 CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
@@ -121,13 +121,13 @@ CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SR
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE NPU_P6_ACCEPTANCE NPU_P6_WORKLOAD
 # Preserve existing baseline keys; experimental software inputs have distinct variants.
-ifneq ($(SW_ISA_PROFILE):$(SW_OPT):$(SW_LTO),COMPAT:APP:NO)
-CONFIG_KEY_VARS    += SW_ISA_PROFILE SW_OPT SW_LTO
+ifneq ($(SW_ISA_PROFILE)/$(SW_OPT)/$(SW_LTO),COMPAT/APP/NO)
+CONFIG_KEY_VARS += SW_ISA_PROFILE SW_OPT SW_LTO
 endif
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
-CONFIG_KEY_VARS    += WS2812_P3_ACCEPTANCE
+CONFIG_KEY_VARS += WS2812_P3_ACCEPTANCE
 endif
-VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
+VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
 ifeq ($(VARIANT_ID),)
@@ -288,7 +288,7 @@ $(call validate_value,SW_OPT,APP O2 O3 Os)
 $(call validate_value,SW_LTO,$(VALID_BOOL))
 $(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
-ifneq ($(SOC):$(APP):$(HAVE_CSR),MINI:ci_smoke:YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR),MINI/ci_smoke/YES)
 $(error WS2812_P3_ACCEPTANCE requires SOC=MINI APP=ci_smoke HAVE_CSR=YES)
 endif
 endif
@@ -383,7 +383,7 @@ endif
 
 ifeq ($(STA),OPENSTA)
 ifeq ($(HAVE_PLL),YES)
-ifneq ($(SOC):$(PDK):$(TINY_SAFE24_PLL_OFF),TINY:ICS55:YES)
+ifneq ($(SOC)/$(PDK)/$(TINY_SAFE24_PLL_OFF),TINY/ICS55/YES)
 $(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
 endif
 endif

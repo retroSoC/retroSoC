@@ -20,7 +20,7 @@ TOP := retrosoc_asic
 COMMERCIAL_CLOCK_DOMAINS := aon lp hp pclk memory audio jtag dvp usb2_ulpi
 
 # Qualified-I/O interface groups and the budget variables each group requires.
-COMMERCIAL_IO_INTERFACES := JTAG DVP ULPI SDRAM SDIO XPI ASYNC
+COMMERCIAL_IO_INTERFACES       := JTAG DVP ULPI SDRAM SDIO XPI ASYNC
 COMMERCIAL_IO_BUDGET_VARIABLES := \
 	JTAG_INPUT_DELAY_MAX_NS JTAG_INPUT_DELAY_MIN_NS \
 	JTAG_INPUT_TRANSITION_NS JTAG_OUTPUT_DELAY_MAX_NS \
@@ -53,23 +53,23 @@ PRODUCT_REQUIRES_IO_MODE_HOOK := YES
 
 # The Mini RCU clocks the system from PLL_TOP in the qualified production
 # mode; doctor enforces the reviewed SEL/N/OD values below.
-PRODUCT_PLL_MODE := qualified
+PRODUCT_PLL_MODE        := qualified
 ICS55_PLL_SUPPORTED_SEL ?= 0
-ICS55_PLL_N ?= 2
-ICS55_PLL_OD ?= 2
+ICS55_PLL_N             ?= 2
+ICS55_PLL_OD            ?= 2
 
 # Non-sensitive floorplan/timing defaults; the local configuration may
 # override them.
-DIE_WIDTH ?= 2400
-DIE_HEIGHT ?= 2400
-CORE_MARGIN_LEFT ?= 258
-CORE_MARGIN_BOTTOM ?= 258
-CORE_MARGIN_RIGHT ?= 258
-CORE_MARGIN_TOP ?= 258
-CORE_UTILIZATION ?= 0.60
-PLL_OUTPUT_PERIOD_NS ?= 13.888888889
+DIE_WIDTH                  ?= 2400
+DIE_HEIGHT                 ?= 2400
+CORE_MARGIN_LEFT           ?= 258
+CORE_MARGIN_BOTTOM         ?= 258
+CORE_MARGIN_RIGHT          ?= 258
+CORE_MARGIN_TOP            ?= 258
+CORE_UTILIZATION           ?= 0.60
+PLL_OUTPUT_PERIOD_NS       ?= 13.888888889
 CLOCK_SETUP_UNCERTAINTY_NS ?= 0.20
-CLOCK_HOLD_UNCERTAINTY_NS ?= 0.10
-CLOCK_TRANSITION_NS ?= 0.10
-MAX_TRANSITION_NS ?= 0.50
-MAX_FANOUT ?= 32
+CLOCK_HOLD_UNCERTAINTY_NS  ?= 0.10
+CLOCK_TRANSITION_NS        ?= 0.10
+MAX_TRANSITION_NS          ?= 0.50
+MAX_FANOUT                 ?= 32

@@ -156,13 +156,13 @@ ECO_PHYSICAL_MODE        := open_site
 
 # Tiny has no tracked die defaults yet; size the pad ring and core from the
 # product floorplan review before implementation.
-DIE_WIDTH                  := REQUIRED
-DIE_HEIGHT                 := REQUIRED
-CORE_MARGIN_LEFT           := REQUIRED
-CORE_MARGIN_BOTTOM         := REQUIRED
-CORE_MARGIN_RIGHT          := REQUIRED
-CORE_MARGIN_TOP            := REQUIRED
-CORE_UTILIZATION           := REQUIRED
+DIE_WIDTH          := REQUIRED
+DIE_HEIGHT         := REQUIRED
+CORE_MARGIN_LEFT   := REQUIRED
+CORE_MARGIN_BOTTOM := REQUIRED
+CORE_MARGIN_RIGHT  := REQUIRED
+CORE_MARGIN_TOP    := REQUIRED
+CORE_UTILIZATION   := REQUIRED
 # CLOCK_SETUP_UNCERTAINTY_NS := 0.20
 # CLOCK_HOLD_UNCERTAINTY_NS  := 0.10
 # CLOCK_TRANSITION_NS        := 0.10

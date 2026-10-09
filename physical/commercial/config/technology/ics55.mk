@@ -41,26 +41,26 @@ TIMING_DERATE_DEFAULT_EARLY          := 0.95
 
 # Innovus derate and per-stage setup uncertainty (legacy
 # pd_data/pr/scr/CL1/set_derate_uncertainty.tcl).
-APR_DERATE_CLOCK_EARLY := 0.95
-APR_DERATE_CLOCK_LATE  := 1.10
-APR_DERATE_DATA_LATE   := 1.10
+APR_DERATE_CLOCK_EARLY         := 0.95
+APR_DERATE_CLOCK_LATE          := 1.10
+APR_DERATE_DATA_LATE           := 1.10
 APR_SETUP_UNCERTAINTY_PLACE_NS := 0.25
 APR_SETUP_UNCERTAINTY_CTS_NS   := 0.225
 APR_SETUP_UNCERTAINTY_ROUTE_NS := 0.20
 
 # Innovus per-stage DRV limits (legacy pd_data/pr/scr/CL1/update_sdc.tcl) and
 # CTS targets (legacy pd_data/pr/scr/setting/cts_setting.tcl).
-APR_DESIGN_PROCESS               ?= 55
-APR_MAX_FANOUT                   ?= 32
-APR_MAX_TRANSITION_NS            ?= 0.08
-APR_MAX_CAPACITANCE_PF           ?= 0.15
-APR_CTS_NDR_WIDTH_UM             ?= 0.2
-APR_CTS_NDR_SPACING_UM           ?= 0.2
-APR_CTS_TARGET_SKEW_NS           ?= 0.08
-APR_CTS_TARGET_MAX_TRANS_LEAF_NS ?= 0.78
+APR_DESIGN_PROCESS                ?= 55
+APR_MAX_FANOUT                    ?= 32
+APR_MAX_TRANSITION_NS             ?= 0.08
+APR_MAX_CAPACITANCE_PF            ?= 0.15
+APR_CTS_NDR_WIDTH_UM              ?= 0.2
+APR_CTS_NDR_SPACING_UM            ?= 0.2
+APR_CTS_TARGET_SKEW_NS            ?= 0.08
+APR_CTS_TARGET_MAX_TRANS_LEAF_NS  ?= 0.78
 APR_CTS_TARGET_MAX_TRANS_TRUNK_NS ?= 0.78
 APR_CTS_TARGET_INSERTION_DELAY_NS ?= 0.05
-APR_CTS_MAX_FANOUT               ?= 4
+APR_CTS_MAX_FANOUT                ?= 4
 
 # Synthesis compile policy (legacy bes_data/syn/scr/flow_com/
 # syn_common_flow.tcl).

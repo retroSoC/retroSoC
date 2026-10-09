@@ -24,7 +24,7 @@ ifeq ($(filter $(SW_ISA_PROFILE),COMPAT TINY_PERF),)
 $(error SW_ISA_PROFILE must be COMPAT or TINY_PERF)
 endif
 ifeq ($(SW_ISA_PROFILE),TINY_PERF)
-ifneq ($(SOC):$(ISA):$(HAVE_CSR),TINY:RV32IM:YES)
+ifneq ($(SOC)/$(ISA)/$(HAVE_CSR),TINY/RV32IM/YES)
 $(error TINY_PERF requires SOC=TINY ISA=RV32IM HAVE_CSR=YES)
 endif
 endif
@@ -210,10 +210,10 @@ endif
 ifneq ($(SW_OPT),APP)
 APP_CFLAGS := $(filter-out -O0 -O1 -O2 -O3 -Os -Og -Oz,$(APP_CFLAGS))
 endif
-CFLAGS       += $(APP_CFLAGS)
-CFLAGS       += -Wl,-Map,$(SW_BUILD_DIR)/$(FIRMWARE_NAME).map
-ifneq ($(SW_ISA_PROFILE):$(SW_OPT):$(SW_LTO),COMPAT:APP:NO)
-CFLAGS       += -fstack-usage
+CFLAGS += $(APP_CFLAGS)
+CFLAGS += -Wl,-Map,$(SW_BUILD_DIR)/$(FIRMWARE_NAME).map
+ifneq ($(SW_ISA_PROFILE)/$(SW_OPT)/$(SW_LTO),COMPAT/APP/NO)
+CFLAGS += -fstack-usage
 endif
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)
 

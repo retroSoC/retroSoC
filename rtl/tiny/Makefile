@@ -177,8 +177,8 @@ tiny-r2-baseline-report:
 .PHONY: tiny-r2-baseline-image tiny-r2-baseline-sim tiny-r2-baseline-report
 
 # Independent P3 experiment protocol; never rewrite or relabel a P1 image.
-TINY_P3_TOOL := $(ROOT_PATH)/scripts/tiny_r2_p3.py
-TINY_P3_IMAGE ?=
+TINY_P3_TOOL   := $(ROOT_PATH)/scripts/tiny_r2_p3.py
+TINY_P3_IMAGE  ?=
 TINY_P3_RESUME ?= NO
 tiny-r2-p3-image: firmware
 	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) image -- \
