@@ -29,6 +29,33 @@ logical geometry, generated-file hashes, TT 1.8 V/25 C Liberty, and SS
 the locked HD library submodule; OpenRAM's build-space and Ciel inputs are
 recorded in the macro artifact rather than added to the SoC PDK checkout.
 
+ICS55 setup also downloads the locked OpenECOS `1024x32_m8` and
+`4096x32_m8` single-port SRAM releases. Their Verilog core/stub models and
+Liberty views are materialized below `.cache/retrosoc/pdk/ics55/sram/`; the
+`tc_sram_1024x32` and `tc_sram_4096x32` connect the release byte-write macros
+directly. No local commercial ICS55 SRAM model is required.
+
+ICS55 setup also restores `sources.pdk_ics55_pll` (`PLL_V02p1`, full revision
+`6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`) to
+`.cache/retrosoc/sources/ics55_ecos_pll`. To acquire just the PLL without
+touching other PDK inputs, run:
+
+```sh
+python3 physical/pdk/setup.py --pdk ICS55 --component pll
+```
+
+The default `--component all` retains existing PDK setup and adds PLL
+acquisition for ICS55. Other PDK/component combinations with `pll` are rejected.
+The helper checks the README, behavioral/blackbox Verilog, LEF and three
+Liberty views and prints their hashes. No profile or RTL binding is changed.
+The views have no characterized timing arcs or LOCK output; licensing is
+undetermined. Functional modeling, actual lock/loss detection, supply binding
+and final timing characterization remain separate integration/release work.
+Tiny's default `configs/ci/ics55-tiny.mk` instantiates one disabled PLL and
+32 locked 4 KiB SRAM macros at external SAFE24. Its digital backend tests and
+core STA observations do not qualify analog PLL behavior or PLL-driven SYS.
+IHP130/no PLL remains explicit Tiny compatibility.
+
 The IHP130 dependency is also the technology source for the independent
 `physical/librelane/{mini,tiny}/` core-hardening and full-chip pad-ring flows.
 The locked

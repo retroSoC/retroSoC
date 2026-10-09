@@ -8,7 +8,10 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-module tc_pll (
+module tc_pll #(
+    parameter bit UseIcs55EcosPll = 1'b0,
+    parameter bit Ics55Parked     = 1'b0
+) (
     input  logic       fref_i,
     input  logic       rst_n_i,
     input  logic [2:0] cfg_sel_i,
@@ -117,6 +120,27 @@ module tc_pll (
   );
 `elsif PDK_ICS55
 `ifdef HAVE_PLL
+`ifdef RETROSOC_SOC__TINY
+  if (UseIcs55EcosPll) begin : gen_ecos
+    tc_pll_ics55_ecos #(
+        .Parked(Ics55Parked)
+    ) u_backend (
+        .fref_i       (fref_i),
+        .rst_n_i      (rst_n_i),
+        .cfg_sel_i    (cfg_sel_i),
+        .cfg_apply_i  (cfg_apply_i),
+        .pll_capable_o(pll_capable_o),
+        .pll_lock_o   (pll_lock_o),
+        .pll_clk_o    (pll_clk_o)
+    );
+  end else begin : gen_unsupported
+    assign pll_capable_o = 1'b0;
+    assign pll_lock_o    = 1'b0;
+    assign pll_clk_o     = 1'b0;
+  end
+`else
+  // Retain the legacy Mini experimental binding and instance path. It is not
+  // the locked OpenECOS backend and does not qualify that macro.
   localparam logic [2:0] ICS55_SUPPORTED_SEL = 3'd0;
   localparam logic [7:0] ICS55_N = 8'd2;
   localparam logic [1:0] ICS55_OD = 2'd2;
@@ -178,6 +202,7 @@ module tc_pll (
       .OD    (ICS55_OD),
       .N     (ICS55_N)
   );
+`endif
 `else
   assign pll_capable_o = 1'b0;
   assign pll_lock_o    = 1'b0;

@@ -1,5 +1,13 @@
 {
   "schema_version": 2,
+  "inactive_macros": {
+    "ics55_pll": {
+      "cell": "PLL_TOP",
+      "scope": "TINY-ICS55-P1: present, EN=0, no SYS connection",
+      "active_clock_domain": false,
+      "qualification": "no characterized timing arcs; full RCU remains R2-P7"
+    }
+  },
   "reset_ports": [
     "ext_rst_n_i_pad",
     "jtag_trst_n_i_pad"
@@ -8,10 +16,10 @@
     {
       "name": "system",
       "clock": "clk_i",
-      "reset": "s_rst_n",
-      "reset_source": "rst_n_i",
+      "reset": "system_rst_n_o",
+      "reset_source": "s_system_req_n",
       "reset_primitive": "rst_sync",
-      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "path": "rtl/tiny/top/tiny_reset_tree.sv",
       "instance": "u_system_rst_sync",
       "sta": {
         "source_port": "extclk_i_pad",
@@ -36,6 +44,25 @@
       }
     }
   ],
+  "reset_distribution": {
+    "release_edges": 5,
+    "por": "u_soc.u_reset_tree.u_por_rst_sync",
+    "system": "u_soc.u_reset_tree.u_system_rst_sync",
+    "system_source": "por_rst_n_o && !watchdog_reset_req_i",
+    "leaf_instance_pattern": "u_soc.u_reset_tree.gen_leaf[%d].u_leaf_rst_sync",
+    "leaf_names": [
+      "fabric", "gpio", "uart0", "uart1", "timer0", "timer1", "i2c0", "i2c1",
+      "xpi", "dma", "sysctrl", "clint", "sram", "archinfo", "pwm", "rtc", "wdg"
+    ],
+    "cpu_prerequisite": "all leaf resets released",
+    "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
+    "jtag": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_jtag_rst_sync",
+    "dmi": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_dmi_rst_sync",
+    "watchdog_functional_reset": "POR only; APB uses wdg leaf",
+    "main_sram_payload_reset": "none",
+    "crypto": "not integrated; physical erasure contract unchanged",
+    "clock_domain": "system"
+  },
   "crossings": [
     {
       "name": "debug_dmi",

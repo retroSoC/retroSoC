@@ -619,7 +619,7 @@ __STATIC_FORCEINLINE void __disable_all_counter(void) {
  * and data streams.
  */
 __STATIC_FORCEINLINE void __FENCE_I(void) {
-    __ASM volatile("fence.i");
+    __ASM volatile(".option push\n.option arch, +zifencei\nfence.i\n.option pop" ::: "memory");
 }
 
 /** \brief Read & Write Memory barrier */

@@ -21,6 +21,10 @@ module retrosoc_tiny (
     output logic           [7:0] test_code_o
 );
   logic s_por_rst_n, s_rst_n;
+  logic [16:0] s_leaf_rst_n;
+  logic s_fabric_rst_n, s_cpu_ready_rst_n;
+  logic        s_master_rst_n [2];
+  logic        s_target_rst_n [5];
   logic        s_debug_halted;
   logic [31:0] s_irq;
   logic s_fault_valid, s_fault_master, s_fault_write;
@@ -34,7 +38,8 @@ module retrosoc_tiny (
   logic [4:0] s_tick_count_d, s_tick_count_q;
   logic s_tick;
   logic s_unused_uart1_tx_stall, s_unused_uart1_rx_stall;
-  uart_if u_uart0_if ();
+  `include "tiny_apb_interfaces.svh"
+uart_if u_uart0_if ();
   uart_if u_uart1_if ();
   i2c_if u_i2c0_if ();
   i2c_if u_i2c1_if ();
@@ -45,7 +50,7 @@ module retrosoc_tiny (
   dma_req_if u_dma_req_if ();
   rtc_if u_rtc_if (
       .rtc_clk_i  (clk_i),
-      .rtc_rst_n_i(s_rst_n)
+      .rtc_rst_n_i(s_rtc_rst_n)
   );
   // The watchdog reset pulse must survive resetting the bus/CPU. Its timer
   // uses POR reset while its APB register domain uses the system reset.
@@ -60,7 +65,7 @@ module retrosoc_tiny (
       .USER_WIDTH(1)
   ) u_masters_axi4_if[2] (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_master_rst_n)
   );
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -69,49 +74,56 @@ module retrosoc_tiny (
       .USER_WIDTH(1)
   ) u_targets_axi4_if[5] (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_target_rst_n)
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_i2s_tx_axis_if (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_dma_rst_n)
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_i2s_rx_axis_if (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_dma_rst_n)
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_dvp_rx_axis_if (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_dma_rst_n)
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_crypto_tx_axis_if (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_dma_rst_n)
   );
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_crypto_rx_axis_if (
       .aclk   (clk_i),
-      .aresetn(s_rst_n)
+      .aresetn(s_dma_rst_n)
   );
-  `include "tiny_apb_interfaces.svh"
+  assign s_fabric_rst_n = s_leaf_rst_n[0];
+  assign s_master_rst_n = '{s_cpu_ready_rst_n, s_dma_rst_n};
+  assign s_target_rst_n = '{
+          s_sram_rst_n,
+          s_xpi_rst_n,
+          s_fabric_rst_n,
+          s_fabric_rst_n,
+          s_fabric_rst_n
+      };
 
-rst_sync u_por_rst_sync (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .rst_n_o(s_por_rst_n)
-  );
-  rst_sync u_system_rst_sync (
-      .clk_i  (clk_i),
-      .rst_n_i(s_por_rst_n && !u_wdg_if.reset_req_o),
-      .rst_n_o(s_rst_n)
+  tiny_reset_tree u_reset_tree (
+      .clk_i               (clk_i),
+      .rst_n_i             (rst_n_i),
+      .watchdog_reset_req_i(u_wdg_if.reset_req_o),
+      .por_rst_n_o         (s_por_rst_n),
+      .system_rst_n_o      (s_rst_n),
+      .leaf_rst_n_o        (s_leaf_rst_n),
+      .cpu_ready_rst_n_o   (s_cpu_ready_rst_n)
   );
   assign s_tick         = s_tick_count_q == 5'd23;
   assign s_tick_count_d = s_tick ? 5'd0 : (s_tick_count_q + 5'd1);
@@ -119,17 +131,18 @@ rst_sync u_por_rst_sync (
       .DATA_WIDTH(5)
   ) u_tick_reg (
       .clk_i  (clk_i),
-      .rst_n_i(s_rst_n),
+      .rst_n_i(s_fabric_rst_n),
       .dat_i  (s_tick_count_d),
       .dat_o  (s_tick_count_q)
   );
   mgmt_core_wrapper #(
       .ExternalIrqCount (30),
       .EnableAtomics    (1'b0),
-      .TwoCycleBusErrors(1'b1)
+      .TwoCycleBusErrors(1'b1),
+      .ResetSyncStages  (5)
   ) u_cpu (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_cpu_ready_rst_n),
       .irq_i         (s_irq),
       .jtag_tck_i    (jtag_tck_i),
       .jtag_tms_i    (jtag_tms_i),
@@ -141,7 +154,7 @@ rst_sync u_por_rst_sync (
   );
   tiny_axi4_fabric u_fabric (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_fabric_rst_n),
       .masters       (u_masters_axi4_if),
       .targets       (u_targets_axi4_if),
       .perf_enable_i (s_perf_enable),
@@ -155,12 +168,13 @@ rst_sync u_por_rst_sync (
       .dma_wait_o    (s_dma_wait)
   );
   onchip_ram #(
-      .CapacityKiB(128),
-      .DataWidth  (32),
-      .IdWidth    (1)
+      .CapacityKiB    (128),
+      .DataWidth      (32),
+      .IdWidth        (1),
+      .Ics55SmallBanks(1'b1)
   ) u_sram (
       .clk_i        (clk_i),
-      .rst_n_i      (s_rst_n),
+      .rst_n_i      (s_sram_rst_n),
       .mem_axi4     (u_targets_axi4_if[0]),
       .cfg_apb4     (u_sram_apb4_if),
       .perf_enable_i(s_perf_enable),
@@ -168,7 +182,7 @@ rst_sync u_por_rst_sync (
   );
   apb4_xpi u_xpi (
       .clk_i          (clk_i),
-      .rst_n_i        (s_rst_n),
+      .rst_n_i        (s_xpi_rst_n),
       .mem_axi4       (u_targets_axi4_if[1]),
       .apb4           (u_xpi_apb4_if),
       .xpi            (xpi),
@@ -179,7 +193,7 @@ rst_sync u_por_rst_sync (
   );
   tiny_axi42apb4 u_apb_bridge (
       .clk_i  (clk_i),
-      .rst_n_i(s_rst_n),
+      .rst_n_i(s_fabric_rst_n),
       .axi4   (u_targets_axi4_if[2]),
       `include "tiny_apb_connections.svh"
   );
@@ -187,19 +201,19 @@ rst_sync u_por_rst_sync (
       .Response(2'b11)
   ) u_decode_error (
       .clk_i  (clk_i),
-      .rst_n_i(s_rst_n),
+      .rst_n_i(s_fabric_rst_n),
       .axi4   (u_targets_axi4_if[3])
   );
   axi4_error_slave #(
       .Response(2'b10)
   ) u_protocol_error (
       .clk_i  (clk_i),
-      .rst_n_i(s_rst_n),
+      .rst_n_i(s_fabric_rst_n),
       .axi4   (u_targets_axi4_if[4])
   );
   tiny_sysctrl u_sysctrl (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_sysctrl_rst_n),
       .apb4          (u_sysctrl_apb4_if),
       .fault_valid_i (s_fault_valid),
       .fault_addr_i  (s_fault_addr),
@@ -217,12 +231,16 @@ rst_sync u_por_rst_sync (
   );
   tiny_archinfo u_archinfo (
       .clk_i  (clk_i),
-      .rst_n_i(s_rst_n),
+      .rst_n_i(s_archinfo_rst_n),
       .apb4   (u_archinfo_apb4_if)
   );
-  apb4_gpio u_gpio (
+  apb4_gpio #(
+      .HasInputCmos(gpio_pad_caps_pkg::HasInputCmos),
+      .HasPullUp   (gpio_pad_caps_pkg::HasPullUp),
+      .HasPullDown (gpio_pad_caps_pkg::HasPullDown)
+  ) u_gpio (
       .clk_i    (clk_i),
-      .rst_n_i  (s_rst_n),
+      .rst_n_i  (s_gpio_rst_n),
       .apb4     (u_gpio_apb4_if),
       .gpio     (u_gpio_if),
       .user_gpio(u_user_gpio_if)
@@ -243,7 +261,7 @@ rst_sync u_por_rst_sync (
   `include "tiny_irq.svh"
 apb4_uart u_uart0 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_uart0_rst_n),
       .apb4          (u_uart0_apb4_if),
       .uart          (u_uart0_if),
       .dma_tx_stall_o(s_dma_stall[2]),
@@ -251,7 +269,7 @@ apb4_uart u_uart0 (
   );
   apb4_i2c u_i2c0 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_i2c0_rst_n),
       .apb4          (u_i2c0_apb4_if),
       .i2c           (u_i2c0_if),
       .dma_tx_stall_o(s_dma_stall[4]),
@@ -259,14 +277,14 @@ apb4_uart u_uart0 (
   );
   apb4_timer u_timer0 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_timer0_rst_n),
       .debug_halted_i(s_debug_halted),
       .apb4          (u_timer0_apb4_if),
       .irq_o         (s_timer0_irq)
   );
   apb4_uart u_uart1 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_uart1_rst_n),
       .apb4          (u_uart1_apb4_if),
       .uart          (u_uart1_if),
       .dma_tx_stall_o(s_unused_uart1_tx_stall),
@@ -274,7 +292,7 @@ apb4_uart u_uart0 (
   );
   apb4_i2c u_i2c1 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_i2c1_rst_n),
       .apb4          (u_i2c1_apb4_if),
       .i2c           (u_i2c1_if),
       .dma_tx_stall_o(s_dma_stall[6]),
@@ -282,14 +300,14 @@ apb4_uart u_uart0 (
   );
   apb4_timer u_timer1 (
       .clk_i         (clk_i),
-      .rst_n_i       (s_rst_n),
+      .rst_n_i       (s_timer1_rst_n),
       .debug_halted_i(s_debug_halted),
       .apb4          (u_timer1_apb4_if),
       .irq_o         (s_timer1_irq)
   );
   apb4_clint u_clint (
       .clk_i          (clk_i),
-      .rst_n_i        (s_rst_n),
+      .rst_n_i        (s_clint_rst_n),
       .timebase_tick_i(s_tick),
       .apb4           (u_clint_apb4_if),
       .clint          (u_clint_if)
@@ -322,7 +340,7 @@ apb4_uart u_uart0 (
       .EnableStreams(1'b0)
   ) u_dma (
       .clk_i          (clk_i),
-      .rst_n_i        (s_rst_n),
+      .rst_n_i        (s_dma_rst_n),
       .dma_xfer_done_o(s_dma_done),
       .irq_o          (s_dma_irq),
       .hw_trg         (u_dma_req_if),

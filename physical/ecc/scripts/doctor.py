@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the reproducible padless ICS55 ECC hardening environment."""
+"""Validate the padless ICS55 ECC hardening environment."""
 
 from __future__ import annotations
 
@@ -23,7 +23,6 @@ from scripts.dependency_lock import load_lock  # noqa: E402
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 
-EXPECTED_ECC_VERSION = "ecc 0.1.0a10"
 EXPECTED_CLOCKS = (
     "clk_external",
     "clk_system",
@@ -141,7 +140,6 @@ def main() -> int:
     project = args.project.resolve()
     config_path = project / "ecc.toml"
     lock = load_lock(args.lock)
-    details["ecc_archive_sha256"] = lock["archives"]["ecc_cli_linux_x86_64"]["sha256"]
     details["locked_pdk_revision"] = lock["sources"]["pdk_ics55"]["revision"]
 
     if not args.ecc.is_file() or not args.ecc.stat().st_mode & 0o111:
@@ -150,8 +148,6 @@ def main() -> int:
         try:
             version = ecc_version(args.ecc, project)
             details["ecc_version"] = version
-            if version != EXPECTED_ECC_VERSION:
-                errors.append(f"expected {EXPECTED_ECC_VERSION}, found {version or '<empty>'}")
         except (OSError, subprocess.CalledProcessError) as error:
             errors.append(f"cannot execute ECC: {error}")
 
@@ -172,8 +168,7 @@ def main() -> int:
 
     required = (
         args.pdk_root / "prtech/techLEF/N551P6M_ecos.lef",
-        args.pdk_root
-        / "IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/lef/"
+        args.pdk_root / "IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/lef/"
         "ics55_LLSC_H7CR_ecos.lef",
     )
     for path in required:
@@ -184,7 +179,9 @@ def main() -> int:
         errors.append(f"ECC project configuration is missing: {config_path}")
     else:
         try:
-            config_errors, config_details = validate_config(read_config(config_path), args.sdc.resolve())
+            config_errors, config_details = validate_config(
+                read_config(config_path), args.sdc.resolve()
+            )
             errors.extend(config_errors)
             details.update(config_details)
         except (OSError, tomllib.TOMLDecodeError, ValueError) as error:

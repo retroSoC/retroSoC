@@ -333,6 +333,14 @@ def test_ics55_wrapper_preserves_active_low_controls_and_byte_masks(tmp_path: Pa
     if verilator is None:
         return
 
+    macro_model = (
+        ROOT
+        / ".cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x32_m8/verilog/"
+        / "ics55_ecos_sram_1024x32_m8_core.v"
+    )
+    if not macro_model.is_file():
+        pytest.skip("ICS55 SRAM release model is not installed")
+
     output = tmp_path / "tc_sram_ics55"
     ccache_tmp = tmp_path / "ccache-ics55"
     ccache_tmp.mkdir()
@@ -346,7 +354,7 @@ def test_ics55_wrapper_preserves_active_low_controls_and_byte_masks(tmp_path: Pa
             "tc_sram_1024x32_tb",
             "+define+PDK_ICS55",
             "+define+HAVE_SRAM_MACRO",
-            str(ROOT / "tests/rtl/ics55_onchip_sram_stub.sv"),
+            str(macro_model),
             str(ROOT / "rtl/tech/tc_sram.sv"),
             str(ROOT / "tests/rtl/tc_sram_1024x32_tb.sv"),
             "-Mdir",

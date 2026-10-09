@@ -6,6 +6,12 @@ ROOT_PATH ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 CONFIG    ?=
 LOCK_FILE ?= $(ROOT_PATH)/dependencies/dependencies.lock.json
 
+ifeq ($(strip $(CONFIG)),)
+ifeq ($(SOC),TINY)
+CONFIG := configs/ci/$(if $(filter IHP130,$(PDK)),ihp130,ics55)-tiny.mk
+endif
+endif
+
 ifneq ($(strip $(CONFIG)),)
 CONFIG_PATH := $(if $(filter /%,$(CONFIG)),$(CONFIG),$(ROOT_PATH)/$(CONFIG))
 ifeq ($(wildcard $(CONFIG_PATH)),)
@@ -70,19 +76,23 @@ RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lo
 RTL_TOP ?= retrosoc_tb
 
 # SW
-ISA                ?= RV32IM
-HAVE_CSR           ?= NO
-FIRMWARE_NAME      ?= retrosoc_fw
-APP                ?= shell
-LINK_TYPE          ?= ld2_sram
-COREMARK_MODE      ?= quick
-NPU_P5_ACCEPTANCE  ?= NO
-NPU_P6_ACCEPTANCE  ?= NO
-NPU_P6_WORKLOAD    ?= kws
-HP_PERF_MIN_RATIO  ?= 2.5
-HP_CROSS           ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
-LP_COREMARK_REPORT ?=
-HP_COREMARK_REPORT ?=
+ISA                  ?= RV32IM
+HAVE_CSR             ?= NO
+FIRMWARE_NAME        ?= retrosoc_fw
+APP                  ?= shell
+LINK_TYPE            ?= ld2_sram
+SW_ISA_PROFILE       ?= COMPAT
+SW_OPT               ?= APP
+SW_LTO               ?= NO
+WS2812_P3_ACCEPTANCE ?= NO
+COREMARK_MODE        ?= quick
+NPU_P5_ACCEPTANCE    ?= NO
+NPU_P6_ACCEPTANCE    ?= NO
+NPU_P6_WORKLOAD      ?= kws
+HP_PERF_MIN_RATIO    ?= 2.5
+HP_CROSS             ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
+LP_COREMARK_REPORT   ?=
+HP_COREMARK_REPORT   ?=
 
 BUILD_ROOT         ?= $(ROOT_PATH)/build
 CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
@@ -110,7 +120,14 @@ CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SR
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE NPU_P6_ACCEPTANCE NPU_P6_WORKLOAD
-VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
+# Preserve existing baseline keys; experimental software inputs have distinct variants.
+ifneq ($(SW_ISA_PROFILE)/$(SW_OPT)/$(SW_LTO),COMPAT/APP/NO)
+CONFIG_KEY_VARS += SW_ISA_PROFILE SW_OPT SW_LTO
+endif
+ifeq ($(WS2812_P3_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += WS2812_P3_ACCEPTANCE
+endif
+VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
 ifeq ($(VARIANT_ID),)
@@ -229,7 +246,7 @@ VALID_BOOL          := YES NO
 VALID_HP_CONFIG     := rv64imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader apu_release
-VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
+VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram ld2_tiny_banked
 VALID_COREMARK_MODE := quick standard
 VALID_SRAM_SIZE_KIB := 4 16 32 64 128
 
@@ -266,6 +283,15 @@ $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 $(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_WORKLOAD,kws vww)
+$(call validate_value,SW_ISA_PROFILE,COMPAT TINY_PERF)
+$(call validate_value,SW_OPT,APP O2 O3 Os)
+$(call validate_value,SW_LTO,$(VALID_BOOL))
+$(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(WS2812_P3_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR),MINI/ci_smoke/YES)
+$(error WS2812_P3_ACCEPTANCE requires SOC=MINI APP=ci_smoke HAVE_CSR=YES)
+endif
+endif
 
 ifeq ($(NPU_P5_ACCEPTANCE),YES)
 ifeq ($(filter $(APP),ci_smoke hp_boot),)
@@ -357,7 +383,9 @@ endif
 
 ifeq ($(STA),OPENSTA)
 ifeq ($(HAVE_PLL),YES)
+ifneq ($(SOC)/$(PDK)/$(TINY_SAFE24_PLL_OFF),TINY/ICS55/YES)
 $(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
+endif
 endif
 endif
 
@@ -530,7 +558,7 @@ help:
 	  '  librelane-openroad         open the current Chip run in OpenROAD' \
 	  '  librelane-klayout          open the current Chip run in KLayout' \
 	  '  librelane-package          package full-chip views and evidence' \
-	  '  ecc-setup                   install the pinned ECC CLI and ICS55 inputs' \
+	  '  ecc-setup                   install latest ECC and toolchain via the official installer' \
 	  '  ecc-doctor                  validate the padless ICS55 ECC hardening flow' \
 	  '  ecc-core                    run the padless ICS55 ECC hardening flow' \
 	  '  ecc-package                 package ECC core views and evidence' \
@@ -636,7 +664,7 @@ config:
 doctor:
 	@python3 $(ROOT_PATH)/scripts/doctor.py \
 	  --root $(ROOT_PATH) --simu $(SIMU) --synth $(SYNTH) --sta $(STA) \
-	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) \
+	  --pdk $(PDK) --soc $(SOC) --have-sram-macro $(HAVE_SRAM_MACRO) --have-pll $(HAVE_PLL) \
 	  --formal $(FORMAL) --lock $(LOCK_FILE)
 
 benchmark-report: firmware
@@ -661,7 +689,7 @@ hp-performance-check:
 ifeq ($(SOC),TINY)
 setup: setup-tiny
 setup-tiny:
-	python3 $(ROOT_PATH)/scripts/setup_tiny.py
+	python3 $(ROOT_PATH)/scripts/setup_tiny.py --pdk $(PDK)
 else
 setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
 endif
@@ -1181,13 +1209,13 @@ commercial-package: $(MPW_VARIANT_DEP) $(FILELIST_STAMP) manifest
 	  --variant-root $(VARIANT_ROOT) --output-dir $(VARIANT_ROOT)/commercial/input
 
 regress-smoke:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite smoke --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-rtl:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite rtl --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY)
 
 regress-pr:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk IHP130 $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk $(if $(filter TINY,$(SOC)),$(PDK),IHP130) $(if $(filter TINY,$(SOC)),--soc TINY) $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 ifneq ($(SOC),TINY)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk GF180 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
 	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite pr --pdk SKY130 $(if $(filter YES,$(REGRESS_NETSIM_BOOT_ONLY)),--netsim-boot-only)
@@ -1196,7 +1224,7 @@ ifneq ($(SOC),TINY)
 endif
 
 regress-nightly:
-	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY)
+	python3 $(ROOT_PATH)/scripts/regress.py --root $(ROOT_PATH) --suite nightly $(if $(filter TINY,$(SOC)),--soc TINY --pdk $(PDK))
 
 sim-asm: asm
 	$(MAKE) SIM_FIRMWARE_NAME=$(ASM_FIRMWARE_NAME) sim

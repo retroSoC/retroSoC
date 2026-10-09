@@ -52,6 +52,15 @@ proc flow::vt_cells {suffix} {
         -filter "is_hierarchical == false && ref_name =~ *$suffix"]
 }
 
+proc flow::vt_suffix_map {} {
+    set configured [flow::env SYN_VT_SUFFIX_MAP "HVT H7H LVT H7L SVT H7R"]
+    if {[llength $configured] == 0 || [llength $configured] % 2 != 0} {
+        flow::fail "SYN_VT_SUFFIX_MAP must be a flat group/suffix list"
+    }
+    array set map $configured
+    return [array get map]
+}
+
 proc flow::write_synthesis_summary {path drv_count} {
     variable io_qualified
     set setup [flow::timing_metrics "" max]
@@ -69,15 +78,27 @@ proc flow::write_synthesis_summary {path drv_count} {
     set memories [get_cells -quiet -hierarchical \
         -filter "is_hierarchical == false && is_memory_cell == true"]
 
-    array set vt_suffix {HVT H7H LVT H7L SVT H7R}
+    array set vt_suffix [flow::vt_suffix_map]
     set std_area 0.0
     set std_count 0
-    foreach group {HVT LVT SVT} {
+    foreach group [lsort [array names vt_suffix]] {
         set cells [flow::vt_cells $vt_suffix($group)]
         set vt_count($group) [sizeof_collection $cells]
         set vt_area($group) [flow::collection_area $cells]
         set std_count [expr {$std_count + $vt_count($group)}]
         set std_area [expr {$std_area + $vt_area($group)}]
+    }
+
+    # Area split adapted from the legacy syn_statistics.tcl:29-45 table.  The
+    # new netlists contain only standard cells and macros, so the legacy
+    # mem/ipio/sub_harden buckets collapse into a single macro residual.
+    set total_leaf_area [flow::collection_area $leaf]
+    set macro_area [expr {$total_leaf_area - $std_area}]
+    set std_percent 0.0
+    set macro_percent 0.0
+    if {$total_leaf_area > 0.0} {
+        set std_percent [expr {100.0 * $std_area / $total_leaf_area}]
+        set macro_percent [expr {100.0 * $macro_area / $total_leaf_area}]
     }
 
     set handle [open $path w]
@@ -100,8 +121,11 @@ proc flow::write_synthesis_summary {path drv_count} {
     puts $handle "memory_macros\t[sizeof_collection $memories]"
     puts $handle "standard_cells\t$std_count"
     puts $handle "standard_cell_area_um2\t[format %.4f $std_area]"
-    puts $handle "total_leaf_area_um2\t[format %.4f [flow::collection_area $leaf]]"
-    foreach group {HVT LVT SVT} {
+    puts $handle "macro_area_um2\t[format %.4f $macro_area]"
+    puts $handle "total_leaf_area_um2\t[format %.4f $total_leaf_area]"
+    puts $handle "standard_cell_area_percent\t[format %.2f $std_percent]"
+    puts $handle "macro_area_percent\t[format %.2f $macro_percent]"
+    foreach group [lsort [array names vt_suffix]] {
         set percent 0.0
         if {$std_area > 0.0} {
             set percent [expr {100.0 * $vt_area($group) / $std_area}]
@@ -113,11 +137,22 @@ proc flow::write_synthesis_summary {path drv_count} {
     close $handle
 }
 
+proc flow::vt_library_map {} {
+    set configured [flow::env SYN_VT_LIBRARY_MAP "HVT *H7CH* LVT *H7CL* SVT *H7CR*"]
+    if {[llength $configured] == 0 || [llength $configured] % 2 != 0} {
+        flow::fail "SYN_VT_LIBRARY_MAP must be a flat group/pattern list"
+    }
+    array set map $configured
+    return [array get map]
+}
+
 proc flow::configure_synthesis_libraries {} {
-    foreach {group pattern} {HVT *H7CH* LVT *H7CL* SVT *H7CR*} {
+    array set vt_library [flow::vt_library_map]
+    foreach group [array names vt_library] {
+        set pattern $vt_library($group)
         set libraries [get_libs -quiet $pattern]
         if {[sizeof_collection $libraries] == 0} {
-            flow::fail "missing $group H7C library in the TYP link set"
+            flow::fail "missing $group standard-cell library in the TYP link set"
         }
         set_attribute $libraries default_threshold_voltage_group $group -type string
     }

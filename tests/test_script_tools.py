@@ -282,6 +282,8 @@ def test_package_forwards_manifest_jtag_idcode() -> None:
         assert f'"{option}"' in package_source
     assert "generate_timing_contract.py" in package_source
     assert "commercial_timing_contract.tcl" in package_source
+    assert '"--soc"' in package_source
+    assert "tiny_core.sdc" in package_source
 
 
 def test_source_export_writes_tar_without_staging_rtl_tree(tmp_path: Path) -> None:
@@ -1384,7 +1386,9 @@ def test_hazard3_debug_flow_is_locked_and_uses_remote_bitbang() -> None:
     assert ".BRANCH_PREDICTOR   (1)" in wrapper
     assert ".BREAKPOINT_TRIGGERS(2)" in wrapper
     assert ".HAVE_SBA(0)" in debug_wrapper
-    assert "mgmt_debug_reset u_mgmt_debug_reset" in debug_wrapper
+    assert re.search(r"mgmt_debug_reset\s*#\(\s*\.ResetSyncStages\(ResetSyncStages\)\s*\)\s+u_mgmt_debug_reset", debug_wrapper)
+    assert re.search(r"parameter\s+int\s+ResetSyncStages\s*=\s*3", wrapper)
+    assert re.search(r"parameter\s+int\s+ResetSyncStages\s*=\s*3", debug_wrapper)
     assert "--timeout $(SOC_SIM_TIME)" in verilator_makefile
     assert "--require-debug-tools" in verilator_makefile
     assert "HAVE_DEBUG" not in verilator_makefile
@@ -1432,7 +1436,7 @@ def test_benchmark_profile_uses_functional_sram_and_reserved_data() -> None:
     assert sram_size_bytes - (benchmark_offset + benchmark_bytes) >= 7 * 1024
 
 
-def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> None:
+def test_open_pdk_profiles_enable_32kib_macro_sram_including_ics55() -> None:
     for pdk in ("ihp130", "gf180", "sky130"):
         profile = (ROOT / f"configs/ci/{pdk}.mk").read_text(encoding="utf-8")
         assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", profile, re.MULTILINE)
@@ -1440,8 +1444,8 @@ def test_open_pdk_profiles_enable_32kib_macro_sram_and_ics55_stays_absent() -> N
         assert re.search(r"^SRAM_SIZE_KIB\s*:= 32$", profile, re.MULTILINE)
 
     ics55 = (ROOT / "configs/ci/ics55.mk").read_text(encoding="utf-8")
-    assert re.search(r"^HAVE_SRAM_IF\s*:= NO$", ics55, re.MULTILINE)
-    assert re.search(r"^HAVE_SRAM_MACRO\s*:= NO$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_IF\s*:= YES$", ics55, re.MULTILINE)
+    assert re.search(r"^HAVE_SRAM_MACRO\s*:= YES$", ics55, re.MULTILINE)
 
     for name in ("ihp130-hazard3", "ihp130-hazard3-coremark"):
         benchmark = (ROOT / f"configs/benchmark/{name}.mk").read_text(encoding="utf-8")
@@ -1796,6 +1800,22 @@ def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() 
     assert quality.index("Set up locked accelerator references") < quality.index(
         "Test scripts and RTL fixtures"
     )
+
+
+def test_quality_prepares_required_ics55_inputs_even_on_cache_miss() -> None:
+    import yaml
+
+    quality = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    steps = quality["jobs"]["scripts"]["steps"]
+    command = "make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 setup-pdk"
+    setup = next(step for step in steps if step.get("run") == command)
+    pytest_step = next(step for step in steps if step.get("run") == "python3 -m pytest -q")
+    assert steps.index(setup) < steps.index(pytest_step)
+    assert "if" not in setup and not setup.get("continue-on-error", False)
+    cache = next(step for step in steps if step.get("name") == "Restore locked source dependencies")
+    assert "physical/pdk/icsprout55-pdk" in cache["with"]["path"].splitlines()
+    assert ".cache/retrosoc/sources/ics55_ecos_pll" in cache["with"]["path"].splitlines()
+    assert cache["with"]["key"].startswith("quality-sources-")
 
 
 def test_regression_observations_do_not_block_or_skip_metrics(

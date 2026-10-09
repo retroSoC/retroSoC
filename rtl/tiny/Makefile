@@ -31,7 +31,8 @@ $(ARCHINFO_METADATA_STAMP): $(LOCK_FILE) $(wildcard $(ARCHINFO_METADATA_SCRIPT))
 
 $(FILELIST_STAMP): $(ROOT_PATH)/Makefile $(RTL_PATH)/Makefile $(TINY_MAPS) $(TINY_TEMPLATES) $(TINY_TOOLS) $(ARCHINFO_METADATA_STAMP)
 	$(PYTHON) $(ROOT_PATH)/scripts/generate_tiny.py --output $(TINY_GENERATED_DIR) \
-		--filelists $(GENERATED_FL_DIR) $(foreach define,$(DEF_LIST),--define $(define))
+		--filelists $(GENERATED_FL_DIR) --pdk $(PDK) --simulator $(SIMU) --synthesis $(SYNTH) \
+		$(foreach define,$(DEF_LIST),--define $(define))
 	@touch $@
 
 $(SOC_IRQ_METADATA): $(FILELIST_STAMP)
@@ -50,7 +51,7 @@ check-clock-reset-domains:
 
 RTL_FILELISTS    := $(addprefix $(GENERATED_FL_DIR)/,def.fl inc.fl commonip.fl clusterip.fl ip.fl tech.fl core_hazard3.fl top.fl)
 RTL_FLIST        := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
-PDK_FILELIST     := $(GENERATED_FL_DIR)/pdk_ihp130.fl
+PDK_FILELIST     := $(GENERATED_FL_DIR)/pdk_selected.fl
 TINY_TB_FLIST    := -f $(GENERATED_FL_DIR)/tb.fl
 TOP_DESIGN       := retrosoc_tiny_asic
 RTL_NAME         := retrosoc_tiny_asic
@@ -62,6 +63,7 @@ TINY_DEPFILE     := $(SIM_BUILD_ROOT)/sources.d
 TINY_LINT_LOG    := $(VARIANT_ROOT)/lint/verilator/lint.log
 SOC_SIM_TIME     ?= 1800
 TINY_SIM_TIMEOUT ?= 20000000
+TINY_SIM_ARGS    ?=
 VERILATOR        ?= verilator
 IVERILOG         ?= iverilog
 VVP              ?= vvp
@@ -110,7 +112,7 @@ check-rtl-lint: rtl-lint
 sim: comp firmware | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool $(SIM_TOOL_NAME)-sim \
 		--log $(SIM_BUILD_ROOT)/sim.log --result $(SIM_BUILD_ROOT)/result-sim.json -- \
-		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT)
+		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT) $(TINY_SIM_ARGS)
 	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(SIM_BUILD_ROOT)/sim.log \
 		--result $(SIM_BUILD_ROOT)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
@@ -149,3 +151,53 @@ netsim-boot: netcomp tiny-boot-image | manifest
 		--result $(NETLIST_SIM_ROOT)/result-sim-check.json --require 'SIM_TEST_PASS'
 
 .PHONY: tiny-boot-image
+
+# R2-P1 verification image: normal APP selection and the flat linker stay intact.
+# Image creation always compiles and snapshots inputs before retaining a binary.
+# Simulation rebuilds its model once, then replays the same image three times.
+TINY_BASELINE_TOOL       := $(ROOT_PATH)/scripts/tiny_r2_baseline.py
+TINY_BASELINE_HEX        ?=
+TINY_BASELINE_MAX_CYCLES ?= 100000000
+
+tiny-r2-baseline-image: firmware
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) image \
+		--objcopy $(OBJC) --objdump $(DUMP) --nm $(CROSS)nm --size $(CROSS)size -- \
+		$(CC) $(CFLAGS) $(INC_PATH) $(CRT_SRCS) $(ROOT_PATH)/app/apps/ci_smoke/tiny_baseline.c
+
+tiny-r2-baseline-sim: | manifest
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) simulate \
+		--simulator $(SIM_TOOL_NAME) --vvp $(VVP) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		--max-cycles $(TINY_BASELINE_MAX_CYCLES) $(if $(TINY_BASELINE_HEX),--hex $(TINY_BASELINE_HEX)) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-baseline-report:
+	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
+
+.PHONY: tiny-r2-baseline-image tiny-r2-baseline-sim tiny-r2-baseline-report
+
+# Independent P3 experiment protocol; never rewrite or relabel a P1 image.
+TINY_P3_TOOL   := $(ROOT_PATH)/scripts/tiny_r2_p3.py
+TINY_P3_IMAGE  ?=
+TINY_P3_RESUME ?= NO
+tiny-r2-p3-image: firmware
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) image -- \
+		$(CC) $(CFLAGS) $(INC_PATH) $(CRT_SRCS) \
+		$(ROOT_PATH)/app/apps/ci_smoke/tiny_r2_p3.c $(ROOT_PATH)/app/apps/ci_smoke/tiny_r2_p3_isa.S
+
+tiny-r2-p3-sim: | manifest
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) simulate \
+		--simulator $(SIM_TOOL_NAME) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		$(if $(TINY_P3_IMAGE),--image $(TINY_P3_IMAGE)) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p3-matrix: | manifest
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) matrix \
+		--timestamp $(BUILD_TIMESTAMP) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		$(if $(filter YES,$(TINY_P3_RESUME)),--resume)
+
+tiny-r2-p3-report:
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
+
+.PHONY: tiny-r2-p3-image tiny-r2-p3-sim tiny-r2-p3-matrix tiny-r2-p3-report

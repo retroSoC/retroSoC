@@ -123,13 +123,20 @@ def test_usb2_packet_ram_ecc() -> None:
 
 
 def test_usb2_packet_ram_ecc_with_ics55_macros() -> None:
+    macro_model = (
+        ROOT
+        / ".cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_4096x32_m8/verilog/"
+        / "ics55_ecos_sram_4096x32_m8_core.v"
+    )
+    if not macro_model.is_file():
+        return
     _run_iverilog(
         "packet-ram-ics55",
         "usb2_packet_ram_tb",
         [
             "rtl/managed/clusterip/common/rtl/utils/register.sv",
             "rtl/managed/clusterip/common/rtl/base/ecc_secded.sv",
-                "tests/rtl/ics55_sram_4096x32_stub.sv",
+                str(macro_model.relative_to(ROOT)),
                 "rtl/tech/tc_sram.sv",
                 "rtl/tech/tc_usb2_packet_ram.sv",
             "rtl/ip/usb/usb2_packet_ram.sv",

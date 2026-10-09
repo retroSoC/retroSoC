@@ -13,9 +13,7 @@ ECC_STATUS        := $(ECC_RUN_ROOT)/status.json
 ECC_META_RESULT   := $(META_DIR)/ecc-$(ECC_TARGET).json
 ECC_DOCTOR_RESULT := $(META_DIR)/ecc-$(ECC_TARGET)-doctor.json
 ECC_ARCHIVE       := $(ECC_RUN_ROOT)/retrosoc-ics55-$(ECC_TARGET).tar.gz
-ECC_CACHE_ROOT    := $(CACHE_ROOT)/tools/ecc/v0.1.0-alpha.10
-ECC_BIN           := $(ECC_CACHE_ROOT)/ecc
-ECC_DOWNLOAD      := $(ROOT_PATH)/.cache/retrosoc/downloads/ecc/ecc-cli-linux-x86_64-v0.1.0-alpha.10.tar.gz
+ECC_BIN           ?= $(if $(XDG_BIN_HOME),$(XDG_BIN_HOME),$(HOME)/.local/bin)/ecc
 ECC_PDK_ROOT      := $(ROOT_PATH)/physical/pdk/icsprout55-pdk
 ECC_H7CR_LIBERTY  := $(CACHE_ROOT)/pdk/ics55/ics55_h7cr_ss.lib
 ECC_CLOCK_DOMAINS := $(ROOT_PATH)/rtl/mini/integration/clock_reset_domains.json
@@ -46,12 +44,13 @@ ecc-check-profile:
 	@test '$(HAVE_SRAM_MACRO)' = NO || { \
 		echo 'physical/ecc currently has no qualified ICS55 SRAM macro configuration' >&2; exit 2; }
 
-$(ECC_BIN): $(LOCK_FILE) $(ECC_FLOW_ROOT)/scripts/setup.py | ecc-check-profile
-	$(FLOW_PYTHON) $(ECC_FLOW_ROOT)/scripts/setup.py --root $(ROOT_PATH) \
-		--lock $(LOCK_FILE) --output-dir $(ECC_CACHE_ROOT)
-	@test -x $@
+# Only an explicit setup invocation follows latest. Physical flows use the installed wrapper.
+ecc-setup:
+	$(ECC_SOURCE_PYTHON) $(ECC_FLOW_ROOT)/scripts/setup.py
 
-ecc-setup: setup-pdk $(ECC_BIN)
+$(ECC_BIN):
+	@echo 'ECC wrapper missing: run make ecc-setup or set ECC_BIN to an installed wrapper' >&2
+	@exit 2
 
 $(ECC_H7CR_LIBERTY):
 	+$(MAKE) setup-pdk
@@ -85,7 +84,7 @@ $(ECC_CONFIG): $(ECC_RTL) $(ECC_SDC) $(ECC_H7CR_LIBERTY) \
 		--rtl $(ECC_RTL) --sdc $(ECC_SDC) --pdk-root $(ECC_PDK_ROOT) \
 		--h7cr-liberty $(ECC_H7CR_LIBERTY) --ext-clk-hz $(EXT_CLK_HZ) --output $@
 
-ecc-input: ecc-setup $(ECC_CONFIG)
+ecc-input: $(ECC_BIN) $(ECC_CONFIG)
 
 $(ECC_DOCTOR_RESULT): $(ECC_CONFIG) $(ECC_BIN) $(ECC_FLOW_ROOT)/scripts/doctor.py
 	@mkdir -p $(@D)
@@ -93,7 +92,7 @@ $(ECC_DOCTOR_RESULT): $(ECC_CONFIG) $(ECC_BIN) $(ECC_FLOW_ROOT)/scripts/doctor.p
 		--lock $(LOCK_FILE) --ecc $(ECC_BIN) --project $(ECC_PROJECT_DIR) \
 		--pdk-root $(ECC_PDK_ROOT) --sdc $(ECC_SDC) --output $@
 
-ecc-doctor: ecc-setup $(ECC_DOCTOR_RESULT)
+ecc-doctor: $(ECC_DOCTOR_RESULT)
 
 ecc-check: ecc-doctor
 

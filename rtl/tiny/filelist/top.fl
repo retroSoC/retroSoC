@@ -2,5 +2,6 @@
 /top/tiny_axi42apb4.sv
 /top/tiny_sysctrl.sv
 /top/tiny_archinfo.sv
+/top/tiny_reset_tree.sv
 /top/retrosoc_tiny.sv
 /top/retrosoc_tiny_asic.sv

@@ -27,11 +27,7 @@ def load_module(name: str, path: Path):
 
 def write_pdk(root: Path) -> None:
     tech = root / "prtech/techLEF/N551P6M_ecos.lef"
-    lef = (
-        root
-        / "IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/lef/"
-        "ics55_LLSC_H7CR_ecos.lef"
-    )
+    lef = root / "IP/STD_cell/ics55_LLSC_H7C_V1p10C100/ics55_LLSC_H7CR/lef/ics55_LLSC_H7CR_ecos.lef"
     tech.parent.mkdir(parents=True)
     lef.parent.mkdir(parents=True)
     tech.write_text("VERSION 5.8 ;\n", encoding="utf-8")
@@ -139,7 +135,7 @@ def test_ecc_doctor_rejects_single_clock_or_pad_collateral(tmp_path: Path) -> No
     assert any("IO, PAD, or bondpad" in error for error in errors)
 
 
-def test_ecc_flow_is_on_demand_and_locked() -> None:
+def test_ecc_flow_is_on_demand_with_upstream_installation() -> None:
     makefile = (ECC_ROOT / "Makefile").read_text(encoding="utf-8")
     root_makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     lock = json.loads((ROOT / "dependencies/dependencies.lock.json").read_text(encoding="utf-8"))
@@ -150,6 +146,146 @@ def test_ecc_flow_is_on_demand_and_locked() -> None:
     assert "--librelane-safe" in makefile
     assert "include physical/ecc/Makefile" in root_makefile
     assert "ecc-core" not in (ROOT / "scripts/regress.py").read_text(encoding="utf-8")
-    archive = lock["archives"]["ecc_cli_linux_x86_64"]
-    assert archive["url"].endswith("v0.1.0-alpha.10/ecc-cli-linux-x86_64.tar.gz")
-    assert archive["sha256"] == "fc3daaca24dddb04ba3490329042f52da05190da03c3831042293dd0cbffdca6"
+    assert "ecc_cli_linux_x86_64" not in lock["archives"]
+    assert "ecc-input: ecc-setup" not in makefile
+    assert "ecc-doctor: ecc-setup" not in makefile
+
+
+def test_ecc_binary_uses_upstream_home_and_xdg_defaults(tmp_path, monkeypatch):
+    module = load_module("retrosoc_ecc_setup", ECC_ROOT / "scripts/setup.py")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("XDG_BIN_HOME", raising=False)
+    assert module.default_binary() == tmp_path / ".local/bin/ecc"
+    monkeypatch.setenv("XDG_BIN_HOME", "")
+    assert module.default_binary() == tmp_path / ".local/bin/ecc"
+    monkeypatch.setenv("XDG_BIN_HOME", str(tmp_path / "custom bin"))
+    assert module.default_binary() == tmp_path / "custom bin/ecc"
+
+
+def test_ecc_setup_always_streams_installer_and_checks_runtime(tmp_path, monkeypatch):
+    import subprocess
+
+    module = load_module("retrosoc_ecc_setup", ECC_ROOT / "scripts/setup.py")
+    monkeypatch.setenv("XDG_BIN_HOME", str(tmp_path))
+    binary = tmp_path / "ecc"
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    calls = []
+
+    def run(command, **kwargs):
+        assert kwargs["check"]
+        assert "env" not in kwargs  # Upstream owns directory and toolchain selection.
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout='{"version":"test"}')
+
+    monkeypatch.setattr(module.subprocess, "run", run)
+    for _ in range(2):
+        assert module.install() == binary
+    expected = [
+        "bash",
+        "-o",
+        "pipefail",
+        "-c",
+        "curl -fsSL http://release.openecos.com/installers/ecc/latest/ecc-installer.sh"
+        " | sh -s -- --with-toolchain",
+    ]
+    assert calls == [expected, [str(binary), "--version"], [str(binary), "version", "--json"]] * 2
+    assert list(tmp_path.iterdir()) == [binary]
+
+
+def test_ecc_pipeline_propagates_curl_and_installer_failures(tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import pytest
+
+    module = load_module("retrosoc_ecc_setup", ECC_ROOT / "scripts/setup.py")
+    tools = tmp_path / "bin"
+    tools.mkdir()
+    monkeypatch.setenv("PATH", str(tools) + ":" + os.environ["PATH"])
+    monkeypatch.setenv("XDG_BIN_HOME", str(tmp_path / "installed"))
+    curl = tools / "curl"
+    curl.write_text("#!/bin/sh\nexit 22\n")
+    curl.chmod(0o755)
+    with pytest.raises(subprocess.CalledProcessError) as error:
+        module.install()
+    assert error.value.returncode == 22  # Empty sh succeeds, but pipefail catches curl.
+    curl.write_text("#!/bin/sh\nprintf 'exit 7\\n'\n")
+    with pytest.raises(subprocess.CalledProcessError) as error:
+        module.install()
+    assert error.value.returncode == 7
+    assert not (tmp_path / "installed").exists()
+
+
+def test_ecc_setup_is_profile_independent_and_honors_binary_override(tmp_path):
+    import subprocess
+
+    result = subprocess.run(
+        ["make", "-n", "ecc-setup"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    assert "physical/ecc/scripts/setup.py" in result.stdout
+    assert "physical/pdk/setup.py" not in result.stdout
+    assert "requires PDK" not in result.stdout
+    binary = tmp_path / "ecc"
+    binary.touch()
+    result = subprocess.run(
+        ["make", "-n", f"ECC_BIN={binary}", str(binary)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert "setup.py" not in result.stdout
+
+
+def test_ecc_doctor_works_without_cli_lock_or_fixed_version(tmp_path, monkeypatch):
+    import sys
+
+    module = load_module("retrosoc_ecc_doctor", ECC_ROOT / "scripts/doctor.py")
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "ecc.toml").write_text("")
+    pdk = tmp_path / "pdk"
+    write_pdk(pdk)
+    (pdk / ".git").mkdir()
+    binary = tmp_path / "ecc"
+    binary.touch()
+    binary.chmod(0o755)
+    output = tmp_path / "doctor.json"
+    monkeypatch.setattr(
+        module,
+        "load_lock",
+        lambda _: {"sources": {"pdk_ics55": {"revision": "test-revision"}}, "archives": {}},
+    )
+    monkeypatch.setattr(module, "ecc_version", lambda *args: "ecc future-release")
+    monkeypatch.setattr(module, "command_output", lambda *args: "test-revision")
+    monkeypatch.setattr(module, "validate_config", lambda *args: ([], {}))
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(stdout='{"status":"passed"}'),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "doctor",
+            "--root",
+            str(tmp_path),
+            "--lock",
+            "unused",
+            "--ecc",
+            str(binary),
+            "--project",
+            str(project),
+            "--pdk-root",
+            str(pdk),
+            "--sdc",
+            str(tmp_path / "test.sdc"),
+            "--output",
+            str(output),
+        ],
+    )
+    assert module.main() == 0
+    result = json.loads(output.read_text())
+    assert result["details"]["ecc_version"] == "ecc future-release"
+    assert "ecc_archive_sha256" not in result["details"]

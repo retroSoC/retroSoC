@@ -186,4 +186,90 @@ module retrosoc_top (
       .dq_io  (s_sdram_dq)
   );
 
+`ifdef RETROSOC_WS2812_P3_OBSERVE
+  // Approved option A: actual Mini PIO frames and recovery, never DMA latency.
+  `define _P3_PERIPH u_retrosoc_asic.u_retrosoc.u_apb4_periph
+  `define _P3_WS `_P3_PERIPH.u_apb4_ws2812
+  int unsigned        s_p3_frames = 0;
+  int unsigned        s_p3_done = 0;
+  int unsigned        s_p3_underflows = 0;
+  int unsigned        s_p3_aborts = 0;
+  int unsigned        s_p3_dma_starts = 0;
+  int unsigned        s_p3_word = 0;
+  int unsigned        s_p3_bit = 0;
+  int unsigned        s_p3_bit_cycle = 0;
+  int unsigned        s_p3_reset_cycles = 0;
+  int unsigned        s_p3_expected_words;
+  logic        [23:0] s_p3_pixel;
+  logic               s_p3_busy_previous = 1'b0;
+  logic               s_p3_expected_high;
+  // Sample settled outputs halfway between active edges. The model has no
+  // timing delays and the production waveform is never driven by this observer.
+  always @(negedge u_retrosoc_asic.u_retrosoc.clk_pclk_i) begin
+    if (`_P3_WS.s_busy && !s_p3_busy_previous) begin
+      s_p3_frames       = s_p3_frames + 1;
+      s_p3_word         = 0;
+      s_p3_bit          = 0;
+      s_p3_bit_cycle    = 0;
+      s_p3_reset_cycles = 0;
+    end
+    if (`_P3_WS.s_underflow) s_p3_underflows = s_p3_underflows + 1;
+    if (`_P3_WS.s_aborted) s_p3_aborts = s_p3_aborts + 1;
+    if (`_P3_PERIPH.u_apb4_dma.s_start != '0) s_p3_dma_starts = s_p3_dma_starts + 1;
+    if (`_P3_WS.s_busy && !`_P3_WS.s_reset_active && s_p3_frames <= 4) begin
+      s_p3_pixel         = 24'(s_p3_word * 32'h010203);
+      s_p3_expected_high = s_p3_bit_cycle < (s_p3_pixel[23-s_p3_bit] ? 17 : 8);
+      if (`_P3_WS.s_dat !== s_p3_expected_high)
+        $fatal(
+            1,
+            "SIM_TEST_FAIL Mini PIO waveform frame=%0d word=%0d bit=%0d cycle=%0d",
+            s_p3_frames,
+            s_p3_word,
+            s_p3_bit,
+            s_p3_bit_cycle
+        );
+      s_p3_bit_cycle = s_p3_bit_cycle + 1;
+      if (s_p3_bit_cycle == 30) begin
+        s_p3_bit_cycle = 0;
+        s_p3_bit       = s_p3_bit + 1;
+        if (s_p3_bit == 24) begin
+          s_p3_bit  = 0;
+          s_p3_word = s_p3_word + 1;
+        end
+      end
+    end
+    if (`_P3_WS.s_reset_active) begin
+      if (`_P3_WS.s_dat !== 1'b0) $fatal(1, "SIM_TEST_FAIL Mini PIO reset-low");
+      s_p3_reset_cycles = s_p3_reset_cycles + 1;
+    end
+    if (!`_P3_WS.s_busy && s_p3_busy_previous) begin
+      if (s_p3_reset_cycles < 7200) $fatal(1, "SIM_TEST_FAIL Mini PIO short reset interval");
+      if (s_p3_frames <= 4) begin
+        case (s_p3_frames)
+          1:       s_p3_expected_words = 4;
+          2:       s_p3_expected_words = 16;
+          3:       s_p3_expected_words = 33;
+          default: s_p3_expected_words = 65;
+        endcase
+        if (s_p3_word != s_p3_expected_words || s_p3_bit != 0 || s_p3_bit_cycle != 0)
+          $fatal(1, "SIM_TEST_FAIL Mini PIO frame length");
+        s_p3_done = s_p3_done + 1;
+      end
+    end
+    s_p3_busy_previous = `_P3_WS.s_busy;
+  end
+  // The C++ harness calls final() immediately on TEST_STATUS.
+  final begin
+    if (test_done_o && test_pass_o) begin
+      if (s_p3_frames != 6 || s_p3_done != 4 || s_p3_underflows != 1 ||
+          s_p3_aborts < 1 || s_p3_dma_starts != 0)
+        $fatal(1, "SIM_TEST_FAIL incomplete Mini PIO observations");
+      $display(
+          "WS2812_P3_MINI_PIO_OBSERVER frames=%0d completed=%0d underflows=%0d aborts=%0d dma_starts=%0d",
+          s_p3_frames, s_p3_done, s_p3_underflows, s_p3_aborts, s_p3_dma_starts);
+    end
+  end
+  `undef _P3_WS
+  `undef _P3_PERIPH
+`endif
 endmodule

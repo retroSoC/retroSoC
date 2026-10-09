@@ -50,6 +50,27 @@ typedef struct {
     bool reset_active;
 } rs_ws2812_status_t;
 
+typedef struct {
+    bool active;
+    bool draining;
+    bool dma_pending;
+    uint32_t remaining;
+    uint32_t batches;
+    rs_status_t result;
+} rs_ws2812_dma_status_t;
+
+/* Foreground-only, one transmitter session. IRQ handlers publish events; a timer
+ * must also call service so missing IRQs cannot disable the software deadline.
+ * now/deadline use caller-defined monotonic uint64_t ticks, without wraparound.
+ * Pixels remain immutable and alive until status.active becomes false, including
+ * after timeout. cancel/service continue recovery without busy waits. */
+rs_status_t rs_ws2812_dma_begin(const uint32_t *pixels, size_t pixel_count, uint64_t now,
+                                uint64_t deadline);
+rs_status_t rs_ws2812_dma_service(uint64_t now);
+rs_status_t rs_ws2812_dma_status(rs_ws2812_dma_status_t *status);
+rs_status_t rs_ws2812_dma_cancel(void);
+rs_status_t rs_ws2812_refill_words(uint32_t remaining, uint32_t level, uint32_t *words);
+
 uint32_t rs_ws2812_pack_grb(uint8_t red, uint8_t green, uint8_t blue);
 rs_status_t rs_ws2812_timing_from_ns(const rs_ws2812_config_t *config, rs_ws2812_timing_t *timing);
 rs_status_t rs_ws2812_init(const rs_ws2812_config_t *config);

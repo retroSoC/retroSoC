@@ -10,11 +10,14 @@ drivers.
 - `librelane/` contains the open-source IHP130 implementation flows, organized
   per product line: `librelane/mini/` (core hardening and full-chip pad ring)
   and `librelane/tiny/` (Tiny full-chip pad ring).
-- `ecc/` contains the open-source ICS55 padless-core hardening flow backed by
-  the locked ECOS Chip Compiler release.
-- `commercial/` contains licensed-tool orchestration and flow logic. PDKs,
-  foundry decks, commercial libraries, site configuration, and results remain
-  outside Git.
+- `ecc/` contains the ICS55 padless-core adapter and the official ECC `latest`
+  installer entrypoint. Installation does not qualify physical-flow compatibility.
+- `commercial/` contains licensed-tool orchestration and flow logic for the
+  ICS55 implementation flow, parameterized per product line (`SOC=MINI` and
+  `SOC=TINY`, extensible to future series). PDKs, foundry decks, commercial
+  libraries, site configuration, and results remain outside Git; see
+  [commercial/README.md](commercial/README.md) for the three-layer
+  configuration model and stage graph.
 - `sdf/`, when supplied by an implementation flow, contains post-layout
   netlist and SDF collateral consumed by post-layout simulation.
 

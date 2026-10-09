@@ -48,6 +48,13 @@ if {$pdk == "IHP130"} {
     set pdk_io_lib "${pdk_dir}/IP/IO/ICsprout_55LLULP1233_IO_251013/liberty"
     set tech_cells [list "$pdk_cells_lib/ics55_h7cr_tt.lib"]
     set tech_macros [list "$pdk_io_lib/ICSIOA_N55_3P3_tt_1p2_3p3_25c.lib"]
+    if {$soc == "TINY"} {
+        lappend tech_macros "$root_dir/.cache/retrosoc/sources/ics55_ecos_pll/lib/PLL_TOP_typ.lib"
+    }
+    if {$have_sram_macro} {
+        lappend tech_macros "$pdk_cells_lib/sram/ics55_ecos_sram_1024x32_m8/lib/ics55_ecos_sram_1024x32_m8_tt1p2v25cctyp.lib"
+        lappend tech_macros "$pdk_cells_lib/sram/ics55_ecos_sram_4096x32_m8/lib/ics55_ecos_sram_4096x32_m8_tt1p2v25cctyp.lib"
+    }
     # for hilomap
     set tech_cell_tiehi {TIEHIH7R Z}
     set tech_cell_tielo {TIELOH7R Z}

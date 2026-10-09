@@ -251,6 +251,7 @@
       "gpio_define.svh",
       "gpio_if.sv",
       "gpio_pad_bridge.sv",
+      "gpio_pad_caps_pkg.sv",
       "gpio_reg.sv",
       "hp_mailbox_define.svh",
       "pll_ctrl_if.sv",
@@ -436,6 +437,7 @@
       "tiny_archinfo.sv",
       "tiny_axi42apb4.sv",
       "tiny_axi4_fabric.sv",
+      "tiny_reset_tree.sv",
       "tiny_sysctrl.sv"
     ]
   },

@@ -77,8 +77,12 @@ README that states its ownership, source of truth, and validation expectations.
   `bringup`, `debug`, and `shell`; each profile is declared in
   `app/apps/<name>/app.mk`. The `debug` application is an RTL debug-transport
   acceptance image, not a user-facing firmware profile.
-- Tiny is a distinct wired MCU product under `rtl/tiny`; `SOC=TINY` selects its
-  IHP130 profile and AXI4/APB4 integration.
+- Tiny is a distinct wired MCU product under `rtl/tiny` with AXI4/APB4 integration.
+  Its default profile is `configs/ci/ics55-tiny.mk`: ICS55, `HAVE_PLL=YES`,
+  SAFE24 boot with the PLL macro parked off. IHP130/no PLL remains explicit
+  compatibility. PLL presence does not enable SYS switching; Tiny RCU remains
+  R2-P7. Keep implementation, observed timing and physical qualification distinct,
+  and do not change Mini defaults.
 - Do not add new dependencies on `crt/inc`, retired SDK `tiny` names, or legacy
   `rs_*.h`/`tiny*.h` include paths.
 - Treat `app/coremark/coremark-main`, `app/fatfs/ff16`, `app/lvgl/lvgl-main`,
@@ -120,6 +124,9 @@ README that states its ownership, source of truth, and validation expectations.
   controlled by `dependencies/dependencies.lock.json`. Do not add direct downloads to
   workflows or setup scripts. Use the shared dependency helpers and review a
   full Git revision or SHA-256 checksum when updating the lock.
+  Exception: `make ecc-setup` streams the official ECC `latest` installer with
+  `--with-toolchain`. ECC and its private toolchain use upstream installation
+  defaults and checksum checks, outside the repository dependency lock.
 - Do not hand-edit warning baseline signatures. Regenerate only an affected
   baseline from a successful flow, review every normalized signature, and keep
   baseline changes separate from the implementation change they approve.
@@ -169,6 +176,14 @@ warning checks, and metric collection.
   the verdict; delayed terminal UART display is a known operational condition,
   not evidence that the simulation has failed.
 ## Before Hand-off
+
+For Tiny/SPI/PIO-lite/PPALite, apply the 2026-10-07 policy in
+`docs/ip/tiny-soc.md`: pre-final post-synthesis timing is observational, with
+attempted/failed/unrun evidence retained. Functional, protocol, source-integrity,
+synthesis/mapping and netlist-function checks remain required. Timing closure
+is mandatory in the final combined complete-product campaign only. This does
+not alter global warning/metric policy, waive missing physical evidence, or
+permit advertising an unqualified operating point.
 
 1. State the selected profile and commands run.
 2. Summarize code, configuration, and public-interface changes separately.

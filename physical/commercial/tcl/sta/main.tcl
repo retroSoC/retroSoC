@@ -31,6 +31,10 @@ proc run_sta {} {
     if {![dict exists $::flow::scenarios $scenario]} {
         flow::fail "unsupported STA scenario: $scenario"
     }
+    set sdf_scenario [flow::env STA_SDF_SCENARIO func_TYP_TYP_25]
+    if {![dict exists $::flow::scenarios $sdf_scenario]} {
+        flow::fail "unsupported STA_SDF_SCENARIO: $sdf_scenario"
+    }
     set base [flow::stage_dirs sta $tag]
     set report_dir [file join $base reports]
     set output_dir [file join $base output]
@@ -39,7 +43,36 @@ proc run_sta {} {
     flow::require_commercial_clock_inventory
 
     update_timing -full
-    if {![check_timing -include {no_clock unconstrained_endpoints}]} {
+    # Full CX55 legacy check_timing coverage (pt_common_flow.tcl:350); the
+    # redirect keeps the per-scenario report and preserves the pass/fail
+    # return value used as the verdict gate.
+    set check_timing_report [file join $report_dir ${scenario}.check_timing.rpt]
+    if {![redirect $check_timing_report {
+        check_timing -verbose -include {
+            clock_crossing
+            data_check_multiple_clock
+            data_check_no_clock
+            generated_clocks
+            generic
+            ideal_clocks
+            latch_fanout
+            latency_override
+            loops
+            ms_separation
+            no_clock
+            no_driving_cell
+            no_input_delay
+            partial_input_delay
+            pll_configuration
+            retain
+            signal_level
+            supply_net_voltage
+            unconstrained_endpoints
+            unexpandable_clocks
+            pulse_clock_non_pulse_clock_merge
+            pulse_clock_no_pulse_generator
+        }
+    }]} {
         flow::fail "check_timing failed in scenario $scenario"
     }
 
@@ -61,6 +94,22 @@ proc run_sta {} {
             -max_paths 100000 -path_type full_clock_expanded \
             -input_pins -nets -transition_time -capacitance -derate
     }
+    # Exhaustive path-based recheck next to the graph-based reports above
+    # (legacy pt_common_flow.tcl:381-392 emits the PBA violation variants at
+    # signoff; there report_constraint -pba exhaustive is used, here
+    # report_timing -pba_mode exhaustive keeps the full path detail).
+    redirect [file join $report_dir ${scenario}.setup.pba.rpt] {
+        report_timing -delay_type max -slack_lesser_than 0.0 \
+            -max_paths 100000 -path_type full_clock_expanded \
+            -input_pins -nets -transition_time -capacitance -derate \
+            -pba_mode exhaustive
+    }
+    redirect [file join $report_dir ${scenario}.hold.pba.rpt] {
+        report_timing -delay_type min -slack_lesser_than 0.0 \
+            -max_paths 100000 -path_type full_clock_expanded \
+            -input_pins -nets -transition_time -capacitance -derate \
+            -pba_mode exhaustive
+    }
     redirect $constraint_report { report_constraint -all_violators }
     redirect [file join $report_dir ${scenario}.coverage.rpt] {
         report_analysis_coverage -status_details untested
@@ -79,6 +128,21 @@ proc run_sta {} {
             puts [get_object_name $library]
         }
     }
+    # Optional SAIF-annotated power analysis (legacy pt_common_flow.tcl:283-314
+    # activity annotation and :325-331 report_power). An empty STA_SAIF_FILE
+    # keeps the previous timing-only behavior.
+    set saif_file [string trim [flow::env STA_SAIF_FILE ""]]
+    if {$saif_file eq ""} {
+        puts "STA_SAIF_FILE is not set; skipping SAIF power analysis"
+    } else {
+        if {![file isfile $saif_file] || ![file readable $saif_file]} {
+            flow::fail "STA_SAIF_FILE is not readable: $saif_file"
+        }
+        read_saif $saif_file
+        redirect [file join $report_dir ${scenario}.power.rpt] {
+            report_power -nosplit
+        }
+    }
     set drv_count [count_violations $constraint_report]
     flow::write_text [file join $output_dir ${scenario}.summary.tsv] \
         "$scenario\t$setup_count\t$hold_count\t$drv_count\n"
@@ -89,7 +153,7 @@ proc run_sta {} {
         flow::fail "incomplete parasitic annotation in scenario $scenario"
     }
 
-    if {$scenario eq "func_TYP_TYP_25"} {
+    if {$scenario eq $sdf_scenario} {
         write_sdf -version 3.0 -context verilog \
             [file join $output_dir ${top}.${tag}.sdf]
     }

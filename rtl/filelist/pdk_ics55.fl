@@ -1,3 +1,5 @@
 +define+functional
 /cache/retrosoc/pdk/ics55/ics55_h7cr_functional.v
 /physical/pdk/icsprout55-pdk/IP/IO/ICsprout_55LLULP1233_IO_251013/verilog/icsIOA_N55_3P3.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x32_m8/verilog/ics55_ecos_sram_1024x32_m8_core.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_4096x32_m8/verilog/ics55_ecos_sram_4096x32_m8_core.v

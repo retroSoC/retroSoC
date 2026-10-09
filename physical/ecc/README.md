@@ -1,31 +1,60 @@
-# ECC ICS55 Core Hardening
+# ECC Setup and ICS55 Core Hardening
 
-This directory owns the on-demand ECOS Chip Compiler (ECC) hardening adapter
-for the padless `retrosoc_core` macro on the committed
-`configs/ci/ics55.mk` profile. It consumes the locked ECC
-`v0.1.0-alpha.10` Linux CLI release, the locked ICS55 PDK checkout, the
-cached H7CR slow Liberty view, and the canonical generated SoC sources and
-clock-domain constraints.
-
-The flow deliberately does not use `retrosoc_asic`, IO LEFs/Liberties, pad
-cells, a pad ring, bondpads, package constraints, or board timing. Logical
-ports remain macro pins. The generated SDC constrains the external, generated
-system, audio, JTAG, DVP, and ULPI domains; ECC must accept that SDC through
-its PDK overrides. A single-clock fallback is not permitted.
-
-Run the flow through the root Makefile:
+`make ecc-setup` installs the latest official ECOS Chip Compiler release and its
+required toolchain by directly executing:
 
 ```sh
-make CONFIG=configs/ci/ics55.mk ecc-setup
-make CONFIG=configs/ci/ics55.mk ecc-doctor
-make CONFIG=configs/ci/ics55.mk ecc-core
-make CONFIG=configs/ci/ics55.mk ecc-package
+curl -fsSL http://release.openecos.com/installers/ecc/latest/ecc-installer.sh | sh -s -- --with-toolchain
 ```
 
-Inputs, logs, the ECC workspace, reports, and packaged views live below
-`build/<variant>/physical/ecc/core/`; the CLI archive and extracted tool live
-below `.cache/retrosoc/`. They are generated evidence, not tracked source.
+The setup helper uses Bash with `pipefail` so a failed download or installer
+returns failure. It does not save the installer script or pin ECC versions in
+the repository dependency lock. The upstream installer selects versions,
+checks payload checksums, and installs ECC, OSS CAD Suite, ECC Sizer and the
+ICS55 PDK. Every explicit setup invocation follows `latest`; the installer
+manages reuse of same-version downloads and installations.
 
-ECC hardening is development evidence only. The ICS55 preview PDK and this
-padless flow do not establish foundry DRC/LVS, IR/EM, ESD, package, board, or
-production-signoff closure.
+Run from the repository root, without a SoC profile:
+
+```sh
+make ecc-setup
+"${XDG_BIN_HOME:-$HOME/.local/bin}/ecc" --version
+"${XDG_BIN_HOME:-$HOME/.local/bin}/ecc" version --json
+export PATH="${XDG_BIN_HOME:-$HOME/.local/bin}:$PATH"
+```
+
+The official installer currently requires Linux x86_64 with glibc >= 2.34,
+curl, GNU tar, gzip, bzip2 and sha256sum; the repository entrypoint also needs
+Bash and Python 3. Setup verifies the resulting executable wrapper and its
+version/runtime JSON before reporting success.
+
+No install-directory environment variables are overridden. With upstream
+defaults, the wrapper is `~/.local/bin/ecc`, versioned ECC/tools/PDKs live in
+`~/.local/share/ecc/`, downloads in `~/.cache/ecc/downloads/`, and the receipt
+in `~/.config/ecc/ecc-receipt.json`. Existing `ECC_INSTALL_DIR` and XDG variables
+are handled by the official script. The wrapper selects the installed private
+toolchain. Setup prints PATH guidance without changing shell startup files or
+creating a repository activation script. Old clones and caches are not removed.
+
+## Existing physical adapter
+
+The physical adapter targets the padless `retrosoc_core` macro on the committed
+`configs/ci/ics55.mk` profile. It retains its independent locked PDK inputs,
+H7CR slow Liberty view, source export and multi-clock constraints. Installing
+the upstream private PDK does not replace those shared inputs.
+
+Physical targets use the already installed wrapper, defaulting to
+`${XDG_BIN_HOME:-$HOME/.local/bin}/ecc`; override `ECC_BIN` to select another
+installation. They do not implicitly install or update ECC. Doctor records
+the actual CLI version and checks the project rather than requiring alpha.10.
+
+The existing `harden` configuration and current profile still require
+compatibility qualification with the installed release. Installing ECC alone
+does not establish that `ecc-doctor`, `ecc-core`, or `ecc-package` will pass.
+This setup change does not migrate or validate synthesis, STA, place-and-route,
+or Tiny/ICS55 support. The profile, clock, padless-cell and project checks remain
+in place and report actual incompatibilities.
+
+Physical outputs remain below `build/<variant>/physical/ecc/core/`. This
+experimental adapter does not establish foundry DRC/LVS, IR/EM, ESD, package,
+board or production-signoff closure.

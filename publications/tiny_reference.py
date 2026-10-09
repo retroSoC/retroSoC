@@ -23,6 +23,7 @@ TOPOLOGY = "rtl/tiny/integration/soc_topology.json"
 PINS = "rtl/tiny/pin_map/pin_map.json"
 CLOCKS = "rtl/tiny/integration/clock_reset_domains.json"
 TOP = "rtl/tiny/top/retrosoc_tiny.sv"
+RESET_TREE = "rtl/tiny/top/tiny_reset_tree.sv"
 SYSCTRL = "rtl/tiny/top/tiny_sysctrl.sv"
 ARCHINFO = "rtl/tiny/top/tiny_archinfo.sv"
 FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo"}
@@ -67,12 +68,16 @@ def facts(root: Path = ROOT) -> dict:
     ram = instance_parameters(top, "onchip_ram", "u_sram")
     dma = instance_parameters(top, "apb4_dma", "u_dma")
     cpu = instance_parameters(top, "mgmt_core_wrapper", "u_cpu")
-    if ram != {"CapacityKiB": 128, "DataWidth": 32, "IdWidth": 1}:
+    if ram != {"CapacityKiB": 128, "DataWidth": 32, "IdWidth": 1, "Ics55SmallBanks": 1}:
         raise ValueError("Tiny SRAM parameters changed")
+    # The publication remains the reviewed IHP130 compatibility profile;
+    # selecting ICS55's 4 KiB geometry does not alter its reported SRAM facts.
+    ram = {key: value for key, value in ram.items() if key != "Ics55SmallBanks"}
     if dma != {"NumChannels": 4, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x7F9, "EnableStreams": 0}:
         raise ValueError("Tiny DMA parameters changed")
-    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "TwoCycleBusErrors": 1}:
+    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "TwoCycleBusErrors": 1, "ResetSyncStages": 5}:
         raise ValueError("Tiny CPU integration changed")
+    require_snippets(root, RESET_TREE, [".STAGE(5)", "assign cpu_ready_rst_n_o = &leaf_rst_n_o;"])
     require_snippets(root, "rtl/ip/core/mgmt_core_wrapper.sv", [".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
     require_snippets(root, TOP, ["u_masters_axi4_if[2]", ".axi4(u_masters_axi4_if[0])",
                                ".axi4(u_masters_axi4_if[1])", ".cfg_apb4(u_sram_apb4_if)",
@@ -80,7 +85,15 @@ def facts(root: Path = ROOT) -> dict:
     require_snippets(root, SYSCTRL, ["(apb4.paddr[1:0] != 2'd0)", "(apb4.pstrb != 4'hf)",
                                    "if (!s_test_q[31] && apb4.pwdata[31]) s_test_d = apb4.pwdata & 32'h8000_ff01;",
                                    "if (!s_fault_stat_d[0])", "if (rtc_wake_i) s_wake_d = 1'b1;"])
-    arch = instance_parameters((root / ARCHINFO).read_text(encoding="utf-8").split(".BUILD_ID")[0] + ") u_archinfo (", "apb4_archinfo", "u_archinfo")
+    from scripts.generate_tiny import platform_values
+    platform = platform_values(profile["PDK"], profile["HAVE_PLL"] == "YES")
+    arch_text = (root / ARCHINFO).read_text(encoding="utf-8")
+    require_snippets(root, ARCHINFO, ['`include "tiny_platform.svh"',
+                                    ".FEATURES0(`RETROSOC_TINY__FEATURES0)",
+                                    ".TECHNOLOGY(`RETROSOC_TINY__TECHNOLOGY)"])
+    arch_text = arch_text.replace("`RETROSOC_TINY__FEATURES0", f"32'h{platform['features0']:08x}")
+    arch_text = arch_text.replace("`RETROSOC_TINY__TECHNOLOGY", f"32'h{platform['technology']:08x}")
+    arch = instance_parameters(arch_text.split(".BUILD_ID")[0] + ") u_archinfo (", "apb4_archinfo", "u_archinfo")
     if arch != {"REFERENCE_CLOCK_HZ": 24000000, "SRAM_BYTES": 131072, "TOPOLOGY": 0x20200001,
                 "FEATURES0": 0x7FFE, "TECHNOLOGY": 0x02010082}:
         raise ValueError("Tiny discovery parameters changed")
@@ -225,7 +238,7 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     evidence = read(ROOT / BOOK / "evidence.json")
     validate_evidence(evidence)
     lock = read(ROOT / "dependencies/dependencies.lock.json")
-    paths = {MAP, TOPOLOGY, PINS, CLOCKS, TOP, SYSCTRL, ARCHINFO, config["profile"],
+    paths = {MAP, TOPOLOGY, PINS, CLOCKS, TOP, RESET_TREE, SYSCTRL, ARCHINFO, "scripts/generate_tiny.py", config["profile"],
              "docs/ip/tiny-soc.md", "docs/ip/tiny-soc-verification.md", "dependencies/dependencies.lock.json", "LICENSE"}
     paths.update(contract["sources"])
     paths.update(b["file"] for b in contract["bindings"])

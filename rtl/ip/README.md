@@ -10,6 +10,26 @@ in `core`, AXI adapters in `interconnect`, and native AXI SRAM in `memory`.
 Both products reference these shared files directly in their own filelists.
 Tiny does not select any RIB/RIBP module.
 
+The [PIO-lite contract](../../docs/ip/piolite.md) specifies a future owned
+programmable-I/O block for Tiny, with shared GPIO ownership and DMA V2.1
+integration changes. Its planned hierarchy is not present in the active
+filelists yet. The [verification ledger](../../docs/ip/piolite-verification.md)
+keeps model, RTL, integration and physical gates separate from design freeze;
+shared DMA/GPIO changes must preserve Mini behavior without enabling PIO there.
+
+The [independent SPI master](../../docs/ip/spi.md) is a separately frozen future
+Tiny block, distinct from SPI-SD and XPI. Its APB/packed FIFOs, native GPIO
+guard, source-qualified DMA V2.2 MMIO pacing and `SPI-P0..P5` gates are defined
+there, with [pending verification](../../docs/ip/spi-verification.md). A
+specification or reserved route does not add it to the current RTL/filelists.
+
+The [PPALite contract](../../docs/ip/ppalite.md) specifies a future camera-inline
+PCLK processor with RAW bypass, small FIFOs and existing DVP_RX11/DMA2 output.
+Its [verification ledger](../../docs/ip/ppalite-verification.md) makes DVP source
+error/statistic/CDC and drain qualification prerequisites explicit. Shared
+correctness work preserves the DVP V2 ABI/FIFO and Mini RAW behavior; it does
+not import GA2D's private DMA or enable a new master or product rollout.
+
 experimental contains retained inactive RTL. It is not included by any active
 filelist and must not become a build dependency without an explicit integration
 change and matching validation.

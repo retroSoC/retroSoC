@@ -1,1 +1,3 @@
 # ICS55 technology cells are supplied by the locked Liberty views in Yosys.
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x32_m8/verilog/ics55_ecos_sram_1024x32_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_4096x32_m8/verilog/ics55_ecos_sram_4096x32_m8_stub.v

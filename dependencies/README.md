@@ -23,6 +23,17 @@ python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 Then run the affected setup, doctor, test, and regression flow described in
 [Engineering Workflow](../docs/engineering.md).
 
+`sources.pdk_ics55_pll` locks OpenECOS `PLL_V02p1` at
+`6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`. Restore only its seven integration
+views with `python3 physical/pdk/setup.py --pdk ICS55 --component pll`, or as
+part of normal ICS55 PDK setup (`--component all`, the default). The checkout
+is `.cache/retrosoc/sources/ics55_ecos_pll`, outside replaceable Liberty caches.
+Setup reports its revision and per-file SHA-256 values and refuses dirty or
+unexpected checkouts under the usual update policy. The upstream license is
+undetermined (`NOASSERTION`); Liberty lacks timing arcs and the macro has no
+LOCK output. Acquisition neither selects the macro in a profile nor qualifies
+PLL behavior, timing or release. Tiny platform integration remains pending.
+
 The locked SKY130 OpenRAM SRAM archive is generated and published by the
 `retroSoC/artifact` workflow. `physical/pdk/setup.py` verifies its SHA-256,
 manifest, geometry, source revisions, generated-file hashes, and TT/SS views
@@ -60,3 +71,9 @@ The NPU Visual Wake Words archive is mirrored as an unmodified release asset in
 `retroSoC/artifact`, with the original Silicon Labs URL retained as a fallback.
 Both locations resolve to the same required SHA-256; setup accepts neither a
 different archive nor a fallback with a non-HTTPS URL.
+
+ECC is an explicit exception to the lock policy. `make ecc-setup` streams the
+official `latest` installer with `--with-toolchain`; upstream manages versions,
+archive checksums, installation directories and download caches. No ECC CLI or
+private toolchain archive is pinned here. Shared PDK and tool dependencies used
+by other flows remain locked. See [ECC setup](../physical/ecc/README.md).

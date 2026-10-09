@@ -125,6 +125,12 @@
       "recursive": true,
       "license": "Apache-2.0"
     },
+    "pdk_ics55_pll": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_pll.git",
+      "revision": "6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b",
+      "destination": ".cache/retrosoc/sources/ics55_ecos_pll",
+      "license": "NOASSERTION"
+    },
     "pdk_gf180": {
       "url": "https://github.com/google/gf180mcu-pdk.git",
       "revision": "de3240d7529a6970437ac3344820aaae7839f215",
@@ -267,12 +273,6 @@
       "destination": ".cache/retrosoc/downloads/libjpeg-turbo/libjpeg-turbo-3.2.0.tar.gz",
       "license": "BSD-3-Clause AND IJG"
     },
-    "ecc_cli_linux_x86_64": {
-      "url": "https://github.com/openecos-projects/ecc/releases/download/v0.1.0-alpha.10/ecc-cli-linux-x86_64.tar.gz",
-      "sha256": "fc3daaca24dddb04ba3490329042f52da05190da03c3831042293dd0cbffdca6",
-      "destination": ".cache/retrosoc/downloads/ecc/ecc-cli-linux-x86_64-v0.1.0-alpha.10.tar.gz",
-      "license": "Apache-2.0"
-    },
     "fatfs": {
       "url": "https://github.com/retroSoC/artifact/releases/download/fatfs-r0.16/fatfs-r0.16.zip",
       "sha256": "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e",
@@ -284,6 +284,18 @@
       "sha256": "faa3fc2f3ef8560c2d7cafc7800ecee39b69b8d177b14d098ed94062ba3f6e5c",
       "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_LLSC_H7CR_liberty.tar.bz2",
       "license": "Apache-2.0"
+    },
+    "pdk_ics55_sram_1024x32_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-0ed75ad689e36b2fd2aec89cb4a7c7db3b342864141c94f4366763034bd6fe82/ics55_ecos_sram_1024x32_m8.tar.gz",
+      "sha256": "71797619312b82df8dc3622476c53872dc1512d2b04fd410e0eb5f0d57ffa1d2",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_1024x32_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_4096x32_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-5ea91275df77176fa7e0469a94c75d7ed6468de0569a3f89fac519f09c319a17/ics55_ecos_sram_4096x32_m8.tar.gz",
+      "sha256": "5d168d0c7c26281bd7ab0e58493033e65823e5ea6b320c897d65ed079ee4de6e",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_4096x32_m8.tar.gz",
+      "license": "NOASSERTION"
     },
     "sky130_openram_sram_4kbyte_1rw_32x1024_8": {
       "url": "https://github.com/retroSoC/artifact/releases/download/openram-sky130_sram_4kbyte_1rw_32x1024_8-b2b069ce119d-24dfd2f0371c/sky130_sram_4kbyte_1rw_32x1024_8-openram-b2b069ce119d.tar.gz",

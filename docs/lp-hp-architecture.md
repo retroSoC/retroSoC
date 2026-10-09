@@ -135,7 +135,7 @@ is released.
 
 Product profiles instantiate on-chip SRAM, SDRAM, QPI, OPI/HyperBus, and XPI
 integration paths. The on-chip SRAM product size is 32 KiB. ICS55 uses two
-16 KiB `SRAM_4096X32_M8_BW` macros; committed ICS55 regression profiles keep
+16 KiB OpenECOS `ics55_ecos_sram_4096x32_m8` macros; committed ICS55 regression profiles keep
 the SRAM interface/macro disabled until commercial models are supplied locally.
 
 QPI and OPI share GPIO21-31 through `memory_pad_mux`. AON retains
@@ -190,14 +190,13 @@ Product writes to `CORESEL`, `IPSEL`, `USER_CORE_RESET`, or
 `USER_CORE_STATUS` return APB `PSLVERR`; legacy HAL mutators return
 `RS_ENOTSUP`.
 
-## Configuration and local ICS55 models
+## Configuration and ICS55 SRAM inputs
 
-Committed `configs/ci/ics55.mk` and `configs/cluster/ics55.mk` deliberately set
-both PLL and SRAM to `NO`. `configs/local/ics55.example.mk` documents an
-ignored local profile with PLL, SRAM interface, SRAM macro, and 32 KiB enabled.
-`LOCAL_RTL_FILES` injects commercial SRAM and PLL simulation models into only
-that generated variant filelist. `configs/local/*.mk` and `*.sv` are ignored,
-so absolute commercial paths are never tracked.
+Committed `configs/ci/ics55.mk` and `configs/cluster/ics55.mk` enable the
+32 KiB SRAM interface and the locked OpenECOS ICS55 SRAM macros while leaving
+the PLL disabled. `physical/pdk/setup.py` downloads and verifies the SRAM
+release assets through `dependencies/dependencies.lock.json`; local profile
+files remain available only for optional PLL experiments.
 
 ## Evidence boundary
 

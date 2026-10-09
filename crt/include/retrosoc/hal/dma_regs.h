@@ -89,8 +89,12 @@
 
 #define RS_DMA_CHANNEL_OFFSET(channel, offset)                                                     \
     (RS_DMA_CH_BASE + ((uint32_t)(channel)*RS_DMA_CH_STRIDE) + (offset))
+#ifdef RS_DMA_TEST_MMIO
+extern volatile uint32_t rs_dma_test_mmio[1024];
+#define RS_DMA_REG(offset) rs_dma_test_mmio[(offset) / 4U]
+#else
 #define RS_DMA_REG(offset) RS_SOC_REG32(RS_SOC_APB4_DMA_BASE, (offset))
-#define RS_DMA_CH_REG(channel, offset)                                                             \
-    RS_SOC_REG32(RS_SOC_APB4_DMA_BASE, RS_DMA_CHANNEL_OFFSET((channel), (offset)))
+#endif
+#define RS_DMA_CH_REG(channel, offset) RS_DMA_REG(RS_DMA_CHANNEL_OFFSET((channel), (offset)))
 
 #endif

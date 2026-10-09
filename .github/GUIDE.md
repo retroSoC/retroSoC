@@ -11,7 +11,8 @@ interface impact, validation evidence, and remaining risks. Follow the
 to merge-commit integration. These documents do not configure branch protection.
 
 `workflows/quality.yml` runs the quality gate. It restores the locked IHP130
-PDK, third-party simulation models, and APU/NPU references and installs the
+and Tiny ICS55 PDKs (including the locked SRAM, IO and PLL views), third-party
+simulation models, and APU/NPU references and installs the
 locked Verilator, Icarus, sv2v, and Yosys tools before the complete Pytest
 suite. The reference cache includes the NPU MLPerf Tiny models, MFCC inputs,
 TensorFlow/gemmlowp oracle sources, and decoded VWW corpus; setup still

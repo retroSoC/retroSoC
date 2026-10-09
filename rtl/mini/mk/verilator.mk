@@ -31,6 +31,9 @@ VERILATOR_FLAGS    += --timescale "1ns/1ns" -Wno-fatal
 VERILATOR_FLAGS    += -o $(BUILD_DIR)/emu
 VERILATOR_FLAGS    += -Mdir $(SOC_COMPILE_HOME)
 VERILATOR_FLAGS    += $(SOC_VSRC_INCLPATH) $(SOC_CXXFILES) $(SOC_VXXFILES)
+ifeq ($(WS2812_P3_ACCEPTANCE),YES)
+VERILATOR_FLAGS += -DRETROSOC_WS2812_P3_OBSERVE
+endif
 
 RTL_LINT_FLAGS := --lint-only --no-timing --top-module $(SOC_VSRC_TOP)
 RTL_LINT_FLAGS += --assert --Wall --timescale "1ns/1ns" -Wno-fatal

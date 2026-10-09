@@ -21,8 +21,12 @@ CURRENT = re.compile(r"^current_instance(?:\s+\{([^}]*)\})?\s*$")
 SIZE = re.compile(r"^size_cell\s+\{([^}]+)\}\s+\{([^}]+)\}\s*$")
 INSERT = re.compile(
     r"^insert_buffer\s+\[get_pins\s+\{([^}]+)\}\]\s+(\S+)"
-    r"\s+-new_net_names\s+\{([^}]+)\}\s+-new_cell_names\s+\{([^}]+)\}\s*$"
+    r"\s+-new_net_names\s+\{([^}]+)\}\s+-new_cell_names\s+\{([^}]+)\}"
+    r"(?:\s+-location\s+\{([^}]+)\})?\s*$"
 )
+# Legacy pd_data/pteco/rpt/formate_pt2edi.pl maps a single-cell buffer
+# removal to the Innovus ecoDeleteRepeater command.
+REMOVE = re.compile(r"^remove_buffer\s+\[get_cells\s+\{([^\s}]+)\}\]\s*$")
 
 
 def full_name(parent, name):
@@ -54,7 +58,7 @@ def translate(paths):
                     continue
                 match = INSERT.match(line)
                 if match:
-                    output.append(
+                    command = (
                         "ecoAddRepeater -term {{{0}}} -cell {{{1}}} "
                         "-newNetName {{{2}}} -name {{{3}}}".format(
                             full_name(current, match.group(1)),
@@ -63,13 +67,32 @@ def translate(paths):
                             match.group(4),
                         )
                     )
+                    if match.group(5) is not None:
+                        command += " -loc {{{0}}}".format(match.group(5).strip())
+                    output.append(command)
+                    continue
+                match = REMOVE.match(line)
+                if match:
+                    output.append(
+                        "ecoDeleteRepeater -inst {{{0}}}".format(
+                            full_name(current, match.group(1))
+                        )
+                    )
                     continue
                 raise ValueError(
                     "{0}:{1}: unsupported PrimeTime ECO command: {2}".format(
                         path, number, line
                     )
                 )
-    return output
+    # DMSA exports one change list per scenario; identical changes repeat in
+    # every scenario, so keep the first occurrence of each translated command.
+    unique = []
+    seen = set()
+    for command in output:
+        if command not in seen:
+            seen.add(command)
+            unique.append(command)
+    return unique
 
 
 def main():

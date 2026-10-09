@@ -3,12 +3,37 @@
 This directory contains repository-level engineering policy that supplements
 the root README and subsystem guides.
 
-- [Tiny Gen1 QFN64](ip/tiny-soc.md) freezes shared RNG/CRC/WS2812/Crypto,
-  eight-channel DMA and Tiny-owned RCU, no-PLL 96 MHz / PLL 240 MHz clock and
-  reset trees, DVP V2 camera routing and optional XPI PSRAM frame buffers,
-  with the unchanged package budget. P10 -> P7 -> P8 -> P11 -> P12 -> P9 is
-  the remaining execution order; P0-P9 IDs/titles are preserved. These targets
-  remain separate from the existing 24 MHz implementation and physical evidence.
+- [Tiny Gen1 QFN64 R2](ip/tiny-soc.md) freezes dual CPU I/D paths, four
+  independent 32 KiB main-SRAM groups on the CPU's SYS clock, per-target AXI32
+  concurrency, eight-channel DMA scheduling and the existing shared-IP/camera
+  target without changing the package budget. After `TINY-ICS55-P1`, the active
+  roadmap completes remaining Tiny foundation, SPI, PIO-lite and PPALite, then
+  jointly qualifies the complete product. `TINY-R2-P0..P11` and legacy
+  `TINY-P0` through `TINY-P12`
+  remain in the linked contract history. CPU/main-SRAM rates up to 240 MHz
+  require qualification. These targets remain separate from the existing
+  24 MHz/four-channel implementation and physical evidence.
+- [Tiny ICS55 platform](ip/tiny-ics55-platform.md) defines the default SAFE24
+  profile, parked PLL, locked 32-macro SRAM mapping, validation commands and
+  source-bound platform evidence; PLL-driven SYS remains later work.
+- [PIO-lite](ip/piolite.md) freezes the separately approved future Tiny
+  standard programmable-I/O block: two state machines, shared 32x16 program
+  store, existing GPIO USER ownership, PCLK execution and central DMA V2.1
+  requests 14/15. Its `PIOLITE-P0..P5` phases preserve the historical
+  performance-only R2 boundary; the [verification ledger](ip/piolite-verification.md)
+  retains all implementation, application and physical evidence gaps.
+- [Independent SPI/display master](ip/spi.md) freezes the separately approved
+  future Tiny controller, four Gen1 GPIO ALT additions, segmented CS/D/C,
+  packed 8/16-bit frames and DMA V2.2 requests16/17. Its stable `SPI-P0..P5`
+  order and [verification ledger](ip/spi-verification.md) distinguish sequential
+  snapshot/display/SD requirements from implementation and physical evidence;
+  the legacy XPI LCD path and prior R2/PIO phases remain separate.
+- [PPALite streaming pixels](ip/ppalite.md) freezes the separately approved
+  future Tiny camera-inline Y extraction, RGB565 ordering, fixed sampling and
+  row-aligned packing. RAW/PROCESS shares existing DVP_RX11/DMA2 without new
+  pins or memory masters. Its `PPALITE-P0..P5` stages and
+  [verification ledger](ip/ppalite-verification.md) retain source-correctness,
+  integration, stride-aware consumer and physical qualification gaps.
 - [Tiny Gen1 datasheet](../publications/datasheets/tiny/README.md) describes the
   current 24 MHz implementation, registers, software and qualification boundary;
   it does not yet describe the QFN64 Gen1 target.

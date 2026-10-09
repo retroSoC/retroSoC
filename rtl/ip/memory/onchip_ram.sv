@@ -12,10 +12,11 @@
 `include "mmap_define.svh"
 
 module onchip_ram #(
-    parameter bit          Present     = 1'b1,
-    parameter int unsigned CapacityKiB = 128,
-    parameter int unsigned DataWidth   = 32,
-    parameter int unsigned IdWidth     = 1
+    parameter bit          Present         = 1'b1,
+    parameter int unsigned CapacityKiB     = 128,
+    parameter int unsigned DataWidth       = 32,
+    parameter int unsigned IdWidth         = 1,
+    parameter bit          Ics55SmallBanks = 1'b0
 ) (
     // verilog_format: off -- preserve the AXI, APB, and performance grouping
     input logic          clk_i,
@@ -27,8 +28,10 @@ module onchip_ram #(
     // verilog_format: on
 );
 `ifdef PDK_ICS55
-  localparam int unsigned TechnologyBankKiB = 16;
-  localparam int unsigned TechnologyAddrWidth = 12;
+  // Mini retains its existing 16 KiB macro geometry. Tiny selects 4 KiB
+  // physical macros without adding logical services or changing arbitration.
+  localparam int unsigned TechnologyBankKiB = (Ics55SmallBanks && DataWidth == 32) ? 4 : 16;
+  localparam int unsigned TechnologyAddrWidth = (Ics55SmallBanks && DataWidth == 32) ? 10 : 12;
 `else
   localparam int unsigned TechnologyBankKiB = 4;
   localparam int unsigned TechnologyAddrWidth = 10;
@@ -382,15 +385,27 @@ module onchip_ram #(
       assign s_bank_cs[bank] = (s_mem_read || s_mem_write) &&
           (s_mem_word_addr[14:TechnologyAddrWidth] == (15 - TechnologyAddrWidth)'(bank));
 `ifdef PDK_ICS55
-      tc_sram_4096x32 u_ram (
-          .clk_i (clk_i),
-          .cs_i  (s_bank_cs[bank]),
-          .addr_i(s_mem_word_addr[11:0]),
-          .data_i(s_mem_wdata),
-          .mask_i(s_mem_wstrb),
-          .wren_i(s_mem_write),
-          .data_o(s_bank_rdata[bank])
-      );
+      if (Ics55SmallBanks) begin : gen_small
+        tc_sram_1024x32 u_ram (
+            .clk_i (clk_i),
+            .cs_i  (s_bank_cs[bank]),
+            .addr_i(s_mem_word_addr[9:0]),
+            .data_i(s_mem_wdata),
+            .mask_i(s_mem_wstrb),
+            .wren_i(s_mem_write),
+            .data_o(s_bank_rdata[bank])
+        );
+      end else begin : gen_large
+        tc_sram_4096x32 u_ram (
+            .clk_i (clk_i),
+            .cs_i  (s_bank_cs[bank]),
+            .addr_i(s_mem_word_addr[11:0]),
+            .data_i(s_mem_wdata),
+            .mask_i(s_mem_wstrb),
+            .wren_i(s_mem_write),
+            .data_o(s_bank_rdata[bank])
+        );
+      end
 `else
       tc_sram_1024x32 u_ram (
           .clk_i (clk_i),
@@ -695,6 +710,7 @@ module onchip_ram #(
 `ifndef SYNTHESIS
   initial begin
     if (((DataWidth != 32) && (DataWidth != 64)) || (IdWidth < 1) ||
+        (Ics55SmallBanks && (DataWidth != 32)) ||
         ((DataWidth % 8) != 0) ||
         ((CapacityKiB != 4) && (CapacityKiB != 16) && (CapacityKiB != 32) &&
          (CapacityKiB != 64) && (CapacityKiB != 128))) begin

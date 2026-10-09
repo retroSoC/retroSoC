@@ -142,14 +142,16 @@ module tc_sram_1024x32 (
 
 `elsif PDK_ICS55
 `ifdef HAVE_SRAM_MACRO
-  S55NLLG1PH_X256Y4D32_BW u_S55NLLG1PH_X256Y4D32_BW (
-      .Q   (data_o),
-      .CLK (clk_i),
-      .CEN (~cs_i),
-      .WEN (~wren_i),
-      .BWEN(~{{8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+  ics55_ecos_sram_1024x32_m8 u_mem (
       .A   (addr_i),
-      .D   (data_i)
+      .D   (data_i),
+      .CEB (~cs_i),
+      .CLK (clk_i),
+      .GWEB(~wren_i),
+      .WEB (~{{8{mask_i[3]}}, {8{mask_i[2]}}, {8{mask_i[1]}}, {8{mask_i[0]}}}),
+      .MARE(1'b0),
+      .MAR (4'b0),
+      .Q   (data_o)
   );
 
 `endif
@@ -315,7 +317,7 @@ module tc_sram_4096x32 (
   end
 `elsif PDK_ICS55
 `ifdef HAVE_SRAM_MACRO
-  SRAM_4096X32_M8_BW u_sram (
+  ics55_ecos_sram_4096x32_m8 u_sram (
       .A   (addr_i),
       .D   (data_i),
       .CEB (~cs_i),

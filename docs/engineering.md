@@ -2,8 +2,19 @@
 
 ## Supported Profiles
 
+Tiny's [2026-10-07 specification default](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+is ICS55/PLL with SAFE24 boot. The executable default keeps the PLL parked off;
+PLL-driven SYS and physical qualification remain later work. The table
+describes executable profiles, not qualified operating rates.
+For Tiny and its SPI/PIO-lite/PPALite extensions only, pre-final post-synthesis
+timing closure is observational. Retain STA attempts/failures and all required
+functional, synthesis/mapping and netlist-function evidence. The combined
+complete-product final campaign retains hard timing/physical acceptance.
+This does not change warning/metrics policy or another product's gates.
+
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
+| Pull request | `configs/ci/ics55-tiny.mk` | Default Tiny SAFE24/parked PLL; firmware, Verilator/Icarus and JTAG, lint; local Yosys, netlist and OpenSTA |
 | Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator/Icarus, lint; local Yosys, netlist and OpenSTA |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |

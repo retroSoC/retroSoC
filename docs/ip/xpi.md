@@ -18,13 +18,16 @@ definitions remain the executable sources of truth:
 
 XPI V2 intentionally breaks the retired `qspi.h` register and HAL ABI.
 
-The [Tiny Gen1 target](tiny-soc.md) retains this shared XPI register/LUT/PHY
+The [Tiny Gen1 R2 target](tiny-soc.md) retains this shared XPI register/LUT/PHY
 contract and selects optional NSS1 PSRAM at `0x54000000` with GPIO29 ALT0.
-NSS0 remains the boot NOR path; SRAM-only operation is preserved. Tiny P11
-must validate initialization, actual capacity, mapped CPU/DMA writes, serial
-boundaries/CS timing and transport bandwidth before P12 DVP capture uses the
-RAM. Frames use DVP request 11 and ordinary DMA AXI destination writes, not
-the XPI indirect TX path. No extra PSRAM controller/window, XPI ABI change or
+NSS0 remains the boot NOR path; SRAM-only operation is preserved. XPI remains
+in MEM at the selected 24/96/96/120 MHz target while CPU and main SRAM share
+SYS; SYS-to-MEM CDC remains at the XPI boundary. `TINY-R2-P8` must validate
+initialization, actual capacity, mapped CPU/DMA writes, serial boundaries/CS
+timing and transport bandwidth before `TINY-R2-P9` DVP capture uses the RAM.
+The product contract retains this IP's nonpreemptible physical-command and
+no-cache behavior. Frames use DVP request 11 and ordinary DMA AXI destination
+writes, not the XPI indirect TX path. No extra PSRAM controller/window, XPI ABI change or
 qualified camera/PSRAM rate is implied by the documentation freeze.
 
 ## Commercial Reference Survey

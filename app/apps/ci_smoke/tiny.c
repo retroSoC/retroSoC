@@ -119,6 +119,18 @@ static bool rs_mcu_io(void) {
         .trigger = RS_GPIO_TRIGGER_NONE,
         .output_high = false,
     };
+    const rs_gpio_config_t pull_up = {
+        .mode = RS_GPIO_MODE_INPUT,
+        .pull = RS_GPIO_PULL_UP,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+    };
+    const rs_gpio_config_t pull_down = {
+        .mode = RS_GPIO_MODE_INPUT,
+        .pull = RS_GPIO_PULL_DOWN,
+        .trigger = RS_GPIO_TRIGGER_NONE,
+        .output_high = false,
+    };
     const rs_uart_config_t loopback = {
         .source_clock_hz = RS_CPU_CLOCK_HZ,
         .baud_rate = UART_BPS,
@@ -133,6 +145,7 @@ static bool rs_mcu_io(void) {
     };
     const uint32_t transmit[4] = {UINT32_C(0x54), UINT32_C(0x49), UINT32_C(0x4e), UINT32_C(0x59)};
     uint32_t receive[4] = {0U};
+    rs_gpio_capabilities_t capabilities;
     rs_uart_timing_t timing;
     bool high;
     uint32_t timeout = UINT32_C(10000);
@@ -144,7 +157,15 @@ static bool rs_mcu_io(void) {
     };
     rs_i2c_status_t status;
 
-    if ((rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
+    if ((rs_gpio_get_capabilities(&capabilities) != RS_OK) ||
+        ((capabilities.pad_features & (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)) !=
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)
+                                        : 0U)) ||
+        (rs_gpio_configure(15U, &pull_up) !=
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
+        (rs_gpio_configure(15U, &pull_down) !=
+         ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
+        (rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || !high || (rs_gpio_write(15U, false) != RS_OK) ||
         (rs_gpio_read(15U, &high) != RS_OK) || high) {
         return false;
@@ -201,7 +222,7 @@ static bool rs_mcu_rtc(void) {
         .enable = true,
     };
     const rs_rtc_time_t value = {.seconds = UINT64_C(1234), .subsecond = 0U};
-    rs_rtc_time_t observed;
+    rs_rtc_time_t observed = {0};
 
     return (rs_rtc_probe() == RS_OK) && (rs_rtc_configure(&config, RS_TIMEOUT_DEFAULT) == RS_OK) &&
            (rs_rtc_set_time(&value, RS_TIMEOUT_DEFAULT) == RS_OK) &&
@@ -213,7 +234,7 @@ int main(void) {
     rs_archinfo_t info;
     rs_onchip_sram_info_t memory;
     rs_sysctrl_fault_status_t fault;
-    rs_watchdog_status_t watchdog;
+    rs_watchdog_status_t watchdog = {0};
     uint64_t before;
     uint64_t after;
     const rs_watchdog_config_t watchdog_config = {
@@ -238,6 +259,8 @@ int main(void) {
     }
     if ((rs_archinfo_read(&info) != RS_OK) || (rs_archinfo_validate_build(&info) != RS_OK) ||
         (info.soc_id != RS_SOC_ID) || (info.topology != UINT32_C(0x20200001)) ||
+        (info.technology != RS_SOC_TECHNOLOGY_ID) ||
+        ((info.features0 & UINT32_C(1)) != RS_SOC_PLL_PRESENT) ||
         (rs_onchip_sram_probe(&memory) != RS_OK) || (memory.memory_bytes != UINT32_C(131072)) ||
         (memory.data_bytes != 4U) || (memory.bank_count != 32U)) {
         rs_mcu_finish(false, 3U);

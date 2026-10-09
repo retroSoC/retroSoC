@@ -5285,7 +5285,7 @@
       {
         "id": "premain",
         "file": "crt/arch/riscv/startup.S",
-        "text": "main_start:\n# call main\n#ifdef CSR_ENABLE\ncall _premain_init # init irq\n#endif\ncall main\nloop:\nj loop"
+        "text": "main_start:\n#ifdef RS_SOC_TINY\n/* Hazard3 implements Zifencei even for compatible RV32IM images. */\n.option push\n.option arch, +zifencei\nfence.i\n.option pop\n#endif\n# call main\n#ifdef CSR_ENABLE\ncall _premain_init # init irq\n#endif\ncall main\nloop:\nj loop"
       },
       {
         "id": "debug-start",
@@ -5812,22 +5812,22 @@
       {
         "name": "rs_dma_start",
         "source": "crt/src/hal/dma.c",
-        "body_sha256": "159bc71910716dbdc95a6218282d98bd1fbdede26571d46ae870cf9bdd4ff5d0",
+        "body_sha256": "71fa042fbb83bda8c77fb1f2ccc6f8ec8fda606c419d323191275a14b5b1b924",
         "budget": "No timeout argument; no completion polling.",
         "zero": "Not applicable: no timeout parameter.",
-        "success": "For a valid channel, software cleared event flags and wrote START. It did not independently confirm command admission or completion.",
-        "failure": "An invalid channel is rejected locally; hardware may later report a command or transfer error.",
-        "next": "Observe channel status and completion/error records before consuming output or reusing buffers."
+        "success": "For a valid channel not owned by a session, software clears event flags, fences preceding writes and writes START. It does not independently confirm command admission or completion.",
+        "failure": "An invalid channel or a channel owned by a session is rejected locally; hardware may later report a command or transfer error.",
+        "next": "Observe channel status and completion/error records before consuming output or reusing buffers; use the session API when ownership is required."
       },
       {
         "name": "rs_dma_abort",
         "source": "crt/src/hal/dma.c",
-        "body_sha256": "218dcfacb4d4af383b8f4dab44d3d4158f9cc580aeef690abbcdfcbea4a62749",
+        "body_sha256": "458c564bec971320d488fb2699e9a88ec8283a7083930d8c05af9b3fc6af15c7",
         "budget": "No timeout argument; no drain polling.",
         "zero": "Not applicable: no timeout parameter.",
-        "success": "For a valid channel, the ABORT command was written. Accepted transactions may still be draining.",
-        "failure": "The return does not confirm that BUSY is clear or that the buffer is reusable.",
-        "next": "Use rs_dma_abort_wait or an equivalent status/drain observation, then preserve completion and error details."
+        "success": "For a valid channel not owned by a session, the ABORT command is written. Accepted transactions may still be draining.",
+        "failure": "An invalid channel or a channel owned by a session is rejected locally; the return does not confirm that BUSY is clear.",
+        "next": "Use rs_dma_abort_wait or an equivalent status/drain observation, then preserve completion and error details; use the session API when ownership is required."
       },
       {
         "name": "rs_dma_abort_wait",

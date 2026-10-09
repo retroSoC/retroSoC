@@ -102,9 +102,43 @@ def main() -> int:
     ) as temp:
         staging = Path(temp) / "package"
         staging.mkdir()
-        timing_contract = Path(temp) / ("tiny_core.sdc" if soc == "TINY" else "commercial_timing_contract.tcl")
-        timing_generator = (root / "physical/smoke/sta/opensta/generate_sdc.py" if soc == "TINY"
-                            else root / "physical/commercial/scripts/generate_timing_contract.py")
+        commercial_contract = Path(temp) / "commercial_timing_contract.tcl"
+        subprocess.run(
+            [
+                "python3",
+                str(root / "physical/commercial/scripts/generate_timing_contract.py"),
+                "--soc",
+                soc,
+                "--domains",
+                str(product_root / "integration/clock_reset_domains.json"),
+                "--pin-map",
+                str(product_root / "pin_map/pin_map.json"),
+                "--output",
+                str(commercial_contract),
+            ],
+            cwd=root,
+            check=True,
+        )
+        metadata_files = [
+            f"contracts/{commercial_contract.name}={commercial_contract}",
+        ]
+        if soc == "TINY":
+            tiny_sdc = Path(temp) / "tiny_core.sdc"
+            subprocess.run(
+                [
+                    "python3",
+                    str(root / "physical/smoke/sta/opensta/generate_sdc.py"),
+                    "--domains",
+                    str(product_root / "integration/clock_reset_domains.json"),
+                    "--pin-map",
+                    str(product_root / "pin_map/pin_map.json"),
+                    "--output",
+                    str(tiny_sdc),
+                ],
+                cwd=root,
+                check=True,
+            )
+            metadata_files.append(f"contracts/{tiny_sdc.name}={tiny_sdc}")
         if config.get("MINI_MODE", "PRODUCT") == "MPW":
             dynamic_core_filelist = (
                 args.variant_root
@@ -125,20 +159,6 @@ def main() -> int:
             dynamic_ip_filelist = (
                 args.variant_root / "generated/user_extensions/legacy_ip.fl"
             )
-        subprocess.run(
-            [
-                "python3",
-                str(timing_generator),
-                "--domains",
-                str(product_root / "integration/clock_reset_domains.json"),
-                "--pin-map",
-                str(product_root / "pin_map/pin_map.json"),
-                "--output",
-                str(timing_contract),
-            ],
-            cwd=root,
-            check=True,
-        )
         command = [
             "python3",
             str(root / "physical/smoke/syn/tools/export_soc_sources.py"),
@@ -171,9 +191,9 @@ def main() -> int:
             str(args.variant_root / "generated/pin_map/pin_map.fl"),
             "--archinfo-incdir",
             str(args.variant_root / "generated/archinfo"),
-            "--metadata-file",
-            f"contracts/{timing_contract.name}={timing_contract}",
         ]
+        for metadata in metadata_files:
+            command.extend(("--metadata-file", metadata))
         if soc == "TINY":
             if config.get("SYNTH") == "YOSYS":
                 recipe = config.get("SYNTH_RECIPE", "balanced")

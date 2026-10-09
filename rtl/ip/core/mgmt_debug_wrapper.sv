@@ -11,7 +11,8 @@
 // Hazard3 JTAG-DTM and Debug Module integration. The Debug Module is in the
 // management-core clock domain and exposes abstract commands only (no SBA).
 module mgmt_debug_wrapper #(
-    parameter logic [31:0] JtagIdcode = 32'hDEAD_BEEF
+    parameter logic [31:0] JtagIdcode      = 32'hDEAD_BEEF,
+    parameter int          ResetSyncStages = 3
 ) (
     input  logic clk_i,
     input  logic rst_n_i,
@@ -67,7 +68,9 @@ module mgmt_debug_wrapper #(
       .clk_i(jtag_tck_i),
       .clk_o(s_jtag_tck_buf)
   );
-  rst_sync u_jtag_rst_sync (
+  rst_sync #(
+      .STAGE(ResetSyncStages)
+  ) u_jtag_rst_sync (
       .clk_i  (s_jtag_tck_buf),
       .rst_n_i(jtag_trst_n_i),
       .rst_n_o(s_jtag_trst_n_sync)
@@ -78,7 +81,9 @@ module mgmt_debug_wrapper #(
       .dat_i  (s_dmihardreset_req),
       .dat_o  (s_dmihardreset_sync)
   );
-  rst_sync u_dmi_rst_sync (
+  rst_sync #(
+      .STAGE(ResetSyncStages)
+  ) u_dmi_rst_sync (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i && !s_dmihardreset_sync),
       .rst_n_o(s_dmi_rst_n)
@@ -146,7 +151,9 @@ module mgmt_debug_wrapper #(
       .sbus_rdata                 (dbg_sbus_rdata_i)
   );
 
-  mgmt_debug_reset u_mgmt_debug_reset (
+  mgmt_debug_reset #(
+      .ResetSyncStages(ResetSyncStages)
+  ) u_mgmt_debug_reset (
       .clk_i        (clk_i),
       .rst_n_i      (rst_n_i),
       .reset_req_i  (s_sys_reset_req || s_hart_reset_req),

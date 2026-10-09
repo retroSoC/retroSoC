@@ -5,7 +5,10 @@
 This document defines the intended Tiny, Mini, Std, and Pro product ladder.
 Tiny and Mini have executable build profiles; Std and Pro remain roadmap
 targets. Committed product profiles and retained validation evidence define
-implemented support. Tiny first targets IHP130 as a wired MCU.
+implemented support. Tiny's 2026-10-07 specification selects ICS55/PLL as its
+default wired-MCU target. Its executable profile keeps SYS on external SAFE24
+and the PLL parked off. IHP130 remains explicit compatibility, and Mini
+defaults are unchanged.
 
 Mini is the family anchor. It establishes the common product model: an open
 RISC-V SoC in which a small, always-available Hazard3 management core owns
@@ -40,6 +43,16 @@ verification requirements differ materially.
 
 ## Tiny: Low-Power MCU and Edge Connectivity
 
+The [2026-10-07 refreeze](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+requires ICS55 with `HAVE_PLL=YES`, SAFE24 startup and unchanged CPU-rate
+128 KiB SRAM. `configs/ci/ics55-tiny.mk` implements that SAFE24 platform;
+PLL192/240 backend tests do not qualify those frequencies as SoC operating points.
+After platform enablement, the order is remaining Tiny foundation, SPI,
+PIO-lite, PPALite, then one complete-product final physical campaign. Earlier
+post-synthesis timing is observational; functionality and source-bound evidence
+remain required. R2-P11 and the extensions' P5 IDs/titles are retained and
+closed jointly on the same final design. This does not qualify a frequency.
+
 ### Position
 
 Tiny serves battery-powered sensors, actuators, metering, low-power industrial
@@ -52,31 +65,61 @@ integration in `rtl/tiny`, selected with `configs/ci/ihp130-tiny.mk`. It has no
 wireless IP, wireless protocol stack, or radio-specific companion integration.
 Tiny-Connect, BLE, IEEE 802.15.4 and Wi-Fi are deferred product research.
 
-The committed baseline still uses 24 MHz, no PLL, two UARTs, two I2C
-controllers and legacy pad routing. The QFN64 Gen1 product/package target
-was established on 2026-09-26 and extended on 2026-09-30 with shared IP,
-eight-channel DMA and explicit no-PLL/PLL clock and reset trees. The
-2026-10-01 P10 refreeze adds DVP V2 camera routing and optional XPI PSRAM
-frame buffers. The remaining order is P10 -> P7 -> P8 -> P11 -> P12 -> P9;
-old phase IDs/titles are preserved. Existing generated datasheets describe
-the baseline, not completed implementation of the refreeze.
+The committed baseline still uses 24 MHz, no PLL, four DMA channels, two
+UARTs, two I2C controllers and legacy pad routing. The QFN64 Gen1 target was
+established on 2026-09-26, extended with shared IP and clock/reset requirements
+on 2026-09-30, and with DVP/XPI frame buffers on 2026-10-01. The 2026-10-04
+[R2 performance contract](ip/tiny-soc.md) replaces the remaining execution
+order with `TINY-R2-P0` through `TINY-R2-P11`; the 2026-10-07 refreeze adds
+ICS55 platform enablement and defers R2-P11 to the complete-product final
+campaign after SPI, PIO-lite and PPALite functionality. The original
+`TINY-P0` through `TINY-P12` IDs/titles remain in that contract's history.
+Existing generated datasheets describe the baseline, not completed R2
+implementation or qualification.
+
+The separately approved 2026-10-04 [PIO-lite extension](ip/piolite.md) is a
+future standard Tiny feature, not part of the historical performance-only R2
+approval or current RTL baseline. Its two PCLK state machines share 32x16
+instructions, use the existing 32 GPIO through USER ownership and borrow central
+DMA requests 14/15 without adding pads, user-SRAM capacity or an AXI master.
+Its independent `PIOLITE-P0..P5` gates preserve all R2 IDs and require fresh
+PIO-inclusive application, timing and physical evidence. Other products remain
+outside this feature scope; the [verification ledger](ip/piolite-verification.md)
+records the unimplemented and unqualified boundary.
+
+The separately approved 2026-10-04 [SPI extension](ip/spi.md) adds one future
+standard Tiny master/display controller using four previously reserved Gen1
+ALT routes without adding package pins. It uses packed 8/16-bit transfers,
+DMA V2.2 pacing and a separate `SPI-P0..P5` roadmap. Its initial application
+is sequential capture/verify/display/SD save, not simultaneous video. The
+existing XPI LCD path is unchanged; the [SPI evidence ledger](ip/spi-verification.md)
+keeps implementation and qualification gaps explicit alongside R2 and PIO.
+
+The separately approved 2026-10-05 [PPALite extension](ip/ppalite.md) adds
+camera-inline format normalization, Y extraction, fixed1/2/4 pixel/line
+selection and padded row packing. It is a future standard Tiny feature, not
+Mini GA2D or a memory-to-memory graphics engine. It preserves RAW DVP and
+shares request11/DMA2 without new pins, main SRAM, channels or AXI owners.
+Its [ledger](ip/ppalite-verification.md) and `PPALITE-P0..P5` gates distinguish
+source correctness, source-bound application evidence and final physical
+qualification from the unchanged executable baseline.
 
 ### Gen1 Product and Package Target
 
 | Area | Tiny Gen1 target |
 | --- | --- |
-| CPU | One Hazard3 RV32IMC hart; A extension disabled until atomic bus semantics are qualified |
-| On-chip memory | 128 KiB user SRAM plus six private Crypto banks (24 KiB); larger user SRAM and retention deferred |
+| CPU | One Hazard3 RV32IMC hart with independent local I/D paths; A remains disabled |
+| On-chip memory | 128 KiB user SRAM in four contiguous 32 KiB arbitration groups, with independent frontends and physical macros at CPU SYS frequency; six private Crypto banks (24 KiB) remain PCLK |
 | Code storage | XPI NOR boot, loaded into SRAM; authenticated recovery boot deferred |
 | Memory model | No MMU, HP hart or external RAM boot dependency; optional initialized XPI NSS1 PSRAM for whole-frame data, bounded by actual device capacity |
-| Interconnect | AXI32 with CPU, central DMA and SDIO private-DMA masters; APB4 control and explicit domain bridges; no RIB/RIBP |
-| Software | Shared peripheral specifications, addresses and HAL source; product-specific RCU/SYSCTRL backend and routing/clock configuration; RV32IM compiler target |
-| Clock/reset | Safe REF24 boot; external-XIN no-PLL up to 96 MHz or a 24 MHz reference/single-output PLL up to 240 MHz; MEM up to 120 MHz, PCLK up to 60 MHz, fixed 1 MHz CLINT tick; no independent safety RC |
+| Interconnect | Per-target concurrent AXI32 with three external owners: CPU non-SRAM I/D merge, central DMA and SDIO private DMA; independent local SRAM I/D paths, APB4 control and explicit domain bridges; no RIB/RIBP |
+| Software | Shared peripheral specifications, addresses and HAL source; product-specific RCU/SYSCTRL backend and routing/clock configuration; compatible RV32IM build plus separately validated performance compiler/linker configuration |
+| Clock/reset | Default ICS55/HAVE_PLL=YES with SAFE24 boot; CPU and main SRAM share SYS at 24/96/192/240 MHz targets; XPI MEM at 24/96/96/120 MHz; PCLK at 24/48/48/60 MHz; no main-SRAM CDC, fixed 1 MHz CLINT tick, no independent safety RC; physical rate claims require final qualification |
 | Edge I/O | 32 user GPIO, one UART, one I2C, one full-duplex master/slave I2S target, alternate 8-bit DVP V2 camera profile, one 3.3 V 1-bit/4-bit SDIO host, two timers, eight central DMA channels, four PWM outputs, RTC, watchdog and XPI |
 | Shared services | RNG V2, CRC V2, WS2812 and Crypto V2 at Mini-compatible addresses; entropy and security claims require separate qualification |
 | Package | QFN64 plus separate EP: 48 signal and 16 power/ground terminals; preferred 9 x 9 mm, 0.5 mm pitch pending physical review |
 | Dedicated signals | Six boot XPI pins and five JTAG pins outside the 32 GPIO; XPI CS1-3 use GPIO29-31 |
-| Power | One 3.3 V digital IO rail; IHP130 Core planned at 1.2 V; clock analog supply and EP connection require macro/package confirmation |
+| Power | One 3.3 V digital IO rail; ICS55 default and IHP130 compatibility Core nominally 1.2 V; clock analog supply/ground and EP binding require macro/package confirmation without changing terminal assignments |
 
 The normative [Tiny Gen1 contract](ip/tiny-soc.md) defines the complete QFN64
 pinout, power/reset requirements and GPIO/ALT0/ALT1 table. Default SDIO,
@@ -88,10 +131,13 @@ GPIO27/28/30/31. CAM_XCLK and GPIO28 CLKOUT share one RCU generator.
 Independent boot Flash and JTAG remain available. DVP retains the shared V2
 ABI at `0x1000E000`/IRQ15 and uses DMA2/request 11; frames may exceed internal
 SRAM through NSS1 at `0x54000000` without adding a master or controller.
-The shared-IP addresses, DMA/IRQ allocations, Tiny RCU bank
-and clock/reset behavior are frozen targets, with implementation in P7/P8,
-PSRAM transport in P11, DVP capture in P12 and
-physical acceptance in P9. SDIO reaches target clocks of 48 MHz at SYS96/192
+The R2 roadmap places software/DMA scheduling in `TINY-R2-P3`, local CPU/SRAM
+integration in `TINY-R2-P4` and the concurrent fabric in `TINY-R2-P5`.
+Shared-IP/eight-channel integration follows in `TINY-R2-P6`, RCU/clock/reset
+in `TINY-R2-P7`, PSRAM transport in `TINY-R2-P8`, and DVP capture in
+`TINY-R2-P9`; system and physical qualification are `TINY-R2-P10` and
+`TINY-R2-P11`. The canonical contract retains the legacy phase mapping.
+SDIO reaches target clocks of 48 MHz at SYS96/192
 and 40 MHz at SYS240 using the existing integer divider. XIN loss stops the
 reference/watchdog domain too; recovery requires the external source and
 RESET_N. The historical AXI/ABI and verification sections still describe the
@@ -441,7 +487,7 @@ software quality.
 
 | Tier | Claim gate |
 | --- | --- |
-| Tiny | Gen1 target: unchanged QFN64, shared IP/eight-channel DMA, product RCU/CDC/reset, no-PLL 96 MHz and PLL 240 MHz evidence, DVP snapshot/crop to optional XPI PSRAM with measured transport and Pad timing; low-power, entropy and security claims require separate qualification |
+| Tiny | Gen1 R2 target: unchanged QFN64, dual local I/D and four main-SRAM groups at CPU SYS frequency, per-target AXI32 concurrency, shared IP/eight-channel DMA, RCU/CDC/reset, CPU/SRAM 96/192/240 MHz qualification, DVP snapshot/crop to optional XPI PSRAM with measured transport and Pad timing; low-power, entropy and security claims require separate qualification |
 | Mini | Repeatable Linux boot, at least 64 MiB usable main memory, native memory bursts, and management-controlled start/stop recovery |
 | Std | Full AXI4 ordering tests, coherent accelerator traffic, 1080p60 graphical desktop, audio playback, and NPU inference under concurrent DMA load |
 | Pro | Four-hart coherent SMP stress, RV64 distribution boot, more-than-4-GiB memory validation, and concurrent GPU/NPU/video operation |

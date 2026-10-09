@@ -20,6 +20,9 @@ if {[info exists ::env(OPENSTA_TOP)] && $::env(OPENSTA_TOP) ne ""} {
 }
 link_design $top_design
 read_sdc $::env(OPENSTA_SDC)
+if {[info exists ::env(OPENSTA_TINY_ICS55)] && $::env(OPENSTA_TINY_ICS55) eq "YES"} {
+    source [file join [file dirname [info script]] tiny_ics55_checks.tcl]
+}
 
 report_checks -path_delay min_max -sort_by_slack -slack_max 0.0 -group_path_count 1000 -endpoint_path_count 1000 > $::env(OPENSTA_REPORT)
 

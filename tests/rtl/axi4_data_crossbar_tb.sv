@@ -329,6 +329,48 @@ module axi4_data_crossbar_tb;
     repeat (3) @(posedge clk_i);
     rst_n_i = 1'b1;
 
+    // Current Mini central DMA is master 2 of the memory-only data plane.
+    // Diagnose its existing MMIO boundary; this is not WS2812 DMA acceptance.
+    @(negedge clk_i);
+    fault_ready_i      = 1'b0;
+    masters[2].awid    = 7'h10;
+    masters[2].awaddr  = 32'h1000_8010;
+    masters[2].awsize  = 3'd2;
+    masters[2].awburst = 2'b00;
+    masters[2].awvalid = 1'b1;
+    #1;
+    if (!targets[5].awvalid || targets[0].awvalid || targets[1].awvalid ||
+        targets[2].awvalid || targets[3].awvalid || targets[4].awvalid)
+      $fatal(1, "Mini DMA MMIO must retain the documented unmapped error route");
+    do @(posedge clk_i); while (!masters[2].awready);
+    @(negedge clk_i);
+    masters[2].awvalid = 1'b0;
+    if (!fault_valid_o || fault_master_o != 4'd2 || fault_target_o != 3'd5 ||
+        fault_reason_o != 4'd1 || fault_addr_o != 32'h1000_8010 || !fault_write_o)
+      $fatal(1, "Mini DMA MMIO fault attribution mismatch");
+    masters[2].wdata  = 64'h0011_2233;
+    masters[2].wstrb  = 8'h0f;
+    masters[2].wvalid = 1'b1;
+    do @(posedge clk_i); while (!masters[2].wready);
+    @(negedge clk_i);
+    masters[2].wvalid = 1'b0;
+    targets[5].bid    = 7'h10;
+    targets[5].bresp  = 2'b10;
+    targets[5].bvalid = 1'b1;
+    #1;
+    if (!masters[2].bvalid || masters[2].bresp != 2'b10)
+      $fatal(1, "Mini DMA MMIO error response was lost");
+    do @(posedge clk_i); while (!targets[5].bready);
+    @(negedge clk_i);
+    targets[5].bvalid  = 1'b0;
+    targets[5].bresp   = '0;
+    masters[2].awsize  = 3'd3;
+    masters[2].awburst = 2'b01;
+    fault_ready_i      = 1'b1;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    $display("MINI_DMA_MMIO_BOUNDARY master=2 address=10008010 target=5 reason=1 response=SLVERR");
+
     @(negedge clk_i);
     master_block_i[1]  = 1'b1;
     masters[1].arid    = 6'b001_111;

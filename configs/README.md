@@ -43,19 +43,18 @@ variables on the command line.
 `SRAM_SIZE_KIB` selects 4, 16, 32, 64, or 128 KiB of on-chip SRAM and is part
 of the build variant key. IHP130, GF180, and SKY130 CI profiles select eight
 4 KiB banks for 32 KiB total and enable both the interface and technology
-macro. Committed ICS55 profiles keep the memory and PLL absent. All committed
-product and benchmark profiles use 32 KiB; larger capacities remain valid
-manual values but are not selected by the product profiles.
+macro. The committed ICS55 Mini profile now uses the locked OpenECOS SRAM
+release; its PLL remains absent. Capacity is selected by each committed
+profile: the executable IHP130 Tiny profile uses 128 KiB. Do not infer a
+Tiny capacity or PLL setting from a Mini profile.
 
-`local/ics55.example.mk` is the only tracked local-profile artifact. Copy it to
-the ignored `local/ics55.mk`, set `HAVE_PLL`, `HAVE_SRAM_IF`, and
-`HAVE_SRAM_MACRO` to `YES`, and list the commercial SRAM model plus a local
-`PLL_TOP` simulation adapter in `LOCAL_RTL_FILES`. Both the copied profile and
-local `.sv` model are ignored so absolute commercial paths never enter Git.
+`local/ics55.example.mk` remains available for an optional PLL experiment.
+The committed ICS55 SRAM models are downloaded and verified by the PDK setup
+flow from the dependency lock; no local commercial SRAM path is needed.
 
 `HAVE_SRAM_MACRO=YES` requires `HAVE_SRAM_IF=YES`. The generic manual defaults
-enable 32 KiB for IHP130, GF180, and SKY130 and keep ICS55 disabled; committed
-profiles remain the supported reproducible entry points.
+enable 32 KiB for IHP130, GF180, SKY130, and ICS55; committed profiles remain
+the supported reproducible entry points.
 
 `PDK_BEHAV=YES` selects technology-wrapper functional models for behavioral
 simulation. It is a simulation-only setting, participates in the build variant
@@ -66,6 +65,21 @@ For supported profiles and commands, see the root [README](../README.md) and
 [agent contract](../AGENTS.md).
 
 ## Tiny MCU
+
+`benchmark/ics55-tiny-performance.mk` is the separate R2-P3 compiler experiment
+entrypoint: the same SAFE24/parked-PLL hardware, validated candidate ISA,
+`SW_OPT=O2` and `SW_LTO=NO`. Optimizer/LTO and `ld2_tiny_banked` placement are
+explicit variants; the CI profile remains compatible RV32IM. See the
+[software scheduling runbook](../docs/ip/tiny-soc-r2-software-scheduling.md)
+for the matrix and its pending/current evidence boundary.
+
+The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
+sets the default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
+`ci/ics55-tiny.mk` implements that entrypoint with the PLL held off; standalone
+PLL backend tests do not enable RCU/SYS switching. `make SOC=TINY` selects this
+committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
+Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in
+the Tiny ledger, and physical qualification remains pending.
 
 `ci/ihp130-tiny.mk` selects `SOC=TINY`, one RV32IMC Hazard3 (A disabled),
 128 KiB SRAM, AXI32/APB4, four DMA channels and the wired peripheral subset.

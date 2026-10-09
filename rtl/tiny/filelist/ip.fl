@@ -32,6 +32,7 @@
 /ip/peripheral/timer_core.sv
 /ip/peripheral/timer_reg.sv
 /ip/peripheral/apb4_timer.sv
+/ip/peripheral/gpio_pad_caps_pkg.sv
 /ip/peripheral/gpio_if.sv
 /ip/peripheral/user_gpio_if.sv
 /ip/peripheral/gpio_core.sv

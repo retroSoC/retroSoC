@@ -133,8 +133,16 @@ module gpio_tb;
     write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_OUT_CLEAR, 32'h2, 1'b0);
     if ({gpio.oe_o[1], gpio.do_o[1]} !== 2'b10) $fatal(1, "open-drain low drive failed");
 
-    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_UP, 32'h8, 1'b0);
-    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_DOWN, 32'h8, 1'b1);
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_UP, 32'h4, 1'b0);
+    if ({gpio.pu_o[2], gpio.pd_o[2]} !== 2'b10) $fatal(1, "pull-up output failed");
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_DOWN, 32'h4, 1'b1);
+    if ({gpio.pu_o[2], gpio.pd_o[2]} !== 2'b10) $fatal(1, "pull conflict changed state");
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_UP, 32'h0, 1'b0);
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_DOWN, 32'h4, 1'b0);
+    if ({gpio.pu_o[2], gpio.pd_o[2]} !== 2'b01) $fatal(1, "pull-down output failed");
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_CONFIG_LOCK, 32'h4, 1'b0);
+    write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_PULL_DOWN, 32'h0, 1'b1);
+    if ({gpio.pu_o[2], gpio.pd_o[2]} !== 2'b01) $fatal(1, "lock did not protect pull-down");
 
     write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_INTR_RISE_ENABLE, 32'h1, 1'b0);
     write_register(ADMIN_BASE + `APB4_GPIO_ADMIN_INTR_ENABLE, 32'h1, 1'b0);

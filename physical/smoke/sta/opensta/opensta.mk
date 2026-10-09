@@ -20,6 +20,11 @@ $(OPENSTA_SDC): $(OPENSTA_SDC_GEN) $(OPENSTA_DOMAIN_MAP) $(OPENSTA_PIN_MAP) | ma
 
 sta: $(OPENSTA_SDC) | manifest
 	@mkdir -p $(STA_BUILD_ROOT)
+ifeq ($(TINY_SAFE24_PLL_OFF),YES)
+	python3 $(ROOT_PATH)/scripts/tiny_ics55_platform.py --variant-root $(VARIANT_ROOT) verify-netlist \
+		--netlist $(OPENSTA_NETLIST) --config $(OPENSTA_CONFIG) \
+		--output $(SYN_BUILD_ROOT)/tiny-ics55-netlist.json
+endif
 	@for input in $(OPENSTA_NETLIST) $(OPENSTA_LIBERTY) $(OPENSTA_LINK_LIBS) $(OPENSTA_SRAM_LIBS) $(OPENSTA_SDC) $(OPENSTA_CONFIG); do \
 		test -f "$$input" || { echo "OpenSTA input missing: $$input" >&2; exit 1; }; \
 	done
@@ -40,7 +45,7 @@ sta: $(OPENSTA_SDC) | manifest
 		--env OPENSTA_TOP=$(OPENSTA_TOP) --env OPENSTA_NETLIST=$(OPENSTA_NETLIST) --env OPENSTA_LIBERTY=$(OPENSTA_LIBERTY) \
 		--env 'OPENSTA_LINK_LIBS=$(OPENSTA_LINK_LIBS)' --env 'OPENSTA_SRAM_LIBS=$(OPENSTA_SRAM_LIBS)' \
 		--env OPENSTA_SDC=$(OPENSTA_SDC) --env OPENSTA_REPORT=$(OPENSTA_REPORT) \
-		--env OPENSTA_METRICS=$(OPENSTA_METRICS) -- \
+		--env OPENSTA_METRICS=$(OPENSTA_METRICS) --env OPENSTA_TINY_ICS55=$(TINY_SAFE24_PLL_OFF) -- \
 		$(OPENSTA) -no_init -exit -threads $(OPENSTA_THREADS) $(ROOT_PATH)/physical/smoke/sta/opensta/opensta.tcl
 
 .PHONY: sta

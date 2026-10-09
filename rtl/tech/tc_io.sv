@@ -520,7 +520,9 @@ module tc_io_schmitt_in_pad (
 `endif
 endmodule
 
-module tc_io_tri_full_pad (
+module tc_io_tri_full_pad #(
+    parameter bit ReadWhileDriving = 1'b0
+) (
 `ifdef PDK_IHP130
 `ifdef USE_POWER_PINS
     inout  wire  iovdd,
@@ -599,15 +601,15 @@ module tc_io_tri_full_pad (
       .C  (p2c),
       .A  (),
       .PAD(pad),
-      .IE (~c2p_en),
-      .CS (cs),       // 1: CMOS 0: SCHMI
+      .IE (ReadWhileDriving || !c2p_en),
+      .CS (cs),                           // 1: CMOS 0: SCHMI
       .I  (c2p),
       .OE (c2p_en),
       .OD (1'b0),
-      .PU (pu),       // active high
-      .PD (pd),       // active high
+      .PU (pu),                           // active high
+      .PD (pd),                           // active high
       .DS0(1'b0),
-      .DS1(1'b1)      // 8mA
+      .DS1(1'b1)                          // 8mA
   );
 
 `endif

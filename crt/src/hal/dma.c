@@ -3,17 +3,50 @@
 #include <retrosoc/hal/i2s.h>
 #include <retrosoc/lib/printf.h>
 
+static const rs_dma_session_t *rs_dma_owners[RS_DMA_CHANNEL_COUNT];
+
+static uint32_t rs_dma_lock(void) {
+    uint32_t saved = 0U;
+#if defined(__riscv) && defined(CSR_ENABLE)
+    __asm__ volatile("csrrci %0, mstatus, 8" : "=r"(saved)::"memory");
+#endif
+    return saved;
+}
+
+static void rs_dma_unlock(uint32_t saved) {
+#if defined(__riscv) && defined(CSR_ENABLE)
+    if ((saved & UINT32_C(8)) != 0U) {
+        __asm__ volatile("csrsi mstatus, 8" ::: "memory");
+    }
+#else
+    (void)saved;
+#endif
+}
+
+static void rs_dma_fence(void) {
+#ifdef __riscv
+    __asm__ volatile("fence rw, rw" ::: "memory");
+#else
+    __asm__ volatile("" ::: "memory");
+#endif
+}
+
 static bool rs_dma_channel_valid(uint32_t channel) {
     return channel < RS_DMA_CHANNEL_COUNT;
 }
 
-rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config) {
+static rs_status_t rs_dma_configure_owned(uint32_t channel, const rs_dma_config_t *config,
+                                          const rs_dma_session_t *owner) {
     uint32_t channel_config;
+    uint32_t saved;
 
     if (rs_dma_config_validate(channel, config) != RS_OK) {
         return RS_EINVAL;
     }
-    if ((RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U) {
+    saved = rs_dma_lock();
+    if ((rs_dma_owners[channel] != owner) ||
+        ((RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U)) {
+        rs_dma_unlock(saved);
         return RS_EIO;
     }
 
@@ -40,6 +73,95 @@ rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config) {
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_REQUEST_SEL) = (uint32_t)config->request;
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_BURST_CFG) = (uint32_t)config->burst_beats;
     RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CRC_EXPECTED) = config->crc_expected;
+    rs_dma_unlock(saved);
+    return RS_OK;
+}
+
+rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config) {
+    return rs_dma_configure_owned(channel, config, NULL);
+}
+
+static rs_status_t rs_dma_command(uint32_t channel, uint32_t command,
+                                  const rs_dma_session_t *owner) {
+    uint32_t saved;
+    if (!rs_dma_channel_valid(channel)) {
+        return RS_EINVAL;
+    }
+    saved = rs_dma_lock();
+    if (rs_dma_owners[channel] != owner) {
+        rs_dma_unlock(saved);
+        return RS_EIO;
+    }
+    if ((command == RS_DMA_CH_CTRL_RESET) &&
+        ((RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U)) {
+        rs_dma_unlock(saved);
+        return RS_EIO;
+    }
+    if (command == RS_DMA_CH_CTRL_START) {
+        RS_DMA_CH_REG(channel, RS_DMA_CH_REG_EVENT_STATUS) = RS_DMA_EVENT_ALL;
+        rs_dma_fence();
+    }
+    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = command;
+    rs_dma_unlock(saved);
+    return RS_OK;
+}
+
+rs_status_t rs_dma_session_acquire(rs_dma_session_t *session, uint32_t channel) {
+    uint32_t saved;
+    if ((session == NULL) || !rs_dma_channel_valid(channel)) {
+        return RS_EINVAL;
+    }
+    saved = rs_dma_lock();
+    for (uint32_t index = 0U; index < RS_DMA_CHANNEL_COUNT; ++index) {
+        if (rs_dma_owners[index] == session) {
+            rs_dma_unlock(saved);
+            return RS_EIO;
+        }
+    }
+    if ((rs_dma_owners[channel] != NULL) ||
+        ((RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U)) {
+        rs_dma_unlock(saved);
+        return RS_EIO;
+    }
+    session->channel = channel;
+    rs_dma_owners[channel] = session;
+    /* A new direct session must not inherit the previous owner's TCD chain. */
+    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_RESET;
+    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_HEAD) = 0U;
+    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = 0U;
+    rs_dma_unlock(saved);
+    return RS_OK;
+}
+
+rs_status_t rs_dma_session_configure(rs_dma_session_t *session, const rs_dma_config_t *config) {
+    return (session == NULL) ? RS_EINVAL
+                             : rs_dma_configure_owned(session->channel, config, session);
+}
+
+rs_status_t rs_dma_session_start(rs_dma_session_t *session) {
+    return (session == NULL) ? RS_EINVAL
+                             : rs_dma_command(session->channel, RS_DMA_CH_CTRL_START, session);
+}
+
+rs_status_t rs_dma_session_abort(rs_dma_session_t *session) {
+    return (session == NULL) ? RS_EINVAL
+                             : rs_dma_command(session->channel, RS_DMA_CH_CTRL_ABORT, session);
+}
+
+rs_status_t rs_dma_session_release(rs_dma_session_t *session) {
+    uint32_t saved;
+    if ((session == NULL) || !rs_dma_channel_valid(session->channel)) {
+        return RS_EINVAL;
+    }
+    saved = rs_dma_lock();
+    if ((rs_dma_owners[session->channel] != session) ||
+        ((RS_DMA_CH_REG(session->channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U)) {
+        rs_dma_unlock(saved);
+        return RS_EIO;
+    }
+    rs_dma_fence();
+    rs_dma_owners[session->channel] = NULL;
+    rs_dma_unlock(saved);
     return RS_OK;
 }
 
@@ -92,7 +214,7 @@ rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint3
         }
         RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_HEAD) = (uint32_t)(uintptr_t)current;
         RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = UINT32_C(1);
-        __asm__ volatile("fence rw, rw" ::: "memory");
+        rs_dma_fence();
         result = rs_dma_start(channel);
         if (result != RS_OK) {
             return result;
@@ -118,36 +240,19 @@ rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint3
 }
 
 rs_status_t rs_dma_start(uint32_t channel) {
-    if (!rs_dma_channel_valid(channel)) {
-        return RS_EINVAL;
-    }
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_EVENT_STATUS) = RS_DMA_EVENT_ALL;
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_START;
-    return RS_OK;
+    return rs_dma_command(channel, RS_DMA_CH_CTRL_START, NULL);
 }
 
 rs_status_t rs_dma_suspend(uint32_t channel) {
-    if (!rs_dma_channel_valid(channel)) {
-        return RS_EINVAL;
-    }
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_SUSPEND;
-    return RS_OK;
+    return rs_dma_command(channel, RS_DMA_CH_CTRL_SUSPEND, NULL);
 }
 
 rs_status_t rs_dma_resume(uint32_t channel) {
-    if (!rs_dma_channel_valid(channel)) {
-        return RS_EINVAL;
-    }
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_RESUME;
-    return RS_OK;
+    return rs_dma_command(channel, RS_DMA_CH_CTRL_RESUME, NULL);
 }
 
 rs_status_t rs_dma_abort(uint32_t channel) {
-    if (!rs_dma_channel_valid(channel)) {
-        return RS_EINVAL;
-    }
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_ABORT;
-    return RS_OK;
+    return rs_dma_command(channel, RS_DMA_CH_CTRL_ABORT, NULL);
 }
 
 rs_status_t rs_dma_abort_wait(uint32_t channel, rs_timeout_t timeout) {
@@ -165,14 +270,7 @@ rs_status_t rs_dma_abort_wait(uint32_t channel, rs_timeout_t timeout) {
 }
 
 rs_status_t rs_dma_reset(uint32_t channel) {
-    if (!rs_dma_channel_valid(channel)) {
-        return RS_EINVAL;
-    }
-    if ((RS_DMA_CH_REG(channel, RS_DMA_CH_REG_STATUS) & RS_DMA_STATUS_BUSY) != 0U) {
-        return RS_EIO;
-    }
-    RS_DMA_CH_REG(channel, RS_DMA_CH_REG_CTRL) = RS_DMA_CH_CTRL_RESET;
-    return RS_OK;
+    return rs_dma_command(channel, RS_DMA_CH_CTRL_RESET, NULL);
 }
 
 rs_status_t rs_dma_get_status(uint32_t channel, rs_dma_status_t *status) {
