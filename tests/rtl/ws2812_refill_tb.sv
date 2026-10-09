@@ -1,0 +1,416 @@
+`timescale 1ns / 1ps
+
+`include "ws2812_define.svh"
+
+module ws2812_refill_tb;
+  localparam logic [31:0] SourceBase = 32'h4000_0000;
+  localparam logic [31:0] Ws2812Txdata = 32'h1000_8010;
+  localparam int BitCycles = 30;
+  localparam int T0hCycles = 8;
+  localparam int T1hCycles = 17;
+  localparam int ResetCycles = 7200;
+
+  typedef enum logic [2:0] {
+    AxiIdle,
+    AxiReadResponse,
+    AxiWriteWait,
+    AxiWriteSetup,
+    AxiWriteAccess,
+    AxiWriteResponse
+  } axi_state_e;
+
+  logic               clk_i = 1'b0;
+  logic               rst_n_i = 1'b0;
+  logic               dma_start = 1'b0;
+  logic       [ 31:0] dma_cfg = '0;
+  logic       [ 31:0] dma_src_addr = '0;
+  logic       [ 31:0] dma_dst_addr = '0;
+  logic       [ 31:0] dma_byte_count = '0;
+  logic       [ 31:0] dma_request = '0;
+  logic       [ 31:0] dma_burst = '0;
+  logic               dma_done;
+  logic               dma_error;
+  logic       [  3:0] dma_done_vector;
+  logic       [  3:0] dma_error_vector;
+  logic       [127:0] dma_error_status_vector;
+  logic       [127:0] dma_error_addr_vector;
+  logic               host_active = 1'b1;
+  logic               host_write_enable = 1'b1;
+  logic       [  3:0] dma_busy_vector;
+  integer             s_b_delay_q = 0;
+  integer             s_cycle = 0;
+  integer             s_service_start;
+  integer             s_service_max = 0;
+  integer             s_submitted = 16;
+  integer             s_batch_words;
+  logic       [ 31:0] s_level;
+  logic               host_psel = 1'b0;
+  logic               host_penable = 1'b0;
+  logic       [ 31:0] host_addr = '0;
+  logic       [ 31:0] host_wdata = '0;
+  logic       [  3:0] host_wstrb = '0;
+  axi_state_e         axi_state_q = AxiIdle;
+  logic       [ 31:0] axi_read_addr_q = '0;
+  integer             dma_write_count = 0;
+  integer             dma_backpressure_cycles = 0;
+  logic       [ 23:0] pixels                      [0:32];
+  integer             observed_pixel = 0;
+  integer             observed_bit = 0;
+  integer             observed_cycle = 0;
+  integer             reset_low_cycles = 0;
+
+  dma_req_if req ();
+  axi4_if axi4 (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  apb4_if apb4 (
+      .pclk   (clk_i),
+      .presetn(rst_n_i)
+  );
+  ws2812_if ws2812 ();
+  axi4_stream_if i2s_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if i2s_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if dvp_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if crypto_in_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if crypto_out_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+
+  always #20.833 clk_i = ~clk_i;
+
+  initial begin
+    repeat (1000000) @(posedge clk_i);
+    $fatal(1, "WS2812 DMA integration test timeout");
+  end
+
+  assign apb4.psel = host_active ? host_psel :
+                     ((axi_state_q == AxiWriteSetup) || (axi_state_q == AxiWriteAccess));
+  assign apb4.penable = host_active ? host_penable : (axi_state_q == AxiWriteAccess);
+  assign apb4.pwrite = host_active ? host_write_enable : 1'b1;
+  assign apb4.paddr = host_active ? host_addr : Ws2812Txdata;
+  assign apb4.pwdata = host_active ? host_wdata : axi4.wdata;
+  assign apb4.pstrb = host_active ? host_wstrb : axi4.wstrb;
+  assign apb4.pprot = '0;
+
+  assign axi4.arready = axi_state_q == AxiIdle;
+  assign axi4.rid = '0;
+  assign axi4.rdata = pixels[axi_read_addr_q[7:2]];
+  assign axi4.rresp = `AXI4_RESP_OKAY;
+  assign axi4.rlast = 1'b1;
+  assign axi4.ruser = '0;
+  assign axi4.rvalid = axi_state_q == AxiReadResponse;
+  assign axi4.awready = (axi_state_q == AxiIdle) && !axi4.arvalid;
+  assign axi4.wready = (axi_state_q == AxiWriteAccess) && apb4.pready;
+  assign axi4.bid = '0;
+  assign axi4.bresp = `AXI4_RESP_OKAY;
+  assign axi4.buser = '0;
+  assign axi4.bvalid = (axi_state_q == AxiWriteResponse) && (s_b_delay_q >= 12);
+  assign i2s_tx_axis.tready = 1'b0;
+  assign i2s_rx_axis.tdata = '0;
+  assign i2s_rx_axis.tkeep = '0;
+  assign i2s_rx_axis.tstrb = '0;
+  assign i2s_rx_axis.tlast = 1'b0;
+  assign i2s_rx_axis.tid = '0;
+  assign i2s_rx_axis.tdest = '0;
+  assign i2s_rx_axis.tuser = '0;
+  assign i2s_rx_axis.tvalid = 1'b0;
+  assign dvp_rx_axis.tdata = '0;
+  assign dvp_rx_axis.tkeep = '0;
+  assign dvp_rx_axis.tstrb = '0;
+  assign dvp_rx_axis.tlast = 1'b0;
+  assign dvp_rx_axis.tid = '0;
+  assign dvp_rx_axis.tdest = '0;
+  assign dvp_rx_axis.tuser = '0;
+  assign dvp_rx_axis.tvalid = 1'b0;
+  assign crypto_in_axis.tready = 1'b0;
+  assign crypto_out_axis.tdata = '0;
+  assign crypto_out_axis.tkeep = '0;
+  assign crypto_out_axis.tstrb = '0;
+  assign crypto_out_axis.tlast = 1'b0;
+  assign crypto_out_axis.tid = '0;
+  assign crypto_out_axis.tdest = '0;
+  assign crypto_out_axis.tuser = '0;
+  assign crypto_out_axis.tvalid = 1'b0;
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      axi_state_q             <= AxiIdle;
+      axi_read_addr_q         <= '0;
+      dma_write_count         <= 0;
+      dma_backpressure_cycles <= 0;
+    end else begin
+      s_b_delay_q <= (axi_state_q == AxiWriteResponse) ? s_b_delay_q + 1 : 0;
+      if (axi4.wvalid && !axi4.wready) begin
+        dma_backpressure_cycles <= dma_backpressure_cycles + 1;
+      end
+      unique case (axi_state_q)
+        AxiIdle: begin
+          if (axi4.arvalid && axi4.arready) begin
+            if ((axi4.arlen != 8'd0) || (axi4.araddr < (SourceBase + 32'd64)) ||
+                (axi4.araddr > (SourceBase + 32'd128))) begin
+              $fatal(1, "DMA issued an invalid WS2812 source read");
+            end
+            axi_read_addr_q <= axi4.araddr;
+            axi_state_q     <= AxiReadResponse;
+          end else if (axi4.awvalid && axi4.awready) begin
+            if ((axi4.awlen != 8'd0) || (axi4.awaddr != Ws2812Txdata) ||
+                (axi4.awburst != `AXI4_BURST_TYPE_FIXED)) begin
+              $fatal(1, "fixed WS2812 destination was not a single AXI4 FIXED beat");
+            end
+            axi_state_q <= AxiWriteWait;
+          end
+        end
+        AxiReadResponse: begin
+          if (axi4.rvalid && axi4.rready) begin
+            axi_state_q <= AxiIdle;
+          end
+        end
+        AxiWriteWait: begin
+          if (axi4.wvalid) begin
+            axi_state_q <= AxiWriteSetup;
+          end
+        end
+        AxiWriteSetup: axi_state_q <= AxiWriteAccess;
+        AxiWriteAccess: begin
+          if (axi4.wvalid && axi4.wready) begin
+            if (!axi4.wlast) begin
+              $fatal(1, "single-beat WS2812 write did not assert WLAST");
+            end
+            dma_write_count <= dma_write_count + 1;
+            axi_state_q     <= AxiWriteResponse;
+          end
+        end
+        AxiWriteResponse: begin
+          if (axi4.bvalid && axi4.bready) begin
+            axi_state_q <= AxiIdle;
+          end
+        end
+        default:       axi_state_q <= AxiIdle;
+      endcase
+    end
+  end
+
+  dma_core #(
+      .NumChannels  (4),
+      .MaxBurstBeats(16),
+      .FifoDepth    (16)
+  ) u_dma_core (
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .global_reset_i       (1'b0),
+      .global_error_clear_i (1'b0),
+      .ch_cfg_i             ({dma_cfg, 96'd0}),
+      .src_addr_i           ({dma_src_addr, 96'd0}),
+      .dst_addr_i           ({dma_dst_addr, 96'd0}),
+      .byte_count_i         ({dma_byte_count, 96'd0}),
+      .request_sel_i        ({dma_request, 96'd0}),
+      .burst_cfg_i          ({dma_burst, 96'd0}),
+      .start_i              ({dma_start, 3'd0}),
+      .suspend_i            ('0),
+      .resume_i             ('0),
+      .abort_i              ('0),
+      .channel_reset_i      ('0),
+      .event_clear_i        ('0),
+      .busy_o               (dma_busy_vector),
+      .suspended_o          (),
+      .done_o               (dma_done_vector),
+      .aborted_o            (),
+      .error_o              (dma_error_vector),
+      .stream_last_o        (),
+      .event_status_o       (),
+      .error_status_o       (dma_error_status_vector),
+      .error_addr_o         (dma_error_addr_vector),
+      .current_src_o        (),
+      .current_dst_o        (),
+      .remaining_o          (),
+      .bytes_done_o         (),
+      .stall_cycles_lo_o    (),
+      .stall_cycles_hi_o    (),
+      .first_error_valid_o  (),
+      .first_error_channel_o(),
+      .first_error_status_o (),
+      .first_error_addr_hi_o(),
+      .request_status_o     (),
+      .xpi_xfer_done_o      (),
+      .req                  (req),
+      .axi4                 (axi4),
+      .i2s_tx_axis          (i2s_tx_axis),
+      .i2s_rx_axis          (i2s_rx_axis),
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis)
+  );
+
+  assign dma_done  = dma_done_vector[3];
+  assign dma_error = dma_error_vector[3];
+
+  apb4_ws2812 #(
+      .TxFifoDepth(16)
+  ) u_ws2812 (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .apb4   (apb4),
+      .ws2812 (ws2812)
+  );
+
+  task automatic host_write(input logic [31:0] address, input logic [31:0] data);
+    begin
+      @(negedge clk_i);
+      host_write_enable = 1'b1;
+      host_addr         = address;
+      host_wdata        = data;
+      host_wstrb        = 4'hF;
+      host_psel         = 1'b1;
+      host_penable      = 1'b0;
+      @(negedge clk_i);
+      host_penable = 1'b1;
+      while (!apb4.pready) @(negedge clk_i);
+      if (apb4.pslverr) $fatal(1, "WS2812 host write %h failed", address);
+      host_psel    = 1'b0;
+      host_penable = 1'b0;
+    end
+  endtask
+
+  task automatic host_read(input logic [31:0] address, output logic [31:0] data);
+    @(negedge clk_i);
+    host_write_enable = 1'b0;
+    host_addr         = address;
+    host_wstrb        = '0;
+    host_psel         = 1'b1;
+    host_penable      = 1'b0;
+    @(negedge clk_i);
+    host_penable = 1'b1;
+    do @(negedge clk_i); while (!apb4.pready);
+    if (apb4.pslverr) $fatal(1, "occupancy read rejected");
+    data         = apb4.prdata;
+    host_psel    = 1'b0;
+    host_penable = 1'b0;
+  endtask
+
+  always @(posedge clk_i) begin
+    s_cycle = s_cycle + 1;
+    #1;
+    if ((axi_state_q == AxiWriteResponse) && (s_b_delay_q < 12) && dma_done)
+      $fatal(1, "DMA completed before delayed B response");
+    if (rst_n_i && (u_ws2812.u_ws2812_reg.s_tx_count > 16)) $fatal(1, "FIFO credit overflow");
+    if (rst_n_i && u_ws2812.s_busy && !u_ws2812.s_reset_active) begin
+      integer high_cycles;
+      logic   expected_data;
+
+      high_cycles   = pixels[observed_pixel][23-observed_bit] ? T1hCycles : T0hCycles;
+      expected_data = observed_cycle < high_cycles;
+      if (ws2812.dat_o !== expected_data) begin
+        $fatal(1, "DMA waveform mismatch pixel=%0d bit=%0d cycle=%0d", observed_pixel,
+               observed_bit, observed_cycle);
+      end
+      observed_cycle = observed_cycle + 1;
+      if (observed_cycle == BitCycles) begin
+        observed_cycle = 0;
+        observed_bit   = observed_bit + 1;
+        if (observed_bit == 24) begin
+          observed_bit   = 0;
+          observed_pixel = observed_pixel + 1;
+        end
+      end
+    end
+    if (rst_n_i && u_ws2812.s_reset_active) begin
+      if (ws2812.dat_o !== 1'b0) begin
+        $fatal(1, "DMA frame reset interval drove the output high");
+      end
+      reset_low_cycles = reset_low_cycles + 1;
+    end
+    if (dma_error) begin
+      $fatal(1, "DMA failed during WS2812 transfer status=%h address=%h",
+             dma_error_status_vector[31:0], dma_error_addr_vector[31:0]);
+    end
+  end
+
+  initial begin
+    for (int pixel = 0; pixel < 33; pixel++) pixels[pixel] = 24'((pixel * 32'h010203) ^ 32'h800001);
+    req.i2s_tx_proc     = 1'b1;
+    req.i2s_rx_proc     = 1'b1;
+    req.qspi_tx_proc    = 1'b1;
+    req.qspi_rx_proc    = 1'b1;
+    req.uart_tx_proc    = 1'b1;
+    req.uart_rx_proc    = 1'b1;
+    req.i2c0_tx_proc    = 1'b1;
+    req.i2c0_rx_proc    = 1'b1;
+    req.i2c1_tx_proc    = 1'b1;
+    req.i2c1_rx_proc    = 1'b1;
+    req.crypto_in_proc  = 1'b1;
+    req.crypto_out_proc = 1'b1;
+
+
+    repeat (3) @(posedge clk_i);
+    rst_n_i = 1'b1;
+    host_write(`APB4_WS2812_BIT_CYCLES, BitCycles);
+    host_write(`APB4_WS2812_T0H_CYCLES, T0hCycles);
+    host_write(`APB4_WS2812_T1H_CYCLES, T1hCycles);
+    host_write(`APB4_WS2812_RESET_CYCLES, ResetCycles);
+    host_write(`APB4_WS2812_FIFO_WATERMARK, 8);
+    host_write(`APB4_WS2812_INTR_ENABLE, 3);
+    for (int pixel = 0; pixel < 16; pixel++) host_write(`APB4_WS2812_TXDATA, {8'd0, pixels[pixel]});
+    host_write(`APB4_WS2812_FRAME_WORDS, 33);
+    host_write(`APB4_WS2812_CTRL, 1);
+
+    while (s_submitted < 33) begin
+      wait (ws2812.irq_o);
+      s_service_start = s_cycle;
+      // Declared scheduling latency; consumer-only draining makes an older L safe.
+      repeat (37) @(posedge clk_i);
+      host_read(`APB4_WS2812_FIFO_LEVEL, s_level);
+      if (s_level > 16) $fatal(1, "invalid occupancy");
+      if (s_level <= 8) begin
+        s_batch_words = (33 - s_submitted < 16 - int'(s_level)) ?
+                      33 - s_submitted : 16 - int'(s_level);
+        if ((s_batch_words < 1) || (s_batch_words > 16 - int'(s_level)))
+          $fatal(1, "invalid finite batch");
+        host_write(`APB4_WS2812_INTR_STATE, 2);
+        @(negedge clk_i);
+        host_active    = 1'b0;
+        dma_cfg        = {22'd0, 2'd1, 1'b0, 1'b1, 2'd2, 1'b0, 3'd0};
+        dma_src_addr   = SourceBase + 32'(s_submitted * 4);
+        dma_dst_addr   = Ws2812Txdata;
+        dma_byte_count = 32'(s_batch_words * 4);
+        dma_request    = '0;
+        dma_burst      = 1;
+        dma_start      = 1'b1;
+        @(negedge clk_i);
+        dma_start = 1'b0;
+        wait (dma_done && !dma_busy_vector[3]);
+        if ((s_cycle - s_service_start) > s_service_max) s_service_max = s_cycle - s_service_start;
+        s_submitted = s_submitted + s_batch_words;
+        @(negedge clk_i);
+        host_active = 1'b1;
+      end else begin
+        host_write(`APB4_WS2812_INTR_STATE, 2);
+      end
+    end
+    wait (!u_ws2812.s_busy);
+    @(posedge clk_i);
+    #1;
+    if ((dma_write_count != 17) || (observed_pixel != 33) ||
+        (reset_low_cycles < ResetCycles) || !ws2812.irq_o ||
+        (s_service_max >= 5760) || (u_ws2812.u_ws2812_reg.s_err_stat_q != 0)) begin
+      $fatal(1, "finite refill failed writes=%0d pixels=%0d latency=%0d", dma_write_count,
+             observed_pixel, s_service_max);
+    end
+    $display("WS2812_REFILL words=33 watermark=8 b_delay=12 service_max_cycles=%0d", s_service_max);
+    $display("WS2812 finite refill integration test passed");
+    $finish;
+  end
+endmodule

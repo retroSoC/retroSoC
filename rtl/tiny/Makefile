@@ -175,3 +175,29 @@ tiny-r2-baseline-report:
 	$(PYTHON) $(TINY_BASELINE_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
 
 .PHONY: tiny-r2-baseline-image tiny-r2-baseline-sim tiny-r2-baseline-report
+
+# Independent P3 experiment protocol; never rewrite or relabel a P1 image.
+TINY_P3_TOOL := $(ROOT_PATH)/scripts/tiny_r2_p3.py
+TINY_P3_IMAGE ?=
+TINY_P3_RESUME ?= NO
+tiny-r2-p3-image: firmware
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) image -- \
+		$(CC) $(CFLAGS) $(INC_PATH) $(CRT_SRCS) \
+		$(ROOT_PATH)/app/apps/ci_smoke/tiny_r2_p3.c $(ROOT_PATH)/app/apps/ci_smoke/tiny_r2_p3_isa.S
+
+tiny-r2-p3-sim: | manifest
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) simulate \
+		--simulator $(SIM_TOOL_NAME) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		$(if $(TINY_P3_IMAGE),--image $(TINY_P3_IMAGE)) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p3-matrix: | manifest
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) matrix \
+		--timestamp $(BUILD_TIMESTAMP) --timeout $(SOC_SIM_TIME) --jobs $(JOBS) \
+		$(if $(filter YES,$(TINY_P3_RESUME)),--resume)
+
+tiny-r2-p3-report:
+	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
+
+.PHONY: tiny-r2-p3-image tiny-r2-p3-sim tiny-r2-p3-matrix tiny-r2-p3-report

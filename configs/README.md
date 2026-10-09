@@ -66,6 +66,13 @@ For supported profiles and commands, see the root [README](../README.md) and
 
 ## Tiny MCU
 
+`benchmark/ics55-tiny-performance.mk` is the separate R2-P3 compiler experiment
+entrypoint: the same SAFE24/parked-PLL hardware, validated candidate ISA,
+`SW_OPT=O2` and `SW_LTO=NO`. Optimizer/LTO and `ld2_tiny_banked` placement are
+explicit variants; the CI profile remains compatible RV32IM. See the
+[software scheduling runbook](../docs/ip/tiny-soc-r2-software-scheduling.md)
+for the matrix and its pending/current evidence boundary.
+
 The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 sets the default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
 `ci/ics55-tiny.mk` implements that entrypoint with the PLL held off; standalone

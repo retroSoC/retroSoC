@@ -105,6 +105,41 @@ PSRAM_READY_WAIT:
 #endif
 
 app_loader_start:
+#ifdef RS_TINY_BANKED
+    la       t1, _copy_table_start
+    la       t2, _copy_table_end
+copy_entry:
+    bgeu     t1, t2, zero_entries_start
+    lw       a0, 0(t1)
+    lw       a1, 4(t1)
+    lw       a2, 8(t1)
+    addi     t1, t1, 12
+    add      a2, a1, a2
+    beq      a0, a1, copy_entry
+    bgeu     a1, a2, copy_entry
+copy_words:
+    lw       t0, 0(a0)
+    sw       t0, 0(a1)
+    addi     a0, a0, 4
+    addi     a1, a1, 4
+    bltu     a1, a2, copy_words
+    j        copy_entry
+zero_entries_start:
+    la       t1, _zero_table_start
+    la       t2, _zero_table_end
+zero_entry:
+    bgeu     t1, t2, main_start
+    lw       a0, 0(t1)
+    lw       a1, 4(t1)
+    addi     t1, t1, 8
+    add      a1, a0, a1
+    bgeu     a0, a1, zero_entry
+zero_words:
+    sw       zero, 0(a0)
+    addi     a0, a0, 4
+    bltu     a0, a1, zero_words
+    j        zero_entry
+#else
     la       a0, _ram_lma
     la       a1, _ram_vma
     beq      a0, a1, data_loader_start # flash xip
@@ -139,7 +174,15 @@ bss_cleaner:
     addi     a0, a0, 4
     blt      a0, a1, bss_cleaner
 
+#endif
 main_start:
+#ifdef RS_SOC_TINY
+    /* Hazard3 implements Zifencei even for compatible RV32IM images. */
+    .option push
+    .option arch, +zifencei
+    fence.i
+    .option pop
+#endif
 # call main
 #ifdef CSR_ENABLE
     call     _premain_init # init irq

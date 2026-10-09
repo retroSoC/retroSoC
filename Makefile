@@ -81,6 +81,10 @@ HAVE_CSR           ?= NO
 FIRMWARE_NAME      ?= retrosoc_fw
 APP                ?= shell
 LINK_TYPE          ?= ld2_sram
+SW_ISA_PROFILE     ?= COMPAT
+SW_OPT             ?= APP
+SW_LTO             ?= NO
+WS2812_P3_ACCEPTANCE ?= NO
 COREMARK_MODE      ?= quick
 NPU_P5_ACCEPTANCE  ?= NO
 NPU_P6_ACCEPTANCE  ?= NO
@@ -116,6 +120,13 @@ CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SR
                    HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE NPU_P6_ACCEPTANCE NPU_P6_WORKLOAD
+# Preserve existing baseline keys; experimental software inputs have distinct variants.
+ifneq ($(SW_ISA_PROFILE):$(SW_OPT):$(SW_LTO),COMPAT:APP:NO)
+CONFIG_KEY_VARS    += SW_ISA_PROFILE SW_OPT SW_LTO
+endif
+ifeq ($(WS2812_P3_ACCEPTANCE),YES)
+CONFIG_KEY_VARS    += WS2812_P3_ACCEPTANCE
+endif
 VARIANT_ID         := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
     $(foreach var,$(CONFIG_KEY_VARS),--value $(var)=$($(var))) | tail -n 1))
@@ -235,7 +246,7 @@ VALID_BOOL          := YES NO
 VALID_HP_CONFIG     := rv64imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader apu_release
-VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram
+VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram ld2_tiny_banked
 VALID_COREMARK_MODE := quick standard
 VALID_SRAM_SIZE_KIB := 4 16 32 64 128
 
@@ -272,6 +283,15 @@ $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 $(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_WORKLOAD,kws vww)
+$(call validate_value,SW_ISA_PROFILE,COMPAT TINY_PERF)
+$(call validate_value,SW_OPT,APP O2 O3 Os)
+$(call validate_value,SW_LTO,$(VALID_BOOL))
+$(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(WS2812_P3_ACCEPTANCE),YES)
+ifneq ($(SOC):$(APP):$(HAVE_CSR),MINI:ci_smoke:YES)
+$(error WS2812_P3_ACCEPTANCE requires SOC=MINI APP=ci_smoke HAVE_CSR=YES)
+endif
+endif
 
 ifeq ($(NPU_P5_ACCEPTANCE),YES)
 ifeq ($(filter $(APP),ci_smoke hp_boot),)

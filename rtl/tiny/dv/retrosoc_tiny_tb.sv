@@ -77,7 +77,11 @@ module retrosoc_tiny_tb;
   // The Verilator RTL already prints accepted TX bytes. The Icarus observer is
   // opt-in for measurements; SYSCTRL remains the authoritative verdict.
   initial begin
-    if (ObserveUartAlways || (ObserveUartBaseline && $test$plusargs("tiny_r2_baseline"))) begin
+    if (ObserveUartAlways || (ObserveUartBaseline && ($test$plusargs(
+            "tiny_r2_baseline"
+        ) || $test$plusargs(
+            "tiny_r2_p3"
+        )))) begin
       forever begin
         @(negedge s_uart0_tx);
         #1627.604;
@@ -98,7 +102,7 @@ module retrosoc_tiny_tb;
   logic s_baseline_enabled = 1'b0;
   logic [31:0] s_baseline_tcd_base, s_baseline_tcd_end;
   initial begin
-    s_baseline_enabled = $test$plusargs("tiny_r2_baseline");
+    s_baseline_enabled = $test$plusargs("tiny_r2_baseline") || $test$plusargs("tiny_r2_p3");
     if (s_baseline_enabled) begin
       if (!$value$plusargs(
               "baseline_tcd_base=%h", s_baseline_tcd_base

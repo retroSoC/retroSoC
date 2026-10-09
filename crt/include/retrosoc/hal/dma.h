@@ -104,6 +104,19 @@ typedef struct {
 
 _Static_assert(sizeof(rs_dma_tcd_t) == 64U, "DMA TCD ABI must be 64 bytes");
 
+/* Single-hart software lease. Keep this object alive and unchanged until release.
+ * Mini's LP/HP hardware owner must already permit this hart's DMA accesses.
+ * A timeout never releases a lease; accepted bus work must first drain. */
+typedef struct {
+    uint32_t channel;
+} rs_dma_session_t;
+
+rs_status_t rs_dma_session_acquire(rs_dma_session_t *session, uint32_t channel);
+rs_status_t rs_dma_session_configure(rs_dma_session_t *session, const rs_dma_config_t *config);
+rs_status_t rs_dma_session_start(rs_dma_session_t *session);
+rs_status_t rs_dma_session_abort(rs_dma_session_t *session);
+rs_status_t rs_dma_session_release(rs_dma_session_t *session);
+
 #define RS_DMA_TCD_VALID          UINT32_C(0x00000001)
 #define RS_DMA_TCD_SRC_INC        UINT32_C(0x00000002)
 #define RS_DMA_TCD_DST_INC        UINT32_C(0x00000004)

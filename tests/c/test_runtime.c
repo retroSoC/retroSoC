@@ -65,6 +65,197 @@ uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_npu_test_mmio[1024];
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 volatile uint32_t rs_resource_test_mmio[1024];
+volatile uint32_t rs_dma_test_mmio[1024];
+static uint32_t ws_registers[16];
+static uint32_t ws_pushed;
+static uint32_t ws_pixels[33];
+
+uint32_t rs_ws2812_test_read(uint32_t offset) {
+    return ws_registers[offset / 4U];
+}
+
+void rs_ws2812_test_write(uint32_t offset, uint32_t value) {
+    if ((offset == 0x2cU) || (offset == 0x30U)) {
+        ws_registers[offset / 4U] &= ~value;
+    } else if (offset == 0x10U) {
+        ++ws_pushed;
+        ++ws_registers[0x20U / 4U];
+    } else if (offset == 0x14U) {
+        if (value == 1U) {
+            ws_registers[0x18U / 4U] = 9U;
+        } else if (value == 2U) {
+            ws_registers[0x18U / 4U] = 8U;
+            ws_registers[0x30U / 4U] |= RS_WS2812_INTR_ABORTED;
+        } else if (value == 4U) {
+            ws_registers[0x20U / 4U] = 0U;
+        }
+    } else {
+        ws_registers[offset / 4U] = value;
+    }
+}
+
+static void ws_test_reset(void) {
+    for (uint32_t index = 0U; index < 1024U; ++index) {
+        rs_dma_test_mmio[index] = 0U;
+    }
+    for (uint32_t index = 0U; index < 16U; ++index) {
+        ws_registers[index] = 0U;
+    }
+    ws_registers[0x3cU / 4U] = UINT32_C(0x18100100);
+    ws_registers[0x18U / 4U] = 8U;
+    ws_registers[0x24U / 4U] = 3U;
+    ws_pushed = 0U;
+}
+
+static int test_dma_sessions(void) {
+    rs_dma_session_t first = {0}, second = {0};
+    rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM, .source = 0x1000U,
+        .destination = 0x2000U, .byte_count = 32U, .width = RS_DMA_WIDTH_32,
+        .source_increment = true, .destination_increment = true, .burst_beats = 1U};
+    ws_test_reset();
+    if ((rs_dma_session_acquire(&first, 3U) != RS_OK) ||
+        (rs_dma_session_acquire(&first, 2U) != RS_EIO) ||
+        (rs_dma_session_acquire(&second, 3U) != RS_EIO) ||
+        (rs_dma_configure(3U, &config) != RS_EIO) || (rs_dma_start(3U) != RS_EIO) ||
+        (rs_dma_abort(3U) != RS_EIO) || (rs_dma_reset(3U) != RS_EIO) ||
+        (rs_dma_session_configure(&first, &config) != RS_OK) ||
+        (rs_dma_session_start(&first) != RS_OK)) {
+        return 1;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    if ((rs_dma_session_release(&first) != RS_EIO) ||
+        (rs_dma_session_abort(&first) != RS_OK)) {
+        return 2;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    if ((rs_dma_session_release(&first) != RS_OK) ||
+        (rs_dma_session_release(&first) != RS_EIO) ||
+        (rs_dma_session_acquire(&second, 3U) != RS_OK) ||
+        (rs_dma_session_release(&second) != RS_OK)) {
+        return 3;
+    }
+    return 0;
+}
+
+static int test_ws2812_refill(void) {
+    rs_ws2812_dma_status_t transfer;
+    rs_dma_session_t competitor = {0};
+    uint32_t words;
+    for (uint32_t level = 0U; level <= 16U; ++level) {
+        for (uint32_t remaining = 0U; remaining <= 33U; ++remaining) {
+            if ((rs_ws2812_refill_words(remaining, level, &words) != RS_OK) ||
+                (words > remaining) || ((words + level) > 16U) ||
+                ((words != remaining) && ((words + level) != 16U))) {
+                return 1;
+            }
+        }
+    }
+    if ((rs_ws2812_refill_words(1U, 17U, &words) != RS_EINVAL) ||
+        (rs_ws2812_refill_words(1U, 0U, NULL) != RS_EINVAL)) {
+        return 2;
+    }
+    ws_test_reset();
+    ws_pixels[32] = UINT32_C(0xff000000);
+    if ((rs_ws2812_dma_begin(ws_pixels, 33U, 0U, 100U) != RS_EINVAL) || ws_pushed) {
+        return 3;
+    }
+    ws_pixels[32] = 0U;
+    if ((rs_ws2812_dma_begin(ws_pixels, 33U, 0U, 100U) != RS_OK) || (ws_pushed != 16U) ||
+        (ws_registers[0x24U / 4U] != 8U) || (rs_ws2812_push(0U, 1U) != RS_EIO) ||
+        (rs_ws2812_start(1U) != RS_EIO) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
+        return 4;
+    }
+    ws_registers[0x30U / 4U] = RS_WS2812_INTR_FIFO_LOW;
+    (void)rs_ws2812_dma_service(1U);
+    (void)rs_ws2812_dma_status(&transfer);
+    if ((transfer.batches != 0U) ||
+        ((ws_registers[0x30U / 4U] & RS_WS2812_INTR_FIFO_LOW) != 0U)) {
+        return 5;
+    }
+    /* Hardware REMAINING includes queued words: it must never size the batch. */
+    ws_registers[0x28U / 4U] = 33U;
+    for (uint32_t batch = 0U; batch < 3U; ++batch) {
+        const uint32_t expected = (batch == 2U) ? 1U : 8U;
+        ws_registers[0x20U / 4U] = 8U;
+        if ((rs_ws2812_dma_service(2U + (batch * 3U)) != RS_OK) ||
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_BYTE_COUNT) != expected * 4U) ||
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_CRC_EXPECTED) != 0U)) {
+            return 6;
+        }
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY | RS_DMA_STATUS_DONE;
+        ws_registers[0x20U / 4U] = 0U;
+        if (rs_ws2812_dma_service(3U + (batch * 3U)) != RS_OK) {
+            return 7;
+        }
+        (void)rs_ws2812_dma_status(&transfer);
+        if (!transfer.dma_pending || (transfer.batches != batch + 1U)) {
+            return 8;
+        }
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_DONE;
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_BYTES_DONE) = expected * 4U;
+        ws_registers[0x20U / 4U] = 16U;
+        if (rs_ws2812_dma_service(4U + (batch * 3U)) != RS_OK) {
+            return 9;
+        }
+    }
+    if (rs_dma_session_acquire(&competitor, 3U) != RS_EIO) {
+        return 10;
+    }
+    ws_registers[0x18U / 4U] = 8U;
+    ws_registers[0x30U / 4U] = RS_WS2812_INTR_DONE;
+    if ((rs_ws2812_dma_service(15U) != RS_OK) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_OK) ||
+        (rs_dma_session_release(&competitor) != RS_OK) ||
+        (ws_registers[0x24U / 4U] != 3U)) {
+        return 11;
+    }
+    /* Wire DONE may precede a delayed final B. Retain the lease until both
+     * completions have been observed, even if the FIFO is already empty. */
+    ws_test_reset();
+    if (rs_ws2812_dma_begin(ws_pixels, 17U, 0U, 100U) != RS_OK) {
+        return 15;
+    }
+    ws_registers[0x20U / 4U] = 8U;
+    (void)rs_ws2812_dma_service(1U);
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    ws_registers[0x18U / 4U] = 8U;
+    ws_registers[0x30U / 4U] = RS_WS2812_INTR_DONE;
+    if ((rs_ws2812_dma_service(2U) != RS_OK) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
+        return 16;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_DONE;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_BYTES_DONE) = 4U;
+    if ((rs_ws2812_dma_service(3U) != RS_OK) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_OK) ||
+        (rs_dma_session_release(&competitor) != RS_OK)) {
+        return 17;
+    }
+    /* Timeout with an outstanding B cannot release either ownership or source. */
+    ws_test_reset();
+    if (rs_ws2812_dma_begin(ws_pixels, 33U, 0U, 3U) != RS_OK) {
+        return 12;
+    }
+    ws_registers[0x20U / 4U] = 8U;
+    (void)rs_ws2812_dma_service(1U);
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    if ((rs_ws2812_dma_service(3U) != RS_ETIMEOUT) ||
+        (rs_ws2812_dma_service(100U) != RS_ETIMEOUT) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
+        return 13;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    (void)rs_ws2812_dma_service(101U);
+    (void)rs_ws2812_dma_service(102U);
+    (void)rs_ws2812_dma_status(&transfer);
+    if (transfer.active || (transfer.result != RS_ETIMEOUT) ||
+        (rs_dma_session_acquire(&competitor, 3U) != RS_OK) ||
+        (rs_dma_session_release(&competitor) != RS_OK)) {
+        return 14;
+    }
+    return 0;
+}
 
 #define APU_TEST_REG(offset)            rs_apu_test_mmio[(offset) / 4U]
 #define GA2D_TEST_REG(offset)           rs_ga2d_test_mmio[(offset) / 4U]
@@ -2796,6 +2987,8 @@ int main(void) {
         test_crypto_lifecycle_contract(),
         test_clock_frequency_contract(),
         test_ws2812_helpers(),
+        test_dma_sessions(),
+        test_ws2812_refill(),
         test_timer_helpers(),
         test_psram_helpers(),
         test_sdram_helpers(),

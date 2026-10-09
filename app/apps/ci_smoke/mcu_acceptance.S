@@ -26,6 +26,11 @@ rs_mcu_atomic_probe:
     .type rs_mcu_unmapped_probe,@function
 rs_mcu_unmapped_probe:
     li a0, 0x38000000
+    /* The acceptance trap handler advances MEPC by four bytes. Keep this
+     * faulting instruction 32-bit even in the separate compressed ISA build. */
+    .option push
+    .option norvc
     lw a0, 0(a0)
+    .option pop
     ret
     .size rs_mcu_unmapped_probe, .-rs_mcu_unmapped_probe

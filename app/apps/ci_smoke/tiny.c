@@ -222,7 +222,7 @@ static bool rs_mcu_rtc(void) {
         .enable = true,
     };
     const rs_rtc_time_t value = {.seconds = UINT64_C(1234), .subsecond = 0U};
-    rs_rtc_time_t observed;
+    rs_rtc_time_t observed = {0};
 
     return (rs_rtc_probe() == RS_OK) && (rs_rtc_configure(&config, RS_TIMEOUT_DEFAULT) == RS_OK) &&
            (rs_rtc_set_time(&value, RS_TIMEOUT_DEFAULT) == RS_OK) &&
@@ -234,7 +234,7 @@ int main(void) {
     rs_archinfo_t info;
     rs_onchip_sram_info_t memory;
     rs_sysctrl_fault_status_t fault;
-    rs_watchdog_status_t watchdog;
+    rs_watchdog_status_t watchdog = {0};
     uint64_t before;
     uint64_t after;
     const rs_watchdog_config_t watchdog_config = {

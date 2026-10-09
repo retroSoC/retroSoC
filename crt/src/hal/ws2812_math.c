@@ -3,6 +3,14 @@
 
 #include <retrosoc/hal/ws2812.h>
 
+rs_status_t rs_ws2812_refill_words(uint32_t remaining, uint32_t level, uint32_t *words) {
+    if ((words == NULL) || (level > 16U)) {
+        return RS_EINVAL;
+    }
+    *words = (remaining < (16U - level)) ? remaining : (16U - level);
+    return RS_OK;
+}
+
 #define RS_NANOSECONDS_PER_SECOND UINT64_C(1000000000)
 
 static rs_status_t rs_ws2812_cycles_nearest(uint32_t frequency_hz, uint32_t duration_ns,

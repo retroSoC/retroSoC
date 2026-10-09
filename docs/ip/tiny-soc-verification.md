@@ -1,5 +1,67 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P3 implementation in progress (2026-10-08–09)
+
+The 2026-10-09 execution snapshot in the [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md)
+records all eight ordinary Tiny/Verilator compiler experiments completed, with
+selected Icarus groups still running. The current-source full Pytest result is
+1531 passed, 4 failed, 94 fixture errors and 1 skipped; configuration-declaration
+and publication source/fixture drift remain open. IHP130 Tiny PR completes with
+non-blocking lint observations and negative STA margin. These results do not
+close the remaining matrix, quality or human phase-acceptance gates.
+
+The [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md) closes the retained
+banked O2 Icarus finding: all three runs completed successfully and match the
+three Verilator samples after artifact/log/command revalidation. The Mini
+WS2812 finding remains open: the current Mini memory-only DMA data plane has
+no route to WS2812 TXDATA, independently reproduced by the production crossbar
+fixture. Its failed integration run is not relabeled a pass. The user explicitly
+approved option A on 2026-10-08: retain this unsupported boundary, validate the
+shared DMA algorithm through host/standalone checks, and use the supported Mini
+PIO path for compatibility. No production fabric change is part of this follow-up;
+product-integrated DMA/IRQ service budgets remain pending an actual route.
+
+Option A is implemented and its supported-path checks pass. Mini PIO evidence
+is bound at
+`build/ics55-2026-10-08-22-57-d0c568d0142e/meta/tiny-r2-p3/option-a-evidence.json`:
+4/16/33/65-word frames, real DONE IRQ, exact serial waveform/reset-low,
+underflow/abort recovery, zero DMA starts and strict TEST_STATUS/SIM_TEST_PASS.
+Focused checks report 96 passed; C/RTL quality, Ruff and diff checks pass.
+The old Mini DMA failure remains failed/unsupported evidence, not a PIO pass.
+The full compiler/placement matrix, broader current-source regressions and human
+phase acceptance remain pending. See the review-fix record for exact commands,
+artifacts, historical attribution and unrun gates.
+
+The user explicitly approved the P3 preflight and implementation on source
+`bab01352f8f7c80e39546b04e3ed37a3d927f475`, with a clean worktree at entry.
+The specification blob is `7e19de49d49efaafacccfa85671e314d53dd15a4` and the
+preflight ledger blob is `bb18d58598eb7e60a166c19fc9da60407ce4bd4c`. This authorizes
+continuing from the implemented R2-P2 and ICS55-P1 SAFE24 foundation; it does not
+retroactively turn their recorded human-review or physical gaps into passes.
+Original phase IDs, historical evidence and qualification limits are retained.
+
+The [P3 runbook](tiny-soc-r2-software-scheduling.md) defines compiler/layout
+experiments, shared finite DMA/WS2812 service, ownership and exact commands.
+Implementation and validation are in progress; this entry does not claim
+phase completion or performance improvement. The existing GNU toolchain is
+used first, as requested; no dependency version has been changed.
+
+Early development testing found a compressed-instruction acceptance bug:
+`rs_mcu_unmapped_probe` assembled its faulting load as 16-bit `4108`, while
+the test trap handler advances MEPC by four bytes. The performance image
+therefore skipped its return, first surfacing as I/O code 10 and, with diagnostic
+layout, a subsequent store-access fault. Explicit `.option norvc` around the
+faulting load restores the intended fixed-width probe. The repaired performance
+banked normal image passes strict Tiny acceptance. This is an acceptance-fixture
+fix, not a CPU, register ABI or toolchain replacement.
+
+Provisional development evidence is under
+`build/ics55-tiny-performance-2026-10-08-16-14-b6fb322b1bce/`;
+`meta/tiny-r2-p3/` retains the first failure, separate diagnostic source/ELF
+and the Mini SBT sandbox failure. These are development attempts, not the final
+source-frozen compiler matrix. Mini SBT required the existing environment
+restriction on Unix socket creation to be lifted for the same approved command.
+
 ## TINY-ICS55-P1 implementation (2026-10-07–08)
 
 Implementation is based on committed source

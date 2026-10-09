@@ -105,6 +105,14 @@ deterministic channel assignments; see the [DMA V2 contract](../docs/ip/dma.md).
 The SDK accepts aligned 32-bit transfers, partial final beats for MM-to-MM,
 and 64-byte aligned TCD chains.
 
+`rs_dma_session_*` adds single-hart channel leases across finite transfers.
+Legacy channel mutation is rejected while leased, and BUSY prevents release.
+Mini's hardware LP/HP ownership still applies. Shared `rs_ws2812_dma_*` service
+uses a persistent, event-driven finite-refill session with channel 3 reserved
+until wire completion or safe cleanup. Callers retain source buffers after a
+timeout while status is active. See the [P3 runbook](../docs/ip/tiny-soc-r2-software-scheduling.md);
+these shared APIs do not add WS2812 to the current Tiny integration.
+
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
 V2 callers first use `rs_crypto_init(timeout)` to load and lock CRYC1. It

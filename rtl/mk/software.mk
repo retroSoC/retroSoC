@@ -7,12 +7,33 @@ OBJC = $(CROSS)objcopy
 DUMP = $(CROSS)objdump
 
 GCC_FLAGS     := -std=gnu11 -Wall -Wextra \
-             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug,--gc-sections -O3 \
+             -Wl,-Bstatic,-T,$(LINK_TYPE).lds,--strip-debug,--gc-sections $(if $(filter APP,$(SW_OPT)),-O3,-$(SW_OPT)) \
              -ffreestanding -nostdlib -ffunction-sections -fdata-sections
 SW_WARN_FLAGS := -Wformat=2 -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
                  -Wcast-align -Werror=implicit-function-declaration \
                  -Werror=return-type -Werror=incompatible-pointer-types \
                  -Werror=int-conversion -Werror=format
+
+ifeq ($(filter $(SW_OPT),APP O2 O3 Os),)
+$(error SW_OPT must be APP, O2, O3 or Os)
+endif
+ifeq ($(filter $(SW_LTO),NO YES),)
+$(error SW_LTO must be NO or YES)
+endif
+ifeq ($(filter $(SW_ISA_PROFILE),COMPAT TINY_PERF),)
+$(error SW_ISA_PROFILE must be COMPAT or TINY_PERF)
+endif
+ifeq ($(SW_ISA_PROFILE),TINY_PERF)
+ifneq ($(SOC):$(ISA):$(HAVE_CSR),TINY:RV32IM:YES)
+$(error TINY_PERF requires SOC=TINY ISA=RV32IM HAVE_CSR=YES)
+endif
+endif
+ifeq ($(SW_LTO),YES)
+GCC_FLAGS += -flto -fno-builtin
+GCC_FLAGS += -Wl,--undefined=memset,--undefined=memcpy,--undefined=memmove
+GCC_FLAGS += -Wl,--undefined=__clzsi2,--undefined=__divdi3
+GCC_FLAGS += -Wl,--undefined=__ffssi2,--undefined=__udivdi3,--undefined=__umoddi3
+endif
 
 ifeq ($(ISA),RV32E)
 ISA_FLAGS := -mabi=ilp32e
@@ -40,6 +61,15 @@ ISA_FLAGS += -march=rv32im
 endif
 endif
 
+ifeq ($(SW_ISA_PROFILE),TINY_PERF)
+ISA_FLAGS := -march=rv32imc_zicsr_zifencei_zba_zbb_zbc_zbkb_zbkx_zbs -mabi=ilp32
+endif
+ifeq ($(LINK_TYPE),ld2_tiny_banked)
+ifneq ($(SOC),TINY)
+$(error ld2_tiny_banked requires SOC=TINY)
+endif
+DEF_VAL += -DRS_TINY_BANKED
+endif
 DEF_VAL += -DAPP_$(APP)
 ifeq ($(APU_ENABLE_P7),YES)
 DEF_VAL += -DRS_APU_RELEASE_P7
@@ -177,7 +207,14 @@ ifneq ($(strip $(APP_CRT_SRCS)),)
 CRT_SRCS := $(APP_CRT_SRCS)
 endif
 
+ifneq ($(SW_OPT),APP)
+APP_CFLAGS := $(filter-out -O0 -O1 -O2 -O3 -Os -Og -Oz,$(APP_CFLAGS))
+endif
 CFLAGS       += $(APP_CFLAGS)
+CFLAGS       += -Wl,-Map,$(SW_BUILD_DIR)/$(FIRMWARE_NAME).map
+ifneq ($(SW_ISA_PROFILE):$(SW_OPT):$(SW_LTO),COMPAT:APP:NO)
+CFLAGS       += -fstack-usage
+endif
 APP_INC_DIRS += $(MPW_OUTPUT_DIR)
 
 ifneq ($(filter RV32E RV32I,$(ISA)),)

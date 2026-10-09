@@ -46,14 +46,17 @@ endif
 ifeq ($(filter $(APP),bringup ci_smoke),)
 $(error SOC=TINY supports APP=bringup or ci_smoke)
 endif
-ifneq ($(LINK_TYPE),ld2_all_sram)
-$(error SOC=TINY requires LINK_TYPE=ld2_all_sram)
+ifeq ($(filter $(LINK_TYPE),ld2_all_sram ld2_tiny_banked),)
+$(error SOC=TINY requires LINK_TYPE=ld2_all_sram or ld2_tiny_banked)
 endif
 ifneq ($(HAVE_CSR),YES)
 $(error SOC=TINY requires HAVE_CSR=YES)
 endif
 ifneq ($(ISA),RV32IM)
 $(error SOC=TINY firmware uses ISA=RV32IM)
+endif
+ifneq ($(WS2812_P3_ACCEPTANCE),NO)
+$(error SOC=TINY does not yet integrate WS2812)
 endif
 ifneq ($(filter YES,$(APU_ENABLE_P7) $(NPU_P5_ACCEPTANCE) $(NPU_P6_ACCEPTANCE)),)
 $(error SOC=TINY does not include multimedia accelerators)

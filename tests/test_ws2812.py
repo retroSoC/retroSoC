@@ -7,6 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from scripts.check_simulation import DEFAULT_FAILURE
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,11 +66,15 @@ def test_ws2812_register_waveform_streaming_and_errors(tmp_path: Path) -> None:
     assert "WS2812 register, waveform, streaming, and error test passed" in result.stdout
 
 
-def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> None:
+@pytest.mark.parametrize("top,marker", [
+    ("ws2812_dma_tb", "WS2812 native AXI4 DMA backpressure integration test passed"),
+    ("ws2812_refill_tb", "WS2812 finite refill integration test passed"),
+])
+def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path, top: str, marker: str) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")
-    if iverilog is None or vvp is None:
-        return
+    if iverilog is None or vvp is None or shutil.which("sv2v") is None:
+        pytest.fail("required WS2812 DMA/refill simulator or converter unavailable")
 
     memory_map = tmp_path / "memory_map"
     subprocess.run(
@@ -111,7 +119,7 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
                 str(serial / "ws2812_reg.sv"),
                 str(serial / "ws2812_core.sv"),
                 str(serial / "apb4_ws2812.sv"),
-                str(ROOT / "tests/rtl/ws2812_dma_tb.sv"),
+                str(ROOT / "tests/rtl" / (top + ".sv")),
                 "",
             ]
         ),
@@ -131,8 +139,9 @@ def test_ws2812_accepts_dma_fixed_destination_backpressure(tmp_path: Path) -> No
     )
     simulation = tmp_path / "ws2812_dma_tb"
     subprocess.run(
-        [iverilog, "-g2012", "-s", "ws2812_dma_tb", "-o", str(simulation), str(converted)],
+        [iverilog, "-g2012", "-s", top, "-o", str(simulation), str(converted)],
         check=True,
     )
     result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
-    assert "WS2812 native AXI4 DMA backpressure integration test passed" in result.stdout
+    assert marker in result.stdout
+    assert not DEFAULT_FAILURE.search(result.stdout + result.stderr)
