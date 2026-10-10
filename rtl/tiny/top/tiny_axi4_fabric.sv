@@ -56,6 +56,7 @@ module tiny_axi4_fabric (
   logic [32:0] s_last_addr;
   logic [ 2:0] s_decoded_target;
   logic        s_protocol_legal;
+  logic        s_fetch_denied;
   logic [1:0] s_awvalid, s_arvalid, s_wvalid, s_wlast, s_bready, s_rready;
   logic [1:0][31:0] s_wdata;
   logic [1:0][ 3:0] s_wstrb;
@@ -90,6 +91,11 @@ module tiny_axi4_fabric (
       s_last_addr[31:0]
   ) == s_decoded_target) && ((s_decoded_target != 3'd2) || (s_selected_addr.len == 8'd0));
   assign s_accept = (s_state_q == Idle) && s_selected_valid;
+  // The tagged CPU slow ingress preserves instruction origin. Reject fetches
+  // outside the read-idempotent NOR apertures before reaching any APB target.
+  assign s_fetch_denied = !s_selected[1] && !s_selected[0] && s_selected_addr.prot[2] && !(
+      `SOC_ADDR_IS_FLASH(s_selected_addr.addr)
+      || ((s_selected_addr.addr >= 32'h5000_0000) && (s_selected_addr.addr < 32'h5400_0000)));
   assign s_terminal = (s_state_q == Response) &&
       (s_write_q ? (s_target_bvalid[s_tgt_q] && s_bready[s_owner_q]) :
        (s_target_rvalid[s_tgt_q] && s_rready[s_owner_q] && s_target_rlast[s_tgt_q]));
@@ -126,8 +132,9 @@ module tiny_axi4_fabric (
       if (s_accept) begin
         s_owner_d = s_selected[1];
         s_write_d = s_selected[0];
-        s_addr_d  = s_selected_addr;
-        s_tgt_d   = s_protocol_legal ? s_decoded_target : 3'd4;
+        s_addr_d = s_selected_addr;
+        s_tgt_d   = !s_protocol_legal ? 3'd4 :
+            s_fetch_denied ? ((s_decoded_target == 3'd2) ? 3'd4 : 3'd3) : s_decoded_target;
         s_state_d = Addr;
       end
       Addr:

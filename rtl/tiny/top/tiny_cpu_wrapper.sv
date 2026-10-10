@@ -10,11 +10,10 @@
 
 `include "mmap_define.svh"
 
-module mgmt_core_wrapper #(
-    parameter int ExternalIrqCount  = 30,
-    parameter bit EnableAtomics     = 1'b1,
-    parameter bit TwoCycleBusErrors = 1'b0,
-    parameter int ResetSyncStages   = 3
+module tiny_cpu_wrapper #(
+    parameter int ExternalIrqCount = 30,
+    parameter bit EnableAtomics    = 1'b0,
+    parameter int ResetSyncStages  = 3
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
@@ -26,12 +25,16 @@ module mgmt_core_wrapper #(
     input  logic        jtag_trst_n_i,
     output logic        jtag_tdo_o,
     output logic        debug_halted_o,
-    axi4_if.master      axi4
+    input  logic        bus_idle_i,
+    output logic        core_rst_n_o,
+    output logic        quiesce_o,
+    ahbl_if.master      cpu[2]
     // verilog_format: on
 );
 
   logic        s_pwrup_req;
-  logic        s_ahbl_idle;
+  logic        s_reset_pending;
+  logic        s_hart_idle;
   logic        s_core_rst_n;
   logic        s_dbg_req_halt;
   logic        s_dbg_req_halt_on_reset;
@@ -56,56 +59,50 @@ module mgmt_core_wrapper #(
   logic [31:0] s_dbg_sbus_rdata;
 
   assign debug_halted_o = s_dbg_halted;
-  // verilog_format: off -- preserve reviewed column alignment
-  ahbl_if u_ahbl_if (
-      .hclk(clk_i),
-      .hresetn(s_core_rst_n)
-  );
-  ahbl2axi4 #(.TwoCycleErrors(TwoCycleBusErrors)) u_ahbl2axi4 (
-      .ahbl  (u_ahbl_if),
-      .axi4  (axi4),
-      .idle_o(s_ahbl_idle)
-  );
-  // verilog_format: on
+  assign core_rst_n_o   = s_core_rst_n;
+  // Request a normal debug halt before draining/resetting the core. Never cut
+  // off an accepted AHB transfer to manufacture an idle indication.
+  assign quiesce_o      = s_reset_pending && s_dbg_halted;
+  assign s_hart_idle    = bus_idle_i && (!s_reset_pending || s_dbg_halted);
 
   mgmt_debug_wrapper #(
       .JtagIdcode     (`SOC_JTAG_IDCODE),
       .ResetSyncStages(ResetSyncStages)
   ) u_mgmt_debug_wrapper (
-      .clk_i(clk_i),
-      .rst_n_i(rst_n_i),
-      .bridge_idle_i(s_ahbl_idle),
-      .jtag_tck_i(jtag_tck_i),
-      .jtag_tms_i(jtag_tms_i),
-      .jtag_tdi_i(jtag_tdi_i),
-      .jtag_trst_n_i(jtag_trst_n_i),
-      .jtag_tdo_o(jtag_tdo_o),
-      .core_rst_n_o(s_core_rst_n),
-      .reset_pending_o(),  // Mini retains its existing reset policy.
-      .dbg_req_halt_o(s_dbg_req_halt),
-      .dbg_req_halt_on_reset_o(s_dbg_req_halt_on_reset),
-      .dbg_req_resume_o(s_dbg_req_resume),
-      .dbg_halted_i(s_dbg_halted),
-      .dbg_running_i(s_dbg_running),
-      .dbg_data0_rdata_o(s_dbg_data0_rdata),
-      .dbg_data0_wdata_i(s_dbg_data0_wdata),
-      .dbg_data0_wen_i(s_dbg_data0_wen),
-      .dbg_instr_data_o(s_dbg_instr_data),
-      .dbg_instr_data_vld_o(s_dbg_instr_data_vld),
-      .dbg_instr_data_rdy_i(s_dbg_instr_data_rdy),
+      .clk_i                       (clk_i),
+      .rst_n_i                     (rst_n_i),
+      .bridge_idle_i               (s_hart_idle),
+      .jtag_tck_i                  (jtag_tck_i),
+      .jtag_tms_i                  (jtag_tms_i),
+      .jtag_tdi_i                  (jtag_tdi_i),
+      .jtag_trst_n_i               (jtag_trst_n_i),
+      .jtag_tdo_o                  (jtag_tdo_o),
+      .core_rst_n_o                (s_core_rst_n),
+      .reset_pending_o             (s_reset_pending),
+      .dbg_req_halt_o              (s_dbg_req_halt),
+      .dbg_req_halt_on_reset_o     (s_dbg_req_halt_on_reset),
+      .dbg_req_resume_o            (s_dbg_req_resume),
+      .dbg_halted_i                (s_dbg_halted),
+      .dbg_running_i               (s_dbg_running),
+      .dbg_data0_rdata_o           (s_dbg_data0_rdata),
+      .dbg_data0_wdata_i           (s_dbg_data0_wdata),
+      .dbg_data0_wen_i             (s_dbg_data0_wen),
+      .dbg_instr_data_o            (s_dbg_instr_data),
+      .dbg_instr_data_vld_o        (s_dbg_instr_data_vld),
+      .dbg_instr_data_rdy_i        (s_dbg_instr_data_rdy),
       .dbg_instr_caught_exception_i(s_dbg_instr_caught_exception),
-      .dbg_instr_caught_ebreak_i(s_dbg_instr_caught_ebreak),
-      .dbg_sbus_addr_o(s_dbg_sbus_addr),
-      .dbg_sbus_write_o(s_dbg_sbus_write),
-      .dbg_sbus_size_o(s_dbg_sbus_size),
-      .dbg_sbus_vld_o(s_dbg_sbus_vld),
-      .dbg_sbus_rdy_i(s_dbg_sbus_rdy),
-      .dbg_sbus_err_i(s_dbg_sbus_err),
-      .dbg_sbus_wdata_o(s_dbg_sbus_wdata),
-      .dbg_sbus_rdata_i(s_dbg_sbus_rdata)
+      .dbg_instr_caught_ebreak_i   (s_dbg_instr_caught_ebreak),
+      .dbg_sbus_addr_o             (s_dbg_sbus_addr),
+      .dbg_sbus_write_o            (s_dbg_sbus_write),
+      .dbg_sbus_size_o             (s_dbg_sbus_size),
+      .dbg_sbus_vld_o              (s_dbg_sbus_vld),
+      .dbg_sbus_rdy_i              (s_dbg_sbus_rdy),
+      .dbg_sbus_err_i              (s_dbg_sbus_err),
+      .dbg_sbus_wdata_o            (s_dbg_sbus_wdata),
+      .dbg_sbus_rdata_i            (s_dbg_sbus_rdata)
   );
 
-  hazard3_cpu_1port #(
+  hazard3_cpu_2port #(
       .RESET_VECTOR       (`SOC_CPU_RESET_ADDR),
       .MTVEC_INIT         (32'h0000_0000),
       .EXTENSION_A        (EnableAtomics),
@@ -154,7 +151,7 @@ module mgmt_core_wrapper #(
       .RESET_REGFILE      (1),
       .BRANCH_PREDICTOR   (1),
       .MTVEC_WMASK        (32'hfffffffd)
-  ) u_hazard3_cpu_1port (
+  ) u_hazard3_cpu_2port (
       .clk                       (clk_i),
       .clk_always_on             (clk_i),
       .rst_n                     (s_core_rst_n),
@@ -163,33 +160,45 @@ module mgmt_core_wrapper #(
       .clk_en                    (),
       .unblock_out               (),
       .unblock_in                (1'b0),
-      .haddr                     (u_ahbl_if.haddr),
-      .hwrite                    (u_ahbl_if.hwrite),
-      .htrans                    (u_ahbl_if.htrans),
-      .hsize                     (u_ahbl_if.hsize),
-      .hburst                    (u_ahbl_if.hburst),
-      .hprot                     (u_ahbl_if.hprot),
-      .hmastlock                 (u_ahbl_if.hmastlock),
-      .hmaster                   (),
-      .hexcl                     (),
-      .hready                    (u_ahbl_if.hready),
-      .hresp                     (u_ahbl_if.hresp),
-      .hexokay                   (1'b1),
-      .hwdata                    (u_ahbl_if.hwdata),
-      .hrdata                    (u_ahbl_if.hrdata),
+      .i_haddr                   (cpu[0].haddr),
+      .i_hwrite                  (cpu[0].hwrite),
+      .i_htrans                  (cpu[0].htrans),
+      .i_hsize                   (cpu[0].hsize),
+      .i_hburst                  (cpu[0].hburst),
+      .i_hprot                   (cpu[0].hprot),
+      .i_hmastlock               (cpu[0].hmastlock),
+      .i_hmaster                 (),
+      .i_hready                  (cpu[0].hready),
+      .i_hresp                   (cpu[0].hresp),
+      .i_hwdata                  (cpu[0].hwdata),
+      .i_hrdata                  (cpu[0].hrdata),
+      .d_haddr                   (cpu[1].haddr),
+      .d_hwrite                  (cpu[1].hwrite),
+      .d_htrans                  (cpu[1].htrans),
+      .d_hsize                   (cpu[1].hsize),
+      .d_hburst                  (cpu[1].hburst),
+      .d_hprot                   (cpu[1].hprot),
+      .d_hmastlock               (cpu[1].hmastlock),
+      .d_hmaster                 (),
+      .d_hready                  (cpu[1].hready),
+      .d_hresp                   (cpu[1].hresp),
+      .d_hwdata                  (cpu[1].hwdata),
+      .d_hrdata                  (cpu[1].hrdata),
+      .d_hexcl                   (),
+      .d_hexokay                 (1'b1),
       .fence_i_vld               (),
       .fence_d_vld               (),
       .fence_rdy                 (1'b1),
-      .dbg_req_halt              (s_dbg_req_halt),
+      .dbg_req_halt              (s_dbg_req_halt || s_reset_pending),
       .dbg_req_halt_on_reset     (s_dbg_req_halt_on_reset),
-      .dbg_req_resume            (s_dbg_req_resume),
+      .dbg_req_resume            (s_dbg_req_resume && !s_reset_pending),
       .dbg_halted                (s_dbg_halted),
       .dbg_running               (s_dbg_running),
       .dbg_data0_rdata           (s_dbg_data0_rdata),
       .dbg_data0_wdata           (s_dbg_data0_wdata),
       .dbg_data0_wen             (s_dbg_data0_wen),
       .dbg_instr_data            (s_dbg_instr_data),
-      .dbg_instr_data_vld        (s_dbg_instr_data_vld),
+      .dbg_instr_data_vld        (s_dbg_instr_data_vld && !s_reset_pending),
       .dbg_instr_data_rdy        (s_dbg_instr_data_rdy),
       .dbg_instr_caught_exception(s_dbg_instr_caught_exception),
       .dbg_instr_caught_ebreak   (s_dbg_instr_caught_ebreak),

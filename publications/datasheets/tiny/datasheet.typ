@@ -29,9 +29,9 @@
     - JTAG debug with coordinated hart reset.
 
     *Memory and interconnect*
-    - *128 KiB SRAM*, 32 banks of 4 KiB.
+    - *128 KiB SRAM*, four independently serviced 32 KiB groups backed by 32 banks of 4 KiB.
     - Native AXI32 memory paths and one APB4 island.
-    - CPU and DMA share one active transaction globally.
+    - CPU instruction/data ports are independent locally; the compatible external attachment remains serialized until P5.
     - XPI NOR boot and SRAM-resident application layout.
 
     *DMA and control*
@@ -103,16 +103,18 @@ The document uses the approved Mini visual language; all product facts and sourc
 
 = System Architecture
 == Processor and Integration <tiny-core>
-Hazard3 is hart zero. The shared wrapper selects the C and M extensions and disables A for Tiny. Its AHB-Lite bus terminates
-at a direct AXI32 adapter. JTAG supports the implemented halt/resume, register and system-bus debug path; debug hart reset
-waits for the adapter to become idle instead of abandoning an accepted transaction.
+Hazard3 is hart zero. The locked dual-port wrapper selects the C and M extensions and disables A for Tiny. Instruction fetch
+and load/store use independent AHB ports through separate local SRAM frontends; non-SRAM accesses use the tagged slow path.
+JTAG supports halt/resume, register access and halted-hart abstract-command memory access, without an independent system-bus master.
+Debug hart reset first halts the hart and drains accepted local I/D and slow-path responses. SRAM and unrelated DMA work stay active.
 
 The system has no application hart, MMU/Linux platform, hardware cache-coherent multicore organization or product extension
 slots. CPU-visible SRAM, XPI and APB routes are the implemented interconnect. The single-hart architecture does not remove
 the need for software/DMA buffer ownership and fences.
 #architecture()
 #source-note("rtl/tiny/top/retrosoc_tiny.sv",title:"Tiny product integration and parameters")
-#source-note("rtl/ip/core/mgmt_core_wrapper.sv",title:"CPU ISA, AHB adapter and debug wrapper")
+#source-note("rtl/tiny/top/tiny_cpu_wrapper.sv",title:"Dual-port CPU ISA, AHB ports and debug wrapper")
+#source-note("rtl/tiny/top/tiny_sram.sv",title:"Four local SRAM groups and external attachment")
 
 == Clock, Reset and Operating State <tiny-clock>
 CPU, AXI, APB, RTC and watchdog share the configured 24 MHz system clock. CLINT derives a 1 MHz tick. JTAG has its own
@@ -130,7 +132,8 @@ advertised as a qualified voltage/frequency operating point.
 #source-note("rtl/tiny/integration/clock_reset_domains.json",title:"Clock/reset inventory and debug crossings")
 
 == Bus Transactions, Arbitration and Errors <tiny-bus>
-The two initiators are CPU and DMA. They share *one active read or write transaction globally*. The fabric saves source,
+The two external initiators are CPU slow path and DMA. They share *one active read or write transaction globally* in this
+pre-P5 attachment. CPU instruction/data local requests are independently arbitrated within each SRAM group. The fabric saves source,
 direction, address and attributes, forwards the request, and retains ownership until the terminal B or RLAST handshake.
 Read/write request arbitration is round-robin; it is not a throughput guarantee or an unrestricted liveness guarantee.
 

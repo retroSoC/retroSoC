@@ -107,10 +107,10 @@ def test_chip_config_covers_every_onchip_sram_bank(tmp_path: Path) -> None:
     macro = config["MACROS"]["RM_IHPSG13_1P_1024x32_c2_bm_bist"]
     assert len(macro["instances"]) == 32
     assert (
-        "u_soc.u_sram.gen_memory.gen_bank[0].u_ram.u_mem" in macro["instances"]
+        "u_soc.u_sram.gen_group[0].u_group.gen_bank[0].u_ram.u_mem" in macro["instances"]
     )
     assert (
-        "u_soc.u_sram.gen_memory.gen_bank[31].u_ram.u_mem" in macro["instances"]
+        "u_soc.u_sram.gen_group[3].u_group.gen_bank[7].u_ram.u_mem" in macro["instances"]
     )
     for instance in macro["instances"].values():
         x, y = instance["location"]

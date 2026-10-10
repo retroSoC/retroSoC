@@ -26,21 +26,22 @@
   })
 }
 #let architecture() = diagram("tiny-architecture",schematic((
-  (5,4,65,19,[Hazard3 · hart 0 \ RV32IMC · A disabled]),
+  (5,4,65,19,[Hazard3 dual-port · hart 0 \ RV32IMC · A disabled]),
   (104,4,63,19,[JTAG / debug transport \ External TCK domain]),
-  (5,37,65,15,[AHB-Lite → AXI32 adapter]),
+  (5,37,65,15,[I/D decode + slow adapter]),
   (104,37,63,15,[Four-channel DMA \ AXI32 master]),
-  (30,69,112,19,[Tiny AXI32 fabric \ One active transaction globally]),
-  (0,110,40,22,[128 KiB SRAM \ 32 × 4 KiB]),
+  (30,69,112,19,[Tiny AXI32 fabric \ P5 external concurrency pending]),
+  (0,110,40,22,[128 KiB SRAM \ 4 × 32 KiB groups]),
   (44,110,40,22,[XPI read path \ Flash alias / NOR]),
   (88,110,40,22,[APB4 bridge \ 16 targets]),
   (132,110,40,22,[Error responders \ DECERR / SLVERR]),
 ),(
   ((104,13),(70,13)),((37,23),(37,37)),
+  ((5,44),(0,44),(0,103),(6,103),(6,110)),
   ((37,52),(37,61),(60,61),(60,69)),((135,52),(135,61),(112,61),(112,69)),
   ((45,88),(45,99),(20,99),(20,110)),((70,88),(70,103),(64,103),(64,110)),
   ((103,88),(103,103),(108,103),(108,110)),((127,88),(127,99),(152,99),(152,110)),
-),height:134),[Tiny Gen1 integration. System logic runs from the configured 24 MHz clock; JTAG is asynchronous.])
+),height:134),[Tiny Gen1 integration. The left branch represents independent local I/D paths bypassing the external fabric. System logic uses the configured 24 MHz clock; JTAG is asynchronous.])
 
 #let ip-diagram(entry) = {
   let children=entry.nodes.slice(1)

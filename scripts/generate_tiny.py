@@ -23,6 +23,17 @@ def read_topology(path: Path, memory_map: Path) -> dict:
     regions = {r["symbol"] for r in json.loads(memory_map.read_text())["regions"]}
     if document.get("schema_version") != 1 or document.get("dma_channels") != 4:
         raise ValueError("Tiny requires topology schema 1 and four DMA channels")
+    if document.get("cpu") != {"module": "hazard3_cpu_2port", "local_ports": 2,
+                               "data_outstanding": 1}:
+        raise ValueError("Tiny P4 requires independent I/D and one ordered data operation")
+    memory = document.get("main_sram", {})
+    if any(memory.get(key) != value for key, value in {
+        "groups": 4, "group_bytes": 32768, "macros_per_group": 8,
+        "macro_bytes": 4096, "base": "0x30000000",
+        "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
+        "external_attachment": "serialized-pre-P5",
+    }.items()):
+        raise ValueError("Tiny P4 SRAM geometry/attachment differs from its frozen contract")
     if document.get("irq_vector_width") != 32 or document.get("external_irq_count") != 30:
         raise ValueError("Tiny requires a 32-bit IRQ vector and 30 external inputs")
     names: set[str] = set()

@@ -23,6 +23,7 @@ module mgmt_debug_wrapper #(
     input  logic jtag_trst_n_i,
     output logic jtag_tdo_o,
     output logic core_rst_n_o,
+    output logic reset_pending_o,
 
     output logic        dbg_req_halt_o,
     output logic        dbg_req_halt_on_reset_o,
@@ -154,12 +155,13 @@ module mgmt_debug_wrapper #(
   mgmt_debug_reset #(
       .ResetSyncStages(ResetSyncStages)
   ) u_mgmt_debug_reset (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .reset_req_i  (s_sys_reset_req || s_hart_reset_req),
-      .bridge_idle_i(bridge_idle_i),
-      .core_rst_n_o (core_rst_n_o),
-      .reset_done_o (s_reset_done)
+      .clk_i          (clk_i),
+      .rst_n_i        (rst_n_i),
+      .reset_req_i    (s_sys_reset_req || s_hart_reset_req),
+      .bridge_idle_i  (bridge_idle_i),
+      .core_rst_n_o   (core_rst_n_o),
+      .reset_pending_o(reset_pending_o),
+      .reset_done_o   (s_reset_done)
   );
 
 endmodule

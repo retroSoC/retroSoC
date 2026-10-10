@@ -437,7 +437,14 @@
       "tiny_archinfo.sv",
       "tiny_axi42apb4.sv",
       "tiny_axi4_fabric.sv",
+      "tiny_cpu_mem.sv",
+      "tiny_cpu_wrapper.sv",
       "tiny_reset_tree.sv",
+      "tiny_sram.sv",
+      "tiny_sram_axi4.sv",
+      "tiny_sram_axi4_demux.sv",
+      "tiny_sram_group.sv",
+      "tiny_sram_port_if.sv",
       "tiny_sysctrl.sv"
     ]
   },

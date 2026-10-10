@@ -20,6 +20,9 @@ if {[info exists ::env(OPENSTA_TOP)] && $::env(OPENSTA_TOP) ne ""} {
 }
 link_design $top_design
 read_sdc $::env(OPENSTA_SDC)
+if {$top_design eq "retrosoc_tiny_asic"} {
+    source [file join [file dirname [info script]] tiny_r2_p4_checks.tcl]
+}
 if {[info exists ::env(OPENSTA_TINY_ICS55)] && $::env(OPENSTA_TINY_ICS55) eq "YES"} {
     source [file join [file dirname [info script]] tiny_ics55_checks.tcl]
 }

@@ -71,7 +71,8 @@ def test_reset_update_does_not_bypass_reviewed_snapshot(monkeypatch):
 
 @pytest.fixture
 def source_tree(tmp_path):
-    sources = [tiny.TOP, tiny.RESET_TREE, tiny.ARCHINFO, tiny.SYSCTRL, "rtl/ip/core/mgmt_core_wrapper.sv", "configs/ci/ihp130-tiny.mk",
+    sources = [tiny.TOP, tiny.RESET_TREE, tiny.ARCHINFO, tiny.SYSCTRL,
+               tiny.CPU, tiny.CPU_MEM, tiny.SRAM, "configs/ci/ihp130-tiny.mk",
                tiny.MAP, tiny.TOPOLOGY, (tiny.BOOK / "source-contract.json").as_posix()]
     for relative in sources:
         target = tmp_path / relative
@@ -81,9 +82,9 @@ def source_tree(tmp_path):
 
 
 @pytest.mark.parametrize("path,before,after", [
-    (tiny.TOP, ".CapacityKiB(128)", ".CapacityKiB(32)"),
-    (tiny.TOP, ".Ics55SmallBanks(1'b1)", ".Ics55SmallBanks(1'b0)"),
-    (tiny.TOP, ".DataWidth  (32)", ".DataWidth  (64)"),
+    (tiny.SRAM, ".CapacityKiB(128)", ".CapacityKiB(32)"),
+    (tiny.SRAM, "group < 4", "group < 2"),
+    (tiny.SRAM, ".DataBytes(4)", ".DataBytes(8)"),
     (tiny.TOP, ".NumChannels  (4)", ".NumChannels  (8)"),
     (tiny.TOP, ".EnableStreams(1'b0)", ".EnableStreams(1'b1)"),
     (tiny.TOP, ".EnableAtomics    (1'b0)", ".EnableAtomics    (1'b1)"),

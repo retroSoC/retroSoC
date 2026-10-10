@@ -201,3 +201,18 @@ tiny-r2-p3-report:
 	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
 
 .PHONY: tiny-r2-p3-image tiny-r2-p3-sim tiny-r2-p3-matrix tiny-r2-p3-report
+
+# P4 preserves old image identity and replays each selected image exactly once.
+TINY_P4_REFERENCE ?=
+TINY_P4_CASES ?= perf-o2-plain-flat,perf-o2-plain-banked
+tiny-r2-p4-replay: | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
+		--reference $(TINY_P4_REFERENCE) --cases $(TINY_P4_CASES) --simulator $(SIM_TOOL_NAME) \
+		--vvp $(VVP) --timeout $(SOC_SIM_TIME) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p4-report:
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) --report
+
+.PHONY: tiny-r2-p4-replay tiny-r2-p4-report

@@ -26,6 +26,9 @@ TOP = "rtl/tiny/top/retrosoc_tiny.sv"
 RESET_TREE = "rtl/tiny/top/tiny_reset_tree.sv"
 SYSCTRL = "rtl/tiny/top/tiny_sysctrl.sv"
 ARCHINFO = "rtl/tiny/top/tiny_archinfo.sv"
+CPU = "rtl/tiny/top/tiny_cpu_wrapper.sv"
+CPU_MEM = "rtl/tiny/top/tiny_cpu_mem.sv"
+SRAM = "rtl/tiny/top/tiny_sram.sv"
 FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo"}
 MANAGED = {"publication_media", "hazard3", "cluster_common", "cluster_archinfo", "cluster_pwm", "cluster_rtc", "cluster_wdg"}
 SUPPORTED_SYSCTRL = {
@@ -65,21 +68,27 @@ def facts(root: Path = ROOT) -> dict:
     if any(profile.get(key) != value for key, value in required.items()):
         raise ValueError("Tiny publication profile changed; review configuration and ISA boundary")
     top = (root / TOP).read_text(encoding="utf-8")
-    ram = instance_parameters(top, "onchip_ram", "u_sram")
+    ram_reg = instance_parameters((root / SRAM).read_text(), "onchip_ram_reg", "u_reg")
+    ram = {"CapacityKiB": ram_reg.get("CapacityKiB"),
+           "DataWidth": 8 * ram_reg.get("DataBytes", 0), "IdWidth": 1}
     dma = instance_parameters(top, "apb4_dma", "u_dma")
-    cpu = instance_parameters(top, "mgmt_core_wrapper", "u_cpu")
-    if ram != {"CapacityKiB": 128, "DataWidth": 32, "IdWidth": 1, "Ics55SmallBanks": 1}:
+    cpu = instance_parameters(top, "tiny_cpu_wrapper", "u_cpu")
+    if ram != {"CapacityKiB": 128, "DataWidth": 32, "IdWidth": 1} or ram_reg.get("Present") != 1:
         raise ValueError("Tiny SRAM parameters changed")
-    # The publication remains the reviewed IHP130 compatibility profile;
-    # selecting ICS55's 4 KiB geometry does not alter its reported SRAM facts.
-    ram = {key: value for key, value in ram.items() if key != "Ics55SmallBanks"}
+    # P4 changes local routing, not physical geometry or the book's IHP130
+    # compatibility selection. Snapshot enforcement still precedes publication.
+    read_topology(root / TOPOLOGY, root / MAP)
+    require_snippets(root, TOP, ["tiny_sram u_sram", "tiny_sram_axi4_demux u_sram_attachment",
+                               ".ID_WIDTH(1)", ".DATA_WIDTH(32)"])
+    require_snippets(root, SRAM, ["group < 4", "tiny_sram_group u_group"])
     if dma != {"NumChannels": 4, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x7F9, "EnableStreams": 0}:
         raise ValueError("Tiny DMA parameters changed")
-    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "TwoCycleBusErrors": 1, "ResetSyncStages": 5}:
+    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "ResetSyncStages": 5}:
         raise ValueError("Tiny CPU integration changed")
     require_snippets(root, RESET_TREE, [".STAGE(5)", "assign cpu_ready_rst_n_o = &leaf_rst_n_o;"])
-    require_snippets(root, "rtl/ip/core/mgmt_core_wrapper.sv", [".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
-    require_snippets(root, TOP, ["u_masters_axi4_if[2]", ".axi4(u_masters_axi4_if[0])",
+    require_snippets(root, CPU, ["hazard3_cpu_2port", ".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
+    require_snippets(root, CPU_MEM, [".TwoCycleErrors(1'b1)", "ErrorFirst", "ErrorLast"])
+    require_snippets(root, TOP, ["u_masters_axi4_if[2]", ".slow_axi4(u_masters_axi4_if[0])",
                                ".axi4(u_masters_axi4_if[1])", ".cfg_apb4(u_sram_apb4_if)",
                                "assign s_tick = s_tick_count_q == 5'd23;"])
     require_snippets(root, SYSCTRL, ["(apb4.paddr[1:0] != 2'd0)", "(apb4.pstrb != 4'hf)",

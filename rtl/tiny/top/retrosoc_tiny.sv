@@ -23,9 +23,10 @@ module retrosoc_tiny (
   logic s_por_rst_n, s_rst_n;
   logic [16:0] s_leaf_rst_n;
   logic s_fabric_rst_n, s_cpu_ready_rst_n;
-  logic        s_master_rst_n [2];
-  logic        s_target_rst_n [5];
-  logic        s_debug_halted;
+  logic s_master_rst_n [2];
+  logic s_target_rst_n [5];
+  logic s_debug_halted;
+  logic s_core_rst_n, s_cpu_bus_idle, s_cpu_quiesce;
   logic [31:0] s_irq;
   logic s_fault_valid, s_fault_master, s_fault_write;
   logic [31:0] s_fault_addr;
@@ -38,6 +39,20 @@ module retrosoc_tiny (
   logic [4:0] s_tick_count_d, s_tick_count_q;
   logic s_tick;
   logic s_unused_uart1_tx_stall, s_unused_uart1_rx_stall;
+  ahbl_if u_cpu_ahbl_if[2] (
+      .hclk   (clk_i),
+      .hresetn(s_core_rst_n)
+  );
+  tiny_sram_port_if u_cpu_local_if[2] ();
+  axi4_if #(
+      .ADDR_WIDTH(32),
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .USER_WIDTH(1)
+  ) u_sram_axi4_if[4] (
+      .aclk   (clk_i),
+      .aresetn(s_sram_rst_n)
+  );
   `include "tiny_apb_interfaces.svh"
 uart_if u_uart0_if ();
   uart_if u_uart1_if ();
@@ -135,11 +150,10 @@ uart_if u_uart0_if ();
       .dat_i  (s_tick_count_d),
       .dat_o  (s_tick_count_q)
   );
-  mgmt_core_wrapper #(
-      .ExternalIrqCount (30),
-      .EnableAtomics    (1'b0),
-      .TwoCycleBusErrors(1'b1),
-      .ResetSyncStages  (5)
+  tiny_cpu_wrapper #(
+      .ExternalIrqCount(30),
+      .EnableAtomics   (1'b0),
+      .ResetSyncStages (5)
   ) u_cpu (
       .clk_i         (clk_i),
       .rst_n_i       (s_cpu_ready_rst_n),
@@ -150,7 +164,19 @@ uart_if u_uart0_if ();
       .jtag_trst_n_i (jtag_trst_n_i),
       .jtag_tdo_o    (jtag_tdo_o),
       .debug_halted_o(s_debug_halted),
-      .axi4          (u_masters_axi4_if[0])
+      .bus_idle_i    (s_cpu_bus_idle),
+      .core_rst_n_o  (s_core_rst_n),
+      .quiesce_o     (s_cpu_quiesce),
+      .cpu           (u_cpu_ahbl_if)
+  );
+  tiny_cpu_mem u_cpu_mem (
+      .clk_i      (clk_i),
+      .rst_n_i    (s_core_rst_n),
+      .quiesce_i  (s_cpu_quiesce),
+      .idle_o     (s_cpu_bus_idle),
+      .cpu        (u_cpu_ahbl_if),
+      .local_ports(u_cpu_local_if),
+      .slow_axi4  (u_masters_axi4_if[0])
   );
   tiny_axi4_fabric u_fabric (
       .clk_i         (clk_i),
@@ -167,18 +193,20 @@ uart_if u_uart0_if ();
       .cpu_wait_o    (s_cpu_wait),
       .dma_wait_o    (s_dma_wait)
   );
-  onchip_ram #(
-      .CapacityKiB    (128),
-      .DataWidth      (32),
-      .IdWidth        (1),
-      .Ics55SmallBanks(1'b1)
-  ) u_sram (
-      .clk_i        (clk_i),
-      .rst_n_i      (s_sram_rst_n),
-      .mem_axi4     (u_targets_axi4_if[0]),
-      .cfg_apb4     (u_sram_apb4_if),
-      .perf_enable_i(s_perf_enable),
-      .perf_clear_i (s_perf_clear)
+  tiny_sram_axi4_demux u_sram_attachment (
+      .clk_i   (clk_i),
+      .rst_n_i (s_sram_rst_n),
+      .upstream(u_targets_axi4_if[0]),
+      .groups  (u_sram_axi4_if)
+  );
+  tiny_sram u_sram (
+      .clk_i         (clk_i),
+      .rst_n_i       (s_sram_rst_n),
+      .local_ports   (u_cpu_local_if),
+      .external_ports(u_sram_axi4_if),
+      .cfg_apb4      (u_sram_apb4_if),
+      .perf_enable_i (s_perf_enable),
+      .perf_clear_i  (s_perf_clear)
   );
   apb4_xpi u_xpi (
       .clk_i          (clk_i),

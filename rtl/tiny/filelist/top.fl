@@ -3,5 +3,12 @@
 /top/tiny_sysctrl.sv
 /top/tiny_archinfo.sv
 /top/tiny_reset_tree.sv
+/top/tiny_sram_port_if.sv
+/top/tiny_sram_group.sv
+/top/tiny_sram_axi4.sv
+/top/tiny_sram_axi4_demux.sv
+/top/tiny_sram.sv
+/top/tiny_cpu_mem.sv
+/top/tiny_cpu_wrapper.sv
 /top/retrosoc_tiny.sv
 /top/retrosoc_tiny_asic.sv

@@ -2,6 +2,23 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "tiny-r2-p4",
+      "paths": ["rtl/tiny/top"],
+      "status": "prototype",
+      "baseline_revision": "4db27524a6282ca40d76b935415b89f043d6ea83",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common registers; independent I/D request state and per-group responses",
+        "reset": "five-edge release; hart halt/drain leaves SRAM and unrelated DMA active",
+        "clock_enable": "CPU and all 32 main-SRAM macros use direct SAFE24 SYS",
+        "memory": "four groups of eight tc_sram_1024x32 macros; no payload reset or extra SRAM",
+        "pipeline": "AHB capture, macro issue, registered response; uncontended completion within three cycles"
+      },
+      "waivers": []
+    },
+    {
       "name": "owned-rtl",
       "paths": [
         "rtl/ip",

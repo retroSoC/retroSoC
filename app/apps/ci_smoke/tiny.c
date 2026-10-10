@@ -92,7 +92,25 @@ static bool rs_mcu_dma(void) {
     }
     config.kind = RS_DMA_KIND_MM_TO_STREAM;
     config.request = RS_DMA_REQUEST_I2S_TX;
-    return rs_dma_config_validate(0U, &config) != RS_OK;
+    if (rs_dma_config_validate(0U, &config) == RS_OK) {
+        return false;
+    }
+    /* DMA owns the destination until completion. FENCE.I is executed by the
+     * assembly helper before entering either the DMA-written or patched code. */
+    rs_mcu_source[0] = UINT32_C(0x02a00513); /* addi a0,zero,42 */
+    rs_mcu_source[1] = UINT32_C(0x00008067); /* jalr zero,ra,0 */
+    config.kind = RS_DMA_KIND_MM_TO_MM;
+    config.request = RS_DMA_REQUEST_SOFTWARE;
+    config.byte_count = UINT32_C(8);
+    config.burst_beats = 1U;
+    if ((rs_dma_configure(RS_DMA_CHANNEL_BULK, &config) != RS_OK) ||
+        (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) ||
+        (rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK) ||
+        (rs_mcu_execute_probe((uint32_t)(uintptr_t)rs_mcu_destination) != UINT32_C(42))) {
+        return false;
+    }
+    rs_mcu_destination[0] = UINT32_C(0x02b00513); /* addi a0,zero,43 */
+    return rs_mcu_execute_probe((uint32_t)(uintptr_t)rs_mcu_destination) == UINT32_C(43);
 }
 
 static bool rs_mcu_interrupts(void) {

@@ -19,11 +19,14 @@ module mgmt_debug_reset #(
     input  logic reset_req_i,
     input  logic bridge_idle_i,
     output logic core_rst_n_o,
+    output logic reset_pending_o,
     output logic reset_done_o
 );
 
   logic s_pending_d, s_pending_q;
   logic s_reset_active_d, s_reset_active_q;
+
+  assign reset_pending_o = reset_req_i || s_pending_q || s_reset_active_q;
 
   always_comb begin
     s_pending_d      = s_pending_q;

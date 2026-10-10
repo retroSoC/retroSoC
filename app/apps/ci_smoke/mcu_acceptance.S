@@ -34,3 +34,15 @@ rs_mcu_unmapped_probe:
     .option pop
     ret
     .size rs_mcu_unmapped_probe, .-rs_mcu_unmapped_probe
+
+    .balign 4
+    .global rs_mcu_execute_probe
+    .type rs_mcu_execute_probe,@function
+rs_mcu_execute_probe:
+    mv t0, a0
+    .option push
+    .option arch, +zifencei
+    fence.i
+    .option pop
+    jr t0
+    .size rs_mcu_execute_probe, .-rs_mcu_execute_probe

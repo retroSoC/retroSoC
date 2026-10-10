@@ -183,6 +183,12 @@ def inspect_netlist(document: dict) -> dict:
         raise ValueError("Tiny instantiated the unsupported 16 KiB SRAM interface stub")
     if len(ram) != 32 or len(pll) != 1:
         raise ValueError("expected 32 main SRAM macros and one PLL")
+    expected_ram = {f"u_soc.u_sram.gen_group[{g}].u_group.gen_bank[{n}].u_ram.u_mem"
+                    for g in range(4) for n in range(8)}
+    observed_ram = {next((name for name in expected_ram
+                         if c["path"].replace("/", ".").endswith("." + name)), "") for c in ram}
+    if observed_ram != expected_ram:
+        raise ValueError("Tiny P4 SRAM group/macro hierarchy is missing or stale")
     if any(c["ports"].get("CLK") != [system] for c in ram):
         raise ValueError("main SRAM does not share direct SYS")
     constants = {"0": 0, "1": 1}
@@ -202,7 +208,7 @@ def inspect_netlist(document: dict) -> dict:
     enable = pll[0]["ports"].get("EN", [])
     if len(enable) != 1 or constants.get(enable[0]) != 0:
         raise ValueError("PLL enable is not proven constant zero")
-    cpu = [c for c in leaves if "u_hazard3_cpu_1port" in c["path"]
+    cpu = [c for c in leaves if "u_hazard3_cpu_2port" in c["path"]
            and ("CK" in c["ports"] or "CKN" in c["ports"])]
     if not cpu or any(c["ports"].get("CK", c["ports"].get("CKN")) != [system] for c in cpu):
         raise ValueError("CPU sequential clocks do not share direct SYS")

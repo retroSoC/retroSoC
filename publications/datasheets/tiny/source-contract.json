@@ -98,7 +98,13 @@
     "uart1": 26
   },
   "sources": [
-    "rtl/ip/core/mgmt_core_wrapper.sv",
+    "rtl/tiny/top/tiny_cpu_wrapper.sv",
+    "rtl/tiny/top/tiny_cpu_mem.sv",
+    "rtl/tiny/top/tiny_sram.sv",
+    "rtl/tiny/top/tiny_sram_group.sv",
+    "rtl/tiny/top/tiny_sram_axi4.sv",
+    "rtl/tiny/top/tiny_sram_axi4_demux.sv",
+    "rtl/tiny/top/tiny_sram_port_if.sv",
     "rtl/ip/core/mgmt_debug_wrapper.sv",
     "rtl/ip/core/mgmt_debug_reset.sv",
     "rtl/ip/interconnect/ahbl2axi4.sv",
@@ -122,7 +128,7 @@
         "(s_last_addr[31:12] == s_selected_addr.addr[31:12])",
         "s_accept = (s_state_q == Idle) && s_selected_valid;",
         "Response: if (s_terminal) s_state_d = Idle;",
-        "s_tgt_d = s_protocol_legal ? s_decoded_target : 3'd4;",
+        "s_tgt_d = !s_protocol_legal ? 3'd4 : s_fetch_denied ? ((s_decoded_target == 3'd2) ? 3'd4 : 3'd3) : s_decoded_target;",
         "assign s_protocol_legal = !s_selected_addr.lock && (s_selected_addr.size <= 3'd2) &&\n      ((s_selected_addr.addr & ((32'd1 << s_selected_addr.size) - 32'd1)) == 32'd0) &&\n      ((s_selected_addr.burst == 2'b01) ||\n       ((s_selected_addr.burst == 2'b00) && (s_selected_addr.len == 8'd0))) &&\n      (s_selected_addr.len <= 8'd15) && !s_last_addr[32] &&\n      (s_last_addr[31:12] == s_selected_addr.addr[31:12]) &&\n      (decode_target(\n      s_last_addr[31:0]\n  ) == s_decoded_target) && ((s_decoded_target != 3'd2) || (s_selected_addr.len == 8'd0));",
         "assign s_terminal = (s_state_q == Response) &&\n      (s_write_q ? (s_target_bvalid[s_tgt_q] && s_bready[s_owner_q]) :\n       (s_target_rvalid[s_tgt_q] && s_rready[s_owner_q] && s_target_rlast[s_tgt_q]));"
       ]

@@ -1,5 +1,15 @@
 {
   "schema_version": 1,
+  "cpu": {"module": "hazard3_cpu_2port", "local_ports": 2, "data_outstanding": 1},
+  "main_sram": {
+    "groups": 4,
+    "group_bytes": 32768,
+    "macros_per_group": 8,
+    "macro_bytes": 4096,
+    "base": "0x30000000",
+    "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
+    "external_attachment": "serialized-pre-P5"
+  },
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "external_irq_count": 30,

@@ -1,5 +1,69 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P4 throughput repair; validated, review pending (2026-10-10)
+
+Following the read-only P4 review, the maintainer approved the bounded-buffer
+repair plan for the P2 external-SRAM throughput regression. The changed Tiny
+group/frontend keep local I/D single-operation semantics, reserve external
+response capacity and overlap burst issuance/retirement; W is captured before
+macro arbitration and B follows complete commit-response drain. Common FIFO
+and register dependencies, ABI, clock/macro bindings and the pre-P5 external
+attachment remain unchanged. No shared Mini debug code is changed by this fix.
+
+Fresh evidence belongs under
+`build/ics55-tiny-2026-10-10-15-15-b4aa59f3e5d9/meta/tiny-r2-p4/`.
+The preceding P4 report below remains the pre-repair comparison, and does not
+qualify these new changes. The final audit rechecks 1972 technical inputs,
+six fresh regression simulations and three immutable-image executions. Full
+Pytest reports 1659 passed and one optional `pypdf` skip. Both Tiny PDK PR
+regressions pass, including synthesis, netlist boot and clock/macro bindings.
+Streaming/backpressure/error/reset checks and response conservation/fairness
+induction pass; all six SRAM fixtures retain three-cycle local completion and
+one-cycle steady read/write beat spacing. Initial style failures and focused
+development attempts remain separate from final qualifying results.
+
+Matched burst16 DMA cycles fall from 36713 to 17897 (flat) and 36489 to 17317
+(banked), reductions of 51.25% and 52.54%. All banked observations match across
+Verilator and Icarus. CPU/copy/burst1 cycles remain unchanged from pre-repair
+P4; burst1 overhead and 8.34%/4.81% burst16 overhead versus original P3 remain
+explicit. The combined input digest is
+`58daf68fbb9dee199b3085a73ef07d22eb3de6d00ba875c462e85b76b6091a0d`.
+`evidence.json` binds the source, artifacts, comparison and reused unchanged
+Mini behavioral evidence. All long gates ran once; Tiny nightly matched PR
+and was not duplicated. Setup WNS remains negative (-36.88 ns ICS55,
+-97.37 ns IHP130), with warning/metrics observations and baselines preserved.
+The [runbook](tiny-soc-r2-local-memory.md) records exact commands, measurements
+and unrun qualifications. Human review remains required; no P5 execution or
+physical-frequency qualification is implied.
+
+## TINY-R2-P4 implementation and validation; review pending (2026-10-10)
+
+The maintainer approved P4 preflight and implementation on clean source
+`4db27524a6282ca40d76b935415b89f043d6ea83`, specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The [P4 runbook](tiny-soc-r2-local-memory.md)
+records architecture, lifecycle, physical binding and matched-image boundaries.
+P3 results retain their original source attribution; no historical phase or
+physical qualification is automatically promoted.
+
+Development evidence is under
+`build/ics55-tiny-2026-10-10-10-05-b4aa59f3e5d9/meta/tiny-r2-p4/`.
+All planned functional gates completed: 1659 Pytest passes and one optional
+`pypdf` skip; Tiny ICS55/IHP130 PR and Mini ICS55 behavioral compatibility pass.
+Both Tiny netlists pass boot and the four-group/32-macro/common-SYS binding
+checks. Local uncontended latency is three cycles; group-control induction
+passes. Setup and hold timing remain negative and observational.
+
+`report.json` retains single-execution matched-binary results; the banked image
+matches exactly across Verilator and Icarus. CPU-copy cycles improve about
+19%/25% for flat/banked images, while isolated burst-16 DMA cycles increase
+about 2.2 times. This external-frontend throughput regression requires review;
+no blanket speedup or automatic phase acceptance is claimed. `evidence.json`
+rechecks 1972 source inputs and binds the gate, image, model, log and report
+artifacts. Exact commands, measurements and unrun qualifications are in the runbook.
+
+External fabric stays serialized until P5, which is not authorized. Default
+Tiny stays ICS55 SAFE24 with PLL off; IHP130 is explicit compatibility.
+
 ## TINY-R2-P3 implementation in progress (2026-10-08–10)
 
 The retained source-bound compiler/layout matrix is complete for commit
@@ -493,7 +557,7 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Functional/measurement baseline accepted by explicit P2 approval on 2026-10-06; timing, warning and physical gaps retained |
 | TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Implementation and evidence ready for review; all analyzed rates retain timing failures; phase acceptance pending human review |
 | TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling and available-path correctness; approved option A retains product DMA/IRQ budget qualification for the platform that supplies the route. | Matrix retained on `3e46cc8`; subsequent two P1 HAL fixes and focused/compatibility checks complete in the worktree; human review/acceptance pending |
-| TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
+| TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Implementation and planned functional validation complete on `4db2752` plus retained worktree snapshot; matched-image DMA throughput regression and human phase acceptance pending review; timing remains observational |
 | TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
 | TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration | Legacy P7 obligations; shared PWM reporting, I2S slave and alternate-input-route prerequisites; common ABI/HAL parity; Crypto banks/lifecycle; truthful capabilities and affected Mini compatibility. | Pending |
 | TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration | Legacy P8 obligations with main SRAM in SYS and XPI in MEM; atomic rate changes, all actual CDC/reset barriers, clock failures, WFI leaf gating and reserved DVP controls. | Pending |

@@ -1,10 +1,16 @@
 # Tiny Gen1 v0.1 DRAFT content review
 
-The publication describes the independent IHP130 Tiny profile: one RV32IMC
-Hazard3 with A disabled, RV32IM default firmware, 128 KiB SRAM, 24 MHz target,
+The publication describes the independent IHP130 Tiny profile: one dual-port
+RV32IMC Hazard3 with A disabled, RV32IM default firmware, 128 KiB SRAM in four
+independently serviced 32 KiB groups, 24 MHz target,
 four DMA channels and AXI32/APB4. Rill (清溪) is the selected prototype brand.
 The font/palette/grid are inherited as design rules; product facts are not
 inherited from Mini's descriptions or qualification records.
+
+The P4 working-source update changes CPU/local-SRAM bindings and the affected
+draft architecture prose/figure. It does not advance `tiny.json.source_revision`,
+rebuild or relabel a delivered PDF, or add hardware qualification. A later
+publication release still requires source review, snapshot refresh and PDF checks.
 
 | Area | Review and publication decision | Follow-up boundary |
 | --- | --- | --- |

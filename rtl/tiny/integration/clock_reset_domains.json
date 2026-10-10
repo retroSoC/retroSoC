@@ -1,5 +1,17 @@
 {
   "schema_version": 2,
+  "local_memory": {
+    "phase": "TINY-R2-P4",
+    "clock_domain": "system",
+    "cpu_instance": "u_soc.u_cpu.u_hazard3_cpu_2port",
+    "frontend_instance": "u_soc.u_cpu_mem",
+    "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
+    "groups": 4,
+    "macros_per_group": 8,
+    "hart_reset": "halt then drain accepted I/D and slow responses; SRAM/DMA stay active",
+    "main_sram_payload_reset": "none",
+    "local_uncontended_max_cycles": 3
+  },
   "inactive_macros": {
     "ics55_pll": {
       "cell": "PLL_TOP",

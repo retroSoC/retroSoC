@@ -230,57 +230,117 @@ module retrosoc_tiny_tb;
     `undef _BASELINE_AXI
   end
 
-  // The baseline has one AHB port. HPROT[0] distinguishes instruction/data;
-  // these observations do not assert future independent local-I/D latency.
-  longint unsigned s_ahb_cycle = 0;
-  longint unsigned s_ahb_start = 0;
-  longint unsigned s_ahb_accept[2], s_ahb_done[2], s_ahb_latency[2];
-  logic s_ahb_pending = 1'b0, s_ahb_measured = 1'b0;
-  logic s_ahb_data = 1'b0, s_ahb_previous_enable = 1'b0;
-  integer s_ahb_window = 0;
-  wire    s_ahb_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
-  `define _BASELINE_AHB u_dut.u_soc.u_cpu.u_ahbl_if
-  always @(posedge s_clk) begin
-    s_ahb_cycle = s_ahb_cycle + 1;
-    if (!u_dut.u_soc.s_rst_n) begin
-      s_ahb_pending         = 1'b0;
-      s_ahb_measured        = 1'b0;
-      s_ahb_previous_enable = 1'b0;
-      s_ahb_window          = 0;
-    end else if (s_baseline_enabled) begin
-      if (s_ahb_enable && !s_ahb_previous_enable) begin
-        s_ahb_window   = s_ahb_window + 1;
-        s_ahb_measured = 1'b0;
-        for (int kind = 0; kind < 2; kind++) begin
-          s_ahb_accept[kind]  = 0;
-          s_ahb_done[kind]    = 0;
-          s_ahb_latency[kind] = 0;
+  // Verification-only per-group issue/conflict accounting. A bank conflict is
+  // two or more eligible macro clients in one cycle, not an AXI address stall.
+  for (genvar group = 0; group < 4; group++) begin : gen_bank_observer
+    longint unsigned s_issues[3], s_waits[3];
+    longint unsigned       s_conflicts = 0;
+    logic                  s_previous_enable = 0;
+    integer                s_window = 0;
+    wire                   s_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
+    wire             [2:0] s_req = u_dut.u_soc.u_sram.gen_group[group].u_group.s_req;
+    wire             [2:0] s_grant = u_dut.u_soc.u_sram.gen_group[group].u_group.s_grant;
+    always @(posedge s_clk) begin
+      if (!u_dut.u_soc.s_rst_n) begin
+        s_previous_enable = 0;
+        s_window          = 0;
+      end else if (s_baseline_enabled) begin
+        if (s_enable && !s_previous_enable) begin
+          s_window    = s_window + 1;
+          s_conflicts = 0;
+          for (int client = 0; client < 3; client++) begin
+            s_issues[client] = 0;
+            s_waits[client]  = 0;
+          end
         end
+        if (s_enable) begin
+          if ((s_req & (s_req - 3'd1)) != 3'd0) s_conflicts = s_conflicts + 1;
+          for (int client = 0; client < 3; client++) begin
+            if (s_grant[client]) s_issues[client] = s_issues[client] + 1;
+            if (s_req[client] && !s_grant[client]) s_waits[client] = s_waits[client] + 1;
+          end
+        end
+        if (!s_enable && s_previous_enable)
+          $display(
+              "R2_P4_BANK window=%0d group=%0d issues_i=%0d issues_d=%0d issues_external=%0d conflicts=%0d wait_i=%0d wait_d=%0d wait_external=%0d",
+              s_window,
+              group,
+              s_issues[0],
+              s_issues[1],
+              s_issues[2],
+              s_conflicts,
+              s_waits[0],
+              s_waits[1],
+              s_waits[2]
+          );
+        s_previous_enable = s_enable;
       end
-      if (`_BASELINE_AHB.hready) begin
-        if (s_ahb_pending && s_ahb_measured && s_ahb_enable) begin
-          s_ahb_done[s_ahb_data] = s_ahb_done[s_ahb_data] + 1;
-          if ((s_ahb_cycle - s_ahb_start) > s_ahb_latency[s_ahb_data])
-            s_ahb_latency[s_ahb_data] = s_ahb_cycle - s_ahb_start;
-        end
-        s_ahb_pending  = `_BASELINE_AHB.htrans[1];
-        s_ahb_measured = s_ahb_pending && s_ahb_enable;
-        if (s_ahb_measured) begin
-          s_ahb_data               = `_BASELINE_AHB.hprot[0];
-          s_ahb_start              = s_ahb_cycle;
-          s_ahb_accept[s_ahb_data] = s_ahb_accept[s_ahb_data] + 1;
-        end
-      end
-      if (!s_ahb_enable && s_ahb_previous_enable) begin
-        for (int kind = 0; kind < 2; kind++) begin
-          $display("R2_AHB window=%0d kind=%0d accepted=%0d completed=%0d latency_max=%0d",
-                   s_ahb_window, kind, s_ahb_accept[kind], s_ahb_done[kind], s_ahb_latency[kind]);
-        end
-      end
-      s_ahb_previous_enable = s_ahb_enable;
     end
   end
-  `undef _BASELINE_AHB
+
+  // P4 retains the original per-kind record format, now observed on two
+  // independent ports. External AXI counts remain external traffic only.
+  for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_ahb_observer
+    longint unsigned s_cycle = 0, s_start = 0;
+    longint unsigned s_accepted = 0, s_completed = 0, s_latency = 0;
+    longint unsigned s_local_accepted = 0, s_local_completed = 0, s_local_latency = 0;
+    longint unsigned s_admission_wait = 0;
+    logic s_pending = 0, s_measured = 0, s_local = 0, s_previous_enable = 0;
+    integer s_window = 0;
+    wire    s_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
+    `define _P4_AHB u_dut.u_soc.u_cpu_ahbl_if[port_index]
+    always @(posedge s_clk) begin
+      s_cycle = s_cycle + 1;
+      if (!u_dut.u_soc.s_core_rst_n) begin
+        s_pending         = 0;
+        s_measured        = 0;
+        s_previous_enable = 0;
+        s_window          = 0;
+      end else if (s_baseline_enabled) begin
+        if (s_enable && !s_previous_enable) begin
+          s_window          = s_window + 1;
+          s_measured        = 0;
+          s_accepted        = 0;
+          s_completed       = 0;
+          s_latency         = 0;
+          s_local_accepted  = 0;
+          s_local_completed = 0;
+          s_local_latency   = 0;
+          s_admission_wait  = 0;
+        end
+        if (s_enable && `_P4_AHB.htrans[1] && !`_P4_AHB.hready)
+          s_admission_wait = s_admission_wait + 1;
+        if (`_P4_AHB.hready) begin
+          if (s_pending && s_measured && s_enable) begin
+            s_completed = s_completed + 1;
+            if ((s_cycle - s_start) > s_latency) s_latency = s_cycle - s_start;
+            if (s_local) begin
+              s_local_completed = s_local_completed + 1;
+              if ((s_cycle - s_start) > s_local_latency) s_local_latency = s_cycle - s_start;
+            end
+          end
+          s_pending  = `_P4_AHB.htrans[1];
+          s_measured = s_pending && s_enable;
+          if (s_measured) begin
+            s_start    = s_cycle;
+            s_accepted = s_accepted + 1;
+            s_local    = (`_P4_AHB.haddr >= 32'h30000000) && (`_P4_AHB.haddr < 32'h30020000);
+            if (s_local) s_local_accepted = s_local_accepted + 1;
+          end
+        end
+        if (!s_enable && s_previous_enable) begin
+          $display("R2_AHB window=%0d kind=%0d accepted=%0d completed=%0d latency_max=%0d",
+                   s_window, port_index, s_accepted, s_completed, s_latency);
+          $display(
+              "R2_P4_LOCAL window=%0d port=%0d accepted=%0d completed=%0d latency_max=%0d admission_wait=%0d",
+              s_window, port_index, s_local_accepted, s_local_completed, s_local_latency,
+              s_admission_wait);
+        end
+        s_previous_enable = s_enable;
+      end
+    end
+    `undef _P4_AHB
+  end
 `endif
 
   retrosoc_tiny_asic u_dut (

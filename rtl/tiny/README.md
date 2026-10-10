@@ -9,6 +9,12 @@ explicit compatibility through `configs/ci/ihp130-tiny.mk`. See the
 [platform runbook](../../docs/ip/tiny-ics55-platform.md) for source-bound
 validation; backend frequency tests are not SYS switching or timing qualification.
 
+The [R2-P4 implementation](../../docs/ip/tiny-soc-r2-local-memory.md) connects the
+official dual-port CPU to four independently serviced 32 KiB local SRAM groups.
+The 32 physical macros and register ABI are unchanged. Only non-SRAM CPU work
+uses the tagged slow path; the external fabric stays serialized until P5.
+Source presence alone is not completed phase or physical qualification.
+
 `top` owns product integration, `address_map`, `pin_map` and `integration` own
 canonical address, pad, IRQ and clock/reset inputs, `filelist` selects sources,
 `dv` owns product verification, and `mk` owns product configuration. Reusable
@@ -43,8 +49,8 @@ final timing closure is mandatory. Software/DMA scheduling is `TINY-R2-P3`, loca
 `TINY-R2-P9`, system qualification `TINY-R2-P10` and complete-product physical
 qualification `TINY-R2-P11` (historical IHP130 title; now default ICS55).
 Legacy `TINY-P0` through `TINY-P12` remain in
-the contract history. The committed RTL/profile still implements the initial
-24 MHz/no-PLL/four-channel design; no faster CPU/SRAM or PLL timing support
+the contract history. Executable profiles retain SAFE24 and four DMA channels;
+ICS55's present PLL stays off. No faster CPU/SRAM or PLL timing support
 follows from this freeze or the `HAVE_PLL` selector alone.
 
 The R2-P2 candidate keeps that executable clock/memory configuration and adds
