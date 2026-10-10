@@ -5,16 +5,25 @@
 
 static const rs_dma_session_t *rs_dma_owners[RS_DMA_CHANNEL_COUNT];
 
+#ifdef RS_DMA_TEST_MMIO
+uint32_t rs_dma_test_irq_save(void);
+void rs_dma_test_irq_restore(uint32_t saved);
+#endif
+
 static uint32_t rs_dma_lock(void) {
     uint32_t saved = 0U;
-#if defined(__riscv) && defined(CSR_ENABLE)
+#ifdef RS_DMA_TEST_MMIO
+    saved = rs_dma_test_irq_save();
+#elif defined(__riscv) && defined(CSR_ENABLE)
     __asm__ volatile("csrrci %0, mstatus, 8" : "=r"(saved)::"memory");
 #endif
     return saved;
 }
 
 static void rs_dma_unlock(uint32_t saved) {
-#if defined(__riscv) && defined(CSR_ENABLE)
+#ifdef RS_DMA_TEST_MMIO
+    rs_dma_test_irq_restore(saved);
+#elif defined(__riscv) && defined(CSR_ENABLE)
     if ((saved & UINT32_C(8)) != 0U) {
         __asm__ volatile("csrsi mstatus, 8" ::: "memory");
     }
@@ -185,6 +194,7 @@ rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint3
         rs_status_t result;
         uint32_t control;
         uint32_t burst;
+        uint32_t saved;
 
         result = rs_dma_tcd_validate(channel, current);
         if (result != RS_OK) {
@@ -208,14 +218,20 @@ rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint3
         config.crc_expected = current->crc_expected;
         config.priority = (uint8_t)((control >> RS_DMA_TCD_PRIORITY_SHIFT) & UINT32_C(0x3));
         config.burst_beats = (uint8_t)burst;
+        /* Publish configuration, TCD and START before an ISR can lease the
+         * idle channel. Nested helpers preserve this outer interrupt mask.
+         * Restore interrupts before the bounded completion wait. */
+        saved = rs_dma_lock();
         result = rs_dma_configure(channel, &config);
         if (result != RS_OK) {
+            rs_dma_unlock(saved);
             return result;
         }
         RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_HEAD) = (uint32_t)(uintptr_t)current;
         RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = UINT32_C(1);
         rs_dma_fence();
         result = rs_dma_start(channel);
+        rs_dma_unlock(saved);
         if (result != RS_OK) {
             return result;
         }

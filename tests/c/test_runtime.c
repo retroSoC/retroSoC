@@ -69,9 +69,47 @@ volatile uint32_t rs_dma_test_mmio[1024];
 static uint32_t ws_registers[16];
 static uint32_t ws_pushed;
 static uint32_t ws_pixels[33];
+static uint32_t ws_idle_on_interrupt_read;
+static uint32_t dma_irq_enabled = 8U;
+static bool dma_irq_pending;
+static rs_dma_session_t dma_irq_owner;
+static rs_status_t dma_irq_result;
+
+uint32_t rs_dma_test_irq_save(void) {
+    const uint32_t saved = dma_irq_enabled;
+    dma_irq_enabled = 0U;
+    return saved;
+}
+
+void rs_dma_test_irq_restore(uint32_t saved) {
+    dma_irq_enabled = saved;
+    if ((saved != 0U) && dma_irq_pending) {
+        dma_irq_pending = false;
+        /* Model START taking effect before an interrupt can execute. */
+        if (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_CTRL) == RS_DMA_CH_CTRL_START) {
+            RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+        }
+        dma_irq_result = rs_dma_session_acquire(&dma_irq_owner, 3U);
+        if (dma_irq_result == RS_OK) {
+            const rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM,
+                .source = 0x3000U, .destination = 0x4000U, .byte_count = 16U,
+                .width = RS_DMA_WIDTH_32, .source_increment = true,
+                .destination_increment = true, .burst_beats = 1U};
+            dma_irq_result = rs_dma_session_configure(&dma_irq_owner, &config);
+        }
+    }
+}
 
 uint32_t rs_ws2812_test_read(uint32_t offset) {
-    return ws_registers[offset / 4U];
+    const uint32_t value = ws_registers[offset / 4U];
+    if ((offset == 0x30U) && (ws_idle_on_interrupt_read != 0U)) {
+        ws_registers[0x18U / 4U] = 8U;
+        if (ws_idle_on_interrupt_read == 1U) {
+            ws_registers[0x30U / 4U] |= RS_WS2812_INTR_DONE;
+        }
+        ws_idle_on_interrupt_read = 0U;
+    }
+    return value;
 }
 
 void rs_ws2812_test_write(uint32_t offset, uint32_t value) {
@@ -105,6 +143,107 @@ static void ws_test_reset(void) {
     ws_registers[0x18U / 4U] = 8U;
     ws_registers[0x24U / 4U] = 3U;
     ws_pushed = 0U;
+    ws_idle_on_interrupt_read = 0U;
+}
+
+static int test_dma_tcd_preemption(void) {
+    static _Alignas(64) rs_dma_tcd_t tcd = {
+        .source = 0x1000U, .destination = 0x2000U, .byte_count = 32U, .y_count = 1U,
+        .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                   (UINT32_C(1) << RS_DMA_TCD_BURST_SHIFT)};
+    rs_status_t result;
+    bool valid;
+    ws_test_reset();
+    dma_irq_pending = true;
+    dma_irq_result = RS_OK;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_ETIMEOUT) && (dma_irq_result == RS_EIO) &&
+            !dma_irq_pending && (dma_irq_enabled == 8U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) == (uint32_t)(uintptr_t)&tcd) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) == 1U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) == tcd.source);
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = 0U;
+    (void)rs_dma_session_release(&dma_irq_owner);
+    if (!valid) {
+        return 1;
+    }
+    /* An already leased direct channel must remain untouched on rejection. */
+    if (rs_dma_session_acquire(&dma_irq_owner, 3U) != RS_OK) {
+        return 2;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) = 0x3000U;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_EIO) && (dma_irq_enabled == 8U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) == 0U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) == 0U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) == 0x3000U);
+    (void)rs_dma_session_release(&dma_irq_owner);
+    if (!valid) {
+        return 3;
+    }
+    /* Calling from an already masked context must not enable interrupts. */
+    dma_irq_enabled = 0U;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_ETIMEOUT) && (dma_irq_enabled == 0U);
+    dma_irq_enabled = 8U;
+    return valid ? 0 : 4;
+}
+
+static int test_ws2812_completion_race(void) {
+    rs_ws2812_dma_status_t transfer;
+    for (uint32_t delay = 1U; delay <= 2U; ++delay) {
+        ws_test_reset();
+        if (rs_ws2812_dma_begin(ws_pixels, 4U, 0U, 100U) != RS_OK) {
+            return 1;
+        }
+        /* Complete after INTR_STATE was sampled, before STATUS is sampled.
+         * The second case also delays the sticky DONE latch until next service. */
+        ws_idle_on_interrupt_read = delay;
+        if (rs_ws2812_dma_service(1U) != RS_OK) {
+            return 2;
+        }
+        (void)rs_ws2812_dma_status(&transfer);
+        if (!transfer.active || transfer.draining || transfer.dma_pending) {
+            return 3;
+        }
+        ws_registers[0x30U / 4U] |= RS_WS2812_INTR_DONE;
+        if (rs_ws2812_dma_service(2U) != RS_OK) {
+            return 4;
+        }
+        (void)rs_ws2812_dma_status(&transfer);
+        if (transfer.active || (transfer.result != RS_OK) ||
+            (ws_registers[0x24U / 4U] != 3U)) {
+            return 5;
+        }
+    }
+    /* An idle core without DONE must still terminate on error, abort or the
+     * original deadline; waiting for the sticky latch cannot hide a failure. */
+    for (uint32_t failure = 0U; failure < 3U; ++failure) {
+        const rs_status_t expected = (failure == 2U) ? RS_ETIMEOUT : RS_EIO;
+        ws_test_reset();
+        if (rs_ws2812_dma_begin(ws_pixels, 4U, 0U, 3U) != RS_OK) {
+            return 6;
+        }
+        ws_idle_on_interrupt_read = 2U;
+        if (rs_ws2812_dma_service(1U) != RS_OK) {
+            return 7;
+        }
+        if (failure == 0U) {
+            ws_registers[0x2cU / 4U] = 1U;
+        } else if (failure == 1U) {
+            ws_registers[0x30U / 4U] = RS_WS2812_INTR_ABORTED;
+        }
+        if (rs_ws2812_dma_service(3U) != expected) {
+            return 8;
+        }
+        (void)rs_ws2812_dma_service(4U);
+        (void)rs_ws2812_dma_service(5U);
+        (void)rs_ws2812_dma_status(&transfer);
+        if (transfer.active || (transfer.result != expected)) {
+            return 9;
+        }
+    }
+    return 0;
 }
 
 static int test_dma_sessions(void) {
@@ -2989,6 +3128,8 @@ int main(void) {
         test_ws2812_helpers(),
         test_dma_sessions(),
         test_ws2812_refill(),
+        test_dma_tcd_preemption(),
+        test_ws2812_completion_race(),
         test_timer_helpers(),
         test_psram_helpers(),
         test_sdram_helpers(),

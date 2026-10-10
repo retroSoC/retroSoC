@@ -1,14 +1,58 @@
 # Tiny MCU Verification Record
 
-## TINY-R2-P3 implementation in progress (2026-10-08–09)
+## TINY-R2-P3 implementation in progress (2026-10-08–10)
+
+The retained source-bound compiler/layout matrix is complete for commit
+`3e46cc80e2d2243233d284b7cd9583714b0773bb`, source digest
+`a7fc5112cd6f20df956243c4d081a6a31ede6192cd270e3c13340557b0e58776`.
+All eight configurations pass ordinary Tiny acceptance and three deterministic
+Verilator cold starts. `compat-os-flat`, `perf-o2-lto-flat` and
+`perf-o2-plain-banked` also pass three native Icarus cold starts, with exact
+cross-simulator sample identity. The structured measurement report is
+`build/ics55-tiny-performance-2026-10-09-17-10-53cc6674d532/meta/tiny-r2-p3/report.json`.
+It records software measurements only; it does not close phase acceptance,
+physical timing, hardware bank conflict or Mini integrated-DMA gates.
+
+Quality evidence for that committed source is complete: full Pytest reports 1629 passed and
+one environment skip for missing `pypdf`; focused P3 tests and the embedded/RTL
+quality checks pass. Its Tiny PR regressions pass for ICS55 and IHP130, and
+Mini ICS55 behavioral-only compatibility passes. Negative STA margins and
+non-blocking lint observations remain recorded as observations.
+
+Exact commands, measurements, current evidence roots and remaining qualification
+limits are in the final section of the [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md).
+Human review and acceptance remain required before any R2-P4 work.
+
+### Subsequent P1 race-fix follow-up
+
+The approved follow-up fixes WS2812 completion between register reads and
+legacy TCD publication across an ISR lease acquisition. Current source is
+`3e46cc8` plus the two HAL fixes and deterministic host tests; the matrix above
+remains evidence for the original commit. New evidence is under
+`build/ics55-tiny-2026-10-10-09-00-b4aa59f3e5d9/meta/tiny-r2-p3-races/`.
+The two new tests fail before their respective fixes and pass afterward;
+C format/policy/host checks and 156 focused tests pass. Mini PIO compatibility
+also passes once with strict SIM_TEST_PASS and no forbidden markers. Tiny
+ICS55/IHP130 PR and Mini ICS55 behavioral regressions each pass once. Final
+`evidence.json` checks all 1287 source inputs, 487 Mini PIO compiled inputs and
+all eight ordinary regression simulations. Lint baseline differences and
+negative STA remain observations; no timing closure is claimed. See the final
+review-fix section for commands, hashes, exact paths and unrun gates.
+
+Per the maintainer's follow-up instruction, long checks default to one execution;
+repeat only for a concrete failure/inconsistency or an explicit acceptance
+requirement. This follow-up does not repeat the three-cold-start compiler matrix.
+It does not waive any frozen qualification requirement or reattribute old runs.
+
+### Historical development snapshot
 
 The 2026-10-09 execution snapshot in the [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md)
 records all eight ordinary Tiny/Verilator compiler experiments completed, with
-selected Icarus groups still running. The current-source full Pytest result is
+selected Icarus groups still running at that snapshot. The then-current full Pytest result was
 1531 passed, 4 failed, 94 fixture errors and 1 skipped; configuration-declaration
-and publication source/fixture drift remain open. IHP130 Tiny PR completes with
+and publication source/fixture drift were still open. IHP130 Tiny PR completed with
 non-blocking lint observations and negative STA margin. These results do not
-close the remaining matrix, quality or human phase-acceptance gates.
+replace the final results above or imply human phase acceptance.
 
 The [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md) closes the retained
 banked O2 Icarus finding: all three runs completed successfully and match the
@@ -28,8 +72,8 @@ is bound at
 underflow/abort recovery, zero DMA starts and strict TEST_STATUS/SIM_TEST_PASS.
 Focused checks report 96 passed; C/RTL quality, Ruff and diff checks pass.
 The old Mini DMA failure remains failed/unsupported evidence, not a PIO pass.
-The full compiler/placement matrix, broader current-source regressions and human
-phase acceptance remain pending. See the review-fix record for exact commands,
+The full compiler/placement matrix and broader regressions were pending in this
+initial record; human phase acceptance remains pending. See the review-fix record for exact commands,
 artifacts, historical attribution and unrun gates.
 
 The user explicitly approved the P3 preflight and implementation on source
@@ -42,9 +86,9 @@ Original phase IDs, historical evidence and qualification limits are retained.
 
 The [P3 runbook](tiny-soc-r2-software-scheduling.md) defines compiler/layout
 experiments, shared finite DMA/WS2812 service, ownership and exact commands.
-Implementation and validation are in progress; this entry does not claim
-phase completion or performance improvement. The existing GNU toolchain is
-used first, as requested; no dependency version has been changed.
+The initial entry recorded implementation and validation in progress; it did not
+claim phase completion or performance improvement. The existing GNU toolchain
+was used as requested; no dependency version has been changed.
 
 Early development testing found a compressed-instruction acceptance bug:
 `rs_mcu_unmapped_probe` assembled its faulting load as 16-bit `4108`, while
@@ -448,7 +492,7 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | TINY-R2-P0 - Performance Contract and Roadmap Freeze | Reviewable requirements, exact old/new phase mapping, invariant package/IO counts, same-frequency CPU/main-SRAM ownership, explicit performance budgets, links and commands. Record actual documentation checks separately. | Documentation freeze only; no hardware result |
 | TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Functional/measurement baseline accepted by explicit P2 approval on 2026-10-06; timing, warning and physical gaps retained |
 | TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Implementation and evidence ready for review; all analyzed rates retain timing failures; phase acceptance pending human review |
-| TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling, WS2812 refill budget and workload correctness on the available platform. | Pending |
+| TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling and available-path correctness; approved option A retains product DMA/IRQ budget qualification for the platform that supplies the route. | Matrix retained on `3e46cc8`; subsequent two P1 HAL fixes and focused/compatibility checks complete in the worktree; human review/acceptance pending |
 | TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
 | TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
 | TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration | Legacy P7 obligations; shared PWM reporting, I2S slave and alternate-input-route prerequisites; common ABI/HAL parity; Crypto banks/lifecycle; truthful capabilities and affected Mini compatibility. | Pending |
