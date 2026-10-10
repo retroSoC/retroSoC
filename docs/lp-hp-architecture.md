@@ -215,7 +215,13 @@ files remain available only for optional PLL experiments.
 ## Evidence boundary
 
 Behavioral RTL, firmware, directed data-plane/lifecycle/clock tests, manifest
-parity, and quality checks are the evidence for this implementation. HP stop
+parity, and quality checks are the evidence for this implementation. The
+directed `tests/rtl/hp_release_window_tb.sv` composes the exact release path
+(AON lifecycle controller, HP-domain CDC synchronizers, MMIO address gate, and
+HP-to-LP async bridge) and proves that same-cycle release-window writes and
+reads complete intact, that a full stop/re-release cycle leaves the chain
+clean, and that a gate-held transaction during drain is dropped without
+contaminating the next release window. HP stop
 implements a pre-drain cache request/ACK window, drain, coordinated flush,
 actual-release status, and bounded forced reset. OpenC906 uses 64-byte cache
 lines with T-Head custom-0 `dcache.cva`/`dcache.iva` maintenance instructions

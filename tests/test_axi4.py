@@ -90,6 +90,46 @@ def test_axi4_async_bridge_transfers_and_warm_flushes(tmp_path: Path) -> None:
     assert "AXI4 async bridge transfer and warm flush test passed" in result.stdout
 
 
+def test_hp_release_window_retains_transactions(tmp_path: Path) -> None:
+    verilator = shutil.which("verilator")
+    if verilator is None:
+        return
+    output = tmp_path / "hp_release_window_tb"
+    ccache_tmp = tmp_path / "ccache"
+    ccache_tmp.mkdir()
+    subprocess.run(
+        [
+            verilator, "--binary", "--timing", "-Wno-fatal", "--top-module",
+            "hp_release_window_tb",
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/cdc"),
+            "-I" + str(ROOT / "rtl/managed/clusterip/common/rtl/interface"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/xchecker.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/spill_register.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/bin2gray.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/utils/gray2bin.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_sync.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_rst_ctrlr.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"),
+            str(ROOT / "rtl/managed/clusterip/common/rtl/clkrst/rst_sync.sv"),
+            str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
+            str(ROOT / "rtl/mini/top/axi4_address_gate.sv"),
+            str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
+            str(ROOT / "rtl/mini/top/hp_lifecycle_controller.sv"),
+            str(ROOT / "tests/rtl/hp_release_window_tb.sv"),
+            "-Mdir", str(tmp_path / "obj"), "-o", str(output),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "CCACHE_DIR": str(ccache_tmp), "CCACHE_TEMPDIR": str(ccache_tmp)},
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "HP release window transaction retention test passed" in result.stdout
+
+
 def test_axi4_downsizer_preserves_bursts_lanes_and_backpressure(
     tmp_path: Path,
 ) -> None:
