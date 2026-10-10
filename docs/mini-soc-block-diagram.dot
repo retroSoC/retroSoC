@@ -104,9 +104,13 @@ digraph mini_soc_block_diagram {
     label="HP data domain @ EXT72 / PLL";
     style="rounded";
 
-    vexii [
+    c906 [
       fillcolor="#DBEAFE",
-      label="VexiiRiscv hart 1\nindependent native AXI64 I-cache / D-cache"
+      label="OpenC906 hart 1\nsingle 128-bit AXI4 master\ninternal CLINT/PLIC @ 0x08000000"
+    ];
+    hp_demux [
+      fillcolor="#E0F2FE",
+      label="128 -> 64 serializing downsizer\n+ MMIO demux (0x02000000-0x2FFFFFFF)"
     ];
     ext_h [
       fillcolor="#DBEAFE",
@@ -158,8 +162,9 @@ digraph mini_soc_block_diagram {
   lp_fabric -> lp_gateway [label="memory windows"];
   hp_mmio -> lp_fabric [label="uncached MMIO"];
 
-  vexii -> data_plane [label="I$ / D$ AXI64"];
-  vexii -> hp_mmio [label="MMIO"];
+  c906 -> hp_demux [label="AXI4 128-bit"];
+  hp_demux -> data_plane [label="mem AXI64, slot 0"];
+  hp_demux -> hp_mmio [label="MMIO window"];
   io_gateway -> data_plane [label="M2-M4"];
   lp_gateway -> data_plane [label="M5"];
   ext_h -> data_plane [label="M7"];

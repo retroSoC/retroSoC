@@ -19,9 +19,9 @@ Every committed `MINI_MODE=PRODUCT` profile instantiates two fixed harts:
 
 | Property | LP management | HP application |
 | --- | --- | --- |
-| Core | Hazard3 | generated VexiiRiscv |
+| Core | Hazard3 | T-Head OpenC906 (locked pre-generated DEFAULT configuration) |
 | Hart ID | 0 | 1 |
-| ISA | profile RV32I/RV32IM | RV64IMAFDC + Zicbom, S/U mode, Sv39 |
+| ISA | profile RV32I/RV32IM | RV64GC (RV64IMAFDC + Zicsr/Zifencei), S/U mode, Sv39 |
 | Reset clock | REF24 at 24 MHz | external 72 MHz safe clock |
 | Role | boot, control, diagnostics, recovery | high-throughput application/Linux |
 | JTAG | reset owner | selectable while HP is held in reset |
@@ -33,6 +33,19 @@ product address, interrupt, or lifecycle ABI.
 
 There is no hardware cache coherency. Firmware and operating systems must use
 explicit ownership, fences, and cache maintenance for shared buffers.
+
+HP interrupt and timer delivery uses the CLINT and PLIC internal to the C906
+(T-Head c900 register layouts), decoded inside the core BIU below the
+128 MiB-aligned base `0x08000000`; that window never reaches the SoC fabric
+and is reserved as `HP_C906_SYS` in the address map. The former SoC-level HP
+ACLINT (`0x02000000`) and HP PLIC (`0x0C000000`) are removed. SoC interrupt
+source numbers are unchanged at the boundary (1 UART1, 2 mailbox doorbell,
+3 EXT-H, 4-12 DMA/USB2/SDIO0/SDIO1/SPI-SD/JPEG/APU/GA2D/NPU); the C906 maps
+external input *i* to PLIC ID *i*+16, so software sees IDs 17-28. The CLINT
+at `0x10020000` remains the LP/global CLINT and mtime source; mtime reaches
+the C906 through `pad_cpu_sys_cnt` and is read through the `time` CSR.
+LP-to-HP notification is exclusively the mailbox doorbell (PLIC ID 18). See
+[HP platform](ip/hp-platform.md).
 
 ## Clock and reset domains
 
@@ -74,10 +87,11 @@ Hazard3 -> AHB-Lite adapter -> LP AXI32 control fabric
         -> LP/PCLK bridge -> APB4 peripheral and system register banks
 ```
 
-HP uncached MMIO is downsized to AXI32 and crosses HP to LP through
-`axi4_async_bridge`. Product access control rejects HP writes to root SYSCTRL,
-watchdog, and GPIO administration windows with `SLVERR`; Hazard3 retains full
-management access.
+HP uncached MMIO is demuxed from the HP core's single AXI4 master by
+`axi4_mmio_demux` (window `0x02000000-0x2FFFFFFF`), downsized to AXI32, and
+crosses HP to LP through `axi4_async_bridge`. Product access control rejects
+HP writes to root SYSCTRL, watchdog, and GPIO administration windows with
+`SLVERR`; Hazard3 retains full management access.
 
 `axi4_mgmt_router` keeps APB/control addresses on this path and routes every
 memory window through an LP-to-HP data gateway. Hazard3 therefore shares the
@@ -94,8 +108,8 @@ and a Common FIFO preserves write-data order where AXI4 W has no ID.
 
 | Master | Entry path |
 | --- | --- |
-| HP I-cache | native AXI64, ID prefix 0 |
-| HP D-cache | native AXI64, ID prefix 1 |
+| HP core (OpenC906) | single 128-bit AXI4 master serialized by `axi4_downsizer_128to64`, ID prefix 0; `axi4_mmio_demux` splits off the MMIO window |
+| retired HP D-cache slot | tied idle; ID-prefix map preserved |
 | central DMA | PCLK-to-HP async bridge, AXI32-to-64 upsizer |
 | I/O gateway A | USB2 and SDIO0, then PCLK-to-HP CDC and upsizer |
 | I/O gateway B | SDIO1 and SPI-SD, then PCLK-to-HP CDC and upsizer |
@@ -203,9 +217,10 @@ files remain available only for optional PLL experiments.
 Behavioral RTL, firmware, directed data-plane/lifecycle/clock tests, manifest
 parity, and quality checks are the evidence for this implementation. HP stop
 implements a pre-drain cache request/ACK window, drain, coordinated flush,
-actual-release status, and bounded forced reset. Vexii implements 64-byte
-`Zicbom`; software still owns shared-range selection, and a forced reset cannot
-preserve dirty cache data when the ACK times out. It must not be
+actual-release status, and bounded forced reset. OpenC906 uses 64-byte cache
+lines with T-Head custom-0 `dcache.cva`/`dcache.iva` maintenance instructions
+instead of Zicbom; software still owns shared-range selection, and a forced
+reset cannot preserve dirty cache data when the ACK times out. It must not be
 called cache coherent, power isolated, timing closed, CDC/RDC signed off, or
 silicon-qualified. Synthesis, netlist simulation, STA, MMMC, clock-tree, DFT,
 and analogue PLL qualification are separate gates.

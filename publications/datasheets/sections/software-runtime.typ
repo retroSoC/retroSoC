@@ -96,13 +96,13 @@ the C runtime dispatches LP external interrupts through Hazard3 Xh3irq; it is no
    (code("rs_irq_disable_external"),[Mask the selected external source.],[The no-CSR implementations return RS_ENOTSUP; they do not silently emulate interrupts.]),
    ([Global enable],[The caller controls the global interrupt-enable bit separately.],[Complete handler and source setup before enabling delivery.]),
    ([Default exception],[Print diagnostic mcause and stack pointer, then loop.],[No automatic TEST_STATUS failure or instruction recovery is generated.]),
-   ([External interrupt dispatch],[Claim the highest-priority Xh3irq source, call its installed handler, then restore context; mask a source with no handler.],[The peripheral cause still needs acknowledgement in the handler. HP PLIC claim/complete belongs to the HP platform.])),
+   ([External interrupt dispatch],[Claim the highest-priority Xh3irq source, call its installed handler, then restore context; mask a source with no handler.],[The peripheral cause still needs acknowledgement in the handler. HP claim/complete belongs to the core-internal PLIC on the HP platform.])),
   widths:(1.05fr,1.7fr,1.7fr))
 
 The supplied IRQ example registers machine timer/software handlers, enables global delivery,
 updates the compare value in the timer handler and clears the software-pending source in its
 handler. Its bounded foreground waits are example-specific. LP vector bits, CPU cause numbers,
-handler-table indexes and HP PLIC source IDs are distinct namespaces. See @dma-routing for
+handler-table indexes and HP PLIC IDs (SoC source + 16) are distinct namespaces. See @dma-routing for
 hardware routes and @fault-code-reference for interpreting captured results.
 #source-note("crt/arch/riscv/system_irq.S",title:"Saved context and direct trap entry")
 #source-note("crt/src/core/system_irq_handler.c",title:"Registration, supported enables and default dispatch behavior")

@@ -26,11 +26,13 @@ def test_cpu_configuration_does_not_substitute_firmware_flags(spec):
     assert result["lp"]["CSR_M_MANDATORY"] == "1"
     assert result["build"]["ISA"] == "RV32IM" and result["build"]["HAVE_CSR"] == "NO"
     assert result["lp"]["PMP_REGIONS"] == "0"
-    assert result["hp"]["pmpParam.pmpSize"] == "16"
-    assert result["hp"]["fetchL1Sets"] == "64" and result["hp"]["fetchL1Ways"] == "4"
-    assert result["hp_cache_capacity"].startswith("Unconfirmed")
-    sram_pma = next(row for row in result["pma"] if row["base"] == "0x30000000")
-    assert sram_pma["bytes"] == 128 * 1024  # Attribute envelope, not fitted SRAM capacity.
+    assert result["hp"]["resetVector"] == "0x38000000"
+    assert result["hp"]["sysWindowBase"] == "0x08000000"
+    assert result["hp"]["coreAxiDataWidth"] == "128" and result["hp"]["fabricAxiDataWidth"] == "64"
+    assert result["hp"]["hartId"] == "1" and result["hp"]["externalInterruptSources"] == "16"
+    assert result["hp_isa_base"] == "rv64i" and result["hp_mmu"] == "sv39"
+    assert "zicbom" not in result["hp_isa"]
+    assert "32 KiB" in result["hp_cache_capacity"]
 
 
 @pytest.mark.parametrize("text", [
@@ -50,8 +52,9 @@ def test_lp_parameters_ignore_commented_out_instance():
 
 
 def test_duplicate_hp_assignment_is_rejected():
+    wrapper = "localparam logic [39:0] HpResetVector = 40'h00_3800_0000;\n" * 2
     with pytest.raises(ValueError, match="duplicate HP"):
-        ir.hp_parameters('param.xlen = 32\nparam.xlen = 64\nparam.addISA("m")')
+        ir.hp_parameters(wrapper, "")
 
 
 def test_required_processor_parameter_cannot_disappear(spec):

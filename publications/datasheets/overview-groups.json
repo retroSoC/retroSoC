@@ -3,7 +3,7 @@
     "title": "Processors and Debug",
     "items": [
       "Hazard3",
-      "VexiiRiscv",
+      "OpenC906",
       "JTAG"
     ]
   },
@@ -31,8 +31,6 @@
     "title": "Interrupts and IPC",
     "items": [
       "LP CLINT",
-      "HP ACLINT",
-      "HP PLIC",
       "LP/HP Mailbox"
     ]
   },

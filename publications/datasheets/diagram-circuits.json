@@ -4441,7 +4441,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "UART1 is the HP console instance with dedicated TX/RX pads and an HP PLIC route. DMA pacing and RTS/CTS are not connected for this instance. FIFO geometry and serial formatting are shared with UART0."
+    "note": "UART1 is the HP console instance with dedicated TX/RX pads and an HP external interrupt route (PLIC ID 17). DMA pacing and RTS/CTS are not connected for this instance. FIFO geometry and serial formatting are shared with UART0."
   },
   "pwm": {
     "nodes": [
@@ -7273,72 +7273,27 @@
   "hp-aclint": {
     "nodes": [
       {
-        "id": "apb",
-        "title": "APB4 control\n32-bit register access",
-        "x": 0.0,
-        "y": 7.0,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p0",
-            "direction": "out",
-            "width": 32,
-            "side": "south"
-          }
-        ],
-        "sources": [
-          "rtl/ip/peripheral/apb4_clint.sv"
-        ]
-      },
-      {
-        "id": "reg",
-        "title": "Register bank\nconfiguration / status",
+        "id": "tick",
+        "title": "LP CLINT timebase\n64-bit MTIME",
         "x": 0.0,
         "y": 3.5,
         "w": 4.0,
         "h": 1.8,
         "ports": [
           {
-            "id": "p0",
-            "direction": "in",
-            "width": 32,
-            "side": "north"
-          },
-          {
             "id": "p1",
             "direction": "out",
             "width": 64,
             "side": "east"
-          },
-          {
-            "id": "p2",
-            "direction": "in",
-            "width": 64,
-            "side": "east"
-          },
-          {
-            "id": "p5",
-            "direction": "out",
-            "width": null,
-            "side": "south",
-            "bundle": true
           }
         ],
         "sources": [
-          "rtl/ip/peripheral/apb4_clint.sv",
-          "rtl/ip/peripheral/clint_reg.sv"
-        ],
-        "instance_source": {
-          "file": "rtl/ip/peripheral/apb4_clint.sv",
-          "name": "u_clint_reg",
-          "module": "clint_reg",
-          "declaration_file": "rtl/ip/peripheral/clint_reg.sv"
-        }
+          "rtl/mini/top/apb4_periph.sv"
+        ]
       },
       {
         "id": "core",
-        "title": "Time counter / comparator\nsoftware interrupt state",
+        "title": "OpenC906 internal CLINT\nc900 layout, core-BIU decode",
         "x": 6.3,
         "y": 3.5,
         "w": 4.0,
@@ -7349,18 +7304,6 @@
             "direction": "in",
             "width": 64,
             "side": "west"
-          },
-          {
-            "id": "p2",
-            "direction": "out",
-            "width": 64,
-            "side": "west"
-          },
-          {
-            "id": "p3",
-            "direction": "in",
-            "width": 1,
-            "side": "north"
           },
           {
             "id": "p4",
@@ -7371,38 +7314,20 @@
           }
         ],
         "sources": [
-          "rtl/ip/peripheral/apb4_clint.sv",
-          "rtl/ip/peripheral/clint_core.sv"
+          "rtl/mini/top/hp_subsystem.sv",
+          "rtl/mini/top/hp_core_wrapper.sv",
+          "rtl/mini/ip_overrides/aq_sysio_kid.v"
         ],
         "instance_source": {
-          "file": "rtl/ip/peripheral/apb4_clint.sv",
-          "name": "u_clint_core",
-          "module": "clint_core",
-          "declaration_file": "rtl/ip/peripheral/clint_core.sv"
+          "file": "rtl/mini/top/hp_subsystem.sv",
+          "name": "u_hp_core_wrapper",
+          "module": "hp_core_wrapper",
+          "declaration_file": "rtl/mini/top/hp_core_wrapper.sv"
         }
       },
       {
-        "id": "tick",
-        "title": "Shared timebase tick",
-        "x": 6.3,
-        "y": 7.0,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p3",
-            "direction": "out",
-            "width": 1,
-            "side": "south"
-          }
-        ],
-        "sources": [
-          "rtl/ip/peripheral/apb4_clint.sv"
-        ]
-      },
-      {
-        "id": "irq",
-        "title": "HP timer/software routes",
+        "id": "hart",
+        "title": "HP hart 1\nM/S timer + software IRQ",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -7414,211 +7339,73 @@
             "width": null,
             "side": "west",
             "bundle": true
-          },
-          {
-            "id": "p5",
-            "direction": "in",
-            "width": null,
-            "side": "south",
-            "bundle": true
           }
         ],
         "sources": [
-          "rtl/ip/peripheral/apb4_clint.sv"
+          "rtl/mini/ip_overrides/aq_sysio_kid.v"
         ]
       }
     ],
     "edges": [
       {
-        "from": "apb.p0",
-        "to": "reg.p0",
-        "kind": "data",
-        "label": "APB4 / 32",
-        "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".apb4(apb4)"
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "reg",
-            "port": "apb4",
-            "expression": "apb4"
-          }
-        ],
-        "zigzag-dir": "horizontal"
-      },
-      {
-        "from": "reg.p1",
+        "from": "tick.p1",
         "to": "core.p1",
         "kind": "data",
-        "label": "LOAD / 64",
+        "label": "MTIME / 64",
         "style": "direct",
         "bindings": [
           {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".mtime_load_value_o(s_mtime_load_value)"
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "assign hp_time_o = u_clint_if.mtime_o;"
           },
           {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".mtime_load_value_i(s_mtime_load_value)"
+            "file": "rtl/mini/top/hp_subsystem.sv",
+            "text": ".time_i(time_i)"
           }
         ],
         "signals": [
           {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "scope": "apb4_clint",
-            "symbol": "s_mtime_load_value",
-            "bits": 64
-          },
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "scope": "apb4_clint",
-            "symbol": "s_mtime_load_value",
-            "bits": 64
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "reg",
-            "port": "mtime_load_value_o",
-            "expression": "s_mtime_load_value"
-          },
-          {
-            "node": "core",
-            "port": "mtime_load_value_i",
-            "expression": "s_mtime_load_value"
-          }
-        ]
-      },
-      {
-        "from": "core.p2",
-        "to": "reg.p2",
-        "kind": "data",
-        "label": "TIME / 64",
-        "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".mtime_o(s_mtime)"
-          },
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".mtime_i(s_mtime)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "scope": "apb4_clint",
-            "symbol": "s_mtime",
-            "bits": 64
-          },
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "scope": "apb4_clint",
-            "symbol": "s_mtime",
+            "file": "rtl/mini/top/retrosoc.sv",
+            "scope": "retrosoc",
+            "symbol": "s_hp_time",
             "bits": 64
           }
         ],
         "instance_ports": [
           {
             "node": "core",
-            "port": "mtime_o",
-            "expression": "s_mtime"
-          },
-          {
-            "node": "reg",
-            "port": "mtime_i",
-            "expression": "s_mtime"
-          }
-        ]
-      },
-      {
-        "from": "tick.p3",
-        "to": "core.p3",
-        "kind": "control",
-        "label": "TICK",
-        "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".tick_i(timebase_tick_i)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "scope": "apb4_clint",
-            "symbol": "timebase_tick_i",
-            "bits": 1
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "core",
-            "port": "tick_i",
-            "expression": "timebase_tick_i"
+            "port": "time_i",
+            "expression": "time_i"
           }
         ],
         "zigzag-dir": "horizontal"
       },
       {
         "from": "core.p4",
-        "to": "irq.p4",
+        "to": "hart.p4",
         "kind": "control",
-        "label": "Timer IRQ",
+        "label": "M/S IRQ",
         "style": "direct",
         "bindings": [
           {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".timer_irq_o(s_timer_irq)"
+            "file": "rtl/mini/top/hp_core_wrapper.sv",
+            "text": ".pad_cpu_sys_cnt(time_i)"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_sysio_kid.v",
+            "text": "input          clint_core_mt_int;"
           }
         ],
-        "instance_ports": [
-          {
-            "node": "core",
-            "port": "timer_irq_o",
-            "expression": "s_timer_irq"
-          }
-        ]
-      },
-      {
-        "from": "reg.p5",
-        "to": "irq.p5",
-        "kind": "control",
-        "label": "Software IRQ",
-        "style": "dodge",
-        "bindings": [
-          {
-            "file": "rtl/ip/peripheral/apb4_clint.sv",
-            "text": ".msip_o(s_msip)"
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "reg",
-            "port": "msip_o",
-            "expression": "s_msip"
-          }
-        ],
-        "zigzag-dir": "horizontal",
-        "dodge-y": 1.7,
-        "dodge-margins": [
-          0,
-          0
-        ]
+        "zigzag-dir": "horizontal"
       }
     ],
-    "note": "The LP CLINT and HP ACLINT share this RTL family but own separate register windows and interrupt routing. HP logical contexts are not additional physical harts."
+    "note": "The OpenC906 CLINT is decoded inside the core BIU within the 0x08000000 system window and never appears on the SoC fabric. There is no memory-mapped mtime: the SoC drives the 64-bit time value into the core and software reads the time CSR."
   },
   "hp-plic": {
     "nodes": [
       {
         "id": "sources",
-        "title": "Peripheral IRQ sources\n32 source slots",
+        "title": "SoC peripheral IRQs\n16 external sources",
         "x": 0.0,
         "y": 3.5,
         "w": 4.0,
@@ -7627,17 +7414,24 @@
           {
             "id": "p0",
             "direction": "out",
-            "width": 32,
+            "width": 16,
             "side": "east"
           }
         ],
         "sources": [
-          "rtl/mini/top/apb4_periph.sv"
-        ]
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/retrosoc.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/mini/top/retrosoc.sv",
+          "name": "u_apb4_periph",
+          "module": "apb4_periph",
+          "declaration_file": "rtl/mini/top/apb4_periph.sv"
+        }
       },
       {
-        "id": "plic",
-        "title": "Pending / priority / claim\n2 context arbiters",
+        "id": "core",
+        "title": "OpenC906 internal PLIC\nc900 layout, ID = source + 16",
         "x": 6.3,
         "y": 3.5,
         "w": 4.0,
@@ -7646,36 +7440,31 @@
           {
             "id": "p0",
             "direction": "in",
-            "width": 32,
+            "width": 16,
             "side": "west"
           },
           {
             "id": "p1",
             "direction": "out",
-            "width": 2,
-            "side": "east"
-          },
-          {
-            "id": "p2",
-            "direction": "in",
-            "width": 32,
-            "side": "north"
+            "width": null,
+            "side": "east",
+            "bundle": true
           }
         ],
         "sources": [
-          "rtl/mini/top/apb4_periph.sv",
-          "rtl/ip/peripheral/apb4_plic.sv"
+          "rtl/mini/top/hp_subsystem.sv",
+          "rtl/mini/top/hp_core_wrapper.sv"
         ],
         "instance_source": {
-          "file": "rtl/mini/top/apb4_periph.sv",
-          "name": "u_apb4_hp_plic",
-          "module": "apb4_plic",
-          "declaration_file": "rtl/ip/peripheral/apb4_plic.sv"
+          "file": "rtl/mini/top/hp_subsystem.sv",
+          "name": "u_hp_core_wrapper",
+          "module": "hp_core_wrapper",
+          "declaration_file": "rtl/mini/top/hp_core_wrapper.sv"
         }
       },
       {
-        "id": "hp",
-        "title": "HP machine / supervisor\nexternal interrupt inputs",
+        "id": "hart",
+        "title": "HP hart 1\nM/S external interrupts",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -7684,114 +7473,71 @@
           {
             "id": "p1",
             "direction": "in",
-            "width": 2,
-            "side": "west"
+            "width": null,
+            "side": "west",
+            "bundle": true
           }
         ],
         "sources": [
-          "rtl/mini/top/apb4_periph.sv"
-        ]
-      },
-      {
-        "id": "apb",
-        "title": "APB4 configuration\npriority / enable / threshold",
-        "x": 6.3,
-        "y": 7.0,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p2",
-            "direction": "out",
-            "width": 32,
-            "side": "south"
-          }
-        ],
-        "sources": [
-          "rtl/mini/top/apb4_periph.sv"
+          "rtl/mini/top/hp_core_wrapper.sv"
         ]
       }
     ],
     "edges": [
       {
         "from": "sources.p0",
-        "to": "plic.p0",
-        "kind": "control",
-        "label": "IRQ / 32",
-        "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/mini/top/apb4_periph.sv",
-            "text": ".source_i(s_hp_plic_source)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/mini/top/apb4_periph.sv",
-            "scope": "apb4_periph",
-            "symbol": "s_hp_plic_source",
-            "bits": 32
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "plic",
-            "port": "source_i",
-            "expression": "s_hp_plic_source"
-          }
-        ]
-      },
-      {
-        "from": "plic.p1",
-        "to": "hp.p1",
-        "kind": "control",
-        "label": "CTX / 2",
-        "style": "direct",
-        "bindings": [
-          {
-            "file": "rtl/mini/top/apb4_periph.sv",
-            "text": ".context_irq_o(s_hp_plic_context_irq)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/mini/top/apb4_periph.sv",
-            "scope": "apb4_periph",
-            "symbol": "s_hp_plic_context_irq",
-            "bits": 2
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "plic",
-            "port": "context_irq_o",
-            "expression": "s_hp_plic_context_irq"
-          }
-        ]
-      },
-      {
-        "from": "apb.p2",
-        "to": "plic.p2",
+        "to": "core.p0",
         "kind": "data",
-        "label": "APB4 / 32",
+        "label": "SOURCES / 16",
         "style": "direct",
         "bindings": [
           {
-            "file": "rtl/mini/top/apb4_periph.sv",
-            "text": ".apb4(u_hp_plic_apb4_if)"
+            "file": "rtl/mini/top/retrosoc.sv",
+            "text": ".hp_plic_src_o(s_hp_plic_src)"
+          },
+          {
+            "file": "rtl/mini/top/hp_subsystem.sv",
+            "text": ".plic_src_i(plic_src_i)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/mini/top/retrosoc.sv",
+            "scope": "retrosoc",
+            "symbol": "s_hp_plic_src",
+            "bits": 16
           }
         ],
         "instance_ports": [
           {
-            "node": "plic",
-            "port": "apb4",
-            "expression": "u_hp_plic_apb4_if"
+            "node": "sources",
+            "port": "hp_plic_src_o",
+            "expression": "s_hp_plic_src"
+          },
+          {
+            "node": "core",
+            "port": "plic_src_i",
+            "expression": "plic_src_i"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p1",
+        "to": "hart.p1",
+        "kind": "control",
+        "label": "MEIP / SEIP",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/hp_core_wrapper.sv",
+            "text": ".pad_plic_int_vld({224'd0, plic_src_i})"
           }
         ],
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "32 source slots feed two logical HP interrupt contexts. Pending/claimed state, priority and thresholds are inside apb4_plic. This is the HP external-interrupt controller, not the LP IRQ route."
+    "note": "The OpenC906 PLIC is decoded inside the core BIU at the base of the 0x08000000 system window and never appears on the SoC fabric. SoC external source n is delivered to the core as PLIC ID n+16; IDs 0-15 are reserved or internal."
   },
   "hp-mailbox": {
     "nodes": [
@@ -8165,7 +7911,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Ten resources retain independent owner/lock/quiesce/reset state. Resource 8 owns GA2D; resource 9 owns NPU and routes LP vector 33 / HP PLIC source 12. IRQ steering and cache handoff are control relationships, not a payload DMA path."
+    "note": "Ten resources retain independent owner/lock/quiesce/reset state. Resource 8 owns GA2D; resource 9 owns NPU and routes LP vector 33 / HP external source 12 (PLIC ID 28). IRQ steering and cache handoff are control relationships, not a payload DMA path."
   },
   "monitor": {
     "nodes": [
@@ -10714,7 +10460,7 @@
       },
       {
         "id": "hp",
-        "title": "VexiiRiscv HP\nI-cache / D-cache",
+        "title": "OpenC906 HP\nAXI4 128-bit master, downsized to 64",
         "x": 6.3,
         "y": 7.0,
         "w": 4.0,
@@ -11001,28 +10747,28 @@
         "from": "hp.p1",
         "to": "fabric.p1",
         "kind": "data",
-        "label": "I-cache / 64",
+        "label": "Memory / 64",
         "style": "direct",
         "bindings": [
           {
             "file": "rtl/mini/top/retrosoc.sv",
-            "text": ".icache_axi4(u_hp_icache_axi4_if)"
+            "text": ".mem_axi4(u_hp_mem_axi4_if)"
           },
           {
             "file": "rtl/mini/top/retrosoc.sv",
-            "text": ".hp_icache_axi4(u_hp_icache_axi4_if)"
+            "text": ".hp_mem_axi4(u_hp_mem_axi4_if)"
           }
         ],
         "instance_ports": [
           {
             "node": "hp",
-            "port": "icache_axi4",
-            "expression": "u_hp_icache_axi4_if"
+            "port": "mem_axi4",
+            "expression": "u_hp_mem_axi4_if"
           },
           {
             "node": "fabric",
-            "port": "hp_icache_axi4",
-            "expression": "u_hp_icache_axi4_if"
+            "port": "hp_mem_axi4",
+            "expression": "u_hp_mem_axi4_if"
           }
         ],
         "zigzag-dir": "horizontal"

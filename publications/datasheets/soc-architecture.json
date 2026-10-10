@@ -273,14 +273,17 @@
     },
     {
       "id": "hp_core",
-      "label": "VexiiRiscv\nI$ / D$ / FPU / MMU",
+      "label": "OpenC906\nI$ / D$ / FPU / MMU",
       "x": 107,
       "y": 4.793103448275862,
       "w": 43,
       "h": 11.896551724137932,
       "domain": "hp",
       "role": "module",
-      "ips": [],
+      "ips": [
+        "hp-aclint",
+        "hp-plic"
+      ],
       "rotate": false,
       "clock": {
         "file": "rtl/mini/top/retrosoc.sv",
@@ -834,48 +837,6 @@
       "role": "module",
       "ips": [
         "clint"
-      ],
-      "rotate": false,
-      "clock": {
-        "file": "rtl/mini/top/retrosoc.sv",
-        "name": "u_apb4_periph",
-        "module": "apb4_periph",
-        "port": "clk_i",
-        "signal": "clk_pclk_i"
-      }
-    },
-    {
-      "id": "hp-aclint",
-      "label": "HP ACLINT",
-      "x": 108,
-      "y": 118,
-      "w": 42,
-      "h": 5.5,
-      "domain": "pclk",
-      "role": "module",
-      "ips": [
-        "hp-aclint"
-      ],
-      "rotate": false,
-      "clock": {
-        "file": "rtl/mini/top/retrosoc.sv",
-        "name": "u_apb4_periph",
-        "module": "apb4_periph",
-        "port": "clk_i",
-        "signal": "clk_pclk_i"
-      }
-    },
-    {
-      "id": "hp-plic",
-      "label": "HP PLIC",
-      "x": 108,
-      "y": 125,
-      "w": 42,
-      "h": 5.5,
-      "domain": "pclk",
-      "role": "module",
-      "ips": [
-        "hp-plic"
       ],
       "rotate": false,
       "clock": {
@@ -2600,30 +2561,6 @@
       "arrow": true
     },
     {
-      "id": "e55",
-      "from": "cfg_right",
-      "to": "hp-aclint",
-      "source_side": "east",
-      "target_side": "west",
-      "source_position": 0.38392857142857145,
-      "target_position": 0.5,
-      "via": [],
-      "kind": "control",
-      "arrow": true
-    },
-    {
-      "id": "e56",
-      "from": "cfg_right",
-      "to": "hp-plic",
-      "source_side": "east",
-      "target_side": "west",
-      "source_position": 0.6339285714285714,
-      "target_position": 0.5,
-      "via": [],
-      "kind": "control",
-      "arrow": true
-    },
-    {
       "id": "e57",
       "from": "cfg_right",
       "to": "hp-mailbox",
@@ -3405,7 +3342,7 @@
         },
         "output_bits": {
           "file": "rtl/mini/top/retrosoc.sv",
-          "name": "u_hp_icache_axi4_if"
+          "name": "u_hp_mem_axi4_if"
         }
       }
     },
@@ -3812,11 +3749,11 @@
   "masters": [
     {
       "index": 0,
-      "name": "hp_icache"
+      "name": "hp_mem"
     },
     {
       "index": 1,
-      "name": "hp_dcache"
+      "name": "hp_retired"
     },
     {
       "index": 2,

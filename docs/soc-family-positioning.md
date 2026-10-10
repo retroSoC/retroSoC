@@ -27,14 +27,21 @@ advertised for a device or PDK.
 | Tier | Product role | Compute topology | Primary software | Defining boundary |
 | --- | --- | --- | --- | --- |
 | Tiny | Low-power MCU and edge-connectivity endpoint | One Hazard3 MCU core | Bare metal or RTOS | No MMU or external DRAM dependency |
-| Mini | Low-cost heterogeneous Linux control SoC | RV32 Hazard3 management plus one RV64 VexiiRiscv application core | Embedded Linux or RT-Thread plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
+| Mini | Low-cost heterogeneous Linux control SoC | RV32 Hazard3 management plus one RV64 T-Head OpenC906 application core | Embedded Linux or RT-Thread plus management firmware | Lightweight Linux and basic HMI, without a desktop-class accelerator requirement |
 | Std | Heterogeneous RV32 graphical Linux edge SoC | Hazard3 management core plus VexiiRiscv performance and efficiency cores | Graphical Linux plus RTOS firmware | Full AXI4 memory fabric, GPU, audio, and AI acceleration |
 | Pro | Highest-performance coherent RV64 family tier | Hazard3 management core plus four coherent RV64 VexiiRiscv Linux cores | RV64 graphical Linux | Coherent SMP, high-bandwidth memory, GPU, NPU, and video codecs |
 
 The VexiiRiscv targets rely on the upstream core's documented RV32/RV64,
 single/dual-issue, cache, Sv32/Sv39, AXI4, and Linux capabilities. The exact
 [VexiiRiscv](https://github.com/SpinalHDL/VexiiRiscv) revision and generated
-configuration must be locked and verified before integration.
+configuration must be locked and verified before integration. The former Mini
+HP VexiiRiscv configuration (RV64IMAFDC + Zicbom, reset vector `0x38000000`,
+hart ID 1) is now preserved as a frozen Std-series generator asset:
+`scripts/vexiiriscv/GenerateRetroSocStd.scala` (module
+`vexiiriscv_std_generated`), driven by `make std-vexii-generate`, with the
+locked VexiiRiscv revision retained in the dependency lock. Mini no longer
+consumes it; the Mini HP core is the locked, pre-generated T-Head
+[OpenC906](https://github.com/XUANTIE-RV/openc906).
 
 The names describe capability tiers, not die-size derivatives. In particular,
 Tiny is not a Mini with features disabled, and Std is not a Mini that merely
@@ -170,7 +177,7 @@ feature reference when Wi-Fi is included.
 ### Status and Position
 
 retroSoC Mini is an open-source asymmetric RISC-V SoC with a fixed Hazard3 LP
-management core and a fixed 32-bit VexiiRiscv HP application core. C0-C3 are
+management core and a fixed RV64 T-Head OpenC906 HP application core. C0-C3 are
 available only in the separate MPW compatibility profile. RTL integration, a direct-Linux image
 flow, and LP boot firmware are implemented; repeatable Linux boot,
 performance, synthesis, timing, and hardware evidence are still qualification
@@ -180,8 +187,7 @@ Mini is the price, complexity, and Linux-capability anchor for the family. It
 targets industrial control, protocol gateways, compact human-machine
 interfaces, and retro multimedia systems that need Linux but do not need a
 desktop-class graphics pipeline. Hazard3 remains the trusted management core,
-and one RV32 VexiiRiscv application core runs Linux in the planned
-configuration.
+and one RV64 OpenC906 application core runs Linux.
 
 The product target starts at 64 MiB of external SDRAM, with 128 MiB preferred.
 A simple display controller or framebuffer is compatible with the Mini
@@ -213,8 +219,11 @@ capabilities:
   window, and an 8 MiB PSRAM window. Address-window capacity does not guarantee
   that every implementation includes the corresponding physical memory.
 - AXI4 uses a 32-bit LP control plane and a 10x6 native AXI64 HP data plane
-  with seven-bit global IDs. Vexii I/D ports remain independent; DMA and I/O
-  masters cross into HP and current memory frontends are reached through
+  with seven-bit global IDs. The OpenC906 HP core presents a single 128-bit
+  AXI4 master, serialized through a 128-to-64 downsizer and demuxed into
+  data-plane master slot 0 and the MMIO window; the former separate
+  I-cache/D-cache ports are retired and master slot 1 is tied idle. DMA and
+  I/O masters cross into HP and current memory frontends are reached through
   64-to-32 target adapters. Master 8 is the dedicated PCLK-to-HP AXI64/ID3
   GA2D bridge for a direct single-job private-AXI64 2D engine; master 9 is
   the HP-native NPU path, tied safely idle until the Phase 3 DMA lands.
@@ -232,7 +241,8 @@ capabilities:
   PSRAM, flash, or SPI-SD physical transaction.
 
 The experimental HP profile adds the fixed hart 1 core, a compatibility AXI
-plane, HP ACLINT/PLIC, UART1, mailbox, reset release, and shared-JTAG selection.
+plane, the C906 internal CLINT/PLIC, UART1, mailbox, reset release, and
+shared-JTAG selection.
 Its detailed executable contract is [LP/HP Architecture](lp-hp-architecture.md).
 
 The generated address map, user-extension map,
@@ -243,8 +253,8 @@ for the implemented baseline.
 ### Experimental Linux Configuration
 
 The Linux configuration keeps Hazard3 as the always-available trusted
-management core and adds VexiiRiscv as the application processor. Hazard3 is
-responsible for clock and memory initialization, image selection, VexiiRiscv
+management core and adds OpenC906 as the application processor. Hazard3 is
+responsible for clock and memory initialization, image selection, OpenC906
 boot release, fault recovery, and final power-state control. Linux must not be
 able to reconfigure the management-core lifecycle controls.
 
@@ -252,19 +262,22 @@ The frozen Mini RV64 configuration provides the following architectural target;
 validation status is recorded separately in [HP RV64 validation](hp-rv64-validation.md).
 The Std/Pro roadmap below remains independent of this implemented Mini profile.
 
-- RV64IMAFDC with machine, supervisor, and user modes.
+- RV64GC (RV64IMAFDC plus Zicsr and Zifencei) with machine, supervisor, and
+  user modes.
 - Sv39 virtual memory, hardware page-table walking, and the privileged CSRs
   required by the supported Linux kernel.
-- LR/SC atomics, separate 16 KiB instruction and data caches, and uncached MMIO
-  regions.
-- A PLIC-compatible external interrupt controller, CLINT-compatible timer and
-  software interrupts, and a deterministic reset vector.
-- A documented DMA cache-maintenance contract unless the memory system supplies
+- LR/SC atomics, separate 32 KiB instruction and data caches with 64-byte
+  lines, and uncached MMIO regions.
+- The C906 internal PLIC (T-Head c900 layout) for external interrupts, the
+  C906 internal CLINT for timer and software interrupts, `time`-CSR mtime
+  delivery from the LP/global CLINT, and a deterministic reset vector.
+- A documented DMA cache-maintenance contract (T-Head custom-0
+  `dcache.cva`/`dcache.iva` instructions) unless the memory system supplies
   hardware coherency.
 
 The implemented management firmware waits for external memory, validates and
 places the OpenSBI firmware, device tree, kernel, and initial filesystem at
-fixed addresses, and then releases the fixed VexiiRiscv reset vector. The
+fixed addresses, and then releases the fixed HP reset vector. The
 bundle uses CRC32 for accidental-corruption detection, not secure boot. A
 future normal stop must first request Linux shutdown through the mailbox. After
 Linux acknowledges and flushes persistent data, the management core must
@@ -279,9 +292,9 @@ implemented or cross-PDK guarantee:
 
 | Area | Minimum target | Preferred target |
 | --- | --- | --- |
-| VexiiRiscv frequency | 150 MHz | PDK-qualified maximum above 150 MHz |
+| HP core frequency | 150 MHz | PDK-qualified maximum above 150 MHz |
 | Main memory | 64 MiB SDRAM | 128 MiB SDRAM |
-| L1 caches | 16 KiB I-cache and 16 KiB D-cache | Same, with measured refill and DMA behavior |
+| L1 caches | 32 KiB I-cache and 32 KiB D-cache | Same, with measured refill and DMA behavior |
 | Memory transport | Native cache-line burst | Native burst with two to four outstanding transactions per master |
 | Boot storage | SPI NAND or qualified SDIO path | SDIO/eMMC plus recovery image |
 | Linux platform devices | UART, timer, interrupt controller, storage | Ethernet or USB selected by the product profile |

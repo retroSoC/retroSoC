@@ -24,11 +24,13 @@ halt, resume, register and system-bus access. LP retains control while HP is hel
 #source-note("docs/hazard3-debug.md", title:"Management debug transport and acceptance flow")
 
 === Application Processor
-==== VexiiRiscv
-The generated HP hart is a dual-issue RV64IMAFDC + Zicbom configuration, with supervisor/user
-modes, Sv39 virtual memory and *64-byte cache-maintenance blocks*. Hart 1 uses native AXI64
-instruction and data paths. Its uncached MMIO path is downsized and crosses into the LP
-control plane. OpenSBI/Linux inputs and generated-core configuration are dependency-locked.
+==== OpenC906
+The HP hart is the locked T-Head OpenC906 pre-generated RTL in its default RV64GC
+configuration, with supervisor/user modes and Sv39 virtual memory. Hart 1 issues a single
+*128-bit AXI4 master*, downsized to the 64-bit HP data fabric and split into memory and MMIO
+ports by address window. The uncached MMIO path is downsized further and crosses into the LP
+control plane. Its CLINT/PLIC are *core-internal* (c900 layouts) and never appear as SoC
+fabric targets. OpenSBI/Linux inputs and the vendored core revision are dependency-locked.
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
 
 #include "processor-details.typ"
@@ -70,7 +72,7 @@ An allowed entry does not guarantee throughput.]
 
 #pagebreak()
 #figure(matrix-diagram(), caption:[AXI64 memory access matrix: R = read, W = write, - = denied.])<bus-matrix>
-The I-cache is the only instruction-permitted initiator. HP cache attributes are preserved;
+The HP memory master is the only instruction-permitted initiator. HP cache attributes are preserved;
 DMA, I/O gateways, LP gateway, JPEG, EXT-H, GA2D and NPU require non-cacheable transactions. XPI is read-only
 on this data plane; indirect writes use its APB-controlled command engine.
 
@@ -94,7 +96,8 @@ advertise an implemented IP.
   data.regions.filter(r=>r.route in ("axi4","ram","reserved") and r.size > 4096).map(r=>(
     code(r.symbol),code(r.base_hex),code(r.end_hex),r.size_label)),
   widths:(1fr,1.1fr,1.1fr,0.65fr),
-  notes:[FLASH is the reset/boot alias. SPISD's former card-data aperture is reserved. The physical
+  notes:[FLASH is the reset/boot alias. SPISD's former card-data aperture is reserved. HP_C906_SYS
+  is reserved for the HP core's internal CLINT/PLIC decode; it is not a SoC fabric target. The physical
   capacity of fitted XPI/OPI devices remains board-dependent.],
 )
 #ds-table("registers", [Register and interrupt-controller windows],
@@ -150,7 +153,7 @@ qualification. No crystal-oscillator range or maximum core frequency is specifie
 == Interrupt System
 The management interrupt vector is 64 bits wide; two local causes and 62 external positions
 are distinct from the currently allocated source list. The following numbers are
-LP vector bits, not HP PLIC source IDs. Peripheral-level status registers identify causes
+LP vector bits, not HP PLIC IDs. Peripheral-level status registers identify causes
 within an aggregate source. Resource-controlled interrupts are routed according to ownership.
 #ds-table("lp-irqs", [LP interrupt vector],
   ([LP bit], [Source], [Description]),
@@ -158,13 +161,16 @@ within an aggregate source. Resource-controlled interrupts are routed according 
   widths:(0.45fr,1.25fr,2fr),
 )
 
-HP has local software/timer interrupts and a 32-source, two-context PLIC. Source 0 is
-reserved; sources 1-12 are UART1, mailbox, EXT-H, DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU,
-GA2D and NPU. Sources 13-31 are reserved. GA2D uses LP vector bit 32 (external ordinal 30),
-which is distinct from HP PLIC source 11; NPU uses LP vector bit 33 (external ordinal 31)
-or HP PLIC source 12 according to Resource Controller ownership. The contexts drive machine
-and supervisor external interrupts.
-Claim/complete and priority rules are defined in the HP platform contract.
+HP local software/timer interrupts come from the core-internal CLINT, and external sources
+from the core-internal PLIC (T-Head c900 layouts, decoded inside the OpenC906 core). Sixteen
+SoC external sources are wired; *SoC source n reaches software as PLIC ID n+16*. Source 1 is
+UART1, source 2 is the mailbox doorbell, source 3 is EXT-H, and sources 4-12 are the
+resource-owned DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU, GA2D and NPU lines; sources 13-15
+are reserved. GA2D uses LP vector bit 32 (external ordinal 30),
+which is distinct from HP external source 11; NPU uses LP vector bit 33 (external ordinal 31)
+or HP external source 12 according to Resource Controller ownership. The PLIC drives the
+hart's machine and supervisor external interrupts.
+Claim/complete and priority rules follow the T-Head C906 manuals.
 #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
   #set text(size:9pt)
   #source("docs/ip/hp-platform.md",title:"HP PLIC, local interrupts and mailbox") · LP software: @irq-runtime

@@ -1,10 +1,65 @@
 # HP RV64 Migration Validation
 
-The active contract is [HP platform](ip/hp-platform.md), phases 2–5. LP remains
-RV32 Hazard3. All PRODUCT profiles select RV64IMAFDC with Zicbom, Sv39 and
-32-bit physical addresses. No upstream CPU or RT-Thread source is modified.
+The active contract is [HP platform](ip/hp-platform.md). LP remains RV32
+Hazard3 (hart 0); HP is the locked, pre-generated T-Head OpenC906 (hart 1,
+RV64GC with Zicsr/Zifencei, M/S/U modes, Sv39, 32-bit SoC physical
+addresses). No upstream CPU or RT-Thread source is modified.
 
-## Reproduction
+## Current status after the OpenC906 core swap
+
+All simulation evidence below was gathered with the previous generated
+VexiiRiscv HP core and is historical: it must not be presented as OpenC906
+qualification. Current evidence requires, at minimum:
+
+- `make setup-openc906` (part of `make setup`) restoring the locked
+  [openc906](https://github.com/XUANTIE-RV/openc906) checkout, and
+  `make openc906-prepare` emitting
+  `build/<variant>/generated/openc906/openc906.fl` and its manifest under the
+  pinned upstream sha256 guard, with the reviewed
+  `rtl/mini/ip_overrides/aq_sysio_kid.v` hart-ID override applied by filelist
+  generation rather than by editing the vendored checkout.
+- Verilator compile of the OpenC906 HP subsystem, including the serializing
+  `axi4_downsizer_128to64` and `axi4_mmio_demux` path.
+- Fresh `hp-smoke-sim`, `hp-rtthread-sim`, and `hp-linux-sim` runs from their
+  committed IHP130 profiles with all contract markers and
+  `SIM_TEST_PASS code=0`, exercising the internal C906 CLINT/PLIC and the
+  `time`-CSR mtime delivery.
+- The IHP130 behavioral PR regression on the swapped design.
+
+### OpenC906 evidence gathered (2026-10-10)
+
+- `hp-smoke-sim` on `configs/ci/ihp130-hp.mk` (Verilator): `HP_LINUX_READY`,
+  `HP_GA2D_PASS`, `HP_GA2D_CACHE_CLEAN`, `SIM_TEST_PASS code=0`;
+  3,629,906 cycles in 285 s. This exercises C906 boot at 0x38000000, the
+  128-to-64 downsizer and MMIO demux, the mailbox protocol, the GA2D engine
+  through the HP data path, and the T-Head `dcache.cva`/`dcache.iva` cache
+  lifecycle handshake.
+- Focused `hp_c906_boot_tb` (pytest `test_hp_platform.py`): the real smoke
+  payload runs on `hp_core_wrapper` plus the production MMIO chain
+  (64-to-32 downsizer, address gate, HP-to-LP CDC bridge) and completes the
+  full mailbox/GA2D-phase protocol.
+- The swap exposed and fixed a latent integration bug: the merged HP port
+  initially inherited the read-only I-cache slot's zero write credits in the
+  data crossbar; `axi4_data_crossbar.sv` now grants the HP slot two write
+  credits, locked by a new write/readback case in `ga2d_platform_tb`.
+- The sysmap override is required for correctness: the upstream default marks
+  the Mini MMIO window cacheable/bufferable, which absorbs device writes in
+  the C906 store buffer; `rtl/mini/ip_overrides/sysmap.h` marks the MMIO and
+  core-internal CLINT/PLIC windows strong-order non-cacheable per the user
+  manual.
+
+`hp-rtthread-sim`, `hp-linux-sim`, and the synthesis-dependent gates remain
+unrun this round (synthesis waits for the SRAM macro swap); they stay required
+evidence for qualification.
+
+Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
+(scan/mbist tied off), the debug SBA AXI master (unconnected), ASIC
+memory-macro replacement for the behavioral FPGA SRAM models, and HP Linux
+re-qualification timing/performance evidence.
+
+## Historical VexiiRiscv evidence (pre-swap)
+
+### Reproduction (VexiiRiscv)
 
 ```sh
 make setup-vexiiriscv setup-hp-rtthread setup-hp-linux
@@ -38,7 +93,7 @@ The `ihp130-apu` evidence profile likewise uses workload 1 only as the existing
 four-entry transport. Its application-specific `apu_release` LP loader owns the
 APU acceptance semantics; that bundle label does not claim a Linux boot result.
 
-## Measured runs
+### Measured runs (VexiiRiscv)
 
 Initial RV64 validation uses `configs/ci/ihp130-hp.mk` and
 `BUILD_TIMESTAMP=2026-09-25-11-42`, producing
@@ -86,7 +141,7 @@ The IHP130 behavioral PR regression completed successfully with
 new/increased signatures as non-blocking observations; baselines were not
 modified. No synthesis or STA result is implied by this regression.
 
-## RT-Thread first-schedule failure and correction
+### RT-Thread first-schedule failure and correction
 
 The first BSP run reached `HP_RTTHREAD_BOOT` and then reported
 `RTTHREAD_TRAP cause=1 epc=deadbeee`, failure 92, followed by LP failure 18.
@@ -106,7 +161,7 @@ the initial variant. This was a BSP integration error:
    bound. The same integrated test then passed scheduling, RV64 context, IPC,
    timer timeout, and mailbox IRQ checks. Vendor source stayed unchanged.
 
-## Linux firmware reservation correction
+### Linux firmware reservation correction
 
 The first RV64 run reached Linux 6.12.105 and memory initialization. Its log
 reported no `/reserved-memory` node and included the full SDRAM range beginning
@@ -146,7 +201,7 @@ RISC-V `pt_regs` layout. UART subsequently reported the 9-bit ASID allocator.
 These observations avoid treating an IRQ-handler PC or stale raw SDRAM as
 evidence of main-thread progress.
 
-## Coverage limits
+### Coverage limits
 
 The repository's mechanical C format/policy checks are partial MISRA evidence;
 no complete MISRA certification or new approved Required-rule deviation is

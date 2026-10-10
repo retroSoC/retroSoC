@@ -19,7 +19,7 @@
 | Initiator ACL and first-fault attribution | Generated data policy, crossbar, SYSCTRL, and Fabric Monitor | target/execute/cache/range denial and injection tests | implemented: fixed policy is topology-generated and valid/ready fault reporting retains every accepted event across the HP/PCLK CDC |
 | Stable memory functional clocks | Memory integration | HP DFS while refresh/protocol engines continue | implemented digitally: SRAM is native HP AXI64; SDRAM and all serial targets cross directly from HP to stable memory as AXI64 before local downsizing |
 | Reset epoch and stale-response rejection | Async bridges | unilateral reset and clock-stop matrix | partial: coordinated warm flush and epoch implemented |
-| HP normal and forced hot reset | AON lifecycle controller and Resource Controller | cache request/ACK, drain, timeout, flush, and recovery tests | implemented digitally: Zicbom and bounded ACK window exist; range policy and Linux service remain software work |
+| HP normal and forced hot reset | AON lifecycle controller and Resource Controller | cache request/ACK, drain, timeout, flush, and recovery tests | implemented digitally: C906 custom-0 cache-maintenance instructions and bounded ACK window exist; range policy and Linux service remain software work |
 | Clock monitor and programmable timeout | AON clock/reset subsystem | 8x8 DFS and clock-loss tests | implemented |
 | Operational EXT-H ACL, timeout, and data path | Extension subsystem | transfer, denial, hang, and quiesce tests | implemented |
 | Ownership-aware IRQ handoff | Resource Controller and HP PLIC | idle handoff, owner lock, LP/HP exclusion, and fault tests | implemented for DMA, USB2, SDIO0/1, SPI-SD, EXT-H, and JPEG; downstream per-engine reset ACK remains pending |
@@ -36,8 +36,12 @@ sources of truth.
 ## Historical RV32 verification evidence
 
 The results below predate the RV64 migration and must not be used as RV64
-qualification. Current generation selects `rv64imafdc_zicbom_max`; see
-[HP RV64 validation](hp-rv64-validation.md) for migration-specific evidence.
+qualification. The RV64 VexiiRiscv evidence recorded after that migration is
+likewise historical: the HP core is now the locked, pre-generated T-Head
+OpenC906 (RV64GC), and the `rv64imafdc_zicbom_max` VexiiRiscv configuration
+survives only as the frozen Std-series generator asset. See
+[HP RV64 validation](hp-rv64-validation.md) for the swap status and the new
+evidence requirements.
 
 - The complete Python suite passes 308 tests, including directed AXI64
   multi-ID/ACL/QoS, target isolation, native AXI64 SRAM, Fabric Monitor,
@@ -64,7 +68,7 @@ qualification. Current generation selects `rv64imafdc_zicbom_max`; see
 
 The strict IHP130 warning-baseline comparison remains an observation: the
 baseline predates the fixed HP/product topology and does not contain many
-generated VexiiRiscv, newly enabled peripheral, and PDK signatures. New warning
+OpenC906, newly enabled peripheral, and PDK signatures. New warning
 signatures introduced directly by the data-plane, lifecycle, extension, and
 CDC integration were removed; the baseline was intentionally not regenerated
 or hand-edited in this change.

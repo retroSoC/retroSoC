@@ -13,7 +13,7 @@
 #ip-reference("resource","resource",4,legacy:[
 *Ten resources* are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
 APU, GA2D and NPU. Resource ABI 1.2 reports ten slots. Resource 9 owns the native-HP
-NPU, including LP vector 33 / HP PLIC 12 steering. Resource 8 routes the GA2D
+NPU, including LP vector 33 / HP external source 12 (PLIC ID 28) steering. Resource 8 routes the GA2D
 its IRQ according to its current owner and controls its private AXI64 lifecycle.
 GA2D supports FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color
 foreground masks, and exact equal background/destination in-place composition.

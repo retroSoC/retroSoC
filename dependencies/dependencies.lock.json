@@ -25,7 +25,15 @@
       "revision": "ef7da4134ff11ec6a681d0632123b232b853b046",
       "destination": ".cache/retrosoc/sources/vexiiriscv",
       "recursive": true,
-      "license": "MIT"
+      "license": "MIT",
+      "purpose": "Std series performance-core generator source (Std asset; no longer consumed by Mini)"
+    },
+    "openc906": {
+      "url": "https://github.com/XUANTIE-RV/openc906.git",
+      "revision": "b0c06eb1f8b3bae663bd8b87eac89ff48e68a57f",
+      "destination": ".cache/retrosoc/sources/openc906",
+      "license": "Apache-2.0",
+      "purpose": "Mini HP core: pre-generated openC906 RTL (C906_RTL_FACTORY/gen_rtl), default configuration"
     },
     "rtthread_hp": {
       "url": "https://github.com/RT-Thread/rt-thread.git",

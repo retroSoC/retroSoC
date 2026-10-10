@@ -1,11 +1,16 @@
 # Core-Local Interruptor
 
 The baseline Mini SoC CLINT provides machine software and machine timer
-interrupts for the management hart. The HP profile adds an independent
-two-slot instance at `0x02000000` and connects slot 1 to HP hart 1. Its register
-layout follows the conventional SiFive
+interrupts for the management hart and owns the global `mtime` source. Its
+register layout follows the conventional SiFive
 CLINT and RISC-V ACLINT-compatible offsets, while its bus-facing logic uses the
 retroSoC APB4 target protocol.
+
+With the OpenC906 HP core, the former HP ACLINT instance at `0x02000000` is
+removed: the C906 uses its internal CLINT/PLIC (T-Head c900 layouts, decoded
+inside the core BIU below `0x08000000`), and this CLINT's `mtime` is delivered
+to the C906 through `pad_cpu_sys_cnt` and read by HP software through the
+`time` CSR. There is no HP memory-mapped `mtime`.
 
 ## Integration
 
@@ -20,9 +25,9 @@ retroSoC APB4 target protocol.
 | User-core access | denied by the AXI4 interconnect access policy |
 | User-core interrupt visibility | masked |
 
-The HP instance uses the same 1 MHz reference timebase. OpenSBI programs hart
-1 `MSIP` at `0x02000004`, `MTIMECMP` at `0x02004008`, and shared `MTIME` at
-`0x0200BFF8`. The baseline management CLINT remains at `0x10020000`.
+The CLINT drives the global 1 MHz reference timebase. Its `mtime` is exported
+to the HP subsystem (`pad_cpu_sys_cnt`) so the OpenC906 `time` CSR tracks the
+same counter. The baseline management CLINT remains at `0x10020000`.
 
 The timebase divider runs from the buffered external reference clock, not the
 PLL-selected system clock. A toggle crosses into the system domain through the

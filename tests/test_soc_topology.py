@@ -80,7 +80,7 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     ).read_text(encoding="utf-8")
     filelist = (tmp_path / "soc_topology.fl").read_text(encoding="utf-8")
 
-    assert interfaces.count("apb4_if u_") == 28
+    assert interfaces.count("apb4_if u_") == 26
     assert "nmi_if" not in interfaces
     assert "soc_nmi" not in interfaces
     assert "assign s_psel_comb[17] = `SOC_ADDR_IS_APB4_I2C1(s_decode_addr);" in routes
@@ -93,12 +93,10 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "assign s_psel_comb[20] = `SOC_ADDR_IS_APB4_USB2(s_decode_addr);" in routes
     assert "assign s_psel_comb[22] = `SOC_ADDR_IS_APB4_UART1(s_decode_addr);" in routes
     assert "assign s_psel_comb[23] = `SOC_ADDR_IS_APB4_HP_MAILBOX(s_decode_addr);" in routes
-    assert "assign s_psel_comb[24] = `SOC_ADDR_IS_HP_ACLINT(s_decode_addr);" in routes
-    assert "assign s_psel_comb[25] = `SOC_ADDR_IS_HP_PLIC(s_decode_addr);" in routes
-    assert "assign s_psel_comb[26] = `SOC_ADDR_IS_APB4_JPEG(s_decode_addr);" in routes
-    assert "assign s_psel_comb[27] = `SOC_ADDR_IS_APB4_APU(s_decode_addr);" in routes
-    assert "assign s_psel_comb[28] = `SOC_ADDR_IS_APB4_GA2D(s_decode_addr);" in routes
-    assert "assign s_psel_comb[29] = `SOC_ADDR_IS_APB4_NPU(s_decode_addr);" in routes
+    assert "assign s_psel_comb[24] = `SOC_ADDR_IS_APB4_JPEG(s_decode_addr);" in routes
+    assert "assign s_psel_comb[25] = `SOC_ADDR_IS_APB4_APU(s_decode_addr);" in routes
+    assert "assign s_psel_comb[26] = `SOC_ADDR_IS_APB4_GA2D(s_decode_addr);" in routes
+    assert "assign s_psel_comb[27] = `SOC_ADDR_IS_APB4_NPU(s_decode_addr);" in routes
     assert "apb4_if u_ga2d_apb4_if (clk_i, rst_n_i);" in interfaces
     assert "apb4_if u_npu_apb4_if (clk_i, rst_n_i);" in interfaces
     assert gpio.count("// GPIO") == 64
@@ -204,8 +202,8 @@ def test_topology_generates_complete_rib_apb_and_gpio_bindings(tmp_path: Path) -
     assert "SOC_DATA_POLICY_WRITE_TARGET_MASK" in data_policy
     assert "SOC_DATA_POLICY_ALLOW_INSTRUCTION" in data_policy
     assert "SOC_DATA_POLICY_REQUIRE_NONCACHEABLE" in data_policy
-    assert "`define SOC_DATA_POLICY_READ_TARGET_MASK             50'b11111111111111111111111111111111111111111111111111" in data_policy
-    assert "`define SOC_DATA_POLICY_WRITE_TARGET_MASK            50'b01111011110111101111011110111101111011110111100000" in data_policy
+    assert "`define SOC_DATA_POLICY_READ_TARGET_MASK             50'b11111111111111111111111111111111111111110000011111" in data_policy
+    assert "`define SOC_DATA_POLICY_WRITE_TARGET_MASK            50'b01111011110111101111011110111101111011110000001111" in data_policy
     assert "`define SOC_DATA_POLICY_ALLOW_INSTRUCTION            10'b0000000001" in data_policy
     assert "`define SOC_DATA_POLICY_REQUIRE_NONCACHEABLE         10'b1111111100" in data_policy
     assert "RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(64)" in irq_metadata
@@ -276,8 +274,8 @@ def test_ga2d_p4_topology_preserves_the_private_master_policy_and_active_shell()
     policies = document["data_master_policies"]
 
     assert [policy["name"] for policy in policies] == [
-        "hp_icache",
-        "hp_dcache",
+        "hp_mem",
+        "hp_retired",
         "dma",
         "io_gateway_a",
         "io_gateway_b",
@@ -305,10 +303,10 @@ def test_ga2d_p4_topology_preserves_the_private_master_policy_and_active_shell()
         "require_noncacheable": True,
     }
     assert document["apb4_periph_targets"][-2]["name"] == "ga2d"
-    assert document["apb4_periph_targets"][-2]["slot"] == 28
+    assert document["apb4_periph_targets"][-2]["slot"] == 26
     assert document["apb4_periph_targets"][-2]["region"] == "APB4_GA2D"
     assert document["apb4_periph_targets"][-1]["name"] == "npu"
-    assert document["apb4_periph_targets"][-1]["slot"] == 29
+    assert document["apb4_periph_targets"][-1]["slot"] == 27
     assert document["apb4_periph_targets"][-1]["region"] == "APB4_NPU"
     assert document["interrupts"][-2]["name"] == "ga2d"
     assert document["interrupts"][-2]["group_bit"] == 24
@@ -331,9 +329,9 @@ def test_apu_p1_fixed_resource_and_hp_irq_allocations() -> None:
     assert "s_hp_plic_source[12] = resource_irq_hp_i[8];" in periph
     assert "s_ga2d_irq_raw," in periph
     assert ".ResourceCount(10)" in system
-    assert ".apu_owner_i                 (s_resource_owner[7])" in top
-    assert ".apu_quiesce_i               (s_resource_quiesce[7])" in top
-    assert ".apu_reset_i                 (s_resource_reset[7])" in top
+    assert ".apu_owner_i             (s_resource_owner[7])" in top
+    assert ".apu_quiesce_i           (s_resource_quiesce[7])" in top
+    assert ".apu_reset_i             (s_resource_reset[7])" in top
     compact_top = "".join(top.split())
     assert ".ga2d_quiesce_i(s_resource_quiesce[8])" in compact_top
     assert ".ga2d_reset_i(s_resource_reset[8])" in compact_top

@@ -3,10 +3,12 @@
 
 #include <rthw.h>
 
-#define RS_RTT_UART    UINT32_C(0x10018000)
-#define RS_RTT_CLINT   UINT32_C(0x02000000)
-#define RS_RTT_PLIC    UINT32_C(0x0C000000)
-#define RS_RTT_MAILBOX UINT32_C(0x10019000)
+#define RS_RTT_UART            UINT32_C(0x10018000)
+/* Internal C906 CLINT (MSIP@0x0, MTIMECMP@0x4000) and PLIC (ID n+16). */
+#define RS_RTT_CLINT           UINT32_C(0x0C000000)
+#define RS_RTT_PLIC            UINT32_C(0x08000000)
+#define RS_RTT_MAILBOX         UINT32_C(0x10019000)
+#define RS_RTT_MAILBOX_PLIC_ID UINT32_C(18)
 
 static struct rt_semaphore s_mailbox_sem;
 static volatile uint32_t s_irq_command;
@@ -23,19 +25,16 @@ static void rs_write32(uint32_t address, uint32_t value) {
 }
 
 static uint64_t rs_time(void) {
-    uint32_t high;
-    uint32_t low;
-    do {
-        high = rs_read32(RS_RTT_CLINT + UINT32_C(0xBFFC));
-        low = rs_read32(RS_RTT_CLINT + UINT32_C(0xBFF8));
-    } while (high != rs_read32(RS_RTT_CLINT + UINT32_C(0xBFFC)));
-    return ((uint64_t)high << 32U) | low;
+    uint64_t value;
+    /* No memory-mapped mtime: the SoC drives mtime into the core. */
+    __asm__ volatile("csrr %0, time" : "=r"(value));
+    return value;
 }
 
 static void rs_set_timer(uint64_t value) {
-    rs_write32(RS_RTT_CLINT + UINT32_C(0x4008), UINT32_MAX);
-    rs_write32(RS_RTT_CLINT + UINT32_C(0x400C), (uint32_t)(value >> 32U));
-    rs_write32(RS_RTT_CLINT + UINT32_C(0x4008), (uint32_t)value);
+    rs_write32(RS_RTT_CLINT + UINT32_C(0x4000), UINT32_MAX);
+    rs_write32(RS_RTT_CLINT + UINT32_C(0x4004), (uint32_t)(value >> 32U));
+    rs_write32(RS_RTT_CLINT + UINT32_C(0x4000), (uint32_t)value);
     __asm__ volatile("fence iorw, iorw" ::: "memory");
 }
 
@@ -82,11 +81,11 @@ static void rs_assert(const char *expression, const char *function, rt_size_t li
 }
 
 void rt_trigger_software_interrupt(void) {
-    rs_write32(RS_RTT_CLINT + UINT32_C(4), 1U);
+    rs_write32(RS_RTT_CLINT, 1U);
 }
 
 void rt_hw_do_after_save_above(void) {
-    rs_write32(RS_RTT_CLINT + UINT32_C(4), 0U);
+    rs_write32(RS_RTT_CLINT, 0U);
 }
 
 void handle_trap(rt_ubase_t cause, rt_ubase_t epc, void *frame) {
@@ -109,7 +108,7 @@ void handle_trap(rt_ubase_t cause, rt_ubase_t epc, void *frame) {
         break;
     case 11U: {
         uint32_t claim = rs_read32(RS_RTT_PLIC + UINT32_C(0x200004));
-        if (claim != 2U) {
+        if (claim != RS_RTT_MAILBOX_PLIC_ID) {
             rs_rtt_fail(93U);
         }
         s_irq_command = rs_read32(RS_RTT_MAILBOX + UINT32_C(0x10));
@@ -149,11 +148,11 @@ void rt_hw_board_init(void) {
     rs_write32(RS_RTT_UART + UINT32_C(4), 32U);
     rs_write32(RS_RTT_UART + UINT32_C(8), 3U);
     rs_write32(RS_RTT_UART + UINT32_C(0x0C), 3U);
-    rs_write32(RS_RTT_CLINT + UINT32_C(4), 0U);
+    rs_write32(RS_RTT_CLINT, 0U);
     rs_write32(RS_RTT_MAILBOX + UINT32_C(0x40), 1U);
     rs_write32(RS_RTT_MAILBOX + UINT32_C(0x44), 1U);
-    rs_write32(RS_RTT_PLIC + UINT32_C(8), 1U);
-    rs_write32(RS_RTT_PLIC + UINT32_C(0x2000), 4U);
+    rs_write32(RS_RTT_PLIC + (UINT32_C(4) * RS_RTT_MAILBOX_PLIC_ID), 1U);
+    rs_write32(RS_RTT_PLIC + UINT32_C(0x2000), UINT32_C(1) << RS_RTT_MAILBOX_PLIC_ID);
     rs_write32(RS_RTT_PLIC + UINT32_C(0x200000), 0U);
     s_next_tick = rs_time() + UINT64_C(1000);
     rs_set_timer(s_next_tick);

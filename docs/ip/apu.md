@@ -39,7 +39,7 @@ This refreeze is a future implementation contract, not a synthesis/PPA result.
 
 The APU is deliberately coreless. LP loads one validated codec-microcode bundle
 at startup and HP or LP later submits jobs. The APU contains a bounded codec
-sequencer and fixed processing engines; it does not contain Hazard3, VexiiRiscv,
+sequencer and fixed processing engines; it does not contain Hazard3, OpenC906,
 a DSP CPU, a general-purpose instruction set, or a C runtime.
 
 The design was frozen on 2026-09-02 from these repository sources of truth:
@@ -2673,7 +2673,7 @@ measured evidence. Inferred memories may be padded/duplicated by elaboration;
 the 462208 logical table bits above are not interchangeable with that tool
 statistic. Removing the two reported groups would arithmetically leave 568626
 bits (about 70.1 percent lower), but that is a projection, not a synthesis
-speed, RSS or measured memory claim. Vexii and other IP memories are outside
+speed, RSS or measured memory claim. OpenC906 and other IP memories are outside
 P9 scope. Fresh like-for-like reports below are required.
 
 Stable requirements:

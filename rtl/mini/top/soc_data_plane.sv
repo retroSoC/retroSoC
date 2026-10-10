@@ -23,8 +23,7 @@ module soc_data_plane (
     input  logic [31:0] ext_h_read_limit_i,
     input  logic [31:0] ext_h_write_base_i,
     input  logic [31:0] ext_h_write_limit_i,
-    axi4_if.slave      hp_icache_axi4,
-    axi4_if.slave      hp_dcache_axi4,
+    axi4_if.slave      hp_mem_axi4,
     axi4_if.slave      dma_axi4,
     axi4_if.slave      sdio0_axi4,
     axi4_if.slave      sdio1_axi4,
@@ -206,16 +205,7 @@ module soc_data_plane (
       .DATA_WIDTH(64),
       .ID_WIDTH  (7),
       .USER_WIDTH(1)
-  ) u_hp_icache_prefixed_axi4 (
-      .aclk   (clk_hp_i),
-      .aresetn(rst_hp_n_i)
-  );
-  axi4_if #(
-      .ADDR_WIDTH(32),
-      .DATA_WIDTH(64),
-      .ID_WIDTH  (7),
-      .USER_WIDTH(1)
-  ) u_hp_dcache_prefixed_axi4 (
+  ) u_hp_mem_prefixed_axi4 (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
   );
@@ -506,24 +496,17 @@ module soc_data_plane (
 
   axi4_id_prefix #(
       .MasterIndex(4'd0)
-  ) u_hp_icache_prefix (
-      .source(hp_icache_axi4),
-      .sink  (u_hp_icache_prefixed_axi4)
+  ) u_hp_mem_prefix (
+      .source(hp_mem_axi4),
+      .sink  (u_hp_mem_prefixed_axi4)
   );
-  axi4_connector u_hp_icache_connector (
-      .source(u_hp_icache_prefixed_axi4),
+  axi4_connector u_hp_mem_connector (
+      .source(u_hp_mem_prefixed_axi4),
       .sink  (u_master_axi4[0])
   );
-  axi4_id_prefix #(
-      .MasterIndex(4'd1)
-  ) u_hp_dcache_prefix (
-      .source(hp_dcache_axi4),
-      .sink  (u_hp_dcache_prefixed_axi4)
-  );
-  axi4_connector u_hp_dcache_connector (
-      .source(u_hp_dcache_prefixed_axi4),
-      .sink  (u_master_axi4[1])
-  );
+  // The retired split instruction/data HP ports collapsed into hp_mem_axi4;
+  // crossbar master slot 1 is kept idle to preserve the ID-prefix map.
+  axi4_master_idle u_hp_retired_idle (.axi4(u_master_axi4[1]));
 
   axi4_connector u_dma_source_connector (
       .source(dma_axi4),

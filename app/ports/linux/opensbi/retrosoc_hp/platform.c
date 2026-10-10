@@ -1,13 +1,18 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /* Copyright (c) 2026 Yuchi Miao */
 
+#include <sbi/riscv_asm.h>
+#include <sbi/riscv_encoding.h>
 #include <sbi/riscv_io.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_platform.h>
+#include <sbi/sbi_timer.h>
 #include <sbi_utils/ipi/aclint_mswi.h>
-#include <sbi_utils/timer/aclint_mtimer.h>
 
-#define RETROSOC_HP_ACLINT_BASE          0x02000000UL
+/* Internal C906 CLINT (thead,c900-clint), decoded by the core BIU. */
+#define RETROSOC_HP_CLINT_BASE           0x0C000000UL
+#define RETROSOC_HP_CLINT_MTIMECMP_LO    0x4000UL
+#define RETROSOC_HP_CLINT_MTIMECMP_HI    0x4004UL
 #define RETROSOC_HP_UART_BASE            0x10018000UL
 #define RETROSOC_HP_UART_BAUD_INT        78U
 #define RETROSOC_HP_UART_BAUD_FRAC       32U
@@ -30,21 +35,44 @@
 static const u32 s_hart_index_to_id[] = {1U};
 
 static struct aclint_mswi_data s_mswi = {
-    .addr = RETROSOC_HP_ACLINT_BASE,
+    .addr = RETROSOC_HP_CLINT_BASE,
     .size = ACLINT_MSWI_SIZE,
-    .first_hartid = 0U,
-    .hart_count = 2U,
+    .first_hartid = 1U,
+    .hart_count = 1U,
 };
 
-static struct aclint_mtimer_data s_mtimer = {
-    .mtime_freq = 1000000UL,
-    .mtime_addr = RETROSOC_HP_ACLINT_BASE + 0xBFF8UL,
-    .mtime_size = ACLINT_DEFAULT_MTIME_SIZE,
-    .mtimecmp_addr = RETROSOC_HP_ACLINT_BASE + 0x4000UL,
-    .mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE,
-    .first_hartid = 0U,
-    .hart_count = 2U,
-    .has_64bit_mmio = false,
+/* No memory-mapped mtime: the SoC drives mtime into the core. */
+static u64 retrosoc_hp_timer_value(void) {
+    return csr_read(CSR_TIME);
+}
+
+static void retrosoc_hp_mtimecmp_write(u64 value) {
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_LO));
+    writel_relaxed((u32)(value >> 32U),
+                   (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_HI));
+    writel_relaxed((u32)value, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_LO));
+}
+
+static void retrosoc_hp_timer_event_start(u64 next_event) {
+    retrosoc_hp_mtimecmp_write(next_event);
+}
+
+static void retrosoc_hp_timer_event_stop(void) {
+    retrosoc_hp_mtimecmp_write(~0ULL);
+}
+
+static int retrosoc_hp_timer_warm_init(void) {
+    retrosoc_hp_timer_event_stop();
+    return 0;
+}
+
+static struct sbi_timer_device s_timer = {
+    .name = "retrosoc-hp-c906-clint",
+    .timer_freq = 1000000UL,
+    .timer_value = retrosoc_hp_timer_value,
+    .timer_event_start = retrosoc_hp_timer_event_start,
+    .timer_event_stop = retrosoc_hp_timer_event_stop,
+    .warm_init = retrosoc_hp_timer_warm_init,
 };
 
 static void retrosoc_hp_uart_write(u32 offset, u32 value) {
@@ -93,7 +121,8 @@ static int retrosoc_hp_early_init(bool cold_boot) {
 }
 
 static int retrosoc_hp_timer_init(void) {
-    return aclint_mtimer_cold_init(&s_mtimer, NULL);
+    sbi_timer_set_device(&s_timer);
+    return 0;
 }
 
 static const struct sbi_platform_operations s_platform_operations = {
@@ -104,7 +133,7 @@ static const struct sbi_platform_operations s_platform_operations = {
 const struct sbi_platform platform = {
     .opensbi_version = OPENSBI_VERSION,
     .platform_version = SBI_PLATFORM_VERSION(1U, 0U),
-    .name = "retroSoC RV64 HP",
+    .name = "retroSoC OpenC906 HP",
     .features = SBI_PLATFORM_DEFAULT_FEATURES,
     .hart_count = 1U,
     .hart_stack_size = SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,

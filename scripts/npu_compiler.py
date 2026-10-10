@@ -287,6 +287,14 @@ static void rs_{prefix}_cache_clean(const void *pointer, uint32_t bytes) {{
     uintptr_t cursor = (uintptr_t)pointer & ~(uintptr_t)UINT32_C(63);
     uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
     while (cursor < end) {{ __asm__ volatile("cbo.clean 0(%0)" :: "r"(cursor) : "memory"); cursor += 64U; }}
+#elif defined(__riscv)
+    /* OpenC906 (T-Head C906): custom-0 dcache.cva, 0x0250000b | rs1<<15 */
+    uintptr_t cursor = (uintptr_t)pointer & ~(uintptr_t)UINT32_C(63);
+    uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
+    while (cursor < end) {{
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x5" :: "r"(cursor) : "memory");
+        cursor += 64U;
+    }}
 #else
     (void)pointer; (void)bytes;
 #endif
@@ -297,6 +305,14 @@ static void rs_{prefix}_cache_invalidate(const void *pointer, uint32_t bytes) {{
     uintptr_t cursor = (uintptr_t)pointer & ~(uintptr_t)UINT32_C(63);
     uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
     while (cursor < end) {{ __asm__ volatile("cbo.inval 0(%0)" :: "r"(cursor) : "memory"); cursor += 64U; }}
+#elif defined(__riscv)
+    /* OpenC906 (T-Head C906): custom-0 dcache.iva, 0x0260000b | rs1<<15 */
+    uintptr_t cursor = (uintptr_t)pointer & ~(uintptr_t)UINT32_C(63);
+    uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
+    while (cursor < end) {{
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x6" :: "r"(cursor) : "memory");
+        cursor += 64U;
+    }}
 #else
     (void)pointer; (void)bytes;
 #endif

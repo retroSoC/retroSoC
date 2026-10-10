@@ -8,6 +8,10 @@ The canonical RTL/configuration inputs remain authoritative.
 The current working source includes the Mini RV64/Sv39 migration, V2 workload
 bundle checks, and minimal Linux `/init` handoff. RT-Thread's M-mode BSP and
 acceptance evidence are documented in [HP RV64 validation](../docs/hp-rv64-validation.md).
+The HP core is being switched from VexiiRiscv to the locked T-Head OpenC906
+(default RV64GC configuration, core-internal c900 CLINT/PLIC, mhartid 1 via a
+reviewed override); the Mini publication now describes that integration, and the
+Overview drops the former HP ACLINT/HP PLIC SoC-peripheral labels (43 labels).
 These edits do not advance `mini.json.source_revision` or relabel an existing
 PDF. Review and commit the implementation snapshot before producing a matching
 new PDF; the source-drift check remains mandatory.
@@ -246,9 +250,10 @@ initial-state/dependency summary, interface selection/subset matrices, multimedi
 format interoperability and an image-maintenance chapter. Its publication-only
 records live under `system-reference.json.product_details`; the
 `implementation_reference.py` collector validates source/reset bindings and
-extracts explicit LP/HP parameters, PMA envelopes and build flags. The LP firmware
+extracts explicit LP instance parameters, the fixed HP OpenC906 integration
+constants and build flags. The LP firmware
 ISA/CSR choices are kept separate from hardware parameters. Unreviewed upstream
-defaults and cache capacity are not inferred from the HP generator's sets/ways.
+defaults and cache capacity are not inferred from the vendored HP core configuration.
 
 The Multimedia overview is outside the actual I2S IP page markers; its label
 ends the preceding IP header scope. All actual IP sections retain independent

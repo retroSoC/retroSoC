@@ -164,7 +164,7 @@ def linux_platform(root: Path) -> dict:
     if harts != ["1"] or hart_ids != ["1"] or len(cpu) != 1 or not re.search(r"\breg\s*=\s*<1>\s*;", cpu[0]):
         raise ValueError("Linux/OpenSBI hart identity changed")
     timebase = dt_value("timebase-frequency")
-    mtimer = re.findall(r"\.mtime_freq\s*=\s*(\d+)UL", platform)
+    mtimer = re.findall(r"\.timer_freq\s*=\s*(\d+)UL", platform)
     if mtimer != [str(timebase)]:
         raise ValueError("Linux/OpenSBI timebase mismatch")
     profile = (root / "configs/ci/ihp130-hp.mk").read_text(encoding="utf-8")
@@ -181,8 +181,11 @@ def linux_platform(root: Path) -> dict:
         raise ValueError("CPU and UART device-tree clock declarations disagree")
     if dt_value("linux,initrd-start") != dt_value("linux,initrd-end"):
         raise ValueError("reviewed initrd template placeholder changed")
+    controllers = re.findall(r'"(thead,c900-clint|thead,c900-plic)"', dts)
+    if controllers != ["thead,c900-clint", "thead,c900-plic"] or dt_value("riscv,ndev") != 31:
+        raise ValueError("Linux internal CLINT/PLIC declaration changed")
     return {"hart_id": 1, "timebase_hz": timebase, "clock_hz": int(clocks[0]),
-            "cbom_bytes": dt_value("riscv,cbom-block-size"), "memory_base": memory[0][0],
+            "memory_base": memory[0][0],
             "memory_bytes": int(memory[0][1], 0), "initrd_start": dt_value("linux,initrd-start"),
             "initrd_template_end": dt_value("linux,initrd-end"), "bootargs": bootargs[0],
             "ready_writes": ready_mailbox(root)}

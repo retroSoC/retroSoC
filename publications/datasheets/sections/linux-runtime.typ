@@ -5,18 +5,20 @@
 
 === OpenSBI platform and console path <linux-runtime>
 The supplied OpenSBI platform exposes *one application hart*, with hart ID #platform.hart_id.
-LP remains the separate management firmware processor. The platform's ACLINT descriptor covers
-two hart-indexed register positions beginning at zero so it can address hart 1; that storage
+LP remains the separate management firmware processor. The platform's software-interrupt
+descriptor targets the core-internal CLINT with first hart ID 1 and hart count 1; that storage
 range is not a declaration that Linux runs on both harts. The *kernel configuration disables SMP*.
 
 The early platform setup programs UART1, registers its polled console and initializes machine
-software-interrupt support. Timer initialization uses the ACLINT machine timer. Console writes
+software-interrupt support. Timer initialization registers a custom timer device that reads
+the time CSR and programs the core-internal MTIMECMP; there is *no memory-mapped mtime*.
+Console writes
 wait while TX is full; this loop has *no local timeout*. These implemented callbacks do not
 establish that all optional SBI services or all peripherals have native Linux drivers.
 
 #figure(sequence-diagram((
   [*LP handoff* \ Existing bundle validation \ Release HP at OpenSBI],
-  [*OpenSBI on hart 1* \ UART1 SBI console \ ACLINT platform setup],
+  [*OpenSBI on hart 1* \ UART1 SBI console \ CLINT timer/MSWI setup],
   [*FW_JUMP* \ Enter Linux Image \ Pass the prepared DTB],
   [*Kernel / initramfs* \ SBI early console and hvc0 \ Run /init],
   [*Rootfs ready service* \ Print ready text \ Publish mailbox fields],
@@ -27,11 +29,11 @@ The kernel uses #code(platform.bootargs). Console text therefore reaches UART1 t
 path in this configuration. The UART1 device-tree node's presence does not substitute for a
 native driver. The configured machine timer and software-interrupt path are distinct from
 external interrupt-controller and custom peripheral driver integration.
-#source-note("app/ports/linux/opensbi/retrosoc_hp/platform.c",title:"Hart mapping, console callbacks and ACLINT setup")
+#source-note("app/ports/linux/opensbi/retrosoc_hp/platform.c",title:"Hart mapping, console callbacks and timer/MSWI setup")
 #source-note("app/ports/linux/linux/retrosoc_hp.config",title:"RV64, SBI console and single-hart kernel configuration")
 
 === Device-tree and image consistency
-The device-tree template, OpenSBI build arguments, boot-bundle bounds and actual generated HP
+The device-tree template, OpenSBI build arguments, boot-bundle bounds and actual integrated HP
 core must agree. The existing image addresses in @boot-configuration remain authoritative;
 the following values explain the platform relationship rather than defining a second layout.
 
@@ -39,11 +41,11 @@ the following values explain the platform relationship rather than defining a se
   ([Property],[Source value],[Consistency boundary]),
   (([CPU identity],[Hart #platform.hart_id],[Match OpenSBI's hart-index map and the generated core.]),
    ([Main memory],[#code(platform.memory_base), #(platform.memory_bytes / 1024 / 1024) MiB],[Device-tree envelope; actual external memory and boot-loader bounds must agree.]),
-   ([Timer base rate],[#platform.timebase_hz Hz],[Match ACLINT timebase-frequency and the OpenSBI mtimer declaration.]),
+   ([Timer base rate],[#platform.timebase_hz Hz],[Match the device-tree timebase-frequency and the OpenSBI timer-frequency declaration.]),
    ([CPU / UART clock declarations],[#platform.clock_hz Hz],[Nominal template values, not measured or dynamically synchronized frequencies.]),
-   ([MMU / cache maintenance],[Sv39; #(platform.cbom_bytes)-byte CBO blocks],[Software metadata must be checked against the generated HP artifact.]),
+   ([MMU / cache maintenance],[Sv39; 64-byte D-cache lines via T-Head extended operations],[Software must enable the extended instruction set before using the maintenance encodings.]),
    ([Initial ramdisk],[Start #code("0x"+str(platform.initrd_start,base:16))],[The source template's equal start/end is patched using the built uncompressed CPIO size.]),
-   ([Interrupt controllers],[ACLINT CPU causes; PLIC machine/supervisor contexts],[A DT node and binding alone do not demonstrate a complete driver or interrupt acceptance test.])),
+   ([Interrupt controllers],[Core-internal CLINT CPU causes; core-internal PLIC machine/supervisor contexts],[A DT node and binding alone do not demonstrate a complete driver or interrupt acceptance test.])),
   widths:(1fr,1.3fr,2.15fr))
 
 The image builder replaces linux,initrd-end with the start plus the actual rootfs.cpio size.

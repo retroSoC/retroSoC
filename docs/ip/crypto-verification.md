@@ -25,7 +25,7 @@ response after retirement, a stale response after an epoch change, and a
 missing response. Engine transactions carry both an operation epoch and a
 per-bank transaction token; write retirements are never consumed as read
 responses. The default product store remains fixed-latency with no fault
-injection. Generated VexiiRiscv output, its manifest, and the selected
+injection. The generated OpenC906 filelist, its manifest, and the selected
 IHP SRAM behavioral models are included in each firmware run's source hash.
 
 The interruption argument combines universal control properties with bounded

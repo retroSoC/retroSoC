@@ -475,8 +475,6 @@ def check_document_sources(config: dict, data: dict) -> None:
         "opipsram": "OPI PSRAM",
         "dma": "Central DMA",
         "clint": "LP CLINT",
-        "hp_aclint": "HP ACLINT",
-        "hp_plic": "HP PLIC",
         "hp_mailbox": "LP/HP Mailbox",
         "ps2": "PS/2",
         "resource_ctrl": "Resource Controller",
@@ -494,7 +492,7 @@ def check_document_sources(config: dict, data: dict) -> None:
     ]
     expected = {aliases.get(name, name.upper()) for name in names} | {
         "Hazard3",
-        "VexiiRiscv",
+        "OpenC906",
         "JTAG",
         "RCU",
     }

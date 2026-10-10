@@ -1283,47 +1283,47 @@
   "aclint": {
     "title": "HP ACLINT",
     "blocks": [
-      "APB decoder",
-      "Two hart slots",
-      "64-bit timer",
-      "Compare registers",
-      "Hart 1 IRQ outputs"
+      "Core-internal CLINT",
+      "c900 layout",
+      "64-bit time input",
+      "M/S timer + software IRQ"
     ],
     "function_sections": [],
     "software_sections": [],
     "notes": [
-      "The HP ACLINT is mapped at 0x02000000. The shared implementation provides two addressable hart slots, and hart slot 1 drives the HP software and timer interrupt inputs. MSIP1 is at offset 0x0004, MTIMECMP1 at 0x4008/0x400C, and the common MTIME at 0xBFF8/0xBFFC. This is separate from the management CLINT at 0x02010000.",
-      "Each 64-bit timer value is accessed as two 32-bit words. Use the retry and safe compare-update sequences below. The HP boot configuration uses a 1 MHz reference timebase; changing a CPU PLL setting does not redefine this reference."
+      "There is **no memory-mapped mtime**: the SoC drives the shared 64-bit time value from the management CLINT into the core, and HP software reads the time CSR. The compare value is programmed through the core-internal window; the supplied OpenSBI platform writes MTIMECMP at window offsets 0x4000/0x4004 with the 1 MHz reference timebase. Changing a CPU PLL setting does not redefine this reference.",
+      "Machine and supervisor timer/software interrupts follow the c900 per-hart order (M-SW, M-timer, S-SW, S-timer), as declared by the supplied device tree. The management CLINT at 0x10020000 is a separate LP-owned peripheral with its own chapter."
     ],
     "software_steps": [
-      "HP consumes **hart slot 1** of the two-slot window. Do not use a management-CLINT base-address helper.",
-      "Read **high/low/high and retry** if the high words differ when a coherent RV32 time value is required.",
-      "Update compare using the **safe high/low sequence**. OpenSBI may provide this service for HP software."
+      "Use the OpenSBI platform services for HP timer and software interrupts; the supplied platform binds the ACLINT MSWI driver at the internal base with **first hart ID 1 and hart count 1**.",
+      "Program timer events through the platform's custom timer device, which reads the **time CSR** and writes MTIMECMP with the safe high/low sequence; do not assume a memory-mapped MTIME register.",
+      "Do not use a management-CLINT base-address helper for HP-local interrupts."
     ],
     "flow": [
-      "Reference ticks / MSIP",
-      "Hart 1 compare / pending",
-      "HP MTIP / MSIP"
+      "SoC 64-bit time value",
+      "Core-internal compare / pending",
+      "HP M/S timer + software IRQ"
     ]
   },
   "plic": {
     "title": "HP PLIC",
     "blocks": [
-      "APB decoder",
-      "Source priorities",
-      "Pending/claimed bits",
-      "Context enables",
-      "Priority arbitration",
-      "Claim/complete"
+      "Core-internal PLIC",
+      "c900 layout",
+      "16 SoC sources",
+      "PLIC ID = source + 16",
+      "M/S external contexts"
     ],
-    "function_sections": [
-      "PLIC"
-    ],
+    "function_sections": [],
     "software_sections": [],
-    "notes": [],
+    "notes": [
+      "Sixteen SoC external interrupt sources drive the core's PLIC vector. **SoC source n is delivered to software as PLIC ID n+16**; IDs 0-15 are reserved or internal. Source 1 is UART1, source 2 is the HP-side mailbox doorbell, source 3 is EXT-H, and sources 4 through 12 are the resource-owned DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU, GA2D and NPU lines. Sources 13 through 15 are reserved and tied low.",
+      "The c900 PLIC provides machine and supervisor external-interrupt contexts for the HP hart, with per-source priorities, enables, thresholds and claim/complete arbitration. Register-bit detail follows the T-Head C906 manuals; the supplied device tree declares the thead,c900-plic node with riscv,ndev = 31.",
+      "Resource-owned sources are suppressed unless HP is the exclusive owner; see the Resource Controller chapter for the ownership and routing contract."
+    ],
     "software_steps": [
-      "Program source priority, the machine/supervisor **context enable and threshold**.",
-      "Read CLAIM_COMPLETE **once per claim**. Zero means no eligible source; a nonzero ID claims that source.",
+      "Program source priority and the machine/supervisor **context enable and threshold** in the core-internal PLIC window, using **PLIC ID = SoC source + 16**.",
+      "Read the claim register **once per claim**. Zero means no eligible source; a nonzero ID claims that source.",
       "Service the device cause, then write the claimed ID to the **same context** to complete it. A still-active level can pend again."
     ],
     "flow": [
@@ -1784,7 +1784,7 @@
       "The deployed implementation advertises CAPABILITY=0x0000007F and OP_CAPABILITY=0x000001FE. It includes the complete eight-operator execution path; reusable module defaults and older phase comments do not describe the deployed configuration.",
       "The HP-native AXI64 master is index 9 and resource 9. It uses source ID zero, one outstanding read and one outstanding write, and an integrated maximum of eight beats per burst. It does not allocate a central-DMA channel.",
       "The PCLK register shell exchanges launch, result and snapshot mailboxes with HP computation. Resource quiesce waits for cancellation/drain; a coordinated clock pause retains the active job.",
-      "LP vector 33 (external ordinal 31) and HP PLIC source 12 are selected through resource ownership. No dedicated NPU pad, GPIO alternate function or camera/audio stream port is added.",
+      "LP vector 33 (external ordinal 31) and HP external source 12 (PLIC ID 28) are selected through resource ownership. No dedicated NPU pad, GPIO alternate function or camera/audio stream port is added.",
       "All APB writes require full word strobes. Unknown offsets, reserved-bit violations, busy configuration changes and disallowed START commands complete with PSLVERR without the prohibited side effect."
     ],
     "software_steps": [
@@ -2295,7 +2295,7 @@
       "Read capability/format words, select an implemented operation, and obtain resource ownership. Confirm DATA_READY and that **no recovery is pending**.",
       "Allocate **disjoint bounded surfaces**, except the explicitly supported equal background/destination BLEND case. Validate pitch, format, dimensions, alignment and addresses with rs_ga2d_job_validate.",
       "Clean CPU-produced inputs as required, prepare destination ownership, and issue the required memory fence before configuring the job. Keep surfaces and configuration **stable while active**.",
-      "Call rs_ga2d_configure, then rs_ga2d_start. Use rs_ga2d_wait or the **owner-routed IRQ**; LP vector 32, external ordinal 30 and HP PLIC source 11 name different routing layers.",
+      "Call rs_ga2d_configure, then rs_ga2d_start. Use rs_ga2d_wait or the **owner-routed IRQ**; LP vector 32, external ordinal 30 and HP external source 11 (PLIC ID 27) name different routing layers.",
       "Capture terminal status, first-error details and counter snapshots **before acknowledging** W1C IRQ causes. Invalidate a DMA-written destination before CPU consumption where its mapping is cached.",
       "A polling timeout **does not prove hardware idle**. Use rs_ga2d_abort_wait to stop/drain accepted traffic, inspect recovery_required, and perform the documented resource/bridge rearm when required. A soft reset must not be used to discard in-flight bus obligations."
     ],

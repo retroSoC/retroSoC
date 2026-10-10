@@ -250,7 +250,7 @@ def build(args: argparse.Namespace) -> None:
             f"PLATFORM_DIR={external / 'opensbi'}",
             "PLATFORM_RISCV_XLEN=64",
             "PLATFORM_RISCV_ABI=lp64d",
-            "PLATFORM_RISCV_ISA=rv64imafdc_zicbom_zicsr_zifencei",
+            "PLATFORM_RISCV_ISA=rv64imafdc_zicsr_zifencei",
             "FW_TEXT_START=0x38000000",
             "FW_JUMP=y",
             "FW_JUMP_ADDR=0x38400000",

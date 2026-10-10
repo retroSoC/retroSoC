@@ -220,22 +220,13 @@
       "burst": "incr16"
     },
     {
-      "symbol": "HP_ACLINT",
-      "base": "0x02000000",
-      "size": "0x00010000",
-      "route": "apb4_periph",
-      "kind": "active",
+      "symbol": "HP_C906_SYS",
+      "base": "0x08000000",
+      "size": "0x08000000",
+      "route": "reserved",
+      "kind": "reserved",
       "public": true,
-      "user_access": "rw"
-    },
-    {
-      "symbol": "HP_PLIC",
-      "base": "0x0C000000",
-      "size": "0x04000000",
-      "route": "apb4_periph",
-      "kind": "active",
-      "public": true,
-      "user_access": "rw"
+      "user_access": "none"
     },
     {
       "symbol": "APB4_GPIO",

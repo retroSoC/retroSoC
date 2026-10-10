@@ -10,7 +10,7 @@ SOFTWARE_MAKE = ROOT / "rtl/mk/software.mk"
 MGMT_CORE = ROOT / "rtl/ip/core/mgmt_core_wrapper.sv"
 MGMT_DEBUG = ROOT / "rtl/ip/core/mgmt_debug_wrapper.sv"
 AHBL_TO_AXI4 = ROOT / "rtl/ip/interconnect/ahbl2axi4.sv"
-VEXII_CONFIG = ROOT / "scripts/vexiiriscv/GenerateRetroSocHp.scala"
+VEXII_CONFIG = ROOT / "scripts/vexiiriscv/GenerateRetroSocStd.scala"
 
 
 def test_booter_prints_the_fixed_hazard3_specification() -> None:
@@ -75,34 +75,24 @@ def test_booter_prints_the_fixed_hazard3_specification() -> None:
 
 def test_booter_prints_present_hp_core_specification() -> None:
     booter = BOOTER.read_text(encoding="utf-8")
-    vexii_config = VEXII_CONFIG.read_text(encoding="utf-8")
 
     for text in (
         "High-Performance-Core Specification:",
-        "Core: VexiiRiscv(hart 1), dual-issue in-order",
-        "Base: RV64IMAFDC_Zicbom_Zicntr_Zihpm",
-        "Mode: M/S/U; Sv39 MMU, 9-bit ASID",
-        "Protection: 16 PMP regions, 4 KiB granularity",
-        "L1: separate 16 KiB, 4-way instruction and data caches",
-        "Maintenance: 64-byte Zicbom CBO; no hardware coherency",
-        "Bus: native AXI64 I/D/MMIO; MMIO downsized to AXI32",
-        "Embedded RISC-V JTAG, 4 triggers",
+        "Core: T-Head OpenC906(hart 1), dual-issue in-order",
+        "Base: RV64IMAFDC_Zicsr_Zifencei (RV64GC)",
+        "Mode: M/S/U; Sv39 MMU",
+        "IRQ: internal CLINT/PLIC (T-Head c900 layout)",
+        "PLIC: 0x08000000; SoC external source n -> ID n+16",
+        "CLINT: 0x0c000000; MSIP/MTIMECMP/SSIP/STIMECMP",
+        "No MMIO mtime; software reads the time CSR",
+        "LP->HP notification: mailbox doorbell (PLIC ID 18)",
+        "Bus: AXI4 via core BIU; MMIO downsized to AXI32",
     ):
         assert text in booter
 
     assert "rs_sysctrl_get_hp_status(&status)" in booter
     assert "!status.present" in booter
-    for parameter in (
-        'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")',
-        "param.asidWidth = 9",
-        "param.decoders = 2",
-        "param.lanes = 2",
-        "param.fetchL1Sets = 64",
-        "param.fetchL1Ways = 4",
-        "param.lsuL1Sets = 64",
-        "param.lsuL1Ways = 4",
-        "param.pmpParam.pmpSize = 16",
-        "param.pmpParam.granularity = 4096",
-        "param.privParam.debugTriggers = 4",
-    ):
-        assert parameter in vexii_config
+
+    # The retired VexiiRiscv Mini configuration is preserved as the frozen
+    # Std-series generator asset (covered by tests/test_std_vexiiriscv.py).
+    assert VEXII_CONFIG.is_file()

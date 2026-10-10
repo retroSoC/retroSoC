@@ -25,6 +25,8 @@
 /top/axi42apb4_periph.sv
 /top/axi4_word_bridge.sv
 /top/axi4_downsizer_64to32.sv
+/top/axi4_downsizer_128to64.sv
+/top/axi4_mmio_demux.sv
 /top/hp_axi4_mux3.sv
 /top/axi42ram.sv
 /top/rib_error_slave.sv

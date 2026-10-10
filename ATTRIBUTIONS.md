@@ -1,5 +1,15 @@
 # Third-party attribution
 
+The Mini high-performance (HP) core is the pre-generated T-Head OpenC906 RTL
+from [XUANTIE-RV/openc906](https://github.com/XUANTIE-RV/openc906), locked at
+commit `b0c06eb1f8b3bae663bd8b87eac89ff48e68a57f` in
+`dependencies/dependencies.lock.json` and installed below
+`.cache/retrosoc/sources/openc906`. OpenC906 is licensed under Apache-2.0; its
+copyright and license files remain in the locked checkout and are not copied
+into this repository. The single retroSoC-controlled substitution is the
+reviewed hart-ID override `rtl/mini/ip_overrides/aq_sysio_kid.v`, which
+retains the upstream Apache-2.0 header.
+
 The optional HP RT-Thread kernel is official RT-Thread v5.3.0, commit
 `99428a1e7f7447955aa860f7c969273a12095b8f`, from
 [RT-Thread/rt-thread](https://github.com/RT-Thread/rt-thread). It is licensed

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the locked VexiiRiscv HP core below the selected build variant."""
+"""Generate the locked VexiiRiscv Std-series core below the selected build variant.
+
+The generator is a Std-series asset preserved from the retired Mini HP
+configuration; Mini no longer consumes it.
+"""
 
 from __future__ import annotations
 
@@ -12,8 +16,8 @@ from pathlib import Path
 from typing import Any
 
 
-GENERATOR_CLASS = "vexiiriscv.GenerateRetroSocHp"
-GENERATED_MODULE = "vexii_riscv_hp_generated"
+GENERATOR_CLASS = "vexiiriscv.GenerateRetroSocStd"
+GENERATED_MODULE = "vexiiriscv_std_generated"
 
 
 def run(command: list[str], cwd: Path) -> str:
@@ -86,7 +90,7 @@ def generate(args: argparse.Namespace) -> None:
     environment["COURSIER_CACHE"] = str(sbt_cache / "coursier")
     subprocess.run(command, cwd=source, check=True, env=environment)
 
-    generated = output / "vexii_riscv_hp_generated.v"
+    generated = output / "vexiiriscv_std_generated.v"
     if not generated.is_file():
         raise FileNotFoundError(f"VexiiRiscv generator did not create {generated}")
     validate_locked_source(source, expected)
@@ -95,6 +99,7 @@ def generate(args: argparse.Namespace) -> None:
     manifest = {
         "schema_version": 1,
         "module": GENERATED_MODULE,
+        "product": "std",
         "configuration": "rv64imafdc_zicbom_max",
         "xlen": 64,
         "physical_address_width": 32,
@@ -102,7 +107,7 @@ def generate(args: argparse.Namespace) -> None:
         "vexiiriscv_revision": actual,
         "source_status": [],
         "submodules": submodules,
-        "generator": str((scala_dir / "GenerateRetroSocHp.scala").relative_to(root)),
+        "generator": str((scala_dir / "GenerateRetroSocStd.scala").relative_to(root)),
         "files": {generated.name: sha256(generated)},
     }
     args.manifest.resolve().parent.mkdir(parents=True, exist_ok=True)

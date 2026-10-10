@@ -366,17 +366,17 @@
   "data_master_policies": [
     {
       "index": 0,
-      "name": "hp_icache",
+      "name": "hp_mem",
       "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
-      "write_targets": [],
+      "write_targets": ["sram", "sdram", "qpi", "opi"],
       "allow_instruction": true,
       "require_noncacheable": false
     },
     {
       "index": 1,
-      "name": "hp_dcache",
-      "read_targets": ["sram", "sdram", "qpi", "opi", "xpi"],
-      "write_targets": ["sram", "sdram", "qpi", "opi"],
+      "name": "hp_retired",
+      "read_targets": [],
+      "write_targets": [],
       "allow_instruction": false,
       "require_noncacheable": false
     },
@@ -625,41 +625,27 @@
     },
     {
       "slot": 24,
-      "name": "hp_aclint",
-      "timed_interface": "u_hp_aclint_apb4_if",
-      "pure_interface": "u_hp_aclint_apb4_pure_if",
-      "region": "HP_ACLINT"
-    },
-    {
-      "slot": 25,
-      "name": "hp_plic",
-      "timed_interface": "u_hp_plic_apb4_if",
-      "pure_interface": "u_hp_plic_apb4_pure_if",
-      "region": "HP_PLIC"
-    },
-    {
-      "slot": 26,
       "name": "jpeg",
       "timed_interface": "u_jpeg_apb4_if",
       "pure_interface": "u_jpeg_apb4_pure_if",
       "region": "APB4_JPEG"
     },
     {
-      "slot": 27,
+      "slot": 25,
       "name": "apu",
       "timed_interface": "u_apu_apb4_if",
       "pure_interface": "u_apu_apb4_pure_if",
       "region": "APB4_APU"
     },
     {
-      "slot": 28,
+      "slot": 26,
       "name": "ga2d",
       "timed_interface": "u_ga2d_apb4_if",
       "pure_interface": "u_ga2d_apb4_pure_if",
       "region": "APB4_GA2D"
     },
     {
-      "slot": 29,
+      "slot": 27,
       "name": "npu",
       "timed_interface": "u_npu_apb4_if",
       "pure_interface": "u_npu_apb4_pure_if",

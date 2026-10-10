@@ -42,13 +42,49 @@ def lp_parameters(text: str) -> dict[str, str]:
             for name, value in parameters.items()}
 
 
-def hp_parameters(text: str) -> tuple[dict[str, str], list[str]]:
-    text = without_comments(text)
-    values = unique_pairs(re.findall(r"^\s*param\.([A-Za-z][\w.]*)\s*=\s*([^\n]+)", text, re.M), "HP")
-    isa = re.findall(r"param\.addISA\(([^)]*)\)", text)
-    if len(isa) != 1:
-        raise ValueError("HP ISA configuration missing or ambiguous")
-    return values, re.findall(r'"([a-z0-9]+)"', isa[0])
+def hp_parameters(wrapper: str, override: str) -> dict[str, str]:
+    """Read the fixed OpenC906 integration constants from the Mini HP wrapper."""
+    text = without_comments(wrapper)
+    constants = unique_pairs(
+        [(name, f"0x{int(value.replace('_', ''), 16):08X}")
+         for name, value in re.findall(
+             r"localparam\s+logic\s+\[39:0\]\s+(HpResetVector|HpApbBase)\s*=\s*40'h([0-9A-Fa-f_]+)\s*;", text)],
+        "HP")
+    interfaces = {}
+    for body, name in re.findall(
+            r"axi4_if\s*#\s*\(([^;]+?)\)\s*(u_c906_axi4_if|u_hp_64_axi4_if)\s*\(", text, re.S):
+        width = re.findall(r"\.\s*DATA_WIDTH\s*\(\s*(\d+)\s*\)", body)
+        if len(width) != 1 or name in interfaces:
+            raise ValueError("HP interface width missing or ambiguous")
+        interfaces[name] = width[0]
+    sources = re.findall(r"input\s+logic\s+\[15:0\]\s+plic_src_i\b", text)
+    hart = re.findall(r"assign\s+sysio_core_hartid\[2:0\]\s*=\s*3'd(\d)\s*;", without_comments(override))
+    if len(constants) != 2 or len(interfaces) != 2 or len(sources) != 1 or len(hart) != 1:
+        raise ValueError("HP OpenC906 integration constants missing or ambiguous")
+    return {
+        "resetVector": constants["HpResetVector"],
+        "sysWindowBase": constants["HpApbBase"],
+        "coreAxiDataWidth": interfaces["u_c906_axi4_if"],
+        "fabricAxiDataWidth": interfaces["u_hp_64_axi4_if"],
+        "externalInterruptSources": "16",
+        "hartId": hart[0],
+    }
+
+
+def hp_isa(dts: str) -> dict[str, object]:
+    """Read the software-visible HP ISA/MMU identity from the reviewed device tree."""
+    cpu = re.findall(r"cpu@1\s*\{(.*?)hp_cpu_intc:", dts, re.S)
+    if len(cpu) != 1:
+        raise ValueError("HP device-tree CPU node missing or ambiguous")
+    node = cpu[0]
+    compatible = re.findall(r'compatible\s*=\s*"thead,c906"', node)
+    base = re.findall(r'riscv,isa-base\s*=\s*"(\w+)"', node)
+    extensions = re.findall(r'riscv,isa-extensions\s*=\s*((?:\s*"[a-z0-9]+",?)+)\s*;', node)
+    mmu = re.findall(r'mmu-type\s*=\s*"riscv,(\w+)"', node)
+    if not compatible or len(base) != 1 or len(extensions) != 1 or len(mmu) != 1:
+        raise ValueError("HP device-tree ISA/MMU identity missing or ambiguous")
+    return {"compatible": "thead,c906", "isa_base": base[0],
+            "extensions": re.findall(r'"([a-z0-9]+)"', extensions[0]), "mmu": mmu[0]}
 
 
 def reset_assignments(text: str, signal: str, module: str | None = None) -> dict[str, str]:
@@ -115,32 +151,28 @@ def validate_details(spec: dict, ids: set[str], root: Path, active_limits: set[s
 def collect_details(root: Path, spec: dict, ids: set[str], active_limits: set[str]) -> dict:
     validate_details(spec, ids, root, active_limits)
     lp = lp_parameters((root / "rtl/ip/core/mgmt_core_wrapper.sv").read_text(encoding="utf-8"))
-    hp_source = (root / "scripts/vexiiriscv/GenerateRetroSocHp.scala").read_text(encoding="utf-8")
-    hp, hp_isa = hp_parameters(hp_source)
+    hp = hp_parameters((root / "rtl/mini/top/hp_core_wrapper.sv").read_text(encoding="utf-8"),
+                       (root / "rtl/mini/ip_overrides/aq_sysio_kid.v").read_text(encoding="utf-8"))
+    identity = hp_isa((root / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8"))
     for required, actual, name in ((spec["cpu"]["lp_fields"], lp, "LP"), (spec["cpu"]["hp_fields"], hp, "HP")):
         if len(set(required)) != len(required) or not set(required) <= set(actual):
             raise ValueError(f"missing or duplicate requested {name} parameters")
     config = json.loads((root / "publications/datasheets/mini.json").read_text(encoding="utf-8"))
     profile = (root / config["profile"]).read_text(encoding="utf-8")
-    build = unique_pairs(re.findall(r"^\s*(ISA|HAVE_CSR|HAVE_HP|HP_CONFIG)\s*:?=\s*([^\n#]+)", profile, re.M), "firmware")
-    if set(build) != {"ISA", "HAVE_CSR", "HAVE_HP", "HP_CONFIG"}:
+    build = unique_pairs(re.findall(r"^\s*(ISA|HAVE_CSR|HAVE_HP)\s*:?=\s*([^\n#]+)", profile, re.M), "firmware")
+    if set(build) != {"ISA", "HAVE_CSR", "HAVE_HP"} or build["HAVE_HP"] != "YES":
         raise ValueError("incomplete firmware/core profile identity")
     lock = json.loads((root / "dependencies/dependencies.lock.json").read_text(encoding="utf-8"))
     result = copy.deepcopy(spec)
     result["cpu"] = {
-        "lp": lp, "hp": hp, "hp_isa": hp_isa, "build": build,
+        "lp": lp, "hp": hp, "hp_isa": identity["extensions"], "build": build,
+        "hp_isa_base": identity["isa_base"], "hp_mmu": identity["mmu"],
+        "hp_compatible": identity["compatible"],
         "lp_extensions": [name.removeprefix("EXTENSION_") for name, value in lp.items() if name.startswith("EXTENSION_") and value == "1"],
-        "hp_revision": lock["sources"]["vexiiriscv"]["revision"],
-        "generated_artifact_basis": "Not supplied in the publication evidence set",
-        "hp_cache_capacity": "Unconfirmed; upstream default block size not independently reviewed",
+        "hp_revision": lock["sources"]["openc906"]["revision"],
+        "generated_artifact_basis": "Pre-generated vendored OpenC906 RTL at the locked revision, with the reviewed retroSoC hart-ID override; no new core generation",
+        "hp_cache_capacity": "Default OpenC906 configuration (32 KiB instruction + 32 KiB data L1 per the T-Head C906 manuals); not independently re-measured",
     }
-    pma = re.findall(r"SizeMapping\((0x[0-9A-Fa-f]+)L,\s*(0x[0-9A-Fa-f]+)L\),\s*isMain\s*=\s*(true|false),\s*isExecutable\s*=\s*(true|false)", without_comments(hp_source))
-    if not pma:
-        raise ValueError("explicit HP PMA mappings missing")
-    result["cpu"]["pma"] = [{"base": f"0x{int(base, 16):08X}",
-                             "end": f"0x{int(base, 16)+int(size, 16)-1:08X}",
-                             "bytes": int(size, 16), "main": main, "executable": execute}
-                            for base, size, main, execute in pma]
     result["service_results"] = [{"executed": str(e).lower(), "passed": str(p).lower(),
                                  "meaning": programming_result({"executed": e, "passed": p})}
                                 for e, p in ((False, True), (False, False), (True, False), (True, True))]

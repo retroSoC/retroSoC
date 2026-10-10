@@ -4,15 +4,51 @@
 
 The RV64 migration approved on 2026-09-25 extends the existing HP platform in
 the phases below. These are requirements, not claims of completed validation.
-LP remains the RV32 Hazard3 management hart (hart 0). HP is VexiiRiscv hart 1,
-RV64IMAFDC_Zicbom_Zicntr_Zihpm, with M/S/U modes and Sv39. Physical addresses
-remain 32 bits; the reset vector remains `0x38000000`. The existing 16 KiB
-four-way I/D caches, 64-byte lines, 9-bit ASIDs, PMP, and clocks remain fixed.
-I/D and cacheless MMIO use AXI64 at HP; MMIO is downsized to the existing
-AXI32/APB32 control plane. Software accesses peripheral registers as 32-bit
-words, including the two halves of CLINT timer registers. No new CDC or
+LP remains the RV32 Hazard3 management hart (hart 0). HP is hart 1, a T-Head
+OpenC906 core from [XUANTIE-RV/openc906](https://github.com/XUANTIE-RV/openc906)
+(Apache-2.0), locked in `dependencies/dependencies.lock.json` and integrated
+from its pre-generated `C906_RTL_FACTORY/gen_rtl` DEFAULT configuration:
+RV64GC (RV64IMAFDC plus Zicsr and Zifencei) with M/S/U modes and Sv39,
+32 KiB instruction and data caches with 64-byte lines, an eight-region PMP,
+and a 16K-entry BHT. The earlier VexiiRiscv-based RV64 integration is
+superseded; its validation evidence is retained only as historical in
+[HP RV64 validation](../hp-rv64-validation.md). VexiiRiscv remains in the
+repository solely as the frozen Std-series generator asset
+(`scripts/vexiiriscv/GenerateRetroSocStd.scala`, driven by
+`make std-vexii-generate`); Mini no longer consumes it and Mini profiles have
+no `HP_CONFIG` selector.
+
+The C906 drives 40-bit addresses; Mini physical addresses remain 32 bits and
+the reset vector remains `0x38000000`. The core exposes a single 128-bit AXI4
+master (8-bit IDs, `axim_clk_en` tied high for 1:1 clocking) that a
+serializing `axi4_downsizer_128to64` and `axi4_mmio_demux` split into HP
+data-fabric master slot 0 and the MMIO window `0x02000000-0x2FFFFFFF`; the
+former separate I-cache/D-cache/MMIO port structure and crossbar master slot 1
+are retired (slot 1 is tied idle, ID-prefix map preserved). MMIO continues
+through the existing 64-to-32 downsizer/gate/CDC chain into the AXI32/APB32
+control plane. Software accesses peripheral registers as 32-bit words,
+including the two halves of CLINT timer registers. No new CDC or
 hardware coherency is introduced. LP retains SYSCTRL and terminal-status
 ownership, DMA channel 6, SDRAM initialization, and HP release control.
+
+OpenC906 implements no Zicbom, Zicntr, or Zihpm; cache maintenance uses the
+T-Head custom-0 `dcache.cva`/`dcache.iva` instructions. Debug uses the C906
+internal Debug Module behind the external JTAG DTM (`tdt_dmi_top`).
+OpenC906 hardwires `mhartid=0` upstream; retroSoC substitutes the reviewed
+override `rtl/mini/ip_overrides/aq_sysio_kid.v` (only change:
+`sysio_core_hartid = 3'd1`) during build-time filelist generation through
+`scripts/generate_openc906.py`, which guards the pinned upstream sha256. A
+second reviewed override, `rtl/mini/ip_overrides/sysmap.h`, replaces the
+upstream default sysmap region table (which targets a 40-bit reference map
+and would mark the Mini peripheral window cacheable/bufferable) with the Mini
+address map: the MMIO window `0x02000000`-`0x2FFFFFFF` — including the
+core-internal CLINT/PLIC window — is strong-order/non-cacheable device memory
+as the OpenC906 user manual requires; SRAM/SDRAM/PSRAM/OPI and the flash/XIP
+windows stay cacheable. The vendored checkout is never modified. Deferred
+this phase: low-power support
+(`core0_pad_lpmd_b` unconnected), DFT (scan/mbist tied off), the debug SBA AXI
+master (unconnected), ASIC memory-macro replacement for the behavioral FPGA
+SRAM models, and HP Linux re-qualification timing/performance evidence.
 
 ### Boot bundle V2
 
@@ -35,7 +71,8 @@ with a nonzero error code. LP prints `HP_LINUX_READY` and terminates on Linux
 success without entering the GA2D protocol.
 
 RT-Thread publishes ready event 1, argument `0x52545401`, sequence 1 after
-enabling PLIC source 2 in machine context 0. LP sends command `0x52545402`,
+enabling the mailbox-doorbell PLIC ID (18) in the machine context. LP sends
+command `0x52545402`,
 argument `0x12345678`, sequence 1. Its ISR clears the HP mailbox source and
 completes the PLIC claim; the test thread verifies the received message. Once
 all tests pass, HP publishes event 2, argument `0x52545401`, sequence 2.
@@ -48,7 +85,8 @@ handshake documented by its existing payload.
 RT-Thread uses the official v5.3.0 commit
 `99428a1e7f7447955aa860f7c969273a12095b8f` without vendor source modifications.
 The BSP uses the common RISC-V M-mode port, static threads and IPC objects,
-1000 Hz ticks, UART1, hart-1 MSIP/MTIMECMP, and the existing PLIC/mailbox.
+1000 Hz ticks, UART1, the internal CLINT MSIP/MTIMECMP pair, and the internal
+PLIC plus the mailbox.
 The first test image covers integer RV64 computation/context, preemption,
 semaphore and message queue behavior, timeouts, and external mailbox IRQ.
 RT-Smart, networking, filesystems, and floating-point task qualification are
@@ -68,10 +106,13 @@ uncompressed and does not run the full Buildroot services sequence.
 
 #### Phase 2 - RV64 HP core and platform migration
 
-Migrate the fixed generator, all PRODUCT profiles, manifests and core reports;
-retain the locked VexiiRiscv revision. Use separate RV32 LP and RV64 HP tools.
-Validate generated port widths, narrow MMIO lanes, 64-bit memory accesses,
-and the migrated GA2D/cache-lifecycle smoke in IHP130 Verilator.
+Originally executed against a generated VexiiRiscv core; that integration is
+superseded by the OpenC906 swap and its evidence is historical. The current
+phase integrates the locked OpenC906 DEFAULT configuration, all PRODUCT
+profiles, manifests and core reports. Use separate RV32 LP and RV64 HP tools.
+Validate the 128-to-64 serializing downsizer, the MMIO demux, narrow MMIO
+lanes, 64-bit memory accesses, and the migrated GA2D/cache-lifecycle smoke in
+IHP130 Verilator.
 
 #### Phase 3 - RT-Thread dependency, BSP and acceptance
 
@@ -90,7 +131,8 @@ Unexpected console corruption remains a failure requiring diagnosis.
 #### Phase 5 - Documentation and delivery evidence
 
 Update architecture, guides and publication source bindings. Preserve prior
-RV32 evidence as historical. Each workload writes separate run logs and
+RV32 and pre-swap VexiiRiscv evidence as historical. Each workload writes
+separate run logs and
 structured results; an interrupted or ongoing run cannot reuse an old pass.
 Run affected host/Python/C/RTL checks and IHP130 behavioral regressions.
 Synthesis, netlist simulation, STA, and synthesis-dependent metrics are
@@ -98,39 +140,43 @@ explicitly deferred by user instruction, as are SRAM macro replacement,
 CDC/RDC/physical signoff and commercial qualification. No PPA claim is made.
 
 Reference boundaries: [RT-Thread v5.3.0](https://github.com/RT-Thread/rt-thread/releases/tag/v5.3.0)
-supplies the OS/CPU port; the repository owns board integration. The existing
-CLINT/PLIC architecture and locked OpenSBI platform supply the interrupt and
-supervisor boot patterns; no third-party board register map is imported.
+supplies the OS/CPU port; the repository owns board integration. The C906
+internal CLINT/PLIC (the `thead,c900-clint`/`thead,c900-plic` device-tree
+bindings) and the locked OpenSBI platform supply the interrupt and supervisor
+boot patterns; no third-party board register map is imported.
 
-The experimental LP/HP profile adds a 32-source, two-context PLIC at
-`0x0C000000` and a bidirectional mailbox at `0x10019000`. Both are self-owned
-APB4 peripherals. Their role in boot and lifecycle control is defined by
-[LP/HP Architecture](../lp-hp-architecture.md).
+The LP/HP profile adds a bidirectional mailbox at `0x10019000` as a
+self-owned APB4 peripheral. Its role in boot and lifecycle control is defined
+by [LP/HP Architecture](../lp-hp-architecture.md).
 
-## PLIC
+## Interrupt and timer architecture
 
-Source 0 is permanently reserved. Source 1 is UART1, source 2 is the HP-side
-mailbox doorbell, source 3 is EXT-H, and sources 4 through 10 are central DMA,
-USB2, SDIO0, SDIO1, SPI-SD, JPEG, and APU respectively. Source 11 is GA2D and
-source 12 is the NPU shell. Sources 13 through 31
-are reserved and tied low. Resource-owned sources are suppressed unless HP is
-the exclusive owner. Each source has a three-bit priority. Context 0 drives HP
-machine external interrupt and context 1 drives HP supervisor external interrupt.
+The former SoC-level HP ACLINT at `0x02000000` and HP PLIC at `0x0C000000`
+are removed from the HP path; their self-owned RTL sources remain in the
+repository but are no longer instantiated. Interrupt and timer delivery now
+uses the CLINT and PLIC internal to the C906, which follow the T-Head c900
+register layouts and are decoded inside the core BIU at the 128 MiB-aligned
+window base `0x08000000`. That window never reaches the SoC fabric;
+`rtl/mini/address_map/memory_map.json` reserves it as `HP_C906_SYS`:
 
-| Address offset | Register | Access |
-| --- | --- | --- |
-| `0x000000 + 4 * source` | source priority | RW |
-| `0x001000` | pending bits 31:0 | RO |
-| `0x002000 + 0x80 * context` | enable bits 31:0 | RW |
-| `0x200000 + 0x1000 * context` | threshold | RW |
-| `0x200004 + 0x1000 * context` | claim/complete | RO/RW |
+| Address | Function |
+| --- | --- |
+| `0x08000000` | internal PLIC (`thead,c900-plic`) |
+| `0x0C000000` | internal CLINT (`thead,c900-clint`): MSIP at +`0x0`, MTIMECMP at +`0x4000`, SSIP at +`0xC000`, STIMECMP at +`0xD000` |
 
-Claim returns the lowest source ID at the greatest priority strictly above the
-context threshold, clears its pending bit, and marks it claimed. Writing that
-nonzero ID to the same context's claim/complete register completes it. A level
-source that remains asserted becomes pending again after completion. Priority
-zero disables delivery. The MVP implements one 32-bit pending/enable word and
-does not implement MSI, AIA, virtualization, or affinity routing.
+The CLINT at `0x10020000` remains the LP/global CLINT and the mtime source.
+Its mtime is delivered to the C906 through `pad_cpu_sys_cnt`; HP software
+reads the `time` CSR and has no memory-mapped mtime.
+
+SoC interrupt source numbers are unchanged at the boundary: source 1 is
+UART1, source 2 is the HP-side mailbox doorbell, source 3 is EXT-H, and
+sources 4 through 12 are central DMA, USB2, SDIO0, SDIO1, SPI-SD, JPEG, APU,
+GA2D, and the NPU shell respectively. Sources 13 and above are reserved and
+tied low. Resource-owned sources are suppressed unless HP is the exclusive
+owner. The C906 maps external input *i* to PLIC ID *i*+16, so software claims
+these sources as PLIC IDs 17 through 28; IDs 0-15 are reserved/internal.
+LP-to-HP notification is exclusively the mailbox doorbell (PLIC ID 18); the
+former LP-writes-HP-MSIP path no longer exists.
 
 ## Mailbox
 
@@ -160,8 +206,9 @@ Linux userspace acceptance script reports event 1, argument `0x4C4E5801`, and
 sequence 1 after init; this is a bring-up verdict, not a general Linux mailbox
 driver ABI.
 
-`tests/rtl/plic_tb.sv` and `tests/rtl/hp_mailbox_tb.sv` cover register and
-interrupt behavior. `tests/test_hp_boot_bundle.py` enforces the handwritten
-mailbox RTL/C offset parity. Production work still requires a Linux mailbox
-driver, concurrent sequence/wrap policy, malformed-message tests, lifecycle
-timeouts, and fault-injection coverage.
+`tests/rtl/hp_mailbox_tb.sv` covers mailbox register and interrupt behavior.
+`tests/rtl/plic_tb.sv` covers the retained self-owned PLIC RTL, which is no
+longer part of the HP interrupt path. `tests/test_hp_boot_bundle.py` enforces
+the handwritten mailbox RTL/C offset parity. Production work still requires a
+Linux mailbox driver, concurrent sequence/wrap policy, malformed-message
+tests, lifecycle timeouts, and fault-injection coverage.

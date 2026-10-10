@@ -18,15 +18,14 @@
 		timebase-frequency = <1000000>;
 
 		cpu@1 {
-			compatible = "spinal,vexiiriscv", "riscv";
+			compatible = "thead,c906", "riscv";
 			device_type = "cpu";
 			reg = <1>;
 			clock-frequency = <72000000>;
 			mmu-type = "riscv,sv39";
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicbom",
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c",
 					       "zicsr", "zifencei";
-			riscv,cbom-block-size = <64>;
 
 			hp_cpu_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -60,15 +59,27 @@
 		#size-cells = <1>;
 		ranges;
 
-		hp_aclint: timer@2000000 {
-			compatible = "sifive,clint0";
-			reg = <0x02000000 0x00010000>;
-			interrupts-extended = <&hp_cpu_intc 3>, <&hp_cpu_intc 7>;
+		/*
+		 * Internal C906 CLINT (thead,c900-clint): decoded by the core
+		 * BIU, not a SoC fabric slave. No memory-mapped mtime; software
+		 * reads the time CSR. Interrupt order per hart: M-SW, M-timer,
+		 * S-SW, S-timer.
+		 */
+		hp_clint: timer@c000000 {
+			compatible = "thead,c900-clint";
+			reg = <0x0c000000 0x00010000>;
+			interrupts-extended = <&hp_cpu_intc 3>, <&hp_cpu_intc 7>,
+					      <&hp_cpu_intc 1>, <&hp_cpu_intc 5>;
 		};
 
-		hp_plic: interrupt-controller@c000000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0x0c000000 0x04000000>;
+		/*
+		 * Internal C906 PLIC (thead,c900-plic): decoded by the core
+		 * BIU. SoC external source n is PLIC ID n+16; IDs 0-15 are
+		 * reserved/internal.
+		 */
+		hp_plic: interrupt-controller@8000000 {
+			compatible = "thead,c900-plic";
+			reg = <0x08000000 0x04000000>;
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <1>;
@@ -80,7 +91,7 @@
 			compatible = "retrosoc,uart-v3";
 			reg = <0x10018000 0x1000>;
 			interrupt-parent = <&hp_plic>;
-			interrupts = <1>;
+			interrupts = <17>;
 			clock-frequency = <72000000>;
 			status = "okay";
 		};
@@ -89,7 +100,7 @@
 			compatible = "retrosoc,hp-mailbox-v1";
 			reg = <0x10019000 0x1000>;
 			interrupt-parent = <&hp_plic>;
-			interrupts = <2>;
+			interrupts = <18>;
 			#mbox-cells = <1>;
 		};
 	};

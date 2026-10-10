@@ -304,7 +304,9 @@ module axi4_data_crossbar #(
   endfunction
 
   function automatic logic [CountWidth-1:0] master_write_limit(input int unsigned master);
-    if ((master == 1) || (master == 2) || (master == 7)) return CountWidth'(2);
+    // Master 0 is the merged HP core port (instruction and data); it inherits
+    // the retired HP data port's write credits. Master 1 is the retired slot.
+    if ((master == 0) || (master == 2) || (master == 7)) return CountWidth'(2);
     if (((master >= 3) && (master <= 6)) || (master == 8) || (master == 9)) return CountWidth'(1);
     return '0;
   endfunction

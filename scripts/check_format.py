@@ -21,6 +21,10 @@ SELF_OWNED_RTL_ROOTS = {
     ("rtl", "tech"),
     ("tests", "rtl"),
 }
+# Vendored upstream sources carried with a reviewed patch (e.g. the OpenC906
+# hart-ID override) keep upstream formatting so they stay diffable against
+# the locked revision.
+VENDORED_RTL_DIRS = ("ip_overrides",)
 
 
 def tracked_files(root: Path) -> list[Path]:
@@ -41,7 +45,9 @@ def format_files(paths: Iterable[Path], kind: str) -> list[Path]:
         return sorted(
             path
             for path in paths
-            if path.suffix in RTL_SUFFIXES and tuple(path.parts[:2]) in SELF_OWNED_RTL_ROOTS
+            if path.suffix in RTL_SUFFIXES
+            and tuple(path.parts[:2]) in SELF_OWNED_RTL_ROOTS
+            and not any(part in VENDORED_RTL_DIRS for part in path.parts)
         )
     raise ValueError(f"unknown format kind: {kind}")
 

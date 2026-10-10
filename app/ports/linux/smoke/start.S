@@ -58,6 +58,10 @@
     .equ GA2D_WAIT_POLLS,  0x00100000
 
 _start:
+    # Enable the T-Head extended instruction set (mxstatus.theadisaee) so the
+    # C906 custom-0 cache maintenance instructions below decode legally.
+    li      t0, 0x400000
+    csrs    0x7c0, t0
     la      sp, _stack_top
     la      t0, _bss_start
     la      t1, _bss_end
@@ -257,27 +261,31 @@ prepare_source_data:
     mv      ra, s0
     ret
 
+# C906 cache maintenance replaces the VexiiRiscv Zicbom ops: custom-0
+# encodings dcache.cva (0x0250000b | rs1<<15, clean by VA) and dcache.iva
+# (0x0260000b | rs1<<15, invalidate by VA) per the OpenC906 ID decoder and
+# the XTheadCmo specification. Each shared buffer remains one 64-byte line.
 clean_shared_lines:
     la      a0, hp_source_guard
-    cbo.clean 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x5
     la      a0, hp_source_line
-    cbo.clean 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x5
     la      a0, hp_destination_line
-    cbo.clean 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x5
     la      a0, hp_destination_guard
-    cbo.clean 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x5
     fence   rw, rw
     ret
 
 invalidate_shared_lines:
     la      a0, hp_source_guard
-    cbo.inval 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x6
     la      a0, hp_source_line
-    cbo.inval 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x6
     la      a0, hp_destination_line
-    cbo.inval 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x6
     la      a0, hp_destination_guard
-    cbo.inval 0(a0)
+    .insn r 0x0b, 0x0, 0x01, x0, a0, x6
     fence   r, r
     ret
 

@@ -3,5 +3,4 @@
 config PLATFORM_RETROSOC_HP
 	bool
 	select IPI_MSWI
-	select TIMER_MTIMER
 	default y

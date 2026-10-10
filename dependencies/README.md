@@ -40,14 +40,18 @@ manifest, geometry, source revisions, generated-file hashes, and TT/SS views
 before materializing it below `.cache/retrosoc/pdk/sky130/openram/`. Generated
 Verilog, Liberty, LEF, GDS, and SPICE views are never committed here.
 
-The HP profile additionally locks VexiiRiscv, OpenSBI, Linux stable, and
-Buildroot source revisions and the SBT launcher used by VexiiRiscv generation.
-`make setup-hp-linux` installs the software sources below
-`.cache/retrosoc/sources/`; VexiiRiscv may be supplied through
-`VEXIIRISCV_ROOT`, but its revision is still checked before generated RTL is
-accepted. Java 17 is a host runtime supplied by Docker, Nix, or the documented
-Ubuntu prerequisites. No generated CPU RTL or Linux build output belongs in
-Git.
+The HP profile locks the OpenC906 source (`sources.openc906`, Apache-2.0) below
+`.cache/retrosoc/sources/openc906`; `make setup-openc906` installs it and
+`make openc906-prepare` emits the build-variant `openc906.fl` filelist with the
+reviewed hart-ID override substituted (the locked checkout is never modified).
+OpenSBI, Linux stable, and Buildroot source revisions are locked for HP payload
+builds. `make setup-hp-linux` installs the software sources below
+`.cache/retrosoc/sources/`. VexiiRiscv remains locked as a Std-series asset: it
+may be supplied through `VEXIIRISCV_ROOT`, its revision is still checked before
+generated RTL is accepted, and `make std-vexii-generate` invokes the SBT
+launcher for `GenerateRetroSocStd.scala`. Java 17 is a host runtime supplied
+by Docker, Nix, or the documented Ubuntu prerequisites. No generated CPU RTL or
+Linux build output belongs in Git.
 
 `rtthread_hp` pins official RT-Thread v5.3.0 at
 `99428a1e7f7447955aa860f7c969273a12095b8f`. `make setup-hp-rtthread` installs

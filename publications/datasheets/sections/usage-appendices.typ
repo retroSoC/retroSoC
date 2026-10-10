@@ -105,7 +105,7 @@ the stated inclusive end address. Numeric suffixes in signal names denote signal
 not package pin numbers. `_i`, `_o` and `_n` retain their declared direction/polarity meaning.
 An RTL `inout` pad wrapper may contain a functionally input-only route.
 
-LP interrupt vector bits, HP PLIC source IDs, DMA request values, software channel contexts
+LP interrupt vector bits, HP external sources and their PLIC IDs, DMA request values, software channel contexts
 and native master slots are separate namespaces. A matching integer does not connect them.
 Clock configuration, nominal calculated rate, model timing and characterized pin timing are
 also distinct. Interpret every Min/Typ/Max entry with its stated evidence and conditions.

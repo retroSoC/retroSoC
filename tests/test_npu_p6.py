@@ -32,7 +32,8 @@ def test_p6_shard_parser_invalidates_image_before_header_and_payload_reads() -> 
     runner = (ROOT / "app/benchmark/npu/npu_p6_runner.c").read_text(encoding="utf-8")
     assert "rs_npu_p6_invalidate_range(image, RS_NPU_P6_HEADER_BYTES);" in runner
     assert "rs_npu_p6_invalidate_range(&image[RS_NPU_P6_HEADER_BYTES], payload_bytes);" in runner
-    assert '"cbo.inval 0(%0)"' in runner
+    # C906 cache maintenance: custom-0 dcache.iva (replaces the Zicbom cbo.inval).
+    assert '".insn r 0x0b, 0x0, 0x01, x0, %0, x6"' in runner
 
 
 def test_p6_first_case_has_bounded_stage_markers_without_changing_case_schema() -> None:
@@ -156,7 +157,6 @@ def test_verilator_report_uses_matching_variant_manifests(tmp_path: Path) -> Non
         "MINI_MODE": "PRODUCT",
         "APP": "hp_boot",
         "SIMU": "VERILATOR",
-        "HP_CONFIG": "rv64imafdc_zicbom_max",
         "EXT_CLK_HZ": "72000000",
     }
     for variant in variants.values():
@@ -170,7 +170,7 @@ def test_verilator_report_uses_matching_variant_manifests(tmp_path: Path) -> Non
         "EXT_CLK_HZ": 72_000_000,
     }
 
-    mismatched = {**configuration, "HP_CONFIG": "rv32imafdc_zicbom_max"}
+    mismatched = {**configuration, "APP": "shell"}
     (variants["vww"] / "meta/manifest.json").write_text(
         json.dumps({"configuration": mismatched}), encoding="utf-8"
     )

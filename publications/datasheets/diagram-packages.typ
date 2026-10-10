@@ -114,9 +114,9 @@
   #diagram-text[Relative byte boundaries: 0 · #c.granule · #c.covered_bytes]
   #v(4pt)
   #bc.region(width:100%,fill:white,stroke:0.6pt+ink,radius:0pt)[
-    #bc.cell(width:77mm,height:12mm,fill:gray,stroke:0.6pt+ink)[#align(center+horizon)[CBO block 0: bytes 0–63]]
+    #bc.cell(width:77mm,height:12mm,fill:gray,stroke:0.6pt+ink)[#align(center+horizon)[Cache line 0: bytes 0–63]]
     #h(2mm)
-    #bc.cell(width:77mm,height:12mm,fill:gray,stroke:0.6pt+ink)[#align(center+horizon)[CBO block 1: bytes 64–127]]
+    #bc.cell(width:77mm,height:12mm,fill:gray,stroke:0.6pt+ink)[#align(center+horizon)[Cache line 1: bytes 64–127]]
     #linebreak()
     #v(4pt)
     #bc.cell(width:19mm,height:15mm,fill:gray,stroke:0.6pt+ink)[16 B \ before]
@@ -125,8 +125,8 @@
     #bc.cell(width:19mm,height:15mm,fill:pale-gold,stroke:0.6pt+ink)[16 B \ payload]
     #bc.cell(width:57mm,height:15mm,fill:gray,stroke:0.6pt+ink)[48 B after \ bytes 80–127]
   ]
-  #diagram-note[The software-declared 64-byte maintenance granule covers a 64-byte payload at offset 16
-    using two blocks. Keep boundary bytes under compatible ownership. Relative offsets are illustrative;
+  #diagram-note[A 64-byte payload at offset 16 touches two 64-byte HP D-cache lines, so
+    maintenance spans both. Keep boundary bytes under compatible ownership. Relative offsets are illustrative;
     this is not a verified HP cache tag/set/way layout or an allocated buffer address.]
   #diagram-end("blockcell","cache-boundaries")
 ]

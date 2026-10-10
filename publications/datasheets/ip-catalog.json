@@ -309,8 +309,7 @@
   {
     "id": "hp-platform",
     "regions": [
-      "HP_ACLINT",
-      "HP_PLIC",
+      "HP_C906_SYS",
       "APB4_HP_MAILBOX"
     ],
     "irqs": [
@@ -320,7 +319,7 @@
       "docs/ip/hp-platform.md",
       "docs/lp-hp-architecture.md"
     ],
-    "summary": "HP local timer/software interrupts, two-context PLIC and bidirectional mailbox."
+    "summary": "HP core-internal CLINT/PLIC window (decoded inside the OpenC906 core) and bidirectional mailbox."
   },
   {
     "id": "resource",

@@ -90,10 +90,7 @@ module apb4_periph #(
     input logic [3:0]                             fault_wstrb_i,
     input logic                                   fault_reserved_i,
     output logic [63:0]                           hp_time_o,
-    output logic                                  hp_timer_irq_o,
-    output logic                                  hp_software_irq_o,
-    output logic                                  hp_machine_external_irq_o,
-    output logic                                  hp_supervisor_external_irq_o,
+    output logic [15:0]                           hp_plic_src_o,
     output logic                                  apu_idle_o,
     output logic                                  jpeg_idle_o,
     output logic                                  ga2d_idle_o,
@@ -177,7 +174,6 @@ axi4_stream_if #(
   );
 
   clint_if u_clint_if ();
-  clint_if #(.HartNum(2)) u_hp_clint_if ();
   dma_req_if u_dma_req_if ();
   apb4_if u_psram_mem_apb4_if (
       .pclk   (clk_mem_i),
@@ -221,8 +217,7 @@ axi4_stream_if #(
   logic s_dma_xpi_tx_stall_mem;
   logic s_dma_xpi_rx_stall_mem;
   logic s_mailbox_lp_irq, s_mailbox_hp_irq;
-  logic [31:0] s_hp_plic_source;
-  logic [ 1:0] s_hp_plic_context_irq;
+  logic [15:0] s_hp_plic_source;
   logic [ 3:0] s_unused_optional_status;
 
   axi42apb4_periph u_axi42apb4_periph (
@@ -244,11 +239,8 @@ axi4_stream_if #(
   assign u_dma_req_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
   assign u_dma_req_if.crypto_in_proc = s_dma_crypto_in_proc;
   assign u_dma_req_if.crypto_out_proc = s_dma_crypto_out_proc;
-  assign hp_time_o = u_hp_clint_if.mtime_o;
-  assign hp_timer_irq_o = u_hp_clint_if.timer_irq_o[1];
-  assign hp_software_irq_o = u_hp_clint_if.software_irq_o[1];
-  assign hp_machine_external_irq_o = s_hp_plic_context_irq[0];
-  assign hp_supervisor_external_irq_o = s_hp_plic_context_irq[1];
+  assign hp_time_o = u_clint_if.mtime_o;
+  assign hp_plic_src_o = s_hp_plic_source;
   assign resource_irq_raw_o = {
     s_npu_irq_raw,
     s_ga2d_irq_raw,
@@ -387,24 +379,6 @@ axi4_stream_if #(
       .apb4    (u_hp_mailbox_apb4_if),
       .lp_irq_o(s_mailbox_lp_irq),
       .hp_irq_o(s_mailbox_hp_irq)
-  );
-
-  apb4_clint #(
-      .HartNum(2)
-  ) u_apb4_hp_aclint (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .timebase_tick_i(timebase_tick_i),
-      .apb4           (u_hp_aclint_apb4_if),
-      .clint          (u_hp_clint_if)
-  );
-
-  apb4_plic u_apb4_hp_plic (
-      .clk_i        (clk_i),
-      .rst_n_i      (rst_n_i),
-      .source_i     (s_hp_plic_source),
-      .apb4         (u_hp_plic_apb4_if),
-      .context_irq_o(s_hp_plic_context_irq)
   );
 
   apb4_timer u_apb4_timer0 (

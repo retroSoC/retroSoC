@@ -136,7 +136,7 @@ def test_unreviewed_return_expression_is_not_silently_omitted(source_tree):
 
 def test_linux_platform_uses_source_values_and_order():
     data = sr.linux_platform(ROOT)
-    assert (data["hart_id"], data["timebase_hz"], data["cbom_bytes"]) == (1, 1000000, 64)
+    assert (data["hart_id"], data["timebase_hz"]) == (1, 1000000)
     assert data["initrd_start"] == data["initrd_template_end"] == 0x39000000
     assert data["ready_writes"][-1] == {
         "address": "0x1001902C", "value": "0x00000001",
@@ -148,7 +148,7 @@ def test_linux_platform_uses_source_values_and_order():
 @pytest.mark.parametrize("relative,old,new", [
     ("app/ports/linux/linux/retrosoc_hp.dts", "cpu@1", "cpu@0"),
     ("app/ports/linux/linux/retrosoc_hp.dts", "linux,initrd-end = <0x39000000>", "linux,initrd-end = <0x39100000>"),
-    ("app/ports/linux/opensbi/retrosoc_hp/platform.c", ".mtime_freq = 1000000UL", ".mtime_freq = 2000000UL"),
+    ("app/ports/linux/opensbi/retrosoc_hp/platform.c", ".timer_freq = 1000000UL", ".timer_freq = 2000000UL"),
     ("app/ports/linux/hp_ready.c", "0x4C4E5801", "0x4C4E5802"),
 ])
 def test_linux_consistency_and_ready_event_drift_fail(source_tree, relative, old, new):
