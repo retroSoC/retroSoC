@@ -18,10 +18,11 @@ module tiny_axi4_target (
     output logic                 fault_instruction_o,
     output logic          [ 1:0] fault_resp_o
 );
-  typedef enum logic [1:0] {
+  typedef enum logic [2:0] {
     Idle,
     Address,
     Response,
+    AbortWrite,
     AbortResponse
   } state_e;
   typedef struct packed {
@@ -44,6 +45,8 @@ module tiny_axi4_target (
     addr_t       addr;
     logic [7:0]  write_beat;
     logic        write_done;
+    logic [8:0]  read_count;
+    logic        b_captured;
     logic [31:0] read_addr,  error_addr;
     logic [1:0]  error_resp;
     logic        error_seen;
@@ -64,6 +67,9 @@ module tiny_axi4_target (
   logic [ 3:0] s_b_data;
   logic s_read_capture, s_write_capture;
   logic s_abort_read_valid, s_abort_write_valid;
+  logic s_resp_active, s_rin_valid, s_bin_valid;
+  logic [36:0] s_rin_data;
+  logic [ 3:0] s_bin_data;
 
   assign s_saved_addr = s_req_q.addr;
   assign s_req_addr = s_saved_addr.addr;
@@ -74,22 +80,34 @@ module tiny_axi4_target (
   assign s_selected_addr = s_selected_write ? s_write_addr[s_selected] : s_read_addr[s_selected];
   assign s_accept = (s_req_q.state == Idle) && enable_i && s_valid;
   assign idle_o = (s_req_q.state == Idle) && !s_r_valid && !s_b_valid;
-  assign s_abort_read_valid = (s_req_q.state == AbortResponse) && !s_req_q.write;
-  assign s_abort_write_valid = (s_req_q.state == AbortResponse) && s_req_q.write;
-  assign s_terminal =
-      (s_req_q.state == Response) ?
-          (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) :
-           (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1])) :
-      (s_req_q.state == AbortResponse) &&
-          (s_req_q.write ? s_bready[s_req_q.owner] : s_rready[s_req_q.owner]);
-  assign fault_valid_o = s_terminal && (s_req_q.error_seen || s_req_q.state == AbortResponse);
+  // Target reset cancels downstream work, never an already captured upstream
+  // response. Append missing error beats through the same spill registers.
+  assign s_resp_active = (s_req_q.state == Response) || (s_req_q.state == AbortResponse);
+  assign s_abort_read_valid = (s_req_q.state == AbortResponse) && !s_req_q.write &&
+      (s_req_q.read_count <= {1'b0, s_saved_addr.len});
+  assign s_abort_write_valid = (s_req_q.state == AbortResponse) && s_req_q.write &&
+      s_req_q.write_done && !s_req_q.b_captured;
+  assign s_terminal = s_resp_active &&
+      (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) :
+       (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]));
+  assign fault_valid_o = s_terminal && s_req_q.error_seen;
   assign fault_addr_o = s_req_q.error_addr;
   assign fault_master_o = s_req_q.owner;
   assign fault_write_o = s_req_q.write;
   assign fault_instruction_o = !s_req_q.write && s_saved_addr.prot[2];
   assign fault_resp_o = s_req_q.error_resp;
-  assign s_read_capture = target.rvalid && target.rready;
-  assign s_write_capture = target.bvalid && target.bready;
+  assign s_rin_valid = ((s_req_q.state == Response) && enable_i &&
+      !s_req_q.write && target.rvalid) || s_abort_read_valid;
+  assign s_rin_data = s_abort_read_valid ?
+      {s_req_id, 32'd0, 2'b11,
+       (s_req_q.read_count == {1'b0, s_saved_addr.len}), 1'b0} :
+      {target.rid, target.rdata, target.rresp, target.rlast, target.ruser};
+  assign s_bin_valid = ((s_req_q.state == Response) && enable_i &&
+      s_req_q.write && target.bvalid) || s_abort_write_valid;
+  assign s_bin_data = s_abort_write_valid ? {s_req_id, 2'b11, 1'b0} :
+      {target.bid, target.bresp, target.buser};
+  assign s_read_capture = s_rin_valid && s_r_ready;
+  assign s_write_capture = s_bin_valid && s_b_ready;
 
   round_robin_arbiter #(
       .CLIENTS(3)
@@ -154,22 +172,17 @@ module tiny_axi4_target (
     assign s_bready[owner] = masters[owner].bready;
     assign masters[owner].arready = s_accept && s_grant[owner] && !s_selected_write;
     assign masters[owner].awready = s_accept && s_grant[owner] && s_selected_write;
-    assign masters[owner].wready = (s_req_q.state == Response) && enable_i && s_req_q.write &&
-        !s_req_q.write_done && (s_req_q.owner == 2'(owner)) && target.wready;
-    assign masters[owner].rvalid = ((s_req_q.state == Response) && enable_i && !s_req_q.write &&
-        (s_req_q.owner == 2'(owner)) && s_r_valid) ||
-        (s_abort_read_valid && (s_req_q.owner == 2'(owner)));
-    assign masters[owner].rid = s_abort_read_valid ? s_req_id : s_r_data[36];
-    assign masters[owner].rdata = s_abort_read_valid ? 32'd0 : s_r_data[35:4];
-    assign masters[owner].rresp = s_abort_read_valid ? 2'b11 : s_r_data[3:2];
-    assign masters[owner].rlast = s_abort_read_valid ? 1'b1 : s_r_data[1];
-    assign masters[owner].ruser = s_abort_read_valid ? 1'b0 : s_r_data[0];
-    assign masters[owner].bvalid = ((s_req_q.state == Response) && enable_i && s_req_q.write &&
-        (s_req_q.owner == 2'(owner)) && s_b_valid) ||
-        (s_abort_write_valid && (s_req_q.owner == 2'(owner)));
-    assign masters[owner].bid = s_abort_write_valid ? s_req_id : s_b_data[3];
-    assign masters[owner].bresp = s_abort_write_valid ? 2'b11 : s_b_data[2:1];
-    assign masters[owner].buser = s_abort_write_valid ? 1'b0 : s_b_data[0];
+    assign masters[owner].wready = ((s_req_q.state == Response) && enable_i && s_req_q.write &&
+        !s_req_q.write_done && (s_req_q.owner == 2'(owner)) && target.wready) ||
+        ((s_req_q.state == AbortWrite) && !s_req_q.write_done &&
+         (s_req_q.owner == 2'(owner)));
+    assign masters[owner].rvalid = s_resp_active && !s_req_q.write &&
+        (s_req_q.owner == 2'(owner)) && s_r_valid;
+    assign {masters[owner].rid, masters[owner].rdata, masters[owner].rresp,
+            masters[owner].rlast, masters[owner].ruser} = s_r_data;
+    assign masters[owner].bvalid = s_resp_active && s_req_q.write &&
+        (s_req_q.owner == 2'(owner)) && s_b_valid;
+    assign {masters[owner].bid, masters[owner].bresp, masters[owner].buser} = s_b_data;
   end
 
   assign target.awaddr = s_saved_addr.addr;
@@ -209,12 +222,12 @@ module tiny_axi4_target (
   ) u_read_response (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .flush_i(!enable_i),
-      .valid_i((s_req_q.state == Response) && !s_req_q.write && target.rvalid),
+      .flush_i(1'b0),
+      .valid_i(s_rin_valid),
       .ready_o(s_r_ready),
-      .data_i ({target.rid, target.rdata, target.rresp, target.rlast, target.ruser}),
+      .data_i (s_rin_data),
       .valid_o(s_r_valid),
-      .ready_i((s_req_q.state == Response) && !s_req_q.write && s_rready[s_req_q.owner]),
+      .ready_i(s_resp_active && !s_req_q.write && s_rready[s_req_q.owner]),
       .data_o (s_r_data)
   );
   spill_register #(
@@ -222,12 +235,12 @@ module tiny_axi4_target (
   ) u_write_response (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .flush_i(!enable_i),
-      .valid_i((s_req_q.state == Response) && s_req_q.write && target.bvalid),
+      .flush_i(1'b0),
+      .valid_i(s_bin_valid),
       .ready_o(s_b_ready),
-      .data_i ({target.bid, target.bresp, target.buser}),
+      .data_i (s_bin_data),
       .valid_o(s_b_valid),
-      .ready_i((s_req_q.state == Response) && s_req_q.write && s_bready[s_req_q.owner]),
+      .ready_i(s_resp_active && s_req_q.write && s_bready[s_req_q.owner]),
       .data_o (s_b_data)
   );
   always_comb begin
@@ -244,42 +257,49 @@ module tiny_axi4_target (
       end
       Address: begin
         if (!enable_i) begin
-          s_req_d.state      = AbortResponse;
-          s_req_d.error_seen = 1'b1;
-          s_req_d.error_addr = s_req_addr;
-          s_req_d.error_resp = 2'b11;
+          s_req_d.state = s_req_q.write ? AbortWrite : AbortResponse;
         end else if (s_req_q.write ? target.awready : target.arready) s_req_d.state = Response;
       end
       Response: begin
         if (!enable_i) begin
-          s_req_d.state      = AbortResponse;
-          s_req_d.error_seen = 1'b1;
-          s_req_d.error_addr = s_req_addr;
-          s_req_d.error_resp = 2'b11;
+          s_req_d.state = (s_req_q.write && !s_req_q.write_done) ? AbortWrite : AbortResponse;
         end
         if (target.wvalid && target.wready) begin
           s_req_d.write_beat = s_req_q.write_beat + 8'd1;
           if (target.wlast || (s_req_q.write_beat == s_saved_addr.len)) s_req_d.write_done = 1'b1;
         end
-        if (s_read_capture) begin
-          if (s_saved_addr.burst == 2'b01)
-            s_req_d.read_addr = s_req_q.read_addr + (32'd1 << s_saved_addr.size);
-          if (!s_req_q.error_seen && (target.rresp != 2'b00)) begin
-            s_req_d.error_seen = 1'b1;
-            s_req_d.error_addr = s_req_q.read_addr;
-            s_req_d.error_resp = target.rresp;
+        if (s_terminal) s_req_d.state = Idle;
+      end
+      AbortWrite: begin
+        if (s_wvalid[s_req_q.owner] && !s_req_q.write_done) begin
+          s_req_d.write_beat = s_req_q.write_beat + 8'd1;
+          if (s_wlast[s_req_q.owner] || (s_req_q.write_beat == s_saved_addr.len)) begin
+            s_req_d.write_done = 1'b1;
+            s_req_d.state      = AbortResponse;
           end
         end
-        if (s_write_capture && !s_req_q.error_seen && (target.bresp != 2'b00)) begin
-          s_req_d.error_seen = 1'b1;
-          s_req_d.error_addr = s_saved_addr.addr;
-          s_req_d.error_resp = target.bresp;
-        end
-        if (s_terminal) s_req_d.state = Idle;
       end
       AbortResponse: if (s_terminal) s_req_d.state = Idle;
       default:       s_req_d.state = Idle;
     endcase
+    if (s_read_capture) begin
+      s_req_d.read_count = s_req_q.read_count + 9'd1;
+      if (s_saved_addr.burst == 2'b01)
+        s_req_d.read_addr = s_req_q.read_addr + (32'd1 << s_saved_addr.size);
+      if (!s_req_q.error_seen && (s_rin_data[3:2] != 2'b00)) begin
+        s_req_d.error_seen = 1'b1;
+        s_req_d.error_addr = s_req_q.read_addr;
+        s_req_d.error_resp = s_rin_data[3:2];
+      end
+    end
+    if (s_write_capture) begin
+      s_req_d.b_captured = 1'b1;
+      if (!s_req_q.error_seen && (s_bin_data[2:1] != 2'b00)) begin
+        s_req_d.error_seen = 1'b1;
+        s_req_d.error_addr = s_req_addr;
+        s_req_d.error_resp = s_bin_data[2:1];
+      end
+    end
   end
   dffr #(
       .DATA_WIDTH($bits(request_t))
@@ -334,17 +354,17 @@ module tiny_axi4_target (
   end
 `endif
 `ifdef HAVE_SVA
-  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+  assert property (@(posedge clk_i) disable iff (!rst_n_i || !enable_i)
       target.wvalid && !target.wready |=> target.wvalid &&
       $stable(
       {target.wdata, target.wstrb, target.wlast, target.wuser}
   ));
-  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+  assert property (@(posedge clk_i) disable iff (!rst_n_i || !enable_i)
       target.arvalid && !target.arready |=> target.arvalid &&
       $stable(
       {target.araddr, target.arlen, target.arid, target.arsize, target.arburst}
   ));
-  assert property (@(posedge clk_i) disable iff (!rst_n_i)
+  assert property (@(posedge clk_i) disable iff (!rst_n_i || !enable_i)
       target.awvalid && !target.awready |=> target.awvalid &&
       $stable(
       {target.awaddr, target.awlen, target.awid, target.awsize, target.awburst}

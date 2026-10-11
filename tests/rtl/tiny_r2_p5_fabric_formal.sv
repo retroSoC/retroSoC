@@ -2,9 +2,16 @@ module tiny_r2_p5_fabric_formal (
     input logic clk_i,
     rst_n_i
 );
+`ifdef TINY_P5_RESET_FORMAL
+  localparam bit TargetReset = 1'b1;
+`else
+  localparam bit TargetReset = 1'b0;
+`endif
   logic started = 0;
   (* anyseq *) logic [2:0] arvalid, awvalid, wvalid, rready, bready;
-  (* anyseq *) logic [2:0][1:0] length;
+  (* anyseq *)logic [2:0][1:0] length;
+  (* anyseq *)logic            target_reset_n;
+  wire             target_enable = !TargetReset || target_reset_n;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
@@ -33,7 +40,7 @@ module tiny_r2_p5_fabric_formal (
   tiny_axi4_target u_target (
       .clk_i              (clk_i),
       .rst_n_i            (rst_n_i),
-      .enable_i           (1'b1),
+      .enable_i           (target_enable),
       .masters            (masters),
       .target             (target),
       .idle_o             (idle),
@@ -48,11 +55,13 @@ module tiny_r2_p5_fabric_formal (
       .Response(2'b10)
   ) u_endpoint (
       .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
+      .rst_n_i(rst_n_i && target_enable),
       .axi4   (target)
   );
   for (genvar m = 0; m < 3; m++) begin : gen_master
     logic outstanding = 0;
+    logic [2:0] remaining = 0;
+    logic write_data_pending = 0;
     wire accept=(masters[m].arvalid && masters[m].arready)||(masters[m].awvalid && masters[m].awready);
     wire done=(masters[m].rvalid && masters[m].rready && masters[m].rlast)||
               (masters[m].bvalid && masters[m].bready);
@@ -88,15 +97,30 @@ module tiny_r2_p5_fabric_formal (
     assign masters[m].rready   = rready[m];
     assign masters[m].bready   = bready[m];
     always_ff @(posedge clk_i) begin
-      if (!rst_n_i) outstanding <= 0;
-      else begin
+      if (!rst_n_i) begin
+        outstanding        <= 0;
+        remaining          <= 0;
+        write_data_pending <= 0;
+      end else begin
+        if (masters[m].arvalid && masters[m].arready) remaining <= {1'b0, length[m]} + 3'd1;
+        if (masters[m].rvalid) begin
+          assert (remaining != 0);
+          assert (masters[m].rlast == (remaining == 1));
+          if (masters[m].rready) remaining <= remaining - 3'd1;
+        end
+        if (masters[m].awvalid && masters[m].awready) write_data_pending <= 1;
+        if (masters[m].wvalid && masters[m].wready) write_data_pending <= 0;
+        if (masters[m].bvalid) assert (!write_data_pending);
         if (accept) outstanding <= 1;
         if (done) outstanding <= 0;
         assert (!(accept && outstanding));
         assert (!done || outstanding);
         assert (!(masters[m].arready && masters[m].awready));
         if (done) begin
-          assert (fault && fault_owner == 2'(m) && fault_resp == 2);
+          assert (fault && fault_owner == 2'(m));
+          if (TargetReset)
+            assert (fault_resp == 2 || fault_resp == 3);
+            else assert (fault_resp == 2);
           assert (fault_addr == 32'h30000000 + 32'(m) * 32'h100);
         end
       end

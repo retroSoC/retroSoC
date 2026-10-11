@@ -187,9 +187,13 @@
       "file": "rtl/tiny/top/tiny_axi4_target.sv",
       "text": [
         "assign s_accept = (s_req_q.state == Idle) && enable_i && s_valid;",
-        "  assign s_terminal = (s_req_q.state == Response) &&\n      (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) :\n       (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]));",
+        "assign s_terminal = s_resp_active && (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) : (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]));",
         "assign fault_valid_o = s_terminal && s_req_q.error_seen;",
-        "if (!s_req_q.error_seen && (target.rresp != 2'b00)) begin s_req_d.error_seen = 1'b1; s_req_d.error_addr = s_req_q.read_addr; s_req_d.error_resp = target.rresp; end",
+        "if (!s_req_q.error_seen && (s_rin_data[3:2] != 2'b00)) begin s_req_d.error_seen = 1'b1; s_req_d.error_addr = s_req_q.read_addr; s_req_d.error_resp = s_rin_data[3:2]; end",
+        "assign s_abort_write_valid = (s_req_q.state == AbortResponse) && s_req_q.write && s_req_q.write_done && !s_req_q.b_captured;",
+        "assign s_abort_read_valid = (s_req_q.state == AbortResponse) && !s_req_q.write && (s_req_q.read_count <= {1'b0, s_saved_addr.len});",
+        ".flush_i(1'b0)",
+        "AbortWrite: begin",
         "if (s_terminal) s_req_d.state = Idle;"
       ]
     }

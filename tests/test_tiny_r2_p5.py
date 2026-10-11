@@ -71,9 +71,11 @@ def test_concurrent_fabric(tmp_path, simulator):
 @pytest.mark.parametrize("simulator", ["iverilog", "verilator"])
 def test_target_reset_isolation(tmp_path, simulator):
     files, includes = sources(tmp_path)
+    files.append(ROOT / "rtl/ip/peripheral/dma_axi4_master.sv")
     files.append(ROOT / "tests/rtl/tiny_r2_p5_reset_tb.sv")
     log = simulate(tmp_path, simulator, "tiny_r2_p5_reset_tb", files, includes)
     assert "SIM_TEST_PASS Tiny P5 target reset isolation" in log
+    assert "P5_RESET cases=28 production_dma=3 burst_beats=16 held_RB=1 first_fault=1" in log
 
 
 @pytest.mark.parametrize("simulator", ["iverilog", "verilator"])
@@ -103,14 +105,15 @@ def test_real_cpu_dma_progress_and_abort(tmp_path, simulator):
     assert "hart_reset=1 abort_drained=1" in log
 
 
-@pytest.mark.parametrize("kind", ["fabric", "fault"])
+@pytest.mark.parametrize("kind", ["fabric", "fabric_reset", "fault"])
 def test_protocol_proofs(tmp_path, kind):
     for tool in ("sv2v", "yosys"):
         assert shutil.which(tool), f"required tool unavailable: {tool}"
     files, includes = sources(tmp_path)
-    top = f"tiny_r2_p5_{kind}_formal"
+    top = f"tiny_r2_p5_{'fabric' if kind == 'fabric_reset' else kind}_formal"
     files.append(ROOT / f"tests/rtl/{top}.sv")
-    converted = subprocess.run(["sv2v", "-DFORMAL", "-DSV_ASSRT_DISABLE", *includes,
+    reset_define = ["-DTINY_P5_RESET_FORMAL"] if kind == "fabric_reset" else []
+    converted = subprocess.run(["sv2v", "-DFORMAL", "-DSV_ASSRT_DISABLE", *reset_define, *includes,
                                 *(str(p) for p in files)], text=True, capture_output=True, timeout=180)
     (tmp_path / "sv2v.log").write_text(converted.stderr)
     assert converted.returncode == 0, converted.stderr

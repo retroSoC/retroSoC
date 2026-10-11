@@ -54,6 +54,24 @@ def test_common_register_default_remains_mini_compatible():
     assert "SOC_SYSCTRL_TEST_STATUS_OFFSET" in constants
 
 
+@pytest.mark.parametrize("before,after", [
+    ("s_req_q.write_done && !s_req_q.b_captured", "1'b1"),
+    ("s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]", "s_r_valid"),
+    (".flush_i(1'b0)", ".flush_i(!enable_i)"),
+])
+def test_target_reset_contract_rejects_unsafe_completion(tmp_path, before, after):
+    contract = tiny.read(ROOT / tiny.BOOK / "source-contract.json")
+    binding = next(item for item in contract["bindings"]
+                   if item["file"] == "rtl/tiny/top/tiny_axi4_target.sv")
+    path = tmp_path / binding["file"]
+    path.parent.mkdir(parents=True)
+    original = (ROOT / binding["file"]).read_text()
+    assert before in original
+    path.write_text(original.replace(before, after))
+    with pytest.raises(ValueError, match="Tiny behavior binding changed"):
+        tiny.require_snippets(tmp_path, binding["file"], binding["text"])
+
+
 def test_reset_update_does_not_bypass_reviewed_snapshot(monkeypatch):
     original = tiny.subprocess.check_output
     checked = []
