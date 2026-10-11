@@ -34,6 +34,38 @@ qualification. Current evidence requires, at minimum:
   128-to-64 downsizer and MMIO demux, the mailbox protocol, the GA2D engine
   through the HP data path, and the T-Head `dcache.cva`/`dcache.iva` cache
   lifecycle handshake.
+- `hp-rtthread-sim` on `configs/ci/ihp130-rtthread.mk` (Verilator): all
+  selftest markers (`RTTHREAD_RV64_PASS`, `RTTHREAD_TIMEOUT_PASS`,
+  `RTTHREAD_PREEMPT_PASS`, `RTTHREAD_CONTEXT_PASS`, `RTTHREAD_IPC_PASS`,
+  `RTTHREAD_MAILBOX_IRQ_PASS`, `RTTHREAD_TEST_PASS`) plus `HP_RTTHREAD_PASS`
+  and `SIM_TEST_PASS code=0`; 6,373,952 cycles in 542 s. This exercises the
+  C906 internal CLINT timer tick and MSIP IPI, the internal PLIC mailbox
+  doorbell (MEIP), and the full cached SDRAM fill path.
+- `hp-linux-sim` on `configs/ci/ihp130-hp.mk` (Verilator, bounded 4 h wall,
+  158.7 M cycles): OpenSBI v1.9 completes fully on the C906 with the
+  repo-owned platform (custom timer device reading the `time` CSR plus
+  internal-CLINT MSWI IPI, custom UART1 console), and `fw_jump` hands off to
+  the kernel Image at `0x38400000` with the DTB at `0x38080000` (bundle
+  segments byte-identical to the built images, CRC-checked). The kernel
+  enters S-mode, brings Sv39 up and executes, but does not reach its first
+  console print: a temporary retire-PC/trap probe shows it cycling through
+  the S-mode fault path (`handle_exception`/`do_trap_break`) after a store
+  page fault on the `__cpu_online_mask` AMO, i.e. the A/D-bit emulation
+  fixup path is the current bring-up frontier. The target stays unqualified.
+- The RT-Thread bring-up exposed and fixed three latent issues, each locked
+  by directed regression. (a) The C906 resets with caches and the BPU
+  disabled and does not initialize the cache/predictor RAMs: HP payloads must
+  run the upstream `mcor` invalidate-then-`mhcr` enable sequence
+  (`app/ports/rtthread/start.S`, OpenSBI `early_init`). Without it the 1 kHz
+  tick ISR livelocked the uncached core, and enabling caches without
+  invalidating first produced wild control flow. (b) `sdram_axi4` computed
+  WRAP wrap-back addresses from the decrementing remaining-beat count,
+  corrupting every cache-line fill starting mid-line (locked by WRAP cases in
+  `tests/rtl/sdram_data_tb.sv`). (c) The data crossbar's `burst_legal`
+  computed a WRAP burst's last address as if it were INCR, faulting fills
+  that start in the last 64 bytes of a 4 KiB page (locked by the page-edge
+  case in `tests/rtl/axi4_data_crossbar_tb.sv`). No previous master issued
+  WRAP bursts, so (b) and (c) predated the swap.
 - Focused `hp_c906_boot_tb` (pytest `test_hp_platform.py`): the real smoke
   payload runs on `hp_core_wrapper` plus the production MMIO chain
   (64-to-32 downsizer, address gate, HP-to-LP CDC bridge) and completes the
@@ -48,14 +80,19 @@ qualification. Current evidence requires, at minimum:
   core-internal CLINT/PLIC windows strong-order non-cacheable per the user
   manual.
 
-`hp-rtthread-sim`, `hp-linux-sim`, and the synthesis-dependent gates remain
-unrun this round (synthesis waits for the SRAM macro swap); they stay required
-evidence for qualification.
+`hp-linux-sim` was run with a bounded wall-clock budget this round and its
+current frontier is recorded above; the synthesis-dependent gates remain
+unrun (synthesis waits for the SRAM macro swap). Both stay required evidence
+for qualification.
 
 Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
 (scan/mbist tied off), the debug SBA AXI master (unconnected), ASIC
 memory-macro replacement for the behavioral FPGA SRAM models, and HP Linux
-re-qualification timing/performance evidence.
+re-qualification timing/performance evidence. The repo-owned OpenSBI platform
+deliberately registers no `.irqchip_init`, so the C906-internal PLIC is not
+initialized by OpenSBI: harmless for the current minimal Linux acceptance
+(`hvc0` console, SBI TIME timer, polled mailbox), but Linux S-mode
+external-interrupt consumers will need an `fdt_irqchip_init(true)` wrapper.
 
 ## Historical VexiiRiscv evidence (pre-swap)
 
