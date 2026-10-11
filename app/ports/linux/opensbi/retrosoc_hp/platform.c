@@ -32,6 +32,16 @@
 #define RETROSOC_HP_UART_FIFO_FLUSH      0x03U
 #define RETROSOC_HP_UART_ERROR_ALL       0x7FU
 
+/* C906 resets with caches and the BPU disabled (mhcr=0) and does not
+ * initialize the cache/predictor RAMs; the upstream reference crt0
+ * (smart_run/tests/lib/crt0.s) invalidates them via mcor before enabling
+ * mhcr. Uncached SDRAM execution is ~100x slower. MMIO windows stay
+ * strong-order non-cacheable via the sysmap override. */
+#define RETROSOC_HP_CSR_MCOR             0x7c2U
+#define RETROSOC_HP_MCOR_INVALIDATE_ALL  0x30013UL /* BTB|BHT|DCACHE|ICACHE */
+#define RETROSOC_HP_CSR_MHCR             0x7c1U
+#define RETROSOC_HP_MHCR_CACHES_BPU      0x7fUL /* IE|DE|WA|RSE|BPE|BTBE */
+
 static const u32 s_hart_index_to_id[] = {1U};
 
 static struct aclint_mswi_data s_mswi = {
@@ -106,6 +116,9 @@ static int retrosoc_hp_early_init(bool cold_boot) {
     if (!cold_boot) {
         return 0;
     }
+
+    csr_write(RETROSOC_HP_CSR_MCOR, RETROSOC_HP_MCOR_INVALIDATE_ALL);
+    csr_write(RETROSOC_HP_CSR_MHCR, RETROSOC_HP_MHCR_CACHES_BPU);
 
     retrosoc_hp_uart_write(RETROSOC_HP_UART_CTRL_REG, 0U);
     retrosoc_hp_uart_write(RETROSOC_HP_UART_FIFO_CTRL_REG, RETROSOC_HP_UART_FIFO_FLUSH);

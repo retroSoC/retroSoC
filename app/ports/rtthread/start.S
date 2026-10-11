@@ -5,6 +5,17 @@ _start:
     csrw satp, zero
     li t0, 0x6000
     csrw mstatus, t0
+    # C906 resets with caches and the BPU disabled (mhcr=0) and does not
+    # initialize the cache/predictor RAMs; the upstream reference crt0
+    # (smart_run/tests/lib/crt0.s) invalidates them via mcor before enabling
+    # mhcr, otherwise the core fetches/stores through stale state.
+    li t0, 0x30013
+    csrs 0x7c2, t0  # mcor: invalidate BTB/BHT/D-cache/I-cache
+    li t0, 0x7f
+    csrs 0x7c1, t0  # mhcr: IE|DE|WA|RSE|BPE|BTBE
+    # Uncached SDRAM execution is ~100x slower otherwise, and the 1 kHz tick
+    # ISR round-trip then exceeds the tick period (livelock). MMIO windows
+    # stay strong-order non-cacheable via the sysmap override.
     .option push
     .option norelax
     la gp, __global_pointer$
