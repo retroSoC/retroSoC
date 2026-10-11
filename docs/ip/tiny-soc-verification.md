@@ -1,6 +1,49 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P5 P1 protocol correction; validated, review pending (2026-10-12)
+
+The maintainer requested correction of the reset write-drain/read-retention
+failures and publication-binding mismatch. The implementation starts from
+`4e6ab1a6fb445521703f0bfa412d3a1e8a38cd69`; the specification remains blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The [P5 runbook](tiny-soc-r2-concurrent-fabric.md)
+describes preserved upstream spill responses, complete read/error bursts,
+write drain before B, latched downstream cancellation and first-error capture.
+Profiles remain Tiny/ICS55 SAFE24 with parked PLL and Tiny/IHP130 compatibility.
+
+Current evidence is isolated under
+`build/ics55-tiny-2026-10-11-23-35-b4aa59f3e5d9/meta/tiny-r2-p5-p1/`.
+The older `09-30` campaign failed overall: 1669 Pytest passes, one skip,
+two failures and ten errors (publication), plus independent R stability and
+W-before-B violations. Its passing ordinary regressions, PPA and replay are
+historical observations, not acceptance of the repair.
+
+Final focused validation passes 101 tests. Full Pytest passes 1685 tests,
+with one optional `pypdf` skip and no failures; these counts overlap. Both
+Tiny PDK PR regressions pass, including six strict simulation verdicts,
+synthesis, netlist boot and the 32-macro/common-SYS binding check. Each
+simulator passes all 28 reset scenarios, including three production DMA
+drain cases; normal-target, arbitrary-target-reset and fault-collector
+induction/SAT checks pass. Complete terminal/fault publication bindings and
+three unsafe-completion mutation tests pass without changing the reviewed
+publication SHA. RTL format/style/readiness, Ruff and diff checks pass.
+
+`source.json` and `evidence.json` bind 2011 technical inputs to digest
+`f670789a2379a8d2e6c59f5ecd714ca0237bb6f1cfe749a2f29b0794d356b5f0`,
+locked tools, exact command results and retained artifacts. No warning
+baseline, metric policy, shared DMA/SDK implementation or public ABI changed.
+The lint signatures/counts match the preceding `09-30` campaign; the existing
+baseline comparison remains a non-blocking observation. STA remains unclosed:
+max WNS is -70.04 ns ICS55 and -127.01 ns IHP130. The runbook records full
+area/timing observations and limitations. Matched-image replay, full-function
+C netlist qualification, PDF promotion and physical qualification were not
+repeated for this bounded correctness repair. P5 human review/acceptance and
+all P6+ work remain separate.
+
 ## TINY-R2-P5 target-reset isolation repair; focused validation (2026-10-11)
+
+Superseded attempt: later protocol checks rejected its response flushing and
+early B/RLAST behavior. The four focused passes below remain historically
+accurate but were insufficient to establish reset isolation.
 
 Following the P5 review, the fabric now receives the explicit 23-entry target
 reset vector. A reset blocks new admission and downstream handshakes, flushes

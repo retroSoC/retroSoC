@@ -5,14 +5,120 @@ This implements the approved P5 preflight on
 `7e19de49d49efaafacccfa85671e314d53dd15a4`. The default is Tiny/ICS55 SAFE24
 with its present PLL parked off; IHP130/no PLL remains compatibility.
 The [ledger](tiny-soc-verification.md) separates phase evidence from approval.
-Functional validation and matched-image measurements are complete for review;
-no P6, frequency or physical qualification is implied.
+Historical campaigns and their limitations remain below. The P1 correction
+has its own source and validation scope; no P6, frequency or physical
+qualification is implied.
+
+## P1 protocol correction (2026-10-11)
+
+This correction starts from committed `4e6ab1a6fb445521703f0bfa412d3a1e8a38cd69`
+and the unchanged frozen specification. The preceding `09-30` campaign's
+`final-evidence.json` records two reset protocol failures and stale publication
+bindings even though ordinary regressions and matched-image replay passed.
+Those results do not qualify this corrected RTL.
+
+Target reset cancels the downstream session while preserving the live
+upstream session. A reset sampled in Address/Response latches the abort path;
+releasing the target cannot replay its cancelled address or data. Already
+captured R/B responses remain in the Common spills with unchanged VALID,
+payload, ID and order. Only fabric/system reset clears those buffers. The
+downstream stability assertions follow the target's own reset; upstream
+stability assertions remain enabled throughout target-only reset.
+
+A nine-bit count tracks captured read beats, including buffered and already
+retired beats. Missing DECERR beats append through the same spill until the
+original ARLEN+1 count is met; RLAST belongs only to the final beat. AbortWrite
+accepts/discards remaining upstream W beats before creating one DECERR B.
+Captured-B state prevents duplicate responses and preserves an already held
+successful completion. Fault metadata is captured from the first erroneous
+response beat, preserving earlier SLVERR over a subsequent reset DECERR;
+fault counting remains once per terminal transaction. Fully captured successful
+responses do not become reset faults.
+
+The reset fixture drives stimulus away from sampling edges and independently
+checks R/B stability, exact beat counts, W-before-B ordering, one completion,
+credit release and first-error metadata. Its 28 cases include 16-beat SRAM/XPI
+traffic, a production APB bridge, three production DMA-master drain cases,
+target reset held through completion and early target release. A separate
+formal mode varies target reset arbitrarily and proves response/ownership,
+beat-count and W/B ordering properties by induction. The normal formal mode
+and its fixed-response expectations remain intact. Publication bindings retain
+complete terminal/fault predicates, with negative tests for premature
+completion and response flushing; the reviewed publication SHA is unchanged.
+
+Evidence belongs under
+`build/ics55-tiny-2026-10-11-23-35-b4aa59f3e5d9/meta/tiny-r2-p5-p1/`.
+Final focused checks precede one full Pytest and one PR execution per Tiny
+PDK. No matched-image replay is required to claim this bounded correctness
+repair; historical workload measurements retain their source attribution.
+Validation completed on 2026-10-12; the ledger retains human review pending.
+Runtime peripheral-reset controls/quiescence remain P7, and the existing
+five-edge reset leaves remain unchanged. No shared DMA, public ABI, profile,
+dependency, warning baseline or metrics policy changes are included.
+
+The final technical input digest is
+`f670789a2379a8d2e6c59f5ecd714ca0237bb6f1cfe749a2f29b0794d356b5f0`.
+`source.json` preserves the 2011 inputs and locked tools; `evidence.json`
+rechecks their identity and binds all gate/fixture/flow artifacts. Focused
+validation passes 101 tests; full Pytest passes 1685 with one optional `pypdf`
+skip and no failures. Counts overlap. ICS55/IHP130 PR commands each ran once;
+their Tiny nightly dry-run matrices match, so the same gates were not repeated.
+All six ordinary simulations satisfy command success, the Tiny success marker
+and forbidden-marker checks. The scoped reset fixture and formal checks are
+additional protocol evidence, not physical or XPI-device qualification.
+
+| PDK / balanced recipe | Cells | Library area | Max WNS / TNS (ns) | Min WNS / TNS (ns) |
+| --- | ---: | ---: | ---: | ---: |
+| ICS55 | 245037 | 1910664.100799 | -70.04 / -1151596.25 | 0 / 0 |
+| IHP130 | 259394 | 9911158.202394 | -127.01 / -3120300.50 | 0 / 0 |
+
+Current physical-flow observations are under
+`build/ics55-tiny-2026-10-11-23-35-42d5beccb726/` and
+`build/ihp130-tiny-2026-10-11-23-35-bff91e3529ba/`, in `meta/metrics.json`
+and `sta/opensta/{timing_metrics.rpt,p4-clock-bindings.rpt,opensta.log}`.
+Both mapping checks retain four groups, 32 macros and CPU/main SRAM on SYS.
+Timing remains observational and unclosed; library area is not routed die area
+and zero observed min violations do not constitute PVT/hold signoff. Lint
+signature/count sets are identical to `09-30` (470/414 new against the unchanged
+ICS55/IHP130 baselines, zero increased). Successful ABC Liberty-cache fallback
+and NFS clock-skew observations remain logged. No baselines were regenerated.
+
+Commands used the locked activation, `BUILD_TIMESTAMP=2026-10-11-23-35` and
+`JOBS=3`. The `run_flow.py` JSON/log pairs in the correction evidence root retain
+every exact command: `focused`, `quality`, `pytest-full`, `regress-ics55`,
+`regress-ihp130`, `metrics-ics55`, `metrics-ihp130`, four `dry-run-*` records
+and `audit-result`. The principal acceptance commands were:
+
+```sh
+source .cache/retrosoc/development/tiny-r2-p1/activate.sh
+export BUILD_TIMESTAMP=2026-10-11-23-35 JOBS=3
+make rtl-format-check rtl-style-check-all rtl-readiness-check-all
+ruff check .
+python3 -m pytest -q --tb=short --basetemp=build/ics55-tiny-2026-10-11-23-35-b4aa59f3e5d9/meta/tiny-r2-p5-p1/tests-full
+python3 scripts/regress.py --root . --suite pr --soc TINY --pdk ICS55
+python3 scripts/regress.py --root . --suite pr --soc TINY --pdk IHP130
+make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 APP=ci_smoke SYNTH=YOSYS STA=OPENSTA metrics
+make CONFIG=configs/ci/ihp130-tiny.mk SOC=TINY PDK=IHP130 APP=ci_smoke SYNTH=YOSYS STA=OPENSTA metrics
+git diff --check
+```
+
+New executions must select a fresh timestamp/evidence directory. New matched
+workload replay, compiler experiments, full-function C netlist qualification,
+PDF build/visual promotion, CDC/RDC, extracted PVT/MMMC and place/route were
+not run. No performance, new operating-frequency or complete-product claim is
+made by this correction. Error completion does not roll back downstream writes
+or peripheral side effects that committed before reset.
 
 ## Target-local reset repair (2026-10-11)
 
+This is the superseded first attempt. Its focused tests passed but omitted
+required protocol checks; the later `09-30` campaign and independent monitors
+rejected it. The following description records that attempted behavior, not
+the corrected implementation above.
+
 The P5 review found that a target reset was previously used only as an
 admission enable while an accepted controller session remained live. The
-fabric now carries the explicit per-target reset leaf into each controller.
+attempt carried the explicit per-target reset leaf into each controller.
 Admission and downstream AXI VALID/W/RREADY are blocked while that leaf is
 asserted. An accepted Address or Response session changes to an abort response
 and returns one DECERR RLAST or B response with the saved owner and ID; the
