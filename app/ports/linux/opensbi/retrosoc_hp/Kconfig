@@ -2,5 +2,8 @@
 
 config PLATFORM_RETROSOC_HP
 	bool
+	select FDT
+	select FDT_IRQCHIP
+	select FDT_IRQCHIP_PLIC
 	select IPI_MSWI
 	default y

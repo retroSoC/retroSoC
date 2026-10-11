@@ -8,6 +8,7 @@
 #include <sbi/sbi_platform.h>
 #include <sbi/sbi_timer.h>
 #include <sbi_utils/ipi/aclint_mswi.h>
+#include <sbi_utils/irqchip/fdt_irqchip.h>
 
 /* Internal C906 CLINT (thead,c900-clint), decoded by the core BIU. */
 #define RETROSOC_HP_CLINT_BASE           0x0C000000UL
@@ -140,6 +141,10 @@ static int retrosoc_hp_timer_init(void) {
 
 static const struct sbi_platform_operations s_platform_operations = {
     .early_init = retrosoc_hp_early_init,
+    /* Initialize the C906-internal PLIC from the boot FDT: the thead,c900-plic
+     * match applies the T-Head M-to-S delegation quirk that S-mode interrupt
+     * delivery requires. */
+    .irqchip_init = fdt_irqchip_init,
     .timer_init = retrosoc_hp_timer_init,
 };
 
