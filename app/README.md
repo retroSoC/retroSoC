@@ -50,6 +50,13 @@ the same plan with polling and 64-byte T-Head XTheadCmo dcache maintenance, then
 ownership before LP publishes the final verdict. The option defaults to `NO`,
 preserving normal PR firmware size and behavior.
 
+`HP_JTAG_DEBUG=YES` is an `hp_boot` debug aid: the LP selects the HP
+(OpenC906) JTAG target before releasing the HP core, so a debugger can attach
+from the first HP instruction. It defaults to `NO` and is behavior-neutral
+when off. It is deliberately excluded from the variant key because debug runs
+are not qualification evidence; toggling it requires touching an app source
+to trigger a rebuild.
+
 NPU-P6 likewise reuses `APP=hp_boot`; it does not add an application profile
 or public ABI. `NPU_P6_ACCEPTANCE=YES` selects a private qualification payload,
 and `NPU_P6_WORKLOAD=kws|vww` selects one frozen generated plan. The payload
