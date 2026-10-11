@@ -10,6 +10,8 @@ module tiny_sysctrl_tb;
       .presetn(rst_n_i)
   );
   logic        fault_valid = 0;
+  logic [ 3:0] fault_count = 1;
+  logic [ 1:0] fault_master = 1;
   logic [31:0] fault_addr = 32'h38000000;
   logic [63:0] cpu_wait = 64'h123456789abcdef0;
   logic [63:0] dma_wait = 64'h1122334455667788;
@@ -22,9 +24,10 @@ module tiny_sysctrl_tb;
       .rst_n_i       (rst_n_i),
       .apb4          (apb4),
       .fault_valid_i (fault_valid),
+      .fault_count_i (fault_count),
       .fault_addr_i  (fault_addr),
       .fault_write_i (1'b1),
-      .fault_master_i(1'b1),
+      .fault_master_i(fault_master),
       .fault_resp_i  (2'b11),
       .cpu_wait_i    (cpu_wait),
       .dma_wait_i    (dma_wait),
@@ -73,6 +76,43 @@ module tiny_sysctrl_tb;
     apb4_write(`APB4_SYSCTRL__FAULT_STATUS, 1, 4'hf, 0);
     apb4_read(`APB4_SYSCTRL__FAULT_STATUS, 0, value);
     if (value[0]) $fatal(1, "fault W1C failed");
+    // Multiple terminal events count independently. A hardware event on the
+    // clear edge wins and records the new first owner without clearing count.
+    fork
+      apb4_write(`APB4_SYSCTRL__FAULT_STATUS, 1, 4'hf, 0);
+      begin
+        wait (apb4.psel && apb4.penable && apb4.pwrite);
+        fault_count  = 5;
+        fault_master = 2;
+        fault_addr   = 32'h30018004;
+        fault_valid  = 1;
+        @(posedge clk_i);
+        @(negedge clk_i);
+        fault_valid = 0;
+      end
+    join
+    apb4_read(`APB4_SYSCTRL__FAULT_COUNT, 0, value);
+    if (value != 7) $fatal(1, "concurrent fault count lost");
+    apb4_read(`APB4_SYSCTRL__FAULT_MASTER, 0, value);
+    if (value != 2) $fatal(1, "third owner truncated");
+    apb4_read(`APB4_SYSCTRL__FAULT_DETAIL, 0, value);
+    if (value != 3) $fatal(1, "raw AXI response changed");
+    apb4_read(`APB4_SYSCTRL__FAULT_STATUS, 0, value);
+    if (!value[0]) $fatal(1, "W1C defeated simultaneous hardware event");
+    // Seed only the counter corner, then exercise the actual wide adder and
+    // register update. Billions of event pulses are not useful simulation.
+    @(negedge clk_i);
+    force u_dut.u_fault_count_reg.dat_o = 32'hfffffffc;
+    fault_count = 8;
+    fault_valid = 1;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    release u_dut.u_fault_count_reg.dat_o;
+    @(posedge clk_i);
+    @(negedge clk_i);
+    fault_valid = 0;
+    apb4_read(`APB4_SYSCTRL__FAULT_COUNT, 0, value);
+    if (value != 32'hffffffff) $fatal(1, "multi-event saturation wrapped");
     @(negedge clk_i);
     wake = 1;
     @(negedge clk_i);

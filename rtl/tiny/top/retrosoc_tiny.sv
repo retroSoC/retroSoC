@@ -23,14 +23,21 @@ module retrosoc_tiny (
   logic s_por_rst_n, s_rst_n;
   logic [16:0] s_leaf_rst_n;
   logic s_fabric_rst_n, s_cpu_ready_rst_n;
-  logic s_master_rst_n [2];
-  logic s_target_rst_n [5];
+  logic s_master_rst_n [ 3];
+  logic s_target_rst_n [23];
   logic s_debug_halted;
   logic s_core_rst_n, s_cpu_bus_idle, s_cpu_quiesce;
   logic [31:0] s_irq;
-  logic s_fault_valid, s_fault_master, s_fault_write;
-  logic [31:0] s_fault_addr;
-  logic [ 1:0] s_fault_resp;
+  logic        s_fault_write;
+  logic [ 1:0] s_fault_master;
+  logic [ 3:0] s_fault_count;
+  logic [5:0] s_external_fault_valid, s_external_fault_instruction;
+  logic [5:0][31:0] s_external_fault_addr;
+  logic [5:0][ 1:0] s_external_fault_resp;
+  logic [1:0] s_local_fault_valid, s_local_fault_write;
+  logic [ 1:0][31:0] s_local_fault_addr;
+  logic [31:0]       s_fault_addr;
+  logic [ 1:0]       s_fault_resp;
   logic s_perf_enable, s_perf_clear;
   logic [63:0] s_cpu_wait, s_dma_wait;
   logic s_timer0_irq, s_timer1_irq, s_xpi_irq, s_dma_irq;
@@ -78,7 +85,7 @@ uart_if u_uart0_if ();
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_masters_axi4_if[2] (
+  ) u_masters_axi4_if[3] (
       .aclk   (clk_i),
       .aresetn(s_master_rst_n)
   );
@@ -87,7 +94,7 @@ uart_if u_uart0_if ();
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_targets_axi4_if[5] (
+  ) u_targets_axi4_if[23] (
       .aclk   (clk_i),
       .aresetn(s_target_rst_n)
   );
@@ -121,15 +128,44 @@ uart_if u_uart0_if ();
       .aclk   (clk_i),
       .aresetn(s_dma_rst_n)
   );
-  assign s_fabric_rst_n = s_leaf_rst_n[0];
-  assign s_master_rst_n = '{s_cpu_ready_rst_n, s_dma_rst_n};
-  assign s_target_rst_n = '{
-          s_sram_rst_n,
-          s_xpi_rst_n,
-          s_fabric_rst_n,
-          s_fabric_rst_n,
-          s_fabric_rst_n
-      };
+  assign s_fabric_rst_n                = s_leaf_rst_n[0];
+  assign s_master_rst_n                = '{s_cpu_ready_rst_n, s_dma_rst_n, s_fabric_rst_n};
+  assign s_target_rst_n[4]             = s_xpi_rst_n;
+  assign s_target_rst_n[21]            = s_fabric_rst_n;
+  assign s_target_rst_n[22]            = s_fabric_rst_n;
+  // Owner 2 is a reserved native read/write ingress, not an integrated SDIO.
+  // P6 supplies its real producer; no capability or interrupt is enabled here.
+  assign u_masters_axi4_if[2].awid     = '0;
+  assign u_masters_axi4_if[2].awaddr   = '0;
+  assign u_masters_axi4_if[2].awlen    = '0;
+  assign u_masters_axi4_if[2].awsize   = '0;
+  assign u_masters_axi4_if[2].awburst  = '0;
+  assign u_masters_axi4_if[2].awlock   = 1'b0;
+  assign u_masters_axi4_if[2].awcache  = '0;
+  assign u_masters_axi4_if[2].awprot   = '0;
+  assign u_masters_axi4_if[2].awqos    = '0;
+  assign u_masters_axi4_if[2].awregion = '0;
+  assign u_masters_axi4_if[2].awuser   = '0;
+  assign u_masters_axi4_if[2].awvalid  = 1'b0;
+  assign u_masters_axi4_if[2].arid     = '0;
+  assign u_masters_axi4_if[2].araddr   = '0;
+  assign u_masters_axi4_if[2].arlen    = '0;
+  assign u_masters_axi4_if[2].arsize   = '0;
+  assign u_masters_axi4_if[2].arburst  = '0;
+  assign u_masters_axi4_if[2].arlock   = 1'b0;
+  assign u_masters_axi4_if[2].arcache  = '0;
+  assign u_masters_axi4_if[2].arprot   = '0;
+  assign u_masters_axi4_if[2].arqos    = '0;
+  assign u_masters_axi4_if[2].arregion = '0;
+  assign u_masters_axi4_if[2].aruser   = '0;
+  assign u_masters_axi4_if[2].arvalid  = 1'b0;
+  assign u_masters_axi4_if[2].wdata    = '0;
+  assign u_masters_axi4_if[2].wstrb    = '0;
+  assign u_masters_axi4_if[2].wlast    = 1'b0;
+  assign u_masters_axi4_if[2].wuser    = '0;
+  assign u_masters_axi4_if[2].wvalid   = 1'b0;
+  assign u_masters_axi4_if[2].rready   = 1'b0;
+  assign u_masters_axi4_if[2].bready   = 1'b0;
 
   tiny_reset_tree u_reset_tree (
       .clk_i               (clk_i),
@@ -170,35 +206,41 @@ uart_if u_uart0_if ();
       .cpu           (u_cpu_ahbl_if)
   );
   tiny_cpu_mem u_cpu_mem (
-      .clk_i      (clk_i),
-      .rst_n_i    (s_core_rst_n),
-      .quiesce_i  (s_cpu_quiesce),
-      .idle_o     (s_cpu_bus_idle),
-      .cpu        (u_cpu_ahbl_if),
-      .local_ports(u_cpu_local_if),
-      .slow_axi4  (u_masters_axi4_if[0])
+      .clk_i              (clk_i),
+      .rst_n_i            (s_core_rst_n),
+      .quiesce_i          (s_cpu_quiesce),
+      .idle_o             (s_cpu_bus_idle),
+      .local_fault_valid_o(s_local_fault_valid),
+      .local_fault_addr_o (s_local_fault_addr),
+      .local_fault_write_o(s_local_fault_write),
+      .cpu                (u_cpu_ahbl_if),
+      .local_ports        (u_cpu_local_if),
+      .slow_axi4          (u_masters_axi4_if[0])
   );
   tiny_axi4_fabric u_fabric (
-      .clk_i         (clk_i),
-      .rst_n_i       (s_fabric_rst_n),
-      .masters       (u_masters_axi4_if),
-      .targets       (u_targets_axi4_if),
-      .perf_enable_i (s_perf_enable),
-      .perf_clear_i  (s_perf_clear),
-      .fault_valid_o (s_fault_valid),
-      .fault_addr_o  (s_fault_addr),
-      .fault_master_o(s_fault_master),
-      .fault_write_o (s_fault_write),
-      .fault_resp_o  (s_fault_resp),
-      .cpu_wait_o    (s_cpu_wait),
-      .dma_wait_o    (s_dma_wait)
+      .clk_i(clk_i),
+      .rst_n_i(s_fabric_rst_n),
+      .target_rst_n_i(s_target_rst_n),
+      .masters(u_masters_axi4_if),
+      .targets(u_targets_axi4_if),
+      .perf_enable_i(s_perf_enable),
+      .perf_clear_i(s_perf_clear),
+      .fault_valid_o(s_external_fault_valid),
+      .fault_addr_o(s_external_fault_addr),
+      .fault_resp_o(s_external_fault_resp),
+      .fault_instruction_o(s_external_fault_instruction),
+      .owner_idle_o(),  // Reserved lifecycle observations; RCU remains P7.
+      .target_idle_o(),  // The P5 testbench checks all accepted-work barriers.
+      .cpu_wait_o(s_cpu_wait),
+      .dma_wait_o(s_dma_wait)
   );
-  tiny_sram_axi4_demux u_sram_attachment (
-      .clk_i   (clk_i),
-      .rst_n_i (s_sram_rst_n),
-      .upstream(u_targets_axi4_if[0]),
-      .groups  (u_sram_axi4_if)
-  );
+  for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment
+    assign s_target_rst_n[group] = s_sram_rst_n;
+    axi4_connector u_connector (
+        .source(u_targets_axi4_if[group]),
+        .sink  (u_sram_axi4_if[group])
+    );
+  end
   tiny_sram u_sram (
       .clk_i         (clk_i),
       .rst_n_i       (s_sram_rst_n),
@@ -211,7 +253,7 @@ uart_if u_uart0_if ();
   apb4_xpi u_xpi (
       .clk_i          (clk_i),
       .rst_n_i        (s_xpi_rst_n),
-      .mem_axi4       (u_targets_axi4_if[1]),
+      .mem_axi4       (u_targets_axi4_if[4]),
       .apb4           (u_xpi_apb4_if),
       .xpi            (xpi),
       .dma_xfer_done_i(s_dma_done),
@@ -219,31 +261,41 @@ uart_if u_uart0_if ();
       .dma_rx_stall_o (s_dma_stall[1]),
       .irq_o          (s_xpi_irq)
   );
-  tiny_axi42apb4 u_apb_bridge (
-      .clk_i  (clk_i),
-      .rst_n_i(s_fabric_rst_n),
-      .axi4   (u_targets_axi4_if[2]),
-      `include "tiny_apb_connections.svh"
-  );
-  axi4_error_slave #(
+  `include "tiny_apb_bridges.svh"
+axi4_error_slave #(
       .Response(2'b11)
   ) u_decode_error (
       .clk_i  (clk_i),
       .rst_n_i(s_fabric_rst_n),
-      .axi4   (u_targets_axi4_if[3])
+      .axi4   (u_targets_axi4_if[21])
   );
   axi4_error_slave #(
       .Response(2'b10)
   ) u_protocol_error (
       .clk_i  (clk_i),
       .rst_n_i(s_fabric_rst_n),
-      .axi4   (u_targets_axi4_if[4])
+      .axi4   (u_targets_axi4_if[22])
+  );
+  tiny_fault_collector u_fault_collector (
+      .local_valid_i         (s_local_fault_valid),
+      .local_addr_i          (s_local_fault_addr),
+      .local_write_i         (s_local_fault_write),
+      .external_valid_i      (s_external_fault_valid),
+      .external_addr_i       (s_external_fault_addr),
+      .external_resp_i       (s_external_fault_resp),
+      .external_instruction_i(s_external_fault_instruction),
+      .count_o               (s_fault_count),
+      .addr_o                (s_fault_addr),
+      .master_o              (s_fault_master),
+      .write_o               (s_fault_write),
+      .resp_o                (s_fault_resp)
   );
   tiny_sysctrl u_sysctrl (
       .clk_i         (clk_i),
       .rst_n_i       (s_sysctrl_rst_n),
       .apb4          (u_sysctrl_apb4_if),
-      .fault_valid_i (s_fault_valid),
+      .fault_valid_i (s_fault_count != 4'd0),
+      .fault_count_i (s_fault_count),
       .fault_addr_i  (s_fault_addr),
       .fault_write_i (s_fault_write),
       .fault_master_i(s_fault_master),

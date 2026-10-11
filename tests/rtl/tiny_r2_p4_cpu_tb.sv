@@ -63,13 +63,16 @@ tiny_cpu_wrapper #(
       .cpu           (cpu)
   );
   tiny_cpu_mem u_cpu_mem (
-      .clk_i      (clk_i),
-      .rst_n_i    (core_rst_n),
-      .quiesce_i  (quiesce),
-      .idle_o     (idle),
-      .cpu        (cpu),
-      .local_ports(local_ports),
-      .slow_axi4  (slow)
+      .clk_i              (clk_i),
+      .rst_n_i            (core_rst_n),
+      .quiesce_i          (quiesce),
+      .idle_o             (idle),
+      .local_fault_valid_o(),             // P5 fault aggregation has its own fixture.
+      .local_fault_addr_o (),
+      .local_fault_write_o(),
+      .cpu                (cpu),
+      .local_ports        (local_ports),
+      .slow_axi4          (slow)
   );
   tiny_sram u_sram (
       .clk_i         (clk_i),

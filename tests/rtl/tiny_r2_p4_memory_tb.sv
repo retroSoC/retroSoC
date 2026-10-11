@@ -45,15 +45,24 @@ module tiny_r2_p4_memory_tb;
   integer        local_latency_max = 0;
   logic   [31:0] observed;
   logic   [31:0] seed = 32'h12345678;
+  logic [1:0] local_fault_valid, local_fault_write;
+  logic   [1:0][31:0] local_fault_addr;
+  integer             local_fault_count[2] = '{0, 0};
+  always @(posedge clk_i) begin
+    for (integer p = 0; p < 2; p++) if (rst_n_i && local_fault_valid[p]) local_fault_count[p]++;
+  end
 
   tiny_cpu_mem u_cpu_mem (
-      .clk_i      (clk_i),
-      .rst_n_i    (rst_n_i),
-      .quiesce_i  (quiesce),
-      .idle_o     (idle),
-      .cpu        (cpu),
-      .local_ports(local_ports),
-      .slow_axi4  (slow)
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .quiesce_i          (quiesce),
+      .idle_o             (idle),
+      .local_fault_valid_o(local_fault_valid),
+      .local_fault_addr_o (local_fault_addr),
+      .local_fault_write_o(local_fault_write),
+      .cpu                (cpu),
+      .local_ports        (local_ports),
+      .slow_axi4          (slow)
   );
   tiny_sram u_sram (
       .clk_i         (clk_i),
@@ -597,7 +606,14 @@ module tiny_r2_p4_memory_tb;
     buffered_write_errors();
     read_external(0, 32'h30008000, 0, 0, 3);
     ahb(1, 0, 32'h70000000, 2, 0, 1, 0, observed);
+    if (local_fault_count[1] != 0) $fatal(1, "external CPU error double-counted locally");
     ahb(1, 0, 32'h30000001, 2, 0, 1, 0, observed);
+    if (local_fault_count[1] != 1 || local_fault_addr[1] != 32'h30000001 || local_fault_write[1])
+      $fatal(1, "local data fault metadata missing");
+    ahb(0, 1, 32'h30000000, 2, 0, 1, 0, observed);
+    if (local_fault_count[0] != 1 || !local_fault_write[0])
+      $fatal(1, "local instruction fault metadata missing");
+    load(1, 32'h30000000, 32'ha5000000, 3);
     // Deterministic word/byte readback across all groups without touching a
     // simulator memory array: every operation travels through the real ports.
     for (integer g = 0; g < 4; g++) begin

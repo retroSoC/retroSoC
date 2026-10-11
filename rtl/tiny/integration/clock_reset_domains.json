@@ -1,5 +1,15 @@
 {
   "schema_version": 2,
+  "external_fabric": {
+    "phase": "TINY-R2-P5",
+    "clock_domain": "system",
+    "target_controllers": "u_soc.u_fabric.gen_target[%d].u_controller",
+    "target_count": 23,
+    "apb_bridges": "u_soc.u_<peripheral>_bridge; corresponding existing peripheral reset leaf",
+    "fabric_reset": "fabric leaf; target reset blocks admission and aborts accepted target work with DECERR",
+    "hart_reset": "CPU-only accepted-work drain; DMA and all target responses stay active",
+    "runtime_peripheral_reset": "not exposed; quiescence-controlled RCU remains P7"
+  },
   "local_memory": {
     "phase": "TINY-R2-P4",
     "clock_domain": "system",

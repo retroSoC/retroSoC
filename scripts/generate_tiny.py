@@ -31,9 +31,17 @@ def read_topology(path: Path, memory_map: Path) -> dict:
         "groups": 4, "group_bytes": 32768, "macros_per_group": 8,
         "macro_bytes": 4096, "base": "0x30000000",
         "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
-        "external_attachment": "serialized-pre-P5",
+        "external_attachment": "per-target-P5",
     }.items()):
-        raise ValueError("Tiny P4 SRAM geometry/attachment differs from its frozen contract")
+        raise ValueError("Tiny SRAM geometry/P5 attachment differs from its frozen contract")
+    if document.get("fabric") != {
+        "owners": ["cpu_slow", "central_dma", "sdio_reserved"], "active_owners": [0, 1],
+        "cpu_combined_outstanding": 1, "dma_direction_outstanding": 1,
+        "sdio_direction_outstanding": 1, "target_combined_outstanding": 1,
+        "sram_targets": [0, 1, 2, 3], "xpi_target": 4, "apb_target_base": 5,
+        "decode_error_target": 21, "protocol_error_target": 22, "target_count": 23,
+    }:
+        raise ValueError("Tiny P5 requires three owner slots, two active owners and 23 targets")
     if document.get("irq_vector_width") != 32 or document.get("external_irq_count") != 30:
         raise ValueError("Tiny requires a 32-bit IRQ vector and 30 external inputs")
     names: set[str] = set()
@@ -117,33 +125,22 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
             gpio.extend((f"assign u_gpio_if.{mode}_do_i[{pin}] = {value['do']};",
                          f"assign u_gpio_if.{mode}_oe_i[{pin}] = {value['oe']};"))
     atomic_write(output / "rtl/tiny_gpio.svh", "\n".join(gpio) + "\n")
-    ports, declarations, routes, decode = [], [comment], [comment], [comment]
+    declarations, bridges, decode = [comment], [comment], [comment]
     reset_assignments = []
     for index, target in enumerate(document["apb_targets"]):
         name = target["name"]
-        ports.append(f"apb4_if.master {name}")
         declarations.append(f"logic s_{name}_rst_n;")
         declarations.append(f"apb4_if u_{name}_apb4_if (.pclk(clk_i), .presetn(s_{name}_rst_n));")
         reset_assignments.append(f"assign s_{name}_rst_n = s_leaf_rst_n[{index + 1}];")
-        routes.append(f".{name}(u_{name}_apb4_if)")
-        decode.append(f"if ({' || '.join(f'`SOC_ADDR_IS_{r}(s_addr_q)' for r in target['regions'])}) "
-                      f"s_select = {len(document['apb_targets'])}'b{1 << index:016b};")
-    atomic_write(output / "rtl/tiny_apb_ports.svh", ",\n".join(ports) + "\n")
+        bridges.append(f"assign s_target_rst_n[{index + 5}] = s_{name}_rst_n;")
+        bridges.append(f"tiny_axi42apb4 u_{name}_bridge ("
+                       f".clk_i(clk_i), .rst_n_i(s_{name}_rst_n), "
+                       f".axi4(u_targets_axi4_if[{index + 5}]), .apb4(u_{name}_apb4_if));")
+        decode.append(f"if ({' || '.join(f'`SOC_ADDR_IS_{r}(addr_i)' for r in target['regions'])}) "
+                      f"return 5'd{index + 5};")
     atomic_write(output / "rtl/tiny_apb_interfaces.svh", "\n".join(declarations + reset_assignments) + "\n")
-    atomic_write(output / "rtl/tiny_apb_connections.svh", ",\n".join(routes[1:]) + "\n")
-    atomic_write(output / "rtl/tiny_apb_decode.svh", "\n".join(decode) + "\n")
-    wiring = [comment]
-    for index, target in enumerate(document["apb_targets"]):
-        name = target["name"]
-        for field, value in {"paddr": "s_addr_q", "pwrite": "s_write_q",
-                             "pwdata": "s_wdata_q", "pstrb": "s_wstrb_q", "pprot": "3'd0",
-                             "psel": f"s_select[{index}] && s_access",
-                             "penable": "s_enable"}.items():
-            wiring.append(f"assign {name}.{field} = {value};")
-        wiring.extend((f"assign s_ready[{index}] = {name}.pready;",
-                       f"assign s_error[{index}] = {name}.pslverr;",
-                       f"assign s_rdata[{index}] = {name}.prdata;"))
-    atomic_write(output / "rtl/tiny_apb_wiring.svh", "\n".join(wiring) + "\n")
+    atomic_write(output / "rtl/tiny_apb_bridges.svh", "\n".join(bridges) + "\n")
+    atomic_write(output / "rtl/tiny_fabric_decode.svh", "\n".join(decode) + "\n")
 
 
 def generate_filelists(output: Path, generated: Path, defines: list[str],

@@ -30,10 +30,10 @@
   (104,4,63,19,[JTAG / debug transport \ External TCK domain]),
   (5,37,65,15,[I/D decode + slow adapter]),
   (104,37,63,15,[Four-channel DMA \ AXI32 master]),
-  (30,69,112,19,[Tiny AXI32 fabric \ P5 external concurrency pending]),
+  (30,69,112,19,[Tiny AXI32 fabric \ Independent target ownership]),
   (0,110,40,22,[128 KiB SRAM \ 4 × 32 KiB groups]),
   (44,110,40,22,[XPI read path \ Flash alias / NOR]),
-  (88,110,40,22,[APB4 bridge \ 16 targets]),
+  (88,110,40,22,[16 APB4 branches \ One per peripheral]),
   (132,110,40,22,[Error responders \ DECERR / SLVERR]),
 ),(
   ((104,13),(70,13)),((37,23),(37,37)),

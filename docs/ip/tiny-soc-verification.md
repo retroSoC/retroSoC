@@ -1,5 +1,65 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P5 target-reset isolation repair; focused validation (2026-10-11)
+
+Following the P5 review, the fabric now receives the explicit 23-entry target
+reset vector. A reset blocks new admission and downstream handshakes, flushes
+response spill state, and converts any accepted target session into a held
+DECERR terminal response. The existing owner credit is released only by the
+upstream RLAST/B handshake, preventing stale response replay or a permanently
+busy direction. No target map, public register, DMA capacity, clock profile or
+later phase was changed.
+
+The focused command
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p5.py -k 'target_reset_isolation or concurrent_fabric'` passed 4 tests: both
+Icarus and Verilator reset-isolation tests and both existing concurrent-fabric
+tests. `make rtl-format-check rtl-style-check-all rtl-readiness-check-all`
+also passed. This is a focused implementation check; the prior P5 campaign
+reports remain source-bound to their recorded snapshots and have not been
+rewritten or relabeled. The retained focused logs are under
+`build/ics55-tiny-2026-10-10-18-58-b4aa59f3e5d9/meta/tiny-r2-p5/reset-repair-tests/`.
+
+## TINY-R2-P5 implementation; validated, review pending (2026-10-10)
+
+The maintainer approved the single-phase P5 plan on clean commit
+`3131762b35e0ebfcd196395f955e7c1005bd18e7`, specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The P4 input hashes match this
+starting source, but earlier reports retain their original snapshot attribution.
+The [P5 runbook](tiny-soc-r2-concurrent-fabric.md) records target-local ownership,
+sixteen APB branches, reserved inactive SDIO owner 2, concurrent-fault accounting
+and the unchanged public ABI/clock/memory boundaries.
+
+The completed campaign is under
+`build/ics55-tiny-2026-10-10-18-58-b4aa59f3e5d9/meta/tiny-r2-p5/`;
+the earlier `18-25` root retains development attempts. Full Pytest reports
+1679 passed and one optional `pypdf` skip. Both Tiny PDK PR regressions pass,
+including synthesis, netlist boot and clock/macro binding. The real CPU/DMA
+fixture records 13 overlapping DMA read/write beat cycles, 27 independent control
+completions, hart-reset isolation and abort drain on both simulators. Scoped
+target-control/fault proofs and retained P4 latency/streaming checks pass.
+
+Initial image executions passed but aggregation correctly failed on an Icarus 13
+temporary-expression population-count defect. The only subsequent source change
+is P5 opt-in testbench instrumentation. `source.json` retains the original
+snapshot for the unchanged DUT/full-suite/ordinary-regression/PPA results;
+`monitor-source.json` records the corrected monitor. Only affected image
+measurements and monitor checks were repeated. `monitor-diagnosis.json` retains
+the reproduction and original discrepancy; no comparison rule was relaxed.
+
+Final `report.json` has identical banked observations across simulators. Against
+repaired P4, burst1 cycles change 91306→65527 flat and 89365→65502 banked; burst16
+changes 17897→16974 and 17317→15802. CPU/copy cycles are unchanged; small
+contention/TCD/chunk256 increases remain explicit. The final combined input
+digest is `0f3ed21f6fd6e932ff2532aab8c9964e71cf4b972e4c27e2c8ca6ab1f22c1015`.
+`evidence.json` rechecks 2010 inputs and binds both snapshot scopes, six ordinary
+simulations, final matched-image runs, 15 focused/formal artifacts and reused
+unchanged Mini compatibility evidence. Library area grows 5.56%/6.95%; max WNS
+is -64.75 ns ICS55 and -111.93 ns IHP130. Timing remains unclosed/observational.
+The runbook records exact commands, source attribution, warning observations,
+measurements and unrun qualifications. Human phase acceptance is pending.
+Shared DMA/Mini/SDK behavior, dependencies and warning/metrics policy remain
+unchanged. No P6 execution or physical-frequency qualification is authorized.
+
 ## TINY-R2-P4 throughput repair; validated, review pending (2026-10-10)
 
 Following the read-only P4 review, the maintainer approved the bounded-buffer

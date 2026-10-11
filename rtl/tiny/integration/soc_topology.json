@@ -8,7 +8,21 @@
     "macro_bytes": 4096,
     "base": "0x30000000",
     "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
-    "external_attachment": "serialized-pre-P5"
+    "external_attachment": "per-target-P5"
+  },
+  "fabric": {
+    "owners": ["cpu_slow", "central_dma", "sdio_reserved"],
+    "active_owners": [0, 1],
+    "cpu_combined_outstanding": 1,
+    "dma_direction_outstanding": 1,
+    "sdio_direction_outstanding": 1,
+    "target_combined_outstanding": 1,
+    "sram_targets": [0, 1, 2, 3],
+    "xpi_target": 4,
+    "apb_target_base": 5,
+    "decode_error_target": 21,
+    "protocol_error_target": 22,
+    "target_count": 23
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,

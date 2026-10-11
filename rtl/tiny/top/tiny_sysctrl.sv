@@ -7,9 +7,10 @@ module tiny_sysctrl (
     input  logic                rst_n_i,
            apb4_if.slave        apb4,
     input  logic                fault_valid_i,
+    input  logic         [ 3:0] fault_count_i,
     input  logic         [31:0] fault_addr_i,
     input  logic                fault_write_i,
-    input  logic                fault_master_i,
+    input  logic         [ 1:0] fault_master_i,
     input  logic         [ 1:0] fault_resp_i,
     input  logic         [63:0] cpu_wait_i,
     input  logic         [63:0] dma_wait_i,
@@ -24,7 +25,8 @@ module tiny_sysctrl (
   logic [31:0] s_fault_addr_d, s_fault_addr_q;
   logic [31:0] s_fault_count_d, s_fault_count_q;
   logic [4:0] s_fault_stat_d, s_fault_stat_q;
-  logic s_fault_master_d, s_fault_master_q;
+  logic [1:0] s_fault_master_d, s_fault_master_q;
+  logic [32:0] s_fault_sum;
   logic [1:0] s_fault_resp_d, s_fault_resp_q;
   logic s_perf_en_d, s_perf_en_q;
   logic s_wake_d, s_wake_q;
@@ -68,7 +70,7 @@ module tiny_sysctrl (
       end
       `APB4_SYSCTRL__FAULT_ADDR:                    s_read_data = s_fault_addr_q;
       `APB4_SYSCTRL__FAULT_COUNT:                   s_read_data = s_fault_count_q;
-      `APB4_SYSCTRL__FAULT_MASTER:                  s_read_data = {31'd0, s_fault_master_q};
+      `APB4_SYSCTRL__FAULT_MASTER:                  s_read_data = {30'd0, s_fault_master_q};
       `APB4_SYSCTRL__FAULT_DETAIL:                  s_read_data = {30'd0, s_fault_resp_q};
       `APB4_SYSCTRL__PERF_CTRL: begin
         s_read_data = {31'd0, s_perf_en_q};
@@ -89,6 +91,7 @@ module tiny_sysctrl (
       default:                                      s_valid = 1'b0;
     endcase
   end
+  assign s_fault_sum = {1'b0, s_fault_count_q} + {29'd0, fault_count_i};
   always_comb begin
     s_test_d         = s_test_q;
     s_fault_addr_d   = s_fault_addr_q;
@@ -124,7 +127,7 @@ module tiny_sysctrl (
     end
     if (rtc_wake_i) s_wake_d = 1'b1;
     if (fault_valid_i) begin
-      if (s_fault_count_q != 32'hffff_ffff) s_fault_count_d = s_fault_count_q + 32'd1;
+      s_fault_count_d = s_fault_sum[32] ? 32'hffff_ffff : s_fault_sum[31:0];
       if (!s_fault_stat_d[0]) begin
         s_fault_stat_d   = {(fault_resp_i == 2'b11) ? 3'd1 : 3'd2, fault_write_i, 1'b1};
         s_fault_addr_d   = fault_addr_i;
@@ -166,7 +169,7 @@ module tiny_sysctrl (
       .dat_o  (s_fault_stat_q)
   );
   dffr #(
-      .DATA_WIDTH(1)
+      .DATA_WIDTH(2)
   ) u_fault_master_reg (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),

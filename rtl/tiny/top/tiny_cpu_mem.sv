@@ -6,13 +6,16 @@
 // following address acceptance. Local stores complete only after macro commit.
 // Only non-SRAM work enters the tagged, non-posted slow-path merge.
 module tiny_cpu_mem (
-    input  logic                    clk_i,
-    input  logic                    rst_n_i,
-    input  logic                    quiesce_i,
-    output logic                    idle_o,
-           ahbl_if.slave            cpu        [2],
-           tiny_sram_port_if.master local_ports[2],
-           axi4_if.master           slow_axi4
+    input  logic                                clk_i,
+    input  logic                                rst_n_i,
+    input  logic                                quiesce_i,
+    output logic                                idle_o,
+    output logic                    [1:0]       local_fault_valid_o,
+    output logic                    [1:0][31:0] local_fault_addr_o,
+    output logic                    [1:0]       local_fault_write_o,
+           ahbl_if.slave                        cpu                [2],
+           tiny_sram_port_if.master             local_ports        [2],
+           axi4_if.master                       slow_axi4
 );
   typedef enum logic [2:0] {
     Idle,
@@ -26,9 +29,10 @@ module tiny_cpu_mem (
   } state_e;
   typedef struct packed {
     state_e      state;
-    logic [31:0] addr,  data;
+    logic [31:0] addr,           data;
     logic [2:0]  size;
     logic        write;
+    logic        external_error;
     logic [3:0]  strb;
   } request_t;
   request_t s_req_d[2], s_req_q[2];
@@ -63,6 +67,10 @@ module tiny_cpu_mem (
   logic s_adapter_idle;
 
   for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port
+    assign local_fault_valid_o[port_index] =
+        (s_req_q[port_index].state == ErrorLast) && !s_req_q[port_index].external_error;
+    assign local_fault_addr_o[port_index] = s_req_q[port_index].addr;
+    assign local_fault_write_o[port_index] = s_req_q[port_index].write;
     assign s_slow_req[port_index] = s_req_q[port_index].state == SlowIssue;
     assign s_front_idle[port_index] = (s_req_q[port_index].state == Idle) &&
         (quiesce_i || !cpu[port_index].htrans[1]);
@@ -113,7 +121,12 @@ module tiny_cpu_mem (
         LocalIssue: if (local_ports[port_index].req_ready) s_req_d[port_index].state = LocalWait;
         SlowIssue:
         if (s_slow_accept && s_slow_grant[port_index]) s_req_d[port_index].state = SlowWait;
-        SlowWait: if (s_err[port_index]) s_req_d[port_index].state = ErrorLast;
+        SlowWait:
+        if (s_err[port_index]) begin
+          s_req_d[port_index].state          = ErrorLast;
+          // The fabric already reports externally completed errors once.
+          s_req_d[port_index].external_error = 1'b1;
+        end
         ErrorFirst: s_req_d[port_index].state = ErrorLast;
         default: begin
         end
@@ -123,10 +136,11 @@ module tiny_cpu_mem (
         // Capture even a terminal-cycle overlap during quiesce: that address
         // was acknowledged by HREADY and cannot be silently discarded.
         if (cpu[port_index].htrans[1]) begin
-          s_req_d[port_index].addr  = cpu[port_index].haddr;
-          s_req_d[port_index].size  = cpu[port_index].hsize;
-          s_req_d[port_index].write = cpu[port_index].hwrite;
-          s_req_d[port_index].strb  = '0;
+          s_req_d[port_index].addr           = cpu[port_index].haddr;
+          s_req_d[port_index].size           = cpu[port_index].hsize;
+          s_req_d[port_index].write          = cpu[port_index].hwrite;
+          s_req_d[port_index].strb           = '0;
+          s_req_d[port_index].external_error = 1'b0;
           if ((cpu[port_index].htrans != 2'b10) || cpu[port_index].hmastlock ||
               (cpu[port_index].hsize > 3'd2) ||
               ((cpu[port_index].haddr & ((32'd1 << cpu[port_index].hsize) - 32'd1)) != 32'd0) ||

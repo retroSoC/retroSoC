@@ -15,7 +15,7 @@ publication release still requires source review, snapshot refresh and PDF check
 | Area | Review and publication decision | Follow-up boundary |
 | --- | --- | --- |
 | CPU and startup | Publish the actual C/M extensions, disabled A, CSR-enabled firmware and Tiny guard around PSRAM setup. | Keep compiler target separate from implemented ISA; a reset vector is not a completed boot. |
-| Fabric | Document one globally active CPU/DMA read or write, saved ownership, naturally aligned bounded bursts and terminal response/drain. | Do not claim arbitrary AXI4 features, independent read/write concurrency or unrestricted liveness. |
+| Fabric | P5 draft: independent target ownership, one combined CPU slow operation, DMA one read/one write, 16 APB branches and lossless concurrent-fault accounting. Owner2 is reserved, inactive SDIO. | No SDIO integration, arbitrary AXI4 features or unconditional liveness claim. Snapshot/PDF revision is not advanced. |
 | Address/IRQ/pads | Derive all 20 regions, 14 allocated core causes and 52 logical signal pads; retain 32 GPIO alternate entries. | Logical pads are not package pin numbers or a board schematic. |
 | IP/register scope | Fourteen chapters, thirteen unique register families; Tiny SYSCTRL is decoded independently and ARCHINFO overrides the SoC identity. | Reject missing/extra decode and defaults belonging to other products. |
 | DMA | Four channels, request mask 0x07F9, no stream modes, 64-byte descriptors and source-derived field layout. | **Discovery discrepancy:** the four-bit maximum-burst field reads zero after truncating 16. Publish that value and the actual 16-beat limit separately; propose a future ABI/RTL review, do not change RTL here. |

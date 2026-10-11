@@ -31,7 +31,7 @@
     *Memory and interconnect*
     - *128 KiB SRAM*, four independently serviced 32 KiB groups backed by 32 banks of 4 KiB.
     - Native AXI32 memory paths and one APB4 island.
-    - CPU instruction/data ports are independent locally; the compatible external attachment remains serialized until P5.
+    - Independent local instruction/data ports and target-local external ownership.
     - XPI NOR boot and SRAM-resident application layout.
 
     *DMA and control*
@@ -132,10 +132,18 @@ advertised as a qualified voltage/frequency operating point.
 #source-note("rtl/tiny/integration/clock_reset_domains.json",title:"Clock/reset inventory and debug crossings")
 
 == Bus Transactions, Arbitration and Errors <tiny-bus>
-The two external initiators are CPU slow path and DMA. They share *one active read or write transaction globally* in this
-pre-P5 attachment. CPU instruction/data local requests are independently arbitrated within each SRAM group. The fabric saves source,
-direction, address and attributes, forwards the request, and retains ownership until the terminal B or RLAST handshake.
-Read/write request arbitration is round-robin; it is not a throughput guarantee or an unrestricted liveness guarantee.
+The two active external initiators are CPU slow path and DMA. A third ingress is reserved for future SDIO integration and
+has no active producer. Each SRAM group, XPI memory endpoint and APB peripheral has independent transaction ownership.
+CPU slow traffic admits one combined operation; DMA can have one read and one write outstanding across different targets.
+Each target admits one combined read or write. CPU local instruction/data requests remain independently arbitrated within
+each SRAM group. Saved ownership includes accepted address and response buffers and lasts through the upstream B/RLAST handshake.
+Owner arbitration is round-robin with fair direction selection. Progress bounds require a running clock and peer progress.
+Separate APB bridges keep independent controls outside a FIFO-waiting peripheral's transaction.
+
+Fault accounting counts each failed transaction once, including errors before the final read beat. Simultaneous events
+increment the saturating count individually; first-fault metadata uses ascending owner, instruction before data, then read
+before write. CPU is owner0, DMA owner1, and owner2 is reserved. FAULT_DETAIL retains raw AXI response2/3. Clearing validity
+does not clear the count, and a simultaneous hardware event wins over clear.
 
 Memory transfers support naturally aligned 1/2/4-byte beats and up to 16 INCR beats. Single-beat FIXED is also admitted.
 The complete address span must remain within one decoded target and one 4 KiB page without overflow. MMIO accepts only

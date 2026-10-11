@@ -77,8 +77,8 @@ def facts(root: Path = ROOT) -> dict:
         raise ValueError("Tiny SRAM parameters changed")
     # P4 changes local routing, not physical geometry or the book's IHP130
     # compatibility selection. Snapshot enforcement still precedes publication.
-    read_topology(root / TOPOLOGY, root / MAP)
-    require_snippets(root, TOP, ["tiny_sram u_sram", "tiny_sram_axi4_demux u_sram_attachment",
+    topology = read_topology(root / TOPOLOGY, root / MAP)
+    require_snippets(root, TOP, ["tiny_sram u_sram", "gen_sram_attachment", "axi4_connector u_connector",
                                ".ID_WIDTH(1)", ".DATA_WIDTH(32)"])
     require_snippets(root, SRAM, ["group < 4", "tiny_sram_group u_group"])
     if dma != {"NumChannels": 4, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x7F9, "EnableStreams": 0}:
@@ -88,7 +88,10 @@ def facts(root: Path = ROOT) -> dict:
     require_snippets(root, RESET_TREE, [".STAGE(5)", "assign cpu_ready_rst_n_o = &leaf_rst_n_o;"])
     require_snippets(root, CPU, ["hazard3_cpu_2port", ".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
     require_snippets(root, CPU_MEM, [".TwoCycleErrors(1'b1)", "ErrorFirst", "ErrorLast"])
-    require_snippets(root, TOP, ["u_masters_axi4_if[2]", ".slow_axi4(u_masters_axi4_if[0])",
+    require_snippets(root, TOP, ["u_masters_axi4_if[3]", "u_targets_axi4_if[23]",
+                               "assign u_masters_axi4_if[2].arvalid = 1'b0;",
+                               "assign u_masters_axi4_if[2].awvalid = 1'b0;",
+                               ".slow_axi4(u_masters_axi4_if[0])",
                                ".axi4(u_masters_axi4_if[1])", ".cfg_apb4(u_sram_apb4_if)",
                                "assign s_tick = s_tick_count_q == 5'd23;"])
     require_snippets(root, SYSCTRL, ["(apb4.paddr[1:0] != 2'd0)", "(apb4.pstrb != 4'hf)",
@@ -108,6 +111,7 @@ def facts(root: Path = ROOT) -> dict:
         raise ValueError("Tiny discovery parameters changed")
     require_snippets(root, ARCHINFO, ["32'h5449_4e59 : u_info_apb4_if.prdata", ".device_id_valid_i(1'b0)", ".device_id_read_enable_i(1'b0)"])
     return {"profile": profile, "sram": ram, "dma": dma, "cpu": cpu, "archinfo": arch,
+            "fabric": topology["fabric"],
             "hardware_isa": "RV32IMC", "firmware_isa": profile["ISA"], "soc_id": 0x54494E59,
             "system_hz": int(profile["EXT_CLK_HZ"]), "timebase_hz": int(profile["CLINT_TIMEBASE_HZ"])}
 
@@ -139,7 +143,7 @@ def sysctrl_registers(root: Path) -> dict:
     offsets = {r["symbol"]: int(r["offset"], 0) for r in read(root / MAP)["sysctrl_registers"]}
     definitions = {
         "FAULT_STATUS": ("RW1C", "Sticky first fault. Bit 0 clears pending; a new fault can win after clear.", [("PENDING", 0, 0, "A fault record is pending."), ("WRITE", 1, 1, "Faulting transaction was a write."), ("CLASS", 2, 4, "1: decode error; 2: protocol/target error.")]),
-        "FAULT_MASTER": ("RO", "Master of the captured first fault.", [("MASTER", 0, 0, "0 CPU, 1 DMA.")]),
+        "FAULT_MASTER": ("RO", "Master of the captured first fault.", [("MASTER", 0, 1, "0 CPU, 1 DMA, 2 reserved SDIO ingress; SDIO is not integrated.")]),
         "FAULT_DETAIL": ("RO", "Captured AXI response code.", [("RESPONSE", 0, 1, "AXI RRESP/BRESP encoding.")]),
         "PERF_CTRL": ("RW / command", "Enable counters, clear counters/snapshots or capture a coherent pair. Clear takes precedence over snapshot.", [("ENABLE", 0, 0, "Counter enable state."), ("CLEAR", 1, 1, "Write-one pulse; reads zero."), ("SNAPSHOT", 2, 2, "Write-one pulse; reads zero.")]),
         "TEST_STATUS": ("RW sticky", "First full-word valid result is sticky until system reset; write mask 0x8000FF01.", [("PASS", 0, 0, "Pass when valid is set."), ("CODE", 8, 15, "Application-defined result code."), ("VALID", 31, 31, "The first valid write locks the result.")]),

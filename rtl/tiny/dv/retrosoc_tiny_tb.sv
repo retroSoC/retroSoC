@@ -230,6 +230,65 @@ module retrosoc_tiny_tb;
     `undef _BASELINE_AXI
   end
 
+  // P5-only observations supplement the unchanged P3/P4 record formats. They
+  // are testbench measurements, not new software-visible performance counters.
+  longint unsigned s_p5_overlap = 0, s_p5_beat_overlap = 0;
+  integer s_p5_window = 0, s_p5_active_max = 0;
+  logic s_p5_previous_enable = 0;
+  wire  s_p5_enable = s_baseline_enabled && u_dut.u_soc.s_perf_enable;
+  // Icarus 13 miscounts the temporary expression $countones(~a_23_bit_vector).
+  // Count declared bits explicitly and reject unknowns rather than correcting
+  // a report afterward. This function changes only opt-in P5 observations.
+  function automatic integer p5_active_targets(input logic [22:0] idle_i);
+    integer count;
+    count = 0;
+    for (integer target_index = 0; target_index < 23; target_index++) begin
+      if (idle_i[target_index] === 1'b0) count++;
+      else if (idle_i[target_index] !== 1'b1) $fatal(1, "SIM_TEST_FAIL P5 unknown target state");
+    end
+    return count;
+  endfunction
+  initial begin : p5_monitor_check
+    if ($test$plusargs("tiny_r2_p5_monitor_check")) begin
+      for (integer active = 0; active <= 23; active++) begin
+        if (p5_active_targets(23'h7fffff ^ ((23'd1 << active) - 23'd1)) != active)
+          $fatal(1, "SIM_TEST_FAIL P5 monitor population count");
+      end
+      $display("SIM_TEST_PASS Tiny P5 monitor-check counts=0..23; instrumentation only");
+      $finish;
+    end
+  end
+  always @(posedge s_clk) begin
+    if (!u_dut.u_soc.s_rst_n) begin
+      s_p5_previous_enable = 0;
+      s_p5_window          = 0;
+    end else if ($test$plusargs("tiny_r2_p5")) begin
+      if (s_p5_enable && !s_p5_previous_enable) begin
+        s_p5_window++;
+        s_p5_overlap      = 0;
+        s_p5_beat_overlap = 0;
+        s_p5_active_max   = 0;
+      end
+      if (s_p5_enable) begin
+        if (p5_active_targets(u_dut.u_soc.u_fabric.target_idle_o) > s_p5_active_max)
+          s_p5_active_max = p5_active_targets(u_dut.u_soc.u_fabric.target_idle_o);
+        if (u_dut.u_soc.u_fabric.s_busy_q[2] && u_dut.u_soc.u_fabric.s_busy_q[3]) s_p5_overlap++;
+        if (u_dut.u_soc.u_masters_axi4_if[1].rvalid && u_dut.u_soc.u_masters_axi4_if[1].rready &&
+            u_dut.u_soc.u_masters_axi4_if[1].wvalid && u_dut.u_soc.u_masters_axi4_if[1].wready)
+          s_p5_beat_overlap++;
+      end
+      if (!s_p5_enable && s_p5_previous_enable)
+        $display(
+            "R2_P5_FABRIC window=%0d active_targets_max=%0d dma_rw_overlap_cycles=%0d dma_rw_beat_overlap_cycles=%0d",
+            s_p5_window,
+            s_p5_active_max,
+            s_p5_overlap,
+            s_p5_beat_overlap
+        );
+      s_p5_previous_enable = s_p5_enable;
+    end
+  end
+
   // Verification-only per-group issue/conflict accounting. A bank conflict is
   // two or more eligible macro clients in one cycle, not an AXI address stall.
   for (genvar group = 0; group < 4; group++) begin : gen_bank_observer

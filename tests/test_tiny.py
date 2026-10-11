@@ -97,15 +97,19 @@ def test_tiny_protocol_contracts(tmp_path: Path, simulator: str, block: str) -> 
         pytest.skip("locked RTL/tool dependency unavailable")
     generated = tmp_path / "map"
     generate_memory_map(TINY / "address_map/memory_map.json", generated, "YES", 128)
+    generate_bindings(read_topology(TINY / "integration/soc_topology.json",
+                                   TINY / "address_map/memory_map.json"), tmp_path / "bindings")
     top = "tiny_axi4_fabric_tb" if block == "fabric" else "tiny_sysctrl_tb"
     sources = [COMMON / "utils/register.sv"]
     if block == "fabric":
         sources += [COMMON / "interface/axi4_if.sv", COMMON / "stream/round_robin_arbiter.sv",
-                    ROOT / "rtl/ip/interconnect/axi4_error_slave.sv", TINY / "top/tiny_axi4_fabric.sv"]
+                    COMMON / "utils/spill_register.sv",
+                    ROOT / "rtl/ip/interconnect/axi4_error_slave.sv",
+                    TINY / "top/tiny_axi4_target.sv", TINY / "top/tiny_axi4_fabric.sv"]
     else:
         sources += [COMMON / "interface/apb4_if.sv", TINY / "top/tiny_sysctrl.sv"]
     sources.append(ROOT / "tests/rtl" / f"{top}.sv")
-    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", generated / "rtl",
+    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", generated / "rtl", tmp_path / "bindings/rtl",
                                    ROOT / "rtl/ip/peripheral", ROOT / "tests/rtl")]
     output = tmp_path / "sim"
     if simulator == "verilator":

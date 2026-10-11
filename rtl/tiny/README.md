@@ -12,7 +12,9 @@ validation; backend frequency tests are not SYS switching or timing qualificatio
 The [R2-P4 implementation](../../docs/ip/tiny-soc-r2-local-memory.md) connects the
 official dual-port CPU to four independently serviced 32 KiB local SRAM groups.
 The 32 physical macros and register ABI are unchanged. Only non-SRAM CPU work
-uses the tagged slow path; the external fabric stays serialized until P5.
+uses the tagged slow path. The [P5 implementation](../../docs/ip/tiny-soc-r2-concurrent-fabric.md)
+replaces external serialization with independent target ownership and APB
+branches; the third, SDIO ingress remains reserved and inactive until P6.
 Source presence alone is not completed phase or physical qualification.
 
 `top` owns product integration, `address_map`, `pin_map` and `integration` own

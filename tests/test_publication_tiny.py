@@ -27,6 +27,8 @@ def test_tiny_configuration_and_inventory_are_derived(data):
     assert data["facts"]["dma"]["RequestMask"] == 0x7F9
     assert data["facts"]["dma"]["EnableStreams"] == 0
     assert data["facts"]["cpu"]["ResetSyncStages"] == 5
+    assert data["facts"]["fabric"]["target_count"] == 23
+    assert data["facts"]["fabric"]["active_owners"] == [0, 1]
     assert tiny.RESET_TREE in data["source_paths"]
     assert len(data["catalog"]) == 14 and len(data["regions"]) == 20 and len(data["pads"]) == 52
     assert len(data["interrupts"]) == 14 and len(data["gpio"]) == 32

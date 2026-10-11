@@ -216,3 +216,19 @@ tiny-r2-p4-report:
 	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) --report
 
 .PHONY: tiny-r2-p4-replay tiny-r2-p4-report
+
+# P5 compares the same P3 binaries to retained P4 observations, with its own
+# phase identity and evidence root. The historical P3/P4 commands stay intact.
+TINY_P5_REFERENCE ?=
+TINY_P5_CASES ?= perf-o2-plain-flat,perf-o2-plain-banked
+tiny-r2-p5-replay: | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p5.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
+		--reference $(TINY_P5_REFERENCE) --cases $(TINY_P5_CASES) --simulator $(SIM_TOOL_NAME) \
+		--vvp $(VVP) --timeout $(SOC_SIM_TIME) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p5-report:
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p5.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) --report
+
+.PHONY: tiny-r2-p5-replay tiny-r2-p5-report
