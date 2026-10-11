@@ -86,6 +86,11 @@ SW_LTO               ?= NO
 WS2812_P3_ACCEPTANCE ?= NO
 COREMARK_MODE        ?= quick
 NPU_P5_ACCEPTANCE    ?= NO
+# Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
+# for HP bring-up sessions, behavior-neutral when off. Debug runs are not
+# qualification evidence, so the knob deliberately stays out of the variant
+# key; rebuilds require touching the app source.
+HP_JTAG_DEBUG        ?= NO
 NPU_P6_ACCEPTANCE    ?= NO
 NPU_P6_WORKLOAD      ?= kws
 HP_PERF_MIN_RATIO    ?= 2.5
@@ -279,6 +284,7 @@ $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 $(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,HP_JTAG_DEBUG,$(VALID_BOOL))
 $(call validate_value,NPU_P6_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_WORKLOAD,kws vww)
 $(call validate_value,SW_ISA_PROFILE,COMPAT TINY_PERF)
