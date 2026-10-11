@@ -41,17 +41,37 @@ qualification. Current evidence requires, at minimum:
   and `SIM_TEST_PASS code=0`; 6,373,952 cycles in 542 s. This exercises the
   C906 internal CLINT timer tick and MSIP IPI, the internal PLIC mailbox
   doorbell (MEIP), and the full cached SDRAM fill path.
-- `hp-linux-sim` on `configs/ci/ihp130-hp.mk` (Verilator, bounded 4 h wall,
-  158.7 M cycles): OpenSBI v1.9 completes fully on the C906 with the
-  repo-owned platform (custom timer device reading the `time` CSR plus
-  internal-CLINT MSWI IPI, custom UART1 console), and `fw_jump` hands off to
-  the kernel Image at `0x38400000` with the DTB at `0x38080000` (bundle
-  segments byte-identical to the built images, CRC-checked). The kernel
-  enters S-mode, brings Sv39 up and executes, but does not reach its first
-  console print: a temporary retire-PC/trap probe shows it cycling through
-  the S-mode fault path (`handle_exception`/`do_trap_break`) after a store
-  page fault on the `__cpu_online_mask` AMO, i.e. the A/D-bit emulation
-  fixup path is the current bring-up frontier. The target stays unqualified.
+- `hp-linux-sim` on `configs/ci/ihp130-hp.mk` (Verilator, bounded 2 h wall,
+  83.5 M emulator cycles / 41.8 M HP cycles): OpenSBI v1.9 completes fully on
+  the C906 with the repo-owned platform (custom timer device reading the
+  `time` CSR plus internal-CLINT MSWI IPI, custom UART1 console), and
+  `fw_jump` hands off to the kernel Image at `0x38400000` with the DTB at
+  `0x38080000` (bundle segments byte-identical to the built images,
+  CRC-checked). The kernel enters S-mode, brings Sv39 up, executes past
+  `set_cpu_online()`'s first AMO, and prints `Linux version 6.12.105+` on the
+  SBI console: the earlier boot blocker is fixed (see the MAEE entry below).
+  The run ends on the wall-clock budget while the kernel is mid-`meminit`
+  (`Initmem setup node 0`), retiring steadily with no further traps; userspace
+  acceptance (`HP_LINUX_READY`) is continued on a longer bounded run. The
+  target stays unqualified until that acceptance completes.
+- The Linux boot blocker was a doc/RTL mismatch in OpenC906, root-caused with
+  bare-metal MMU payloads and locked by simulation evidence: the user manual
+  states `mxstatus.MAEE` resets to 0, but the RTL (`aq_cp0_ext_csr.v`) resets
+  it to 1. With MAEE set, S-mode page attributes come from the T-Head
+  extended PTE bits [63:59], which a stock mainline kernel never programs, so
+  every translated page is non-cacheable; the C906 then raises a store/AMO
+  access fault (cause 7) for any AMO on such a page (`aq_lsu_ag.v`:
+  `!mmu_ca && ag_pipe_amo`). The first victim is `set_cpu_online()`'s
+  `amoor.d.aqrl` on `__cpu_online_mask`, after which the kernel enters the
+  `do_trap_break` storm. Loads/stores and full Sv39 page-table walks
+  (4 KiB three-level, 2 MiB megapage, high-half canonical VAs, cold fills from
+  SDRAM after D$ eviction) were proven correct independently: the failure was
+  purely the AMO-on-non-cacheable rule. The OpenSBI platform `early_init` now
+  clears `mxstatus.MAEE` (`app/ports/linux/opensbi/retrosoc_hp/platform.c`),
+  making translated accesses follow the sysmap override (RAM cacheable, MMIO
+  strong-order device) so the stock kernel needs no T-Head PBMT errata. A
+  directed payload then passes the full AMO battery (amoor/amoadd/amoswap/
+  lr-sc, cold-line and high-half-VA variants).
 - The RT-Thread bring-up exposed and fixed three latent issues, each locked
   by directed regression. (a) The C906 resets with caches and the BPU
   disabled and does not initialize the cache/predictor RAMs: HP payloads must
@@ -89,10 +109,10 @@ Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
 (scan/mbist tied off), the debug SBA AXI master (unconnected), ASIC
 memory-macro replacement for the behavioral FPGA SRAM models, and HP Linux
 re-qualification timing/performance evidence. The repo-owned OpenSBI platform
-deliberately registers no `.irqchip_init`, so the C906-internal PLIC is not
-initialized by OpenSBI: harmless for the current minimal Linux acceptance
-(`hvc0` console, SBI TIME timer, polled mailbox), but Linux S-mode
-external-interrupt consumers will need an `fdt_irqchip_init(true)` wrapper.
+registers `fdt_irqchip_init` (v1.9 supports the `thead,c900-plic` match with
+T-Head delegation fixups), so the C906-internal PLIC is initialized by
+OpenSBI before the kernel probes it; the minimal Linux acceptance uses the
+`hvc0` console, the SBI TIME timer, and the polled mailbox path.
 
 ## Historical VexiiRiscv evidence (pre-swap)
 

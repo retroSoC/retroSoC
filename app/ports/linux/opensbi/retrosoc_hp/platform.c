@@ -43,6 +43,18 @@
 #define RETROSOC_HP_CSR_MHCR             0x7c1U
 #define RETROSOC_HP_MHCR_CACHES_BPU      0x7fUL /* IE|DE|WA|RSE|BPE|BTBE */
 
+/* The OpenC906 RTL resets mxstatus.MAEE (bit 21) to 1, contrary to the user
+ * manual's stated reset value of 0 (aq_cp0_ext_csr.v). With MAEE set, S-mode
+ * page attributes come from the T-Head extended PTE bits [63:59], which a
+ * stock mainline kernel never programs: every translated page becomes
+ * non-cacheable and the C906 raises a store/AMO access fault (cause 7) for
+ * any AMO on such a page (aq_lsu_ag.v: !mmu_ca && ag_pipe_amo), e.g. the
+ * kernel's first set_cpu_online amoor.d. Clearing MAEE makes translated
+ * accesses follow the sysmap override (RAM cacheable, MMIO strong-order
+ * device), so the stock kernel works without T-Head PBMT errata. */
+#define RETROSOC_HP_CSR_MXSTATUS         0x7c0U
+#define RETROSOC_HP_MXSTATUS_MAEE        (1UL << 21)
+
 static const u32 s_hart_index_to_id[] = {1U};
 
 static struct aclint_mswi_data s_mswi = {
@@ -120,6 +132,7 @@ static int retrosoc_hp_early_init(bool cold_boot) {
 
     csr_write(RETROSOC_HP_CSR_MCOR, RETROSOC_HP_MCOR_INVALIDATE_ALL);
     csr_write(RETROSOC_HP_CSR_MHCR, RETROSOC_HP_MHCR_CACHES_BPU);
+    csr_clear(RETROSOC_HP_CSR_MXSTATUS, RETROSOC_HP_MXSTATUS_MAEE);
 
     retrosoc_hp_uart_write(RETROSOC_HP_UART_CTRL_REG, 0U);
     retrosoc_hp_uart_write(RETROSOC_HP_UART_FIFO_CTRL_REG, RETROSOC_HP_UART_FIFO_FLUSH);
