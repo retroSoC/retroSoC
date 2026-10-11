@@ -33,7 +33,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `hp_boot` | SRAM-resident LP loader that validates typed V2 Linux, smoke or RT-Thread bundles, loads SDRAM, releases HP, and monitors the workload-specific mailbox verdict. |
-| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to RV64 HP, HP-submitted WAV/KWS jobs with Zicbom maintenance, and LP-only register fault probe. |
+| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to RV64 HP, HP-submitted WAV/KWS jobs with T-Head XTheadCmo dcache maintenance, and LP-only register fault probe. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 | `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
@@ -46,7 +46,7 @@ NPU-P5 acceptance extends existing compositions rather than adding an APP.
 of the reproducible variant key. The LP path links the generated KWS plan into
 `ci_smoke`, uses the real LP completion interrupt, and writes the normal
 SYSCTRL verdict. The RV64 HP smoke bundle assigns resource 9 to hart 1, runs
-the same plan with polling and 64-byte Zicbom maintenance, then returns
+the same plan with polling and 64-byte T-Head XTheadCmo dcache maintenance, then returns
 ownership before LP publishes the final verdict. The option defaults to `NO`,
 preserving normal PR firmware size and behavior.
 

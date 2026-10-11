@@ -450,7 +450,7 @@ def main() -> int:
                 "softmax_cycles": int(marker.group(4)),
                 **lp_evidence},
             "hp": {"result": str(args.hp_result), "check": str(args.hp_check),
-                "command": hp["command"], "mode": "polling-zicbom",
+                "command": hp["command"], "mode": "polling-xtheadcmo",
                 **hp_evidence},
             "summary": {
                 "required_checks": 47,

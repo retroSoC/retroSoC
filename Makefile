@@ -576,7 +576,7 @@ help:
 	  '  npu-p5-host                run compiler, generated-C, executor, and ABI tests' \
 	  '  npu-p5-rtl                 run frozen model inputs through Icarus and Verilator' \
 	  '  npu-p5-lp-sim              run LP interrupt bare-metal NPU acceptance' \
-	  '  npu-p5-hp-sim              run HP polling/Zicbom bare-metal NPU acceptance' \
+	  '  npu-p5-hp-sim              run HP polling/XTheadCmo bare-metal NPU acceptance' \
 	  '  npu-p5-report              validate and assemble retained P5 evidence' \
 	  '  npu-p6-corpus              build deterministic 100-case qualification shards' \
 	  '  npu-p6-formal              close DMA, context, and control bounded proofs' \
