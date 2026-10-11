@@ -282,12 +282,17 @@ module axi4_data_crossbar #(
     logic [32:0] beat_bytes;
     logic [32:0] burst_bytes;
     logic [32:0] last_addr;
+    logic [32:0] wrap_base;
     logic [32:0] window_limit;
     beat_bytes = 33'd1 << size;
     burst_bytes = beat_bytes * ({25'd0, len} + 1'b1);
+    // WRAP bursts end at their wrap boundary, not at addr + burst_bytes: a
+    // mid-line start otherwise overshoots and fails the 4 KiB page check.
+    wrap_base = {1'b0, addr} & ~(burst_bytes - 1'b1);
     last_addr = (burst == 2'b00) ?
         ({1'b0, addr} + beat_bytes - 1'b1) :
-        ({1'b0, addr} + burst_bytes - 1'b1);
+        ((burst == 2'b10) ? (wrap_base + burst_bytes - 1'b1) :
+                            ({1'b0, addr} + burst_bytes - 1'b1));
     window_limit = {1'b0, addr[31:12], 12'd0} + 33'd4096;
     return !lock && (size <= 3'd3) &&
            ((burst == 2'b00) || (burst == 2'b01) ||
