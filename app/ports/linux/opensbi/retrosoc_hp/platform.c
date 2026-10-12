@@ -14,6 +14,8 @@
 #define RETROSOC_HP_CLINT_BASE           0x0C000000UL
 #define RETROSOC_HP_CLINT_MTIMECMP_LO    0x4000UL
 #define RETROSOC_HP_CLINT_MTIMECMP_HI    0x4004UL
+#define RETROSOC_HP_CLINT_STIMECMP_LO    0xD000UL
+#define RETROSOC_HP_CLINT_STIMECMP_HI    0xD004UL
 #define RETROSOC_HP_UART_BASE            0x10018000UL
 #define RETROSOC_HP_UART_BAUD_INT        78U
 #define RETROSOC_HP_UART_BAUD_FRAC       32U
@@ -133,6 +135,18 @@ static int retrosoc_hp_early_init(bool cold_boot) {
     csr_write(RETROSOC_HP_CSR_MCOR, RETROSOC_HP_MCOR_INVALIDATE_ALL);
     csr_write(RETROSOC_HP_CSR_MHCR, RETROSOC_HP_MHCR_CACHES_BPU);
     csr_clear(RETROSOC_HP_CSR_MXSTATUS, RETROSOC_HP_MXSTATUS_MAEE);
+
+    /* Park both internal-CLINT compare registers. The C906 ORs the hardware
+     * supervisor-timer line into mip.STIP (aq_cp0_trap_csr.v: st_int && CLINTEE,
+     * and the RTL resets CLINTEE to 1), so an unparked STIMECMP wedges S-mode
+     * with an infinite supervisor-timer interrupt the moment the kernel enables
+     * sie.STIE. The compare registers' 0xFFFF_FFFF reset values are not
+     * guaranteed to be applied (the hold-reset produces no async negedge in
+     * Verilator), so park them explicitly at cold boot. */
+    retrosoc_hp_mtimecmp_write(~0ULL);
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_LO));
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_HI));
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_LO));
 
     retrosoc_hp_uart_write(RETROSOC_HP_UART_CTRL_REG, 0U);
     retrosoc_hp_uart_write(RETROSOC_HP_UART_FIFO_CTRL_REG, RETROSOC_HP_UART_FIFO_FLUSH);
