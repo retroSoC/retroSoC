@@ -50,9 +50,10 @@ qualification. Current evidence requires, at minimum:
   CRC-checked). The kernel enters S-mode, brings Sv39 up, executes past
   `set_cpu_online()`'s first AMO, and prints `Linux version 6.12.105+` on the
   SBI console: the earlier boot blocker is fixed (see the MAEE entry below).
-  The run ends on the wall-clock budget while the kernel is mid-`meminit`
-  (`Initmem setup node 0`), retiring steadily with no further traps; userspace
-  acceptance (`HP_LINUX_READY`) is continued on a longer bounded run. The
+  A longer bounded run (8 h wall) with the STIMECMP fix additionally boots
+  the kernel through console init, BogoMIPS calibration, devtmpfs, and the
+  switch to the riscv_clocksource with a healthy periodic tick; userspace
+  acceptance (`HP_LINUX_READY`) evidence is collected on that run. The
   target stays unqualified until that acceptance completes.
 - The Linux boot blocker was a doc/RTL mismatch in OpenC906, root-caused with
   bare-metal MMU payloads and locked by simulation evidence: the user manual
@@ -72,6 +73,21 @@ qualification. Current evidence requires, at minimum:
   strong-order device) so the stock kernel needs no T-Head PBMT errata. A
   directed payload then passes the full AMO battery (amoor/amoadd/amoswap/
   lr-sc, cold-line and high-half-VA variants).
+- The post-`sched_clock` stall was a second doc/RTL trap of the same family:
+  the C906 ORs the internal CLINT's hardware supervisor-timer line into
+  `mip.STIP` (`aq_cp0_trap_csr.v`: `st_int && CLINTEE || stip_reg`) and the
+  RTL resets `CLINTEE` to 1. Nobody parked the internal STIMECMP, and the
+  compare registers' `0xFFFF_FFFF` reset values are not guaranteed to be
+  applied (the HP hold-reset produces no async negedge in Verilator, leaving
+  them at zero), so the hardware S-timer line fired continuously: the first
+  `sie.STIE` enable in the kernel's `time_init` dropped it into an infinite
+  supervisor-timer storm and starved the boot thread. M-mode firmware
+  (RT-Thread, OpenSBI) is immune, which is why earlier targets were
+  unaffected. The OpenSBI `early_init` now parks both internal-CLINT compare
+  registers at cold boot, making the state deterministic on silicon and in
+  simulation; probe evidence shows MTIMECMP armed exactly one jiffy out and
+  MTIP firing exactly at the compare value on a healthy 288 kHz-cycle
+  cadence.
 - The RT-Thread bring-up exposed and fixed three latent issues, each locked
   by directed regression. (a) The C906 resets with caches and the BPU
   disabled and does not initialize the cache/predictor RAMs: HP payloads must
