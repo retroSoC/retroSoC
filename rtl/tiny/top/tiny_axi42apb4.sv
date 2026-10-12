@@ -57,7 +57,7 @@ module tiny_axi42apb4 (
   assign apb4.paddr   = s_addr_q;
   assign apb4.pwrite  = s_write_q;
   assign apb4.pwdata  = s_wdata_q;
-  assign apb4.pstrb   = s_wstrb_q;
+  assign apb4.pstrb   = s_write_q ? s_wstrb_q : 4'd0;
   assign apb4.pprot   = 3'd0;
   assign apb4.psel    = s_access;
   assign apb4.penable = s_enable;

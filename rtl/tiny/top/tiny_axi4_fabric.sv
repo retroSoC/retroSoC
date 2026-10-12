@@ -1,47 +1,50 @@
 // Copyright (c) 2026 Yuchi Miao
 // SPDX-License-Identifier: MulanPSL-2.0
 `include "mmap_define.svh"
+`include "tiny_topology.svh"
 
-// Three reserved owner slots, 23 independently owned targets. CPU admits one
+// Three active owners and topology-selected independent targets. CPU admits one
 // combined operation; DMA and SDIO each admit one read and one write. IDs are
 // unchanged: saved target ownership, not ID expansion, routes all responses.
 module tiny_axi4_fabric (
-    input  logic                       clk_i,
-    input  logic                       rst_n_i,
-    input  logic                       perf_enable_i,
-    input  logic                       perf_clear_i,
-    input  logic                       target_rst_n_i     [23],
-           axi4_if.slave               masters            [ 3],
-           axi4_if.master              targets            [23],
-    output logic          [ 5:0]       fault_valid_o,
-    output logic          [ 5:0][31:0] fault_addr_o,
-    output logic          [ 5:0][ 1:0] fault_resp_o,
-    output logic          [ 5:0]       fault_instruction_o,
-    output logic          [ 2:0]       owner_idle_o,
-    output logic          [22:0]       target_idle_o,
-    output logic          [63:0]       cpu_wait_o,
-    output logic          [63:0]       dma_wait_o
+    input logic clk_i,
+    input logic rst_n_i,
+    input logic perf_enable_i,
+    input logic perf_clear_i,
+    input logic target_rst_n_i[`RETROSOC_TINY__TARGET_COUNT],
+    axi4_if.slave masters[3],
+    axi4_if.master targets[`RETROSOC_TINY__TARGET_COUNT],
+    output logic [5:0] fault_valid_o,
+    output logic [5:0][31:0] fault_addr_o,
+    output logic [5:0][1:0] fault_resp_o,
+    output logic [5:0] fault_instruction_o,
+    output logic [2:0] owner_idle_o,
+    output logic [`RETROSOC_TINY__TARGET_COUNT-1:0] target_idle_o,
+    output logic [63:0] cpu_wait_o,
+    output logic [63:0] dma_wait_o
 );
+  localparam logic [4:0] DecodeErrorTarget = 5'(`RETROSOC_TINY__DECODE_ERROR);
+  localparam logic [4:0] ProtocolErrorTarget = 5'(`RETROSOC_TINY__PROTOCOL_ERROR);
   logic [5:0] s_busy_d, s_busy_q, s_admit, s_done, s_eligible;
   logic s_cpu_prefer_write_d, s_cpu_prefer_write_q;
   logic [2:0][4:0] s_read_target, s_write_target;
-  logic [22:0][2:0] s_arready, s_awready, s_wready, s_rvalid, s_bvalid;
-  logic [22:0][ 2:0][36:0] s_rdata;
-  logic [22:0][ 2:0][ 3:0] s_bdata;
-  logic [ 2:0][36:0]       s_read_return;
-  logic [ 2:0][ 3:0]       s_write_return;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][2:0] s_arready, s_awready, s_wready, s_rvalid, s_bvalid;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][36:0] s_rdata;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][ 3:0] s_bdata;
+  logic [                             2:0][36:0]       s_read_return;
+  logic [                             2:0][ 3:0]       s_write_return;
   logic [2:0] s_master_arready, s_master_awready, s_master_wready, s_master_rvalid, s_master_bvalid;
   logic [2:0] s_arvalid, s_awvalid;
   logic [1:0][63:0] s_wait_d, s_wait_q;
-  logic [22:0] s_fault_valid, s_fault_write, s_fault_instruction;
-  logic [22:0][31:0] s_fault_addr;
-  logic [22:0][1:0] s_fault_master, s_fault_resp;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0] s_fault_valid, s_fault_write, s_fault_instruction;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][31:0] s_fault_addr;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][1:0] s_fault_master, s_fault_resp;
 
   function automatic logic [4:0] decode_target(input logic [31:0] addr_i);
     if (`SOC_ADDR_IS_SRAM(addr_i)) return {3'd0, addr_i[16:15]};
     if (`SOC_ADDR_IS_FLASH(addr_i) || `SOC_ADDR_IS_XPI(addr_i)) return 5'd4;
     `include "tiny_fabric_decode.svh"
-    return 5'd21;
+    return DecodeErrorTarget;
   endfunction
   function automatic logic [4:0] checked_target(input logic [31:0] addr_i, input logic [7:0] len_i,
                                                 input logic [2:0] size_i, input logic [1:0] burst_i,
@@ -56,12 +59,14 @@ module tiny_axi4_fabric (
         last_addr[32] || (last_addr[31:12] != addr_i[31:12]) ||
         (decode_target(
             last_addr[31:0]
-        ) != decoded) || ((decoded >= 5'd5) && (decoded <= 5'd20) && (len_i != 8'd0)))
-      return 5'd22;
+        ) != decoded) || ((decoded >= 5'd5) && (decoded < DecodeErrorTarget) && (len_i != 8'd0)))
+      return ProtocolErrorTarget;
     if (instruction_i && !(
         `SOC_ADDR_IS_FLASH(addr_i)
-        || ((addr_i >= 32'h5000_0000) && (addr_i < 32'h5400_0000))))
-      return ((decoded >= 5'd5) && (decoded <= 5'd20)) ? 5'd22 : 5'd21;
+        || ((addr_i >= 32'h5000_0000) && (addr_i < 32'h5400_0000)))) begin
+      if ((decoded >= 5'd5) && (decoded < DecodeErrorTarget)) return ProtocolErrorTarget;
+      return DecodeErrorTarget;
+    end
     return decoded;
   endfunction
 
@@ -106,7 +111,7 @@ module tiny_axi4_fabric (
     fault_addr_o        = '0;
     fault_resp_o        = '0;
     fault_instruction_o = '0;
-    for (int target_index = 0; target_index < 23; target_index++) begin
+    for (int target_index = 0; target_index < `RETROSOC_TINY__TARGET_COUNT; target_index++) begin
       s_master_arready |= s_arready[target_index];
       s_master_awready |= s_awready[target_index];
       s_master_wready |= s_wready[target_index];
@@ -179,7 +184,9 @@ module tiny_axi4_fabric (
             masters[owner].rlast, masters[owner].ruser} = s_read_return[owner];
     assign {masters[owner].bid, masters[owner].bresp, masters[owner].buser} = s_write_return[owner];
   end
-  for (genvar target_index = 0; target_index < 23; target_index++) begin : gen_target
+  for (
+      genvar target_index = 0; target_index < `RETROSOC_TINY__TARGET_COUNT; target_index++
+  ) begin : gen_target
     axi4_if #(
         .ADDR_WIDTH(32),
         .DATA_WIDTH(32),
@@ -260,8 +267,8 @@ module tiny_axi4_fabric (
   assert property (@(posedge clk_i) disable iff (!rst_n_i) (s_admit & s_busy_q) == 6'd0);
   assert property (@(posedge clk_i) disable iff (!rst_n_i) (s_done & ~s_busy_q) == 6'd0);
   for (genvar owner = 0; owner < 3; owner++) begin : gen_route_assert
-    logic [22:0] s_reads, s_writes;
-    for (genvar t = 0; t < 23; t++) begin : gen_column
+    logic [`RETROSOC_TINY__TARGET_COUNT-1:0] s_reads, s_writes;
+    for (genvar t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin : gen_column
       assign s_reads[t]  = s_rvalid[t][owner];
       assign s_writes[t] = s_bvalid[t][owner];
     end

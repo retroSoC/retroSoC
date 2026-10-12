@@ -420,6 +420,8 @@ endif
 
 ifeq ($(HAVE_SVA), NO)
     DEF_LIST += +define+SV_ASSRT_DISABLE
+else ifeq ($(SOC),TINY)
+    DEF_LIST += +define+HAVE_SVA
 endif
 
 ifeq ($(HAVE_HP), YES)

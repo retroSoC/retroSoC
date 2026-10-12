@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
-  "cpu": {"module": "hazard3_cpu_2port", "local_ports": 2, "data_outstanding": 1},
+  "cpu": {
+    "module": "hazard3_cpu_2port",
+    "local_ports": 2,
+    "data_outstanding": 1
+  },
   "main_sram": {
     "groups": 4,
     "group_bytes": 32768,
@@ -11,23 +15,36 @@
     "external_attachment": "per-target-P5"
   },
   "fabric": {
-    "owners": ["cpu_slow", "central_dma", "sdio_reserved"],
-    "active_owners": [0, 1],
+    "owners": [
+      "cpu_slow",
+      "central_dma",
+      "sdio"
+    ],
+    "active_owners": [
+      0,
+      1,
+      2
+    ],
     "cpu_combined_outstanding": 1,
     "dma_direction_outstanding": 1,
     "sdio_direction_outstanding": 1,
     "target_combined_outstanding": 1,
-    "sram_targets": [0, 1, 2, 3],
+    "sram_targets": [
+      0,
+      1,
+      2,
+      3
+    ],
     "xpi_target": 4,
     "apb_target_base": 5,
-    "decode_error_target": 21,
-    "protocol_error_target": 22,
-    "target_count": 23
+    "decode_error_target": 25,
+    "protocol_error_target": 26,
+    "target_count": 27
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,
   "external_irq_count": 30,
-  "dma_channels": 4,
+  "dma_channels": 8,
   "apb_targets": [
     {
       "name": "gpio",
@@ -40,12 +57,6 @@
       "name": "uart0",
       "regions": [
         "APB4_UART0"
-      ]
-    },
-    {
-      "name": "uart1",
-      "regions": [
-        "APB4_UART1"
       ]
     },
     {
@@ -64,12 +75,6 @@
       "name": "i2c0",
       "regions": [
         "APB4_I2C0"
-      ]
-    },
-    {
-      "name": "i2c1",
-      "regions": [
-        "APB4_I2C1"
       ]
     },
     {
@@ -125,6 +130,42 @@
       "regions": [
         "APB4_WDG"
       ]
+    },
+    {
+      "name": "rng",
+      "regions": [
+        "APB4_RNG"
+      ]
+    },
+    {
+      "name": "crc",
+      "regions": [
+        "APB4_CRC"
+      ]
+    },
+    {
+      "name": "ws2812",
+      "regions": [
+        "APB4_WS2812"
+      ]
+    },
+    {
+      "name": "crypto",
+      "regions": [
+        "APB4_CRYPTO"
+      ]
+    },
+    {
+      "name": "i2s",
+      "regions": [
+        "APB4_I2S"
+      ]
+    },
+    {
+      "name": "sdio",
+      "regions": [
+        "APB4_SDIO0"
+      ]
     }
   ],
   "interrupts": [
@@ -159,9 +200,19 @@
       "signal": "u_i2c0_if.irq_o"
     },
     {
+      "name": "i2s",
+      "core_bit": 8,
+      "signal": "u_i2s_if.irq_o"
+    },
+    {
       "name": "xpi",
       "core_bit": 9,
       "signal": "s_xpi_irq"
+    },
+    {
+      "name": "sdio",
+      "core_bit": 10,
+      "signal": "u_sdio_if.irq_o"
     },
     {
       "name": "pwm",
@@ -179,14 +230,19 @@
       "signal": "u_wdg_if.irq_o"
     },
     {
+      "name": "rng",
+      "core_bit": 16,
+      "signal": "s_rng_irq"
+    },
+    {
+      "name": "ws2812",
+      "core_bit": 17,
+      "signal": "u_ws2812_if.irq_o"
+    },
+    {
       "name": "gpio",
       "core_bit": 18,
       "signal": "u_gpio_if.irq_o"
-    },
-    {
-      "name": "i2c1",
-      "core_bit": 19,
-      "signal": "u_i2c1_if.irq_o"
     },
     {
       "name": "dma",
@@ -194,20 +250,18 @@
       "signal": "s_dma_irq"
     },
     {
-      "name": "uart1",
-      "core_bit": 26,
-      "signal": "u_uart1_if.irq_o"
+      "name": "crypto",
+      "core_bit": 23,
+      "signal": "s_crypto_irq"
     }
   ],
   "gpio_alt_functions": [
     {
       "pin": 0,
       "alt0": {
-        "inputs": [
-          "u_uart0_if.cts_n_i"
-        ],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "inputs": [],
+        "do": "u_sdio_if.sck_o",
+        "oe": "1'b1"
       },
       "alt1": {
         "inputs": [],
@@ -218,9 +272,11 @@
     {
       "pin": 1,
       "alt0": {
-        "inputs": [],
-        "do": "u_uart0_if.rts_n_o",
-        "oe": "1'b1"
+        "inputs": [
+          "u_sdio_if.cmd_di_i"
+        ],
+        "do": "u_sdio_if.cmd_do_o",
+        "oe": "u_sdio_if.cmd_oe_o"
       },
       "alt1": {
         "inputs": [],
@@ -232,10 +288,10 @@
       "pin": 2,
       "alt0": {
         "inputs": [
-          "u_pwm_if.sync_i"
+          "u_sdio_if.dat_di_i[0]"
         ],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "u_sdio_if.dat_do_o[0]",
+        "oe": "u_sdio_if.dat_oe_o[0]"
       },
       "alt1": {
         "inputs": [],
@@ -246,35 +302,242 @@
     {
       "pin": 3,
       "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[1]"
+        ],
+        "do": "u_sdio_if.dat_do_o[1]",
+        "oe": "u_sdio_if.dat_oe_o[1]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 4,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[2]"
+        ],
+        "do": "u_sdio_if.dat_do_o[2]",
+        "oe": "u_sdio_if.dat_oe_o[2]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 5,
+      "alt0": {
+        "inputs": [
+          "u_sdio_if.dat_di_i[3]"
+        ],
+        "do": "u_sdio_if.dat_do_o[3]",
+        "oe": "u_sdio_if.dat_oe_o[3]"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 6,
+      "alt0": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 7,
+      "alt0": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 8,
+      "alt0": {
+        "inputs": [],
+        "do": "u_uart0_if.tx_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[0]",
+        "oe": "u_pwm_if.oe_o[0]"
+      }
+    },
+    {
+      "pin": 9,
+      "alt0": {
+        "inputs": [
+          "u_uart0_if.rx_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[1]",
+        "oe": "u_pwm_if.oe_o[1]"
+      }
+    },
+    {
+      "pin": 10,
+      "alt0": {
+        "inputs": [
+          "u_i2c0_if.scl_i"
+        ],
+        "do": "u_i2c0_if.scl_o",
+        "oe": "u_i2c0_if.scl_oe_o"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[2]",
+        "oe": "u_pwm_if.oe_o[2]"
+      }
+    },
+    {
+      "pin": 11,
+      "alt0": {
+        "inputs": [
+          "u_i2c0_if.sda_i"
+        ],
+        "do": "u_i2c0_if.sda_o",
+        "oe": "u_i2c0_if.sda_oe_o"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "u_pwm_if.pwm_o[3]",
+        "oe": "u_pwm_if.oe_o[3]"
+      }
+    },
+    {
+      "pin": 12,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.sclk_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 13,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.lrck_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 14,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.dacdat_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 15,
+      "alt0": {
+        "inputs": [
+          "u_i2s_if.adcdat_i"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 16,
+      "alt0": {
+        "inputs": [],
+        "do": "u_i2s_if.mclk_o",
+        "oe": "1'b1"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 17,
+      "alt0": {
+        "inputs": [
+          "s_audio_pad_clk"
+        ],
+        "do": "1'b0",
+        "oe": "1'b0"
+      },
+      "alt1": {
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
+      }
+    },
+    {
+      "pin": 18,
+      "alt0": {
         "inputs": [],
         "do": "u_pwm_if.pwm_o[0]",
         "oe": "u_pwm_if.oe_o[0]"
       },
       "alt1": {
-        "inputs": [
-          "u_i2c1_if.scl_i"
-        ],
-        "do": "u_i2c1_if.scl_o",
-        "oe": "u_i2c1_if.scl_oe_o"
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
       }
     },
     {
-      "pin": 4,
+      "pin": 19,
       "alt0": {
         "inputs": [],
         "do": "u_pwm_if.pwm_o[1]",
         "oe": "u_pwm_if.oe_o[1]"
       },
       "alt1": {
-        "inputs": [
-          "u_i2c1_if.sda_i"
-        ],
-        "do": "u_i2c1_if.sda_o",
-        "oe": "u_i2c1_if.sda_oe_o"
+        "inputs": [],
+        "do": "1'b0",
+        "oe": "1'b0"
       }
     },
     {
-      "pin": 5,
+      "pin": 20,
       "alt0": {
         "inputs": [],
         "do": "u_pwm_if.pwm_o[2]",
@@ -287,7 +550,7 @@
       }
     },
     {
-      "pin": 6,
+      "pin": 21,
       "alt0": {
         "inputs": [],
         "do": "u_pwm_if.pwm_o[3]",
@@ -300,37 +563,7 @@
       }
     },
     {
-      "pin": 7,
-      "alt0": {
-        "inputs": [
-          "u_i2c0_if.scl_i"
-        ],
-        "do": "u_i2c0_if.scl_o",
-        "oe": "u_i2c0_if.scl_oe_o"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 8,
-      "alt0": {
-        "inputs": [
-          "u_i2c0_if.sda_i"
-        ],
-        "do": "u_i2c0_if.sda_o",
-        "oe": "u_i2c0_if.sda_oe_o"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 9,
+      "pin": 22,
       "alt0": {
         "inputs": [
           "u_pwm_if.fault_i"
@@ -345,178 +578,11 @@
       }
     },
     {
-      "pin": 10,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 11,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 12,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 13,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 14,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 15,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 16,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 17,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 18,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 19,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 20,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 21,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
-      "pin": 22,
-      "alt0": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      },
-      "alt1": {
-        "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
-      }
-    },
-    {
       "pin": 23,
       "alt0": {
-        "inputs": [],
+        "inputs": [
+          "u_pwm_if.sync_i"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       },
@@ -529,7 +595,9 @@
     {
       "pin": 24,
       "alt0": {
-        "inputs": [],
+        "inputs": [
+          "u_pwm_if.capture_i[0]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       },
@@ -542,7 +610,9 @@
     {
       "pin": 25,
       "alt0": {
-        "inputs": [],
+        "inputs": [
+          "u_pwm_if.capture_i[1]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       },
@@ -556,8 +626,8 @@
       "pin": 26,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "u_ws2812_if.dat_o",
+        "oe": "1'b1"
       },
       "alt1": {
         "inputs": [],
@@ -595,8 +665,8 @@
       "pin": 29,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "xpi.nss_o[1]",
+        "oe": "1'b1"
       },
       "alt1": {
         "inputs": [],
@@ -608,13 +678,11 @@
       "pin": 30,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "xpi.nss_o[2]",
+        "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [
-          "u_pwm_if.capture_i[0]"
-        ],
+        "inputs": [],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -623,16 +691,22 @@
       "pin": 31,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "xpi.nss_o[3]",
+        "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [
-          "u_pwm_if.capture_i[1]"
-        ],
+        "inputs": [],
         "do": "1'b0",
         "oe": "1'b0"
       }
     }
-  ]
+  ],
+  "dma_request_mask": "0x31ff",
+  "private_crypto": {
+    "banks": 6,
+    "bank_bytes": 4096,
+    "macro_instance": "u_soc.u_crypto.u_storage.gen_bank[{bank}].gen_macro.u_sram.u_mem",
+    "clock_domain": "system",
+    "logical_domain": "PCLK (SAFE24 alias)"
+  }
 }

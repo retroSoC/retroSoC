@@ -11,15 +11,15 @@
 # retroSoC Tiny (retrosoc_tiny_asic) product overlay.
 #
 # Clock intent: the canonical contract (rtl/tiny/integration/
-# clock_reset_domains.json) owns two domains, system (SAFE24 external clock)
-# and jtag. The ICS55 PLL_TOP macro is present but parked off (EN=0) and is
+# clock_reset_domains.json) owns system (SAFE24 external clock), jtag and
+# the independent GPIO17 AUDIO reference. The ICS55 PLL_TOP macro is present but parked off (EN=0) and is
 # not a clock source; it carries no characterized timing arcs yet, so no PLL
 # overlay clock is created here. See docs/ip/tiny-soc.md (TINY-055).
 
 namespace eval product {}
 
 proc product::expected_clock_domains {} {
-    return {system jtag}
+    return {system jtag audio}
 }
 
 proc product::custom_clock_domains {} {
@@ -27,7 +27,7 @@ proc product::custom_clock_domains {} {
 }
 
 proc product::clock_names {} {
-    return {clk_system clk_jtag}
+    return {clk_system clk_jtag clk_audio}
 }
 
 proc product::io_interface_groups {} {

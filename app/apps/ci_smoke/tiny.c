@@ -20,12 +20,15 @@
 #include <retrosoc/lib/printf.h>
 
 #include "mcu_acceptance.h"
+#include "mcu_shared_acceptance.h"
 
 static _Alignas(64) uint32_t rs_mcu_source[80];
 static _Alignas(64) uint32_t rs_mcu_destination[80];
 static volatile uint32_t rs_mcu_irq_count;
 static volatile uint32_t rs_mcu_exception_count;
 static volatile bool rs_mcu_handler_failed;
+static volatile bool rs_mcu_probes_active;
+static uint8_t rs_mcu_io_code;
 
 static void rs_mcu_finish(bool pass, uint8_t code) {
     printf("Tiny acceptance %s code=%u\n", pass ? "passed" : "failed", code);
@@ -39,8 +42,8 @@ static void rs_mcu_finish(bool pass, uint8_t code) {
 static void rs_mcu_exception(uintptr_t mcause, uintptr_t stack_pointer) {
     volatile uint32_t *const frame = (volatile uint32_t *)stack_pointer;
 
-    if ((mcause != UINT32_C(2)) && (mcause != UINT32_C(5))) {
-        rs_mcu_handler_failed = true;
+    if (!rs_mcu_probes_active || ((mcause != UINT32_C(2)) && (mcause != UINT32_C(5)))) {
+        rs_mcu_finish(false, 11U);
     }
     ++rs_mcu_exception_count;
     /* system_irq.S saves MEPC in slot 11 of the RV32 trap frame. Both test
@@ -75,7 +78,7 @@ static bool rs_mcu_dma(void) {
         rs_mcu_source[index] = UINT32_C(0xa519c300) ^ index;
         rs_mcu_destination[index] = UINT32_C(0xcccccccc);
     }
-    if ((rs_dma_configure(4U, &config) != RS_EINVAL) ||
+    if ((rs_dma_configure(8U, &config) != RS_EINVAL) ||
         (rs_dma_configure(RS_DMA_CHANNEL_BULK, &config) != RS_OK) ||
         (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) ||
         (rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK)) {
@@ -91,7 +94,7 @@ static bool rs_mcu_dma(void) {
         return false;
     }
     config.kind = RS_DMA_KIND_MM_TO_STREAM;
-    config.request = RS_DMA_REQUEST_I2S_TX;
+    config.request = RS_DMA_REQUEST_DVP_RX;
     if (rs_dma_config_validate(0U, &config) == RS_OK) {
         return false;
     }
@@ -164,9 +167,7 @@ static bool rs_mcu_io(void) {
     const uint32_t transmit[4] = {UINT32_C(0x54), UINT32_C(0x49), UINT32_C(0x4e), UINT32_C(0x59)};
     uint32_t receive[4] = {0U};
     rs_gpio_capabilities_t capabilities;
-    rs_uart_timing_t timing;
     bool high;
-    uint32_t timeout = UINT32_C(10000);
     uint8_t payload = UINT8_C(0x55);
     const rs_i2c_transfer_t transfer = {
         .address = UINT16_C(0x50),
@@ -175,54 +176,51 @@ static bool rs_mcu_io(void) {
     };
     rs_i2c_status_t status;
 
+    rs_mcu_io_code = 40U;
     if ((rs_gpio_get_capabilities(&capabilities) != RS_OK) ||
         ((capabilities.pad_features & (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)) !=
          ((RS_SOC_GPIO_HAS_PULLS != 0U) ? (RS_GPIO_PAD_CAP_PULL_UP | RS_GPIO_PAD_CAP_PULL_DOWN)
                                         : 0U)) ||
-        (rs_gpio_configure(15U, &pull_up) !=
+        (rs_gpio_configure(27U, &pull_up) !=
          ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
-        (rs_gpio_configure(15U, &pull_down) !=
+        (rs_gpio_configure(27U, &pull_down) !=
          ((RS_SOC_GPIO_HAS_PULLS != 0U) ? RS_OK : RS_ENOTSUP)) ||
-        (rs_gpio_configure(15U, &output) != RS_OK) || (rs_gpio_write(15U, true) != RS_OK) ||
-        (rs_gpio_read(15U, &high) != RS_OK) || !high || (rs_gpio_write(15U, false) != RS_OK) ||
-        (rs_gpio_read(15U, &high) != RS_OK) || high) {
+        (rs_gpio_configure(27U, &output) != RS_OK) || (rs_gpio_write(27U, true) != RS_OK) ||
+        (rs_gpio_read(27U, &high) != RS_OK) || !high || (rs_gpio_write(27U, false) != RS_OK) ||
+        (rs_gpio_read(27U, &high) != RS_OK) || high) {
         return false;
     }
+    rs_mcu_io_code = 41U;
     if ((rs_uart_configure(&loopback, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_write_dma(transmit, 4U, RS_TIMEOUT_DEFAULT) != RS_OK) ||
         (rs_uart_read_dma(receive, 4U, RS_TIMEOUT_DEFAULT) != RS_OK)) {
         return false;
     }
+    rs_mcu_io_code = 42U;
     for (uint32_t index = 0U; index < 4U; ++index) {
         if (transmit[index] != receive[index]) {
             return false;
         }
     }
+    rs_mcu_io_code = 43U;
     if ((rs_uart_init(RS_CPU_CLOCK_HZ, UART_BPS) != RS_OK) ||
-        (rs_uart_timing_calculate(RS_CPU_CLOCK_HZ, UART_BPS, &timing) != RS_OK)) {
-        return false;
-    }
-    /* UART1 uses the same register ABI; the current shared high-level UART
-     * API selects UART0. Exercise UART1 PIO and its internal loopback here. */
-    RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x00)) = timing.baud_integer;
-    RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x04)) = timing.baud_fraction;
-    RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x08)) = UINT32_C(3);
-    RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x0c)) = UINT32_C(7);
-    RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x10)) = UINT32_C(0x5a);
-    while (((RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x18)) & UINT32_C(0x40)) != 0U) &&
-           (timeout != 0U)) {
-        --timeout;
-    }
-    if ((timeout == 0U) || ((RS_SOC_REG32(RS_SOC_APB4_UART1_BASE, UINT32_C(0x14)) &
-                             UINT32_C(0xff)) != UINT32_C(0x5a))) {
+        (rs_i2c_init(RS_I2C_BUS_1, RS_CPU_CLOCK_HZ, UINT32_C(100000)) != RS_ENOTSUP)) {
         return false;
     }
     /* There is no slave on the pulled-up acceptance board: a real address
      * transaction must terminate as NACK rather than stick waiting on the bus. */
-    for (uint32_t bus = 0U; bus < 2U; ++bus) {
+    for (uint32_t bus = 0U; bus < 1U; ++bus) {
+        rs_mcu_io_code = 44U;
         const rs_i2c_bus_t instance = (bus == 0U) ? RS_I2C_BUS_0 : RS_I2C_BUS_1;
-        if ((rs_i2c_init(instance, RS_CPU_CLOCK_HZ, UINT32_C(100000)) != RS_OK) ||
-            (rs_i2c_transfer(instance, &transfer, RS_TIMEOUT_DEFAULT) != RS_EIO) ||
+        rs_status_t init_result = rs_i2c_init(instance, RS_CPU_CLOCK_HZ, UINT32_C(100000));
+        rs_status_t transfer_result = init_result == RS_OK
+                                          ? rs_i2c_transfer(instance, &transfer, RS_TIMEOUT_DEFAULT)
+                                          : init_result;
+        printf("R2_P6_IO i2c_init=%d i2c_transfer=%d\n", (int)init_result, (int)transfer_result);
+        if (rs_i2c_get_status(instance, &status) == RS_OK) {
+            printf("R2_P6_IO i2c_errors=%lx\n", (unsigned long)status.errors);
+        }
+        if ((init_result != RS_OK) || (transfer_result != RS_EIO) ||
             (rs_i2c_get_status(instance, &status) != RS_OK) ||
             ((status.errors & RS_I2C_ERROR_ADDR_NACK) == 0U)) {
             return false;
@@ -255,6 +253,7 @@ int main(void) {
     rs_watchdog_status_t watchdog = {0};
     uint64_t before;
     uint64_t after;
+    uint8_t p6_result;
     const rs_watchdog_config_t watchdog_config = {
         .prescale_divider = 1U,
         .timeout_ticks = UINT32_C(20000),
@@ -285,11 +284,14 @@ int main(void) {
     }
     if ((rs_mcu_compressed_probe() != 42U) || ((__RV_CSR_READ(CSR_MISA) & UINT32_C(1)) != 0U) ||
         (rs_irq_register_exception(2U, rs_mcu_exception) != RS_OK) ||
-        (rs_irq_register_exception(5U, rs_mcu_exception) != RS_OK)) {
+        (rs_irq_register_exception(5U, rs_mcu_exception) != RS_OK) ||
+        (rs_irq_register_exception(7U, rs_mcu_exception) != RS_OK)) {
         rs_mcu_finish(false, 4U);
     }
+    rs_mcu_probes_active = true;
     rs_mcu_atomic_probe(rs_mcu_source);
     rs_mcu_unmapped_probe();
+    rs_mcu_probes_active = false;
     if ((rs_mcu_exception_count != 2U) || rs_mcu_handler_failed ||
         (rs_sysctrl_get_fault_status(&fault) != RS_OK) || !fault.pending ||
         (fault.address != UINT32_C(0x38000000)) || (rs_sysctrl_clear_fault() != RS_OK)) {
@@ -307,7 +309,11 @@ int main(void) {
         rs_mcu_finish(false, 8U);
     }
     if (!rs_mcu_io()) {
-        rs_mcu_finish(false, 10U);
+        rs_mcu_finish(false, rs_mcu_io_code);
+    }
+    p6_result = rs_tiny_p6_acceptance();
+    if (p6_result != 0U) {
+        rs_mcu_finish(false, p6_result);
     }
     printf("Tiny CPU/DMA/IRQ/RTC/I/O passed; exercising watchdog reset\n");
     if ((rs_watchdog_configure(&watchdog_config) != RS_OK) ||

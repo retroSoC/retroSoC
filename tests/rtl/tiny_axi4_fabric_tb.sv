@@ -1,8 +1,9 @@
+`include "tiny_topology.svh"
 `timescale 1ns / 1ps
 module tiny_axi4_fabric_tb;
   logic clk_i = 0;
   logic rst_n_i = 0;
-  logic target_rst_n[23];
+  logic target_rst_n[`RETROSOC_TINY__TARGET_COUNT];
   always #5 clk_i = !clk_i;
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -18,7 +19,7 @@ module tiny_axi4_fabric_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) targets[23] (
+  ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -27,8 +28,8 @@ module tiny_axi4_fabric_tb;
   logic [5:0][ 1:0] fault_resp;
   logic [63:0] cpu_wait, dma_wait;
   integer             faults = 0;
-  integer             completions    [ 3];
-  integer             target_requests[23];
+  integer             completions    [                           3];
+  integer             target_requests[`RETROSOC_TINY__TARGET_COUNT];
   logic   [2:0][31:0] awaddr;
   logic   [2:0][ 7:0] awlen;
   logic   [2:0][ 2:0] awsize;
@@ -78,7 +79,7 @@ module tiny_axi4_fabric_tb;
       .cpu_wait_o         (cpu_wait),
       .dma_wait_o         (dma_wait)
   );
-  for (genvar target = 0; target < 23; target++) begin : gen_target_reset
+  for (genvar target = 0; target < `RETROSOC_TINY__TARGET_COUNT; target++) begin : gen_target_reset
     assign target_rst_n[target] = rst_n_i;
   end
   always @(posedge clk_i) faults <= faults + $countones(fault_valid);
@@ -126,11 +127,11 @@ module tiny_axi4_fabric_tb;
     assign masters[m].aruser   = '0;
     assign masters[m].wuser    = '0;
   end
-  for (genvar t = 0; t < 23; t++) begin : gen_target
+  for (genvar t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin : gen_target
     // Deterministic terminal responder allows independent checks of routing,
     // burst length and ID preservation without sharing the fabric decoder.
     axi4_error_slave #(
-        .Response(t == 21 ? 2'b11 : (t == 22 ? 2'b10 : 2'b00))
+        .Response(t == `RETROSOC_TINY__DECODE_ERROR ? 2'b11 : (t == `RETROSOC_TINY__PROTOCOL_ERROR ? 2'b10 : 2'b00))
     ) u_response (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
@@ -273,7 +274,7 @@ module tiny_axi4_fabric_tb;
     join
     if (completions[0]!=7 || completions[1]!=6 || faults!=7 ||
         target_requests[0]!=2 || target_requests[3]!=1 || target_requests[4]!=1 ||
-        target_requests[6]!=2 || target_requests[21]!=3 || target_requests[22]!=4)
+        target_requests[6]!=2 || target_requests[`RETROSOC_TINY__DECODE_ERROR]!=3 || target_requests[`RETROSOC_TINY__PROTOCOL_ERROR]!=4)
       $fatal(1, "accounting/fairness mismatch faults=%0d", faults);
     read_request(0, 32'h30000000, 1, 2, 1, 0);
     arprot[0] = 3'b100;

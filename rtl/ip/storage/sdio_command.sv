@@ -88,7 +88,10 @@ module sdio_command #(
   assign s_frame_crc_error = s_frame_crc != s_resp_shift_next[7:1];
   assign s_frame_index_error = s_resp_shift_next[45:40] != s_cmd_index_q;
 
-  assign cmd_oe_o = (s_state_q == Send) || (s_tx_final_hold_q && !sample_tick_i);
+  // Admission can coincide with an SDCLK rising edge. Do not expose the
+  // start bit until the first scheduled launch, or the card sees it twice.
+  assign cmd_oe_o = ((s_state_q == Send) && (s_tx_started_q || launch_tick_i)) ||
+                    (s_tx_final_hold_q && !sample_tick_i);
   assign cmd_do_o = ((s_state_q == Send) || s_tx_final_hold_q) ? s_tx_shift_q[47] : 1'b1;
   assign busy_o = (s_state_q != Idle) && (s_state_q != Complete);
   assign done_o = s_done_q;

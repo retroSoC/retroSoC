@@ -92,9 +92,13 @@ void rs_dma_test_irq_restore(uint32_t saved) {
         dma_irq_result = rs_dma_session_acquire(&dma_irq_owner, 3U);
         if (dma_irq_result == RS_OK) {
             const rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM,
-                .source = 0x3000U, .destination = 0x4000U, .byte_count = 16U,
-                .width = RS_DMA_WIDTH_32, .source_increment = true,
-                .destination_increment = true, .burst_beats = 1U};
+                                            .source = 0x3000U,
+                                            .destination = 0x4000U,
+                                            .byte_count = 16U,
+                                            .width = RS_DMA_WIDTH_32,
+                                            .source_increment = true,
+                                            .destination_increment = true,
+                                            .burst_beats = 1U};
             dma_irq_result = rs_dma_session_configure(&dma_irq_owner, &config);
         }
     }
@@ -147,18 +151,21 @@ static void ws_test_reset(void) {
 }
 
 static int test_dma_tcd_preemption(void) {
-    static _Alignas(64) rs_dma_tcd_t tcd = {
-        .source = 0x1000U, .destination = 0x2000U, .byte_count = 32U, .y_count = 1U,
-        .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
-                   (UINT32_C(1) << RS_DMA_TCD_BURST_SHIFT)};
+    static _Alignas(64)
+        rs_dma_tcd_t tcd = {.source = 0x1000U,
+                            .destination = 0x2000U,
+                            .byte_count = 32U,
+                            .y_count = 1U,
+                            .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                                       (UINT32_C(1) << RS_DMA_TCD_BURST_SHIFT)};
     rs_status_t result;
     bool valid;
     ws_test_reset();
     dma_irq_pending = true;
     dma_irq_result = RS_OK;
     result = rs_dma_submit_tcd(3U, &tcd, 1U);
-    valid = (result == RS_ETIMEOUT) && (dma_irq_result == RS_EIO) &&
-            !dma_irq_pending && (dma_irq_enabled == 8U) &&
+    valid = (result == RS_ETIMEOUT) && (dma_irq_result == RS_EIO) && !dma_irq_pending &&
+            (dma_irq_enabled == 8U) &&
             (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) == (uint32_t)(uintptr_t)&tcd) &&
             (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) == 1U) &&
             (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) == tcd.source);
@@ -211,8 +218,7 @@ static int test_ws2812_completion_race(void) {
             return 4;
         }
         (void)rs_ws2812_dma_status(&transfer);
-        if (transfer.active || (transfer.result != RS_OK) ||
-            (ws_registers[0x24U / 4U] != 3U)) {
+        if (transfer.active || (transfer.result != RS_OK) || (ws_registers[0x24U / 4U] != 3U)) {
             return 5;
         }
     }
@@ -248,9 +254,14 @@ static int test_ws2812_completion_race(void) {
 
 static int test_dma_sessions(void) {
     rs_dma_session_t first = {0}, second = {0};
-    rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM, .source = 0x1000U,
-        .destination = 0x2000U, .byte_count = 32U, .width = RS_DMA_WIDTH_32,
-        .source_increment = true, .destination_increment = true, .burst_beats = 1U};
+    rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM,
+                              .source = 0x1000U,
+                              .destination = 0x2000U,
+                              .byte_count = 32U,
+                              .width = RS_DMA_WIDTH_32,
+                              .source_increment = true,
+                              .destination_increment = true,
+                              .burst_beats = 1U};
     ws_test_reset();
     if ((rs_dma_session_acquire(&first, 3U) != RS_OK) ||
         (rs_dma_session_acquire(&first, 2U) != RS_EIO) ||
@@ -262,13 +273,11 @@ static int test_dma_sessions(void) {
         return 1;
     }
     RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
-    if ((rs_dma_session_release(&first) != RS_EIO) ||
-        (rs_dma_session_abort(&first) != RS_OK)) {
+    if ((rs_dma_session_release(&first) != RS_EIO) || (rs_dma_session_abort(&first) != RS_OK)) {
         return 2;
     }
     RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
-    if ((rs_dma_session_release(&first) != RS_OK) ||
-        (rs_dma_session_release(&first) != RS_EIO) ||
+    if ((rs_dma_session_release(&first) != RS_OK) || (rs_dma_session_release(&first) != RS_EIO) ||
         (rs_dma_session_acquire(&second, 3U) != RS_OK) ||
         (rs_dma_session_release(&second) != RS_OK)) {
         return 3;
@@ -301,15 +310,13 @@ static int test_ws2812_refill(void) {
     ws_pixels[32] = 0U;
     if ((rs_ws2812_dma_begin(ws_pixels, 33U, 0U, 100U) != RS_OK) || (ws_pushed != 16U) ||
         (ws_registers[0x24U / 4U] != 8U) || (rs_ws2812_push(0U, 1U) != RS_EIO) ||
-        (rs_ws2812_start(1U) != RS_EIO) ||
-        (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
+        (rs_ws2812_start(1U) != RS_EIO) || (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
         return 4;
     }
     ws_registers[0x30U / 4U] = RS_WS2812_INTR_FIFO_LOW;
     (void)rs_ws2812_dma_service(1U);
     (void)rs_ws2812_dma_status(&transfer);
-    if ((transfer.batches != 0U) ||
-        ((ws_registers[0x30U / 4U] & RS_WS2812_INTR_FIFO_LOW) != 0U)) {
+    if ((transfer.batches != 0U) || ((ws_registers[0x30U / 4U] & RS_WS2812_INTR_FIFO_LOW) != 0U)) {
         return 5;
     }
     /* Hardware REMAINING includes queued words: it must never size the batch. */
@@ -345,8 +352,7 @@ static int test_ws2812_refill(void) {
     ws_registers[0x30U / 4U] = RS_WS2812_INTR_DONE;
     if ((rs_ws2812_dma_service(15U) != RS_OK) ||
         (rs_dma_session_acquire(&competitor, 3U) != RS_OK) ||
-        (rs_dma_session_release(&competitor) != RS_OK) ||
-        (ws_registers[0x24U / 4U] != 3U)) {
+        (rs_dma_session_release(&competitor) != RS_OK) || (ws_registers[0x24U / 4U] != 3U)) {
         return 11;
     }
     /* Wire DONE may precede a delayed final B. Retain the lease until both
@@ -907,7 +913,11 @@ static int test_sdio_helpers(void) {
     rs_sd_memory_info_t info = {0};
     uint32_t value;
 
-    if ((rs_sdio_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
+    if ((rs_sdio_clock_calculate(24000000U, 400000U, &clock) != RS_OK) ||
+        (clock.half_period != 30U) || (clock.actual_hz != 400000U) ||
+        (rs_sdio_clock_calculate(24000000U, 12000000U, &clock) != RS_OK) ||
+        (clock.half_period != 1U) || (clock.actual_hz != 12000000U) ||
+        (rs_sdio_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
         (clock.half_period != 90U) || (clock.actual_hz != 400000U) ||
         (rs_sdio_clock_calculate(100000000U, 50000000U, &clock) != RS_OK) ||
         (clock.half_period != 1U) || (clock.actual_hz != 50000000U)) {
@@ -1075,31 +1085,47 @@ rs_status_t rs_tiny_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
 
 static int test_tiny_dma_config_validation(void) {
     rs_dma_config_t config = {
-        .kind = RS_DMA_KIND_MM_TO_MM, .request = RS_DMA_REQUEST_SOFTWARE,
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
         .source = (uintptr_t)UINT32_C(0x30000000),
-        .destination = (uintptr_t)UINT32_C(0x30001000), .byte_count = 259U,
-        .width = RS_DMA_WIDTH_32, .source_increment = true, .destination_increment = true,
+        .destination = (uintptr_t)UINT32_C(0x30001000),
+        .byte_count = 259U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
         .burst_beats = 16U,
     };
     static _Alignas(64) rs_dma_tcd_t descriptor;
     if ((rs_tiny_dma_config_validate(3U, &config) != RS_OK) ||
-        (rs_tiny_dma_config_validate(4U, &config) != RS_EINVAL)) {
+        (rs_tiny_dma_config_validate(7U, &config) != RS_OK) ||
+        (rs_tiny_dma_config_validate(8U, &config) != RS_EINVAL)) {
         return 1;
     }
     config.kind = RS_DMA_KIND_MM_TO_STREAM;
     config.request = RS_DMA_REQUEST_I2S_TX;
     config.byte_count = 256U;
-    if (rs_tiny_dma_config_validate(0U, &config) != RS_EINVAL) {
+    if (rs_tiny_dma_config_validate(6U, &config) != RS_OK) {
         return 2;
     }
     descriptor.source = UINT32_C(0x30000000);
     descriptor.byte_count = 256U;
     descriptor.y_count = 1U;
     descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
-        ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
-        ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
-    if (rs_tiny_dma_tcd_validate(0U, &descriptor) != RS_ENOTSUP) {
+                         ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+                         ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(6U, &descriptor) != RS_OK) {
         return 3;
+    }
+    config.kind = RS_DMA_KIND_STREAM_TO_MM;
+    config.request = RS_DMA_REQUEST_DVP_RX;
+    if (rs_tiny_dma_config_validate(2U, &config) != RS_EINVAL) {
+        return 4;
+    }
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_DST_INC |
+                         ((uint32_t)RS_DMA_KIND_STREAM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
+                         ((uint32_t)RS_DMA_REQUEST_DVP_RX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_ENOTSUP) {
+        return 5;
     }
     return 0;
 }
@@ -2992,9 +3018,12 @@ static int test_npu_p6_reference_edge_ops(void) {
     uint8_t depthwise_weights[72] = {0U};
     int32_t depthwise_parameters[4] = {1, INT32_C(1073741824), 1, 0};
     rs_npu_p6_memory_t depthwise_memory = {
-        .arena = {.base = UINT32_C(0x1000), .bytes = sizeof(depthwise_arena), .data = depthwise_arena},
-        .weights =
-            {.base = UINT32_C(0x3000), .bytes = sizeof(depthwise_weights), .data = depthwise_weights},
+        .arena = {.base = UINT32_C(0x1000),
+                  .bytes = sizeof(depthwise_arena),
+                  .data = depthwise_arena},
+        .weights = {.base = UINT32_C(0x3000),
+                    .bytes = sizeof(depthwise_weights),
+                    .data = depthwise_weights},
         .params =
             {
                 .base = UINT32_C(0x2000),
@@ -3030,7 +3059,9 @@ static int test_npu_p6_reference_edge_ops(void) {
     {
         uint8_t average_arena[16] = {1U, 2U, 3U, 4U};
         rs_npu_p6_memory_t average_memory = {
-            .arena = {.base = UINT32_C(0x4000), .bytes = sizeof(average_arena), .data = average_arena},
+            .arena = {.base = UINT32_C(0x4000),
+                      .bytes = sizeof(average_arena),
+                      .data = average_arena},
             .weights = {.base = UINT32_C(0x5000), .bytes = 1U, .data = average_arena},
             .params = {.base = UINT32_C(0x6000), .bytes = 1U, .data = average_arena},
         };

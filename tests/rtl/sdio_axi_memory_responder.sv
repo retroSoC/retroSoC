@@ -141,7 +141,17 @@ module sdio_axi_memory_responder #(
   assign axi4.rresp = (s_read_error_q) ? `AXI4_RESP_SLAVE_ERROR : `AXI4_RESP_OKAY;
   assign axi4.rlast = s_read_bad_last_q || ((s_read_index_q + 1'b1) >= (s_read_len_q + 1'b1));
   assign axi4.ruser = '0;
-  assign axi4.rvalid = s_read_active_q;
+  integer s_read_gap = 0;
+  integer s_read_gap_count = 0;
+  task automatic set_read_gap(input integer cycles_i);
+    s_read_gap = cycles_i < 0 ? 0 : cycles_i;
+  endtask
+  always @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) s_read_gap_count <= 0;
+    else if (axi4.rvalid && axi4.rready) s_read_gap_count <= s_read_gap;
+    else if (s_read_gap_count != 0) s_read_gap_count <= s_read_gap_count - 1;
+  end
+  assign axi4.rvalid = s_read_active_q && (s_read_gap_count == 0);
 
   assign axi4.awready = !s_write_active_q && !axi4.bvalid && !s_aw_stall_q;
   assign axi4.wready = s_write_active_q && !s_w_stall_q;

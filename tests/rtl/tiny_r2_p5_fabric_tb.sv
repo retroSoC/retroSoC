@@ -1,8 +1,9 @@
+`include "tiny_topology.svh"
 `timescale 1ns / 1ps
 module tiny_r2_p5_fabric_tb;
   logic clk_i = 0;
   logic rst_n_i = 0;
-  logic target_rst_n[23];
+  logic target_rst_n[`RETROSOC_TINY__TARGET_COUNT];
   always #5 clk_i = !clk_i;
   axi4_if #(
       .ADDR_WIDTH(32),
@@ -18,7 +19,7 @@ module tiny_r2_p5_fabric_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) targets[23] (
+  ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -27,14 +28,15 @@ module tiny_r2_p5_fabric_tb;
   logic [5:0][ 1:0] fault_resp;
   logic [63:0] cpu_wait, dma_wait;
   integer faults = 0;
-  logic [22:0] hold_address = '0, hold_read = '0, hold_write = '0, hold_b = '0;
-  integer              error_beat              [23];
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0]
+      hold_address = '0, hold_read = '0, hold_write = '0, hold_b = '0;
+  integer              error_beat              [`RETROSOC_TINY__TARGET_COUNT];
   logic   [ 2:0]       error_last_wait = '0;
   logic                release_error = 0;
   integer              simultaneous_faults = 0;
   logic   [31:0]       seed = 32'h12345678;
-  integer              completions             [ 3];
-  integer              target_requests         [23];
+  integer              completions             [                           3];
+  integer              target_requests         [`RETROSOC_TINY__TARGET_COUNT];
   logic   [ 2:0][31:0] awaddr;
   logic   [ 2:0][ 7:0] awlen;
   logic   [ 2:0][ 2:0] awsize;
@@ -84,7 +86,7 @@ module tiny_r2_p5_fabric_tb;
       .cpu_wait_o         (cpu_wait),
       .dma_wait_o         (dma_wait)
   );
-  for (genvar target = 0; target < 23; target++) begin : gen_target_reset
+  for (genvar target = 0; target < `RETROSOC_TINY__TARGET_COUNT; target++) begin : gen_target_reset
     assign target_rst_n[target] = rst_n_i;
   end
   always @(posedge clk_i) begin
@@ -140,9 +142,9 @@ module tiny_r2_p5_fabric_tb;
     assign masters[m].aruser   = '0;
     assign masters[m].wuser    = '0;
   end
-  for (genvar t = 0; t < 23; t++) begin : gen_target
+  for (genvar t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin : gen_target
     tiny_p5_target_model #(
-        .ErrorResponse(t == 21 ? 3 : (t == 22 ? 2 : 0))
+        .ErrorResponse(t == `RETROSOC_TINY__DECODE_ERROR ? 3 : (t == `RETROSOC_TINY__PROTOCOL_ERROR ? 2 : 0))
     ) u_response (
         .clk_i         (clk_i),
         .rst_n_i       (rst_n_i),
@@ -346,13 +348,13 @@ module tiny_r2_p5_fabric_tb;
       end
     join
     // A waiting APB FIFO branch cannot block independent control admission.
-    hold_read[12] = 1;
+    hold_read[`RETROSOC_TINY__TARGET_XPI] = 1;
     fork
       read_request(1, 32'h10009000, 1, 2, 1, 0);
       begin
-        wait (!u_dut.target_idle_o[12]);
+        wait (!u_dut.target_idle_o[`RETROSOC_TINY__TARGET_XPI]);
         read_request(0, 32'h1000a000, 1, 2, 1, 0);
-        hold_read[12] = 0;
+        hold_read[`RETROSOC_TINY__TARGET_XPI] = 0;
       end
     join
     fork

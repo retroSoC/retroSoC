@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Yuchi Miao
 // SPDX-License-Identifier: MulanPSL-2.0
 `include "mmap_define.svh"
+`include "tiny_topology.svh"
 
 module retrosoc_tiny (
     input  logic                 clk_i,
@@ -21,10 +22,10 @@ module retrosoc_tiny (
     output logic           [7:0] test_code_o
 );
   logic s_por_rst_n, s_rst_n;
-  logic [16:0] s_leaf_rst_n;
+  logic [`RETROSOC_TINY__LEAF_COUNT-1:0] s_leaf_rst_n;
   logic s_fabric_rst_n, s_cpu_ready_rst_n;
-  logic s_master_rst_n [ 3];
-  logic s_target_rst_n [23];
+  logic s_master_rst_n [                           3];
+  logic s_target_rst_n [`RETROSOC_TINY__TARGET_COUNT];
   logic s_debug_halted;
   logic s_core_rst_n, s_cpu_bus_idle, s_cpu_quiesce;
   logic [31:0] s_irq;
@@ -42,10 +43,14 @@ module retrosoc_tiny (
   logic [63:0] s_cpu_wait, s_dma_wait;
   logic s_timer0_irq, s_timer1_irq, s_xpi_irq, s_dma_irq;
   logic       s_dma_done;
-  logic [7:0] s_dma_stall;
+  logic [5:0] s_dma_stall;
   logic [4:0] s_tick_count_d, s_tick_count_q;
   logic s_tick;
-  logic s_unused_uart1_tx_stall, s_unused_uart1_rx_stall;
+  logic s_audio_pad_clk, s_audio_clk, s_audio_rst_n;
+  logic s_rng_en, s_rng_ready, s_rng_valid, s_rng_qualified, s_rng_fault, s_rng_irq;
+  logic [31:0] s_rng_data;
+  logic s_crypto_irq, s_crypto_input_ready, s_crypto_output_ready;
+  logic s_i2s_tx_stall, s_i2s_rx_stall;
   ahbl_if u_cpu_ahbl_if[2] (
       .hclk   (clk_i),
       .hresetn(s_core_rst_n)
@@ -62,14 +67,15 @@ module retrosoc_tiny (
   );
   `include "tiny_apb_interfaces.svh"
 uart_if u_uart0_if ();
-  uart_if u_uart1_if ();
   i2c_if u_i2c0_if ();
-  i2c_if u_i2c1_if ();
   pwm_if u_pwm_if ();
   clint_if u_clint_if ();
   gpio_if u_gpio_if ();
   user_gpio_if u_user_gpio_if ();
   dma_req_if u_dma_req_if ();
+  i2s_if u_i2s_if ();
+  ws2812_if u_ws2812_if ();
+  sdio_if u_sdio_if ();
   rtc_if u_rtc_if (
       .rtc_clk_i  (clk_i),
       .rtc_rst_n_i(s_rtc_rst_n)
@@ -94,7 +100,7 @@ uart_if u_uart0_if ();
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) u_targets_axi4_if[23] (
+  ) u_targets_axi4_if[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(s_target_rst_n)
   );
@@ -128,46 +134,14 @@ uart_if u_uart0_if ();
       .aclk   (clk_i),
       .aresetn(s_dma_rst_n)
   );
-  assign s_fabric_rst_n                = s_leaf_rst_n[0];
-  assign s_master_rst_n                = '{s_cpu_ready_rst_n, s_dma_rst_n, s_fabric_rst_n};
-  assign s_target_rst_n[4]             = s_xpi_rst_n;
-  assign s_target_rst_n[21]            = s_fabric_rst_n;
-  assign s_target_rst_n[22]            = s_fabric_rst_n;
-  // Owner 2 is a reserved native read/write ingress, not an integrated SDIO.
-  // P6 supplies its real producer; no capability or interrupt is enabled here.
-  assign u_masters_axi4_if[2].awid     = '0;
-  assign u_masters_axi4_if[2].awaddr   = '0;
-  assign u_masters_axi4_if[2].awlen    = '0;
-  assign u_masters_axi4_if[2].awsize   = '0;
-  assign u_masters_axi4_if[2].awburst  = '0;
-  assign u_masters_axi4_if[2].awlock   = 1'b0;
-  assign u_masters_axi4_if[2].awcache  = '0;
-  assign u_masters_axi4_if[2].awprot   = '0;
-  assign u_masters_axi4_if[2].awqos    = '0;
-  assign u_masters_axi4_if[2].awregion = '0;
-  assign u_masters_axi4_if[2].awuser   = '0;
-  assign u_masters_axi4_if[2].awvalid  = 1'b0;
-  assign u_masters_axi4_if[2].arid     = '0;
-  assign u_masters_axi4_if[2].araddr   = '0;
-  assign u_masters_axi4_if[2].arlen    = '0;
-  assign u_masters_axi4_if[2].arsize   = '0;
-  assign u_masters_axi4_if[2].arburst  = '0;
-  assign u_masters_axi4_if[2].arlock   = 1'b0;
-  assign u_masters_axi4_if[2].arcache  = '0;
-  assign u_masters_axi4_if[2].arprot   = '0;
-  assign u_masters_axi4_if[2].arqos    = '0;
-  assign u_masters_axi4_if[2].arregion = '0;
-  assign u_masters_axi4_if[2].aruser   = '0;
-  assign u_masters_axi4_if[2].arvalid  = 1'b0;
-  assign u_masters_axi4_if[2].wdata    = '0;
-  assign u_masters_axi4_if[2].wstrb    = '0;
-  assign u_masters_axi4_if[2].wlast    = 1'b0;
-  assign u_masters_axi4_if[2].wuser    = '0;
-  assign u_masters_axi4_if[2].wvalid   = 1'b0;
-  assign u_masters_axi4_if[2].rready   = 1'b0;
-  assign u_masters_axi4_if[2].bready   = 1'b0;
-
-  tiny_reset_tree u_reset_tree (
+  assign s_fabric_rst_n = s_leaf_rst_n[0];
+  assign s_master_rst_n = '{s_cpu_ready_rst_n, s_dma_rst_n, s_sdio_rst_n};
+  assign s_target_rst_n[4] = s_xpi_rst_n;
+  assign s_target_rst_n[`RETROSOC_TINY__DECODE_ERROR] = s_fabric_rst_n;
+  assign s_target_rst_n[`RETROSOC_TINY__PROTOCOL_ERROR] = s_fabric_rst_n;
+  tiny_reset_tree #(
+      .LeafCount(`RETROSOC_TINY__LEAF_COUNT)
+  ) u_reset_tree (
       .clk_i               (clk_i),
       .rst_n_i             (rst_n_i),
       .watchdog_reset_req_i(u_wdg_if.reset_req_o),
@@ -267,14 +241,14 @@ axi4_error_slave #(
   ) u_decode_error (
       .clk_i  (clk_i),
       .rst_n_i(s_fabric_rst_n),
-      .axi4   (u_targets_axi4_if[21])
+      .axi4   (u_targets_axi4_if[`RETROSOC_TINY__DECODE_ERROR])
   );
   axi4_error_slave #(
       .Response(2'b10)
   ) u_protocol_error (
       .clk_i  (clk_i),
       .rst_n_i(s_fabric_rst_n),
-      .axi4   (u_targets_axi4_if[22])
+      .axi4   (u_targets_axi4_if[`RETROSOC_TINY__PROTOCOL_ERROR])
   );
   tiny_fault_collector u_fault_collector (
       .local_valid_i         (s_local_fault_valid),
@@ -331,11 +305,10 @@ axi4_error_slave #(
   );
   assign u_user_gpio_if.do_o     = '0;
   assign u_user_gpio_if.oe_o     = '0;
-  assign u_uart0_if.rx_i         = uart0_rx_i;
   assign uart0_tx_o              = u_uart0_if.tx_o;
-  assign u_uart1_if.rx_i         = uart1_rx_i;
-  assign u_uart1_if.cts_n_i      = 1'b0;
-  assign uart1_tx_o              = u_uart1_if.tx_o;
+  // Legacy ASIC observation pads are retained, not a Gen1 package binding.
+  assign uart1_tx_o              = 1'b1;
+  assign u_uart0_if.cts_n_i      = 1'b0;
   assign u_wdg_if.debug_halted_i = s_debug_halted;
   `include "tiny_gpio.svh"
   `include "tiny_irq.svh"
@@ -361,22 +334,6 @@ apb4_uart u_uart0 (
       .debug_halted_i(s_debug_halted),
       .apb4          (u_timer0_apb4_if),
       .irq_o         (s_timer0_irq)
-  );
-  apb4_uart u_uart1 (
-      .clk_i         (clk_i),
-      .rst_n_i       (s_uart1_rst_n),
-      .apb4          (u_uart1_apb4_if),
-      .uart          (u_uart1_if),
-      .dma_tx_stall_o(s_unused_uart1_tx_stall),
-      .dma_rx_stall_o(s_unused_uart1_rx_stall)
-  );
-  apb4_i2c u_i2c1 (
-      .clk_i         (clk_i),
-      .rst_n_i       (s_i2c1_rst_n),
-      .apb4          (u_i2c1_apb4_if),
-      .i2c           (u_i2c1_if),
-      .dma_tx_stall_o(s_dma_stall[6]),
-      .dma_rx_stall_o(s_dma_stall[7])
   );
   apb4_timer u_timer1 (
       .clk_i         (clk_i),
@@ -413,11 +370,11 @@ apb4_uart u_uart0 (
       .wdg (u_wdg_if)
   );
   apb4_dma #(
-      .NumChannels  (4),
+      .NumChannels  (8),
       .MaxBurstBeats(16),
       .FifoDepth    (32),
-      .RequestMask  (16'h07f9),
-      .EnableStreams(1'b0)
+      .RequestMask  (16'h31ff),
+      .EnableStreams(1'b1)
   ) u_dma (
       .clk_i          (clk_i),
       .rst_n_i        (s_dma_rst_n),
@@ -432,26 +389,18 @@ apb4_uart u_uart0 (
       .crypto_in_axis (u_crypto_tx_axis_if),
       .crypto_out_axis(u_crypto_rx_axis_if)
   );
-  assign u_dma_req_if.i2s_tx_proc     = 1'b0;
-  assign u_dma_req_if.i2s_rx_proc     = 1'b0;
-  assign u_dma_req_if.crypto_in_proc  = 1'b0;
-  assign u_dma_req_if.crypto_out_proc = 1'b0;
+  assign u_dma_req_if.i2s_tx_proc     = !s_i2s_tx_stall;
+  assign u_dma_req_if.i2s_rx_proc     = !s_i2s_rx_stall;
+  assign u_dma_req_if.crypto_in_proc  = s_crypto_input_ready;
+  assign u_dma_req_if.crypto_out_proc = s_crypto_output_ready;
   assign u_dma_req_if.qspi_tx_proc    = !s_dma_stall[0];
   assign u_dma_req_if.qspi_rx_proc    = !s_dma_stall[1];
   assign u_dma_req_if.uart_tx_proc    = !s_dma_stall[2];
   assign u_dma_req_if.uart_rx_proc    = !s_dma_stall[3];
   assign u_dma_req_if.i2c0_tx_proc    = !s_dma_stall[4];
   assign u_dma_req_if.i2c0_rx_proc    = !s_dma_stall[5];
-  assign u_dma_req_if.i2c1_tx_proc    = !s_dma_stall[6];
-  assign u_dma_req_if.i2c1_rx_proc    = !s_dma_stall[7];
-  assign u_i2s_rx_axis_if.tvalid      = '0;
-  assign u_i2s_rx_axis_if.tdata       = '0;
-  assign u_i2s_rx_axis_if.tstrb       = '0;
-  assign u_i2s_rx_axis_if.tkeep       = '0;
-  assign u_i2s_rx_axis_if.tlast       = '0;
-  assign u_i2s_rx_axis_if.tid         = '0;
-  assign u_i2s_rx_axis_if.tdest       = '0;
-  assign u_i2s_rx_axis_if.tuser       = '0;
+  assign u_dma_req_if.i2c1_tx_proc    = 1'b0;
+  assign u_dma_req_if.i2c1_rx_proc    = 1'b0;
   assign u_dvp_rx_axis_if.tvalid      = '0;
   assign u_dvp_rx_axis_if.tdata       = '0;
   assign u_dvp_rx_axis_if.tstrb       = '0;
@@ -460,14 +409,80 @@ apb4_uart u_uart0 (
   assign u_dvp_rx_axis_if.tid         = '0;
   assign u_dvp_rx_axis_if.tdest       = '0;
   assign u_dvp_rx_axis_if.tuser       = '0;
-  assign u_crypto_rx_axis_if.tvalid   = '0;
-  assign u_crypto_rx_axis_if.tdata    = '0;
-  assign u_crypto_rx_axis_if.tstrb    = '0;
-  assign u_crypto_rx_axis_if.tkeep    = '0;
-  assign u_crypto_rx_axis_if.tlast    = '0;
-  assign u_crypto_rx_axis_if.tid      = '0;
-  assign u_crypto_rx_axis_if.tdest    = '0;
-  assign u_crypto_rx_axis_if.tuser    = '0;
-  assign u_i2s_tx_axis_if.tready      = 1'b0;
-  assign u_crypto_tx_axis_if.tready   = 1'b0;
+
+  // Host logic remains SAFE24. Audio reset waits for its own clock, never CPU boot.
+  tc_clk_buf u_audio_clock_buffer (
+      .clk_i(s_audio_pad_clk),
+      .clk_o(s_audio_clk)
+  );
+  rst_sync #(
+      .STAGE(5)
+  ) u_audio_rst_sync (
+      .clk_i  (s_audio_clk),
+      .rst_n_i(s_i2s_rst_n),
+      .rst_n_o(s_audio_rst_n)
+  );
+  apb4_i2s u_i2s (
+      .clk_i            (clk_i),
+      .rst_n_i          (s_i2s_rst_n),
+      .clk_aud_i        (s_audio_clk),
+      .rst_aud_n_i      (s_audio_rst_n),
+      .dma_tx_stall_o   (s_i2s_tx_stall),
+      .dma_rx_stall_o   (s_i2s_rx_stall),
+      .tx_underrun_evt_o(),                  // Sticky status and IRQ retain these events.
+      .rx_overrun_evt_o (),
+      .rx_flush_busy_o  (),                  // No APU consumer in Tiny.
+      .apb4             (u_i2s_apb4_if),
+      .tx_axis          (u_i2s_tx_axis_if),
+      .rx_axis          (u_i2s_rx_axis_if),
+      .i2s              (u_i2s_if)
+  );
+  apb4_sdio #(
+      .InputClockHz(24_000_000)
+  ) u_sdio (
+      .clk_i   (clk_i),
+      .rst_n_i (s_sdio_rst_n),
+      .apb4    (u_sdio_apb4_if),
+      .dma_axi4(u_masters_axi4_if[2]),
+      .sdio    (u_sdio_if)
+  );
+  apb4_ws2812 u_ws2812 (
+      .clk_i  (clk_i),
+      .rst_n_i(s_ws2812_rst_n),
+      .apb4   (u_ws2812_apb4_if),
+      .ws2812 (u_ws2812_if)
+  );
+  apb4_crypto u_crypto (
+      .clk_i            (clk_i),
+      .rst_n_i          (s_crypto_rst_n),
+      .dma_input_proc_o (s_crypto_input_ready),
+      .dma_output_proc_o(s_crypto_output_ready),
+      .irq_o            (s_crypto_irq),
+      .apb4             (u_crypto_apb4_if),
+      .crypto_in_axis   (u_crypto_tx_axis_if),
+      .crypto_out_axis  (u_crypto_rx_axis_if)
+  );
+  apb4_crc u_crc (.apb4(u_crc_apb4_if));
+  rng_deterministic_source u_rng_source (
+      .clk_i      (clk_i),
+      .rst_n_i    (s_rng_rst_n),
+      .enable_i   (s_rng_en),
+      .ready_i    (s_rng_ready),
+      .valid_o    (s_rng_valid),
+      .data_o     (s_rng_data),
+      .qualified_o(s_rng_qualified),
+      .fault_o    (s_rng_fault)
+  );
+  apb4_rng #(
+      .FIFO_DEPTH(8)
+  ) u_rng (
+      .entropy_enable_o   (s_rng_en),
+      .entropy_ready_o    (s_rng_ready),
+      .entropy_valid_i    (s_rng_valid),
+      .entropy_data_i     (s_rng_data),
+      .entropy_qualified_i(s_rng_qualified),
+      .entropy_fault_i    (s_rng_fault),
+      .irq_o              (s_rng_irq),
+      .apb4               (u_rng_apb4_if)
+  );
 endmodule

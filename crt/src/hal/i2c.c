@@ -49,8 +49,12 @@
 #define RS_I2C_TIMEOUT_MAX_CYCLES      UINT32_C(0xFFFFFF)
 
 static uintptr_t rs_i2c_base(rs_i2c_bus_t bus) {
+#ifdef RS_SOC_TINY
+    return (bus == RS_I2C_BUS_0) ? (uintptr_t)RS_SOC_APB4_I2C0_BASE : (uintptr_t)0U;
+#else
     return (bus == RS_I2C_BUS_0) ? (uintptr_t)RS_SOC_APB4_I2C0_BASE
                                  : (uintptr_t)RS_SOC_APB4_I2C1_BASE;
+#endif
 }
 
 static bool rs_i2c_bus_valid(rs_i2c_bus_t bus) {
@@ -92,8 +96,13 @@ static rs_status_t rs_i2c_gpio_configure(rs_i2c_bus_t bus) {
         .filter_enable = false,
         .interrupt_enable = false,
     };
+#ifdef RS_SOC_TINY
+    const uint32_t scl_pin = UINT32_C(10);
+    const uint32_t sda_pin = UINT32_C(11);
+#else
     const uint32_t scl_pin = (bus == RS_I2C_BUS_0) ? UINT32_C(7) : UINT32_C(3);
     const uint32_t sda_pin = (bus == RS_I2C_BUS_0) ? UINT32_C(8) : UINT32_C(4);
+#endif
     rs_status_t status = rs_gpio_configure(scl_pin, &pin_config);
 
     if (status == RS_OK) {
@@ -228,6 +237,11 @@ static rs_status_t rs_i2c_wait_done(rs_i2c_bus_t bus, rs_timeout_t timeout) {
 
 rs_status_t rs_i2c_configure(rs_i2c_bus_t bus, const rs_i2c_config_t *config,
                              rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_i2c_timing_t timing;
     uint32_t stretch_timeout;
     uint32_t bus_idle_timeout;
@@ -287,6 +301,11 @@ rs_status_t rs_i2c_configure(rs_i2c_bus_t bus, const rs_i2c_config_t *config,
 }
 
 rs_status_t rs_i2c_init(rs_i2c_bus_t bus, uint32_t source_clock_hz, uint32_t bus_hz) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     const rs_i2c_config_t config = {
         .source_clock_hz = source_clock_hz,
         .bus_hz = bus_hz,
@@ -303,6 +322,11 @@ rs_status_t rs_i2c_init(rs_i2c_bus_t bus, uint32_t source_clock_hz, uint32_t bus
 
 rs_status_t rs_i2c_transfer(rs_i2c_bus_t bus, const rs_i2c_transfer_t *transfer,
                             rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (transfer == NULL) {
         return RS_EINVAL;
     }
@@ -338,6 +362,11 @@ static rs_status_t rs_i2c_register_prefix(const rs_i2c_register_access_t *access
 
 rs_status_t rs_i2c_register_write(rs_i2c_bus_t bus, const rs_i2c_register_access_t *access,
                                   const uint8_t *data, size_t length, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint8_t prefix[2];
     size_t prefix_length;
     rs_status_t status;
@@ -355,6 +384,11 @@ rs_status_t rs_i2c_register_write(rs_i2c_bus_t bus, const rs_i2c_register_access
 
 rs_status_t rs_i2c_register_read(rs_i2c_bus_t bus, const rs_i2c_register_access_t *access,
                                  uint8_t *data, size_t length, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint8_t prefix[2];
     size_t prefix_length;
     rs_status_t status;
@@ -371,6 +405,11 @@ rs_status_t rs_i2c_register_read(rs_i2c_bus_t bus, const rs_i2c_register_access_
 }
 
 rs_status_t rs_i2c_abort(rs_i2c_bus_t bus, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_i2c_bus_valid(bus)) {
         return RS_EINVAL;
     }
@@ -382,6 +421,11 @@ rs_status_t rs_i2c_abort(rs_i2c_bus_t bus, rs_timeout_t timeout) {
 }
 
 rs_status_t rs_i2c_recover(rs_i2c_bus_t bus, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
 
     if (!rs_i2c_bus_valid(bus)) {
@@ -408,6 +452,11 @@ rs_status_t rs_i2c_recover(rs_i2c_bus_t bus, rs_timeout_t timeout) {
 }
 
 rs_status_t rs_i2c_get_status(rs_i2c_bus_t bus, rs_i2c_status_t *status) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t levels;
 
     if (!rs_i2c_bus_valid(bus) || (status == NULL)) {
@@ -423,6 +472,11 @@ rs_status_t rs_i2c_get_status(rs_i2c_bus_t bus, rs_i2c_status_t *status) {
 }
 
 rs_status_t rs_i2c_irq_enable(rs_i2c_bus_t bus, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_i2c_bus_valid(bus) || ((mask & ~RS_I2C_INTR_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -431,6 +485,11 @@ rs_status_t rs_i2c_irq_enable(rs_i2c_bus_t bus, uint32_t mask) {
 }
 
 rs_status_t rs_i2c_irq_ack(rs_i2c_bus_t bus, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_i2c_bus_valid(bus) || (mask == 0U) || ((mask & ~RS_I2C_INTR_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -439,6 +498,11 @@ rs_status_t rs_i2c_irq_ack(rs_i2c_bus_t bus, uint32_t mask) {
 }
 
 rs_status_t rs_i2c_irq_test(rs_i2c_bus_t bus, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_i2c_bus_valid(bus) || (mask == 0U) || ((mask & ~RS_I2C_INTR_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -449,6 +513,11 @@ rs_status_t rs_i2c_irq_test(rs_i2c_bus_t bus, uint32_t mask) {
 rs_status_t rs_i2c_write_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_address,
                              const uint8_t *data, size_t length, rs_i2c_dma_workspace_t *workspace,
                              rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
     size_t index;
     const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;
@@ -494,6 +563,11 @@ rs_status_t rs_i2c_write_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_ad
 rs_status_t rs_i2c_read_dma(rs_i2c_bus_t bus, uint16_t address, bool ten_bit_address, uint8_t *data,
                             size_t length, rs_i2c_dma_workspace_t *workspace,
                             rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (bus == RS_I2C_BUS_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
     size_t index;
     const uint32_t channel = (bus == RS_I2C_BUS_0) ? RS_DMA_CHANNEL_I2C0 : RS_DMA_CHANNEL_I2C1;

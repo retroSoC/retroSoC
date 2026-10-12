@@ -18,7 +18,7 @@ TOP := retrosoc_tiny_asic
 # validated against rtl/tiny/integration/clock_reset_domains.json when the
 # commercial timing contract is generated. Tiny boots SAFE24: the PLL_TOP
 # macro is present in the netlist but parked off and is not a clock source.
-COMMERCIAL_CLOCK_DOMAINS := system jtag
+COMMERCIAL_CLOCK_DOMAINS := system jtag audio
 
 # Qualified-I/O interface groups and the budget variables each group requires.
 COMMERCIAL_IO_INTERFACES       := JTAG XPI ASYNC

@@ -177,7 +177,18 @@ def inspect_netlist(document: dict) -> dict:
     system = canonical(f"{top}:{clock[0]}")
     if system in ("0", "1", "x", "z"):
         raise ValueError("SYS is not a live clock net")
-    ram = [c for c in leaves if c["type"] == RAM]
+    all_ram = [c for c in leaves if c["type"] == RAM]
+    crypto_names = {f"u_soc.u_crypto.u_storage.gen_bank[{n}].gen_macro.u_sram.u_mem"
+                    for n in range(6)}
+    crypto = [c for c in all_ram if any(c["path"].replace("/", ".").endswith("." + name)
+                                      for name in crypto_names)]
+    observed_crypto = {name for name in crypto_names for c in crypto
+                       if c["path"].replace("/", ".").endswith("." + name)}
+    if len(all_ram) != 38 or len(crypto) != 6 or observed_crypto != crypto_names:
+        raise ValueError("Tiny P6 requires exactly 32 main SRAM and six private Crypto macros")
+    if any(c["ports"].get("CLK") != [system] for c in crypto):
+        raise ValueError("private Crypto SRAM does not use SAFE24 PCLK")
+    ram = [c for c in all_ram if c not in crypto]
     pll = [c for c in leaves if c["type"] == "PLL_TOP"]
     if any(c["type"] == "ics55_ecos_sram_4096x32_m8" for c in leaves):
         raise ValueError("Tiny instantiated the unsupported 16 KiB SRAM interface stub")
@@ -219,6 +230,7 @@ def inspect_netlist(document: dict) -> dict:
             "system_clock_source": {"port": "extclk_i_pad", "net": reference, "path": clock_path},
             "cpu_clocked_cells": len(cpu),
             "sram": [{"path": c["path"], "clock": c["ports"]["CLK"]} for c in ram],
+            "crypto_sram": [{"path": c["path"], "clock": c["ports"]["CLK"]} for c in crypto],
             "pll": pll[0], "pll_enable": 0, "qualification": "SAFE24 digital connectivity only"}
 
 

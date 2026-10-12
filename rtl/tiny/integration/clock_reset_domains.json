@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "external_fabric": {
-    "phase": "TINY-R2-P5",
+    "phase": "TINY-R2-P6",
     "clock_domain": "system",
     "target_controllers": "u_soc.u_fabric.gen_target[%d].u_controller",
-    "target_count": 23,
+    "target_count": 27,
     "apb_bridges": "u_soc.u_<peripheral>_bridge; corresponding existing peripheral reset leaf",
     "fabric_reset": "fabric leaf; target reset blocks admission and aborts accepted target work with DECERR",
     "hart_reset": "CPU-only accepted-work drain; DMA and all target responses stay active",
@@ -61,8 +61,23 @@
       "sta": {
         "source_port": "jtag_tck_i_pad",
         "object_type": "port",
-        "period_ns": 100.0,
+        "period_ns": 100,
         "async_group": "jtag"
+      }
+    },
+    {
+      "name": "audio",
+      "clock": "s_audio_clk",
+      "reset": "s_audio_rst_n",
+      "reset_source": "s_i2s_rst_n",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_audio_rst_sync",
+      "sta": {
+        "source_port": "gpio_17_io_pad",
+        "pin": "u_soc.u_audio_clock_buffer/clk_o",
+        "period_ns": 54.253472222,
+        "async_group": "audio"
       }
     }
   ],
@@ -73,8 +88,27 @@
     "system_source": "por_rst_n_o && !watchdog_reset_req_i",
     "leaf_instance_pattern": "u_soc.u_reset_tree.gen_leaf[%d].u_leaf_rst_sync",
     "leaf_names": [
-      "fabric", "gpio", "uart0", "uart1", "timer0", "timer1", "i2c0", "i2c1",
-      "xpi", "dma", "sysctrl", "clint", "sram", "archinfo", "pwm", "rtc", "wdg"
+      "fabric",
+      "gpio",
+      "uart0",
+      "timer0",
+      "timer1",
+      "i2c0",
+      "xpi",
+      "dma",
+      "sysctrl",
+      "clint",
+      "sram",
+      "archinfo",
+      "pwm",
+      "rtc",
+      "wdg",
+      "rng",
+      "crc",
+      "ws2812",
+      "crypto",
+      "i2s",
+      "sdio"
     ],
     "cpu_prerequisite": "all leaf resets released",
     "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
@@ -82,7 +116,7 @@
     "dmi": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_dmi_rst_sync",
     "watchdog_functional_reset": "POR only; APB uses wdg leaf",
     "main_sram_payload_reset": "none",
-    "crypto": "not integrated; physical erasure contract unchanged",
+    "crypto": "six private macro banks; reset invalidates then scrubs/readbacks; CPU does not wait for READY",
     "clock_domain": "system"
   },
   "crossings": [
@@ -101,6 +135,54 @@
       "primitive": "cdc_sync",
       "path": "rtl/ip/core/mgmt_debug_wrapper.sv",
       "instance": "u_dmihardreset_cdc_sync"
+    },
+    {
+      "name": "i2s_configuration",
+      "source": "system",
+      "destination": "audio",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_i2s_cfg_cdc"
+    },
+    {
+      "name": "i2s_commands",
+      "source": "system",
+      "destination": "audio",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_i2s_cmd_cdc"
+    },
+    {
+      "name": "i2s_tx_samples",
+      "source": "system",
+      "destination": "audio",
+      "primitive": "cdc_fifo_warm_flush",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_tx_cdc_fifo"
+    },
+    {
+      "name": "i2s_rx_samples",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "cdc_fifo_warm_flush",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_rx_cdc_fifo"
+    },
+    {
+      "name": "i2s_tx_occupancy",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_tx_pop_cnt_cdc"
+    },
+    {
+      "name": "i2s_rx_occupancy",
+      "source": "audio",
+      "destination": "system",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_rx_push_cnt_cdc"
     }
   ]
 }

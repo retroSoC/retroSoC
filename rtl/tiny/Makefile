@@ -60,6 +60,7 @@ OPENSTA_CONFIG   := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.config
 NETLIST_PATH     := $(OPENSTA_NETLIST)
 TINY_CONVERTED   := $(SIM_BUILD_ROOT)/converted_soc.v
 TINY_DEPFILE     := $(SIM_BUILD_ROOT)/sources.d
+TINY_TB_DEPFILE  := $(SIM_BUILD_ROOT)/testbench.d
 TINY_LINT_LOG    := $(VARIANT_ROOT)/lint/verilator/lint.log
 SOC_SIM_TIME     ?= 1800
 TINY_SIM_TIMEOUT ?= 20000000
@@ -69,7 +70,7 @@ IVERILOG         ?= iverilog
 VVP              ?= vvp
 
 include $(ROOT_PATH)/rtl/mk/software.mk
--include $(TINY_DEPFILE)
+-include $(TINY_DEPFILE) $(TINY_TB_DEPFILE)
 
 $(TINY_CONVERTED): $(FILELIST_STAMP)
 	@mkdir -p $(@D)
@@ -95,6 +96,9 @@ $(SIM_BUILD_ROOT)/simv: $(TINY_CONVERTED) $(wildcard $(RTL_PATH)/dv/*.sv)
 		--log $(SIM_BUILD_ROOT)/compile.log --result $(SIM_BUILD_ROOT)/result-compile.json -- \
 		$(IVERILOG) -g2012 -gno-specify -s $(RTL_TOP) -o $@ -f $(GENERATED_FL_DIR)/def.fl \
 		-f $(GENERATED_FL_DIR)/inc.fl -f $(PDK_FILELIST) $(TINY_TB_FLIST) $(TINY_CONVERTED)
+	$(PYTHON) $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $(GENERATED_FL_DIR)/def.fl \
+		-f $(GENERATED_FL_DIR)/inc.fl $(TINY_TB_FLIST) \
+		--target $@ --output $(TINY_TB_DEPFILE)
 comp: $(SIM_BUILD_ROOT)/simv
 TINY_RUN := $(VVP) $(SIM_BUILD_ROOT)/simv
 endif
@@ -204,7 +208,7 @@ tiny-r2-p3-report:
 
 # P4 preserves old image identity and replays each selected image exactly once.
 TINY_P4_REFERENCE ?=
-TINY_P4_CASES ?= perf-o2-plain-flat,perf-o2-plain-banked
+TINY_P4_CASES     ?= perf-o2-plain-flat,perf-o2-plain-banked
 tiny-r2-p4-replay: | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
 		--reference $(TINY_P4_REFERENCE) --cases $(TINY_P4_CASES) --simulator $(SIM_TOOL_NAME) \
@@ -220,7 +224,7 @@ tiny-r2-p4-report:
 # P5 compares the same P3 binaries to retained P4 observations, with its own
 # phase identity and evidence root. The historical P3/P4 commands stay intact.
 TINY_P5_REFERENCE ?=
-TINY_P5_CASES ?= perf-o2-plain-flat,perf-o2-plain-banked
+TINY_P5_CASES     ?= perf-o2-plain-flat,perf-o2-plain-banked
 tiny-r2-p5-replay: | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p5.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
 		--reference $(TINY_P5_REFERENCE) --cases $(TINY_P5_CASES) --simulator $(SIM_TOOL_NAME) \

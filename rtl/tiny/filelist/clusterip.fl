@@ -22,3 +22,10 @@
 /clusterip/wdg/rtl/wdg_core.sv
 /clusterip/wdg/rtl/wdg_reg.sv
 /clusterip/wdg/rtl/apb4_wdg.sv
+/clusterip/rng/rtl/rng_core.sv
+/clusterip/rng/rtl/rng_reg.sv
+/clusterip/rng/rtl/rng_deterministic_source.sv
+/clusterip/rng/rtl/apb4_rng.sv
+/clusterip/crc/rtl/crc_core.sv
+/clusterip/crc/rtl/crc_reg.sv
+/clusterip/crc/rtl/apb4_crc.sv

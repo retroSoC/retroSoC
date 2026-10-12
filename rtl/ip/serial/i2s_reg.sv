@@ -92,7 +92,7 @@ module i2s_reg (
   endfunction
 
   assign s_req = apb4.psel && apb4.penable && !s_ready_q;
-  assign s_write = |apb4.pstrb;
+  assign s_write = apb4.pwrite;
   assign s_accept = s_req;
   assign s_offset = apb4.paddr[11:0];
   assign s_aligned = apb4.paddr[1:0] == 2'b00;

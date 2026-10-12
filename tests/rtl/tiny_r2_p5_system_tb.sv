@@ -1,3 +1,4 @@
+`include "tiny_topology.svh"
 `timescale 1ns / 1ps
 module tiny_r2_p5_system_tb;
   logic clk_i = 0, rst_n_i = 0;
@@ -38,7 +39,7 @@ retrosoc_tiny u_dut (
          u_dut.u_masters_axi4_if[1].wvalid && u_dut.u_masters_axi4_if[1].wready)
         overlap_cycles++;
       if((u_dut.u_fabric.s_busy_q[2] || u_dut.u_fabric.s_busy_q[3]) &&
-         (!u_dut.u_fabric.target_idle_o[4] || !u_dut.u_fabric.target_idle_o[12]) &&
+         (!u_dut.u_fabric.target_idle_o[4] || !u_dut.u_fabric.target_idle_o[`RETROSOC_TINY__TARGET_XPI]) &&
          u_dut.u_sysctrl_apb4_if.psel && u_dut.u_sysctrl_apb4_if.penable && u_dut.u_sysctrl_apb4_if.pready)
         controls++;
       if(u_dut.u_cpu_local_if[1].req_valid && u_dut.u_cpu_local_if[1].req_ready &&
@@ -76,7 +77,7 @@ retrosoc_tiny u_dut (
     jtag_dmi(1, 7'h10, 3, status);
     $display("P5_SYSTEM_STAGE reset-request pending=%b", u_dut.u_cpu.s_reset_pending);
     wait (!u_dut.s_core_rst_n);
-    if (!u_dut.u_fabric.s_busy_q[3] || u_dut.u_fabric.target_idle_o[12])
+    if (!u_dut.u_fabric.s_busy_q[3] || u_dut.u_fabric.target_idle_o[`RETROSOC_TINY__TARGET_XPI])
       $fatal(1, "hart reset cancelled unrelated DMA");
     hart_reset_observed = 1;
     $display("P5_SYSTEM_STAGE hart-reset");

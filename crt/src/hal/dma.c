@@ -427,9 +427,9 @@ void ip_dma_test(void) {
              .lowbound = 32U,
          }) != RS_OK) ||
         (rs_i2s_enable(true, false) != RS_OK) ||
-        (rs_dma_configure(RS_DMA_CHANNEL_BULK, &tx_config) != RS_OK) ||
+        (rs_dma_configure(RS_DMA_CHANNEL_I2S_TX, &tx_config) != RS_OK) ||
         (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) ||
-        (rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK)) {
+        (rs_dma_wait(RS_DMA_CHANNEL_I2S_TX, RS_TIMEOUT_DEFAULT) != RS_OK)) {
         printf("dma transmit failed\n");
         return;
     }
@@ -448,9 +448,9 @@ void ip_dma_test(void) {
              .lowbound = 32U,
          }) != RS_OK) ||
         (rs_i2s_enable(false, true) != RS_OK) ||
-        (rs_dma_configure(RS_DMA_CHANNEL_BULK, &rx_config) != RS_OK) ||
-        (rs_dma_start(RS_DMA_CHANNEL_BULK) != RS_OK) ||
-        (rs_dma_wait(RS_DMA_CHANNEL_BULK, RS_TIMEOUT_DEFAULT) != RS_OK)) {
+        (rs_dma_configure(RS_DMA_CHANNEL_I2S_RX, &rx_config) != RS_OK) ||
+        (rs_dma_start(RS_DMA_CHANNEL_I2S_RX) != RS_OK) ||
+        (rs_dma_wait(RS_DMA_CHANNEL_I2S_RX, RS_TIMEOUT_DEFAULT) != RS_OK)) {
         printf("dma receive failed\n");
         (void)rs_i2s_disable();
         return;

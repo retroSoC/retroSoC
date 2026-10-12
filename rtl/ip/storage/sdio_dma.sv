@@ -516,11 +516,18 @@ module sdio_dma #(
               s_err_addr_d   = s_payload_addr + s_burst_offset;
             end
             if (s_write_final_sent_q) begin
-              s_writeback_control_d = (s_desc_control_q &
-                                       ~(32'd1 << sdio_pkg::SDIO_DESC_OWN)) |
-                                      (s_fault_d ? (32'd1 << sdio_pkg::SDIO_DESC_ERROR) :
-                                                   (32'd1 << sdio_pkg::SDIO_DESC_DONE));
-              s_state_d = WritebackStart;
+              // A retired AXI burst is not necessarily the whole descriptor.
+              // Keep ownership while subsequent bursts receive its remaining
+              // bytes, just as the memory-to-card direction does.
+              if (s_fault_d || (s_desc_progress_d >= s_desc_count_q)) begin
+                s_writeback_control_d = (s_desc_control_q &
+                                         ~(32'd1 << sdio_pkg::SDIO_DESC_OWN)) |
+                                        (s_fault_d ? (32'd1 << sdio_pkg::SDIO_DESC_ERROR) :
+                                                     (32'd1 << sdio_pkg::SDIO_DESC_DONE));
+                s_state_d = WritebackStart;
+              end else begin
+                s_state_d = PayloadWriteStart;
+              end
             end
           end
         end

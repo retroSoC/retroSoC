@@ -160,7 +160,12 @@ module sdio_data #(
   assign tx_ready_o = (s_state_q == WriteWaitWord) || (s_state_q == WriteNextWord) ||
                       ((s_state_q == WritePayload) && launch_tick_i && s_tx_word_final &&
                        (s_tx_total_q < s_target_bytes_q));
-  assign tx_wait_o = (s_state_q == WriteWaitWord) || (s_state_q == WriteNextWord);
+  // Stop before launching the next word if memory has not supplied it.
+  // Waiting only after that launch exposes an idle bit to the card and
+  // corrupts the next word's MSB when the clock resumes.
+  assign tx_wait_o = (s_state_q == WriteWaitWord) || (s_state_q == WriteNextWord) ||
+                      ((s_state_q == WritePayload) && s_tx_word_final &&
+                       (s_tx_total_q < s_target_bytes_q) && !tx_valid_i);
   assign rx_valid_o = (s_state_q == ReadEmit);
   assign rx_data_o = s_rx_pending_data_q;
   assign rx_strb_o = s_rx_pending_strb_q;

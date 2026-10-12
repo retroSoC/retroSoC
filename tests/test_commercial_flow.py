@@ -421,7 +421,7 @@ def test_commercial_timing_contract_supports_tiny(tmp_path: Path) -> None:
         check=True,
     )
     assert result.stdout.splitlines() == [
-        "jtag,system",
+        "audio,jtag,system",
         "ext_rst_n_i_pad,jtag_trst_n_i_pad",
     ]
     assert "observation {u_clock_buffer/clk_o}" in output.read_text(
@@ -660,7 +660,7 @@ CONSTRAINT_SMOKE_CASES = {
     "TINY": {
         "domains": "rtl/tiny/integration/clock_reset_domains.json",
         "pin_map": "rtl/tiny/pin_map/pin_map.json",
-        "masters": "clk_system clk_jtag",
+        "masters": "clk_system clk_jtag clk_audio",
         "generated": "",
         "groups": "1",
     },

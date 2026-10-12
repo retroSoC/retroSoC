@@ -1,8 +1,9 @@
+`include "tiny_topology.svh"
 `timescale 1ns / 1ps
 module tiny_r2_p5_reset_tb;
   logic clk_i = 0, rst_n_i = 0;
   always #5 clk_i = !clk_i;
-  logic target_rst_n[23];
+  logic target_rst_n[`RETROSOC_TINY__TARGET_COUNT];
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
@@ -17,22 +18,26 @@ module tiny_r2_p5_reset_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) targets[23] (
+  ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(target_rst_n)
   );
   apb4_if apb (
       .pclk   (clk_i),
-      .presetn(target_rst_n[12])
+      .presetn(target_rst_n[`RETROSOC_TINY__TARGET_XPI])
   );
-  logic [22:0] hold_address = '0, hold_read = '0, hold_write = '0, hold_b = '0;
-  integer error_beat[23];
-  integer captures[23], addresses[23], writes[23];
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0]
+      hold_address = '0, hold_read = '0, hold_write = '0, hold_b = '0;
+  integer error_beat[`RETROSOC_TINY__TARGET_COUNT];
+  integer
+      captures[`RETROSOC_TINY__TARGET_COUNT],
+      addresses[`RETROSOC_TINY__TARGET_COUNT],
+      writes[`RETROSOC_TINY__TARGET_COUNT];
   logic [5:0] fault_valid, fault_instruction;
-  logic [ 5:0][31:0] fault_addr;
-  logic [ 5:0][ 1:0] fault_resp;
-  logic [ 2:0]       owner_idle;
-  logic [22:0]       target_idle;
+  logic [                             5:0][31:0] fault_addr;
+  logic [                             5:0][ 1:0] fault_resp;
+  logic [                             2:0]       owner_idle;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0]       target_idle;
   logic [63:0] cpu_wait, dma_wait;
   logic [2:0] arvalid = 0, awvalid = 0, wvalid = 0, rready = 0, bready = 0;
   logic [2:0][31:0] araddr = 0, awaddr = 0, wdata = 0;
@@ -200,8 +205,8 @@ module tiny_r2_p5_reset_tb;
     end
   end
 
-  for (genvar t = 0; t < 23; t++) begin : gen_target
-    if (t == 12) begin : gen_apb
+  for (genvar t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin : gen_target
+    if (t == `RETROSOC_TINY__TARGET_XPI) begin : gen_apb
       tiny_axi42apb4 u_bridge (
           .clk_i  (clk_i),
           .rst_n_i(target_rst_n[t]),
@@ -232,8 +237,8 @@ module tiny_r2_p5_reset_tb;
       end
     end
   end
-  assign apb.pready  = apb.psel && apb.penable && !hold_read[12] && !hold_b[12];
-  assign apb.prdata  = 32'hcafe_f00d;
+  assign apb.pready  = apb.psel && apb.penable && !hold_read[`RETROSOC_TINY__TARGET_XPI] && !hold_b[`RETROSOC_TINY__TARGET_XPI];
+  assign apb.prdata = 32'hcafe_f00d;
   assign apb.pslverr = 0;
   always @(posedge clk_i) begin
     if (rst_n_i) begin
@@ -249,7 +254,7 @@ module tiny_r2_p5_reset_tb;
 
   task automatic quiet;
     repeat (4) @(negedge clk_i);
-    if (owner_idle != 7 || target_idle != 23'h7fffff || rvalid != 0 || bvalid != 0)
+    if (owner_idle != 7 || target_idle != {`RETROSOC_TINY__TARGET_COUNT{1'b1}} || rvalid != 0 || bvalid != 0)
       $fatal(1, "credit/response not retired");
   endtask
   task automatic receive_read(input int index, input int beats, input logic [1:0] expected,
@@ -310,7 +315,7 @@ module tiny_r2_p5_reset_tb;
     end
     for (integer n = 0; n < beats; n++) begin
       expected = inject_reset && n >= prefix ? 3 : (n == error_beat[t] ? 2 : 0);
-      data = expected == 3 ? 0 : (t == 12 ? 32'hcafe_f00d : (address + 32'(4 * n)) ^ 32'h10000000);
+      data = expected == 3 ? 0 : (t == `RETROSOC_TINY__TARGET_XPI ? 32'hcafe_f00d : (address + 32'(4 * n)) ^ 32'h10000000);
       receive_read(n, beats, expected, data);
     end
     target_rst_n[t] = 1;
@@ -412,7 +417,7 @@ module tiny_r2_p5_reset_tb;
   endtask
 
   initial begin
-    for (integer t = 0; t < 23; t++) begin
+    for (integer t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin
       target_rst_n[t] = 0;
       captures[t]     = 0;
       addresses[t]    = 0;
@@ -422,7 +427,7 @@ module tiny_r2_p5_reset_tb;
     for (integer e = 0; e < 6; e++) faults[e] = 0;
     repeat (4) @(negedge clk_i);
     rst_n_i = 1;
-    for (integer t = 0; t < 23; t++) target_rst_n[t] = 1;
+    for (integer t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) target_rst_n[t] = 1;
     // SRAM and XPI: address cancellation, missing 16 beats, two captured
     // beats under backpressure, and already captured successful completion.
     for (integer t = 0; t < 5; t += 4) begin
@@ -441,13 +446,13 @@ module tiny_r2_p5_reset_tb;
     read_case(32'h30000000, 0, 16, 1, 0, 1);
     error_beat[0] = -1;
     // Actual APB bridge, with a withheld peripheral completion.
-    read_case(32'h10009000, 12, 1, 0, 1, 1);
-    read_case(32'h10009000, 12, 1, 0, 0, 1);
-    read_case(32'h10009000, 12, 1, 1, 0, 1);
-    write_case(32'h10009000, 12, 1, 0, 0, 1);
-    write_case(32'h10009000, 12, 1, 1, 0, 0);
-    write_case(32'h10009000, 12, 1, 1, 1, 0);
-    dma_case(32'h10009000, 12, 1, 0);
+    read_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 0, 1, 1);
+    read_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 0, 0, 1);
+    read_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 1, 0, 1);
+    write_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 0, 0, 1);
+    write_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 1, 0, 0);
+    write_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 1, 1, 0);
+    dma_case(32'h10009000, `RETROSOC_TINY__TARGET_XPI, 1, 0);
     $display("P5_RESET cases=%0d production_dma=3 burst_beats=16 held_RB=1 first_fault=1", cases);
     $display("SIM_TEST_PASS Tiny P5 target reset isolation");
     $finish;

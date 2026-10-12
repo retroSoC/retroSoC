@@ -59,8 +59,8 @@ def test_reset_inventory_has_one_clock_and_all_existing_targets() -> None:
     reset = inventory["reset_distribution"]
     assert reset["release_edges"] == 5
     assert reset["leaf_names"] == ["fabric", *(target["name"] for target in topology["apb_targets"])]
-    assert len(reset["leaf_names"]) == 17
-    assert {domain["name"] for domain in inventory["domains"]} == {"system", "jtag"}
+    assert len(reset["leaf_names"]) == 21
+    assert {domain["name"] for domain in inventory["domains"]} == {"system", "jtag", "audio"}
     assert reset["clock_domain"] == "system" and reset["main_sram_payload_reset"] == "none"
 
 

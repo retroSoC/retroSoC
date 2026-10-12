@@ -50,6 +50,15 @@ typedef enum {
     RS_DMA_CHANNEL_BULK = 3,
     RS_DMA_CHANNEL_CRYPTO_IN = 4,
     RS_DMA_CHANNEL_CRYPTO_OUT = 5,
+#ifdef RS_SOC_TINY
+    RS_DMA_CHANNEL_DVP = 2,
+    RS_DMA_CHANNEL_I2S_TX = 6,
+    RS_DMA_CHANNEL_I2S_RX = 7,
+#else
+    RS_DMA_CHANNEL_DVP = RS_DMA_CHANNEL_BULK,
+    RS_DMA_CHANNEL_I2S_TX = RS_DMA_CHANNEL_BULK,
+    RS_DMA_CHANNEL_I2S_RX = RS_DMA_CHANNEL_BULK,
+#endif
 } rs_dma_channel_t;
 
 typedef struct {

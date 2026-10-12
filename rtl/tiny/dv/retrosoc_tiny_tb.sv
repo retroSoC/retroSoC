@@ -1,3 +1,4 @@
+`include "tiny_topology.svh"
 // Copyright (c) 2026 Yuchi Miao
 // SPDX-License-Identifier: MulanPSL-2.0
 `timescale 1ns / 1ps
@@ -8,24 +9,27 @@ module retrosoc_tiny_tb;
   logic s_reset_driver = 1'b0;
   wire  s_rst_n = s_reset_driver;
   wire s_uart0_tx, s_uart1_tx;
-  wire           s_uart0_rx = 1'b1;
-  wire           s_uart1_rx = 1'b1;
-  logic          s_jtag_tck_driver = 1'b0;
-  logic          s_jtag_tms_driver = 1'b1;
-  logic          s_jtag_tdi_driver = 1'b0;
-  wire           s_jtag_tck = s_jtag_tck_driver;
-  wire           s_jtag_tms = s_jtag_tms_driver;
-  wire           s_jtag_tdi = s_jtag_tdi_driver;
-  wire           s_jtag_trst_n = s_rst_n;
-  wire           s_jtag_tdo;
-  tri1    [31:0] s_gpio;
-  wire           s_xpi_sck;
-  wire    [ 3:0] s_xpi_nss;
-  tri     [ 3:0] s_xpi_data;
-  integer        s_cycles;
-  integer        s_max_cycles = 20000000;
-  integer        s_done_cycles = 0;
-  logic   [ 7:0] s_uart_byte;
+  wire  s_uart0_rx = 1'b1;
+  wire  s_uart1_rx = 1'b1;
+  logic s_jtag_tck_driver = 1'b0;
+  logic s_jtag_tms_driver = 1'b1;
+  logic s_jtag_tdi_driver = 1'b0;
+  wire  s_jtag_tck = s_jtag_tck_driver;
+  wire  s_jtag_tms = s_jtag_tms_driver;
+  wire  s_jtag_tdi = s_jtag_tdi_driver;
+  wire  s_jtag_trst_n = s_rst_n;
+  wire  s_jtag_tdo;
+  `include "tiny_tb_gpio.svh"
+  wire          s_xpi_sck;
+  wire    [3:0] s_xpi_nss;
+  tri     [3:0] s_xpi_data;
+  integer       s_cycles;
+`ifndef RETROSOC_SOC__TINY_NETLIST
+  `include "tiny_p6_devices.svh"
+`endif
+  integer       s_max_cycles = 20000000;
+  integer       s_done_cycles = 0;
+  logic   [7:0] s_uart_byte;
   `include "tiny_jtag_smoke.svh"
 
 `ifdef RETROSOC_SOC__TINY_NETLIST
@@ -64,24 +68,15 @@ module retrosoc_tiny_tb;
     if (s_done_cycles != 128) $fatal(1, "SIM_TEST_TIMEOUT Tiny cycles=%0d", s_cycles);
   end
 
-`ifdef RETROSOC_SOC__TINY_NETLIST
+`ifdef SIMU_IVERILOG
   localparam bit ObserveUartAlways = 1'b1;
 `else
   localparam bit ObserveUartAlways = 1'b0;
 `endif
-`ifdef SIMU_IVERILOG
-  localparam bit ObserveUartBaseline = 1'b1;
-`else
-  localparam bit ObserveUartBaseline = 1'b0;
-`endif
-  // The Verilator RTL already prints accepted TX bytes. The Icarus observer is
-  // opt-in for measurements; SYSCTRL remains the authoritative verdict.
+  // The Verilator RTL prints accepted TX bytes. Icarus observes serial output for
+  // all firmware measurements; SYSCTRL remains the authoritative verdict.
   initial begin
-    if (ObserveUartAlways || (ObserveUartBaseline && ($test$plusargs(
-            "tiny_r2_baseline"
-        ) || $test$plusargs(
-            "tiny_r2_p3"
-        )))) begin
+    if (ObserveUartAlways) begin
       forever begin
         @(negedge s_uart0_tx);
         #1627.604;
@@ -239,10 +234,13 @@ module retrosoc_tiny_tb;
   // Icarus 13 miscounts the temporary expression $countones(~a_23_bit_vector).
   // Count declared bits explicitly and reject unknowns rather than correcting
   // a report afterward. This function changes only opt-in P5 observations.
-  function automatic integer p5_active_targets(input logic [22:0] idle_i);
+  function automatic integer p5_active_targets(
+      input logic [`RETROSOC_TINY__TARGET_COUNT-1:0] idle_i);
     integer count;
     count = 0;
-    for (integer target_index = 0; target_index < 23; target_index++) begin
+    for (
+        integer target_index = 0; target_index < `RETROSOC_TINY__TARGET_COUNT; target_index++
+    ) begin
       if (idle_i[target_index] === 1'b0) count++;
       else if (idle_i[target_index] !== 1'b1) $fatal(1, "SIM_TEST_FAIL P5 unknown target state");
     end
@@ -250,11 +248,13 @@ module retrosoc_tiny_tb;
   endfunction
   initial begin : p5_monitor_check
     if ($test$plusargs("tiny_r2_p5_monitor_check")) begin
-      for (integer active = 0; active <= 23; active++) begin
-        if (p5_active_targets(23'h7fffff ^ ((23'd1 << active) - 23'd1)) != active)
+      for (integer active = 0; active <= `RETROSOC_TINY__TARGET_COUNT; active++) begin
+        if (p5_active_targets(
+                {`RETROSOC_TINY__TARGET_COUNT{1'b1}} ^ ((`RETROSOC_TINY__TARGET_COUNT'(1) << active) - `RETROSOC_TINY__TARGET_COUNT'(1))
+            ) != active)
           $fatal(1, "SIM_TEST_FAIL P5 monitor population count");
       end
-      $display("SIM_TEST_PASS Tiny P5 monitor-check counts=0..23; instrumentation only");
+      $display("SIM_TEST_PASS Tiny P5 monitor-check counts=0..27; instrumentation only");
       $finish;
     end
   end

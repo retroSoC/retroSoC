@@ -56,7 +56,7 @@ ifneq ($(ISA),RV32IM)
 $(error SOC=TINY firmware uses ISA=RV32IM)
 endif
 ifneq ($(WS2812_P3_ACCEPTANCE),NO)
-$(error SOC=TINY does not yet integrate WS2812)
+$(error SOC=TINY uses its integrated P6 acceptance, not the Mini WS2812 P3 image)
 endif
 ifneq ($(filter YES,$(APU_ENABLE_P7) $(NPU_P5_ACCEPTANCE) $(NPU_P6_ACCEPTANCE)),)
 $(error SOC=TINY does not include multimedia accelerators)
