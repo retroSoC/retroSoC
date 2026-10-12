@@ -14,7 +14,9 @@ official dual-port CPU to four independently serviced 32 KiB local SRAM groups.
 The 32 physical macros and register ABI are unchanged. Only non-SRAM CPU work
 uses the tagged slow path. The [P5 implementation](../../docs/ip/tiny-soc-r2-concurrent-fabric.md)
 replaces external serialization with independent target ownership and APB
-branches; the third, SDIO ingress remains reserved and inactive until P6.
+branches. The [P6 candidate](../../docs/ip/tiny-soc-r2-shared-integration.md)
+activates the SDIO ingress, eight-channel DMA, RNG/CRC/WS2812/Crypto and the
+existing I2S master path. Its validation and acceptance remain in the ledger.
 Source presence alone is not completed phase or physical qualification.
 
 `top` owns product integration, `address_map`, `pin_map` and `integration` own
@@ -51,7 +53,7 @@ final timing closure is mandatory. Software/DMA scheduling is `TINY-R2-P3`, loca
 `TINY-R2-P9`, system qualification `TINY-R2-P10` and complete-product physical
 qualification `TINY-R2-P11` (historical IHP130 title; now default ICS55).
 Legacy `TINY-P0` through `TINY-P12` remain in
-the contract history. Executable profiles retain SAFE24 and four DMA channels;
+the contract history. The P6 candidate retains SAFE24 with eight DMA channels;
 ICS55's present PLL stays off. No faster CPU/SRAM or PLL timing support
 follows from this freeze or the `HAVE_PLL` selector alone.
 
@@ -96,8 +98,8 @@ FIFOs, APB4 `0x1001D000..0x1001DFFF`, IRQ25 and RCU target16. DMA V2.2 adds
 paced fixed-MMIO requests `SPI_TX=16` / `SPI_RX=17`; payload MMIO retains
 single-beat transactions. TX borrows channel3 and RX channel2 only after
 prior owners fully drain and release them. No extra AXI master, DMA channel,
-SRAM capacity or pad is added. None of these paths exists in the current
-24 MHz/no-PLL/four-channel RTL/profile.
+SRAM capacity or pad is added. SPI and its requests remain absent from the
+SAFE24 P6 candidate.
 
 The frozen Gen1 routes add only GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30
 ALT1 MISO and GPIO31 ALT1 CS_N. Write-only display mode uses ordinary GPIO30

@@ -169,7 +169,11 @@ configurations, and build artifact locations.
 
 For `SOC=TINY`, `bringup` and `ci_smoke` use the MCU acceptance composition. It
 boots through XPI into SRAM, checks CPU C/A behavior and bus exceptions, DMA
-(including UART requests), interrupts, RTC, GPIO, UART1 and I2C error completion,
-then verifies watchdog reset by completing after the next NOR boot. It uses
+(including UART requests), interrupts, RTC, GPIO and I2C0 error completion.
+The P6 composition additionally checks RNG qualification rejection, CRC DMA,
+Crypto initialization/vectors/erasure, audio plus finite WS refill and background
+DMA, and SDIO transfers/recovery with verification-board models. Missing external
+devices fail boundedly; they do not hold CPU boot reset. The image then verifies
+watchdog reset by completing after the next NOR boot. It uses
 SYSCTRL terminal status. The small `asm/tiny_boot.S` image separately qualifies
 the synthesized SRAM/pad path; it is not a replacement for the full RTL test.

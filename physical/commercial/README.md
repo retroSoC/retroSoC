@@ -158,11 +158,14 @@ false-paths the canonical reset ports. Product overlays
   Qualified I/O covers JTAG, DVP (GPIO10-20), ULPI, SDRAM, SDIO, XPI, and
   asynchronous pads (UART0/1, remaining GPIO); a reviewed
   `TIMING_IO_MODE_HOOK` is mandatory in qualified mode.
-- Tiny (`tiny.tcl`): SAFE24 boot — `clk_system` (external 24 MHz) and
-  `clk_jtag` only. The PLL_TOP macro is parked (EN=0), is not a clock source,
+- Tiny (`tiny.tcl`): SAFE24 boot — `clk_system` (external 24 MHz),
+  `clk_jtag`, and P6's independent `clk_audio` (GPIO17, 18.432 MHz).
+  The PLL_TOP macro is parked (EN=0), is not a clock source,
   and has no characterized timing arcs yet (see `docs/ip/tiny-soc.md`
   TINY-055); its DB/LEF/GDS/CDL views are still required for link, placement,
-  and LVS. Qualified I/O covers JTAG, XPI, and asynchronous pads.
+  and LVS. The legacy I/O template covers JTAG, XPI, and asynchronous pads;
+  this domain inventory update does not qualify P6 I2S/SDIO board timing or
+  the final QFN64 wrapper.
 
 ## Legacy-flow parity
 

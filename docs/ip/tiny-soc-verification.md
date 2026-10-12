@@ -1,5 +1,39 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P6 implementation complete, human review pending (2026-10-12)
+
+The maintainer approved the P6 preflight on
+`b3b30a72cd6ef5340c28e5044c96cd13258ec5a6`, against unchanged specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The
+[P6 runbook](tiny-soc-r2-shared-integration.md) records eight-channel/shared-IP
+integration, the explicitly retained historical ASIC wrapper and publication,
+and the separate source-bound validation scope. Development diagnostics are
+not final acceptance; no P7 or physical-frequency qualification is implied.
+
+Initial integration exposed a shared I2S sample-LSB assembly defect and a
+Verilator packed-tri1 board-model limitation. The runbook records their narrow
+corrections. Directed SDIO integration additionally exposed command admission,
+transmit/receive pause and multi-burst descriptor-retirement defects, plus
+manual card-model gaps; their independent reproductions are recorded there.
+Both Tiny PDKs have complete Verilator and Icarus functional verdicts and
+netlist boots. Yosys synthesis and OpenSTA run for both PDKs with the exact
+32-main plus 6-private-Crypto macro bindings. The final audit is
+`build/ics55-tiny-2026-10-12-11-50-2eb98c0e1fae/meta/tiny-r2-p6/audit-result-v3.json`;
+the source-bound evidence is `evidence.json` in the same directory. The
+functional report retains four simulator records, all workload/AXI/device
+observations and the Mini compatibility result.
+
+Observed setup/hold slack remains negative: ICS55 WNSmax/WNSmin −84.93/−0.31 ns
+and IHP130 −165.41/−0.51 ns. Warning checks report new signatures from the
+existing policy's observation flows; no baseline or metrics policy was edited.
+The full Pytest attempt remains recorded as 1634 passed, one optional `pypdf`
+skip, five failures and 60 fixture errors; all 65 failed/error nodes pass in
+the explicit repair selection, and the affected consumer suite passes 512 with
+one optional skip. These overlapping counts are not a clean full-suite rerun.
+Final human review, complete-product timing closure, package/QFN64 binding and
+physical signoff remain pending. Earlier P5 results and failed P6 attempts
+retain their original attribution.
+
 ## TINY-R2-P5 P1 protocol correction; validated, review pending (2026-10-12)
 
 The maintainer requested correction of the reset write-drain/read-retention
