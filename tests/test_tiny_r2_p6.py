@@ -404,7 +404,8 @@ def test_p6_map_irq_request_and_pin_contract():
     irqs = {i["name"]: i["core_bit"] for i in topology["interrupts"]}
     assert {k: irqs[k] for k in ("rng", "ws2812", "crypto", "i2s", "sdio")} == {
         "rng": 16, "ws2812": 17, "crypto": 23, "i2s": 8, "sdio": 10}
-    assert {15, 19, 24, 25, 26, 27, 31}.isdisjoint(irqs.values())
+    assert {15, 19, 24, 25, 26, 27}.isdisjoint(irqs.values())
+    assert irqs["rcu"] == 31
     pins = topology["gpio_alt_functions"]
     assert pins[9]["alt0"]["inputs"] == ["u_uart0_if.rx_i"]
     assert pins[10]["alt0"]["inputs"] == ["u_i2c0_if.scl_i"]
@@ -413,8 +414,10 @@ def test_p6_map_irq_request_and_pin_contract():
     for pin in (24, 25):
         assert pins[pin]["alt0"]["inputs"] == [f"u_pwm_if.capture_i[{pin - 24}]"]
         assert pins[pin]["alt1"]["inputs"] == []
-    for pin in range(12, 24):
+    for pin in range(12, 23):
         assert pins[pin]["alt1"]["oe"] == "1'b0"
+    assert pins[23]["alt1"]["do"] == pins[28]["alt0"]["do"] == "s_clkout"
+    assert pins[23]["alt1"]["oe"] == pins[28]["alt0"]["oe"] == "s_clkout_enable"
     validate_clocks(TINY / "integration/clock_reset_domains.json", ROOT)
 
 

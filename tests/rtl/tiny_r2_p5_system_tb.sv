@@ -112,6 +112,7 @@ endmodule
 // XPI device or replace the pin-level NOR regression. The small reset ROM is
 // only a fixture boot source, never a product Boot ROM.
 module apb4_xpi (
+    output logic         lifecycle_idle_o,
     input  logic         clk_i,
     rst_n_i,
     dma_xfer_done_i,
@@ -128,6 +129,7 @@ module apb4_xpi (
   logic [31:0] captured_write = 0;
   logic [31:0] address = 0;
   logic [7:0] beat = 0, length = 0;
+  assign lifecycle_idle_o = !active && !(apb4.psel && apb4.penable);
   initial begin
     if (!$value$plusargs("firmware=%s", firmware)) $fatal(1, "firmware required");
     $readmemh(firmware, rom);

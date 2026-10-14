@@ -10,6 +10,7 @@
 
 module apb4_timer (
     // verilog_format: off -- preserve reviewed column alignment
+    output logic lifecycle_idle_o,
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  debug_halted_i,
@@ -89,4 +90,5 @@ module apb4_timer (
       .one_shot_done_o      (s_one_shot_done)
   );
 
+  assign lifecycle_idle_o = !s_en;
 endmodule

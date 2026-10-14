@@ -35,7 +35,13 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     for index, target in enumerate(document["apb_targets"], start=1):
         name = target["name"]
         assert f".presetn(s_{name}_rst_n)" in interfaces
-        assert f"assign s_{name}_rst_n = s_leaf_rst_n[{index}];" in interfaces
+        if name in {"gpio", "uart0", "i2c0", "timer0", "timer1", "pwm", "i2s", "sdio",
+                    "dma", "ws2812", "rng", "crc", "crypto"}:
+            assert f"tiny_peripheral_leaf u_{name}_lifecycle" in interfaces
+            assert f".rst_n_i(s_leaf_rst_n[{index}])" in interfaces
+            assert f".rst_n_o(s_{name}_rst_n)" in interfaces
+        else:
+            assert f"assign s_{name}_rst_n = s_leaf_rst_n[{index}];" in interfaces
     generate_filelists(filelists, output, ["+define+RETROSOC_SOC__TINY"])
     generate_memory_map(TINY / "address_map/memory_map.json", output / "memory_map", "YES", 128)
     resolved = parse_filelists(filelists / name for name in
@@ -109,10 +115,13 @@ def test_tiny_protocol_contracts(tmp_path: Path, simulator: str, block: str) -> 
                     ROOT / "rtl/ip/interconnect/axi4_error_slave.sv",
                     TINY / "top/tiny_axi4_target.sv", TINY / "top/tiny_axi4_fabric.sv"]
     else:
-        sources += [COMMON / "interface/apb4_if.sv", TINY / "top/tiny_sysctrl.sv"]
+        sources += [COMMON / "interface/apb4_if.sv", COMMON / "cdc/cdc_sync.sv",
+                    COMMON / "cdc/cdc_rst_ctrlr.sv", COMMON / "cdc/cdc_2phase.sv",
+                    COMMON / "clkrst/rst_sync.sv", TINY / "top/tiny_apb_async_bridge.sv",
+                    TINY / "top/tiny_sysctrl.sv"]
     sources.append(ROOT / "tests/rtl" / f"{top}.sv")
     includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", generated / "rtl", tmp_path / "bindings/rtl",
-                                   ROOT / "rtl/ip/peripheral", ROOT / "tests/rtl")]
+                                   ROOT / "rtl/ip/peripheral", TINY / "top", ROOT / "tests/rtl")]
     output = tmp_path / "sim"
     if simulator == "verilator":
         cache = tmp_path / "cache"

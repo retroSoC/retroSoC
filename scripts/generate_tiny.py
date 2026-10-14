@@ -16,6 +16,9 @@ from scripts.rtl.generate_pin_map import generate as generate_pin_map  # noqa: E
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 TINY = ROOT / "rtl/tiny"
+RCU_TARGETS = {"gpio": 1, "uart0": 2, "i2c0": 3, "timer0": 4, "timer1": 5,
+               "pwm": 6, "i2s": 7, "sdio": 8, "dma": 9, "ws2812": 10,
+               "rng": 11, "crc": 12, "crypto": 13}
 
 
 def read_topology(path: Path, memory_map: Path) -> dict:
@@ -77,9 +80,9 @@ def read_topology(path: Path, memory_map: Path) -> dict:
     if document.get("private_crypto") != {
         "banks": 6, "bank_bytes": 4096,
         "macro_instance": "u_soc.u_crypto.u_storage.gen_bank[{bank}].gen_macro.u_sram.u_mem",
-        "clock_domain": "system", "logical_domain": "PCLK (SAFE24 alias)",
+        "clock_domain": "peripheral", "logical_domain": "PCLK",
     }:
-        raise ValueError("Tiny P6 requires six private Crypto banks on SAFE24 PCLK")
+        raise ValueError("Tiny requires six private Crypto banks on PCLK")
     return document
 
 
@@ -111,7 +114,7 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
     board.append("wire [31:0] s_gpio = {" +
                  ", ".join(f"s_gpio_{pin}" for pin in reversed(range(32))) + "};\n")
     atomic_write(output / "rtl/tiny_tb_gpio.svh", "\n".join(board))
-    irq = [comment, "always_comb begin", "  s_irq = '0;"]
+    irq = [comment, "always_comb begin", "  s_irq_async = '0;"]
     header = ["#ifndef RETROSOC_GENERATED_IRQ_METADATA_H",
               "#define RETROSOC_GENERATED_IRQ_METADATA_H", "#include <stdint.h>",
               "#define RS_SOC_IRQ_VECTOR_WIDTH UINT32_C(32)",
@@ -119,7 +122,7 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
               f"#define RS_SOC_ALLOCATED_IRQ_COUNT UINT32_C({len(document['interrupts']) - 2})"]
     for item in document["interrupts"]:
         bit, name = item["core_bit"], item["name"].upper()
-        irq.append(f"  s_irq[{bit}] = {item['signal']};")
+        irq.append(f"  s_irq_async[{bit}] = {item['signal']};")
         header.append(f"#define RS_SOC_IRQ_{name} UINT32_C({bit})")
         if bit >= 2:
             header.append(f"#define RS_SOC_EXT_IRQ_{name} UINT32_C({bit - 2})")
@@ -164,13 +167,51 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
     reset_assignments = []
     for index, target in enumerate(document["apb_targets"]):
         name = target["name"]
+        clock = ("s_ref_clk" if name in ("clint", "archinfo") else
+                 "s_backend_mem_clk" if name == "xpi" else
+                 "s_exec_clk" if name in ("sysctrl", "sram", "sdio") else "s_backend_pclk")
+        target_bit = RCU_TARGETS.get(name)
+        ip_clock = f"s_{name}_clk" if target_bit is not None else clock
+        if target_bit is not None:
+            declarations.append(f"logic {ip_clock};")
         declarations.append(f"logic s_{name}_rst_n;")
-        declarations.append(f"apb4_if u_{name}_apb4_if (.pclk(clk_i), .presetn(s_{name}_rst_n));")
-        reset_assignments.append(f"assign s_{name}_rst_n = s_leaf_rst_n[{index + 1}];")
-        bridges.append(f"assign s_target_rst_n[{index + 5}] = s_{name}_rst_n;")
+        declarations.append(f"apb4_if u_{name}_apb4_if (.pclk({ip_clock}), .presetn(s_{name}_rst_n));")
+        if target_bit is None:
+            reset_assignments.append(f"assign s_{name}_rst_n = s_leaf_rst_n[{index + 1}];")
+        else:
+            reset_assignments.append(f"(* keep_hierarchy = 1 *) tiny_peripheral_leaf u_{name}_lifecycle ("
+                                    f".clk_i({clock}), .rst_n_i(s_leaf_rst_n[{index + 1}]), "
+                                    f".gate_i(s_gate_request[{target_bit}]), "
+                                    f".reset_i(s_local_reset[{target_bit}]), "
+                                    f".clk_o({ip_clock}), .rst_n_o(s_{name}_rst_n), "
+                                    f".gated_o(s_actual_gate[{target_bit}]), "
+                                    f".held_o(s_reset_held[{target_bit}]));")
+            extra_ready = " && s_i2s_reset_ready" if name == "i2s" else ""
+            if name == "dma":
+                # CDC-ready outputs are observed in SYS, matching APB readiness.
+                extra_ready = " && s_dma_ready_sys && s_dma_idle_sys"
+            reset_assignments.append(f"assign s_reset_ready[{target_bit}] = s_{name}_rst_n && "
+                                    f"s_apb_cdc_ready[{index}]{extra_ready};")
+        reset_assignments.append(f"assign s_leaf_clk[{index + 1}] = {clock};")
+        bridges.append(f"assign s_target_rst_n[{index + 5}] = s_fabric_rst_n;")
+        crossed = clock != "s_exec_clk" or target_bit is not None
+        endpoint = f"u_{name}_sys_apb4_if" if crossed else f"u_{name}_apb4_if"
         bridges.append(f"tiny_axi42apb4 u_{name}_bridge ("
-                       f".clk_i(clk_i), .rst_n_i(s_{name}_rst_n), "
-                       f".axi4(u_targets_axi4_if[{index + 5}]), .apb4(u_{name}_apb4_if));")
+                       f".clk_i(s_exec_clk), .rst_n_i(s_fabric_rst_n), "
+                       f".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint}));")
+        if crossed:
+            disabled = f"s_disabled_sys[{target_bit}]" if target_bit is not None else "1'b0"
+            declarations.append(f"apb4_if {endpoint} (.pclk(s_exec_clk), .presetn(s_fabric_rst_n));")
+            bridges.append(f"tiny_apb_async_bridge u_{name}_cfg_cdc ("
+                           f".src_clk_i(s_exec_clk), .src_rst_n_i(s_fabric_rst_n), "
+                           f".dst_clk_i({ip_clock}), .dst_rst_n_i(s_{name}_rst_n), "
+                           f".disabled_i({disabled}), "
+                           f".idle_o(s_apb_cdc_idle[{index}]), "
+                           f".ready_o(s_apb_cdc_ready[{index}]), "
+                           f".src_apb4({endpoint}), .dst_apb4(u_{name}_apb4_if));")
+        else:
+            bridges.append(f"assign s_apb_cdc_idle[{index}] = 1'b1;")
+            bridges.append(f"assign s_apb_cdc_ready[{index}] = 1'b1;")
         decode.append(f"if ({' || '.join(f'`SOC_ADDR_IS_{r}(addr_i)' for r in target['regions'])}) "
                       f"return 5'd{index + 5};")
     atomic_write(output / "rtl/tiny_apb_interfaces.svh", "\n".join(declarations + reset_assignments) + "\n")

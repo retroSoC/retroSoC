@@ -253,6 +253,11 @@
       "name": "crypto",
       "core_bit": 23,
       "signal": "s_crypto_irq"
+    },
+    {
+      "name": "rcu",
+      "core_bit": 31,
+      "signal": "s_rcu_irq"
     }
   ],
   "gpio_alt_functions": [
@@ -588,8 +593,8 @@
       },
       "alt1": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "s_clkout",
+        "oe": "s_clkout_enable"
       }
     },
     {
@@ -652,8 +657,8 @@
       "pin": 28,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "s_clkout",
+        "oe": "s_clkout_enable"
       },
       "alt1": {
         "inputs": [],
@@ -706,7 +711,7 @@
     "banks": 6,
     "bank_bytes": 4096,
     "macro_instance": "u_soc.u_crypto.u_storage.gen_bank[{bank}].gen_macro.u_sram.u_mem",
-    "clock_domain": "system",
-    "logical_domain": "PCLK (SAFE24 alias)"
+    "clock_domain": "peripheral",
+    "logical_domain": "PCLK"
   }
 }

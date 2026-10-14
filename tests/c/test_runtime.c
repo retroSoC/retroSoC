@@ -12,6 +12,8 @@
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/clock.h>
+#include <retrosoc/hal/rcu.h>
+#include <retrosoc/hal/rcu_regs.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/fabric_monitor.h>
@@ -65,6 +67,7 @@ uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_npu_test_mmio[1024];
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 volatile uint32_t rs_resource_test_mmio[1024];
+volatile uint32_t rs_tiny_rcu_test_mmio[1024];
 volatile uint32_t rs_dma_test_mmio[1024];
 static uint32_t ws_registers[16];
 static uint32_t ws_pushed;
@@ -3148,6 +3151,61 @@ static int test_crypto_lifecycle_contract(void) {
     return 0;
 }
 
+static int test_tiny_rcu_boundaries(void) {
+    rs_tiny_rcu_snapshot_t snapshot;
+    uint32_t hz = 0U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_CAPABILITY_OFFSET / 4U] = 3U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_TARGET_CAP_OFFSET / 4U] = 0x3FFFU;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_XIN_HZ_OFFSET / 4U] = 96000000U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_REF_HZ_OFFSET / 4U] = 24000000U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_COMMAND_OFFSET / 4U] = 0xDEADU;
+    if (rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_PLL192, 10U) != RS_ENOTSUP ||
+        rs_tiny_rcu_request_profile((rs_tiny_rcu_profile_t)4, 10U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_gate(0U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_reset(2U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_reset(1U, 10U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_gate(1U << 14U, 10U) != RS_ENOTSUP ||
+        rs_tiny_rcu_apply_reset(1U << 17U, 10U) != RS_ENOTSUP) {
+        return 1;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_STATUS_OFFSET / 4U] = RS_TINY_RCU_STATUS_BUSY;
+    if (rs_tiny_rcu_get_snapshot(&snapshot) != RS_EBUSY ||
+        rs_tiny_rcu_apply_gate(2U, 10U) != RS_EBUSY ||
+        rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_SAFE24, 10U) != RS_EBUSY) {
+        return 2;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_STATUS_OFFSET / 4U] = 0U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_GATE_STATUS_OFFSET / 4U] = 2U;
+    if (rs_tiny_rcu_apply_reset(2U, 10U) != RS_EBUSY) {
+        return 3;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 4U;
+    if (rs_tiny_rcu_apply_gate(2U, 10U) != RS_ETIMEOUT) {
+        return 4;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 8U;
+    if (rs_tiny_rcu_apply_gate(2U, 10U) != RS_EIO ||
+        rs_tiny_rcu_test_mmio[RS_TINY_RCU_COMMAND_OFFSET / 4U] != 0xDEADU) {
+        return 5;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 0U;
+    if (rs_tiny_rcu_profile_hz(RS_TINY_RCU_PROFILE_XIN, &hz) != RS_OK || hz != 96000000U ||
+        rs_tiny_rcu_get_snapshot(NULL) != RS_EINVAL ||
+        rs_tiny_rcu_get_snapshot(&snapshot) != RS_OK || snapshot.xin_hz != hz ||
+        rs_tiny_rcu_set_clkout(5U, 1U) != RS_EINVAL ||
+        rs_tiny_rcu_set_clkout(1U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_clear_fault(32U) != RS_EINVAL ||
+        rs_tiny_rcu_clear_reset_cause(64U) != RS_EINVAL) {
+        return 6;
+    }
+    if (rs_tiny_rcu_set_clkout(1U, 1U) != RS_OK ||
+        rs_tiny_rcu_set_clkout(1U, 2U) != RS_EBUSY ||
+        rs_tiny_rcu_set_clkout(0U, 0U) != RS_OK) {
+        return 7;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -3156,6 +3214,7 @@ int main(void) {
         test_wait_helper(),
         test_crypto_lifecycle_contract(),
         test_clock_frequency_contract(),
+        test_tiny_rcu_boundaries(),
         test_ws2812_helpers(),
         test_dma_sessions(),
         test_ws2812_refill(),

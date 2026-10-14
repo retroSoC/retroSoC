@@ -41,6 +41,16 @@ _start:
     li t0, 0x1000b084
     li t1, 1
     sw t1, 0(t0)
+#ifdef TINY_TEST_P7
+    csrsi 0xbf0, 1
+    li t0, 128
+    csrs mie, t0
+    wfi
+5:  csrr t1, mip
+    andi t1, t1, 128
+    bnez t1, 5b
+    wfi
+#endif
     li t0, 0x3001ffe0
 2:  lw t1, 0(t0)
     beqz t1, 2b

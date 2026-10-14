@@ -5,6 +5,15 @@
 /top/tiny_sysctrl.sv
 /top/tiny_archinfo.sv
 /top/tiny_reset_tree.sv
+/top/tiny_clock_reset_subsystem.sv
+/top/tiny_axi4_async_bridge.sv
+/top/tiny_apb_async_bridge.sv
+/top/tiny_axi4_admission.sv
+/top/tiny_managed_lifecycle.sv
+/top/tiny_peripheral_leaf.sv
+/top/tiny_peripheral_control.sv
+/top/tiny_clock_output.sv
+/top/tiny_clock_gate.sv
 /top/tiny_sram_port_if.sv
 /top/tiny_sram_group.sv
 /top/tiny_sram_axi4.sv

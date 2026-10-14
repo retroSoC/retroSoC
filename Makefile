@@ -57,7 +57,7 @@ JTAG_IDCODE       ?= DEADBEEF
 EXT_CLK_HZ        ?= 72000000
 AUD_CLK_HZ        ?= 18432000
 CLINT_TIMEBASE_HZ ?= 1000000
-MGMT_CPU_CLK_HZ   := $(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ))
+MGMT_CPU_CLK_HZ   := $(if $(filter TINY,$(SOC)),24000000,$(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ)))
 # Reset-state peripheral clock: the PCLK divider in the clock/reset subsystem
 # resets to passthrough on the LP root clock, so PCLK starts at the management
 # CPU frequency until software programs a different divider.
@@ -85,6 +85,7 @@ SW_ISA_PROFILE       ?= COMPAT
 SW_OPT               ?= APP
 SW_LTO               ?= NO
 WS2812_P3_ACCEPTANCE ?= NO
+TINY_P7_ACCEPTANCE   ?= NO
 COREMARK_MODE        ?= quick
 NPU_P5_ACCEPTANCE    ?= NO
 NPU_P6_ACCEPTANCE    ?= NO
@@ -126,6 +127,9 @@ CONFIG_KEY_VARS += SW_ISA_PROFILE SW_OPT SW_LTO
 endif
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += WS2812_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_P7_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P7_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -287,6 +291,12 @@ $(call validate_value,SW_ISA_PROFILE,COMPAT TINY_PERF)
 $(call validate_value,SW_OPT,APP O2 O3 Os)
 $(call validate_value,SW_LTO,$(VALID_BOOL))
 $(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P7_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(TINY_P7_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR),TINY/ci_smoke/YES)
+$(error TINY_P7_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES)
+endif
+endif
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR),MINI/ci_smoke/YES)
 $(error WS2812_P3_ACCEPTANCE requires SOC=MINI APP=ci_smoke HAVE_CSR=YES)
@@ -383,7 +393,7 @@ endif
 
 ifeq ($(STA),OPENSTA)
 ifeq ($(HAVE_PLL),YES)
-ifneq ($(SOC)/$(PDK)/$(TINY_SAFE24_PLL_OFF),TINY/ICS55/YES)
+ifneq ($(SOC)/$(PDK)/$(TINY_R2_P7),TINY/ICS55/YES)
 $(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
 endif
 endif

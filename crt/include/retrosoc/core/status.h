@@ -12,6 +12,7 @@ typedef enum {
     RS_EIO = -5,
     RS_ENOTSUP = -6,
     RS_EFORMAT = -7,
+    RS_EBUSY = -8,
 } rs_status_t;
 
 typedef uint32_t rs_timeout_t;

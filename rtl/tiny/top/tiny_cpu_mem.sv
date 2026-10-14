@@ -5,10 +5,14 @@
 // Independent one-operation I/D frontends. AHB write data belongs to the cycle
 // following address acceptance. Local stores complete only after macro commit.
 // Only non-SRAM work enters the tagged, non-posted slow-path merge.
-module tiny_cpu_mem (
+module tiny_cpu_mem #(
+    parameter bit ClockPause = 1'b0
+) (
     input  logic                                clk_i,
     input  logic                                rst_n_i,
     input  logic                                quiesce_i,
+    input  logic                                clock_pause_i,
+    output logic                                clock_idle_o,
     output logic                                idle_o,
     output logic                    [1:0]       local_fault_valid_o,
     output logic                    [1:0][31:0] local_fault_addr_o,
@@ -64,14 +68,23 @@ module tiny_cpu_mem (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
-  logic s_adapter_idle;
+  logic       s_adapter_idle;
+  logic       s_clock_pause;
+  logic [1:0] s_clock_front_idle;
+  assign s_clock_pause = ClockPause && clock_pause_i;
+  // A pipeline-overlap address acknowledged with the preceding AHB response
+  // remains in the input register until resume. Only target admissions are
+  // blocked: every accepted bank/AXI operation and response still drains.
+  assign clock_idle_o  = (&s_clock_front_idle) && (s_slow_q.state == SlowIdle) && s_adapter_idle;
 
   for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port
     assign local_fault_valid_o[port_index] =
         (s_req_q[port_index].state == ErrorLast) && !s_req_q[port_index].external_error;
     assign local_fault_addr_o[port_index] = s_req_q[port_index].addr;
     assign local_fault_write_o[port_index] = s_req_q[port_index].write;
-    assign s_slow_req[port_index] = s_req_q[port_index].state == SlowIssue;
+    assign s_slow_req[port_index] = (s_req_q[port_index].state == SlowIssue) && !s_clock_pause;
+    assign s_clock_front_idle[port_index] = (s_req_q[port_index].state == Idle) ||
+        (s_req_q[port_index].state == LocalIssue) || (s_req_q[port_index].state == SlowIssue);
     assign s_front_idle[port_index] = (s_req_q[port_index].state == Idle) &&
         (quiesce_i || !cpu[port_index].htrans[1]);
     assign s_err[port_index] = (s_req_q[port_index].state == ErrorFirst) ||
@@ -87,7 +100,8 @@ module tiny_cpu_mem (
     assign cpu[port_index].hresp = s_err[port_index];
     assign cpu[port_index].hrdata = (s_req_q[port_index].state == LocalWait) ?
         local_ports[port_index].rdata : s_slow_q.rdata;
-    assign local_ports[port_index].req_valid = s_req_q[port_index].state == LocalIssue;
+    assign local_ports[port_index].req_valid = (s_req_q[port_index].state == LocalIssue) &&
+        !s_clock_pause;
     assign local_ports[port_index].addr = s_req_q[port_index].addr;
     assign local_ports[port_index].write = s_req_q[port_index].write;
     assign local_ports[port_index].wdata = s_req_q[port_index].data;
@@ -118,7 +132,9 @@ module tiny_cpu_mem (
           `SOC_ADDR_IS_SRAM(s_req_q[port_index].addr)
           ? LocalIssue : SlowIssue;
         end
-        LocalIssue: if (local_ports[port_index].req_ready) s_req_d[port_index].state = LocalWait;
+        LocalIssue:
+        if (local_ports[port_index].req_valid && local_ports[port_index].req_ready)
+          s_req_d[port_index].state = LocalWait;
         SlowIssue:
         if (s_slow_accept && s_slow_grant[port_index]) s_req_d[port_index].state = SlowWait;
         SlowWait:

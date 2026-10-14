@@ -20,6 +20,7 @@
 
 module apb4_xpi (
     // verilog_format: off -- preserve reviewed port alignment
+    output logic lifecycle_idle_o,
     input  logic  clk_i,
     input  logic  rst_n_i,
     input  logic  dma_xfer_done_i,
@@ -175,6 +176,11 @@ module apb4_xpi (
   logic              s_fifo_flush;
   logic              s_unused_dma_xfer_done;
   logic              s_unused_mm_perf_split;
+
+  logic              s_protocol_idle;
+  assign s_protocol_idle = !s_mm_busy && !s_indirect_busy && !s_core_busy;
+  assign lifecycle_idle_o = s_protocol_idle &&
+      (s_owner_q == OwnerNone) && s_tx_fifo_empty && s_rx_fifo_empty;
 
   assign s_owner_q = xpi_owner_e'(s_owner_bits_q);
   assign s_selected_req_valid = s_mm_busy ? s_mm_req_valid :

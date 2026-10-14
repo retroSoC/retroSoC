@@ -12,6 +12,7 @@ module apb4_ws2812 #(
     parameter int TxFifoDepth = 16
 ) (
     // verilog_format: off -- preserve reviewed column alignment
+    output logic lifecycle_idle_o,
     input logic   clk_i,
     input logic   rst_n_i,
     apb4_if.slave apb4,
@@ -33,8 +34,10 @@ module apb4_ws2812 #(
   logic s_done, s_underflow, s_aborted;
   logic s_irq, s_dat;
 
-  assign ws2812.dat_o = s_dat;
-  assign ws2812.irq_o = s_irq;
+  assign lifecycle_idle_o = !s_busy && !s_reset_active && !s_start && !s_data_valid;
+
+  assign ws2812.dat_o     = s_dat;
+  assign ws2812.irq_o     = s_irq;
 
   ws2812_reg #(
       .TxFifoDepth(TxFifoDepth)

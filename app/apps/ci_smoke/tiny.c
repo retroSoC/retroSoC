@@ -12,6 +12,7 @@
 #include <retrosoc/hal/i2c.h>
 #include <retrosoc/hal/onchip_sram.h>
 #include <retrosoc/hal/pwm.h>
+#include <retrosoc/hal/rcu.h>
 #include <retrosoc/hal/rtc.h>
 #include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/timer.h>
@@ -29,6 +30,7 @@ static volatile uint32_t rs_mcu_exception_count;
 static volatile bool rs_mcu_handler_failed;
 static volatile bool rs_mcu_probes_active;
 static uint8_t rs_mcu_io_code;
+static volatile uint32_t rs_mcu_watchdog_cookie __attribute__((section(".noinit.rs_mcu_wdg")));
 
 static void rs_mcu_finish(bool pass, uint8_t code) {
     printf("Tiny acceptance %s code=%u\n", pass ? "passed" : "failed", code);
@@ -251,6 +253,7 @@ int main(void) {
     rs_onchip_sram_info_t memory;
     rs_sysctrl_fault_status_t fault;
     rs_watchdog_status_t watchdog = {0};
+    rs_tiny_rcu_snapshot_t reset_snapshot;
     uint64_t before;
     uint64_t after;
     uint8_t p6_result;
@@ -268,12 +271,21 @@ int main(void) {
         rs_mcu_finish(false, 1U);
     }
     printf("Hello retroSoC! Tiny MCU\n");
-    if (rs_watchdog_get_status(&watchdog, RS_TIMEOUT_DEFAULT) != RS_OK) {
+    if (rs_watchdog_get_status(&watchdog, RS_TIMEOUT_DEFAULT) != RS_OK ||
+        rs_tiny_rcu_get_snapshot(&reset_snapshot) != RS_OK) {
         rs_mcu_finish(false, 2U);
     }
-    if (watchdog.reset_count != 0U) {
-        rs_mcu_finish(true, 0U);
+    if ((reset_snapshot.reset_cause & UINT32_C(4)) != 0U) {
+        /* P7 resets WDG functional state. The AON RCU owns the retained cause;
+         * the SRAM cookie proves all pre-reset acceptance work completed. */
+        const bool reset_valid =
+            rs_mcu_watchdog_cookie == UINT32_C(0x57375037) && watchdog.reset_count == 0U &&
+            reset_snapshot.current_profile == 0U && reset_snapshot.sys_hz == UINT32_C(24000000) &&
+            reset_snapshot.gate_status == 0U;
+        rs_mcu_watchdog_cookie = 0U;
+        rs_mcu_finish(reset_valid, reset_valid ? 0U : 2U);
     }
+    rs_mcu_watchdog_cookie = 0U;
     if ((rs_archinfo_read(&info) != RS_OK) || (rs_archinfo_validate_build(&info) != RS_OK) ||
         (info.soc_id != RS_SOC_ID) || (info.topology != UINT32_C(0x20200001)) ||
         (info.technology != RS_SOC_TECHNOLOGY_ID) ||
@@ -316,6 +328,7 @@ int main(void) {
         rs_mcu_finish(false, p6_result);
     }
     printf("Tiny CPU/DMA/IRQ/RTC/I/O passed; exercising watchdog reset\n");
+    rs_mcu_watchdog_cookie = UINT32_C(0x57375037);
     if ((rs_watchdog_configure(&watchdog_config) != RS_OK) ||
         (rs_watchdog_start(RS_TIMEOUT_DEFAULT) != RS_OK)) {
         rs_mcu_finish(false, 9U);

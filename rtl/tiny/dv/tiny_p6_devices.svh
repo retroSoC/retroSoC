@@ -1,6 +1,6 @@
 // Verification-only external devices on the Gen1 GPIO routes. No DUT state is driven.
 logic s_p6_io_trace_started = 0;
-always @(negedge s_clk) begin
+always @(negedge u_dut.u_soc.s_i2c0_clk) begin
   if ($test$plusargs("p6_debug_io")) begin
     if (u_dut.u_soc.u_i2c0.s_cmd_valid && !s_p6_io_trace_started) begin
       s_p6_io_trace_started = 1;
@@ -62,7 +62,7 @@ initial begin
 end
 integer s_p6_frames = 0, s_p6_completed = 0, s_p6_underflows = 0, s_p6_aborts = 0;
 longint unsigned s_p6_sdio_overlap = 0, s_p6_overlap_fetches = 0;
-always @(posedge s_clk) begin
+always @(posedge u_dut.u_soc.s_exec_clk) begin
   if (u_dut.u_soc.u_dma.s_busy[2] && u_dut.u_soc.u_sdio.s_dma_status[0]) begin
     s_p6_sdio_overlap++;
     if (u_dut.u_soc.u_cpu_ahbl_if[0].hready && u_dut.u_soc.u_cpu_ahbl_if[0].htrans[1])
@@ -124,7 +124,7 @@ logic        s_p6_expected_high;
 logic        s_p6_audio_reference = 1'b0;
 logic        s_p6_audio_running = 1'b0;
 initial begin
-  repeat (200) @(negedge s_clk);
+  repeat (200) @(negedge u_dut.u_soc.s_ref_clk);
   if (!u_dut.u_soc.s_cpu_ready_rst_n)
     $fatal(1, "SIM_TEST_FAIL CPU boot waited for absent AUDIO clock");
   s_p6_audio_running = 1'b1;
@@ -135,12 +135,12 @@ always @(posedge s_gpio[27]) begin
   if (s_p6_frames == 4 && s_p6_clock_stops < 2) begin
     wait (s_p6_audio_reference == (s_p6_clock_stops != 0));
     s_p6_audio_running = 0;
-    repeat (4800) @(negedge s_clk);
+    repeat (4800) @(negedge u_dut.u_soc.s_ref_clk);
     s_p6_clock_stops++;
     s_p6_audio_running = 1;
   end
 end
-always @(negedge s_clk) begin
+always @(negedge u_dut.u_soc.s_ws2812_clk) begin
   if (`_P6_WS.s_busy && !s_p6_busy_previous) begin
     s_p6_frames++;
     s_p6_word         = 0;
@@ -218,8 +218,11 @@ for (genvar owner = 0; owner < 3; owner++) begin : gen_p6_axi_observer
   logic pending_read = 0, pending_write = 0, descriptor = 0;
   logic [2:0] read_size = 0;
   `define _P6_AXI u_dut.u_soc.u_masters_axi4_if[owner]
-  always @(posedge s_clk) begin
-    if (s_rst_n) begin
+  always @(posedge u_dut.u_soc.s_exec_clk) begin
+    if (!u_dut.u_soc.s_fabric_rst_n) begin
+      pending_read  = 0;
+      pending_write = 0;
+    end else begin
       if (`_P6_AXI.arvalid && `_P6_AXI.arready) begin
         if (pending_read) $fatal(1, "SIM_TEST_FAIL P6 duplicate read admission");
         pending_read = 1;
@@ -297,7 +300,7 @@ assign s_gpio_2 = u_dut.u_soc.u_sdio_if.dat_oe_o[0] ? 1'bz : s_p6_card_data[0];
 assign s_gpio_3 = u_dut.u_soc.u_sdio_if.dat_oe_o[1] ? 1'bz : s_p6_card_data[1];
 assign s_gpio_4 = u_dut.u_soc.u_sdio_if.dat_oe_o[2] ? 1'bz : s_p6_card_data[2];
 assign s_gpio_5 = u_dut.u_soc.u_sdio_if.dat_oe_o[3] ? 1'bz : s_p6_card_data[3];
-always @(negedge s_clk) begin
+always @(negedge u_dut.u_soc.s_sdio_clk) begin
   // Reuse the standalone card's explicit data-stimulus API. The wire command
   // fixes direction/address/length; host DATA_START only schedules admission.
   // This is repository controller integration evidence, not card compliance.

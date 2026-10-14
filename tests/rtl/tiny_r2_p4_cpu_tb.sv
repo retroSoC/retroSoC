@@ -1,6 +1,13 @@
 `timescale 1ns / 1ps
 module tiny_r2_p4_cpu_tb;
   logic clk_i = 0, rst_n_i = 0;
+`ifdef TINY_TEST_P7
+  localparam bit P7Lifecycle = 1;
+`else
+  localparam bit P7Lifecycle = 0;
+`endif
+  logic cold_rst_n = 0, clock_pause = 0, clock_idle, gated;
+  logic [31:0] irq = 0;
   always #5 clk_i = ~clk_i;
   wire s_rst_n = rst_n_i;
   logic s_jtag_tck_driver = 0, s_jtag_tms_driver = 1, s_jtag_tdi_driver = 0;
@@ -46,15 +53,21 @@ module tiny_r2_p4_cpu_tb;
 
 tiny_cpu_wrapper #(
       .EnableAtomics  (0),
+      .EnableWfiGate  (P7Lifecycle),
+      .PreserveDebug  (P7Lifecycle),
       .ResetSyncStages(5)
   ) u_cpu (
       .clk_i         (clk_i),
       .rst_n_i       (rst_n_i),
-      .irq_i         (32'd0),
+      .debug_rst_n_i (cold_rst_n),
+      .wfi_gate_i    (P7Lifecycle),
+      .gated_o       (gated),
+      .hart_reset_o  (),
+      .irq_i         (irq),
       .jtag_tck_i    (s_jtag_tck_driver),
       .jtag_tms_i    (s_jtag_tms_driver),
       .jtag_tdi_i    (s_jtag_tdi_driver),
-      .jtag_trst_n_i (rst_n_i),
+      .jtag_trst_n_i (cold_rst_n),
       .jtag_tdo_o    (s_jtag_tdo),
       .debug_halted_o(halted),
       .bus_idle_i    (idle),
@@ -62,10 +75,14 @@ tiny_cpu_wrapper #(
       .quiesce_o     (quiesce),
       .cpu           (cpu)
   );
-  tiny_cpu_mem u_cpu_mem (
+  tiny_cpu_mem #(
+      .ClockPause(P7Lifecycle)
+  ) u_cpu_mem (
       .clk_i              (clk_i),
       .rst_n_i            (core_rst_n),
       .quiesce_i          (quiesce),
+      .clock_pause_i      (clock_pause),
+      .clock_idle_o       (clock_idle),
       .idle_o             (idle),
       .local_fault_valid_o(),             // P5 fault aggregation has its own fixture.
       .local_fault_addr_o (),
@@ -219,12 +236,22 @@ tiny_cpu_wrapper #(
     cfg.pstrb   = 15;
     repeat (6) jtag_tick(1, 0, ignored);
     @(negedge clk_i);
-    rst_n_i = 1;
+    rst_n_i    = 1;
+    cold_rst_n = 1;
     repeat (12) jtag_tick(1, 0, ignored);
     jtag_idle(1);
     jtag_ir(5'h11);
     wait (starts == 1);
     $display("P4_CPU_STAGE boot-and-boundaries");
+    if (P7Lifecycle) begin
+      wait (gated);
+      repeat (10) @(negedge clk_i);
+      irq = 2;  // Tiny wrapper timer IRQ is input bit 1.
+      wait (!gated);
+      repeat (10) @(negedge clk_i);
+      irq = 0;
+      wait (gated);
+    end
     jtag_dmi(1, 7'h10, 1, status);
     jtag_dmi(1, 7'h10, 32'h80000001, status);
     wait (halted);
@@ -279,6 +306,41 @@ tiny_cpu_wrapper #(
     do @(posedge clk_i); while (!ext[2].rvalid);
     if (ext[2].rdata !== 32'hdecafbad || ext[2].rresp != 0)
       $fatal(1, "SRAM payload lost on hart reset");
+    if (P7Lifecycle) begin
+      @(negedge clk_i);
+      ext[2].rready = 0;
+      // A clock pause is different from a hart reset: unaccepted requests
+      // may remain parked, and resume without being dropped or replayed.
+      clock_pause   = 1;
+      wait (clock_idle);
+      repeat (20) begin
+        @(negedge clk_i);
+        if (!clock_idle || local_ports[0].req_valid || local_ports[1].req_valid)
+          $fatal(1, "CPU local admission continued while clock-paused");
+      end
+      clock_pause = 0;
+      jtag_dmi(1, 7'h10, 32'h80000001, status);
+      wait (halted);
+      set_gpr(28, 0);
+      jtag_dmi(1, 7'h04, 32'h5a1234a5, status);
+      jtag_dmi(1, 7'h20, 32'h000e2e83, status);  // lw t4,0(t3)
+      jtag_dmi(1, 7'h21, 32'h00100073, status);
+      hold_read = 1;
+      jtag_dmi(1, 7'h17, 32'h00240000, status);
+      wait (read_pending);
+      @(negedge clk_i);
+      rst_n_i = 0;
+      repeat (10) @(negedge clk_i);
+      hold_read = 0;
+      rst_n_i   = 1;
+      repeat (20) @(negedge clk_i);
+      jtag_dmi(0, 7'h04, 0, status);
+      if (status != 32'h5a1234a5) $fatal(1, "warm reset lost retained debug data");
+      jtag_dmi(0, 7'h16, 0, status);
+      if (status[12] || status[10:8] == 0)
+        $fatal(1, "warm reset did not terminate pending debug command with error");
+      $display("P7_CPU_LIFECYCLE_PASS irq-wake debug-wake clock-pause warm-debug-abort");
+    end
     $display("SIM_TEST_PASS Tiny P4 CPU compressed-boundaries fence-i debug-patch hart-drain");
     $finish;
   end

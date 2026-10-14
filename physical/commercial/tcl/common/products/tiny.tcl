@@ -11,15 +11,14 @@
 # retroSoC Tiny (retrosoc_tiny_asic) product overlay.
 #
 # Clock intent: the canonical contract (rtl/tiny/integration/
-# clock_reset_domains.json) owns system (SAFE24 external clock), jtag and
-# the independent GPIO17 AUDIO reference. The ICS55 PLL_TOP macro is present but parked off (EN=0) and is
-# not a clock source; it carries no characterized timing arcs yet, so no PLL
-# overlay clock is created here. See docs/ip/tiny-soc.md (TINY-055).
+# clock_reset_domains.json) owns REF24, derived SYS/MEM/PCLK, JTAG and GPIO17
+# AUDIO. This adapter covers SAFE24 boot only. RCU can enable the physical PLL
+# in functional operation, but its active timing remains unqualified.
 
 namespace eval product {}
 
 proc product::expected_clock_domains {} {
-    return {system jtag audio}
+    return {aon system memory peripheral jtag audio}
 }
 
 proc product::custom_clock_domains {} {
@@ -27,7 +26,7 @@ proc product::custom_clock_domains {} {
 }
 
 proc product::clock_names {} {
-    return {clk_system clk_jtag clk_audio}
+    return {clk_aon clk_system clk_memory clk_peripheral clk_jtag clk_audio clk_sys_div2 clk_sys_div4 clk_clkout_source}
 }
 
 proc product::io_interface_groups {} {
@@ -35,6 +34,31 @@ proc product::io_interface_groups {} {
 }
 
 proc product::apply_clock_overlays {} {
+    foreach divisor {2 4} {
+        create_generated_clock -name clk_sys_div$divisor \
+            -source [flow::domain_object system] -divide_by $divisor \
+            [flow::required_net_driver_pin "Tiny SYS /$divisor" \
+                "u_soc/u_clock_backend/s_div${divisor}_clk"]
+        flow::register_clock clk_sys_div$divisor core
+    }
+    foreach mux {u_sys_mux u_mem_mux u_pclk_div2_mux u_pclk_mux} {
+        set_case_analysis 0 [flow::required_pins "Tiny SAFE24 mux $mux" \
+            "u_soc/u_clock_backend/$mux/select_i"]
+        foreach {side enabled} {0 1 1 0} {
+            set_case_analysis $enabled [flow::required_net_driver_pin "Tiny settled clock gate" \
+                "u_soc/u_clock_backend/$mux/r_enable$side"]
+        }
+    }
+    set_case_analysis 0 [flow::required_pins "Tiny SAFE24 PLL enable" \
+        "u_soc/u_clock_backend/u_pll/gen_ecos/u_backend/u_PLL_TOP/EN"]
+    foreach bit {1 2} {
+        set_case_analysis 0 [flow::required_net_driver_pin "Tiny boot CLKOUT source" \
+            "u_soc/u_clock_output/s_cfg_q\[$bit\]"]
+    }
+    create_generated_clock -name clk_clkout_source -source [flow::domain_object aon] \
+        -divide_by 1 [flow::required_net_driver_pin "Tiny boot CLKOUT source clock" \
+            "u_soc/u_clock_output/s_src_clk"]
+    flow::register_clock clk_clkout_source core
 }
 
 proc product::apply_io_constraints {} {

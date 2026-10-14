@@ -13,6 +13,7 @@ module apb4_i2c #(
     parameter int RxFifoDepth  = 16
 ) (
     // verilog_format: off -- preserve reviewed column alignment
+    output logic lifecycle_idle_o,
     input  logic  clk_i,
     input  logic  rst_n_i,
     output logic  dma_tx_stall_o,
@@ -66,10 +67,12 @@ module apb4_i2c #(
   logic        s_recovery_failed_event;
   logic        s_core_cmd_flush;
 
-  assign i2c.scl_o    = 1'b0;
-  assign i2c.sda_o    = 1'b0;
-  assign i2c.scl_oe_o = s_scl_pull_low;
-  assign i2c.sda_oe_o = s_sda_pull_low;
+  assign lifecycle_idle_o = !s_en && !s_busy && !s_recovery_active;
+
+  assign i2c.scl_o        = 1'b0;
+  assign i2c.sda_o        = 1'b0;
+  assign i2c.scl_oe_o     = s_scl_pull_low;
+  assign i2c.sda_oe_o     = s_sda_pull_low;
 
   i2c_filter u_i2c_filter (
       .clk_i              (clk_i),

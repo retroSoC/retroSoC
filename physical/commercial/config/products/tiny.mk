@@ -16,9 +16,9 @@ TOP := retrosoc_tiny_asic
 
 # Canonical clock domains, mirrored by tcl/common/products/tiny.tcl and
 # validated against rtl/tiny/integration/clock_reset_domains.json when the
-# commercial timing contract is generated. Tiny boots SAFE24: the PLL_TOP
-# macro is present in the netlist but parked off and is not a clock source.
-COMMERCIAL_CLOCK_DOMAINS := system jtag audio
+# commercial timing contract is generated. This adapter analyzes the SAFE24
+# boot scenario, explicitly constraining RCU mux selections and PLL enable.
+COMMERCIAL_CLOCK_DOMAINS := aon system memory peripheral jtag audio
 
 # Qualified-I/O interface groups and the budget variables each group requires.
 COMMERCIAL_IO_INTERFACES       := JTAG XPI ASYNC
@@ -38,7 +38,7 @@ COMMERCIAL_IO_BUDGET_VARIABLES := \
 # Tiny has no bidirectional pad-mode selection requirement.
 PRODUCT_REQUIRES_IO_MODE_HOOK := NO
 
-# The Tiny PLL_TOP macro is parked (EN=0) and has no characterized timing
+# In this SAFE24 scenario PLL_TOP is parked (EN=0) and has no characterized timing
 # arcs; doctor skips the qualified PLL-mode checks for this product. See
 # docs/ip/tiny-soc.md (TINY-055) for the qualification boundary.
 PRODUCT_PLL_MODE := parked

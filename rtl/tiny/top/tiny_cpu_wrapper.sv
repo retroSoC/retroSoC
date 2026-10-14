@@ -13,11 +13,15 @@
 module tiny_cpu_wrapper #(
     parameter int ExternalIrqCount = 30,
     parameter bit EnableAtomics    = 1'b0,
-    parameter int ResetSyncStages  = 3
+    parameter int ResetSyncStages  = 3,
+    parameter bit EnableWfiGate    = 1'b0,
+    parameter bit PreserveDebug    = 1'b0
 ) (
     // verilog_format: off -- preserve reviewed column alignment
     input  logic        clk_i,
     input  logic        rst_n_i,
+    input logic debug_rst_n_i,
+    output logic hart_reset_o,
     input  logic [ExternalIrqCount+1:0] irq_i,
     input  logic        jtag_tck_i,
     input  logic        jtag_tms_i,
@@ -26,13 +30,16 @@ module tiny_cpu_wrapper #(
     output logic        jtag_tdo_o,
     output logic        debug_halted_o,
     input  logic        bus_idle_i,
+    input  logic        wfi_gate_i,
+    output logic        gated_o,
     output logic        core_rst_n_o,
     output logic        quiesce_o,
     ahbl_if.master      cpu[2]
     // verilog_format: on
 );
-
-  logic        s_pwrup_req;
+  logic s_pwrup_req;
+  logic s_debug_reset_n, s_abort_debug;
+  logic s_cpu_clk, s_cpu_clk_en, s_gate_d, s_gate_q;
   logic        s_reset_pending;
   logic        s_hart_idle;
   logic        s_core_rst_n;
@@ -58,6 +65,21 @@ module tiny_cpu_wrapper #(
   logic [31:0] s_dbg_sbus_wdata;
   logic [31:0] s_dbg_sbus_rdata;
 
+  assign s_debug_reset_n = PreserveDebug ? debug_rst_n_i : rst_n_i;
+  assign s_abort_debug = PreserveDebug && !rst_n_i;
+  assign hart_reset_o = s_reset_pending;
+  assign s_gate_d = EnableWfiGate && wfi_gate_i && !s_cpu_clk_en && bus_idle_i &&
+      !(|irq_i) && !s_dbg_req_halt && !s_dbg_req_resume && !s_reset_pending;
+  (* keep_hierarchy = 1 *)
+  tiny_clock_gate u_cpu_gate (
+      .clk_i  (clk_i),
+      .rst_n_i(s_core_rst_n),
+      .gate_i (s_gate_d),
+      .clk_o  (s_cpu_clk),
+      .gated_o(s_gate_q)
+  );
+  assign gated_o        = s_gate_q;
+
   assign debug_halted_o = s_dbg_halted;
   assign core_rst_n_o   = s_core_rst_n;
   // Request a normal debug halt before draining/resetting the core. Never cut
@@ -66,11 +88,13 @@ module tiny_cpu_wrapper #(
   assign s_hart_idle    = bus_idle_i && (!s_reset_pending || s_dbg_halted);
 
   mgmt_debug_wrapper #(
-      .JtagIdcode     (`SOC_JTAG_IDCODE),
-      .ResetSyncStages(ResetSyncStages)
+      .JtagIdcode         (`SOC_JTAG_IDCODE),
+      .ResetSyncStages    (ResetSyncStages),
+      .SeparateSystemReset(PreserveDebug)
   ) u_mgmt_debug_wrapper (
       .clk_i                       (clk_i),
-      .rst_n_i                     (rst_n_i),
+      .rst_n_i                     (s_debug_reset_n),
+      .system_rst_n_i              (rst_n_i),
       .bridge_idle_i               (s_hart_idle),
       .jtag_tck_i                  (jtag_tck_i),
       .jtag_tms_i                  (jtag_tms_i),
@@ -86,18 +110,18 @@ module tiny_cpu_wrapper #(
       .dbg_running_i               (s_dbg_running),
       .dbg_data0_rdata_o           (s_dbg_data0_rdata),
       .dbg_data0_wdata_i           (s_dbg_data0_wdata),
-      .dbg_data0_wen_i             (s_dbg_data0_wen),
+      .dbg_data0_wen_i             (s_dbg_data0_wen && !s_abort_debug),
       .dbg_instr_data_o            (s_dbg_instr_data),
       .dbg_instr_data_vld_o        (s_dbg_instr_data_vld),
-      .dbg_instr_data_rdy_i        (s_dbg_instr_data_rdy),
-      .dbg_instr_caught_exception_i(s_dbg_instr_caught_exception),
-      .dbg_instr_caught_ebreak_i   (s_dbg_instr_caught_ebreak),
+      .dbg_instr_data_rdy_i        (s_dbg_instr_data_rdy || s_abort_debug),
+      .dbg_instr_caught_exception_i(s_dbg_instr_caught_exception || s_abort_debug),
+      .dbg_instr_caught_ebreak_i   (s_dbg_instr_caught_ebreak || s_abort_debug),
       .dbg_sbus_addr_o             (s_dbg_sbus_addr),
       .dbg_sbus_write_o            (s_dbg_sbus_write),
       .dbg_sbus_size_o             (s_dbg_sbus_size),
       .dbg_sbus_vld_o              (s_dbg_sbus_vld),
-      .dbg_sbus_rdy_i              (s_dbg_sbus_rdy),
-      .dbg_sbus_err_i              (s_dbg_sbus_err),
+      .dbg_sbus_rdy_i              (s_dbg_sbus_rdy || s_abort_debug),
+      .dbg_sbus_err_i              (s_dbg_sbus_err || s_abort_debug),
       .dbg_sbus_wdata_o            (s_dbg_sbus_wdata),
       .dbg_sbus_rdata_i            (s_dbg_sbus_rdata)
   );
@@ -123,7 +147,7 @@ module tiny_cpu_wrapper #(
       .EXTENSION_XH3BEXTM (1),
       .EXTENSION_XH3IRQ   (1),
       .EXTENSION_XH3PMPM  (0),
-      .EXTENSION_XH3POWER (0),
+      .EXTENSION_XH3POWER (EnableWfiGate),
       .CSR_M_MANDATORY    (1),
       .CSR_M_TRAP         (1),
       .CSR_COUNTER        (1),
@@ -152,12 +176,12 @@ module tiny_cpu_wrapper #(
       .BRANCH_PREDICTOR   (1),
       .MTVEC_WMASK        (32'hfffffffd)
   ) u_hazard3_cpu_2port (
-      .clk                       (clk_i),
+      .clk                       (s_cpu_clk),
       .clk_always_on             (clk_i),
       .rst_n                     (s_core_rst_n),
       .pwrup_req                 (s_pwrup_req),
       .pwrup_ack                 (s_pwrup_req),
-      .clk_en                    (),
+      .clk_en                    (s_cpu_clk_en),
       .unblock_out               (),
       .unblock_in                (1'b0),
       .i_haddr                   (cpu[0].haddr),
@@ -198,14 +222,14 @@ module tiny_cpu_wrapper #(
       .dbg_data0_wdata           (s_dbg_data0_wdata),
       .dbg_data0_wen             (s_dbg_data0_wen),
       .dbg_instr_data            (s_dbg_instr_data),
-      .dbg_instr_data_vld        (s_dbg_instr_data_vld && !s_reset_pending),
+      .dbg_instr_data_vld        (s_dbg_instr_data_vld && !s_reset_pending && !s_abort_debug),
       .dbg_instr_data_rdy        (s_dbg_instr_data_rdy),
       .dbg_instr_caught_exception(s_dbg_instr_caught_exception),
       .dbg_instr_caught_ebreak   (s_dbg_instr_caught_ebreak),
       .dbg_sbus_addr             (s_dbg_sbus_addr),
       .dbg_sbus_write            (s_dbg_sbus_write),
       .dbg_sbus_size             (s_dbg_sbus_size),
-      .dbg_sbus_vld              (s_dbg_sbus_vld),
+      .dbg_sbus_vld              (s_dbg_sbus_vld && !s_abort_debug),
       .dbg_sbus_rdy              (s_dbg_sbus_rdy),
       .dbg_sbus_err              (s_dbg_sbus_err),
       .dbg_sbus_wdata            (s_dbg_sbus_wdata),

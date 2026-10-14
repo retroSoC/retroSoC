@@ -114,10 +114,12 @@ def verify_locked_views(root: Path) -> dict:
     return verified
 
 
-def inspect_netlist(document: dict) -> dict:
+def expand_netlist(document: dict) -> tuple:
+    """Resolve hierarchy aliases without assigning a product clock contract."""
     modules = document["modules"]
     top = "retrosoc_tiny_asic"
     leaves = []
+    boundaries = {}
     aliases = {}
 
     def canonical(bit):
@@ -159,6 +161,7 @@ def inspect_netlist(document: dict) -> dict:
             path = f"{scope}/{name}"
             attrs = modules.get(kind, {}).get("attributes", {})
             if kind in modules and not int(str(attrs.get("blackbox", "0")), 2):
+                boundaries[path] = {"path": path, "type": kind, "ports": ports}
                 visit(kind, path, ports)
             else:
                 directions = cell.get("port_directions", {
@@ -168,9 +171,15 @@ def inspect_netlist(document: dict) -> dict:
                                "directions": directions})
 
     visit(top, top, {})
-    for c in leaves:
+    for c in [*leaves, *boundaries.values()]:
         for port, bits in c["ports"].items():
             c["ports"][port] = [canonical(bit) for bit in bits]
+    return modules, top, leaves, canonical, boundaries
+
+
+def inspect_netlist(document: dict) -> dict:
+    # Keep the original P1 parked-PLL/direct-SYS contract fail-closed.
+    modules, top, leaves, canonical, _ = expand_netlist(document)
     clock = modules[top]["cells"]["u_clock_buffer"]["connections"]["clk_o"]
     if len(clock) != 1 or not isinstance(clock[0], int):
         raise ValueError("missing live SYS clock")

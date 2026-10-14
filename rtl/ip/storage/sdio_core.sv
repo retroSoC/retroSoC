@@ -11,15 +11,17 @@
 `timescale 1ns / 1ps
 
 module sdio_core #(
-    parameter int InputClockHz = 72_000_000,
-    parameter int AddrWidth    = 32,
-    parameter int DataWidth    = 32,
-    parameter int DescCount    = 16
+    parameter int InputClockHz      = 72_000_000,
+    parameter bit UseRuntimeClockHz = 1'b0,
+    parameter int AddrWidth         = 32,
+    parameter int DataWidth         = 32,
+    parameter int DescCount         = 16
 ) (
     // verilog_format: off -- preserve the host, status, and external bus groups
     input  logic                          clk_i,
     input  logic                          rst_n_i,
     input  logic                          host_enable_i,
+    input  logic [31:0]                   clock_hz_i,
     input  logic                          host_irq_enable_i,
     input  logic                          clock_enable_i,
     input  logic [15:0]                   half_period_i,
@@ -236,7 +238,9 @@ module sdio_core #(
   assign bytes_done_o = s_dma_bytes_done;
   assign dma_error_addr_o = s_dma_err_addr;
   assign dma_error_o = {24'd0, s_dma_err_code};
-  assign clock_actual_o = (half_period_i == 16'd0) ? 32'd0 : InputClockHz / (2 * half_period_i);
+  logic [31:0] s_input_clock_hz;
+  assign s_input_clock_hz = UseRuntimeClockHz && (clock_hz_i != 32'd0) ? clock_hz_i : InputClockHz;
+  assign clock_actual_o = (half_period_i == 16'd0) ? 32'd0 : s_input_clock_hz / (2 * half_period_i);
   assign status_o = {
     23'd0,
     s_clock_running,

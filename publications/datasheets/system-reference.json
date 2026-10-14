@@ -4500,7 +4500,8 @@
           "RS_ETIMEOUT": -4,
           "RS_EIO": -5,
           "RS_ENOTSUP": -6,
-          "RS_EFORMAT": -7
+          "RS_EFORMAT": -7,
+          "RS_EBUSY": -8
         },
         "meanings": {
           "RS_OK": "Operation completed under that API contract.",
@@ -4510,7 +4511,8 @@
           "RS_ETIMEOUT": "Bounded operation timed out.",
           "RS_EIO": "I/O operation failed.",
           "RS_ENOTSUP": "Operation unsupported.",
-          "RS_EFORMAT": "Input format rejected."
+          "RS_EFORMAT": "Input format rejected.",
+          "RS_EBUSY": "Resource or lifecycle operation is busy; retry after the owning operation completes."
         },
         "observation": "Signed API return value. Exact triggering conditions depend on the called function; the enum definition does not make every code reachable from every API.",
         "handling": "Check the return before using output values. No hardware W1C applies to a C return value; preserve the relevant peripheral status if diagnosis requires it.",

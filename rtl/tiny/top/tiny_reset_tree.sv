@@ -1,12 +1,17 @@
 // Copyright (c) 2026 Yuchi Miao
 // SPDX-License-Identifier: MulanPSL-2.0
 
-// One SYS clock, separate reset loads. Leaf zero owns the fabric; the remaining
-// leaves follow the canonical APB target order. This is not a clock-domain split.
+// SYS-clocked reset distribution with an always-on POR synchronizer. The POR
+// source remains on the external reference while all functional leaves release
+// on the selected SYS clock.
 module tiny_reset_tree #(
-    parameter int LeafCount = 17
+    parameter int LeafCount    = 17,
+    parameter bit SplitDomains = 1'b0
 ) (
     input  logic                 clk_i,
+    input  logic                 por_clk_i,
+    input  logic [LeafCount-1:0] leaf_clk_i,
+    input  logic                 backend_reset_n_i,
     input  logic                 rst_n_i,
     input  logic                 watchdog_reset_req_i,
     output logic                 por_rst_n_o,
@@ -16,7 +21,8 @@ module tiny_reset_tree #(
 );
   logic s_system_req_n;
 
-  assign s_system_req_n    = por_rst_n_o && !watchdog_reset_req_i;
+  assign s_system_req_n    = por_rst_n_o && !watchdog_reset_req_i &&
+      (!SplitDomains || backend_reset_n_i);
   // The core/debug wrapper adds its five local release edges after every
   // functional endpoint is ready. No external peripheral clock is a prerequisite.
   assign cpu_ready_rst_n_o = &leaf_rst_n_o;
@@ -24,7 +30,7 @@ module tiny_reset_tree #(
   rst_sync #(
       .STAGE(5)
   ) u_por_rst_sync (
-      .clk_i  (clk_i),
+      .clk_i  (SplitDomains ? por_clk_i : clk_i),
       .rst_n_i(rst_n_i),
       .rst_n_o(por_rst_n_o)
   );
@@ -42,7 +48,7 @@ module tiny_reset_tree #(
     rst_sync #(
         .STAGE(5)
     ) u_leaf_rst_sync (
-        .clk_i  (clk_i),
+        .clk_i  (SplitDomains ? leaf_clk_i[leaf] : clk_i),
         .rst_n_i(system_rst_n_o),
         .rst_n_o(leaf_rst_n_o[leaf])
     );

@@ -79,11 +79,13 @@ def test_four_group_local_memory(tmp_path, simulator, pdk):
 
 
 @pytest.mark.parametrize("simulator", ["verilator", "iverilog"])
-def test_actual_dual_port_cpu_debug_and_reset(tmp_path, simulator):
+@pytest.mark.parametrize("p7_lifecycle", [False, True])
+def test_actual_dual_port_cpu_debug_and_reset(tmp_path, simulator, p7_lifecycle):
     for tool in (simulator, "sv2v", "vvp", "riscv32-unknown-elf-gcc", "riscv32-unknown-elf-objcopy"):
         assert shutil.which(tool), f"required tool unavailable: {tool}"
     generate_memory_map(ROOT / "rtl/tiny/address_map/memory_map.json", tmp_path / "map", "YES", 128)
-    run(["riscv32-unknown-elf-gcc", "-march=rv32imc_zicsr_zifencei", "-mabi=ilp32",
+    lifecycle_defines = ["-DTINY_TEST_P7"] if p7_lifecycle else []
+    run(["riscv32-unknown-elf-gcc", *lifecycle_defines, "-march=rv32imc_zicsr_zifencei", "-mabi=ilp32",
          "-nostdlib", "-Wl,--build-id=none", "-T", str(ROOT / "tests/rtl/tiny_r2_p4_cpu.ld"),
          str(ROOT / "tests/rtl/tiny_r2_p4_cpu.S"), "-o", str(tmp_path / "cpu.elf")], tmp_path, "firmware")
     run(["riscv32-unknown-elf-objcopy", "-O", "verilog", str(tmp_path / "cpu.elf"),
@@ -97,7 +99,7 @@ def test_actual_dual_port_cpu_debug_and_reset(tmp_path, simulator):
                 if line.startswith("/hazard3/")]
     sources += [TINY / p for p in (
         "tiny_sram_port_if.sv", "tiny_sram_group.sv", "tiny_sram_axi4.sv",
-        "tiny_sram.sv", "tiny_cpu_mem.sv", "tiny_cpu_wrapper.sv")]
+        "tiny_sram.sv", "tiny_cpu_mem.sv", "tiny_clock_gate.sv", "tiny_cpu_wrapper.sv")]
     sources += [ROOT / p for p in (
         "rtl/tech/tc_sram.sv", "rtl/tech/tc_clk.sv", "rtl/ip/memory/onchip_ram_reg.sv",
         "rtl/ip/interconnect/ahbl2axi4.sv", "rtl/ip/core/mgmt_debug_wrapper.sv",
@@ -105,7 +107,7 @@ def test_actual_dual_port_cpu_debug_and_reset(tmp_path, simulator):
     includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", tmp_path / "map/rtl",
                                    ROOT / "rtl/ip/memory", ROOT / "rtl/managed/hazard3/hdl",
                                    ROOT / "rtl/tiny/dv")]
-    defines = ["-DSV_ASSRT_DISABLE", "-DPDK_BEHAV", "-DSOC_JTAG_IDCODE=32'hDEADBEEF"]
+    defines = ["-DSV_ASSRT_DISABLE", "-DPDK_BEHAV", "-DSOC_JTAG_IDCODE=32'hDEADBEEF", *lifecycle_defines]
     output = tmp_path / "sim"
     top = "tiny_r2_p4_cpu_tb"
     if simulator == "verilator":
@@ -122,6 +124,8 @@ def test_actual_dual_port_cpu_debug_and_reset(tmp_path, simulator):
         launch = ["vvp", str(output)]
     content = run([*launch, f"+firmware={tmp_path / 'cpu.hex'}"], tmp_path, "sim")
     assert "SIM_TEST_PASS Tiny P4 CPU" in content
+    if p7_lifecycle:
+        assert "P7_CPU_LIFECYCLE_PASS" in content
 
 
 def test_group_control_induction(tmp_path):

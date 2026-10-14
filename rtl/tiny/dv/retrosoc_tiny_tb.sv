@@ -6,7 +6,10 @@
 module retrosoc_tiny_tb;
   logic s_clk_driver = 1'b0;
   wire  s_clk = s_clk_driver;
-  logic s_reset_driver = 1'b0;
+  // Assert RESET_N after time zero. With a divided REF24 there are no REF
+  // edges while reset is held, so a declaration initialized low is not an
+  // observable asynchronous assertion for every four-state simulator process.
+  logic s_reset_driver = $test$plusargs("p7_legacy_reset_level") ? 1'b0 : 1'b1;
   wire  s_rst_n = s_reset_driver;
   wire s_uart0_tx, s_uart1_tx;
   wire  s_uart0_rx = 1'b1;
@@ -26,6 +29,7 @@ module retrosoc_tiny_tb;
   integer       s_cycles;
 `ifndef RETROSOC_SOC__TINY_NETLIST
   `include "tiny_p6_devices.svh"
+  `include "tiny_p7_observers.svh"
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
@@ -47,8 +51,12 @@ module retrosoc_tiny_tb;
   wire [7:0] s_test_code = u_dut.s_test_code;
 `endif
 
-  always #20.833333 s_clk_driver = !s_clk_driver;
+  always #(500000000.0 / `SOC_EXT_CLK_HZ) s_clk_driver = !s_clk_driver;
   initial begin
+    if (!$test$plusargs("p7_legacy_reset_level")) begin
+      #1;
+      s_reset_driver = 1'b0;
+    end
     if ($value$plusargs("max_cycles=%d", s_max_cycles)) begin
     end
     repeat (20) @(posedge s_clk);
@@ -57,7 +65,8 @@ module retrosoc_tiny_tb;
     for (s_cycles = 0; s_cycles < s_max_cycles; s_cycles = s_cycles + 1) begin
       @(posedge s_clk);
       if (u_dut.s_test_done) begin
-        if (!u_dut.s_test_pass) $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
+        if (u_dut.s_test_pass !== 1'b1 || (^s_test_code) === 1'bx)
+          $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
         s_done_cycles = s_done_cycles + 1;
         if (s_done_cycles >= 128 && s_jtag_checks_done) begin
           $display("SIM_TEST_PASS Tiny cycles=%0d", s_cycles);

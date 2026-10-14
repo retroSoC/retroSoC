@@ -29,7 +29,7 @@ def sources(tmp_path):
     files += [TINY / p for p in ("tiny_axi4_target.sv", "tiny_axi4_fabric.sv",
               "tiny_axi42apb4.sv", "tiny_fault_collector.sv", "tiny_sysctrl.sv")]
     files += [ROOT / "rtl/ip/interconnect/axi4_error_slave.sv"]
-    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", tmp_path / "map/rtl",
+    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", TINY, tmp_path / "map/rtl",
                  tmp_path / "bindings/rtl", ROOT / "rtl/ip/peripheral", ROOT / "tests/rtl")]
     return files, includes
 
@@ -99,7 +99,8 @@ def test_real_cpu_dma_progress_and_abort(tmp_path, simulator):
          "--output-c", str(tmp_path / "archinfo_integration_metadata.h")], tmp_path, "metadata")
     includes = [f"-I{p}" for p in (*resolved.incdirs, tmp_path, tmp_path / "map/rtl",
                                    tmp_path / "bindings/rtl", ROOT / "rtl/tiny/dv")]
-    includes += ["-DPDK_BEHAV", "-DRETROSOC_SOC__TINY", "-DSOC_JTAG_IDCODE=32'hDEADBEEF"]
+    includes += ["-DPDK_BEHAV", "-DRETROSOC_SOC__TINY", "-DSOC_JTAG_IDCODE=32'hDEADBEEF",
+                 "-DSOC_EXT_CLK_HZ=24000000"]
     log = simulate(tmp_path, simulator, "tiny_r2_p5_system_tb", files, includes,
                    [f"+firmware={tmp_path / 'cpu.hex'}"])
     assert "hart_reset=1 abort_drained=1" in log
