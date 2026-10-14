@@ -1313,10 +1313,16 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
         if "SIMU=VERILATOR" in values:
             simulation_timeout = [value for value in values if value.startswith("SOC_SIM_TIME=")]
             if "APP=ci_smoke" in values and "sim" in values:
-                assert simulation_timeout == ["SOC_SIM_TIME=1800"]
+                if profile == "configs/ci/ihp130-tiny.mk":
+                    assert simulation_timeout == ["SOC_SIM_TIME=3600"]
+                    assert "TINY_P7_ACCEPTANCE=YES" in values
+                    assert "TINY_SIM_TIMEOUT=6000000" in values
+                    assert "TINY_SIM_ARGS=+p7_monitor" in values
+                else:
+                    assert simulation_timeout == ["SOC_SIM_TIME=1800"]
                 assert "LINK_TYPE=ld2_all_sram" in values
                 if profile == "configs/ci/ihp130-tiny.mk":
-                    assert not any(value.startswith("VERILATOR_SIM_ARGS=") for value in values)
+                    assert "TINY_P7_ACCEPTANCE=YES" in values
                 else:
                     assert "VERILATOR_SIM_ARGS=--fast-flash" in values
                 assert "HAVE_CSR=YES" in values
@@ -1776,7 +1782,8 @@ def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() 
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
 
     assert "timeout-minutes: 90" in quality
-    assert "tools: verilator sv2v iverilog yosys" in quality
+    assert "tools: verilator sv2v iverilog yosys riscv_gnu" in quality
+    assert "fetch-depth: 0" in quality
     assert "rtl/managed/third_party" in quality
     assert "python3 rtl/ip/setup.py" in quality
     assert "make CONFIG=configs/ci/ihp130.mk setup-pdk" in quality
