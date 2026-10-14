@@ -14,6 +14,12 @@ for their vendored counterparts:
   window cacheable/bufferable; the override maps the Mini address map with
   the MMIO window (including the core-internal CLINT/PLIC window) as
   strong-order non-cacheable, as the OpenC906 user manual requires.
+- ``aq_spsram_*.v``: the eight single-port SRAM wrappers (OpenC906
+  integration manual chapter 3 memory swap). Each override keeps the upstream
+  behavioral ``aq_f_spsram_*`` instance by default and substitutes IHP130
+  ``RM_IHPSG13_1P_*`` macro combinations (depth/width stacking per manual
+  section 3.1.5) only when the build defines ``PDK_IHP130`` and
+  ``HAVE_SRAM_MACRO`` without ``PDK_BEHAV``.
 
 All sources are concatenated into a single compilation unit
 (``openc906_combined.v``) because gen_rtl relies on header macros being
@@ -49,6 +55,38 @@ OVERRIDES = {
     "C906_RTL_FACTORY/gen_rtl/mmu/rtl/sysmap.h": (
         "sysmap.h",
         "0389089a42ef762768e57bbb4fdcbe6b95f33ab650b5bacc0de8122e0d8711d5",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/ifu/rtl/aq_spsram_1024x16.v": (
+        "aq_spsram_1024x16.v",
+        "8969cdfd73933ff4ca105d562e31283e16433f90e4ceaa4339759e6df7ba34d9",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/ifu/rtl/aq_spsram_2048x32.v": (
+        "aq_spsram_2048x32.v",
+        "3f4aa927be7d16a0bcd0d3a0f973d93e5cd1b0912f310981bf24656711964abd",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/ifu/rtl/aq_spsram_256x59.v": (
+        "aq_spsram_256x59.v",
+        "6760517965692f1c94c31be295696d7c016f138d697c3495184a6bb14ce482f3",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/lsu/rtl/aq_spsram_1024x64.v": (
+        "aq_spsram_1024x64.v",
+        "695c054d66f673cc863e2eaea0ec53845c45f83797acb7abe9d08e59dfc9d0bb",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/lsu/rtl/aq_spsram_128x8.v": (
+        "aq_spsram_128x8.v",
+        "7a8e963c4539f5ecfb29b147e5bc1b1e66fffd3cb5ee72923db7199092a15f38",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/lsu/rtl/aq_spsram_64x58.v": (
+        "aq_spsram_64x58.v",
+        "f4b5457d06d2e97ae158432cb7c265242c05c9f96ffeb8c68083d8cee941bd96",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/mmu/rtl/aq_spsram_64x88.v": (
+        "aq_spsram_64x88.v",
+        "0a38b7ffc18c2b837e7a253d7ba7b40fc88a172f1b94ed552470614927d7fee8",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/mmu/rtl/aq_spsram_64x98.v": (
+        "aq_spsram_64x98.v",
+        "99680fb11271eee6cfe6ff7aaa95cbdd04ef4f78d7b0e23a18c17ef064a8bedf",
     ),
 }
 

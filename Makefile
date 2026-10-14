@@ -1112,7 +1112,15 @@ npu-p5-lp-sim: firmware sim
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_openc906.py \
 	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_sysio_kid.v \
-	$(ROOT_PATH)/rtl/mini/ip_overrides/sysmap.h $(LOCK_FILE)
+	$(ROOT_PATH)/rtl/mini/ip_overrides/sysmap.h \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_1024x16.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_2048x32.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_256x59.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_1024x64.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_128x8.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x58.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x88.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x98.v $(LOCK_FILE)
 	python3 $(ROOT_PATH)/scripts/generate_openc906.py \
 		--root $(ROOT_PATH) --source $(OPENC906_ROOT) --output $(HP_GENERATED_DIR) \
 		--manifest $(HP_GENERATED_MANIFEST) --lock $(LOCK_FILE)
