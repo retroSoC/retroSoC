@@ -1,5 +1,232 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P7 source-reset integration contract (2026-10-14)
+
+The follow-up review identified a missing source-side reset proof, not a
+reproduced product failure. The AXI bridge does not support arbitrarily
+resetting an active source while leaving its slave session alive. Flushing
+the FIFO cannot cancel a request already accepted by that slave. Production
+Tiny prevents that sequence: DMA local reset requires engine, admission and
+fabric drain before resetting the source; XPI's SYS source reset is a common
+system reset that also resets its MEM endpoint. Neither production bridge
+uses warm clear. These preconditions are part of the integration contract,
+not a claim of unrestricted unilateral-reset support by the standalone bridge.
+
+`tests/rtl/tiny_p7_source_reset_tb.sv` uses the production DMA master,
+admission, CDC, lifecycle controller and reset tree. The test extracts the
+actual top-level instances, drain/block synchronizers and generated DMA/XPI
+reset bindings, so a hand-copied reset policy cannot silently replace them.
+An independent outstanding scoreboard survives local reset and rejects
+premature reset. The AXI target is a controllable behavioral slave; unrelated
+CPU/APB/SDIO work and the DMA completion mailbox are idle. This is a focused
+integration test, not a full-SoC firmware or formal CDC/RDC signoff result.
+
+The scenarios cover stalled AR/AW, partial W, downstream W backpressure,
+delayed R/B, source-held R, drain timeout without reset, post-reset reads and
+writes, and common system reset during an outstanding read. The same binary
+is reused at SAFE24, XIN48, XIN96, PLL192 and PLL240 domain ratios. They test
+digital ordering only; the clock generators do not qualify a PLL or PDK rate.
+A negative run falsifies both idle observations and must trip
+`P7_SOURCE_RESET_UNDRAINED`; Icarus may return zero for sv2v's lowered fatal,
+so the forbidden marker and missing PASS still make that simulation invalid.
+
+Evidence for this correction is retained under
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/meta/tiny-r2-p7-source-reset/`.
+The first focused attempt's test-driver failure is retained in `focused-1.log`;
+it is not a DUT failure or acceptance result. The final `directed.log` and
+`result-directed.json` record **54 passed in 191.71 seconds**. This includes
+ten positive source-reset runs (five ratios in each simulator) and two
+expected-negative broken-drain runs inside the two new Pytest cases.
+RTL format/style, clock/reset inventory, Ruff, both Tiny PDK PR dry-runs and
+`git diff --check` pass. The verification-only source comparison is retained
+in `verification-update.json`: only the two test files differ; 1728 other
+technical inputs and tool identities match. The design,
+firmware, configuration, dependencies and physical inputs are unchanged from
+the `06-00` source snapshot; the new tests do not relabel earlier simulations
+as new executions. Full Icarus firmware remains deferred to final Tiny
+qualification. Human P7 acceptance is still required.
+
+## TINY-R2-P7 response conservation correction (2026-10-14)
+
+The earlier review recommendation to give abort unconditional priority over
+source response retirement was incorrect. A cycle with an already exposed
+normal B/R handshake followed by an abort produced two completions for one
+request. Four read/write tests reproduced this in Verilator and Icarus. The
+failed candidate, diagnostics and source archive are retained below
+`build/ics55-tiny-2026-10-14-04-00-ff4b5cef6eb5/meta/tiny-r2-p7-response/`.
+The `04-00` synthesis/netlist/STA results belong to that rejected candidate;
+their successful boot does not close the protocol finding.
+
+The corrected bridge holds presented responses in source-owned registers.
+Remote reset cannot revoke VALID or rewrite their payload under backpressure,
+and a completed source handshake is never followed by a second completion.
+Only missing read beats receive DECERR, with RLAST at the original burst end;
+a reset write consumes the remaining W beats before emitting B. Outstanding
+tracking is one transaction per direction, matching the existing Tiny paths.
+The payload reset uses the five-edge source link barrier. An unfinished warm
+clear quarantines the bridge until a real destination reset; a FIFO clear
+cannot by itself cancel remote slave state or authorize re-use of late replies.
+Production DMA/XPI clear inputs remain tied low; no new software reset API,
+autonomous AXI timeout, DMA owner, or later-phase capability is introduced.
+
+The new tests distinguish completed/held responses from missing responses,
+cover simultaneous clear and response handshakes, remote reset with READY high,
+backpressure, partial bursts and late-response quarantine. That campaign's
+full directed selection passed 52 cases. Earlier 36-case and rejected-
+candidate passes did not cover these failures and are not proof of the repair.
+The failed same-cycle candidate and diagnostics remain in the response
+evidence directory.
+The final input snapshot is
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/meta/tiny-r2-p7-response/final/source-final.json`.
+The `06-00` backend campaign is bound to the final source snapshot and all
+requested post-fix gates pass. Its variants are
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/` and
+`build/ihp130-tiny-2026-10-14-06-00-8232fa11e7f3/`. ICS55
+synthesis/netlist/STA durations are `2108.388/1655.980/43.594 s`, with WNS
+max/min `-152.03/-0.31 ns` and TNS max/min `-5622052.50/-44.14`; IHP130
+durations are `1934.515/578.869/47.109 s`, with WNS max/min
+`-253.43/-0.49 ns` and TNS max/min `-10035324.00/-153.37`. Netlist boot
+emitted `SIM_TEST_PASS Tiny netlist boot` for both PDKs. These timing values
+remain observational and do not qualify closure or an operating point.
+Full Icarus firmware remains deferred by the maintainer to final Tiny
+qualification. It is not a current P7 gate; protocol correctness and human
+phase acceptance remain required.
+
+## TINY-R2-P7 final verification campaign (2026-10-13)
+
+The [P7 runbook](tiny-soc-r2-clock-reset.md) records the current implementation,
+exact profile-specific commands, workload definitions and source snapshot.
+The integrated design now drives actual SYS/MEM/PCLK consumers, CPU-only WFI
+gating, local reset barriers, CLKOUT and the single ICS55 PLL backend. It keeps
+the 32 main SRAM macros at CPU SYS and six private Crypto macros at PCLK.
+Future target capabilities remain absent. No later phase is authorized here.
+
+Development validation includes 68 passing Tiny P7/SYSCTRL/P5 directed tests
+and a later complete 52-case P7 directed pass,
+plus both simulators' real Hazard3 IRQ/debug wake, clock-pause and retained-debug
+warm-reset/aborted-command cases. RCU validation now rejects invalid or BUSY
+staging writes with PSLVERR, and the CLKOUT waveform test exposed and corrected
+enable/divisor ordering. HAL tests cover invalid, absent, busy, gated-reset and
+sticky-timeout/error boundaries. These short checks complement the final long
+flows; they do not replace full firmware or netlist acceptance.
+
+Source evidence is retained at
+`build/ics55-tiny-2026-10-13-17-05-f3e42d54c18b/meta/tiny-r2-p7/source.json`.
+The final command matrix and its retained corrections are listed in the runbook.
+Default ICS55/IHP130 and external XIN48/96 P7 firmware pass in both simulators.
+Each profile's cycle count and WFI/DMA/reset observations match across simulators.
+Both watchdog-corrected full Verilator firmware runs pass the unchanged P6
+peripheral/wire/AXI collector and JTAG. The two corresponding full Icarus
+replays were intentionally interrupted with exit 130 after the maintainer
+requested that this long-running gate move to the final Tiny phase; their
+partial logs and interrupted result records are retained, but they are not
+acceptance evidence.
+Both PDKs pass synthesis, structural macro binding and Tiny netlist boot.
+Current core STA remains observational and negative, with the coverage limits
+explicit in the runbook. These are historical campaign results; current phase
+acceptance requires the response correction above and human review. The full
+Icarus firmware gate belongs to final Tiny qualification. No high-rate physical operating point is
+qualified by these functional simulations or SAFE24 core STA.
+
+## Historical TINY-R2-P7 CDC/reset correction follow-up (2026-10-14)
+
+This checkpoint predates the response-conservation correction and is
+superseded by the `06-00` campaign above. It is not current-source acceptance.
+The P7 review identified two source-bound gaps. The XPI fabric target and bridge source side release with
+the SYS reset endpoint, while the XPI/MEM side retains its MEM leaf reset. The
+Tiny AXI CDC bridge synchronizes destination reset loss, invalidates its
+protected request/response state and blocks new source admissions. Its original
+single-DECERR completion claim was insufficient for held responses and bursts;
+the later response-conservation correction supersedes that claim. The existing DMA/XPI
+instances retain their explicit bridge boundaries and the XPI bridge now uses
+the split SYS/MEM reset mapping.
+
+The new `tests/rtl/tiny_axi4_async_bridge_tb.sv` passes under both Verilator
+and Icarus for normal read response, reset-aborted read/write, DECERR,
+no-replay and bridge recovery. The complete
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p7.py`
+selection eventually passed 52 tests after the later corrections; that count
+does not belong to the `01-20` implementation. `make --silent rtl-format-check rtl-style-check-all`
+and `git diff --check` pass. An ICS55 default-profile Verilator `comp` also
+passes; its existing PDK and simulator warnings remain observations. The
+checkpoint's synthesis, netlist boot and observational STA gates passed for
+both PDKs. Its historical evidence is retained under
+`build/ics55-tiny-2026-10-14-01-20-ff4b5cef6eb5/` and
+`build/ihp130-tiny-2026-10-14-01-20-8232fa11e7f3/`. ICS55 reports WNS
+max/min `-144.40/-0.31 ns` and TNS max/min `-4859636.50/-45.04`; IHP130
+reports WNS max/min `-257.81/-0.47 ns` and TNS max/min `-9807803.00/-100.68`.
+These remain observational negative timing results, not closure or operating
+point qualification. The long-running full Icarus firmware gate remains
+intentionally deferred to the final Tiny phase; no physical flow was run.
+
+## Historical initial P7 checkpoint, superseded (2026-10-13)
+
+The following incomplete checkpoint belongs to earlier development snapshots.
+Its unconnected/missing-path statements do not describe the final campaign.
+
+This checkpoint starts from committed source `43a3c8d453b6d41df3536719ebc6d1f4521bc7cd`,
+specification blob `7e19de49d49efaafacccfa85671e314d53dd15a4`, Tiny/ICS55
+profile `configs/ci/ics55-tiny.mk`, and the locked PWM revision
+`38efaf5e20f084a00148920087c60cadab61839b`. The dependency lock validator
+passes with digest `263402a34f2e315ca46ef4bf6366aab64935bd8de7abab3e469f513e988b0208`.
+
+The implementation adds the Tiny-owned RCU register bank and handwritten
+`rcu.h`/`rcu_regs.h`/`rcu.c` contract, reports SAFE24/domain-rate snapshots,
+connects committed PCLK/SYS rate reporting to the upgraded PWM and SDIO
+`CLOCK_ACTUAL` paths, and adds focused APB coverage for identity, capability,
+profile rejection/commit, status and write-only command behavior. Verilator
+and Icarus SYSCTRL focused tests pass; ICS55 Verilator and Icarus top-level
+compilation, Tiny firmware linking, C format/policy/host tests and the SDIO
+suite pass. Build logs are retained under the generated
+`build/ics55-tiny-2026-10-13-09-00-f3e42d54c18b/` and
+`build/ics55-tiny-2026-10-13-10-30-f3e42d54c18b/` roots.
+
+A Tiny-owned `tiny_clock_reset_subsystem` backend is now source-bound and
+filelisted. Its SAFE24/no-PLL focused test passes in both simulators and covers
+five-stage SYS/MEM/PCLK reset release, external-profile handling and rejected
+PLL requests. A second focused test exercises the behavioral PLL lock-timeout
+path in both simulators; it does not claim successful macro lock or frequency
+qualification. The backend is intentionally not advertised or wired into the
+CPU/fabric yet; its SYSCTRL profile/apply handshake is now connected, while
+the backend instance is now present in the Tiny top and its SYS output clocks
+the CPU, fabric, SRAM, AXI interfaces and system reset tree. XPI now crosses
+from SYS to the backend MEM clock through the Tiny-owned warm-flush AXI bridge.
+The RCU command checks CPU/fabric/target idle observations and the XPI bridge
+before accepting a transition. PCLK outputs are still not connected to all
+peripheral consumers.
+
+The focused command is
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p7.py`;
+its four cases passed. Supporting gates were
+`make --silent rtl-format-check rtl-style-check-all`,
+`make --silent sw-format-check sw-policy-check sw-host-test`,
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_script_tools.py -k 'run_flow'`,
+`ruff check scripts/run_flow.py tests/test_tiny_r2_p7.py`, and
+`python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json`.
+The current ICS55 top-level compile used
+`source .cache/retrosoc/development/tiny-r2-p1/activate.sh && CCACHE_DISABLE=1 make --silent CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke SIMU=VERILATOR HAVE_SVA=YES BUILD_TIMESTAMP=2026-10-13-16-30 comp`
+and exited zero. These are source/compile/focused checks; none is a strict
+full firmware terminal verdict or physical qualification.
+
+The long-run diagnostic also confirmed that the emulator itself exits normally
+with a Tiny timeout at a bounded cycle count and uses about 26 MiB RSS. The
+earlier `status=running` records lacked a verified terminal result. The initial
+diagnosis attributed this to sandbox cleanup without sufficient evidence;
+that conclusion is withdrawn. Separate tool invocations can have different
+PID namespaces, so process absence in one does not establish that another
+command died. `run_flow.py` now records `parent_pid` and `child_pid`
+in the running result and writes a failed terminal result for unexpected
+Python exceptions; long runs must remain attached to one polling session.
+
+This is not phase acceptance. The current RTL now uses the backend SYS clock
+for the system/fabric path, but does not yet provide the required executable
+MEM/PCLK clock consumers, full CDC bridges, WFI leaf gating, PLL lock/loss
+recovery, or target-local five-cycle reset sequences. A full Tiny Verilator firmware
+run was started but did not produce a terminal `TEST_STATUS`/`SIM_TEST_PASS`
+verdict and was stopped; no physical, STA or netlist qualification is claimed.
+The remaining P7 clock/reset implementation and strict terminal regressions
+require a follow-up correction before human phase approval.
+
 ## TINY-R2-P6 implementation complete, human review pending (2026-10-12)
 
 The maintainer approved the P6 preflight on

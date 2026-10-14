@@ -7,7 +7,10 @@ Use `make CONFIG=configs/ci/ics55-tiny.mk setup` followed by
 `make CONFIG=configs/ci/ics55-tiny.mk firmware sim`. IHP130/no PLL remains
 explicit compatibility through `configs/ci/ihp130-tiny.mk`. See the
 [platform runbook](../../docs/ip/tiny-ics55-platform.md) for source-bound
-validation; backend frequency tests are not SYS switching or timing qualification.
+validation of the historical SAFE24 platform. The
+[R2-P7 runbook](../../docs/ip/tiny-soc-r2-clock-reset.md) describes the integrated
+RCU, runtime domains and separate acceptance evidence. Backend frequency tests
+alone are not full-SoC or physical qualification.
 
 The [R2-P4 implementation](../../docs/ip/tiny-soc-r2-local-memory.md) connects the
 official dual-port CPU to four independently serviced 32 KiB local SRAM groups.

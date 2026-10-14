@@ -75,8 +75,14 @@ for the matrix and its pending/current evidence boundary.
 
 The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 sets the default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
-`ci/ics55-tiny.mk` implements that entrypoint with the PLL held off; standalone
-PLL backend tests do not enable RCU/SYS switching. `make SOC=TINY` selects this
+`ci/ics55-tiny.mk` boots with the PLL held off; R2-P7 adds explicit software
+requests for functional PLL192/240 transitions, subject to separate acceptance.
+`ci/ihp130-tiny-xin48.mk` and `ci/ihp130-tiny-xin96.mk` normalize their declared
+external input to REF24 at boot and permit no-PLL XIN transitions. See the
+[P7 runbook](../docs/ip/tiny-soc-r2-clock-reset.md) for the evidence boundary.
+`TINY_P7_ACCEPTANCE=YES APP=ci_smoke` selects the distinct RCU acceptance image
+and configuration digest; ordinary Tiny acceptance firmware remains the default.
+`make SOC=TINY` selects this
 committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
 Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in
 the Tiny ledger, and physical qualification remains pending.
