@@ -44,11 +44,36 @@ and would mark the Mini peripheral window cacheable/bufferable) with the Mini
 address map: the MMIO window `0x02000000`-`0x2FFFFFFF` — including the
 core-internal CLINT/PLIC window — is strong-order/non-cacheable device memory
 as the OpenC906 user manual requires; SRAM/SDRAM/PSRAM/OPI and the flash/XIP
-windows stay cacheable. The vendored checkout is never modified. Deferred
-this phase: low-power support
+windows stay cacheable. The vendored checkout is never modified.
+
+The OpenC906 integration manual chapter 3 memory swap is implemented for
+simulation: the eight C906 single-port SRAM wrappers have reviewed overrides
+in `rtl/mini/ip_overrides/aq_spsram_*.v`. With `PDK_IHP130` +
+`HAVE_SRAM_MACRO` and without `PDK_BEHAV` each wrapper instantiates IHP130
+`RM_IHPSG13_1P_*` macros (BIST pins tied off, `A_DLY=1`), stacked per manual
+section 3.1.5:
+
+| Wrapper | Macro combination | Stacking |
+| --- | --- | --- |
+| `aq_spsram_1024x16` (BHT) | 1x `RM_IHPSG13_1P_1024x32_c2_bm_bist` | low 16 bits used |
+| `aq_spsram_2048x32` (ICache data) | 2x `RM_IHPSG13_1P_1024x32_c2_bm_bist` | depth, `A[10]` chip-select |
+| `aq_spsram_256x59` (ICache tag) | 4x `RM_IHPSG13_1P_64x64_c2_bm_bist` | depth, `A[7:6]` chip-select |
+| `aq_spsram_1024x64` (DCache data) | 2x `RM_IHPSG13_1P_1024x32_c2_bm_bist` | width, low/high 32 bits |
+| `aq_spsram_128x8` (DCache dirty) | 2x `RM_IHPSG13_1P_64x64_c2_bm_bist` | depth, `A[6]` chip-select |
+| `aq_spsram_64x58` (DCache tag) | 1x `RM_IHPSG13_1P_64x64_c2_bm_bist` | low 58 bits used |
+| `aq_spsram_64x88` (JTLB data) | 2x `RM_IHPSG13_1P_64x64_c2_bm_bist` | width, low 64 + high 24 bits |
+| `aq_spsram_64x98` (JTLB tag) | 2x `RM_IHPSG13_1P_64x64_c2_bm_bist` | width, low 64 + high 34 bits |
+
+Depth stacks register the bank select on read transactions and mux the bank
+outputs one cycle later (manual section 3.1.4 timing); unused upper
+write-mask bits are tied off so unimplemented bits are never written. Every
+other configuration — including the committed `PDK_BEHAV=YES` CI profiles —
+compiles the upstream behavioral `aq_f_spsram_*` instance byte-identically.
+Deferred this phase: low-power support
 (`core0_pad_lpmd_b` unconnected), DFT (scan/mbist tied off), the debug SBA AXI
-master (unconnected), ASIC memory-macro replacement for the behavioral FPGA
-SRAM models, and HP Linux re-qualification timing/performance evidence.
+master (unconnected), the chapter 3 ICG (`gated_clk_cell`) replacement,
+physical/LEC qualification of the macro path (synthesis mapping, STA), and
+HP Linux re-qualification timing/performance evidence.
 
 ### Boot bundle V2
 
@@ -136,8 +161,12 @@ separate run logs and
 structured results; an interrupted or ongoing run cannot reuse an old pass.
 Run affected host/Python/C/RTL checks and IHP130 behavioral regressions.
 Synthesis, netlist simulation, STA, and synthesis-dependent metrics are
-explicitly deferred by user instruction, as are SRAM macro replacement,
-CDC/RDC/physical signoff and commercial qualification. No PPA claim is made.
+explicitly deferred by user instruction, as are CDC/RDC/physical signoff and
+commercial qualification. No PPA claim is made. The SRAM macro swap is no
+longer deferred at simulation level: the `aq_spsram_*` overrides described
+above run the IHP130 macro path in the focused boot testbench (see
+[HP RV64 Validation](../hp-rv64-validation.md)); physical macro integration
+remains deferred.
 
 Reference boundaries: [RT-Thread v5.3.0](https://github.com/RT-Thread/rt-thread/releases/tag/v5.3.0)
 supplies the OS/CPU port; the repository owns board integration. The C906

@@ -115,15 +115,28 @@ qualification. Current evidence requires, at minimum:
   the C906 store buffer; `rtl/mini/ip_overrides/sysmap.h` marks the MMIO and
   core-internal CLINT/PLIC windows strong-order non-cacheable per the user
   manual.
+- The integration manual chapter 3 SRAM swap is validated in simulation: the
+  eight `rtl/mini/ip_overrides/aq_spsram_*.v` overrides select IHP130
+  `RM_IHPSG13_1P_*` macro combinations under `PDK_IHP130`+`HAVE_SRAM_MACRO`
+  without `PDK_BEHAV`, and the focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_ihp130_sram_macros` boots the real
+  smoke payload (cache maintenance plus GA2D data movement, which exercises
+  the BHT/ICache/DCache/JTLB RAMs for real) on the macro path with the same
+  `HP_C906_BOOT_TEST_PASS` verdict as the behavioral run.
 
 `hp-linux-sim` was run with a bounded wall-clock budget this round and its
 current frontier is recorded above; the synthesis-dependent gates remain
-unrun (synthesis waits for the SRAM macro swap). Both stay required evidence
-for qualification.
+unrun (synthesis, netlist simulation, STA, and the physical/LEC qualification
+of the macro path). The SoC-level macro-mode simulation now has passing
+evidence: `make CONFIG=configs/ci/ihp130-hp.mk PDK_BEHAV=NO SIMU=VERILATOR
+hp-smoke-sim` builds the whole SoC (C906 `aq_spsram_*` wrappers and
+`tc_sram`) on the IHP130 macro models and passes with
+`SIM_TEST_PASS code=0` plus the `HP_LINUX_READY`/`HP_GA2D_PASS`/
+`HP_GA2D_CACHE_CLEAN` markers. All stay required evidence for qualification.
 
 Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
-(scan/mbist tied off), the debug SBA AXI master (unconnected), ASIC
-memory-macro replacement for the behavioral FPGA SRAM models, and HP Linux
+(scan/mbist tied off), the debug SBA AXI master (unconnected), the chapter 3
+ICG (`gated_clk_cell`) replacement, and HP Linux
 re-qualification timing/performance evidence. The repo-owned OpenSBI platform
 registers `fdt_irqchip_init` (v1.9 supports the `thead,c900-plic` match with
 T-Head delegation fixups), so the C906-internal PLIC is initialized by
