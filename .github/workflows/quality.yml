@@ -91,6 +91,9 @@ jobs:
           python3 rtl/managed/clusterip/setup.py
           python3 rtl/ip/setup.py
 
+      - name: Prepare historical publication dependencies
+        run: python3 tests/publication_history.py prepare
+
       - name: Set up locked IHP130 PDK
         run: make CONFIG=configs/ci/ihp130.mk setup-pdk
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -26,6 +27,24 @@ def git_output(repo: Path, *args: str) -> str:
     return subprocess.check_output(
         ["git", "-C", str(repo), *args], text=True, stderr=subprocess.STDOUT
     ).strip()
+
+
+def ensure_git_commit(url: str, destination: Path, revision: str) -> None:
+    """Fetch a locked historical object without switching the active checkout."""
+    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        raise ValueError("historical dependency requires a full Git commit revision")
+    destination = destination.resolve()
+    if not (destination / ".git").exists():
+        raise RuntimeError(f"prepare the current dependency checkout first: {destination}")
+    try:
+        git_output(destination, "cat-file", "-e", f"{revision}^{{commit}}")
+    except subprocess.CalledProcessError:
+        # No checkout/refspec: preserve HEAD, index, worktree and FETCH_HEAD.
+        run(("git", "fetch", "--no-tags", "--no-write-fetch-head", "--depth", "1",
+             url, revision), cwd=destination)
+    if git_output(destination, "rev-parse", f"{revision}^{{commit}}") != revision:
+        raise RuntimeError(f"historical dependency commit mismatch: {destination}: {revision}")
+    print(f"[dependency] historical object available: {destination.name}: {revision}")
 
 
 def ensure_git_repo(

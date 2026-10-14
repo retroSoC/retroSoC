@@ -116,3 +116,10 @@ python3 -m pytest -q
 
 These tests complement, but do not replace, firmware builds, RTL simulation,
 synthesis, timing, or hardware validation.
+
+Historical Tiny publication fixtures also need the main repository history
+and dependency commit objects named by their archived locks. After ordinary
+dependency setup, run `python3 tests/publication_history.py prepare` before
+Pytest on a fresh checkout. This only fetches missing immutable Git objects;
+it does not switch current managed checkouts or alter either lock. Historical
+fixture export remains offline and fails if required inputs are unavailable.
