@@ -11,9 +11,12 @@
 // stack: A[7:6] selects the bank, only the low 59 bits of each macro are
 // used (upper mask bits tied off so they are never written), and the
 // read-data mux uses the bank select registered on read transactions
-// (manual section 3.1.5 stacking). Every other configuration keeps the
-// upstream behavioral aq_f_spsram_256x59 instance byte-identical. Keep in
-// sync when the lock revision changes.
+// (manual section 3.1.5 stacking). With PDK_ICS55+HAVE_SRAM_MACRO and
+// without PDK_BEHAV, the exact-geometry ics55_ecos_sram_256x59_m4 macro
+// replaces it directly (identical active-low polarity, no stacking or
+// padding). Every other configuration keeps the upstream behavioral
+// aq_f_spsram_256x59 instance byte-identical. Keep in sync when the lock
+// revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -82,6 +85,14 @@ parameter WE_WIDTH   = 59;
 `endif
 `endif
 
+`ifdef PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_256X59_ICS55_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_256X59_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -130,6 +141,22 @@ generate
     );
   end
 endgenerate
+`elsif _AQ_SPSRAM_256X59_ICS55_
+  //********************************************************
+  //*                ICS55 SRAM macro                      *
+  //********************************************************
+// Exact-geometry macro; polarities match the wrapper, direct connection.
+ics55_ecos_sram_256x59_m4  u_mem (
+  .A    (A   ),
+  .CEB  (CEN ),
+  .CLK  (CLK ),
+  .D    (D   ),
+  .GWEB (GWEN),
+  .MARE (1'b0),
+  .MAR  (4'b0),
+  .WEB  (WEN ),
+  .Q    (Q   )
+);
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -148,6 +175,10 @@ aq_f_spsram_256x59  x_aq_f_spsram_256x59 (
 
 `ifdef _AQ_SPSRAM_256X59_IHP130_
 `undef _AQ_SPSRAM_256X59_IHP130_
+`endif
+
+`ifdef _AQ_SPSRAM_256X59_ICS55_
+`undef _AQ_SPSRAM_256X59_ICS55_
 `endif
 
 //   &Instance("aq_tsmc_spsram_256x59"); @49

@@ -9,9 +9,12 @@
 // PDK_IHP130+HAVE_SRAM_MACRO and without PDK_BEHAV, the 2048x32 ICache data
 // RAM is built from two RM_IHPSG13_1P_1024x32_c2_bm_bist macros in a depth
 // stack: A[10] selects the bank and the read-data mux uses the bank select
-// registered on read transactions (manual section 3.1.5 stacking). Every
-// other configuration keeps the upstream behavioral aq_f_spsram_2048x32
-// instance byte-identical. Keep in sync when the lock revision changes.
+// registered on read transactions (manual section 3.1.5 stacking). With
+// PDK_ICS55+HAVE_SRAM_MACRO and without PDK_BEHAV, the exact-geometry
+// ics55_ecos_sram_2048x32_m8 macro replaces it directly (identical
+// active-low polarity, no stacking or padding). Every other configuration
+// keeps the upstream behavioral aq_f_spsram_2048x32 instance byte-identical.
+// Keep in sync when the lock revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -80,6 +83,14 @@ parameter WE_WIDTH   = 32;
 `endif
 `endif
 
+`ifdef PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_2048X32_ICS55_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_2048X32_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -142,6 +153,22 @@ RM_IHPSG13_1P_1024x32_c2_bm_bist  u_mem_hi (
   .A_BIST_DIN (32'b0   ),
   .A_BIST_BM  (32'b0   )
 );
+`elsif _AQ_SPSRAM_2048X32_ICS55_
+  //********************************************************
+  //*                ICS55 SRAM macro                      *
+  //********************************************************
+// Exact-geometry macro; polarities match the wrapper, direct connection.
+ics55_ecos_sram_2048x32_m8  u_mem (
+  .A    (A   ),
+  .CEB  (CEN ),
+  .CLK  (CLK ),
+  .D    (D   ),
+  .GWEB (GWEN),
+  .MARE (1'b0),
+  .MAR  (4'b0),
+  .WEB  (WEN ),
+  .Q    (Q   )
+);
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -160,6 +187,10 @@ aq_f_spsram_2048x32  x_aq_f_spsram_2048x32 (
 
 `ifdef _AQ_SPSRAM_2048X32_IHP130_
 `undef _AQ_SPSRAM_2048X32_IHP130_
+`endif
+
+`ifdef _AQ_SPSRAM_2048X32_ICS55_
+`undef _AQ_SPSRAM_2048X32_ICS55_
 `endif
 
 //   &Instance("aq_tsmc_spsram_2048x32"); @49

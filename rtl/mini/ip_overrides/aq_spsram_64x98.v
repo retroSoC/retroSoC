@@ -10,9 +10,11 @@
 // is built from two RM_IHPSG13_1P_64x64_c2_bm_bist macros in a width stack:
 // one macro holds the low 64 bits, the other the high 34 bits with its upper
 // mask bits tied off so they are never written (manual section 3.1.5
-// stacking). Every other configuration keeps the upstream behavioral
-// aq_f_spsram_64x98 instance byte-identical. Keep in sync when the lock
-// revision changes.
+// stacking). With PDK_ICS55+HAVE_SRAM_MACRO and without PDK_BEHAV, the
+// exact-geometry ics55_ecos_sram_64x98_m4 macro replaces it directly
+// (identical active-low polarity, no stacking or padding). Every other
+// configuration keeps the upstream behavioral aq_f_spsram_64x98 instance
+// byte-identical. Keep in sync when the lock revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -81,6 +83,14 @@ parameter WE_WIDTH   = 98;
 `endif
 `endif
 
+`ifdef PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_64X98_ICS55_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_64X98_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -134,6 +144,22 @@ RM_IHPSG13_1P_64x64_c2_bm_bist  u_mem_hi (
   .A_BIST_DIN (64'b0               ),
   .A_BIST_BM  (64'b0               )
 );
+`elsif _AQ_SPSRAM_64X98_ICS55_
+  //********************************************************
+  //*                ICS55 SRAM macro                      *
+  //********************************************************
+// Exact-geometry macro; polarities match the wrapper, direct connection.
+ics55_ecos_sram_64x98_m4  u_mem (
+  .A    (A   ),
+  .CEB  (CEN ),
+  .CLK  (CLK ),
+  .D    (D   ),
+  .GWEB (GWEN),
+  .MARE (1'b0),
+  .MAR  (4'b0),
+  .WEB  (WEN ),
+  .Q    (Q   )
+);
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -153,6 +179,10 @@ aq_f_spsram_64x98  x_aq_f_spsram_64x98 (
 
 `ifdef _AQ_SPSRAM_64X98_IHP130_
 `undef _AQ_SPSRAM_64X98_IHP130_
+`endif
+
+`ifdef _AQ_SPSRAM_64X98_ICS55_
+`undef _AQ_SPSRAM_64X98_ICS55_
 `endif
 
 //   &Instance("aq_tsmc_spsram_64x98"); @50

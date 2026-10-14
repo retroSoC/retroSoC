@@ -9,9 +9,11 @@
 // PDK_IHP130+HAVE_SRAM_MACRO and without PDK_BEHAV, the 1024x16 BHT RAM is
 // built from one RM_IHPSG13_1P_1024x32_c2_bm_bist macro; only the low 16
 // bits are used and the upper mask bits are tied off so they are never
-// written. Every other configuration keeps the upstream behavioral
-// aq_f_spsram_1024x16 instance byte-identical. Keep in sync when the lock
-// revision changes.
+// written. With PDK_ICS55+HAVE_SRAM_MACRO and without PDK_BEHAV, the
+// exact-geometry ics55_ecos_sram_1024x16_m8 macro replaces it directly
+// (identical active-low polarity, no stacking or padding). Every other
+// configuration keeps the upstream behavioral aq_f_spsram_1024x16 instance
+// byte-identical. Keep in sync when the lock revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -80,6 +82,14 @@ parameter WE_WIDTH   = 16;
 `endif
 `endif
 
+`ifdef PDK_ICS55
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_1024X16_ICS55_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_1024X16_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -111,6 +121,22 @@ RM_IHPSG13_1P_1024x32_c2_bm_bist  u_mem (
   .A_BIST_DIN (32'b0         ),
   .A_BIST_BM  (32'b0         )
 );
+`elsif _AQ_SPSRAM_1024X16_ICS55_
+  //********************************************************
+  //*                ICS55 SRAM macro                      *
+  //********************************************************
+// Exact-geometry macro; polarities match the wrapper, direct connection.
+ics55_ecos_sram_1024x16_m8  u_mem (
+  .A    (A   ),
+  .CEB  (CEN ),
+  .CLK  (CLK ),
+  .D    (D   ),
+  .GWEB (GWEN),
+  .MARE (1'b0),
+  .MAR  (4'b0),
+  .WEB  (WEN ),
+  .Q    (Q   )
+);
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -129,6 +155,10 @@ aq_f_spsram_1024x16  x_aq_f_spsram_1024x16 (
 
 `ifdef _AQ_SPSRAM_1024X16_IHP130_
 `undef _AQ_SPSRAM_1024X16_IHP130_
+`endif
+
+`ifdef _AQ_SPSRAM_1024X16_ICS55_
+`undef _AQ_SPSRAM_1024X16_ICS55_
 `endif
 
 //   &Instance("aq_tsmc_spsram_1024x16"); @49
