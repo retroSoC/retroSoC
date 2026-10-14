@@ -1,3 +1,11 @@
 # ICS55 technology cells are supplied by the locked Liberty views in Yosys.
 /cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x32_m8/verilog/ics55_ecos_sram_1024x32_m8_stub.v
 /cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_4096x32_m8/verilog/ics55_ecos_sram_4096x32_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x16_m8/verilog/ics55_ecos_sram_1024x16_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_2048x32_m8/verilog/ics55_ecos_sram_2048x32_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_256x59_m4/verilog/ics55_ecos_sram_256x59_m4_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_1024x64_m8/verilog/ics55_ecos_sram_1024x64_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_128x8_m8/verilog/ics55_ecos_sram_128x8_m8_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_64x58_m4/verilog/ics55_ecos_sram_64x58_m4_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_64x88_m4/verilog/ics55_ecos_sram_64x88_m4_stub.v
+/cache/retrosoc/pdk/ics55/sram/ics55_ecos_sram_64x98_m4/verilog/ics55_ecos_sram_64x98_m4_stub.v
