@@ -123,6 +123,7 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/clint.c \
             $(ROOT_PATH)/crt/src/hal/clock.c \
             $(ROOT_PATH)/crt/src/hal/sysctrl.c \
+            $(ROOT_PATH)/crt/src/hal/rcu.c \
             $(ROOT_PATH)/crt/src/hal/uart_math.c \
             $(ROOT_PATH)/crt/src/hal/uart.c \
             $(ROOT_PATH)/crt/src/hal/gpio_math.c \
@@ -182,7 +183,8 @@ CFLAGS         += -DRS_SOC_TINY
 TINY_CRT_NAMES := startup.S clzsi2.c divdi3.c ffssi2.c udivdi3.c umoddi3.c \
     stdlib.c string.c console.c printf.c archinfo.c clint.c uart_math.c uart.c \
     gpio_math.c gpio.c timer_math.c timer.c pwm.c rtc.c wdg.c watchdog.c i2c_math.c i2c.c \
-    dma_math.c dma.c onchip_sram.c xpi.c
+    dma_math.c dma.c onchip_sram.c xpi.c rng.c crc.c ws2812_math.c ws2812.c \
+    crypto.c crypto_lifecycle.c i2s_math.c i2s.c sdio_math.c sdio.c rcu.c
 CRT_SRCS       := $(foreach source,$(CRT_SRCS),$(if $(filter $(notdir $(source)),$(TINY_CRT_NAMES)),$(source)))
 CRT_SRCS       += $(ROOT_PATH)/crt/src/hal/sysctrl.c
 endif
@@ -285,12 +287,12 @@ asm: $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP)
 	cp $(SW_BUILD_DIR)/asm/hello-asm.bin $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME).bin
 	cp $(SW_BUILD_DIR)/asm/hello-asm.txt $(SW_BUILD_DIR)/$(ASM_FIRMWARE_NAME)_all.txt
 
+endif
+
 $(CRYPTO_CONSTANTS_HEADER): $(ROOT_PATH)/scripts/crypto_constants.py $(ROOT_PATH)/scripts/data/crypto_constants.json
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_constants.py --root $(ROOT_PATH) --output $(SW_BUILD_DIR)/include
 
-endif
-
-CRYPTO_CONSTANTS_DEP := $(if $(filter TINY,$(SOC)),,$(CRYPTO_CONSTANTS_HEADER))
+CRYPTO_CONSTANTS_DEP := $(CRYPTO_CONSTANTS_HEADER)
 
 $(FIRMWARE_ELF): $(MPW_VARIANT_DEP) $(MEMORY_MAP_STAMP) $(SOC_TOPOLOGY_STAMP) $(SOC_IRQ_METADATA) $(USER_EXTENSIONS_STAMP) $(ARCHINFO_METADATA_STAMP) $(VERSION_HEADER) $(CRYPTO_CONSTANTS_DEP) $(SRC_PATH) $(SW_HEADERS) $(LDS_PATH) \
 	$(ROOT_PATH)/rtl/mk/software.mk $(APP_MK)

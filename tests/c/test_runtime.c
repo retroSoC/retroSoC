@@ -12,6 +12,8 @@
 #include <retrosoc/hal/crypto.h>
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/clock.h>
+#include <retrosoc/hal/rcu.h>
+#include <retrosoc/hal/rcu_regs.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/fabric_monitor.h>
@@ -65,13 +67,56 @@ uint32_t rs_ga2d_test_mem_pad_mode;
 volatile uint32_t rs_npu_test_mmio[1024];
 volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 volatile uint32_t rs_resource_test_mmio[1024];
+volatile uint32_t rs_tiny_rcu_test_mmio[1024];
 volatile uint32_t rs_dma_test_mmio[1024];
 static uint32_t ws_registers[16];
 static uint32_t ws_pushed;
 static uint32_t ws_pixels[33];
+static uint32_t ws_idle_on_interrupt_read;
+static uint32_t dma_irq_enabled = 8U;
+static bool dma_irq_pending;
+static rs_dma_session_t dma_irq_owner;
+static rs_status_t dma_irq_result;
+
+uint32_t rs_dma_test_irq_save(void) {
+    const uint32_t saved = dma_irq_enabled;
+    dma_irq_enabled = 0U;
+    return saved;
+}
+
+void rs_dma_test_irq_restore(uint32_t saved) {
+    dma_irq_enabled = saved;
+    if ((saved != 0U) && dma_irq_pending) {
+        dma_irq_pending = false;
+        /* Model START taking effect before an interrupt can execute. */
+        if (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_CTRL) == RS_DMA_CH_CTRL_START) {
+            RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+        }
+        dma_irq_result = rs_dma_session_acquire(&dma_irq_owner, 3U);
+        if (dma_irq_result == RS_OK) {
+            const rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM,
+                                            .source = 0x3000U,
+                                            .destination = 0x4000U,
+                                            .byte_count = 16U,
+                                            .width = RS_DMA_WIDTH_32,
+                                            .source_increment = true,
+                                            .destination_increment = true,
+                                            .burst_beats = 1U};
+            dma_irq_result = rs_dma_session_configure(&dma_irq_owner, &config);
+        }
+    }
+}
 
 uint32_t rs_ws2812_test_read(uint32_t offset) {
-    return ws_registers[offset / 4U];
+    const uint32_t value = ws_registers[offset / 4U];
+    if ((offset == 0x30U) && (ws_idle_on_interrupt_read != 0U)) {
+        ws_registers[0x18U / 4U] = 8U;
+        if (ws_idle_on_interrupt_read == 1U) {
+            ws_registers[0x30U / 4U] |= RS_WS2812_INTR_DONE;
+        }
+        ws_idle_on_interrupt_read = 0U;
+    }
+    return value;
 }
 
 void rs_ws2812_test_write(uint32_t offset, uint32_t value) {
@@ -105,13 +150,121 @@ static void ws_test_reset(void) {
     ws_registers[0x18U / 4U] = 8U;
     ws_registers[0x24U / 4U] = 3U;
     ws_pushed = 0U;
+    ws_idle_on_interrupt_read = 0U;
+}
+
+static int test_dma_tcd_preemption(void) {
+    static _Alignas(64)
+        rs_dma_tcd_t tcd = {.source = 0x1000U,
+                            .destination = 0x2000U,
+                            .byte_count = 32U,
+                            .y_count = 1U,
+                            .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                                       (UINT32_C(1) << RS_DMA_TCD_BURST_SHIFT)};
+    rs_status_t result;
+    bool valid;
+    ws_test_reset();
+    dma_irq_pending = true;
+    dma_irq_result = RS_OK;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_ETIMEOUT) && (dma_irq_result == RS_EIO) && !dma_irq_pending &&
+            (dma_irq_enabled == 8U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) == (uint32_t)(uintptr_t)&tcd) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) == 1U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) == tcd.source);
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = 0U;
+    (void)rs_dma_session_release(&dma_irq_owner);
+    if (!valid) {
+        return 1;
+    }
+    /* An already leased direct channel must remain untouched on rejection. */
+    if (rs_dma_session_acquire(&dma_irq_owner, 3U) != RS_OK) {
+        return 2;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) = 0x3000U;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_EIO) && (dma_irq_enabled == 8U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) == 0U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) == 0U) &&
+            (RS_DMA_CH_REG(3U, RS_DMA_CH_REG_SRC_ADDR) == 0x3000U);
+    (void)rs_dma_session_release(&dma_irq_owner);
+    if (!valid) {
+        return 3;
+    }
+    /* Calling from an already masked context must not enable interrupts. */
+    dma_irq_enabled = 0U;
+    result = rs_dma_submit_tcd(3U, &tcd, 1U);
+    valid = (result == RS_ETIMEOUT) && (dma_irq_enabled == 0U);
+    dma_irq_enabled = 8U;
+    return valid ? 0 : 4;
+}
+
+static int test_ws2812_completion_race(void) {
+    rs_ws2812_dma_status_t transfer;
+    for (uint32_t delay = 1U; delay <= 2U; ++delay) {
+        ws_test_reset();
+        if (rs_ws2812_dma_begin(ws_pixels, 4U, 0U, 100U) != RS_OK) {
+            return 1;
+        }
+        /* Complete after INTR_STATE was sampled, before STATUS is sampled.
+         * The second case also delays the sticky DONE latch until next service. */
+        ws_idle_on_interrupt_read = delay;
+        if (rs_ws2812_dma_service(1U) != RS_OK) {
+            return 2;
+        }
+        (void)rs_ws2812_dma_status(&transfer);
+        if (!transfer.active || transfer.draining || transfer.dma_pending) {
+            return 3;
+        }
+        ws_registers[0x30U / 4U] |= RS_WS2812_INTR_DONE;
+        if (rs_ws2812_dma_service(2U) != RS_OK) {
+            return 4;
+        }
+        (void)rs_ws2812_dma_status(&transfer);
+        if (transfer.active || (transfer.result != RS_OK) || (ws_registers[0x24U / 4U] != 3U)) {
+            return 5;
+        }
+    }
+    /* An idle core without DONE must still terminate on error, abort or the
+     * original deadline; waiting for the sticky latch cannot hide a failure. */
+    for (uint32_t failure = 0U; failure < 3U; ++failure) {
+        const rs_status_t expected = (failure == 2U) ? RS_ETIMEOUT : RS_EIO;
+        ws_test_reset();
+        if (rs_ws2812_dma_begin(ws_pixels, 4U, 0U, 3U) != RS_OK) {
+            return 6;
+        }
+        ws_idle_on_interrupt_read = 2U;
+        if (rs_ws2812_dma_service(1U) != RS_OK) {
+            return 7;
+        }
+        if (failure == 0U) {
+            ws_registers[0x2cU / 4U] = 1U;
+        } else if (failure == 1U) {
+            ws_registers[0x30U / 4U] = RS_WS2812_INTR_ABORTED;
+        }
+        if (rs_ws2812_dma_service(3U) != expected) {
+            return 8;
+        }
+        (void)rs_ws2812_dma_service(4U);
+        (void)rs_ws2812_dma_service(5U);
+        (void)rs_ws2812_dma_status(&transfer);
+        if (transfer.active || (transfer.result != expected)) {
+            return 9;
+        }
+    }
+    return 0;
 }
 
 static int test_dma_sessions(void) {
     rs_dma_session_t first = {0}, second = {0};
-    rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM, .source = 0x1000U,
-        .destination = 0x2000U, .byte_count = 32U, .width = RS_DMA_WIDTH_32,
-        .source_increment = true, .destination_increment = true, .burst_beats = 1U};
+    rs_dma_config_t config = {.kind = RS_DMA_KIND_MM_TO_MM,
+                              .source = 0x1000U,
+                              .destination = 0x2000U,
+                              .byte_count = 32U,
+                              .width = RS_DMA_WIDTH_32,
+                              .source_increment = true,
+                              .destination_increment = true,
+                              .burst_beats = 1U};
     ws_test_reset();
     if ((rs_dma_session_acquire(&first, 3U) != RS_OK) ||
         (rs_dma_session_acquire(&first, 2U) != RS_EIO) ||
@@ -123,13 +276,11 @@ static int test_dma_sessions(void) {
         return 1;
     }
     RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
-    if ((rs_dma_session_release(&first) != RS_EIO) ||
-        (rs_dma_session_abort(&first) != RS_OK)) {
+    if ((rs_dma_session_release(&first) != RS_EIO) || (rs_dma_session_abort(&first) != RS_OK)) {
         return 2;
     }
     RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
-    if ((rs_dma_session_release(&first) != RS_OK) ||
-        (rs_dma_session_release(&first) != RS_EIO) ||
+    if ((rs_dma_session_release(&first) != RS_OK) || (rs_dma_session_release(&first) != RS_EIO) ||
         (rs_dma_session_acquire(&second, 3U) != RS_OK) ||
         (rs_dma_session_release(&second) != RS_OK)) {
         return 3;
@@ -162,15 +313,13 @@ static int test_ws2812_refill(void) {
     ws_pixels[32] = 0U;
     if ((rs_ws2812_dma_begin(ws_pixels, 33U, 0U, 100U) != RS_OK) || (ws_pushed != 16U) ||
         (ws_registers[0x24U / 4U] != 8U) || (rs_ws2812_push(0U, 1U) != RS_EIO) ||
-        (rs_ws2812_start(1U) != RS_EIO) ||
-        (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
+        (rs_ws2812_start(1U) != RS_EIO) || (rs_dma_session_acquire(&competitor, 3U) != RS_EIO)) {
         return 4;
     }
     ws_registers[0x30U / 4U] = RS_WS2812_INTR_FIFO_LOW;
     (void)rs_ws2812_dma_service(1U);
     (void)rs_ws2812_dma_status(&transfer);
-    if ((transfer.batches != 0U) ||
-        ((ws_registers[0x30U / 4U] & RS_WS2812_INTR_FIFO_LOW) != 0U)) {
+    if ((transfer.batches != 0U) || ((ws_registers[0x30U / 4U] & RS_WS2812_INTR_FIFO_LOW) != 0U)) {
         return 5;
     }
     /* Hardware REMAINING includes queued words: it must never size the batch. */
@@ -206,8 +355,7 @@ static int test_ws2812_refill(void) {
     ws_registers[0x30U / 4U] = RS_WS2812_INTR_DONE;
     if ((rs_ws2812_dma_service(15U) != RS_OK) ||
         (rs_dma_session_acquire(&competitor, 3U) != RS_OK) ||
-        (rs_dma_session_release(&competitor) != RS_OK) ||
-        (ws_registers[0x24U / 4U] != 3U)) {
+        (rs_dma_session_release(&competitor) != RS_OK) || (ws_registers[0x24U / 4U] != 3U)) {
         return 11;
     }
     /* Wire DONE may precede a delayed final B. Retain the lease until both
@@ -768,7 +916,11 @@ static int test_sdio_helpers(void) {
     rs_sd_memory_info_t info = {0};
     uint32_t value;
 
-    if ((rs_sdio_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
+    if ((rs_sdio_clock_calculate(24000000U, 400000U, &clock) != RS_OK) ||
+        (clock.half_period != 30U) || (clock.actual_hz != 400000U) ||
+        (rs_sdio_clock_calculate(24000000U, 12000000U, &clock) != RS_OK) ||
+        (clock.half_period != 1U) || (clock.actual_hz != 12000000U) ||
+        (rs_sdio_clock_calculate(72000000U, 400000U, &clock) != RS_OK) ||
         (clock.half_period != 90U) || (clock.actual_hz != 400000U) ||
         (rs_sdio_clock_calculate(100000000U, 50000000U, &clock) != RS_OK) ||
         (clock.half_period != 1U) || (clock.actual_hz != 50000000U)) {
@@ -936,31 +1088,47 @@ rs_status_t rs_tiny_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
 
 static int test_tiny_dma_config_validation(void) {
     rs_dma_config_t config = {
-        .kind = RS_DMA_KIND_MM_TO_MM, .request = RS_DMA_REQUEST_SOFTWARE,
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SOFTWARE,
         .source = (uintptr_t)UINT32_C(0x30000000),
-        .destination = (uintptr_t)UINT32_C(0x30001000), .byte_count = 259U,
-        .width = RS_DMA_WIDTH_32, .source_increment = true, .destination_increment = true,
+        .destination = (uintptr_t)UINT32_C(0x30001000),
+        .byte_count = 259U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
         .burst_beats = 16U,
     };
     static _Alignas(64) rs_dma_tcd_t descriptor;
     if ((rs_tiny_dma_config_validate(3U, &config) != RS_OK) ||
-        (rs_tiny_dma_config_validate(4U, &config) != RS_EINVAL)) {
+        (rs_tiny_dma_config_validate(7U, &config) != RS_OK) ||
+        (rs_tiny_dma_config_validate(8U, &config) != RS_EINVAL)) {
         return 1;
     }
     config.kind = RS_DMA_KIND_MM_TO_STREAM;
     config.request = RS_DMA_REQUEST_I2S_TX;
     config.byte_count = 256U;
-    if (rs_tiny_dma_config_validate(0U, &config) != RS_EINVAL) {
+    if (rs_tiny_dma_config_validate(6U, &config) != RS_OK) {
         return 2;
     }
     descriptor.source = UINT32_C(0x30000000);
     descriptor.byte_count = 256U;
     descriptor.y_count = 1U;
     descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
-        ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
-        ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
-    if (rs_tiny_dma_tcd_validate(0U, &descriptor) != RS_ENOTSUP) {
+                         ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+                         ((uint32_t)RS_DMA_REQUEST_I2S_TX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(6U, &descriptor) != RS_OK) {
         return 3;
+    }
+    config.kind = RS_DMA_KIND_STREAM_TO_MM;
+    config.request = RS_DMA_REQUEST_DVP_RX;
+    if (rs_tiny_dma_config_validate(2U, &config) != RS_EINVAL) {
+        return 4;
+    }
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_DST_INC |
+                         ((uint32_t)RS_DMA_KIND_STREAM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
+                         ((uint32_t)RS_DMA_REQUEST_DVP_RX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_ENOTSUP) {
+        return 5;
     }
     return 0;
 }
@@ -2853,9 +3021,12 @@ static int test_npu_p6_reference_edge_ops(void) {
     uint8_t depthwise_weights[72] = {0U};
     int32_t depthwise_parameters[4] = {1, INT32_C(1073741824), 1, 0};
     rs_npu_p6_memory_t depthwise_memory = {
-        .arena = {.base = UINT32_C(0x1000), .bytes = sizeof(depthwise_arena), .data = depthwise_arena},
-        .weights =
-            {.base = UINT32_C(0x3000), .bytes = sizeof(depthwise_weights), .data = depthwise_weights},
+        .arena = {.base = UINT32_C(0x1000),
+                  .bytes = sizeof(depthwise_arena),
+                  .data = depthwise_arena},
+        .weights = {.base = UINT32_C(0x3000),
+                    .bytes = sizeof(depthwise_weights),
+                    .data = depthwise_weights},
         .params =
             {
                 .base = UINT32_C(0x2000),
@@ -2891,7 +3062,9 @@ static int test_npu_p6_reference_edge_ops(void) {
     {
         uint8_t average_arena[16] = {1U, 2U, 3U, 4U};
         rs_npu_p6_memory_t average_memory = {
-            .arena = {.base = UINT32_C(0x4000), .bytes = sizeof(average_arena), .data = average_arena},
+            .arena = {.base = UINT32_C(0x4000),
+                      .bytes = sizeof(average_arena),
+                      .data = average_arena},
             .weights = {.base = UINT32_C(0x5000), .bytes = 1U, .data = average_arena},
             .params = {.base = UINT32_C(0x6000), .bytes = 1U, .data = average_arena},
         };
@@ -2978,6 +3151,61 @@ static int test_crypto_lifecycle_contract(void) {
     return 0;
 }
 
+static int test_tiny_rcu_boundaries(void) {
+    rs_tiny_rcu_snapshot_t snapshot;
+    uint32_t hz = 0U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_CAPABILITY_OFFSET / 4U] = 3U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_TARGET_CAP_OFFSET / 4U] = 0x3FFFU;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_XIN_HZ_OFFSET / 4U] = 96000000U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_REF_HZ_OFFSET / 4U] = 24000000U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_COMMAND_OFFSET / 4U] = 0xDEADU;
+    if (rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_PLL192, 10U) != RS_ENOTSUP ||
+        rs_tiny_rcu_request_profile((rs_tiny_rcu_profile_t)4, 10U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_gate(0U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_reset(2U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_reset(1U, 10U) != RS_EINVAL ||
+        rs_tiny_rcu_apply_gate(1U << 14U, 10U) != RS_ENOTSUP ||
+        rs_tiny_rcu_apply_reset(1U << 17U, 10U) != RS_ENOTSUP) {
+        return 1;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_STATUS_OFFSET / 4U] = RS_TINY_RCU_STATUS_BUSY;
+    if (rs_tiny_rcu_get_snapshot(&snapshot) != RS_EBUSY ||
+        rs_tiny_rcu_apply_gate(2U, 10U) != RS_EBUSY ||
+        rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_SAFE24, 10U) != RS_EBUSY) {
+        return 2;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_STATUS_OFFSET / 4U] = 0U;
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_GATE_STATUS_OFFSET / 4U] = 2U;
+    if (rs_tiny_rcu_apply_reset(2U, 10U) != RS_EBUSY) {
+        return 3;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 4U;
+    if (rs_tiny_rcu_apply_gate(2U, 10U) != RS_ETIMEOUT) {
+        return 4;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 8U;
+    if (rs_tiny_rcu_apply_gate(2U, 10U) != RS_EIO ||
+        rs_tiny_rcu_test_mmio[RS_TINY_RCU_COMMAND_OFFSET / 4U] != 0xDEADU) {
+        return 5;
+    }
+    rs_tiny_rcu_test_mmio[RS_TINY_RCU_FAULT_OFFSET / 4U] = 0U;
+    if (rs_tiny_rcu_profile_hz(RS_TINY_RCU_PROFILE_XIN, &hz) != RS_OK || hz != 96000000U ||
+        rs_tiny_rcu_get_snapshot(NULL) != RS_EINVAL ||
+        rs_tiny_rcu_get_snapshot(&snapshot) != RS_OK || snapshot.xin_hz != hz ||
+        rs_tiny_rcu_set_clkout(5U, 1U) != RS_EINVAL ||
+        rs_tiny_rcu_set_clkout(1U, 0U) != RS_EINVAL ||
+        rs_tiny_rcu_clear_fault(32U) != RS_EINVAL ||
+        rs_tiny_rcu_clear_reset_cause(64U) != RS_EINVAL) {
+        return 6;
+    }
+    if (rs_tiny_rcu_set_clkout(1U, 1U) != RS_OK ||
+        rs_tiny_rcu_set_clkout(1U, 2U) != RS_EBUSY ||
+        rs_tiny_rcu_set_clkout(0U, 0U) != RS_OK) {
+        return 7;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -2986,9 +3214,12 @@ int main(void) {
         test_wait_helper(),
         test_crypto_lifecycle_contract(),
         test_clock_frequency_contract(),
+        test_tiny_rcu_boundaries(),
         test_ws2812_helpers(),
         test_dma_sessions(),
         test_ws2812_refill(),
+        test_dma_tcd_preemption(),
+        test_ws2812_completion_race(),
         test_timer_helpers(),
         test_psram_helpers(),
         test_sdram_helpers(),

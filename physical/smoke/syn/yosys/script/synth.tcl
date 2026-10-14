@@ -165,7 +165,7 @@ yosys tee -q -o "${report_dir}/${proj_name}_area_logic.rpt" stat -top $top_desig
 
 # final netlist
 yosys write_verilog -noattr -noexpr -nohex -nodec $netlist
-if {$soc == "TINY" && $pdk == "ICS55"} {
+if {$soc == "TINY"} {
     yosys write_json ${netlist}.json
 }
 

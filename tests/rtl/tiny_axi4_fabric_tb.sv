@@ -1,14 +1,16 @@
+`include "tiny_topology.svh"
 `timescale 1ns / 1ps
 module tiny_axi4_fabric_tb;
   logic clk_i = 0;
   logic rst_n_i = 0;
+  logic target_rst_n[`RETROSOC_TINY__TARGET_COUNT];
   always #5 clk_i = !clk_i;
   axi4_if #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) masters[2] (
+  ) masters[3] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
@@ -17,65 +19,71 @@ module tiny_axi4_fabric_tb;
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
       .USER_WIDTH(1)
-  ) targets[5] (
+  ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
-  logic fault_valid, fault_master, fault_write;
-  logic [31:0] fault_addr;
-  logic [ 1:0] fault_resp;
+  logic [5:0] fault_valid, fault_instruction;
+  logic [5:0][31:0] fault_addr;
+  logic [5:0][ 1:0] fault_resp;
   logic [63:0] cpu_wait, dma_wait;
   integer             faults = 0;
-  integer             completions    [2];
-  integer             target_requests[5];
-  logic   [1:0][31:0] awaddr;
-  logic   [1:0][ 7:0] awlen;
-  logic   [1:0][ 2:0] awsize;
-  logic   [1:0][ 1:0] awburst;
-  logic   [1:0][ 0:0] awlock;
-  logic   [1:0][ 0:0] awid;
-  logic   [1:0][ 0:0] awvalid;
-  logic   [1:0][31:0] wdata;
-  logic   [1:0][ 3:0] wstrb;
-  logic   [1:0][ 0:0] wlast;
-  logic   [1:0][ 0:0] wvalid;
-  logic   [1:0][ 0:0] bready;
-  logic   [1:0][31:0] araddr;
-  logic   [1:0][ 7:0] arlen;
-  logic   [1:0][ 2:0] arsize;
-  logic   [1:0][ 1:0] arburst;
-  logic   [1:0][ 0:0] arlock;
-  logic   [1:0][ 0:0] arid;
-  logic   [1:0][ 0:0] arvalid;
-  logic   [1:0][ 0:0] rready;
-  logic   [1:0][ 0:0] awready;
-  logic   [1:0][ 0:0] arready;
-  logic   [1:0][ 0:0] wready;
-  logic   [1:0][ 0:0] bvalid;
-  logic   [1:0][ 0:0] bid;
-  logic   [1:0][ 1:0] bresp;
-  logic   [1:0][ 0:0] rvalid;
-  logic   [1:0][ 0:0] rid;
-  logic   [1:0][ 0:0] rlast;
-  logic   [1:0][31:0] rdata;
-  logic   [1:0][ 1:0] rresp;
+  integer             completions    [                           3];
+  integer             target_requests[`RETROSOC_TINY__TARGET_COUNT];
+  logic   [2:0][31:0] awaddr;
+  logic   [2:0][ 7:0] awlen;
+  logic   [2:0][ 2:0] awsize;
+  logic   [2:0][ 1:0] awburst;
+  logic   [2:0][ 0:0] awlock;
+  logic   [2:0][ 0:0] awid;
+  logic   [2:0][ 0:0] awvalid;
+  logic   [2:0][31:0] wdata;
+  logic   [2:0][ 3:0] wstrb;
+  logic   [2:0][ 0:0] wlast;
+  logic   [2:0][ 0:0] wvalid;
+  logic   [2:0][ 0:0] bready;
+  logic   [2:0][31:0] araddr;
+  logic   [2:0][ 7:0] arlen;
+  logic   [2:0][ 2:0] arsize;
+  logic   [2:0][ 1:0] arburst;
+  logic   [2:0][ 0:0] arlock;
+  logic   [2:0][ 0:0] arid;
+  logic   [2:0][ 0:0] arvalid;
+  logic   [2:0][ 2:0] arprot;
+  logic   [2:0][ 0:0] rready;
+  logic   [2:0][ 0:0] awready;
+  logic   [2:0][ 0:0] arready;
+  logic   [2:0][ 0:0] wready;
+  logic   [2:0][ 0:0] bvalid;
+  logic   [2:0][ 0:0] bid;
+  logic   [2:0][ 1:0] bresp;
+  logic   [2:0][ 0:0] rvalid;
+  logic   [2:0][ 0:0] rid;
+  logic   [2:0][ 0:0] rlast;
+  logic   [2:0][31:0] rdata;
+  logic   [2:0][ 1:0] rresp;
   tiny_axi4_fabric u_dut (
-      .clk_i         (clk_i),
-      .rst_n_i       (rst_n_i),
-      .perf_enable_i (1'b1),
-      .perf_clear_i  (1'b0),
-      .masters       (masters),
-      .targets       (targets),
-      .fault_valid_o (fault_valid),
-      .fault_addr_o  (fault_addr),
-      .fault_master_o(fault_master),
-      .fault_write_o (fault_write),
-      .fault_resp_o  (fault_resp),
-      .cpu_wait_o    (cpu_wait),
-      .dma_wait_o    (dma_wait)
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .target_rst_n_i     (target_rst_n),
+      .perf_enable_i      (1'b1),
+      .perf_clear_i       (1'b0),
+      .masters            (masters),
+      .targets            (targets),
+      .fault_valid_o      (fault_valid),
+      .fault_addr_o       (fault_addr),
+      .fault_instruction_o(fault_instruction),
+      .owner_idle_o       (),
+      .target_idle_o      (),
+      .fault_resp_o       (fault_resp),
+      .cpu_wait_o         (cpu_wait),
+      .dma_wait_o         (dma_wait)
   );
-  always @(posedge clk_i) if (fault_valid) faults <= faults + 1;
-  for (genvar m = 0; m < 2; m++) begin : gen_master
+  for (genvar target = 0; target < `RETROSOC_TINY__TARGET_COUNT; target++) begin : gen_target_reset
+    assign target_rst_n[target] = rst_n_i;
+  end
+  always @(posedge clk_i) faults <= faults + $countones(fault_valid);
+  for (genvar m = 0; m < 3; m++) begin : gen_master
     assign masters[m].awaddr   = awaddr[m];
     assign masters[m].awlen    = awlen[m];
     assign masters[m].awsize   = awsize[m];
@@ -113,17 +121,17 @@ module tiny_axi4_fabric_tb;
     assign masters[m].awregion = '0;
     assign masters[m].awuser   = '0;
     assign masters[m].arcache  = '0;
-    assign masters[m].arprot   = '0;
+    assign masters[m].arprot   = arprot[m];
     assign masters[m].arqos    = '0;
     assign masters[m].arregion = '0;
     assign masters[m].aruser   = '0;
     assign masters[m].wuser    = '0;
   end
-  for (genvar t = 0; t < 5; t++) begin : gen_target
+  for (genvar t = 0; t < `RETROSOC_TINY__TARGET_COUNT; t++) begin : gen_target
     // Deterministic terminal responder allows independent checks of routing,
     // burst length and ID preservation without sharing the fabric decoder.
     axi4_error_slave #(
-        .Response(t == 3 ? 2'b11 : (t == 4 ? 2'b10 : 2'b00))
+        .Response(t == `RETROSOC_TINY__DECODE_ERROR ? 2'b11 : (t == `RETROSOC_TINY__PROTOCOL_ERROR ? 2'b10 : 2'b00))
     ) u_response (
         .clk_i  (clk_i),
         .rst_n_i(rst_n_i),
@@ -238,9 +246,11 @@ module tiny_axi4_fabric_tb;
     arlock         = '0;
     arid           = '0;
     arvalid        = '0;
+    arprot         = '0;
     rready         = '0;
     completions[0] = 0;
     completions[1] = 0;
+    completions[2] = 0;
     repeat (5) @(negedge clk_i);
     rst_n_i = 1;
     fork
@@ -263,10 +273,18 @@ module tiny_axi4_fabric_tb;
       end
     join
     if (completions[0]!=7 || completions[1]!=6 || faults!=7 ||
-        target_requests[0]!=3 || target_requests[1]!=1 || target_requests[2]!=2 ||
-        target_requests[3]!=3 || target_requests[4]!=4 || cpu_wait==0 || dma_wait==0)
+        target_requests[0]!=2 || target_requests[3]!=1 || target_requests[4]!=1 ||
+        target_requests[6]!=2 || target_requests[`RETROSOC_TINY__DECODE_ERROR]!=3 || target_requests[`RETROSOC_TINY__PROTOCOL_ERROR]!=4)
       $fatal(1, "accounting/fairness mismatch faults=%0d", faults);
     read_request(0, 32'h30000000, 1, 2, 1, 0);
+    arprot[0] = 3'b100;
+    read_request(0, 32'h10001000, 1, 2, 1, 2);
+    read_request(0, 32'h54000000, 1, 2, 1, 3);
+    if (target_requests[6] != 2 || target_requests[4] != 1)
+      $fatal(1, "instruction request reached a peripheral or non-NSS0 window");
+    read_request(0, 32'h00000000, 1, 2, 1, 0);
+    read_request(0, 32'h50000000, 1, 2, 1, 0);
+    if (target_requests[4] != 3) $fatal(1, "NOR instruction windows not reachable");
     $display("SIM_TEST_PASS Tiny fabric");
     $finish;
   end

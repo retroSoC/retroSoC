@@ -119,9 +119,12 @@ def render(domains: list[dict[str, Any]], reset_ports: list[str]) -> str:
         if source_domain is None:
             lines.append(f"create_clock -name clk_{name} -period {period} ${pin_variable}")
         else:
+            divide_by = sta.get("divide_by", 1)
+            if not isinstance(divide_by, int) or isinstance(divide_by, bool) or divide_by < 1:
+                raise ValueError("generated clock division must be a positive integer")
             lines.append(
                 f"create_generated_clock -name clk_{name} -source ${pin_variables[source_domain]} "
-                f"-divide_by 1 ${pin_variable}"
+                f"-divide_by {divide_by} ${pin_variable}"
             )
         lines.append("")
 
@@ -175,10 +178,52 @@ def main() -> int:
     parser.add_argument("--domains", type=Path, required=True)
     parser.add_argument("--pin-map", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--xin-hz", type=int, default=24000000)
     args = parser.parse_args()
     try:
         domains, reset_ports = parse_document(args.domains, args.pin_map)
-        atomic_write(args.output, render(domains, reset_ports))
+        document = json.loads(args.domains.read_text())
+        p7 = document.get("clock_contract") == "TINY-R2-P7"
+        if p7 and args.xin_hz not in (24000000, 48000000, 96000000):
+            raise ValueError("unsupported Tiny external clock")
+        if p7 and args.xin_hz != 24000000:
+            aon = next(domain for domain in domains if domain["name"] == "aon")
+            external = {**aon, "name": "external", "sta": {**aon["sta"],
+                        "period_ns": 1e9 / args.xin_hz}}
+            aon["sta"] = {"source_domain": "external", "period_ns": 1e9 / 24000000,
+                          "divide_by": args.xin_hz // 24000000, "async_group": "core",
+                          "pin": "u_soc.u_clock_backend.gen_ref_divided.u_ref_div/clk_o"}
+            domains.insert(0, external)
+        if p7:
+            # These sources run even while the muxes select their undivided
+            # inputs. Their handover synchronizers still require real clocks.
+            for divisor in (2, 4):
+                domains.append({"name": f"sys_div{divisor}", "sta": {
+                    "source_domain": "system", "period_ns": 1e9 * divisor / 24000000,
+                    "divide_by": divisor, "async_group": "core", "object_type": "net_driver",
+                    "net": f"u_soc.u_clock_backend.s_div{divisor}_clk"}})
+            domains.append({"name": "clkout_source", "sta": {
+                "source_domain": "aon", "period_ns": 1e9 / 24000000,
+                "divide_by": 1, "async_group": "core", "object_type": "net_driver",
+                "net": "u_soc.u_clock_output.s_src_clk"}})
+        result = render(domains, reset_ports)
+        if p7:
+            result += "\n# P7 SAFE24 boot scenario; this does not qualify active PLL timing.\n"
+            for mux in ("u_sys_mux", "u_mem_mux", "u_pclk_div2_mux", "u_pclk_mux"):
+                result += (f"set_case_analysis 0 [require_pins {{P7 SAFE24 selection}} "
+                           f"{{u_soc.u_clock_backend.{mux}/select_i}}]\n")
+                # select_i passes through sequential handshake state. A static
+                # mode must also select its settled gate state; setting only
+                # the request cannot prune the other live clock in STA.
+                for side, enabled in ((0, 1), (1, 0)):
+                    result += (f"set_case_analysis {enabled} [require_net_driver_pin "
+                               f"{{P7 SAFE24 settled gate}} "
+                               f"{{u_soc.u_clock_backend.{mux}/r_enable{side}}}]\n")
+            result += "# CLKOUT retains its reset REF24 source in this boot scenario.\n"
+            for bit in (1, 2):
+                result += (f"set_case_analysis 0 [require_net_driver_pin {{P7 CLKOUT source}} "
+                           f"{{u_soc.u_clock_output.s_cfg_q_{bit}_}}]\n")
+        atomic_write(args.output, result)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.error(str(error))
     return 0

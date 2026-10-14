@@ -1,12 +1,26 @@
 {
   "schema_version": 2,
-  "inactive_macros": {
-    "ics55_pll": {
-      "cell": "PLL_TOP",
-      "scope": "TINY-ICS55-P1: present, EN=0, no SYS connection",
-      "active_clock_domain": false,
-      "qualification": "no characterized timing arcs; full RCU remains R2-P7"
-    }
+  "external_fabric": {
+    "phase": "TINY-R2-P7",
+    "clock_domain": "system",
+    "target_controllers": "u_soc.u_fabric.gen_target[%d].u_controller",
+    "target_count": 27,
+    "apb_bridges": "SYS frontends; acknowledged per-endpoint crossings to AON, PCLK and MEM",
+    "fabric_reset": "fabric leaf; target reset blocks admission and aborts accepted target work with DECERR",
+    "hart_reset": "CPU-only accepted-work drain; DMA and all target responses stay active",
+    "runtime_peripheral_reset": "RCU blocks admissions, drains accepted work, holds reset for five local edges, waits for local release and bus barriers"
+  },
+  "local_memory": {
+    "phase": "TINY-R2-P4",
+    "clock_domain": "system",
+    "cpu_instance": "u_soc.u_cpu.u_hazard3_cpu_2port",
+    "frontend_instance": "u_soc.u_cpu_mem",
+    "macro_instance": "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem",
+    "groups": 4,
+    "macros_per_group": 8,
+    "hart_reset": "halt then drain accepted I/D and slow responses; SRAM/DMA stay active",
+    "main_sram_payload_reset": "none",
+    "local_uncontended_max_cycles": 3
   },
   "reset_ports": [
     "ext_rst_n_i_pad",
@@ -14,18 +28,63 @@
   ],
   "domains": [
     {
+      "name": "aon",
+      "clock": "s_ref_clk",
+      "reset": "ref_rst_n_o",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+      "instance": "u_ref_rst",
+      "sta": {
+        "source_port": "extclk_i_pad",
+        "pin": "u_clock_buffer/clk_o",
+        "period_ns": 41.666666667,
+        "async_group": "core"
+      }
+    },
+    {
       "name": "system",
-      "clock": "clk_i",
+      "clock": "s_backend_sys_clk",
       "reset": "system_rst_n_o",
       "reset_source": "s_system_req_n",
       "reset_primitive": "rst_sync",
       "path": "rtl/tiny/top/tiny_reset_tree.sv",
       "instance": "u_system_rst_sync",
       "sta": {
-        "source_port": "extclk_i_pad",
-        "pin": "u_clock_buffer/clk_o",
+        "source_domain": "aon",
+        "pin": "u_soc.u_clock_backend.u_sys_mux/clk_o",
         "period_ns": 41.666666667,
-        "async_group": "system"
+        "async_group": "core"
+      }
+    },
+    {
+      "name": "memory",
+      "clock": "s_backend_mem_clk",
+      "reset": "s_backend_mem_rst_n",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+      "instance": "u_mem_rst",
+      "sta": {
+        "source_domain": "system",
+        "pin": "u_soc.u_clock_backend.u_mem_mux/clk_o",
+        "period_ns": 41.666666667,
+        "async_group": "core"
+      }
+    },
+    {
+      "name": "peripheral",
+      "clock": "s_backend_pclk",
+      "reset": "pclk_rst_n_o",
+      "reset_source": "rst_n_i",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+      "instance": "u_pclk_rst",
+      "sta": {
+        "source_domain": "system",
+        "pin": "u_soc.u_clock_backend.u_pclk_mux/clk_o",
+        "period_ns": 41.666666667,
+        "async_group": "core"
       }
     },
     {
@@ -39,8 +98,23 @@
       "sta": {
         "source_port": "jtag_tck_i_pad",
         "object_type": "port",
-        "period_ns": 100.0,
+        "period_ns": 100,
         "async_group": "jtag"
+      }
+    },
+    {
+      "name": "audio",
+      "clock": "s_audio_clk",
+      "reset": "s_audio_rst_n",
+      "reset_source": "s_i2s_rst_n",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_audio_rst_sync",
+      "sta": {
+        "source_port": "gpio_17_io_pad",
+        "pin": "u_soc.u_audio_clock_buffer/clk_o",
+        "period_ns": 54.253472222,
+        "async_group": "audio"
       }
     }
   ],
@@ -48,22 +122,128 @@
     "release_edges": 5,
     "por": "u_soc.u_reset_tree.u_por_rst_sync",
     "system": "u_soc.u_reset_tree.u_system_rst_sync",
-    "system_source": "por_rst_n_o && !watchdog_reset_req_i",
+    "system_source": "por_rst_n_o && !watchdog_reset_req_i && backend_reset_n_i",
     "leaf_instance_pattern": "u_soc.u_reset_tree.gen_leaf[%d].u_leaf_rst_sync",
     "leaf_names": [
-      "fabric", "gpio", "uart0", "uart1", "timer0", "timer1", "i2c0", "i2c1",
-      "xpi", "dma", "sysctrl", "clint", "sram", "archinfo", "pwm", "rtc", "wdg"
+      "fabric",
+      "gpio",
+      "uart0",
+      "timer0",
+      "timer1",
+      "i2c0",
+      "xpi",
+      "dma",
+      "sysctrl",
+      "clint",
+      "sram",
+      "archinfo",
+      "pwm",
+      "rtc",
+      "wdg",
+      "rng",
+      "crc",
+      "ws2812",
+      "crypto",
+      "i2s",
+      "sdio"
     ],
-    "cpu_prerequisite": "all leaf resets released",
+    "cpu_prerequisite": "all global leaf resets and actual APB/DMA/XPI/RCU barriers; boot readiness latches until the next system reset",
     "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
     "jtag": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_jtag_rst_sync",
     "dmi": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_dmi_rst_sync",
-    "watchdog_functional_reset": "POR only; APB uses wdg leaf",
+    "watchdog_functional_reset": "REF24 five-edge release after backend retains the watchdog reset event; PCLK APB uses the wdg leaf",
     "main_sram_payload_reset": "none",
-    "crypto": "not integrated; physical erasure contract unchanged",
-    "clock_domain": "system"
+    "crypto": "six private macro banks; reset invalidates then scrubs/readbacks; CPU does not wait for READY",
+    "clock_domain": "domain-specific",
+    "peripheral": "tiny_peripheral_leaf; five running hold edges and five release edges; I2S additionally requires actual audio-side barrier readiness"
   },
   "crossings": [
+    {
+      "name": "debug_pclk_status",
+      "source": "system", "destination": "peripheral", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_debug_pclk_sync"
+    },
+    {
+      "name": "debug_aon_status",
+      "source": "system", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_debug_ref_sync"
+    },
+    {
+      "name": "rtc_wake",
+      "source": "aon", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_rtc_wake_sync"
+    },
+    {
+      "name": "hart_reset_event",
+      "source": "system", "destination": "aon", "primitive": "cdc_2phase",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_hart_event_cdc"
+    },
+    {
+      "name": "peripheral_interrupts",
+      "source": "peripheral", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_irq_sync",
+      "notes": "sticky interrupt levels; this vector also contains AON/MEM and synchronous SYS bits"
+    },
+    {
+      "name": "wfi_permission",
+      "source": "aon", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_wfi_gate_sync"
+    },
+    {
+      "name": "admission_block_system",
+      "source": "aon", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_block_sys"
+    },
+    {
+      "name": "admission_block_dma",
+      "source": "aon", "destination": "peripheral", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_block_pclk"
+    },
+    {
+      "name": "gate_reset_disabled",
+      "source": "aon", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_disabled_sync"
+    },
+    {
+      "name": "peripheral_idle",
+      "source": "peripheral", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_periph_idle_sync"
+    },
+    {
+      "name": "xpi_idle",
+      "source": "memory", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_xpi_idle_sync"
+    },
+    {
+      "name": "dma_ready",
+      "source": "peripheral", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_dma_ready_sync"
+    },
+    {
+      "name": "dma_retirement",
+      "source": "peripheral", "destination": "system", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_dma_idle_sync"
+    },
+    {
+      "name": "fabric_retirement",
+      "source": "system", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_bus_idle_ref"
+    },
+    {
+      "name": "gate_acknowledgements",
+      "source": "peripheral", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_gate_feedback"
+    },
+    {
+      "name": "reset_hold_acknowledgements",
+      "source": "peripheral", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_held_feedback"
+    },
+    {
+      "name": "reset_release_acknowledgements",
+      "source": "system", "destination": "aon", "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv", "instance": "u_ready_feedback"
+    },
     {
       "name": "debug_dmi",
       "source": "jtag",
@@ -73,12 +253,169 @@
       "instance": "inst_hazard3_apb_async_bridge"
     },
     {
+      "name": "xpi_mem_axi",
+      "source": "system",
+      "destination": "memory",
+      "primitive": "tiny_axi4_async_bridge",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_xpi_mem_cdc",
+      "source_reset": "s_fabric_rst_n",
+      "destination_reset": "s_xpi_rst_n",
+      "reset_semantics": "five-edge link release; source-owned held responses survive destination reset; drain remaining W before B and synthesize only missing R beats with DECERR; unfinished warm clear requires destination reset before re-admission"
+    },
+    {
       "name": "debug_hard_reset",
       "source": "jtag",
       "destination": "system",
       "primitive": "cdc_sync",
       "path": "rtl/ip/core/mgmt_debug_wrapper.sv",
       "instance": "u_dmihardreset_cdc_sync"
+    },
+    {
+      "name": "i2s_configuration",
+      "source": "peripheral",
+      "destination": "audio",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_i2s_cfg_cdc"
+    },
+    {
+      "name": "i2s_commands",
+      "source": "peripheral",
+      "destination": "audio",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_i2s_cmd_cdc"
+    },
+    {
+      "name": "i2s_tx_samples",
+      "source": "peripheral",
+      "destination": "audio",
+      "primitive": "cdc_fifo_warm_flush",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_tx_cdc_fifo"
+    },
+    {
+      "name": "i2s_rx_samples",
+      "source": "audio",
+      "destination": "peripheral",
+      "primitive": "cdc_fifo_warm_flush",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_rx_cdc_fifo"
+    },
+    {
+      "name": "i2s_tx_occupancy",
+      "source": "audio",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_tx_pop_cnt_cdc"
+    },
+    {
+      "name": "i2s_rx_occupancy",
+      "source": "audio",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/serial/apb4_i2s.sv",
+      "instance": "u_rx_push_cnt_cdc"
+    },
+    {
+      "name": "dma_axi",
+      "source": "peripheral",
+      "destination": "system",
+      "primitive": "tiny_axi4_async_bridge",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_dma_cdc",
+      "source_reset": "s_dma_rst_n",
+      "destination_reset": "s_fabric_rst_n",
+      "reset_semantics": "five-edge link release; source-owned held responses survive destination reset; drain remaining W before B and synthesize only missing R beats with DECERR; unfinished warm clear requires destination reset before re-admission"
+    },
+    {
+      "name": "rcu_commands",
+      "source": "system",
+      "destination": "aon",
+      "primitive": "tiny_apb_async_bridge",
+      "path": "rtl/tiny/top/tiny_sysctrl.sv",
+      "instance": "u_rcu_cdc"
+    },
+    {
+      "name": "system_rate",
+      "source": "aon",
+      "destination": "system",
+      "primitive": "cdc_2phase",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_sys_rate_cdc"
+    },
+    {
+      "name": "peripheral_rate",
+      "source": "aon",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_pclk_rate_cdc"
+    },
+    {
+      "name": "dma_done",
+      "source": "peripheral",
+      "destination": "memory",
+      "primitive": "cdc_2phase",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_dma_done_cdc"
+    },
+    {
+      "name": "xpi_requests",
+      "source": "memory",
+      "destination": "peripheral",
+      "primitive": "cdc_sync",
+      "path": "rtl/tiny/top/retrosoc_tiny.sv",
+      "instance": "u_xpi_stall_sync"
     }
-  ]
+  ],
+  "clock_contract": "TINY-R2-P7",
+  "macros": {
+    "ics55_pll": {
+      "cell": "PLL_TOP",
+      "scope": "single RCU-owned macro; off after cold reset; selectors 5/7",
+      "active_clock_domain": true,
+      "qualification": "digital activity/rate qualification only; no analog LOCK or characterized timing arcs"
+    }
+  },
+  "generated_apb_crossings": {
+    "generator": "scripts/generate_tiny.py",
+    "template": "tiny_apb_bridges.svh",
+    "primitive": "tiny_apb_async_bridge",
+    "source": "system",
+    "destinations": {
+      "aon": [
+        "clint",
+        "archinfo"
+      ],
+      "memory": [
+        "xpi"
+      ],
+      "peripheral": [
+        "gpio",
+        "uart0",
+        "timer0",
+        "timer1",
+        "i2c0",
+        "dma",
+        "pwm",
+        "rtc",
+        "wdg",
+        "rng",
+        "crc",
+        "ws2812",
+        "crypto",
+        "i2s"
+      ]
+    },
+    "same_clock_isolation": [
+      "sdio"
+    ],
+    "native_system": [
+      "sysctrl",
+      "sram"
+    ]
+  }
 }

@@ -1969,6 +1969,8 @@ def test_run_flow_writes_structured_result(tmp_path: Path) -> None:
     assert data["status"] == "passed"
     assert data["exit_code"] == 0
     assert data["duration_seconds"] >= 0
+    assert isinstance(data["parent_pid"], int)
+    assert isinstance(data["child_pid"], int)
     assert isinstance(data["peak_rss_kib"], int)
     assert data["peak_rss_kib"] > 0
     assert log.read_text(encoding="utf-8") == "flow output\n"
@@ -2120,6 +2122,41 @@ def test_run_flow_streams_bytes_without_waiting_for_newline(tmp_path: Path) -> N
     assert json.loads(result.read_text(encoding="utf-8"))["status"] == "passed"
 
 
+def test_run_flow_persists_cancel_before_cleanup_and_ignores_second_signal(tmp_path: Path) -> None:
+    result = tmp_path / "cancelled.json"
+    process = subprocess.Popen([
+        sys.executable, str(ROOT / "scripts/run_flow.py"), "--tool", "unit",
+        "--log", str(tmp_path / "cancelled.log"), "--result", str(result), "--",
+        sys.executable, "-u", "-c",
+        "import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+        "print('READY',flush=True); time.sleep(30)",
+    ], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        assert process.stdout is not None
+        assert process.stdout.readline().strip() == "READY"
+        process.send_signal(signal.SIGINT)
+        for _ in range(100):
+            checkpoint = json.loads(result.read_text())
+            if checkpoint["status"] == "interrupted":
+                break
+            time.sleep(0.01)
+        assert checkpoint["status"] == "interrupted"
+        assert checkpoint["child_cleanup_pending"] is True
+        assert "finished_at" not in checkpoint
+        process.send_signal(signal.SIGTERM)
+        _, stderr = process.communicate(timeout=10)
+        assert process.returncode == 130, stderr
+        final = json.loads(result.read_text())
+        assert final["status"] == "interrupted"
+        assert final["child_cleanup_pending"] is False
+        assert final["child_exit_code"] == -signal.SIGKILL
+        assert final["finished_at"] >= final["started_at"]
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+
+
 def test_run_flow_records_interruption(tmp_path: Path) -> None:
     log = tmp_path / "interrupted.log"
     result = tmp_path / "interrupted.json"
@@ -2190,6 +2227,27 @@ def test_simulation_success_marker_and_failure_detection(tmp_path: Path) -> None
     )
     assert failed.returncode != 0
     assert json.loads(result.read_text(encoding="utf-8"))["status"] == "failed"
+
+
+@pytest.mark.parametrize("status,exit_code", [("running", None), ("failed", 1),
+                                              ("passed", 124), ("invalid", None)])
+def test_check_simulation_requires_terminal_flow(tmp_path: Path, status: str,
+                                                exit_code: int | None) -> None:
+    log = tmp_path / "sim.log"
+    result = tmp_path / "result-sim-check.json"
+    log.write_text("SIM_TEST_PASS code=0\n", encoding="utf-8")
+    (tmp_path / "result-sim.json").write_text(
+        json.dumps({"status": status, "exit_code": exit_code}),
+        encoding="utf-8",
+    )
+    checked = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/check_simulation.py"), "--log", str(log),
+         "--result", str(result)], text=True, capture_output=True,
+    )
+    report = json.loads(result.read_text(encoding="utf-8"))
+    assert checked.returncode != 0
+    assert report["status"] == "failed"
+    assert report["flow_status"] == status
 
 
 def test_warning_baseline_rejects_new_signature(tmp_path: Path) -> None:

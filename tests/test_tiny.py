@@ -35,7 +35,13 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     for index, target in enumerate(document["apb_targets"], start=1):
         name = target["name"]
         assert f".presetn(s_{name}_rst_n)" in interfaces
-        assert f"assign s_{name}_rst_n = s_leaf_rst_n[{index}];" in interfaces
+        if name in {"gpio", "uart0", "i2c0", "timer0", "timer1", "pwm", "i2s", "sdio",
+                    "dma", "ws2812", "rng", "crc", "crypto"}:
+            assert f"tiny_peripheral_leaf u_{name}_lifecycle" in interfaces
+            assert f".rst_n_i(s_leaf_rst_n[{index}])" in interfaces
+            assert f".rst_n_o(s_{name}_rst_n)" in interfaces
+        else:
+            assert f"assign s_{name}_rst_n = s_leaf_rst_n[{index}];" in interfaces
     generate_filelists(filelists, output, ["+define+RETROSOC_SOC__TINY"])
     generate_memory_map(TINY / "address_map/memory_map.json", output / "memory_map", "YES", 128)
     resolved = parse_filelists(filelists / name for name in
@@ -51,7 +57,9 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     assert "RS_SOC_PSRAM_BASE" not in sdk
     irq = (output / "include/retrosoc/generated/irq_metadata.h").read_text()
     assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(30)" in irq
-    assert "RS_SOC_EXT_IRQ_UART1 UINT32_C(24)" in irq
+    assert "RS_SOC_EXT_IRQ_UART1" not in irq
+    assert "RS_SOC_EXT_IRQ_I2C1" not in irq
+    assert "RS_SOC_EXT_IRQ_SDIO UINT32_C(8)" in irq
     assert "RS_SOC_EXT_IRQ_DMA UINT32_C(18)" in irq
     assert "RS_SOC_EXT_IRQ_NPU" not in irq
     # A consumer of public SDK headers must see Tiny capabilities without
@@ -59,7 +67,7 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     if shutil.which("cc"):
         probe = tmp_path / "consumer.c"
         probe.write_text('#include <retrosoc/hal/dma.h>\n'
-                         '_Static_assert(RS_DMA_CHANNEL_COUNT == 4, "wrong product");\n')
+                         '_Static_assert(RS_DMA_CHANNEL_COUNT == 8, "wrong product");\n')
         run(["cc", "-std=c11", "-Werror", "-I" + str(ROOT / "crt/include"),
              "-I" + str(output / "memory_map/include"), "-I" + str(output / "include"),
              "-c", str(probe), "-o", str(tmp_path / "consumer.o")])
@@ -97,16 +105,23 @@ def test_tiny_protocol_contracts(tmp_path: Path, simulator: str, block: str) -> 
         pytest.skip("locked RTL/tool dependency unavailable")
     generated = tmp_path / "map"
     generate_memory_map(TINY / "address_map/memory_map.json", generated, "YES", 128)
+    generate_bindings(read_topology(TINY / "integration/soc_topology.json",
+                                   TINY / "address_map/memory_map.json"), tmp_path / "bindings")
     top = "tiny_axi4_fabric_tb" if block == "fabric" else "tiny_sysctrl_tb"
     sources = [COMMON / "utils/register.sv"]
     if block == "fabric":
         sources += [COMMON / "interface/axi4_if.sv", COMMON / "stream/round_robin_arbiter.sv",
-                    ROOT / "rtl/ip/interconnect/axi4_error_slave.sv", TINY / "top/tiny_axi4_fabric.sv"]
+                    COMMON / "utils/spill_register.sv",
+                    ROOT / "rtl/ip/interconnect/axi4_error_slave.sv",
+                    TINY / "top/tiny_axi4_target.sv", TINY / "top/tiny_axi4_fabric.sv"]
     else:
-        sources += [COMMON / "interface/apb4_if.sv", TINY / "top/tiny_sysctrl.sv"]
+        sources += [COMMON / "interface/apb4_if.sv", COMMON / "cdc/cdc_sync.sv",
+                    COMMON / "cdc/cdc_rst_ctrlr.sv", COMMON / "cdc/cdc_2phase.sv",
+                    COMMON / "clkrst/rst_sync.sv", TINY / "top/tiny_apb_async_bridge.sv",
+                    TINY / "top/tiny_sysctrl.sv"]
     sources.append(ROOT / "tests/rtl" / f"{top}.sv")
-    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", generated / "rtl",
-                                   ROOT / "rtl/ip/peripheral", ROOT / "tests/rtl")]
+    includes = [f"-I{p}" for p in (COMMON, COMMON / "interface", generated / "rtl", tmp_path / "bindings/rtl",
+                                   ROOT / "rtl/ip/peripheral", TINY / "top", ROOT / "tests/rtl")]
     output = tmp_path / "sim"
     if simulator == "verilator":
         cache = tmp_path / "cache"

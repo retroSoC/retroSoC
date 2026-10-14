@@ -53,6 +53,12 @@
      RS_SD_R1_CARD_ECC_FAILED | RS_SD_R1_CC_ERROR | RS_SD_R1_ERROR | RS_SD_R1_CSD_OVERWRITE |      \
      RS_SD_R1_WP_ERASE_SKIP)
 
+/* Preserve protocol ceilings while supporting slower product input clocks. */
+static uint32_t rs_sdio_transfer_clock(uint32_t source_hz, uint32_t ceiling_hz) {
+    const uint32_t maximum_hz = source_hz / UINT32_C(2);
+    return (maximum_hz < ceiling_hz) ? maximum_hz : ceiling_hz;
+}
+
 static bool rs_sdio_instance_valid(rs_sdio_instance_t instance) {
     return (instance == RS_SDIO_INSTANCE_0) || (instance == RS_SDIO_INSTANCE_1);
 }
@@ -61,8 +67,10 @@ static uintptr_t rs_sdio_base(rs_sdio_instance_t instance) {
     switch (instance) {
     case RS_SDIO_INSTANCE_0:
         return (uintptr_t)RS_SOC_APB4_SDIO0_BASE;
+#ifndef RS_SOC_TINY
     case RS_SDIO_INSTANCE_1:
         return (uintptr_t)RS_SOC_APB4_SDIO1_BASE;
+#endif
     default:
         return (uintptr_t)0U;
     }
@@ -257,6 +265,11 @@ static rs_status_t rs_sdio_send_app_command(rs_sdio_instance_t instance, uint16_
 
 rs_status_t rs_sdio_probe(rs_sdio_instance_t instance, uint32_t *ip_id, uint32_t *version,
                           uint32_t *capability) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || (ip_id == NULL) || (version == NULL) ||
         (capability == NULL) || (rs_sdio_read(instance, RS_SDIO_REG_IP_ID, ip_id) != RS_OK) ||
         (rs_sdio_read(instance, RS_SDIO_REG_IP_VERSION, version) != RS_OK) ||
@@ -270,6 +283,11 @@ rs_status_t rs_sdio_probe(rs_sdio_instance_t instance, uint32_t *ip_id, uint32_t
 }
 
 rs_status_t rs_sdio_reset(rs_sdio_instance_t instance, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     volatile uint32_t *status_reg;
 
     if (!rs_sdio_instance_valid(instance)) {
@@ -294,6 +312,11 @@ rs_status_t rs_sdio_reset(rs_sdio_instance_t instance, rs_timeout_t timeout) {
 
 rs_status_t rs_sdio_clock_set(rs_sdio_instance_t instance, uint32_t source_clock_hz,
                               uint32_t target_clock_hz, rs_sdio_clock_t *clock) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_clock_t calculated;
     uint32_t value;
     uint32_t enabled;
@@ -318,6 +341,11 @@ rs_status_t rs_sdio_clock_set(rs_sdio_instance_t instance, uint32_t source_clock
 }
 
 rs_status_t rs_sdio_bus_width_set(rs_sdio_instance_t instance, rs_sdio_bus_width_t width) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t value;
 
     if (!rs_sdio_instance_valid(instance) || rs_sdio_busy(instance)) {
@@ -338,6 +366,11 @@ rs_status_t rs_sdio_bus_width_set(rs_sdio_instance_t instance, rs_sdio_bus_width
 
 rs_status_t rs_sdio_timeouts_set(rs_sdio_instance_t instance, uint32_t command_timeout,
                                  uint32_t data_timeout, uint32_t busy_timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || rs_sdio_busy(instance) || (command_timeout == 0U) ||
         (data_timeout == 0U) || (busy_timeout == 0U)) {
         return RS_EINVAL;
@@ -351,6 +384,11 @@ rs_status_t rs_sdio_timeouts_set(rs_sdio_instance_t instance, uint32_t command_t
 }
 
 rs_status_t rs_sdio_enable(rs_sdio_instance_t instance, bool enable) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t value;
 
     if (!rs_sdio_instance_valid(instance) ||
@@ -366,6 +404,11 @@ rs_status_t rs_sdio_enable(rs_sdio_instance_t instance, bool enable) {
 }
 
 rs_status_t rs_sdio_configure(rs_sdio_instance_t instance, const rs_sdio_config_t *config) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_clock_t clock;
     rs_status_t status;
 
@@ -393,6 +436,11 @@ rs_status_t rs_sdio_configure(rs_sdio_instance_t instance, const rs_sdio_config_
 }
 
 rs_status_t rs_sdio_status_get(rs_sdio_instance_t instance, rs_sdio_status_t *status) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t present;
 
     if (!rs_sdio_instance_valid(instance) || (status == NULL)) {
@@ -421,6 +469,11 @@ rs_status_t rs_sdio_status_get(rs_sdio_instance_t instance, rs_sdio_status_t *st
 }
 
 rs_status_t rs_sdio_command_start(rs_sdio_instance_t instance, const rs_sdio_command_t *command) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t cfg;
 
     if (!rs_sdio_instance_valid(instance) || (command == NULL) || (command->index > 63U) ||
@@ -449,6 +502,11 @@ rs_status_t rs_sdio_command_start(rs_sdio_instance_t instance, const rs_sdio_com
 }
 
 rs_status_t rs_sdio_response_get(rs_sdio_instance_t instance, rs_sdio_response_t *response) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || (response == NULL) ||
         (rs_sdio_read(instance, RS_SDIO_REG_RESP0, &response->words[0]) != RS_OK) ||
         (rs_sdio_read(instance, RS_SDIO_REG_RESP1, &response->words[1]) != RS_OK) ||
@@ -462,6 +520,11 @@ rs_status_t rs_sdio_response_get(rs_sdio_instance_t instance, rs_sdio_response_t
 
 rs_status_t rs_sdio_command_wait(rs_sdio_instance_t instance, rs_sdio_response_t *response,
                                  rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
 
     if (!rs_sdio_instance_valid(instance) || (response == NULL)) {
@@ -485,6 +548,11 @@ rs_status_t rs_sdio_command_wait(rs_sdio_instance_t instance, rs_sdio_response_t
 
 rs_status_t rs_sdio_command_execute(rs_sdio_instance_t instance, const rs_sdio_command_t *command,
                                     rs_sdio_response_t *response, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
 
     status = rs_sdio_command_start(instance, command);
@@ -500,6 +568,11 @@ rs_status_t rs_sdio_command_execute(rs_sdio_instance_t instance, const rs_sdio_c
 
 rs_status_t rs_sdio_data_configure(rs_sdio_instance_t instance,
                                    const rs_sdio_data_config_t *config) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t value;
 
     if (!rs_sdio_instance_valid(instance) || (config == NULL) || (config->block_size == 0U) ||
@@ -532,6 +605,11 @@ rs_status_t rs_sdio_data_configure(rs_sdio_instance_t instance,
 }
 
 rs_status_t rs_sdio_data_start(rs_sdio_instance_t instance) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || rs_sdio_busy(instance) ||
         (rs_sdio_irq_clear(instance, RS_SDIO_IRQ_DATA_DONE | RS_SDIO_IRQ_DATA_ERROR) != RS_OK) ||
         (rs_sdio_error_clear(instance, RS_SDIO_ERROR_DATA_CRC | RS_SDIO_ERROR_DATA_TIMEOUT |
@@ -582,6 +660,11 @@ static rs_status_t rs_sdio_pio_store(rs_sdio_instance_t instance, const uint8_t 
 
 rs_status_t rs_sdio_pio_write(rs_sdio_instance_t instance, const void *buffer, size_t byte_count,
                               rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     const uint8_t *bytes = (const uint8_t *)buffer;
     rs_status_t status;
     size_t offset = 0U;
@@ -612,6 +695,11 @@ rs_status_t rs_sdio_pio_write(rs_sdio_instance_t instance, const void *buffer, s
 
 rs_status_t rs_sdio_pio_read(rs_sdio_instance_t instance, void *buffer, size_t byte_count,
                              rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint8_t *bytes = (uint8_t *)buffer;
     size_t offset = 0U;
 
@@ -645,6 +733,11 @@ rs_status_t rs_sdio_pio_read(rs_sdio_instance_t instance, void *buffer, size_t b
 }
 
 rs_status_t rs_sdio_data_wait(rs_sdio_instance_t instance, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
 
     if (!rs_sdio_instance_valid(instance)) {
@@ -664,6 +757,11 @@ rs_status_t rs_sdio_data_wait(rs_sdio_instance_t instance, rs_timeout_t timeout)
 
 rs_status_t rs_sdio_dma_setup(rs_sdio_instance_t instance, rs_sdio_descriptor_t *descriptors,
                               uint16_t count, uint32_t total_bytes) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uintptr_t address;
 
     if (!rs_sdio_instance_valid(instance) || (total_bytes == 0U) ||
@@ -686,6 +784,11 @@ rs_status_t rs_sdio_dma_setup(rs_sdio_instance_t instance, rs_sdio_descriptor_t 
 }
 
 rs_status_t rs_sdio_dma_start(rs_sdio_instance_t instance) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     /*
      * DATA_START is the coordinated DMA/data-engine launch.  Keep this
      * compatibility entry point as an alias so software cannot start a DMA
@@ -695,6 +798,11 @@ rs_status_t rs_sdio_dma_start(rs_sdio_instance_t instance) {
 }
 
 rs_status_t rs_sdio_dma_abort(rs_sdio_instance_t instance) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance)) {
         return RS_EINVAL;
     }
@@ -702,6 +810,11 @@ rs_status_t rs_sdio_dma_abort(rs_sdio_instance_t instance) {
 }
 
 rs_status_t rs_sdio_dma_status_get(rs_sdio_instance_t instance, rs_sdio_dma_status_t *status) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t dma_error;
 
     if (!rs_sdio_instance_valid(instance) || (status == NULL) ||
@@ -720,6 +833,11 @@ rs_status_t rs_sdio_dma_status_get(rs_sdio_instance_t instance, rs_sdio_dma_stat
 }
 
 rs_status_t rs_sdio_dma_wait(rs_sdio_instance_t instance, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_status_t status;
 
     if (!rs_sdio_instance_valid(instance)) {
@@ -738,6 +856,11 @@ rs_status_t rs_sdio_dma_wait(rs_sdio_instance_t instance, rs_timeout_t timeout) 
 }
 
 rs_status_t rs_sdio_irq_enable(rs_sdio_instance_t instance, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || ((mask & ~RS_SDIO_IRQ_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -745,6 +868,11 @@ rs_status_t rs_sdio_irq_enable(rs_sdio_instance_t instance, uint32_t mask) {
 }
 
 rs_status_t rs_sdio_irq_pending(rs_sdio_instance_t instance, uint32_t *mask) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || (mask == NULL)) {
         return RS_EINVAL;
     }
@@ -752,6 +880,11 @@ rs_status_t rs_sdio_irq_pending(rs_sdio_instance_t instance, uint32_t *mask) {
 }
 
 rs_status_t rs_sdio_irq_clear(rs_sdio_instance_t instance, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || ((mask & ~RS_SDIO_IRQ_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -759,6 +892,11 @@ rs_status_t rs_sdio_irq_clear(rs_sdio_instance_t instance, uint32_t mask) {
 }
 
 rs_status_t rs_sdio_irq_test(rs_sdio_instance_t instance, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || ((mask & ~RS_SDIO_IRQ_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -766,6 +904,11 @@ rs_status_t rs_sdio_irq_test(rs_sdio_instance_t instance, uint32_t mask) {
 }
 
 rs_status_t rs_sdio_error_clear(rs_sdio_instance_t instance, uint32_t mask) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     if (!rs_sdio_instance_valid(instance) || ((mask & ~RS_SDIO_ERROR_ALL) != 0U)) {
         return RS_EINVAL;
     }
@@ -773,6 +916,11 @@ rs_status_t rs_sdio_error_clear(rs_sdio_instance_t instance, uint32_t mask) {
 }
 
 rs_status_t rs_sdio_controller_selftest(rs_sdio_instance_t instance) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_status_t status;
     uint32_t ip_id;
     uint32_t version;
@@ -916,7 +1064,9 @@ static rs_status_t rs_sd_memory_try_high_speed(rs_sdio_instance_t instance,
         return RS_EIO;
     }
     if (rs_sdio_clock_set(instance, source_clock_hz,
-                          (source_clock_hz >= 100000000U) ? 50000000U : 36000000U,
+                          rs_sdio_transfer_clock(source_clock_hz, (source_clock_hz >= 100000000U)
+                                                                      ? 50000000U
+                                                                      : 36000000U),
                           &clock) == RS_OK) {
         info->actual_clock_hz = clock.actual_hz;
         info->high_speed = true;
@@ -928,6 +1078,11 @@ static rs_status_t rs_sd_memory_try_high_speed(rs_sdio_instance_t instance,
 
 rs_status_t rs_sd_memory_initialize(rs_sdio_instance_t instance, uint32_t source_clock_hz,
                                     rs_sd_memory_info_t *info, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_response_t response;
     rs_sdio_clock_t clock;
     uint32_t payload;
@@ -1008,7 +1163,9 @@ rs_status_t rs_sd_memory_initialize(rs_sdio_instance_t instance, uint32_t source
     if (status != RS_OK) {
         return status;
     }
-    if ((rs_sdio_response_field(&response, 31U, 16U, &payload) != RS_OK) ||
+    /* RESP retains the complete 48-bit frame: the R6 payload is [39:8],
+     * so its upper sixteen RCA bits are [39:24], above the status/CRC. */
+    if ((rs_sdio_response_field(&response, 39U, 24U, &payload) != RS_OK) ||
         (payload > UINT16_MAX)) {
         return RS_EFORMAT;
     }
@@ -1046,7 +1203,8 @@ rs_status_t rs_sd_memory_initialize(rs_sdio_instance_t instance, uint32_t source
         info->bus_width_fallback = true;
         info->bus_width = RS_SDIO_BUS_WIDTH_1;
     }
-    status = rs_sdio_clock_set(instance, source_clock_hz, 36000000U, &clock);
+    status = rs_sdio_clock_set(instance, source_clock_hz,
+                               rs_sdio_transfer_clock(source_clock_hz, 36000000U), &clock);
     if (status != RS_OK) {
         return status;
     }
@@ -1150,12 +1308,22 @@ static rs_status_t rs_sd_memory_transfer(rs_sdio_instance_t instance,
 rs_status_t rs_sd_memory_read_blocks(rs_sdio_instance_t instance, const rs_sd_memory_info_t *info,
                                      uint32_t block, uint32_t count, void *buffer,
                                      rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     return rs_sd_memory_transfer(instance, info, block, count, buffer, false, timeout);
 }
 
 rs_status_t rs_sd_memory_write_blocks(rs_sdio_instance_t instance, const rs_sd_memory_info_t *info,
                                       uint32_t block, uint32_t count, const void *buffer,
                                       rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     return rs_sd_memory_transfer(instance, info, block, count, (void *)buffer, true, timeout);
 }
 
@@ -1175,6 +1343,11 @@ static rs_status_t rs_sdio_function_command(rs_sdio_instance_t instance, uint8_t
 
 rs_status_t rs_sdio_function_cmd52_read(rs_sdio_instance_t instance, uint8_t function,
                                         uint32_t address, uint8_t *data, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_cmd52_t command = {
         .function = function,
         .address = address,
@@ -1203,6 +1376,11 @@ rs_status_t rs_sdio_function_cmd52_read(rs_sdio_instance_t instance, uint8_t fun
 
 rs_status_t rs_sdio_function_cmd52_write(rs_sdio_instance_t instance, uint8_t function,
                                          uint32_t address, uint8_t data, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     const rs_sdio_cmd52_t command = {
         .function = function,
         .address = address,
@@ -1223,6 +1401,11 @@ rs_status_t rs_sdio_function_cmd52_write(rs_sdio_instance_t instance, uint8_t fu
 
 rs_status_t rs_sdio_function_initialize(rs_sdio_instance_t instance, uint32_t source_clock_hz,
                                         rs_sdio_function_info_t *info, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_response_t response;
     rs_sdio_clock_t clock;
     uint32_t payload;
@@ -1345,8 +1528,10 @@ rs_status_t rs_sdio_function_initialize(rs_sdio_instance_t instance, uint32_t so
     } else {
         info->high_speed_fallback = true;
     }
-    status = rs_sdio_clock_set(instance, source_clock_hz,
-                               high_speed_enabled ? 24000000U : 25000000U, &clock);
+    status = rs_sdio_clock_set(
+        instance, source_clock_hz,
+        rs_sdio_transfer_clock(source_clock_hz, high_speed_enabled ? 24000000U : 25000000U),
+        &clock);
     if (status != RS_OK) {
         return status;
     }
@@ -1356,6 +1541,11 @@ rs_status_t rs_sdio_function_initialize(rs_sdio_instance_t instance, uint32_t so
 
 rs_status_t rs_sdio_function_enable(rs_sdio_instance_t instance, rs_sdio_function_info_t *info,
                                     uint8_t function, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint8_t enable;
     uint8_t ready;
     uint32_t attempts;
@@ -1394,6 +1584,11 @@ rs_status_t rs_sdio_function_cmd53_transfer(rs_sdio_instance_t instance, uint8_t
                                             uint32_t address, void *buffer, size_t byte_count,
                                             bool write, bool block_mode, bool fixed_address,
                                             uint16_t block_size, rs_timeout_t timeout) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     rs_sdio_cmd53_t command;
     rs_sdio_data_config_t data_config;
     rs_sdio_response_t response;
@@ -1482,6 +1677,11 @@ rs_status_t rs_sdio_function_cmd53_transfer(rs_sdio_instance_t instance, uint8_t
 }
 
 rs_status_t rs_sdio_function_irq_enable(rs_sdio_instance_t instance, bool enable) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t mask;
 
     if (!rs_sdio_instance_valid(instance) ||
@@ -1501,6 +1701,11 @@ rs_status_t rs_sdio_function_irq_enable(rs_sdio_instance_t instance, bool enable
 }
 
 rs_status_t rs_sdio_function_irq_pending(rs_sdio_instance_t instance, bool *pending) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     uint32_t mask;
 
     if ((pending == NULL) || (rs_sdio_irq_pending(instance, &mask) != RS_OK)) {
@@ -1511,5 +1716,10 @@ rs_status_t rs_sdio_function_irq_pending(rs_sdio_instance_t instance, bool *pend
 }
 
 rs_status_t rs_sdio_function_irq_ack(rs_sdio_instance_t instance) {
+#ifdef RS_SOC_TINY
+    if (instance == RS_SDIO_INSTANCE_1) {
+        return RS_ENOTSUP;
+    }
+#endif
     return rs_sdio_irq_clear(instance, RS_SDIO_IRQ_DAT1);
 }

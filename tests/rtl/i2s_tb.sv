@@ -98,6 +98,28 @@ module i2s_tb;
     end
   endtask
 
+  task automatic zero_strobe_rx_write;
+    logic [31:0] before_status, after_status;
+    read(32'h8, before_status);
+    if (before_status[2]) $fatal(1, "missing RX data for direction test");
+    @(negedge clk_i);
+    apb4.paddr   = 32'h20;
+    apb4.pwdata  = 0;
+    apb4.pstrb   = 0;
+    apb4.pwrite  = 1;
+    apb4.psel    = 1;
+    apb4.penable = 0;
+    @(negedge clk_i);
+    apb4.penable = 1;
+    while (!apb4.pready) @(negedge clk_i);
+    if (!apb4.pslverr) $fatal(1, "zero-strobe write became an RX read");
+    apb4.psel    = 0;
+    apb4.penable = 0;
+    apb4.pwrite  = 0;
+    read(32'h8, after_status);
+    if (before_status[23:16] != after_status[23:16]) $fatal(1, "invalid write popped RX FIFO");
+  endtask
+
   always @(posedge i2s.sclk_o) sclk_edges = sclk_edges + 1;
 
   initial begin
@@ -132,6 +154,9 @@ module i2s_tb;
     repeat (4000) @(posedge clk_aud_i);
     if (sclk_edges == 0) $fatal(1, "I2S SCLK did not toggle");
     read(32'h0000_0008, value);
+    write(32'h0000_0000, 32'h0000_0000);
+    repeat (64) @(negedge clk_i);
+    zero_strobe_rx_write();
     write(32'h0000_0000, 32'h0000_0008);
     write(32'h0000_0000, 32'h0000_0009);
     repeat (2000) @(posedge clk_aud_i);

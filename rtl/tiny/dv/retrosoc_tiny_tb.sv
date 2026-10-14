@@ -1,3 +1,4 @@
+`include "tiny_topology.svh"
 // Copyright (c) 2026 Yuchi Miao
 // SPDX-License-Identifier: MulanPSL-2.0
 `timescale 1ns / 1ps
@@ -5,27 +6,34 @@
 module retrosoc_tiny_tb;
   logic s_clk_driver = 1'b0;
   wire  s_clk = s_clk_driver;
-  logic s_reset_driver = 1'b0;
+  // Assert RESET_N after time zero. With a divided REF24 there are no REF
+  // edges while reset is held, so a declaration initialized low is not an
+  // observable asynchronous assertion for every four-state simulator process.
+  logic s_reset_driver = $test$plusargs("p7_legacy_reset_level") ? 1'b0 : 1'b1;
   wire  s_rst_n = s_reset_driver;
   wire s_uart0_tx, s_uart1_tx;
-  wire           s_uart0_rx = 1'b1;
-  wire           s_uart1_rx = 1'b1;
-  logic          s_jtag_tck_driver = 1'b0;
-  logic          s_jtag_tms_driver = 1'b1;
-  logic          s_jtag_tdi_driver = 1'b0;
-  wire           s_jtag_tck = s_jtag_tck_driver;
-  wire           s_jtag_tms = s_jtag_tms_driver;
-  wire           s_jtag_tdi = s_jtag_tdi_driver;
-  wire           s_jtag_trst_n = s_rst_n;
-  wire           s_jtag_tdo;
-  tri1    [31:0] s_gpio;
-  wire           s_xpi_sck;
-  wire    [ 3:0] s_xpi_nss;
-  tri     [ 3:0] s_xpi_data;
-  integer        s_cycles;
-  integer        s_max_cycles = 20000000;
-  integer        s_done_cycles = 0;
-  logic   [ 7:0] s_uart_byte;
+  wire  s_uart0_rx = 1'b1;
+  wire  s_uart1_rx = 1'b1;
+  logic s_jtag_tck_driver = 1'b0;
+  logic s_jtag_tms_driver = 1'b1;
+  logic s_jtag_tdi_driver = 1'b0;
+  wire  s_jtag_tck = s_jtag_tck_driver;
+  wire  s_jtag_tms = s_jtag_tms_driver;
+  wire  s_jtag_tdi = s_jtag_tdi_driver;
+  wire  s_jtag_trst_n = s_rst_n;
+  wire  s_jtag_tdo;
+  `include "tiny_tb_gpio.svh"
+  wire          s_xpi_sck;
+  wire    [3:0] s_xpi_nss;
+  tri     [3:0] s_xpi_data;
+  integer       s_cycles;
+`ifndef RETROSOC_SOC__TINY_NETLIST
+  `include "tiny_p6_devices.svh"
+  `include "tiny_p7_observers.svh"
+`endif
+  integer       s_max_cycles = 20000000;
+  integer       s_done_cycles = 0;
+  logic   [7:0] s_uart_byte;
   `include "tiny_jtag_smoke.svh"
 
 `ifdef RETROSOC_SOC__TINY_NETLIST
@@ -43,8 +51,12 @@ module retrosoc_tiny_tb;
   wire [7:0] s_test_code = u_dut.s_test_code;
 `endif
 
-  always #20.833333 s_clk_driver = !s_clk_driver;
+  always #(500000000.0 / `SOC_EXT_CLK_HZ) s_clk_driver = !s_clk_driver;
   initial begin
+    if (!$test$plusargs("p7_legacy_reset_level")) begin
+      #1;
+      s_reset_driver = 1'b0;
+    end
     if ($value$plusargs("max_cycles=%d", s_max_cycles)) begin
     end
     repeat (20) @(posedge s_clk);
@@ -53,7 +65,8 @@ module retrosoc_tiny_tb;
     for (s_cycles = 0; s_cycles < s_max_cycles; s_cycles = s_cycles + 1) begin
       @(posedge s_clk);
       if (u_dut.s_test_done) begin
-        if (!u_dut.s_test_pass) $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
+        if (u_dut.s_test_pass !== 1'b1 || (^s_test_code) === 1'bx)
+          $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
         s_done_cycles = s_done_cycles + 1;
         if (s_done_cycles >= 128 && s_jtag_checks_done) begin
           $display("SIM_TEST_PASS Tiny cycles=%0d", s_cycles);
@@ -64,24 +77,15 @@ module retrosoc_tiny_tb;
     if (s_done_cycles != 128) $fatal(1, "SIM_TEST_TIMEOUT Tiny cycles=%0d", s_cycles);
   end
 
-`ifdef RETROSOC_SOC__TINY_NETLIST
+`ifdef SIMU_IVERILOG
   localparam bit ObserveUartAlways = 1'b1;
 `else
   localparam bit ObserveUartAlways = 1'b0;
 `endif
-`ifdef SIMU_IVERILOG
-  localparam bit ObserveUartBaseline = 1'b1;
-`else
-  localparam bit ObserveUartBaseline = 1'b0;
-`endif
-  // The Verilator RTL already prints accepted TX bytes. The Icarus observer is
-  // opt-in for measurements; SYSCTRL remains the authoritative verdict.
+  // The Verilator RTL prints accepted TX bytes. Icarus observes serial output for
+  // all firmware measurements; SYSCTRL remains the authoritative verdict.
   initial begin
-    if (ObserveUartAlways || (ObserveUartBaseline && ($test$plusargs(
-            "tiny_r2_baseline"
-        ) || $test$plusargs(
-            "tiny_r2_p3"
-        )))) begin
+    if (ObserveUartAlways) begin
       forever begin
         @(negedge s_uart0_tx);
         #1627.604;
@@ -230,57 +234,181 @@ module retrosoc_tiny_tb;
     `undef _BASELINE_AXI
   end
 
-  // The baseline has one AHB port. HPROT[0] distinguishes instruction/data;
-  // these observations do not assert future independent local-I/D latency.
-  longint unsigned s_ahb_cycle = 0;
-  longint unsigned s_ahb_start = 0;
-  longint unsigned s_ahb_accept[2], s_ahb_done[2], s_ahb_latency[2];
-  logic s_ahb_pending = 1'b0, s_ahb_measured = 1'b0;
-  logic s_ahb_data = 1'b0, s_ahb_previous_enable = 1'b0;
-  integer s_ahb_window = 0;
-  wire    s_ahb_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
-  `define _BASELINE_AHB u_dut.u_soc.u_cpu.u_ahbl_if
-  always @(posedge s_clk) begin
-    s_ahb_cycle = s_ahb_cycle + 1;
-    if (!u_dut.u_soc.s_rst_n) begin
-      s_ahb_pending         = 1'b0;
-      s_ahb_measured        = 1'b0;
-      s_ahb_previous_enable = 1'b0;
-      s_ahb_window          = 0;
-    end else if (s_baseline_enabled) begin
-      if (s_ahb_enable && !s_ahb_previous_enable) begin
-        s_ahb_window   = s_ahb_window + 1;
-        s_ahb_measured = 1'b0;
-        for (int kind = 0; kind < 2; kind++) begin
-          s_ahb_accept[kind]  = 0;
-          s_ahb_done[kind]    = 0;
-          s_ahb_latency[kind] = 0;
-        end
+  // P5-only observations supplement the unchanged P3/P4 record formats. They
+  // are testbench measurements, not new software-visible performance counters.
+  longint unsigned s_p5_overlap = 0, s_p5_beat_overlap = 0;
+  integer s_p5_window = 0, s_p5_active_max = 0;
+  logic s_p5_previous_enable = 0;
+  wire  s_p5_enable = s_baseline_enabled && u_dut.u_soc.s_perf_enable;
+  // Icarus 13 miscounts the temporary expression $countones(~a_23_bit_vector).
+  // Count declared bits explicitly and reject unknowns rather than correcting
+  // a report afterward. This function changes only opt-in P5 observations.
+  function automatic integer p5_active_targets(
+      input logic [`RETROSOC_TINY__TARGET_COUNT-1:0] idle_i);
+    integer count;
+    count = 0;
+    for (
+        integer target_index = 0; target_index < `RETROSOC_TINY__TARGET_COUNT; target_index++
+    ) begin
+      if (idle_i[target_index] === 1'b0) count++;
+      else if (idle_i[target_index] !== 1'b1) $fatal(1, "SIM_TEST_FAIL P5 unknown target state");
+    end
+    return count;
+  endfunction
+  initial begin : p5_monitor_check
+    if ($test$plusargs("tiny_r2_p5_monitor_check")) begin
+      for (integer active = 0; active <= `RETROSOC_TINY__TARGET_COUNT; active++) begin
+        if (p5_active_targets(
+                {`RETROSOC_TINY__TARGET_COUNT{1'b1}} ^ ((`RETROSOC_TINY__TARGET_COUNT'(1) << active) - `RETROSOC_TINY__TARGET_COUNT'(1))
+            ) != active)
+          $fatal(1, "SIM_TEST_FAIL P5 monitor population count");
       end
-      if (`_BASELINE_AHB.hready) begin
-        if (s_ahb_pending && s_ahb_measured && s_ahb_enable) begin
-          s_ahb_done[s_ahb_data] = s_ahb_done[s_ahb_data] + 1;
-          if ((s_ahb_cycle - s_ahb_start) > s_ahb_latency[s_ahb_data])
-            s_ahb_latency[s_ahb_data] = s_ahb_cycle - s_ahb_start;
-        end
-        s_ahb_pending  = `_BASELINE_AHB.htrans[1];
-        s_ahb_measured = s_ahb_pending && s_ahb_enable;
-        if (s_ahb_measured) begin
-          s_ahb_data               = `_BASELINE_AHB.hprot[0];
-          s_ahb_start              = s_ahb_cycle;
-          s_ahb_accept[s_ahb_data] = s_ahb_accept[s_ahb_data] + 1;
-        end
-      end
-      if (!s_ahb_enable && s_ahb_previous_enable) begin
-        for (int kind = 0; kind < 2; kind++) begin
-          $display("R2_AHB window=%0d kind=%0d accepted=%0d completed=%0d latency_max=%0d",
-                   s_ahb_window, kind, s_ahb_accept[kind], s_ahb_done[kind], s_ahb_latency[kind]);
-        end
-      end
-      s_ahb_previous_enable = s_ahb_enable;
+      $display("SIM_TEST_PASS Tiny P5 monitor-check counts=0..27; instrumentation only");
+      $finish;
     end
   end
-  `undef _BASELINE_AHB
+  always @(posedge s_clk) begin
+    if (!u_dut.u_soc.s_rst_n) begin
+      s_p5_previous_enable = 0;
+      s_p5_window          = 0;
+    end else if ($test$plusargs("tiny_r2_p5")) begin
+      if (s_p5_enable && !s_p5_previous_enable) begin
+        s_p5_window++;
+        s_p5_overlap      = 0;
+        s_p5_beat_overlap = 0;
+        s_p5_active_max   = 0;
+      end
+      if (s_p5_enable) begin
+        if (p5_active_targets(u_dut.u_soc.u_fabric.target_idle_o) > s_p5_active_max)
+          s_p5_active_max = p5_active_targets(u_dut.u_soc.u_fabric.target_idle_o);
+        if (u_dut.u_soc.u_fabric.s_busy_q[2] && u_dut.u_soc.u_fabric.s_busy_q[3]) s_p5_overlap++;
+        if (u_dut.u_soc.u_masters_axi4_if[1].rvalid && u_dut.u_soc.u_masters_axi4_if[1].rready &&
+            u_dut.u_soc.u_masters_axi4_if[1].wvalid && u_dut.u_soc.u_masters_axi4_if[1].wready)
+          s_p5_beat_overlap++;
+      end
+      if (!s_p5_enable && s_p5_previous_enable)
+        $display(
+            "R2_P5_FABRIC window=%0d active_targets_max=%0d dma_rw_overlap_cycles=%0d dma_rw_beat_overlap_cycles=%0d",
+            s_p5_window,
+            s_p5_active_max,
+            s_p5_overlap,
+            s_p5_beat_overlap
+        );
+      s_p5_previous_enable = s_p5_enable;
+    end
+  end
+
+  // Verification-only per-group issue/conflict accounting. A bank conflict is
+  // two or more eligible macro clients in one cycle, not an AXI address stall.
+  for (genvar group = 0; group < 4; group++) begin : gen_bank_observer
+    longint unsigned s_issues[3], s_waits[3];
+    longint unsigned       s_conflicts = 0;
+    logic                  s_previous_enable = 0;
+    integer                s_window = 0;
+    wire                   s_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
+    wire             [2:0] s_req = u_dut.u_soc.u_sram.gen_group[group].u_group.s_req;
+    wire             [2:0] s_grant = u_dut.u_soc.u_sram.gen_group[group].u_group.s_grant;
+    always @(posedge s_clk) begin
+      if (!u_dut.u_soc.s_rst_n) begin
+        s_previous_enable = 0;
+        s_window          = 0;
+      end else if (s_baseline_enabled) begin
+        if (s_enable && !s_previous_enable) begin
+          s_window    = s_window + 1;
+          s_conflicts = 0;
+          for (int client = 0; client < 3; client++) begin
+            s_issues[client] = 0;
+            s_waits[client]  = 0;
+          end
+        end
+        if (s_enable) begin
+          if ((s_req & (s_req - 3'd1)) != 3'd0) s_conflicts = s_conflicts + 1;
+          for (int client = 0; client < 3; client++) begin
+            if (s_grant[client]) s_issues[client] = s_issues[client] + 1;
+            if (s_req[client] && !s_grant[client]) s_waits[client] = s_waits[client] + 1;
+          end
+        end
+        if (!s_enable && s_previous_enable)
+          $display(
+              "R2_P4_BANK window=%0d group=%0d issues_i=%0d issues_d=%0d issues_external=%0d conflicts=%0d wait_i=%0d wait_d=%0d wait_external=%0d",
+              s_window,
+              group,
+              s_issues[0],
+              s_issues[1],
+              s_issues[2],
+              s_conflicts,
+              s_waits[0],
+              s_waits[1],
+              s_waits[2]
+          );
+        s_previous_enable = s_enable;
+      end
+    end
+  end
+
+  // P4 retains the original per-kind record format, now observed on two
+  // independent ports. External AXI counts remain external traffic only.
+  for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_ahb_observer
+    longint unsigned s_cycle = 0, s_start = 0;
+    longint unsigned s_accepted = 0, s_completed = 0, s_latency = 0;
+    longint unsigned s_local_accepted = 0, s_local_completed = 0, s_local_latency = 0;
+    longint unsigned s_admission_wait = 0;
+    logic s_pending = 0, s_measured = 0, s_local = 0, s_previous_enable = 0;
+    integer s_window = 0;
+    wire    s_enable = u_dut.u_soc.s_perf_enable && s_baseline_enabled;
+    `define _P4_AHB u_dut.u_soc.u_cpu_ahbl_if[port_index]
+    always @(posedge s_clk) begin
+      s_cycle = s_cycle + 1;
+      if (!u_dut.u_soc.s_core_rst_n) begin
+        s_pending         = 0;
+        s_measured        = 0;
+        s_previous_enable = 0;
+        s_window          = 0;
+      end else if (s_baseline_enabled) begin
+        if (s_enable && !s_previous_enable) begin
+          s_window          = s_window + 1;
+          s_measured        = 0;
+          s_accepted        = 0;
+          s_completed       = 0;
+          s_latency         = 0;
+          s_local_accepted  = 0;
+          s_local_completed = 0;
+          s_local_latency   = 0;
+          s_admission_wait  = 0;
+        end
+        if (s_enable && `_P4_AHB.htrans[1] && !`_P4_AHB.hready)
+          s_admission_wait = s_admission_wait + 1;
+        if (`_P4_AHB.hready) begin
+          if (s_pending && s_measured && s_enable) begin
+            s_completed = s_completed + 1;
+            if ((s_cycle - s_start) > s_latency) s_latency = s_cycle - s_start;
+            if (s_local) begin
+              s_local_completed = s_local_completed + 1;
+              if ((s_cycle - s_start) > s_local_latency) s_local_latency = s_cycle - s_start;
+            end
+          end
+          s_pending  = `_P4_AHB.htrans[1];
+          s_measured = s_pending && s_enable;
+          if (s_measured) begin
+            s_start    = s_cycle;
+            s_accepted = s_accepted + 1;
+            s_local    = (`_P4_AHB.haddr >= 32'h30000000) && (`_P4_AHB.haddr < 32'h30020000);
+            if (s_local) s_local_accepted = s_local_accepted + 1;
+          end
+        end
+        if (!s_enable && s_previous_enable) begin
+          $display("R2_AHB window=%0d kind=%0d accepted=%0d completed=%0d latency_max=%0d",
+                   s_window, port_index, s_accepted, s_completed, s_latency);
+          $display(
+              "R2_P4_LOCAL window=%0d port=%0d accepted=%0d completed=%0d latency_max=%0d admission_wait=%0d",
+              s_window, port_index, s_local_accepted, s_local_completed, s_local_latency,
+              s_admission_wait);
+        end
+        s_previous_enable = s_enable;
+      end
+    end
+    `undef _P4_AHB
+  end
 `endif
 
   retrosoc_tiny_asic u_dut (

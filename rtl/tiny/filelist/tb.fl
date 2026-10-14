@@ -1,2 +1,3 @@
 /dv/tiny_qspi_nor.sv
+/tests/rtl/sdio_native_model.sv
 /dv/retrosoc_tiny_tb.sv

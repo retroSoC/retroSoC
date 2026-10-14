@@ -7,6 +7,7 @@ module apb4_crypto #(
     parameter logic [5:0] DropResponseMask  = 6'd0,
     parameter bit         DuplicateResponse = 1'b0
 ) (
+    output logic                 lifecycle_idle_o,
     input  logic                 clk_i,
     rst_n_i,
     output logic                 dma_input_proc_o,
@@ -43,9 +44,13 @@ module apb4_crypto #(
   logic [11:0] s_offset;
   logic [31:0] s_wdata;
   logic [ 3:0] s_strb;
-  assign s_offset = s_regs_q.offset;
-  assign s_wdata  = s_regs_q.data;
-  assign s_strb   = s_regs_q.mask;
+  logic        s_transport_busy;
+  assign s_transport_busy = (|s_fifo_busy) || (|s_engine_pending_q) || s_aes_key_busy;
+  assign lifecycle_idle_o = !(|s_busy) && !s_maintenance_busy && !s_transport_busy;
+
+  assign s_offset         = s_regs_q.offset;
+  assign s_wdata          = s_regs_q.data;
+  assign s_strb           = s_regs_q.mask;
   crypto_mem_req_t [5:0] s_engine_req, s_maintenance_req, s_store_req;
   crypto_mem_resp_t [5:0] s_store_resp, s_engine_resp, s_maintenance_resp;
   logic [ 6:0] s_mem_stat;

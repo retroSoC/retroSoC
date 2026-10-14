@@ -138,8 +138,10 @@ points, not the complete profile or application inventory.
 
 Tiny's [2026-10-07 target refreeze](docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 selects ICS55 with `HAVE_PLL=YES` and SAFE24 startup as the default.
-The profile instantiates a parked PLL; dynamic SYS switching remains R2-P7 and
-physical qualification is pending. IHP130 remains explicit compatibility.
+The PLL starts parked off. The [R2-P7 implementation](docs/ip/tiny-soc-r2-clock-reset.md)
+adds software-controlled SYS transitions; acceptance evidence is tracked in
+the Tiny ledger and physical qualification remains pending. IHP130 remains
+explicit compatibility.
 Locked PLL views can be acquired
 with `python3 physical/pdk/setup.py --pdk ICS55 --component pll` independently
 of platform implementation or timing qualification.

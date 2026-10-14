@@ -27,7 +27,7 @@ SIDE_ORDER = ("south", "east", "north", "west")
 EXPECTED_SIGNAL_PADS = 52
 CLOCK_PORTS = ("extclk_i_pad", "jtag_tck_i_pad")
 SRAM_MASTER = "RM_IHPSG13_1P_1024x32_c2_bm_bist"
-SRAM_INSTANCE = "u_soc.u_sram.gen_memory.gen_bank[{index}].u_ram.u_mem"
+SRAM_INSTANCE = "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem"
 SRAM_COLUMNS = 8
 SRAM_ORIGIN = (400, 600)
 # Detailed routing requires an M2 track inside each bank's 0.26 um bottom-edge
@@ -95,7 +95,7 @@ def sram_instances(capacity_kib: int) -> dict[str, tuple[list[int], str]]:
             SRAM_ORIGIN[0] + column * SRAM_PITCH[0],
             SRAM_ORIGIN[1] + row * SRAM_PITCH[1],
         ]
-        instances[SRAM_INSTANCE.format(index=index)] = (location, "N")
+        instances[SRAM_INSTANCE.format(group=index // 8, bank=index % 8)] = (location, "N")
     return instances
 
 
@@ -122,18 +122,9 @@ def macro_config(instances: dict[str, tuple[list[int], str]], header: str) -> di
 def macro_hooks(instances: dict[str, tuple[list[int], str]]) -> list[str]:
     hooks: list[str] = []
     for instance in instances:
-        bracket_start = instance.find("[")
-        if bracket_start >= 0:
-            bracket_end = instance.index("]", bracket_start)
-            instance_pattern = (
-                re.escape(instance[:bracket_start])
-                + ".*"
-                + instance[bracket_start + 1 : bracket_end]
-                + ".*"
-                + re.escape(instance[bracket_end + 1 :])
-            )
-        else:
-            instance_pattern = re.escape(instance)
+        # OpenDB and synthesis may escape array brackets differently. Handle
+        # every index (group and bank), retaining the exact non-index hierarchy.
+        instance_pattern = ".*".join(re.escape(part) for part in re.split(r"[\[\]]", instance))
         hooks.extend(
             [
                 f"{instance_pattern} VDD VSS VDDARRAY! VSS!",

@@ -32,6 +32,8 @@ module sdio_command_tb;
   integer                            launch_count;
   integer                            captured_bits;
   logic                      [ 47:0] captured_command;
+  tri1                               command_pad;
+  assign command_pad = cmd_oe_o ? cmd_do_o : 1'bz;
 
   always #1 clk_i = ~clk_i;
 
@@ -77,8 +79,8 @@ module sdio_command_tb;
   end
 
   always @(posedge sck) begin
-    if (cmd_oe_o) begin
-      captured_command = {captured_command[46:0], cmd_do_o};
+    if (captured_bits < 48 && (captured_bits != 0 || command_pad == 1'b0)) begin
+      captured_command = {captured_command[46:0], command_pad};
       captured_bits    = captured_bits + 1;
     end
   end
@@ -95,6 +97,7 @@ module sdio_command_tb;
     start_i        = 1'b0;
     clock_enable_i = 1'b1;
     wait (done_o);
+    @(negedge clk_i);
     if (error_o || (launch_count != 48) || (captured_bits != 48) ||
         (captured_command[47:46] != 2'b01) || (captured_command[0] != 1'b1) ||
         (captured_command[7:1] != sdio_pkg::sdio_crc7_calc(
@@ -102,6 +105,33 @@ module sdio_command_tb;
         )) || (last_cmd_index_o != 6'd0) || cmd_oe_o) begin
       $fatal(1, "no-response command frame failed: err=%b launches=%0d captured=%0d frame=%h oe=%b",
              error_o, launch_count, captured_bits, captured_command, cmd_oe_o);
+    end
+
+    // A running SDCLK can accept a command on either half-cycle. The
+    // stopped-clock first command above does not exercise this boundary.
+    for (integer phase = 0; phase < 16; phase++) begin
+      repeat (phase % 3 + 3) @(negedge clk_i);
+      captured_bits    = 0;
+      captured_command = '0;
+      cmd_index_i      = 6'd8;
+      cmd_arg_i        = 32'h1aa ^ 32'(phase);
+      start_i          = 1'b1;
+      @(negedge clk_i);
+      start_i = 1'b0;
+      wait (done_o);
+      @(negedge clk_i);
+      if (error_o || captured_bits != 48 || captured_command[47:40] != 8'h48 ||
+          captured_command[39:8] != cmd_arg_i || captured_command[0] != 1'b1 ||
+          captured_command[7:1] != sdio_pkg::sdio_crc7_calc(
+              captured_command[47:8]
+          ))
+        $fatal(
+            1,
+            "SDIO running-clock frame phase=%0d bits=%0d frame=%h",
+            phase,
+            captured_bits,
+            captured_command
+        );
     end
 
     @(posedge clk_i);

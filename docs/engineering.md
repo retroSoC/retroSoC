@@ -3,8 +3,10 @@
 ## Supported Profiles
 
 Tiny's [2026-10-07 specification default](ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
-is ICS55/PLL with SAFE24 boot. The executable default keeps the PLL parked off;
-PLL-driven SYS and physical qualification remain later work. The table
+is ICS55/PLL with SAFE24 boot. The PLL starts parked off; the
+[R2-P7 implementation](ip/tiny-soc-r2-clock-reset.md) adds explicit software
+transitions with separate functional evidence. Physical qualification remains
+pending. The table
 describes executable profiles, not qualified operating rates.
 For Tiny and its SPI/PIO-lite/PPALite extensions only, pre-final post-synthesis
 timing closure is observational. Retain STA attempts/failures and all required

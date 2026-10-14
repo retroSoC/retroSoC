@@ -439,8 +439,26 @@
       "tiny_archinfo.sv",
       "tiny_axi42apb4.sv",
       "tiny_axi4_fabric.sv",
+      "tiny_axi4_target.sv",
+      "tiny_cpu_mem.sv",
+      "tiny_cpu_wrapper.sv",
+      "tiny_fault_collector.sv",
+      "tiny_clock_reset_subsystem.sv",
+      "tiny_axi4_async_bridge.sv",
+      "tiny_apb_async_bridge.sv",
+      "tiny_axi4_admission.sv",
+      "tiny_managed_lifecycle.sv",
+      "tiny_peripheral_leaf.sv",
+      "tiny_peripheral_control.sv",
+      "tiny_clock_output.sv",
+      "tiny_clock_gate.sv",
       "tiny_reset_tree.sv",
-      "tiny_sysctrl.sv"
+      "tiny_sram.sv",
+      "tiny_sram_axi4.sv",
+      "tiny_sram_group.sv",
+      "tiny_sram_port_if.sv",
+      "tiny_sysctrl.sv",
+      "tiny_rcu_regs.svh"
     ]
   },
   "reviewed_boundaries": [

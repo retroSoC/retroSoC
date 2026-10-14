@@ -14,13 +14,14 @@
 // implements only public command/data behavior exercised by this repository;
 // it is not a normative-specification replacement.
 module sdio_native_card_model #(
-    parameter bit SdioOnly      = 1'b0,
-    parameter bit HighCapacity  = 1'b1,
-    parameter int BlockBytes    = 512,
-    parameter int BlockCount    = 128,
-    parameter int FunctionCount = 1,
-    parameter int FunctionBytes = 4096,
-    parameter int BusyCycles    = 2
+    parameter bit MemoryInitialization = 1'b0,
+    parameter bit SdioOnly             = 1'b0,
+    parameter bit HighCapacity         = 1'b1,
+    parameter int BlockBytes           = 512,
+    parameter int BlockCount           = 128,
+    parameter int FunctionCount        = 1,
+    parameter int FunctionBytes        = 4096,
+    parameter int BusyCycles           = 2
 ) (
     input  logic       rst_n_i,
     input  logic       sck_i,
@@ -48,60 +49,63 @@ module sdio_native_card_model #(
     WriteBusy
   } data_state_e;
 
-  logic        [  7:0] s_memory                 [         0:MemoryBytes-1];
-  logic        [  7:0] s_function_memory        [0:FunctionStorageBytes-1];
+  logic [7:0] s_memory[0:MemoryBytes-1];
+  logic [7:0] s_function_memory[0:FunctionStorageBytes-1];
 
-  logic        [ 47:0] s_cmd_shift;
-  integer              s_cmd_bits;
-  logic                s_cmd_response_active;
-  logic        [135:0] s_cmd_response;
-  integer              s_cmd_response_length;
-  integer              s_cmd_response_index;
-  integer              s_cmd_response_delay;
-  integer              s_response_delay;
-  integer              s_data_delay_cfg;
-  logic                s_inject_crc_error;
-  logic                s_inject_timeout;
-  logic                s_inject_write_error;
-  logic                s_next_cmd_crc_error;
+  logic [47:0] s_cmd_shift;
+  integer s_cmd_bits;
+  logic s_cmd_response_active;
+  logic [135:0] s_cmd_response;
+  integer s_cmd_response_length;
+  integer s_cmd_response_index;
+  integer s_cmd_response_delay;
+  integer s_response_delay;
+  integer s_data_delay_cfg;
+  logic s_inject_crc_error;
+  logic s_inject_timeout;
+  logic s_inject_write_error;
+  logic s_next_cmd_crc_error;
 
-  logic        [  5:0] s_last_cmd;
-  logic        [ 31:0] s_last_arg;
-  logic                s_last_cmd_write;
-  logic                s_last_cmd_data;
-  logic                s_pending_busy;
-  integer              s_busy_count;
+  logic [5:0] s_last_cmd;
+  logic [31:0] s_last_arg;
+  logic s_last_cmd_write;
+  logic s_last_cmd_data;
+  logic s_memory_width4;
+  logic s_pending_busy;
+  integer s_busy_count;
 
-  data_state_e         s_data_state;
-  logic                s_data_width4;
-  logic                s_data_fixed;
-  integer              s_data_address;
-  integer              s_data_bytes;
-  integer              s_data_byte_index;
-  integer              s_data_bit_index;
-  integer              s_data_nibble_index;
-  integer              s_data_crc_index;
-  integer              s_data_delay;
-  logic        [ 15:0] s_read_crc;
-  logic        [ 15:0] s_read_crc_lane          [                     0:3];
-  logic        [ 15:0] s_write_crc;
-  logic        [ 15:0] s_write_crc_lane         [                     0:3];
-  logic        [ 15:0] s_received_crc;
-  logic        [ 15:0] s_received_crc_lane      [                     0:3];
-  logic        [  7:0] s_write_byte;
-  logic        [  7:0] s_write_byte_lane        [                     0:3];
-  integer              s_write_bit_count;
-  integer              s_write_nibble_count;
-  logic        [  4:0] s_write_response_token;
-  integer              s_write_response_index;
-  logic                s_write_response_started;
-  logic                s_data_crc_error;
-  logic                s_data_timeout;
-  logic                s_irq_pending;
-  logic        [  2:0] s_cmd_function;
-  logic        [ 31:0] s_cmd_address;
-  logic                s_cmd_fixed_address;
-  integer              s_cmd_count;
+  data_state_e s_data_state;
+  logic s_data_width4;
+  logic s_data_fixed;
+  integer s_data_address;
+  integer s_data_bytes;
+  wire [3:0] s_token_lanes = !s_data_width4 ? 4'b0001 :
+                             (s_data_bytes >= 4 ? 4'b1111 : (4'b0001 << s_data_bytes) - 1'b1);
+  integer s_data_byte_index;
+  integer s_data_bit_index;
+  integer s_data_nibble_index;
+  integer s_data_crc_index;
+  integer s_data_delay;
+  logic [15:0] s_read_crc;
+  logic [15:0] s_read_crc_lane[0:3];
+  logic [15:0] s_write_crc;
+  logic [15:0] s_write_crc_lane[0:3];
+  logic [15:0] s_received_crc;
+  logic [15:0] s_received_crc_lane[0:3];
+  logic [7:0] s_write_byte;
+  logic [7:0] s_write_byte_lane[0:3];
+  integer s_write_bit_count;
+  integer s_write_nibble_count;
+  logic [4:0] s_write_response_token;
+  integer s_write_response_index;
+  logic s_write_response_started;
+  logic s_data_crc_error;
+  logic s_data_timeout;
+  logic s_irq_pending;
+  logic [2:0] s_cmd_function;
+  logic [31:0] s_cmd_address;
+  logic s_cmd_fixed_address;
+  integer s_cmd_count;
 
   function automatic logic [6:0] crc7_40(input logic [39:0] data_i);
     logic [6:0] crc;
@@ -404,17 +408,20 @@ module sdio_native_card_model #(
   endtask
 
   task automatic command_received(input logic [47:0] frame_i);
-    logic   [ 5:0] index;
-    logic   [31:0] argument;
-    logic   [ 6:0] expected_crc;
-    logic   [39:0] body;
-    logic   [31:0] response_payload;
-    integer        address;
+    logic   [  5:0] index;
+    logic   [ 31:0] argument;
+    logic   [  6:0] expected_crc;
+    logic   [ 39:0] body;
+    logic   [ 31:0] response_payload;
+    logic   [127:0] memory_csd_body;
+    logic           application_command;
+    integer         address;
     begin
       index               = frame_i[45:40];
       argument            = frame_i[39:8];
       body                = frame_i[47:8];
       expected_crc        = crc7_40(body);
+      application_command = s_last_cmd == 6'd55;
       s_last_cmd          = index;
       s_last_arg          = argument;
       s_last_cmd_data     = 1'b0;
@@ -471,7 +478,15 @@ module sdio_native_card_model #(
             cmd_do_o              = 1'b1;
           end
           6'd2, 6'd9: begin
-            make_r2_response(index == 6'd9 ? {HighCapacity ? 1'b0 : 1'b0, 127'd0} : 128'd0);
+            memory_csd_body = '0;
+            if (MemoryInitialization && index == 6'd9) begin
+              // The 136-bit wire frame holds the CSD at [127:0], including
+              // its CRC/end byte. make_r2_response appends that final byte.
+              memory_csd_body[119:118] = 2'd1;
+              memory_csd_body[75:72]   = 4'd9;
+              memory_csd_body[61:40]   = 22'(BlockCount / 1024 - 1);
+            end
+            make_r2_response(memory_csd_body);
             s_cmd_response_active = 1'b1;
             s_cmd_response_index  = 0;
             s_cmd_response_delay  = s_response_delay;
@@ -492,6 +507,15 @@ module sdio_native_card_model #(
             s_busy_count       = BusyCycles;
           end
           6'd16, 6'd55, 6'd41, 6'd6, 6'd13: begin
+            if (MemoryInitialization) begin
+              if (index == 6'd41 && application_command) response_payload = 32'hc0ff8000;
+              if (index == 6'd6) begin
+                if (application_command) s_memory_width4 = argument == 2;
+                // This deterministic card supports default speed only.
+                else
+                  response_payload = 32'h00400000;
+              end
+            end
             queue_response(index, response_payload, 1'b0, s_inject_crc_error);
             s_inject_crc_error = 1'b0;
           end
@@ -654,9 +678,10 @@ module sdio_native_card_model #(
       s_last_arg            = 32'd0;
       s_last_cmd_write      = 1'b0;
       s_last_cmd_data       = 1'b0;
+      s_memory_width4       = 1'b0;
       s_pending_busy        = 1'b0;
       s_busy_count          = 0;
-    end else if (cmd_oe_i) begin
+    end else if ((s_cmd_bits != 0) || (cmd_oe_i && cmd_do_i == 1'b0)) begin
       if (s_cmd_bits == 0) begin
         s_cmd_shift = {{47{1'b0}}, cmd_do_i};
         s_cmd_bits  = 1;
@@ -717,6 +742,7 @@ module sdio_native_card_model #(
       s_last_arg            = 32'd0;
       s_last_cmd_write      = 1'b0;
       s_last_cmd_data       = 1'b0;
+      s_memory_width4       = 1'b0;
       s_pending_busy        = 1'b0;
       s_busy_count          = 0;
       s_data_state          = DataIdle;
@@ -828,7 +854,7 @@ module sdio_native_card_model #(
               dat_do_o         = 4'b1111;
               for (integer lane = 0; lane < 4; lane++) begin
                 if (lane < s_data_bytes) begin
-                  dat_do_o[lane] = s_read_crc_lane[lane][15-(s_data_crc_index+1)];
+                  dat_do_o[lane] = s_read_crc_lane[lane][15-s_data_crc_index];
                 end
               end
             end
@@ -838,7 +864,7 @@ module sdio_native_card_model #(
           end else begin
             s_data_crc_index = s_data_crc_index + 1;
             dat_do_o         = 4'b1111;
-            dat_do_o[0]      = s_read_crc[15-(s_data_crc_index+1)];
+            dat_do_o[0]      = s_read_crc[15-s_data_crc_index];
           end
         end
         WriteResponse: begin
@@ -850,7 +876,9 @@ module sdio_native_card_model #(
             s_write_response_index = s_write_response_index + 1;
             dat_do_o[0]            = s_write_response_token[4-s_write_response_index];
           end else begin
-            s_data_state = (s_write_response_token == 5'b00101) ? WriteBusy : DataIdle;
+            // Keep the enum assignment portable to Icarus's native SV parser.
+            if (s_write_response_token == 5'b00101) s_data_state = WriteBusy;
+            else s_data_state = DataIdle;
             s_busy_count = BusyCycles;
             dat_do_o[0]  = (s_write_response_token == 5'b00101) ? 1'b0 : 1'b1;
           end
@@ -879,7 +907,7 @@ module sdio_native_card_model #(
     end else begin
       case (s_data_state)
         WriteWait: begin
-          if ((dat_oe_i != 4'b0000) && (dat_do_i == 4'b0000)) begin
+          if ((dat_oe_i != 4'b0000) && ((dat_do_i & s_token_lanes) == 4'b0000)) begin
             s_data_state         = WritePayload;
             s_write_bit_count    = 0;
             s_write_nibble_count = 0;
@@ -903,7 +931,8 @@ module sdio_native_card_model #(
             s_data_crc_error = 1'b0;
             if (s_data_width4) begin
               for (integer lane = 0; lane < 4; lane++) begin
-                if (s_received_crc_lane[lane] != s_write_crc_lane[lane]) begin
+                if ((s_data_bytes % 4 == 0 || lane < s_data_bytes % 4) &&
+                    s_received_crc_lane[lane] != s_write_crc_lane[lane]) begin
                   s_data_crc_error = 1'b1;
                 end
               end
@@ -938,6 +967,9 @@ module sdio_native_card_model #(
   end
 
   initial begin
+    if (MemoryInitialization && (!HighCapacity || SdioOnly || BlockBytes != 512 ||
+        BlockCount < 1024 || BlockCount % 1024 != 0))
+      $fatal(1, "SDIO enumeration profile requires an exactly representable SDHC capacity");
     if ((BlockBytes < 1) || (BlockCount < 1) || (FunctionCount < 1) || (FunctionBytes < 256)) begin
       $fatal(1, "sdio_native_card_model: invalid storage geometry");
     end
@@ -955,6 +987,7 @@ module sdio_native_card_model #(
     s_last_arg            = 32'd0;
     s_last_cmd_write      = 1'b0;
     s_last_cmd_data       = 1'b0;
+    s_memory_width4       = 1'b0;
     s_pending_busy        = 1'b0;
     s_busy_count          = 0;
     s_data_state          = DataIdle;

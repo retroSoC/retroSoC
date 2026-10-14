@@ -109,10 +109,13 @@ def mapped_netlist():
                                     else "input" for k in ports}}
     cells = {"u_clock_buffer": cell("clock_buffer", clk_i=7, clk_o=2),
              "receiver": cell("P65_1233_PBMUX", PAD=1, C=7, IE="1", OE="0", CS="1"),
-             "u_soc.u_cpu.u_hazard3_cpu_1port.core.pc_reg": cell("DFF", CK=2),
+             "u_soc.u_cpu.u_hazard3_cpu_2port.core.pc_reg": cell("DFF", CK=2),
              "pll": cell("PLL_TOP", EN=3, CKOUT1=4, CKOUT2=5, CKTST=6),
              "low": cell("TIELOH7R", Z=3)}
-    cells.update({f"bank{i}": cell(RAM, CLK=2) for i in range(32)})
+    cells.update({f"u_soc.u_sram.gen_group[{i // 8}].u_group.gen_bank[{i % 8}].u_ram.u_mem":
+                  cell(RAM, CLK=2) for i in range(32)})
+    cells.update({f"u_soc.u_crypto.u_storage.gen_bank[{i}].gen_macro.u_sram.u_mem":
+                  cell(RAM, CLK=2) for i in range(6)})
     return {"modules": {
         "retrosoc_tiny_asic": {"ports": {"extclk_i_pad": {"direction": "inout", "bits": [1]},
                                          "jtag_tck_i_pad": {"direction": "inout", "bits": [11]}},
@@ -125,6 +128,7 @@ def mapped_netlist():
 def test_safe24_structural_binding(mapped_netlist):
     result = inspect_netlist(mapped_netlist)
     assert len(result["sram"]) == 32 and result["cpu_clocked_cells"] == 1
+    assert len(result["crypto_sram"]) == 6
     assert result["pll_enable"] == 0
     assert result["system_clock_source"]["port"] == "extclk_i_pad"
     assert [c["type"] for c in result["system_clock_source"]["path"]] == [
@@ -198,24 +202,41 @@ def test_hierarchical_constant_output_is_resolved(mapped_netlist):
 
 
 @pytest.mark.parametrize("mutation", ["missing_pll", "missing_ram", "live_pll", "unknown_enable",
-                                      "divided_ram", "wrong_cpu", "pll_sys"])
+                                      "divided_ram", "wrong_cpu", "pll_sys",
+                                      "missing_crypto", "misplaced_crypto", "divided_crypto"])
 def test_unsafe_or_incomplete_mapping_is_rejected(mapped_netlist, mutation):
     cells = mapped_netlist["modules"]["retrosoc_tiny_asic"]["cells"]
+    first_ram = "u_soc.u_sram.gen_group[0].u_group.gen_bank[0].u_ram.u_mem"
+    first_crypto = "u_soc.u_crypto.u_storage.gen_bank[0].gen_macro.u_sram.u_mem"
     if mutation == "missing_pll":
         del cells["pll"]
     elif mutation == "missing_ram":
-        del cells["bank0"]
+        del cells[first_ram]
     elif mutation == "live_pll":
         cells["low"]["type"] = "TIEHIH7R"
     elif mutation == "unknown_enable":
         cells["pll"]["connections"]["EN"] = [99]
     elif mutation == "divided_ram":
-        cells["bank0"]["connections"]["CLK"] = [99]
+        cells[first_ram]["connections"]["CLK"] = [99]
     elif mutation == "wrong_cpu":
-        cells["u_soc.u_cpu.u_hazard3_cpu_1port.core.pc_reg"]["connections"]["CK"] = [99]
+        cells["u_soc.u_cpu.u_hazard3_cpu_2port.core.pc_reg"]["connections"]["CK"] = [99]
+    elif mutation == "missing_crypto":
+        del cells[first_crypto]
+    elif mutation == "misplaced_crypto":
+        cells["unexpected_private_memory"] = cells.pop(first_crypto)
+    elif mutation == "divided_crypto":
+        cells[first_crypto]["connections"]["CLK"] = [99]
     else:
         cells["pll"]["connections"]["CKOUT1"] = [2]
     with pytest.raises(ValueError):
+        inspect_netlist(mapped_netlist)
+
+
+def test_stale_p4_macro_hierarchy_is_rejected(mapped_netlist):
+    cells = mapped_netlist["modules"]["retrosoc_tiny_asic"]["cells"]
+    first_ram = "u_soc.u_sram.gen_group[0].u_group.gen_bank[0].u_ram.u_mem"
+    cells["u_soc.u_sram.gen_memory.gen_bank[0].u_ram.u_mem"] = cells.pop(first_ram)
+    with pytest.raises(ValueError, match="hierarchy"):
         inspect_netlist(mapped_netlist)
 
 

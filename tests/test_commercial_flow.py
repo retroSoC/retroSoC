@@ -421,7 +421,7 @@ def test_commercial_timing_contract_supports_tiny(tmp_path: Path) -> None:
         check=True,
     )
     assert result.stdout.splitlines() == [
-        "jtag,system",
+        "aon,audio,jtag,memory,peripheral,system",
         "ext_rst_n_i_pad,jtag_trst_n_i_pad",
     ]
     assert "observation {u_clock_buffer/clk_o}" in output.read_text(
@@ -612,6 +612,7 @@ set ::created_clocks_named {}
 set ::generated_clocks {}
 set ::clock_groups {}
 set ::false_paths 0
+set ::case_selections {}
 
 proc get_ports {args} { return [lindex $args end] }
 proc get_pins {args} { return [list pin_[string map {/ _} [lindex $args end]]] }
@@ -629,6 +630,7 @@ proc set_clock_groups {args} { lappend ::clock_groups $args }
 proc set_clock_uncertainty {args} {}
 proc set_clock_transition {args} {}
 proc set_false_path {args} { incr ::false_paths }
+proc set_case_analysis {value pins} { lappend ::case_selections [list $value $pins] }
 proc all_inputs {} { return {} }
 proc all_outputs {} { return {} }
 proc current_design {args} { return {} }
@@ -642,6 +644,7 @@ puts "masters=$::created_clocks_named"
 puts "generated=$::generated_clocks"
 puts "groups=[llength $::clock_groups]"
 puts "false_paths=$::false_paths"
+puts "case_selections=$::case_selections"
 flow::require_commercial_clock_inventory
 puts "inventory-ok"
 """
@@ -660,8 +663,8 @@ CONSTRAINT_SMOKE_CASES = {
     "TINY": {
         "domains": "rtl/tiny/integration/clock_reset_domains.json",
         "pin_map": "rtl/tiny/pin_map/pin_map.json",
-        "masters": "clk_system clk_jtag",
-        "generated": "",
+        "masters": "clk_aon clk_jtag clk_audio",
+        "generated": "clk_system clk_memory clk_peripheral clk_sys_div2 clk_sys_div4 clk_clkout_source",
         "groups": "1",
     },
 }
@@ -713,6 +716,11 @@ def test_constraint_stack_models_product_clocks(tmp_path: Path, soc: str) -> Non
     assert lines["generated"].strip("-") == case["generated"]
     assert lines["groups"] == case["groups"]
     assert "inventory-ok" in result.stdout
+    if soc == "TINY":
+        for selection in ("u_sys_mux", "u_mem_mux", "u_pclk_div2_mux", "u_pclk_mux", "u_PLL_TOP_EN"):
+            assert selection in lines["case_selections"]
+        assert lines["case_selections"].count("{0 ") == 11
+        assert lines["case_selections"].count("{1 ") == 4
 
 
 def test_commercial_make_graph_covers_both_products(tmp_path: Path) -> None:

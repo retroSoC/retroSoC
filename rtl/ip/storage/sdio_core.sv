@@ -11,15 +11,17 @@
 `timescale 1ns / 1ps
 
 module sdio_core #(
-    parameter int InputClockHz = 72_000_000,
-    parameter int AddrWidth    = 32,
-    parameter int DataWidth    = 32,
-    parameter int DescCount    = 16
+    parameter int InputClockHz      = 72_000_000,
+    parameter bit UseRuntimeClockHz = 1'b0,
+    parameter int AddrWidth         = 32,
+    parameter int DataWidth         = 32,
+    parameter int DescCount         = 16
 ) (
     // verilog_format: off -- preserve the host, status, and external bus groups
     input  logic                          clk_i,
     input  logic                          rst_n_i,
     input  logic                          host_enable_i,
+    input  logic [31:0]                   clock_hz_i,
     input  logic                          host_irq_enable_i,
     input  logic                          clock_enable_i,
     input  logic [15:0]                   half_period_i,
@@ -102,7 +104,7 @@ module sdio_core #(
   logic         s_data_tx_last;
   logic         s_data_rx_valid;
   logic         s_data_rx_ready;
-  logic         s_data_rx_stall_q;
+  logic         s_data_rx_stall;
   logic [ 31:0] s_data_rx_data;
   logic [  3:0] s_data_rx_strb;
   logic         s_data_rx_last;
@@ -174,8 +176,8 @@ module sdio_core #(
   assign s_clock_en = host_enable_i && clock_enable_i &&
                           (s_cmd_busy || s_data_busy || s_dma_busy || cmd_start_i ||
                            data_start_i) &&
-                          !s_data_rx_stall_q &&
-                          !(s_data_busy && s_data_tx_wait && (s_data_oe == 4'b0000));
+                          !s_data_rx_stall &&
+                          !(s_data_busy && s_data_tx_wait);
   assign s_total_bytes = {16'd0, block_size_i} * {16'd0, block_count_i};
   assign s_abort_request = host_abort_i || dma_abort_i ||
                            (s_dma_done && s_dma_err) ||
@@ -200,6 +202,9 @@ module sdio_core #(
   assign s_dma_data_in_strb = s_data_rx_strb;
   assign s_dma_data_in_last = s_data_rx_last;
   assign s_data_rx_ready = data_dma_enable_i ? s_dma_data_in_ready : !s_pio_valid_q;
+  // ReadEmit begins on the sampling edge. Stop before the very next launch
+  // if its word cannot retire; registering this condition loses one card bit.
+  assign s_data_rx_stall = s_data_rx_valid && !s_data_rx_ready;
   assign s_core_busy = s_cmd_busy || s_data_busy || s_dma_busy;
   assign busy_o = s_core_busy;
   assign s_pio_tx_pop = !data_dma_enable_i && s_data_tx_valid && s_data_tx_ready;
@@ -233,7 +238,9 @@ module sdio_core #(
   assign bytes_done_o = s_dma_bytes_done;
   assign dma_error_addr_o = s_dma_err_addr;
   assign dma_error_o = {24'd0, s_dma_err_code};
-  assign clock_actual_o = (half_period_i == 16'd0) ? 32'd0 : InputClockHz / (2 * half_period_i);
+  logic [31:0] s_input_clock_hz;
+  assign s_input_clock_hz = UseRuntimeClockHz && (clock_hz_i != 32'd0) ? clock_hz_i : InputClockHz;
+  assign clock_actual_o = (half_period_i == 16'd0) ? 32'd0 : s_input_clock_hz / (2 * half_period_i);
   assign status_o = {
     23'd0,
     s_clock_running,
@@ -401,7 +408,6 @@ module sdio_core #(
       s_dat1_meta_q     <= 1'b1;
       s_dat1_sync_q     <= 1'b1;
       s_dat1_seen_q     <= 1'b0;
-      s_data_rx_stall_q <= 1'b0;
       s_pio_rdata_q     <= '0;
       s_pio_valid_q     <= 1'b0;
       s_pio_tx_rd_q     <= '0;
@@ -418,10 +424,9 @@ module sdio_core #(
         s_pio_tx_strb_q[index] <= '0;
       end
     end else begin
-      s_dat1_meta_q     <= sdio.dat_di_i[1];
-      s_dat1_sync_q     <= s_dat1_meta_q;
-      s_dat1_seen_q     <= s_dat1_seen_d;
-      s_data_rx_stall_q <= s_data_rx_valid && !s_data_rx_ready;
+      s_dat1_meta_q <= sdio.dat_di_i[1];
+      s_dat1_sync_q <= s_dat1_meta_q;
+      s_dat1_seen_q <= s_dat1_seen_d;
 
       if (data_start_i) begin
         s_pio_tx_rd_q    <= '0;

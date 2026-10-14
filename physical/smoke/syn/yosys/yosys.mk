@@ -59,7 +59,7 @@ gen_synth_filelist: $(SV_FLIST)
 ## Synthesize netlist using Yosys
 synth: $(NETLIST) | manifest
 
-$(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
+$(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS) | manifest
 	@mkdir -p $(YOSYS_OUT)
 	@mkdir -p $(YOSYS_TMP)
 	@mkdir -p $(YOSYS_RPT)
@@ -74,9 +74,9 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS)
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
 		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
 		yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
-ifeq ($(SOC)-$(PDK),TINY-ICS55)
-	python3 $(ROOT_PATH)/scripts/tiny_ics55_platform.py --variant-root $(VARIANT_ROOT) audit-netlist \
-		--netlist $(NETLIST) --config $(NETLIST_CONFIG) --output $(YOSYS_BUILD)/tiny-ics55-netlist.json
+ifeq ($(SOC),TINY)
+	python3 $(ROOT_PATH)/scripts/tiny_r2_p7.py --variant-root $(VARIANT_ROOT) audit-netlist \
+		--netlist $(NETLIST) --config $(NETLIST_CONFIG) --output $(YOSYS_BUILD)/tiny-r2-p7-netlist.json
 endif
 
 $(NETLIST_DEBUG): $(NETLIST)

@@ -4,7 +4,7 @@
 set audit_dir [file dirname $::env(OPENSTA_REPORT)]
 set pll [get_cells -hierarchical -filter {ref_name == PLL_TOP}]
 set ram [get_cells -hierarchical -filter {ref_name == ics55_ecos_sram_1024x32_m8}]
-if {[llength $pll] != 1 || [llength $ram] != 32} { error "Tiny ICS55 macro binding mismatch" }
+if {[llength $pll] != 1 || [llength $ram] != 38} { error "Tiny ICS55 macro binding mismatch" }
 if {[llength [get_clocks clk_system]] != 1} { error "Tiny SYS clock missing" }
 report_clock_properties > $audit_dir/clocks.rpt
 check_setup -verbose > $audit_dir/coverage.rpt

@@ -18,6 +18,7 @@ module apb4_dma #(
     parameter bit          EnableStreams = 1'b1
 ) (
     // verilog_format: off -- integration ports retain established peripheral endpoint names.
+    output logic lifecycle_idle_o,
     input  logic          clk_i,
     input  logic          rst_n_i,
     output logic          dma_xfer_done_o,
@@ -179,4 +180,7 @@ module apb4_dma #(
       .crypto_in_axis       (crypto_in_axis),
       .crypto_out_axis      (crypto_out_axis)
   );
+  logic s_bus_busy;
+  assign s_bus_busy       = axi4.awvalid || axi4.arvalid || axi4.wvalid;
+  assign lifecycle_idle_o = !(|s_busy) && !(|s_start) && !s_bus_busy;
 endmodule

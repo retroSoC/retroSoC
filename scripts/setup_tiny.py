@@ -15,7 +15,7 @@ from scripts.setup_helpers import ensure_git_repo  # noqa: E402
 
 TINY_SOURCES = (
     "hazard3", "cluster_common", "cluster_archinfo", "cluster_pwm",
-    "cluster_rtc", "cluster_wdg", "pdk_ihp130",
+    "cluster_rtc", "cluster_wdg", "cluster_rng", "cluster_crc", "pdk_ihp130",
 )
 
 

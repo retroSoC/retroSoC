@@ -53,15 +53,17 @@ def test_reset_and_fifo_contracts(tmp_path: Path, simulator: str, fixture: str, 
     assert "SIM_TEST_FAIL" not in content and "SIM_TEST_TIMEOUT" not in content
 
 
-def test_reset_inventory_has_one_clock_and_all_existing_targets() -> None:
+def test_reset_inventory_has_active_domains_and_all_existing_targets() -> None:
     topology = json.loads((ROOT / "rtl/tiny/integration/soc_topology.json").read_text())
     inventory = json.loads((ROOT / "rtl/tiny/integration/clock_reset_domains.json").read_text())
     reset = inventory["reset_distribution"]
     assert reset["release_edges"] == 5
     assert reset["leaf_names"] == ["fabric", *(target["name"] for target in topology["apb_targets"])]
-    assert len(reset["leaf_names"]) == 17
-    assert {domain["name"] for domain in inventory["domains"]} == {"system", "jtag"}
-    assert reset["clock_domain"] == "system" and reset["main_sram_payload_reset"] == "none"
+    assert len(reset["leaf_names"]) == 21
+    assert {domain["name"] for domain in inventory["domains"]} == {
+        "aon", "system", "memory", "peripheral", "jtag", "audio"}
+    assert reset["clock_domain"] == "domain-specific" and reset["main_sram_payload_reset"] == "none"
+    assert inventory["local_memory"]["clock_domain"] == "system"
 
 
 SDC = ("create_clock -name clk_system -period 41.666666667 $clk_system_pin\n"

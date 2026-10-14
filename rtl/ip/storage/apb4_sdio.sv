@@ -11,17 +11,20 @@
 `timescale 1ns / 1ps
 
 module apb4_sdio #(
-    parameter int InputClockHz = 72_000_000,
-    parameter int AddrWidth    = 32,
-    parameter int DataWidth    = 32,
-    parameter int DescCount    = 16
+    parameter int InputClockHz      = 72_000_000,
+    parameter bit UseRuntimeClockHz = 1'b0,
+    parameter int AddrWidth         = 32,
+    parameter int DataWidth         = 32,
+    parameter int DescCount         = 16
 ) (
     // verilog_format: off -- preserve the APB, AXI, and pad column alignment
+    output logic lifecycle_idle_o,
     input logic                         clk_i,
     input logic                         rst_n_i,
     apb4_if.slave                       apb4,
     axi4_if.master                      dma_axi4,
-    sdio_if.dut                         sdio
+    sdio_if.dut                         sdio,
+    input logic [31:0]                  clock_hz_i
     // verilog_format: on
 );
   logic                              s_busy;
@@ -79,6 +82,10 @@ module apb4_sdio #(
   logic                              s_pio_ready;
   logic                              s_pio_read_consume;
   sdio_if u_sdio_core_if ();
+
+  logic s_bus_busy;
+  assign s_bus_busy              = dma_axi4.awvalid || dma_axi4.arvalid || dma_axi4.wvalid;
+  assign lifecycle_idle_o        = !s_busy && !s_clock_enable && !s_bus_busy;
 
   assign u_sdio_core_if.cmd_di_i = sdio.cmd_di_i;
   assign u_sdio_core_if.dat_di_i = sdio.dat_di_i;
@@ -149,14 +156,16 @@ module apb4_sdio #(
   );
 
   sdio_core #(
-      .InputClockHz(InputClockHz),
-      .AddrWidth   (AddrWidth),
-      .DataWidth   (DataWidth),
-      .DescCount   (DescCount)
+      .InputClockHz     (InputClockHz),
+      .UseRuntimeClockHz(UseRuntimeClockHz),
+      .AddrWidth        (AddrWidth),
+      .DataWidth        (DataWidth),
+      .DescCount        (DescCount)
   ) u_sdio_core (
       .clk_i             (clk_i),
       .rst_n_i           (rst_n_i),
       .host_enable_i     (s_host_enable),
+      .clock_hz_i        (clock_hz_i),
       .host_irq_enable_i (s_host_irq_enable),
       .clock_enable_i    (s_clock_enable),
       .half_period_i     (s_half_period),

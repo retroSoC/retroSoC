@@ -1,14 +1,486 @@
 # Tiny MCU Verification Record
 
-## TINY-R2-P3 implementation in progress (2026-10-08–09)
+## TINY-R2-P7 source-reset integration contract (2026-10-14)
+
+The follow-up review identified a missing source-side reset proof, not a
+reproduced product failure. The AXI bridge does not support arbitrarily
+resetting an active source while leaving its slave session alive. Flushing
+the FIFO cannot cancel a request already accepted by that slave. Production
+Tiny prevents that sequence: DMA local reset requires engine, admission and
+fabric drain before resetting the source; XPI's SYS source reset is a common
+system reset that also resets its MEM endpoint. Neither production bridge
+uses warm clear. These preconditions are part of the integration contract,
+not a claim of unrestricted unilateral-reset support by the standalone bridge.
+
+`tests/rtl/tiny_p7_source_reset_tb.sv` uses the production DMA master,
+admission, CDC, lifecycle controller and reset tree. The test extracts the
+actual top-level instances, drain/block synchronizers and generated DMA/XPI
+reset bindings, so a hand-copied reset policy cannot silently replace them.
+An independent outstanding scoreboard survives local reset and rejects
+premature reset. The AXI target is a controllable behavioral slave; unrelated
+CPU/APB/SDIO work and the DMA completion mailbox are idle. This is a focused
+integration test, not a full-SoC firmware or formal CDC/RDC signoff result.
+
+The scenarios cover stalled AR/AW, partial W, downstream W backpressure,
+delayed R/B, source-held R, drain timeout without reset, post-reset reads and
+writes, and common system reset during an outstanding read. The same binary
+is reused at SAFE24, XIN48, XIN96, PLL192 and PLL240 domain ratios. They test
+digital ordering only; the clock generators do not qualify a PLL or PDK rate.
+A negative run falsifies both idle observations and must trip
+`P7_SOURCE_RESET_UNDRAINED`; Icarus may return zero for sv2v's lowered fatal,
+so the forbidden marker and missing PASS still make that simulation invalid.
+
+Evidence for this correction is retained under
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/meta/tiny-r2-p7-source-reset/`.
+The first focused attempt's test-driver failure is retained in `focused-1.log`;
+it is not a DUT failure or acceptance result. The final `directed.log` and
+`result-directed.json` record **54 passed in 191.71 seconds**. This includes
+ten positive source-reset runs (five ratios in each simulator) and two
+expected-negative broken-drain runs inside the two new Pytest cases.
+RTL format/style, clock/reset inventory, Ruff, both Tiny PDK PR dry-runs and
+`git diff --check` pass. The verification-only source comparison is retained
+in `verification-update.json`: only the two test files differ; 1728 other
+technical inputs and tool identities match. The design,
+firmware, configuration, dependencies and physical inputs are unchanged from
+the `06-00` source snapshot; the new tests do not relabel earlier simulations
+as new executions. Full Icarus firmware remains deferred to final Tiny
+qualification. Human P7 acceptance is still required.
+
+## TINY-R2-P7 response conservation correction (2026-10-14)
+
+The earlier review recommendation to give abort unconditional priority over
+source response retirement was incorrect. A cycle with an already exposed
+normal B/R handshake followed by an abort produced two completions for one
+request. Four read/write tests reproduced this in Verilator and Icarus. The
+failed candidate, diagnostics and source archive are retained below
+`build/ics55-tiny-2026-10-14-04-00-ff4b5cef6eb5/meta/tiny-r2-p7-response/`.
+The `04-00` synthesis/netlist/STA results belong to that rejected candidate;
+their successful boot does not close the protocol finding.
+
+The corrected bridge holds presented responses in source-owned registers.
+Remote reset cannot revoke VALID or rewrite their payload under backpressure,
+and a completed source handshake is never followed by a second completion.
+Only missing read beats receive DECERR, with RLAST at the original burst end;
+a reset write consumes the remaining W beats before emitting B. Outstanding
+tracking is one transaction per direction, matching the existing Tiny paths.
+The payload reset uses the five-edge source link barrier. An unfinished warm
+clear quarantines the bridge until a real destination reset; a FIFO clear
+cannot by itself cancel remote slave state or authorize re-use of late replies.
+Production DMA/XPI clear inputs remain tied low; no new software reset API,
+autonomous AXI timeout, DMA owner, or later-phase capability is introduced.
+
+The new tests distinguish completed/held responses from missing responses,
+cover simultaneous clear and response handshakes, remote reset with READY high,
+backpressure, partial bursts and late-response quarantine. That campaign's
+full directed selection passed 52 cases. Earlier 36-case and rejected-
+candidate passes did not cover these failures and are not proof of the repair.
+The failed same-cycle candidate and diagnostics remain in the response
+evidence directory.
+The final input snapshot is
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/meta/tiny-r2-p7-response/final/source-final.json`.
+The `06-00` backend campaign is bound to the final source snapshot and all
+requested post-fix gates pass. Its variants are
+`build/ics55-tiny-2026-10-14-06-00-ff4b5cef6eb5/` and
+`build/ihp130-tiny-2026-10-14-06-00-8232fa11e7f3/`. ICS55
+synthesis/netlist/STA durations are `2108.388/1655.980/43.594 s`, with WNS
+max/min `-152.03/-0.31 ns` and TNS max/min `-5622052.50/-44.14`; IHP130
+durations are `1934.515/578.869/47.109 s`, with WNS max/min
+`-253.43/-0.49 ns` and TNS max/min `-10035324.00/-153.37`. Netlist boot
+emitted `SIM_TEST_PASS Tiny netlist boot` for both PDKs. These timing values
+remain observational and do not qualify closure or an operating point.
+Full Icarus firmware remains deferred by the maintainer to final Tiny
+qualification. It is not a current P7 gate; protocol correctness and human
+phase acceptance remain required.
+
+## TINY-R2-P7 final verification campaign (2026-10-13)
+
+The [P7 runbook](tiny-soc-r2-clock-reset.md) records the current implementation,
+exact profile-specific commands, workload definitions and source snapshot.
+The integrated design now drives actual SYS/MEM/PCLK consumers, CPU-only WFI
+gating, local reset barriers, CLKOUT and the single ICS55 PLL backend. It keeps
+the 32 main SRAM macros at CPU SYS and six private Crypto macros at PCLK.
+Future target capabilities remain absent. No later phase is authorized here.
+
+Development validation includes 68 passing Tiny P7/SYSCTRL/P5 directed tests
+and a later complete 52-case P7 directed pass,
+plus both simulators' real Hazard3 IRQ/debug wake, clock-pause and retained-debug
+warm-reset/aborted-command cases. RCU validation now rejects invalid or BUSY
+staging writes with PSLVERR, and the CLKOUT waveform test exposed and corrected
+enable/divisor ordering. HAL tests cover invalid, absent, busy, gated-reset and
+sticky-timeout/error boundaries. These short checks complement the final long
+flows; they do not replace full firmware or netlist acceptance.
+
+Source evidence is retained at
+`build/ics55-tiny-2026-10-13-17-05-f3e42d54c18b/meta/tiny-r2-p7/source.json`.
+The final command matrix and its retained corrections are listed in the runbook.
+Default ICS55/IHP130 and external XIN48/96 P7 firmware pass in both simulators.
+Each profile's cycle count and WFI/DMA/reset observations match across simulators.
+Both watchdog-corrected full Verilator firmware runs pass the unchanged P6
+peripheral/wire/AXI collector and JTAG. The two corresponding full Icarus
+replays were intentionally interrupted with exit 130 after the maintainer
+requested that this long-running gate move to the final Tiny phase; their
+partial logs and interrupted result records are retained, but they are not
+acceptance evidence.
+Both PDKs pass synthesis, structural macro binding and Tiny netlist boot.
+Current core STA remains observational and negative, with the coverage limits
+explicit in the runbook. These are historical campaign results; current phase
+acceptance requires the response correction above and human review. The full
+Icarus firmware gate belongs to final Tiny qualification. No high-rate physical operating point is
+qualified by these functional simulations or SAFE24 core STA.
+
+## Historical TINY-R2-P7 CDC/reset correction follow-up (2026-10-14)
+
+This checkpoint predates the response-conservation correction and is
+superseded by the `06-00` campaign above. It is not current-source acceptance.
+The P7 review identified two source-bound gaps. The XPI fabric target and bridge source side release with
+the SYS reset endpoint, while the XPI/MEM side retains its MEM leaf reset. The
+Tiny AXI CDC bridge synchronizes destination reset loss, invalidates its
+protected request/response state and blocks new source admissions. Its original
+single-DECERR completion claim was insufficient for held responses and bursts;
+the later response-conservation correction supersedes that claim. The existing DMA/XPI
+instances retain their explicit bridge boundaries and the XPI bridge now uses
+the split SYS/MEM reset mapping.
+
+The new `tests/rtl/tiny_axi4_async_bridge_tb.sv` passes under both Verilator
+and Icarus for normal read response, reset-aborted read/write, DECERR,
+no-replay and bridge recovery. The complete
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p7.py`
+selection eventually passed 52 tests after the later corrections; that count
+does not belong to the `01-20` implementation. `make --silent rtl-format-check rtl-style-check-all`
+and `git diff --check` pass. An ICS55 default-profile Verilator `comp` also
+passes; its existing PDK and simulator warnings remain observations. The
+checkpoint's synthesis, netlist boot and observational STA gates passed for
+both PDKs. Its historical evidence is retained under
+`build/ics55-tiny-2026-10-14-01-20-ff4b5cef6eb5/` and
+`build/ihp130-tiny-2026-10-14-01-20-8232fa11e7f3/`. ICS55 reports WNS
+max/min `-144.40/-0.31 ns` and TNS max/min `-4859636.50/-45.04`; IHP130
+reports WNS max/min `-257.81/-0.47 ns` and TNS max/min `-9807803.00/-100.68`.
+These remain observational negative timing results, not closure or operating
+point qualification. The long-running full Icarus firmware gate remains
+intentionally deferred to the final Tiny phase; no physical flow was run.
+
+## Historical initial P7 checkpoint, superseded (2026-10-13)
+
+The following incomplete checkpoint belongs to earlier development snapshots.
+Its unconnected/missing-path statements do not describe the final campaign.
+
+This checkpoint starts from committed source `43a3c8d453b6d41df3536719ebc6d1f4521bc7cd`,
+specification blob `7e19de49d49efaafacccfa85671e314d53dd15a4`, Tiny/ICS55
+profile `configs/ci/ics55-tiny.mk`, and the locked PWM revision
+`38efaf5e20f084a00148920087c60cadab61839b`. The dependency lock validator
+passes with digest `263402a34f2e315ca46ef4bf6366aab64935bd8de7abab3e469f513e988b0208`.
+
+The implementation adds the Tiny-owned RCU register bank and handwritten
+`rcu.h`/`rcu_regs.h`/`rcu.c` contract, reports SAFE24/domain-rate snapshots,
+connects committed PCLK/SYS rate reporting to the upgraded PWM and SDIO
+`CLOCK_ACTUAL` paths, and adds focused APB coverage for identity, capability,
+profile rejection/commit, status and write-only command behavior. Verilator
+and Icarus SYSCTRL focused tests pass; ICS55 Verilator and Icarus top-level
+compilation, Tiny firmware linking, C format/policy/host tests and the SDIO
+suite pass. Build logs are retained under the generated
+`build/ics55-tiny-2026-10-13-09-00-f3e42d54c18b/` and
+`build/ics55-tiny-2026-10-13-10-30-f3e42d54c18b/` roots.
+
+A Tiny-owned `tiny_clock_reset_subsystem` backend is now source-bound and
+filelisted. Its SAFE24/no-PLL focused test passes in both simulators and covers
+five-stage SYS/MEM/PCLK reset release, external-profile handling and rejected
+PLL requests. A second focused test exercises the behavioral PLL lock-timeout
+path in both simulators; it does not claim successful macro lock or frequency
+qualification. The backend is intentionally not advertised or wired into the
+CPU/fabric yet; its SYSCTRL profile/apply handshake is now connected, while
+the backend instance is now present in the Tiny top and its SYS output clocks
+the CPU, fabric, SRAM, AXI interfaces and system reset tree. XPI now crosses
+from SYS to the backend MEM clock through the Tiny-owned warm-flush AXI bridge.
+The RCU command checks CPU/fabric/target idle observations and the XPI bridge
+before accepting a transition. PCLK outputs are still not connected to all
+peripheral consumers.
+
+The focused command is
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p7.py`;
+its four cases passed. Supporting gates were
+`make --silent rtl-format-check rtl-style-check-all`,
+`make --silent sw-format-check sw-policy-check sw-host-test`,
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_script_tools.py -k 'run_flow'`,
+`ruff check scripts/run_flow.py tests/test_tiny_r2_p7.py`, and
+`python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json`.
+The current ICS55 top-level compile used
+`source .cache/retrosoc/development/tiny-r2-p1/activate.sh && CCACHE_DISABLE=1 make --silent CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke SIMU=VERILATOR HAVE_SVA=YES BUILD_TIMESTAMP=2026-10-13-16-30 comp`
+and exited zero. These are source/compile/focused checks; none is a strict
+full firmware terminal verdict or physical qualification.
+
+The long-run diagnostic also confirmed that the emulator itself exits normally
+with a Tiny timeout at a bounded cycle count and uses about 26 MiB RSS. The
+earlier `status=running` records lacked a verified terminal result. The initial
+diagnosis attributed this to sandbox cleanup without sufficient evidence;
+that conclusion is withdrawn. Separate tool invocations can have different
+PID namespaces, so process absence in one does not establish that another
+command died. `run_flow.py` now records `parent_pid` and `child_pid`
+in the running result and writes a failed terminal result for unexpected
+Python exceptions; long runs must remain attached to one polling session.
+
+This is not phase acceptance. The current RTL now uses the backend SYS clock
+for the system/fabric path, but does not yet provide the required executable
+MEM/PCLK clock consumers, full CDC bridges, WFI leaf gating, PLL lock/loss
+recovery, or target-local five-cycle reset sequences. A full Tiny Verilator firmware
+run was started but did not produce a terminal `TEST_STATUS`/`SIM_TEST_PASS`
+verdict and was stopped; no physical, STA or netlist qualification is claimed.
+The remaining P7 clock/reset implementation and strict terminal regressions
+require a follow-up correction before human phase approval.
+
+## TINY-R2-P6 implementation complete, human review pending (2026-10-12)
+
+The maintainer approved the P6 preflight on
+`b3b30a72cd6ef5340c28e5044c96cd13258ec5a6`, against unchanged specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The
+[P6 runbook](tiny-soc-r2-shared-integration.md) records eight-channel/shared-IP
+integration, the explicitly retained historical ASIC wrapper and publication,
+and the separate source-bound validation scope. Development diagnostics are
+not final acceptance; no P7 or physical-frequency qualification is implied.
+
+Initial integration exposed a shared I2S sample-LSB assembly defect and a
+Verilator packed-tri1 board-model limitation. The runbook records their narrow
+corrections. Directed SDIO integration additionally exposed command admission,
+transmit/receive pause and multi-burst descriptor-retirement defects, plus
+manual card-model gaps; their independent reproductions are recorded there.
+Both Tiny PDKs have complete Verilator and Icarus functional verdicts and
+netlist boots. Yosys synthesis and OpenSTA run for both PDKs with the exact
+32-main plus 6-private-Crypto macro bindings. The final audit is
+`build/ics55-tiny-2026-10-12-11-50-2eb98c0e1fae/meta/tiny-r2-p6/audit-result-v3.json`;
+the source-bound evidence is `evidence.json` in the same directory. The
+functional report retains four simulator records, all workload/AXI/device
+observations and the Mini compatibility result.
+
+Observed setup/hold slack remains negative: ICS55 WNSmax/WNSmin −84.93/−0.31 ns
+and IHP130 −165.41/−0.51 ns. Warning checks report new signatures from the
+existing policy's observation flows; no baseline or metrics policy was edited.
+The full Pytest attempt remains recorded as 1634 passed, one optional `pypdf`
+skip, five failures and 60 fixture errors; all 65 failed/error nodes pass in
+the explicit repair selection, and the affected consumer suite passes 512 with
+one optional skip. These overlapping counts are not a clean full-suite rerun.
+Final human review, complete-product timing closure, package/QFN64 binding and
+physical signoff remain pending. Earlier P5 results and failed P6 attempts
+retain their original attribution.
+
+## TINY-R2-P5 P1 protocol correction; validated, review pending (2026-10-12)
+
+The maintainer requested correction of the reset write-drain/read-retention
+failures and publication-binding mismatch. The implementation starts from
+`4e6ab1a6fb445521703f0bfa412d3a1e8a38cd69`; the specification remains blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The [P5 runbook](tiny-soc-r2-concurrent-fabric.md)
+describes preserved upstream spill responses, complete read/error bursts,
+write drain before B, latched downstream cancellation and first-error capture.
+Profiles remain Tiny/ICS55 SAFE24 with parked PLL and Tiny/IHP130 compatibility.
+
+Current evidence is isolated under
+`build/ics55-tiny-2026-10-11-23-35-b4aa59f3e5d9/meta/tiny-r2-p5-p1/`.
+The older `09-30` campaign failed overall: 1669 Pytest passes, one skip,
+two failures and ten errors (publication), plus independent R stability and
+W-before-B violations. Its passing ordinary regressions, PPA and replay are
+historical observations, not acceptance of the repair.
+
+Final focused validation passes 101 tests. Full Pytest passes 1685 tests,
+with one optional `pypdf` skip and no failures; these counts overlap. Both
+Tiny PDK PR regressions pass, including six strict simulation verdicts,
+synthesis, netlist boot and the 32-macro/common-SYS binding check. Each
+simulator passes all 28 reset scenarios, including three production DMA
+drain cases; normal-target, arbitrary-target-reset and fault-collector
+induction/SAT checks pass. Complete terminal/fault publication bindings and
+three unsafe-completion mutation tests pass without changing the reviewed
+publication SHA. RTL format/style/readiness, Ruff and diff checks pass.
+
+`source.json` and `evidence.json` bind 2011 technical inputs to digest
+`f670789a2379a8d2e6c59f5ecd714ca0237bb6f1cfe749a2f29b0794d356b5f0`,
+locked tools, exact command results and retained artifacts. No warning
+baseline, metric policy, shared DMA/SDK implementation or public ABI changed.
+The lint signatures/counts match the preceding `09-30` campaign; the existing
+baseline comparison remains a non-blocking observation. STA remains unclosed:
+max WNS is -70.04 ns ICS55 and -127.01 ns IHP130. The runbook records full
+area/timing observations and limitations. Matched-image replay, full-function
+C netlist qualification, PDF promotion and physical qualification were not
+repeated for this bounded correctness repair. P5 human review/acceptance and
+all P6+ work remain separate.
+
+## TINY-R2-P5 target-reset isolation repair; focused validation (2026-10-11)
+
+Superseded attempt: later protocol checks rejected its response flushing and
+early B/RLAST behavior. The four focused passes below remain historically
+accurate but were insufficient to establish reset isolation.
+
+Following the P5 review, the fabric now receives the explicit 23-entry target
+reset vector. A reset blocks new admission and downstream handshakes, flushes
+response spill state, and converts any accepted target session into a held
+DECERR terminal response. The existing owner credit is released only by the
+upstream RLAST/B handshake, preventing stale response replay or a permanently
+busy direction. No target map, public register, DMA capacity, clock profile or
+later phase was changed.
+
+The focused command
+`PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_tiny_r2_p5.py -k 'target_reset_isolation or concurrent_fabric'` passed 4 tests: both
+Icarus and Verilator reset-isolation tests and both existing concurrent-fabric
+tests. `make rtl-format-check rtl-style-check-all rtl-readiness-check-all`
+also passed. This is a focused implementation check; the prior P5 campaign
+reports remain source-bound to their recorded snapshots and have not been
+rewritten or relabeled. The retained focused logs are under
+`build/ics55-tiny-2026-10-10-18-58-b4aa59f3e5d9/meta/tiny-r2-p5/reset-repair-tests/`.
+
+## TINY-R2-P5 implementation; validated, review pending (2026-10-10)
+
+The maintainer approved the single-phase P5 plan on clean commit
+`3131762b35e0ebfcd196395f955e7c1005bd18e7`, specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The P4 input hashes match this
+starting source, but earlier reports retain their original snapshot attribution.
+The [P5 runbook](tiny-soc-r2-concurrent-fabric.md) records target-local ownership,
+sixteen APB branches, reserved inactive SDIO owner 2, concurrent-fault accounting
+and the unchanged public ABI/clock/memory boundaries.
+
+The completed campaign is under
+`build/ics55-tiny-2026-10-10-18-58-b4aa59f3e5d9/meta/tiny-r2-p5/`;
+the earlier `18-25` root retains development attempts. Full Pytest reports
+1679 passed and one optional `pypdf` skip. Both Tiny PDK PR regressions pass,
+including synthesis, netlist boot and clock/macro binding. The real CPU/DMA
+fixture records 13 overlapping DMA read/write beat cycles, 27 independent control
+completions, hart-reset isolation and abort drain on both simulators. Scoped
+target-control/fault proofs and retained P4 latency/streaming checks pass.
+
+Initial image executions passed but aggregation correctly failed on an Icarus 13
+temporary-expression population-count defect. The only subsequent source change
+is P5 opt-in testbench instrumentation. `source.json` retains the original
+snapshot for the unchanged DUT/full-suite/ordinary-regression/PPA results;
+`monitor-source.json` records the corrected monitor. Only affected image
+measurements and monitor checks were repeated. `monitor-diagnosis.json` retains
+the reproduction and original discrepancy; no comparison rule was relaxed.
+
+Final `report.json` has identical banked observations across simulators. Against
+repaired P4, burst1 cycles change 91306→65527 flat and 89365→65502 banked; burst16
+changes 17897→16974 and 17317→15802. CPU/copy cycles are unchanged; small
+contention/TCD/chunk256 increases remain explicit. The final combined input
+digest is `0f3ed21f6fd6e932ff2532aab8c9964e71cf4b972e4c27e2c8ca6ab1f22c1015`.
+`evidence.json` rechecks 2010 inputs and binds both snapshot scopes, six ordinary
+simulations, final matched-image runs, 15 focused/formal artifacts and reused
+unchanged Mini compatibility evidence. Library area grows 5.56%/6.95%; max WNS
+is -64.75 ns ICS55 and -111.93 ns IHP130. Timing remains unclosed/observational.
+The runbook records exact commands, source attribution, warning observations,
+measurements and unrun qualifications. Human phase acceptance is pending.
+Shared DMA/Mini/SDK behavior, dependencies and warning/metrics policy remain
+unchanged. No P6 execution or physical-frequency qualification is authorized.
+
+## TINY-R2-P4 throughput repair; validated, review pending (2026-10-10)
+
+Following the read-only P4 review, the maintainer approved the bounded-buffer
+repair plan for the P2 external-SRAM throughput regression. The changed Tiny
+group/frontend keep local I/D single-operation semantics, reserve external
+response capacity and overlap burst issuance/retirement; W is captured before
+macro arbitration and B follows complete commit-response drain. Common FIFO
+and register dependencies, ABI, clock/macro bindings and the pre-P5 external
+attachment remain unchanged. No shared Mini debug code is changed by this fix.
+
+Fresh evidence belongs under
+`build/ics55-tiny-2026-10-10-15-15-b4aa59f3e5d9/meta/tiny-r2-p4/`.
+The preceding P4 report below remains the pre-repair comparison, and does not
+qualify these new changes. The final audit rechecks 1972 technical inputs,
+six fresh regression simulations and three immutable-image executions. Full
+Pytest reports 1659 passed and one optional `pypdf` skip. Both Tiny PDK PR
+regressions pass, including synthesis, netlist boot and clock/macro bindings.
+Streaming/backpressure/error/reset checks and response conservation/fairness
+induction pass; all six SRAM fixtures retain three-cycle local completion and
+one-cycle steady read/write beat spacing. Initial style failures and focused
+development attempts remain separate from final qualifying results.
+
+Matched burst16 DMA cycles fall from 36713 to 17897 (flat) and 36489 to 17317
+(banked), reductions of 51.25% and 52.54%. All banked observations match across
+Verilator and Icarus. CPU/copy/burst1 cycles remain unchanged from pre-repair
+P4; burst1 overhead and 8.34%/4.81% burst16 overhead versus original P3 remain
+explicit. The combined input digest is
+`58daf68fbb9dee199b3085a73ef07d22eb3de6d00ba875c462e85b76b6091a0d`.
+`evidence.json` binds the source, artifacts, comparison and reused unchanged
+Mini behavioral evidence. All long gates ran once; Tiny nightly matched PR
+and was not duplicated. Setup WNS remains negative (-36.88 ns ICS55,
+-97.37 ns IHP130), with warning/metrics observations and baselines preserved.
+The [runbook](tiny-soc-r2-local-memory.md) records exact commands, measurements
+and unrun qualifications. Human review remains required; no P5 execution or
+physical-frequency qualification is implied.
+
+## TINY-R2-P4 implementation and validation; review pending (2026-10-10)
+
+The maintainer approved P4 preflight and implementation on clean source
+`4db27524a6282ca40d76b935415b89f043d6ea83`, specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4`. The [P4 runbook](tiny-soc-r2-local-memory.md)
+records architecture, lifecycle, physical binding and matched-image boundaries.
+P3 results retain their original source attribution; no historical phase or
+physical qualification is automatically promoted.
+
+Development evidence is under
+`build/ics55-tiny-2026-10-10-10-05-b4aa59f3e5d9/meta/tiny-r2-p4/`.
+All planned functional gates completed: 1659 Pytest passes and one optional
+`pypdf` skip; Tiny ICS55/IHP130 PR and Mini ICS55 behavioral compatibility pass.
+Both Tiny netlists pass boot and the four-group/32-macro/common-SYS binding
+checks. Local uncontended latency is three cycles; group-control induction
+passes. Setup and hold timing remain negative and observational.
+
+`report.json` retains single-execution matched-binary results; the banked image
+matches exactly across Verilator and Icarus. CPU-copy cycles improve about
+19%/25% for flat/banked images, while isolated burst-16 DMA cycles increase
+about 2.2 times. This external-frontend throughput regression requires review;
+no blanket speedup or automatic phase acceptance is claimed. `evidence.json`
+rechecks 1972 source inputs and binds the gate, image, model, log and report
+artifacts. Exact commands, measurements and unrun qualifications are in the runbook.
+
+External fabric stays serialized until P5, which is not authorized. Default
+Tiny stays ICS55 SAFE24 with PLL off; IHP130 is explicit compatibility.
+
+## TINY-R2-P3 implementation in progress (2026-10-08–10)
+
+The retained source-bound compiler/layout matrix is complete for commit
+`3e46cc80e2d2243233d284b7cd9583714b0773bb`, source digest
+`a7fc5112cd6f20df956243c4d081a6a31ede6192cd270e3c13340557b0e58776`.
+All eight configurations pass ordinary Tiny acceptance and three deterministic
+Verilator cold starts. `compat-os-flat`, `perf-o2-lto-flat` and
+`perf-o2-plain-banked` also pass three native Icarus cold starts, with exact
+cross-simulator sample identity. The structured measurement report is
+`build/ics55-tiny-performance-2026-10-09-17-10-53cc6674d532/meta/tiny-r2-p3/report.json`.
+It records software measurements only; it does not close phase acceptance,
+physical timing, hardware bank conflict or Mini integrated-DMA gates.
+
+Quality evidence for that committed source is complete: full Pytest reports 1629 passed and
+one environment skip for missing `pypdf`; focused P3 tests and the embedded/RTL
+quality checks pass. Its Tiny PR regressions pass for ICS55 and IHP130, and
+Mini ICS55 behavioral-only compatibility passes. Negative STA margins and
+non-blocking lint observations remain recorded as observations.
+
+Exact commands, measurements, current evidence roots and remaining qualification
+limits are in the final section of the [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md).
+Human review and acceptance remain required before any R2-P4 work.
+
+### Subsequent P1 race-fix follow-up
+
+The approved follow-up fixes WS2812 completion between register reads and
+legacy TCD publication across an ISR lease acquisition. Current source is
+`3e46cc8` plus the two HAL fixes and deterministic host tests; the matrix above
+remains evidence for the original commit. New evidence is under
+`build/ics55-tiny-2026-10-10-09-00-b4aa59f3e5d9/meta/tiny-r2-p3-races/`.
+The two new tests fail before their respective fixes and pass afterward;
+C format/policy/host checks and 156 focused tests pass. Mini PIO compatibility
+also passes once with strict SIM_TEST_PASS and no forbidden markers. Tiny
+ICS55/IHP130 PR and Mini ICS55 behavioral regressions each pass once. Final
+`evidence.json` checks all 1287 source inputs, 487 Mini PIO compiled inputs and
+all eight ordinary regression simulations. Lint baseline differences and
+negative STA remain observations; no timing closure is claimed. See the final
+review-fix section for commands, hashes, exact paths and unrun gates.
+
+Per the maintainer's follow-up instruction, long checks default to one execution;
+repeat only for a concrete failure/inconsistency or an explicit acceptance
+requirement. This follow-up does not repeat the three-cold-start compiler matrix.
+It does not waive any frozen qualification requirement or reattribute old runs.
+
+### Historical development snapshot
 
 The 2026-10-09 execution snapshot in the [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md)
 records all eight ordinary Tiny/Verilator compiler experiments completed, with
-selected Icarus groups still running. The current-source full Pytest result is
+selected Icarus groups still running at that snapshot. The then-current full Pytest result was
 1531 passed, 4 failed, 94 fixture errors and 1 skipped; configuration-declaration
-and publication source/fixture drift remain open. IHP130 Tiny PR completes with
+and publication source/fixture drift were still open. IHP130 Tiny PR completed with
 non-blocking lint observations and negative STA margin. These results do not
-close the remaining matrix, quality or human phase-acceptance gates.
+replace the final results above or imply human phase acceptance.
 
 The [P3 review-fix record](tiny-soc-r2-p3-review-fixes.md) closes the retained
 banked O2 Icarus finding: all three runs completed successfully and match the
@@ -28,8 +500,8 @@ is bound at
 underflow/abort recovery, zero DMA starts and strict TEST_STATUS/SIM_TEST_PASS.
 Focused checks report 96 passed; C/RTL quality, Ruff and diff checks pass.
 The old Mini DMA failure remains failed/unsupported evidence, not a PIO pass.
-The full compiler/placement matrix, broader current-source regressions and human
-phase acceptance remain pending. See the review-fix record for exact commands,
+The full compiler/placement matrix and broader regressions were pending in this
+initial record; human phase acceptance remains pending. See the review-fix record for exact commands,
 artifacts, historical attribution and unrun gates.
 
 The user explicitly approved the P3 preflight and implementation on source
@@ -42,9 +514,9 @@ Original phase IDs, historical evidence and qualification limits are retained.
 
 The [P3 runbook](tiny-soc-r2-software-scheduling.md) defines compiler/layout
 experiments, shared finite DMA/WS2812 service, ownership and exact commands.
-Implementation and validation are in progress; this entry does not claim
-phase completion or performance improvement. The existing GNU toolchain is
-used first, as requested; no dependency version has been changed.
+The initial entry recorded implementation and validation in progress; it did not
+claim phase completion or performance improvement. The existing GNU toolchain
+was used as requested; no dependency version has been changed.
 
 Early development testing found a compressed-instruction acceptance bug:
 `rs_mcu_unmapped_probe` assembled its faulting load as 16-bit `4108`, while
@@ -448,8 +920,8 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | TINY-R2-P0 - Performance Contract and Roadmap Freeze | Reviewable requirements, exact old/new phase mapping, invariant package/IO counts, same-frequency CPU/main-SRAM ownership, explicit performance budgets, links and commands. Record actual documentation checks separately. | Documentation freeze only; no hardware result |
 | TINY-R2-P1 - Reproducible Baseline, Constraints and Measurements | Reviewed source/profile/lock/tool identity; current 24 MHz functional and workload baseline; clocks, reset endpoints, constraints and timing-exception audit; counters and comparison methodology. Historical WNS is a risk reference, not a refreshed measurement. | Functional/measurement baseline accepted by explicit P2 approval on 2026-10-06; timing, warning and physical gaps retained |
 | TINY-R2-P2 - Reset Distribution and CPU/SRAM Clock Feasibility | Reset distribution and payload-reset semantics; locked IHP130 main-SRAM macro timing, candidate common CPU/SRAM periods and representative paths; early clock/reset feasibility with explicit gaps. No final routed/PVT pass is implied. | Implementation and evidence ready for review; all analyzed rates retain timing failures; phase acceptance pending human review |
-| TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling, WS2812 refill budget and workload correctness on the available platform. | Pending |
-| TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Pending |
+| TINY-R2-P3 - Software and DMA Scheduling | Compiler and placement A/B results, finite DMA ownership, burst/chunk scheduling and available-path correctness; approved option A retains product DMA/IRQ budget qualification for the platform that supplies the route. | Matrix retained on `3e46cc8`; subsequent two P1 HAL fixes and focused/compatibility checks complete in the worktree; human review/acceptance pending |
+| TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Implementation and planned functional validation complete on `4db2752` plus retained worktree snapshot; matched-image DMA throughput regression and human phase acceptance pending review; timing remains observational |
 | TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
 | TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration | Legacy P7 obligations; shared PWM reporting, I2S slave and alternate-input-route prerequisites; common ABI/HAL parity; Crypto banks/lifecycle; truthful capabilities and affected Mini compatibility. | Pending |
 | TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration | Legacy P8 obligations with main SRAM in SYS and XPI in MEM; atomic rate changes, all actual CDC/reset barriers, clock failures, WFI leaf gating and reserved DVP controls. | Pending |

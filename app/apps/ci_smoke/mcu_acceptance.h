@@ -6,5 +6,6 @@
 uint32_t rs_mcu_compressed_probe(void);
 void rs_mcu_atomic_probe(uint32_t *address);
 void rs_mcu_unmapped_probe(void);
+uint32_t rs_mcu_execute_probe(uint32_t address);
 
 #endif

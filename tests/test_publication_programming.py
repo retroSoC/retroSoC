@@ -98,6 +98,21 @@ def test_channel_coverage_cannot_drop_the_boot_channel(spec):
         pr.collect_programming(ROOT, spec, IDS, REFERENCE["source_revision"])
 
 
+def test_mini_channel_selection_excludes_inactive_tiny_roles():
+    header = (ROOT / "crt/include/retrosoc/hal/dma.h").read_text()
+    selected = pr.mini_channel_enum(header)
+    channels = pr.constants(selected, "RS_DMA_CHANNEL_")
+    assert sorted(channels.values()) == list(range(6))
+    assert "RS_DMA_CHANNEL_I2S_TX = RS_DMA_CHANNEL_BULK" in selected
+    # A Tiny allocation change must not become a Mini allocation or alias.
+    assert pr.mini_channel_enum(header.replace("RS_DMA_CHANNEL_I2S_TX = 6", "RS_DMA_CHANNEL_I2S_TX = 7")) == selected
+    with pytest.raises(ValueError, match="alias binding"):
+        pr.mini_channel_enum(header.replace("RS_DMA_CHANNEL_I2S_TX = RS_DMA_CHANNEL_BULK",
+                                            "RS_DMA_CHANNEL_I2S_TX = RS_DMA_CHANNEL_CRYPTO_IN"))
+    with pytest.raises(ValueError, match="unreviewed"):
+        pr.mini_channel_enum(header.replace("#ifdef RS_SOC_TINY", "#ifdef UNKNOWN_PRODUCT"))
+
+
 def test_credit_parser_fails_closed_on_unreviewed_shape():
     with pytest.raises(ValueError, match="unsupported credit function"):
         pr.credit_values("function automatic int limits(input int master); return compute(master); endfunction", "limits", 8)

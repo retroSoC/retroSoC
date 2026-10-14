@@ -98,7 +98,12 @@
     "uart1": 26
   },
   "sources": [
-    "rtl/ip/core/mgmt_core_wrapper.sv",
+    "rtl/tiny/top/tiny_cpu_wrapper.sv",
+    "rtl/tiny/top/tiny_cpu_mem.sv",
+    "rtl/tiny/top/tiny_sram.sv",
+    "rtl/tiny/top/tiny_sram_group.sv",
+    "rtl/tiny/top/tiny_sram_axi4.sv",
+    "rtl/tiny/top/tiny_sram_port_if.sv",
     "rtl/ip/core/mgmt_debug_wrapper.sv",
     "rtl/ip/core/mgmt_debug_reset.sv",
     "rtl/ip/interconnect/ahbl2axi4.sv",
@@ -112,19 +117,19 @@
     "app/apps/bringup/tiny.mk",
     "app/apps/ci_smoke/tiny.mk",
     "scripts/generate_tiny.py",
-    "tests/test_tiny.py"
+    "tests/test_tiny.py",
+    "rtl/tiny/top/tiny_axi4_target.sv",
+    "rtl/tiny/top/tiny_fault_collector.sv"
   ],
   "bindings": [
     {
       "file": "rtl/tiny/top/tiny_axi4_fabric.sv",
       "text": [
-        "(s_selected_addr.len <= 8'd15)",
-        "(s_last_addr[31:12] == s_selected_addr.addr[31:12])",
-        "s_accept = (s_state_q == Idle) && s_selected_valid;",
-        "Response: if (s_terminal) s_state_d = Idle;",
-        "s_tgt_d = s_protocol_legal ? s_decoded_target : 3'd4;",
-        "assign s_protocol_legal = !s_selected_addr.lock && (s_selected_addr.size <= 3'd2) &&\n      ((s_selected_addr.addr & ((32'd1 << s_selected_addr.size) - 32'd1)) == 32'd0) &&\n      ((s_selected_addr.burst == 2'b01) ||\n       ((s_selected_addr.burst == 2'b00) && (s_selected_addr.len == 8'd0))) &&\n      (s_selected_addr.len <= 8'd15) && !s_last_addr[32] &&\n      (s_last_addr[31:12] == s_selected_addr.addr[31:12]) &&\n      (decode_target(\n      s_last_addr[31:0]\n  ) == s_decoded_target) && ((s_decoded_target != 3'd2) || (s_selected_addr.len == 8'd0));",
-        "assign s_terminal = (s_state_q == Response) &&\n      (s_write_q ? (s_target_bvalid[s_tgt_q] && s_bready[s_owner_q]) :\n       (s_target_rvalid[s_tgt_q] && s_rready[s_owner_q] && s_target_rlast[s_tgt_q]));"
+        "  function automatic logic [4:0] checked_target(\n      input logic [31:0] addr_i, input logic [7:0] len_i,\n      input logic [2:0] size_i, input logic [1:0] burst_i,\n      input logic lock_i, input logic instruction_i);\n    logic [32:0] last_addr;\n    logic [4:0] decoded;\n    decoded = decode_target(addr_i);\n    last_addr = {1'b0, addr_i} + (({25'd0, len_i} + 33'd1) << size_i) - 33'd1;\n    if (lock_i || (size_i > 3'd2) || (len_i > 8'd15) ||\n        ((addr_i & ((32'd1 << size_i) - 32'd1)) != 32'd0) ||\n        !((burst_i == 2'b01) || ((burst_i == 2'b00) && (len_i == 8'd0))) ||\n        last_addr[32] || (last_addr[31:12] != addr_i[31:12]) ||\n        (decode_target(last_addr[31:0]) != decoded) ||\n        ((decoded >= 5'd5) && (decoded <= 5'd20) && (len_i != 8'd0)))\n      return 5'd22;\n    if (instruction_i && !(`SOC_ADDR_IS_FLASH(addr_i) ||\n        ((addr_i >= 32'h5000_0000) && (addr_i < 32'h5400_0000))))\n      return ((decoded >= 5'd5) && (decoded <= 5'd20)) ? 5'd22 : 5'd21;\n    return decoded;\n  endfunction",
+        "assign s_busy_d = (s_busy_q & ~s_done) | s_admit;",
+        "assign owner_idle_o[owner] = !(s_busy_q[2*owner] || s_busy_q[2*owner+1]);",
+        "assign s_eligible[2*owner] = rst_n_i && owner_idle_o[owner] && masters[owner].arvalid && (!masters[owner].awvalid || !s_cpu_prefer_write_q);",
+        "assign s_eligible[2*owner+1] = rst_n_i && owner_idle_o[owner] && masters[owner].awvalid && (!masters[owner].arvalid || s_cpu_prefer_write_q);"
       ]
     },
     {
@@ -176,6 +181,20 @@
         "if (burst == UINT32_C(0)) {\n            burst = RS_DMA_MAX_BURST_BEATS;\n        }",
         "RS_DMA_CH_REG(channel, RS_DMA_CH_REG_TCD_COUNT) = UINT32_C(1);",
         "current = (rs_dma_tcd_t *)(uintptr_t)current->next_ptr;"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/tiny_axi4_target.sv",
+      "text": [
+        "assign s_accept = (s_req_q.state == Idle) && enable_i && s_valid;",
+        "assign s_terminal = s_resp_active && (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) : (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]));",
+        "assign fault_valid_o = s_terminal && s_req_q.error_seen;",
+        "if (!s_req_q.error_seen && (s_rin_data[3:2] != 2'b00)) begin s_req_d.error_seen = 1'b1; s_req_d.error_addr = s_req_q.read_addr; s_req_d.error_resp = s_rin_data[3:2]; end",
+        "assign s_abort_write_valid = (s_req_q.state == AbortResponse) && s_req_q.write && s_req_q.write_done && !s_req_q.b_captured;",
+        "assign s_abort_read_valid = (s_req_q.state == AbortResponse) && !s_req_q.write && (s_req_q.read_count <= {1'b0, s_saved_addr.len});",
+        ".flush_i(1'b0)",
+        "AbortWrite: begin",
+        "if (s_terminal) s_req_d.state = Idle;"
       ]
     }
   ]

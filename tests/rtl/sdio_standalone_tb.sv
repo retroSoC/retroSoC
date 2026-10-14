@@ -12,7 +12,9 @@
 
 module sdio_standalone_tb #(
     parameter bit CardHighCapacity = 1'b1,
-    parameter bit RunFourBit       = 1'b1
+    parameter bit RunFourBit       = 1'b1,
+    parameter bit PadLoopback      = 1'b0,
+    parameter int CardBusyCycles   = 8
 );
   localparam logic [31:0] HostCtrl = 32'h00C;
   localparam logic [31:0] ClockCtrl = 32'h010;
@@ -65,8 +67,21 @@ module sdio_standalone_tb #(
   integer        timeout_count_before;
   integer        crc_count_before;
 
-  assign sdio.cmd_di_i = sdio.cmd_oe_o ? sdio.cmd_do_o : card_cmd_do;
-  assign sdio.dat_di_i = (sdio.dat_oe_o & sdio.dat_do_o) | (~sdio.dat_oe_o & card_dat_do);
+  tri1 command_pad, data0_pad, data1_pad, data2_pad, data3_pad;
+  wire [3:0] data_pads = {data3_pad, data2_pad, data1_pad, data0_pad};
+  assign command_pad = sdio.cmd_oe_o ? sdio.cmd_do_o : 1'bz;
+  assign command_pad = sdio.cmd_oe_o ? 1'bz : card_cmd_do;
+  assign data0_pad = sdio.dat_oe_o[0] ? sdio.dat_do_o[0] : 1'bz;
+  assign data1_pad = sdio.dat_oe_o[1] ? sdio.dat_do_o[1] : 1'bz;
+  assign data2_pad = sdio.dat_oe_o[2] ? sdio.dat_do_o[2] : 1'bz;
+  assign data3_pad = sdio.dat_oe_o[3] ? sdio.dat_do_o[3] : 1'bz;
+  assign data0_pad = sdio.dat_oe_o[0] ? 1'bz : card_dat_do[0];
+  assign data1_pad = sdio.dat_oe_o[1] ? 1'bz : card_dat_do[1];
+  assign data2_pad = sdio.dat_oe_o[2] ? 1'bz : card_dat_do[2];
+  assign data3_pad = sdio.dat_oe_o[3] ? 1'bz : card_dat_do[3];
+  assign sdio.cmd_di_i = PadLoopback ? command_pad : (sdio.cmd_oe_o ? sdio.cmd_do_o : card_cmd_do);
+  assign sdio.dat_di_i = PadLoopback ? data_pads :
+                         ((sdio.dat_oe_o & sdio.dat_do_o) | (~sdio.dat_oe_o & card_dat_do));
 
   always #5 clk_i = ~clk_i;
 
@@ -87,15 +102,15 @@ module sdio_standalone_tb #(
       .HighCapacity(CardHighCapacity),
       .BlockBytes  (512),
       .BlockCount  (128),
-      .BusyCycles  (8)
+      .BusyCycles  (CardBusyCycles)
   ) u_card (
       .rst_n_i (rst_n_i),
       .sck_i   (sdio.sck_o),
       .cmd_oe_i(sdio.cmd_oe_o),
-      .cmd_do_i(sdio.cmd_do_o),
+      .cmd_do_i(PadLoopback ? command_pad : sdio.cmd_do_o),
       .cmd_do_o(card_cmd_do),
       .dat_oe_i(sdio.dat_oe_o),
-      .dat_do_i(sdio.dat_do_o),
+      .dat_do_i(PadLoopback ? data_pads : sdio.dat_do_o),
       .dat_do_o(card_dat_do),
       .irq_o   (card_irq)
   );
@@ -204,7 +219,13 @@ module sdio_standalone_tb #(
         end
       end
       if (timeout_guard >= 200000) begin
-        $fatal(1, "data path did not drain");
+        $fatal(
+            1,
+            "data path did not drain: data_state=%0d dma_state=%0d rx=%b%b dma_bytes=%0d card_state=%0d card_bytes=%0d clk=%b",
+            u_apb4_sdio.u_sdio_core.u_sdio_data.s_state_q,
+            u_apb4_sdio.u_sdio_core.u_sdio_dma.s_state_q, u_apb4_sdio.u_sdio_core.s_data_rx_valid,
+            u_apb4_sdio.u_sdio_core.s_data_rx_ready, u_apb4_sdio.s_bytes_done,
+            u_card.u_model.s_data_state, u_card.u_model.s_data_byte_index, sdio.sck_o);
       end
     end
   endtask
@@ -552,6 +573,84 @@ module sdio_standalone_tb #(
       $fatal(1, "memory-to-card DMA end-to-end direction failed");
     end
 
+    // P6 exercises a full four-lane DMA payload at divider 1, with memory
+    // arbitration delays. Short one-lane tails do not cover its word pauses.
+    if (RunFourBit) begin
+      u_axi_memory.clear_memory();
+      u_axi_memory.set_read_gap(24);
+      u_axi_memory.write_word(32'h0, 32'h200);
+      u_axi_memory.write_word(32'h4, 32'd1024);
+      u_axi_memory.write_word(32'h8, 32'd0);
+      u_axi_memory.write_word(32'hc, 32'h5);
+      for (integer word_index = 0; word_index < 256; word_index++)
+      u_axi_memory.write_word(32'h200 + 32'(word_index * 4), 32'h13579bdf ^ 32'(word_index));
+      configure_dma_data(1'b1, 1'b1, 16'd512);
+      apb_write(BlockCount, 32'd2, 4'hf);
+      u_card.arm_write(24000, 1024, 1'b1, 1'b0);
+      apb_write(DataStart, 32'd1, 4'h1);
+      wait_data();
+      apb_read(DataStatus, apb_value);
+      for (integer byte_index = 0; byte_index < 1024; byte_index++) begin
+        if (u_card.read_backing(
+                24000 + byte_index
+            ) != 8'((32'h13579bdf ^ 32'(byte_index / 4)) >> ((byte_index % 4) * 8)))
+          $fatal(
+              1,
+              "SDIO four-lane DMA payload byte=%0d got=%h expected=%h",
+              byte_index,
+              u_card.read_backing(
+                  24000 + byte_index
+              ),
+              8'((32'h13579bdf ^ 32'(byte_index / 4)) >> ((byte_index % 4) * 8))
+          );
+      end
+      if ((apb_value & 32'h1e) != 0)
+        $fatal(
+            1,
+            "SDIO four-lane DMA block status=%h card_crc=%b",
+            apb_value,
+            u_card.u_model.s_data_crc_error
+        );
+      if (u_axi_memory.read_word(32'hc) != 32'h00010004)
+        $fatal(1, "SDIO four-lane DMA descriptor did not retire");
+      // Delay descriptor reads while the card sends its first receive word.
+      u_axi_memory.clear_memory();
+      u_axi_memory.write_word(32'h0, 32'h800);
+      u_axi_memory.write_word(32'h4, 32'd1024);
+      u_axi_memory.write_word(32'h8, 32'd0);
+      u_axi_memory.write_word(32'hc, 32'h5);
+      configure_dma_data(1'b1, 1'b0, 16'd512);
+      apb_write(BlockCount, 32'd2, 4'hf);
+      u_card.arm_read(24000, 1024, 1'b1, 1'b0);
+      apb_write(DataStart, 32'd1, 4'h1);
+      wait_data();
+      apb_read(DataStatus, apb_value);
+      for (integer word_index = 0; word_index < 256; word_index++) begin
+        if (u_axi_memory.read_word(
+                32'h800 + 32'(word_index * 4)
+            ) != (32'h13579bdf ^ 32'(word_index)))
+          $fatal(
+              1,
+              "SDIO delayed-descriptor receive word=%0d got=%h expected=%h",
+              word_index,
+              u_axi_memory.read_word(
+                  32'h800 + 32'(word_index * 4)
+              ),
+              32'h13579bdf ^ 32'(word_index)
+          );
+      end
+      if ((apb_value & 32'h1e) != 0 || u_axi_memory.read_word(32'hc) != 32'h00010004)
+        $fatal(
+            1,
+            "SDIO delayed-descriptor receive status=%h descriptor=%h",
+            apb_value,
+            u_axi_memory.read_word(
+                32'hc
+            )
+        );
+      u_axi_memory.set_read_gap(0);
+    end
+
     apb_read(AxiCount, apb_value);
     timeout_count_before = apb_value;
     u_axi_memory.clear_memory();
@@ -674,4 +773,11 @@ endmodule
 
 module sdio_onebit_tb;
   sdio_standalone_tb #(.RunFourBit(1'b0)) u_tb ();
+endmodule
+
+module tiny_p6_sdio_pads_tb;
+  sdio_standalone_tb #(
+      .PadLoopback   (1'b1),
+      .CardBusyCycles(2)
+  ) u_tb ();
 endmodule
