@@ -127,7 +127,7 @@ def test_generated_hp_core_rtl_is_not_tracked() -> None:
     assert tracked == ""
 
 
-def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: bool) -> None:
+def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: str | None) -> None:
     """Build and run the focused hp_core_wrapper boot testbench."""
     verilator = shutil.which("verilator")
     openc906 = ROOT / ".cache/retrosoc/sources/openc906"
@@ -209,7 +209,7 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: bool) -> None:
         "-I" + str(ROOT / "rtl/mini/top"),
         f"+define+HP_SMOKE_HEX=\"{hex_image}\"",
     ]
-    if sram_macros:
+    if sram_macros == "ihp130":
         # IHP130 macro path for the eight C906 SRAM wrappers (integration
         # manual chapter 3): the override files select RM_IHPSG13_1P_* macros
         # when PDK_IHP130+HAVE_SRAM_MACRO are defined without PDK_BEHAV, and
@@ -217,14 +217,37 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: bool) -> None:
         sram_verilog = (
             ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog"
         )
-        command += [
-            "+define+PDK_IHP130",
-            "+define+HAVE_SRAM_MACRO",
-            "+define+FUNCTIONAL",
-            str(sram_verilog / "RM_IHPSG13_1P_core_behavioral_bm_bist.v"),
-            str(sram_verilog / "RM_IHPSG13_1P_1024x32_c2_bm_bist.v"),
-            str(sram_verilog / "RM_IHPSG13_1P_64x64_c2_bm_bist.v"),
+        macro_defines = ["+define+PDK_IHP130", "+define+HAVE_SRAM_MACRO", "+define+FUNCTIONAL"]
+        macro_models = [
+            sram_verilog / "RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+            sram_verilog / "RM_IHPSG13_1P_1024x32_c2_bm_bist.v",
+            sram_verilog / "RM_IHPSG13_1P_64x64_c2_bm_bist.v",
         ]
+    elif sram_macros == "ics55":
+        # ICS55 macro path: the override files select the exact-geometry
+        # ics55_ecos_sram_* macros when PDK_ICS55+HAVE_SRAM_MACRO are defined
+        # without PDK_BEHAV; these models need no FUNCTIONAL define.
+        ics55_names = (
+            "ics55_ecos_sram_1024x16_m8",
+            "ics55_ecos_sram_2048x32_m8",
+            "ics55_ecos_sram_256x59_m4",
+            "ics55_ecos_sram_1024x64_m8",
+            "ics55_ecos_sram_128x8_m8",
+            "ics55_ecos_sram_64x58_m4",
+            "ics55_ecos_sram_64x88_m4",
+            "ics55_ecos_sram_64x98_m4",
+        )
+        macro_defines = ["+define+PDK_ICS55", "+define+HAVE_SRAM_MACRO"]
+        macro_models = [
+            ROOT / ".cache/retrosoc/pdk/ics55/sram" / name / "verilog" / f"{name}_core.v"
+            for name in ics55_names
+        ]
+    else:
+        macro_defines = []
+        macro_models = []
+    if any(not model.is_file() for model in macro_models):
+        return
+    command += [*macro_defines, *(str(model) for model in macro_models)]
     command += [
         str(common / "interface/axi4_if.sv"),
         str(common / "interface/axi4_addr_gen.sv"),
@@ -266,12 +289,17 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: bool) -> None:
 
 def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
     """Boot the real HP smoke payload on the hp_core_wrapper integration."""
-    _run_c906_boot_tb(tmp_path, sram_macros=False)
+    _run_c906_boot_tb(tmp_path, sram_macros=None)
 
 
 def test_c906_boots_smoke_payload_with_ihp130_sram_macros(tmp_path: Path) -> None:
     """Boot the same payload with the C906 SRAM wrappers on IHP130 macros."""
-    _run_c906_boot_tb(tmp_path, sram_macros=True)
+    _run_c906_boot_tb(tmp_path, sram_macros="ihp130")
+
+
+def test_c906_boots_smoke_payload_with_ics55_sram_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 SRAM wrappers on ICS55 macros."""
+    _run_c906_boot_tb(tmp_path, sram_macros="ics55")
 
 
 def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
