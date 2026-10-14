@@ -150,7 +150,7 @@
     "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "964a54d70cb78e394ba9a25c05f2aa2b02941fb7", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "8c1a5664c4d23d005c1afad432372a13ca967cc8", "destination": "rtl/managed/clusterip/crc", "license": "MulanPSL-2.0"},
     "cluster_ps2": {"url": "https://github.com/retroSoC/ps2.git", "revision": "2097a0d41b07573ff0453d65ba9a1670b3df7b9c", "destination": "rtl/managed/clusterip/ps2", "license": "MulanPSL-2.0"},
-    "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "79ae32f725e848a1e7f6134847b3fb032ed64006", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},
+    "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "38efaf5e20f084a00148920087c60cadab61839b", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},
     "cluster_rng": {"url": "https://github.com/retroSoC/rng.git", "revision": "36f3e0774d8f3c4b597d3db8a96ca3992532b61e", "destination": "rtl/managed/clusterip/rng", "license": "MulanPSL-2.0"},
     "cluster_rtc": {"url": "https://github.com/retroSoC/rtc.git", "revision": "32548c5cbcdf39e09d0880fb611f9dd47940ea88", "destination": "rtl/managed/clusterip/rtc", "license": "NOASSERTION"},
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
