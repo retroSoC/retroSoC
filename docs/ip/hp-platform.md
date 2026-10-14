@@ -66,9 +66,22 @@ section 3.1.5:
 
 Depth stacks register the bank select on read transactions and mux the bank
 outputs one cycle later (manual section 3.1.4 timing); unused upper
-write-mask bits are tied off so unimplemented bits are never written. Every
-other configuration — including the committed `PDK_BEHAV=YES` CI profiles —
-compiles the upstream behavioral `aq_f_spsram_*` instance byte-identically.
+write-mask bits are tied off so unimplemented bits are never written.
+
+With `PDK_ICS55` + `HAVE_SRAM_MACRO` and without `PDK_BEHAV`, each wrapper
+instead instantiates its exact-geometry ICS55 OpenECOS macro
+(`ics55_ecos_sram_1024x16_m8`, `_2048x32_m8`, `_256x59_m4`, `_1024x64_m8`,
+`_128x8_m8`, `_64x58_m4`, `_64x88_m4`, `_64x98_m4`), materialized by
+`make setup-pdk` from the locked `openecos-projects/ics55_ecos_sram` release
+assets (`dependencies.lock.json` `pdk_ics55_sram_<geom>` entries). The macro
+interface matches the wrapper polarity exactly (`CEB`/`GWEB`/per-bit `WEB`
+are active-low at identical widths), so the replacement is a direct
+connection with no inversion, padding, or stacking; `MARE`/`MAR` are tied
+off as in `tc_sram.sv`.
+
+Every other configuration — including the committed `PDK_BEHAV=YES` CI
+profiles — compiles the upstream behavioral `aq_f_spsram_*` instance
+byte-identically.
 Deferred this phase: low-power support
 (`core0_pad_lpmd_b` unconnected), DFT (scan/mbist tied off), the debug SBA AXI
 master (unconnected), the chapter 3 ICG (`gated_clk_cell`) replacement,

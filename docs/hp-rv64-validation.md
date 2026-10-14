@@ -123,16 +123,37 @@ qualification. Current evidence requires, at minimum:
   smoke payload (cache maintenance plus GA2D data movement, which exercises
   the BHT/ICache/DCache/JTLB RAMs for real) on the macro path with the same
   `HP_C906_BOOT_TEST_PASS` verdict as the behavioral run.
+- The wrappers also have an ICS55 macro path: under `PDK_ICS55`+
+  `HAVE_SRAM_MACRO` without `PDK_BEHAV` each wrapper directly instantiates
+  its exact-geometry `ics55_ecos_sram_<geom>_m4/m8` macro (locked
+  `openecos-projects/ics55_ecos_sram` release assets materialized by
+  `make setup-pdk`; polarity-identical ports, no stacking or padding). The
+  focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_ics55_sram_macros` passes with the same
+  verdict, the vendored MEM_INTF memory suite (manual section 3.2, adapted
+  to Icarus) passes on the ICS55 path as well, and the `ics55.mk` CI profile
+  smoke simulation (`APP=ci_smoke`, Verilator) passes with the macro path
+  compiled into the SoC.
 
 `hp-linux-sim` was run with a bounded wall-clock budget this round and its
 current frontier is recorded above; the synthesis-dependent gates remain
 unrun (synthesis, netlist simulation, STA, and the physical/LEC qualification
-of the macro path). The SoC-level macro-mode simulation now has passing
+of the macro path; on Yosys the C906 ICS55 macros additionally need their
+Liberty views registered in `physical/smoke/syn/yosys/script/init_tech.tcl`,
+and the ICS55 smoke synthesis is already red without this work because
+`npu_scheduler.sv` hard-codes IHP130 `sg13g2_dlygate4sd3_1` delay cells under
+plain `SYNTHESIS`). The SoC-level macro-mode simulation now has passing
 evidence: `make CONFIG=configs/ci/ihp130-hp.mk PDK_BEHAV=NO SIMU=VERILATOR
 hp-smoke-sim` builds the whole SoC (C906 `aq_spsram_*` wrappers and
 `tc_sram`) on the IHP130 macro models and passes with
 `SIM_TEST_PASS code=0` plus the `HP_LINUX_READY`/`HP_GA2D_PASS`/
-`HP_GA2D_CACHE_CLEAN` markers. All stay required evidence for qualification.
+`HP_GA2D_CACHE_CLEAN` markers. The same SoC smoke passes on the ICS55 macro
+path (`PDK=ICS55 PDK_BEHAV=NO`, 3.64M cycles, `SIM_TEST_PASS code=0` with the
+full GA2D cache-lifecycle marker sequence); the default 300 s
+`HP_SMOKE_SIM_TIME` is only enough when the run is uncontended, and the bare
+`ics55.mk` profile-default `sim` (no fast-flash) exceeds its 180 s default
+budget in this environment, so both were run with the CI-sized time budgets.
+All stay required evidence for qualification.
 
 Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
 (scan/mbist tied off), the debug SBA AXI master (unconnected), the chapter 3
