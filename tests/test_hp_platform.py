@@ -127,8 +127,8 @@ def test_generated_hp_core_rtl_is_not_tracked() -> None:
     assert tracked == ""
 
 
-def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
-    """Boot the real HP smoke payload on the hp_core_wrapper integration."""
+def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: bool) -> None:
+    """Build and run the focused hp_core_wrapper boot testbench."""
     verilator = shutil.which("verilator")
     openc906 = ROOT / ".cache/retrosoc/sources/openc906"
     if verilator is None or not (openc906 / "C906_RTL_FACTORY").is_dir():
@@ -195,47 +195,66 @@ def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
     output = tmp_path / "hp_c906_boot_tb"
     ccache_tmp = tmp_path / "ccache"
     ccache_tmp.mkdir()
+    command = [
+        verilator,
+        "--binary",
+        "--timing",
+        "-Wno-fatal",
+        "--top-module",
+        "hp_c906_boot_tb",
+        "-I" + str(common / "interface"),
+        "-I" + str(common / "utils"),
+        "-I" + str(common),
+        "-I" + str(common / "cdc"),
+        "-I" + str(ROOT / "rtl/mini/top"),
+        f"+define+HP_SMOKE_HEX=\"{hex_image}\"",
+    ]
+    if sram_macros:
+        # IHP130 macro path for the eight C906 SRAM wrappers (integration
+        # manual chapter 3): the override files select RM_IHPSG13_1P_* macros
+        # when PDK_IHP130+HAVE_SRAM_MACRO are defined without PDK_BEHAV, and
+        # FUNCTIONAL puts the macro models in zero-delay functional mode.
+        sram_verilog = (
+            ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog"
+        )
+        command += [
+            "+define+PDK_IHP130",
+            "+define+HAVE_SRAM_MACRO",
+            "+define+FUNCTIONAL",
+            str(sram_verilog / "RM_IHPSG13_1P_core_behavioral_bm_bist.v"),
+            str(sram_verilog / "RM_IHPSG13_1P_1024x32_c2_bm_bist.v"),
+            str(sram_verilog / "RM_IHPSG13_1P_64x64_c2_bm_bist.v"),
+        ]
+    command += [
+        str(common / "interface/axi4_if.sv"),
+        str(common / "interface/axi4_addr_gen.sv"),
+        str(common / "utils/register.sv"),
+        str(common / "utils/xchecker.sv"),
+        str(common / "utils/spill_register.sv"),
+        str(common / "utils/bin2gray.sv"),
+        str(common / "utils/gray2bin.sv"),
+        str(common / "cdc/cdc_sync.sv"),
+        str(common / "cdc/cdc_rst_ctrlr.sv"),
+        str(common / "cdc/cdc_2phase.sv"),
+        str(common / "clkrst/rst_sync.sv"),
+        str(common / "clkrst/clk_int_div.sv"),
+        str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
+        str(ROOT / "rtl/mini/top/axi4_downsizer_128to64.sv"),
+        str(ROOT / "rtl/mini/top/axi4_mmio_demux.sv"),
+        str(ROOT / "rtl/mini/top/axi4_downsizer_64to32.sv"),
+        str(ROOT / "rtl/mini/top/axi4_address_gate.sv"),
+        str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
+        str(ROOT / "rtl/mini/top/hp_core_wrapper.sv"),
+        "-f",
+        str(generated / "openc906.fl"),
+        str(ROOT / "tests/rtl/hp_c906_boot_tb.sv"),
+        "-Mdir",
+        str(tmp_path / "obj"),
+        "-o",
+        str(output),
+    ]
     subprocess.run(
-        [
-            verilator,
-            "--binary",
-            "--timing",
-            "-Wno-fatal",
-            "--top-module",
-            "hp_c906_boot_tb",
-            "-I" + str(common / "interface"),
-            "-I" + str(common / "utils"),
-            "-I" + str(common),
-            "-I" + str(common / "cdc"),
-            "-I" + str(ROOT / "rtl/mini/top"),
-            f"+define+HP_SMOKE_HEX=\"{hex_image}\"",
-            str(common / "interface/axi4_if.sv"),
-            str(common / "interface/axi4_addr_gen.sv"),
-            str(common / "utils/register.sv"),
-            str(common / "utils/xchecker.sv"),
-            str(common / "utils/spill_register.sv"),
-            str(common / "utils/bin2gray.sv"),
-            str(common / "utils/gray2bin.sv"),
-            str(common / "cdc/cdc_sync.sv"),
-            str(common / "cdc/cdc_rst_ctrlr.sv"),
-            str(common / "cdc/cdc_2phase.sv"),
-            str(common / "clkrst/rst_sync.sv"),
-            str(common / "clkrst/clk_int_div.sv"),
-            str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
-            str(ROOT / "rtl/mini/top/axi4_downsizer_128to64.sv"),
-            str(ROOT / "rtl/mini/top/axi4_mmio_demux.sv"),
-            str(ROOT / "rtl/mini/top/axi4_downsizer_64to32.sv"),
-            str(ROOT / "rtl/mini/top/axi4_address_gate.sv"),
-            str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
-            str(ROOT / "rtl/mini/top/hp_core_wrapper.sv"),
-            "-f",
-            str(generated / "openc906.fl"),
-            str(ROOT / "tests/rtl/hp_c906_boot_tb.sv"),
-            "-Mdir",
-            str(tmp_path / "obj"),
-            "-o",
-            str(output),
-        ],
+        command,
         check=True,
         text=True,
         capture_output=True,
@@ -243,6 +262,16 @@ def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
     )
     result = subprocess.run([output], check=True, text=True, capture_output=True)
     assert "HP_C906_BOOT_TEST_PASS" in result.stdout
+
+
+def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
+    """Boot the real HP smoke payload on the hp_core_wrapper integration."""
+    _run_c906_boot_tb(tmp_path, sram_macros=False)
+
+
+def test_c906_boots_smoke_payload_with_ihp130_sram_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 SRAM wrappers on IHP130 macros."""
+    _run_c906_boot_tb(tmp_path, sram_macros=True)
 
 
 def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
