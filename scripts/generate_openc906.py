@@ -18,8 +18,16 @@ for their vendored counterparts:
   integration manual chapter 3 memory swap). Each override keeps the upstream
   behavioral ``aq_f_spsram_*`` instance by default and substitutes IHP130
   ``RM_IHPSG13_1P_*`` macro combinations (depth/width stacking per manual
-  section 3.1.5) only when the build defines ``PDK_IHP130`` and
+  section 3.1.5) or exact-geometry ICS55 ``ics55_ecos_sram_*`` macros only
+  when the build defines ``PDK_IHP130``/``PDK_ICS55`` and
   ``HAVE_SRAM_MACRO`` without ``PDK_BEHAV``.
+- ``gated_clk_cell.v`` / ``tdt_gated_clk_cell.v`` / ``BUFGCE.v``: the
+  clock-gating cells (manual chapter 3 ICG swap). Each override keeps the
+  upstream default (pass-through for the two ``*_gated_clk_cell`` wrappers,
+  behavioral latch gate for ``BUFGCE``) unless a PDK define is set without
+  ``PDK_BEHAV``, in which case the process ICG cell is instantiated
+  (``sg13g2_slgcp_1`` / ``ICGX1H7R`` / ``sky130_fd_sc_hd__sdlclkp_1`` /
+  ``gf180mcu_fd_sc_mcu7t5v0__icgtp_1``).
 
 All sources are concatenated into a single compilation unit
 (``openc906_combined.v``) because gen_rtl relies on header macros being
@@ -87,6 +95,18 @@ OVERRIDES = {
     "C906_RTL_FACTORY/gen_rtl/mmu/rtl/aq_spsram_64x98.v": (
         "aq_spsram_64x98.v",
         "99680fb11271eee6cfe6ff7aaa95cbdd04ef4f78d7b0e23a18c17ef064a8bedf",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/clk/rtl/gated_clk_cell.v": (
+        "gated_clk_cell.v",
+        "22a4a5f41c7733bd4935adc8a036870a110a8e2f2a70f1f3cf64476b7a49eb9e",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/tdt/rtl/common/tdt_gated_clk_cell.v": (
+        "tdt_gated_clk_cell.v",
+        "9c38f1d71a3aaa64e00d2aa7d5a43f5836080c604f245dd414a85935241d26bd",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/common/rtl/BUFGCE.v": (
+        "BUFGCE.v",
+        "b0907982b81c64494756d7f62a3a35bf961f6cbf7d54241460a476dde36a333a",
     ),
 }
 
