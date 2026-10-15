@@ -156,7 +156,13 @@ module hp_core_wrapper (
       .pad_tdt_dm_rvalid     (1'b0),
       .pad_tdt_dm_wready     (1'b0),
       .pad_yy_dft_clk_rst_b  (rst_n_i),
-      .pad_yy_icg_scan_en    (1'b0),
+      // Hold the ICG scan enable asserted while the core is in reset so the
+      // gated clocks stay transparent and every async-reset flop behind a
+      // clock gate still initializes on running-clock edges. Two-state
+      // simulators otherwise never apply a held async-reset level when the
+      // gate is closed (the DTM sleeps at boot and would hold hartreset
+      // low). Pass-through builds ignore SE, keeping them bit-identical.
+      .pad_yy_icg_scan_en    (!s_core_rst_b),
       .pad_yy_mbist_mode     (1'b0),
       .pad_yy_scan_enable    (1'b0),
       .pad_yy_scan_mode      (1'b0),
@@ -209,7 +215,10 @@ module hp_core_wrapper (
       .pad_tdt_dtm_tdi      (jtag_tdi_i),
       .pad_tdt_dtm_tms_i    (jtag_tms_i),
       .pad_tdt_dtm_trst_b   (jtag_trst_n_i),
-      .pad_tdt_icg_scan_en  (1'b0),
+      // Same ICG transparency while the DTM/APB reset is held (see the
+      // pad_yy_icg_scan_en note above); the debug module sleeps at boot and
+      // its async-reset flops still need clock edges to initialize.
+      .pad_tdt_icg_scan_en  (!s_sys_apb_rst_b),
       .pad_yy_scan_mode     (1'b0),
       .pad_yy_scan_rst_b    (1'b1),
       .sys_apb_clk          (s_sys_apb_clk),
