@@ -12,9 +12,13 @@
 // mask bits tied off so they are never written (manual section 3.1.5
 // stacking). With PDK_ICS55+HAVE_SRAM_MACRO and without PDK_BEHAV, the
 // exact-geometry ics55_ecos_sram_64x88_m4 macro replaces it directly
-// (identical active-low polarity, no stacking or padding). Every other
-// configuration keeps the upstream behavioral aq_f_spsram_64x88 instance
-// byte-identical. Keep in sync when the lock revision changes.
+// (identical active-low polarity, no stacking or padding). With
+// PDK_GF180+HAVE_SRAM_MACRO and without PDK_BEHAV, eleven GF180
+// gf180mcu_fd_ip_sram__sram64x8m8wm1 tiles width-stack it exactly (the
+// repo-owned functional models live in rtl/tech/gf180_sram_sim_cells.sv).
+// Every other configuration keeps the upstream behavioral
+// aq_f_spsram_64x88 instance byte-identical. Keep in sync when the lock
+// revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -91,6 +95,14 @@ parameter WE_WIDTH   = 88;
 `endif
 `endif
 
+`ifdef PDK_GF180
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_64X88_GF180_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_64X88_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -160,6 +172,42 @@ ics55_ecos_sram_64x88_m4  u_mem (
   .WEB  (WEN ),
   .Q    (Q   )
 );
+`elsif _AQ_SPSRAM_64X88_GF180_
+  //********************************************************
+  //*                GF180 SRAM macro                      *
+  //********************************************************
+// Eleven 64x8 tiles width-stack the 88-bit word exactly.
+`ifndef SYNTHESIS
+wire           s_vdd;
+wire           s_vss;
+
+assign s_vdd = 1'b1;
+assign s_vss = 1'b0;
+`endif
+wire   [87:0]  s_q;
+genvar         g_w;
+
+assign Q = s_q;
+
+generate
+  for (g_w = 0; g_w < 11; g_w = g_w + 1) begin : gen_width
+    gf180mcu_fd_ip_sram__sram64x8m8wm1  u_mem (
+      .CLK  (CLK              ),
+      .CEN  (CEN              ),
+      .GWEN (GWEN             ),
+      .WEN  (WEN[g_w*8 +: 8]  ),
+      .A    (A                ),
+      .D    (D[g_w*8 +: 8]    ),
+`ifndef SYNTHESIS
+      .Q    (s_q[g_w*8 +: 8]  ),
+      .VDD  (s_vdd            ),
+      .VSS  (s_vss            )
+`else
+      .Q    (s_q[g_w*8 +: 8]  )
+`endif
+    );
+  end
+endgenerate
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -183,6 +231,10 @@ aq_f_spsram_64x88  x_aq_f_spsram_64x88 (
 
 `ifdef _AQ_SPSRAM_64X88_ICS55_
 `undef _AQ_SPSRAM_64X88_ICS55_
+`endif
+
+`ifdef _AQ_SPSRAM_64X88_GF180_
+`undef _AQ_SPSRAM_64X88_GF180_
 `endif
 
 //   &Instance("aq_tsmc_spsram_64x88"); @50

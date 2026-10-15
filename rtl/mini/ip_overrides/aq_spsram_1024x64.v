@@ -11,7 +11,11 @@
 // stack: one macro holds the low 32 bits, the other the high 32 bits (manual
 // section 3.1.5 stacking). With PDK_ICS55+HAVE_SRAM_MACRO and without
 // PDK_BEHAV, the exact-geometry ics55_ecos_sram_1024x64_m8 macro replaces it
-// directly (identical active-low polarity, no stacking or padding). Every
+// directly (identical active-low polarity, no stacking or padding). With
+// PDK_GF180+HAVE_SRAM_MACRO and without PDK_BEHAV, GF180
+// gf180mcu_fd_ip_sram__sram512x8m8wm1 tiles build it (two deep selected by
+// A[9] with a registered read mux, times eight wide; the repo-owned
+// functional models live in rtl/tech/gf180_sram_sim_cells.sv). Every
 // other configuration keeps the upstream behavioral aq_f_spsram_1024x64
 // instance byte-identical. Keep in sync when the lock revision changes.
 
@@ -90,6 +94,14 @@ parameter WE_WIDTH   = 64;
 `endif
 `endif
 
+`ifdef PDK_GF180
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_1024X64_GF180_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_1024X64_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -156,6 +168,53 @@ ics55_ecos_sram_1024x64_m8  u_mem (
   .WEB  (WEN ),
   .Q    (Q   )
 );
+`elsif _AQ_SPSRAM_1024X64_GF180_
+  //********************************************************
+  //*                GF180 SRAM macro                      *
+  //********************************************************
+// Sixteen 512x8 tiles: two deep selected by A[9] with the bank select
+// registered on read transactions, times eight wide.
+`ifndef SYNTHESIS
+wire           s_vdd;
+wire           s_vss;
+
+assign s_vdd = 1'b1;
+assign s_vss = 1'b0;
+`endif
+wire   [127:0]  s_q;
+reg             s_rd_sel_q;
+genvar          g_d;
+genvar          g_w;
+
+always @(posedge CLK) begin
+  if (!CEN && GWEN) begin
+    s_rd_sel_q <= A[9];
+  end
+end
+
+assign Q = s_q[s_rd_sel_q*64 +: 64];
+
+generate
+  for (g_d = 0; g_d < 2; g_d = g_d + 1) begin : gen_depth
+    for (g_w = 0; g_w < 8; g_w = g_w + 1) begin : gen_width
+      gf180mcu_fd_ip_sram__sram512x8m8wm1  u_mem (
+        .CLK  (CLK                       ),
+        .CEN  (~(~CEN & (A[9] == g_d))   ),
+        .GWEN (GWEN                      ),
+        .WEN  (WEN[g_w*8 +: 8]           ),
+        .A    (A[8:0]                    ),
+        .D    (D[g_w*8 +: 8]             ),
+`ifndef SYNTHESIS
+        .Q    (s_q[g_d*64 + g_w*8 +: 8]  ),
+        .VDD  (s_vdd                     ),
+        .VSS  (s_vss                     )
+`else
+        .Q    (s_q[g_d*64 + g_w*8 +: 8]  )
+`endif
+      );
+    end
+  end
+endgenerate
 `else
 //  //********************************************************
 //  //*                        FPGA memory                   *
@@ -178,6 +237,10 @@ aq_f_spsram_1024x64  x_aq_f_spsram_1024x64 (
 
 `ifdef _AQ_SPSRAM_1024X64_ICS55_
 `undef _AQ_SPSRAM_1024X64_ICS55_
+`endif
+
+`ifdef _AQ_SPSRAM_1024X64_GF180_
+`undef _AQ_SPSRAM_1024X64_GF180_
 `endif
 
 //   &Instance("aq_umc_spsram_1024x64"); @49

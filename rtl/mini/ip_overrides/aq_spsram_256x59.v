@@ -14,9 +14,12 @@
 // (manual section 3.1.5 stacking). With PDK_ICS55+HAVE_SRAM_MACRO and
 // without PDK_BEHAV, the exact-geometry ics55_ecos_sram_256x59_m4 macro
 // replaces it directly (identical active-low polarity, no stacking or
-// padding). Every other configuration keeps the upstream behavioral
-// aq_f_spsram_256x59 instance byte-identical. Keep in sync when the lock
-// revision changes.
+// padding). With PDK_GF180+HAVE_SRAM_MACRO and without PDK_BEHAV, eight
+// GF180 gf180mcu_fd_ip_sram__sram256x8m8wm1 tiles width-stack it (the top
+// tile's upper 5 bits are tied inactive; the repo-owned functional models
+// live in rtl/tech/gf180_sram_sim_cells.sv). Every other configuration
+// keeps the upstream behavioral aq_f_spsram_256x59 instance byte-identical.
+// Keep in sync when the lock revision changes.
 
 /*Copyright 2020-2021 T-Head Semiconductor Co., Ltd.
 
@@ -93,6 +96,14 @@ parameter WE_WIDTH   = 59;
 `endif
 `endif
 
+`ifdef PDK_GF180
+`ifdef HAVE_SRAM_MACRO
+`ifndef PDK_BEHAV
+`define _AQ_SPSRAM_256X59_GF180_
+`endif
+`endif
+`endif
+
 `ifdef _AQ_SPSRAM_256X59_IHP130_
   //********************************************************
   //*                IHP130 SRAM macro                     *
@@ -157,6 +168,49 @@ ics55_ecos_sram_256x59_m4  u_mem (
   .WEB  (WEN ),
   .Q    (Q   )
 );
+`elsif _AQ_SPSRAM_256X59_GF180_
+  //********************************************************
+  //*                GF180 SRAM macro                      *
+  //********************************************************
+// Eight 256x8 tiles width-stack the 59-bit word; the top tile's upper 5
+// bits are tied inactive so they are never written.
+`ifndef SYNTHESIS
+wire           s_vdd;
+wire           s_vss;
+
+assign s_vdd = 1'b1;
+assign s_vss = 1'b0;
+`endif
+wire   [63:0]  s_din_ext;
+wire   [63:0]  s_wen_ext;
+wire   [63:0]  s_q;
+wire   [4:0]   s_q_unused;
+genvar         g_w;
+
+assign s_din_ext  = {5'b00000, D};
+assign s_wen_ext  = {5'b11111, WEN};
+assign Q          = s_q[58:0];
+assign s_q_unused = s_q[63:59];
+
+generate
+  for (g_w = 0; g_w < 8; g_w = g_w + 1) begin : gen_width
+    gf180mcu_fd_ip_sram__sram256x8m8wm1  u_mem (
+      .CLK  (CLK                    ),
+      .CEN  (CEN                    ),
+      .GWEN (GWEN                   ),
+      .WEN  (s_wen_ext[g_w*8 +: 8]  ),
+      .A    (A                      ),
+      .D    (s_din_ext[g_w*8 +: 8]  ),
+`ifndef SYNTHESIS
+      .Q    (s_q[g_w*8 +: 8]        ),
+      .VDD  (s_vdd                  ),
+      .VSS  (s_vss                  )
+`else
+      .Q    (s_q[g_w*8 +: 8]        )
+`endif
+    );
+  end
+endgenerate
 `else
   //********************************************************
   //*                        FPGA memory                   *
@@ -179,6 +233,10 @@ aq_f_spsram_256x59  x_aq_f_spsram_256x59 (
 
 `ifdef _AQ_SPSRAM_256X59_ICS55_
 `undef _AQ_SPSRAM_256X59_ICS55_
+`endif
+
+`ifdef _AQ_SPSRAM_256X59_GF180_
+`undef _AQ_SPSRAM_256X59_GF180_
 `endif
 
 //   &Instance("aq_tsmc_spsram_256x59"); @49
