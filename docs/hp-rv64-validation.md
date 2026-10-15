@@ -134,6 +134,23 @@ qualification. Current evidence requires, at minimum:
   to Icarus) passes on the ICS55 path as well, and the `ics55.mk` CI profile
   smoke simulation (`APP=ci_smoke`, Verilator) passes with the macro path
   compiled into the SoC.
+- The chapter 3 ICG swap is validated in simulation on all four PDKs: the
+  `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` overrides select
+  `sg13g2_slgcp_1` (IHP130), `ICGX1H7R` (ICS55, scan enable ORed into `E`),
+  `sky130_fd_sc_hd__sdlclkp_1` (SKY130), or
+  `gf180mcu_fd_sc_mcu7t5v0__icgtp_1` (GF180; repo-owned sim model in
+  `rtl/tech/gf180_seq_sim_cells.v` because the locked checkout never ships
+  the vendor latch UDP the cell model references) under a `PDK_*` define
+  without `PDK_BEHAV`. The vendored MEM_INTF `c906_icg_test_tb` gate sequence
+  passes on all four cell paths (Icarus adaptation; the pass-through default
+  fails it by design since it never gates). The focused boot testbench passes
+  with real clock gating for all four PDKs — the IHP130/ICS55 modes run SRAM
+  macros and ICG together, the SKY130/GF180 modes run ICG with behavioral
+  SRAMs. One integration fix was required for two-state simulators:
+  `hp_core_wrapper` asserts the C906/DTM ICG scan-enable while the core is
+  held in reset, so flops behind closed gates initialize on running-clock
+  edges (the DTM sleeps at boot and otherwise holds `hartreset_n` low);
+  pass-through modes ignore the scan-enable input and stay bit-identical.
 
 `hp-linux-sim` was run with a bounded wall-clock budget this round and its
 current frontier is recorded above; the synthesis-dependent gates remain
@@ -147,17 +164,20 @@ evidence: `make CONFIG=configs/ci/ihp130-hp.mk PDK_BEHAV=NO SIMU=VERILATOR
 hp-smoke-sim` builds the whole SoC (C906 `aq_spsram_*` wrappers and
 `tc_sram`) on the IHP130 macro models and passes with
 `SIM_TEST_PASS code=0` plus the `HP_LINUX_READY`/`HP_GA2D_PASS`/
-`HP_GA2D_CACHE_CLEAN` markers. The same SoC smoke passes on the ICS55 macro
-path (`PDK=ICS55 PDK_BEHAV=NO`, 3.64M cycles, `SIM_TEST_PASS code=0` with the
-full GA2D cache-lifecycle marker sequence); the default 300 s
+`HP_GA2D_CACHE_CLEAN` markers; with the ICG overrides the same run also
+exercises the real `sg13g2_slgcp_1` clock gates. The same SoC smoke passes on
+the ICS55 macro+ICG path (`PDK=ICS55 PDK_BEHAV=NO`, 3.64M cycles,
+`SIM_TEST_PASS code=0` with the full GA2D cache-lifecycle marker sequence),
+and the `sky130.mk` and `gf180.mk` CI profile smokes (`APP=ci_smoke`,
+Verilator) pass with the `sky130_fd_sc_hd__sdlclkp_1` /
+`gf180mcu_fd_sc_mcu7t5v0__icgtp_1` ICG compiled in. The default 300 s
 `HP_SMOKE_SIM_TIME` is only enough when the run is uncontended, and the bare
 `ics55.mk` profile-default `sim` (no fast-flash) exceeds its 180 s default
-budget in this environment, so both were run with the CI-sized time budgets.
+budget in this environment, so these were run with CI-sized time budgets.
 All stay required evidence for qualification.
 
 Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
-(scan/mbist tied off), the debug SBA AXI master (unconnected), the chapter 3
-ICG (`gated_clk_cell`) replacement, and HP Linux
+(scan/mbist tied off), the debug SBA AXI master (unconnected), and HP Linux
 re-qualification timing/performance evidence. The repo-owned OpenSBI platform
 registers `fdt_irqchip_init` (v1.9 supports the `thead,c900-plic` match with
 T-Head delegation fixups), so the C906-internal PLIC is initialized by

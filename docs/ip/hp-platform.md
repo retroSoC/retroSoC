@@ -82,10 +82,38 @@ off as in `tc_sram.sv`.
 Every other configuration — including the committed `PDK_BEHAV=YES` CI
 profiles — compiles the upstream behavioral `aq_f_spsram_*` instance
 byte-identically.
+
+The chapter 3 ICG swap is implemented alongside: `gated_clk_cell.v` (the 216
+CPU clock gates), `tdt_gated_clk_cell.v` (the debug module gate), and
+`BUFGCE.v` (the PLIC/CLINT divide-by-2 gate in `aq_mp_clk_top.v`) have
+reviewed overrides in `rtl/mini/ip_overrides/`. With a PDK define and without
+`PDK_BEHAV` — no `HAVE_SRAM_MACRO` knob, the ICG is a base cell — each
+override instantiates the process clock-gating cell:
+
+| PDK | ICG cell | Enable/scan mapping |
+| --- | --- | --- |
+| IHP130 | `sg13g2_slgcp_1` | `GATE`=enable, `SCE`=scan enable |
+| ICS55 | `ICGX1H7R` | no test-enable pin: scan enable ORed into `E` |
+| SKY130 | `sky130_fd_sc_hd__sdlclkp_1` | `GATE`=enable, `SCE`=scan enable |
+| GF180 | `gf180mcu_fd_sc_mcu7t5v0__icgtp_1` | `E`=enable, `TE`=scan enable |
+
+`BUFGCE` has no scan enable upstream, so SCE/TE tie off there. The GF180
+vendor model cannot elaborate (its UDP latch primitive is not shipped in the
+locked checkout), so its simulation model is repo-owned in
+`rtl/tech/gf180_seq_sim_cells.v`, following the existing `dffq` precedent.
+Because two-state simulators only apply an async-reset flop's reset value on
+a real reset edge, `hp_core_wrapper` asserts `pad_yy_icg_scan_en`/
+`pad_tdt_icg_scan_en` while the core/DTM is held in reset, keeping the gated
+clocks transparent so flops behind closed gates initialize (the DTM sleeps at
+boot and would otherwise hold `hartreset_n` low forever). `PDK_BEHAV` and
+PDK-less builds keep the upstream defaults byte-identical (pass-through for
+the two `*_gated_clk_cell`, the behavioral latch gate for `BUFGCE`), and
+pass-through ignores the scan-enable input entirely.
 Deferred this phase: low-power support
 (`core0_pad_lpmd_b` unconnected), DFT (scan/mbist tied off), the debug SBA AXI
-master (unconnected), the chapter 3 ICG (`gated_clk_cell`) replacement,
-physical/LEC qualification of the macro path (synthesis mapping, STA), and
+master (unconnected),
+physical/LEC qualification of the macro and ICG paths (synthesis mapping,
+STA), and
 HP Linux re-qualification timing/performance evidence.
 
 ### Boot bundle V2

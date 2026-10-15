@@ -19,11 +19,15 @@ SYSCTRL lifecycle signals. `make setup-openc906` (part of `make setup`)
 restores the locked checkout and `make openc906-prepare` emits the generated
 filelist and manifest below `build/<variant>/generated/openc906/`; the OpenC906
 sources are an external lint boundary. The reviewed hart-ID, sysmap
-address-attribute, and SRAM wrapper overrides live in `rtl/mini/ip_overrides/`
+address-attribute, SRAM wrapper, and clock-gate (ICG) overrides live in
+`rtl/mini/ip_overrides/`
 (the `aq_spsram_*.v` overrides implement the integration manual chapter 3
 memory swap and select IHP130 `RM_IHPSG13_1P_*` or exact-geometry ICS55
 `ics55_ecos_sram_*` macros only under `PDK_IHP130`/`PDK_ICS55` +
-`HAVE_SRAM_MACRO` without `PDK_BEHAV`) and are applied
+`HAVE_SRAM_MACRO` without `PDK_BEHAV`; the `gated_clk_cell.v`,
+`tdt_gated_clk_cell.v`, and `BUFGCE.v` overrides implement the chapter 3 ICG
+swap and select the process clock-gating cell under a `PDK_*` define without
+`PDK_BEHAV`) and are applied
 by filelist generation, never by editing the vendored checkout. The former
 VexiiRiscv HP generator is preserved
 only as the frozen Std-series asset (`make std-vexii-generate`). See

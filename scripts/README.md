@@ -130,10 +130,12 @@ source used by Mini product profiles and verifies the checked-out revision;
 the vendored checkout is never modified. `generate_openc906.py` resolves the
 upstream `C906_RTL_FACTORY/gen_rtl` filelists from that checkout, substitutes
 the reviewed overrides from `rtl/mini/ip_overrides/` (the hart-1
-`aq_sysio_kid.v`, the strong-order MMIO-window `sysmap.h`, and the eight
+`aq_sysio_kid.v`, the strong-order MMIO-window `sysmap.h`, the eight
 `aq_spsram_*.v` SRAM wrappers whose PDK-selectable macro path — stacked
 IHP130 `RM_IHPSG13_1P_*` or exact-geometry ICS55 `ics55_ecos_sram_*` — is
-gated on `PDK_IHP130`/`PDK_ICS55`+`HAVE_SRAM_MACRO` without `PDK_BEHAV`,
+gated on `PDK_IHP130`/`PDK_ICS55`+`HAVE_SRAM_MACRO` without `PDK_BEHAV`, and
+the `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` clock-gate overrides
+that select the process ICG cell under a `PDK_*` define without `PDK_BEHAV`),
 each pinned to
 the upstream file's SHA-256 so a locked-revision move forces review), and
 emits the single compilation unit `openc906_combined.v` below `build/`;
