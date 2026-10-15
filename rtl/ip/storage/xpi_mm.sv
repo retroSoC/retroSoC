@@ -83,6 +83,7 @@ module xpi_mm (
   logic [1:0] s_resp_d, s_resp_q;
   logic [31:0] s_rdata_d, s_rdata_q;
   logic s_rvalid_d, s_rvalid_q;
+  logic s_word_complete_d, s_word_complete_q;
   logic [2:0] s_byte_idx_d, s_byte_idx_q;
   logic [6:0] s_cursor_d, s_cursor_q;
   logic [6:0] s_run_end_d, s_run_end_q;
@@ -198,7 +199,7 @@ module xpi_mm (
       axi4.awburst, axi4.awlen
   ) && !axi4.awlock && (axi4.awsize <= `AXI4_BURST_SIZE_4BYTES) &&
       ((axi4.awaddr & ((32'd1 << axi4.awsize) - 1'b1)) == 32'd0) &&
-      (axi4.awaddr[31:12] == s_write_last_addr[31:12]);
+      (axi4.awaddr[31:12] == s_write_last_addr[31:12]) && s_write_boundary_ok;
 
   assign s_legal_read = address_supported(
       axi4.araddr
@@ -216,7 +217,7 @@ module xpi_mm (
       axi4.arburst, axi4.arlen
   ) && !axi4.arlock && (axi4.arsize <= `AXI4_BURST_SIZE_4BYTES) &&
       ((axi4.araddr & ((32'd1 << axi4.arsize) - 1'b1)) == 32'd0) &&
-      (axi4.araddr[31:12] == s_read_last_addr[31:12]);
+      (axi4.araddr[31:12] == s_read_last_addr[31:12]) && s_read_boundary_ok;
 
   assign axi4.awready = (s_state_q == Idle) && accept_enable_i && !axi4.arvalid;
   assign axi4.arready = (s_state_q == Idle) && accept_enable_i;
@@ -247,7 +248,7 @@ module xpi_mm (
                            (16'd1 << s_size_q));
 
   assign core_tx_valid_o = s_state_q == WriteStream;
-  assign core_rx_ready_o = (s_state_q == ReadData) && !s_rvalid_q;
+  assign core_rx_ready_o = (s_state_q == ReadData) && !s_word_complete_q;
   assign core_tx_data_o = s_write_buffer_q[s_tx_beat][(s_tx_lane*8)+:8];
 
   assign s_err_code_q = xpi_error_e'(s_err_code_bits_q);
@@ -306,8 +307,13 @@ module xpi_mm (
   end
 
   always_comb begin
-    s_write_lane_mask = (4'd1 << s_size_q) - 1'b1;
-    s_read_lane       = {1'b0, s_addr_q[1:0]} + s_byte_idx_q;
+    unique case (s_size_q)
+      3'd0:    s_write_lane_mask = 4'b0001;
+      3'd1:    s_write_lane_mask = 4'b0011;
+      3'd2:    s_write_lane_mask = 4'b1111;
+      default: s_write_lane_mask = 4'b0000;
+    endcase
+    s_read_lane = {1'b0, s_addr_q[1:0]} + s_byte_idx_q;
   end
 
   for (genvar write_index = 0; write_index < 16; write_index++) begin : write_buffer_block
@@ -339,6 +345,7 @@ module xpi_mm (
     s_resp_d                = s_resp_q;
     s_rdata_d               = s_rdata_q;
     s_rvalid_d              = s_rvalid_q;
+    s_word_complete_d       = s_word_complete_q;
     s_byte_idx_d            = s_byte_idx_q;
     s_cursor_d              = s_cursor_q;
     s_run_end_d             = s_run_end_q;
@@ -362,6 +369,7 @@ module xpi_mm (
         s_resp_d            = `AXI4_RESP_OKAY;
         s_rdata_d           = '0;
         s_rvalid_d          = 1'b0;
+        s_word_complete_d   = 1'b0;
         s_byte_idx_d        = '0;
         s_cursor_d          = '0;
         s_frame_done_d      = 1'b0;
@@ -423,37 +431,45 @@ module xpi_mm (
           s_rdata_d[(s_read_lane*8)+:8] = core_rx_data_i;
           perf_read_byte_event_o        = 1'b1;
           if (s_byte_idx_q == ((3'd1 << s_size_q) - 1'b1)) begin
-            s_byte_idx_d = '0;
-            s_rvalid_d   = 1'b1;
+            s_byte_idx_d      = '0;
+            s_word_complete_d = 1'b1;
+            // Hold the physical command's last beat until STOP/CS completion
+            // so a late sequence error cannot follow a successful AXI end.
+            s_rvalid_d        = s_coalesce_q && (s_beat_q != s_len_q);
           end else begin
             s_byte_idx_d = s_byte_idx_q + 1'b1;
           end
         end
         if (core_done_i) begin
           s_frame_done_d = 1'b1;
-          if (core_error_i) begin
-            s_resp_d            = `AXI4_RESP_SLAVE_ERROR;
+          if (core_error_i || !s_word_complete_q || (s_coalesce_q && (s_beat_q != s_len_q))) begin
             s_transaction_err_d = 1'b1;
-            s_err_code_d        = core_error_code_i;
+            s_err_code_d        = core_error_i ? core_error_code_i : XpiErrorSequence;
             s_err_addr_d        = s_addr_q;
             s_err_slot_d        = s_slot_q;
             s_err_pc_d          = core_error_pc_i;
             axi_error_event_o   = 1'b1;
             if (!s_rvalid_q) begin
-              s_rdata_d  = '0;
-              s_rvalid_d = 1'b1;
+              s_resp_d          = `AXI4_RESP_SLAVE_ERROR;
+              s_rdata_d         = '0;
+              s_rvalid_d        = 1'b1;
+              s_word_complete_d = 1'b1;
             end
+          end else begin
+            s_rvalid_d = 1'b1;
           end
         end
         if (s_rvalid_q && axi4.rready) begin
-          s_rvalid_d = 1'b0;
-          s_rdata_d  = '0;
+          s_rvalid_d        = 1'b0;
+          s_word_complete_d = 1'b0;
+          s_rdata_d         = '0;
           if (s_beat_q == s_len_q) begin
             s_state_d = (s_frame_done_q || core_done_i) ? Idle : ReadFinish;
           end else begin
             s_addr_d = s_next_addr;
             s_beat_d = s_beat_q + 1'b1;
-            if (s_transaction_err_q || core_error_i) begin
+            if (s_transaction_err_d) begin
+              s_resp_d  = `AXI4_RESP_SLAVE_ERROR;
               s_state_d = ReadErrorResponse;
             end else if (s_coalesce_q) begin
               s_state_d = ReadData;
@@ -516,10 +532,12 @@ module xpi_mm (
             axi_error_event_o = 1'b1;
             s_state_d         = axi4.wlast ? WriteResponse : WriteDrain;
           end else if (s_beat_q == s_len_q) begin
+            s_addr_d   = s_start_addr_q;
             s_beat_d   = '0;
             s_cursor_d = '0;
             s_state_d  = WriteScan;
           end else begin
+            s_addr_d = s_next_addr;
             s_beat_d = s_beat_q + 1'b1;
           end
         end
@@ -549,7 +567,17 @@ module xpi_mm (
       end
 
       WriteStream: begin
-        if (core_tx_valid_o && core_tx_ready_i) begin
+        // The core can time out or abort before consuming all buffered bytes.
+        // AXI W is already drained; complete B rather than wait for a dead core.
+        if (core_done_i) begin
+          s_resp_d          = `AXI4_RESP_SLAVE_ERROR;
+          s_err_code_d      = core_error_i ? core_error_code_i : XpiErrorSequence;
+          s_err_addr_d      = s_addr_q;
+          s_err_slot_d      = s_slot_q;
+          s_err_pc_d        = core_error_pc_i;
+          axi_error_event_o = 1'b1;
+          s_state_d         = WriteResponse;
+        end else if (core_tx_valid_o && core_tx_ready_i) begin
           perf_write_byte_event_o = 1'b1;
           s_cursor_d              = s_cursor_q + 1'b1;
           if ((s_cursor_q + 1'b1) >= s_run_end_q) begin
@@ -608,6 +636,14 @@ module xpi_mm (
       .rst_n_i(rst_n_i),
       .dat_i  (s_state_d),
       .dat_o  (s_state_bits_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_word_complete_dffr (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_word_complete_d),
+      .dat_o  (s_word_complete_q)
   );
   dffr #(
       .DATA_WIDTH(32)

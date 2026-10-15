@@ -225,7 +225,8 @@ def generate_filelists(output: Path, generated: Path, defines: list[str],
     prefixes = {"top": TINY / "top", "dv": TINY / "dv", "ip": ROOT / "rtl/ip",
                 "tech": ROOT / "rtl/tech", "clusterip": ROOT / "rtl/managed/clusterip",
                 "hazard3": ROOT / "rtl/managed/hazard3/hdl", "physical": ROOT / "physical",
-                "cache": ROOT / ".cache", "tests": ROOT / "tests"}
+                "cache": ROOT / ".cache", "tests": ROOT / "tests",
+                "device_model": ROOT / "rtl/model"}
     suffix = "_yosys" if synthesis == "YOSYS" else "_verilator" if simulator == "VERILATOR" else ""
     pdk_name = "pdk_ihp130.fl" if pdk == "IHP130" else f"pdk_ics55{suffix}.fl"
     templates = [*sorted((TINY / "filelist").glob("*.fl")),

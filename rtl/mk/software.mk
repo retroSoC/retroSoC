@@ -168,6 +168,8 @@ CRT_SRCS := $(ROOT_PATH)/crt/arch/riscv/startup.S \
             $(ROOT_PATH)/crt/src/hal/spisd_math.c \
             $(ROOT_PATH)/crt/src/hal/spisd.c \
             $(ROOT_PATH)/crt/src/hal/xpi.c \
+            $(ROOT_PATH)/crt/src/hal/xpi_psram_math.c \
+            $(ROOT_PATH)/crt/src/hal/xpi_psram.c \
             $(ROOT_PATH)/crt/src/hal/fabric_monitor.c \
             $(ROOT_PATH)/crt/src/hal/resource.c \
             $(ROOT_PATH)/crt/src/hal/extension.c \
@@ -180,7 +182,7 @@ CFLAGS         += -DRS_SOC_TINY
 TINY_CRT_NAMES := startup.S clzsi2.c divdi3.c ffssi2.c udivdi3.c umoddi3.c \
     stdlib.c string.c console.c printf.c archinfo.c clint.c uart_math.c uart.c \
     gpio_math.c gpio.c timer_math.c timer.c pwm.c rtc.c wdg.c watchdog.c i2c_math.c i2c.c \
-    dma_math.c dma.c onchip_sram.c xpi.c rng.c crc.c ws2812_math.c ws2812.c \
+    dma_math.c dma.c onchip_sram.c xpi.c xpi_psram.c xpi_psram_math.c rng.c crc.c ws2812_math.c ws2812.c \
     crypto.c crypto_lifecycle.c i2s_math.c i2s.c sdio_math.c sdio.c rcu.c
 CRT_SRCS       := $(foreach source,$(CRT_SRCS),$(if $(filter $(notdir $(source)),$(TINY_CRT_NAMES)),$(source)))
 CRT_SRCS       += $(ROOT_PATH)/crt/src/hal/sysctrl.c

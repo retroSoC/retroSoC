@@ -86,6 +86,7 @@ SW_OPT               ?= APP
 SW_LTO               ?= NO
 WS2812_P3_ACCEPTANCE ?= NO
 TINY_P7_ACCEPTANCE   ?= NO
+TINY_P8_ACCEPTANCE   ?= NO
 COREMARK_MODE        ?= quick
 NPU_P5_ACCEPTANCE    ?= NO
 NPU_P6_ACCEPTANCE    ?= NO
@@ -130,6 +131,9 @@ CONFIG_KEY_VARS += WS2812_P3_ACCEPTANCE
 endif
 ifeq ($(TINY_P7_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_P7_ACCEPTANCE
+endif
+ifeq ($(TINY_P8_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P8_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -292,6 +296,12 @@ $(call validate_value,SW_OPT,APP O2 O3 Os)
 $(call validate_value,SW_LTO,$(VALID_BOOL))
 $(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P7_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P8_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(TINY_P8_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE),TINY/ci_smoke/YES/NO)
+$(error TINY_P8_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES TINY_P7_ACCEPTANCE=NO)
+endif
+endif
 ifeq ($(TINY_P7_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR),TINY/ci_smoke/YES)
 $(error TINY_P7_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES)

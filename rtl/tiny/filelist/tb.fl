@@ -1,3 +1,4 @@
 /dv/tiny_qspi_nor.sv
+/device_model/ESP_PSRAM64H.sv
 /tests/rtl/sdio_native_model.sv
 /dv/retrosoc_tiny_tb.sv

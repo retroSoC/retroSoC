@@ -49,6 +49,9 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     for source in resolved.files:
         assert "/rtl/mini/" not in str(source)
         assert not any(token in source.name.lower() for token in ("rib", "vexii", "radio"))
+    devices = parse_filelists([filelists / "tb.fl"])
+    assert ROOT / "rtl/model/ESP_PSRAM64H.sv" in devices.files
+    assert all("/rtl/mini/" not in str(source) for source in devices.files)
     rtl = (output / "memory_map/rtl/mmap_define.svh").read_text()
     sdk = (output / "memory_map/include/retrosoc/generated/memory_map.h").read_text()
     assert "RIB" not in rtl

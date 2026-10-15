@@ -59,7 +59,7 @@ def test_psram_controller_data_integrity_and_fault_isolation(tmp_path: Path) -> 
             str(ROOT / "rtl/ip/memory/psram_phy.sv"),
             str(ROOT / "rtl/ip/memory/psram_reg.sv"),
             str(ROOT / "rtl/ip/memory/apb4_psram.sv"),
-            str(ROOT / "rtl/mini/dv/model/ESP_PSRAM64H.sv"),
+            str(ROOT / "rtl/model/ESP_PSRAM64H.sv"),
             str(ROOT / "tests/rtl/psram_tb.sv"),
             "-Mdir",
             str(tmp_path / "obj"),

@@ -25,6 +25,7 @@
 #include <retrosoc/hal/memory.h>
 #include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/psram.h>
+#include <retrosoc/hal/xpi_psram.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sdio.h>
@@ -636,6 +637,36 @@ static int test_sdram_helpers(void) {
         return 2;
     }
     return 0;
+}
+
+static int test_xpi_psram_helpers(void) {
+    rs_xpi_slot_config_t config;
+    rs_xpi_psram_t device = {.initialized = true, .capacity_bytes = RS_XPI_PSRAM_BYTES};
+    const uint32_t rates[] = {24000000U, 48000000U, 96000000U, 120000000U};
+    for (uint32_t i = 0U; i < 4U; i++) {
+        if (rs_xpi_psram_timing(rates[i], &config) != RS_OK || config.memory_write_enable ||
+            config.memory_read_enable || config.device_size != RS_XPI_PSRAM_BYTES ||
+            config.timeout_cycles >= rates[i] / 125000U || config.burst_boundary != 1024U ||
+            (uint64_t)config.cs_high_cycles * 1000000000U < (uint64_t)rates[i] * 50U) {
+            return 1;
+        }
+    }
+    if (rs_xpi_psram_timing(UINT32_MAX, &config) != RS_EINVAL ||
+        rs_xpi_psram_timing(24000000U, NULL) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, RS_XPI_PSRAM_BASE, RS_XPI_PSRAM_BYTES, 4U) != RS_OK ||
+        rs_xpi_psram_validate_dma(&device, 0x54000c00U, 1024U, 4U) != RS_OK ||
+        rs_xpi_psram_validate_dma(&device, 0x547ffffcU, 4U, 1U) != RS_OK ||
+        rs_xpi_psram_validate_dma(&device, 0x547ffffcU, 8U, 1U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, 0x540003f4U, 64U, 4U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, 0x54000ff4U, 16U, 4U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, 0x540003fcU, 64U, 4U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, RS_XPI_PSRAM_BASE, UINT32_MAX, 4U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, RS_XPI_PSRAM_BASE, 64U, 16U) != RS_EINVAL ||
+        rs_xpi_psram_validate_dma(&device, RS_XPI_PSRAM_BASE, 0U, 4U) != RS_EINVAL) {
+        return 2;
+    }
+    device.initialized = false;
+    return rs_xpi_psram_validate_dma(&device, RS_XPI_PSRAM_BASE, 4U, 1U) == RS_ENOTSUP ? 0 : 3;
 }
 
 static int test_psram_helpers(void) {
@@ -3193,13 +3224,11 @@ static int test_tiny_rcu_boundaries(void) {
         rs_tiny_rcu_get_snapshot(NULL) != RS_EINVAL ||
         rs_tiny_rcu_get_snapshot(&snapshot) != RS_OK || snapshot.xin_hz != hz ||
         rs_tiny_rcu_set_clkout(5U, 1U) != RS_EINVAL ||
-        rs_tiny_rcu_set_clkout(1U, 0U) != RS_EINVAL ||
-        rs_tiny_rcu_clear_fault(32U) != RS_EINVAL ||
+        rs_tiny_rcu_set_clkout(1U, 0U) != RS_EINVAL || rs_tiny_rcu_clear_fault(32U) != RS_EINVAL ||
         rs_tiny_rcu_clear_reset_cause(64U) != RS_EINVAL) {
         return 6;
     }
-    if (rs_tiny_rcu_set_clkout(1U, 1U) != RS_OK ||
-        rs_tiny_rcu_set_clkout(1U, 2U) != RS_EBUSY ||
+    if (rs_tiny_rcu_set_clkout(1U, 1U) != RS_OK || rs_tiny_rcu_set_clkout(1U, 2U) != RS_EBUSY ||
         rs_tiny_rcu_set_clkout(0U, 0U) != RS_OK) {
         return 7;
     }
@@ -3222,6 +3251,7 @@ int main(void) {
         test_ws2812_completion_race(),
         test_timer_helpers(),
         test_psram_helpers(),
+        test_xpi_psram_helpers(),
         test_sdram_helpers(),
         test_uart_helpers(),
         test_i2s_helpers(),

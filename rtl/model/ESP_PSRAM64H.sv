@@ -8,7 +8,7 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 //
-// Behavioral model for the external ESP-PSRAM64H 64-Mbit PSRAM.
+// Shared behavioral model for the external ESP-PSRAM64H 64-Mbit PSRAM.
 // Only SDR SPI and QPI transactions are modeled.  The model intentionally
 // does not initialize the memory array unless INITIALIZE_MEMORY is enabled.
 

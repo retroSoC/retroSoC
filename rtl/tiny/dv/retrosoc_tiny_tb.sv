@@ -23,13 +23,28 @@ module retrosoc_tiny_tb;
   wire  s_jtag_trst_n = s_rst_n;
   wire  s_jtag_tdo;
   `include "tiny_tb_gpio.svh"
-  wire          s_xpi_sck;
-  wire    [3:0] s_xpi_nss;
-  tri     [3:0] s_xpi_data;
-  integer       s_cycles;
+  wire s_xpi_sck;
+  wire [3:0] s_xpi_nss;
+  tri1 [3:0] s_xpi_data;
+  // Optional board population; the unchanged default has no PSRAM dependency.
+  wire s_psram_csn = ($test$plusargs(
+      "tiny_p8_psram"
+  ) && !$test$plusargs(
+      "p8_absent"
+  )) ? s_gpio[29] : 1'b1;
+  ESP_PSRAM64H #(
+      .TIMING_VIOLATION_FATAL(1),
+      .MIN_CS_HIGH_NS        (50)
+  ) u_psram (
+      .sclk(s_xpi_sck),
+      .csn (s_psram_csn),
+      .sio (s_xpi_data)
+  );
+  integer s_cycles;
 `ifndef RETROSOC_SOC__TINY_NETLIST
   `include "tiny_p6_devices.svh"
   `include "tiny_p7_observers.svh"
+  `include "tiny_p8_observers.svh"
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
