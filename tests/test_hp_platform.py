@@ -263,14 +263,18 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: str | None) -> None:
         macro_models = [sdlclkp_dir / "sky130_fd_sc_hd__sdlclkp_1.v"]
         macro_incdirs = [sdlclkp_dir]
     elif sram_macros == "gf180":
-        # ICG-only path: PDK_GF180 without PDK_BEHAV selects
-        # gf180mcu_fd_sc_mcu7t5v0__icgtp_1; the SRAM wrappers stay
-        # behavioral. The sim model is repo-owned (rtl/tech/
-        # gf180_seq_sim_cells.v) because the vendor icgtp functional model
-        # references a UDP primitive that the locked GF180 checkout does not
-        # ship.
+        # GF180 macro path: PDK_GF180+HAVE_SRAM_MACRO without PDK_BEHAV
+        # selects the gf180mcu_fd_ip_sram__sram*x8m8wm1 tiles for the SRAM
+        # wrappers and gf180mcu_fd_sc_mcu7t5v0__icgtp_1 for the ICG cells.
+        # Both sim models are repo-owned (rtl/tech/gf180_*_sim_cells.*): the
+        # vendor icgtp functional model references a UDP primitive that the
+        # locked GF180 checkout does not ship, and the vendor SRAM verilog is
+        # timing-only.
         macro_defines = ["+define+PDK_GF180", "+define+HAVE_SRAM_MACRO"]
-        macro_models = [ROOT / "rtl/tech/gf180_seq_sim_cells.v"]
+        macro_models = [
+            ROOT / "rtl/tech/gf180_seq_sim_cells.v",
+            ROOT / "rtl/tech/gf180_sram_sim_cells.sv",
+        ]
         macro_incdirs = []
     else:
         macro_defines = []
@@ -339,8 +343,8 @@ def test_c906_boots_smoke_payload_with_sky130_icg(tmp_path: Path) -> None:
     _run_c906_boot_tb(tmp_path, sram_macros="sky130")
 
 
-def test_c906_boots_smoke_payload_with_gf180_icg(tmp_path: Path) -> None:
-    """Boot the same payload with the C906 clock gates on GF180 ICG cells."""
+def test_c906_boots_smoke_payload_with_gf180_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 on GF180 SRAM macros + ICG cells."""
     _run_c906_boot_tb(tmp_path, sram_macros="gf180")
 
 
