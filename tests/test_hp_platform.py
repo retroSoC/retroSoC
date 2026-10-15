@@ -209,24 +209,28 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: str | None) -> None:
         "-I" + str(ROOT / "rtl/mini/top"),
         f"+define+HP_SMOKE_HEX=\"{hex_image}\"",
     ]
+    macro_incdirs: list[Path] = []
     if sram_macros == "ihp130":
         # IHP130 macro path for the eight C906 SRAM wrappers (integration
         # manual chapter 3): the override files select RM_IHPSG13_1P_* macros
         # when PDK_IHP130+HAVE_SRAM_MACRO are defined without PDK_BEHAV, and
-        # FUNCTIONAL puts the macro models in zero-delay functional mode.
-        sram_verilog = (
-            ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog"
-        )
+        # FUNCTIONAL puts the macro models in zero-delay functional mode. The
+        # ICG overrides select sg13g2_slgcp_1, which needs the standard-cell
+        # and UDP model files (mirrors pdk_ihp130.fl).
+        ihp130 = ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref"
         macro_defines = ["+define+PDK_IHP130", "+define+HAVE_SRAM_MACRO", "+define+FUNCTIONAL"]
         macro_models = [
-            sram_verilog / "RM_IHPSG13_1P_core_behavioral_bm_bist.v",
-            sram_verilog / "RM_IHPSG13_1P_1024x32_c2_bm_bist.v",
-            sram_verilog / "RM_IHPSG13_1P_64x64_c2_bm_bist.v",
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_1024x32_c2_bm_bist.v",
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v",
+            ihp130 / "sg13g2_stdcell/verilog/sg13g2_udp.v",
+            ihp130 / "sg13g2_stdcell/verilog/sg13g2_stdcell.v",
         ]
     elif sram_macros == "ics55":
         # ICS55 macro path: the override files select the exact-geometry
         # ics55_ecos_sram_* macros when PDK_ICS55+HAVE_SRAM_MACRO are defined
-        # without PDK_BEHAV; these models need no FUNCTIONAL define.
+        # without PDK_BEHAV; the ICG overrides select ICGX1H7R from the H7CR
+        # functional cell models. Mirrors pdk_ics55.fl (+define+functional).
         ics55_names = (
             "ics55_ecos_sram_1024x16_m8",
             "ics55_ecos_sram_2048x32_m8",
@@ -237,17 +241,45 @@ def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: str | None) -> None:
             "ics55_ecos_sram_64x88_m4",
             "ics55_ecos_sram_64x98_m4",
         )
-        macro_defines = ["+define+PDK_ICS55", "+define+HAVE_SRAM_MACRO"]
+        macro_defines = ["+define+PDK_ICS55", "+define+HAVE_SRAM_MACRO", "+define+functional"]
         macro_models = [
-            ROOT / ".cache/retrosoc/pdk/ics55/sram" / name / "verilog" / f"{name}_core.v"
-            for name in ics55_names
+            ROOT / ".cache/retrosoc/pdk/ics55/ics55_h7cr_functional.v",
+            *(
+                ROOT / ".cache/retrosoc/pdk/ics55/sram" / name / "verilog" / f"{name}_core.v"
+                for name in ics55_names
+            ),
         ]
+    elif sram_macros == "sky130":
+        # ICG-only path (manual chapter 3): PDK_SKY130 without PDK_BEHAV
+        # selects sky130_fd_sc_hd__sdlclkp_1 for the clock-gating cells; the
+        # SRAM wrappers have no SKY130 branch and stay behavioral. Mirrors
+        # pdk_sky130.fl (+define+FUNCTIONAL); the cell dir incdir resolves
+        # the wrapper's `include chain (base module and UDP model).
+        sdlclkp_dir = (
+            ROOT / "physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest"
+            / "cells/sdlclkp"
+        )
+        macro_defines = ["+define+PDK_SKY130", "+define+HAVE_SRAM_MACRO", "+define+FUNCTIONAL"]
+        macro_models = [sdlclkp_dir / "sky130_fd_sc_hd__sdlclkp_1.v"]
+        macro_incdirs = [sdlclkp_dir]
+    elif sram_macros == "gf180":
+        # ICG-only path: PDK_GF180 without PDK_BEHAV selects
+        # gf180mcu_fd_sc_mcu7t5v0__icgtp_1; the SRAM wrappers stay
+        # behavioral. The sim model is repo-owned (rtl/tech/
+        # gf180_seq_sim_cells.v) because the vendor icgtp functional model
+        # references a UDP primitive that the locked GF180 checkout does not
+        # ship.
+        macro_defines = ["+define+PDK_GF180", "+define+HAVE_SRAM_MACRO"]
+        macro_models = [ROOT / "rtl/tech/gf180_seq_sim_cells.v"]
+        macro_incdirs = []
     else:
         macro_defines = []
         macro_models = []
+        macro_incdirs = []
     if any(not model.is_file() for model in macro_models):
         return
     command += [*macro_defines, *(str(model) for model in macro_models)]
+    command += ["-I" + str(incdir) for incdir in macro_incdirs]
     command += [
         str(common / "interface/axi4_if.sv"),
         str(common / "interface/axi4_addr_gen.sv"),
@@ -300,6 +332,16 @@ def test_c906_boots_smoke_payload_with_ihp130_sram_macros(tmp_path: Path) -> Non
 def test_c906_boots_smoke_payload_with_ics55_sram_macros(tmp_path: Path) -> None:
     """Boot the same payload with the C906 SRAM wrappers on ICS55 macros."""
     _run_c906_boot_tb(tmp_path, sram_macros="ics55")
+
+
+def test_c906_boots_smoke_payload_with_sky130_icg(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 clock gates on SKY130 ICG cells."""
+    _run_c906_boot_tb(tmp_path, sram_macros="sky130")
+
+
+def test_c906_boots_smoke_payload_with_gf180_icg(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 clock gates on GF180 ICG cells."""
+    _run_c906_boot_tb(tmp_path, sram_macros="gf180")
 
 
 def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
