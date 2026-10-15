@@ -134,6 +134,18 @@ qualification. Current evidence requires, at minimum:
   to Icarus) passes on the ICS55 path as well, and the `ics55.mk` CI profile
   smoke simulation (`APP=ci_smoke`, Verilator) passes with the macro path
   compiled into the SoC.
+- The wrappers also have a GF180 macro path: under `PDK_GF180`+
+  `HAVE_SRAM_MACRO` without `PDK_BEHAV` each wrapper is tiled from the GF180
+  8-bit bit-write macros `gf180mcu_fd_ip_sram__sram{64,128,256,512}x8m8wm1`
+  (identical active-low polarity; depth/width tiling with registered read
+  muxes where stacked). The vendor verilog views are timing-only, so the
+  simulation models are repo-owned in `rtl/tech/gf180_sram_sim_cells.sv`.
+  The directed eight-wrapper equivalence bench and the MEM_INTF suite both
+  pass on the GF180 path, and the focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_gf180_macros` passes with the SRAM
+  tiles and the `icgtp_1` ICG active together. SKY130 stays behavioral: the
+  locked OpenRAM SRAM has only a byte-granular write mask while the wrappers
+  need per-bit write enable.
 - The chapter 3 ICG swap is validated in simulation on all four PDKs: the
   `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` overrides select
   `sg13g2_slgcp_1` (IHP130), `ICGX1H7R` (ICS55, scan enable ORed into `E`),
@@ -167,10 +179,12 @@ hp-smoke-sim` builds the whole SoC (C906 `aq_spsram_*` wrappers and
 `HP_GA2D_CACHE_CLEAN` markers; with the ICG overrides the same run also
 exercises the real `sg13g2_slgcp_1` clock gates. The same SoC smoke passes on
 the ICS55 macro+ICG path (`PDK=ICS55 PDK_BEHAV=NO`, 3.64M cycles,
-`SIM_TEST_PASS code=0` with the full GA2D cache-lifecycle marker sequence),
-and the `sky130.mk` and `gf180.mk` CI profile smokes (`APP=ci_smoke`,
-Verilator) pass with the `sky130_fd_sc_hd__sdlclkp_1` /
-`gf180mcu_fd_sc_mcu7t5v0__icgtp_1` ICG compiled in. The default 300 s
+`SIM_TEST_PASS code=0` with the full GA2D cache-lifecycle marker sequence)
+and on the GF180 macro+ICG path (`PDK=GF180 PDK_BEHAV=NO`, identical cycle
+count), and the `sky130.mk` and `gf180.mk` CI profile smokes (`APP=ci_smoke`,
+Verilator) pass with the SRAM tiles and the `sky130_fd_sc_hd__sdlclkp_1` /
+`gf180mcu_fd_sc_mcu7t5v0__icgtp_1` ICG compiled in (the GF180 C906 SRAMs run
+as macro tiles there too). The default 300 s
 `HP_SMOKE_SIM_TIME` is only enough when the run is uncontended, and the bare
 `ics55.mk` profile-default `sim` (no fast-flash) exceeds its 180 s default
 budget in this environment, so these were run with CI-sized time budgets.

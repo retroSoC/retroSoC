@@ -22,8 +22,9 @@ sources are an external lint boundary. The reviewed hart-ID, sysmap
 address-attribute, SRAM wrapper, and clock-gate (ICG) overrides live in
 `rtl/mini/ip_overrides/`
 (the `aq_spsram_*.v` overrides implement the integration manual chapter 3
-memory swap and select IHP130 `RM_IHPSG13_1P_*` or exact-geometry ICS55
-`ics55_ecos_sram_*` macros only under `PDK_IHP130`/`PDK_ICS55` +
+memory swap and select IHP130 `RM_IHPSG13_1P_*`, exact-geometry ICS55
+`ics55_ecos_sram_*`, or tiled GF180 `gf180mcu_fd_ip_sram__sram*x8m8wm1`
+macros only under `PDK_IHP130`/`PDK_ICS55`/`PDK_GF180` +
 `HAVE_SRAM_MACRO` without `PDK_BEHAV`; the `gated_clk_cell.v`,
 `tdt_gated_clk_cell.v`, and `BUFGCE.v` overrides implement the chapter 3 ICG
 swap and select the process clock-gating cell under a `PDK_*` define without

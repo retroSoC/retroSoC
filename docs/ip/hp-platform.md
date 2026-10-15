@@ -79,6 +79,32 @@ are active-low at identical widths), so the replacement is a direct
 connection with no inversion, padding, or stacking; `MARE`/`MAR` are tied
 off as in `tc_sram.sv`.
 
+With `PDK_GF180` + `HAVE_SRAM_MACRO` and without `PDK_BEHAV`, each wrapper is
+tiled from the GF180 8-bit bit-write macros
+(`gf180mcu_fd_ip_sram__sram{64,128,256,512}x8m8wm1`; active-low
+`CEN`/`GWEN`/per-bit `WEN` match the wrapper polarity). The vendor verilog
+views are timing-only, so the simulation models are repo-owned in
+`rtl/tech/gf180_sram_sim_cells.sv` (the 512x8 SoC model plus the
+64/128/256x8 tiles):
+
+| Wrapper | Tile | Tiling |
+| --- | --- | --- |
+| `aq_spsram_1024x16` (BHT) | 512x8 | depth 2 (`A[9]`) x width 2 |
+| `aq_spsram_2048x32` (ICache data) | 512x8 | depth 4 (`A[10:9]`) x width 4 |
+| `aq_spsram_256x59` (ICache tag) | 256x8 | width 8; top tile's upper 5 bits tied inactive |
+| `aq_spsram_1024x64` (DCache data) | 512x8 | depth 2 (`A[9]`) x width 8 |
+| `aq_spsram_128x8` (DCache dirty) | 128x8 | exact, single tile |
+| `aq_spsram_64x58` (DCache tag) | 64x8 | width 8; top tile's upper 6 bits tied inactive |
+| `aq_spsram_64x88` (JTLB data) | 64x8 | width 11, exact |
+| `aq_spsram_64x98` (JTLB tag) | 64x8 | width 13; top tile's upper 6 bits tied inactive |
+
+Depth stacks register the bank select on read transactions and mux the tile
+outputs, like the IHP130 stacks. SKY130 stays on the behavioral path: the
+locked OpenRAM SRAM (`sky130_sram_4kbyte_1rw_32x1024_8`) offers only a
+byte-granular write mask (`wmask0[3:0]` per 32-bit word) while the C906
+wrappers require per-bit write enable, so no SKY130 SRAM macro can serve
+them.
+
 Every other configuration — including the committed `PDK_BEHAV=YES` CI
 profiles — compiles the upstream behavioral `aq_f_spsram_*` instance
 byte-identically.
