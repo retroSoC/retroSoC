@@ -3,7 +3,10 @@
 This phase starts at `43a3c8d453b6d41df3536719ebc6d1f4521bc7cd`, against frozen
 specification blob `7e19de49d49efaafacccfa85671e314d53dd15a4`. Implementation
 is authorized; phase acceptance still requires review of the completed gates.
-No P8 implementation, commit, push, or physical frequency qualification follows.
+At this historical P7 checkpoint no P8 implementation, commit, push, or
+physical frequency qualification followed. P7 was later human-accepted on
+2026-10-15; the separate P8 handoff and evidence ledger now govern subsequent
+work.
 
 ## Product and ownership
 

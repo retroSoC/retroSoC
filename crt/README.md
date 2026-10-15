@@ -168,6 +168,12 @@ polling, interrupts, errors, performance counters, and configuration locks.
 Reset-time NSS0 boot behavior and JTAG NOR programming are defined in the
 [XPI V2 controller contract](../docs/ip/xpi.md).
 
+`<retrosoc/hal/xpi_psram.h>` adds an explicit optional ESP-PSRAM64H NSS1
+reference profile, identity/geometry checks and bounded mapped-DMA validation.
+It reserves LUT8..11, preserves NOR configuration, and never initializes RAM
+as a boot dependency. The caller owns pins, XPI quiescence, SRAM residency and
+DMA leases. See the [Tiny P8 runbook](../docs/ip/tiny-soc-r2-psram.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.

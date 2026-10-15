@@ -82,6 +82,10 @@ external input to REF24 at boot and permit no-PLL XIN transitions. See the
 [P7 runbook](../docs/ip/tiny-soc-r2-clock-reset.md) for the evidence boundary.
 `TINY_P7_ACCEPTANCE=YES APP=ci_smoke` selects the distinct RCU acceptance image
 and configuration digest; ordinary Tiny acceptance firmware remains the default.
+`TINY_P8_ACCEPTANCE=YES APP=ci_smoke` instead selects the optional XPI PSRAM
+transport image and its distinct digest. Populate the verification device with
+`TINY_SIM_ARGS=+tiny_p8_psram`; P7/P8 acceptance selectors are mutually exclusive.
+See the [P8 runbook](../docs/ip/tiny-soc-r2-psram.md) for bounded DMA and evidence.
 `make SOC=TINY` selects this
 committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
 Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in

@@ -1,5 +1,73 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P7 human acceptance and P8 implementation authorization (2026-10-15)
+
+The maintainer explicitly confirmed P7 human acceptance and authorized the
+previously approved TINY-R2-P8 implementation plan in the development session.
+The accepted checkpoint is `655c5871ea1789afea1c037c1b566a7be02b2bc6`.
+All seven CI workflows for that commit completed successfully, including
+ICS55 run `38619690260`, IHP130 run `38619690366` and quality run `38619690155`.
+This acceptance retains the source-reset and response-conservation boundaries
+recorded below. Full long-running Icarus firmware remains deferred to final
+Tiny qualification; negative observational STA and physical/board/rate gaps
+are not waived or reclassified. Historical pending-human-review statements
+below describe their original checkpoints. P8 implementation is authorized;
+P8 acceptance and later phases are not implied.
+
+## TINY-R2-P8 implementation checkpoint (2026-10-15)
+
+The approved P8 implementation adds optional XPI NSS1/GPIO29 PSRAM and keeps
+NOR/SRAM-only boot independent. The shared `ESP_PSRAM64H.sv` model is now
+owned at `rtl/model` and remains compatible with Mini's separate-controller
+tests. Shared XPI fixes cover byte-lane strobes, narrow-burst address
+progression, serial-boundary rejection, early core termination, held read
+responses, short sequences and final-command completion. The manual HAL
+validates ESP-PSRAM64H identity `0d/5d/26`, 8 MiB geometry, bounded MEM24/48/96/120
+timing and aligned four-beat DMA jobs.
+
+The focused P8 campaign passed **28 tests** across both simulators, including
+identity, mapped CPU/DMA paths, first/last addresses, byte/halfword/word lanes,
+canaries, 4 KiB/serial boundaries, timeout/held-response/late-error cases and
+forbidden-device behavior. The ICS55 full Verilator firmware passed with
+`P8_RESULT code=0 profiles=3` and `SIM_TEST_PASS Tiny`; retained records are
+under `build/ics55-tiny-2026-10-15-05-00-28a7d10f3a7b/meta/tiny-r2-p8/`.
+Observed windows report 1024-byte CPU/DMA transfers with four-beat bursts at
+SAFE24, PLL192 and PLL240. These are finite digital workload measurements,
+not worst-case bounds, camera budgets, physical rates or board qualification.
+The optional absent-device path is a separate bounded rejection case and does
+not advertise PSRAM capability.
+
+The handoff-required full long-running Icarus Tiny firmware was started once
+but intentionally interrupted before a terminal verdict because that gate is
+deferred to final Tiny qualification. Icarus P8 pin-level focused coverage
+passed; the interrupted full-firmware record remains `NOT_RUN/PARTIAL` and is
+not relabeled. P8 now has explicit IHP130 compatibility replay, source
+snapshot/report generation, synthesis/netlist-function checks and
+observational STA for both profiles. Human phase acceptance remains open.
+P9 DVP, SPI, PIO-lite, PPALite and physical qualification remain unimplemented.
+
+## TINY-R2-P8 P1 correction follow-up (2026-10-15)
+
+The review identified two evidence-blocking issues and both were corrected.
+`rs_xpi_psram_validate_dma()` now checks every emitted burst against the
+configured 1 KiB serial boundary, the 4 KiB DMA page boundary, capacity and
+alignment before a session starts. The P8 workload begins at
+`0x54000c00`, an aligned legal boundary; aligned crossing and malformed cases
+remain rejected by host tests and the XPI directed tests. The MEM observer now
+maps AW/W/AR/B/R stall counters to the correct output fields and records the
+maximum observed CS duration.
+
+After the correction, the P8 focused suite and C/RTL checks passed again. A
+fresh ICS55 Verilator replay passed SAFE24/PLL192/PLL240 with
+`P8_RESULT code=0 profiles=3` and `SIM_TEST_PASS Tiny`; a fresh IHP130 SAFE24
+replay passed with `P8_RESULT code=0 profiles=1` and `SIM_TEST_PASS Tiny`.
+Evidence is retained below the corresponding `build/*-08-00-*/meta/tiny-r2-p8`
+directories. These are behavioral/model results only. Full long Icarus remains
+deferred to final Tiny qualification. Both profiles also have current
+synthesis, netlist boot and observational STA records; source-bound promoted
+reports are retained under each profile's promoted evidence directory. Human
+P8 acceptance remains open.
+
 ## TINY-R2-P7 source-reset integration contract (2026-10-14)
 
 The follow-up review identified a missing source-side reset proof, not a
@@ -924,8 +992,8 @@ not a prerequisite to the architectural improvements in R2-P3 through R2-P5.
 | TINY-R2-P4 - Dual-Port Hazard3 and Four-Bank Local SRAM | Actual separate I/D paths, four independent 32 KiB bank frontends, SYS-clocked physical main-SRAM macros, local latency/fairness, FENCE.I, debug/reset and early inventory/SDC/macro-binding updates. | Implementation and planned functional validation complete on `4db2752` plus retained worktree snapshot; matched-image DMA throughput regression and human phase acceptance pending review; timing remains observational |
 | TINY-R2-P5 - Per-Target Concurrent Fabric | Cross-target concurrency, one combined transaction per target, central-DMA read/write overlap, AW/W binding, errors, simultaneous faults/counters and accepted-transfer drain. | Pending |
 | TINY-R2-P6 - Shared IP and Eight-Channel DMA Integration | Legacy P7 obligations; shared PWM reporting, I2S slave and alternate-input-route prerequisites; common ABI/HAL parity; Crypto banks/lifecycle; truthful capabilities and affected Mini compatibility. | Pending |
-| TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration | Legacy P8 obligations with main SRAM in SYS and XPI in MEM; atomic rate changes, all actual CDC/reset barriers, clock failures, WFI leaf gating and reserved DVP controls. | Pending |
-| TINY-R2-P8 - XPI PSRAM Framebuffer Bring-up | Legacy P11 obligations: real pin-level NSS1 device transport, CPU/DMA mapped-write readback, boundaries/recovery, payload rate and worst backpressure. | Pending |
+| TINY-R2-P7 - Tiny RCU and Dual-Mode Clock/Reset Integration | Legacy P8 obligations with main SRAM in SYS and XPI in MEM; atomic rate changes, all actual CDC/reset barriers, clock failures, WFI leaf gating and reserved DVP controls. | Human accepted 2026-10-15 at `655c587`; full long Icarus firmware and physical/timing gaps remain explicitly deferred |
+| TINY-R2-P8 - XPI PSRAM Framebuffer Bring-up | Legacy P11 obligations: real pin-level NSS1 device transport, CPU/DMA mapped-write readback, boundaries/recovery, payload rate and worst backpressure. | ICS55/IHP130 Verilator, focused dual-simulator, synthesis, netlist boot, STA and promoted reports complete; full long Icarus deferred and human P8 acceptance pending |
 | TINY-R2-P9 - DVP Camera Profile and Frame Capture Integration | Legacy P12 obligations: unchanged DVP ABI/FIFO, DMA2/request 11, exact frame length, final-tail drain, snapshots/crops, missing-clock recovery and camera/audio exclusion. | Pending |
 | TINY-R2-P10 - System Performance and Regression Qualification | Complete current-profile functional regression and workload/contention A/B, measured real-time budgets, synthesis/macro mapping, netlist checks and explicit missing coverage. | Pending |
 | TINY-R2-P11 - IHP130 Physical and Product Qualification | Final joint CPU/main-SRAM timing, CTS/reset distribution, extracted PVT/IO/package/power evidence, qualified clock/PLL inputs and device operating points; close remaining legacy P9 obligations. | Pending |

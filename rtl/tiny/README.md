@@ -94,6 +94,11 @@ require pin-level XPI PSRAM and full-frame readback, not fast-flash or
 separate-controller evidence.
 No camera/PSRAM rate is qualified by this freeze.
 
+The [P8 implementation](../../docs/ip/tiny-soc-r2-psram.md) adds explicit optional
+NSS1 initialization and CPU/DMA mapped-data verification through a shared
+pin-level PSRAM model. It preserves SRAM-only boot and does not integrate DVP.
+The verification ledger owns phase acceptance and remaining qualification gaps.
+
 The separately approved [SPI extension](../../docs/ip/spi.md) adds SPI0 to the
 future standard Tiny product, with its own `SPI-P0` through `SPI-P5` phases.
 It is a PCLK master-only 8/16-bit controller with separate 8 x 32-bit TX/RX
