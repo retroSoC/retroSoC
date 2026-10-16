@@ -52,9 +52,35 @@ qualification. Current evidence requires, at minimum:
   SBI console: the earlier boot blocker is fixed (see the MAEE entry below).
   A longer bounded run (8 h wall) with the STIMECMP fix additionally boots
   the kernel through console init, BogoMIPS calibration, devtmpfs, and the
-  switch to the riscv_clocksource with a healthy periodic tick; userspace
-  acceptance (`HP_LINUX_READY`) evidence is collected on that run. The
-  target stays unqualified until that acceptance completes.
+  switch to the riscv_clocksource with a healthy periodic tick. The 12 h run
+  then probes the internal PLIC successfully at runtime (`riscv-plic:
+  interrupt-controller@8000000: mapped 31 interrupts`, validating the
+  OpenSBI `fdt_irqchip_init` hook) and completes the initramfs unpack
+  (`Unpacking initramfs...` / `Freeing initrd memory: 292K`). Userspace
+  acceptance (`HP_LINUX_READY`) is not yet reached: see the write-wedge
+  frontier entry below. The target stays unqualified until that acceptance
+  completes.
+- The remaining boot frontier is a write-channel wedge, reproduced
+  deterministically by a bare-metal payload (dcache-dirty eviction traffic
+  interleaved with fenced MMIO polls wedges it at ~22 rounds in ~1.5 M HP
+  cycles) and by the kernel late in boot: the C906 issues a write AW whose W
+  data never leaves the core (zero W beats presented at the 128-bit port, the
+  LSU victim-buffer/store-buffer write-valids low, the BIU write buffers
+  empty), so the demux write FSM is parked in Active, the SDRAM core sits in
+  its write-data state waiting for the missing W stream, the concurrent read
+  fill's R never returns behind it, and the core freezes at the next fenced
+  MMIO poll (`retrosoc_hp_console_putc`). This is independent of the fence
+  instructions (the no-fence control payload wedges identically), of the
+  dcache write mode (write-back, write-through, and dcache-off all wedge),
+  and of the MAEE/cacheability work above. The hazard lives inside the
+  vendored C906's LSU write-data production under read/write concurrency
+  against a slow SDRAM partner; a guard write timeout does not cover the
+  source-stalled W stream, so the wedge is permanent. Root-causing it needs
+  C906 LSU debugging (store-buffer/victim-buffer data release) or an
+  interconnect that buffers a full write burst before engaging the SDRAM
+  command engine; both are out of this round's scope. An sdram_axi4-side
+  gate-the-command-on-full-burst prototype recovered the blocked read but
+  not the C906's withheld W, so it is not a fix and was not kept.
 - The Linux boot blocker was a doc/RTL mismatch in OpenC906, root-caused with
   bare-metal MMU payloads and locked by simulation evidence: the user manual
   states `mxstatus.MAEE` resets to 0, but the RTL (`aq_cp0_ext_csr.v`) resets
