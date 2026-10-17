@@ -13,7 +13,7 @@ initial begin
     // Case comparisons require the exact known reset values in both simulators.
     if (u_dut.u_soc.u_sysctrl.s_reset_cause_q !== 32'd1 ||
         u_dut.u_soc.u_sysctrl.s_rcu_fault_q !== 32'd0 ||
-        u_dut.u_soc.s_backend_current !== 2'd0 || u_dut.u_soc.s_gate_request !== 14'd0)
+        u_dut.u_soc.s_backend_current !== 2'd0 || u_dut.u_soc.s_gate_request !== 15'd0)
       $fatal(
           1,
           "SIM_TEST_FAIL P7 cold reset state cause=%h fault=%h profile=%h gates=%h",

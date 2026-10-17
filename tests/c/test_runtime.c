@@ -16,6 +16,7 @@
 #include <retrosoc/hal/rcu_regs.h>
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/dvp.h>
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/i2c.h>
@@ -42,6 +43,7 @@
 #include <retrosoc/media/wav_audio.h>
 
 #include "../../crt/src/hal/ga2d_math.h"
+#include "../../app/apps/ci_smoke/p9_frame.h"
 #include "../../crt/src/hal/opipsram_math.c"
 
 #define TEST_STORAGE_ADDRESS ((uintptr_t)0x1000U)
@@ -1152,14 +1154,228 @@ static int test_tiny_dma_config_validation(void) {
     }
     config.kind = RS_DMA_KIND_STREAM_TO_MM;
     config.request = RS_DMA_REQUEST_DVP_RX;
-    if (rs_tiny_dma_config_validate(2U, &config) != RS_EINVAL) {
+    if (rs_tiny_dma_config_validate(2U, &config) != RS_OK) {
         return 4;
     }
     descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_DST_INC |
                          ((uint32_t)RS_DMA_KIND_STREAM_TO_MM << RS_DMA_TCD_KIND_SHIFT) |
                          ((uint32_t)RS_DMA_REQUEST_DVP_RX << RS_DMA_TCD_REQUEST_SHIFT);
-    if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_ENOTSUP) {
+    descriptor.destination = UINT32_C(0x54000C00);
+    if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_OK) {
         return 5;
+    }
+    config.request = RS_DMA_REQUEST_I2C1_RX;
+    config.kind = RS_DMA_KIND_MM_TO_MM;
+    if (rs_tiny_dma_config_validate(2U, &config) != RS_EINVAL) {
+        return 6;
+    }
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                         ((uint32_t)RS_DMA_REQUEST_I2C1_RX << RS_DMA_TCD_REQUEST_SHIFT);
+    if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_ENOTSUP) {
+        return 7;
+    }
+    return 0;
+}
+
+rs_status_t rs_tiny_dvp_configure(const rs_dvp_config_t *config);
+rs_status_t rs_tiny_dvp_capture_dma(uintptr_t destination, uint32_t capacity, rs_timeout_t timeout);
+rs_status_t rs_tiny_dvp_capture_pio(uintptr_t destination, uint32_t capacity, uint32_t expected,
+                                    rs_timeout_t timeout);
+rs_status_t rs_tiny_dvp_abort(void);
+static uint32_t dvp_registers[64];
+static uint32_t dvp_test_channel;
+static uint32_t dvp_test_polls;
+static uint32_t dvp_test_words;
+static uint32_t dvp_test_pixels;
+static uint32_t dvp_test_popped;
+static uint32_t dvp_test_writes;
+static uint32_t dvp_test_aborts;
+static bool dvp_test_started;
+static bool dvp_test_snapshot_done;
+static bool dvp_test_no_clock;
+static bool dvp_test_hold_response;
+static bool dvp_test_truncate_words;
+static bool dvp_test_size_error;
+static uint32_t dvp_test_control_pending;
+static uint32_t dvp_test_applied_control;
+static uint32_t dvp_pio_buffer[6];
+
+static void dvp_test_apply_control(uint32_t value) {
+    if ((value & 1U) == 0U) {
+        dvp_test_started = false;
+        dvp_test_snapshot_done = false;
+        dvp_registers[2] = 4U;
+    } else if (!dvp_test_snapshot_done || (dvp_test_applied_control & 1U) == 0U) {
+        const uint32_t size = dvp_registers[(value & 4U) != 0U ? 8U : 6U];
+        dvp_test_pixels = (size & UINT32_C(0xFFFF)) * (size >> 16);
+        dvp_test_words = (((size & UINT32_C(0xFFFF)) + 1U) / 2U) * (size >> 16);
+        dvp_test_started = true;
+        dvp_test_snapshot_done = false;
+        dvp_test_polls = 0U;
+        dvp_test_popped = 0U;
+        if (dvp_test_hold_response)
+            RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    }
+    dvp_test_applied_control = value;
+}
+
+uint32_t rs_dvp_test_read(uint32_t offset) {
+    if (offset == 8U && dvp_test_control_pending != 0U && !dvp_test_no_clock) {
+        dvp_test_control_pending--;
+        if (dvp_test_control_pending == 0U)
+            dvp_test_apply_control(dvp_registers[0]);
+    }
+    if (offset == 8U && dvp_test_started) {
+        dvp_test_polls++;
+        if (dvp_test_polls == 3U) {
+            dvp_test_snapshot_done = true;
+            dvp_registers[0x24U / 4U]++;
+            dvp_registers[0x2CU / 4U] = dvp_test_pixels;
+            dvp_registers[0x30U / 4U] =
+                dvp_test_truncate_words ? (dvp_test_words & UINT32_C(0xFFFF)) : dvp_test_words;
+            dvp_registers[0x3CU / 4U] = RS_DVP_INTERRUPT_FRAME_DONE;
+            if (dvp_test_size_error)
+                dvp_registers[0x38U / 4U] |= RS_DVP_ERROR_SIZE;
+            if (!dvp_test_hold_response) {
+                RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_DONE;
+                RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_BYTES_DONE) = dvp_test_words * 4U;
+                RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_REMAINING) = 0U;
+            }
+        }
+        /* ENABLE stays high after snapshot; ACTIVE goes low independently. */
+        return 1U | (dvp_test_polls < 3U ? 2U : 0U) |
+               ((dvp_registers[3] != 0U || dvp_test_popped == dvp_test_words) ? 4U : 0U);
+    }
+    if (offset == 4U) {
+        return UINT32_C(0x10203040) + dvp_test_popped++;
+    }
+    return dvp_registers[offset / 4U];
+}
+
+void rs_dvp_test_write(uint32_t offset, uint32_t value) {
+    dvp_test_writes++;
+    if (offset == 0x38U || offset == 0x3CU) {
+        if (!dvp_test_no_clock || offset == 0x3CU)
+            dvp_registers[offset / 4U] &= ~value;
+    } else if (offset == 0x4CU && (value & 1U) != 0U) {
+        dvp_test_aborts++;
+        if (!dvp_test_no_clock) {
+            dvp_test_started = false;
+            dvp_test_snapshot_done = true;
+            dvp_registers[2] = (dvp_test_applied_control & 1U) | 4U;
+            dvp_registers[0x38U / 4U] |= RS_DVP_ERROR_ABORT;
+        }
+    } else {
+        dvp_registers[offset / 4U] = value;
+        if (offset == 0U)
+            dvp_test_control_pending = 3U;
+    }
+}
+
+static int test_dvp_hal(void) {
+    for (uint32_t tiny = 0U; tiny < 2U; tiny++) {
+        rs_dvp_config_t config = {.format = RS_DVP_FORMAT_RGB565,
+                                  .frame_width = 4U,
+                                  .frame_height = 2U,
+                                  .snapshot = true,
+                                  .stream_enable = true};
+        rs_status_t (*configure)(const rs_dvp_config_t *) =
+            tiny != 0U ? rs_tiny_dvp_configure : rs_dvp_configure;
+        rs_status_t (*capture)(uintptr_t, uint32_t, rs_timeout_t) =
+            tiny != 0U ? rs_tiny_dvp_capture_dma : rs_dvp_capture_dma;
+        dvp_test_channel = tiny != 0U ? 2U : 3U;
+        dvp_test_started = false;
+        dvp_test_snapshot_done = false;
+        dvp_test_no_clock = false;
+        dvp_test_hold_response = false;
+        dvp_test_truncate_words = false;
+        dvp_test_size_error = false;
+        dvp_test_control_pending = 0U;
+        dvp_test_applied_control = 0U;
+        for (uint32_t i = 0U; i < 64U; i++)
+            dvp_registers[i] = 0U;
+        RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = 0U;
+        if (configure(&config) != RS_OK)
+            return 1;
+        const uint32_t writes = dvp_test_writes;
+        if (capture(UINT32_C(0x54000C00), 3U, 20U) != RS_ENOSPC || dvp_test_writes != writes)
+            return 2;
+        if (capture(UINT32_C(0x54000C00), 8U, 20U) != RS_OK ||
+            RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_BYTE_COUNT) != 16U ||
+            RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_CRC_EXPECTED) != 0U ||
+            (RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_CFG) &
+             (RS_DMA_CH_CFG_CRC_ENABLE | RS_DMA_CH_CFG_CRC_FINAL)) != 0U ||
+            RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_BURST_CFG) != (tiny != 0U ? 4U : 16U))
+            return 3;
+        if (capture(UINT32_C(0x54000C00), 8U, 20U) != RS_OK)
+            return 9;
+        /* Correct aggregate counts and DMA DONE do not override a row fault. */
+        dvp_test_size_error = true;
+        if (capture(UINT32_C(0x54000C00), 8U, 20U) != RS_EIO)
+            return 14;
+        dvp_test_size_error = false;
+        if (capture(UINT32_C(0x54000C00), 8U, 20U) != RS_OK)
+            return 15;
+        config.frame_width = 640U;
+        config.frame_height = 480U;
+        if (configure(&config) != RS_OK ||
+            capture(UINT32_C(0x54000C00), UINT32_C(153600), 20U) != RS_OK ||
+            dvp_registers[0x30U / 4U] != UINT32_C(153600) ||
+            RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_BYTE_COUNT) != UINT32_C(614400))
+            return 12;
+        dvp_test_truncate_words = true;
+        if (capture(UINT32_C(0x54000C00), UINT32_C(153600), 20U) != RS_EIO)
+            return 13;
+        dvp_test_truncate_words = false;
+        config.frame_height = 2U;
+        config.frame_width = 3U;
+        config.stream_enable = false;
+        if (configure(&config) != RS_OK || capture(UINT32_C(0x54000C00), 4U, 20U) != RS_EINVAL)
+            return 4;
+        dvp_pio_buffer[0] = UINT32_C(0xCAFEBABE);
+        dvp_pio_buffer[5] = UINT32_C(0xCAFEBABE);
+        RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+        const uint32_t busy_writes = dvp_test_writes;
+        rs_status_t busy_result =
+            tiny != 0U ? rs_tiny_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U)
+                       : rs_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U);
+        if (busy_result == RS_OK || dvp_test_writes != busy_writes)
+            return 10;
+        RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = 0U;
+        rs_status_t result =
+            tiny != 0U ? rs_tiny_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U)
+                       : rs_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U);
+        if (result != RS_OK || dvp_pio_buffer[0] != UINT32_C(0xCAFEBABE) ||
+            dvp_pio_buffer[5] != UINT32_C(0xCAFEBABE) || dvp_pio_buffer[4] != UINT32_C(0x10203043))
+            return 5;
+        result = tiny != 0U ? rs_tiny_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U)
+                            : rs_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U);
+        if (result != RS_OK)
+            return 11;
+        dvp_test_size_error = true;
+        result = tiny != 0U ? rs_tiny_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U)
+                            : rs_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U);
+        if (result != RS_EIO)
+            return 16;
+        dvp_test_size_error = false;
+        result = tiny != 0U ? rs_tiny_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U)
+                            : rs_dvp_capture_pio((uintptr_t)&dvp_pio_buffer[1], 4U, 4U, 20U);
+        if (result != RS_OK)
+            return 17;
+        config.frame_width = 4U;
+        config.stream_enable = true;
+        if (configure(&config) != RS_OK)
+            return 6;
+        dvp_test_hold_response = true;
+        const uint32_t aborts = dvp_test_aborts;
+        if (capture(UINT32_C(0x54000C00), 4U, 20U) == RS_OK || dvp_test_aborts != aborts)
+            return 7;
+        RS_DMA_CH_REG(dvp_test_channel, RS_DMA_CH_REG_STATUS) = 0U;
+        dvp_test_no_clock = true;
+        dvp_registers[0x38U / 4U] = RS_DVP_ERROR_ABORT;
+        result = tiny != 0U ? rs_tiny_dvp_abort() : rs_dvp_abort();
+        if (result != RS_ETIMEOUT)
+            return 8;
     }
     return 0;
 }
@@ -3235,6 +3451,27 @@ static int test_tiny_rcu_boundaries(void) {
     return 0;
 }
 
+static int test_p9_frame_layout(void) {
+    uint32_t words = 0U;
+    if (rs_p9_frame_words(640U, 480U, &words) != RS_OK || words != 153600U ||
+        rs_p9_frame_words(320U, 240U, &words) != RS_OK || words != 38400U ||
+        rs_p9_frame_words(7U, 3U, &words) != RS_OK || words != 12U ||
+        rs_p9_frame_words(512U, 256U, &words) != RS_OK || words != 65536U ||
+        rs_p9_frame_words(0U, 480U, &words) != RS_EINVAL ||
+        rs_p9_frame_words(640U, 480U, NULL) != RS_EINVAL ||
+        rs_p9_frame_words(65535U, 65535U, &words) != RS_ENOSPC) {
+        return 1;
+    }
+    /* Fixed vectors include modulo-256 carry, a partial row and the VGA tail. */
+    if (rs_p9_frame_word(0U, 0U, false) != UINT32_C(0x02030001) ||
+        rs_p9_frame_word(1U, 63U, false) != UINT32_C(0x0102FF00) ||
+        rs_p9_frame_word(2U, 3U, true) != UINT32_C(0x00001213) ||
+        rs_p9_frame_word(479U, 319U, false) != UINT32_C(0x9B9C999A)) {
+        return 2;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -3262,6 +3499,8 @@ int main(void) {
         test_gpio_helpers(),
         test_dma_config_validation(),
         test_tiny_dma_config_validation(),
+        test_dvp_hal(),
+        test_p9_frame_layout(),
         test_opipsram_helpers(),
         test_user_ip_validation(),
         test_extension_validation(),

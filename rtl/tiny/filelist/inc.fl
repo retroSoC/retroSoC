@@ -18,5 +18,6 @@
 +incdir+/ip/peripheral
 +incdir+/ip/core
 +incdir+/ip/security
++incdir+/ip/multimedia
 +incdir+/clusterip/rng/rtl
 +incdir+/clusterip/crc/rtl

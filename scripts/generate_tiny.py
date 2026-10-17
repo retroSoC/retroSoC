@@ -18,15 +18,15 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 TINY = ROOT / "rtl/tiny"
 RCU_TARGETS = {"gpio": 1, "uart0": 2, "i2c0": 3, "timer0": 4, "timer1": 5,
                "pwm": 6, "i2s": 7, "sdio": 8, "dma": 9, "ws2812": 10,
-               "rng": 11, "crc": 12, "crypto": 13}
+               "rng": 11, "crc": 12, "crypto": 13, "dvp": 14}
 
 
 def read_topology(path: Path, memory_map: Path) -> dict:
     document = json.loads(path.read_text())
     regions = {r["symbol"] for r in json.loads(memory_map.read_text())["regions"]}
     if (document.get("schema_version") != 1 or document.get("dma_channels") != 8
-            or document.get("dma_request_mask") != "0x31ff"):
-        raise ValueError("Tiny P6 requires eight DMA channels and request mask 0x31ff")
+            or document.get("dma_request_mask") != "0x39ff"):
+        raise ValueError("Tiny P9 requires eight DMA channels and request mask 0x39ff")
     if document.get("cpu") != {"module": "hazard3_cpu_2port", "local_ports": 2,
                                "data_outstanding": 1}:
         raise ValueError("Tiny P4 requires independent I/D and one ordered data operation")
@@ -43,9 +43,9 @@ def read_topology(path: Path, memory_map: Path) -> dict:
         "cpu_combined_outstanding": 1, "dma_direction_outstanding": 1,
         "sdio_direction_outstanding": 1, "target_combined_outstanding": 1,
         "sram_targets": [0, 1, 2, 3], "xpi_target": 4, "apb_target_base": 5,
-        "decode_error_target": 25, "protocol_error_target": 26, "target_count": 27,
+        "decode_error_target": 26, "protocol_error_target": 27, "target_count": 28,
     }:
-        raise ValueError("Tiny P6 requires three active owners and 27 targets")
+        raise ValueError("Tiny P9 requires three active owners and 28 targets")
     if document.get("irq_vector_width") != 32 or document.get("external_irq_count") != 30:
         raise ValueError("Tiny requires a 32-bit IRQ vector and 30 external inputs")
     names: set[str] = set()
@@ -65,10 +65,10 @@ def read_topology(path: Path, memory_map: Path) -> dict:
             assigned.add(region)
     if assigned != {r for r in regions if r.startswith("APB4_")}:
         raise ValueError("Tiny topology must route every APB region")
-    if len(document["apb_targets"]) != 20:
-        raise ValueError("Tiny P6 requires twenty independent APB targets")
+    if len(document["apb_targets"]) != 21:
+        raise ValueError("Tiny P9 requires twenty-one independent APB targets")
     target_names = [target["name"] for target in document["apb_targets"]]
-    if len(set(target_names)) != 20 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
+    if len(set(target_names)) != 21 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
                                          for name in target_names):
         raise ValueError("Tiny APB target names must be unique identifiers")
     if sorted(item["pin"] for item in document["gpio_alt_functions"]) != list(range(32)):
@@ -140,14 +140,15 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
                  "#define RETROSOC_GENERATED_SOC_FEATURES_H\n"
                  "#define RS_SOC_TINY 1\n#define RS_SOC_HAS_PSRAM 0U\n"
                  "#define RS_SOC_DMA_CHANNELS 8U\n#define RS_SOC_ID 0x54494E59U\n"
-                 "#define RS_SOC_DMA_REQUEST_MASK 0x31FFU\n"
+                 f"#define RS_SOC_DMA_REQUEST_MASK {document['dma_request_mask']}U\n"
                  "#define RS_SOC_HAS_I2C1 0U\n#define RS_SOC_HAS_SDIO1 0U\n"
                  "#define RS_SOC_HAS_UART0 1U\n#define RS_SOC_HAS_UART1 0U\n"
                  "#define RS_SOC_HAS_I2C0 1U\n"
                  "#define RS_SOC_HAS_RNG 1U\n#define RS_SOC_HAS_CRC 1U\n"
                  "#define RS_SOC_HAS_WS2812 1U\n#define RS_SOC_HAS_CRYPTO 1U\n"
                  "#define RS_SOC_HAS_I2S 1U\n#define RS_SOC_HAS_SDIO0 1U\n"
-                 "#define RS_SOC_HAS_DVP 0U\n#define RS_SOC_RNG_QUALIFIED 0U\n"
+                 "#define RS_SOC_HAS_DVP 1U\n#define RS_SOC_DVP_DMA_CHANNEL 2U\n"
+                 "#define RS_SOC_DVP_DMA_BURST_BEATS 4U\n#define RS_SOC_RNG_QUALIFIED 0U\n"
                  f"#define RS_SOC_TECHNOLOGY_ID 0x{platform['technology']:08X}U\n"
                  f"#define RS_SOC_PLL_PRESENT {platform['pll_present']}U\n"
                  f"#define RS_SOC_GPIO_HAS_PULLS {platform['gpio_pulls']}U\n#endif\n")
@@ -187,6 +188,10 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
                                     f".gated_o(s_actual_gate[{target_bit}]), "
                                     f".held_o(s_reset_held[{target_bit}]));")
             extra_ready = " && s_i2s_reset_ready" if name == "i2s" else ""
+            if name == "dvp":
+                # Local camera reset waits for its pixel domain. Global CPU
+                # boot uses APB/AXI barriers, not this local-reset vector.
+                extra_ready = " && s_dvp_reset_ready"
             if name == "dma":
                 # CDC-ready outputs are observed in SYS, matching APB readiness.
                 extra_ready = " && s_dma_ready_sys && s_dma_idle_sys"

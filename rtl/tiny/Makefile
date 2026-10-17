@@ -156,6 +156,28 @@ netsim-boot: netcomp tiny-boot-image | manifest
 
 .PHONY: tiny-boot-image
 
+# Small DVP-specific mapped-netlist check; keep boot evidence in its own log.
+TINY_P9_NETLIST_ELF := $(SW_BUILD_DIR)/tiny_p9_netlist.elf
+# The unchanged compact image needs about 178k cycles when executing from XPI.
+# Retain the cycle guard and allow slower gate models enough host time.
+TINY_P9_NETLIST_WALL_TIMEOUT ?= $(if $(filter ICS55,$(PDK)),10800,7200)
+$(TINY_P9_NETLIST_ELF): $(ROOT_PATH)/app/asm/tiny_p9_netlist.S $(FILELIST_STAMP)
+	@mkdir -p $(@D)
+	$(CC) -march=rv32im_zicsr -mabi=ilp32 -nostdlib -I$(MEMORY_MAP_C_DIR) -I$(SOC_TOPOLOGY_INCLUDE_DIR) \
+		-Wl,-Ttext=0x0,--entry=_start,--build-id=none -o $@ $<
+	$(OBJC) -O verilog $@ $(SW_BUILD_DIR)/tiny_p9_netlist.hex
+
+netsim-dvp: netcomp $(TINY_P9_NETLIST_ELF) | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
+		--log $(NETLIST_SIM_ROOT)/dvp/sim.log --result $(NETLIST_SIM_ROOT)/dvp/result-sim.json -- \
+		timeout --foreground --kill-after=5s $(TINY_P9_NETLIST_WALL_TIMEOUT)s $(VVP) $(NETLIST_SIM_ROOT)/simv \
+		+firmware=$(SW_BUILD_DIR)/tiny_p9_netlist.hex +max_cycles=300000 \
+		+tiny_p9_camera +tiny_p9_small +tiny_p9_half_ns=500
+	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(NETLIST_SIM_ROOT)/dvp/sim.log \
+		--result $(NETLIST_SIM_ROOT)/dvp/result-sim-check.json --require 'SIM_TEST_PASS Tiny'
+
+.PHONY: netsim-dvp
+
 # R2-P1 verification image: normal APP selection and the flat linker stay intact.
 # Image creation always compiles and snapshots inputs before retaining a binary.
 # Simulation rebuilds its model once, then replays the same image three times.

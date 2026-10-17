@@ -37,9 +37,9 @@
     ],
     "xpi_target": 4,
     "apb_target_base": 5,
-    "decode_error_target": 25,
-    "protocol_error_target": 26,
-    "target_count": 27
+    "decode_error_target": 26,
+    "protocol_error_target": 27,
+    "target_count": 28
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,
@@ -166,6 +166,12 @@
       "regions": [
         "APB4_SDIO0"
       ]
+    },
+    {
+      "name": "dvp",
+      "regions": [
+        "APB4_DVP"
+      ]
     }
   ],
   "interrupts": [
@@ -213,6 +219,11 @@
       "name": "sdio",
       "core_bit": 10,
       "signal": "u_sdio_if.irq_o"
+    },
+    {
+      "name": "dvp",
+      "core_bit": 15,
+      "signal": "s_dvp_irq"
     },
     {
       "name": "pwm",
@@ -441,7 +452,9 @@
         "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[0]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -454,7 +467,9 @@
         "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[1]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -467,7 +482,9 @@
         "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[2]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -482,7 +499,9 @@
         "oe": "1'b0"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[3]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -495,7 +514,9 @@
         "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[4]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -510,7 +531,9 @@
         "oe": "1'b0"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[5]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -523,7 +546,9 @@
         "oe": "u_pwm_if.oe_o[0]"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[6]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -536,7 +561,9 @@
         "oe": "u_pwm_if.oe_o[1]"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.dat_i[7]"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -549,7 +576,9 @@
         "oe": "u_pwm_if.oe_o[2]"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.pclk_i"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -562,7 +591,9 @@
         "oe": "u_pwm_if.oe_o[3]"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.href_i"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -577,7 +608,9 @@
         "oe": "1'b0"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "u_dvp_if.vsync_i"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -706,7 +739,7 @@
       }
     }
   ],
-  "dma_request_mask": "0x31ff",
+  "dma_request_mask": "0x39ff",
   "private_crypto": {
     "banks": 6,
     "bank_bytes": 4096,

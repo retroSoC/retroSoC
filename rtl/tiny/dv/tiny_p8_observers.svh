@@ -1,4 +1,6 @@
 // Verification-only MEM-clock observations. No DUT state is driven.
+// tiny_psram populates the shared board device; tiny_p8_psram additionally
+// selects the legacy P8 workload's performance-window acceptance contract.
 `define _P8_AXI u_dut.u_soc.u_xpi_mem_axi4_if
 logic s_p8_previous_enable = 0;
 logic s_p8_finished = 0;
@@ -56,7 +58,7 @@ end
 time s_p8_cs_start, s_p8_cs_max = 0;
 always @(negedge s_psram_csn) s_p8_cs_start = $time;
 always @(posedge s_psram_csn) begin
-  if ($test$plusargs("tiny_p8_psram") && s_p8_cs_start != 0) begin
+  if (($test$plusargs("tiny_psram") || $test$plusargs("tiny_p8_psram")) && s_p8_cs_start != 0) begin
     if ($time - s_p8_cs_start > 8000) $fatal(1, "SIM_TEST_FAIL P8 active CS exceeds 8 us");
     if ($time - s_p8_cs_start > s_p8_cs_max) s_p8_cs_max = $time - s_p8_cs_start;
   end

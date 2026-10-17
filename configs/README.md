@@ -84,8 +84,18 @@ external input to REF24 at boot and permit no-PLL XIN transitions. See the
 and configuration digest; ordinary Tiny acceptance firmware remains the default.
 `TINY_P8_ACCEPTANCE=YES APP=ci_smoke` instead selects the optional XPI PSRAM
 transport image and its distinct digest. Populate the verification device with
-`TINY_SIM_ARGS=+tiny_p8_psram`; P7/P8 acceptance selectors are mutually exclusive.
+`TINY_SIM_ARGS=+tiny_p8_psram`; P7/P8/P9 acceptance selectors are mutually exclusive.
 See the [P8 runbook](../docs/ip/tiny-soc-r2-psram.md) for bounded DMA and evidence.
+`TINY_P9_ACCEPTANCE=YES APP=ci_smoke` selects the DVP camera capture image;
+use `TINY_SIM_ARGS='+tiny_psram +tiny_p9_camera'` for the pin-level camera
+model. The optional `TINY_P9_QUICK=YES` selector is a small focused smoke image,
+not QVGA/VGA acceptance. See the [P9 runbook](../docs/ip/tiny-soc-r2-dvp.md).
+`TINY_P9_WORKLOAD=VGA_YUV422` selects the full 640x480 YUV422 image and
+changes its configuration digest. It requires P9 acceptance with QUICK=NO;
+the default `QVGA_RGB565` retains the existing configuration key. Pair the
+VGA image with `+tiny_p9_vga`; mismatched source geometry is not acceptance.
+For passive progress add `+tiny_p9_monitor +tiny_p9_monitor_log=<absolute-evidence-file>`;
+the separate log preserves firmware UART record boundaries.
 `make SOC=TINY` selects this
 committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
 Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in

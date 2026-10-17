@@ -87,6 +87,9 @@ SW_LTO               ?= NO
 WS2812_P3_ACCEPTANCE ?= NO
 TINY_P7_ACCEPTANCE   ?= NO
 TINY_P8_ACCEPTANCE   ?= NO
+TINY_P9_ACCEPTANCE   ?= NO
+TINY_P9_QUICK        ?= NO
+TINY_P9_WORKLOAD     ?= QVGA_RGB565
 COREMARK_MODE        ?= quick
 NPU_P5_ACCEPTANCE    ?= NO
 NPU_P6_ACCEPTANCE    ?= NO
@@ -134,6 +137,15 @@ CONFIG_KEY_VARS += TINY_P7_ACCEPTANCE
 endif
 ifeq ($(TINY_P8_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_P8_ACCEPTANCE
+endif
+ifeq ($(TINY_P9_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P9_ACCEPTANCE
+ifneq ($(TINY_P9_WORKLOAD),QVGA_RGB565)
+CONFIG_KEY_VARS += TINY_P9_WORKLOAD
+endif
+endif
+ifeq ($(TINY_P9_QUICK),YES)
+CONFIG_KEY_VARS += TINY_P9_QUICK
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -297,9 +309,27 @@ $(call validate_value,SW_LTO,$(VALID_BOOL))
 $(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P7_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P8_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P9_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P9_QUICK,$(VALID_BOOL))
+$(call validate_value,TINY_P9_WORKLOAD,QVGA_RGB565 VGA_YUV422 RECOVERY)
+ifneq ($(TINY_P9_WORKLOAD),QVGA_RGB565)
+ifneq ($(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),YES/NO)
+$(error Selected P9 workload requires TINY_P9_ACCEPTANCE=YES TINY_P9_QUICK=NO)
+endif
+endif
 ifeq ($(TINY_P8_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE),TINY/ci_smoke/YES/NO)
 $(error TINY_P8_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES TINY_P7_ACCEPTANCE=NO)
+endif
+endif
+ifeq ($(TINY_P9_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO)
+$(error TINY_P9_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES and no P7/P8 acceptance image)
+endif
+endif
+ifeq ($(TINY_P9_QUICK),YES)
+ifneq ($(TINY_P9_ACCEPTANCE),YES)
+$(error TINY_P9_QUICK requires TINY_P9_ACCEPTANCE=YES)
 endif
 endif
 ifeq ($(TINY_P7_ACCEPTANCE),YES)

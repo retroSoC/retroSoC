@@ -9,19 +9,19 @@ module tiny_peripheral_control (
     input  logic        warm_reset_i,
     input  logic        apply_i,
     input  logic        reset_command_i,
-    input  logic [13:0] request_i,
-    input  logic [13:0] idle_i,
+    input  logic [14:0] request_i,
+    input  logic [14:0] idle_i,
     input  logic        bus_idle_i,
-    input  logic [13:0] gate_actual_i,
-    input  logic [13:0] reset_held_i,
-    input  logic [13:0] reset_ready_i,
+    input  logic [14:0] gate_actual_i,
+    input  logic [14:0] reset_held_i,
+    input  logic [14:0] reset_ready_i,
     input  logic [31:0] timeout_i,
-    output logic [13:0] gate_o,
-    output logic [13:0] reset_o,
+    output logic [14:0] gate_o,
+    output logic [14:0] reset_o,
     output logic        block_o,
     output logic        done_o,
     output logic [ 4:0] fault_o,
-    output logic [13:0] reset_done_o
+    output logic [14:0] reset_done_o
 );
   typedef enum logic [2:0] {
     Idle,
@@ -34,20 +34,20 @@ module tiny_peripheral_control (
   typedef struct packed {
     state_e      state;
     logic        reset_command;
-    logic [13:0] request_mask,  gates, previous_gates, resets, reset_done, affected;
+    logic [14:0] request_mask,  gates, previous_gates, resets, reset_done, affected;
     logic [31:0] count;
     logic        done;
     logic [4:0]  fault;
   } control_t;
   control_t s_ctrl_d, s_ctrl_q;
-  logic [13:0] s_affected;
+  logic [14:0] s_affected;
   assign s_affected   = s_ctrl_q.affected;
   assign gate_o       = s_ctrl_q.gates;
   assign reset_o      = s_ctrl_q.resets;
   assign reset_done_o = s_ctrl_q.reset_done;
   // Arming the WFI leaf permission must not pause an unrelated DMA job.
   // The CPU leaf itself waits for its accepted I/D work before stopping.
-  assign block_o      = (s_ctrl_q.state != Idle) && (s_affected[13:1] != 0);
+  assign block_o      = (s_ctrl_q.state != Idle) && (s_affected[14:1] != 0);
   assign done_o       = s_ctrl_q.done;
   assign fault_o      = s_ctrl_q.fault;
   always_comb begin
@@ -74,8 +74,8 @@ module tiny_peripheral_control (
         end
       end
       Drain: begin
-        if (s_ctrl_q.count >= 16 && ((s_affected[13:1] == 0) || (bus_idle_i && idle_i[9])) &&
-            ((idle_i[13:1] & s_affected[13:1]) == s_affected[13:1])) begin
+        if (s_ctrl_q.count >= 16 && ((s_affected[14:1] == 0) || (bus_idle_i && idle_i[9])) &&
+            ((idle_i[14:1] & s_affected[14:1]) == s_affected[14:1])) begin
           s_ctrl_d.count = 0;
           if (s_ctrl_q.reset_command) begin
             s_ctrl_d.resets = s_ctrl_q.request_mask;
@@ -90,7 +90,7 @@ module tiny_peripheral_control (
           s_ctrl_d.state    = Idle;
         end
       end
-      GateWait: if (gate_actual_i[13:1] == s_ctrl_q.gates[13:1]) s_ctrl_d.state = Complete;
+      GateWait: if (gate_actual_i[14:1] == s_ctrl_q.gates[14:1]) s_ctrl_d.state = Complete;
       Hold:
       if ((reset_held_i & s_ctrl_q.request_mask) == s_ctrl_q.request_mask) begin
         s_ctrl_d.resets = 0;

@@ -26,10 +26,38 @@ module retrosoc_tiny_tb;
   wire s_xpi_sck;
   wire [3:0] s_xpi_nss;
   tri1 [3:0] s_xpi_data;
-  // Optional board population; the unchanged default has no PSRAM dependency.
-  wire s_psram_csn = ($test$plusargs(
-      "tiny_p8_psram"
+  wire s_dvp_pclk;
+  wire s_dvp_href;
+  wire s_dvp_vsync;
+  wire [7:0] s_dvp_data;
+  logic s_p9_camera_population = $test$plusargs(
+      "tiny_p9_camera"
   ) && !$test$plusargs(
+      "tiny_p9_recovery"
+  );
+  tiny_dvp_camera u_dvp_camera (
+      .pclk_o (s_dvp_pclk),
+      .href_o (s_dvp_href),
+      .vsync_o(s_dvp_vsync),
+      .dat_o  (s_dvp_data)
+  );
+  assign s_gpio_12 = s_p9_camera_population ? s_dvp_data[0] : 1'bz;
+  assign s_gpio_13 = s_p9_camera_population ? s_dvp_data[1] : 1'bz;
+  assign s_gpio_14 = s_p9_camera_population ? s_dvp_data[2] : 1'bz;
+  assign s_gpio_15 = s_p9_camera_population ? s_dvp_data[3] : 1'bz;
+  assign s_gpio_16 = s_p9_camera_population ? s_dvp_data[4] : 1'bz;
+  assign s_gpio_17 = s_p9_camera_population ? s_dvp_data[5] : 1'bz;
+  assign s_gpio_18 = s_p9_camera_population ? s_dvp_data[6] : 1'bz;
+  assign s_gpio_19 = s_p9_camera_population ? s_dvp_data[7] : 1'bz;
+  assign s_gpio_20 = s_p9_camera_population ? s_dvp_pclk : 1'bz;
+  assign s_gpio_21 = s_p9_camera_population ? s_dvp_href : 1'bz;
+  assign s_gpio_22 = s_p9_camera_population ? s_dvp_vsync : 1'bz;
+  // Optional board population; the unchanged default has no PSRAM dependency.
+  wire s_psram_csn = (($test$plusargs(
+      "tiny_psram"
+  ) || $test$plusargs(
+      "tiny_p8_psram"
+  )) && !$test$plusargs(
       "p8_absent"
   )) ? s_gpio[29] : 1'b1;
   ESP_PSRAM64H #(
@@ -45,6 +73,8 @@ module retrosoc_tiny_tb;
   `include "tiny_p6_devices.svh"
   `include "tiny_p7_observers.svh"
   `include "tiny_p8_observers.svh"
+  `include "tiny_p9_observers.svh"
+  `include "tiny_p9_recovery.svh"
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
@@ -92,15 +122,38 @@ module retrosoc_tiny_tb;
     if (s_done_cycles != 128) $fatal(1, "SIM_TEST_TIMEOUT Tiny cycles=%0d", s_cycles);
   end
 
+`ifndef RETROSOC_SOC__TINY_NETLIST
+  // Legacy RTL-only diagnostics reference hierarchy removed by synthesis.
+  integer p9_progress_cycle = 0;
+  always @(posedge s_clk) begin
+    p9_progress_cycle = p9_progress_cycle + 1;
+    if ($test$plusargs("tiny_p9_progress") && ((p9_progress_cycle % 10000) == 0)) begin
+      $display(
+          "P9_TB_PROGRESS cycle=%0d cpu_boot=%b core_rst=%b boot_release=%b fabric=%b dma_ready=%b apb_ready=%b i_trans=%b i_ready=%b d_trans=%b d_ready=%b slow_req=%0d slow_state=%0d slow_htrans=%b slow_hready=%b xpi_ar=%b/%b xpi_r=%b/%b",
+          p9_progress_cycle, u_dut.u_soc.s_cpu_boot_ready, u_dut.u_soc.s_core_rst_n,
+          u_dut.u_soc.s_boot_release_q, u_dut.u_soc.s_fabric_rst_n, u_dut.u_soc.s_dma_ready_sys,
+          &u_dut.u_soc.s_apb_cdc_ready, u_dut.u_soc.u_cpu_ahbl_if[0].htrans[1],
+          u_dut.u_soc.u_cpu_ahbl_if[0].hready, u_dut.u_soc.u_cpu_ahbl_if[1].htrans[1],
+          u_dut.u_soc.u_cpu_ahbl_if[1].hready, u_dut.u_soc.u_cpu_mem.s_req_q[0].state,
+          u_dut.u_soc.u_cpu_mem.s_slow_q.state, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.htrans,
+          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hready, u_dut.u_soc.u_xpi_mem_axi4_if.arvalid,
+          u_dut.u_soc.u_xpi_mem_axi4_if.arready, u_dut.u_soc.u_xpi_mem_axi4_if.rvalid,
+          u_dut.u_soc.u_xpi_mem_axi4_if.rready);
+    end
+  end
+
+`endif
+
 `ifdef SIMU_IVERILOG
   localparam bit ObserveUartAlways = 1'b1;
 `else
   localparam bit ObserveUartAlways = 1'b0;
 `endif
+  wire ObserveP9Progress = $test$plusargs("tiny_p9_progress");
   // The Verilator RTL prints accepted TX bytes. Icarus observes serial output for
   // all firmware measurements; SYSCTRL remains the authoritative verdict.
   initial begin
-    if (ObserveUartAlways) begin
+    if (ObserveUartAlways || ObserveP9Progress) begin
       forever begin
         @(negedge s_uart0_tx);
         #1627.604;

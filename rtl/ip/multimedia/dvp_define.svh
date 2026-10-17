@@ -11,6 +11,10 @@
 `ifndef APB4_DVP_DEFINE_SVH
 `define APB4_DVP_DEFINE_SVH
 
+// Internal completed-frame mailbox; configuration remains 128 bits.
+// {drop[31:0], words[31:0], pixels[31:0], lines[15:0], frames[31:0]}.
+`define APB4_DVP__FRAME_STATS_WIDTH 144
+
 // verilog_format: off -- preserve reviewed column alignment
 `define APB4_DVP_CTRL                    12'h000
 `define APB4_DVP_RXDATA                  12'h004
@@ -39,6 +43,10 @@
 `define APB4_DVP__CTRL_SNAPSHOT          1
 `define APB4_DVP__CTRL_CROP_ENABLE       2
 `define APB4_DVP__STREAM_ENABLE          0
+`define APB4_DVP__STATUS_ACTIVE          1
+`define APB4_DVP__STATUS_ENABLE          0
+`define APB4_DVP__STATUS_FIFO_EMPTY      2
+`define APB4_DVP__STATUS_ERROR           5
 `define APB4_DVP__FORMAT_SELECT          1:0
 `define APB4_DVP__FORMAT_BYTE_SWAP       2
 `define APB4_DVP__FORMAT_PIXEL_SWAP      3

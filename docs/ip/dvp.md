@@ -70,7 +70,7 @@ valid capture. RW registers support byte strobes.
 | `0x024` | `FRAME_COUNT` | RO | Completed frame count. |
 | `0x028` | `LINE_COUNT` | RO | Completed line count from the last frame. |
 | `0x02C` | `PIXEL_COUNT` | RO | Captured pixel count from the last frame. |
-| `0x030` | `WORD_COUNT` | RO | AXI4-Stream word count from the last frame. |
+| `0x030` | `WORD_COUNT` | RO | Full 32-bit AXI4-Stream word count from the last frame. |
 | `0x034` | `DROP_COUNT` | RO | Number of dropped words caused by overflow. |
 | `0x038` | `ERROR_STATUS` | RW1C | Sticky overflow, sync, size, partial, config, and abort errors. |
 | `0x03C` | `INTR_STATE` | RW1C | Sticky frame, line, overflow, configuration, and abort events. |
@@ -93,6 +93,46 @@ synchronization error, configuration error, and aborted capture. Error and
 interrupt state are write-one-to-clear. Hardware events have priority over a
 simultaneous software clear so that an event cannot be lost. The external
 interrupt is the reduction OR of `INTR_STATE & INTR_ENABLE`.
+
+`STATUS` bit 0 is ENABLE, bit 1 is ACTIVE, bit 2 is FIFO_EMPTY and bit 5
+is ERROR. ENABLE reports the configuration actually applied in the pixel
+domain; `CTRL` continues to read back the requested control value. Software
+can therefore acknowledge a disable/enable transition without a new register.
+ACTIVE is delivered with a coherent pixel-domain status snapshot;
+it is not an alias for ENABLE. An error W1C is retained until the pixel domain
+applies its mask and returns a status packet with the matching clear epoch.
+Old reports cannot acknowledge that operation. New source errors take priority
+over a simultaneous clear. APB response timing and register offsets remain
+unchanged; software must poll with a timeout. A stopped pixel clock cannot
+complete a clear or recovery operation.
+Configuration transfer is held behind pending error clears. A separate applied
+pixel configuration is updated only when the core accepts the mailbox; the
+mailbox's earlier data presentation cannot modify an active frame.
+Configuration and command transactions carry internal epochs; lifecycle idle
+stays low until the matching applied/drained status is returned. Waiting for
+the first VSYNC is armed work, not idle. Local reset-ready requires a native
+pixel-domain status after reset. Tiny global boot uses its existing internal
+leaf/APB/AXI prerequisites independently of this local-reset readiness, so an
+absent sensor clock does not become a global CPU boot dependency.
+
+ABORT cancels older configuration requests still waiting in the APB register
+shell without changing requested-register readback. Its command mailbox also
+carries the last issued configuration epoch. If that configuration arrives or
+applies after ABORT, it completes the existing acknowledgement but cannot
+rearm the core. The cancellation record is retired by the next different
+applied configuration epoch, before the one-bit epoch can be reused. Repeated
+or coalesced ABORT commands do not advance configuration epochs. ABORT does
+not wait for configuration readiness, including when an active frame blocks
+configuration application. Later configuration writes remain eligible after
+the command drains; normal recovery still clears errors and acknowledges
+disable/enable before using a new frame. No register or FIFO ABI is added.
+
+Error interrupt causes use a retained six-bit pending mask and an acknowledged
+mailbox, separate from the status snapshots. Repeated causes can coalesce while
+pending, but two events between status samples cannot cancel one another. New
+causes on mailbox acceptance remain pending for the next transfer. Clearing
+an interrupt does not repeatedly reassert it merely because ERROR_STATUS still
+holds an old error; a new occurrence does notify again.
 
 The RTL ABI constants are maintained directly in
 `rtl/ip/multimedia/dvp_define.svh`. Matching HAL offsets and masks are
@@ -120,6 +160,20 @@ pixel sampling and its falling edge completes a line. Snapshot mode stops
 after the next completed frame; continuous mode resets line and pixel counters
 and captures the next frame. Crop coordinates are applied in the normalized
 frame coordinate space, and a crop must fit within the configured frame size.
+Snapshot completion remains stopped until a disabled configuration rearms it.
+Source row width is checked against `FRAME_SIZE`, independently of crop
+selection. The first complete pixel beyond the configured width reports
+SIZE and ends the active frame before the column counter can wrap. HREF
+falling with fewer complete pixels also reports SIZE. Compensating long and
+short rows cannot form a valid frame merely because aggregate counts match.
+Rows outside the crop are checked too. An incomplete final byte additionally
+reports PARTIAL. These faults retain the existing sticky-error/event path;
+they do not flush already accepted FIFO or DMA data. Software discards the
+failed destination, drains/cancels DMA before source cleanup, and uses the
+existing ABORT, W1C and acknowledged disable/enable rearm sequence.
+An enabled source waiting for its first VSYNC does not treat the preceding
+partial frame as captured data. ABORT/FLUSH execute only on an accepted
+command handshake, not repeatedly from a retained CDC payload.
 
 The PIO path and AXI4-Stream path are mutually exclusive at the output:
 `RXDATA` pops a word only while stream output is disabled. The DMA HAL uses a
@@ -146,6 +200,27 @@ for one-frame DMA capture. Applications should use `rs_dvp_configure()`,
 `rs_dma_configure()`, `rs_dma_start()`, `rs_dvp_start()`, and
 `rs_dvp_capture_dma()` rather than
 accessing the registers directly.
+
+The snapshot helpers derive transfer length from the current frame/crop
+geometry. `word_capacity` bounds the destination; it is not a request to fill
+the entire allocation. DMA rejects odd active widths, insufficient capacity
+and address overflow before starting. PIO uses `ceil(width / 2) * height`
+storage words and preserves the zero-padded final halfword in each odd row.
+Success requires a new completed frame, exact pixel/word and DMA counts, an
+empty FIFO and all destination responses. The helper initializes CRC options
+explicitly. Tiny uses channel 2/four-beat bursts; Mini retains channel 3 and
+its existing maximum-burst default.
+Each convenience capture rearms the existing snapshot configuration through
+an acknowledged non-flushing disable/enable sequence; callers need not repeat
+`rs_dvp_configure()` between successful captures. PIO refuses a busy or suspended
+product-selected DMA consumer before changing stream mode, interrupts or FIFO
+contents. The source must also be inactive with an empty FIFO before rearm.
+
+Recovery drains/aborts DMA before issuing a source abort that clears FIFO
+storage. A failed DMA drain is returned to the caller without clearing the
+source tail. `rs_dvp_abort()` refuses a busy product-selected DMA channel and
+waits for an acknowledged abort, FIFO empty and error clear. Recovery timeout
+is an error, not permission to reuse the buffer or rearm capture.
 
 ## Frozen PPALite Source and Route Contract
 
@@ -176,10 +251,18 @@ Before processed capture is qualified, PPALITE-P2 must close or reuse current
 R2 evidence for source correctness: real SYNC/SIZE/PARTIAL detection, exact
 statistics beyond65535 words, coherent host-side active/configuration/status,
 every repeated frame event, error epochs and snapshot stop/rearm behavior.
-Current `dvp_core.sv` leaves three error paths reserved and uses a16-bit word
-counter/status payload. A downstream image/checksum cannot establish those
-unimplemented source guarantees. Minimal shared correctness fixes must retain
+The R2-P9 candidate implements SYNC/SIZE/PARTIAL detection and a 32-bit word
+counter transported through a 144-bit completed-frame mailbox. These source
+guarantees still require matching validation; a downstream image/checksum
+alone does not establish them. Minimal shared correctness fixes must retain
 register offsets/meanings, the512 B payload FIFO and Mini compatibility.
+
+The internal statistics layout is `{drop[31:0], words[31:0], pixels[31:0],
+lines[15:0], frames[31:0]}`. The existing two-phase CDC carries the entire
+144-bit snapshot; register offsets and the separate 128-bit configuration
+channel are unchanged. VGA 640x480 at two bytes per pixel reports 153600
+words rather than the former 16-bit wrapped value 22528. PIO counts one
+additional halfword-bearing word at each odd-width row end.
 
 Valid processed completion requires this source's full-frame/statistic/error
 verdict, a checked non-flushing stop, processor counts and exact DMA length

@@ -428,6 +428,15 @@
       "user_access": "none"
     },
     {
+      "symbol": "APB4_DVP",
+      "base": "0x1000E000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
       "symbol": "APB4_SDIO0",
       "base": "0x1000F000",
       "size": "0x00001000",

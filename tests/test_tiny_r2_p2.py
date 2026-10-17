@@ -59,9 +59,9 @@ def test_reset_inventory_has_active_domains_and_all_existing_targets() -> None:
     reset = inventory["reset_distribution"]
     assert reset["release_edges"] == 5
     assert reset["leaf_names"] == ["fabric", *(target["name"] for target in topology["apb_targets"])]
-    assert len(reset["leaf_names"]) == 21
+    assert len(reset["leaf_names"]) == 22
     assert {domain["name"] for domain in inventory["domains"]} == {
-        "aon", "system", "memory", "peripheral", "jtag", "audio"}
+        "aon", "system", "memory", "peripheral", "jtag", "audio", "dvp_pixel"}
     assert reset["clock_domain"] == "domain-specific" and reset["main_sram_payload_reset"] == "none"
     assert inventory["local_memory"]["clock_domain"] == "system"
 

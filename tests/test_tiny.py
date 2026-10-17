@@ -36,7 +36,7 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
         name = target["name"]
         assert f".presetn(s_{name}_rst_n)" in interfaces
         if name in {"gpio", "uart0", "i2c0", "timer0", "timer1", "pwm", "i2s", "sdio",
-                    "dma", "ws2812", "rng", "crc", "crypto"}:
+                    "dma", "ws2812", "rng", "crc", "crypto", "dvp"}:
             assert f"tiny_peripheral_leaf u_{name}_lifecycle" in interfaces
             assert f".rst_n_i(s_leaf_rst_n[{index}])" in interfaces
             assert f".rst_n_o(s_{name}_rst_n)" in interfaces
@@ -57,12 +57,14 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
     assert "RIB" not in rtl
     assert "SOC_ADDR_SRAM_END  32'h3001FFFF" in rtl
     assert "RS_SOC_SRAM_SIZE UINT32_C(0x00020000)" in sdk
+    assert "RS_SOC_APB4_DVP_BASE UINT32_C(0x1000E000)" in sdk
     assert "RS_SOC_PSRAM_BASE" not in sdk
     irq = (output / "include/retrosoc/generated/irq_metadata.h").read_text()
     assert "RS_SOC_EXTERNAL_IRQ_COUNT UINT32_C(30)" in irq
     assert "RS_SOC_EXT_IRQ_UART1" not in irq
     assert "RS_SOC_EXT_IRQ_I2C1" not in irq
     assert "RS_SOC_EXT_IRQ_SDIO UINT32_C(8)" in irq
+    assert "RS_SOC_EXT_IRQ_DVP UINT32_C(13)" in irq
     assert "RS_SOC_EXT_IRQ_DMA UINT32_C(18)" in irq
     assert "RS_SOC_EXT_IRQ_NPU" not in irq
     # A consumer of public SDK headers must see Tiny capabilities without

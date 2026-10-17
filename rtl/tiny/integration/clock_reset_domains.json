@@ -4,7 +4,7 @@
     "phase": "TINY-R2-P7",
     "clock_domain": "system",
     "target_controllers": "u_soc.u_fabric.gen_target[%d].u_controller",
-    "target_count": 27,
+    "target_count": 28,
     "apb_bridges": "SYS frontends; acknowledged per-endpoint crossings to AON, PCLK and MEM",
     "fabric_reset": "fabric leaf; target reset blocks admission and aborts accepted target work with DECERR",
     "hart_reset": "CPU-only accepted-work drain; DMA and all target responses stay active",
@@ -116,6 +116,21 @@
         "period_ns": 54.253472222,
         "async_group": "audio"
       }
+    },
+    {
+      "name": "dvp_pixel",
+      "clock": "dvp_pixel_clk",
+      "reset": "dvp_pixel_rst_n",
+      "reset_source": "gpio_20_io_pad",
+      "reset_primitive": "rst_sync",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_dvp_pclk_rst_sync",
+      "sta": {
+        "source_port": "gpio_20_io_pad",
+        "object_type": "port",
+        "period_ns": 83.333333333,
+        "async_group": "dvp_pixel"
+      }
     }
   ],
   "reset_distribution": {
@@ -145,7 +160,8 @@
       "ws2812",
       "crypto",
       "i2s",
-      "sdio"
+      "sdio",
+      "dvp"
     ],
     "cpu_prerequisite": "all global leaf resets and actual APB/DMA/XPI/RCU barriers; boot readiness latches until the next system reset",
     "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
@@ -320,6 +336,62 @@
       "instance": "u_rx_push_cnt_cdc"
     },
     {
+      "name": "dvp_configuration",
+      "source": "peripheral",
+      "destination": "dvp_pixel",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_dvp_config_cdc"
+    },
+    {
+      "name": "dvp_commands",
+      "source": "peripheral",
+      "destination": "dvp_pixel",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_dvp_command_cdc"
+    },
+    {
+      "name": "dvp_error_clear",
+      "source": "peripheral",
+      "destination": "dvp_pixel",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_error_clear_cdc"
+    },
+    {
+      "name": "dvp_status",
+      "source": "dvp_pixel",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_status_cdc"
+    },
+    {
+      "name": "dvp_errors",
+      "source": "dvp_pixel",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_error_events_cdc"
+    },
+    {
+      "name": "dvp_payload",
+      "source": "dvp_pixel",
+      "destination": "peripheral",
+      "primitive": "cdc_fifo_warm_flush",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_dvp_payload_fifo"
+    },
+    {
+      "name": "dvp_statistics",
+      "source": "dvp_pixel",
+      "destination": "peripheral",
+      "primitive": "cdc_2phase",
+      "path": "rtl/ip/multimedia/axi4s_dvp.sv",
+      "instance": "u_dvp_stats_cdc"
+    },
+    {
       "name": "dma_axi",
       "source": "peripheral",
       "destination": "system",
@@ -407,7 +479,8 @@
         "crc",
         "ws2812",
         "crypto",
-        "i2s"
+        "i2s",
+        "dvp"
       ]
     },
     "same_clock_isolation": [

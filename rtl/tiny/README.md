@@ -86,12 +86,13 @@ qualified external-I/O rates. `PIOLITE-P5` may join R2-P11 physical work only
 on the same PIO-inclusive source and configuration with both evidence sets.
 The original R2 phase IDs/titles and performance-only scope remain intact.
 
-Camera GPIO12-23 ALT1 remains mutually exclusive with I2S. DMA2/request 11,
-optional XPI NSS1 PSRAM at `0x54000000` through GPIO29 and shared CAM_XCLK
-retain their existing target contracts. RCU target 14 and DVP capabilities
-stay unsupported until actual integration. `TINY-R2-P8` and `TINY-R2-P9`
-require pin-level XPI PSRAM and full-frame readback, not fast-flash or
-separate-controller evidence.
+Camera GPIO12-23 ALT1 is now integrated and remains mutually exclusive with
+I2S. DVP uses APB4 `0x1000E000`, IRQ15, DMA2/request11, the existing pixel CDC
+FIFO and RCU target14. Optional XPI NSS1 PSRAM at `0x54000000` through GPIO29
+and shared CAM_XCLK retain their existing target contracts. `TINY-R2-P8` and
+`TINY-R2-P9` require pin-level XPI PSRAM and full-frame readback, not
+fast-flash or a separate controller; physical sensor and rate qualification
+remain later evidence.
 No camera/PSRAM rate is qualified by this freeze.
 
 The [P8 implementation](../../docs/ip/tiny-soc-r2-psram.md) adds explicit optional

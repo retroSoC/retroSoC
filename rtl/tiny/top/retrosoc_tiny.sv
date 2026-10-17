@@ -89,15 +89,15 @@ module retrosoc_tiny (
   logic [31:0] s_clkout_control;
   logic s_clkout, s_clkout_enable;
   logic s_clkout_idle_ref;
-  logic [13:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
-  logic [13:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
+  logic [14:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
+  logic [14:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
   logic s_periph_apply, s_periph_reset_command, s_periph_block, s_periph_done;
-  logic [13:0] s_periph_request, s_periph_reset_done;
+  logic [14:0] s_periph_request, s_periph_reset_done;
   logic [4:0] s_periph_fault;
   logic       s_bus_idle_ref;
   logic s_boot_release_d, s_boot_release_q;
   logic s_wfi_gate_sys;
-  logic [13:0] s_periph_idle, s_periph_idle_ref;
+  logic [14:0] s_periph_idle, s_periph_idle_ref;
   logic s_xpi_idle, s_xpi_idle_ref;
   logic s_pwm_write, s_crc_write;
   logic [ 4:0] s_clock_fault;
@@ -109,6 +109,7 @@ module retrosoc_tiny (
   logic s_crypto_irq, s_crypto_input_ready, s_crypto_output_ready;
   logic s_i2s_tx_stall, s_i2s_rx_stall;
   logic s_i2s_reset_ready;
+  logic s_dvp_irq, s_dvp_idle, s_dvp_reset_ready;
   logic s_done_pclk_rst_n, s_done_mem_rst_n;
   `include "tiny_apb_interfaces.svh"
 ahbl_if u_cpu_ahbl_if[2] (
@@ -133,6 +134,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   user_gpio_if u_user_gpio_if ();
   dma_req_if u_dma_req_if ();
   i2s_if u_i2s_if ();
+  dvp_if u_dvp_if ();
   ws2812_if u_ws2812_if ();
   sdio_if u_sdio_if ();
   rtc_if u_rtc_if (
@@ -394,7 +396,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   assign s_reset_ready[0] = 1'b0;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(14)
+      .DATA_WIDTH(15)
   ) u_gate_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -403,7 +405,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(14)
+      .DATA_WIDTH(15)
   ) u_held_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -412,7 +414,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(14)
+      .DATA_WIDTH(15)
   ) u_ready_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -421,7 +423,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(14)
+      .DATA_WIDTH(15)
   ) u_disabled_sync (
       .clk_i  (s_exec_clk),
       .rst_n_i(s_fabric_rst_n),
@@ -479,7 +481,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   assign s_periph_idle[11] = !s_rng_en && !s_rng_valid;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(14)
+      .DATA_WIDTH(15)
   ) u_periph_idle_sync (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -798,7 +800,7 @@ axi4_error_slave #(
       .PllPresent (TinyPllPresent),
       .PllProfiles(TinyPllPresent),
       .XinHzValue (`SOC_EXT_CLK_HZ),
-      .TargetMask (14'h3fff)
+      .TargetMask (15'h07fff)
   ) u_sysctrl (
       .clk_i           (s_exec_clk),
       .rst_n_i         (s_sysctrl_rst_n),
@@ -858,7 +860,7 @@ axi4_error_slave #(
       .ref_clk_i        (clk_i),
       .rst_n_i          (rst_n_i),
       .idle_i           (s_clock_safe),
-      .clients_idle_i   ((&s_periph_idle_ref[13:1]) && s_xpi_idle_ref),
+      .clients_idle_i   ((&s_periph_idle_ref[14:1]) && s_xpi_idle_ref),
       .warm_reset_i     (u_wdg_if.reset_req_o),
       .system_request_i (s_system_reset),
       .command_ack_i    (s_cpu_clock_idle && s_target_idle[`RETROSOC_TINY__TARGET_SYSCTRL]),
@@ -989,11 +991,21 @@ cdc_sync #(
       .apb4(u_wdg_apb4_if),
       .wdg (u_wdg_if)
   );
+  axi4s_dvp u_dvp (
+      .clk_i                  (s_dvp_clk),
+      .rst_n_i                (s_dvp_rst_n),
+      .apb4                   (u_dvp_apb4_if),
+      .rx_axis                (u_dvp_rx_axis_if),
+      .dvp                    (u_dvp_if),
+      .irq_o                  (s_dvp_irq),
+      .lifecycle_idle_o       (s_dvp_idle),
+      .lifecycle_reset_ready_o(s_dvp_reset_ready)
+  );
   apb4_dma #(
       .NumChannels  (8),
       .MaxBurstBeats(16),
       .FifoDepth    (32),
-      .RequestMask  (16'h31ff),
+      .RequestMask  (16'h39ff),
       .EnableStreams(1'b1)
   ) u_dma (
       .lifecycle_idle_o(s_periph_idle[9]),
@@ -1022,14 +1034,7 @@ cdc_sync #(
   assign u_dma_req_if.i2c0_rx_proc    = !s_dma_stall[5];
   assign u_dma_req_if.i2c1_tx_proc    = 1'b0;
   assign u_dma_req_if.i2c1_rx_proc    = 1'b0;
-  assign u_dvp_rx_axis_if.tvalid      = '0;
-  assign u_dvp_rx_axis_if.tdata       = '0;
-  assign u_dvp_rx_axis_if.tstrb       = '0;
-  assign u_dvp_rx_axis_if.tkeep       = '0;
-  assign u_dvp_rx_axis_if.tlast       = '0;
-  assign u_dvp_rx_axis_if.tid         = '0;
-  assign u_dvp_rx_axis_if.tdest       = '0;
-  assign u_dvp_rx_axis_if.tuser       = '0;
+  assign s_periph_idle[14]            = s_dvp_idle && s_dma_idle_sys;
 
   // Host logic remains SAFE24. Audio reset waits for its own clock, never CPU boot.
   tc_clk_buf u_audio_clock_buffer (

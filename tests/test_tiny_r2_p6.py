@@ -400,11 +400,13 @@ def test_p6_map_irq_request_and_pin_contract():
     for name, base in {"RNG": 0x20001000, "CRC": 0x20006000, "WS2812": 0x10008000,
                        "CRYPTO": 0x1000C000, "I2S": 0x10007000, "SDIO0": 0x1000F000}.items():
         assert regions["APB4_" + name] == base
-    assert not {"APB4_UART1", "APB4_I2C1", "APB4_DVP", "APB4_SPI0", "APB4_PIOLITE"} & regions.keys()
+    assert regions["APB4_DVP"] == 0x1000E000
+    assert not {"APB4_UART1", "APB4_I2C1", "APB4_SPI0", "APB4_PIOLITE"} & regions.keys()
     irqs = {i["name"]: i["core_bit"] for i in topology["interrupts"]}
     assert {k: irqs[k] for k in ("rng", "ws2812", "crypto", "i2s", "sdio")} == {
         "rng": 16, "ws2812": 17, "crypto": 23, "i2s": 8, "sdio": 10}
-    assert {15, 19, 24, 25, 26, 27}.isdisjoint(irqs.values())
+    assert irqs["dvp"] == 15
+    assert {19, 24, 25, 26, 27}.isdisjoint(irqs.values())
     assert irqs["rcu"] == 31
     pins = topology["gpio_alt_functions"]
     assert pins[9]["alt0"]["inputs"] == ["u_uart0_if.rx_i"]
@@ -506,7 +508,7 @@ int main(void) {
                 ((request==2 || request==11 || request==13) ? RS_DMA_KIND_STREAM_TO_MM :
                  RS_DMA_KIND_MM_TO_MM);
 #ifdef RS_SOC_TINY
-            bool supported=(0x31ffU & (1U << request)) != 0U;
+            bool supported=(0x39ffU & (1U << request)) != 0U;
 #else
             bool supported=request < 14U;
 #endif
@@ -540,7 +542,7 @@ int main(void) {
 def test_p6_reset_and_macro_policy_remains_explicit():
     text = (TINY / "top/retrosoc_tiny.sv").read_text()
     assert ".clk_aud_i" in text and "s_audio_rst_n" in text
-    assert ".EnableStreams" in text and "16'h31ff" in text
+    assert ".EnableStreams" in text and "16'h39ff" in text
     assert "apb4_crypto u_crypto" in text
     tree = (TINY / "top/tiny_reset_tree.sv").read_text()
     assert "s_audio" not in tree and "crypto" not in tree

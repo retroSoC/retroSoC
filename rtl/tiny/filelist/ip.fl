@@ -84,3 +84,7 @@
 /ip/storage/sdio_reg.sv
 /ip/storage/sdio_core.sv
 /ip/storage/apb4_sdio.sv
+/ip/multimedia/dvp_define.svh
+/ip/multimedia/dvp_core.sv
+/ip/multimedia/dvp_reg.sv
+/ip/multimedia/axi4s_dvp.sv

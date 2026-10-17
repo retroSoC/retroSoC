@@ -79,13 +79,18 @@ logic [23:0] s_p6_wire_shift = 0;
 logic [31:0] s_p6_wire_word;
 wire         s_p6_audio_enabled = u_dut.u_soc.u_i2s.u_i2s_core.enable_i;
 wire         s_p6_audio_wide = u_dut.u_soc.u_i2s.u_i2s_core.s_bitmode;
+wire         s_p6_recovery_mode = $test$plusargs("tiny_p9_recovery");
 // Decode actual BCLK/LRCLK/DOUT pads, independently of the receive engine.
 always @(posedge s_gpio[12] or negedge s_p6_audio_enabled) begin
   if (!s_p6_audio_enabled) begin
-    if (s_p6_wire_found) begin
-      if (s_p6_wire_matched != 512) $fatal(1, "SIM_TEST_FAIL P6 truncated I2S wire payload");
+    if (s_p6_wire_found || (s_p6_recovery_mode && s_p6_wire_examined != 0)) begin
+      if (s_p6_wire_matched != (s_p6_recovery_mode ? 8 : 512))
+        $fatal(1, "SIM_TEST_FAIL truncated I2S wire payload");
       s_p6_wire_cases++;
-      $display("R2_P6_I2S_WIRE bits=%0d samples=%0d", s_p6_audio_wide ? 24 : 16, s_p6_wire_matched);
+      if (!s_p6_recovery_mode)
+        $display(
+            "R2_P6_I2S_WIRE bits=%0d samples=%0d", s_p6_audio_wide ? 24 : 16, s_p6_wire_matched
+        );
     end
     s_p6_wire_matched  = 0;
     s_p6_wire_examined = 0;
@@ -104,10 +109,12 @@ always @(posedge s_gpio[12] or negedge s_p6_audio_enabled) begin
       s_p6_wire_boundary = 1;
       s_p6_wire_edges = 0;
       s_p6_wire_word = s_p6_audio_wide ? {8'd0, s_p6_wire_shift} : {16'd0, s_p6_wire_shift[15:0]};
-      if (!s_p6_wire_found && s_p6_wire_word == (s_p6_audio_wide ? 32'h120020 : 32'h2020))
+      if (!s_p6_wire_found && s_p6_wire_word ==
+          (s_p6_recovery_mode ? 32'h1234 : (s_p6_audio_wide ? 32'h120020 : 32'h2020)))
         s_p6_wire_found = 1;
-      if (s_p6_wire_found && s_p6_wire_matched < 512) begin
-        if (s_p6_wire_word != (s_p6_audio_wide ? 32'h120020 : 32'h2020) + 32'(s_p6_wire_matched))
+      if (s_p6_wire_found && s_p6_wire_matched < (s_p6_recovery_mode ? 8 : 512)) begin
+        if (s_p6_wire_word != (s_p6_recovery_mode ? 32'h1234 :
+            (s_p6_audio_wide ? 32'h120020 : 32'h2020) + 32'(s_p6_wire_matched)))
           $fatal(1, "SIM_TEST_FAIL P6 I2S wire ordering/data index=%0d", s_p6_wire_matched);
         s_p6_wire_matched++;
       end
@@ -274,10 +281,11 @@ for (genvar owner = 0; owner < 3; owner++) begin : gen_p6_axi_observer
   `undef _P6_AXI
 end
 always #27.126736111 if (s_p6_audio_running) s_p6_audio_reference = !s_p6_audio_reference;
-assign s_gpio_17 = s_p6_audio_reference;
+// Camera and codec are alternative board populations on these shared pads.
+assign s_gpio_17 = s_p9_camera_population ? 1'bz : s_p6_audio_reference;
 // The first integration case is an external codec loopback, across actual pads.
 // Independent wire decoding and error injection supplement firmware readback.
-assign s_gpio_15 = s_gpio_14;
+assign s_gpio_15 = s_p9_camera_population ? 1'bz : s_gpio_14;
 wire       s_p6_card_cmd;
 wire [3:0] s_p6_card_data;
 wire       s_p6_card_irq;
