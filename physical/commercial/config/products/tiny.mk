@@ -18,7 +18,7 @@ TOP := retrosoc_tiny_asic
 # validated against rtl/tiny/integration/clock_reset_domains.json when the
 # commercial timing contract is generated. This adapter analyzes the SAFE24
 # boot scenario, explicitly constraining RCU mux selections and PLL enable.
-COMMERCIAL_CLOCK_DOMAINS := aon system memory peripheral jtag audio
+COMMERCIAL_CLOCK_DOMAINS := aon system memory peripheral jtag audio dvp_pixel
 
 # Qualified-I/O interface groups and the budget variables each group requires.
 COMMERCIAL_IO_INTERFACES       := JTAG XPI ASYNC

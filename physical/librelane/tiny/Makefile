@@ -1,5 +1,12 @@
+LIBRELANE_IO_PROFILE ?= default
+ifneq ($(LIBRELANE_IO_PROFILE),default)
+ifneq ($(LIBRELANE_IO_PROFILE),camera)
+$(error LIBRELANE_IO_PROFILE must be default or camera)
+endif
+endif
+
 LIBRELANE_FLOW_ROOT        := $(ROOT_PATH)/physical/librelane/tiny
-LIBRELANE_RUN_ROOT         := $(VARIANT_ROOT)/physical/librelane/tiny/chip
+LIBRELANE_RUN_ROOT         := $(VARIANT_ROOT)/physical/librelane/tiny/$(if $(filter camera,$(LIBRELANE_IO_PROFILE)),chip-camera,chip)
 LIBRELANE_INPUT_DIR        := $(LIBRELANE_RUN_ROOT)/input
 LIBRELANE_RTL              := $(LIBRELANE_INPUT_DIR)/retrosoc_tiny_asic_sources.sv
 LIBRELANE_SDC              := $(LIBRELANE_INPUT_DIR)/retrosoc_tiny_chip.sdc
@@ -8,8 +15,8 @@ LIBRELANE_BONDPAD_LEF      := $(ROOT_PATH)/physical/librelane/bondpad/bondpad_70
 LIBRELANE_CONFIG           := $(LIBRELANE_RUN_ROOT)/config.json
 LIBRELANE_LOG              := $(LIBRELANE_RUN_ROOT)/librelane.log
 LIBRELANE_RESULT           := $(LIBRELANE_RUN_ROOT)/result.json
-LIBRELANE_META_RESULT      := $(META_DIR)/librelane-chip.json
-LIBRELANE_DOCTOR_RESULT    := $(META_DIR)/librelane-chip-doctor.json
+LIBRELANE_META_RESULT      := $(META_DIR)/librelane-chip$(if $(filter camera,$(LIBRELANE_IO_PROFILE)),-camera).json
+LIBRELANE_DOCTOR_RESULT    := $(META_DIR)/librelane-chip$(if $(filter camera,$(LIBRELANE_IO_PROFILE)),-camera)-doctor.json
 LIBRELANE_FINAL_DIR        := $(LIBRELANE_RUN_ROOT)/final
 LIBRELANE_ARCHIVE          := $(LIBRELANE_RUN_ROOT)/retrosoc-tiny-ihp130-chip.tar.gz
 LIBRELANE_RUN_TAG          ?= current
@@ -76,7 +83,7 @@ $(LIBRELANE_SDC): $(LIBRELANE_FLOW_ROOT)/scripts/generate_sdc.py \
 	@mkdir -p $(@D)
 	$(FLOW_PYTHON) $(LIBRELANE_FLOW_ROOT)/scripts/generate_sdc.py \
 		--domains $(LIBRELANE_CLOCK_DOMAINS) --pin-map $(LIBRELANE_PIN_MAP) \
-		--ext-clk-hz $(EXT_CLK_HZ) --output $@
+		--ext-clk-hz $(EXT_CLK_HZ) --io-profile $(LIBRELANE_IO_PROFILE) --output $@
 
 $(LIBRELANE_BONDPAD_GDS): $(LIBRELANE_BONDPAD_SCRIPT) | librelane-check-pdk
 	@mkdir -p $(@D)
@@ -90,7 +97,7 @@ $(LIBRELANE_CONFIG): $(LIBRELANE_CONFIG_DEPS)
 		--pin-map $(LIBRELANE_PIN_MAP) --rtl $(LIBRELANE_RTL) --sdc $(LIBRELANE_SDC) \
 		--pdn $(LIBRELANE_PDN) --bondpad-gds $(LIBRELANE_BONDPAD_GDS) \
 		--bondpad-lef $(LIBRELANE_BONDPAD_LEF) --sram-vh $(LIBRELANE_SRAM_VH) \
-		--ext-clk-hz $(EXT_CLK_HZ) --sram-size-kib $(SRAM_SIZE_KIB) \
+		--ext-clk-hz $(EXT_CLK_HZ) --io-profile $(LIBRELANE_IO_PROFILE) --sram-size-kib $(SRAM_SIZE_KIB) \
 		$(if $(filter YES,$(HAVE_SRAM_MACRO)),--have-sram-macro) \
 		--output $@
 

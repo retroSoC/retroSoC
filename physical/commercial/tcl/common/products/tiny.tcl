@@ -18,7 +18,7 @@
 namespace eval product {}
 
 proc product::expected_clock_domains {} {
-    return {aon system memory peripheral jtag audio}
+    return {aon system memory peripheral jtag audio dvp_pixel}
 }
 
 proc product::custom_clock_domains {} {
@@ -26,7 +26,7 @@ proc product::custom_clock_domains {} {
 }
 
 proc product::clock_names {} {
-    return {clk_aon clk_system clk_memory clk_peripheral clk_jtag clk_audio clk_sys_div2 clk_sys_div4 clk_clkout_source}
+    return {clk_aon clk_system clk_memory clk_peripheral clk_jtag clk_audio clk_dvp_pixel clk_sys_div2 clk_sys_div4 clk_clkout_source}
 }
 
 proc product::io_interface_groups {} {

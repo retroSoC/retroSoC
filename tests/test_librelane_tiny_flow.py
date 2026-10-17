@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -153,6 +156,61 @@ def test_chip_sdc_is_pad_aware_and_does_not_false_path_all_io() -> None:
     assert "set_false_path -from $reset_jtag_trst_n_i_pad" in sdc
     assert "set_false_path -from [all_inputs]" not in sdc
     assert "set_false_path -to [all_outputs]" not in sdc
+    assert "clk_pixel" not in sdc
+
+
+@pytest.mark.parametrize("profile", ["default", "camera"])
+def test_camera_io_clock_scenario(profile: str, tmp_path: Path) -> None:
+    module = load_module("tiny_sdc_scenario", FLOW_ROOT / "scripts/generate_sdc.py")
+    sdc = module.render(SimpleNamespace(domains=DOMAINS, pin_map=PIN_MAP,
+                                       ext_clk_hz=24_000_000, io_profile=profile))
+    groups = {name: set(ports.split()) for name, ports in re.findall(
+        r"set (\w+_(?:inputs|outputs)) \[get_ports \{([^}]*)\}\]", sdc)}
+    camera = {f"gpio_{pin}_io_pad" for pin in (*range(12, 20), 21, 22)}
+    config_module = load_module("tiny_config_scenario", FLOW_ROOT / "scripts/generate_chip_config.py")
+    arguments = chip_arguments(tmp_path)
+    arguments.io_profile = profile
+    config = config_module.build_config(arguments)
+    if profile == "camera":
+        assert groups["pixel_inputs"] == camera
+        assert not camera & groups["external_inputs"]
+        assert not camera & groups["external_outputs"]
+        assert "gpio_20_io_pad" not in groups["external_inputs"]
+        assert "gpio_20_io_pad" not in groups["external_outputs"]
+        assert "set_input_delay -min 0 -clock clk_pixel $pixel_inputs" in sdc
+        assert "set_input_delay -max 16.6666666666 -clock clk_pixel $pixel_inputs" in sdc
+        assert "-group [get_clocks {clk_pixel}]" in sdc
+        assert config["CLOCK_PORT"] == ["extclk_i_pad", "jtag_tck_i_pad", "gpio_20_io_pad"]
+    else:
+        assert "pixel_inputs" not in groups
+        assert camera | {"gpio_20_io_pad"} <= groups["external_inputs"]
+        assert camera | {"gpio_20_io_pad"} <= groups["external_outputs"]
+        assert "clk_pixel" not in sdc
+        assert config["CLOCK_PORT"] == ["extclk_i_pad", "jtag_tck_i_pad"]
+    assert "gpio_23_io_pad" in groups["external_outputs"]
+
+
+def test_camera_io_profile_rejects_unknown_value(tmp_path: Path) -> None:
+    module = load_module("tiny_sdc_bad_scenario", FLOW_ROOT / "scripts/generate_sdc.py")
+    with pytest.raises(ValueError, match="IO profile"):
+        module.render(SimpleNamespace(io_profile="both"))
+    module = load_module("tiny_config_bad_scenario", FLOW_ROOT / "scripts/generate_chip_config.py")
+    arguments = chip_arguments(tmp_path)
+    arguments.io_profile = "both"
+    with pytest.raises(ValueError, match="IO profile"):
+        module.build_config(arguments)
+
+
+@pytest.mark.parametrize("profile", ["default", "camera"])
+def test_camera_make_scenario_isolated(profile: str) -> None:
+    result = subprocess.run([
+        "make", "--no-print-directory", "-n", "CONFIG=configs/ci/ihp130-tiny.mk",
+        "SOC=TINY", "PDK=IHP130", f"LIBRELANE_IO_PROFILE={profile}", "librelane-input",
+    ], cwd=ROOT, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    directory = "chip-camera" if profile == "camera" else "chip"
+    assert f"physical/librelane/tiny/{directory}/input/retrosoc_tiny_chip.sdc" in result.stdout
+    assert result.stdout.count(f"--io-profile {profile}") == 2
 
 
 def test_tiny_flow_exposes_chip_target_only() -> None:

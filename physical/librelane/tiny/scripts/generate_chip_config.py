@@ -135,6 +135,9 @@ def macro_hooks(instances: dict[str, tuple[list[int], str]]) -> list[str]:
 
 
 def build_config(args: argparse.Namespace) -> dict[str, object]:
+    io_profile = getattr(args, "io_profile", "default")
+    if io_profile not in ("default", "camera"):
+        raise ValueError("IO profile must be default or camera")
     pads, _ = read_map(args.pin_map)
     power_counts = read_power_pad_counts(args.pin_map)
     signal_instances: dict[str, list[str]] = {side: [] for side in SIDE_ORDER}
@@ -213,7 +216,7 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
         "STA_EXTRA_CORNER_TCL_FILE": config_path(
             ROOT / "physical/librelane/tiny/sta_report_limit.tcl", config_dir
         ),
-        "CLOCK_PORT": list(CLOCK_PORTS),
+        "CLOCK_PORT": [*CLOCK_PORTS, *(["gpio_20_io_pad"] if io_profile == "camera" else [])],
         "CLOCK_PERIOD": 1_000_000_000 / args.ext_clk_hz,
         "VDD_NETS": ["VDD"],
         "GND_NETS": ["VSS"],
@@ -270,6 +273,7 @@ def main() -> int:
     parser.add_argument("--bondpad-lef", type=Path, required=True)
     parser.add_argument("--sram-vh", type=Path, required=True)
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
+    parser.add_argument("--io-profile", choices=("default", "camera"), default="default")
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--sram-size-kib", type=positive_integer, default=128)
     parser.add_argument("--output", type=Path, required=True)
