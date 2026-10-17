@@ -64,17 +64,20 @@ qualification. Current evidence requires, at minimum:
   deterministically by a bare-metal payload (dcache-dirty eviction traffic
   interleaved with fenced MMIO polls wedges it at ~22 rounds in ~1.5 M HP
   cycles) and by the kernel late in boot: the C906 issues a write AW whose W
-  data never leaves the core (zero W beats presented at the 128-bit port, the
-  LSU victim-buffer/store-buffer write-valids low, the BIU write buffers
-  empty), so the demux write FSM is parked in Active, the SDRAM core sits in
-  its write-data state waiting for the missing W stream, the concurrent read
-  fill's R never returns behind it, and the core freezes at the next fenced
-  MMIO poll (`retrosoc_hp_console_putc`). This is independent of the fence
-  instructions (the no-fence control payload wedges identically), of the
-  dcache write mode (write-back, write-through, and dcache-off all wedge),
-  and of the MAEE/cacheability work above. The hazard lives inside the
-  vendored C906's LSU write-data production under read/write concurrency
-  against a slow SDRAM partner; a guard write timeout does not cover the
+  data never leaves the core (zero W beats presented at the 128-bit port, and
+  at the stuck point the LSU store-buffer and victim-buffer write-valids and
+  the BIU write buffers are all empty, so the data vanished inside the core
+  after its AW was accepted), so the demux write FSM is parked in Active, the
+  SDRAM core sits in its write-data state waiting for the missing W stream,
+  the concurrent read fill's R never returns behind it, and the core freezes
+  at the next fenced MMIO poll (`retrosoc_hp_console_putc`). This is
+  independent of the fence instructions (the no-fence control payload wedges
+  identically), of the dcache write mode (write-back, write-through, and
+  dcache-off all wedge), and of the MAEE/cacheability work above. The
+  integration manual's write-channel contract (INCR only, len 1/4, 16
+  outstanding with one per ID, no write interleave, bufferable responses) is
+  honored by our fabric; the violation is inside the core's LSU data release,
+  exposed by the slow-SDRAM window. A guard write timeout does not cover the
   source-stalled W stream, so the wedge is permanent. Root-causing it needs
   C906 LSU debugging (store-buffer/victim-buffer data release) or an
   interconnect that buffers a full write burst before engaging the SDRAM
