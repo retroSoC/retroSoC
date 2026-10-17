@@ -252,10 +252,12 @@ module xpi_mm (
   assign core_tx_data_o = s_write_buffer_q[s_tx_beat][(s_tx_lane*8)+:8];
 
   assign s_err_code_q = xpi_error_e'(s_err_code_bits_q);
-  assign error_code_o = s_err_code_q;
-  assign error_addr_o = s_err_addr_q;
-  assign error_slot_o = s_err_slot_q;
-  assign error_pc_o = s_err_pc_q;
+  // The event is combinational. Its consumer captures on this same edge,
+  // before the retained metadata registers update; bypass the complete bundle.
+  assign error_code_o = axi_error_event_o ? s_err_code_d : s_err_code_q;
+  assign error_addr_o = axi_error_event_o ? s_err_addr_d : s_err_addr_q;
+  assign error_slot_o = axi_error_event_o ? s_err_slot_d : s_err_slot_q;
+  assign error_pc_o = axi_error_event_o ? s_err_pc_d : s_err_pc_q;
   assign perf_stall_event_o = (axi4.awvalid && !axi4.awready) ||
                               (axi4.wvalid && !axi4.wready) ||
                               (axi4.arvalid && !axi4.arready) ||
@@ -391,6 +393,7 @@ module xpi_mm (
             s_err_code_d      = XpiErrorRange;
             s_err_addr_d      = axi4.araddr;
             s_err_slot_d      = s_incoming_read_slot;
+            s_err_pc_d        = '0;  // Rejected before starting a LUT sequence.
             axi_error_event_o = 1'b1;
             s_state_d         = ReadErrorResponse;
           end
@@ -410,6 +413,7 @@ module xpi_mm (
             s_err_code_d      = XpiErrorRange;
             s_err_addr_d      = axi4.awaddr;
             s_err_slot_d      = s_incoming_write_slot;
+            s_err_pc_d        = '0;
             axi_error_event_o = 1'b1;
             s_state_d         = WriteDrain;
           end
@@ -529,6 +533,7 @@ module xpi_mm (
             s_err_code_d      = XpiErrorIllegal;
             s_err_addr_d      = s_addr_q;
             s_err_slot_d      = s_slot_q;
+            s_err_pc_d        = '0;  // W beat validation precedes LUT execution.
             axi_error_event_o = 1'b1;
             s_state_d         = axi4.wlast ? WriteResponse : WriteDrain;
           end else if (s_beat_q == s_len_q) begin
