@@ -46,6 +46,1577 @@ snapshot/report generation, synthesis/netlist-function checks and
 observational STA for both profiles. Human phase acceptance remains open.
 P9 DVP, SPI, PIO-lite, PPALite and physical qualification remain unimplemented.
 
+## TINY-R2-P9 implementation checkpoint (in progress, source 39ae718)
+
+The entries below preserve chronological development checkpoints. For the
+latest executed gates and outstanding work, see
+[the row-size remediation](#p9-row-size-and-io-constraint-remediation-2026-10-17).
+Earlier TIMEOUT/NOT_RUN statements retain their original attribution.
+
+The approved P9 implementation connects the shared DVP V2 block to Tiny at
+`0x1000E000`, IRQ15 and DMA2/request11. It adds the GPIO12-23 ALT1 camera
+profile, RCU target bit14, the pixel-clock CDC/lifecycle declaration, the Tiny
+product HAL binding, a bounded final DMA response drain and an odd-width PIO
+capture helper. The Tiny camera model and P9 evidence parser are source-owned
+verification inputs; Mini keeps its channel-3 DVP default.
+
+The current source revision has passed topology generation, clock/reset-map
+validation, the standalone DVP test, Tiny/IHP130 and Tiny/ICS55 firmware builds,
+and the P9 host contract/evidence tests. A real P9 Verilator firmware attempt
+did not reach a terminal marker within the bounded 120-second probe and is
+retained as unrun/timeout evidence; it is not a pass. No P9 acceptance,
+continuous FPS claim, physical sensor/IO qualification, or final Tiny Icarus
+campaign is inferred from these checks.
+
+### P9 focused integration follow-up (2026-10-15, uncommitted worktree)
+
+The follow-up uses base `39ae71887ca427c83d39ff663ec5f0d1aa19be1a` plus
+the retained worktree inputs; it is not evidence for the committed P8 tree.
+`tests/rtl/tiny_r2_p9_dma_tb.sv` instantiates production DVP and DMA, extracting
+the DMA parameters from Tiny's actual top-level instance. Its controlled AXI
+sink represents the destination address `0x54000c00`; it does **not** instantiate
+XPI, PSRAM pins, the Tiny fabric/RCU/pads or a CPU.
+
+The fixture exposed and fixed two functional gaps:
+
+- Tiny's old `0x31ff` mask rejected request11 in both DMA and the SDK. The
+  P9 mask is now `0x39ff`, with topology, generated capability and validators
+  agreeing. I2C1 requests remain unsupported; Mini's mask is unchanged.
+- Shared DVP event toggles were decoded only on rising edges, losing every
+  second notification. Both synchronized edges now generate an event. The
+  fixture checks two frame-starts, two frame-completions and four line ends.
+  The DVP register ABI, 512-byte payload FIFO and Mini channel binding remain
+  unchanged.
+
+The 4x2 RGB565 case verifies all 16 destination bytes, word sidebands, canaries,
+DMA2/request11 admission, exact bytes_done/remaining and lifecycle drain.
+Frame-done occurs while the last stream word is withheld; completion remains
+false through that hold and a separately delayed final B response (each held
+for at least 30 system cycles). A second execution reuses the binary and
+returns final SLVERR, checking that DONE and confirmed byte accounting cannot
+publish a successful frame. A subsequent 3x2 PIO snapshot checks 12 valid bytes,
+both partial line words, repeated interrupts and final FIFO empty without
+success-path abort/flush.
+
+Verilator and Icarus focused executions pass command status, their explicit
+`SIM_TEST_PASS Tiny P9 focused DVP DMA` marker and forbidden-marker checks.
+This CPU-less test has no SYSCTRL TEST_STATUS; it cannot satisfy the full Tiny
+firmware gate, which still requires TEST_STATUS and the configured terminal
+marker. Sixteen DVP/P9/SDK tests and nine source/topology rejection tests pass.
+C format/policy/host tests, RTL format/style/readiness, Ruff and diff checks
+pass. Both selected P9 firmware profiles build without C warnings after
+replacing negative canary indexing with an explicitly bounded guard address.
+Make still reports approximately 38 seconds of filesystem clock skew; full
+compiler/link commands ran and their outputs are retained. No warning baseline
+or additional MISRA deviation was introduced.
+
+Focused compile/simulation logs, failed diagnostic attempts, quality results
+and PR dry-runs reside under
+`build/ics55-tiny-2026-10-15-13-20-d336f87100e2/meta/tiny-r2-p9/`.
+`focused-final.json` records the 16-test invocation; `source-checks.json`
+records the nine-test invocation. `focused-source-final/` retains a snapshot and
+hashes of the focused inputs (not a physical/whole-product qualification
+manifest). Firmware logs/results are under `meta/tiny-r2-p9/` in
+`build/ics55-tiny-2026-10-15-15-25-9a44f7871af5/` and
+`build/ihp130-tiny-2026-10-15-15-25-064cd640790c/`.
+
+P9 remains **in progress**. The preceding session reported a 100k-cycle timeout
+before a P9 firmware stage marker, with CPU instruction fetch waiting in the
+slow/XPI response path. Its `diagnose-progress-100k.log` is empty on disk:
+this is session-reported diagnostic context, not retained, source-bound
+measurement evidence or proof of a permanent deadlock. Do not reconstruct
+that missing log or promote its inferred cause. Bounded failed probes remain
+TIMEOUT; full terminal acceptance remains NOT_RUN.
+The newly built firmware was not simulated in this follow-up. The current
+firmware still lacks full payload readback and measured FIFO/backpressure
+records (its printed zeros are placeholders, not measurements). Full
+QVGA/VGA, YUV422/crop/error/recovery/service-budget cases, actual DVP-to-XPI
+transport, current synthesis/mapping/netlist and observational STA remain open.
+Full repository Pytest and full PR/nightly executions were not run in this
+focused handoff; dry-runs still select P7 firmware, not the P9 image. Long
+Icarus firmware remains deferred to final qualification. Human P9 acceptance
+and P10 advancement are not implied.
+
+### P9 approved P1 remediation (2026-10-15, 16-22 campaign)
+
+The approved remediation remains on `dev`, base `39ae718`, with uncommitted
+P9 sources. The shared DVP now acknowledges error W1C through a clear epoch
+and coherent pixel-status mailbox, preserves simultaneous new source errors,
+and executes ABORT/FLUSH only at command acceptance. Configuration START is
+held behind an outstanding error clear; an applied configuration register
+prevents an unaccepted mailbox payload from changing an active frame.
+Snapshot completion stays stopped until a disabled configuration rearms it.
+The existing ABI and 512-byte payload FIFO are unchanged.
+
+The real C HAL now decodes ACTIVE at bit1, initializes all DMA/CRC options,
+derives exact frame/crop length rather than treating capacity as length,
+rejects odd-width DMA/undersized buffers/address overflow, and checks new
+frame statistics, FIFO empty and final DMA responses. Failed DMA drain returns
+without source FIFO erasure. Abort and error clearing are bounded; a stopped
+pixel clock cannot be acknowledged as recovered. Mini's channel3/maximum
+burst default and Tiny's channel2/four-beat binding are tested separately.
+
+The firmware compares every DMA payload word and odd-row PIO word, including
+padding and guards. The camera uses a deterministic frame-independent pattern
+and a default 1 MHz candidate PIXCLK; PIO crops 7x3 from the same input frame.
+FIFO/backpressure records come from verification-only handshake observers.
+The parser rejects malformed terminal markers, inconsistent dimensions/frame
+counts, missing readback/observations and stale or failed run identities.
+These changes do not themselves constitute full-firmware acceptance.
+
+Retained validation:
+
+- **28 focused tests pass** after the configuration-barrier correction:
+  shared DVP, P9 topology/ABI, both simulator backends and parser/provenance
+  negative cases. The controlled backend checks delayed final stream/B,
+  SLVERR, stopped-high/low PIXCLK, START ordering, simultaneous new error/W1C,
+  repeated events and no unsolicited snapshot restart.
+- The real XPI backend captures **16x8 / 256 bytes** through production
+  DVP/DMA2/XPI and the NSS1 PSRAM pin model, then reads every word and both
+  canaries through mapped AXI/serial transactions. It also checks **7x3 PIO**
+  (42 valid bytes in 48 bytes of row-padded storage). No PSRAM backdoor supplies
+  the expected result. Both Verilator and Icarus pass strict command/marker
+  checks. These fixtures bypass CPU, product pads, fabric and RCU.
+- Fourteen P8 pin-level compatibility scenarios passed in the earlier
+  42-test combined invocation; their production XPI/model sources were not
+  changed by the subsequent DVP configuration-barrier fix.
+- Real HAL host tests pass for Tiny and Mini, including initialized CRC
+  fields, capacity rejection, odd-width PIO, no success before B, and no source
+  abort when DMA cleanup remains busy. C format/policy, RTL format/style/
+  readiness, Ruff, dependency-lock validation and diff checks pass. No new
+  MISRA deviation or warning-baseline edit is introduced.
+- Both ICS55 and IHP130 P9 firmware builds pass without C warnings. The
+  shared DVP register-shell formal prove/cover passes, including hardware
+  events winning over simultaneous software clears. The final Tiny ASIC top
+  elaborates in Verilator lint; this is not synthesis or CDC/RDC signoff.
+
+Evidence root:
+`build/ics55-tiny-2026-10-15-16-22-9a44f7871af5/meta/tiny-r2-p9/remediation/`.
+`barrier-tests.json` and `barrier-pytest/` retain the final functional test
+invocation and per-simulator logs; `focused.json` retains the earlier combined
+42-test run. `current-quality.json` and `final-rtl.json` record the quality
+checks. `source/` captures the earlier inputs; `source-final/` captures the
+configuration-barrier test inputs. A subsequent local unused-output lint
+annotation is recorded separately; it does not relabel an earlier binary's
+source digest. Formal evidence is under
+`build/ihp130-2026-10-15-16-22-c30fb9412aa3/formal/dvp/`.
+IHP130 firmware evidence is under
+`build/ihp130-tiny-2026-10-15-16-22-064cd640790c/meta/tiny-r2-p9/remediation/`.
+
+One 120-second startup diagnostic used the same campaign's **pre-configuration-
+barrier binary**, with its original source snapshot retained. It exited 124
+and is TIMEOUT, not PASS. Unlike the earlier empty log, its streamed
+`boot-before-config-barrier.log` shows continuing fetch/XPI progress:
+at cycle 570000 the diagnostic counters are 5194/6195 and the last progress
+sample is 569975. Addresses `0x74..0x84` match the retained ELF's `app_loader`
+copy loop. These handshake counters are startup diagnostics, not retired
+instruction/performance measurements. The observation does not support a
+permanent XPI deadlock; it does not prove eventual boot or P9 capture success.
+No further long firmware run was started.
+
+All four Tiny PR/nightly dry-runs pass but still select P7 firmware. Full
+PR/nightly/Pytest, final-source top-level firmware simulation, synthesis,
+mapping/netlist checks and observational STA remain unrun in this remediation.
+The final-source full-SoC binary was not rebuilt after the last configuration
+barrier; focused simulations and top lint cover that correction. Full Icarus
+firmware remains deferred. Full QVGA/VGA, VGA word-counter width, YUV422,
+sensor-rate/service-budget, product mode-transition and physical qualification
+remain P9/final-campaign gaps. Filesystem clock-skew warnings are retained.
+This closes the scoped remediation work for review, not human P9 acceptance;
+P10 is not authorized by these results.
+
+### P9 review fixes: rearm, admission and notifications (2026-10-15)
+
+The next approved review-fix handoff addresses the four additional P1 findings
+on the same `39ae718` worktree. No new register, channel, clock domain, dependency
+revision or physical operating point is introduced.
+
+- The HAL uses the existing STATUS.ENABLE bit to observe applied pixel-domain
+  enable state, while CTRL remains requested control readback. Successful
+  captures can rearm the same configuration through an acknowledged,
+  non-flushing disable/enable sequence. Capture helpers use the supplied
+  timeout for their new start waits. Tiny and Mini host tests model delayed
+  application and execute consecutive DMA and PIO captures.
+- PIO rejects busy/suspended DMA before touching stream mode, IRQ state or
+  FIFO contents, and rejects active/nonempty source rearm. Startup failure
+  after this helper starts DMA uses its own drain/abort cleanup; rejected
+  configuration does not abort another owner.
+- Configuration/command epochs keep lifecycle idle low until the source
+  applies the configuration or drains the command. Armed capture waiting
+  for VSYNC is busy. Local reset-ready requires a fresh native status packet.
+  Global CPU boot already uses internal leaf/APB/AXI prerequisites rather
+  than the local-reset readiness vector, and that production expression is
+  unchanged. The fixture extracts both actual expressions and tests absent
+  PIXCLK global-boot independence separately from local-reset acknowledgement.
+- Error causes are retained in a pending mask and transferred by an
+  acknowledged mailbox. Even pairs of errors cannot cancel as sampled toggle
+  parity did. Tests cover paired errors, cleared IRQ not reasserting from an
+  old sticky level, and notification of a new occurrence of the same cause.
+
+The controlled fixture now includes the production Tiny peripheral controller:
+gate/reset requests time out without being applied while configuration or
+commands are pending; armed capture blocks gating, and fully drained capture
+permits it. The actual XPI/PSRAM and 16x8 DMA/7x3 PIO checks remain in both
+simulators. These are focused controller/HAL/RTL tests, not complete pad-level
+mode-transition or full firmware qualification.
+
+Before the fixes, the retained C host command failed and the new Icarus cases
+reported `pending configuration reported idle` and `paired faults lost their
+interrupt`. Icarus returned zero for those fatal statements; the separate
+strict simulation checks correctly marked them failed. Those diagnostic logs
+are under the `17-15` variant below. Their temporary Pytest converted image
+was subsequently removed by Pytest cleanup and is not claimed as retained.
+
+The `17-15` combined campaign passed **50 tests**, including 14 P8 serial-PSRAM
+compatibility cases. Final `17-55` source replay passed **36 DVP/P9/evidence
+tests**, with the unchanged P8 sources retaining their earlier compatibility
+evidence. Each compiled controlled fixture is reused for response error,
+clear recovery, pending control, paired errors, native reset and rearm cases.
+The formal register-shell prove/cover and both clock-domain inventories pass.
+The formal/DVP register sources are unchanged since the passing `17-15` proof.
+C format/policy/host tests, RTL format/style/readiness, Ruff and diff checks
+pass; no additional MISRA deviation or warning-baseline update was made.
+
+Both final Tiny profiles build firmware without C warnings. The final ICS55
+full-SoC Verilator executable was also compiled into a fresh variant. Its
+`prepared-build.json` was captured before outputs existed; the build identity
+binds unchanged **1808 input hashes** to the resulting ELF, HEX and simulator.
+`validate_run()` verifies those artifact bytes, the matching build-source and
+configuration records, and the executable/firmware launch arguments. Negative
+tests reject existing outputs, changed inputs, stale artifacts and wrong
+launches. A build identity alone is not a passing simulation result.
+
+Final evidence:
+`build/ics55-tiny-2026-10-15-17-55-9a44f7871af5/meta/tiny-r2-p9/review-fixes/`.
+The final IHP130 build is
+`build/ihp130-tiny-2026-10-15-17-55-064cd640790c/meta/tiny-r2-p9/`.
+Earlier combined tests and negative logs are under the corresponding ICS55
+`17-15` variant's `meta/tiny-r2-p9/review-fixes/`; formal reports are under
+`build/ihp130-2026-10-15-17-15-c30fb9412aa3/formal/dvp/`.
+The final source digest is
+`728ed683fcc027929c479d2302f24ffdd642912d51f752bc5ff2c8097d2e2404`.
+Filesystem clock-skew and existing EDA warnings remain observations.
+
+No new full-firmware simulation, broad PR/nightly/Pytest, synthesis, netlist,
+STA or physical flow was run in this handoff. Full QVGA/VGA/YUV422, VGA counter
+width, service-budget and complete product-transition coverage remain open;
+the long Icarus firmware gate stays deferred. The earlier 120-second startup
+diagnostic remains historical TIMEOUT evidence. Human P9 acceptance and P10
+advancement are not implied by these scoped fixes.
+
+### P9 START/ABORT ordering correction (2026-10-15, uncommitted worktree)
+
+The approved correction retains the `39ae718` source baseline and fixes the
+reviewed START/ABORT race in the shared DVP. An accepted ABORT retires older
+unsent register-side configuration requests. The command CDC now carries
+the last issued configuration epoch; a pixel-domain cancellation record
+prevents that configuration from rearming the core if it applies after ABORT.
+The normal config acknowledgement still completes. A subsequent different
+applied config epoch retires the record before epoch reuse, and commands do
+not wait for an active frame's blocked config. Later writes and the existing
+acknowledged disable/enable recovery remain usable. The external DVP V2 ABI,
+512-byte FIFO, Mini transport binding and Tiny DMA2/request11/IRQ15/RCU14 are
+unchanged. No C implementation, dependency, warning baseline or metric policy
+was changed by this correction; no new MISRA deviation was introduced.
+
+Two pre-fix Icarus attempts reproduced `stale START resumed after ABORT`:
+`before.json` covers an unsent START behind W1C and repeated ABORTs;
+`before-single.json` covers an already issued START and one ABORT. Each raw
+Icarus invocation returned zero with a Fatal marker; the Pytest verdict was
+correctly failed. Both source snapshots, converted images and logs are retained.
+
+After correction, the focused command passed **36 tests**. The existing
+controlled binary was reused for three new scenarios in each simulator:
+`abort_order`, `abort_active`, and `abort_applied`. They cover stopped-high/low
+PIXCLK, pending and in-flight START, repeated/coalesced commands, the delayed
+config application, active capture with a blocked config, and a later START
+queued after ABORT. Existing DMA tail/late-response, error notification,
+lifecycle, rearm and actual XPI/PSRAM cases also passed. These are behavioral
+fixtures, not complete Tiny firmware or physical evidence.
+
+The first quality command stopped at fixture formatting. The final quality
+command passed RTL format/style/readiness and the Tiny/Mini C host tests;
+Ruff passed. Only whitespace in `tiny_r2_p9_dma_tb.sv` changed after the passing
+test run. `format-equivalence.json` binds the identical token sequence and
+verifies all other tested input hashes are unchanged; the old test source
+snapshot is retained instead of relabeling its binary. The shared register
+formal prove/cover passed, including cancellation of pending config under
+arbitrary config readiness. This is a register-shell proof, not complete CDC
+formal qualification. Both Tiny PDK PR/nightly dry-runs passed; they still
+select P7 firmware and cannot establish P9 acceptance.
+
+The two Tiny firmware/Verilator builds use fresh variants and prepared input
+records; their completion and artifact hashes are recorded separately in each
+variant's `build.json` and `build-identity.json`. A compiled simulator is not a
+passing full firmware simulation. The retained executable hashes and versions
+identify the tools actually used. The strict R2-P1 cached-archive installation
+audit was unavailable because `RETROSOC_DEVELOPMENT_CACHE` is unset; that audit
+is not claimed, and no tool installation or version was changed.
+
+Evidence roots:
+
+- `build/ics55-tiny-2026-10-15-19-15-9a44f7871af5/meta/tiny-r2-p9/abort-order/`
+- `build/ihp130-tiny-2026-10-15-19-15-064cd640790c/meta/tiny-r2-p9/abort-order/`
+- Register formal: `build/ihp130-2026-10-15-19-15-c30fb9412aa3/formal/dvp/`
+
+The final build input map contains 1750 entries, digest
+`2bf849e9868ea0e7e24fbaedc7207db8bd6f5df13b3128b8ad797d37287921b1`.
+It uses the existing P8 source collector for both PDKs; formal inputs and
+documentation are recorded separately. It is a new evidence set, not a
+replacement for the earlier 1808-entry collector or its historical claims.
+Full firmware simulation, broad Pytest/PR/nightly execution, synthesis/mapping,
+netlist, STA and physical flows remain unrun in this scoped correction.
+QVGA/VGA/YUV422, VGA counter width, service budgets and full product mode
+transitions remain open. Long full-firmware Icarus remains deferred to final
+Tiny qualification; neither P9 human acceptance nor P10 advancement is implied.
+
+### P9 retained-binary QVGA replay (2026-10-15, timed out)
+
+The approved validation-only handoff reused the reviewed ICS55 SAFE24 build
+`ics55-tiny-2026-10-15-19-15-9a44f7871af5` without recompilation or RTL/HAL/test
+changes. Its `APP=ci_smoke TINY_P9_ACCEPTANCE=YES` image requests one 320x240
+RGB565 frame through DMA2/request11 into NSS1 PSRAM at `0x54010000`, complete
+153600-byte readback/guards, and a subsequent 7x3 odd-width PIO check. The
+retained HEX SHA-256 is
+`615f08b42cf9490b0574edddc8f9e15d4e171de8e9dd3694060ce7280e8c09a1`.
+The build/source/runtime identities were checked before execution; the
+1750-entry input map and 296 runtime inputs remained unchanged afterward.
+
+Exactly one ICS55 attempt ran from **2026-10-15 19:44:56 to 21:44:56 CST**
+(`11:44:56..13:44:56 UTC`). The command exited **124** at **7200.012 seconds**;
+`result-sim.json` records a terminal failed result and
+`child_cleanup_pending=false`. `acceptance.json` classifies the attempt as
+**timeout**, with null measurements and `phase_accepted=false`. There was no
+automatic retry or extension. The independently prepared IHP130 image was
+**NOT_RUN** because ICS55 strict acceptance was the prerequisite. Both profile
+PR dry-runs passed; their P7 matrix is not P9 firmware acceptance.
+
+The immutable launch command is in the attempt's `result-sim.json`. It uses
+`timeout --foreground --kill-after=30s 7200s`, `stdbuf -oL -eL`, the retained
+Verilator executable and HEX, `+max_cycles=40000000`, `+tiny_p8_psram`,
+`+tiny_p9_camera`, and `+tiny_p9_half_ns=500`. It does not enable
+`+tiny_p9_progress`, which also enables a second UART character observer.
+The 1 MHz camera input is a candidate digital model rate, not qualification.
+
+The complete 164-byte simulation log contains model initialization,
+`P9_STAGE CAMERA_PINS_START`, and `P9_STAGE CAMERA_PIN pin=15`. Approximately
+32-, 64-, and 94-minute external checks retained that same last stage.
+There is no `CAMERA_PINS_DONE`, PSRAM-init, frame/PIO/observation record or
+`SIM_TEST_PASS`/`SIM_TEST_FAIL` terminal marker. The strict checker rejected
+the missing success records and unsuccessful command; absence of a forbidden
+error string does not make a timed-out command pass. No frame size, throughput,
+FIFO high-water or hardware timing measurement is claimed from this attempt.
+
+Read-only diagnosis confirms that the last marker is emitted inside
+`rs_p9_camera_pins()` after the GPIO15 call. `rs_gpio_configure()` performs
+ordinary register accesses without a software polling loop; the GPIO register
+shell's APB response is not qualified by PIXCLK, and the camera GPIO12-23
+assignment does not replace UART0 GPIO8/9. These checks do not establish the
+root cause or the exact stopped instruction. Without current PC/bus/cycle
+samples, the final UART write response, later GPIO accesses, CPU/fabric state
+and simulation progress cannot be distinguished. A deterministic hardware
+deadlock or regression in the START/ABORT correction is not established by
+this one attempt. A separately approved focused progress diagnostic is needed;
+repeating the full two-hour acceptance run is not the next step.
+
+Evidence:
+`build/ics55-tiny-2026-10-15-19-15-9a44f7871af5/meta/tiny-r2-p9/qvga-replay/attempt-01/`.
+It retains launch/source/library identity, raw log, command and marker verdicts,
+before/after inputs, interval snapshots and the final diagnosis. IHP130's
+conditional NOT_RUN record is under the matching `19-15-064cd640790c` variant's
+`meta/tiny-r2-p9/qvga-replay/`. Existing focused/formal evidence is unchanged.
+Strict tool-install archive audit, full QVGA success, VGA counter width,
+YUV422, service budgets, product transitions, synthesis/netlist, STA and
+physical qualification remain open. Full long Icarus remains deferred; no P9
+acceptance or P10 advancement is authorized by this failed replay.
+
+### P9 passive GPIO/UART diagnostic preparation (2026-10-15, build blocked)
+
+The approved diagnostic plan adds only an opt-in `+tiny_p9_diag` observer to
+`rtl/tiny/dv/tiny_p9_observers.svh`. It writes a separate trace without enabling
+the legacy duplicate UART character observer. It records native-domain CPU
+address/response counts, GPIO/UART APB requests and responses, clock/reset and
+CDC state, slow-path state and UART FIFO/drain signals. It observes the accepted
+UART line for GPIO15, then ends after 100000 REF cycles; the independent
+diagnostic cap is 5000000 cycles. These are diagnostic endpoints, not firmware
+acceptance markers. No RTL/HAL functionality, public ABI, profile, dependency,
+warning baseline or metrics policy was changed.
+
+The fresh diagnostic variant is
+`build/ics55-tiny-2026-10-15-22-04-9a44f7871af5/`. Its prepared input identity
+differs from the retained `19-15` build only in that observer. The original
+ELF/HEX and generated filelists remain unchanged. RTL formatting, full owned
+style/readiness and the Tiny/ICS55 PR dry-run passed. Verilator translated the
+model and generated its C++ makefile, but the single build command exited 2
+after 13.351 seconds during C++ precompiled-header compilation:
+
+```text
+ccache: error: Failed to create temporary file for /run/user/417800035/ccache-tmp/tmp.cpp_stdout.sRJsDx: Read-only file system
+```
+
+The direct compile-command replay omitted `CCACHE_DIR` and `CCACHE_TEMPDIR`
+normally exported by `rtl/tiny/Makefile`; both were unset. This is the confirmed
+build-launch failure, not an established defect in the observed SoC. The
+generated C++ sources are retained, but there is no diagnostic executable or
+simulation attempt. In accordance with the approved stop-on-failure/no-retry
+instruction, the command was not retried and the 900-second diagnostic was
+**NOT_RUN**. IHP130, full QVGA acceptance and all broader gates remain unrun.
+
+Evidence is under the new variant's
+`meta/tiny-r2-p9/gpio-diagnostic/attempt-01/`: `prepared-model.json`, source
+snapshot, quality/dry-run results, failed `compile.json`/`compile.log`, and
+`build-diagnosis.json`. The concrete recovery is to restore the repository's
+existing ccache environment and resume the generated C++ makefile in place;
+it does not require another Verilator translation or firmware build. That
+continuation needs explicit authorization under this handoff's stop condition.
+The original QVGA timeout root cause remains unknown. The new observer has
+not yet been exercised, and no P9 acceptance or P10 advancement is implied.
+
+### P9 UART initialization root-cause diagnostic (2026-10-15)
+
+The maintainer authorized continuation after the ccache failure. Restoring
+the existing `CCACHE_DIR` and `CCACHE_TEMPDIR` values from `rtl/tiny/Makefile`
+allowed the generated C++ makefile to finish in 82.963 seconds with exit 0.
+`cpp-resume.json` retains that command and its environment identity separately
+from the original failed `compile.json`. Verilator translation and firmware
+compilation were not repeated. Prepared source, generated C++, retained ELF/HEX
+and runtime inputs matched before the continuation; the final simulator and
+runtime-library hashes are bound in `model-identity.json`.
+
+Exactly one ICS55 SAFE24 diagnostic ran from 22:29:54 to 22:36:16 CST
+(`14:29:54..14:36:16 UTC`). It exited 0 after 382.716 seconds, ending at REF
+cycle **2085487**, exactly **100000 cycles** after the GPIO15 UART marker at
+**1985487**. The wall limit was 900 seconds, the diagnostic cap 5000000 cycles
+and the outer guard 6000000 cycles. `P9_DIAG_END reason=post_pin15` means the
+diagnostic window was collected; it is not `SIM_TEST_PASS` or P9 acceptance.
+There was no simulation retry, IHP130 run or full QVGA replay.
+
+The trace localizes the original apparent GPIO stall to missing UART
+initialization in the P9 acceptance application:
+
+- `tiny_r2_p9.c:162` disables interrupts and calls `rs_p9_camera_pins()` without
+  first initializing UART. That helper immediately calls `printf`.
+  `_premain_init()` only initializes IRQ tables and enables counters; the
+  retained ELF has no linked `rs_uart_init`/`rs_uart_configure` symbol.
+- At REF cycle 2000000 the TX FIFO is full: 64 pushes, zero pops, count 64,
+  TX enable 0, config-valid 0, baud integer/fraction 0 and TX busy 0. The same
+  condition remains in all nine snapshots through cycle 2080000.
+- CPU fetch completion addresses `0x30000e64` and `0x30000e74` map to the
+  retained ELF's `rs_uart_write()` TX_FULL polling loop. There are **3097**
+  completed SYS-side reads of UART STATUS `0x10001018` returning `0x1060`
+  without an APB error. CPU, GPIO and UART clocks continue, resets are released,
+  gates/disabled masks are zero and clock/peripheral blocking is clear.
+- Both GPIO APB endpoints complete all 232 observed-count transactions. The
+  last GPIO request is the successful write of `0x00080000` to OE_CLEAR
+  `0x1001401c`, completing GPIO19 configuration. GPIO16 is not the stalled
+  transaction; the software is printing the next pin-group progress line.
+
+The first two complete stage lines consume 54 bytes. The next ten bytes,
+`P9_STAGE C`, fill the 64-byte FIFO. The Verilator UART model prints accepted
+FIFO writes even while TX is disabled; those characters are not evidence of
+serial-wire transmission. In the original line-buffered timeout run the last
+complete line was therefore GPIO15. Normal diagnostic `$finish` flushes the
+partial next line, which appears before `P9_DIAG_END` in the console log.
+The HAL wait is bounded, not an infinite hardware deadlock: `rs_uart_write()`
+polls up to `RS_TIMEOUT_DEFAULT`, and `putch()` discards the timeout result,
+so each later printf character can incur another full polling budget.
+
+The source-bound report is
+`build/ics55-tiny-2026-10-15-22-04-9a44f7871af5/meta/tiny-r2-p9/gpio-diagnostic/attempt-01/diagnosis.json`.
+It retains the trace, 208 complete snapshot groups, counter/clock consistency
+checks, run/build identities, ELF disassembly and source evidence. The minimum
+follow-up is a checked UART initialization before the first P9 printf, with
+UART-init failure reported directly through SYSCTRL TEST_STATUS without
+another printf. This is a P9 firmware acceptance-image defect; this diagnostic
+does not authorize or implement that fix, change shared HAL/RTL behavior, or
+implicate the START/ABORT correction.
+
+This turn changed only this ledger and generated evidence/cache outputs.
+No public interface, dependency version, warning/metrics policy or MISRA
+deviation changed. The original two-hour timeout remains failed evidence;
+QVGA success, VGA/YUV422, service budgets, mode transitions, IHP130 replay,
+synthesis/netlist, STA and physical qualification remain open. Full long
+Icarus stays deferred. P9 human acceptance and P10 advancement remain pending.
+
+### P9 UART startup correction and focused replay (2026-10-16)
+
+The approved application fix initializes UART before the first P9 diagnostic
+print. `tiny_r2_p9.c` reads the RCU snapshot and passes its `pclk_hz` to the
+existing `rs_uart_init()` at 921600 baud. A failed snapshot or UART setup writes
+SYSCTRL `TEST_STATUS` failure code 4 directly and enters the terminal loop,
+without calling `printf`. The internal `p9_startup.h` helper is tested with
+success, zero-clock, callback failure and null-input cases. Shared UART/DVP/RCU
+HALs and RTL were not changed; no MISRA deviation was added.
+
+The ICS55 and IHP130 P9 firmware builds at
+`build/*-tiny-2026-10-16-22-20-*` both completed successfully. Software
+format/policy/Host tests, Ruff and the 36 P9 evidence tests passed. Existing
+filesystem clock-skew warnings remain observations.
+
+One ICS55 focused diagnostic reused the previously compiled passive-observer
+model and loaded the new HEX. It ran for 410.539 seconds and ended after the
+approved 100000-cycle post-GPIO15 window. `CAMERA_PINS_DONE` was emitted;
+UART snapshots reported `enable=1`, `config_valid=1`, `baud_int=26`,
+`baud_frac=11`, cumulative push/pop counts above 64 and 215 zero-count FIFO
+samples. This confirms the UART startup correction and FIFO drain behavior.
+
+The run then reached `PSRAM_INIT_START` and reported `PSRAM_INIT_FAIL` before
+frame capture. It is therefore **not** P9 acceptance and does not justify an
+IHP130 replay. The raw runner record conservatively marked the attempt failed
+because it expected one exact `pushes=64 pops=64 count=0` sample; the retained
+`assessment.json` applies the approved cumulative drain criterion and records
+UART as passed while classifying the overall P9 workload as blocked at PSRAM
+initialization. No automatic retry or full QVGA replay was started.
+
+Evidence:
+`build/ics55-tiny-2026-10-16-22-20-9a44f7871af5/meta/tiny-r2-p9/uart-startup/attempt-01/`.
+The previous UART-root-cause diagnostic remains under the `22-04` variant and
+is preserved as historical evidence. The next issue is the existing PSRAM
+initialization path or its retained model interaction; it requires a separate
+review/diagnostic. VGA/YUV422, service budgets, IHP130 simulation, full Icarus,
+synthesis/netlist/STA and physical qualification remain open. P9 acceptance and
+P10 advancement remain pending.
+
+### P9 GPIO29 NSS1 correction and focused replay (2026-10-17)
+
+The approved follow-up adds the missing PSRAM chip-select admission to the P9
+acceptance image. Before camera setup and `rs_xpi_psram_initialize()`, the
+application now configures GPIO29 as ALT0 with no pull, no trigger and a high
+output default. The topology already binds GPIO29 ALT0 to `xpi.nss_o[1]` with
+output enable asserted; the helper and the source-order/static binding test
+keep the firmware admission aligned with that binding. A direct SYSCTRL
+failure code 2 is used if the configuration callback fails, without printing
+before the UART startup path is ready.
+
+Both ICS55 and IHP130 P9 firmware builds completed successfully. The focused
+P9 evidence suite now has 37 passing tests, including the UART/GPIO startup
+host test and the GPIO29-before-PSRAM static binding check. Embedded-C format
+and policy checks, the host C suite, Ruff and `git diff --check` pass. No shared
+HAL/RTL, dependency, warning baseline or MISRA deviation changed in this
+correction.
+
+One ICS55 diagnostic reused the retained passive-observer model and loaded the
+new firmware. It exited 0 because the diagnostic observer deliberately called
+`$finish` after the bounded post-GPIO15 window; this is not the Tiny simulation
+acceptance gate. The console reached `CAMERA_PINS_DONE` and
+`PSRAM_INIT_START`, with no `PSRAM_INIT_DONE` or `PSRAM_INIT_FAIL` before the
+observer ended. The trace records a successful GPIO29 OE_CLEAR write, released
+clocks/resets and a healthy UART (`pushes=160`, `pops=160`, `count=0`, enabled
+and configuration-valid). The last CPU slow-path sample was an XPI APB write at
+`0x1000900c`, so the evidence proves entry into PSRAM initialization but does
+not establish its completion or a PSRAM/model failure. The post-pin15 window
+was insufficient to distinguish a long initialization sequence from a later
+XPI transfer issue.
+
+Source-bound evidence is under
+`build/ics55-tiny-2026-10-17-00-10-9a44f7871af5/meta/tiny-r2-p9/gpio29-psram/attempt-01/`.
+`assessment.json` binds the ICS55 manifest, firmware HEX, retained model,
+command, console, trace and result hashes. The previous UART replay remains
+historical under the `22-20` variant. IHP130 simulation, full QVGA acceptance,
+Icarus, synthesis/mapping/netlist, observational STA, physical qualification
+and broad regression remain unrun. P9 acceptance and P10 advancement remain
+pending; the next diagnostic needs an XPI APB/transfer observer or a separately
+approved longer bounded PSRAM-only window.
+
+### P9 XPI/APB diagnostic (2026-10-17, stall attribution corrected)
+
+The approved diagnostic added passive XPI-domain observations to the existing
+P9 observer: APB request/response sequence, controller ownership, mapped and
+indirect busy state, core busy/done/error, FIFO counts and error address/code.
+The observer remains verification-only and leaves all design handshakes
+untouched. Verible RTL formatting and the changed-only RTL style check pass.
+
+One ICS55 run used the independently compiled observer model and the same
+GPIO29-corrected firmware. It reached `CAMERA_PINS_DONE` and
+`PSRAM_INIT_START`. During PSRAM initialization, all **164 XPI APB requests
+and 164 responses** completed with `error=0`. At the final samples the XPI
+controller was enabled and idle (`mm_busy=0`, `indirect_busy=0`,
+`core_busy=0`, owner none, TX/RX FIFOs empty, no error event). This rules out
+an APB response stall or an XPI core still being busy at the diagnostic end.
+
+The CPU sample shows an in-flight instruction read at `0x30002a4c` in the
+`rs_xpi_psram_validate_dma()` loop. The earlier interpretation that this
+request was stuck is withdrawn: completion counters continue to increase,
+and the longer-window replay below completes the validation. A single
+`LocalWait` sample does not establish a persistent stall.
+The final `P9_DIAG_SLOW` record still shows
+the preceding XPI APB address only because it is the retained slow-path
+request register; the XPI APB observer has no pending request. The run ended
+at the observer's normal `post_pin15` `$finish`, so it is diagnostic evidence,
+not Tiny acceptance and not proof of a PSRAM device failure. No SRAM, XPI or
+application defect is established by this sample.
+
+Evidence is under
+`build/ics55-tiny-2026-10-17-00-10-9a44f7871af5/meta/tiny-r2-p9/xpi-diagnostic/attempt-01/`.
+`assessment.json` records the model/source hashes, command, result and trace.
+The simulation model was compiled before a subsequent mechanical Verible
+format-only rewrite of the observer; the rewrite passed formatting/style
+checks and did not change RTL behavior. IHP130, full QVGA, Icarus, synthesis,
+netlist, STA, physical qualification and broad regression remain unrun. P9
+acceptance and P10 advancement remain pending.
+
+### P9 ICS55 local SRAM response diagnostic (2026-10-17)
+
+The next scoped diagnostic added only passive signals for Tiny SRAM group 0:
+instruction client request/grant, arbitration issue, outstanding read owner and
+bank, bank-2 select/data, and the registered instruction response. The CPU
+state is sampled alongside these signals. No SRAM, CPU or macro RTL was
+modified.
+
+One ICS55 run reached the same P9 boundary. The final sample at instruction
+address `0x30002a4c` showed an in-flight local read (`pending=1`, owner 0,
+bank 2) at the observer sampling edge, but this is right-censored evidence:
+the preceding CPU samples continued to complete instruction fetches. These
+are bus completion counts, not architectural instruction-retirement counts.
+Between REF cycles
+2190000 and 2220000, instruction requests/responses advanced by 3333, 3334
+and 3333 respectively. The XPI controller remained idle with all 164 APB
+responses complete and no error.
+
+The cause of the missing `PSRAM_INIT_DONE` marker is the bounded
+diagnostic window, not a proven SRAM deadlock. `rs_xpi_psram_validate_dma()`
+validates every four-beat burst in the 320x240 RGB565 frame. Each beat is four
+bytes, so its loop executes `153600 / 16 = 9600` iterations. The earlier
+38400-iteration/1.5-million-cycle estimate confused beats with bytes and is
+withdrawn. The retained disassembly at
+`0x30002a34..0x30002a64` is the loop body and increments the cursor by the
+16-byte burst size (`a6 = a3 << 2`, with `a3=4` at the call site).
+The 100000-cycle post-pin15
+observer window ends while this deterministic validation loop is still
+running. The SRAM sample must not be promoted to an SRAM RTL failure.
+
+Evidence is under
+`build/ics55-tiny-2026-10-17-00-10-9a44f7871af5/meta/tiny-r2-p9/sram-diagnostic/attempt-01/`.
+`assessment.json` binds the current observer source, independent model,
+firmware, command, console and trace. Verible RTL format/style checks pass.
+The run is diagnostic-only and ended at the normal observer `$finish`; it is
+not Tiny acceptance. IHP130, full QVGA, Icarus, synthesis, netlist, STA,
+physical qualification and broad regression remain unrun. The longer bounded
+ICS55 replay below retains the same firmware but recompiles the observer
+model to support a longer stop window. No SRAM RTL fix is justified.
+
+### P9 diagnostic-window root cause confirmed (2026-10-16 run timestamps)
+
+The `long-diagnostic/attempt-01` replay uses the same HEX SHA-256
+`232e7a7ca00df295b46c30388f62b165963d2832df071013cd36d8488109e369`.
+Only verification observer stop configuration was extended with
+`+tiny_p9_diag_long` (2000000 post-pin15 REF cycles). Production CPU, SRAM,
+XPI, HAL and workload inputs were not changed during this diagnosis.
+The model was rebuilt, so this is matched-firmware evidence, not a claim
+that the earlier simulator executable was reused.
+
+The trace records GPIO15 at REF 2129996, `PSRAM_INIT_START` at 2168195,
+`PSRAM_INIT_DONE` at **2564848**, and `DMA_CAPTURE_START` at **2572839**.
+The original window ended at 2229996, **334852 cycles before** the observed
+completion marker. START to DONE spans 396653 cycles; this includes both
+PSRAM initialization and DMA admission validation (and marker printing),
+not a measurement of the validation function alone. The marker is after
+both calls in the application's short-circuit condition, so its absence
+previously obscured which operation was executing.
+
+At the disputed SRAM sample, bank data `0x40ee8733` already matches the
+retained ELF instruction at `0x30002a4c`; `pending=1` describes a macro read
+already issued, while bank select need not remain asserted during response
+registration. The group's `s_read_pending_q` supplies the next registered
+response. Later fetch completions and the DONE marker disprove the prior
+claim that this sample establishes a missing SRAM response.
+
+The run exited 0 after 769.997 wall seconds at REF 4129996 due to the
+diagnostic `$finish`. No `SIM_TEST_PASS Tiny` was observed; capture completion
+and full P9 acceptance remain open. This finding resolves the short-window
+startup diagnosis only, not the original pre-UART-fix timeout or downstream
+DMA/capture behavior. Raw logs and original run results remain unchanged;
+the earlier XPI/SRAM assessment interpretations are explicitly superseded.
+Evidence: the same variant's `meta/tiny-r2-p9/long-diagnostic/attempt-01/`,
+including `assessment.json`, `trace.log`, `console.log` and `result-sim.json`.
+
+### P9 observer isolation and single full-workload attempt (2026-10-16)
+
+The approved correction separates generic NSS1 population (`+tiny_psram`)
+from the legacy P8 campaign (`+tiny_p8_psram`). P8's four-window, mapped-write
+and absent-device terminal checks remain intact. Both population flags retain
+the shared active-CS check. P9 documentation now uses the generic flag.
+No production CPU/SRAM/XPI/DVP/DMA RTL, HAL, register ABI, PDK input,
+dependency revision, warning baseline or MISRA deviation changed in this
+correction; the earlier P9 worktree remains uncommitted on base `39ae718`.
+
+The new `tiny_p9_monitor.svh`, included by the existing P9 observer, counts
+camera VSYNC, DVP frame events, DMA2 confirmed bytes and remaining work,
+XPI handshakes/errors and CPU bus completions. The report uses native-clock
+samples with REF timestamps. It never calls `$finish` and cannot be combined
+with the early-stop diagnostics or legacy UART progress observer. These
+observations do not establish atomic cross-domain snapshots or physical rates.
+
+Validation before the single full-SoC launch:
+
+- 26 observer behavior cases passed in Icarus and Verilator, compiling each
+  fixture once and reusing it. They covered P8 missing windows/writes,
+  absent-device writes, generic and legacy CS violations, conflicting monitor
+  modes and continued execution beyond 5000000 cycles. A separate static
+  assertion failed because Verible wrapped a plusargs call; the assertion was
+  made whitespace-insensitive and its focused rerun passed. The initial
+  failure summary and per-case raw logs are retained.
+- 52 P8 pin-level compatibility/P8-P9 evidence tests passed. RTL format/style/
+  readiness, Ruff and dependency-lock validation passed. ICS55 PR/nightly
+  dry-runs passed but still select P7 firmware, so they are not P9 execution.
+- The new ICS55 firmware and Verilator model built successfully. The prepared
+  build record binds 1426 unchanged input hashes to ELF/HEX/model artifacts,
+  with a pre-build source archive. The HEX equals the earlier GPIO29-corrected
+  HEX: `232e7a7ca00df295b46c30388f62b165963d2832df071013cd36d8488109e369`.
+  Existing EDA and filesystem clock-skew warnings remain in the logs.
+
+Exactly one ICS55 SAFE24 full-workload attempt ran with a 40000000-cycle /
+10800-second cap, generic PSRAM, 1 MHz camera and non-terminating monitor.
+It ended with **exit 1 after 1397.023 seconds**, not a timeout or diagnostic
+early stop. It reached `PSRAM_INIT_DONE`, then firmware reported
+`READBACK_FAIL word=0`, `P9_RESULT code=3` and `SIM_TEST_FAIL code=3`.
+
+The final REF-7400000 progress sample records one frame started/completed,
+38400 accepted and delivered words, DMA bytes_done=153600, remaining=0,
+DMA/DVP errors=0, FIFO high-water=1 and backpressure=0. XPI counted 9602 AW/B
+transactions and 153608 written bytes, consistent with 9600 four-beat payload
+bursts and two guard writes. These counts do **not** prove payload contents.
+Reaching the readback loop implies the preceding capture/pixel-count and both
+guard checks passed. The later `guards=0` field reflects aggregate failure,
+not an observed corrupted guard. Expected word0 is `0x02030001`; the actual
+loaded word is not logged, so the mismatch's root cause is unresolved. No
+PIO completion or full-frame readback pass is claimed, and no automatic retry
+or speculative production fix was performed.
+
+The run also exposed a monitor logging defect: stdout progress split a
+character-stream UART `P9_FRAME` line. The final source writes monitor records
+to a required `+tiny_p9_monitor_log=<file>` instead. Twelve focused monitor
+cases passed after this correction, proving separate output, missing-path
+rejection, conflicting-mode rejection and survival beyond the old cycle cap.
+Final full-TB Verilator lint, RTL quality and Ruff checks passed. The final
+observer suite then passed all **29 tests** after restricting the test
+driver's monitor-log argument to monitor scenarios; `$test$plusargs` prefix
+matching otherwise activates the monitor in unrelated fixture cases. This
+post-run fix has its own source snapshot and has **not** been replayed in a
+full firmware simulation. It does not relabel or repair the failed raw log.
+
+Evidence root:
+`build/ics55-tiny-2026-10-16-11-24-9a44f7871af5/meta/tiny-r2-p9/observer-isolation/`.
+`campaign.py` retains the exact explicit profile/build/run commands;
+`prepared-build.json`, `source/`, `build-identity.json` and `tool-identity.json`
+record provenance. `attempt-01/` retains launch, console, structured exit,
+bound result, assessment and readback diagnosis. `observer-tests/`,
+`compatibility-tests/` and `monitor-fix-tests/` retain the short runs.
+`monitor-final-source.json` identifies the separate-log correction's scope.
+`final-observers.json` and `final-observer-source.json` bind the final short
+suite and its source snapshot separately from the failed full-SoC executable.
+
+The scoped observer correction is ready for review, but the P9 workload is
+**failed** and human phase acceptance remains open. IHP130 firmware replay,
+full long Icarus, full-repository Pytest/PR/nightly, current synthesis/netlist,
+STA and physical qualification remain unrun in this correction. P10 is not
+authorized. The next focused diagnosis must capture the first camera bytes,
+DVP stream word, DMA destination write and XPI/CPU read value before assigning
+the mismatch to a packing, sampling or storage boundary.
+
+### P9 external camera/audio pad isolation (2026-10-16)
+
+The approved P1 correction changes only the external P6 board drivers on
+GPIO17 and GPIO15: they release to high impedance in `+tiny_p9_camera` mode.
+The former otherwise supplies the audio reference; the latter otherwise
+loops GPIO14 codec output back to GPIO15 input. P6's oscillator, delayed
+startup/CPU independence check and stop/recovery logic remain unchanged.
+The production GPIO mux cannot disconnect an external testbench driver, so
+ALT1 selection alone did not prevent the old collision. The frozen camera/
+audio exclusion contract now applies to both sides of the pads.
+
+`tests/test_tiny_p9_pad_isolation.py` extracts the actual P6 startup and driver
+statements, top-level camera assignments and generated pad/DVP routes into
+`tiny_p9_pad_isolation_tb.sv`. It uses the production ICS55 pad wrapper and
+DVP core. Icarus uses native ICS55 functional IO definitions; Verilator uses
+the existing compatible functional IO model. The fixture bypasses the GPIO
+register controller, CPU, full interconnect, DMA, XPI and PSRAM, so its result
+is not full-system memory acceptance or physical pad qualification.
+
+Retained results:
+
+- Eight initial cases passed across Icarus/Verilator: delayed audio startup
+  and loopback, 512 byte/audio-level combinations, all 64 words of a 16x8
+  camera frame, and expected rejection of simultaneous legacy codec drivers.
+  The positive first word is `0x02030001` in both simulators. The combined
+  negative case reports expected byte `0x04` versus `0x0c` in Verilator and
+  `0x0X` in Icarus, exposing D3 contamination by the codec loopback.
+- Two additional audio-clock-only negative cases passed as tests by detecting
+  the required failure. Reconnecting the legacy GPIO17 reference corrupts
+  DVP word0 to `0x02230021` in Verilator and `0x02X300X1` in Icarus, versus
+  `0x02030001`. These are deliberate fixture failures, not passing product
+  runs. They demonstrate first-word corruption at the DVP input boundary;
+  they do not reconstruct the actual CPU value missing from the prior
+  full-SoC log.
+- Five existing ICS55 GPIO/P6 I2S/pin-contract checks passed. RTL format,
+  changed-only style, readiness, Ruff and diff checks passed. No embedded-C,
+  public ABI, production RTL, dependency, warning baseline or metrics policy
+  was modified; no MISRA deviation was introduced.
+- A fresh explicit ICS55 SAFE24 P9 firmware/model build passed with 1426
+  unchanged pre/post-build source hashes and archived inputs. The HEX equals
+  the prior failed run's `232e7a7ca00df295b46c30388f62b165963d2832df071013cd36d8488109e369`.
+  Existing clock-skew and EDA warnings remain in the logs. Build success
+  alone is not a functional verdict for the new full-SoC model.
+
+Evidence:
+`build/ics55-tiny-2026-10-16-12-20-9a44f7871af5/meta/tiny-r2-p9/pad-isolation/`.
+`focused.json`/`focused-tests/` retain the eight initial cases;
+`clock-negative.json`/`clock-negative-tests/` retain the two added negatives;
+`compatibility.json` retains the five existing checks. `build-campaign.py`
+records the exact profile/build commands, while `prepared-build.json`,
+`source/`, `tool-identity.json`, `build-identity.json` and `completion.json`
+retain build provenance. The fixture and model sources were not modified
+during the final full-model build.
+
+As explicitly scoped, no full-SoC replay was launched. The previous
+`observer-isolation/attempt-01` remains failed evidence; full QVGA payload
+readback and subsequent PIO completion remain unverified after this fix.
+IHP130 firmware replay, full Icarus, full-repository Pytest/PR/nightly,
+synthesis/netlist, STA and physical qualification were not run. P9 human
+acceptance and P10 advancement remain pending. If a later replay still
+fails, collect the first camera bytes, pad/DVP words, correlated DMA AW/W
+data and XPI/CPU read response in a separate bounded log before changing
+production logic or expected payload values.
+
+### P9 matched-firmware ICS55 replay after pad isolation (2026-10-16)
+
+The maintainer authorized exactly one bounded validation-only replay of the
+reviewed `12-20` build. Before launch, all 1426 current inputs and the retained
+ELF/HEX/model hashes matched `pad-isolation/build-identity.json`; they remained
+unchanged after execution. No compilation, production-source change, or
+automatic retry occurred. The image is the same HEX used by the earlier
+failed run; the model includes the camera/audio pad isolation and the
+separate progress-log correction.
+
+The explicit target is `configs/ci/ics55-tiny.mk`, TINY/ICS55, SAFE24,
+`APP=ci_smoke`, `TINY_P9_ACCEPTANCE=YES`, full 320x240 RGB565 camera at a
+500 ns pixel half-period. The retained `pad-isolation/replay.py` launches the
+existing `sim/verilator/emu` and `sw/retrosoc_fw.hex` through `run_flow.py` with
+`timeout --foreground --kill-after=30s 10800s`, `+max_cycles=40000000`,
+`+tiny_psram +tiny_p9_camera +tiny_p9_half_ns=500 +tiny_p9_monitor`, and an
+absolute `+tiny_p9_monitor_log` path. No diagnostic early-stop mode is enabled.
+`replay-01/launch.json` retains the exact argv and build/source binding.
+
+The replay **passed the specified workload** with exit 0 after **3460.503
+wall seconds**, emitting `SIM_TEST_PASS Tiny cycles=18570772`. The normal
+Tiny testbench observes SYSCTRL TEST_STATUS before emitting this marker;
+`P9_RESULT code=0 frames=1 bytes=153600` is present. `check_simulation.py`
+reports no missing marker or rejected error, and source-bound
+`scripts/tiny_r2_p9.py::validate_run()` passes.
+
+- The QVGA DMA2/request11 frame confirms all **153600 bytes**, complete
+  payload readback and both guards. `DMA_CAPTURE_DONE` is present; the
+  previously observed word0 mismatch does not recur in this matched image.
+- The subsequent **7x3 PIO** crop confirms **42 valid bytes in 48 storage
+  bytes**, complete readback, row padding and guards.
+- The terminal observer records **38412 accepted/delivered words**, FIFO
+  high-water **3 words** and maximum backpressure run **504 consumer-clock
+  cycles**, at the tested 1 MHz camera clock. These are session observations
+  including PIO, not a worst-case service bound, sustained FPS, or a physical
+  sensor/IO-rate qualification.
+
+Evidence directory:
+`build/ics55-tiny-2026-10-16-12-20-9a44f7871af5/meta/tiny-r2-p9/pad-isolation/replay-01/`.
+`console.log` retains intact UART verdict records, `progress.log` contains
+separate periodic observations, and `result-sim.json`, `result-sim-check.json`,
+`bound-result.json`, `launch.json` and `assessment.json` retain command,
+source/configuration and artifact provenance. The prior failed
+`observer-isolation/attempt-01` and all short diagnostic attempts remain
+historical evidence with their original verdicts.
+
+This closes the scoped ICS55 QVGA/PIO replay gate only. The broader P9
+qualification matrix (including VGA/YUV422 and complete product-level
+error/mode/recovery coverage), IHP130 replay, full long Icarus, broad
+regression, synthesis/netlist, STA and physical qualification were not run
+in this replay. No MISRA deviation, public-interface, dependency,
+warning/metric-policy or operating-point change was made. Human P9 phase
+acceptance and P10 advancement remain pending.
+
+### P9 row-size and IO-constraint remediation (2026-10-17)
+
+The maintainer approved the focused P9 remediation and selected reduced
+validation: one RECOVERY and QVGA execution per PDK, current-RTL full-size
+focused tests, and fresh synthesis/compact netlist checks with observational
+STA. Full-SoC VGA keeps its original historical identity. Source remains
+`39ae71887ca427c83d39ff663ec5f0d1aa19be1a` plus the uncommitted worktree;
+the frozen Tiny specification and dependency lock remain unchanged.
+
+Evidence starts at
+`build/ics55-tiny-2026-10-17-09-35-ff4b5cef6eb5/meta/tiny-r2-p9/row-size-remediation/`.
+`before/` retains the pre-change inputs. `counterexample-sources/` retains
+the new test with the unfixed core, and `counterexample.json` records two
+expected failures: both Icarus and Verilator report zero ERROR_STATUS for
+4x2 configured geometry with 6+2 source pixels. The new RTL detects excess
+pixels before counter wrap and short rows at HREF fall, independently of
+crop selection, through the existing SIZE/error-event/cleanup contract.
+It changes no register, FIFO size, DMA allocation or SDK interface.
+
+The host HAL rejection/recovery check and nine LibreLane scenario tests
+pass. The new `default`/`camera` IO profile keeps ordinary GPIO constraints
+separate from camera input delays and uses separate output roots. These
+tests are not physical-flow or board qualification. The original format
+attribution is corrected below: Tiny's final newline was introduced in P9,
+while the four other recorded differences predate P9. Only the scoped Tiny
+Makefiles are formatted; unrelated files and policy remain untouched.
+
+Corrected focused RTL passes 14 tests: both simulators execute all twelve
+malformed-row/recovery cases, actual XPI integration, VGA statistics/readback
+and the new legal 65535-pixel row. C format/policy/host tests, RTL format/style/
+readiness, Ruff and the three selected PR dry-runs pass. Mini IHP130 firmware
+also builds. The global Make formatter still reports the four pre-existing
+differences; the scoped Tiny Makefiles no longer appear in that failure list.
+
+The single full Pytest run records **1915 passed, 13 failed, 60 errors and
+1 skipped** in 5016.09 seconds. Three failures expose P9 integration inventory
+drift: the commercial product Make policy still lists six clock domains,
+and its tests plus the older Tiny reset-inventory test expect the pre-DVP
+domain/leaf counts. The canonical inventory and Tcl product overlay already
+contain DVP. The remediation additionally synchronizes
+`physical/commercial/config/products/tiny.mk`, `tests/test_commercial_flow.py`
+and `tests/test_tiny_r2_p2.py`; it adds no new clock or timing exception and
+does not run commercial EDA. The original three failures remain retained;
+targeted post-correction results are recorded separately, not substituted
+into the original full-suite report.
+The complete commercial-flow/Tiny-P2 targeted replay passes 50 tests in
+15.01 seconds after these inventory corrections.
+
+The other ten failures and sixty fixture errors are publication-source
+validation failures for the obsolete `rtl/mini/dv/model/ESP_PSRAM64H.sv`
+path. `39ae718` already contains that reference in
+`publications/datasheets/system-reference.json`, while the model is tracked
+at `rtl/model/ESP_PSRAM64H.sv`. Publication files were not changed here. The
+single skipped publication test reports missing optional `pypdf`. These
+remain explicit repository/environment gaps, not passing global CI evidence.
+
+The selected full-SoC and backend campaign has now completed. Every functional
+run passes command status, the strict Tiny TEST_STATUS/terminal marker and
+forbidden-error scanning, with unchanged frozen inputs through execution:
+
+| PDK / workload | Variant suffix after `2026-10-17-09-35-` | Terminal cycles | Simulation seconds |
+| --- | --- | ---: | ---: |
+| ICS55 / RECOVERY | `bf63475ab984` | 3058688 | 563.588 |
+| IHP130 / RECOVERY | `7da598c5c377` | 3058688 | 393.120 |
+| ICS55 / QVGA_RGB565 | `9a44f7871af5` | 18601389 | 3362.665 |
+| IHP130 / QVGA_RGB565 | `064cd640790c` | 18601389 | 2294.190 |
+
+Each workload was built and run once per PDK. RECOVERY retains seven cases,
+six validated frames/six IRQs, eight board controls and two audio sessions.
+QVGA checks every one of the 153600 bytes and both guards, then the 7x3 PIO
+crop. Both profiles report 38412 accepted/delivered words, high-water 4 and
+308 PCLK cycles of longest backpressure. All four HEX files match their
+corresponding `2026-10-16-23-24` images exactly; the normal-workload cycle counts
+also match. Wall-time differences are simulator observations, not SoC speedup.
+The original full-SoC VGA result remains historical; current focused VGA
+checks do not relabel that old full-system run.
+
+The new backend variants are
+`ics55-tiny-2026-10-17-09-35-ff4b5cef6eb5` and
+`ihp130-tiny-2026-10-17-09-35-8232fa11e7f3`. Each retains its stage commands,
+results and immutable artifact identities in
+`meta/tiny-r2-p9/row-size-remediation/backend/`. Both syntheses and structural
+audits pass with 32 main SRAM and six private Crypto macros, plus one ICS55
+PLL macro and no IHP130 PLL macro. The source remains SAFE24; these are not
+physical operating-point qualifications.
+
+| PDK | Synthesis seconds | Reported cells | Liberty-based top area | Netlist boot cycles | Netlist DVP cycles / simulation seconds |
+| --- | ---: | ---: | ---: | ---: | --- |
+| ICS55 | 2490.163 | 476025 | 2711078.944704 | 36449 | 177541 / 9433.690 |
+| IHP130 | 2233.433 | 501337 | 14883493.669841 | 36069 | 175649 / 3747.858 |
+
+The compact DVP check verifies all 64 words using the unchanged assembly
+image. Each backend compiled its netlist simulator for boot once and reused
+that same hashed executable for DVP. No synthesis or long simulation was
+retried. Existing filesystem clock-skew warnings remain in the logs; all
+outputs were created in fresh variants and source/artifact checks passed.
+
+OpenSTA executes successfully but reports negative slack. All values below
+are current post-synthesis observations in ns, not timing closure:
+
+| PDK | Setup WNS | Setup TNS | Hold WNS | Hold TNS |
+| --- | ---: | ---: | ---: | ---: |
+| ICS55 | -163.87 | -6193132.50 | -0.31 | -45.71 |
+| IHP130 | -284.47 | -11105854.00 | -0.49 | -141.45 |
+
+ICS55 smoke coverage lists 42 inputs without input delay, 52 outputs without
+output delay, 42 unclocked register/latch pins, five pins with multiple clocks
+and 146 unconstrained endpoints. IHP130 lists 42/51 missing input/output
+delays, five pins with multiple clocks and 89 unconstrained endpoints.
+These reports consume the existing smoke SDC, not the new LibreLane IO
+scenarios. Report limits and missing physical/board constraints remain explicit.
+
+Standalone warning checks fail relative to the stored baselines: ICS55 has
+523 RTL-lint and 20 Yosys new signatures; IHP130 has 471 RTL-lint, 13 Yosys
+and one Icarus signature. These are new-to-baseline counts, not attribution
+of every warning to this patch. OpenSTA warning checks pass. Both metric
+checks retain `observe` policy. No warning baseline, dependency version or
+quality policy was changed; no new MISRA deviation is introduced.
+
+Exact long-run entrypoints and outcomes are retained in `frames-*/` and each
+backend stage JSON. Both full-system workloads use `scripts/tiny_r2_p9.py run`
+with timestamp `2026-10-17-09-35`, jobs 4, a 500 ns pixel half-period and the
+approved RECOVERY 20000000-cycle/7200-second or QVGA 40000000-cycle/10800-second
+limits. Backend synthesis uses `SIMU=IVERILOG SYNTH=YOSYS`, balanced mapping
+and a 10800-second synthesis allowance. RTL lint selects `SIMU=VERILATOR
+SYNTH=NONE` for its functional PDK models. Netlist consumers use
+`SIMU=IVERILOG SYNTH=NONE`; DVP uses the profile defaults of 10800 seconds
+(ICS55) and 7200 seconds (IHP130), with the unchanged 300000-cycle guard.
+
+`closure.json` under the remediation evidence root independently validates
+the retained functional logs, binaries, source identities, netlists and
+matched previous HEX files, and indexes timing, warning and metric artifacts.
+`format-scoped.json` confirms all three Makefiles touched by the remediation
+pass the existing formatter. The original complete-Pytest report and the
+four remaining global format failures are not relabeled as passing CI.
+The verification-ledger completion text is a documentation-only update after
+the frozen-source executions. P9 human acceptance remains pending; there is
+no commit, push or automatic P10 advancement. Full long Icarus firmware,
+broad PR/nightly execution, and physical/PVT/board/sensor qualification remain
+unrun as described by the approved reduced campaign.
+
+### P9 remaining-acceptance functional campaign (2026-10-16/17)
+
+After review of the XPI correction, the maintainer authorized resuming the
+remaining-acceptance plan. The source remains base `39ae718` plus the archived
+worktree. This follow-up changes validation firmware, verification monitors,
+focused tests and evidence checking; it does not redesign the reviewed XPI
+patch or alter product RTL/ABI, dependency versions, warning/metric policy or
+operating-point qualification. All full-system runs below use SAFE24 and a
+500 ns camera pixel half-period.
+
+The added service-budget case passes in Icarus and Verilator. It retains
+480 input bytes without consumer service, checks all words after service and
+source clock resume, then deliberately exceeds FIFO capacity and verifies
+overflow/cleanup. The fixture reserves 16 bytes for source-word/packing and
+observation skew, giving a nominal empty-FIFO admission limit of 496 us at
+1 MHz. A fixture correction was necessary: at external clock pause, only
+119 words had entered the FIFO and the 120th was still held in the source
+output register. Reading it before another pixel edge returned the previous
+FIFO word. The corrected test checks FIFO empty and verifies that held word
+after resume; it does not weaken payload comparison or modify production
+logic. Initial failures and the diagnostic `index=119`/held-word record remain.
+
+Two full ICS55 RECOVERY development attempts also failed and are retained:
+
+- `ics55-tiny-2026-10-16-22-51-bf63475ab984`: firmware received four matching
+  audio loopback words, but the old P6 wire observer required its unrelated
+  512-word incrementing pattern. An opt-in RECOVERY observer now verifies
+  eight constant 16-bit wire samples per audio session; default P6 still
+  checks all 512 incrementing samples. Extracted-observer tests verify both
+  positive paths and deliberate corruption rejection in both simulators.
+- `ics55-tiny-2026-10-16-23-08-bf63475ab984`: the first DMA frame completed
+  correctly, but the draft firmware registered external IRQ id 15 instead
+  of the generated DVP external id 13. SoC vector bit 15 maps through the
+  CPU's `[31:2]` slice; external id 15 belongs to WS2812. The application now
+  uses `RS_SOC_EXT_IRQ_DVP`, with a generated-map/wrapper binding regression.
+  The actual interrupt requirement remains one handler invocation per frame.
+
+Neither failure was a newly demonstrated product RTL defect. Each retry
+followed a concrete verification/application correction and used a fresh
+variant. No failure artifact was overwritten or promoted to PASS.
+
+The final functional runs all pass command status, SYSCTRL TEST_STATUS,
+strict Tiny terminal marker, forbidden-marker scanning and source/build/run
+identity checks:
+
+| Profile / workload | Build variant | Terminal cycles | Wall seconds |
+| --- | --- | ---: | ---: |
+| ICS55 Tiny / RECOVERY | `ics55-tiny-2026-10-16-23-24-bf63475ab984` | 3058688 | 569.889 |
+| IHP130 Tiny / RECOVERY | `ihp130-tiny-2026-10-16-23-24-7da598c5c377` | 3058688 | 397.719 |
+| ICS55 Tiny / QVGA_RGB565 | `ics55-tiny-2026-10-16-23-24-9a44f7871af5` | 18601389 | 3463.139 |
+| IHP130 Tiny / QVGA_RGB565 | `ihp130-tiny-2026-10-16-23-24-064cd640790c` | 18601389 | 2331.387 |
+
+Each variant retains its records under `meta/tiny-r2-p9/full-frame/`.
+RECOVERY reports seven successful cases, six validated captures and six DVP
+IRQs, two stopped-clock reset rejections (`RS_ETIMEOUT`, fault bit 1), eight
+board controls and two independently decoded audio wire sessions. Captures
+include repeated RGB565/YUV422 DMA, a nonzero-origin crop, PSRAM and small
+SRAM destinations, complete data/guard checks, and capture after each reset
+and audio/camera roundtrip. Audio verifies a finite loopback prefix, then
+explicitly disables/flushes the remaining queued tail before pin handoff;
+it is not a full P6 audio-workload replay.
+
+RECOVERY intentionally aborts two source frames. Its old cumulative
+`P9_OBSERVATION` counters report 416 accepted versus 288 delivered words;
+the 128-word difference belongs to discarded sessions. The cumulative
+high-water value of 129 is **not current FIFO occupancy** across flush/reset
+and is not used as service-budget or successful-frame acceptance evidence.
+The dedicated RECOVERY parser instead requires all case/frame/IRQ/board and
+stopped-clock diagnostic records.
+
+QVGA verifies all 153600 DMA bytes and both guards, 38400 words/76800 pixels,
+zero XPI error, then a 7x3 PIO crop with 42 valid/48 storage bytes. Each
+session reports 38412 accepted/delivered words, high-water 4 words and longest
+backpressure 308 PCLK cycles (12.833 us at 24 MHz). These are finite digital
+model observations; they do not qualify arbitrary contention or physical FPS.
+The same RECOVERY HEX is used across PDKs (`6b7f36b7...36b536a7`), as is the
+QVGA HEX (`9557f6d2...8abb2a1c`); full digests remain in each build identity.
+
+Focused evidence is under
+`build/ics55-tiny-2026-10-16-22-40-9a44f7871af5/meta/tiny-r2-p9/acceptance/`.
+The combined focused run initially had 84 passes and the two service-fixture
+failures; corrected controlled runs pass in both simulators. Audio observer
+and recovery parser checks pass 12 cases, and the generated IRQ binding case
+passes. C format/policy/host tests, RTL format/style/readiness, Ruff, diff
+checks and both Tiny PR dry-runs pass. No new MISRA deviation is introduced.
+The retained `vga-reuse.json` documents the original VGA evidence identities
+and the error-report-only/opt-in-control change impact; VGA was not rerun or
+relabeled as a new-source result.
+
+Exact full-system commands use `python3 scripts/tiny_r2_p9.py run`, explicit
+`--pdk ICS55` or `--pdk IHP130`, `--timestamp 2026-10-16-23-24 --jobs 4
+--pixel-half-ns 500`, and `--workload RECOVERY --max-cycles 20000000
+--wall-timeout 7200` or `--workload QVGA_RGB565 --max-cycles 40000000
+--wall-timeout 10800`. Each final selected workload runs once; the two QVGA
+profiles ran independently in parallel. Failed RECOVERY attempts retain their
+earlier timestamps and exact launch records.
+
+Backend evidence uses `ihp130-tiny-2026-10-17-00-31-8232fa11e7f3` and
+`ics55-tiny-2026-10-17-01-01-ff4b5cef6eb5`, both under `build/`. Each has
+`meta/tiny-r2-p9/backend/` with the original source snapshot and synthesis
+command. Both balanced syntheses and structural macro/domain audits pass:
+
+| PDK | Synthesis wall seconds | Reported cells | Liberty-based top area | Main / Crypto / PLL macros |
+| --- | ---: | ---: | ---: | --- |
+| IHP130 | 2538.737 | 500331 | 14886954.637841 | 32 / 6 / 0 |
+| ICS55 | 2767.803 | 477040 | 2710554.224704 | 32 / 6 / 1 |
+
+Area is the Yosys `stat` top-design value, not a placed die/core measurement.
+Both netlist boot checks also pass strict Tiny command/marker/error checks:
+IHP130 uses 36069 cycles and 669.884 simulation seconds; ICS55 uses 36449
+cycles and 1847.863 simulation seconds. Several execution corrections remain
+explicitly attributed:
+
+- The first IHP130 netlist elaboration failed because an opt-in legacy RTL
+  progress block still referenced hierarchy removed by synthesis. The block
+  now has a `RETROSOC_SOC__TINY_NETLIST` exclusion. The testbench is absent
+  from both actual synthesis filelists, so neither synthesis was rerun.
+- The first ICS55 netlist elaboration selected SRAM stubs and omitted the
+  standard-cell/IO/PLL simulation models because this campaign's helper
+  incorrectly carried `SYNTH=YOSYS` into `netcomp`. Using `SYNTH=NONE` for
+  simulation selects the existing locked models. No PDK or product-source
+  change was needed. The original missing-module errors remain retained.
+- The original IHP130 compact DVP run hit its 1800-second host timeout
+  (exit 124), without a terminal functional verdict. The **same HEX** passes
+  in the retained IHP130 Verilator model in 177716 cycles, checking all 64
+  words. This is a diagnostic runtime measurement, not netlist acceptance.
+  `TINY_P9_NETLIST_WALL_TIMEOUT` initially defaulted to 7200 seconds; the
+  300000-cycle guard and all payload checks are unchanged. ICS55 uses an
+  explicit 10800 seconds because its measured boot model is slower. An early
+  ICS55 7200-second attempt was deliberately terminated after this speed estimate
+  became available; it is an interrupted attempt, not a DUT functional fail.
+
+The broad source guards intentionally stopped helpers when the testbench or
+timeout-only Make rule changed. The resumes retain separate consumer input
+snapshots, immutable netlist/config/model/image hashes and the exact deltas;
+they do not relabel either original synthesis as a fresh execution. Completed
+continuations are `meta/tiny-r2-p9/backend-dvp-resume/` for IHP130 and
+`meta/tiny-r2-p9/backend-dvp-budget-10800/` for ICS55. Their durable assessment
+files retain the DVP, firmware, STA and warning/metric stage status and commands.
+
+IHP130 has completed the continuation: compact DVP passes in 175649 cycles
+(3167.831 stage seconds), followed by a passing ordinary `ci_smoke` firmware
+build, STA execution and metric collection/check. The DVP log passes strict
+Tiny terminal/error scanning, and the replay retains the original compact
+image and compiled simulator hashes. OpenSTA reports setup WNS/TNS of
+-280.11/-11170202.00 ns and hold WNS/TNS of -0.48/-120.41 ns. This is a
+current post-synthesis observation, **not timing closure**. The smoke coverage
+report lists 42 inputs without input delay, 51 outputs without output delay,
+6 register/latch pins with multiple clocks and 89 unconstrained endpoints.
+Its SYS/MEM/PCLK period is 41.67 ns; the DVP pixel constraint is 83.33 ns,
+separate from the 1 MHz behavioral stimulus. Reported paths are bounded by
+the existing report limits and are not an exhaustive violation census.
+
+IHP130 `check-warnings` fails on 13 new-to-baseline Yosys signatures and one
+Icarus signature (68 instances of unsupported edge-sensitive `ifnone`).
+OpenSTA's warning check passes. These EDA deltas remain observations under
+the existing regression policy; no baseline was edited. The metric policy
+remains `observe`.
+
+ICS55 also completes the continuation: compact DVP passes in 177541 cycles
+(9847.549 stage seconds), followed by a passing ordinary `ci_smoke` firmware
+build, STA execution and metric collection/check. Its setup WNS/TNS are
+-162.61/-5895612.00 ns; hold WNS/TNS are -0.34/-46.23 ns. The coverage report
+lists 42 inputs without input delay, 52 outputs without output delay,
+42 unclocked register/latch pins, 5 register/latch pins with multiple clocks
+and 146 unconstrained endpoints. These remain explicit smoke-constraint and
+physical-qualification gaps, not timing closure. ICS55 `check-warnings`
+fails on 20 new-to-baseline Yosys signatures, including PLL supply-pin
+constant resolution and multi-output cell observations; Icarus and OpenSTA
+warning checks pass. No warning baseline or metric policy changed.
+
+The compact HEX is identical across PDKs:
+`91abc81261ee978b86bca3b40de94f6d2f2dff38b0d46522f083ffe56b0b5d4e`.
+After both continuations completed, the default host budget was aligned to
+the **already executed** explicit parameters: ICS55 10800, IHP130 7200.
+This changes only default selection in the new test target; the retained
+executions already used these exact budgets. Per-PDK Make dry-runs verify the
+final default commands, and a one-line source-delta check binds this final
+Makefile change to the run snapshots. No additional simulation is needed to
+validate that command-default correction.
+
+`acceptance/closure.json` binds the functional results, synthesized netlists,
+compiled models, macro audits, timing/metric reports and warning deltas to
+their retained hashes. `acceptance/final-defaults/assessment.json` records
+the subsequent default-only source delta and dry-runs. Later changes relative
+to the passing RECOVERY/QVGA binaries are limited to the netlist-only TB
+diagnostic guard, netlist host-time budget and runbook; those original binary
+and source identities remain unchanged. The earlier VGA reuse rationale
+also remains historical, with these additional changes outside its active
+functional path. The scoped campaign is complete for review, not automatic
+P9 human acceptance.
+
+The additional Make-format check failed on formatter differences
+in `Makefile`, `app/apps/ci_smoke/tiny.mk`, `rtl/mk/software.mk`,
+`rtl/tiny/Makefile` and the unmodified `rtl/mini/mk/verilator.mk`. Copies from
+before the timeout-rule change reproduce the differences; this comparison
+does not establish that all differences predate P9. Review against `39ae718`
+confirmed that Tiny's final newline was introduced in P9; the other four
+files already had final newlines at the phase base. The row-size remediation
+fixes the scoped Tiny difference and keeps unrelated debt separate.
+`acceptance/format-attribution/` retains the original comparison.
+No unrelated file was reformatted. Ruff, RTL format/style/
+readiness and `git diff --check` pass. Full long Icarus firmware, the full
+Pytest suite, broad repository regression and physical qualification remain
+separate unrun gates. P9 human acceptance and P10 advancement remain pending;
+no commit/push.
+
+### P9 shared XPI error-report alignment correction (2026-10-16)
+
+The maintainer approved the narrowly scoped shared-XPI preflight. The patch
+changes `xpi_mm.sv` and `xpi_indirect.sv` only in their diagnostic metadata
+outputs/assignments: while the existing error/timeout event is asserted, all
+four fields bypass from the matching next-state bundle. Otherwise outputs
+retain the existing registered values. No event delay, AXI response/FSM,
+register offset/encoding, wrapper arbitration, first-error retention, W1C
+priority, reset, dependency or warning/metric policy is changed. Mapped
+pre-LUT/beat errors report PC zero; polling reports address zero and polling
+budget expiry reports PC zero. Core errors retain their actual fault PC.
+
+The final 32-bit directed fixture was run against archived **unfixed** RTL:
+11 cases fail on metadata and the existing W1C-priority case passes. This
+includes real mapped rejection, indirect and polling sequence errors,
+poll-transfer/poll-interval timeout and mapped core errors. Thus indirect
+and polling failures are now reproduced, not only inferred from source.
+Initial development attempts had incorrect polling offsets and a default
+64-bit AXI test interface; those logs remain diagnostic history. The valid
+before/after comparison is `baseline32.json` versus `final-source-tests.json`.
+
+On the final corrected source, **36 tests pass** (12 cases each for Tiny
+Icarus, Tiny Verilator and Mini's Verilator wrapper with its native backend).
+They check code/address/slot/PC, enabled IRQ causes, sticky first-error hold
+across a second cause, W1C/rearm, exact simultaneous W1C/event priority,
+normal transfer/reset, malformed WLAST/WSTRB, held B response, and core
+sequence/timeout errors. The fixture drives real APB/AXI/LUT operations with
+deterministic external serial input and does not force DUT state.
+
+The original P9 XPI-protection regression passes in **both simulators**:
+`ERROR_STATE=0x80000003`, address `0x54000c00`, INFO `0x13` (slot 1, PC 0),
+AXI-error interrupt set, DMA error with zero confirmed bytes, unchanged PSRAM
+guards/payload, subsequent mapped readback and source PIO recovery. Another
+**16 existing tests pass** for pin-level PSRAM boundaries/lanes/timeout/held
+reads/short reads/late errors, PHY pads and the fast-flash model. Those two
+regression groups ran before an identifier-only style correction; the final
+36-case suite and builds cover the final name. Mini wrapper coverage uses
+the native branch; the fast-flash model is checked separately, not a full
+Mini fast-boot acceptance run.
+
+Final RTL format/style/readiness, Ruff and diff checks pass. A local signal
+was renamed to `s_err_report` following the style gate; no baseline was edited.
+Tiny ICS55 and IHP130 `APP=ci_smoke` firmware builds and RTL lint pass, and
+Mini IHP130 firmware builds. Source inputs remain unchanged through each
+build; ELF/HEX/manifest hashes and source snapshots are retained. Existing
+EDA/clock-skew warnings remain, with no new C compiler warning observed.
+No embedded-C API or MISRA deviation changed.
+
+Exact focused commands (run through the retained result/log wrapper):
+
+```sh
+python3 -m pytest -q tests/test_xpi_error_report.py
+python3 -m pytest -q tests/test_tiny_r2_p9.py -k 'dvp_dma_drain and xpi'
+python3 -m pytest -q tests/test_tiny_r2_p8.py tests/test_xpi_io.py tests/test_xpi_fast_flash.py
+make rtl-format-check rtl-style-check rtl-readiness-check
+ruff check .
+git diff --check
+```
+
+Builds used `BUILD_TIMESTAMP=2026-10-16-22-33 JOBS=4 APP=ci_smoke
+SIMU=VERILATOR`, explicit SOC/PDK, and the following profiles/targets:
+
+| Profile | Targets | Build variant |
+| --- | --- | --- |
+| `configs/ci/ics55-tiny.mk` | `firmware rtl-lint` | `ics55-tiny-2026-10-16-22-33-ff4b5cef6eb5` |
+| `configs/ci/ihp130-tiny.mk` | `firmware rtl-lint` | `ihp130-tiny-2026-10-16-22-33-8232fa11e7f3` |
+| `configs/ci/ihp130.mk` | `firmware` | `ihp130-2026-10-16-22-33-a2f660e37f72` |
+
+Evidence root:
+`build/ics55-tiny-2026-10-16-22-21-9a44f7871af5/meta/tiny-r2-p9/xpi-error-alignment/`.
+`before-source/`, `baseline32/`, `final-source-tests/`, `p9-tests/` and
+`compatibility-tests/` preserve the source/log distinctions. `build-validation.py`
+and each `tiny-ics55/`, `tiny-ihp130/`, `mini-ihp130/` directory retain exact
+build commands/results and identities. This root groups focused host-driven
+tests; its name does not turn behavioral tests into ICS55 physical evidence.
+
+The diagnosed XPI metadata blocker is corrected and ready for review.
+RECOVERY/QVGA/VGA full-system campaigns, full Mini simulation, full-repository
+Pytest/PR/nightly, synthesis/netlist, STA and physical qualification were not
+run in this scoped correction. Existing VGA PASS records remain bound to
+their original RTL and are not relabeled as runs of this shared-XPI patch.
+Draft recovery/netlist work is preserved; subsequent P9 gates require their
+own source-bound execution. P9 human acceptance and P10 advancement remain
+pending; no commit or push was performed.
+
+### P9 remaining-acceptance checkpoint: XPI diagnostic blocker (2026-10-16)
+
+The approved remaining-acceptance plan was started on base `39ae718` plus
+the existing worktree. No production RTL or HAL was changed. The directed
+DVP fixture now drives actual overflow, missing-line size errors, odd-byte
+partial rows, overlapping HREF/VSYNC, invalid format, recovery payloads and
+repeated YUV crops at a nonzero origin. The first recovery test wrote CTRL
+before the asynchronous ABORT completed and correctly received an APB error;
+the fixture was corrected to wait for native abort completion and FIFO drain,
+matching the existing HAL. Both simulators then passed the controlled cases.
+
+The combined focused suite passed **86 tests** in 104.31 seconds before the
+new XPI-protection scenario was added. C format/policy/host tests, RTL
+format/style/readiness, Ruff and diff checks passed. Both Tiny PR definitions
+were dry-run. The compact `app/asm/tiny_p9_netlist.S` assembles successfully
+after adding the generated topology include directory to its build rule;
+that is assembly-build evidence only, not netlist simulation.
+
+Draft validation additions include the explicit RECOVERY application,
+opt-in external board controls (UART-command observation changes only camera
+model clock and camera/audio population), strict seven-case result parsing,
+and the compact `netsim-dvp` target. RECOVERY intends to exercise real IRQ15,
+repeated DMA/crop, rejection, SRAM capture, stopped-high/low reset rejection
+and audio/camera roundtrip. Its firmware build and full-system behavior have
+**not** been validated. No completed recovery or netlist gate is claimed.
+
+The next focused gate failed deterministically in both Verilator and Icarus:
+after initializing real NSS1 PSRAM, the test disables mapped writes through
+the public XPI slot configuration and sends production DVP/DMA2 traffic to
+`0x54000c00`. DMA reports error without DONE and with zero confirmed bytes.
+The APB diagnostic reads `ERROR_STATE=0x80000000` and the first-error address
+assertion fails. Icarus exits zero on its Fatal, but the forbidden-marker
+scan rejects it; Verilator exits nonzero. Neither run is a pass. The checks
+after the failing address assertion, including guard/recovery readback,
+remain unexecuted in this new scenario.
+
+The root cause is an event/metadata cycle mismatch in shared production XPI:
+`xpi_mm.sv` raises combinational `axi_error_event_o` while assigning the new
+code/address/slot to `_d`. Its metadata outputs still expose `_q`.
+`apb4_xpi.sv` forwards the current event with those old fields, and
+`xpi_reg.sv` latches them as the sticky first-error record on that edge.
+The observed valid bit with code NONE matches this ordering. Error IRQ
+classification also uses the old code and is therefore at risk; that IRQ
+consequence has not yet been separately measured. The indirect/poll engine
+contains the same output/event pattern and needs review, not an inferred
+claim that every path was reproduced. This is a shared Tiny/Mini diagnostic
+defect, not a regression introduced by these verification additions.
+
+Evidence root:
+`build/ics55-tiny-2026-10-16-22-00-9a44f7871af5/meta/tiny-r2-p9/acceptance/`.
+`fault-tests*` retains the original fixture failure and corrected controlled
+run; `focused.json`/`focused.log` retain the earlier 86-test pass;
+`xpi-protection.json`/`xpi-protection.log` and `xpi-protection-tests/` retain
+the two failures. `checkpoint.json` and `post-failure-source.json` retain
+this partial status and a post-failure source archive, explicitly not a
+pre-build provenance claim. The initial direct Pytest invocation lacked its
+basetemp parent and executed no tests; the recorded run_flow invocation
+created the evidence parent before running the actual tests.
+
+Per the approved stop-on-failure boundary, RECOVERY/QVGA full-system runs,
+synthesis/mapping, netlist boot/DVP checks and STA were not started. The
+remaining service-budget/boundary coverage is also incomplete. Existing VGA
+and prior focused results retain their original identities; new verification
+controls are not retroactively included in them. A separately approved shared
+XPI fix and focused tests are required before resuming dependent gates.
+No dependency/warning/metrics policy, MISRA deviation, commit or phase
+acceptance change was made; P9 remains incomplete and P10 is not advanced.
+
+### P9 campaign existing-output protection correction (2026-10-16)
+
+The scoped P2 review correction moves the campaign's existing ELF/HEX/model
+and evidence-directory checks before directory creation, evidence writes or
+`generate_filelist manifest`. Previously a built variant without a full-frame
+evidence directory could have its manifest/filelists rewritten before
+`prepare_build()` rejected its outputs. Rejection now returns nonzero without
+writing into that variant. Dangling output/evidence symlinks are also treated
+as occupied paths. The existing pre-compilation check remains in place.
+
+The evidence/tooling suite passed **54 tests** in 0.93 seconds. Twelve added
+runner-level cases cover both ICS55 and IHP130: each existing ELF, HEX or
+simulator, existing evidence, a dangling ELF symlink, and a fresh variant.
+Rejection tests retain exact file bytes, file/directory modification times
+and directory contents, and allow only the read-only configuration query.
+The positive orchestration test executes one mocked generation/build/run/check
+sequence. These are Python tests with fake external tools, not new firmware
+builds or simulator acceptance. The exact validation command was:
+
+```sh
+python3 -m pytest -q tests/test_tiny_r2_p9_evidence.py --basetemp=build/ics55-tiny-2026-10-16-21-34-7be4ff496b65/meta/tiny-r2-p9/runner-guard/pytest
+```
+
+The retained `tests.log` and `tests.json` are under that same `runner-guard/`
+root. Ruff and `git diff --check` also pass. This follow-up changes only
+`scripts/tiny_r2_p9.py`, its evidence tests and this ledger; no profile,
+public interface, firmware, RTL, dependency, policy or MISRA deviation changed.
+
+Both earlier `14-23` full-frame evidence directories remain unmodified:
+the build/log and ELF/HEX/model hashes still match their recorded identities.
+Their input maps differ from the current worktree only in the runner and its
+tests. Keep those PASS results bound to their archived source dictionaries;
+do not rewrite them as runs of the corrected runner. No long simulation,
+firmware build, full-repository Pytest, broad regression, synthesis/netlist,
+STA or physical flow was rerun for this scoped tooling correction. Existing
+P9 acceptance gaps and human phase acceptance remain unchanged.
+
+### P9 VGA/YUV422 full-frame campaign (2026-10-16)
+
+The maintainer approved the scoped full-frame preflight and its implementation.
+This record covers base `39ae71887ca427c83d39ff663ec5f0d1aa19be1a` plus the
+archived uncommitted inputs, not the committed P8 tree. The application adds
+`TINY_P9_WORKLOAD=VGA_YUV422` with a distinct configuration digest; the default
+QVGA_RGB565 and quick paths retain their existing selection. A private frame
+helper supplies checked geometry and deterministic payload expectations.
+The evidence parser now binds format/dimensions/counts to that selection and
+rejects incompatible camera arguments, quick substitution, missing statistics,
+old artifacts or failed commands. The one-shot campaign entrypoint reuses the
+existing build, snapshot and durable run-result helpers. No production RTL,
+HAL ABI, CDC/reset, FIFO, DMA scheduling, dependency or warning/metric policy
+was changed in this follow-up. No new MISRA deviation was introduced.
+
+Focused validation passed **53 tests** in 77.43 seconds, including actual
+DVP/DMA/XPI focused simulations, workload configuration identity and negative
+evidence cases. C format/policy/host tests, Ruff and diff checks passed. Both
+Tiny PR definitions were dry-run, not executed. Commands and observed results
+are summarized in the ICS55 evidence root's `prelaunch-checks.json`; its raw
+interactive quality output remains in the development-session transcript.
+
+Both fresh full-SoC Verilator executions passed, **exactly once per PDK**, at
+SAFE24 with a 500 ns pixel half-period. Each captures a 640x480 YUV422 frame
+through production DMA2/request11, XPI and NSS1 PSRAM at `0x54010000`, verifies
+all 614400 bytes and both guards, then rearms for a 7x3 RGB565 PIO crop from
+the VGA sensor geometry (42 valid bytes, 48 storage bytes, full readback and
+guards). This proves the tested raw byte transport and format-change/rearm
+sequence, not sensor color calibration or the entire recovery matrix.
+
+| Target/profile | Exit and terminal verdict | Wall seconds | Source inputs |
+| --- | --- | ---: | ---: |
+| TINY / `configs/ci/ics55-tiny.mk` / ICS55 | 0; `SIM_TEST_PASS Tiny cycles=73938869` | 13703.038 | 1427 |
+| TINY / `configs/ci/ihp130-tiny.mk` / IHP130 | 0; `SIM_TEST_PASS Tiny cycles=73938869` | 9291.077 | 1387 |
+
+Both runs report `P9_RESULT code=0 frames=1 bytes=614400`, 153600 words,
+307200 pixels and zero XPI error. The Tiny testbench emits its terminal
+marker from SYSCTRL TEST_STATUS; the command checker and workload/source
+validator both pass with no forbidden error marker. Input hashes remain
+unchanged before/after build and run, and the retained artifacts match their
+build identities. Both profiles use HEX SHA-256
+`52e806373c30c03c6c5022ef928bb23b0689176dafde123ec09448e160f1db79`;
+ELF and simulator hashes remain separately recorded. Existing EDA/clock-skew
+warnings are retained; no new C compiler warning was observed.
+
+Each session observes 153612 accepted/delivered FIFO words including PIO,
+high-water 4 words and longest backpressure 489 PCLK cycles (20.375 us at
+24 MHz). These finite model observations are not worst-case service bounds,
+continuous FPS, physical timing or a qualified sensor/PSRAM operating rate.
+
+Exact invocations, each with `--jobs 4 --pixel-half-ns 500
+--max-cycles 160000000 --wall-timeout 43200`, were:
+
+```sh
+python3 scripts/tiny_r2_p9.py run --pdk ICS55 --workload VGA_YUV422 --timestamp 2026-10-16-14-23 --jobs 4 --pixel-half-ns 500 --max-cycles 160000000 --wall-timeout 43200
+python3 scripts/tiny_r2_p9.py run --pdk IHP130 --workload VGA_YUV422 --timestamp 2026-10-16-14-23 --jobs 4 --pixel-half-ns 500 --max-cycles 160000000 --wall-timeout 43200
+```
+
+Evidence roots:
+
+- `build/ics55-tiny-2026-10-16-14-23-7be4ff496b65/meta/tiny-r2-p9/full-frame/`
+- `build/ihp130-tiny-2026-10-16-14-23-28a0c226bed5/meta/tiny-r2-p9/full-frame/`
+
+Each retains source archives, tool executable identities, prepared/build
+identities, exact launch arguments, console and separate progress logs,
+terminal command/check results, bound results and `assessment.json`.
+Tool executable hashes were checked; a new downloaded-tool archive audit
+was not performed. No retry or three-sample repetition occurred.
+
+This closes the scoped VGA/YUV422 plus subsequent PIO workload for both
+profiles. Current-source QVGA full-system replay, the remaining product-level
+error/mode/recovery matrix, full-repository Pytest and broad regression,
+current synthesis/mapping/netlist-function checks, observational STA and
+physical qualification were not run in this campaign. Full long Icarus stays
+deferred to final Tiny qualification. Historical QVGA and earlier focused
+evidence retain their original identities. **P9 human acceptance and P10
+advancement remain pending.**
+
+### P9 full-width word statistics correction (2026-10-16)
+
+The approved correction expands the shared DVP pixel-domain word counter
+from 16 to 32 bits and the completed-frame statistics mailbox from 128 to
+144 bits. The packet is `{drop[31:0], words[31:0], pixels[31:0], lines[15:0],
+frames[31:0]}`. Core output, both CDC-side vectors, the existing Common
+`cdc_2phase` instance and register unpacking now preserve all fields. The
+separate 128-bit configuration path, handshake/reset behavior, V2 software
+register map, 512-byte payload FIFO, Tiny/Mini DMA bindings and strict HAL
+completion comparisons remain unchanged. This fixes the previously
+documented 153600-to-22528 VGA word-count truncation.
+
+Validation uses a new CPU-less `dvp_stats_tb` with real pixel traffic through
+the shared DVP wrapper, FIFO, statistics CDC and APB. No DUT counter is forced
+or preloaded. Each backend compiles once and reuses the binary for boundary
+cases. Both Icarus and Verilator pass all four cases:
+
+| Geometry | Expected words | Coverage |
+| --- | ---: | --- |
+| 510x257 | 65535 | Original 16-bit limit |
+| 512x256 | 65536 | First high bit; stopped/resumed host clock |
+| 640x480 | 153600 | VGA count and payload, YUV422 mode, host-clock pause |
+| 511x256 | 65536 | Odd-row halfword/tkeep padding count path |
+
+All stream payload words and sidebands are checked against an independent
+scoreboard. APB verifies frame/line/pixel/word/drop/error statistics, retention
+of the preceding completed frame during active capture, and a subsequent
+4x2 frame with count reset to four words. These **8 tests passed** in 218.602
+wall seconds in total; they do not instantiate the CPU, DMA, XPI or PSRAM.
+The VGA/YUV422 result is therefore a focused statistics/stream result, not
+the full external-framebuffer qualification.
+
+The real Tiny and Mini HAL host tests accept a complete VGA count and reject
+the deliberately truncated count with `RS_EIO`, without weakening production
+HAL checks. The affected DVP/P9/pad regression passes **48 tests**. Shared
+register-shell formal prove and cover pass, including arbitrary nonzero
+high statistics fields, coherent update/hold, zero-extended line count and
+the existing event/configuration properties. This is not whole-CDC/RDC
+formal signoff. C format/policy, RTL format/style/readiness, Ruff and diff
+checks pass. No dependency, warning/metric policy or MISRA deviation changed.
+
+Fresh P9 firmware/Verilator models build successfully for both
+`configs/ci/ics55-tiny.mk` and `configs/ci/ihp130-tiny.mk`, each with
+`SOC=TINY APP=ci_smoke TINY_P9_ACCEPTANCE=YES SIMU=VERILATOR`, SAFE24 and
+`BUILD_TIMESTAMP=2026-10-16-13-50`. The prepared-build records retain 1430
+ICS55 and 1390 IHP130 unchanged input hashes respectively, archived sources
+and ELF/HEX/model hashes. Both builds retain existing EDA/clock-skew warnings.
+No full-SoC executable was launched, and the prior passing QVGA run is not
+relabeled as a pass for these new RTL inputs.
+
+Evidence roots:
+
+- `build/ics55-tiny-2026-10-16-13-50-9a44f7871af5/meta/tiny-r2-p9/word-count/`
+  retains `stats.json`, per-case logs in `stats-tests/`, `host.json`,
+  `regressions.json`, `quality.json`, source/build identities and `summary.json`.
+  `build-campaign.py` records exact build commands for both PDKs.
+- `build/ihp130-tiny-2026-10-16-13-50-064cd640790c/meta/tiny-r2-p9/word-count/`
+  retains the separate IHP130 source/build identity and results.
+- `build/ihp130-2026-10-16-13-50-c30fb9412aa3/formal/dvp/`
+  retains the Mini-profile shared register-shell prove/cover reports; the
+  exact `formal-dvp` command is also recorded in the ICS55 evidence root's
+  `formal.json`. It is not a Mini full-product simulation.
+
+Full VGA/YUV422 PSRAM capture/readback, current full-system replay and the
+remaining P9 product-level error/mode/recovery matrix are still open.
+Full long Icarus, broad repository regression, synthesis/netlist, STA and
+physical qualification were not run. The scoped counter/statistics fix is
+ready for review; human P9 acceptance and P10 advancement remain pending.
+
 ## TINY-R2-P8 P1 correction follow-up (2026-10-15)
 
 The review identified two evidence-blocking issues and both were corrected.
