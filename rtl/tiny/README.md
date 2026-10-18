@@ -100,6 +100,12 @@ NSS1 initialization and CPU/DMA mapped-data verification through a shared
 pin-level PSRAM model. It preserves SRAM-only boot and does not integrate DVP.
 The verification ledger owns phase acceptance and remaining qualification gaps.
 
+The [P10 campaign](../../docs/ip/tiny-soc-r2-system-performance.md) adds
+source-bound single-execution performance replays and a separate QVGA
+capture/CPU-statistics/SDIO-save image. Passive testbench observers supplement
+the existing counters without changing production RTL or public interfaces.
+Full regression and final physical qualification remain explicit obligations.
+
 The separately approved [SPI extension](../../docs/ip/spi.md) adds SPI0 to the
 future standard Tiny product, with its own `SPI-P0` through `SPI-P5` phases.
 It is a PCLK master-only 8/16-bit controller with separate 8 x 32-bit TX/RX

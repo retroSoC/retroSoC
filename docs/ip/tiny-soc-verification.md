@@ -1,5 +1,407 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P10 quality-gate repair (2026-10-18)
+
+The approved repair starts from `dev@5b81dea4fe0a68aabb51f42f01422068280192b2`
+plus the retained P10/P7 worktree. It corrects publication metadata and tests,
+normalizes exactly one final LF in each of four Make files, and appends these
+two P10 documents. The maintainer explicitly extended the original eight-file
+scope to ten files for the DVP circuit catalog and its tests. Production RTL,
+HAL, public interfaces, profiles, dependencies, warning/metric policy and
+the reviewed P7 capability correction remain unchanged. No new MISRA deviation
+is introduced.
+
+The stale PSRAM source reference predates this repair: P8 commit `f6190f91`
+moved the model to `rtl/model/ESP_PSRAM64H.sv`. The publication's bulk-channel
+binding also still expected the pre-P9 direct `RS_DMA_CHANNEL_BULK` call.
+It now binds both the real `RS_DVP_DMA_CHANNEL` call and its Tiny/Mini
+conditional definition; Mini retains bulk channel 3. Negative tests reject
+a wrong call target or Mini selector without changing the HAL.
+
+After those corrections, the first focused run reaches a further stale DVP
+diagram binding. The configuration CDC now transports 128 configuration bits
+plus an epoch and feeds an applied-configuration register. The approved
+diagram correction records packet assembly, the 129-bit CDC path, payload
+extraction and the 128-bit applied register before the core. The 42-bit payload
+FIFO path remains unchanged. Directed tests reject changed CDC width,
+payload slicing and bypass of the applied register. The isolated diagram
+fixture now copies dependencies from the additional circuit catalog as well
+as the embedded circuits; validators are not relaxed.
+
+The execution retains each attempt rather than overwriting failed results:
+
+| Check | Recorded result |
+| --- | --- |
+| Initial publication selection | 100 passed / 1 skipped / 60 errors; exposed the old DVP diagram binding |
+| Diagram correction before fixture completion | 156 passed / 1 skipped / 7 failed; isolated trees lacked the register declaration source |
+| Final publication selection | 163 passed / 1 skipped |
+| Build-tool and Tiny configuration selections | 2 passed and 6 passed |
+| Format, embedded-C policy/host tests, Ruff, final diff | PASS |
+| One full Pytest execution | **2031 passed / 1 skipped**, zero failures/errors, 4854.44 s |
+
+The sole skip remains the optional `pypdf` import. Source hashes are unchanged
+during the full Pytest run. The earlier full-run 10 failures/60 errors remain
+historical failures; the new run closes the current local publication/Make
+quality gaps. This is not a new remote CI result.
+
+Before/after configuration and firmware dry-run output is byte-identical for
+all five build cases; the Mini Verilator lint dry-run also matches. Tiny
+ICS55/IHP130 and Mini IHP130 each pass PR/nightly definition dry-runs. These
+are definition checks, not executed complete hardware regressions.
+
+| Firmware case | New variant | Build duration | Retained image comparison |
+| --- | --- | --- | --- |
+| Tiny ICS55 P7 | `ics55-tiny-2026-10-18-17-28-bea5da759fbb` | 4.462 s | HEX byte-identical |
+| Tiny ICS55 VGA | `ics55-tiny-2026-10-18-17-28-7be4ff496b65` | 4.398 s | HEX byte-identical |
+| Tiny IHP130 P7 | `ihp130-tiny-2026-10-18-17-28-3f1b609b0b86` | 4.451 s | HEX byte-identical |
+| Tiny IHP130 VGA | `ihp130-tiny-2026-10-18-17-28-28a0c226bed5` | 4.523 s | HEX byte-identical |
+| Mini IHP130 compatibility | `ihp130-2026-10-18-17-28-a2f660e37f72` | 6.772 s | Compilation only |
+
+Each build succeeds without self-owned C compiler warnings and retains its
+own ELF/HEX/configuration identity. No P7/VGA full-system simulation is
+repeated. Directed RTL fixtures remain part of the full Pytest execution.
+The separate reuse audit checks original reports, model/runtime inputs,
+command equivalence, exact final-LF changes and matching loadable images.
+Original simulation source digests stay attached to their original runs;
+no old report or collector allowance is rewritten.
+
+The aggregate evidence root is
+`build/ics55-tiny-2026-10-18-17-28-bea5da759fbb/meta/tiny-r2-p10/quality-repair/`.
+It retains `pre-edit.json`, `approved-extension.json`, source archives,
+`command-equivalence.json`, `firmware-summary.json`,
+`pytest-execution-source.json`, `retained-evidence-audit.json`, `report.json`
+and `validation/` logs/results/JUnit. Each variant above also retains
+`meta/tiny-r2-p10/quality-repair/firmware-record.json`. The
+[runbook](tiny-soc-r2-system-performance.md#quality-gate-repair) records the
+command matrix and ownership boundary.
+
+The report is `quality_repair_complete` with `phase_accepted=false`.
+Full long Icarus/complete supported regression and final physical/PVT/board/
+sensor/frequency qualification remain open. Synthesis, netlist and STA are
+not rerun for these metadata/final-LF changes. Publication identity remains
+`c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b`; PDF generation, source-baseline
+refresh and visual qualification are NOT_RUN. The strict source-drift check
+is preserved. `.editorconfig` still requests a final newline while the locked
+mbake default removes it; this repair follows the executable gate and does
+not approve a formatting-policy change. No commit, push or phase advancement
+is performed.
+
+## TINY-R2-P10 P7 capability correction (2026-10-18)
+
+The approved follow-up repairs the stale P7 acceptance-image capability check
+on `dev@5b81dea4fe0a68aabb51f42f01422068280192b2` plus the retained P10
+worktree. `tiny_r2_p7.c` now requires the exact DVP-inclusive `0x00007FFF`
+through an application-private constant. Production `TargetMask`, HAL,
+register ABI, profiles, dependencies and quality policy are unchanged.
+The architecture's `0x0003FFFF` allowed mask is not an implemented-target
+expectation. No new MISRA deviation is introduced.
+
+The added cross-source checks read the real `u_sysctrl` parameter and firmware
+startup guard. They reject the old capability, unimplemented target bits,
+removed/masked comparisons, and missing or ambiguous source definitions.
+The focused selection passes **14 tests** (including existing register parity).
+Software format/policy/host tests, Ruff and the final diff check pass.
+
+One complete Pytest execution reports **1956 passed, 10 failed, 60 errors and
+1 skipped** in 4841.86 seconds. Its 70 failure/error nodes exactly match the
+previous full run and all reference the existing publication dependency on
+`rtl/mini/dv/model/ESP_PSRAM64H.sv`. They remain failures; the optional `pypdf`
+skip and existing Make-format issues are not repaired here. Shared validation,
+JUnit results and `pytest-baseline-comparison.json` are retained under the
+ICS55 evidence directory's `validation/` below.
+
+Both PDKs pass PR/nightly dry-runs; the expansions remain identical per PDK.
+Each P7 Verilator image is rebuilt in the fresh `2026-10-18-14-51` variant and
+executed exactly once, without automatic retries:
+
+| PDK | Verdict / cycles | Flow duration | Profiles | CPU gated cycles / DMA responses while gated / warm resets |
+| --- | --- | --- | --- | --- |
+| ICS55 | PASS / 3803591 | 1162.871 s | 2, 3, 0 | 71627 / 64 / 1 |
+| IHP130 | PASS / 3799823 | 561.606 s | 1, 0 | 71634 / 64 / 1 |
+
+Both commands and standard checkers succeed, with exactly one
+`SIM_TEST_PASS Tiny`, one `P7_LIFECYCLE_PASS`, required profile coverage and
+no forbidden error marker. There are no self-owned C compiler warnings.
+Source, runtime/filelist and pre-launch ELF/HEX/model identities match after
+execution. The normal `+p7_monitor` cold-reset assertions execute; the
+diagnostic-only `P7_COLD_RESET_PASS` marker is not required. These are logical
+clock/lifecycle checks, not physical frequency qualification. CPU/main-SRAM
+SYS and divided XPI MEM retain their existing distinct meanings.
+
+New evidence directories are:
+
+- `build/ics55-tiny-2026-10-18-14-51-bea5da759fbb/meta/tiny-r2-p10/p7-capability-fix/`.
+- `build/ihp130-tiny-2026-10-18-14-51-3f1b609b0b86/meta/tiny-r2-p10/p7-capability-fix/`.
+
+Each retains `p7-record.json`, `source-before.json`, `runtime-before.json`,
+`launch-identity.json`, command logs/results, `vga-reuse-audit.json` and
+`report.json`. The shared `pre-edit.json` verifies both original VGA executions
+against the actual source before this correction and records the original
+compiler commands, binaries, logs, source archives and tool identities.
+The new audit proves the subsequent P7 C edit is not consumed by the VGA build
+and that its runtime/generated inputs are unchanged. Test/documentation
+changes are recorded separately. Original VGA execution digests and
+measurements remain attached to their original binaries; no simulation is
+repeated and no collector whitelist or old report is rewritten.
+
+This closes the selected P7 Verilator gap and retains the two passed VGA
+executions. Reports use `selected_followup_complete` with
+`phase_accepted=false`. The failed 09:20 P7 attempts below remain real failures
+on their original source. Full long Icarus/complete supported regression,
+separate publication/Make-format repairs and final physical/PVT/board/sensor
+qualification remain open. No synthesis, netlist, STA or physical flow is
+rerun for this acceptance-image correction; earlier evidence retains its
+original attribution. No commit, push or phase advancement is performed.
+
+## TINY-R2-P10 P7 and VGA follow-up (2026-10-18)
+
+The maintainer approved one P7 Verilator lifecycle execution and one full
+VGA/YUV422 execution per PDK, preserving the existing P10 candidate based on
+`5b81dea4fe0a68aabb51f42f01422068280192b2`. Only this ledger and the P10
+runbook are edited; no RTL, firmware, HAL, profile, dependency or quality-policy
+input is changed. New evidence uses timestamp `2026-10-18-09-20`; the
+2026-10-17 reports below keep their original identities and scope.
+
+Both Tiny PR/nightly dry-runs pass and expand to identical commands per PDK.
+This is matrix-definition evidence, not an executed complete regression.
+The original P7/P9 producer phase IDs remain in their records; P10 consumes
+these follow-up results without accepting another phase.
+
+| PDK | P7 lifecycle image | Full VGA/YUV422 image |
+| --- | --- | --- |
+| ICS55 | FAIL, firmware code 1, simulator exit 1, 361.667 s | PASS, 13598.239 s, 73938869 cycles |
+| IHP130 | FAIL, firmware code 1, simulator exit 1, 268.512 s | PASS, 9269.826 s, 73938869 cycles |
+
+The P7 failure is a stale acceptance-image expectation. The firmware at
+`app/apps/ci_smoke/tiny_r2_p7.c:133` requires `target_capability == 0x3fff`.
+The DVP-inclusive integration sets `TargetMask=0x7fff` in
+`rtl/tiny/top/retrosoc_tiny.sv`; `tiny_sysctrl.sv` returns that mask at
+TARGET_CAP and `crt/src/hal/rcu.c` copies it into the snapshot. The retained
+firmware disassembly still compares against `0x3fff`. Both simulations report
+`SIM_TEST_FAIL code=1` before any `P7_CLOCK_COMMIT`, so current-revision clock
+transition, WFI/DMA gating and warm-reset coverage remain unclosed.
+This mismatch is the first established blocker; the later lifecycle checks
+were not reached and need a fresh approved run after the fixture repair.
+
+Git attribution identifies the old expectation in
+`bc48cec74a8f3cec731c4853ac0380f9ae32c35b` and the DVP-inclusive mask in
+`8f5630fb41257098b30153eeb50248bb63ebfb94`. Both predate this P10 follow-up.
+The RTL capability must not be reduced to satisfy the stale test. Fixing the
+acceptance image and adding a hardware/firmware capability-consistency check
+requires the next approved implementation scope; no such fix or retry is
+performed here. Historical P7 acceptance remains attributed to its old source.
+
+P7 source and pre-launch binary identities were checked again after failure.
+Its raw build/simulation logs, command results and causal source/commit chain
+are bound by `p7-failure-evidence.json` under each follow-up directory:
+
+- `build/ics55-tiny-2026-10-18-09-20-bea5da759fbb/meta/tiny-r2-p10/follow-up/`.
+- `build/ihp130-tiny-2026-10-18-09-20-3f1b609b0b86/meta/tiny-r2-p10/follow-up/`.
+
+Fresh VGA evidence is under
+`build/ics55-tiny-2026-10-18-09-20-7be4ff496b65/meta/tiny-r2-p9/full-frame/`
+and `build/ihp130-tiny-2026-10-18-09-20-28a0c226bed5/meta/tiny-r2-p9/full-frame/`.
+Both profiles verify the 640x480 YUV422 frame, all 614400 payload bytes, 153600 DMA
+words, 307200 pixels and guards, followed by the 7x3 RGB565 PIO crop with
+42 valid/48 stored bytes. Total accepted/delivered FIFO words are 153612,
+including the twelve PIO words. FIFO high-water is four words and the longest
+observed backpressure is 489 SAFE24 cycles (20.375 us). Reserving 16 bytes
+leaves a 480-us no-service budget at the exercised 1-MHz PIXCLK. The original
+P9 runner, simulator and strict marker checker pass for each profile, with
+exit zero, exactly one `SIM_TEST_PASS Tiny` and no forbidden error marker.
+This closes the fresh full-system VGA/YUV422 Verilator gap for this candidate;
+it is finite behavioral evidence, not a qualified camera FPS or physical rate.
+
+The generated invocation wrapper compared a parser tuple with the JSON list
+representation and recorded a false VGA collection failure. Supplemental
+`vga-verification.json` checks exact JSON-normalized equality, the original
+source/build/model/firmware identities, zero self-owned compiler warnings and
+the strict Tiny verdict. It preserves the original collection error and does
+not rerun simulation. An independent diagnostic-only `P7_COLD_RESET_PASS`
+requirement in that wrapper was not reached by the real P7 failures; it must
+not be used to convert their code-1 results into passes.
+
+Both follow-up directories contain `report.json` with `status=incomplete`,
+`executions_complete=true` and `phase_accepted=false`, because P7 fails.
+All four simulator executions are complete, exactly once per selected case
+and PDK. The source and pre-launch binary identities remain unchanged.
+Full Icarus/complete regression stays deferred; the publication/Make-format
+failures below still need separate repair approval. Physical/PVT/board/sensor
+and qualified frequency claims remain final-product obligations. No phase,
+commit or push is advanced by this follow-up.
+
+## TINY-R2-P10 approved implementation campaign (2026-10-17)
+
+The maintainer approved the P10 implementation plan from clean
+`5b81dea4fe0a68aabb51f42f01422068280192b2`. The selected campaign completes
+the executable performance/application work while keeping complete P10
+acceptance pending final regression. Full long Icarus firmware stays deferred
+to final Tiny qualification. This instruction does not rewrite prior P9
+human-acceptance records, historical evidence or the frozen specification.
+
+The [P10 runbook](tiny-soc-r2-system-performance.md) defines the exact workload,
+ownership, measured endpoints, single-execution policy and evidence paths.
+Default ICS55/PLL-present and IHP130/no-PLL compatibility retain SAFE24.
+No production RTL, shared SDK ABI, dependency, warning baseline or metrics
+policy change is introduced. The approved implementation and selected
+performance/application/backend campaign are complete. Complete P10 acceptance
+remains pending final regression and human review; no subsequent phase is
+advanced by these results.
+
+The first P10 focused campaign passes 19 new tests and 286 existing
+P1/P3/P4/P5/P6/P9 tests (592.46 seconds for the latter), plus C formatting,
+policy/host tests, Ruff, RTL format/style/readiness, Mini IHP130 firmware and
+explicit Tiny ICS55/IHP130 PR/nightly plus Mini IHP130 PR dry-runs. Evidence is
+under `build/ics55-tiny-2026-10-17-15-56-ff4b5cef6eb5/meta/tiny-r2-p10/validation/`.
+The four pre-existing Make-format differences remain. Initial focused setup
+and observer compiler failures were corrected before measurement; their
+retained attempts do not replace the successful corrected test reports.
+
+The matched stage passes one execution per retained image: ICS55 flat and
+banked under variant `ics55-tiny-2026-10-17-15-56-a0ea4d0cd125`, and IHP130 P1
+under `ihp130-tiny-2026-10-17-15-56-bcf62053a831`. Each records the original
+image separately from the current RTL source and verifies complete readback,
+guards and strict Tiny terminal verdicts. The observed cycle comparisons are:
+
+| Matched image / case | Reference cycles | P10 cycles |
+| --- | ---: | ---: |
+| ICS55 P3 flat / CPU | 73911 | 73911 |
+| ICS55 P3 flat / memory | 102568 | 102568 |
+| ICS55 P3 flat / DMA16 | 16974 | 22829 |
+| ICS55 P3 banked / memory | 86214 | 86214 |
+| ICS55 P3 banked / DMA16 | 15802 | 22805 |
+| IHP130 P1 / memory | 754159 | 639438 |
+| IHP130 P1 / DMA16 | 71444 | 89513 |
+
+The ICS55 reference is P5's execution of the identical P3 images; IHP130 uses
+the repaired P1 reference. This is whole-platform evolution, not attribution
+to an isolated CPU/fabric optimization. The cases include regressions and no
+predetermined speedup gate. The remaining selected stages are recorded below;
+the complete supported regression remains unclosed.
+
+The one full Pytest execution completes in 5031.91 seconds with **1937 passed,
+10 failed, 60 errors and 1 skipped**. All failures/fixture errors are existing
+publication consumers of `rtl/mini/dv/model/ESP_PSRAM64H.sv`; the actual shared
+model remains at `rtl/model/ESP_PSRAM64H.sv`. Publication sources were not
+changed. This is not a global CI PASS. IHP130 ordinary acceptance plus P10
+audio observations passes under `ihp130-tiny-2026-10-17-15-56-83113a53b401`:
+both 256-frame audio formats and four WS frames pass, with longest WS wait
+3219 PCLK cycles (budget 4800), FIFO peak 15 and complete expected recovery.
+The two windows observe 2479/7565 cycles of simultaneous issues to multiple
+SRAM groups; DMA R/W beat overlap in these windows is zero and remains zero
+in the report. Firmware text is 42764 bytes, BSS 10128 and flat-SRAM space
+above BSS is 78388 bytes; this is headroom, not a measured worst-case stack.
+
+ICS55 ordinary acceptance plus audio observations also passes under
+`ics55-tiny-2026-10-17-15-56-f3e42d54c18b`, in 3730.267 seconds. Its WS maximum
+is 3220 PCLK cycles, FIFO peak 15, and the two measured bank-overlap windows
+are 2460/7520 cycles. Both PDKs retain 57 direct-background jobs in the 16-bit
+case and 39 finite-chain jobs in the 24-bit case; these finite service windows
+are not fixed-work architectural speedup comparisons.
+
+IHP130's P10 backend completes under
+`ihp130-tiny-2026-10-17-15-56-8232fa11e7f3`. Boot passes at 36069 cycles
+(641.742 seconds), compact DVP at 175649 cycles (3074.530 seconds). The
+structural audit reports 32 main, six Crypto and zero PLL macros. STA command
+execution succeeds but setup WNS/TNS remain -284.47/-11105854.00 ns and hold
+WNS/TNS -0.49/-141.45 ns. Standalone warnings retain exit 2; metrics remain
+observe-mode PASS. No timing closure or physical qualification follows.
+
+The ICS55 software stage completes the other six P3 images once on the same
+compiled model as the matched stage, under
+`ics55-tiny-2026-10-17-15-56-a0ea4d0cd125/meta/tiny-r2-p10/software/`.
+All eight images retain their original HEX/ELF/compiler/layout identities.
+The following current-model cycles are software comparisons, separate from
+the same-image architectural comparisons above:
+
+| P3 image | CPU | CPU copy | DMA16 | Contention |
+| --- | ---: | ---: | ---: | ---: |
+| COMPAT Os flat | 98586 | 135381 | 25301 | 401857 |
+| TINY_PERF O2 flat | 73911 | 102568 | 22829 | 301181 |
+| TINY_PERF O2 LTO flat | 73919 | 98504 | 21098 | 299414 |
+| TINY_PERF O3 flat | 73911 | 102568 | 22550 | 300906 |
+| TINY_PERF O3 LTO flat | 73919 | 98504 | 21098 | 299414 |
+| TINY_PERF Os flat | 73979 | 110779 | 24056 | 302472 |
+| TINY_PERF Os LTO flat | 73979 | 110776 | 21045 | 299773 |
+| TINY_PERF O2 banked | 73914 | 86214 | 22805 | 300933 |
+
+Compiler/profile defaults are not changed based on this table. Raw instruction,
+bank, wait, descriptor, stack and payload records remain in each stage record.
+
+ICS55's backend also completes under
+`ics55-tiny-2026-10-17-15-56-ff4b5cef6eb5`: compact DVP passes at 177541 cycles
+in 8887.787 seconds. Synthesis reports 476025 cells and 2711070.264704
+Liberty-based area. Setup WNS/TNS are -163.87/-6193132.50 ns and hold WNS/TNS
+-0.31/-45.71 ns; warnings retain exit 2 and metrics remain observational.
+This was the first execution of each selected long workload, not a repeat
+campaign. IHP130 reports 501378 cells and 14883898.734641 Liberty-based area.
+
+After those frozen-source runs completed, the collector/test-only correction
+accounts separately for SDIO descriptor fetches and completion writebacks.
+Twenty-five focused checks pass, and both retained backend bundles revalidate
+with exactly those two permitted source differences. Original records and
+source snapshots are unchanged. The camera campaign uses fresh
+`2026-10-17-21-20` variants and passes once per PDK. ICS55 completes in
+6966.317 seconds under `ics55-tiny-2026-10-17-21-20-b6ad86f0a86e`; IHP130
+completes in 5002.673 seconds under `ihp130-tiny-2026-10-17-21-20-1cb7ba9e3e49`.
+Both command exits are zero, contain exactly one `SIM_TEST_PASS Tiny` at
+34778540 cycles and contain no forbidden error marker. These are new P10
+application results, separate from historical P9 capture and P6 SDIO evidence.
+
+Both PDKs produce identical five-phase measurements at SAFE24:
+
+| Camera pipeline phase | Calls | Bytes | SYS cycles | Retired instructions |
+| --- | ---: | ---: | ---: | ---: |
+| DVP-to-PSRAM capture | 1 | 153600 | 7311485 | 1409737 |
+| CPU full comparison and histogram/checksum | 1 | 153600 | 10060974 | 2140840 |
+| PSRAM-to-SRAM bounce copy | 150 | 153600 | 4016550 | 388950 |
+| SDIO two-sector writes | 150 | 153600 | 1686150 | 402150 |
+| SDIO readback and full comparison | 150 | 153600 | 6824100 | 1667850 |
+
+The 76800-pixel histogram and checksum `2323003269` match the independent
+oracle. All 300 sectors and buffer guards pass. Raw SDIO AXI totals are
+158400 read bytes and 154800 write bytes: each direction carries 153600 pixel
+bytes, plus 4800 descriptor-read and 1200 status-writeback bytes respectively.
+The camera FIFO accepts and delivers 38400 words, peaks at one word and has
+zero observed backpressure. With the reserved 16-byte margin, the measured
+occupancy leaves a 492-us no-service budget at the exercised 1-MHz PIXCLK.
+This finite capture-then-save workflow does not establish continuous FPS.
+
+The camera windows observe 200482 cycles with simultaneous issues to multiple
+SRAM groups, at most two active targets, zero DMA R/W beat-overlap cycles and
+zero bus response errors. Maximum completed read/write latencies are CPU
+77/18 SYS cycles and SDIO 253/254; central DMA has no AXI reads in this stream
+capture and a maximum write latency of 126 cycles. Initial/final pending
+transactions remain in the raw observations; these are measured maxima, not
+universal service guarantees. GNU `size` reports text/data/BSS of
+22264/136/2768 bytes and 106096 bytes above BSS for both camera images; that
+space is not a measured worst-case stack.
+
+The final source-checked reports are:
+
+- ICS55: `build/ics55-tiny-2026-10-17-21-20-ff4b5cef6eb5/meta/tiny-r2-p10/report/report.json`.
+- IHP130: `build/ihp130-tiny-2026-10-17-21-20-8232fa11e7f3/meta/tiny-r2-p10/report/report.json`.
+
+Both report `selected_gates_complete`, with `phase_accepted=false`. Old-stage
+execution digests are preserved with exactly the two collector/test changes
+listed as later validation differences; each camera's source delta is empty.
+Shared C/Python/style/Mini validation is indexed by the ICS55 report and the
+validation directory above, and is not repeated in the IHP130 profile report.
+Exact stage commands, tool/image/model/input digests and terminal logs remain
+in the referenced records. No source was changed during a long execution, and
+no selected long workload was automatically repeated.
+
+Remaining acceptance obligations are unchanged: complete PR/nightly (including
+the deferred full Icarus firmware and P7 clock-transition matrix), fresh
+full-system VGA coverage, physical/PVT/board/sensor and higher-frequency
+qualification. The full Pytest publication failures above and existing Make
+format differences in `Makefile`, `app/apps/ci_smoke/tiny.mk`,
+`rtl/mini/mk/verilator.mk` and `rtl/mk/software.mk` remain explicit quality gaps.
+Negative STA and warning deltas remain observations under the unchanged
+policy. No new MISRA Required-rule deviation is introduced; the mechanical
+checks do not establish complete MISRA certification. Human review and the
+final regression closure are required before complete P10 acceptance.
+
 ## TINY-R2-P7 human acceptance and P8 implementation authorization (2026-10-15)
 
 The maintainer explicitly confirmed P7 human acceptance and authorized the

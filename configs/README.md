@@ -90,6 +90,10 @@ See the [P8 runbook](../docs/ip/tiny-soc-r2-psram.md) for bounded DMA and eviden
 use `TINY_SIM_ARGS='+tiny_psram +tiny_p9_camera'` for the pin-level camera
 model. The optional `TINY_P9_QUICK=YES` selector is a small focused smoke image,
 not QVGA/VGA acceptance. See the [P9 runbook](../docs/ip/tiny-soc-r2-dvp.md).
+`TINY_P10_ACCEPTANCE=YES APP=ci_smoke` selects the separate SAFE24 QVGA
+capture, CPU statistics and SDIO save/readback image. It is mutually exclusive
+with P7/P8/P9 acceptance flags and does not change the ordinary image or its
+configuration key. See the [P10 runbook](../docs/ip/tiny-soc-r2-system-performance.md).
 `TINY_P9_WORKLOAD=VGA_YUV422` selects the full 640x480 YUV422 image and
 changes its configuration digest. It requires P9 acceptance with QUICK=NO;
 the default `QVGA_RGB565` retains the existing configuration key. Pair the
