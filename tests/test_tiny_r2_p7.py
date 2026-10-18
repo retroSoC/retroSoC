@@ -216,6 +216,68 @@ def test_tiny_rcu_register_parity() -> None:
     assert sorted(sv_values.values()) == list(range(0x100, 0x160, 4))
 
 
+def check_p7_target_capability(top: str, firmware: str) -> None:
+    """Bind the acceptance guard to the actual DVP-inclusive SYSCTRL instance."""
+    top, firmware = (re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.DOTALL)
+                     for text in (top, firmware))
+    instances = re.findall(r"\btiny_sysctrl\s*#\(([^;]*?)\)\s*u_sysctrl\s*\(", top)
+    if len(instances) != 1:
+        raise ValueError("missing or ambiguous production SYSCTRL instance")
+    targets = re.findall(r"\.TargetMask\s*\(\s*15'h([0-9a-fA-F_]+)\s*\)", instances[0])
+    expected = re.findall(
+        r"^\s*#define RS_P7_EXPECTED_TARGET_CAPABILITY\s+UINT32_C\(0x([0-9a-fA-F]+)\)\s*$",
+        firmware, re.MULTILINE)
+    if len(targets) != 1 or len(expected) != 1:
+        raise ValueError("missing or ambiguous target capability definition")
+    # Freeze the implemented set independently of both handwritten sources.
+    # The HAL's 0x3ffff architecture mask also admits unimplemented targets.
+    if int(targets[0].replace("_", ""), 16) != 0x7FFF or int(expected[0], 16) != 0x7FFF:
+        raise ValueError("target capability differs from the DVP-inclusive contract")
+    main = re.findall(r"\bint\s+main\s*\(void\)\s*\{(.*)", firmware, re.DOTALL)
+    guard = (
+        r"\bif\s*\(\s*rs_tiny_rcu_get_snapshot\(&snapshot\)\s*!=\s*RS_OK\s*\|\|\s*"
+        r"snapshot\.sys_hz\s*!=\s*24000000U\s*\|\|\s*"
+        r"snapshot\.target_capability\s*!=\s*RS_P7_EXPECTED_TARGET_CAPABILITY\s*\)\s*"
+        r"\{\s*code\s*=\s*1U\s*;"
+    )
+    if len(main) != 1 or len(re.findall(guard, main[0])) != 1:
+        raise ValueError("missing or weakened exact startup capability guard")
+
+
+def test_tiny_p7_target_capability_parity() -> None:
+    check_p7_target_capability((ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text(),
+                              (ROOT / "app/apps/ci_smoke/tiny_r2_p7.c").read_text())
+
+
+@pytest.mark.parametrize(("source", "old", "new"), [
+    ("firmware", "UINT32_C(0x00007FFF)", "UINT32_C(0x00003FFF)"),
+    ("top", "15'h07fff", "15'h03fff"),
+    *[("firmware", "UINT32_C(0x00007FFF)", f"UINT32_C({value})")
+      for value in ("0x0000FFFF", "0x00017FFF", "0x00027FFF", "0x0003FFFF")],
+    ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY", "false"),
+    ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY",
+     "(snapshot.target_capability & RS_P7_EXPECTED_TARGET_CAPABILITY) != RS_P7_EXPECTED_TARGET_CAPABILITY"),
+    ("firmware", "#define RS_P7_EXPECTED_TARGET_CAPABILITY", "#define RS_P7_UNUSED_CAPABILITY"),
+    ("top", ".TargetMask (15'h07fff)", ".UnusedMask (15'h07fff)"),
+])
+def test_tiny_p7_target_capability_rejects_drift(source: str, old: str, new: str) -> None:
+    sources = {"top": (ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text(),
+               "firmware": (ROOT / "app/apps/ci_smoke/tiny_r2_p7.c").read_text()}
+    assert sources[source].count(old) == 1
+    sources[source] = sources[source].replace(old, new)
+    with pytest.raises(ValueError):
+        check_p7_target_capability(**sources)
+
+
+@pytest.mark.parametrize("source", ["top", "firmware"])
+def test_tiny_p7_target_capability_rejects_ambiguous_source(source: str) -> None:
+    sources = {"top": (ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text(),
+               "firmware": (ROOT / "app/apps/ci_smoke/tiny_r2_p7.c").read_text()}
+    sources[source] += sources[source]
+    with pytest.raises(ValueError):
+        check_p7_target_capability(**sources)
+
+
 @pytest.mark.parametrize("simulator", ["verilator", "iverilog"])
 @pytest.mark.parametrize("xin_hz", [24000000, 48000000, 96000000])
 def test_tiny_external_sources(tmp_path: Path, simulator: str, xin_hz: int) -> None:

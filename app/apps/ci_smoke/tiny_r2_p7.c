@@ -11,6 +11,9 @@
 #include <retrosoc/hal/timer.h>
 #include <pwm_regs.h>
 
+/* Current Tiny includes DVP (target 14); later expansion targets stay absent. */
+#define RS_P7_EXPECTED_TARGET_CAPABILITY UINT32_C(0x00007FFF)
+
 /* Short P7 firmware: execute in real main SRAM and use real SYSCTRL/APB
  * crossings. The full peripheral firmware remains a separate regression. */
 static volatile uint32_t rs_p7_words[128];
@@ -130,7 +133,7 @@ int main(void) {
         rs_p7_words[index] = UINT32_C(0xABCDEF00) ^ index;
     }
     if (rs_tiny_rcu_get_snapshot(&snapshot) != RS_OK || snapshot.sys_hz != 24000000U ||
-        snapshot.target_capability != UINT32_C(0x3FFF)) {
+        snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY) {
         code = 1U;
     } else if ((snapshot.capability & UINT32_C(0xC)) == UINT32_C(0xC)) {
         if (!rs_p7_profile(RS_TINY_RCU_PROFILE_PLL192, 192000000U, 96000000U, 48000000U)) {
