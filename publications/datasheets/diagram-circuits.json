@@ -8899,7 +8899,7 @@
         "id": "reg",
         "title": "APB4 registers\ncapture / stream control",
         "x": 0.0,
-        "y": 7.0,
+        "y": 10.5,
         "w": 4.0,
         "h": 1.8,
         "ports": [
@@ -8922,24 +8922,49 @@
         }
       },
       {
-        "id": "cfg",
-        "title": "Configuration CDC\nsystem to pixel",
+        "id": "cfg_packet",
+        "title": "Packet assembly\n128-bit CFG + epoch",
         "x": 6.3,
-        "y": 7.0,
+        "y": 10.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 128,
+            "side": "west"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 129,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      },
+      {
+        "id": "cfg",
+        "title": "Configuration CDC\n129-bit epoch packet",
+        "x": 12.6,
+        "y": 10.5,
         "w": 4.0,
         "h": 1.8,
         "ports": [
           {
             "id": "p0",
             "direction": "in",
-            "width": 128,
+            "width": 129,
             "side": "west"
           },
           {
             "id": "p1",
             "direction": "out",
-            "width": 128,
-            "side": "east"
+            "width": 129,
+            "side": "south"
           }
         ],
         "sources": [
@@ -8954,9 +8979,66 @@
         }
       },
       {
+        "id": "cfg_split",
+        "title": "Epoch / payload split\npacket[127:0]",
+        "x": 12.6,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 129,
+            "side": "north"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 128,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      },
+      {
+        "id": "applied",
+        "title": "Applied configuration\npixel-domain register",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 128,
+            "side": "east"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 128,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_applied_config",
+          "module": "dffer",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        }
+      },
+      {
         "id": "core",
         "title": "Pixel-domain core\nRGB / YUV packing",
-        "x": 12.6,
+        "x": 0.0,
         "y": 7.0,
         "w": 4.0,
         "h": 1.8,
@@ -8965,7 +9047,7 @@
             "id": "p1",
             "direction": "in",
             "width": 128,
-            "side": "west"
+            "side": "east"
           },
           {
             "id": "p2",
@@ -8994,7 +9076,7 @@
       {
         "id": "pads",
         "title": "Camera inputs\nPCLK / VSYNC / HREF / D8",
-        "x": 12.6,
+        "x": 0.0,
         "y": 3.5,
         "w": 4.0,
         "h": 1.8,
@@ -9028,7 +9110,7 @@
             "id": "p4",
             "direction": "out",
             "width": 42,
-            "side": "west"
+            "side": "east"
           }
         ],
         "sources": [
@@ -9043,7 +9125,7 @@
       {
         "id": "sink",
         "title": "PIO / stream sink\ncentral DMA endpoint",
-        "x": 0.0,
+        "x": 12.6,
         "y": 3.5,
         "w": 4.0,
         "h": 1.8,
@@ -9052,7 +9134,7 @@
             "id": "p4",
             "direction": "in",
             "width": 42,
-            "side": "east"
+            "side": "west"
           }
         ],
         "sources": [
@@ -9063,7 +9145,7 @@
     "edges": [
       {
         "from": "reg.p0",
-        "to": "cfg.p0",
+        "to": "cfg_packet.in",
         "kind": "control",
         "label": "CFG / 128",
         "style": "direct",
@@ -9074,21 +9156,7 @@
           },
           {
             "file": "rtl/ip/multimedia/axi4s_dvp.sv",
-            "text": ".src_data_i(s_cfg_sys)"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
-            "scope": "axi4s_dvp",
-            "symbol": "s_cfg_sys",
-            "bits": 128
-          },
-          {
-            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
-            "scope": "axi4s_dvp",
-            "symbol": "s_cfg_sys",
-            "bits": 128
+            "text": ".src_data_i({!s_cfg_epoch_q, s_cfg_sys})"
           }
         ],
         "instance_ports": [
@@ -9096,28 +9164,129 @@
             "node": "reg",
             "port": "cfg_o",
             "expression": "s_cfg_sys"
-          },
+          }
+        ],
+        "signals": [
           {
-            "node": "cfg",
-            "port": "src_data_i",
-            "expression": "s_cfg_sys"
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_cfg_sys",
+            "bits": 128
           }
         ]
       },
       {
-        "from": "cfg.p1",
-        "to": "core.p1",
+        "from": "cfg_packet.out",
+        "to": "cfg.p0",
         "kind": "control",
-        "label": "CFG / 128",
+        "label": "CFG + EPOCH / 129",
         "style": "direct",
         "bindings": [
           {
             "file": "rtl/ip/multimedia/axi4s_dvp.sv",
-            "text": ".dst_data_o(s_cfg_pclk_q)"
+            "text": "cdc_2phase #(.DATA_WIDTH(129)) u_dvp_config_cdc"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".src_data_i({!s_cfg_epoch_q, s_cfg_sys})"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "cfg",
+            "port": "src_data_i",
+            "expression": "{!s_cfg_epoch_q, s_cfg_sys}"
+          }
+        ],
+        "signals": []
+      },
+      {
+        "from": "cfg.p1",
+        "to": "cfg_split.in",
+        "kind": "control",
+        "label": "PACKET / 129",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dst_data_o(s_cfg_packet_pclk)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "cfg",
+            "port": "dst_data_o",
+            "expression": "s_cfg_packet_pclk"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_cfg_packet_pclk",
+            "bits": 129
+          }
+        ]
+      },
+      {
+        "from": "cfg_split.out",
+        "to": "applied.in",
+        "kind": "control",
+        "label": "PAYLOAD / 128",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "dffer #(.DATA_WIDTH(128)) u_applied_config"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dat_i(s_cfg_packet_pclk[127:0])"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".en_i(s_cfg_v_pclk && s_cfg_rdy_pclk && !s_cfg_apply_pclk_q)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "applied",
+            "port": "dat_i",
+            "expression": "s_cfg_packet_pclk[127:0]"
+          }
+        ],
+        "signals": []
+      },
+      {
+        "from": "applied.out",
+        "to": "core.p1",
+        "kind": "control",
+        "label": "APPLIED CFG / 128",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dat_o(s_cfg_pclk_q)"
           },
           {
             "file": "rtl/ip/multimedia/axi4s_dvp.sv",
             "text": ".cfg_i(s_cfg_pclk_q)"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".cfg_valid_i(s_cfg_apply_pclk_q)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "applied",
+            "port": "dat_o",
+            "expression": "s_cfg_pclk_q"
+          },
+          {
+            "node": "core",
+            "port": "cfg_i",
+            "expression": "s_cfg_pclk_q"
           }
         ],
         "signals": [
@@ -9126,24 +9295,6 @@
             "scope": "axi4s_dvp",
             "symbol": "s_cfg_pclk_q",
             "bits": 128
-          },
-          {
-            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
-            "scope": "axi4s_dvp",
-            "symbol": "s_cfg_pclk_q",
-            "bits": 128
-          }
-        ],
-        "instance_ports": [
-          {
-            "node": "cfg",
-            "port": "dst_data_o",
-            "expression": "s_cfg_pclk_q"
-          },
-          {
-            "node": "core",
-            "port": "cfg_i",
-            "expression": "s_cfg_pclk_q"
           }
         ]
       },
@@ -9241,7 +9392,7 @@
         ]
       }
     ],
-    "note": "Configuration crosses into the pixel domain; 42-bit pixel/event payloads return through a warm-flush CDC FIFO. PIO or AXI4-Stream consumes the same captured payload. No direct DVP-to-JPEG connection is implied."
+    "note": "The configuration CDC carries 128 configuration bits plus an epoch. Its payload is latched in the pixel domain before application to the core; command, cancellation and acknowledgement control is not expanded here. 42-bit pixel/event payloads return through a warm-flush CDC FIFO. PIO or AXI4-Stream consumes the same captured payload. No direct DVP-to-JPEG connection is implied."
   },
   "jpeg": {
     "nodes": [

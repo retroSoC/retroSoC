@@ -1640,7 +1640,11 @@
         "bindings": [
           {
             "file": "crt/src/hal/dvp.c",
-            "text": "rs_dma_configure(RS_DMA_CHANNEL_BULK"
+            "text": "rs_dma_configure(RS_DVP_DMA_CHANNEL"
+          },
+          {
+            "file": "crt/src/hal/dvp.c",
+            "text": "#ifdef RS_SOC_TINY\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_DVP\n#else\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_BULK\n#endif"
           }
         ]
       },
@@ -2043,7 +2047,7 @@
         "silicon": "Not established",
         "reports": [],
         "sources": [
-          "rtl/mini/dv/model/ESP_PSRAM64H.sv",
+          "rtl/model/ESP_PSRAM64H.sv",
           "tests/test_psram.py",
           "docs/ip/psram.md"
         ]

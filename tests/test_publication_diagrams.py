@@ -26,7 +26,8 @@ def data():
 
 @pytest.fixture
 def source_tree(tmp_path):
-    for relative in dr.dependencies(SPEC):
+    circuits = {**SPEC["circuits"], **read_json(ROOT / SPEC["circuit_catalog"])}
+    for relative in dr.dependencies({**SPEC, "circuits": circuits}):
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)
@@ -38,6 +39,30 @@ def replace(root: Path, relative: str, old: str, new: str) -> None:
     source = path.read_text(encoding="utf-8")
     assert old in source
     path.write_text(source.replace(old, new), encoding="utf-8")
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    (".DATA_WIDTH(129)", ".DATA_WIDTH(128)"),
+    ("s_cfg_packet_pclk[127:0]", "s_cfg_packet_pclk[128:1]"),
+    (".cfg_i               (s_cfg_pclk_q)",
+     ".cfg_i               (s_cfg_packet_pclk[127:0])"),
+])
+def test_dvp_configuration_diagram_rejects_packet_or_latch_drift(monkeypatch, before, after):
+    circuit = read_json(ROOT / "publications/datasheets/diagram-circuits.json")["dvp"]
+    dr.validate_circuit(ROOT, circuit)
+    read_text = Path.read_text
+    wrapper = ROOT / "rtl/ip/multimedia/axi4s_dvp.sv"
+
+    def drift(path, *args, **kwargs):
+        text = read_text(path, *args, **kwargs)
+        if path.resolve() == wrapper:
+            assert text.count(before) == 1
+            return text.replace(before, after)
+        return text
+
+    monkeypatch.setattr(Path, "read_text", drift)
+    with pytest.raises(ValueError, match="binding changed"):
+        dr.validate_circuit(ROOT, circuit)
 
 
 def test_representative_inventory_uses_actual_widths_and_addresses(data):

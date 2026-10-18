@@ -96,6 +96,28 @@ def test_channel_coverage_cannot_drop_the_boot_channel(spec):
         pr.collect_programming(ROOT, spec, IDS, REFERENCE["source_revision"])
 
 
+@pytest.mark.parametrize(("before", "after"), [
+    ("rs_dma_configure(RS_DVP_DMA_CHANNEL,", "rs_dma_configure(RS_DMA_CHANNEL_CRYPTO_IN,"),
+    ("#else\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_BULK",
+     "#else\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_CRYPTO_IN"),
+])
+def test_dvp_bulk_binding_rejects_channel_drift(spec, monkeypatch, before, after):
+    """A real HAL call or Mini selector change must invalidate its published role."""
+    read_text = Path.read_text
+    dvp = ROOT / "crt/src/hal/dvp.c"
+
+    def drift(path, *args, **kwargs):
+        text = read_text(path, *args, **kwargs)
+        if path.resolve() == dvp:
+            assert text.count(before) == 1
+            return text.replace(before, after)
+        return text
+
+    monkeypatch.setattr(Path, "read_text", drift)
+    with pytest.raises(ValueError, match="programming binding changed: bulk"):
+        check(spec)
+
+
 def test_mini_channel_selection_excludes_inactive_tiny_roles():
     header = (ROOT / "crt/include/retrosoc/hal/dma.h").read_text()
     selected = pr.mini_channel_enum(header)
