@@ -20,3 +20,6 @@ ifeq ($(TINY_P9_QUICK),YES)
 APP_CFLAGS += -DRS_TINY_P9_QUICK
 endif
 endif
+ifeq ($(TINY_P10_ACCEPTANCE),YES)
+APP_SRCS := $(ROOT_PATH)/app/apps/ci_smoke/tiny_r2_p10.c
+endif

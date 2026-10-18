@@ -44,6 +44,7 @@
 
 #include "../../crt/src/hal/ga2d_math.h"
 #include "../../app/apps/ci_smoke/p9_frame.h"
+#include "../../app/apps/ci_smoke/p10_frame.h"
 #include "../../crt/src/hal/opipsram_math.c"
 
 #define TEST_STORAGE_ADDRESS ((uintptr_t)0x1000U)
@@ -3472,6 +3473,31 @@ static int test_p9_frame_layout(void) {
     return 0;
 }
 
+static int test_p10_frame_statistics(void) {
+    rs_p10_statistics_t statistics = {.checksum = UINT32_C(2166136261)};
+    uint32_t offset = UINT32_MAX;
+    uint32_t block = UINT32_MAX;
+    if (rs_p10_accumulate(&statistics, UINT32_C(0xF8000000)) != RS_OK || statistics.pixels != 2U ||
+        statistics.red[0] != 1U || statistics.red[31] != 1U ||
+        rs_p10_accumulate(&statistics, 0U) != RS_OK || statistics.red[0] != 3U) {
+        return 1;
+    }
+    statistics.red[0] = UINT32_MAX - 1U;
+    if (rs_p10_accumulate(&statistics, 0U) != RS_EINVAL || statistics.red[0] != UINT32_MAX - 1U ||
+        rs_p10_accumulate(NULL, 0U) != RS_EINVAL) {
+        return 2;
+    }
+    if (rs_p10_chunk(153600U, 149U, 316U, &offset, &block) != RS_OK || offset != 38144U ||
+        block != 314U || rs_p10_chunk(153600U, 150U, 1024U, &offset, &block) != RS_EINVAL ||
+        rs_p10_chunk(153600U, 0U, 315U, &offset, &block) != RS_EINVAL ||
+        rs_p10_chunk(UINT32_MAX, 0U, UINT32_MAX, &offset, &block) != RS_EINVAL ||
+        rs_p10_chunk(512U, 0U, 1024U, &offset, &block) != RS_EINVAL ||
+        rs_p10_chunk(0U, 0U, 1024U, &offset, &block) != RS_EINVAL) {
+        return 3;
+    }
+    return 0;
+}
+
 int main(void) {
     const int results[] = {
         test_string_helpers(),
@@ -3501,6 +3527,7 @@ int main(void) {
         test_tiny_dma_config_validation(),
         test_dvp_hal(),
         test_p9_frame_layout(),
+        test_p10_frame_statistics(),
         test_opipsram_helpers(),
         test_user_ip_validation(),
         test_extension_validation(),

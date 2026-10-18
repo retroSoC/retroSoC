@@ -3,3 +3,4 @@
 /dv/tiny_dvp_camera.sv
 /tests/rtl/sdio_native_model.sv
 /dv/retrosoc_tiny_tb.sv
+/dv/tiny_p10_observer.sv

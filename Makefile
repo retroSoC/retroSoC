@@ -90,6 +90,7 @@ TINY_P8_ACCEPTANCE   ?= NO
 TINY_P9_ACCEPTANCE   ?= NO
 TINY_P9_QUICK        ?= NO
 TINY_P9_WORKLOAD     ?= QVGA_RGB565
+TINY_P10_ACCEPTANCE  ?= NO
 COREMARK_MODE        ?= quick
 NPU_P5_ACCEPTANCE    ?= NO
 NPU_P6_ACCEPTANCE    ?= NO
@@ -146,6 +147,9 @@ endif
 endif
 ifeq ($(TINY_P9_QUICK),YES)
 CONFIG_KEY_VARS += TINY_P9_QUICK
+endif
+ifeq ($(TINY_P10_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P10_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -311,6 +315,12 @@ $(call validate_value,TINY_P7_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P8_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P9_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P9_QUICK,$(VALID_BOOL))
+$(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(TINY_P10_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),TINY/ci_smoke/YES/NO/NO/NO/NO)
+$(error TINY_P10_ACCEPTANCE requires Tiny ci_smoke with CSR and no P7/P8/P9 acceptance image)
+endif
+endif
 $(call validate_value,TINY_P9_WORKLOAD,QVGA_RGB565 VGA_YUV422 RECOVERY)
 ifneq ($(TINY_P9_WORKLOAD),QVGA_RGB565)
 ifneq ($(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),YES/NO)

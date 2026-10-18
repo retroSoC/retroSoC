@@ -75,6 +75,7 @@ module retrosoc_tiny_tb;
   `include "tiny_p8_observers.svh"
   `include "tiny_p9_observers.svh"
   `include "tiny_p9_recovery.svh"
+  `include "tiny_p10_observers.svh"
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
