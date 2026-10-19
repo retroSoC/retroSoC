@@ -265,6 +265,15 @@
       "user_gpio_if.sv"
     ],
     "rtl/ip/serial": [
+      "apb4_spi.sv",
+      "spi_ctrl_if.sv",
+      "spi_define.svh",
+      "spi_gpio_guard.sv",
+      "spi_master_core.sv",
+      "spi_phase_ctrl.sv",
+      "spi_pkg.sv",
+      "spi_reg.sv",
+      "spi_word_packer.sv",
       "apb4_i2c.sv",
       "apb4_i2c_define.svh",
       "apb4_i2s.sv",

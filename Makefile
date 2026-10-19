@@ -534,6 +534,13 @@ include physical/librelane/mini/Makefile
 endif
 include physical/ecc/Makefile
 
+.PHONY: spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report
+spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p1.py $(patsubst spi-p1-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS) \
+	  $(if $(SPI_P1_COMMON_ROOT),--common-variant-root $(SPI_P1_COMMON_ROOT),) \
+	  $(if $(filter spi-p1-formal,$@),$(if $(SPI_P1_FORMAL_REUSE_ROOT),--formal-reuse-root $(SPI_P1_FORMAL_REUSE_ROOT),),)
+
 .PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report
 crypto-p0-constants: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py constants --variant-root $(VARIANT_ROOT)

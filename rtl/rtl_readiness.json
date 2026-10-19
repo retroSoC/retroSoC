@@ -2,6 +2,25 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "spi-p1",
+      "paths": ["rtl/ip/serial/apb4_spi.sv", "rtl/ip/serial/spi_reg.sv",
+                "rtl/ip/serial/spi_master_core.sv", "rtl/ip/serial/spi_phase_ctrl.sv",
+                "rtl/ip/serial/spi_word_packer.sv", "rtl/ip/serial/spi_gpio_guard.sv"],
+      "status": "prototype",
+      "baseline_revision": "e62ccdad87e1fd412eff70cc2527ad3090f16a55",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common registers; exactly-once registered APB response and finite segment state",
+        "reset": "active-low system reset invalidates traffic; RECOVER drains before clearing local validity",
+        "clock_enable": "PCLK only; SCK is a registered output, never an internal clock",
+        "memory": "two 8x32 Common FIFOs; pre-edge eligibility; no payload reset or SRAM macro",
+        "pipeline": "APB response, FIFO packing, per-frame phase engine; standalone source qualification only"
+      },
+      "waivers": []
+    },
+    {
       "name": "tiny-r2-p5",
       "paths": ["rtl/tiny/top"],
       "status": "prototype",
