@@ -22,6 +22,9 @@ Tiny block, distinct from SPI-SD and XPI. Its APB/packed FIFOs, native GPIO
 guard, source-qualified DMA V2.2 MMIO pacing and `SPI-P0..P5` gates are defined
 there, with [pending verification](../../docs/ip/spi-verification.md). A
 specification or reserved route does not add it to the current RTL/filelists.
+The [SPI-P1 standalone implementation](../../docs/ip/spi-p1.md) is isolated
+from product filelists. Its DMA capability remains clear; actual DMA V2.2,
+Tiny routing, lifecycle and SDK integration belong to P2/P3.
 
 The [PPALite contract](../../docs/ip/ppalite.md) specifies a future camera-inline
 PCLK processor with RAW bypass, small FIFOs and existing DVP_RX11/DMA2 output.

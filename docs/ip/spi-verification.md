@@ -6,6 +6,155 @@ not existing hardware capability. At freeze, SPI RTL, DMA V2.2, native routing,
 HAL/display software and physical qualification are not delivered. Historical
 Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 
+## SPI-P1 review-closure checkpoint (2026-10-19)
+
+The approved eight-file repair closes two missing verification obligations
+(independent SCK timing and complete-core FIFO stall/resume) and strengthens
+tool-component provenance. It does not modify production RTL, profiles,
+register ABI, product integration or dependency versions. The existing
+implementation remains based on `dev@e62ccdad87e1fd412eff70cc2527ad3090f16a55`.
+See the [runbook](spi-p1.md) for the exact workload and checker contracts.
+
+The new campaign completed successfully. Matching evidence roots are:
+
+- `build/ics55-tiny-2026-10-19-07-00-bbe722dc382e/meta/spi-p1/`.
+- `build/ihp130-tiny-2026-10-19-07-00-439583e27401/meta/spi-p1/`.
+
+Tool-input schema2 rejects older incomplete inventories rather than filling
+them retrospectively. The fresh formal campaign retains depth192 BMC and
+the complete-window cover witness; unchanged proof depth does not cover the
+new large FIFO-pressure workloads, which are checked by RTL/netlist fixtures.
+Original evidence below remains historical, including the old full-Pytest
+count. No human SPI-P1 acceptance, P2 implementation or product qualification
+is implied. Final combined-regression/physical obligations remain open.
+
+| Review-closure gate | Result / evidence boundary |
+| --- | --- |
+| Independent checker | Both simulators pass 28 synthetic traces: 17 legal cases and 11 exactly classified waveform/payload violations |
+| Complete-core behavior | Both simulators pass all five fixtures; each core run retains 305 original segments plus 48 pressure completions, 16 pressure aborts and 112 phase-offset aborts |
+| Mapped behavior | Both PDK netlists pass 48 original pin cases plus the same 48 pressure completions, 16 pressure aborts and 112 phase-offset aborts |
+| Inventory/parity negatives | 44 pure tests pass; the focused run also includes both checker fixtures (46 passed, 8 deselected) |
+| Formal, fresh execution | Phase/register induction pass; depth192 BMC passes in 769.397 s; cover passes in 193.824 s with 195 witness steps; no historical proof reuse |
+| Quality / regression definitions | Ruff, formatting, owned RTL style/readiness and whitespace pass; TINY/ICS55 and TINY/IHP130 PR/nightly dry-runs pass |
+| Full Pytest, one execution | 2085 passed, 1 skipped in 4980.22 s; the optional PDF retrieval test still lacks `pypdf` |
+| Final integrity audit | All stage records match current implementation hashes and schema2 tool inventories; exactly the approved eight paths differ from the repair-start snapshot |
+
+Each RTL/netlist pressure campaign records 80 observed waits, with stable
+CPOL/CS/edge counts and advancing stall counters. The standalone core runtime
+is 0.996 s in Verilator and 18.812 s in Icarus (excluding compilation). These
+host runtimes are not hardware performance measurements.
+
+Fresh mapping remains 7431 cells / Liberty area 19240.76 for ICS55 and 7949 /
+126612.7254 for IHP130, with two 256-bit payload FIFOs and zero block SRAM
+macros. Both STA executions report internal setup/hold WNS/TNS 0.00 and retain
+319 missing input delays, 41 missing output delays and 42 unconstrained
+endpoints. These are the same observational timing limitations, not closure.
+
+Exact commands, stdout/result JSON, before/after source maps, JUnit and
+`final-audit.json` are in the new ICS55 root's `validation/`. All test-run
+source snapshots were stable; only this ledger and the runbook were updated
+after full Pytest to record final results. Producer records are immutable.
+The repair-start source map is retained under
+`build/ics55-tiny-2026-10-19-06-48-bbe722dc382e/meta/spi-p1/validation/start-source.json`.
+
+No firmware build was repeated: firmware inputs, product profiles and
+interfaces are unchanged, and their original 23:25 results remain historical
+compatibility evidence. Full product regressions, long firmware Icarus,
+commercial/physical/Pad/board/silicon qualification remain unrun/deferred as
+previously authorized. No warning baseline, metric policy, MISRA deviation,
+dependency version, Git index or branch was changed. Independent read-only
+review and explicit human acceptance remain required; readiness is still
+`prototype` and all phase-acceptance flags remain false.
+
+## SPI-P1 implementation checkpoint (2026-10-18, historical)
+
+The approved standalone implementation starts from clean
+`dev@e62ccdad87e1fd412eff70cc2527ad3090f16a55`. The
+[SPI-P1 runbook](spi-p1.md) records the implementation, interface contracts,
+coverage and commands. Default ICS55/PLL-present and explicit IHP130/no-PLL
+compatibility remain SAFE24. Production product filelists, GPIO/RCU/address
+maps, DMA V2.2, HAL/application integration and dependency versions are unchanged.
+The standalone register header is additive; DMA capability remains clear.
+
+Standalone implementation validation completed on 2026-10-19; no SPI-P1 human
+acceptance or later-phase approval is recorded. Tiny P10 remains pending
+complete regression closure. Read the
+dated implementation results separately from the original P0 freeze record.
+
+Evidence roots for the original candidate were:
+
+- `build/ics55-tiny-2026-10-18-23-58-bbe722dc382e/meta/spi-p1/`.
+- `build/ihp130-tiny-2026-10-18-23-58-439583e27401/meta/spi-p1/`.
+
+Earlier attempts remain retained. In particular, initial formal tool PASS
+results before `sv2v -E Assert` had no active properties and are invalid as
+qualification evidence. Later induction/BMC timeouts, AIG preparation errors,
+statistics-parser failures and the Icarus fixture timeout remain attributed
+to their original sources. The Icarus timeout was caused by sv2v's lowering
+of an early task return into millions of empty loop iterations; moving the
+exit condition into the loop preserves its bound and every test case.
+The 23:25 cover reached all goals but timed out during optional VCD export;
+it remains failed. The 23:53 campaign disables that export, retains compact
+witnesses and validates their length. Its induction and depth192 BMC reuse
+the successful 23:25 subtasks only after exact model/configuration, proof
+input/tool, artifact-integrity and nonvacuity checks. Original producer
+identities remain in the reuse records; no historical failure is relabeled.
+The 23:53 cover passed with a 195-step witness. The final 23:58 cohort follows
+the repository formatter's Makefile EOF convention; its source snapshot is
+distinct, and its focused gates are retained separately.
+
+### Completed standalone results (2026-10-19)
+
+The frozen `docs/ip/spi.md` SHA-256 is
+`2c6b5c40d88973e34eb5e291c5cee40fa0128f7cc860727283e5b9c5ca32706c`.
+The implementation remains an uncommitted worktree delta on the revision
+above; each stage retains its actual source map, source archive, external
+input hashes and commands. `report/record.json` combines checked stage records
+without accepting the phase. `validation/final-audit.json` independently checks
+current-source identity, retained artifact hashes, markers and result files.
+
+| Check | Result and boundary |
+| --- | --- |
+| Verilator and Icarus | All four standalone fixtures pass on each simulator; 305 core segments per simulator, including 48 exhaustive mode/width/order/direction cases, DIV65535 and 256 deterministic random segments |
+| Formal | Phase and register induction pass; depth192 session-core BMC passes (original producer 773.96 s); final cover passes with a 195-step witness and active-property checks; compositional scope only |
+| ABI/tool negative tests | 29 pass, including all 101 handwritten SVH/C constants and rejection of stale/failed/vacuous proof reuse |
+| Quality | Formatting, owned RTL style/readiness, C policy/host tests, Ruff, standalone C header compilation and whitespace checks pass |
+| Full Pytest | 2068 passed, 1 skipped in 4860.55 s; optional PDF retrieval test lacks `pypdf`; no dependency was installed or changed |
+| Compatibility firmware | TINY/ICS55, TINY/IHP130 and MINI/IHP130 compile successfully in the retained 23:25 campaign; no product SPI or firmware-simulation claim |
+| Regression definitions | PR/nightly dry-runs pass for TINY/ICS55, TINY/IHP130 and MINI/IHP130; these are not executed full regressions |
+
+| Block backend | ICS55 | IHP130 |
+| --- | --- | --- |
+| Balanced mapped cells | 7431 | 7949 |
+| Liberty area | 19240.76 | 126612.7254 |
+| FIFO payload / block SRAM macros | 2 x 256 bits / 0 | 2 x 256 bits / 0 |
+| Standard-cell netlist fixture | PASS | PASS |
+| Internal PCLK setup/hold WNS and TNS | all 0.00 | all 0.00 |
+
+Area is the selected library's synthesis statistic, not placed area or a
+cross-PDK density claim. PCLK is 41.666666667 ns; synthesis uses rounded
+41667 ps. STA uses one slow library per PDK and no external delay model:
+each report has 319 inputs missing input delay, 41 outputs missing output
+delay and 42 unconstrained endpoints. There is no blanket reset/MISO exception.
+This does not qualify serial I/O, reset recovery/removal, board timing, all PVT
+corners, higher SYS/PCLK operation or a complete Tiny netlist.
+
+Raw warnings remain retained: ABC reports combinational-network mapping in
+both PDKs and six multi-output library cells in ICS55; formal lowering reports
+FIFO memory expansion. Make records host/filesystem clock skew. Owned lint
+passes with only the explicitly scoped managed-Common suppressions. No warning
+baseline was regenerated, no metric was promoted, and no whole-product
+warning/metric gate is claimed by these standalone targets.
+
+Unrun/deferred: long full-firmware Icarus and complete supported product
+regressions remain deferred to the final combined campaign; no repeated P7/VGA
+campaign, full-chip synthesis/netlist/STA, commercial flow, physical/Pad/board
+or silicon qualification was run. Actual DMA V2.2, latched fabric origin,
+GPIO/RCU integration, CDC/RDC and SDK/display qualification remain P2/P3 or
+later obligations. No new MISRA deviation is required. Independent read-only
+review and explicit human phase acceptance remain the next gate; the
+readiness status stays `prototype` and `phase_accepted` stays false.
+
 ## Configuration and Identity
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
@@ -37,8 +186,9 @@ Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 
 ## Required Case Matrix
 
-All cases currently have status **required, not run**. Later phase records
-must add scoped evidence without deleting unmet conditions.
+At P0 freeze all cases had status **required, not run**. The dated P1 record
+above adds standalone evidence only; later integration and physical obligations
+in this matrix remain required.
 
 | Case | Requirements | Required observation / phase |
 | --- | --- | --- |
@@ -130,7 +280,7 @@ recovery. Tiny success requires exit 0, TEST_STATUS/`SIM_TEST_PASS` and no
 `SIM_TEST_TIMEOUT`. UART output is diagnostic only. Mini retains its own
 configured verdict; never substitute Mini coverage for missing Tiny support.
 
-## Freeze Record and Gaps
+## Freeze Record and Gaps (historical P0)
 
 | Phase | Evidence status |
 | --- | --- |

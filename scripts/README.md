@@ -26,6 +26,12 @@ Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 
+`spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
+entrypoints. It preserves attempt directories, source archives, command results
+and simulation verdicts under the selected Tiny build variant. It does not
+instantiate SPI in Tiny or implement central-DMA pacing. See the
+[SPI-P1 runbook](../docs/ip/spi-p1.md) for scope and pending qualification.
+
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
 schema and release validator; generated assets remain below the selected

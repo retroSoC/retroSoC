@@ -117,6 +117,19 @@ python3 -m pytest -q
 These tests complement, but do not replace, firmware builds, RTL simulation,
 synthesis, timing, or hardware validation.
 
+`test_spi_register_parity.py` checks the handwritten SPI APB 1.0 mirror against
+the independent frozen map and verifies that product filelists do not yet
+advertise the block. `test_spi_p1.py` tests strict verdict and artifact identity
+rejection and executes five standalone fixtures on both simulators. The
+pin-checker selftest feeds valid and malformed synthetic waveforms to the
+same oracle used by the DUT fixtures. Complete-core tests include 37-byte
+and 19-halfword transfers, deliberate TX starvation/RX-full waits, delayed
+service, tail checking and phase-safe ABORT. Tool inventory tests cover SBY
+Python modules, Yosys SMT/witness helpers and ABC, including missing or changed
+components and incompatible historical inventories. The
+`spi-p1-rtl` and backend targets retain separate qualification artifacts;
+they are not a Tiny SPI firmware integration result.
+
 Historical Tiny publication fixtures also need the main repository history
 and dependency commit objects named by their archived locks. After ordinary
 dependency setup, run `python3 tests/publication_history.py prepare` before
