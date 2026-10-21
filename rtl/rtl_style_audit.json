@@ -268,6 +268,7 @@
       "apb4_spi.sv",
       "spi_ctrl_if.sv",
       "spi_define.svh",
+      "spi_dma_pacing.sv",
       "spi_gpio_guard.sv",
       "spi_master_core.sv",
       "spi_phase_ctrl.sv",

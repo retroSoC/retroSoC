@@ -9,13 +9,16 @@
 // See the Mulan PSL v2 for more details.
 
 module apb4_dma #(
-    parameter int          AddrWidth     = 32,
-    parameter int          DataWidth     = 32,
-    parameter int          NumChannels   = 4,
-    parameter int          MaxBurstBeats = 16,
-    parameter int          FifoDepth     = 16,
-    parameter logic [15:0] RequestMask   = 16'h3fff,
-    parameter bit          EnableStreams = 1'b1
+    parameter int          AddrWidth         = 32,
+    parameter int          DataWidth         = 32,
+    parameter int          NumChannels       = 4,
+    parameter int          MaxBurstBeats     = 16,
+    parameter int          FifoDepth         = 16,
+    parameter logic [31:0] RequestMask       = 32'h0000_3fff,
+    parameter logic [31:0] SupportedRequests = RequestMask,
+    parameter logic [31:0] IpVersion         = 32'h0002_0000,
+    parameter bit          EnableStreams     = 1'b1,
+    parameter bit          EnableSpi         = 1'b0
 ) (
     // verilog_format: off -- integration ports retain established peripheral endpoint names.
     output logic lifecycle_idle_o,
@@ -70,13 +73,20 @@ module apb4_dma #(
   logic [$clog2(NumChannels)-1:0] s_first_err_channel;
   logic [                    8:0] s_first_err_stat;
   logic [                   15:0] s_first_err_addr_hi;
-  logic [                   15:0] s_req_stat;
+  logic [                   31:0] s_req_stat;
+  logic [                   31:0] s_supported_req;
+  assign s_supported_req = SupportedRequests &
+                            (EnableSpi ? 32'h0003_ffff : 32'h0000_3fff) &
+                            (EnableStreams ? 32'h0003_ffff :
+                                             (EnableSpi ? 32'h0003_07f9 : 32'h0000_07f9));
 
   dma_reg #(
-      .NumChannels  (NumChannels),
-      .DataWidth    (DataWidth),
-      .MaxBurstBeats(MaxBurstBeats),
-      .EnableStreams(EnableStreams)
+      .NumChannels      (NumChannels),
+      .DataWidth        (DataWidth),
+      .MaxBurstBeats    (MaxBurstBeats),
+      .EnableStreams    (EnableStreams),
+      .IpVersion        (IpVersion),
+      .SupportedRequests(SupportedRequests)
   ) u_dma_reg (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
@@ -119,11 +129,13 @@ module apb4_dma #(
       .first_error_status_i (s_first_err_stat),
       .first_error_addr_hi_i(s_first_err_addr_hi),
       .request_status_i     (s_req_stat),
+      .supported_requests_i (s_supported_req),
       .irq_o                (irq_o)
   );
 
   dma_core #(
       .RequestMask  (RequestMask),
+      .EnableSpi    (EnableSpi),
       .EnableStreams(EnableStreams),
       .AddrWidth    (AddrWidth),
       .DataWidth    (DataWidth),

@@ -1,5 +1,7 @@
-// Standalone SPI-P1 shell. No product route or integrated DMA capability is implied.
-module apb4_spi (
+// Standalone SPI shell. DMA pacing is local; product route and fabric origin remain external.
+module apb4_spi #(
+    parameter bit EnableDma = 1'b1
+) (
     input  logic                clk_i,
     rst_n_i,
     input  logic         [31:0] clock_hz_i,
@@ -30,15 +32,36 @@ module apb4_spi (
   spi_ctrl_if u_ctrl ();
   spi_pkg::configuration_t s_cfg;
   logic [31:0] s_claim, s_ready;
-  logic s_handback, s_credit_fault;
-  logic       s_fifo_pending;
-  logic [1:0] s_credit_pending;
+  logic s_handback, s_credit_fault, s_reg_credit_fault, s_pacing_fault;
+  logic s_fifo_pending;
+  logic [1:0] s_credit_pending, s_pacing_pending, s_reg_credit_pending;
+  logic [1:0] s_credit_valid, s_credit_retire, s_credit_commit;
   logic [3:0] s_dma_stat;
   logic       s_unused;
-  assign s_cfg      = u_ctrl.cfg;
+  assign s_cfg            = u_ctrl.cfg;
   // Only personality bits feed the GPIO guard; other fields feed the core/reg blocks.
-  assign s_unused   = ^s_cfg;
-  assign s_dma_stat = dma_status_i | {s_credit_pending, 2'd0};
+  assign s_unused         = ^s_cfg;
+  assign s_credit_fault   = s_reg_credit_fault | s_pacing_fault;
+  assign s_credit_pending = s_pacing_pending | s_reg_credit_pending;
+  spi_dma_pacing u_dma_pacing (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .enable_i           (EnableDma),
+      .tx_binding_i       (s_cfg.tx_binding),
+      .rx_binding_i       (s_cfg.rx_binding),
+      .dma_start_pending_i(dma_start_pending_i),
+      .dma_status_i       (dma_status_i),
+      .dma_error_i        (dma_error_i),
+      .credit_valid_i     (credit_valid_i),
+      .credit_retire_i    (credit_retire_i),
+      .credit_commit_i    (s_credit_commit),
+      .credit_valid_o     (s_credit_valid),
+      .credit_retire_o    (s_credit_retire),
+      .credit_pending_o   (s_pacing_pending),
+      .dma_status_o       (s_dma_stat),
+      .credit_fault_o     (s_pacing_fault),
+      .busy_o             ()
+  );
   spi_gpio_guard u_gpio_guard (
       .session_i      (s_cfg.session),
       .user_select_i  (user_select_i),
@@ -59,18 +82,19 @@ module apb4_spi (
       .origin_i           (origin_i),
       .request_i          (request_i),
       .channel_i          (channel_i),
-      .credit_valid_i     (credit_valid_i),
-      .credit_retire_i    (credit_retire_i),
+      .credit_valid_i     (s_credit_valid),
+      .credit_retire_i    (s_credit_retire),
       .dma_status_i       (s_dma_stat),
       .dma_start_pending_i(dma_start_pending_i),
-      .credit_commit_o    (credit_commit_o),
-      .credit_pending_o   (s_credit_pending),
+      .credit_commit_o    (s_credit_commit),
+      .credit_pending_o   (s_reg_credit_pending),
       .fifo_pending_o     (s_fifo_pending),
-      .credit_fault_o     (s_credit_fault),
+      .credit_fault_o     (s_reg_credit_fault),
       .irq_o              (irq_o),
       .apb4               (apb4),
       .ctrl               (u_ctrl)
   );
+  assign credit_commit_o = s_credit_commit;
   spi_master_core u_master_core (
       .apb_pending_i      (s_fifo_pending),
       .clk_i              (clk_i),

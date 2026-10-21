@@ -177,9 +177,15 @@ def validate_programming(spec: dict, ids: set[str], root: Path, revision: str) -
     sdk = constants((root / "crt/include/retrosoc/hal/dma.h").read_text(), "RS_DMA_REQUEST_")
     rtl = constants((root / "rtl/ip/peripheral/dma_pkg.sv").read_text(), "DMA_REQUEST_", rtl=True)
     routes = spec["dma_routes"]
-    if {r["sdk"] for r in routes} != set(sdk) or {r["rtl"] for r in routes} != set(rtl):
+    # Future extension request IDs are part of the shared ABI while their
+    # product wiring is intentionally absent from the current publication.
+    # Publish only the executable legacy 0..15 route inventory; later phases
+    # add their own source-bound route rows when the endpoint is wired.
+    published_sdk = {name for name, number in sdk.items() if number < 16}
+    published_rtl = {name for name, number in rtl.items() if number < 16}
+    if {r["sdk"] for r in routes} != published_sdk or {r["rtl"] for r in routes} != published_rtl:
         raise ValueError("DMA route coverage mismatch")
-    if len(routes) != len(sdk) or len({r["sdk"] for r in routes}) != len(routes):
+    if len(routes) != len(published_sdk) or len({r["sdk"] for r in routes}) != len(routes):
         raise ValueError("duplicate DMA request mapping")
     for row in routes:
         if sdk[row["sdk"]] != rtl[row["rtl"]]:

@@ -32,6 +32,10 @@ and simulation verdicts under the selected Tiny build variant. It does not
 instantiate SPI in Tiny or implement central-DMA pacing. See the
 [SPI-P1 runbook](../docs/ip/spi-p1.md) for scope and pending qualification.
 
+`spi_p2.py` runs the focused V2.2 credit-pacing fixture and lint boundary.
+The product DMA remains V2.0/default-disabled until shared integration is
+qualified; this entrypoint does not wire Tiny SPI.
+
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
 schema and release validator; generated assets remain below the selected

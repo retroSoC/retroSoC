@@ -25,6 +25,9 @@ specification or reserved route does not add it to the current RTL/filelists.
 The [SPI-P1 standalone implementation](../../docs/ip/spi-p1.md) is isolated
 from product filelists. Its DMA capability remains clear; actual DMA V2.2,
 Tiny routing, lifecycle and SDK integration belong to P2/P3.
+The [SPI-P2 pacing boundary](../../docs/ip/spi-p2.md) adds shared-DMA request
+encoding and a standalone credit block; committed products remain
+default-disabled until complete cancellation and product admission evidence.
 
 The [PPALite contract](../../docs/ip/ppalite.md) specifies a future camera-inline
 PCLK processor with RAW bypass, small FIFOs and existing DVP_RX11/DMA2 output.

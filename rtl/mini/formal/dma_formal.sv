@@ -49,6 +49,13 @@ module dma_formal_design (
     output logic [  1:0]  tx_channel,
     output logic [ 31:0]  tx_channel_bytes_done,
     output logic [ 31:0]  tx_channel_len,
+    output logic [  1:0]  scenario,
+    output logic          tcd_mode,
+    output logic          tcd_read_owner_valid,
+    output logic          tcd_parse,
+    output logic          tcd_loaded,
+    output logic          tcd_fetch_pending,
+    output logic          tcd_abort,
     output logic          awvalid,
     output logic          awready,
     output logic          awid,
@@ -134,6 +141,8 @@ module dma_formal_design (
   logic [NumChannels*32-1:0] s_byte_count_i;
   logic [NumChannels*32-1:0] s_request_sel_i;
   logic [NumChannels*32-1:0] s_burst_cfg_i;
+  logic [NumChannels*32-1:0] s_tcd_head_i;
+  logic [NumChannels*32-1:0] s_tcd_count_i;
   logic [   NumChannels-1:0] s_start_i;
   logic [   NumChannels-1:0] s_abort_i;
   logic [               5:0] s_cycle_q;
@@ -161,11 +170,24 @@ module dma_formal_design (
   logic                      s_write_error_q;
 
   logic                      s_tx_stalled_once_q;
+  logic                      s_tcd_read_q;
 
-  (* anyconst *)logic [               1:0] f_scenario;
-  (* anyconst *)logic [              31:0] f_read_data;
-  (* anyconst *)logic [              31:0] f_rx_data;
-  (* anyconst *)logic                      f_rx_last;
+  function automatic logic [31:0] tcd_word(input logic [4:0] beat_i);
+    unique case (beat_i)
+      5'd0:    tcd_word = 32'd0;
+      5'd1:    tcd_word = 32'h1000_1000;
+      5'd2:    tcd_word = 32'h1000_2000;
+      5'd3:    tcd_word = 32'd16;
+      5'd7:    tcd_word = 32'h0001_0003;
+      default: tcd_word = 32'd0;
+    endcase
+  endfunction
+
+  (* anyconst *)logic [ 1:0] f_scenario;
+  (* anyconst *)logic        f_tcd_mode;
+  (* anyconst *)logic [31:0] f_read_data;
+  (* anyconst *)logic [31:0] f_rx_data;
+  (* anyconst *)logic        f_rx_last;
 
   dma_req_if req ();
   axi4_if #(
@@ -230,6 +252,8 @@ module dma_formal_design (
     s_byte_count_i          = '0;
     s_request_sel_i         = '0;
     s_burst_cfg_i           = '0;
+    s_tcd_head_i            = '0;
+    s_tcd_count_i           = '0;
 
     s_ch_cfg_i[0+:32]       = {22'd0, 2'd0, 1'b1, 1'b1, DMA_WIDTH_32, 1'b0, DMA_KIND_MM_TO_MM};
     s_src_addr_i[0+:32]     = 32'h1000_0FF0;
@@ -256,43 +280,56 @@ module dma_formal_design (
     s_byte_count_i[96+:32]  = 32'd8;
     s_request_sel_i[96+:32] = {28'd0, DMA_REQUEST_SOFTWARE};
     s_burst_cfg_i[96+:32]   = 32'd2;
+    if (f_tcd_mode) begin
+      s_tcd_head_i[0+:32]  = 32'h2000_0000;
+      s_tcd_count_i[0+:32] = 32'd1;
+    end
   end
 
   always_comb begin
     s_start_i = '0;
     s_abort_i = '0;
     if (rst_n_i) begin
-      unique case (f_scenario)
-        2'd0: begin
-          if (s_cycle_q == 6'd0) begin
-            s_start_i[0] = 1'b1;
-          end
+      if (f_tcd_mode) begin
+        if (s_cycle_q == 6'd0) begin
+          s_start_i[0] = 1'b1;
         end
-        2'd1: begin
-          if (s_cycle_q == 6'd0) begin
-            s_start_i[1] = 1'b1;
-          end
-          if (s_cycle_q == 6'd1) begin
-            s_start_i[0] = 1'b1;
-          end
-          if (!s_abort_seen_q && i2s_tx_axis.tvalid && !i2s_tx_axis.tready) begin
-            s_abort_i[1] = 1'b1;
-          end
+        if (u_dut.s_tcd_fetch_pending_q[0] || u_dut.s_tcd_read_owner_valid_q ||
+            u_dut.s_tcd_parse_q) begin
+          s_abort_i[0] = 1'b1;
         end
-        2'd2: begin
-          if (s_cycle_q == 6'd0) begin
-            s_start_i[2] = 1'b1;
+      end else
+        unique case (f_scenario)
+          2'd0: begin
+            if (s_cycle_q == 6'd0) begin
+              s_start_i[0] = 1'b1;
+            end
           end
-        end
-        default: begin
-          if (s_cycle_q == 6'd0) begin
-            s_start_i[0] = 1'b1;
+          2'd1: begin
+            if (s_cycle_q == 6'd0) begin
+              s_start_i[1] = 1'b1;
+            end
+            if (s_cycle_q == 6'd1) begin
+              s_start_i[0] = 1'b1;
+            end
+            if (!s_abort_seen_q && i2s_tx_axis.tvalid && !i2s_tx_axis.tready) begin
+              s_abort_i[1] = 1'b1;
+            end
           end
-          if (s_cycle_q == 6'd1) begin
-            s_start_i[3] = 1'b1;
+          2'd2: begin
+            if (s_cycle_q == 6'd0) begin
+              s_start_i[2] = 1'b1;
+            end
           end
-        end
-      endcase
+          default: begin
+            if (s_cycle_q == 6'd0) begin
+              s_start_i[0] = 1'b1;
+            end
+            if (s_cycle_q == 6'd1) begin
+              s_start_i[3] = 1'b1;
+            end
+          end
+        endcase
     end
   end
 
@@ -374,8 +411,8 @@ module dma_formal_design (
       .global_reset_i       (1'b0),
       .global_error_clear_i (1'b0),
       .ch_cfg_i             (s_ch_cfg_i),
-      .tcd_head_i           ('0),
-      .tcd_count_i          ('0),
+      .tcd_head_i           (s_tcd_head_i),
+      .tcd_count_i          (s_tcd_count_i),
       .crc_expected_i       ('0),
       .src_addr_i           (s_src_addr_i),
       .dst_addr_i           (s_dst_addr_i),
@@ -419,33 +456,40 @@ module dma_formal_design (
       .crypto_out_axis      (crypto_out_axis)
   );
 
-  assign busy                = s_busy;
-  assign done                = s_done;
-  assign aborted             = s_aborted;
-  assign error               = s_error;
-  assign bytes_done          = s_bytes_done;
-  assign remaining           = s_remaining;
-  assign channel_len         = u_dut.s_len_q;
-  assign fifo_count          = u_dut.s_fifo_count;
-  assign fifo_push           = u_dut.s_fifo_push;
-  assign fifo_pop            = u_dut.s_fifo_pop;
-  assign fifo_flush          = u_dut.s_fifo_flush;
-  assign fifo_full           = u_dut.s_fifo_full;
-  assign fifo_empty          = u_dut.s_fifo_empty;
-  assign abort_pending       = u_dut.s_abort_q;
-  assign read_owner_valid    = u_dut.s_read_owner_valid_q;
-  assign read_owner          = u_dut.s_read_owner_q;
-  assign write_owner_valid   = u_dut.s_write_owner_valid_q;
-  assign write_owner         = u_dut.s_write_owner_q;
-  assign write_bytes         = u_dut.s_write_bytes_q;
-  assign read_start_valid    = u_dut.s_axi_read_start_valid;
-  assign read_start_ready    = u_dut.s_axi_read_start_ready;
-  assign read_start_channel  = u_dut.s_read_rr_selected;
-  assign write_start_valid   = u_dut.s_axi_write_start_valid;
-  assign write_start_ready   = u_dut.s_axi_write_start_ready;
-  assign write_start_channel = u_dut.s_write_rr_selected;
-  assign tx_channel_valid    = u_dut.s_i2s_tx_channel_valid;
-  assign tx_channel          = u_dut.s_i2s_tx_channel;
+  assign busy                 = s_busy;
+  assign done                 = s_done;
+  assign aborted              = s_aborted;
+  assign error                = s_error;
+  assign bytes_done           = s_bytes_done;
+  assign remaining            = s_remaining;
+  assign channel_len          = u_dut.s_len_q;
+  assign fifo_count           = u_dut.s_fifo_count;
+  assign fifo_push            = u_dut.s_fifo_push;
+  assign fifo_pop             = u_dut.s_fifo_pop;
+  assign fifo_flush           = u_dut.s_fifo_flush;
+  assign fifo_full            = u_dut.s_fifo_full;
+  assign fifo_empty           = u_dut.s_fifo_empty;
+  assign abort_pending        = u_dut.s_abort_q;
+  assign read_owner_valid     = u_dut.s_read_owner_valid_q;
+  assign read_owner           = u_dut.s_read_owner_q;
+  assign write_owner_valid    = u_dut.s_write_owner_valid_q;
+  assign write_owner          = u_dut.s_write_owner_q;
+  assign write_bytes          = u_dut.s_write_bytes_q;
+  assign read_start_valid     = u_dut.s_axi_read_start_valid;
+  assign read_start_ready     = u_dut.s_axi_read_start_ready;
+  assign read_start_channel   = u_dut.s_read_rr_selected;
+  assign write_start_valid    = u_dut.s_axi_write_start_valid;
+  assign write_start_ready    = u_dut.s_axi_write_start_ready;
+  assign write_start_channel  = u_dut.s_write_rr_selected;
+  assign tx_channel_valid     = u_dut.s_i2s_tx_channel_valid;
+  assign tx_channel           = u_dut.s_i2s_tx_channel;
+  assign scenario             = f_scenario;
+  assign tcd_mode             = f_tcd_mode;
+  assign tcd_read_owner_valid = u_dut.s_tcd_read_owner_valid_q;
+  assign tcd_parse            = u_dut.s_tcd_parse_q;
+  assign tcd_loaded           = u_dut.s_tcd_loaded_q[0];
+  assign tcd_fetch_pending    = u_dut.s_tcd_fetch_pending_q[0];
+  assign tcd_abort            = u_dut.s_abort_q[0];
 
   always_comb begin
     write_owner_bytes_done = 32'd0;
@@ -563,6 +607,7 @@ module dma_formal_design (
       s_read_beat_q         <= 5'd0;
       s_read_error_q        <= 1'b0;
       s_read_data_q         <= 32'd0;
+      s_tcd_read_q          <= 1'b0;
     end else begin
       if (axi4.arvalid && !axi4.arready) begin
         s_read_stalled_once_q <= 1'b1;
@@ -572,14 +617,15 @@ module dma_formal_design (
         s_read_beats_q  <= {1'b0, axi4.arlen[3:0]} + 1'b1;
         s_read_beat_q   <= 5'd0;
         s_read_error_q  <= axi4.araddr[31:28] == 4'hD;
-        s_read_data_q   <= f_read_data;
+        s_tcd_read_q    <= axi4.araddr == 32'h2000_0000;
+        s_read_data_q   <= (axi4.araddr == 32'h2000_0000) ? tcd_word(5'd0) : f_read_data;
       end
       if (axi4.rvalid && axi4.rready) begin
         if (axi4.rlast) begin
           s_read_active_q <= 1'b0;
         end else begin
           s_read_beat_q <= s_read_beat_q + 1'b1;
-          s_read_data_q <= f_read_data;
+          s_read_data_q <= s_tcd_read_q ? tcd_word(s_read_beat_q + 1'b1) : f_read_data;
         end
       end
     end

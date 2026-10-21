@@ -66,6 +66,52 @@ dependency version, Git index or branch was changed. Independent read-only
 review and explicit human acceptance remain required; readiness is still
 `prototype` and all phase-acceptance flags remain false.
 
+## SPI-P2 implementation checkpoint (2026-10-19)
+
+The current `dev` commits implement the first shared-DMA V2.2 boundary:
+five-bit request constants, TCD bit25 decode, parameterized IP version and
+32-bit support/request status, plus the standalone SPI credit pacing block.
+Committed Tiny and Mini instances retain V2.0/default-disabled SPI support;
+this is deliberate compatibility evidence, not integrated SPI capability.
+
+Focused P2 checks pass: DMA register/native tests, the SPI-P1 standalone
+fixtures and six P2 checks covering request encoding, five-bit channel state,
+default-disable policy, stream-status disable policy and credit admission/
+commit/retirement. Descriptor
+fetch/parse cancellation is guarded in the source and covered by the current
+DMA abort assertions; descriptor-specific dynamic coverage remains unrun. Real SPI request ports,
+source-origin transport through Tiny bridges, firmware discovery and product
+routing remain later integration work. `phase_accepted` stays false and no
+later phase is authorized.
+
+Current focused evidence: 53 SPI/DMA/parity checks, DMA register/native tests,
+SPI-P1 pure checks, P2 pacing lint and RTL fixtures, DMA formal prove/BMC/cover
+and host C all pass. A prior pre-cancellation-fix full Pytest campaign passed
+2089 tests with one optional PDF retrieval skip (`pypdf` unavailable); the full
+campaign is intentionally unrun again after the latest shared-DMA source edits.
+Publication programming validation now deliberately publishes only executable
+DMA requests 0..15; SPI16/17 remain future V2.2 ABI constants and are not
+treated as current product routes. The prior full-suite test log and JUnit are under
+`build/ics55-tiny-2026-10-19-23-20-5f3eb7711d42/meta/spi-p2/validation-final/`.
+The latest source-bound P2 lint/RTL records are under
+`build/ics55-tiny-2026-10-20-22-23-5f3eb7711d42/meta/spi-p2/`; the compatibility
+Tiny lint is under
+`build/ihp130-tiny-2026-10-20-09-20-b00f46e87763/lint/verilator/`, and the
+post-edit Mini DMA formal record is under
+`build/ihp130-2026-10-20-09-13-c30fb9412aa3/formal/dma/`.
+
+The latest Mini DMA formal prove/cover build is under
+`build/ihp130-2026-10-20-22-44-c30fb9412aa3/formal/dma/`; the extended prove
+command passed with the current stream-status RTL and TCD cancellation
+assertions. The standard 120-second wrapper timed out; the dedicated TCD
+cancellation cover remains passing under the retained formal root.
+
+P2 remains incomplete for phase acceptance: full V2.2 block synthesis/netlist/
+STA, Tiny/Mini firmware integration, real source-origin CDC/fabric wiring,
+SPI request allocation, the full post-fix Pytest campaign and product
+regressions are unrun. Product instances
+retain V2.0/default-disabled SPI.
+
 ## SPI-P1 implementation checkpoint (2026-10-18, historical)
 
 The approved standalone implementation starts from clean
@@ -286,7 +332,7 @@ configured verdict; never substitute Mini coverage for missing Tiny support.
 | --- | --- |
 | SPI-P0 | Documentation freeze complete; link/anchor, command dry-run, phase/package/ALT structure and whitespace checks passed on 2026-10-04 |
 | SPI-P1 | Not started; standalone RTL/model, CSR mirror, BFM and synthesis evidence absent |
-| SPI-P2 | Not started; V2.2 request/credit/cancellation implementation and shared compatibility evidence absent |
+| SPI-P2 | Historical freeze entry; current implementation and evidence are recorded in the SPI-P2 checkpoint above |
 | SPI-P3 | Not started; actual routing/source qualification/GPIO/RCU/HAL integration absent |
 | SPI-P4 | Not started; panel adapter, pixel oracle, snapshot/save and performance evidence absent |
 | SPI-P5 | Not started; SPI/PIO-inclusive physical, Pad/package and silicon qualification absent |

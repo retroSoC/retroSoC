@@ -44,11 +44,37 @@ static bool rs_dma_channel_valid(uint32_t channel) {
     return channel < RS_DMA_CHANNEL_COUNT;
 }
 
+rs_status_t rs_dma_supports_request(rs_dma_request_t request) {
+    uint32_t version;
+    uint32_t supported;
+    uint32_t bit;
+
+    if ((uint32_t)request < 16U) {
+        return RS_OK;
+    }
+    if ((uint32_t)request >= 32U) {
+        return RS_ENOTSUP;
+    }
+    version = RS_DMA_REG(RS_DMA_REG_IP_VERSION);
+    if (version < RS_DMA_IP_VERSION_V22) {
+        return RS_ENOTSUP;
+    }
+    supported = RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS);
+    bit = UINT32_C(1) << (uint32_t)request;
+    return ((supported & bit) != UINT32_C(0)) ? RS_OK : RS_ENOTSUP;
+}
+
 static rs_status_t rs_dma_configure_owned(uint32_t channel, const rs_dma_config_t *config,
                                           const rs_dma_session_t *owner) {
     uint32_t channel_config;
     uint32_t saved;
 
+    if ((channel >= RS_DMA_CHANNEL_COUNT) || (config == NULL)) {
+        return RS_EINVAL;
+    }
+    if (rs_dma_supports_request(config->request) != RS_OK) {
+        return RS_ENOTSUP;
+    }
     if (rs_dma_config_validate(channel, config) != RS_OK) {
         return RS_EINVAL;
     }
@@ -207,6 +233,9 @@ rs_status_t rs_dma_submit_tcd_chain(uint32_t channel, rs_dma_tcd_t *first, uint3
         }
         config.kind = (rs_dma_transfer_kind_t)((control >> RS_DMA_TCD_KIND_SHIFT) & UINT32_C(0x7));
         config.request = (rs_dma_request_t)((control >> RS_DMA_TCD_REQUEST_SHIFT) & UINT32_C(0xF));
+        if ((control & RS_DMA_TCD_REQUEST_HIGH) != UINT32_C(0)) {
+            config.request = (rs_dma_request_t)((uint32_t)config.request | UINT32_C(0x10));
+        }
         config.source = (uintptr_t)current->source;
         config.destination = (uintptr_t)current->destination;
         config.byte_count = current->byte_count;

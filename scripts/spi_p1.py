@@ -26,7 +26,7 @@ WRAPPER = ROOT / f"physical/smoke/syn/yosys/{TOP}.sv"
 SOURCES = [COMMON / "interface/apb4_if.sv", COMMON / "utils/register.sv",
            ROOT / "rtl/ip/util/soc_common_fifo.sv",
            *[IP / f"{name}.sv" for name in (
-               "spi_pkg", "spi_ctrl_if", "spi_gpio_guard", "spi_phase_ctrl",
+               "spi_pkg", "spi_ctrl_if", "spi_gpio_guard", "spi_phase_ctrl", "spi_dma_pacing",
                "spi_word_packer", "spi_master_core", "spi_reg", "apb4_spi")], WRAPPER]
 INCLUDES = [COMMON, COMMON / "utils", IP, ROOT / "tests/rtl"]
 CASES = ("spi_pin_checker_tb", "spi_core_tb", "spi_apb_tb", "spi_lifecycle_tb", "spi_packer_tb")

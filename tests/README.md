@@ -130,6 +130,9 @@ components and incompatible historical inventories. The
 `spi-p1-rtl` and backend targets retain separate qualification artifacts;
 they are not a Tiny SPI firmware integration result.
 
+`test_spi_p2.py` covers the V2.2 request split, support-register ABI,
+product-default disable policy and source-qualified credit pacing fixture.
+
 Historical Tiny publication fixtures also need the main repository history
 and dependency commit objects named by their archived locks. After ordinary
 dependency setup, run `python3 tests/publication_history.py prepare` before

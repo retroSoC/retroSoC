@@ -2,6 +2,24 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "spi-p2",
+      "paths": ["rtl/ip/serial/spi_dma_pacing.sv", "rtl/ip/peripheral/dma_core.sv",
+                "rtl/ip/peripheral/dma_reg.sv", "rtl/ip/peripheral/apb4_dma.sv"],
+      "status": "prototype",
+      "baseline_revision": "4b3553faa7dfeb2603d717904a2c1fbf79f168f9",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "DMA V2.2 parameterized version/support bitmap with preserved V2.0 product defaults",
+        "reset": "credit reservations clear on reset; descriptor cancellation retains ownership until responses drain",
+        "clock_enable": "PCLK credit pacing; existing DMA AXI crossing unchanged",
+        "memory": "no new storage; existing DMA FIFOs and descriptor state only",
+        "pipeline": "admission credit, FIFO commit, terminal response retirement; product SPI grant remains disabled"
+      },
+      "waivers": []
+    },
+    {
       "name": "spi-p1",
       "paths": ["rtl/ip/serial/apb4_spi.sv", "rtl/ip/serial/spi_reg.sv",
                 "rtl/ip/serial/spi_master_core.sv", "rtl/ip/serial/spi_phase_ctrl.sv",
