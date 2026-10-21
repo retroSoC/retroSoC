@@ -1124,6 +1124,7 @@ npu-p5-lp-sim: firmware sim
 ifeq ($(HAVE_HP),YES)
 $(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_openc906.py \
 	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_sysio_kid.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_biu_write_channel.v \
 	$(ROOT_PATH)/rtl/mini/ip_overrides/sysmap.h \
 	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_1024x16.v \
 	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_2048x32.v \

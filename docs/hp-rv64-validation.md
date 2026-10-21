@@ -56,34 +56,46 @@ qualification. Current evidence requires, at minimum:
   then probes the internal PLIC successfully at runtime (`riscv-plic:
   interrupt-controller@8000000: mapped 31 interrupts`, validating the
   OpenSBI `fdt_irqchip_init` hook) and completes the initramfs unpack
-  (`Unpacking initramfs...` / `Freeing initrd memory: 292K`). Userspace
-  acceptance (`HP_LINUX_READY`) is not yet reached: see the write-wedge
-  frontier entry below. The target stays unqualified until that acceptance
-  completes.
-- The remaining boot frontier is a write-channel wedge, reproduced
-  deterministically by a bare-metal payload (dcache-dirty eviction traffic
-  interleaved with fenced MMIO polls wedges it at ~22 rounds in ~1.5 M HP
-  cycles) and by the kernel late in boot: the C906 issues a write AW whose W
-  data never leaves the core (zero W beats presented at the 128-bit port, and
-  at the stuck point the LSU store-buffer and victim-buffer write-valids and
-  the BIU write buffers are all empty, so the data vanished inside the core
-  after its AW was accepted), so the demux write FSM is parked in Active, the
-  SDRAM core sits in its write-data state waiting for the missing W stream,
-  the concurrent read fill's R never returns behind it, and the core freezes
-  at the next fenced MMIO poll (`retrosoc_hp_console_putc`). This is
-  independent of the fence instructions (the no-fence control payload wedges
-  identically), of the dcache write mode (write-back, write-through, and
-  dcache-off all wedge), and of the MAEE/cacheability work above. The
-  integration manual's write-channel contract (INCR only, len 1/4, 16
-  outstanding with one per ID, no write interleave, bufferable responses) is
-  honored by our fabric; the violation is inside the core's LSU data release,
-  exposed by the slow-SDRAM window. A guard write timeout does not cover the
-  source-stalled W stream, so the wedge is permanent. Root-causing it needs
-  C906 LSU debugging (store-buffer/victim-buffer data release) or an
-  interconnect that buffers a full write burst before engaging the SDRAM
-  command engine; both are out of this round's scope. An sdram_axi4-side
-  gate-the-command-on-full-burst prototype recovered the blocked read but
-  not the C906's withheld W, so it is not a fix and was not kept.
+  (`Unpacking initramfs...` / `Freeing initrd memory: 292K`). With the
+  write-channel fix below applied, the full `hp-linux-sim` run now reaches
+  userspace acceptance: `Run /init as init process`, busybox init,
+  `HP_LINUX_INIT_PASS`, `retroSoC HP Linux ready`, `HP_LINUX_READY`, and
+  `SIM_TEST_PASS code=0` (1.63 G emulator cycles in ~40.5 h wall; the result
+  checker reports `status: passed` with no missing markers). The wedge
+  payload and heartbeat probes below document the mechanism and the fix.
+- The write-channel wedge is root-caused and fixed. Event-level tracing of
+  the C906 write channel showed the failure is a systematic AW/W misordering,
+  not data lost inside the LSU: the BIU streams a writeback's W beats to the
+  pad as soon as the victim buffer offers them, while the AW still waits in
+  `awbuf` for the serializing 128->64 downsizer to finish the previous write
+  (the ~200-cycle SDRAM write response latency). The early W beats are
+  AXI-legal (W-before-AW), but the Mini HP fabric behind the pad is
+  single-outstanding (downsizer + MMIO demux + target guard, no WID), so they
+  are absorbed into the previous write's burst; each write's AW then arrives
+  to find its W already consumed by the previous write's stream. The cascade
+  persists until the LSU freezes (its fills block behind the SDRAM write
+  channel, which is parked waiting for the orphaned write's W data), leaving
+  a final orphaned AW whose W beats never come: the target guard parks in
+  WriteStream, the SDRAM core parks in its write-data state and blocks the
+  pending read fill, and the C906 stalls at the next LSU-serializing
+  instruction (`retrosoc_hp_console_putc`). Evidence: with the guard parked,
+  the C906 write side is fully idle (victim buffer idle, store buffer idle,
+  BIU write-selection FIFO empty, and zero W beats ever presented at the
+  128-bit port for the wedged write) while the guard and the SDRAM controller
+  both hold the orphaned write's AW. The fix is the
+  `rtl/mini/ip_overrides/aq_biu_write_channel.v` override, which gates the W
+  stream on the burst's AW having been issued on the pad (pad-issued-AW vs
+  completed-W-burst order counters), restoring the AW-before-W order the
+  fabric requires without touching the vendored checkout. Validated: the
+  deterministic wedge payload runs unbounded (previously wedged at ~22
+  rounds/~1.83 M HP cycles, now clean past 10.5 M emulator cycles), the
+  no-fence control payload is clean, `hp-smoke-sim`/`hp-rtthread-sim` pass on
+  the committed IHP130 profile, and the full `hp-linux-sim` reaches
+  `HP_LINUX_READY` with `SIM_TEST_PASS code=0` (see the status entry above).
+  The earlier note that a guard write timeout cannot recover a source-stalled
+  W stream remains true and is a separate hardening gap (the guard's
+  read/write timeouts are gated by source readiness), not the wedge's cause;
+  it is out of this round's scope.
 - The Linux boot blocker was a doc/RTL mismatch in OpenC906, root-caused with
   bare-metal MMU payloads and locked by simulation evidence: the user manual
   states `mxstatus.MAEE` resets to 0, but the RTL (`aq_cp0_ext_csr.v`) resets

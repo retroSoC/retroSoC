@@ -10,6 +10,15 @@ for their vendored counterparts:
 
 - ``aq_sysio_kid.v``: upstream hardwires mhartid to 0; the Mini LP/HP
   contract requires the HP core to report hart 1.
+- ``aq_biu_write_channel.v``: the vendored BIU streams a write's W data as
+  soon as the LSU offers it, even while the AW still waits in ``awbuf`` for a
+  busy downstream slave (AXI-legal W-before-AW). The Mini HP fabric behind the
+  pad is single-outstanding (serializing 128->64 downsizer + MMIO demux +
+  target guard) and cannot attribute early W beats without a WID, so the
+  beats land in the prior write's burst, the queued AW is orphaned, and the
+  channel wedges (observed as a permanent guard WriteStream stall with the
+  SDRAM controller parked waiting for write data). The override gates the W
+  stream on the burst's AW having been issued on the pad.
 - ``sysmap.h``: the upstream default region table marks the Mini peripheral
   window cacheable/bufferable; the override maps the Mini address map with
   the MMIO window (including the core-internal CLINT/PLIC window) as
@@ -63,6 +72,10 @@ OVERRIDES = {
     "C906_RTL_FACTORY/gen_rtl/mmu/rtl/sysmap.h": (
         "sysmap.h",
         "0389089a42ef762768e57bbb4fdcbe6b95f33ab650b5bacc0de8122e0d8711d5",
+    ),
+    "C906_RTL_FACTORY/gen_rtl/biu/rtl/aq_biu_write_channel.v": (
+        "aq_biu_write_channel.v",
+        "7d98d231287f4a8807593990411d96879deb68cfda764c2fb92bc93c2b10e204",
     ),
     "C906_RTL_FACTORY/gen_rtl/ifu/rtl/aq_spsram_1024x16.v": (
         "aq_spsram_1024x16.v",
