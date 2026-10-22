@@ -9,7 +9,7 @@ module tiny_r2_p5_fabric_tb;
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) masters[3] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
@@ -18,7 +18,7 @@ module tiny_r2_p5_fabric_tb;
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)

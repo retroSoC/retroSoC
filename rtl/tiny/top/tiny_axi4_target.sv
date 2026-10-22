@@ -36,7 +36,7 @@ module tiny_axi4_target (
     logic [3:0]  qos;
     logic [3:0]  region;
     logic        id;
-    logic        user;
+    logic [3:0]  user;
   } addr_t;
   typedef struct packed {
     state_e      state;
@@ -56,20 +56,21 @@ module tiny_axi4_target (
   logic [31:0] s_req_addr;
   logic        s_req_id;
   addr_t s_read_addr[3], s_write_addr[3];
-  logic [2:0] s_arvalid, s_awvalid, s_wvalid, s_wlast, s_bready, s_rready, s_wuser;
+  logic [2:0] s_arvalid, s_awvalid, s_wvalid, s_wlast, s_bready, s_rready;
+  logic [2:0][ 3:0] s_wuser;
   logic [2:0][31:0] s_wdata;
   logic [2:0][ 3:0] s_wstrb;
   logic [2:0] s_owner_req, s_grant, s_prefer_write_d, s_prefer_write_q;
   logic [1:0] s_selected;
   logic s_valid, s_selected_write, s_accept, s_terminal;
   logic s_r_valid, s_r_ready, s_b_valid, s_b_ready;
-  logic [36:0] s_r_data;
-  logic [ 3:0] s_b_data;
+  logic [39:0] s_r_data;
+  logic [ 6:0] s_b_data;
   logic s_read_capture, s_write_capture;
   logic s_abort_read_valid, s_abort_write_valid;
   logic s_resp_active, s_rin_valid, s_bin_valid;
-  logic [36:0] s_rin_data;
-  logic [ 3:0] s_bin_data;
+  logic [39:0] s_rin_data;
+  logic [ 6:0] s_bin_data;
 
   assign s_saved_addr = s_req_q.addr;
   assign s_req_addr = s_saved_addr.addr;
@@ -89,7 +90,7 @@ module tiny_axi4_target (
       s_req_q.write_done && !s_req_q.b_captured;
   assign s_terminal = s_resp_active &&
       (s_req_q.write ? (s_b_valid && s_bready[s_req_q.owner]) :
-       (s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]));
+       (s_r_valid && s_rready[s_req_q.owner] && s_r_data[4]));
   assign fault_valid_o = s_terminal && s_req_q.error_seen;
   assign fault_addr_o = s_req_q.error_addr;
   assign fault_master_o = s_req_q.owner;
@@ -100,11 +101,11 @@ module tiny_axi4_target (
       !s_req_q.write && target.rvalid) || s_abort_read_valid;
   assign s_rin_data = s_abort_read_valid ?
       {s_req_id, 32'd0, 2'b11,
-       (s_req_q.read_count == {1'b0, s_saved_addr.len}), 1'b0} :
+       (s_req_q.read_count == {1'b0, s_saved_addr.len}), 4'd0} :
       {target.rid, target.rdata, target.rresp, target.rlast, target.ruser};
   assign s_bin_valid = ((s_req_q.state == Response) && enable_i &&
       s_req_q.write && target.bvalid) || s_abort_write_valid;
-  assign s_bin_data = s_abort_write_valid ? {s_req_id, 2'b11, 1'b0} :
+  assign s_bin_data = s_abort_write_valid ? {s_req_id, 2'b11, 4'd0} :
       {target.bid, target.bresp, target.buser};
   assign s_read_capture = s_rin_valid && s_r_ready;
   assign s_write_capture = s_bin_valid && s_b_ready;
@@ -218,7 +219,7 @@ module tiny_axi4_target (
   assign target.rready = (s_req_q.state == Response) && enable_i && !s_req_q.write && s_r_ready;
   assign target.bready = (s_req_q.state == Response) && enable_i && s_req_q.write && s_b_ready;
   spill_register #(
-      .DATA_WIDTH(37)
+      .DATA_WIDTH(40)
   ) u_read_response (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -231,7 +232,7 @@ module tiny_axi4_target (
       .data_o (s_r_data)
   );
   spill_register #(
-      .DATA_WIDTH(4)
+      .DATA_WIDTH(7)
   ) u_write_response (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
@@ -248,11 +249,24 @@ module tiny_axi4_target (
     unique case (s_req_q.state)
       Idle:
       if (s_accept) begin
-        s_req_d           = '0;
-        s_req_d.state     = Address;
-        s_req_d.owner     = s_selected;
-        s_req_d.write     = s_selected_write;
-        s_req_d.addr      = s_selected_addr;
+        s_req_d = '0;
+        s_req_d.state = Address;
+        s_req_d.owner = s_selected;
+        s_req_d.write = s_selected_write;
+        s_req_d.addr = {
+          s_selected_addr.addr,
+          s_selected_addr.len,
+          s_selected_addr.size,
+          s_selected_addr.burst,
+          s_selected_addr.lock,
+          s_selected_addr.cache,
+          s_selected_addr.prot,
+          s_selected_addr.qos,
+          s_selected_addr.region,
+          s_selected_addr.id,
+          (s_selected == 2'd1) ? {1'b1, s_selected_addr.user[2:0]} :
+            (s_selected == 2'd2) ? 4'b0100 : 4'b0000
+        };
         s_req_d.read_addr = s_selected_addr.addr;
       end
       Address: begin
@@ -286,18 +300,18 @@ module tiny_axi4_target (
       s_req_d.read_count = s_req_q.read_count + 9'd1;
       if (s_saved_addr.burst == 2'b01)
         s_req_d.read_addr = s_req_q.read_addr + (32'd1 << s_saved_addr.size);
-      if (!s_req_q.error_seen && (s_rin_data[3:2] != 2'b00)) begin
+      if (!s_req_q.error_seen && (s_rin_data[6:5] != 2'b00)) begin
         s_req_d.error_seen = 1'b1;
         s_req_d.error_addr = s_req_q.read_addr;
-        s_req_d.error_resp = s_rin_data[3:2];
+        s_req_d.error_resp = s_rin_data[6:5];
       end
     end
     if (s_write_capture) begin
       s_req_d.b_captured = 1'b1;
-      if (!s_req_q.error_seen && (s_bin_data[2:1] != 2'b00)) begin
+      if (!s_req_q.error_seen && (s_bin_data[5:4] != 2'b00)) begin
         s_req_d.error_seen = 1'b1;
         s_req_d.error_addr = s_req_addr;
-        s_req_d.error_resp = s_bin_data[2:1];
+        s_req_d.error_resp = s_bin_data[5:4];
       end
     end
   end

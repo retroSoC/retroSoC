@@ -406,7 +406,8 @@ def test_p6_map_irq_request_and_pin_contract():
     assert {k: irqs[k] for k in ("rng", "ws2812", "crypto", "i2s", "sdio")} == {
         "rng": 16, "ws2812": 17, "crypto": 23, "i2s": 8, "sdio": 10}
     assert irqs["dvp"] == 15
-    assert {19, 24, 25, 26, 27}.isdisjoint(irqs.values())
+    assert irqs["spi"] == 25
+    assert {19, 24, 26, 27}.isdisjoint(irqs.values())
     assert irqs["rcu"] == 31
     pins = topology["gpio_alt_functions"]
     assert pins[9]["alt0"]["inputs"] == ["u_uart0_if.rx_i"]
@@ -542,7 +543,7 @@ int main(void) {
 def test_p6_reset_and_macro_policy_remains_explicit():
     text = (TINY / "top/retrosoc_tiny.sv").read_text()
     assert ".clk_aud_i" in text and "s_audio_rst_n" in text
-    assert ".EnableStreams" in text and "16'h39ff" in text
+    assert ".EnableStreams" in text and "32'h0003_39ff" in text
     assert "apb4_crypto u_crypto" in text
     tree = (TINY / "top/tiny_reset_tree.sv").read_text()
     assert "s_audio" not in tree and "crypto" not in tree

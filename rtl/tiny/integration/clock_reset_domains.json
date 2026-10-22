@@ -4,7 +4,7 @@
     "phase": "TINY-R2-P7",
     "clock_domain": "system",
     "target_controllers": "u_soc.u_fabric.gen_target[%d].u_controller",
-    "target_count": 28,
+    "target_count": 29,
     "apb_bridges": "SYS frontends; acknowledged per-endpoint crossings to AON, PCLK and MEM",
     "fabric_reset": "fabric leaf; target reset blocks admission and aborts accepted target work with DECERR",
     "hart_reset": "CPU-only accepted-work drain; DMA and all target responses stay active",
@@ -161,7 +161,8 @@
       "crypto",
       "i2s",
       "sdio",
-      "dvp"
+      "dvp",
+      "spi"
     ],
     "cpu_prerequisite": "all global leaf resets and actual APB/DMA/XPI/RCU barriers; boot readiness latches until the next system reset",
     "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
@@ -480,7 +481,8 @@
         "ws2812",
         "crypto",
         "i2s",
-        "dvp"
+        "dvp",
+        "spi"
       ]
     },
     "same_clock_isolation": [

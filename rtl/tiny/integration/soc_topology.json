@@ -37,9 +37,9 @@
     ],
     "xpi_target": 4,
     "apb_target_base": 5,
-    "decode_error_target": 26,
-    "protocol_error_target": 27,
-    "target_count": 28
+    "decode_error_target": 27,
+    "protocol_error_target": 28,
+    "target_count": 29
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,
@@ -172,6 +172,12 @@
       "regions": [
         "APB4_DVP"
       ]
+    },
+    {
+      "name": "spi",
+      "regions": [
+        "APB4_SPI"
+      ]
     }
   ],
   "interrupts": [
@@ -264,6 +270,11 @@
       "name": "crypto",
       "core_bit": 23,
       "signal": "s_crypto_irq"
+    },
+    {
+      "name": "spi",
+      "core_bit": 25,
+      "signal": "s_spi_irq"
     },
     {
       "name": "rcu",
@@ -677,8 +688,8 @@
       "pin": 27,
       "alt0": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "s_spi_sck",
+        "oe": "s_spi_output_enable"
       },
       "alt1": {
         "inputs": [],
@@ -695,8 +706,8 @@
       },
       "alt1": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "s_spi_mosi",
+        "oe": "s_spi_output_enable"
       }
     },
     {
@@ -720,7 +731,9 @@
         "oe": "1'b1"
       },
       "alt1": {
-        "inputs": [],
+        "inputs": [
+          "s_spi_miso"
+        ],
         "do": "1'b0",
         "oe": "1'b0"
       }
@@ -734,12 +747,12 @@
       },
       "alt1": {
         "inputs": [],
-        "do": "1'b0",
-        "oe": "1'b0"
+        "do": "s_spi_cs_n",
+        "oe": "s_spi_output_enable"
       }
     }
   ],
-  "dma_request_mask": "0x39ff",
+  "dma_request_mask": "0x339ff",
   "private_crypto": {
     "banks": 6,
     "bank_bytes": 4096,

@@ -112,6 +112,155 @@ SPI request allocation, the full post-fix Pytest campaign and product
 regressions are unrun. Product instances
 retain V2.0/default-disabled SPI.
 
+## SPI-P3 implementation checkpoint (2026-10-21)
+
+The current authorized worktree integrates SPI-P2 into Tiny with APB4
+`0x1001D000..0x1001DFFF`, IRQ25, RCU target16, the four frozen Gen1 ALT
+routes and the ICS55 default/Tiny-IHP130 compatibility profiles. Tiny fabric
+source qualification is carried through AXI user metadata and APB CDC; CPU,
+DMA and other-owner accesses remain distinguishable at the SPI aliases. Tiny
+DMA enables V2.2 requests 16/17 and checks the exact fixed FIFO MMIO addresses.
+
+The GPIO guard uses the existing USER_SELECT/handoff and ALT/electrical state,
+with raw GPIO30 input for MISO. GPIO/SPI lifecycle idle vectors include the
+latched SPI session, so RCU gate/reset/rate changes cannot strand accepted
+SPI work. The bounded `rs_spi_*` HAL is added under the freestanding SDK and
+the `TINY_SPI_P3_ACCEPTANCE` image covers discovery, ownership and RCU target
+checks.
+
+Focused P3 source checks and Tiny firmware/lint records are retained below
+`build/<variant>/meta/spi-p3/`. Full Tiny/Icarus product regression, complete
+DMA contention coverage, synthesis/netlist/STA and human phase acceptance
+remain required. This checkpoint does not authorize SPI-P4 or SPI-P5.
+
+SPI-P3 Tiny Verilator acceptance (2026-10-21, same worktree): both profiles
+pass with the standard `TINY_SIM_TIMEOUT=20000000` budget. Commands:
+`make CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke TINY_SPI_P3_ACCEPTANCE=YES firmware sim`
+and `make CONFIG=configs/ci/ihp130-tiny.mk APP=ci_smoke TINY_SPI_P3_ACCEPTANCE=YES firmware sim`.
+Each log reports `SIM_TEST_PASS Tiny cycles=1030643` with no forbidden marker;
+`result-sim.json` and `result-sim-check.json` both report `passed`. Evidence
+roots: `build/ics55-tiny-2026-10-21-16-15-a257f7b03bdb/` (ICS55) and
+`build/ihp130-tiny-2026-10-21-16-15-76f15177ba7a/` (IHP130). The cycle count
+is dominated by SAFE24 XPI boot copy (~1.015M cycles for the 7212-byte image);
+the SPI APB/RCU/TEST_STATUS sequence completes in the final ~15.6k cycles. A
+1,000,000-cycle budget times out inside the boot copy loop and is not a valid
+acceptance budget for this image. The same change set moves the
+`TINY_SPI_P3_ACCEPTANCE` ci_smoke guard to top level in `Makefile` so
+`APP=bringup` builds are rejected at parse time. UART output remained
+diagnostic only; `phase_accepted` stays false.
+
+SPI-P3 phase-gate campaign (2026-10-21, same worktree), per gate:
+
+| Gate | Result / evidence |
+| --- | --- |
+| Focused stages, both profiles | PASS: `spi-p3-lint/rtl/report` each report `passed` (13 focused tests per stage); records under `build/ics55-tiny-2026-10-21-16-31-a257f7b03bdb/meta/spi-p3/` and `build/ihp130-tiny-2026-10-21-16-31-76f15177ba7a/meta/spi-p3/` |
+| Quality gates | PASS: `ruff check .`, `make sw-format-check sw-policy-check sw-host-test`, `git diff --check` |
+| Regression dry-runs | PASS: `--suite pr --soc TINY --pdk IHP130` and `--suite nightly --soc TINY` |
+| `make regress-pr` | FAIL (first failing step identified): the Mini IHP130 firmware step emits new self-owned C warnings from `crt/src/hal/spi.c:10` (the non-Tiny fallback `RS_SPI_REG` macro dereferences raw offsets, riscv32-gcc `-Warray-bounds=`); `scripts/regress.py:329` fails the suite by policy. Later matrix steps did not run. Awaiting an implementation fix; not a design-behavior defect |
+| Icarus behavioral sims, both profiles | NOT_RUN (blocked, pre-existing): Icarus elaboration of committed `rtl/tiny/dv` observers/tb fails against the sv2v-lowered `converted_soc.v` (struct fields such as `s_req_q[].state`, `s_slow_q.owner`, `u_xpi.apb4.psel`); 29 errors on each profile (`build/ics55-tiny-2026-10-21-16-31-a257f7b03bdb/sim/iverilog/`, `build/ihp130-tiny-2026-10-21-16-36-76f15177ba7a/sim/iverilog/`). Last passing Icarus behavioral run predates the committed R2-P7..P10 observer changes (2026-10-13, `build/ihp130-tiny-2026-10-13-17-06-3f1b609b0b86/`); the sv2v lowering of the referenced structs is byte-identical with and without SPI-P3, so this is not caused by this worktree |
+| Full Pytest | FAIL: 16 failed, 2080 passed, 1 skipped in 4035.41 s (`/tmp/pytest_full.log` capture; one execution). All 16 failures trace to this worktree's incomplete follow-through, none pre-existing: (a) `apb4_spi` gained `session_owned_o`/`lifecycle_idle_o` but `physical/smoke/syn/yosys/apb4_spi_block_top.sv` was not updated, breaking all five SPI-P1 standalone Verilator fixture compiles; (b) `rtl/tiny/integration/clock_reset_domains.json` reset `leaf_names` omits the `spi` leaf that `soc_topology.json` lists as an APB target; (c) committed contract tests still encode the pre-P3 state and were not updated to the frozen P3 allocation (IRQ25, RCU16, 29 fabric targets, SPI lifecycle leaf, 4-bit AXI origin): `test_tiny.py::test_tiny_sources_and_abi_are_independent`, `test_tiny_protocol_contracts[fabric-*]`, `test_tiny_r2_p2.py::test_reset_inventory...`, `test_tiny_r2_p5.py::test_concurrent_fabric`, `test_target_reset_isolation`, `test_tiny_r2_p6.py` IRQ/pin and reset-policy contracts; (d) `test_publication_tiny.py` source binding still expects `s_r_data[1]` for the read-terminal condition, legitimately shifted to `s_r_data[4]` by the 4-bit origin widening |
+
+UART output remained diagnostic only; `phase_accepted` stays false. The
+`regress-pr` C-warning failure must be fixed before SPI-P3 phase acceptance;
+the Icarus observer/sv2v incompatibility belongs to the R2-P7..P10 DV owners
+and is routed back as a separate pre-existing defect.
+
+SPI-P3 repair campaign (2026-10-21/22, same worktree): the five routed fixes
+are implemented. (1) `crt/src/hal/spi.c` now guards every register-touching
+body behind `RS_SPI_TARGET_PRESENT` (Tiny + `RS_SOC_APB4_SPI_BASE`) and
+returns `RS_ENOTSUP` otherwise; the absolute-offset fallback macro is removed,
+so Mini and host builds emit no self-owned C warnings. (2)
+`apb4_spi_block_top.sv` and `tests/rtl/spi_test_body.svh` connect the new
+`session_owned_o`/`lifecycle_idle_o` pins, restoring the SPI-P1 standalone
+fixtures. (3) `clock_reset_domains.json` lists the `spi` leaf and peripheral
+crossing, and `scripts/check_clock_reset_domains.py` expects them. (4) The
+fabric/reset testbenches use `USER_WIDTH(4)` interfaces and matching 40/7-bit
+scoreboard registers, and the committed contract tests now encode the frozen
+P3 allocation (IRQ25, RCU16, 23 reset leaves, SPI lifecycle leaf,
+`32'h0003_39ff` request mask). (5) The Tiny publication source contract tracks
+the 4-bit origin widening (`s_r_data[4]`, `s_rin_data[6:5]`), the renamed
+`decode_target`-based fabric check, the DMA request mask validation and the
+uart1 tie-off.
+
+Post-repair gates: all 16 previously failing tests pass; full Pytest reports
+2096 passed, 1 skipped (known optional `pypdf`), 0 failed in 4035.08 s;
+`ruff check .`, `sw-format-check`, `sw-policy-check`, `sw-host-test` and
+`git diff --check` pass; Mini (`configs/ci/ihp130.mk`) and both Tiny
+acceptance firmware builds are free of self-owned C warnings; the focused
+spi-p3 stages pass on both profiles; the Tiny Verilator acceptance passes
+again on both profiles at `SIM_TEST_PASS Tiny cycles=1030643`
+(`build/ics55-tiny-2026-10-21-21-12-a257f7b03bdb/`,
+`build/ihp130-tiny-2026-10-21-21-12-76f15177ba7a/`). `make regress-pr` then
+passed the Mini rtl-lint, firmware, Verilator, debug and Icarus assembly steps
+but the Mini Yosys smoke synthesis hit the pre-existing 10800 s host timeout
+(`build/ihp130-2026-10-21-21-12-c30fb9412aa3/syn/yosys/result-synth.json`,
+continuous OPT-pass progress, identical 10800 s failures on 2026-09-23 and
+2026-10-02 with older configurations). Per explicit user decision on
+2026-10-22, the Mini Yosys smoke synthesis and its dependent Mini
+netlist/STA steps are skipped for this campaign; the recorded Mini steps
+(rtl-lint, ci_smoke/shell firmware, Verilator sim, debug-sim, Icarus
+assembly) all passed post-repair.
+
+Tiny PR matrix completion (2026-10-22, same worktree): `rtl-lint` and the
+R2-P7 Verilator acceptance passed inside the suite
+(`SIM_TEST_PASS Tiny cycles=3859487`,
+`build/ihp130-tiny-2026-10-22-07-47-3f1b609b0b86/`); the R2-P7 Icarus
+behavioral step aborted the suite at the pre-existing observer/sv2v
+elaboration defect (29 errors, `build/ihp130-tiny-2026-10-22-07-47-aae2707c2aa5/sim/iverilog/`).
+The remaining suite steps were then executed individually with
+`BUILD_TIMESTAMP=2026-10-22-07-58` pinned to one variant root: Tiny Yosys
+synthesis passed in 2066.0 s with the netlist retained, `netsim-boot` passed
+with `SIM_TEST_PASS Tiny cycles=36069`, and OpenSTA completed with per-corner
+reports retained (`build/ihp130-tiny-2026-10-22-07-58-8232fa11e7f3/`; timing
+remains observational, e.g. timing_metrics `wns min -0.48`, no closure
+claimed). `check-rtl-lint` reports failed because no
+`quality/warnings/ihp130-tiny/` baseline exists (every signature reads as new);
+this pre-dates SPI-P3 and is non-blocking inside the regression runner.
+`check-warnings` passed and `check-metrics` ran in observe mode. The Icarus
+behavioral defect remains routed to the R2 DV owners; `phase_accepted` stays
+false.
+
+SPI-P3 review-repair round (2026-10-22, same worktree): independent review of
+the full worktree delta found three P1 defects, all fixed and re-verified.
+(1) `dma_axi4_master` sampled the origin channel from the live arbiter during
+the AW/W/AR address phase, after arbitration advanced, so final single-beat
+and contended SPI alias bursts were mis-qualified; the origin channel is now
+registered at the start handshake alongside addr/beats/fixed. The new focused
+`tests/rtl/dma_origin_tb.sv` (via
+`tests/test_dma.py::test_dma_origin_qualifier_stays_staged_per_burst`) checks
+every AR/AW/W user field per beat for a nonzero channel under idle and
+contended arbitration; it fails against a reverted live-origin variant
+(ar=49/aw=47 mismatches) and passes on the fix. (2) RCU feedback bit 15 had
+no driver; `retrosoc_tiny.sv` now ties off `s_actual_gate[15]`/
+`s_reset_held[15]`/`s_reset_ready[15]`, and the generated bridges tie
+non-SPI origin/channel constants, eliminating the entire UNDRIVEN lint class
+(zero entries in the post-fix lint log). (3) The clock-switch quiescence slice
+`.clients_idle_i` is widened to `s_periph_idle_ref[16:1]` so SPI sessions veto
+rate changes as the phase contract claims. P2/P3 follow-ups fixed in the same
+round: `tiny_r2_p5_fabric_formal.sv` widened to USER_WIDTH(4), five remaining
+`dma_axi4_master` instantiations tie off the origin inputs, `rs_spi_acquire`
+waits on GPIO_READY alone, host tests added for the SPI divider math and the
+Tiny SPI DMA aperture checks, plus comment/dead-branch/magic-number/provenance
+cleanups.
+
+Post-repair evidence (2026-10-22): full Pytest 2097 passed, 1 skipped
+(optional `pypdf`), 0 failed in 4080.06 s; both SPI-P3 Verilator acceptance
+runs pass at `SIM_TEST_PASS Tiny cycles=1030088`
+(`build/ics55-tiny-2026-10-22-10-27-a257f7b03bdb/`,
+`build/ihp130-tiny-2026-10-22-10-27-76f15177ba7a/`); the R2-P7 Verilator
+acceptance still passes at `cycles=3859487`
+(`build/ihp130-tiny-2026-10-22-10-27-3f1b609b0b86/`); Mini DMA formal prove
+and cover both PASS (`build/ihp130-2026-10-22-10-31-c30fb9412aa3/formal/dma/`);
+Mini rtl-lint passes; Tiny Yosys synthesis, `netsim-boot`
+(`SIM_TEST_PASS Tiny cycles=36069`) and OpenSTA all pass under
+`build/ihp130-tiny-2026-10-22-10-31-8232fa11e7f3/`; `rtl-format-check`,
+`ruff check .`, `sw-format-check`, `sw-policy-check`, `sw-host-test` and
+`git diff --check` all pass. Remaining gaps are unchanged: the pre-existing
+Icarus observer/sv2v defect (R2 DV owners), the Mini smoke-synthesis host
+timeout (skipped per user decision), the missing Tiny warning baseline
+(non-blocking observation), human phase acceptance, and the deferred
+SPI-P4/P5 obligations. `phase_accepted` stays false.
+
 ## SPI-P1 implementation checkpoint (2026-10-18, historical)
 
 The approved standalone implementation starts from clean

@@ -3,6 +3,11 @@
 #include <stddef.h>
 
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/spi_regs.h>
+
+#ifndef RS_SOC_APB4_SPI_BASE
+#define RS_SOC_APB4_SPI_BASE UINT32_C(0x1001D000)
+#endif
 
 static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool increment) {
     uintptr_t last_address;
@@ -30,11 +35,13 @@ static bool rs_dma_request_valid(const rs_dma_config_t *config) {
 #ifdef RS_SOC_TINY
         if ((config->request == RS_DMA_REQUEST_SPI_TX) ||
             (config->request == RS_DMA_REQUEST_SPI_RX)) {
+            const uintptr_t tx_aperture = (uintptr_t)RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_TXDATA;
+            const uintptr_t rx_aperture = (uintptr_t)RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_RXDATA;
             return ((config->byte_count % sizeof(uint32_t)) == 0U) &&
                    (((config->request == RS_DMA_REQUEST_SPI_TX) && config->source_increment &&
-                     !config->destination_increment) ||
+                     !config->destination_increment && config->destination == tx_aperture) ||
                     ((config->request == RS_DMA_REQUEST_SPI_RX) && !config->source_increment &&
-                     config->destination_increment));
+                     config->destination_increment && config->source == rx_aperture));
         }
 #endif
         return (config->request == RS_DMA_REQUEST_SOFTWARE) ||
@@ -141,12 +148,14 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
 #ifdef RS_SOC_TINY
     if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) && (request == (uint32_t)RS_DMA_REQUEST_SPI_TX) &&
         (((tcd->control & RS_DMA_TCD_SRC_INC) == UINT32_C(0)) ||
-         ((tcd->control & RS_DMA_TCD_DST_INC) != UINT32_C(0)))) {
+         ((tcd->control & RS_DMA_TCD_DST_INC) != UINT32_C(0)) ||
+         (tcd->destination != (uint32_t)(RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_TXDATA)))) {
         return RS_EINVAL;
     }
     if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) && (request == (uint32_t)RS_DMA_REQUEST_SPI_RX) &&
         (((tcd->control & RS_DMA_TCD_SRC_INC) != UINT32_C(0)) ||
-         ((tcd->control & RS_DMA_TCD_DST_INC) == UINT32_C(0)))) {
+         ((tcd->control & RS_DMA_TCD_DST_INC) == UINT32_C(0)) ||
+         (tcd->source != (uint32_t)(RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_RXDATA)))) {
         return RS_EINVAL;
     }
 #endif

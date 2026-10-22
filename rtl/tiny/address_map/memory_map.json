@@ -444,6 +444,15 @@
       "kind": "active",
       "public": true,
       "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SPI",
+      "base": "0x1001D000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
     }
   ],
   "legacy_rib": false,

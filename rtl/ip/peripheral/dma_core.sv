@@ -12,16 +12,19 @@
 `include "axi4_define.svh"
 
 module dma_core #(
-    parameter int          AddrWidth         = 32,
-    parameter int          DataWidth         = 32,
-    parameter int          NumChannels       = 4,
-    parameter int          ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
-    parameter int          MaxBurstBeats     = 16,
-    parameter int          FifoDepth         = 16,
-    parameter bit          EnableCrc         = 1'b1,
-    parameter logic [31:0] RequestMask       = 32'h0000_3fff,
-    parameter bit          EnableStreams     = 1'b1,
-    parameter bit          EnableSpi         = 1'b0
+    parameter int          AddrWidth             = 32,
+    parameter int          DataWidth             = 32,
+    parameter int          NumChannels           = 4,
+    parameter int          ChannelIndexWidth     = (NumChannels > 1) ? $clog2(NumChannels) : 1,
+    parameter int          MaxBurstBeats         = 16,
+    parameter int          FifoDepth             = 16,
+    parameter bit          EnableCrc             = 1'b1,
+    parameter logic [31:0] RequestMask           = 32'h0000_3fff,
+    parameter bit          EnableStreams         = 1'b1,
+    parameter bit          EnableSpi             = 1'b0,
+    parameter bit          EnableOriginQualifier = 1'b0,
+    parameter logic [31:0] SpiTxAddress          = 32'd0,
+    parameter logic [31:0] SpiRxAddress          = 32'd0
 ) (
     // verilog_format: off -- channel vectors are kept aligned with the register-bank ABI.
     input  logic                           clk_i,
@@ -64,6 +67,11 @@ module dma_core #(
     output logic [8:0]                     first_error_status_o,
     output logic [15:0]                    first_error_addr_hi_o,
     output logic [31:0]                    request_status_o,
+    output logic [1:0]                     spi_credit_valid_o,
+    output logic [1:0]                     spi_credit_retire_o,
+    output logic [1:0]                     spi_start_pending_o,
+    output logic [3:0]                     spi_status_o,
+    output logic                           spi_error_o,
     output logic                           xpi_xfer_done_o,
     dma_req_if.dut                         req,
     axi4_if.master                         axi4,
@@ -183,6 +191,7 @@ module dma_core #(
   logic [                 31:0]                     s_axi_read_start_addr;
   logic [                  4:0]                     s_axi_read_start_beats;
   logic                                             s_axi_read_start_fixed;
+  logic [ChannelIndexWidth-1:0]                     s_axi_read_origin_channel;
   logic                                             s_axi_read_busy;
   logic                                             s_axi_read_beat_valid;
   logic                                             s_axi_read_beat_ready;
@@ -198,6 +207,7 @@ module dma_core #(
   logic [                 31:0]                     s_axi_write_start_addr;
   logic [                  4:0]                     s_axi_write_start_beats;
   logic                                             s_axi_write_start_fixed;
+  logic [ChannelIndexWidth-1:0]                     s_axi_write_origin_channel;
   logic                                             s_axi_write_busy;
   logic                                             s_axi_write_data_valid;
   logic                                             s_axi_write_data_ready;
@@ -293,6 +303,10 @@ module dma_core #(
         ((FifoDepth & (FifoDepth - 1)) != 0)) begin
       $fatal(1, "dma_core: MVP requires 32-bit AXI4, 2+ channels, and a power-of-two FIFO");
     end
+    if (EnableOriginQualifier && (ChannelIndexWidth > 3)) begin
+      $fatal(1,
+             "dma_core: origin qualifier packs three-bit channels, so NumChannels must stay <= 8");
+    end
   end
 `endif
 
@@ -343,38 +357,73 @@ module dma_core #(
       .DataWidth    (DataWidth),
       .MaxBurstBeats(MaxBurstBeats)
   ) u_dma_axi4_master (
-      .clk_i               (clk_i),
-      .rst_n_i             (rst_n_i),
-      .clear_i             (1'b0),
-      .read_start_valid_i  (s_axi_read_start_valid),
-      .read_start_ready_o  (s_axi_read_start_ready),
-      .read_addr_i         (s_axi_read_start_addr),
-      .read_beats_i        (s_axi_read_start_beats),
-      .read_fixed_i        (s_axi_read_start_fixed),
-      .read_busy_o         (s_axi_read_busy),
-      .read_beat_valid_o   (s_axi_read_beat_valid),
-      .read_beat_ready_i   (s_axi_read_beat_ready),
-      .read_data_o         (s_axi_read_data),
-      .read_resp_o         (s_axi_read_resp),
-      .read_last_o         (s_axi_read_last),
-      .read_expected_last_o(s_axi_read_expected_last),
-      .read_id_error_o     (s_axi_read_id_error),
-      .read_done_o         (s_axi_read_done),
-      .write_start_valid_i (s_axi_write_start_valid),
-      .write_start_ready_o (s_axi_write_start_ready),
-      .write_addr_i        (s_axi_write_start_addr),
-      .write_beats_i       (s_axi_write_start_beats),
-      .write_fixed_i       (s_axi_write_start_fixed),
-      .write_busy_o        (s_axi_write_busy),
-      .write_data_valid_i  (s_axi_write_data_valid),
-      .write_data_ready_o  (s_axi_write_data_ready),
-      .write_data_i        (s_axi_write_data),
-      .write_strb_i        (s_axi_write_strb),
-      .write_done_o        (s_axi_write_done),
-      .write_resp_o        (s_axi_write_resp),
-      .write_id_error_o    (s_axi_write_id_error),
-      .axi4                (axi4)
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .clear_i               (1'b0),
+      .read_start_valid_i    (s_axi_read_start_valid),
+      .read_start_ready_o    (s_axi_read_start_ready),
+      .read_addr_i           (s_axi_read_start_addr),
+      .read_beats_i          (s_axi_read_start_beats),
+      .read_fixed_i          (s_axi_read_start_fixed),
+      .read_busy_o           (s_axi_read_busy),
+      .read_beat_valid_o     (s_axi_read_beat_valid),
+      .read_beat_ready_i     (s_axi_read_beat_ready),
+      .read_data_o           (s_axi_read_data),
+      .read_resp_o           (s_axi_read_resp),
+      .read_last_o           (s_axi_read_last),
+      .read_expected_last_o  (s_axi_read_expected_last),
+      .read_id_error_o       (s_axi_read_id_error),
+      .read_done_o           (s_axi_read_done),
+      .write_start_valid_i   (s_axi_write_start_valid),
+      .write_start_ready_o   (s_axi_write_start_ready),
+      .write_addr_i          (s_axi_write_start_addr),
+      .write_beats_i         (s_axi_write_start_beats),
+      .write_fixed_i         (s_axi_write_start_fixed),
+      .write_busy_o          (s_axi_write_busy),
+      .write_data_valid_i    (s_axi_write_data_valid),
+      .write_data_ready_o    (s_axi_write_data_ready),
+      .write_data_i          (s_axi_write_data),
+      .write_strb_i          (s_axi_write_strb),
+      .write_done_o          (s_axi_write_done),
+      .write_resp_o          (s_axi_write_resp),
+      .write_id_error_o      (s_axi_write_id_error),
+      .origin_enable_i       (EnableOriginQualifier),
+      .read_origin_channel_i (s_axi_read_origin_channel),
+      .write_origin_channel_i(s_axi_write_origin_channel),
+      .axi4                  (axi4)
   );
+
+  always_comb begin
+    logic s_spi_error;
+    spi_credit_valid_o  = '0;
+    spi_credit_retire_o = '0;
+    spi_start_pending_o = '0;
+    spi_status_o        = '0;
+    s_spi_error         = 1'b0;
+    if (EnableSpi) begin
+      if (s_read_owner_valid_q && (s_req_q[s_read_owner_q] == DMA_REQUEST_SPI_RX) &&
+          (s_src_base_q[s_read_owner_q] == SpiRxAddress)) begin
+        spi_credit_valid_o[1] = 1'b1;
+        spi_status_o[1]       = 1'b1;
+        s_spi_error           = s_spi_error | s_err_q[s_read_owner_q];
+        if (s_axi_read_done) spi_credit_retire_o[1] = 1'b1;
+      end
+      if (s_write_owner_valid_q && (s_req_q[s_write_owner_q] == DMA_REQUEST_SPI_TX) &&
+          (s_dst_base_q[s_write_owner_q] == SpiTxAddress)) begin
+        spi_credit_valid_o[0] = 1'b1;
+        spi_status_o[0]       = 1'b1;
+        s_spi_error           = s_spi_error | s_err_q[s_write_owner_q];
+        if (s_axi_write_done) spi_credit_retire_o[0] = 1'b1;
+      end
+      if (s_read_rr_valid && (s_req_q[s_read_rr_selected] == DMA_REQUEST_SPI_RX) &&
+          (s_src_base_q[s_read_rr_selected] == SpiRxAddress) && !s_axi_read_busy)
+        spi_start_pending_o[1] = 1'b1;
+      if (s_write_rr_valid && (s_req_q[s_write_rr_selected] == DMA_REQUEST_SPI_TX) &&
+          (s_dst_base_q[s_write_rr_selected] == SpiTxAddress) && !s_axi_write_busy)
+        spi_start_pending_o[0] = 1'b1;
+    end
+    spi_error_o = s_spi_error;
+  end
 
   always_comb begin
     s_req_ready                         = '0;
@@ -480,9 +529,11 @@ module dma_core #(
                 (!EnableSpi && ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX) ||
                                 (s_cfg_req[channel] == DMA_REQUEST_SPI_RX))) ||
                 ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX) &&
-                 (!s_cfg_src_increment[channel] || s_cfg_dst_increment[channel])) ||
+                 (!s_cfg_src_increment[channel] || s_cfg_dst_increment[channel] ||
+                  s_cfg_dst_addr[channel] != SpiTxAddress)) ||
                 ((s_cfg_req[channel] == DMA_REQUEST_SPI_RX) &&
-                 (s_cfg_src_increment[channel] || !s_cfg_dst_increment[channel]))) begin
+                 (s_cfg_src_increment[channel] || !s_cfg_dst_increment[channel] ||
+                  s_cfg_src_addr[channel] != SpiRxAddress))) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
                   ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
@@ -680,10 +731,11 @@ module dma_core #(
   end
 
   always_comb begin
-    s_axi_read_start_valid = s_read_rr_valid && (|s_read_rr_grant) && !s_axi_read_busy;
-    s_axi_read_start_addr  = '0;
-    s_axi_read_start_beats = 5'd1;
-    s_axi_read_start_fixed = 1'b0;
+    s_axi_read_start_valid    = s_read_rr_valid && (|s_read_rr_grant) && !s_axi_read_busy;
+    s_axi_read_start_addr     = '0;
+    s_axi_read_start_beats    = 5'd1;
+    s_axi_read_start_fixed    = 1'b0;
+    s_axi_read_origin_channel = '0;
     if (s_read_rr_valid) begin
       s_axi_read_start_addr = s_src_base_q[s_read_rr_selected] +
                               (s_src_increment_q[s_read_rr_selected]
@@ -691,18 +743,21 @@ module dma_core #(
                                    : 32'd0);
       s_axi_read_start_beats = s_read_candidate_beats[s_read_rr_selected];
       s_axi_read_start_fixed = !s_src_increment_q[s_read_rr_selected];
+      s_axi_read_origin_channel = s_read_rr_selected;
     end
     if (s_tcd_fetch_valid) begin
-      s_axi_read_start_valid = !s_axi_read_busy;
-      s_axi_read_start_addr  = s_tcd_ptr_q[s_tcd_fetch_selected];
-      s_axi_read_start_beats = 5'd16;
-      s_axi_read_start_fixed = 1'b0;
+      s_axi_read_start_valid    = !s_axi_read_busy;
+      s_axi_read_start_addr     = s_tcd_ptr_q[s_tcd_fetch_selected];
+      s_axi_read_start_beats    = 5'd16;
+      s_axi_read_start_fixed    = 1'b0;
+      s_axi_read_origin_channel = s_tcd_fetch_selected;
     end
 
-    s_axi_write_start_valid = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
-    s_axi_write_start_addr  = '0;
-    s_axi_write_start_beats = 5'd1;
-    s_axi_write_start_fixed = 1'b0;
+    s_axi_write_start_valid    = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
+    s_axi_write_start_addr     = '0;
+    s_axi_write_start_beats    = 5'd1;
+    s_axi_write_start_fixed    = 1'b0;
+    s_axi_write_origin_channel = '0;
     if (s_write_rr_valid) begin
       s_axi_write_start_addr = s_dst_base_q[s_write_rr_selected] +
                                (s_dst_increment_q[s_write_rr_selected]
@@ -710,6 +765,7 @@ module dma_core #(
                                     : 32'd0);
       s_axi_write_start_beats = s_write_candidate_beats[s_write_rr_selected];
       s_axi_write_start_fixed = !s_dst_increment_q[s_write_rr_selected];
+      s_axi_write_origin_channel = s_write_rr_selected;
     end
   end
 
@@ -1324,7 +1380,11 @@ module dma_core #(
                   s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_RX) &&
                 ((s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM) ||
                  s_tcd_word7_q[s_tcd_read_owner_q][1] ||
-                 !s_tcd_word7_q[s_tcd_read_owner_q][2]))) ||
+                 !s_tcd_word7_q[s_tcd_read_owner_q][2] ||
+                 s_tcd_word1_q[s_tcd_read_owner_q] != SpiRxAddress))) ||
+              (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                 s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_TX) &&
+               (s_tcd_word2_q[s_tcd_read_owner_q] != SpiTxAddress)) ||
               (((s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_MM_TO_STREAM) ||
                 (s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_STREAM_TO_MM)) &&
                (s_tcd_word3_q[s_tcd_read_owner_q][1:0] != 2'b00)) ||

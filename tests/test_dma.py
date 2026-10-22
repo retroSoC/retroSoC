@@ -78,6 +78,73 @@ def test_dma_reports_native_axi4_errors_bursts_and_streams(tmp_path: Path) -> No
     assert "DMA native AXI4 burst, backpressure, stream, and error test passed" in result.stdout
 
 
+def test_dma_origin_qualifier_stays_staged_per_burst(tmp_path: Path) -> None:
+    iverilog = shutil.which("iverilog")
+    vvp = shutil.which("vvp")
+    if iverilog is None or vvp is None:
+        return
+
+    memory_map = tmp_path / "memory_map"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
+            "--map",
+            str(ROOT / "rtl/mini/address_map/memory_map.json"),
+            "--output-dir",
+            str(memory_map),
+            "--have-sram-if",
+            "NO",
+        ],
+        check=True,
+    )
+    source_list = tmp_path / "dma_origin.fl"
+    source_list.write_text(
+        "\n".join(
+            [
+                "+define+SV_ASSRT_DISABLE",
+                f"+incdir+{memory_map / 'rtl'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/interface'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/stream'}",
+                f"+incdir+{ROOT / 'rtl/managed/clusterip/common/rtl/utils'}",
+                f"+incdir+{ROOT / 'rtl/mini/top'}",
+                f"+incdir+{ROOT / 'rtl/ip/peripheral'}",
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/utils/fifo.sv"),
+                str(ROOT / "rtl/managed/clusterip/common/rtl/stream/round_robin_arbiter.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_pkg.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_req_if.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_axi4_master.sv"),
+                str(ROOT / "rtl/ip/peripheral/dma_core.sv"),
+                str(ROOT / "tests/rtl/dma_origin_tb.sv"),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    converted = tmp_path / "dma_origin_tb.v"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/rtl/convt_sv2v.py"),
+            "-f",
+            str(source_list),
+            "--output",
+            str(converted),
+        ],
+        check=True,
+    )
+    simulation = tmp_path / "dma_origin_tb"
+    subprocess.run(
+        [iverilog, "-g2012", "-s", "dma_origin_tb", "-o", str(simulation), str(converted)],
+        check=True,
+    )
+    result = subprocess.run([vvp, str(simulation)], text=True, capture_output=True, check=True)
+    assert "DMA origin qualifier staging test passed" in result.stdout
+
+
 def test_dma_apb_registers_and_irq(tmp_path: Path) -> None:
     iverilog = shutil.which("iverilog")
     vvp = shutil.which("vvp")

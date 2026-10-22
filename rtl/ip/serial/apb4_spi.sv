@@ -26,11 +26,14 @@ module apb4_spi #(
     cs_n_o,
     output_enable_o,
     irq_o,
+    session_owned_o,
+    lifecycle_idle_o,
     output logic         [ 1:0] credit_commit_o,
            apb4_if.slave        apb4
 );
   spi_ctrl_if u_ctrl ();
   spi_pkg::configuration_t s_cfg;
+  spi_pkg::status_t        s_stat;
   logic [31:0] s_claim, s_ready;
   logic s_handback, s_credit_fault, s_reg_credit_fault, s_pacing_fault;
   logic s_fifo_pending;
@@ -39,6 +42,7 @@ module apb4_spi #(
   logic [3:0] s_dma_stat;
   logic       s_unused;
   assign s_cfg            = u_ctrl.cfg;
+  assign s_stat           = u_ctrl.stat;
   // Only personality bits feed the GPIO guard; other fields feed the core/reg blocks.
   assign s_unused         = ^s_cfg;
   assign s_credit_fault   = s_reg_credit_fault | s_pacing_fault;
@@ -94,7 +98,9 @@ module apb4_spi #(
       .apb4               (apb4),
       .ctrl               (u_ctrl)
   );
-  assign credit_commit_o = s_credit_commit;
+  assign credit_commit_o  = s_credit_commit;
+  assign session_owned_o  = s_stat.status[5];
+  assign lifecycle_idle_o = s_stat.status[10] && s_stat.status[11] && !s_stat.status[5];
   spi_master_core u_master_core (
       .apb_pending_i      (s_fifo_pending),
       .clk_i              (clk_i),

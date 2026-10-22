@@ -46,6 +46,9 @@ module dma_axi4_master #(
     output logic                 write_done_o,
     output logic [          1:0] write_resp_o,
     output logic                 write_id_error_o,
+    input  logic                 origin_enable_i,
+    input  logic [          2:0] read_origin_channel_i,
+    input  logic [          2:0] write_origin_channel_i,
     axi4_if.master               axi4
     // verilog_format: on
 );
@@ -74,6 +77,8 @@ module dma_axi4_master #(
   logic         [          4:0] s_write_beat_q;
   logic                         s_read_fixed_q;
   logic                         s_write_fixed_q;
+  logic         [          2:0] s_read_origin_q;
+  logic         [          2:0] s_write_origin_q;
 
 `ifndef SYNTHESIS
   initial begin
@@ -112,12 +117,12 @@ module dma_axi4_master #(
   assign axi4.awprot          = `AXI4_PROT_DATA;
   assign axi4.awqos           = `AXI4_QOS_NORMAL;
   assign axi4.awregion        = `AXI4_REGION_NORMAL;
-  assign axi4.awuser          = '0;
+  assign axi4.awuser          = origin_enable_i ? {1'b1, s_write_origin_q} : '0;
   assign axi4.awvalid         = s_write_state_q == WriteAddress;
   assign axi4.wdata           = write_data_i;
   assign axi4.wstrb           = write_strb_i;
   assign axi4.wlast           = (s_write_beat_q + 1'b1) == s_write_beats_q;
-  assign axi4.wuser           = '0;
+  assign axi4.wuser           = origin_enable_i ? {1'b1, s_write_origin_q} : '0;
   assign axi4.wvalid          = (s_write_state_q == WriteData) && write_data_valid_i;
   assign axi4.bready          = s_write_state_q == WriteResponse;
 
@@ -131,32 +136,35 @@ module dma_axi4_master #(
   assign axi4.arprot          = `AXI4_PROT_DATA;
   assign axi4.arqos           = `AXI4_QOS_NORMAL;
   assign axi4.arregion        = `AXI4_REGION_NORMAL;
-  assign axi4.aruser          = '0;
+  assign axi4.aruser          = origin_enable_i ? {1'b1, s_read_origin_q} : '0;
   assign axi4.arvalid         = s_read_state_q == ReadAddress;
   assign axi4.rready          = (s_read_state_q == ReadData) && read_beat_ready_i;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_read_state_q <= ReadIdle;
-      s_read_addr_q  <= '0;
-      s_read_beats_q <= 5'd1;
-      s_read_beat_q  <= '0;
-      s_read_fixed_q <= 1'b0;
+      s_read_state_q  <= ReadIdle;
+      s_read_addr_q   <= '0;
+      s_read_beats_q  <= 5'd1;
+      s_read_beat_q   <= '0;
+      s_read_fixed_q  <= 1'b0;
+      s_read_origin_q <= 3'd0;
     end else if (clear_i) begin
-      s_read_state_q <= ReadIdle;
-      s_read_addr_q  <= '0;
-      s_read_beats_q <= 5'd1;
-      s_read_beat_q  <= '0;
-      s_read_fixed_q <= 1'b0;
+      s_read_state_q  <= ReadIdle;
+      s_read_addr_q   <= '0;
+      s_read_beats_q  <= 5'd1;
+      s_read_beat_q   <= '0;
+      s_read_fixed_q  <= 1'b0;
+      s_read_origin_q <= 3'd0;
     end else begin
       unique case (s_read_state_q)
         ReadIdle: begin
           if (read_start_valid_i && read_start_ready_o) begin
-            s_read_addr_q  <= read_addr_i;
-            s_read_beats_q <= read_beats_i;
-            s_read_beat_q  <= '0;
-            s_read_fixed_q <= read_fixed_i;
-            s_read_state_q <= ReadAddress;
+            s_read_addr_q   <= read_addr_i;
+            s_read_beats_q  <= read_beats_i;
+            s_read_beat_q   <= '0;
+            s_read_fixed_q  <= read_fixed_i;
+            s_read_origin_q <= read_origin_channel_i;
+            s_read_state_q  <= ReadAddress;
           end
         end
         ReadAddress: begin
@@ -180,26 +188,29 @@ module dma_axi4_master #(
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      s_write_state_q <= WriteIdle;
-      s_write_addr_q  <= '0;
-      s_write_beats_q <= 5'd1;
-      s_write_beat_q  <= '0;
-      s_write_fixed_q <= 1'b0;
+      s_write_state_q  <= WriteIdle;
+      s_write_addr_q   <= '0;
+      s_write_beats_q  <= 5'd1;
+      s_write_beat_q   <= '0;
+      s_write_fixed_q  <= 1'b0;
+      s_write_origin_q <= 3'd0;
     end else if (clear_i) begin
-      s_write_state_q <= WriteIdle;
-      s_write_addr_q  <= '0;
-      s_write_beats_q <= 5'd1;
-      s_write_beat_q  <= '0;
-      s_write_fixed_q <= 1'b0;
+      s_write_state_q  <= WriteIdle;
+      s_write_addr_q   <= '0;
+      s_write_beats_q  <= 5'd1;
+      s_write_beat_q   <= '0;
+      s_write_fixed_q  <= 1'b0;
+      s_write_origin_q <= 3'd0;
     end else begin
       unique case (s_write_state_q)
         WriteIdle: begin
           if (write_start_valid_i && write_start_ready_o) begin
-            s_write_addr_q  <= write_addr_i;
-            s_write_beats_q <= write_beats_i;
-            s_write_beat_q  <= '0;
-            s_write_fixed_q <= write_fixed_i;
-            s_write_state_q <= WriteAddress;
+            s_write_addr_q   <= write_addr_i;
+            s_write_beats_q  <= write_beats_i;
+            s_write_beat_q   <= '0;
+            s_write_fixed_q  <= write_fixed_i;
+            s_write_origin_q <= write_origin_channel_i;
+            s_write_state_q  <= WriteAddress;
           end
         end
         WriteAddress: begin

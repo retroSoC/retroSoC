@@ -89,15 +89,15 @@ module retrosoc_tiny (
   logic [31:0] s_clkout_control;
   logic s_clkout, s_clkout_enable;
   logic s_clkout_idle_ref;
-  logic [14:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
-  logic [14:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
+  logic [16:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
+  logic [16:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
   logic s_periph_apply, s_periph_reset_command, s_periph_block, s_periph_done;
-  logic [14:0] s_periph_request, s_periph_reset_done;
+  logic [16:0] s_periph_request, s_periph_reset_done;
   logic [4:0] s_periph_fault;
   logic       s_bus_idle_ref;
   logic s_boot_release_d, s_boot_release_q;
   logic s_wfi_gate_sys;
-  logic [14:0] s_periph_idle, s_periph_idle_ref;
+  logic [16:0] s_periph_idle, s_periph_idle_ref;
   logic s_xpi_idle, s_xpi_idle_ref;
   logic s_pwm_write, s_crc_write;
   logic [ 4:0] s_clock_fault;
@@ -110,6 +110,20 @@ module retrosoc_tiny (
   logic s_i2s_tx_stall, s_i2s_rx_stall;
   logic s_i2s_reset_ready;
   logic s_dvp_irq, s_dvp_idle, s_dvp_reset_ready;
+  logic s_spi_sck, s_spi_mosi, s_spi_cs_n, s_spi_output_enable, s_spi_miso;
+  logic s_spi_irq, s_spi_session_owned, s_spi_lifecycle_idle;
+  logic [1:0] s_spi_origin;
+  logic [2:0] s_spi_channel;
+  logic [31:0] s_gpio_user_select, s_gpio_user_handoff, s_gpio_alt_enable;
+  logic [31:0] s_gpio_alt_select, s_gpio_output_enable, s_gpio_open_drain;
+  logic [1:0] s_spi_credit_valid, s_spi_credit_retire, s_spi_dma_start_pending;
+  logic [3:0] s_spi_dma_status;
+  logic       s_spi_dma_error;
+  // Commit strobes are register-visible inside the SPI shell; the SoC has no consumer yet.
+  /* verilator lint_off UNUSEDSIGNAL */
+  logic [1:0] s_spi_credit_commit;
+  /* verilator lint_on UNUSEDSIGNAL */
+  logic [4:0] s_spi_request;
   logic s_done_pclk_rst_n, s_done_mem_rst_n;
   `include "tiny_apb_interfaces.svh"
 ahbl_if u_cpu_ahbl_if[2] (
@@ -121,7 +135,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_sram_axi4_if[4] (
       .aclk   (s_exec_clk),
       .aresetn(s_sram_rst_n)
@@ -151,7 +165,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_masters_axi4_if[3] (
       .aclk   (s_exec_clk),
       .aresetn(s_master_rst_n)
@@ -160,7 +174,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_dma_pclk_axi4_if (
       .aclk   (s_dma_clk),
       .aresetn(s_dma_rst_n)
@@ -169,7 +183,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_dma_admitted_axi4_if (
       .aclk   (s_backend_pclk),
       .aresetn(s_dma_rst_n)
@@ -178,7 +192,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_sdio_sys_axi4_if (
       .aclk   (s_sdio_clk),
       .aresetn(s_sdio_rst_n)
@@ -187,7 +201,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_targets_axi4_if[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (s_exec_clk),
       .aresetn(s_target_rst_n)
@@ -196,7 +210,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_xpi_mem_axi4_if (
       .aclk   (s_backend_mem_clk),
       .aresetn(s_backend_mem_rst_n)
@@ -392,11 +406,14 @@ ahbl_if u_cpu_ahbl_if[2] (
       .dat_i  (s_gate_request[0]),
       .dat_o  (s_wfi_gate_sys)
   );
-  assign s_reset_held[0]  = 1'b0;
-  assign s_reset_ready[0] = 1'b0;
+  assign s_reset_held[0]   = 1'b0;
+  assign s_reset_ready[0]  = 1'b0;
+  assign s_actual_gate[15] = 1'b0;
+  assign s_reset_held[15]  = 1'b0;
+  assign s_reset_ready[15] = 1'b0;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(15)
+      .DATA_WIDTH(17)
   ) u_gate_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -405,7 +422,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(15)
+      .DATA_WIDTH(17)
   ) u_held_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -414,7 +431,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(15)
+      .DATA_WIDTH(17)
   ) u_ready_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -423,7 +440,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(15)
+      .DATA_WIDTH(17)
   ) u_disabled_sync (
       .clk_i  (s_exec_clk),
       .rst_n_i(s_fabric_rst_n),
@@ -477,11 +494,14 @@ ahbl_if u_cpu_ahbl_if[2] (
       .crc_idle_o (s_periph_idle[12])
   );
   assign s_periph_idle[0]  = s_cpu_bus_idle;
-  assign s_periph_idle[1]  = 1'b1;  // GPIO has no independent transaction engine; USER is absent.
+  assign s_periph_idle[1]  = !s_spi_session_owned && !(|s_gpio_user_select);
   assign s_periph_idle[11] = !s_rng_en && !s_rng_valid;
+  assign s_periph_idle[15] = 1'b1;
+  assign s_periph_idle[16] = s_spi_lifecycle_idle;
+  assign s_spi_request     = u_spi_apb4_if.pwrite ? 5'd16 : 5'd17;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(15)
+      .DATA_WIDTH(17)
   ) u_periph_idle_sync (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -706,7 +726,8 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   tiny_axi4_async_bridge #(
       .DataWidth(32),
-      .IdWidth  (1)
+      .IdWidth  (1),
+      .UserWidth(4)
   ) u_dma_cdc (
       .src_clk_i   (s_dma_clk),
       .src_rst_n_i (s_dma_rst_n),
@@ -737,7 +758,8 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   tiny_axi4_async_bridge #(
       .DataWidth(32),
-      .IdWidth  (1)
+      .IdWidth  (1),
+      .UserWidth(4)
   ) u_xpi_mem_cdc (
       .src_clk_i   (s_exec_clk),
       .src_rst_n_i (s_fabric_rst_n),
@@ -800,7 +822,7 @@ axi4_error_slave #(
       .PllPresent (TinyPllPresent),
       .PllProfiles(TinyPllPresent),
       .XinHzValue (`SOC_EXT_CLK_HZ),
-      .TargetMask (15'h07fff)
+      .TargetMask (17'h17fff)
   ) u_sysctrl (
       .clk_i           (s_exec_clk),
       .rst_n_i         (s_sysctrl_rst_n),
@@ -860,7 +882,7 @@ axi4_error_slave #(
       .ref_clk_i        (clk_i),
       .rst_n_i          (rst_n_i),
       .idle_i           (s_clock_safe),
-      .clients_idle_i   ((&s_periph_idle_ref[14:1]) && s_xpi_idle_ref),
+      .clients_idle_i   ((&s_periph_idle_ref[16:1]) && s_xpi_idle_ref),
       .warm_reset_i     (u_wdg_if.reset_req_o),
       .system_request_i (s_system_reset),
       .command_ack_i    (s_cpu_clock_idle && s_target_idle[`RETROSOC_TINY__TARGET_SYSCTRL]),
@@ -900,11 +922,49 @@ axi4_error_slave #(
       .HasPullUp   (gpio_pad_caps_pkg::HasPullUp),
       .HasPullDown (gpio_pad_caps_pkg::HasPullDown)
   ) u_gpio (
-      .clk_i    (s_gpio_clk),
-      .rst_n_i  (s_gpio_rst_n),
-      .apb4     (u_gpio_apb4_if),
-      .gpio     (u_gpio_if),
-      .user_gpio(u_user_gpio_if)
+      .clk_i          (s_gpio_clk),
+      .rst_n_i        (s_gpio_rst_n),
+      .apb4           (u_gpio_apb4_if),
+      .gpio           (u_gpio_if),
+      .user_gpio      (u_user_gpio_if),
+      .user_select_o  (s_gpio_user_select),
+      .user_handoff_o (s_gpio_user_handoff),
+      .alt_enable_o   (s_gpio_alt_enable),
+      .alt_select_o   (s_gpio_alt_select),
+      .output_enable_o(s_gpio_output_enable),
+      .open_drain_o   (s_gpio_open_drain)
+  );
+  apb4_spi #(
+      .EnableDma(1'b1)
+  ) u_spi (
+      .clk_i              (s_spi_clk),
+      .rst_n_i            (s_spi_rst_n),
+      .clock_hz_i         (s_pclk_report_q),
+      .origin_i           (s_spi_origin),
+      .request_i          (s_spi_request),
+      .channel_i          (s_spi_channel),
+      .credit_valid_i     (s_spi_credit_valid),
+      .credit_retire_i    (s_spi_credit_retire),
+      .dma_status_i       (s_spi_dma_status),
+      .dma_start_pending_i(s_spi_dma_start_pending),
+      .dma_error_i        (s_spi_dma_error),
+      .user_select_i      (s_gpio_user_select),
+      .handoff_i          (s_gpio_user_handoff),
+      .alt_enable_i       (s_gpio_alt_enable),
+      .alt_select_i       (s_gpio_alt_select),
+      .output_enable_i    (s_gpio_output_enable),
+      .open_drain_i       (s_gpio_open_drain),
+      .gpio_ready_i       (s_gpio_rst_n && s_apb_cdc_ready[0]),
+      .miso_i             (s_spi_miso),
+      .sck_o              (s_spi_sck),
+      .mosi_o             (s_spi_mosi),
+      .cs_n_o             (s_spi_cs_n),
+      .output_enable_o    (s_spi_output_enable),
+      .irq_o              (s_spi_irq),
+      .credit_commit_o    (s_spi_credit_commit),
+      .session_owned_o    (s_spi_session_owned),
+      .lifecycle_idle_o   (s_spi_lifecycle_idle),
+      .apb4               (u_spi_apb4_if)
   );
   gpio_pad_bridge u_gpio_pads (
       .inner(u_gpio_if),
@@ -1002,25 +1062,36 @@ cdc_sync #(
       .lifecycle_reset_ready_o(s_dvp_reset_ready)
   );
   apb4_dma #(
-      .NumChannels  (8),
-      .MaxBurstBeats(16),
-      .FifoDepth    (32),
-      .RequestMask  (16'h39ff),
-      .EnableStreams(1'b1)
+      .NumChannels          (8),
+      .MaxBurstBeats        (16),
+      .FifoDepth            (32),
+      .RequestMask          (32'h0003_39ff),
+      .SupportedRequests    (32'h0003_39ff),
+      .IpVersion            (32'h0002_0002),
+      .EnableStreams        (1'b1),
+      .EnableSpi            (1'b1),
+      .EnableOriginQualifier(1'b1),
+      .SpiTxAddress         (32'h1001_d054),
+      .SpiRxAddress         (32'h1001_d058)
   ) u_dma (
-      .lifecycle_idle_o(s_periph_idle[9]),
-      .clk_i           (s_dma_clk),
-      .rst_n_i         (s_dma_rst_n),
-      .dma_xfer_done_o (s_dma_done),
-      .irq_o           (s_dma_irq),
-      .hw_trg          (u_dma_req_if),
-      .apb4            (u_dma_apb4_if),
-      .axi4            (u_dma_pclk_axi4_if),
-      .i2s_tx_axis     (u_i2s_tx_axis_if),
-      .i2s_rx_axis     (u_i2s_rx_axis_if),
-      .dvp_rx_axis     (u_dvp_rx_axis_if),
-      .crypto_in_axis  (u_crypto_tx_axis_if),
-      .crypto_out_axis (u_crypto_rx_axis_if)
+      .lifecycle_idle_o   (s_periph_idle[9]),
+      .clk_i              (s_dma_clk),
+      .rst_n_i            (s_dma_rst_n),
+      .dma_xfer_done_o    (s_dma_done),
+      .irq_o              (s_dma_irq),
+      .hw_trg             (u_dma_req_if),
+      .apb4               (u_dma_apb4_if),
+      .axi4               (u_dma_pclk_axi4_if),
+      .i2s_tx_axis        (u_i2s_tx_axis_if),
+      .i2s_rx_axis        (u_i2s_rx_axis_if),
+      .dvp_rx_axis        (u_dvp_rx_axis_if),
+      .crypto_in_axis     (u_crypto_tx_axis_if),
+      .crypto_out_axis    (u_crypto_rx_axis_if),
+      .spi_credit_valid_o (s_spi_credit_valid),
+      .spi_credit_retire_o(s_spi_credit_retire),
+      .spi_start_pending_o(s_spi_dma_start_pending),
+      .spi_status_o       (s_spi_dma_status),
+      .spi_error_o        (s_spi_dma_error)
   );
   assign u_dma_req_if.i2s_tx_proc     = !s_i2s_tx_stall;
   assign u_dma_req_if.i2s_rx_proc     = !s_i2s_rx_stall;

@@ -18,15 +18,15 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 TINY = ROOT / "rtl/tiny"
 RCU_TARGETS = {"gpio": 1, "uart0": 2, "i2c0": 3, "timer0": 4, "timer1": 5,
                "pwm": 6, "i2s": 7, "sdio": 8, "dma": 9, "ws2812": 10,
-               "rng": 11, "crc": 12, "crypto": 13, "dvp": 14}
+               "rng": 11, "crc": 12, "crypto": 13, "dvp": 14, "spi": 16}
 
 
 def read_topology(path: Path, memory_map: Path) -> dict:
     document = json.loads(path.read_text())
     regions = {r["symbol"] for r in json.loads(memory_map.read_text())["regions"]}
     if (document.get("schema_version") != 1 or document.get("dma_channels") != 8
-            or document.get("dma_request_mask") != "0x39ff"):
-        raise ValueError("Tiny P9 requires eight DMA channels and request mask 0x39ff")
+            or document.get("dma_request_mask") != "0x339ff"):
+        raise ValueError("Tiny SPI-P3 requires eight DMA channels and request mask 0x339ff")
     if document.get("cpu") != {"module": "hazard3_cpu_2port", "local_ports": 2,
                                "data_outstanding": 1}:
         raise ValueError("Tiny P4 requires independent I/D and one ordered data operation")
@@ -43,9 +43,9 @@ def read_topology(path: Path, memory_map: Path) -> dict:
         "cpu_combined_outstanding": 1, "dma_direction_outstanding": 1,
         "sdio_direction_outstanding": 1, "target_combined_outstanding": 1,
         "sram_targets": [0, 1, 2, 3], "xpi_target": 4, "apb_target_base": 5,
-        "decode_error_target": 26, "protocol_error_target": 27, "target_count": 28,
+        "decode_error_target": 27, "protocol_error_target": 28, "target_count": 29,
     }:
-        raise ValueError("Tiny P9 requires three active owners and 28 targets")
+        raise ValueError("Tiny SPI-P3 requires three active owners and 29 targets")
     if document.get("irq_vector_width") != 32 or document.get("external_irq_count") != 30:
         raise ValueError("Tiny requires a 32-bit IRQ vector and 30 external inputs")
     names: set[str] = set()
@@ -65,10 +65,10 @@ def read_topology(path: Path, memory_map: Path) -> dict:
             assigned.add(region)
     if assigned != {r for r in regions if r.startswith("APB4_")}:
         raise ValueError("Tiny topology must route every APB region")
-    if len(document["apb_targets"]) != 21:
-        raise ValueError("Tiny P9 requires twenty-one independent APB targets")
+    if len(document["apb_targets"]) != 22:
+        raise ValueError("Tiny SPI-P3 requires twenty-two independent APB targets")
     target_names = [target["name"] for target in document["apb_targets"]]
-    if len(set(target_names)) != 21 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
+    if len(set(target_names)) != 22 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
                                          for name in target_names):
         raise ValueError("Tiny APB target names must be unique identifiers")
     if sorted(item["pin"] for item in document["gpio_alt_functions"]) != list(range(32)):
@@ -149,6 +149,8 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
                  "#define RS_SOC_HAS_I2S 1U\n#define RS_SOC_HAS_SDIO0 1U\n"
                  "#define RS_SOC_HAS_DVP 1U\n#define RS_SOC_DVP_DMA_CHANNEL 2U\n"
                  "#define RS_SOC_DVP_DMA_BURST_BEATS 4U\n#define RS_SOC_RNG_QUALIFIED 0U\n"
+                 "#define RS_SOC_HAS_SPI 1U\n#define RS_SOC_SPI_DMA_TX 16U\n"
+                 "#define RS_SOC_SPI_DMA_RX 17U\n"
                  f"#define RS_SOC_TECHNOLOGY_ID 0x{platform['technology']:08X}U\n"
                  f"#define RS_SOC_PLL_PRESENT {platform['pll_present']}U\n"
                  f"#define RS_SOC_GPIO_HAS_PULLS {platform['gpio_pulls']}U\n#endif\n")
@@ -176,6 +178,10 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
         if target_bit is not None:
             declarations.append(f"logic {ip_clock};")
         declarations.append(f"logic s_{name}_rst_n;")
+        if name == "spi":
+            # Only SPI consumes the origin/channel qualifier; other crossings tie off below.
+            declarations.append(f"logic [1:0] s_{name}_origin_sys;")
+            declarations.append(f"logic [2:0] s_{name}_channel_sys;")
         declarations.append(f"apb4_if u_{name}_apb4_if (.pclk({ip_clock}), .presetn(s_{name}_rst_n));")
         if target_bit is None:
             reset_assignments.append(f"assign s_{name}_rst_n = s_leaf_rst_n[{index + 1}];")
@@ -201,16 +207,23 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
         bridges.append(f"assign s_target_rst_n[{index + 5}] = s_fabric_rst_n;")
         crossed = clock != "s_exec_clk" or target_bit is not None
         endpoint = f"u_{name}_sys_apb4_if" if crossed else f"u_{name}_apb4_if"
+        qualifier = (f".origin_o(s_{name}_origin_sys), .channel_o(s_{name}_channel_sys)"
+                     if name == "spi" else ".origin_o(), .channel_o()")
         bridges.append(f"tiny_axi42apb4 u_{name}_bridge ("
                        f".clk_i(s_exec_clk), .rst_n_i(s_fabric_rst_n), "
-                       f".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint}));")
+                       f".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint}), {qualifier});")
         if crossed:
             disabled = f"s_disabled_sys[{target_bit}]" if target_bit is not None else "1'b0"
+            source = (f".src_origin_i(s_{name}_origin_sys), .src_channel_i(s_{name}_channel_sys)"
+                      if name == "spi" else ".src_origin_i(2'd0), .src_channel_i(3'd0)")
             declarations.append(f"apb4_if {endpoint} (.pclk(s_exec_clk), .presetn(s_fabric_rst_n));")
             bridges.append(f"tiny_apb_async_bridge u_{name}_cfg_cdc ("
                            f".src_clk_i(s_exec_clk), .src_rst_n_i(s_fabric_rst_n), "
                            f".dst_clk_i({ip_clock}), .dst_rst_n_i(s_{name}_rst_n), "
                            f".disabled_i({disabled}), "
+                           f"{source}, "
+                           f".dst_origin_o({ 's_spi_origin' if name == 'spi' else ''}), "
+                           f".dst_channel_o({ 's_spi_channel' if name == 'spi' else ''}), "
                            f".idle_o(s_apb_cdc_idle[{index}]), "
                            f".ready_o(s_apb_cdc_ready[{index}]), "
                            f".src_apb4({endpoint}), .dst_apb4(u_{name}_apb4_if));")

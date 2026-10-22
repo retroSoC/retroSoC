@@ -40,9 +40,9 @@ def test_p9_topology_and_camera_routes() -> None:
     memory = json.loads((TINY / "address_map/memory_map.json").read_text())
     regions = {item["symbol"]: item for item in memory["regions"]}
     assert regions["APB4_DVP"]["base"] == "0x1000E000"
-    assert topology["fabric"]["target_count"] == 28
-    assert topology["fabric"]["decode_error_target"] == 26
-    assert topology["fabric"]["protocol_error_target"] == 27
+    assert topology["fabric"]["target_count"] == 29
+    assert topology["fabric"]["decode_error_target"] == 27
+    assert topology["fabric"]["protocol_error_target"] == 28
     assert any(item["name"] == "dvp" and item["regions"] == ["APB4_DVP"]
                for item in topology["apb_targets"])
     assert {item["core_bit"] for item in topology["interrupts"] if item["name"] == "dvp"} == {15}
@@ -55,7 +55,7 @@ def test_p9_topology_and_camera_routes() -> None:
     assert routes[22]["alt1"]["inputs"] == ["u_dvp_if.vsync_i"]
     assert routes[23]["alt1"]["do"] == "s_clkout"
     assert read_topology(TINY / "integration/soc_topology.json",
-                         TINY / "address_map/memory_map.json")["dma_request_mask"] == "0x39ff"
+                         TINY / "address_map/memory_map.json")["dma_request_mask"] == "0x339ff"
 
 
 def test_p9_generated_and_hal_bindings() -> None:

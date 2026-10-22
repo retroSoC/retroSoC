@@ -37,7 +37,7 @@ def test_current_source_cannot_relabel_historical_publication():
 
 @pytest.mark.parametrize("before,after", [
     ("s_req_q.write_done && !s_req_q.b_captured", "1'b1"),
-    ("s_r_valid && s_rready[s_req_q.owner] && s_r_data[1]", "s_r_valid"),
+    ("s_r_valid && s_rready[s_req_q.owner] && s_r_data[4]", "s_r_valid"),
     (".flush_i(1'b0)", ".flush_i(!enable_i)"),
 ])
 def test_current_reset_binding_still_rejects_unsafe_completion(tmp_path, before, after):

@@ -29,10 +29,10 @@ module tiny_axi4_fabric (
   logic s_cpu_prefer_write_d, s_cpu_prefer_write_q;
   logic [2:0][4:0] s_read_target, s_write_target;
   logic [`RETROSOC_TINY__TARGET_COUNT-1:0][2:0] s_arready, s_awready, s_wready, s_rvalid, s_bvalid;
-  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][36:0] s_rdata;
-  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][ 3:0] s_bdata;
-  logic [                             2:0][36:0]       s_read_return;
-  logic [                             2:0][ 3:0]       s_write_return;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][39:0] s_rdata;
+  logic [`RETROSOC_TINY__TARGET_COUNT-1:0][ 2:0][ 6:0] s_bdata;
+  logic [                             2:0][39:0]       s_read_return;
+  logic [                             2:0][ 6:0]       s_write_return;
   logic [2:0] s_master_arready, s_master_awready, s_master_wready, s_master_rvalid, s_master_bvalid;
   logic [2:0] s_arvalid, s_awvalid;
   logic [1:0][63:0] s_wait_d, s_wait_q;
@@ -191,7 +191,7 @@ module tiny_axi4_fabric (
         .ADDR_WIDTH(32),
         .DATA_WIDTH(32),
         .ID_WIDTH  (1),
-        .USER_WIDTH(1)
+        .USER_WIDTH(4)
     ) u_routes[3] (
         .aclk   (clk_i),
         .aresetn(rst_n_i)

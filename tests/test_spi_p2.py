@@ -23,8 +23,8 @@ def test_dma_v22_abi_and_product_defaults():
     assert "logic [      NumChannels-1:0][               4:0] s_req_q" in core
     assert "!EnableSpi && ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX)" in core
     assert "s_tcd_parse_q &&" in core
-    assert ".RequestMask  (16'h39ff)" in tiny
-    assert ".EnableSpi" not in tiny
+    assert ".RequestMask" in tiny and "0003_39ff" in tiny
+    assert ".EnableSpi(1'b1)" in re.sub(r"\s+", "", tiny)
 
 
 def test_dma_v22_tcd_request_split_is_handwritten_and_stable():

@@ -33,6 +33,7 @@ TEST_SOURCES = (
     "crt/src/hal/usb2_math.c",
     "crt/src/hal/spisd_math.c",
     "crt/src/hal/i2s_math.c",
+    "crt/src/hal/spi_math.c",
     "crt/src/hal/dma_math.c",
     "crt/src/hal/dma.c",
     "crt/src/hal/dvp.c",

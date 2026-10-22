@@ -23,7 +23,7 @@ module tiny_axi4_admission (
     logic [2:0]  prot;
     logic [3:0]  qos;
     logic [3:0]  region;
-    logic [0:0]  user;
+    logic [3:0]  user;
   } address_t;
   address_t s_aw_d, s_aw_q, s_ar_d, s_ar_q;
   logic [1:0] s_pending_d, s_pending_q, s_sent_d, s_sent_q;

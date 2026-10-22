@@ -16,7 +16,7 @@ module tiny_r2_p5_fabric_formal (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) masters[3] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
@@ -25,7 +25,7 @@ module tiny_r2_p5_fabric_formal (
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) target (
       .aclk   (clk_i),
       .aresetn(rst_n_i)

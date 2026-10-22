@@ -4,10 +4,12 @@
 
 // APB setup/access are separate cycles; rejected bursts never assert PSEL.
 module tiny_axi42apb4 (
-    input logic          clk_i,
-    input logic          rst_n_i,
-          axi4_if.slave  axi4,
-          apb4_if.master apb4
+    input  logic                clk_i,
+    input  logic                rst_n_i,
+           axi4_if.slave        axi4,
+           apb4_if.master       apb4,
+    output logic          [1:0] origin_o,
+    output logic          [2:0] channel_o
 );
   typedef enum logic [2:0] {
     Idle,
@@ -30,6 +32,7 @@ module tiny_axi42apb4 (
   logic [1:0] s_resp_d, s_resp_q;
   logic [7:0] s_len_d, s_len_q;
   logic [7:0] s_beat_d, s_beat_q;
+  logic [3:0] s_user_d, s_user_q;
   logic s_access, s_enable, s_done, s_err;
   logic [31:0] s_read_data;
 
@@ -61,6 +64,8 @@ module tiny_axi42apb4 (
   assign apb4.pprot   = 3'd0;
   assign apb4.psel    = s_access;
   assign apb4.penable = s_enable;
+  assign origin_o     = s_user_q[3] ? 2'd1 : (s_user_q == 4'd0 ? 2'd0 : 2'd2);
+  assign channel_o    = s_user_q[2:0];
 
   always_comb begin
     s_state_d = s_state_q;
@@ -73,6 +78,7 @@ module tiny_axi42apb4 (
     s_data_d  = s_data_q;
     s_len_d   = s_len_q;
     s_beat_d  = s_beat_q;
+    s_user_d  = s_user_q;
     unique case (s_state_q)
       Idle: begin
         s_beat_d = '0;
@@ -82,6 +88,7 @@ module tiny_axi42apb4 (
           s_addr_d  = axi4.araddr;
           s_id_d    = axi4.arid;
           s_write_d = 1'b0;
+          s_user_d  = axi4.aruser;
           s_len_d   = axi4.arlen;
           if ((axi4.arlen != 8'd0) || (axi4.arburst[1]) || axi4.arlock ||
               (axi4.arsize > 3'd2) || (axi4.araddr[1:0] != 2'd0)) begin
@@ -92,6 +99,7 @@ module tiny_axi42apb4 (
           s_addr_d  = axi4.awaddr;
           s_id_d    = axi4.awid;
           s_write_d = 1'b1;
+          s_user_d  = axi4.awuser;
           s_len_d   = axi4.awlen;
           if ((axi4.awlen != 8'd0) || (axi4.awburst[1]) || axi4.awlock ||
               (axi4.awsize > 3'd2) || (axi4.awaddr[1:0] != 2'd0)) begin
@@ -209,5 +217,13 @@ module tiny_axi42apb4 (
       .rst_n_i(rst_n_i),
       .dat_i  (s_beat_d),
       .dat_o  (s_beat_q)
+  );
+  dffr #(
+      .DATA_WIDTH(4)
+  ) u_user_reg (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_user_d),
+      .dat_o  (s_user_q)
   );
 endmodule

@@ -63,6 +63,15 @@
 /ip/serial/i2s_send.sv
 /ip/serial/i2s_core.sv
 /ip/serial/apb4_i2s.sv
+/ip/serial/spi_pkg.sv
+/ip/serial/spi_ctrl_if.sv
+/ip/serial/spi_phase_ctrl.sv
+/ip/serial/spi_word_packer.sv
+/ip/serial/spi_gpio_guard.sv
+/ip/serial/spi_master_core.sv
+/ip/serial/spi_reg.sv
+/ip/serial/spi_dma_pacing.sv
+/ip/serial/apb4_spi.sv
 /ip/serial/ws2812_if.sv
 /ip/serial/ws2812_reg.sv
 /ip/serial/ws2812_core.sv

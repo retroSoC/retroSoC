@@ -49,9 +49,10 @@ def test_frozen_spi_register_mirrors():
     assert rtl['IRQ_TX_LEVEL'] == 8 and rtl['IRQ_RX_LEVEL'] == 9
 
 
-def test_spi_is_not_advertised_by_product_integration():
-    for product in ('tiny', 'mini'):
-        for filelist in (ROOT / f'rtl/{product}/filelist').glob('*.fl'):
-            assert '/serial/apb4_spi.sv' not in filelist.read_text()
-    assert 'spi' not in [row['name'] for row in __import__('json').loads(
+def test_spi_is_advertised_only_by_tiny_product_integration():
+    assert any('/serial/apb4_spi.sv' in path.read_text()
+               for path in (ROOT / 'rtl/tiny/filelist').glob('*.fl'))
+    assert all('/serial/apb4_spi.sv' not in path.read_text()
+               for path in (ROOT / 'rtl/mini/filelist').glob('*.fl'))
+    assert 'spi' in [row['name'] for row in __import__('json').loads(
         (ROOT / 'rtl/tiny/integration/soc_topology.json').read_text())['apb_targets']]

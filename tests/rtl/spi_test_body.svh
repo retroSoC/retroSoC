@@ -29,6 +29,7 @@ logic [3:0] pstrb_i = 0;
 logic psel_i = 0, penable_i = 0, pwrite_i = 0, pready_o, pslverr_o;
 logic model_begin = 0, model_enable = 0, model_abort = 0;
 logic model_segment = 0, model_pause = 0;
+logic session_owned, lifecycle_idle;
 logic [15:0] model_divider = 1, model_setup = 1, model_hold = 1, model_inactive = 1;
 logic [8:0] model_faults;
 logic cpol = 0, cpha = 0, lsb = 0, frame16 = 0;
@@ -67,6 +68,8 @@ realtime        access_accept_time;
     .output_enable_o    (output_enable_o),
     .irq_o              (irq_o),
     .credit_commit_o    (credit_commit_o),
+    .session_owned_o    (session_owned),
+    .lifecycle_idle_o   (lifecycle_idle),
     .paddr_i            (paddr_i),
     .pwdata_i           (pwdata_i),
     .pstrb_i            (pstrb_i),

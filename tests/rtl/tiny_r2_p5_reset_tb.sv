@@ -8,7 +8,7 @@ module tiny_r2_p5_reset_tb;
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) masters[3] (
       .aclk   (clk_i),
       .aresetn(rst_n_i)
@@ -17,7 +17,7 @@ module tiny_r2_p5_reset_tb;
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) targets[`RETROSOC_TINY__TARGET_COUNT] (
       .aclk   (clk_i),
       .aresetn(target_rst_n)
@@ -76,37 +76,40 @@ module tiny_r2_p5_reset_tb;
 
   // Production master: BREADY cannot rise until its last W handshake.
   dma_axi4_master u_dma (
-      .clk_i               (clk_i),
-      .rst_n_i             (rst_n_i),
-      .clear_i             (1'b0),
-      .read_start_valid_i  (1'b0),
-      .read_start_ready_o  (),
-      .read_addr_i         (32'd0),
-      .read_beats_i        (5'd1),
-      .read_fixed_i        (1'b0),
-      .read_busy_o         (),
-      .read_beat_valid_o   (),
-      .read_beat_ready_i   (1'b0),
-      .read_data_o         (),
-      .read_resp_o         (),
-      .read_last_o         (),
-      .read_expected_last_o(),
-      .read_id_error_o     (),
-      .read_done_o         (),
-      .write_start_valid_i (dma_start),
-      .write_start_ready_o (dma_start_ready),
-      .write_addr_i        (dma_addr),
-      .write_beats_i       (dma_beats),
-      .write_fixed_i       (1'b0),
-      .write_busy_o        (dma_busy),
-      .write_data_valid_i  (dma_valid),
-      .write_data_ready_o  (dma_ready),
-      .write_data_i        (dma_data),
-      .write_strb_i        (4'hf),
-      .write_done_o        (dma_done),
-      .write_resp_o        (dma_resp),
-      .write_id_error_o    (dma_id_error),
-      .axi4                (masters[1])
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .clear_i               (1'b0),
+      .read_start_valid_i    (1'b0),
+      .read_start_ready_o    (),
+      .read_addr_i           (32'd0),
+      .read_beats_i          (5'd1),
+      .read_fixed_i          (1'b0),
+      .read_busy_o           (),
+      .read_beat_valid_o     (),
+      .read_beat_ready_i     (1'b0),
+      .read_data_o           (),
+      .read_resp_o           (),
+      .read_last_o           (),
+      .read_expected_last_o  (),
+      .read_id_error_o       (),
+      .read_done_o           (),
+      .write_start_valid_i   (dma_start),
+      .write_start_ready_o   (dma_start_ready),
+      .write_addr_i          (dma_addr),
+      .write_beats_i         (dma_beats),
+      .write_fixed_i         (1'b0),
+      .write_busy_o          (dma_busy),
+      .write_data_valid_i    (dma_valid),
+      .write_data_ready_o    (dma_ready),
+      .write_data_i          (dma_data),
+      .write_strb_i          (4'hf),
+      .write_done_o          (dma_done),
+      .write_resp_o          (dma_resp),
+      .write_id_error_o      (dma_id_error),
+      .origin_enable_i       (1'b0),
+      .read_origin_channel_i (3'd0),
+      .write_origin_channel_i(3'd0),
+      .axi4                  (masters[1])
   );
 
   for (genvar m = 0; m < 3; m++) begin : gen_master
@@ -158,8 +161,8 @@ module tiny_r2_p5_reset_tb;
     // Independent upstream scoreboards also run in Icarus without SVA.
     integer rleft = 0, wleft = 0, bleft = 0;
     logic rheld = 0, bheld = 0;
-    logic [36:0] saved_r;
-    logic [ 3:0] saved_b;
+    logic [39:0] saved_r;
+    logic [ 6:0] saved_b;
     always @(posedge clk_i) begin
       if (!rst_n_i) begin
         rleft = 0;

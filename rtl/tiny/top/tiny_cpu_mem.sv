@@ -63,7 +63,7 @@ module tiny_cpu_mem #(
       .ADDR_WIDTH(32),
       .DATA_WIDTH(32),
       .ID_WIDTH  (1),
-      .USER_WIDTH(1)
+      .USER_WIDTH(4)
   ) u_slow_axi4_if (
       .aclk   (clk_i),
       .aresetn(rst_n_i)

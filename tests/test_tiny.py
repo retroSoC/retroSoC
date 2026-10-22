@@ -36,7 +36,7 @@ def test_tiny_sources_and_abi_are_independent(tmp_path: Path) -> None:
         name = target["name"]
         assert f".presetn(s_{name}_rst_n)" in interfaces
         if name in {"gpio", "uart0", "i2c0", "timer0", "timer1", "pwm", "i2s", "sdio",
-                    "dma", "ws2812", "rng", "crc", "crypto", "dvp"}:
+                    "dma", "ws2812", "rng", "crc", "crypto", "dvp", "spi"}:
             assert f"tiny_peripheral_leaf u_{name}_lifecycle" in interfaces
             assert f".rst_n_i(s_leaf_rst_n[{index}])" in interfaces
             assert f".rst_n_o(s_{name}_rst_n)" in interfaces

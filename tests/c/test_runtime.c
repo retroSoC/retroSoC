@@ -30,6 +30,7 @@
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sdio.h>
+#include <retrosoc/hal/spi.h>
 #include <retrosoc/hal/spisd.h>
 #include <retrosoc/hal/timer.h>
 #include <retrosoc/hal/uart.h>
@@ -1174,6 +1175,128 @@ static int test_tiny_dma_config_validation(void) {
                          ((uint32_t)RS_DMA_REQUEST_I2C1_RX << RS_DMA_TCD_REQUEST_SHIFT);
     if (rs_tiny_dma_tcd_validate(2U, &descriptor) != RS_ENOTSUP) {
         return 7;
+    }
+    return 0;
+}
+
+static int test_spi_divider_from_hz(void) {
+    uint32_t divider;
+    uint32_t actual_hz;
+
+    /* Ceiling rounding keeps the actual SCK at or below the request. */
+    if ((rs_spi_divider_from_hz(24000000U, 1000000U, &divider, &actual_hz) != RS_OK) ||
+        (divider != 12U) || (actual_hz != 1000000U)) {
+        return 1;
+    }
+    if ((rs_spi_divider_from_hz(24000000U, 1100000U, &divider, &actual_hz) != RS_OK) ||
+        (divider != 11U) || (actual_hz != 1090909U)) {
+        return 2;
+    }
+    /* Requests at or above half PCLK saturate at divider 1. */
+    if ((rs_spi_divider_from_hz(24000000U, 12000000U, &divider, &actual_hz) != RS_OK) ||
+        (divider != 1U) || (actual_hz != 12000000U)) {
+        return 3;
+    }
+    if ((rs_spi_divider_from_hz(24000000U, 13000000U, &divider, &actual_hz) != RS_OK) ||
+        (divider != 1U) || (actual_hz != 12000000U)) {
+        return 4;
+    }
+    if ((rs_spi_divider_from_hz(131070U, 1U, &divider, &actual_hz) != RS_OK) ||
+        (divider != 65535U) || (actual_hz != 1U)) {
+        return 5;
+    }
+    /* Divider 65536 cannot be represented. */
+    if (rs_spi_divider_from_hz(131072U, 1U, &divider, &actual_hz) != RS_ENOTSUP) {
+        return 6;
+    }
+    if ((rs_spi_divider_from_hz(0U, 1000000U, &divider, &actual_hz) != RS_EINVAL) ||
+        (rs_spi_divider_from_hz(24000000U, 0U, &divider, &actual_hz) != RS_EINVAL) ||
+        (rs_spi_divider_from_hz(24000000U, 1000000U, NULL, &actual_hz) != RS_EINVAL) ||
+        (rs_spi_divider_from_hz(24000000U, 1000000U, &divider, NULL) != RS_EINVAL)) {
+        return 7;
+    }
+    return 0;
+}
+
+static int test_tiny_dma_spi_aperture(void) {
+    rs_dma_config_t config = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .request = RS_DMA_REQUEST_SPI_TX,
+        .source = (uintptr_t)UINT32_C(0x30000000),
+        .destination = (uintptr_t)UINT32_C(0x1001D054),
+        .byte_count = 64U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = false,
+        .burst_beats = 16U,
+    };
+    static _Alignas(64) rs_dma_tcd_t descriptor;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_OK) {
+        return 1;
+    }
+    config.request = RS_DMA_REQUEST_SPI_RX;
+    config.source = (uintptr_t)UINT32_C(0x1001D058);
+    config.destination = (uintptr_t)UINT32_C(0x30001000);
+    config.source_increment = false;
+    config.destination_increment = true;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_OK) {
+        return 2;
+    }
+    /* Wrong fixed-FIFO address, increment direction, count, or kind fails. */
+    config.request = RS_DMA_REQUEST_SPI_TX;
+    config.source = (uintptr_t)UINT32_C(0x30000000);
+    config.destination = (uintptr_t)UINT32_C(0x1001D050);
+    config.source_increment = true;
+    config.destination_increment = false;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_EINVAL) {
+        return 3;
+    }
+    config.destination = (uintptr_t)UINT32_C(0x1001D054);
+    config.destination_increment = true;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_EINVAL) {
+        return 4;
+    }
+    config.destination_increment = false;
+    config.byte_count = 6U;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_EINVAL) {
+        return 5;
+    }
+    config.byte_count = 64U;
+    config.kind = RS_DMA_KIND_MM_TO_STREAM;
+    if (rs_tiny_dma_config_validate(3U, &config) != RS_EINVAL) {
+        return 6;
+    }
+    /* The default Mini selection has no SPI request route at all. */
+    config.kind = RS_DMA_KIND_MM_TO_MM;
+    if (rs_dma_config_validate(3U, &config) != RS_EINVAL) {
+        return 7;
+    }
+    descriptor.source = UINT32_C(0x30000000);
+    descriptor.destination = UINT32_C(0x1001D054);
+    descriptor.byte_count = 64U;
+    descriptor.y_count = 1U;
+    /* Request 16 needs the high bit; the low nibble field stays zero. */
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_REQUEST_HIGH |
+                         ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT);
+    if (rs_tiny_dma_tcd_validate(3U, &descriptor) != RS_OK) {
+        return 8;
+    }
+    descriptor.control = RS_DMA_TCD_VALID | RS_DMA_TCD_DST_INC | RS_DMA_TCD_REQUEST_HIGH |
+                         (UINT32_C(1) << RS_DMA_TCD_REQUEST_SHIFT) |
+                         ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT);
+    descriptor.source = UINT32_C(0x1001D058);
+    descriptor.destination = UINT32_C(0x30001000);
+    if (rs_tiny_dma_tcd_validate(3U, &descriptor) != RS_OK) {
+        return 9;
+    }
+    descriptor.source = UINT32_C(0x1001D054);
+    if (rs_tiny_dma_tcd_validate(3U, &descriptor) != RS_EINVAL) {
+        return 10;
+    }
+    descriptor.source = UINT32_C(0x1001D058);
+    descriptor.control |= RS_DMA_TCD_SRC_INC;
+    if (rs_tiny_dma_tcd_validate(3U, &descriptor) != RS_EINVAL) {
+        return 11;
     }
     return 0;
 }
@@ -3525,6 +3648,8 @@ int main(void) {
         test_gpio_helpers(),
         test_dma_config_validation(),
         test_tiny_dma_config_validation(),
+        test_spi_divider_from_hz(),
+        test_tiny_dma_spi_aperture(),
         test_dvp_hal(),
         test_p9_frame_layout(),
         test_p10_frame_statistics(),
