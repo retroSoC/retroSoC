@@ -103,7 +103,12 @@ module retrosoc_top (
   assign s_jtag_tms          = jtag_tms_i;
   assign s_jtag_tdi          = jtag_tdi_i;
   assign s_jtag_trst_n       = jtag_trst_n_i;
-  assign s_uart1_rx          = s_uart1_tx;
+  // The UART1 RX pin is held idle (no external input). Looping TX back to RX
+  // here fed the HP console output into the kernel's hvc TTY, whose ECHO
+  // re-emitted it repeatedly with progressive character loss (degraded banner
+  // fragments and blank lines in the boot log), so it is intentionally left
+  // unconnected.
+  assign s_uart1_rx          = 1'b1;
   assign jtag_tdo_o          = s_jtag_tdo;
   assign test_done_o         = u_retrosoc_asic.s_test_done;
   assign test_pass_o         = u_retrosoc_asic.s_test_pass;
