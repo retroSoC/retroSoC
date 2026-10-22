@@ -1,5 +1,40 @@
 # Tiny MCU Verification Record
 
+## Tiny Icarus behavioral repair (2026-10-22)
+
+The Tiny Icarus behavioral flow failed elaboration with 29 errors on both
+profiles since the committed R2-P7..P10 observer changes (evidence:
+`build/ics55-tiny-2026-10-21-16-31-a257f7b03bdb/sim/iverilog/` and
+`build/ihp130-tiny-2026-10-21-16-36-76f15177ba7a/sim/iverilog/`; CI runs
+39719773195 and 39719773217 failed at the same step). Root cause: the Icarus
+flow compiles only the sv2v-lowered `converted_soc.v`, where packed structs
+become plain vectors and interface ports dissolve, while the dv observers read
+struct fields hierarchically and `tiny_p9_recovery.svh` used a string `case`
+that crashes Icarus code generation (`eval_vec4` assertion).
+
+The repair keeps every observer semantically identical:
+`rtl/tiny/dv/tiny_p8_observers.svh` moves a `time` declaration above its
+first use; `rtl/tiny/dv/tiny_p9_observers.svh` reads the identical packed bit
+ranges through named slice constants (valid in both the Verilator struct view
+and the sv2v vector view) and reads the XPI APB wires through the top-level
+interface instance `u_xpi_apb4_if` (the same nets); `tiny_p9_recovery.svh`
+rewrites the string `case` as an exact-match if/else chain;
+`rtl/tiny/dv/retrosoc_tiny_tb.sv` uses the same slice constants. No DUT,
+Mini, baseline, or verdict-rule change.
+
+Evidence: Icarus compile is clean on both profiles; the R2-P7 Icarus
+behavioral acceptance now passes with `SIM_TEST_PASS Tiny cycles=3859487`,
+flow passed, check passed, no forbidden markers
+(`build/ihp130-tiny-2026-10-22-12-16-aae2707c2aa5/sim/iverilog/`), matching
+the Verilator cycle count exactly. Verilator results are unchanged after the
+rework: SPI-P3 acceptance `cycles=1030088` on both profiles
+(`build/ics55-tiny-2026-10-22-12-17-a257f7b03bdb/`,
+`build/ihp130-tiny-2026-10-22-12-17-76f15177ba7a/`), R2-P7 Verilator
+`cycles=3859487` (`build/ihp130-tiny-2026-10-22-12-17-3f1b609b0b86/`), and
+the `+tiny_p9_progress` observer output is byte-identical to the pre-repair
+format. Full Pytest after the rework: 2097 passed, 0 failed, 1 skipped
+(optional `pypdf`) in 4042.64 s. Formatting gates pass.
+
 ## TINY-R2-P10 quality-gate repair (2026-10-18)
 
 The approved repair starts from `dev@5b81dea4fe0a68aabb51f42f01422068280192b2`

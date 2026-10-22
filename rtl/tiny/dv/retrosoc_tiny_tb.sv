@@ -135,11 +135,12 @@ module retrosoc_tiny_tb;
           u_dut.u_soc.s_boot_release_q, u_dut.u_soc.s_fabric_rst_n, u_dut.u_soc.s_dma_ready_sys,
           &u_dut.u_soc.s_apb_cdc_ready, u_dut.u_soc.u_cpu_ahbl_if[0].htrans[1],
           u_dut.u_soc.u_cpu_ahbl_if[0].hready, u_dut.u_soc.u_cpu_ahbl_if[1].htrans[1],
-          u_dut.u_soc.u_cpu_ahbl_if[1].hready, u_dut.u_soc.u_cpu_mem.s_req_q[0].state,
-          u_dut.u_soc.u_cpu_mem.s_slow_q.state, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.htrans,
-          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hready, u_dut.u_soc.u_xpi_mem_axi4_if.arvalid,
-          u_dut.u_soc.u_xpi_mem_axi4_if.arready, u_dut.u_soc.u_xpi_mem_axi4_if.rvalid,
-          u_dut.u_soc.u_xpi_mem_axi4_if.rready);
+          u_dut.u_soc.u_cpu_ahbl_if[1].hready,
+          u_dut.u_soc.u_cpu_mem.s_req_q[0][P9_REQ_STATE_HI:P9_REQ_STATE_LO],
+          u_dut.u_soc.u_cpu_mem.s_slow_q[P9_SLOW_STATE_HI:P9_SLOW_STATE_LO],
+          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.htrans, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hready,
+          u_dut.u_soc.u_xpi_mem_axi4_if.arvalid, u_dut.u_soc.u_xpi_mem_axi4_if.arready,
+          u_dut.u_soc.u_xpi_mem_axi4_if.rvalid, u_dut.u_soc.u_xpi_mem_axi4_if.rready);
     end
   end
 

@@ -11,6 +11,24 @@ integer p9_ifetch_completions = 0;
 integer p9_xpi_completions = 0;
 integer p9_last_progress = 0;
 bit     p9_reported = 0;
+// sv2v lowers packed structs to plain vectors with identical bit layout, so
+// the Icarus flow sees only the vector form of these DUT structs. Slice the
+// packed views directly; identical bit ranges work in the Verilator view.
+localparam int P9_REQ_STATE_LO = 73;  // tiny_cpu_mem request_t state[2:0]
+localparam int P9_REQ_STATE_HI = 75;
+localparam int P9_REQ_ADDR_LO = 41;  // request_t addr[31:0]
+localparam int P9_REQ_ADDR_HI = 72;
+localparam int P9_REQ_DATA_LO = 9;  // request_t data[31:0]
+localparam int P9_REQ_DATA_HI = 40;
+localparam int P9_REQ_WRITE = 5;  // request_t write
+localparam int P9_SLOW_STATE_LO = 102;  // tiny_cpu_mem slow_t state[1:0]
+localparam int P9_SLOW_STATE_HI = 103;
+localparam int P9_SLOW_OWNER = 101;  // slow_t owner
+localparam int P9_SLOW_WRITE = 100;  // slow_t write
+localparam int P9_SLOW_ADDR_LO = 64;  // slow_t addr[31:0]
+localparam int P9_SLOW_ADDR_HI = 95;
+localparam int P9_CDC_STATE_LO = 110;  // tiny_apb_async_bridge src_t/dst_t state[1:0]
+localparam int P9_CDC_STATE_HI = 111;
 `include "tiny_p9_monitor.svh"
 always @(posedge u_dut.u_soc.u_dvp.s_pclk_sel) begin
   if ($test$plusargs(
@@ -138,7 +156,7 @@ always @(posedge u_dut.u_soc.s_backend_mem_clk) begin
     if (!u_dut.u_soc.s_xpi_rst_n) begin
       p9_diag_xpi_apb_pending = 0;
       p9_diag_xpi_apb_wait    = 0;
-    end else if (u_dut.u_soc.u_xpi.apb4.psel && u_dut.u_soc.u_xpi.apb4.penable) begin
+    end else if (u_dut.u_soc.u_xpi_apb4_if.psel && u_dut.u_soc.u_xpi_apb4_if.penable) begin
       if (!p9_diag_xpi_apb_pending) begin
         p9_diag_xpi_apb_pending = 1;
         p9_diag_xpi_apb_requests++;
@@ -150,13 +168,13 @@ always @(posedge u_dut.u_soc.s_backend_mem_clk) begin
               $realtime,
               p9_diag_ref_cycles,
               p9_diag_xpi_apb_requests,
-              u_dut.u_soc.u_xpi.apb4.paddr,
-              u_dut.u_soc.u_xpi.apb4.pwrite,
-              u_dut.u_soc.u_xpi.apb4.pwdata,
-              u_dut.u_soc.u_xpi.apb4.pstrb
+              u_dut.u_soc.u_xpi_apb4_if.paddr,
+              u_dut.u_soc.u_xpi_apb4_if.pwrite,
+              u_dut.u_soc.u_xpi_apb4_if.pwdata,
+              u_dut.u_soc.u_xpi_apb4_if.pstrb
           );
       end
-      if (u_dut.u_soc.u_xpi.apb4.pready) begin
+      if (u_dut.u_soc.u_xpi_apb4_if.pready) begin
         p9_diag_xpi_apb_responses++;
         if (p9_diag_camera_started)
           $fdisplay(
@@ -166,8 +184,8 @@ always @(posedge u_dut.u_soc.s_backend_mem_clk) begin
               p9_diag_ref_cycles,
               p9_diag_xpi_apb_requests,
               p9_diag_xpi_apb_wait,
-              u_dut.u_soc.u_xpi.apb4.pslverr,
-              u_dut.u_soc.u_xpi.apb4.prdata
+              u_dut.u_soc.u_xpi_apb4_if.pslverr,
+              u_dut.u_soc.u_xpi_apb4_if.prdata
           );
         p9_diag_xpi_apb_pending = 0;
         p9_diag_xpi_apb_wait    = 0;
@@ -231,9 +249,10 @@ for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_p9_diag_cp
       // an address and must not be mislabeled as instruction retirement.
       if (u_dut.u_soc.u_cpu_mem.s_terminal[port_index]) begin
         responses++;
-        last_response_addr = u_dut.u_soc.u_cpu_mem.s_req_q[port_index].addr;
-        wait_cycles        = 0;
-      end else if (u_dut.u_soc.u_cpu_mem.s_req_q[port_index].state != 0) wait_cycles++;
+        last_response_addr = u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_ADDR_HI:P9_REQ_ADDR_LO];
+        wait_cycles = 0;
+      end else if (u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_STATE_HI:P9_REQ_STATE_LO] != 0)
+        wait_cycles++;
       else wait_cycles = 0;
     end else wait_cycles = 0;
   end
@@ -246,10 +265,10 @@ for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_p9_diag_cp
           u_dut.u_soc.u_cpu_ahbl_if[port_index].haddr, u_dut.u_soc.u_cpu_ahbl_if[port_index].hwrite,
           u_dut.u_soc.u_cpu_ahbl_if[port_index].htrans,
           u_dut.u_soc.u_cpu_ahbl_if[port_index].hready, u_dut.u_soc.u_cpu_ahbl_if[port_index].hresp,
-          u_dut.u_soc.u_cpu_mem.s_req_q[port_index].state,
-          u_dut.u_soc.u_cpu_mem.s_req_q[port_index].addr,
-          u_dut.u_soc.u_cpu_mem.s_req_q[port_index].data,
-          u_dut.u_soc.u_cpu_mem.s_req_q[port_index].write, last_response_addr);
+          u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_STATE_HI:P9_REQ_STATE_LO],
+          u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_ADDR_HI:P9_REQ_ADDR_LO],
+          u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_DATA_HI:P9_REQ_DATA_LO],
+          u_dut.u_soc.u_cpu_mem.s_req_q[port_index][P9_REQ_WRITE], last_response_addr);
       $fflush(p9_diag_file);
     end
   end
@@ -337,11 +356,12 @@ always @(negedge s_clk) begin
       $fdisplay(
           p9_diag_file,
           "P9_DIAG_SLOW time_ns=%0.3f ref=%0d owner=%b state=%0d addr=%h write=%b ahb_trans=%b ahb_ready=%b ahb_resp=%b aw=%b/%b w=%b/%b b=%b/%b bresp=%b ar=%b/%b r=%b/%b rresp=%b",
-          $realtime, p9_diag_ref_cycles, u_dut.u_soc.u_cpu_mem.s_slow_q.owner,
-          u_dut.u_soc.u_cpu_mem.s_slow_q.state, u_dut.u_soc.u_cpu_mem.s_slow_q.addr,
-          u_dut.u_soc.u_cpu_mem.s_slow_q.write, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.htrans,
-          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hready, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hresp,
-          u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.awvalid,
+          $realtime, p9_diag_ref_cycles, u_dut.u_soc.u_cpu_mem.s_slow_q[P9_SLOW_OWNER],
+          u_dut.u_soc.u_cpu_mem.s_slow_q[P9_SLOW_STATE_HI:P9_SLOW_STATE_LO],
+          u_dut.u_soc.u_cpu_mem.s_slow_q[P9_SLOW_ADDR_HI:P9_SLOW_ADDR_LO],
+          u_dut.u_soc.u_cpu_mem.s_slow_q[P9_SLOW_WRITE],
+          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.htrans, u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hready,
+          u_dut.u_soc.u_cpu_mem.u_slow_ahbl_if.hresp, u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.awvalid,
           u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.awready,
           u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.wvalid, u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.wready,
           u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.bvalid, u_dut.u_soc.u_cpu_mem.u_slow_axi4_if.bready,
@@ -351,10 +371,13 @@ always @(negedge s_clk) begin
       $fdisplay(
           p9_diag_file,
           "P9_DIAG_CDC time_ns=%0.3f ref=%0d gpio_src=%0d gpio_dst=%0d gpio_link=%b/%b gpio_ready=%b uart_src=%0d uart_dst=%0d uart_link=%b/%b uart_ready=%b",
-          $realtime, p9_diag_ref_cycles, u_dut.u_soc.u_gpio_cfg_cdc.s_src_q.state,
-          u_dut.u_soc.u_gpio_cfg_cdc.s_dst_q.state, u_dut.u_soc.u_gpio_cfg_cdc.s_link_src_rst_n,
-          u_dut.u_soc.u_gpio_cfg_cdc.s_link_dst_rst_n, u_dut.u_soc.s_apb_cdc_ready[0],
-          u_dut.u_soc.u_uart0_cfg_cdc.s_src_q.state, u_dut.u_soc.u_uart0_cfg_cdc.s_dst_q.state,
+          $realtime, p9_diag_ref_cycles,
+          u_dut.u_soc.u_gpio_cfg_cdc.s_src_q[P9_CDC_STATE_HI:P9_CDC_STATE_LO],
+          u_dut.u_soc.u_gpio_cfg_cdc.s_dst_q[P9_CDC_STATE_HI:P9_CDC_STATE_LO],
+          u_dut.u_soc.u_gpio_cfg_cdc.s_link_src_rst_n, u_dut.u_soc.u_gpio_cfg_cdc.s_link_dst_rst_n,
+          u_dut.u_soc.s_apb_cdc_ready[0],
+          u_dut.u_soc.u_uart0_cfg_cdc.s_src_q[P9_CDC_STATE_HI:P9_CDC_STATE_LO],
+          u_dut.u_soc.u_uart0_cfg_cdc.s_dst_q[P9_CDC_STATE_HI:P9_CDC_STATE_LO],
           u_dut.u_soc.u_uart0_cfg_cdc.s_link_src_rst_n,
           u_dut.u_soc.u_uart0_cfg_cdc.s_link_dst_rst_n, u_dut.u_soc.s_apb_cdc_ready[1]);
       $fdisplay(
@@ -393,7 +416,7 @@ always @(negedge s_clk) begin
             u_dut.u_soc.u_sram.gen_group[0].u_group.s_read_bank_q,
             u_dut.u_soc.u_sram.gen_group[0].u_group.s_bank_select[2],
             u_dut.u_soc.u_sram.gen_group[0].u_group.s_rsp_valid_q[0],
-            u_dut.u_soc.u_cpu_mem.s_req_q[0].state == 3,
+            u_dut.u_soc.u_cpu_mem.s_req_q[0][P9_REQ_STATE_HI:P9_REQ_STATE_LO] == 3,
             u_dut.u_soc.u_sram.gen_group[0].u_group.s_rsp_data_q[0],
             u_dut.u_soc.u_sram.gen_group[0].u_group.s_bank_data[2]);
       end

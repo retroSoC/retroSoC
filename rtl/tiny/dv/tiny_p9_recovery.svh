@@ -17,30 +17,22 @@ always @(posedge u_dut.u_soc.s_uart0_clk) begin
       ) && u_dut.u_soc.s_uart0_rst_n && u_dut.u_soc.u_uart0.u_uart_reg.s_tx_push &&
           !u_dut.u_soc.u_uart0.s_loopback) begin
     if (u_dut.u_soc.u_uart0_apb4_if.pwdata[7:0] == 8'd10) begin
-      case (s_p9_recovery_line)
-        "P9_CTRL camera": begin
-          s_p9_camera_population = 1;
-          s_p9_recovery_controls++;
-        end
-        "P9_CTRL audio": begin
-          s_p9_camera_population = 0;
-          s_p9_recovery_controls++;
-        end
-        "P9_CTRL stop_low": begin
-          u_dvp_camera.recovery_pause = 1;
-          s_p9_recovery_controls++;
-        end
-        "P9_CTRL stop_high": begin
-          u_dvp_camera.recovery_pause = 2;
-          s_p9_recovery_controls++;
-        end
-        "P9_CTRL resume": begin
-          u_dvp_camera.recovery_pause = 0;
-          s_p9_recovery_controls++;
-        end
-        default: begin
-        end
-      endcase
+      if (s_p9_recovery_line == "P9_CTRL camera") begin
+        s_p9_camera_population = 1;
+        s_p9_recovery_controls++;
+      end else if (s_p9_recovery_line == "P9_CTRL audio") begin
+        s_p9_camera_population = 0;
+        s_p9_recovery_controls++;
+      end else if (s_p9_recovery_line == "P9_CTRL stop_low") begin
+        u_dvp_camera.recovery_pause = 1;
+        s_p9_recovery_controls++;
+      end else if (s_p9_recovery_line == "P9_CTRL stop_high") begin
+        u_dvp_camera.recovery_pause = 2;
+        s_p9_recovery_controls++;
+      end else if (s_p9_recovery_line == "P9_CTRL resume") begin
+        u_dvp_camera.recovery_pause = 0;
+        s_p9_recovery_controls++;
+      end
       s_p9_recovery_line = "";
     end else if (u_dut.u_soc.u_uart0_apb4_if.pwdata[7:0] != 8'd13) begin
       if (s_p9_recovery_line.len() >= 256) $fatal(1, "SIM_TEST_FAIL recovery UART record overflow");

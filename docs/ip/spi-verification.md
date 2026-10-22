@@ -220,6 +220,13 @@ this pre-dates SPI-P3 and is non-blocking inside the regression runner.
 behavioral defect remains routed to the R2 DV owners; `phase_accepted` stays
 false.
 
+Icarus defect resolution (2026-10-22, later commit): the routed dv observer
+defect is fixed on top of this worktree with semantics preserved; the R2-P7
+Icarus behavioral acceptance passes with `SIM_TEST_PASS Tiny cycles=3859487`
+(`build/ihp130-tiny-2026-10-22-12-16-aae2707c2aa5/sim/iverilog/`), matching
+the Verilator cycle count exactly. Details are recorded in
+[tiny-soc-verification.md](tiny-soc-verification.md#tiny-icarus-behavioral-repair-2026-10-22).
+
 SPI-P3 review-repair round (2026-10-22, same worktree): independent review of
 the full worktree delta found three P1 defects, all fixed and re-verified.
 (1) `dma_axi4_master` sampled the origin channel from the live arbiter during
@@ -255,11 +262,12 @@ Mini rtl-lint passes; Tiny Yosys synthesis, `netsim-boot`
 (`SIM_TEST_PASS Tiny cycles=36069`) and OpenSTA all pass under
 `build/ihp130-tiny-2026-10-22-10-31-8232fa11e7f3/`; `rtl-format-check`,
 `ruff check .`, `sw-format-check`, `sw-policy-check`, `sw-host-test` and
-`git diff --check` all pass. Remaining gaps are unchanged: the pre-existing
-Icarus observer/sv2v defect (R2 DV owners), the Mini smoke-synthesis host
+`git diff --check` all pass. Remaining gaps are unchanged: the Mini smoke-synthesis host
 timeout (skipped per user decision), the missing Tiny warning baseline
 (non-blocking observation), human phase acceptance, and the deferred
-SPI-P4/P5 obligations. `phase_accepted` stays false.
+SPI-P4/P5 obligations. The pre-existing Icarus observer/sv2v defect listed
+above was subsequently fixed (see the resolution note in the Tiny PR matrix
+paragraph and `tiny-soc-verification.md`); `phase_accepted` stays false.
 
 ## SPI-P1 implementation checkpoint (2026-10-18, historical)
 

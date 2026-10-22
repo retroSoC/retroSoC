@@ -7,7 +7,8 @@ logic s_p8_finished = 0;
 longint unsigned s_p8_cycles = 0, s_p8_write_bytes = 0, s_p8_read_bytes = 0;
 longint unsigned s_p8_stall_run[5], s_p8_stall_max[5];
 longint unsigned s_p8_all_writes = 0;
-integer s_p8_window = 0;
+integer          s_p8_window = 0;
+time s_p8_cs_start, s_p8_cs_max = 0;
 wire [4:0] s_p8_stalls = {
   `_P8_AXI.awvalid && !`_P8_AXI.awready,
   `_P8_AXI.wvalid && !`_P8_AXI.wready,
@@ -55,7 +56,6 @@ always @(posedge u_dut.u_soc.s_backend_mem_clk) begin
 end
 `undef _P8_AXI
 
-time s_p8_cs_start, s_p8_cs_max = 0;
 always @(negedge s_psram_csn) s_p8_cs_start = $time;
 always @(posedge s_psram_csn) begin
   if (($test$plusargs("tiny_psram") || $test$plusargs("tiny_p8_psram")) && s_p8_cs_start != 0) begin
