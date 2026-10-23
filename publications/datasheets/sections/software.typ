@@ -190,12 +190,12 @@ the source paths used for each row and allows later reports to be bound to a pro
   multimedia throughput, physical pin timing or whole-system Linux stability.
 
 The supplied Linux console uses #code("console=hvc0 earlycon=sbi"). OpenSBI contains the UART1
-console implementation and ACLINT timer/software-interrupt setup. UART1 and mailbox DT nodes
+console implementation and the core-internal CLINT timer/software-interrupt setup. UART1 and mailbox DT nodes
 reserve their platform ABI; the presence of #code("status = okay") is not evidence that a
 native custom driver is available or correct. No generic HAL-to-Linux bridge is supplied here.
 
 === Validated-configuration record
-A reusable run record must name the source commit, committed profile, generated HP core,
+A reusable run record must name the source commit, committed profile, vendored HP core revision,
 toolchain/kernel/OpenSBI versions, device/model or board, command, log/result digest and
 tested feature set. Record skips and missing tools explicitly. Keep simulation, FPGA and
 silicon stages separate and retain failed runs as diagnostics rather than overwriting them

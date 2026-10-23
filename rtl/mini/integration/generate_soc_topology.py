@@ -21,8 +21,8 @@ FABRIC_PROTOCOLS = {name: "axi4" for name in FABRIC_LINK_NAMES}
 IRQ_GROUP_NAMES = ("apb4_periph", "apb4_system")
 IRQ_VECTOR_WIDTH = 64
 DATA_MASTER_NAMES = (
-    "hp_icache",
-    "hp_dcache",
+    "hp_mem",
+    "hp_retired",
     "dma",
     "io_gateway_a",
     "io_gateway_b",

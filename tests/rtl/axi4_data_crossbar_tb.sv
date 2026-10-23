@@ -940,6 +940,79 @@ module axi4_data_crossbar_tb;
       join
     end
 
+    // C906 cache fills issue WRAP bursts whose critical word can start near
+    // the end of a 4 KiB page: the burst must be routed to SDRAM with its
+    // real (wrapped) last address, not faulted by an INCR-style overshoot.
+    wrap_page_edge_read : begin
+      logic        collect_done;
+      logic        seen_sdram_ar;
+      logic        seen_error_ar;
+      logic        seen_fault;
+      logic [31:0] seen_addr;
+      logic [ 7:0] seen_len;
+      logic [ 1:0] seen_burst;
+      collect_done  = 1'b0;
+      seen_sdram_ar = 1'b0;
+      seen_error_ar = 1'b0;
+      seen_fault    = 1'b0;
+      seen_addr     = '0;
+      seen_len      = '0;
+      seen_burst    = '0;
+      fork
+        begin
+          @(negedge clk_i);
+          masters[1].arid    = 7'h09;
+          masters[1].araddr  = 32'h3800_0FF0;
+          masters[1].arlen   = 8'd7;
+          masters[1].arsize  = 3'd3;
+          masters[1].arburst = 2'b10;
+          masters[1].arvalid = 1'b1;
+          do @(posedge clk_i); while (!masters[1].arready);
+          @(negedge clk_i);
+          masters[1].arvalid = 1'b0;
+          masters[1].arlen   = '0;
+          masters[1].arburst = 2'b01;
+        end
+        begin
+          while (!collect_done) begin
+            @(posedge clk_i);
+            if (targets[1].arvalid && targets[1].arready) begin
+              seen_sdram_ar = 1'b1;
+              seen_addr     = targets[1].araddr;
+              seen_len      = targets[1].arlen;
+              seen_burst    = targets[1].arburst;
+            end
+            if (targets[5].arvalid && targets[5].arready) seen_error_ar = 1'b1;
+            if (fault_valid_o) seen_fault = 1'b1;
+          end
+        end
+        return_target1_burst(7'h09, 64'hACE0_5555_0000_0000);
+        begin
+          for (int beat = 0; beat < 8; beat++) begin
+            do @(posedge clk_i); while (!masters[1].rvalid);
+            if (masters[1].rid != 7'h09)
+              $fatal(1, "WRAP page-edge read beat %0d ID mismatch", beat);
+            if (masters[1].rdata !== (64'hACE0_5555_0000_0000 + 64'(beat))) begin
+              $fatal(1, "WRAP page-edge read beat %0d data mismatch", beat);
+            end
+            if (masters[1].rresp !== 2'b00) $fatal(1, "WRAP page-edge read beat %0d faulted", beat);
+            if (masters[1].rlast !== (beat == 7)) begin
+              $fatal(1, "WRAP page-edge read beat %0d RLAST mismatch", beat);
+            end
+            @(negedge clk_i);
+          end
+          collect_done = 1'b1;
+        end
+      join
+      if (!seen_sdram_ar || seen_error_ar || seen_fault) begin
+        $fatal(1, "WRAP page-edge read was not cleanly routed to SDRAM");
+      end
+      if ((seen_addr != 32'h3800_0FF0) || (seen_len != 8'd7) || (seen_burst != 2'b10)) begin
+        $fatal(1, "WRAP page-edge read metadata was not forwarded intact");
+      end
+      $display("AXI4 data crossbar WRAP page-edge read routed to SDRAM intact");
+    end
+
     @(negedge clk_i);
     if (!idle_o || (outstanding_read_o != 8'd0) || (outstanding_write_o != 8'd0)) begin
       $fatal(1, "ACL and QoS transactions did not drain the crossbar");

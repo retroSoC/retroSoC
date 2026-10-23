@@ -120,8 +120,9 @@ the root README and subsystem guides.
   counting modes, interrupt, debug-freeze, HAL, and verification contracts.
 - [ip/sysctrl.md](ip/sysctrl.md) defines the SystemCtrl compatibility,
   clock/pad/fault/performance/RTC/test contracts, HAL, and verification.
-- [ip/hp-platform.md](ip/hp-platform.md) defines the experimental HP PLIC and
-  LP/HP mailbox register, interrupt, software, and verification contracts.
+- [ip/hp-platform.md](ip/hp-platform.md) defines the HP OpenC906 platform, the
+  C906 internal CLINT/PLIC interrupt architecture, and the LP/HP mailbox
+  register, software, and verification contracts.
 - [hp-rv64-validation.md](hp-rv64-validation.md) records RV64 core, V2 bundle,
   RT-Thread/Linux acceptance evidence and deferred gates.
 - [ip/onchip-sram.md](ip/onchip-sram.md) defines the configurable native-AXI4

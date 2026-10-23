@@ -154,7 +154,8 @@ simulation and the applicable bounded formal harness:
 
 The reference is the pinned portable-C INT8 implementation running beside the
 NPU path on the same complete PRODUCT Verilator model of the 72 MHz HP
-VexiiRiscv configuration, with the same model, corpus, memory placement and
+core configuration (OpenC906 after the 2026-10-09 core swap), with the same
+model, corpus, memory placement and
 declared cache policy. Both paths include the inference result through CPU
 softmax; the NPU path additionally includes command submission, DMA transfers,
 synchronization and wait. Preprocessing and corpus transport are measured
@@ -173,7 +174,8 @@ replacement would change the measured denominator and requires an explicit
 verification-contract refreeze before implementation.
 
 The stage-instrumented Mini IHP130 diagnostic run at root revision
-`d084002bfe99`, using `configs/ci/ihp130.mk` and the locked VexiiRiscv revision,
+`d084002bfe99`, using `configs/ci/ihp130.mk` and the then-current locked
+VexiiRiscv revision (pre-OpenC906-swap evidence),
 entered `reference-start` for both a contention KWS shard and a non-contention
 KWS shard, but did not reach `reference-compute-done` within the bounded host
 run. This establishes a portable-C reference runtime/evidence gap, not an NPU
@@ -347,7 +349,8 @@ The LP `ci_smoke` run used real external-interrupt entry and acknowledgement,
 completed the KWS job and terminal CPU Softmax, and ended with
 `SIM_TEST_PASS code=0`. Its retained counters were 5765715 active cycles,
 320326 DMA read bytes, 72076 DMA write bytes and 59530 CPU Softmax cycles. The
-HP run used polling plus Zicbom maintenance, completed the same KWS deployment,
+HP run (pre-OpenC906-swap, VexiiRiscv evidence) used polling plus Zicbom
+maintenance, completed the same KWS deployment,
 passed the concurrent GA2D/resource hand-off checks and ended with
 `HP_NPU_PASS` and `SIM_TEST_PASS code=0`.
 

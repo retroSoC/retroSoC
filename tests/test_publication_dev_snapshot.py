@@ -26,7 +26,9 @@ def test_refrozen_structure_covers_ga2d_without_duplicate_register_ownership(dat
     assert contract["ip_ids"].index("ga2d") == contract["ip_ids"].index("jpeg") + 1
     assert contract["ip_ids"].index("apu") == contract["ip_ids"].index("ga2d") + 1
     assert contract["ip_ids"].index("npu") == contract["ip_ids"].index("apu") + 1
-    assert sum(len(group["items"]) for group in data["overview_groups"]) == 45
+    # HP ACLINT/HP PLIC left the inventory with the OpenC906 migration: both are
+    # core-internal units, not separately owned SoC register windows.
+    assert sum(len(group["items"]) for group in data["overview_groups"]) == 43
     ga2d = next(row for row in data["regions"] if row["symbol"] == "APB4_GA2D")
     assert (ga2d["base"], ga2d["size"], ga2d["kind"]) == (0x10012000, 4096, "active")
     assert len(data["policies"]) == 10

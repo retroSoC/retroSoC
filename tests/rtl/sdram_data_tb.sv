@@ -264,6 +264,87 @@ module sdram_data_tb;
     end
   endtask
 
+  // Byte address of beat `beat` in a 4-byte WRAP burst starting mid-line.
+  function automatic logic [31:0] wrap_beat_addr(input logic [31:0] start, input integer beat,
+                                                 input logic [7:0] length);
+    logic [31:0] burst_bytes;
+    logic [31:0] wrap_base;
+    logic [31:0] addr;
+    begin
+      burst_bytes = ({24'd0, length} + 32'd1) * 32'd4;
+      wrap_base   = start & ~(burst_bytes - 32'd1);
+      addr        = start + (32'(beat) * 32'd4);
+      if (addr >= (wrap_base + burst_bytes)) addr = addr - burst_bytes;
+      return addr;
+    end
+  endfunction
+
+  // WRAP write starting mid-line; beat data encodes the beat's own byte
+  // address so a plain sequential INCR readback catches any wrap-back error.
+  task automatic write_wrap(input logic [31:0] address, input logic [7:0] length);
+    integer beat;
+    begin
+      @(negedge clk_i);
+      axi4.awaddr  = address;
+      axi4.awlen   = length;
+      axi4.awburst = `AXI4_BURST_TYPE_WRAP;
+      axi4.awvalid = 1'b1;
+      do @(posedge clk_i); while (!axi4.awready);
+      @(negedge clk_i);
+      axi4.awvalid = 1'b0;
+      for (beat = 0; beat <= length; beat++) begin
+        axi4.wdata  = 32'h1000_0000 + wrap_beat_addr(address, beat, length);
+        axi4.wstrb  = 4'hF;
+        axi4.wlast  = (beat == length);
+        axi4.wvalid = 1'b1;
+        do @(posedge clk_i); while (!axi4.wready);
+        @(negedge clk_i);
+      end
+      axi4.wvalid = 1'b0;
+      axi4.wlast  = 1'b0;
+      axi4.bready = 1'b1;
+      do @(posedge clk_i); while (!axi4.bvalid);
+      if (axi4.bresp != `AXI4_RESP_OKAY) begin
+        $fatal(1, "AXI4 SDRAM WRAP write failed at %08x", address);
+      end
+      @(negedge clk_i);
+      axi4.bready = 1'b0;
+    end
+  endtask
+
+  // WRAP read starting mid-line; every beat must carry the data of its own
+  // wrap-ordered byte address, with RLAST only on the final beat.
+  task automatic read_wrap(input logic [31:0] address, input logic [7:0] length);
+    integer        beat;
+    logic   [31:0] beat_addr;
+    begin
+      @(negedge clk_i);
+      axi4.araddr  = address;
+      axi4.arlen   = length;
+      axi4.arburst = `AXI4_BURST_TYPE_WRAP;
+      axi4.arvalid = 1'b1;
+      do @(posedge clk_i); while (!axi4.arready);
+      @(negedge clk_i);
+      axi4.arvalid = 1'b0;
+      axi4.rready  = 1'b1;
+      for (beat = 0; beat <= length; beat++) begin
+        beat_addr = wrap_beat_addr(address, beat, length);
+        do @(posedge clk_i); while (!axi4.rvalid);
+        if (axi4.rdata !== (32'h1000_0000 + beat_addr)) begin
+          $fatal(1, "WRAP read mismatch beat %0d addr %08x got %08x", beat, beat_addr, axi4.rdata);
+        end
+        if (axi4.rresp != `AXI4_RESP_OKAY) begin
+          $fatal(1, "WRAP read SLVERR beat %0d", beat);
+        end
+        if (axi4.rlast !== (beat == length)) begin
+          $fatal(1, "WRAP RLAST mismatch beat %0d", beat);
+        end
+        @(negedge clk_i);
+      end
+      axi4.rready = 1'b0;
+    end
+  endtask
+
   initial begin
     #2_000_000;
     $fatal(1, "simulation timeout");
@@ -323,6 +404,18 @@ module sdram_data_tb;
     read_incr(`SOC_ADDR_SDRAM_BASE + 32'h200, 8'd7);
     write_incr(`SOC_ADDR_SDRAM_BASE + 32'h300, 8'd15);
     read_incr(`SOC_ADDR_SDRAM_BASE + 32'h300, 8'd15);
+
+    // C906 cache fills issue WRAP bursts whose critical word can start
+    // mid-line: cover a 64-byte line entered at +0x30 in both directions.
+    write_incr(`SOC_ADDR_SDRAM_BASE + 32'h400, 8'd15);
+    read_wrap(`SOC_ADDR_SDRAM_BASE + 32'h430, 8'd15);
+    write_wrap(`SOC_ADDR_SDRAM_BASE + 32'h530, 8'd15);
+    read_incr(`SOC_ADDR_SDRAM_BASE + 32'h500, 8'd15);
+    // A second mid-line offset guards against offset-dependent mask math.
+    write_incr(`SOC_ADDR_SDRAM_BASE + 32'h600, 8'd15);
+    read_wrap(`SOC_ADDR_SDRAM_BASE + 32'h610, 8'd15);
+    write_wrap(`SOC_ADDR_SDRAM_BASE + 32'h720, 8'd15);
+    read_incr(`SOC_ADDR_SDRAM_BASE + 32'h700, 8'd15);
 
     @(negedge clk_i);
     axi4.araddr  = `SOC_ADDR_SDRAM_BASE;

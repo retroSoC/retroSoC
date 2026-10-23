@@ -111,7 +111,7 @@ def build_variants(timestamp: str, log_dir: Path) -> dict[str, Path]:
 
 
 def qualification_configuration(variants: dict[str, Path]) -> dict[str, object]:
-    selected = ("MINI_MODE", "APP", "SIMU", "HP_CONFIG", "EXT_CLK_HZ")
+    selected = ("MINI_MODE", "APP", "SIMU", "EXT_CLK_HZ")
     configurations: dict[str, dict[str, str]] = {}
     for workload, variant in variants.items():
         manifest = json.loads((variant / "meta/manifest.json").read_text(encoding="utf-8"))
@@ -128,7 +128,6 @@ def qualification_configuration(variants: dict[str, Path]) -> dict[str, object]:
         "MINI_MODE": "PRODUCT",
         "APP": "hp_boot",
         "SIMU": "VERILATOR",
-        "HP_CONFIG": "rv64imafdc_zicbom_max",
         "EXT_CLK_HZ": "72000000",
     }
     if configuration != expected:

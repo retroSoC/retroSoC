@@ -1,10 +1,247 @@
 # HP RV64 Migration Validation
 
-The active contract is [HP platform](ip/hp-platform.md), phases 2–5. LP remains
-RV32 Hazard3. All PRODUCT profiles select RV64IMAFDC with Zicbom, Sv39 and
-32-bit physical addresses. No upstream CPU or RT-Thread source is modified.
+The active contract is [HP platform](ip/hp-platform.md). LP remains RV32
+Hazard3 (hart 0); HP is the locked, pre-generated T-Head OpenC906 (hart 1,
+RV64GC with Zicsr/Zifencei, M/S/U modes, Sv39, 32-bit SoC physical
+addresses). No upstream CPU or RT-Thread source is modified.
 
-## Reproduction
+## Current status after the OpenC906 core swap
+
+All simulation evidence below was gathered with the previous generated
+VexiiRiscv HP core and is historical: it must not be presented as OpenC906
+qualification. Current evidence requires, at minimum:
+
+- `make setup-openc906` (part of `make setup`) restoring the locked
+  [openc906](https://github.com/XUANTIE-RV/openc906) checkout, and
+  `make openc906-prepare` emitting
+  `build/<variant>/generated/openc906/openc906.fl` and its manifest under the
+  pinned upstream sha256 guard, with the reviewed
+  `rtl/mini/ip_overrides/aq_sysio_kid.v` hart-ID override applied by filelist
+  generation rather than by editing the vendored checkout.
+- Verilator compile of the OpenC906 HP subsystem, including the serializing
+  `axi4_downsizer_128to64` and `axi4_mmio_demux` path.
+- Fresh `hp-smoke-sim`, `hp-rtthread-sim`, and `hp-linux-sim` runs from their
+  committed IHP130 profiles with all contract markers and
+  `SIM_TEST_PASS code=0`, exercising the internal C906 CLINT/PLIC and the
+  `time`-CSR mtime delivery.
+- The IHP130 behavioral PR regression on the swapped design.
+
+### OpenC906 evidence gathered (2026-10-10)
+
+- `hp-smoke-sim` on `configs/ci/ihp130-hp.mk` (Verilator): `HP_LINUX_READY`,
+  `HP_GA2D_PASS`, `HP_GA2D_CACHE_CLEAN`, `SIM_TEST_PASS code=0`;
+  3,629,906 cycles in 285 s. This exercises C906 boot at 0x38000000, the
+  128-to-64 downsizer and MMIO demux, the mailbox protocol, the GA2D engine
+  through the HP data path, and the T-Head `dcache.cva`/`dcache.iva` cache
+  lifecycle handshake.
+- `hp-rtthread-sim` on `configs/ci/ihp130-rtthread.mk` (Verilator): all
+  selftest markers (`RTTHREAD_RV64_PASS`, `RTTHREAD_TIMEOUT_PASS`,
+  `RTTHREAD_PREEMPT_PASS`, `RTTHREAD_CONTEXT_PASS`, `RTTHREAD_IPC_PASS`,
+  `RTTHREAD_MAILBOX_IRQ_PASS`, `RTTHREAD_TEST_PASS`) plus `HP_RTTHREAD_PASS`
+  and `SIM_TEST_PASS code=0`; 6,373,952 cycles in 542 s. This exercises the
+  C906 internal CLINT timer tick and MSIP IPI, the internal PLIC mailbox
+  doorbell (MEIP), and the full cached SDRAM fill path.
+- `hp-linux-sim` on `configs/ci/ihp130-hp.mk` (Verilator, bounded 2 h wall,
+  83.5 M emulator cycles / 41.8 M HP cycles): OpenSBI v1.9 completes fully on
+  the C906 with the repo-owned platform (custom timer device reading the
+  `time` CSR plus internal-CLINT MSWI IPI, custom UART1 console), and
+  `fw_jump` hands off to the kernel Image at `0x38400000` with the DTB at
+  `0x38080000` (bundle segments byte-identical to the built images,
+  CRC-checked). The kernel enters S-mode, brings Sv39 up, executes past
+  `set_cpu_online()`'s first AMO, and prints `Linux version 6.12.105+` on the
+  SBI console: the earlier boot blocker is fixed (see the MAEE entry below).
+  A longer bounded run (8 h wall) with the STIMECMP fix additionally boots
+  the kernel through console init, BogoMIPS calibration, devtmpfs, and the
+  switch to the riscv_clocksource with a healthy periodic tick. The 12 h run
+  then probes the internal PLIC successfully at runtime (`riscv-plic:
+  interrupt-controller@8000000: mapped 31 interrupts`, validating the
+  OpenSBI `fdt_irqchip_init` hook) and completes the initramfs unpack
+  (`Unpacking initramfs...` / `Freeing initrd memory: 292K`). With the
+  write-channel fix below applied, the full `hp-linux-sim` run now reaches
+  userspace acceptance: `Run /init as init process`, busybox init,
+  `HP_LINUX_INIT_PASS`, `retroSoC HP Linux ready`, `HP_LINUX_READY`, and
+  `SIM_TEST_PASS code=0` (1.63 G emulator cycles in ~40.5 h wall; the result
+  checker reports `status: passed` with no missing markers). The wedge
+  payload and heartbeat probes below document the mechanism and the fix.
+- The write-channel wedge is root-caused and fixed. Event-level tracing of
+  the C906 write channel showed the failure is a systematic AW/W misordering,
+  not data lost inside the LSU: the BIU streams a writeback's W beats to the
+  pad as soon as the victim buffer offers them, while the AW still waits in
+  `awbuf` for the serializing 128->64 downsizer to finish the previous write
+  (the ~200-cycle SDRAM write response latency). The early W beats are
+  AXI-legal (W-before-AW), but the Mini HP fabric behind the pad is
+  single-outstanding (downsizer + MMIO demux + target guard, no WID), so they
+  are absorbed into the previous write's burst; each write's AW then arrives
+  to find its W already consumed by the previous write's stream. The cascade
+  persists until the LSU freezes (its fills block behind the SDRAM write
+  channel, which is parked waiting for the orphaned write's W data), leaving
+  a final orphaned AW whose W beats never come: the target guard parks in
+  WriteStream, the SDRAM core parks in its write-data state and blocks the
+  pending read fill, and the C906 stalls at the next LSU-serializing
+  instruction (`retrosoc_hp_console_putc`). Evidence: with the guard parked,
+  the C906 write side is fully idle (victim buffer idle, store buffer idle,
+  BIU write-selection FIFO empty, and zero W beats ever presented at the
+  128-bit port for the wedged write) while the guard and the SDRAM controller
+  both hold the orphaned write's AW. The fix is the
+  `rtl/mini/ip_overrides/aq_biu_write_channel.v` override, which gates the W
+  stream on the burst's AW having been issued on the pad (pad-issued-AW vs
+  completed-W-burst order counters), restoring the AW-before-W order the
+  fabric requires without touching the vendored checkout. Validated: the
+  deterministic wedge payload runs unbounded (previously wedged at ~22
+  rounds/~1.83 M HP cycles, now clean past 10.5 M emulator cycles), the
+  no-fence control payload is clean, `hp-smoke-sim`/`hp-rtthread-sim` pass on
+  the committed IHP130 profile, and the full `hp-linux-sim` reaches
+  `HP_LINUX_READY` with `SIM_TEST_PASS code=0` (see the status entry above).
+  The earlier note that a guard write timeout cannot recover a source-stalled
+  W stream remains true and is a separate hardening gap (the guard's
+  read/write timeouts are gated by source readiness), not the wedge's cause;
+  it is out of this round's scope.
+- The Linux boot blocker was a doc/RTL mismatch in OpenC906, root-caused with
+  bare-metal MMU payloads and locked by simulation evidence: the user manual
+  states `mxstatus.MAEE` resets to 0, but the RTL (`aq_cp0_ext_csr.v`) resets
+  it to 1. With MAEE set, S-mode page attributes come from the T-Head
+  extended PTE bits [63:59], which a stock mainline kernel never programs, so
+  every translated page is non-cacheable; the C906 then raises a store/AMO
+  access fault (cause 7) for any AMO on such a page (`aq_lsu_ag.v`:
+  `!mmu_ca && ag_pipe_amo`). The first victim is `set_cpu_online()`'s
+  `amoor.d.aqrl` on `__cpu_online_mask`, after which the kernel enters the
+  `do_trap_break` storm. Loads/stores and full Sv39 page-table walks
+  (4 KiB three-level, 2 MiB megapage, high-half canonical VAs, cold fills from
+  SDRAM after D$ eviction) were proven correct independently: the failure was
+  purely the AMO-on-non-cacheable rule. The OpenSBI platform `early_init` now
+  clears `mxstatus.MAEE` (`app/ports/linux/opensbi/retrosoc_hp/platform.c`),
+  making translated accesses follow the sysmap override (RAM cacheable, MMIO
+  strong-order device) so the stock kernel needs no T-Head PBMT errata. A
+  directed payload then passes the full AMO battery (amoor/amoadd/amoswap/
+  lr-sc, cold-line and high-half-VA variants).
+- The post-`sched_clock` stall was a second doc/RTL trap of the same family:
+  the C906 ORs the internal CLINT's hardware supervisor-timer line into
+  `mip.STIP` (`aq_cp0_trap_csr.v`: `st_int && CLINTEE || stip_reg`) and the
+  RTL resets `CLINTEE` to 1. Nobody parked the internal STIMECMP, and the
+  compare registers' `0xFFFF_FFFF` reset values are not guaranteed to be
+  applied (the HP hold-reset produces no async negedge in Verilator, leaving
+  them at zero), so the hardware S-timer line fired continuously: the first
+  `sie.STIE` enable in the kernel's `time_init` dropped it into an infinite
+  supervisor-timer storm and starved the boot thread. M-mode firmware
+  (RT-Thread, OpenSBI) is immune, which is why earlier targets were
+  unaffected. The OpenSBI `early_init` now parks both internal-CLINT compare
+  registers at cold boot, making the state deterministic on silicon and in
+  simulation; probe evidence shows MTIMECMP armed exactly one jiffy out and
+  MTIP firing exactly at the compare value on a healthy 288 kHz-cycle
+  cadence.
+- The RT-Thread bring-up exposed and fixed three latent issues, each locked
+  by directed regression. (a) The C906 resets with caches and the BPU
+  disabled and does not initialize the cache/predictor RAMs: HP payloads must
+  run the upstream `mcor` invalidate-then-`mhcr` enable sequence
+  (`app/ports/rtthread/start.S`, OpenSBI `early_init`). Without it the 1 kHz
+  tick ISR livelocked the uncached core, and enabling caches without
+  invalidating first produced wild control flow. (b) `sdram_axi4` computed
+  WRAP wrap-back addresses from the decrementing remaining-beat count,
+  corrupting every cache-line fill starting mid-line (locked by WRAP cases in
+  `tests/rtl/sdram_data_tb.sv`). (c) The data crossbar's `burst_legal`
+  computed a WRAP burst's last address as if it were INCR, faulting fills
+  that start in the last 64 bytes of a 4 KiB page (locked by the page-edge
+  case in `tests/rtl/axi4_data_crossbar_tb.sv`). No previous master issued
+  WRAP bursts, so (b) and (c) predated the swap.
+- Focused `hp_c906_boot_tb` (pytest `test_hp_platform.py`): the real smoke
+  payload runs on `hp_core_wrapper` plus the production MMIO chain
+  (64-to-32 downsizer, address gate, HP-to-LP CDC bridge) and completes the
+  full mailbox/GA2D-phase protocol.
+- The swap exposed and fixed a latent integration bug: the merged HP port
+  initially inherited the read-only I-cache slot's zero write credits in the
+  data crossbar; `axi4_data_crossbar.sv` now grants the HP slot two write
+  credits, locked by a new write/readback case in `ga2d_platform_tb`.
+- The sysmap override is required for correctness: the upstream default marks
+  the Mini MMIO window cacheable/bufferable, which absorbs device writes in
+  the C906 store buffer; `rtl/mini/ip_overrides/sysmap.h` marks the MMIO and
+  core-internal CLINT/PLIC windows strong-order non-cacheable per the user
+  manual.
+- The integration manual chapter 3 SRAM swap is validated in simulation: the
+  eight `rtl/mini/ip_overrides/aq_spsram_*.v` overrides select IHP130
+  `RM_IHPSG13_1P_*` macro combinations under `PDK_IHP130`+`HAVE_SRAM_MACRO`
+  without `PDK_BEHAV`, and the focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_ihp130_sram_macros` boots the real
+  smoke payload (cache maintenance plus GA2D data movement, which exercises
+  the BHT/ICache/DCache/JTLB RAMs for real) on the macro path with the same
+  `HP_C906_BOOT_TEST_PASS` verdict as the behavioral run.
+- The wrappers also have an ICS55 macro path: under `PDK_ICS55`+
+  `HAVE_SRAM_MACRO` without `PDK_BEHAV` each wrapper directly instantiates
+  its exact-geometry `ics55_ecos_sram_<geom>_m4/m8` macro (locked
+  `openecos-projects/ics55_ecos_sram` release assets materialized by
+  `make setup-pdk`; polarity-identical ports, no stacking or padding). The
+  focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_ics55_sram_macros` passes with the same
+  verdict, the vendored MEM_INTF memory suite (manual section 3.2, adapted
+  to Icarus) passes on the ICS55 path as well, and the `ics55.mk` CI profile
+  smoke simulation (`APP=ci_smoke`, Verilator) passes with the macro path
+  compiled into the SoC.
+- The wrappers also have a GF180 macro path: under `PDK_GF180`+
+  `HAVE_SRAM_MACRO` without `PDK_BEHAV` each wrapper is tiled from the GF180
+  8-bit bit-write macros `gf180mcu_fd_ip_sram__sram{64,128,256,512}x8m8wm1`
+  (identical active-low polarity; depth/width tiling with registered read
+  muxes where stacked). The vendor verilog views are timing-only, so the
+  simulation models are repo-owned in `rtl/tech/gf180_sram_sim_cells.sv`.
+  The directed eight-wrapper equivalence bench and the MEM_INTF suite both
+  pass on the GF180 path, and the focused boot testbench variant
+  `test_c906_boots_smoke_payload_with_gf180_macros` passes with the SRAM
+  tiles and the `icgtp_1` ICG active together. SKY130 stays behavioral: the
+  locked OpenRAM SRAM has only a byte-granular write mask while the wrappers
+  need per-bit write enable.
+- The chapter 3 ICG swap is validated in simulation on all four PDKs: the
+  `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` overrides select
+  `sg13g2_slgcp_1` (IHP130), `ICGX1H7R` (ICS55, scan enable ORed into `E`),
+  `sky130_fd_sc_hd__sdlclkp_1` (SKY130), or
+  `gf180mcu_fd_sc_mcu7t5v0__icgtp_1` (GF180; repo-owned sim model in
+  `rtl/tech/gf180_seq_sim_cells.v` because the locked checkout never ships
+  the vendor latch UDP the cell model references) under a `PDK_*` define
+  without `PDK_BEHAV`. The vendored MEM_INTF `c906_icg_test_tb` gate sequence
+  passes on all four cell paths (Icarus adaptation; the pass-through default
+  fails it by design since it never gates). The focused boot testbench passes
+  with real clock gating for all four PDKs — the IHP130/ICS55 modes run SRAM
+  macros and ICG together, the SKY130/GF180 modes run ICG with behavioral
+  SRAMs. One integration fix was required for two-state simulators:
+  `hp_core_wrapper` asserts the C906/DTM ICG scan-enable while the core is
+  held in reset, so flops behind closed gates initialize on running-clock
+  edges (the DTM sleeps at boot and otherwise holds `hartreset_n` low);
+  pass-through modes ignore the scan-enable input and stay bit-identical.
+
+`hp-linux-sim` was run with a bounded wall-clock budget this round and its
+current frontier is recorded above; the synthesis-dependent gates remain
+unrun (synthesis, netlist simulation, STA, and the physical/LEC qualification
+of the macro path; on Yosys the C906 ICS55 macros additionally need their
+Liberty views registered in `physical/smoke/syn/yosys/script/init_tech.tcl`,
+and the ICS55 smoke synthesis is already red without this work because
+`npu_scheduler.sv` hard-codes IHP130 `sg13g2_dlygate4sd3_1` delay cells under
+plain `SYNTHESIS`). The SoC-level macro-mode simulation now has passing
+evidence: `make CONFIG=configs/ci/ihp130-hp.mk PDK_BEHAV=NO SIMU=VERILATOR
+hp-smoke-sim` builds the whole SoC (C906 `aq_spsram_*` wrappers and
+`tc_sram`) on the IHP130 macro models and passes with
+`SIM_TEST_PASS code=0` plus the `HP_LINUX_READY`/`HP_GA2D_PASS`/
+`HP_GA2D_CACHE_CLEAN` markers; with the ICG overrides the same run also
+exercises the real `sg13g2_slgcp_1` clock gates. The same SoC smoke passes on
+the ICS55 macro+ICG path (`PDK=ICS55 PDK_BEHAV=NO`, 3.64M cycles,
+`SIM_TEST_PASS code=0` with the full GA2D cache-lifecycle marker sequence)
+and on the GF180 macro+ICG path (`PDK=GF180 PDK_BEHAV=NO`, identical cycle
+count), and the `sky130.mk` and `gf180.mk` CI profile smokes (`APP=ci_smoke`,
+Verilator) pass with the SRAM tiles and the `sky130_fd_sc_hd__sdlclkp_1` /
+`gf180mcu_fd_sc_mcu7t5v0__icgtp_1` ICG compiled in (the GF180 C906 SRAMs run
+as macro tiles there too). The default 300 s
+`HP_SMOKE_SIM_TIME` is only enough when the run is uncontended, and the bare
+`ics55.mk` profile-default `sim` (no fast-flash) exceeds its 180 s default
+budget in this environment, so these were run with CI-sized time budgets.
+All stay required evidence for qualification.
+
+Deferred this phase: low-power support (`core0_pad_lpmd_b` unconnected), DFT
+(scan/mbist tied off), the debug SBA AXI master (unconnected), and HP Linux
+re-qualification timing/performance evidence. The repo-owned OpenSBI platform
+registers `fdt_irqchip_init` (v1.9 supports the `thead,c900-plic` match with
+T-Head delegation fixups), so the C906-internal PLIC is initialized by
+OpenSBI before the kernel probes it; the minimal Linux acceptance uses the
+`hvc0` console, the SBI TIME timer, and the polled mailbox path.
+
+## Historical VexiiRiscv evidence (pre-swap)
+
+### Reproduction (VexiiRiscv)
 
 ```sh
 make setup-vexiiriscv setup-hp-rtthread setup-hp-linux
@@ -38,7 +275,7 @@ The `ihp130-apu` evidence profile likewise uses workload 1 only as the existing
 four-entry transport. Its application-specific `apu_release` LP loader owns the
 APU acceptance semantics; that bundle label does not claim a Linux boot result.
 
-## Measured runs
+### Measured runs (VexiiRiscv)
 
 Initial RV64 validation uses `configs/ci/ihp130-hp.mk` and
 `BUILD_TIMESTAMP=2026-09-25-11-42`, producing
@@ -86,7 +323,7 @@ The IHP130 behavioral PR regression completed successfully with
 new/increased signatures as non-blocking observations; baselines were not
 modified. No synthesis or STA result is implied by this regression.
 
-## RT-Thread first-schedule failure and correction
+### RT-Thread first-schedule failure and correction
 
 The first BSP run reached `HP_RTTHREAD_BOOT` and then reported
 `RTTHREAD_TRAP cause=1 epc=deadbeee`, failure 92, followed by LP failure 18.
@@ -106,7 +343,7 @@ the initial variant. This was a BSP integration error:
    bound. The same integrated test then passed scheduling, RV64 context, IPC,
    timer timeout, and mailbox IRQ checks. Vendor source stayed unchanged.
 
-## Linux firmware reservation correction
+### Linux firmware reservation correction
 
 The first RV64 run reached Linux 6.12.105 and memory initialization. Its log
 reported no `/reserved-memory` node and included the full SDRAM range beginning
@@ -146,7 +383,7 @@ RISC-V `pt_regs` layout. UART subsequently reported the 9-bit ASID allocator.
 These observations avoid treating an IRQ-handler PC or stale raw SDRAM as
 evidence of main-thread progress.
 
-## Coverage limits
+### Coverage limits
 
 The repository's mechanical C format/policy checks are partial MISRA evidence;
 no complete MISRA certification or new approved Required-rule deviation is

@@ -19,7 +19,7 @@ selector zero has no dedicated peripheral request wire. WS2812 uses that softwar
 
 The endpoint IRQ column identifies the peripheral's own event line where one exists; it is
 *not the DMA transfer-completion interrupt*. Central DMA channel events aggregate at the DMA
-resource's LP IRQ or HP PLIC source according to the central resource owner. Crypto has no
+resource's LP IRQ or HP external source according to the central resource owner. Crypto has no
 separate LP vector entry in this integration; inspect its register status and DMA completion path.
 
 === Software channel allocation
@@ -39,10 +39,11 @@ descriptors or 2D operation merely from fields in the descriptor structure.
 
 === Private DMA masters and owner-directed completion
 #ds-table("private-dma-routes",[Central and private-master routes with owner-directed interrupts],
-  ([Engine],[Native master / gateway],[LP vector bit],[HP PLIC source]),
+  ([Engine],[Native master / gateway],[LP vector bit],[HP external source]),
   programming.engines.map(r=>(link(label(r.id),r.name),r.master,str(r.lp_irq),str(r.hp_irq))),
   widths:(1.2fr,1.5fr,0.65fr,0.7fr))
-These HP source numbers are read from the actual PLIC assignments. The Resource Controller
+These HP source numbers are read from the actual SoC interrupt wiring. On the OpenC906
+core-internal PLIC, software addresses each one as *PLIC ID = source + 16*. The Resource Controller
 selects one owner's route and masks routes according to its lifecycle contract; it does not
 deliver a completion to both owners. Private DMA engines do not consume a central DMA channel
 simply because both move memory. They can still share a gateway or destination bandwidth.

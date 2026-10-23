@@ -39,14 +39,14 @@ def test_ga2d_p5_preserves_the_real_private_axi64_master_and_irq_route() -> None
         "user_access": "none",
     }
     assert topology["apb4_periph_targets"][-2] == {
-        "slot": 28,
+        "slot": 26,
         "name": "ga2d",
         "timed_interface": "u_ga2d_apb4_if",
         "pure_interface": "u_ga2d_apb4_pure_if",
         "region": "APB4_GA2D",
     }
     assert topology["apb4_periph_targets"][-1] == {
-        "slot": 29,
+        "slot": 27,
         "name": "npu",
         "timed_interface": "u_npu_apb4_if",
         "pure_interface": "u_npu_apb4_pure_if",

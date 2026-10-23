@@ -135,7 +135,8 @@ collector checks RTL/SDK request-number parity (including explicit QSPI/XPI
 aliases), coverage, actual connection snippets and referenced instances. Channel
 conventions are supported by driver call sites, not inferred from selector IDs.
 Private masters and central DMA contexts are different resources. Preserve
-endpoint IRQ, aggregate DMA IRQ, LP vector bit and HP PLIC source as separate
+endpoint IRQ, aggregate DMA IRQ, LP vector bit and HP external source (PLIC ID = source + 16
+on the OpenC906 internal PLIC) as separate
 fields/namespaces. Derive PLIC assignments and normal master credits from the
 current implementation; mark any connected zero-credit route explicitly.
 

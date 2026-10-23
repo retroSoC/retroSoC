@@ -20,8 +20,9 @@ ecosystem of the referenced devices. Official sources were rechecked on
 ## Technical Selection
 
 Mini remains a small, non-coherent, performance-first SoC. Hazard3 is the
-only root-management master. Vexii I/D, DMA, I/O gateways, the LP data gateway, EXT-H, and GA2D use a
-nine-master native AXI64 data plane with seven-bit global IDs. GA2D is a
+only root-management master. The OpenC906 HP core master, DMA, I/O gateways,
+the LP data gateway, JPEG, EXT-H, and GA2D share a
+nine-active-master native AXI64 data plane with seven-bit global IDs. GA2D is a
 dedicated PCLK-to-HP AXI64/ID3 bridge carrying direct, single-job private-AXI64
 2D FILL/COPY/CONVERT/BLEND traffic; `APB4_GA2D` remains its separate PCLK
 control plane and resource-owned IRQ route. It supports RGB565, RGB888,

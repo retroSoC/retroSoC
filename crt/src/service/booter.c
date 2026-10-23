@@ -49,23 +49,21 @@ static void rs_print_hp_core_spec(void) {
 
     printf("\nHigh-Performance-Core Specification:\n");
     printf("  Identity\n");
-    printf("    Core: VexiiRiscv(hart 1), dual-issue in-order\n");
+    printf("    Core: T-Head OpenC906(hart 1), dual-issue in-order\n");
     printf("    Role: application, RT-Thread and Linux\n");
-    printf("    Source: https://github.com/SpinalHDL/VexiiRiscv\n");
+    printf("    Source: https://github.com/XUANTIE-RV/openc906\n");
     printf("  Hardware ISA and privilege\n");
-    printf("    Base: RV64IMAFDC_Zicbom_Zicntr_Zihpm\n");
-    printf("    Mode: M/S/U; Sv39 MMU, 9-bit ASID\n");
-    printf("    Protection: 16 PMP regions, 4 KiB granularity\n");
-    printf("    IRQ: machine software/timer/external + supervisor external\n");
-    printf("  Microarchitecture\n");
-    printf("    Execution: 2 decoders/lanes, late ALU, full bypassing\n");
-    printf("    Prediction: BTB + GShare + RAS\n");
+    printf("    Base: RV64IMAFDC_Zicsr_Zifencei (RV64GC)\n");
+    printf("    Mode: M/S/U; Sv39 MMU\n");
+    printf("    IRQ: internal CLINT/PLIC (T-Head c900 layout)\n");
+    printf("  Interrupt and timer windows\n");
+    printf("    PLIC: 0x08000000; SoC external source n -> ID n+16\n");
+    printf("    CLINT: 0x0c000000; MSIP/MTIMECMP/SSIP/STIMECMP\n");
+    printf("    No MMIO mtime; software reads the time CSR\n");
+    printf("    LP->HP notification: mailbox doorbell (PLIC ID 18)\n");
     printf("  Cache and memory\n");
-    printf("    L1: separate 16 KiB, 4-way instruction and data caches\n");
-    printf("    Maintenance: 64-byte Zicbom CBO; no hardware coherency\n");
-    printf("    Bus: native AXI64 I/D/MMIO; MMIO downsized to AXI32\n");
-    printf("  Debug\n");
-    printf("    Embedded RISC-V JTAG, 4 triggers\n");
+    printf("    L1: separate instruction and data caches; no hardware coherency\n");
+    printf("    Bus: AXI4 via core BIU; MMIO downsized to AXI32\n");
     printf("  Runtime\n");
     printf("    Released: %s; actual: %s; reset asserted: %s\n", rs_boolean_name(status.released),
            rs_boolean_name(status.actual_released), rs_boolean_name(status.reset_asserted));
@@ -75,10 +73,8 @@ static void rs_print_hp_core_spec(void) {
 
 static void rs_print_mmio_map(void) {
     printf("Memory-Mapped I/O Devices:\n");
-    printf("                       1 x HP ACLINT      @%p\n",
-           (void *)(uintptr_t)RS_SOC_HP_ACLINT_BASE);
-    printf("                       1 x HP PLIC        @%p\n",
-           (void *)(uintptr_t)RS_SOC_HP_PLIC_BASE);
+    printf("                       1 x GLOBAL CLINT   @%p\n",
+           (void *)(uintptr_t)RS_SOC_APB4_CLINT_BASE);
     printf("                       1 x GPIO(32PIN)    @%p\n",
            (void *)(uintptr_t)RS_SOC_APB4_GPIO_BASE);
     printf("                       1 x UART0          @%p\n",

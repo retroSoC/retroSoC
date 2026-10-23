@@ -182,7 +182,7 @@ RTL_FILELISTS := $(MEMORY_MAP_FILELIST) $(SOC_TOPOLOGY_FILELIST) $(USER_EXTENSIO
 	$(GENERATED_FL_DIR)/core_hazard3.fl \
 	$(if $(filter MPW,$(MINI_MODE)),$(MPW_OUTPUT_DIR)/core/core.fl,$(USER_EXTENSIONS_DIR)/legacy_core.fl) \
 	$(if $(filter MPW,$(MINI_MODE)),$(MPW_OUTPUT_DIR)/ip/ip.fl,$(USER_EXTENSIONS_DIR)/legacy_ip.fl) \
-	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_DIR)/vexiiriscv.fl) \
+	$(if $(filter YES,$(HAVE_HP)),$(HP_GENERATED_FL)) \
 	$(GENERATED_FL_DIR)/top.fl
 RTL_FLIST     := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
 #====================== end ======================

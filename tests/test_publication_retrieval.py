@@ -51,9 +51,9 @@ def test_array_addresses_include_group_base_exactly_once(data):
     assert row["first"] == 0x1000A128
     assert row["last"] == 0x1000A4A8
     assert (row["stride"], row["count"], row["offset_hex"]) == (0x80, 8, "0x128")
-    plic = bank(result, "HP_PLIC")
-    claim = next(r for r in plic["rows"] if r["key"] == "context.CLAIM_COMPLETE")
-    assert (claim["first"], claim["last"]) == (0x0C200004, 0x0C201004)
+    usb2 = bank(result, "APB4_USB2")
+    channel = next(r for r in usb2["rows"] if r["key"] == "channel.CFG")
+    assert (channel["first"], channel["last"]) == (0x10016500, 0x100168C0)
 
 
 def test_gpio_common_discovery_decode_and_mpw_scope(data):

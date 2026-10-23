@@ -206,9 +206,13 @@ def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) 
                           ("argument", 8, 32), ("crc7", 1, 7), ("end", 0, 1)]:
         raise ValueError("SDIO field order differs from the bound transmitter assembly")
     dts = (root / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8")
-    cbo = re.findall(r"riscv,cbom-block-size\s*=\s*<(\d+)>", dts)
-    if cbo != ["64"]:
+    if "riscv,cbom-block-size" in dts:
         raise ValueError("review cache-maintenance diagram after platform granule change")
+    smoke = (root / "app/ports/linux/smoke/start.S").read_text(encoding="utf-8")
+    if (".insn r 0x0b, 0x0, 0x01, x0, a0, x5" not in smoke
+            or ".insn r 0x0b, 0x0, 0x01, x0, a0, x6" not in smoke
+            or "csrs    0x7c0, t0" not in smoke):
+        raise ValueError("review cache-maintenance diagram after platform maintenance-operation change")
     windows = [{k: r[k] for k in ("symbol", "base", "size", "base_hex", "end_hex", "size_label")}
                for r in regions if r["size"] > 4096 and r["route"] in {"axi4", "ram"} and r["kind"] == "active"]
     if not windows or any(r["base"] + r["size"] > 1 << 32 for r in windows):

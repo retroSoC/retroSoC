@@ -87,17 +87,20 @@ resource-8 idle and ACK with the live source-safe-idle signal.
 
 ## Cache Maintenance
 
-VexiiRiscv implements `Zicbom` with a 64-byte CBO block. On HP shutdown the AON
+VexiiRiscv-era note: the pre-swap HP core implemented `Zicbom` with a 64-byte
+CBO block; OpenC906 instead uses 64-byte cache lines with the T-Head custom-0
+`dcache.cva`/`dcache.iva` maintenance instructions. On HP shutdown the AON
 lifecycle controller first asserts the Resource Controller cache request while
 HP remains released and its MMIO path remains open. Software cleans and
-invalidates shared ranges with CBO operations, reports completion to LP, and LP
+invalidates shared ranges with those instructions, reports completion to LP,
+and LP
 writes `CACHE_CONTROL.CLEAN`. AON then blocks new addresses and drains the data
 plane. Missing acknowledgement is bounded by the lifecycle timeout and records
 a forced fault before reset proceeds.
 
 This handshake provides an execution window and explicit evidence point; it
-does not create hardware coherency. Buffer ownership, fences, CBO range policy,
-and a Linux platform driver remain software responsibilities.
+does not create hardware coherency. Buffer ownership, fences, maintenance
+range policy, and a Linux platform driver remain software responsibilities.
 
 ## Delivery Boundary
 

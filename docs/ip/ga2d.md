@@ -65,7 +65,8 @@ Confirmed baseline facts:
 4. Central DMA implements a 32-bit, one-dimensional transfer contract.
    GA2D does not add channels or request selectors to that controller.
 5. Mini has no hardware cache coherency. Ownership, fences, and the HP
-   64-byte Zicbom cache-maintenance contract remain software obligations.
+   64-byte cache-maintenance contract (OpenC906 custom-0
+   `dcache.cva`/`dcache.iva` instructions) remain software obligations.
 
 Phase 1 approves expansion of the LP interrupt platform. Phase 2 approves
 the ninth data master, wider global IDs, and resource/observability changes.

@@ -12,10 +12,26 @@ notices. `filelist/` selects PDK-specific RTL sources; `tech/` contains
 technology wrappers. Respect managed upstream boundaries and use setup helpers
 rather than editing generated MPW output.
 
-The optional IHP130 LP/HP profile integrates VexiiRiscv through self-owned
-wrappers, a 64-to-32 compatibility plane, HP ACLINT/PLIC, mailbox, UART1, and
-SYSCTRL lifecycle signals. The generated CPU Verilog lives only below
-`build/<variant>/generated/vexiiriscv/` and is an external lint boundary. See
+The optional IHP130 LP/HP profile integrates the locked, pre-generated T-Head
+OpenC906 HP core through self-owned wrappers, a serializing 128-to-64
+downsizer with an MMIO demux, the C906 internal CLINT/PLIC, mailbox, UART1, and
+SYSCTRL lifecycle signals. `make setup-openc906` (part of `make setup`)
+restores the locked checkout and `make openc906-prepare` emits the generated
+filelist and manifest below `build/<variant>/generated/openc906/`; the OpenC906
+sources are an external lint boundary. The reviewed hart-ID, sysmap
+address-attribute, SRAM wrapper, and clock-gate (ICG) overrides live in
+`rtl/mini/ip_overrides/`
+(the `aq_spsram_*.v` overrides implement the integration manual chapter 3
+memory swap and select IHP130 `RM_IHPSG13_1P_*`, exact-geometry ICS55
+`ics55_ecos_sram_*`, or tiled GF180 `gf180mcu_fd_ip_sram__sram*x8m8wm1`
+macros only under `PDK_IHP130`/`PDK_ICS55`/`PDK_GF180` +
+`HAVE_SRAM_MACRO` without `PDK_BEHAV`; the `gated_clk_cell.v`,
+`tdt_gated_clk_cell.v`, and `BUFGCE.v` overrides implement the chapter 3 ICG
+swap and select the process clock-gating cell under a `PDK_*` define without
+`PDK_BEHAV`) and are applied
+by filelist generation, never by editing the vendored checkout. The former
+VexiiRiscv HP generator is preserved
+only as the frozen Std-series asset (`make std-vexii-generate`). See
 [LP/HP Architecture](../docs/lp-hp-architecture.md).
 
 RTL changes require an affected firmware build and simulation. Use

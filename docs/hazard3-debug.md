@@ -13,7 +13,9 @@ a second SoC bus master. Debugger memory operations execute through the halted
 hart and remain subject to the AXI4 interconnect access policy. MPW user cores,
 peripherals, clocks, and pad control stay outside the debug-reset scope.
 
-The product Vexii HP hart can own shared JTAG only while held in reset. C0-C3
+The product OpenC906 HP hart can own shared JTAG only while held in reset; HP
+debug uses the C906 internal Debug Module behind the external JTAG DTM
+(`tdt_dmi_top`). C0-C3
 are software-selected only in the mini-ver-mpw compatibility profile; they are
 not management-core options and do not have a management Debug Module.
 

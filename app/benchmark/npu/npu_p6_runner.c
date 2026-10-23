@@ -503,7 +503,8 @@ static void rs_npu_p6_clean_range(const void *pointer, uint32_t bytes) {
     uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
 
     while (cursor < end) {
-        __asm__ volatile("cbo.clean 0(%0)" : : "r"(cursor) : "memory");
+        /* OpenC906 dcache.cva: clean the 64-byte D-cache line at cursor. */
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x5" : : "r"(cursor) : "memory");
         cursor += UINT32_C(64);
     }
 }
@@ -513,7 +514,8 @@ static void rs_npu_p6_invalidate_range(const void *pointer, uint32_t bytes) {
     uintptr_t end = ((uintptr_t)pointer + bytes + UINT32_C(63)) & ~(uintptr_t)UINT32_C(63);
 
     while (cursor < end) {
-        __asm__ volatile("cbo.inval 0(%0)" : : "r"(cursor) : "memory");
+        /* OpenC906 dcache.iva: invalidate the 64-byte D-cache line at cursor. */
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x6" : : "r"(cursor) : "memory");
         cursor += UINT32_C(64);
     }
     __asm__ volatile("fence r, r" : : : "memory");

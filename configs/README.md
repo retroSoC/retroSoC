@@ -22,10 +22,10 @@ and retained logs under
 `build/ihp130-2026-10-01-10-30-b2e490436ac7/npu/p6/`.
 `ci/ihp130-hp.mk` is the asymmetric Linux application profile. It starts HP
 from the external 72 MHz safe clock and LP from REF24, runs `hp_boot` entirely
-from 32 KiB on-chip SRAM, enables VexiiRiscv `Zicbom` with 64-byte blocks, and
-generates VexiiRiscv RTL only below the selected build variant. It is not part
-of the supported PR matrix until Linux boot, HP performance, synthesis, and
-timing evidence are qualified.
+from 32 KiB on-chip SRAM, and uses the locked pre-generated OpenC906 HP core
+(RV64GC, hart 1) whose combined RTL is emitted only below the selected build
+variant. It is not part of the supported PR matrix until Linux boot, HP
+performance, synthesis, and timing evidence are qualified.
 `ci/ihp130-rtthread.mk` selects the same RV64 HP hardware and LP loader for
 the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
 `make CONFIG=configs/ci/ihp130-rtthread.mk SIMU=VERILATOR hp-rtthread-sim`.
@@ -34,7 +34,10 @@ the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
 SDRAM, performs the LP-only image loads, hands APU ownership to HP, and checks
 HP-submitted WAV/KWS jobs plus the LP-only register fault probe in the full-SoC
 Verilator simulation via `hp-apu-sim`.
-All PRODUCT profiles use `rv64imafdc_zicbom_max`; LP compiler/ISA remain RV32.
+Mini PRODUCT profiles use the locked OpenC906 HP core (RV64GC); HP images
+compile as `rv64imafdc_zicsr_zifencei`/`lp64d`, and the former
+`rv64imafdc_zicbom_max` VexiiRiscv configuration is preserved as the
+Std-series generator asset. LP compiler/ISA remain RV32.
 `ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
 by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of

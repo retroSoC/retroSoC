@@ -19,7 +19,7 @@ An open-source RISC-V SoC platform, from SystemVerilog RTL and firmware to repro
 ## Platform overview
 
 **Mini and Tiny have independent integration flows.** Mini combines a
-low-power Hazard3 management hart and a VexiiRiscv application hart; its separate
+low-power Hazard3 management hart and a T-Head OpenC906 application hart; its separate
 MPW profile retains selectable-core compatibility. [Tiny](docs/ip/tiny-soc.md)
 is a wired MCU with one Hazard3 RV32IMC hart, 128 KiB SRAM, AXI4/APB4 and no
 wireless IP. Tiny defaults to ICS55 SAFE24 with a parked PLL and retains
@@ -34,7 +34,7 @@ multimedia inputs.
 
 | Area | Mini platform |
 | --- | --- |
-| Compute | Hazard3 LP management hart; generated dual-issue VexiiRiscv HP application hart. Baseline profiles compile LP firmware for RV32IM and select an RV64IMAFDC HP core with Zicbom cache maintenance. |
+| Compute | Hazard3 LP management hart; locked pre-generated T-Head OpenC906 HP application hart. Baseline profiles compile LP firmware for RV32IM and use the OpenC906 DEFAULT RV64GC configuration with T-Head custom cache-maintenance instructions. |
 | Memory and interconnect | Native AXI4 data plane, APB4 control, configurable on-chip SRAM, SDRAM, PSRAM/OPI-PSRAM, and XPI flash integration. |
 | Control and I/O | GPIO, timers, UART, I2C, I2S, PWM, RTC, watchdog, storage interfaces, DMA, interrupt routing, and fixed EXT-L/EXT-H extension slots. |
 | Software | Freestanding C runtime and HAL, board support, diagnostic and shell applications, CoreMark, and HP boot/bundle tooling. |

@@ -208,6 +208,14 @@ def main() -> int:
             for sram_name, directory_name in (
                 ("pdk_ics55_sram_1024x32_m8", "ics55_ecos_sram_1024x32_m8"),
                 ("pdk_ics55_sram_4096x32_m8", "ics55_ecos_sram_4096x32_m8"),
+                ("pdk_ics55_sram_1024x16_m8", "ics55_ecos_sram_1024x16_m8"),
+                ("pdk_ics55_sram_2048x32_m8", "ics55_ecos_sram_2048x32_m8"),
+                ("pdk_ics55_sram_256x59_m4", "ics55_ecos_sram_256x59_m4"),
+                ("pdk_ics55_sram_1024x64_m8", "ics55_ecos_sram_1024x64_m8"),
+                ("pdk_ics55_sram_128x8_m8", "ics55_ecos_sram_128x8_m8"),
+                ("pdk_ics55_sram_64x58_m4", "ics55_ecos_sram_64x58_m4"),
+                ("pdk_ics55_sram_64x88_m4", "ics55_ecos_sram_64x88_m4"),
+                ("pdk_ics55_sram_64x98_m4", "ics55_ecos_sram_64x98_m4"),
             ):
                 sram = archive(sram_name)
                 sram_archive = ROOT / sram["destination"]

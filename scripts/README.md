@@ -135,9 +135,28 @@ SRAM CoreMark quick report into `meta/coremark.json`; it requires one valid
 `COREMARK_RESULT` record and `COREMARK_PASS`. Both reports complement, rather
 than replace, the common `SIM_TEST_PASS` simulation verdict.
 
+`setup_openc906.py` installs or updates (`--update`) the locked OpenC906
+source used by Mini product profiles and verifies the checked-out revision;
+the vendored checkout is never modified. `generate_openc906.py` resolves the
+upstream `C906_RTL_FACTORY/gen_rtl` filelists from that checkout, substitutes
+the reviewed overrides from `rtl/mini/ip_overrides/` (the hart-1
+`aq_sysio_kid.v`, the strong-order MMIO-window `sysmap.h`, the eight
+`aq_spsram_*.v` SRAM wrappers whose PDK-selectable macro path — stacked
+IHP130 `RM_IHPSG13_1P_*`, exact-geometry ICS55 `ics55_ecos_sram_*`, or tiled
+GF180 `gf180mcu_fd_ip_sram__sram*x8m8wm1` — is
+gated on `PDK_IHP130`/`PDK_ICS55`/`PDK_GF180`+`HAVE_SRAM_MACRO` without
+`PDK_BEHAV`, and
+the `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` clock-gate overrides
+that select the process ICG cell under a `PDK_*` define without `PDK_BEHAV`),
+each pinned to
+the upstream file's SHA-256 so a locked-revision move forces review), and
+emits the single compilation unit `openc906_combined.v` below `build/`;
+generated RTL is never tracked.
+
 `generate_vexiiriscv.py` verifies the locked VexiiRiscv revision, rejects local
-source changes before and after generation, and generates the fixed HP core
-below `build/`; generated RTL is never tracked.
+source changes before and after generation, and generates the fixed Std-series
+core (preserved from the retired Mini HP configuration) below `build/`; generated
+RTL is never tracked.
 `setup_hp_linux.py` installs the locked OpenSBI, Linux, and Buildroot revisions
 and can resume a checkout left without `HEAD` by an interrupted fetch.
 `build_hp_linux.py` builds the RV64 `lp64d` userspace/OpenSBI image set with the repo-owned

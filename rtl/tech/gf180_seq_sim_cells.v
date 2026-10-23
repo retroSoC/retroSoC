@@ -53,3 +53,21 @@ module gf180mcu_fd_sc_mcu7t5v0__dffsnq_1 (
     else Q <= D;
   end
 endmodule
+
+// The upstream icgtp functional model references a UDP latch primitive
+// (UDP_GF018hv5v_mcu_sc7_TT_1P8V_25C_verilog_nonpg_MGM_N_IQ_LATCH_UDP) that
+// is not shipped anywhere in the locked GF180 checkout, so the vendor model
+// cannot elaborate; this functional model retains the PDK cell interface.
+module gf180mcu_fd_sc_mcu7t5v0__icgtp_1 (
+    input  wire TE,
+    input  wire E,
+    input  wire CLK,
+    output wire Q,
+    input  wire notifier
+);
+  reg s_en_latch;
+  always @(CLK or E or TE) begin
+    if (!CLK) s_en_latch <= E | TE;
+  end
+  assign Q = CLK & s_en_latch;
+endmodule
