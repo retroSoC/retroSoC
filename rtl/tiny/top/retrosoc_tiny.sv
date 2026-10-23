@@ -954,7 +954,7 @@ axi4_error_slave #(
       .alt_select_i       (s_gpio_alt_select),
       .output_enable_i    (s_gpio_output_enable),
       .open_drain_i       (s_gpio_open_drain),
-      .gpio_ready_i       (s_gpio_rst_n && s_apb_cdc_ready[0]),
+      .gpio_ready_i       (s_gpio_rst_n && !s_actual_gate[1]),
       .miso_i             (s_spi_miso),
       .sck_o              (s_spi_sck),
       .mosi_o             (s_spi_mosi),

@@ -63,8 +63,13 @@ rs_status_t rs_spi_configure(const rs_spi_config_t *config) {
 
 rs_status_t rs_spi_acquire(rs_timeout_t timeout) {
 #ifdef RS_SPI_TARGET_PRESENT
+    rs_status_t result;
     RS_SPI_REG(RS_SPI_ABI_COMMAND) = UINT32_C(1) << RS_SPI_ABI_ENABLE;
-    return rs_spi_wait_status(UINT32_C(1) << RS_SPI_ABI_STATUS_GPIO_READY, true, timeout);
+    result = rs_spi_wait_status(UINT32_C(1) << RS_SPI_ABI_STATUS_GPIO_READY, true, timeout);
+    if (result != RS_OK) {
+        return result;
+    }
+    return rs_spi_wait_status(UINT32_C(1) << RS_SPI_ABI_STATUS_BUS_IDLE, true, timeout);
 #else
     (void)timeout;
     return RS_ENOTSUP;
@@ -77,10 +82,16 @@ rs_status_t rs_spi_release(rs_timeout_t timeout) {
         rs_spi_wait_status(UINT32_C(1) << RS_SPI_ABI_STATUS_SEGMENT_CLEAN, true, timeout);
     if (result != RS_OK)
         return result;
-    RS_SPI_REG(RS_SPI_ABI_COMMAND) = UINT32_C(1) << RS_SPI_ABI_DISABLE;
-    result = rs_spi_wait_status(UINT32_C(0xF), false, timeout);
-    if (result != RS_OK)
-        return result;
+    rs_spi_status_t status;
+    if (rs_spi_get_status(&status) != RS_OK) {
+        return RS_EIO;
+    }
+    if ((status.status & UINT32_C(0xF)) != UINT32_C(0x0)) {
+        RS_SPI_REG(RS_SPI_ABI_COMMAND) = UINT32_C(1) << RS_SPI_ABI_DISABLE;
+        result = rs_spi_wait_status(UINT32_C(0xF), false, timeout);
+        if (result != RS_OK)
+            return result;
+    }
     const rs_gpio_config_t input = {
         .mode = RS_GPIO_MODE_INPUT,
         .pull = RS_GPIO_PULL_NONE,
@@ -154,7 +165,7 @@ rs_status_t rs_spi_abort(rs_timeout_t timeout) {
 rs_status_t rs_spi_recover(rs_timeout_t timeout) {
 #ifdef RS_SPI_TARGET_PRESENT
     RS_SPI_REG(RS_SPI_ABI_COMMAND) = UINT32_C(1) << RS_SPI_ABI_RECOVER;
-    return rs_spi_wait_status(UINT32_C(1) << RS_SPI_ABI_STATUS_SESSION_OWNED, false, timeout);
+    return rs_spi_wait_status(UINT32_C(0xF), false, timeout);
 #else
     (void)timeout;
     return RS_ENOTSUP;
