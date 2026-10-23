@@ -114,10 +114,12 @@ def verify_locked_views(root: Path) -> dict:
     return verified
 
 
-def inspect_netlist(document: dict) -> dict:
+def expand_netlist(document: dict) -> tuple:
+    """Resolve hierarchy aliases without assigning a product clock contract."""
     modules = document["modules"]
     top = "retrosoc_tiny_asic"
     leaves = []
+    boundaries = {}
     aliases = {}
 
     def canonical(bit):
@@ -159,6 +161,7 @@ def inspect_netlist(document: dict) -> dict:
             path = f"{scope}/{name}"
             attrs = modules.get(kind, {}).get("attributes", {})
             if kind in modules and not int(str(attrs.get("blackbox", "0")), 2):
+                boundaries[path] = {"path": path, "type": kind, "ports": ports}
                 visit(kind, path, ports)
             else:
                 directions = cell.get("port_directions", {
@@ -168,21 +171,44 @@ def inspect_netlist(document: dict) -> dict:
                                "directions": directions})
 
     visit(top, top, {})
-    for c in leaves:
+    for c in [*leaves, *boundaries.values()]:
         for port, bits in c["ports"].items():
             c["ports"][port] = [canonical(bit) for bit in bits]
+    return modules, top, leaves, canonical, boundaries
+
+
+def inspect_netlist(document: dict) -> dict:
+    # Keep the original P1 parked-PLL/direct-SYS contract fail-closed.
+    modules, top, leaves, canonical, _ = expand_netlist(document)
     clock = modules[top]["cells"]["u_clock_buffer"]["connections"]["clk_o"]
     if len(clock) != 1 or not isinstance(clock[0], int):
         raise ValueError("missing live SYS clock")
     system = canonical(f"{top}:{clock[0]}")
     if system in ("0", "1", "x", "z"):
         raise ValueError("SYS is not a live clock net")
-    ram = [c for c in leaves if c["type"] == RAM]
+    all_ram = [c for c in leaves if c["type"] == RAM]
+    crypto_names = {f"u_soc.u_crypto.u_storage.gen_bank[{n}].gen_macro.u_sram.u_mem"
+                    for n in range(6)}
+    crypto = [c for c in all_ram if any(c["path"].replace("/", ".").endswith("." + name)
+                                      for name in crypto_names)]
+    observed_crypto = {name for name in crypto_names for c in crypto
+                       if c["path"].replace("/", ".").endswith("." + name)}
+    if len(all_ram) != 38 or len(crypto) != 6 or observed_crypto != crypto_names:
+        raise ValueError("Tiny P6 requires exactly 32 main SRAM and six private Crypto macros")
+    if any(c["ports"].get("CLK") != [system] for c in crypto):
+        raise ValueError("private Crypto SRAM does not use SAFE24 PCLK")
+    ram = [c for c in all_ram if c not in crypto]
     pll = [c for c in leaves if c["type"] == "PLL_TOP"]
     if any(c["type"] == "ics55_ecos_sram_4096x32_m8" for c in leaves):
         raise ValueError("Tiny instantiated the unsupported 16 KiB SRAM interface stub")
     if len(ram) != 32 or len(pll) != 1:
         raise ValueError("expected 32 main SRAM macros and one PLL")
+    expected_ram = {f"u_soc.u_sram.gen_group[{g}].u_group.gen_bank[{n}].u_ram.u_mem"
+                    for g in range(4) for n in range(8)}
+    observed_ram = {next((name for name in expected_ram
+                         if c["path"].replace("/", ".").endswith("." + name)), "") for c in ram}
+    if observed_ram != expected_ram:
+        raise ValueError("Tiny P4 SRAM group/macro hierarchy is missing or stale")
     if any(c["ports"].get("CLK") != [system] for c in ram):
         raise ValueError("main SRAM does not share direct SYS")
     constants = {"0": 0, "1": 1}
@@ -202,7 +228,7 @@ def inspect_netlist(document: dict) -> dict:
     enable = pll[0]["ports"].get("EN", [])
     if len(enable) != 1 or constants.get(enable[0]) != 0:
         raise ValueError("PLL enable is not proven constant zero")
-    cpu = [c for c in leaves if "u_hazard3_cpu_1port" in c["path"]
+    cpu = [c for c in leaves if "u_hazard3_cpu_2port" in c["path"]
            and ("CK" in c["ports"] or "CKN" in c["ports"])]
     if not cpu or any(c["ports"].get("CK", c["ports"].get("CKN")) != [system] for c in cpu):
         raise ValueError("CPU sequential clocks do not share direct SYS")
@@ -213,6 +239,7 @@ def inspect_netlist(document: dict) -> dict:
             "system_clock_source": {"port": "extclk_i_pad", "net": reference, "path": clock_path},
             "cpu_clocked_cells": len(cpu),
             "sram": [{"path": c["path"], "clock": c["ports"]["CLK"]} for c in ram],
+            "crypto_sram": [{"path": c["path"], "clock": c["ports"]["CLK"]} for c in crypto],
             "pll": pll[0], "pll_enable": 0, "qualification": "SAFE24 digital connectivity only"}
 
 

@@ -95,6 +95,7 @@ module xpi_indirect (
   logic [2:0] s_err_pc_d, s_err_pc_q;
   logic        s_polling;
   logic        s_rx_last_byte;
+  logic        s_err_report;
   logic [31:0] s_rx_word_with_byte;
 
   assign s_state_q = xpi_indirect_state_e'(s_state_bits_q);
@@ -123,10 +124,13 @@ module xpi_indirect (
     s_rx_word_with_byte[(s_rx_byte_idx_q*8)+:8] = core_rx_data_i;
   end
 
-  assign error_code_o = s_err_code_q;
-  assign error_addr_o = s_err_addr_q;
-  assign error_slot_o = s_err_slot_q;
-  assign error_pc_o   = s_err_pc_q;
+  // Both events reach the register shell in the cycle that creates metadata.
+  // Keep event latency unchanged and present the corresponding complete bundle.
+  assign s_err_report = error_event_o || timeout_event_o;
+  assign error_code_o = s_err_report ? s_err_code_d : s_err_code_q;
+  assign error_addr_o = s_err_report ? s_err_addr_d : s_err_addr_q;
+  assign error_slot_o = s_err_report ? s_err_slot_d : s_err_slot_q;
+  assign error_pc_o   = s_err_report ? s_err_pc_d : s_err_pc_q;
 
   always_comb begin
     s_state_d               = s_state_q;
@@ -265,6 +269,7 @@ module xpi_indirect (
           if (core_error_i) begin
             s_err_code_d  = core_error_code_i;
             s_err_slot_d  = poll_slot_i;
+            s_err_addr_d  = '0;  // Poll commands always issue device address zero.
             s_err_pc_d    = core_error_pc_i;
             error_event_o = 1'b1;
             s_state_d     = Idle;
@@ -275,6 +280,8 @@ module xpi_indirect (
                        (s_poll_elapsed_q >= poll_timeout_i - 1'b1)) begin
             s_err_code_d    = XpiErrorTimeout;
             s_err_slot_d    = poll_slot_i;
+            s_err_addr_d    = '0;
+            s_err_pc_d      = '0;  // Poll budget expiry is not a LUT instruction fault.
             timeout_event_o = 1'b1;
             s_state_d       = Idle;
           end else begin
@@ -294,6 +301,8 @@ module xpi_indirect (
         end else if ((poll_timeout_i != 32'd0) && (s_poll_elapsed_q >= poll_timeout_i - 1'b1)) begin
           s_err_code_d    = XpiErrorTimeout;
           s_err_slot_d    = poll_slot_i;
+          s_err_addr_d    = '0;
+          s_err_pc_d      = '0;
           timeout_event_o = 1'b1;
           s_state_d       = Idle;
         end else if (s_poll_interval_cnt_q == 32'd0) begin

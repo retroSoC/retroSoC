@@ -22,6 +22,7 @@
 `define APB4_DMA__IRQ_TEST              12'h01C
 `define APB4_DMA__ERROR_SUMMARY         12'h020
 `define APB4_DMA__REQUEST_STATUS        12'h024
+`define APB4_DMA__SUPPORTED_REQUESTS    12'h028
 
 `define APB4_DMA__CH_BASE               12'h100
 `define APB4_DMA__CH_STRIDE             12'h080

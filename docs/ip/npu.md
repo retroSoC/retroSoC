@@ -291,7 +291,7 @@ integration advertises no execution readiness, DMA, or operator capability.
 | HP IRQ | PLIC source 12 |
 
 The peripheral IRQ group expands 25 to 26 bits; the existing 64-bit LP vector
-and 32-source PLIC container need no width increase. Preserve the separate
+and the HP PLIC input container need no width increase. Preserve the separate
 MPW compatibility path and all existing harts, resources and interrupts.
 Phase 2 MUST update topology generator names/policies, hardcoded master
 credit/priority functions, 9x6 assertions, resource vectors, monitor banks,
@@ -649,7 +649,7 @@ Software serializes one submitter and acquires resource ownership before use.
 Before START it cleans input/constants/descriptors and cleans/invalidates
 output lines as applicable, then fences. After terminal successful output
 completion it invalidates output and fences before CPU access. Use the
-existing 64-byte HP Zicbom boundary and avoid sharing cache lines with
+existing 64-byte HP cache-line boundary and avoid sharing cache lines with
 unrelated allocations. LP still executes ordering fences despite no D-cache.
 Cache ownership of an active NPU job remains the application's responsibility
 during HP lifecycle operations; automatic coherence is not implied.

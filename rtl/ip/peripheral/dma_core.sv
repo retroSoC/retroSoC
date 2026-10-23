@@ -12,15 +12,19 @@
 `include "axi4_define.svh"
 
 module dma_core #(
-    parameter int          AddrWidth         = 32,
-    parameter int          DataWidth         = 32,
-    parameter int          NumChannels       = 4,
-    parameter int          ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
-    parameter int          MaxBurstBeats     = 16,
-    parameter int          FifoDepth         = 16,
-    parameter bit          EnableCrc         = 1'b1,
-    parameter logic [15:0] RequestMask       = 16'h3fff,
-    parameter bit          EnableStreams     = 1'b1
+    parameter int          AddrWidth             = 32,
+    parameter int          DataWidth             = 32,
+    parameter int          NumChannels           = 4,
+    parameter int          ChannelIndexWidth     = (NumChannels > 1) ? $clog2(NumChannels) : 1,
+    parameter int          MaxBurstBeats         = 16,
+    parameter int          FifoDepth             = 16,
+    parameter bit          EnableCrc             = 1'b1,
+    parameter logic [31:0] RequestMask           = 32'h0000_3fff,
+    parameter bit          EnableStreams         = 1'b1,
+    parameter bit          EnableSpi             = 1'b0,
+    parameter bit          EnableOriginQualifier = 1'b0,
+    parameter logic [31:0] SpiTxAddress          = 32'd0,
+    parameter logic [31:0] SpiRxAddress          = 32'd0
 ) (
     // verilog_format: off -- channel vectors are kept aligned with the register-bank ABI.
     input  logic                           clk_i,
@@ -62,7 +66,12 @@ module dma_core #(
     output logic [ChannelIndexWidth-1:0]   first_error_channel_o,
     output logic [8:0]                     first_error_status_o,
     output logic [15:0]                    first_error_addr_hi_o,
-    output logic [15:0]                    request_status_o,
+    output logic [31:0]                    request_status_o,
+    output logic [1:0]                     spi_credit_valid_o,
+    output logic [1:0]                     spi_credit_retire_o,
+    output logic [1:0]                     spi_start_pending_o,
+    output logic [3:0]                     spi_status_o,
+    output logic                           spi_error_o,
     output logic                           xpi_xfer_done_o,
     dma_req_if.dut                         req,
     axi4_if.master                         axi4,
@@ -86,7 +95,8 @@ module dma_core #(
   logic [      NumChannels-1:0][              31:0] s_cfg_src_addr;
   logic [      NumChannels-1:0][              31:0] s_cfg_dst_addr;
   logic [      NumChannels-1:0][              31:0] s_cfg_byte_count;
-  logic [      NumChannels-1:0][               3:0] s_cfg_request;
+  logic [      NumChannels-1:0][              31:0] s_cfg_req_raw;
+  logic [      NumChannels-1:0][               4:0] s_cfg_req;
   logic [      NumChannels-1:0][               4:0] s_cfg_burst;
   logic [      NumChannels-1:0]                     s_cfg_crc_enable;
   logic [      NumChannels-1:0]                     s_cfg_crc_final;
@@ -105,7 +115,7 @@ module dma_core #(
   logic [      NumChannels-1:0]                     s_evt_half_q;
   logic [      NumChannels-1:0]                     s_evt_err_q;
   logic [      NumChannels-1:0][               2:0] s_kind_q;
-  logic [      NumChannels-1:0][               3:0] s_req_q;
+  logic [      NumChannels-1:0][               4:0] s_req_q;
   logic [      NumChannels-1:0][               1:0] s_priority_q;
   logic [      NumChannels-1:0][               4:0] s_burst_q;
   logic [      NumChannels-1:0]                     s_src_increment_q;
@@ -155,7 +165,7 @@ module dma_core #(
   logic [      NumChannels-1:0][              31:0] s_fifo_wdata;
   logic [      NumChannels-1:0][              31:0] s_fifo_rdata;
 
-  logic [                 15:0]                     s_req_ready;
+  logic [                 31:0]                     s_req_ready;
   logic [      NumChannels-1:0]                     s_start_valid;
   logic [      NumChannels-1:0][               3:0] s_start_err_code;
 
@@ -181,6 +191,7 @@ module dma_core #(
   logic [                 31:0]                     s_axi_read_start_addr;
   logic [                  4:0]                     s_axi_read_start_beats;
   logic                                             s_axi_read_start_fixed;
+  logic [ChannelIndexWidth-1:0]                     s_axi_read_origin_channel;
   logic                                             s_axi_read_busy;
   logic                                             s_axi_read_beat_valid;
   logic                                             s_axi_read_beat_ready;
@@ -196,6 +207,7 @@ module dma_core #(
   logic [                 31:0]                     s_axi_write_start_addr;
   logic [                  4:0]                     s_axi_write_start_beats;
   logic                                             s_axi_write_start_fixed;
+  logic [ChannelIndexWidth-1:0]                     s_axi_write_origin_channel;
   logic                                             s_axi_write_busy;
   logic                                             s_axi_write_data_valid;
   logic                                             s_axi_write_data_ready;
@@ -291,6 +303,10 @@ module dma_core #(
         ((FifoDepth & (FifoDepth - 1)) != 0)) begin
       $fatal(1, "dma_core: MVP requires 32-bit AXI4, 2+ channels, and a power-of-two FIFO");
     end
+    if (EnableOriginQualifier && (ChannelIndexWidth > 3)) begin
+      $fatal(1,
+             "dma_core: origin qualifier packs three-bit channels, so NumChannels must stay <= 8");
+    end
   end
 `endif
 
@@ -341,44 +357,79 @@ module dma_core #(
       .DataWidth    (DataWidth),
       .MaxBurstBeats(MaxBurstBeats)
   ) u_dma_axi4_master (
-      .clk_i               (clk_i),
-      .rst_n_i             (rst_n_i),
-      .clear_i             (1'b0),
-      .read_start_valid_i  (s_axi_read_start_valid),
-      .read_start_ready_o  (s_axi_read_start_ready),
-      .read_addr_i         (s_axi_read_start_addr),
-      .read_beats_i        (s_axi_read_start_beats),
-      .read_fixed_i        (s_axi_read_start_fixed),
-      .read_busy_o         (s_axi_read_busy),
-      .read_beat_valid_o   (s_axi_read_beat_valid),
-      .read_beat_ready_i   (s_axi_read_beat_ready),
-      .read_data_o         (s_axi_read_data),
-      .read_resp_o         (s_axi_read_resp),
-      .read_last_o         (s_axi_read_last),
-      .read_expected_last_o(s_axi_read_expected_last),
-      .read_id_error_o     (s_axi_read_id_error),
-      .read_done_o         (s_axi_read_done),
-      .write_start_valid_i (s_axi_write_start_valid),
-      .write_start_ready_o (s_axi_write_start_ready),
-      .write_addr_i        (s_axi_write_start_addr),
-      .write_beats_i       (s_axi_write_start_beats),
-      .write_fixed_i       (s_axi_write_start_fixed),
-      .write_busy_o        (s_axi_write_busy),
-      .write_data_valid_i  (s_axi_write_data_valid),
-      .write_data_ready_o  (s_axi_write_data_ready),
-      .write_data_i        (s_axi_write_data),
-      .write_strb_i        (s_axi_write_strb),
-      .write_done_o        (s_axi_write_done),
-      .write_resp_o        (s_axi_write_resp),
-      .write_id_error_o    (s_axi_write_id_error),
-      .axi4                (axi4)
+      .clk_i                 (clk_i),
+      .rst_n_i               (rst_n_i),
+      .clear_i               (1'b0),
+      .read_start_valid_i    (s_axi_read_start_valid),
+      .read_start_ready_o    (s_axi_read_start_ready),
+      .read_addr_i           (s_axi_read_start_addr),
+      .read_beats_i          (s_axi_read_start_beats),
+      .read_fixed_i          (s_axi_read_start_fixed),
+      .read_busy_o           (s_axi_read_busy),
+      .read_beat_valid_o     (s_axi_read_beat_valid),
+      .read_beat_ready_i     (s_axi_read_beat_ready),
+      .read_data_o           (s_axi_read_data),
+      .read_resp_o           (s_axi_read_resp),
+      .read_last_o           (s_axi_read_last),
+      .read_expected_last_o  (s_axi_read_expected_last),
+      .read_id_error_o       (s_axi_read_id_error),
+      .read_done_o           (s_axi_read_done),
+      .write_start_valid_i   (s_axi_write_start_valid),
+      .write_start_ready_o   (s_axi_write_start_ready),
+      .write_addr_i          (s_axi_write_start_addr),
+      .write_beats_i         (s_axi_write_start_beats),
+      .write_fixed_i         (s_axi_write_start_fixed),
+      .write_busy_o          (s_axi_write_busy),
+      .write_data_valid_i    (s_axi_write_data_valid),
+      .write_data_ready_o    (s_axi_write_data_ready),
+      .write_data_i          (s_axi_write_data),
+      .write_strb_i          (s_axi_write_strb),
+      .write_done_o          (s_axi_write_done),
+      .write_resp_o          (s_axi_write_resp),
+      .write_id_error_o      (s_axi_write_id_error),
+      .origin_enable_i       (EnableOriginQualifier),
+      .read_origin_channel_i (s_axi_read_origin_channel),
+      .write_origin_channel_i(s_axi_write_origin_channel),
+      .axi4                  (axi4)
   );
+
+  always_comb begin
+    logic s_spi_error;
+    spi_credit_valid_o  = '0;
+    spi_credit_retire_o = '0;
+    spi_start_pending_o = '0;
+    spi_status_o        = '0;
+    s_spi_error         = 1'b0;
+    if (EnableSpi) begin
+      if (s_read_owner_valid_q && (s_req_q[s_read_owner_q] == DMA_REQUEST_SPI_RX) &&
+          (s_src_base_q[s_read_owner_q] == SpiRxAddress)) begin
+        spi_credit_valid_o[1] = 1'b1;
+        spi_status_o[1]       = 1'b1;
+        s_spi_error           = s_spi_error | s_err_q[s_read_owner_q];
+        if (s_axi_read_done) spi_credit_retire_o[1] = 1'b1;
+      end
+      if (s_write_owner_valid_q && (s_req_q[s_write_owner_q] == DMA_REQUEST_SPI_TX) &&
+          (s_dst_base_q[s_write_owner_q] == SpiTxAddress)) begin
+        spi_credit_valid_o[0] = 1'b1;
+        spi_status_o[0]       = 1'b1;
+        s_spi_error           = s_spi_error | s_err_q[s_write_owner_q];
+        if (s_axi_write_done) spi_credit_retire_o[0] = 1'b1;
+      end
+      if (s_read_rr_valid && (s_req_q[s_read_rr_selected] == DMA_REQUEST_SPI_RX) &&
+          (s_src_base_q[s_read_rr_selected] == SpiRxAddress) && !s_axi_read_busy)
+        spi_start_pending_o[1] = 1'b1;
+      if (s_write_rr_valid && (s_req_q[s_write_rr_selected] == DMA_REQUEST_SPI_TX) &&
+          (s_dst_base_q[s_write_rr_selected] == SpiTxAddress) && !s_axi_write_busy)
+        spi_start_pending_o[0] = 1'b1;
+    end
+    spi_error_o = s_spi_error;
+  end
 
   always_comb begin
     s_req_ready                         = '0;
     s_req_ready[DMA_REQUEST_SOFTWARE]   = 1'b1;
-    s_req_ready[DMA_REQUEST_I2S_TX]     = req.i2s_tx_proc;
-    s_req_ready[DMA_REQUEST_I2S_RX]     = req.i2s_rx_proc;
+    s_req_ready[DMA_REQUEST_I2S_TX]     = EnableStreams && req.i2s_tx_proc;
+    s_req_ready[DMA_REQUEST_I2S_RX]     = EnableStreams && req.i2s_rx_proc;
     s_req_ready[DMA_REQUEST_QSPI_TX]    = req.qspi_tx_proc;
     s_req_ready[DMA_REQUEST_QSPI_RX]    = req.qspi_rx_proc;
     s_req_ready[DMA_REQUEST_UART_TX]    = req.uart_tx_proc;
@@ -387,9 +438,11 @@ module dma_core #(
     s_req_ready[DMA_REQUEST_I2C0_RX]    = req.i2c0_rx_proc;
     s_req_ready[DMA_REQUEST_I2C1_TX]    = req.i2c1_tx_proc;
     s_req_ready[DMA_REQUEST_I2C1_RX]    = req.i2c1_rx_proc;
-    s_req_ready[DMA_REQUEST_DVP_RX]     = 1'b1;
-    s_req_ready[DMA_REQUEST_CRYPTO_IN]  = req.crypto_in_proc;
-    s_req_ready[DMA_REQUEST_CRYPTO_OUT] = req.crypto_out_proc;
+    s_req_ready[DMA_REQUEST_DVP_RX]     = EnableStreams;
+    s_req_ready[DMA_REQUEST_CRYPTO_IN]  = EnableStreams && req.crypto_in_proc;
+    s_req_ready[DMA_REQUEST_CRYPTO_OUT] = EnableStreams && req.crypto_out_proc;
+    s_req_ready[DMA_REQUEST_SPI_TX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_TX];
+    s_req_ready[DMA_REQUEST_SPI_RX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_RX];
   end
   assign request_status_o = s_req_ready;
 
@@ -405,7 +458,8 @@ module dma_core #(
       s_cfg_src_addr[channel]      = src_addr_i[(channel*32)+:32];
       s_cfg_dst_addr[channel]      = dst_addr_i[(channel*32)+:32];
       s_cfg_byte_count[channel]    = byte_count_i[(channel*32)+:32];
-      s_cfg_request[channel]       = request_sel_i[(channel*32)+:4];
+      s_cfg_req_raw[channel]       = request_sel_i[(channel*32)+:32];
+      s_cfg_req[channel]           = s_cfg_req_raw[channel][4:0];
       s_cfg_burst[channel]         = burst_cfg_i[(channel*32)+:5];
     end
   end
@@ -415,7 +469,8 @@ module dma_core #(
     s_tcd_fetch_valid    = 1'b0;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
       if (s_tcd_fetch_pending_q[channel] && s_busy_q[channel] &&
-          !s_tcd_read_owner_valid_q && !s_axi_read_busy) begin
+          !s_abort_q[channel] && !abort_i[channel] && !s_err_q[channel] &&
+          !s_tcd_read_owner_valid_q && !s_tcd_parse_q && !s_axi_read_busy) begin
         if (!s_tcd_fetch_valid || (s_priority_q[channel] >
                                    s_priority_q[s_tcd_fetch_selected])) begin
           s_tcd_fetch_selected = ChannelIndexWidth'(channel);
@@ -434,14 +489,14 @@ module dma_core #(
         if ((other != channel) && s_busy_q[other]) begin
           if ((s_cfg_kind[channel] == DMA_KIND_MM_TO_STREAM) &&
               (s_kind_q[other] == DMA_KIND_MM_TO_STREAM) &&
-              (s_req_q[other] == s_cfg_request[channel]) &&
-              ((s_cfg_request[channel] == DMA_REQUEST_I2S_TX) ||
-               (s_cfg_request[channel] == DMA_REQUEST_CRYPTO_IN))) begin
+              (s_req_q[other] == s_cfg_req[channel]) &&
+              ((s_cfg_req[channel] == DMA_REQUEST_I2S_TX) ||
+               (s_cfg_req[channel] == DMA_REQUEST_CRYPTO_IN))) begin
             endpoint_busy = 1'b1;
           end
           if ((s_cfg_kind[channel] == DMA_KIND_STREAM_TO_MM) &&
               (s_kind_q[other] == DMA_KIND_STREAM_TO_MM) &&
-              (s_req_q[other] == s_cfg_request[channel])) begin
+              (s_req_q[other] == s_cfg_req[channel])) begin
             endpoint_busy = 1'b1;
           end
         end
@@ -449,7 +504,9 @@ module dma_core #(
 
       s_start_valid[channel]    = 1'b1;
       s_start_err_code[channel] = DMA_ERROR_CONFIG;
-      if (!RequestMask[s_cfg_request[channel]] ||
+      if ((s_cfg_req_raw[channel][31:5] != 27'd0) ||
+          (s_cfg_req[channel] > DMA_REQUEST_SPI_RX) ||
+          !RequestMask[s_cfg_req[channel]] ||
           (!EnableStreams && (s_cfg_kind[channel] != DMA_KIND_MM_TO_MM)) ||
           (s_cfg_width[channel] != DMA_WIDTH_32) || (s_cfg_byte_count[channel] == 32'd0) ||
           (s_cfg_burst[channel] == 5'd0) ||
@@ -462,11 +519,21 @@ module dma_core #(
             if ((s_cfg_src_addr[channel] == 32'd0) || (s_cfg_dst_addr[channel] == 32'd0) ||
                 (s_cfg_src_addr[channel][1:0] != 2'b00) ||
                 (s_cfg_dst_addr[channel][1:0] != 2'b00) ||
-                (s_cfg_request[channel] == DMA_REQUEST_I2S_TX) ||
-                (s_cfg_request[channel] == DMA_REQUEST_I2S_RX) ||
-                (s_cfg_request[channel] == DMA_REQUEST_DVP_RX) ||
-                (s_cfg_request[channel] == DMA_REQUEST_CRYPTO_IN) ||
-                (s_cfg_request[channel] == DMA_REQUEST_CRYPTO_OUT)) begin
+                (s_cfg_req[channel] == DMA_REQUEST_I2S_TX) ||
+                (s_cfg_req[channel] == DMA_REQUEST_I2S_RX) ||
+                (s_cfg_req[channel] == DMA_REQUEST_DVP_RX) ||
+                (s_cfg_req[channel] == DMA_REQUEST_CRYPTO_IN) ||
+                (s_cfg_req[channel] == DMA_REQUEST_CRYPTO_OUT) ||
+                ((s_cfg_req[channel] >= 5'd14) &&
+                 (s_cfg_req[channel] < DMA_REQUEST_SPI_TX)) ||
+                (!EnableSpi && ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX) ||
+                                (s_cfg_req[channel] == DMA_REQUEST_SPI_RX))) ||
+                ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX) &&
+                 (!s_cfg_src_increment[channel] || s_cfg_dst_increment[channel] ||
+                  s_cfg_dst_addr[channel] != SpiTxAddress)) ||
+                ((s_cfg_req[channel] == DMA_REQUEST_SPI_RX) &&
+                 (s_cfg_src_increment[channel] || !s_cfg_dst_increment[channel] ||
+                  s_cfg_src_addr[channel] != SpiRxAddress))) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
                   ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
@@ -480,8 +547,8 @@ module dma_core #(
                 (s_cfg_src_addr[channel][1:0] != 2'b00) ||
                 (s_cfg_byte_count[channel][1:0] != 2'b00) ||
                 !s_cfg_src_increment[channel] ||
-                ((s_cfg_request[channel] != DMA_REQUEST_I2S_TX) &&
-                 (s_cfg_request[channel] != DMA_REQUEST_CRYPTO_IN)) || endpoint_busy) begin
+                ((s_cfg_req[channel] != DMA_REQUEST_I2S_TX) &&
+                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_IN)) || endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
                   ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
@@ -495,9 +562,9 @@ module dma_core #(
                 (s_cfg_dst_addr[channel][1:0] != 2'b00) ||
                 (s_cfg_byte_count[channel][1:0] != 2'b00) ||
                 !s_cfg_dst_increment[channel] ||
-                ((s_cfg_request[channel] != DMA_REQUEST_I2S_RX) &&
-                 (s_cfg_request[channel] != DMA_REQUEST_DVP_RX) &&
-                 (s_cfg_request[channel] != DMA_REQUEST_CRYPTO_OUT)) ||
+                ((s_cfg_req[channel] != DMA_REQUEST_I2S_RX) &&
+                 (s_cfg_req[channel] != DMA_REQUEST_DVP_RX) &&
+                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_OUT)) ||
                 endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
@@ -664,10 +731,11 @@ module dma_core #(
   end
 
   always_comb begin
-    s_axi_read_start_valid = s_read_rr_valid && (|s_read_rr_grant) && !s_axi_read_busy;
-    s_axi_read_start_addr  = '0;
-    s_axi_read_start_beats = 5'd1;
-    s_axi_read_start_fixed = 1'b0;
+    s_axi_read_start_valid    = s_read_rr_valid && (|s_read_rr_grant) && !s_axi_read_busy;
+    s_axi_read_start_addr     = '0;
+    s_axi_read_start_beats    = 5'd1;
+    s_axi_read_start_fixed    = 1'b0;
+    s_axi_read_origin_channel = '0;
     if (s_read_rr_valid) begin
       s_axi_read_start_addr = s_src_base_q[s_read_rr_selected] +
                               (s_src_increment_q[s_read_rr_selected]
@@ -675,18 +743,21 @@ module dma_core #(
                                    : 32'd0);
       s_axi_read_start_beats = s_read_candidate_beats[s_read_rr_selected];
       s_axi_read_start_fixed = !s_src_increment_q[s_read_rr_selected];
+      s_axi_read_origin_channel = s_read_rr_selected;
     end
     if (s_tcd_fetch_valid) begin
-      s_axi_read_start_valid = !s_axi_read_busy;
-      s_axi_read_start_addr  = s_tcd_ptr_q[s_tcd_fetch_selected];
-      s_axi_read_start_beats = 5'd16;
-      s_axi_read_start_fixed = 1'b0;
+      s_axi_read_start_valid    = !s_axi_read_busy;
+      s_axi_read_start_addr     = s_tcd_ptr_q[s_tcd_fetch_selected];
+      s_axi_read_start_beats    = 5'd16;
+      s_axi_read_start_fixed    = 1'b0;
+      s_axi_read_origin_channel = s_tcd_fetch_selected;
     end
 
-    s_axi_write_start_valid = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
-    s_axi_write_start_addr  = '0;
-    s_axi_write_start_beats = 5'd1;
-    s_axi_write_start_fixed = 1'b0;
+    s_axi_write_start_valid    = s_write_rr_valid && (|s_write_rr_grant) && !s_axi_write_busy;
+    s_axi_write_start_addr     = '0;
+    s_axi_write_start_beats    = 5'd1;
+    s_axi_write_start_fixed    = 1'b0;
+    s_axi_write_origin_channel = '0;
     if (s_write_rr_valid) begin
       s_axi_write_start_addr = s_dst_base_q[s_write_rr_selected] +
                                (s_dst_increment_q[s_write_rr_selected]
@@ -694,6 +765,7 @@ module dma_core #(
                                     : 32'd0);
       s_axi_write_start_beats = s_write_candidate_beats[s_write_rr_selected];
       s_axi_write_start_fixed = !s_dst_increment_q[s_write_rr_selected];
+      s_axi_write_origin_channel = s_write_rr_selected;
     end
   end
 
@@ -938,6 +1010,10 @@ module dma_core #(
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
       s_read_owns_channel[channel] = s_read_owner_valid_q &&
                                      (s_read_owner_q == ChannelIndexWidth'(channel));
+      s_read_owns_channel[channel] |= s_tcd_read_owner_valid_q &&
+                                      (s_tcd_read_owner_q == ChannelIndexWidth'(channel));
+      s_read_owns_channel[channel] |= s_tcd_parse_q &&
+                                      (s_tcd_read_owner_q == ChannelIndexWidth'(channel));
       s_write_owns_channel[channel] = s_write_owner_valid_q &&
                                       (s_write_owner_q == ChannelIndexWidth'(channel));
       s_stream_tx_valid[channel] = s_i2s_tx_channel_valid &&
@@ -1144,7 +1220,7 @@ module dma_core #(
               if (s_start_valid[channel]) begin
                 s_busy_q[channel] <= 1'b1;
                 s_kind_q[channel] <= s_cfg_kind[channel];
-                s_req_q[channel] <= s_cfg_request[channel];
+                s_req_q[channel] <= s_cfg_req[channel];
                 s_priority_q[channel] <= s_cfg_priority[channel];
                 s_burst_q[channel] <= s_cfg_burst[channel];
                 s_src_increment_q[channel] <= s_cfg_src_increment[channel];
@@ -1272,7 +1348,10 @@ module dma_core #(
 
         if (s_tcd_parse_q) begin
           s_tcd_parse_q <= 1'b0;
-          if (!RequestMask[s_tcd_word7_q[s_tcd_read_owner_q][15:12]] ||
+          if (s_abort_q[s_tcd_read_owner_q]) begin
+            s_tcd_loaded_q[s_tcd_read_owner_q] <= 1'b0;
+          end else if (!RequestMask[{s_tcd_word7_q[s_tcd_read_owner_q][25],
+                            s_tcd_word7_q[s_tcd_read_owner_q][15:12]}] ||
               (!EnableStreams && (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM)) ||
               s_err_q[s_tcd_read_owner_q] ||
               (s_tcd_word7_q[s_tcd_read_owner_q][0] == 1'b0) ||
@@ -1282,7 +1361,30 @@ module dma_core #(
               ((s_tcd_word0_q[s_tcd_read_owner_q] != 32'd0) &&
                (s_tcd_word0_q[s_tcd_read_owner_q][5:0] != 6'd0)) ||
               (s_tcd_word7_q[s_tcd_read_owner_q][10:8] > DMA_KIND_STREAM_TO_MM) ||
-              (s_tcd_word7_q[s_tcd_read_owner_q][15:12] > DMA_REQUEST_CRYPTO_OUT) ||
+              ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                s_tcd_word7_q[s_tcd_read_owner_q][15:12]} > DMA_REQUEST_SPI_RX) ||
+              ((s_tcd_word7_q[s_tcd_read_owner_q][25] == 1'b0) &&
+               (s_tcd_word7_q[s_tcd_read_owner_q][15:12] >= 4'd14) &&
+               (s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_MM_TO_MM)) ||
+              ((!EnableSpi) &&
+               (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                  s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_TX) ||
+                ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                  s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_RX))) ||
+              ((({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                  s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_TX) &&
+                ((s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM) ||
+                 !s_tcd_word7_q[s_tcd_read_owner_q][1] ||
+                 s_tcd_word7_q[s_tcd_read_owner_q][2])) ||
+               (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                  s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_RX) &&
+                ((s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM) ||
+                 s_tcd_word7_q[s_tcd_read_owner_q][1] ||
+                 !s_tcd_word7_q[s_tcd_read_owner_q][2] ||
+                 s_tcd_word1_q[s_tcd_read_owner_q] != SpiRxAddress))) ||
+              (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                 s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_SPI_TX) &&
+               (s_tcd_word2_q[s_tcd_read_owner_q] != SpiTxAddress)) ||
               (((s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_MM_TO_STREAM) ||
                 (s_tcd_word7_q[s_tcd_read_owner_q][10:8] == DMA_KIND_STREAM_TO_MM)) &&
                (s_tcd_word3_q[s_tcd_read_owner_q][1:0] != 2'b00)) ||
@@ -1297,7 +1399,9 @@ module dma_core #(
             s_dst_base_q[s_tcd_read_owner_q] <= s_tcd_word2_q[s_tcd_read_owner_q];
             s_len_q[s_tcd_read_owner_q] <= s_tcd_word3_q[s_tcd_read_owner_q];
             s_kind_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][10:8];
-            s_req_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][15:12];
+            s_req_q[s_tcd_read_owner_q] <= {
+              s_tcd_word7_q[s_tcd_read_owner_q][25], s_tcd_word7_q[s_tcd_read_owner_q][15:12]
+            };
             s_priority_q[s_tcd_read_owner_q] <= s_tcd_word7_q[s_tcd_read_owner_q][17:16];
             s_burst_q[s_tcd_read_owner_q]     <=
                 (s_tcd_word7_q[s_tcd_read_owner_q][24:20] == 5'd0)
@@ -1314,7 +1418,6 @@ module dma_core #(
                     : s_tcd_word9_q[s_tcd_read_owner_q];
             s_stream_tx_stop_q[s_tcd_read_owner_q] <= 1'b0;
             s_suspended_q[s_tcd_read_owner_q] <= 1'b0;
-            s_abort_q[s_tcd_read_owner_q] <= 1'b0;
             s_done_q[s_tcd_read_owner_q] <= 1'b0;
             s_read_issued_q[s_tcd_read_owner_q] <= '0;
             s_write_issued_q[s_tcd_read_owner_q] <= '0;
@@ -1613,12 +1716,15 @@ module dma_core #(
               !s_write_owns_channel[channel]) begin
             if ((s_kind_q[channel] != DMA_KIND_MM_TO_STREAM) ||
                 s_stream_tx_stop_q[channel] || !s_stream_tx_valid[channel]) begin
-              s_busy_q[channel]           <= 1'b0;
-              s_aborted_q[channel]        <= 1'b1;
-              s_abort_q[channel]          <= 1'b0;
-              s_suspend_req_q[channel]    <= 1'b0;
-              s_stream_tx_stop_q[channel] <= 1'b1;
-              s_err_code_q[channel]       <= DMA_ERROR_ABORT;
+              s_busy_q[channel]              <= 1'b0;
+              s_aborted_q[channel]           <= 1'b1;
+              s_abort_q[channel]             <= 1'b0;
+              s_suspend_req_q[channel]       <= 1'b0;
+              s_stream_tx_stop_q[channel]    <= 1'b1;
+              s_tcd_fetch_pending_q[channel] <= 1'b0;
+              s_tcd_loaded_q[channel]        <= 1'b0;
+              s_tcd_mode_q[channel]          <= 1'b0;
+              s_err_code_q[channel]          <= DMA_ERROR_ABORT;
             end
           end
           if (s_busy_q[channel] && s_err_q[channel] && !s_read_owns_channel[channel] &&

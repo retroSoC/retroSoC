@@ -29,16 +29,17 @@ programming uses the command engine. Reserved ranges and inactive QPI/OPI window
 used as scratch space. Physical device capacity must match the controller and board setup.
 
 === Buffer ownership and alignment
-The supplied HP platform metadata declares Zicbom with a 64-byte cache-maintenance block. Round shared
-maintenance ranges to full blocks and *prevent unrelated owners from sharing a boundary block*.
+The OpenC906 HP hart maintains its 64-byte D-cache lines with T-Head extended cache
+operations (XTheadCmo). Round shared
+maintenance ranges to full lines and *prevent unrelated owners from sharing a boundary line*.
 *Check address-plus-length overflow* before rounding. Device descriptors can impose additional
 alignment, byte-count, stride and memory-placement constraints; the DMA TCD is a separate
 64-byte descriptor contract, not a universal transfer-alignment rule for every IP.
 
-#figure(cache-boundary-diagram(),kind:image,supplement:[Figure],caption:[Software-declared maintenance blocks around a shared-buffer range.])<cache-maintenance-layout>
-Match the platform declaration to the generated HP artifact before deployment; this schematic
+#figure(cache-boundary-diagram(),kind:image,supplement:[Figure],caption:[HP D-cache maintenance lines around a shared-buffer range.])<cache-maintenance-layout>
+Match the maintenance operations to the vendored HP core before deployment; this schematic
 does not independently establish physical cache-line geometry or total cache capacity.
-#source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Software-declared cache-maintenance block size")
+#source-note("app/ports/linux/smoke/start.S",title:"C906 cache-maintenance instruction encodings")
 
 #ds-table("buffer-ownership",[Shared-buffer responsibilities],
   ([Actor],[Responsibility before handoff],[Responsibility after completion]),
@@ -70,8 +71,8 @@ does not independently establish physical cache-line geometry or total cache cap
   operation, then transfer the buffer to the application.
 
 These are integration sequences, not a new cache HAL. Linux drivers must use the DMA mapping
-and synchronization interfaces appropriate to their platform. The existence of Zicbom and a
-device-tree block-size property does not establish complete Linux DMA coherency integration.
+and synchronization interfaces appropriate to their platform. The existence of core cache
+maintenance operations does not establish complete Linux DMA coherency integration.
 
 === LP-to-HP and HP-to-LP handoff
 #figure(sequence-diagram((
@@ -93,6 +94,6 @@ transaction at the protocol level; retries require a new ownership decision.
 #source-note("docs/lp-hp-architecture.md",title:"Memory paths and non-coherent ownership contract")
 #source-note("docs/ip/resource-controller.md",title:"Cache request and clean acknowledgement")
 #source-note("docs/ip/dma.md",title:"DMA descriptors, transfer restrictions and completion")
-#source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Linux RAM and cache-maintenance properties")
+#source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Linux RAM and platform properties")
 
 #change-end("v05-emphasis-memory-use")

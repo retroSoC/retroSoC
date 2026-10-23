@@ -33,7 +33,7 @@ The build selects an application with `APP=<name>`. The supported profiles are:
 | `coremark` | SRAM-resident Hazard3 CoreMark measurement; use the committed quick or standard profile. |
 | `debug` | Minimal SRAM image used only by the Hazard3 OpenOCD/GDB acceptance flow. |
 | `hp_boot` | SRAM-resident LP loader that validates typed V2 Linux, smoke or RT-Thread bundles, loads SDRAM, releases HP, and monitors the workload-specific mailbox verdict. |
-| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to RV64 HP, HP-submitted WAV/KWS jobs with Zicbom maintenance, and LP-only register fault probe. |
+| `apu_release` | PSRAM-resident LP/HP APU evidence flow: LP-only microcode/KWS model load, ownership handoff to RV64 HP, HP-submitted WAV/KWS jobs with T-Head XTheadCmo dcache maintenance, and LP-only register fault probe. |
 | `shell` | Interactive application that adds shell services, board drivers, media, FatFs, CoreMark, and UserIP integration. |
 | `xpi_flash_loader` | SRAM-resident, GDB-called service image for sector-preserving JTAG programming of the qualified NSS0 NOR. |
 
@@ -46,9 +46,16 @@ NPU-P5 acceptance extends existing compositions rather than adding an APP.
 of the reproducible variant key. The LP path links the generated KWS plan into
 `ci_smoke`, uses the real LP completion interrupt, and writes the normal
 SYSCTRL verdict. The RV64 HP smoke bundle assigns resource 9 to hart 1, runs
-the same plan with polling and 64-byte Zicbom maintenance, then returns
+the same plan with polling and 64-byte T-Head XTheadCmo dcache maintenance, then returns
 ownership before LP publishes the final verdict. The option defaults to `NO`,
 preserving normal PR firmware size and behavior.
+
+`HP_JTAG_DEBUG=YES` is an `hp_boot` debug aid: the LP selects the HP
+(OpenC906) JTAG target before releasing the HP core, so a debugger can attach
+from the first HP instruction. It defaults to `NO` and is behavior-neutral
+when off. It is deliberately excluded from the variant key because debug runs
+are not qualification evidence; toggling it requires touching an app source
+to trigger a rebuild.
 
 NPU-P6 likewise reuses `APP=hp_boot`; it does not add an application profile
 or public ABI. `NPU_P6_ACCEPTANCE=YES` selects a private qualification payload,
@@ -169,7 +176,11 @@ configurations, and build artifact locations.
 
 For `SOC=TINY`, `bringup` and `ci_smoke` use the MCU acceptance composition. It
 boots through XPI into SRAM, checks CPU C/A behavior and bus exceptions, DMA
-(including UART requests), interrupts, RTC, GPIO, UART1 and I2C error completion,
-then verifies watchdog reset by completing after the next NOR boot. It uses
+(including UART requests), interrupts, RTC, GPIO and I2C0 error completion.
+The P6 composition additionally checks RNG qualification rejection, CRC DMA,
+Crypto initialization/vectors/erasure, audio plus finite WS refill and background
+DMA, and SDIO transfers/recovery with verification-board models. Missing external
+devices fail boundedly; they do not hold CPU boot reset. The image then verifies
+watchdog reset by completing after the next NOR boot. It uses
 SYSCTRL terminal status. The small `asm/tiny_boot.S` image separately qualifies
 the synthesized SRAM/pad path; it is not a replacement for the full RTL test.

@@ -8,6 +8,7 @@
 // MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
+`timescale 1ns / 1ps
 module tc_pll #(
     parameter bit UseIcs55EcosPll = 1'b0,
     parameter bit Ics55Parked     = 1'b0
@@ -28,10 +29,10 @@ module tc_pll #(
   logic [2:0] s_lock_count_d, s_lock_count_q;
   logic s_lock_d, s_lock_q;
   logic s_apply_seen_d, s_apply_seen_q;
-  logic s_cfg_apply;
-  logic s_force_lock_fail;
-  time  s_last_ref_edge;
-  time  s_ref_period;
+  logic    s_cfg_apply;
+  logic    s_force_lock_fail;
+  realtime s_last_ref_edge;
+  realtime s_ref_period;
 
   function automatic int pll_multiplier(input logic [2:0] cfg_sel);
     case (cfg_sel)
@@ -55,14 +56,14 @@ module tc_pll #(
 
   always @(posedge fref_i) begin
     if (s_last_ref_edge != 0) begin
-      s_ref_period = $time - s_last_ref_edge;
+      s_ref_period = $realtime - s_last_ref_edge;
     end
-    s_last_ref_edge = $time;
+    s_last_ref_edge = $realtime;
   end
 
   always begin
     @(posedge fref_i);
-    wait (pll_lock_o);
+    wait (pll_lock_o && s_ref_period > 0.0);
     while (pll_lock_o) begin
       #(s_ref_period / (2 * pll_multiplier(s_cfg_sel_q)));
       if (pll_lock_o) begin

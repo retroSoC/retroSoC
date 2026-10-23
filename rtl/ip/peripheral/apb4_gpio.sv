@@ -21,7 +21,13 @@ module apb4_gpio #(
     input  logic         rst_n_i,
     apb4_if.slave        apb4,
     gpio_if.dut          gpio,
-    user_gpio_if.padctrl user_gpio
+    user_gpio_if.padctrl user_gpio,
+    output logic [31:0]  user_select_o,
+    output logic [31:0]  user_handoff_o,
+    output logic [31:0]  alt_enable_o,
+    output logic [31:0]  alt_select_o,
+    output logic [31:0]  output_enable_o,
+    output logic [31:0]  open_drain_o
     // verilog_format: on
 );
 
@@ -107,5 +113,12 @@ module apb4_gpio #(
       .gpio              (gpio),
       .user_gpio         (user_gpio)
   );
+
+  assign user_select_o   = s_user_sel;
+  assign user_handoff_o  = s_user_handoff;
+  assign alt_enable_o    = s_alt_en;
+  assign alt_select_o    = s_alt_sel;
+  assign output_enable_o = s_output_en;
+  assign open_drain_o    = s_open_drain;
 
 endmodule

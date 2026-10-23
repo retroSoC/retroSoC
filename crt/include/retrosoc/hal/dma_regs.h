@@ -15,6 +15,8 @@
 #define RS_DMA_REG_IRQ_TEST           UINT32_C(0x01C)
 #define RS_DMA_REG_ERROR_SUMMARY      UINT32_C(0x020)
 #define RS_DMA_REG_REQUEST_STATUS     UINT32_C(0x024)
+#define RS_DMA_REG_SUPPORTED_REQUESTS UINT32_C(0x028)
+#define RS_DMA_IP_VERSION_V22         UINT32_C(0x00020002)
 
 #define RS_DMA_CH_BASE                UINT32_C(0x100)
 #define RS_DMA_CH_STRIDE              UINT32_C(0x080)
@@ -77,15 +79,13 @@
 #define RS_DMA_ERROR_READ             UINT32_C(0x00000040)
 #define RS_DMA_ERROR_STREAM_LAST      UINT32_C(0x00000100)
 
-#ifdef RS_SOC_TINY
-#define RS_DMA_CHANNEL_COUNT 4U
-#else
-#define RS_DMA_CHANNEL_COUNT 8U
-#endif
+#define RS_DMA_CHANNEL_COUNT          8U
+#ifndef RS_SOC_TINY
 #define RS_DMA_CHANNEL_HP       6U
 #define RS_DMA_CHANNEL_RESERVED 7U
-#define RS_DMA_MAX_BURST_BEATS  16U
-#define RS_DMA_DATA_WIDTH_BITS  32U
+#endif
+#define RS_DMA_MAX_BURST_BEATS 16U
+#define RS_DMA_DATA_WIDTH_BITS 32U
 
 #define RS_DMA_CHANNEL_OFFSET(channel, offset)                                                     \
     (RS_DMA_CH_BASE + ((uint32_t)(channel)*RS_DMA_CH_STRIDE) + (offset))

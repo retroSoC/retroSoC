@@ -175,7 +175,7 @@ module ga2d_platform_sram_target (
         last_arid_o                      <= axi4.arid;
         seen_arid_mask_o[axi4.arid[6:0]] <= 1'b1;
         if (axi4.arid == 7'h40) saw_ga2d_o <= 1'b1;
-        if (axi4.arid == 7'h08) saw_legacy_o <= 1'b1;
+        if (axi4.arid == 7'h00) saw_legacy_o <= 1'b1;
         if (axi4.arid[6:3] == 4'd6) saw_jpeg_o <= 1'b1;
       end
       if (read_pending_q && !hold_response_i) begin
@@ -527,16 +527,7 @@ module ga2d_platform_tb;
       .DATA_WIDTH(64),
       .ID_WIDTH  (3),
       .USER_WIDTH(1)
-  ) hp_icache_axi4 (
-      .aclk   (clk_hp_i),
-      .aresetn(rst_hp_n_i)
-  );
-  axi4_if #(
-      .ADDR_WIDTH(32),
-      .DATA_WIDTH(64),
-      .ID_WIDTH  (3),
-      .USER_WIDTH(1)
-  ) hp_dcache_axi4 (
+  ) hp_mem_axi4 (
       .aclk   (clk_hp_i),
       .aresetn(rst_hp_n_i)
   );
@@ -701,10 +692,9 @@ module ga2d_platform_tb;
   end
   always #13 clk_mem_i = ~clk_mem_i;
 
-  axi4_master_idle u_hp_icache_idle (.axi4(hp_icache_axi4));
   // V13 competitor map: central DMA (master 2), APU/SDIO0/USB2 (master 3 via
   // the round-robin IO gateway A), and SDIO1 (master 4 via IO gateway B) are
-  // driven by deterministic BFMs; the HP dcache tasks below add the CPU-proxy
+  // driven by deterministic BFMs; the HP mem tasks below add the CPU-proxy
   // old-ID traffic and the JPEG tasks the master-6 traffic. spisd stays tied
   // off as the quiescent client of IO gateway B (driving it would only repeat
   // the master-4 path SDIO1 already exercises), and ext_h stays tied off
@@ -844,8 +834,7 @@ module ga2d_platform_tb;
       .ext_h_read_limit_i      (32'h4FFF_FFFF),
       .ext_h_write_base_i      (32'h3000_0000),
       .ext_h_write_limit_i     (32'h4FFF_FFFF),
-      .hp_icache_axi4          (hp_icache_axi4),
-      .hp_dcache_axi4          (hp_dcache_axi4),
+      .hp_mem_axi4             (hp_mem_axi4),
       .dma_axi4                (dma_axi4),
       .sdio0_axi4              (sdio0_axi4),
       .sdio1_axi4              (sdio1_axi4),
@@ -1029,29 +1018,68 @@ module ga2d_platform_tb;
   task automatic issue_legacy_read(input logic [2:0] id, input logic [31:0] address);
     begin
       @(negedge clk_hp_i);
-      hp_dcache_axi4.arid     = id;
-      hp_dcache_axi4.araddr   = address;
-      hp_dcache_axi4.arlen    = '0;
-      hp_dcache_axi4.arsize   = 3'd3;
-      hp_dcache_axi4.arburst  = 2'b01;
-      hp_dcache_axi4.arlock   = 1'b0;
-      hp_dcache_axi4.arcache  = '0;
-      hp_dcache_axi4.arprot   = '0;
-      hp_dcache_axi4.arqos    = '0;
-      hp_dcache_axi4.arregion = '0;
-      hp_dcache_axi4.aruser   = '0;
-      hp_dcache_axi4.arvalid  = 1'b1;
-      do @(posedge clk_hp_i); while (!hp_dcache_axi4.arready);
+      hp_mem_axi4.arid     = id;
+      hp_mem_axi4.araddr   = address;
+      hp_mem_axi4.arlen    = '0;
+      hp_mem_axi4.arsize   = 3'd3;
+      hp_mem_axi4.arburst  = 2'b01;
+      hp_mem_axi4.arlock   = 1'b0;
+      hp_mem_axi4.arcache  = '0;
+      hp_mem_axi4.arprot   = '0;
+      hp_mem_axi4.arqos    = '0;
+      hp_mem_axi4.arregion = '0;
+      hp_mem_axi4.aruser   = '0;
+      hp_mem_axi4.arvalid  = 1'b1;
+      do @(posedge clk_hp_i); while (!hp_mem_axi4.arready);
       @(negedge clk_hp_i);
-      hp_dcache_axi4.arvalid = 1'b0;
+      hp_mem_axi4.arvalid = 1'b0;
     end
   endtask
 
   task automatic expect_legacy_read(input logic [2:0] id);
     begin
-      wait (hp_dcache_axi4.rvalid);
-      if ((hp_dcache_axi4.rid != id) || (hp_dcache_axi4.rresp != 2'b00)) begin
+      wait (hp_mem_axi4.rvalid);
+      if ((hp_mem_axi4.rid != id) || (hp_mem_axi4.rresp != 2'b00)) begin
         $fatal(1, "legacy response did not preserve its source ID");
+      end
+    end
+  endtask
+
+  task automatic issue_legacy_write(input logic [2:0] id, input logic [31:0] address,
+                                    input logic [63:0] data);
+    begin
+      @(negedge clk_hp_i);
+      hp_mem_axi4.awid     = id;
+      hp_mem_axi4.awaddr   = address;
+      hp_mem_axi4.awlen    = '0;
+      hp_mem_axi4.awsize   = 3'd3;
+      hp_mem_axi4.awburst  = 2'b01;
+      hp_mem_axi4.awlock   = 1'b0;
+      hp_mem_axi4.awcache  = '0;
+      hp_mem_axi4.awprot   = '0;
+      hp_mem_axi4.awqos    = '0;
+      hp_mem_axi4.awregion = '0;
+      hp_mem_axi4.awuser   = '0;
+      hp_mem_axi4.awvalid  = 1'b1;
+      do @(posedge clk_hp_i); while (!hp_mem_axi4.awready);
+      @(negedge clk_hp_i);
+      hp_mem_axi4.awvalid = 1'b0;
+      hp_mem_axi4.wdata   = data;
+      hp_mem_axi4.wstrb   = 8'hFF;
+      hp_mem_axi4.wlast   = 1'b1;
+      hp_mem_axi4.wuser   = '0;
+      hp_mem_axi4.wvalid  = 1'b1;
+      do @(posedge clk_hp_i); while (!hp_mem_axi4.wready);
+      @(negedge clk_hp_i);
+      hp_mem_axi4.wvalid = 1'b0;
+    end
+  endtask
+
+  task automatic expect_legacy_write(input logic [2:0] id);
+    begin
+      wait (hp_mem_axi4.bvalid);
+      if ((hp_mem_axi4.bid != id) || (hp_mem_axi4.bresp != 2'b00)) begin
+        $fatal(1, "legacy write response did not preserve its source ID");
       end
     end
   endtask
@@ -1491,37 +1519,37 @@ module ga2d_platform_tb;
     jpeg_axi4.arvalid           = 1'b0;
     jpeg_axi4.rready            = 1'b1;
 
-    hp_dcache_axi4.awid         = '0;
-    hp_dcache_axi4.awaddr       = '0;
-    hp_dcache_axi4.awlen        = '0;
-    hp_dcache_axi4.awsize       = 3'd3;
-    hp_dcache_axi4.awburst      = 2'b01;
-    hp_dcache_axi4.awlock       = 1'b0;
-    hp_dcache_axi4.awcache      = '0;
-    hp_dcache_axi4.awprot       = '0;
-    hp_dcache_axi4.awqos        = '0;
-    hp_dcache_axi4.awregion     = '0;
-    hp_dcache_axi4.awuser       = '0;
-    hp_dcache_axi4.awvalid      = 1'b0;
-    hp_dcache_axi4.wdata        = '0;
-    hp_dcache_axi4.wstrb        = '0;
-    hp_dcache_axi4.wlast        = 1'b1;
-    hp_dcache_axi4.wuser        = '0;
-    hp_dcache_axi4.wvalid       = 1'b0;
-    hp_dcache_axi4.bready       = 1'b1;
-    hp_dcache_axi4.arid         = '0;
-    hp_dcache_axi4.araddr       = '0;
-    hp_dcache_axi4.arlen        = '0;
-    hp_dcache_axi4.arsize       = 3'd3;
-    hp_dcache_axi4.arburst      = 2'b01;
-    hp_dcache_axi4.arlock       = 1'b0;
-    hp_dcache_axi4.arcache      = '0;
-    hp_dcache_axi4.arprot       = '0;
-    hp_dcache_axi4.arqos        = '0;
-    hp_dcache_axi4.arregion     = '0;
-    hp_dcache_axi4.aruser       = '0;
-    hp_dcache_axi4.arvalid      = 1'b0;
-    hp_dcache_axi4.rready       = 1'b1;
+    hp_mem_axi4.awid            = '0;
+    hp_mem_axi4.awaddr          = '0;
+    hp_mem_axi4.awlen           = '0;
+    hp_mem_axi4.awsize          = 3'd3;
+    hp_mem_axi4.awburst         = 2'b01;
+    hp_mem_axi4.awlock          = 1'b0;
+    hp_mem_axi4.awcache         = '0;
+    hp_mem_axi4.awprot          = '0;
+    hp_mem_axi4.awqos           = '0;
+    hp_mem_axi4.awregion        = '0;
+    hp_mem_axi4.awuser          = '0;
+    hp_mem_axi4.awvalid         = 1'b0;
+    hp_mem_axi4.wdata           = '0;
+    hp_mem_axi4.wstrb           = '0;
+    hp_mem_axi4.wlast           = 1'b1;
+    hp_mem_axi4.wuser           = '0;
+    hp_mem_axi4.wvalid          = 1'b0;
+    hp_mem_axi4.bready          = 1'b1;
+    hp_mem_axi4.arid            = '0;
+    hp_mem_axi4.araddr          = '0;
+    hp_mem_axi4.arlen           = '0;
+    hp_mem_axi4.arsize          = 3'd3;
+    hp_mem_axi4.arburst         = 2'b01;
+    hp_mem_axi4.arlock          = 1'b0;
+    hp_mem_axi4.arcache         = '0;
+    hp_mem_axi4.arprot          = '0;
+    hp_mem_axi4.arqos           = '0;
+    hp_mem_axi4.arregion        = '0;
+    hp_mem_axi4.aruser          = '0;
+    hp_mem_axi4.arvalid         = 1'b0;
+    hp_mem_axi4.rready          = 1'b1;
 
     fabric_monitor_apb4.paddr   = '0;
     fabric_monitor_apb4.pprot   = '0;
@@ -1581,6 +1609,23 @@ module ga2d_platform_tb;
     if (!sram_saw_ga2d_write) begin
       $fatal(1, "GA2D write did not preserve global ID 7'h40");
     end
+
+    // The merged HP port must retain the retired HP data port's write credits:
+    // a write to SRAM followed by a readback with the returned data checked.
+    fork
+      issue_legacy_write(3'd1, 32'h3000_0100, 64'hA5A5_5A5A_0123_4567);
+      expect_legacy_write(3'd1);
+    join
+    fork
+      issue_legacy_read(3'd2, 32'h3000_0100);
+      begin
+        wait (hp_mem_axi4.rvalid);
+        if ((hp_mem_axi4.rid != 3'd2) || (hp_mem_axi4.rresp != 2'b00) ||
+            (hp_mem_axi4.rdata != 64'hA5A5_5A5A_0123_4567)) begin
+          $fatal(1, "legacy readback did not return the data written through the HP port");
+        end
+      end
+    join
 
     wait (!flush_busy_o);
     block_new_i = 1'b1;
@@ -1832,7 +1877,7 @@ module ga2d_platform_tb;
     // GA2D-V13 contention window. The five BFMs (central DMA on master 2,
     // APU/SDIO0/USB2 sharing master 3, SDIO1 on master 4), the JPEG master-6
     // loop, and the legacy HP-dcache loop (CPU proxy with old global ID
-    // 7'h08) run against the SRAM target while the GA2D battery executes
+    // 7'h00) run against the SRAM target while the GA2D battery executes
     // byte-checked jobs. Memory-refresh contention is not modelled here (no
     // SDRAM model exists in this TB); it is covered by the full-SoC ci_smoke
     // and benchmark runs against the real SDRAM controller.
@@ -1914,9 +1959,9 @@ module ga2d_platform_tb;
     // Old/new global-ID alias check: every ID accepted by the SRAM target
     // must belong to the master that owns it. GA2D's IDs carry the new
     // seventh bit; if that bit were dropped anywhere, GA2D traffic would
-    // appear as 7'h00 and alias the (tied-off) HP icache master 0.
+    // appear as 7'h00 and alias the HP mem (CPU-proxy) master 0.
     expected_read_mask        = '0;
-    expected_read_mask[7'h08] = 1'b1;
+    expected_read_mask[7'h00] = 1'b1;
     expected_read_mask[7'h10] = 1'b1;
     expected_read_mask[7'h11] = 1'b1;
     expected_read_mask[7'h18] = 1'b1;
@@ -1945,12 +1990,12 @@ module ga2d_platform_tb;
     if ((sram_seen_awid_mask & ~expected_write_mask) != 128'd0) begin
       $fatal(1, "an unexpected global write ID reached the SRAM target");
     end
-    if (!sram_seen_arid_mask[7'h40] || !sram_seen_arid_mask[7'h08] ||
+    if (!sram_seen_arid_mask[7'h40] || !sram_seen_arid_mask[7'h00] ||
         !sram_seen_arid_mask[7'h30]) begin
       $fatal(1, "old and new global read IDs were not interleaved during contention");
     end
-    if (sram_seen_arid_mask[7'h00] || sram_seen_awid_mask[7'h00]) begin
-      $fatal(1, "GA2D traffic aliased onto the legacy master-0 ID space");
+    if (sram_seen_arid_mask[7'h08] || sram_seen_awid_mask[7'h08]) begin
+      $fatal(1, "traffic aliased onto the retired HP master-1 ID space");
     end
     // Fabric-monitor cross-check: bank 8 at 0x200 must have counted the GA2D
     // battery, and bank 2 the central-DMA competitor.
@@ -2056,8 +2101,8 @@ module ga2d_platform_tb;
     end
     issue_legacy_read(3'd0, 32'h3000_0080);
     expect_legacy_read(3'd0);
-    if (sram_last_arid != 7'h08) begin
-      $fatal(1, "post-contention legacy read did not keep global ID 7'h08");
+    if (sram_last_arid != 7'h00) begin
+      $fatal(1, "post-contention legacy read did not keep global ID 7'h00");
     end
     issue_jpeg_read(3'd0, 32'h3000_00A0);
     expect_jpeg_read(3'd0);

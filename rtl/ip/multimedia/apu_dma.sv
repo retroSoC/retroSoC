@@ -237,6 +237,9 @@ module apu_dma (
       .write_done_o(s_write_done),
       .write_resp_o(s_write_resp),
       .write_id_error_o(s_write_id_error),
+      .origin_enable_i(1'b0),
+      .read_origin_channel_i(3'd0),
+      .write_origin_channel_i(3'd0),
       .axi4(axi4)
   );
 

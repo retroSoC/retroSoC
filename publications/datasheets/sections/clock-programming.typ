@@ -12,7 +12,7 @@ the domains; the table below records which clock must be supplied to the relevan
   (([UART / I2C / general timer],[Actual clock driving the selected engine; check PCLK/root routing.],[Recalculate divisors/timing or counter period after that clock changes.]),
    ([I2S],[External audio-domain frequency, not the HP CPU clock.],[Select a compatible preset or exact programmable divisors while disabled.]),
    ([SDRAM / QPI / OPI / XPI],[Stable memory domain plus the controller's local divider/sampling convention.],[Convert device timing to controller cycles and reinitialize where required.]),
-   ([LP CLINT / HP ACLINT],[Configured CLINT timebase. The reference configuration selects 1 MHz.],[Use the timebase for deadlines rather than a core instruction frequency.]),
+   ([LP CLINT / HP time base],[Configured CLINT timebase; the HP core receives the 64-bit time value and software reads the time CSR. The reference configuration selects 1 MHz.],[Use the timebase for deadlines rather than a core instruction frequency.]),
    ([RTC / watchdog],[Their actual independent timing source and divider contract.],[Do not infer their tick from a CPU frequency change.]),
    ([DVP / ULPI / JTAG],[Externally supplied functional clock under the interface contract.],[Validate external clock availability and board timing separately.])),
   widths:(0.95fr,1.55fr,1.7fr))

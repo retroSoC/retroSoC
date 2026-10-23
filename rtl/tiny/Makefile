@@ -60,6 +60,7 @@ OPENSTA_CONFIG   := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.config
 NETLIST_PATH     := $(OPENSTA_NETLIST)
 TINY_CONVERTED   := $(SIM_BUILD_ROOT)/converted_soc.v
 TINY_DEPFILE     := $(SIM_BUILD_ROOT)/sources.d
+TINY_TB_DEPFILE  := $(SIM_BUILD_ROOT)/testbench.d
 TINY_LINT_LOG    := $(VARIANT_ROOT)/lint/verilator/lint.log
 SOC_SIM_TIME     ?= 1800
 TINY_SIM_TIMEOUT ?= 20000000
@@ -69,7 +70,7 @@ IVERILOG         ?= iverilog
 VVP              ?= vvp
 
 include $(ROOT_PATH)/rtl/mk/software.mk
--include $(TINY_DEPFILE)
+-include $(TINY_DEPFILE) $(TINY_TB_DEPFILE)
 
 $(TINY_CONVERTED): $(FILELIST_STAMP)
 	@mkdir -p $(@D)
@@ -95,6 +96,9 @@ $(SIM_BUILD_ROOT)/simv: $(TINY_CONVERTED) $(wildcard $(RTL_PATH)/dv/*.sv)
 		--log $(SIM_BUILD_ROOT)/compile.log --result $(SIM_BUILD_ROOT)/result-compile.json -- \
 		$(IVERILOG) -g2012 -gno-specify -s $(RTL_TOP) -o $@ -f $(GENERATED_FL_DIR)/def.fl \
 		-f $(GENERATED_FL_DIR)/inc.fl -f $(PDK_FILELIST) $(TINY_TB_FLIST) $(TINY_CONVERTED)
+	$(PYTHON) $(ROOT_PATH)/scripts/rtl/filelist_deps.py -f $(GENERATED_FL_DIR)/def.fl \
+		-f $(GENERATED_FL_DIR)/inc.fl $(TINY_TB_FLIST) \
+		--target $@ --output $(TINY_TB_DEPFILE)
 comp: $(SIM_BUILD_ROOT)/simv
 TINY_RUN := $(VVP) $(SIM_BUILD_ROOT)/simv
 endif
@@ -152,6 +156,28 @@ netsim-boot: netcomp tiny-boot-image | manifest
 
 .PHONY: tiny-boot-image
 
+# Small DVP-specific mapped-netlist check; keep boot evidence in its own log.
+TINY_P9_NETLIST_ELF := $(SW_BUILD_DIR)/tiny_p9_netlist.elf
+# The unchanged compact image needs about 178k cycles when executing from XPI.
+# Retain the cycle guard and allow slower gate models enough host time.
+TINY_P9_NETLIST_WALL_TIMEOUT ?= $(if $(filter ICS55,$(PDK)),10800,7200)
+$(TINY_P9_NETLIST_ELF): $(ROOT_PATH)/app/asm/tiny_p9_netlist.S $(FILELIST_STAMP)
+	@mkdir -p $(@D)
+	$(CC) -march=rv32im_zicsr -mabi=ilp32 -nostdlib -I$(MEMORY_MAP_C_DIR) -I$(SOC_TOPOLOGY_INCLUDE_DIR) \
+		-Wl,-Ttext=0x0,--entry=_start,--build-id=none -o $@ $<
+	$(OBJC) -O verilog $@ $(SW_BUILD_DIR)/tiny_p9_netlist.hex
+
+netsim-dvp: netcomp $(TINY_P9_NETLIST_ELF) | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool iverilog-sim \
+		--log $(NETLIST_SIM_ROOT)/dvp/sim.log --result $(NETLIST_SIM_ROOT)/dvp/result-sim.json -- \
+		timeout --foreground --kill-after=5s $(TINY_P9_NETLIST_WALL_TIMEOUT)s $(VVP) $(NETLIST_SIM_ROOT)/simv \
+		+firmware=$(SW_BUILD_DIR)/tiny_p9_netlist.hex +max_cycles=300000 \
+		+tiny_p9_camera +tiny_p9_small +tiny_p9_half_ns=500
+	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(NETLIST_SIM_ROOT)/dvp/sim.log \
+		--result $(NETLIST_SIM_ROOT)/dvp/result-sim-check.json --require 'SIM_TEST_PASS Tiny'
+
+.PHONY: netsim-dvp
+
 # R2-P1 verification image: normal APP selection and the flat linker stay intact.
 # Image creation always compiles and snapshots inputs before retaining a binary.
 # Simulation rebuilds its model once, then replays the same image three times.
@@ -201,3 +227,34 @@ tiny-r2-p3-report:
 	$(PYTHON) $(TINY_P3_TOOL) --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) report
 
 .PHONY: tiny-r2-p3-image tiny-r2-p3-sim tiny-r2-p3-matrix tiny-r2-p3-report
+
+# P4 preserves old image identity and replays each selected image exactly once.
+TINY_P4_REFERENCE ?=
+TINY_P4_CASES     ?= perf-o2-plain-flat,perf-o2-plain-banked
+tiny-r2-p4-replay: | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
+		--reference $(TINY_P4_REFERENCE) --cases $(TINY_P4_CASES) --simulator $(SIM_TOOL_NAME) \
+		--vvp $(VVP) --timeout $(SOC_SIM_TIME) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p4-report:
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p4.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) --report
+
+.PHONY: tiny-r2-p4-replay tiny-r2-p4-report
+
+# P5 compares the same P3 binaries to retained P4 observations, with its own
+# phase identity and evidence root. The historical P3/P4 commands stay intact.
+TINY_P5_REFERENCE ?=
+TINY_P5_CASES     ?= perf-o2-plain-flat,perf-o2-plain-banked
+tiny-r2-p5-replay: | manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p5.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) \
+		--reference $(TINY_P5_REFERENCE) --cases $(TINY_P5_CASES) --simulator $(SIM_TOOL_NAME) \
+		--vvp $(VVP) --timeout $(SOC_SIM_TIME) -- \
+		make --no-print-directory -j1 -B CONFIG=$(CONFIG_PATH) BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) \
+		$(foreach var,$(CONFIG_KEY_VARS),$(var)=$($(var))) SIMU=$(SIMU) SYNTH=NONE STA=NONE comp
+
+tiny-r2-p5-report:
+	$(PYTHON) $(ROOT_PATH)/scripts/tiny_r2_p5.py --root $(ROOT_PATH) --variant-root $(VARIANT_ROOT) --report
+
+.PHONY: tiny-r2-p5-replay tiny-r2-p5-report

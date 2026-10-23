@@ -6,8 +6,9 @@ dependency lock under `.cache/`; it is not edited or copied into project source.
 SCons runs on a staged BSP below `build/<variant>/hp-rtthread/`.
 
 Run `make setup-hp-rtthread`, then `make CONFIG=configs/ci/ihp130-rtthread.mk
-SIMU=VERILATOR hp-rtthread-sim`. The test uses UART1, hart-1 CLINT and PLIC
-machine context 0/source 2. Peripheral accesses remain 32 bits. Static threads
+SIMU=VERILATOR hp-rtthread-sim`. The test uses UART1 and the internal C906
+CLINT (time CSR plus MTIMECMP at 0x0C004000) and PLIC machine context 0 with
+the mailbox doorbell at source 18. Peripheral accesses remain 32 bits. Static threads
 exercise RV64 integer state, timer preemption, semaphore/message queue behavior,
 timeouts, and an LP-to-HP mailbox interrupt. LP validates the final mailbox
 response and owns SYSCTRL TEST_STATUS. A banner alone is not a pass.

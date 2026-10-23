@@ -16,6 +16,7 @@ module dvp_reg (
     input  logic         rst_n_i,
     apb4_if.slave        apb4,
     input  logic         active_i,
+    input  logic         enabled_i,
     input  logic         fifo_empty_i,
     input  logic         fifo_full_i,
     input  logic [31:0]  rx_data_i,
@@ -23,8 +24,12 @@ module dvp_reg (
     input  logic         line_done_i,
     input  logic         frame_done_i,
     input  logic         error_event_i,
+    input  logic [ 5:0]  error_events_i,
     input  logic [ 5:0]  error_flags_i,
-    input  logic [127:0] frame_stats_i,
+    input  logic         error_valid_i,
+    input  logic [ 5:0]  error_clear_done_i,
+    output logic [ 5:0]  error_clear_o,
+    input  logic [`APB4_DVP__FRAME_STATS_WIDTH-1:0] frame_stats_i,
     input  logic         frame_stats_valid_i,
     output logic [127:0] cfg_o,
     output logic         cfg_valid_o,
@@ -69,6 +74,7 @@ module dvp_reg (
   logic [31:0] s_cfg_seq_d, s_cfg_seq_q;
   logic [31:0] s_cfg_sent_q;
   logic [ 1:0] s_cmd_q;
+  logic        s_abort_accept;
 
   function automatic logic [31:0] merge_wstrb(
       input logic [31:0] current_i, input logic [31:0] value_i, input logic [3:0] strobe_i);
@@ -107,8 +113,14 @@ module dvp_reg (
     cfg_o[106:104] = s_sync_q[2:0];
   end
   assign cfg_valid_o = s_cfg_seq_q != s_cfg_sent_q;
-  assign rx_pop_o    = s_accept && !s_write && !stream_enable_o && (s_offset == `APB4_DVP_RXDATA);
-  assign irq_o       = |(s_intr_stat_q & s_intr_en_q);
+  assign s_abort_accept = s_accept && s_write && !s_access_err &&
+                          (s_offset == `APB4_DVP_COMMAND) &&
+                          apb4.pwdata[`APB4_DVP__COMMAND_ABORT];
+  assign rx_pop_o = s_accept && !s_write && !stream_enable_o && (s_offset == `APB4_DVP_RXDATA);
+  assign irq_o = |(s_intr_stat_q & s_intr_en_q);
+  assign error_clear_o = (s_accept && s_write && !s_access_err &&
+                          s_offset == `APB4_DVP_ERROR_STATUS && apb4.pstrb[0]) ?
+                          apb4.pwdata[5:0] : 6'd0;
 
   always_comb begin
     s_access_err = !s_aligned;
@@ -119,7 +131,7 @@ module dvp_reg (
         `APB4_DVP_RXDATA: s_rdata_d = rx_data_i;
         `APB4_DVP_STATUS:
         s_rdata_d = {
-          26'd0, s_err_q != 0, stream_enable_o, !fifo_full_i, fifo_empty_i, active_i, s_ctrl_q[0]
+          26'd0, s_err_q != 0, stream_enable_o, !fifo_full_i, fifo_empty_i, active_i, enabled_i
         };
         `APB4_DVP_STREAM_CTRL: s_rdata_d = s_stream_q;
         `APB4_DVP_FORMAT: s_rdata_d = s_format_q;
@@ -284,31 +296,37 @@ module dvp_reg (
       s_word_cnt_q  <= '0;
       s_drop_cnt_q  <= '0;
     end else begin
-      if (cfg_valid_o && cfg_ready_i) s_cfg_sent_q <= s_cfg_seq_q;
+      // ABORT consumes any older configuration still waiting at the source.
+      // Requested register readback is unchanged; a later write is a new item.
+      if ((cfg_valid_o && cfg_ready_i) || s_abort_accept) s_cfg_sent_q <= s_cfg_seq_q;
       if (cmd_valid_o && cmd_ready_i) s_cmd_q <= '0;
       if (s_accept && s_write && !s_access_err && (s_offset == `APB4_DVP_COMMAND)) begin
         s_cmd_q <= s_cmd_q | apb4.pwdata[1:0];
       end
-      s_err_q <= (s_err_q | error_flags_i) &
-                 ~((s_accept && s_write && (s_offset == `APB4_DVP_ERROR_STATUS))
-                       ? apb4.pwdata[5:0]
-                       : 6'd0);
+      // Keep errors visible until the pixel-domain clear has completed. A
+      // coherent post-clear report can set a newly arriving error immediately.
+      s_err_q <= (s_err_q & ~error_clear_done_i) | (error_valid_i ? error_flags_i : 6'd0);
+      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_STATE) && apb4.pstrb[0])
+        s_intr_stat_q <= s_intr_stat_q & ~apb4.pwdata[6:0];
+      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_TEST) && apb4.pstrb[0])
+        s_intr_stat_q <= s_intr_stat_q | apb4.pwdata[6:0];
       if (frame_start_i) s_intr_stat_q[`APB4_DVP__INTR_FRAME_START] <= 1'b1;
       if (line_done_i) s_intr_stat_q[`APB4_DVP__INTR_LINE_DONE] <= 1'b1;
       if (frame_done_i) s_intr_stat_q[`APB4_DVP__INTR_FRAME_DONE] <= 1'b1;
-      if (error_event_i) s_intr_stat_q[`APB4_DVP__INTR_OVERFLOW] <= 1'b1;
-      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_STATE))
-        s_intr_stat_q <= s_intr_stat_q & ~apb4.pwdata[6:0];
+      if (error_event_i) begin
+        if (error_events_i[0]) s_intr_stat_q[`APB4_DVP__INTR_OVERFLOW] <= 1'b1;
+        if (|(error_events_i & 6'b001110)) s_intr_stat_q[`APB4_DVP__INTR_SYNC_ERROR] <= 1'b1;
+        if (error_events_i[4]) s_intr_stat_q[`APB4_DVP__INTR_CONFIG_ERROR] <= 1'b1;
+        if (error_events_i[5]) s_intr_stat_q[`APB4_DVP__INTR_ABORTED] <= 1'b1;
+      end
       if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_ENABLE))
         s_intr_en_q <= apb4.pwdata[6:0];
-      if (s_accept && s_write && (s_offset == `APB4_DVP_INTR_TEST))
-        s_intr_stat_q <= s_intr_stat_q | apb4.pwdata[6:0];
       if (frame_stats_valid_i) begin
         s_frm_cnt_q   <= frame_stats_i[31:0];
         s_line_cnt_q  <= {16'd0, frame_stats_i[47:32]};
         s_pixel_cnt_q <= frame_stats_i[79:48];
-        s_word_cnt_q  <= {16'd0, frame_stats_i[95:80]};
-        s_drop_cnt_q  <= frame_stats_i[127:96];
+        s_word_cnt_q  <= frame_stats_i[111:80];
+        s_drop_cnt_q  <= frame_stats_i[143:112];
       end
     end
   end

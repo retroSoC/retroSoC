@@ -125,6 +125,26 @@ def clean_source(text: str) -> str:
     return re.sub(r"\s+", "", re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.S))
 
 
+def mini_channel_enum(text: str) -> str:
+    """Select Mini's channel roles, excluding the Tiny product branch.
+
+    Helper aliases share an allocated context; they do not allocate another
+    channel. Keep their Mini bulk binding checked instead of parsing Tiny's
+    literal 6/7 values from an inactive preprocessor branch.
+    """
+    match = re.search(r"typedef enum\s*\{([^{}]*)\}\s*rs_dma_channel_t;", text, re.S)
+    if match is None:
+        raise ValueError("missing DMA channel enumeration")
+    body = re.sub(r"#ifdef RS_SOC_TINY\s*\n[^#]*#else\s*\n([^#]*)#endif", r"\1", match[1])
+    if "#" in body:
+        raise ValueError("unreviewed Mini DMA channel selection")
+    aliases = dict(re.findall(r"(RS_DMA_CHANNEL_\w+)\s*=\s*(RS_DMA_CHANNEL_\w+)\s*,", body))
+    expected = {"RS_DMA_CHANNEL_DVP", "RS_DMA_CHANNEL_I2S_TX", "RS_DMA_CHANNEL_I2S_RX"}
+    if any(name not in expected or value != "RS_DMA_CHANNEL_BULK" for name, value in aliases.items()):
+        raise ValueError("Mini DMA helper alias binding changed")
+    return body
+
+
 def validate_programming(spec: dict, ids: set[str], root: Path, revision: str) -> None:
     for relative in dependencies(spec):
         path = root / relative
@@ -157,9 +177,15 @@ def validate_programming(spec: dict, ids: set[str], root: Path, revision: str) -
     sdk = constants((root / "crt/include/retrosoc/hal/dma.h").read_text(), "RS_DMA_REQUEST_")
     rtl = constants((root / "rtl/ip/peripheral/dma_pkg.sv").read_text(), "DMA_REQUEST_", rtl=True)
     routes = spec["dma_routes"]
-    if {r["sdk"] for r in routes} != set(sdk) or {r["rtl"] for r in routes} != set(rtl):
+    # Future extension request IDs are part of the shared ABI while their
+    # product wiring is intentionally absent from the current publication.
+    # Publish only the executable legacy 0..15 route inventory; later phases
+    # add their own source-bound route rows when the endpoint is wired.
+    published_sdk = {name for name, number in sdk.items() if number < 16}
+    published_rtl = {name for name, number in rtl.items() if number < 16}
+    if {r["sdk"] for r in routes} != published_sdk or {r["rtl"] for r in routes} != published_rtl:
         raise ValueError("DMA route coverage mismatch")
-    if len(routes) != len(sdk) or len({r["sdk"] for r in routes}) != len(routes):
+    if len(routes) != len(published_sdk) or len({r["sdk"] for r in routes}) != len(routes):
         raise ValueError("duplicate DMA request mapping")
     for row in routes:
         if sdk[row["sdk"]] != rtl[row["rtl"]]:
@@ -193,7 +219,7 @@ def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) ->
     result = copy.deepcopy(spec)
     sdk_text = (root / "crt/include/retrosoc/hal/dma.h").read_text()
     sdk = constants(sdk_text, "RS_DMA_REQUEST_")
-    channels = constants(sdk_text, "RS_DMA_CHANNEL_")
+    channels = constants(mini_channel_enum(sdk_text), "RS_DMA_CHANNEL_")
     # Capacity is selected by product; it is not a named channel allocation.
     # Keep the Mini publication's role inventory independent of Tiny's count.
     channels.update(constants((root / "crt/include/retrosoc/hal/dma_regs.h").read_text(),

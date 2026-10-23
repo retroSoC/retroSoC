@@ -26,7 +26,8 @@ def data():
 
 @pytest.fixture
 def source_tree(tmp_path):
-    for relative in dr.dependencies(SPEC):
+    circuits = {**SPEC["circuits"], **read_json(ROOT / SPEC["circuit_catalog"])}
+    for relative in dr.dependencies({**SPEC, "circuits": circuits}):
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)
@@ -38,6 +39,30 @@ def replace(root: Path, relative: str, old: str, new: str) -> None:
     source = path.read_text(encoding="utf-8")
     assert old in source
     path.write_text(source.replace(old, new), encoding="utf-8")
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    (".DATA_WIDTH(129)", ".DATA_WIDTH(128)"),
+    ("s_cfg_packet_pclk[127:0]", "s_cfg_packet_pclk[128:1]"),
+    (".cfg_i               (s_cfg_pclk_q)",
+     ".cfg_i               (s_cfg_packet_pclk[127:0])"),
+])
+def test_dvp_configuration_diagram_rejects_packet_or_latch_drift(monkeypatch, before, after):
+    circuit = read_json(ROOT / "publications/datasheets/diagram-circuits.json")["dvp"]
+    dr.validate_circuit(ROOT, circuit)
+    read_text = Path.read_text
+    wrapper = ROOT / "rtl/ip/multimedia/axi4s_dvp.sv"
+
+    def drift(path, *args, **kwargs):
+        text = read_text(path, *args, **kwargs)
+        if path.resolve() == wrapper:
+            assert text.count(before) == 1
+            return text.replace(before, after)
+        return text
+
+    monkeypatch.setattr(Path, "read_text", drift)
+    with pytest.raises(ValueError, match="binding changed"):
+        dr.validate_circuit(ROOT, circuit)
 
 
 def test_representative_inventory_uses_actual_widths_and_addresses(data):
@@ -82,7 +107,7 @@ def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     ("rtl/ip/serial/uart_reg.sv", "TxFifoDepth    = 64", "TxFifoDepth    = 32"),
     ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
     ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1", "APUMC_MAX_INSTRUCTIONS = 4096"),
-    ("app/ports/linux/linux/retrosoc_hp.dts", "riscv,cbom-block-size = <64>", "riscv,cbom-block-size = <128>"),
+    ("app/ports/linux/smoke/start.S", ".insn r 0x0b, 0x0, 0x01, x0, a0, x5", ".insn r 0x0b, 0x0, 0x02, x0, a0, x5"),
     ("rtl/ip/security/apb4_crypto.sv", "logic [31:0] s_wdata;", "logic [63:0] s_wdata;"),
 ])
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):

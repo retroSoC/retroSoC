@@ -582,16 +582,15 @@
       "id": "hp-aclint",
       "title": "HP ACLINT",
       "implementation": "Integrated",
-      "scope": "Two addressable hart slots; HP consumes slot 1.",
+      "scope": "Core-internal CLINT of the OpenC906 HP hart (thead,c900-clint layout), decoded inside the core at 0x0C000000 within the 0x08000000 system window; no memory-mapped mtime.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
-      "hal": "Register/platform interface; no standalone HAL example indexed.",
-      "linux": "OpenSBI timer/IPI and standard DT bindings present; target boot report not supplied.",
+      "hal": "Core-internal unit; no SoC register bank or standalone HAL example indexed.",
+      "linux": "OpenSBI uses the ACLINT software-interrupt driver at the core-internal base and a custom timer device reading the time CSR; target boot report not supplied.",
       "verification": "Tests available",
       "sources": [
         "app/ports/linux/linux/retrosoc_hp.dts",
         "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-        "docs/ip/clint.md",
-        "rtl/ip/peripheral/clint_reg.sv"
+        "rtl/mini/top/hp_core_wrapper.sv"
       ],
       "tests": [
         "tests/test_hp_platform.py"
@@ -602,16 +601,15 @@
       "id": "hp-plic",
       "title": "HP PLIC",
       "implementation": "Integrated",
-      "scope": "32 source IDs, with source 0 reserved.",
+      "scope": "Core-internal PLIC of the OpenC906 HP hart (thead,c900-plic layout), decoded inside the core at 0x08000000; SoC external interrupt source n is delivered as PLIC ID n+16.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
-      "hal": "Register/platform interface; no standalone HAL example indexed.",
-      "linux": "Standard PLIC DT binding present; target IRQ validation report not supplied.",
+      "hal": "Core-internal unit; no SoC register bank or standalone HAL example indexed.",
+      "linux": "thead,c900-plic DT binding present; target IRQ validation report not supplied.",
       "verification": "Tests available",
       "sources": [
         "app/ports/linux/linux/retrosoc_hp.dts",
         "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-        "docs/ip/hp-platform.md",
-        "rtl/ip/peripheral/apb4_plic.sv"
+        "rtl/mini/top/hp_core_wrapper.sv"
       ],
       "tests": [
         "tests/test_hp_platform.py"
@@ -1640,7 +1638,11 @@
         "bindings": [
           {
             "file": "crt/src/hal/dvp.c",
-            "text": "rs_dma_configure(RS_DMA_CHANNEL_BULK"
+            "text": "rs_dma_configure(RS_DVP_DMA_CHANNEL"
+          },
+          {
+            "file": "crt/src/hal/dvp.c",
+            "text": "#ifdef RS_SOC_TINY\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_DVP\n#else\n#define RS_DVP_DMA_CHANNEL RS_DMA_CHANNEL_BULK\n#endif"
           }
         ]
       },
@@ -2043,7 +2045,7 @@
         "silicon": "Not established",
         "reports": [],
         "sources": [
-          "rtl/mini/dv/model/ESP_PSRAM64H.sv",
+          "rtl/model/ESP_PSRAM64H.sv",
           "tests/test_psram.py",
           "docs/ip/psram.md"
         ]
@@ -2130,7 +2132,7 @@
       {
         "id": "hp",
         "term": "HP",
-        "meaning": "VexiiRiscv application hart; asymmetric Linux platform.",
+        "meaning": "OpenC906 application hart; asymmetric Linux platform.",
         "sources": [
           "docs/lp-hp-architecture.md",
           "docs/ip/dma.md",
@@ -2179,12 +2181,12 @@
       },
       {
         "id": "cbo",
-        "term": "CBO / Zicbom",
-        "meaning": "Cache-block maintenance operation / RISC-V extension; not hardware coherency.",
+        "term": "XTheadCmo",
+        "meaning": "T-Head extended cache-maintenance operations used by OpenC906 HP software (64-byte line); not hardware coherency.",
         "sources": [
+          "app/ports/linux/smoke/start.S",
           "docs/lp-hp-architecture.md",
-          "docs/ip/dma.md",
-          "crt/linker/ld2_all_sram.lds"
+          "docs/ip/dma.md"
         ]
       },
       {
@@ -2305,26 +2307,12 @@
         "U_MODE"
       ],
       "hp_fields": [
-        "additionalPerformanceCounters",
-        "asidWidth",
-        "decoders",
-        "fetchL1Enable",
-        "fetchL1Sets",
-        "fetchL1Ways",
-        "fetchMemDataWidthMin",
-        "lanes",
-        "lsuL1Enable",
-        "lsuL1Sets",
-        "lsuL1Ways",
-        "lsuMemDataWidthMin",
-        "physicalWidth",
-        "pmpParam.granularity",
-        "pmpParam.pmpSize",
-        "privParam.debugTriggers",
-        "privParam.withDebug",
-        "privParam.withRdTime",
+        "coreAxiDataWidth",
+        "externalInterruptSources",
+        "fabricAxiDataWidth",
+        "hartId",
         "resetVector",
-        "xlen"
+        "sysWindowBase"
       ]
     },
     "reset": [
@@ -3388,9 +3376,10 @@
       "rtl/ip/core/mgmt_core_wrapper.sv",
       "rtl/mini/top/resource_controller.sv",
       "rtl/mini/top/soc_clock_reset_subsystem.sv",
-      "scripts/generate_vexiiriscv.py",
+      "scripts/generate_openc906.py",
       "scripts/program_xpi_flash.py",
-      "scripts/vexiiriscv/GenerateRetroSocHp.scala",
+      "rtl/mini/ip_overrides/aq_sysio_kid.v",
+      "rtl/mini/top/hp_core_wrapper.sv",
       "tests/test_xpi_flash_tool.py"
     ]
   },
@@ -3728,32 +3717,6 @@
         ]
       },
       {
-        "id": "hp_aclint",
-        "chapter": "hp-aclint",
-        "family": "aclint",
-        "mode": "PRODUCT",
-        "region": "HP_ACLINT",
-        "catalog": "hp-platform",
-        "qualification": "Use the named instance, ownership and reset conditions in the linked IP reference.",
-        "sources": [
-          "docs/ip/hp-platform.md",
-          "docs/lp-hp-architecture.md"
-        ]
-      },
-      {
-        "id": "hp_plic",
-        "chapter": "hp-plic",
-        "family": "plic",
-        "mode": "PRODUCT",
-        "region": "HP_PLIC",
-        "catalog": "hp-platform",
-        "qualification": "PRIORITY index 0 is reserved and hardwired zero; its generic array access does not make source 0 programmable. Context indices retain the HP-platform contract.",
-        "sources": [
-          "docs/ip/hp-platform.md",
-          "docs/lp-hp-architecture.md"
-        ]
-      },
-      {
         "id": "apb4_hp_mailbox",
         "chapter": "hp-mailbox",
         "family": "mailbox",
@@ -3867,7 +3830,7 @@
         "mode": "PRODUCT",
         "region": "APB4_NPU",
         "catalog": "npu",
-        "qualification": "Integrated native-HP NPU execution with eight operator classes, descriptor DMA and private SRAM; CAPABILITY=0x7F and OP_CAPABILITY=0x1FE. Resource 9 routes LP vector 33 / HP PLIC source 12. Use configured lifecycle, cache and descriptor admission rules; no native Linux driver, arbitrary model or current corpus/physical qualification is implied.",
+        "qualification": "Integrated native-HP NPU execution with eight operator classes, descriptor DMA and private SRAM; CAPABILITY=0x7F and OP_CAPABILITY=0x1FE. Resource 9 routes LP vector 33 / HP external source 12 (PLIC ID 28 on the OpenC906 internal PLIC). Use configured lifecycle, cache and descriptor admission rules; no native Linux driver, arbitrary model or current corpus/physical qualification is implied.",
         "sources": [
           "docs/ip/npu.md",
           "rtl/ip/multimedia/npu_reg.sv",
@@ -4500,7 +4463,8 @@
           "RS_ETIMEOUT": -4,
           "RS_EIO": -5,
           "RS_ENOTSUP": -6,
-          "RS_EFORMAT": -7
+          "RS_EFORMAT": -7,
+          "RS_EBUSY": -8
         },
         "meanings": {
           "RS_OK": "Operation completed under that API contract.",
@@ -4510,7 +4474,8 @@
           "RS_ETIMEOUT": "Bounded operation timed out.",
           "RS_EIO": "I/O operation failed.",
           "RS_ENOTSUP": "Operation unsupported.",
-          "RS_EFORMAT": "Input format rejected."
+          "RS_EFORMAT": "Input format rejected.",
+          "RS_EBUSY": "Resource or lifecycle operation is busy; retry after the owning operation completes."
         },
         "observation": "Signed API return value. Exact triggering conditions depend on the called function; the enum definition does not make every code reachable from every API.",
         "handling": "Check the return before using output values. No hardware W1C applies to a C return value; preserve the relevant peripheral status if diagnosis requires it.",
@@ -5143,6 +5108,7 @@
         9,
         18,
         18,
+        20,
         10,
         18,
         19,
@@ -5177,7 +5143,8 @@
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
         "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
         "18": "NPU handoff to HP failed, or the RT-Thread ready message reported failure or mismatched identity.",
-        "19": "NPU handoff back to LP failed, or the RT-Thread IRQ command/final verdict failed."
+        "19": "NPU handoff back to LP failed, or the RT-Thread IRQ command/final verdict failed.",
+        "20": "HP JTAG debug target selection before LP release failed."
       }
     }
   },
@@ -5355,7 +5322,7 @@
       {
         "id": "aclint-index-range",
         "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-        "text": ".first_hartid = 0U,\n.hart_count = 2U,"
+        "text": ".first_hartid = 1U,\n.hart_count = 1U,"
       },
       {
         "id": "sbi-console",
@@ -5372,7 +5339,7 @@
       {
         "id": "sbi-timer",
         "file": "app/ports/linux/opensbi/retrosoc_hp/platform.c",
-        "text": "return aclint_mtimer_cold_init(&s_mtimer, NULL);",
+        "text": "sbi_timer_set_device(&s_timer);",
         "function": "retrosoc_hp_timer_init"
       },
       {
@@ -5956,6 +5923,7 @@
       "app/apps/hp_boot/main.c",
       "app/apps/xpi_flash_loader/startup.S",
       "app/ports/linux/linux/retrosoc_hp.dts",
+      "app/ports/linux/smoke/start.S",
       "configs/ci/ihp130-debug.mk",
       "configs/ci/ihp130-hp.mk",
       "configs/ci/ihp130-xpi-flash-loader.mk",
@@ -6146,8 +6114,10 @@
       "rtl/mini/top/extension_slot.sv",
       "rtl/mini/top/extension_subsystem.sv",
       "rtl/mini/top/fabric_monitor.sv",
+      "rtl/mini/top/hp_core_wrapper.sv",
       "rtl/mini/top/hp_subsystem.sv",
       "rtl/mini/top/memory_pad_mux.sv",
+      "rtl/mini/ip_overrides/aq_sysio_kid.v",
       "rtl/ip/core/mgmt_debug_wrapper.sv",
       "rtl/ip/memory/onchip_ram.sv",
       "rtl/mini/top/rcu.sv",

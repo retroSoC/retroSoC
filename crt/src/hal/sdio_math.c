@@ -136,7 +136,9 @@ rs_status_t rs_sd_memory_parse_csd(const rs_sdio_response_t *response, rs_sd_mem
             return RS_EINVAL;
         }
         block_length = UINT32_C(1) << read_bl_len;
-        capacity_bytes = ((uint64_t)c_size + UINT64_C(1)) * (UINT64_C(1) << (c_size_mult + 2U)) *
+        /* C_SIZE_MULT is a three-bit CSD field: the shift is at most nine.
+         * Keep the factor RV32-native; the enclosing product remains 64-bit. */
+        capacity_bytes = ((uint64_t)c_size + UINT64_C(1)) * (UINT32_C(1) << (c_size_mult + 2U)) *
                          (uint64_t)block_length;
         capacity_blocks = capacity_bytes / (uint64_t)RS_SD_MEMORY_BLOCK_SIZE;
         info->card_type = RS_SD_MEMORY_SDSC;

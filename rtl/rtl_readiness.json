@@ -2,6 +2,77 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "spi-p2",
+      "paths": ["rtl/ip/serial/spi_dma_pacing.sv", "rtl/ip/peripheral/dma_core.sv",
+                "rtl/ip/peripheral/dma_reg.sv", "rtl/ip/peripheral/apb4_dma.sv"],
+      "status": "prototype",
+      "baseline_revision": "4b3553faa7dfeb2603d717904a2c1fbf79f168f9",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "DMA V2.2 parameterized version/support bitmap with preserved V2.0 product defaults",
+        "reset": "credit reservations clear on reset; descriptor cancellation retains ownership until responses drain",
+        "clock_enable": "PCLK credit pacing; existing DMA AXI crossing unchanged",
+        "memory": "no new storage; existing DMA FIFOs and descriptor state only",
+        "pipeline": "admission credit, FIFO commit, terminal response retirement; product SPI grant remains disabled"
+      },
+      "waivers": []
+    },
+    {
+      "name": "spi-p1",
+      "paths": ["rtl/ip/serial/apb4_spi.sv", "rtl/ip/serial/spi_reg.sv",
+                "rtl/ip/serial/spi_master_core.sv", "rtl/ip/serial/spi_phase_ctrl.sv",
+                "rtl/ip/serial/spi_word_packer.sv", "rtl/ip/serial/spi_gpio_guard.sv"],
+      "status": "prototype",
+      "baseline_revision": "e62ccdad87e1fd412eff70cc2527ad3090f16a55",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common registers; exactly-once registered APB response and finite segment state",
+        "reset": "active-low system reset invalidates traffic; RECOVER drains before clearing local validity",
+        "clock_enable": "PCLK only; SCK is a registered output, never an internal clock",
+        "memory": "two 8x32 Common FIFOs; pre-edge eligibility; no payload reset or SRAM macro",
+        "pipeline": "APB response, FIFO packing, per-frame phase engine; standalone source qualification only"
+      },
+      "waivers": []
+    },
+    {
+      "name": "tiny-r2-p5",
+      "paths": ["rtl/tiny/top"],
+      "status": "prototype",
+      "baseline_revision": "3131762b35e0ebfcd196395f955e7c1005bd18e7",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common registers and bounded response spill registers per external target",
+        "reset": "accepted CPU work drains before hart reset; system reset invalidates all sessions",
+        "clock_enable": "all fabric, APB, CPU and SRAM logic remains on direct SAFE24 SYS",
+        "memory": "unchanged 32 SRAM macros; no global SRAM transaction lock",
+        "pipeline": "one combined transaction per target, CPU one combined, DMA/SDIO one per direction"
+      },
+      "waivers": []
+    },
+    {
+      "name": "tiny-r2-p4",
+      "paths": ["rtl/tiny/top"],
+      "status": "prototype",
+      "baseline_revision": "4db27524a6282ca40d76b935415b89f043d6ea83",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common registers; independent I/D request state and per-group responses",
+        "reset": "five-edge release; hart halt/drain leaves SRAM and unrelated DMA active",
+        "clock_enable": "CPU and all 32 main-SRAM macros use direct SAFE24 SYS",
+        "memory": "four groups of eight tc_sram_1024x32 macros; no payload reset or extra SRAM",
+        "pipeline": "AHB capture, macro issue, registered response; uncontended completion within three cycles"
+      },
+      "waivers": []
+    },
+    {
       "name": "owned-rtl",
       "paths": [
         "rtl/ip",

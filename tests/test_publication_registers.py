@@ -52,9 +52,9 @@ def test_repeated_banks_keep_their_real_instance_ranges(reference):
         0x40,
         16,
     )
-    clint = {g["id"]: g for g in reference["aclint"]["groups"]}
-    assert clint["compare"]["count"] == 2
-    assert clint["compare"]["stride"] == 8
+    pwm = {g["id"]: g for g in reference["pwm"]["groups"]}
+    assert pwm["channel"]["count"] == 4
+    assert pwm["channel"]["stride"] == 64
 
 
 def test_gpio_windows_are_not_collapsed_into_one_register_table(reference):

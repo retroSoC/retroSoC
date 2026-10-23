@@ -27,13 +27,16 @@ TEST_SOURCES = (
     "crt/src/hal/uart_math.c",
     "crt/src/hal/timer_math.c",
     "crt/src/hal/psram_math.c",
+    "crt/src/hal/xpi_psram_math.c",
     "crt/src/hal/sdram_math.c",
     "crt/src/hal/sdio_math.c",
     "crt/src/hal/usb2_math.c",
     "crt/src/hal/spisd_math.c",
     "crt/src/hal/i2s_math.c",
+    "crt/src/hal/spi_math.c",
     "crt/src/hal/dma_math.c",
     "crt/src/hal/dma.c",
+    "crt/src/hal/dvp.c",
     "crt/src/hal/crypto_lifecycle.c",
     "crt/src/hal/jpeg_math.c",
     "crt/src/hal/apu.c",
@@ -43,6 +46,7 @@ TEST_SOURCES = (
     "crt/src/hal/fabric_monitor.c",
     "crt/src/hal/sysctrl.c",
     "crt/src/hal/clock.c",
+    "crt/src/hal/rcu.c",
     "crt/src/hal/resource.c",
     "crt/src/hal/extension.c",
     "crt/src/hal/user_ip.c",
@@ -52,6 +56,7 @@ TEST_SOURCES = (
     "rtl/managed/clusterip/rtc/sw/src/rtc.c",
     "app/media/src/video_player.c",
     "app/media/src/wav_audio.c",
+    "app/board/src/st7789vi_math.c",
     "app/benchmark/npu/npu_p6_reference.c",
     "tests/c/test_runtime.c",
 )
@@ -113,6 +118,7 @@ def main() -> int:
             "-fdata-sections",
             "-Wl,--gc-sections",
             "-DRS_DMA_TEST_MMIO",
+            "-DRS_DVP_TEST_MMIO",
             "-DRS_WS2812_TEST_MMIO",
             "-DRS_APU_TEST_MMIO",
             "-DRS_CRYPTO_TEST_MMIO",
@@ -122,6 +128,7 @@ def main() -> int:
             "-DRS_NPU_TEST_MMIO",
             "-DRS_FABRIC_MONITOR_TEST_MMIO",
             "-DRS_RESOURCE_TEST_MMIO",
+            "-DRS_TINY_RCU_TEST_MMIO",
             "-I",
             str(memory_map_root / "include"),
             "-I",
@@ -134,6 +141,8 @@ def main() -> int:
             str(root / "crt/include"),
             "-I",
             str(root / "app/media/include"),
+            "-I",
+            str(root / "app/board/include"),
             "-I",
             str(root / "app/benchmark/npu"),
             "-o",
@@ -151,6 +160,20 @@ def main() -> int:
             "-o", str(tiny_object),
         ], check=True)
         command.append(str(tiny_object))
+        tiny_dvp_object = temporary_root / "tiny_dvp.o"
+        dvp_functions = ("probe", "configure", "start", "abort", "flush", "get_status",
+                         "interrupt_enable", "interrupt_clear", "interrupt_test",
+                         "capture_dma", "capture_pio")
+        subprocess.run([
+            compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-DRS_SOC_TINY",
+            "-DRS_DVP_TEST_MMIO", "-DRS_SOC_DVP_DMA_BURST_BEATS=4U",
+            *[f"-Drs_dvp_{name}=rs_tiny_dvp_{name}" for name in dvp_functions],
+            "-Dip_dvp_test=ip_tiny_dvp_test",
+            "-I", str(memory_map_root / "include"),
+            "-I", str(user_extensions_root / "include"), "-I", str(root / "crt/include"),
+            "-c", str(root / "crt/src/hal/dvp.c"), "-o", str(tiny_dvp_object),
+        ], check=True)
+        command.append(str(tiny_dvp_object))
         subprocess.run(command, check=True)
         subprocess.run([str(executable)], check=True)
     return 0

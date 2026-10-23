@@ -27,7 +27,7 @@ SIDE_ORDER = ("south", "east", "north", "west")
 EXPECTED_SIGNAL_PADS = 52
 CLOCK_PORTS = ("extclk_i_pad", "jtag_tck_i_pad")
 SRAM_MASTER = "RM_IHPSG13_1P_1024x32_c2_bm_bist"
-SRAM_INSTANCE = "u_soc.u_sram.gen_memory.gen_bank[{index}].u_ram.u_mem"
+SRAM_INSTANCE = "u_soc.u_sram.gen_group[{group}].u_group.gen_bank[{bank}].u_ram.u_mem"
 SRAM_COLUMNS = 8
 SRAM_ORIGIN = (400, 600)
 # Detailed routing requires an M2 track inside each bank's 0.26 um bottom-edge
@@ -95,7 +95,7 @@ def sram_instances(capacity_kib: int) -> dict[str, tuple[list[int], str]]:
             SRAM_ORIGIN[0] + column * SRAM_PITCH[0],
             SRAM_ORIGIN[1] + row * SRAM_PITCH[1],
         ]
-        instances[SRAM_INSTANCE.format(index=index)] = (location, "N")
+        instances[SRAM_INSTANCE.format(group=index // 8, bank=index % 8)] = (location, "N")
     return instances
 
 
@@ -122,18 +122,9 @@ def macro_config(instances: dict[str, tuple[list[int], str]], header: str) -> di
 def macro_hooks(instances: dict[str, tuple[list[int], str]]) -> list[str]:
     hooks: list[str] = []
     for instance in instances:
-        bracket_start = instance.find("[")
-        if bracket_start >= 0:
-            bracket_end = instance.index("]", bracket_start)
-            instance_pattern = (
-                re.escape(instance[:bracket_start])
-                + ".*"
-                + instance[bracket_start + 1 : bracket_end]
-                + ".*"
-                + re.escape(instance[bracket_end + 1 :])
-            )
-        else:
-            instance_pattern = re.escape(instance)
+        # OpenDB and synthesis may escape array brackets differently. Handle
+        # every index (group and bank), retaining the exact non-index hierarchy.
+        instance_pattern = ".*".join(re.escape(part) for part in re.split(r"[\[\]]", instance))
         hooks.extend(
             [
                 f"{instance_pattern} VDD VSS VDDARRAY! VSS!",
@@ -144,6 +135,9 @@ def macro_hooks(instances: dict[str, tuple[list[int], str]]) -> list[str]:
 
 
 def build_config(args: argparse.Namespace) -> dict[str, object]:
+    io_profile = getattr(args, "io_profile", "default")
+    if io_profile not in ("default", "camera"):
+        raise ValueError("IO profile must be default or camera")
     pads, _ = read_map(args.pin_map)
     power_counts = read_power_pad_counts(args.pin_map)
     signal_instances: dict[str, list[str]] = {side: [] for side in SIDE_ORDER}
@@ -222,7 +216,7 @@ def build_config(args: argparse.Namespace) -> dict[str, object]:
         "STA_EXTRA_CORNER_TCL_FILE": config_path(
             ROOT / "physical/librelane/tiny/sta_report_limit.tcl", config_dir
         ),
-        "CLOCK_PORT": list(CLOCK_PORTS),
+        "CLOCK_PORT": [*CLOCK_PORTS, *(["gpio_20_io_pad"] if io_profile == "camera" else [])],
         "CLOCK_PERIOD": 1_000_000_000 / args.ext_clk_hz,
         "VDD_NETS": ["VDD"],
         "GND_NETS": ["VSS"],
@@ -279,6 +273,7 @@ def main() -> int:
     parser.add_argument("--bondpad-lef", type=Path, required=True)
     parser.add_argument("--sram-vh", type=Path, required=True)
     parser.add_argument("--ext-clk-hz", type=positive_integer, required=True)
+    parser.add_argument("--io-profile", choices=("default", "camera"), default="default")
     parser.add_argument("--have-sram-macro", action="store_true")
     parser.add_argument("--sram-size-kib", type=positive_integer, default=128)
     parser.add_argument("--output", type=Path, required=True)

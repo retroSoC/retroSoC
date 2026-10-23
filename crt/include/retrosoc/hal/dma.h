@@ -41,6 +41,8 @@ typedef enum {
     RS_DMA_REQUEST_DVP_RX = 11,
     RS_DMA_REQUEST_CRYPTO_IN = 12,
     RS_DMA_REQUEST_CRYPTO_OUT = 13,
+    RS_DMA_REQUEST_SPI_TX = 16,
+    RS_DMA_REQUEST_SPI_RX = 17,
 } rs_dma_request_t;
 
 typedef enum {
@@ -50,6 +52,15 @@ typedef enum {
     RS_DMA_CHANNEL_BULK = 3,
     RS_DMA_CHANNEL_CRYPTO_IN = 4,
     RS_DMA_CHANNEL_CRYPTO_OUT = 5,
+#ifdef RS_SOC_TINY
+    RS_DMA_CHANNEL_DVP = 2,
+    RS_DMA_CHANNEL_I2S_TX = 6,
+    RS_DMA_CHANNEL_I2S_RX = 7,
+#else
+    RS_DMA_CHANNEL_DVP = RS_DMA_CHANNEL_BULK,
+    RS_DMA_CHANNEL_I2S_TX = RS_DMA_CHANNEL_BULK,
+    RS_DMA_CHANNEL_I2S_RX = RS_DMA_CHANNEL_BULK,
+#endif
 } rs_dma_channel_t;
 
 typedef struct {
@@ -126,10 +137,12 @@ rs_status_t rs_dma_session_release(rs_dma_session_t *session);
 #define RS_DMA_TCD_INT_ERROR      UINT32_C(0x00000040)
 #define RS_DMA_TCD_KIND_SHIFT     8U
 #define RS_DMA_TCD_REQUEST_SHIFT  12U
+#define RS_DMA_TCD_REQUEST_HIGH   UINT32_C(0x02000000)
 #define RS_DMA_TCD_PRIORITY_SHIFT 16U
 #define RS_DMA_TCD_BURST_SHIFT    20U
 
 rs_status_t rs_dma_config_validate(uint32_t channel, const rs_dma_config_t *config);
+rs_status_t rs_dma_supports_request(rs_dma_request_t request);
 rs_status_t rs_dma_configure(uint32_t channel, const rs_dma_config_t *config);
 rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd);
 rs_status_t rs_dma_submit_tcd(uint32_t channel, rs_dma_tcd_t *tcd, rs_timeout_t timeout);

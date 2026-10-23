@@ -36,7 +36,7 @@
   #set list(tight:false,spacing:rhythm.cover-list-spacing,body-indent:rhythm.cover-list-indent)
   *Compute and control*
   - Hazard3 LP: boot, clocks, resource ownership and fault recovery.
-  - Dual-issue VexiiRiscv HP: RV64IMAFDC + Zicbom, Sv39.
+  - OpenC906 HP: RV64GC, Sv39, single 128-bit AXI4 master.
   - NPU: *64 dense MACs*, eight INT8 operator classes and 64 KiB private SRAM.
   - JTAG debug; fixed EXT-L control and EXT-H AXI64 slots.
 
@@ -90,7 +90,7 @@ retained document title; no separate derivative specifications are inferred.]
 #change-start("v05-overview","NPU-inclusive functional inventory and configuration reference")
 retroSoC Mini combines a small management processor with an application processor and shared
 memory and I/O. Hazard3 retains authority over startup, clock transitions, resource ownership
-and fault recovery. VexiiRiscv supplies the application-side compute and Linux integration.
+and fault recovery. OpenC906 supplies the application-side compute and Linux integration.
 The design is intended for embedded control, basic human-machine interfaces, retro multimedia
 experimentation, education and ASIC prototyping.
 

@@ -25,7 +25,15 @@
       "revision": "ef7da4134ff11ec6a681d0632123b232b853b046",
       "destination": ".cache/retrosoc/sources/vexiiriscv",
       "recursive": true,
-      "license": "MIT"
+      "license": "MIT",
+      "purpose": "Std series performance-core generator source (Std asset; no longer consumed by Mini)"
+    },
+    "openc906": {
+      "url": "https://github.com/XUANTIE-RV/openc906.git",
+      "revision": "b0c06eb1f8b3bae663bd8b87eac89ff48e68a57f",
+      "destination": ".cache/retrosoc/sources/openc906",
+      "license": "Apache-2.0",
+      "purpose": "Mini HP core: pre-generated openC906 RTL (C906_RTL_FACTORY/gen_rtl), default configuration"
     },
     "rtthread_hp": {
       "url": "https://github.com/RT-Thread/rt-thread.git",
@@ -150,7 +158,7 @@
     "cluster_common": {"url": "https://github.com/retroSoC/common.git", "revision": "964a54d70cb78e394ba9a25c05f2aa2b02941fb7", "destination": "rtl/managed/clusterip/common", "license": "NOASSERTION"},
     "cluster_crc": {"url": "https://github.com/retroSoC/crc.git", "revision": "8c1a5664c4d23d005c1afad432372a13ca967cc8", "destination": "rtl/managed/clusterip/crc", "license": "MulanPSL-2.0"},
     "cluster_ps2": {"url": "https://github.com/retroSoC/ps2.git", "revision": "2097a0d41b07573ff0453d65ba9a1670b3df7b9c", "destination": "rtl/managed/clusterip/ps2", "license": "MulanPSL-2.0"},
-    "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "79ae32f725e848a1e7f6134847b3fb032ed64006", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},
+    "cluster_pwm": {"url": "https://github.com/retroSoC/pwm.git", "revision": "38efaf5e20f084a00148920087c60cadab61839b", "destination": "rtl/managed/clusterip/pwm", "license": "MulanPSL-2.0"},
     "cluster_rng": {"url": "https://github.com/retroSoC/rng.git", "revision": "36f3e0774d8f3c4b597d3db8a96ca3992532b61e", "destination": "rtl/managed/clusterip/rng", "license": "MulanPSL-2.0"},
     "cluster_rtc": {"url": "https://github.com/retroSoC/rtc.git", "revision": "32548c5cbcdf39e09d0880fb611f9dd47940ea88", "destination": "rtl/managed/clusterip/rtc", "license": "NOASSERTION"},
     "cluster_wdg": {"url": "https://github.com/retroSoC/wdg.git", "revision": "f5d39fa246054d678d34195824d943367dfcce44", "destination": "rtl/managed/clusterip/wdg", "license": "MulanPSL-2.0"}
@@ -289,6 +297,54 @@
       "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-0ed75ad689e36b2fd2aec89cb4a7c7db3b342864141c94f4366763034bd6fe82/ics55_ecos_sram_1024x32_m8.tar.gz",
       "sha256": "71797619312b82df8dc3622476c53872dc1512d2b04fd410e0eb5f0d57ffa1d2",
       "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_1024x32_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_1024x16_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-7aee4a4c686eb3d2cd8e86b7a62a5a5c065996fef8b25e8d535be5846cf52313/ics55_ecos_sram_1024x16_m8.tar.gz",
+      "sha256": "2873728b20faa2a28b892c3833a930399d3ec5bb443441004026483bc6acdfd0",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_1024x16_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_2048x32_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-74bf8d8151ec0d2ecba03c6feb004b83df1a4d7878bcca780ddf82160b371e94/ics55_ecos_sram_2048x32_m8.tar.gz",
+      "sha256": "e5d0554155084c3624a16aff5e6df5f89ce3367274aeeff469b74ff443e0c1c0",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_2048x32_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_256x59_m4": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-a82938d52971739e36dfda702b892ebd21b17bdf308859761cb52be0207919a8/ics55_ecos_sram_256x59_m4.tar.gz",
+      "sha256": "c59da66a16d95f13d22b350cbba185dcdbaed243c15211d48eba2b6afd0e8977",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_256x59_m4.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_1024x64_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-b9994f07f8e68e6c6387b433ca8421401a2b7e1a1aa5a29f7de1ce62691832f7/ics55_ecos_sram_1024x64_m8.tar.gz",
+      "sha256": "0e11c6ef5715d20adc76a2fa5044c06cddb2b48315b2fac5b8b99ceeccd0515d",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_1024x64_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_128x8_m8": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-ad751361962b34a6d63346196ae8a35f7332486a08b16f3473b30488a3ebc931/ics55_ecos_sram_128x8_m8.tar.gz",
+      "sha256": "f8187a4d19636602cede59cad17bf77810834ec53748c96235f38eadbd037580",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_128x8_m8.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_64x58_m4": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-d4783a521fb52872d51a3661cdec3eb394723e44501307f31817e7c1e92fc240/ics55_ecos_sram_64x58_m4.tar.gz",
+      "sha256": "df9fe1726d140c610ff2a96270226a6f2a4140ce5c3462065e97557d99d74c2f",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_64x58_m4.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_64x88_m4": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-5754982b8e6208f88e2eb2e0ba6e474e9e4eecd2d38dcfe8467ee10b3d6b7e4e/ics55_ecos_sram_64x88_m4.tar.gz",
+      "sha256": "6b69114c28557b00be71b3f822780872d1ce1eef46ca81f626f176f6d4f85d6c",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_64x88_m4.tar.gz",
+      "license": "NOASSERTION"
+    },
+    "pdk_ics55_sram_64x98_m4": {
+      "url": "https://github.com/openecos-projects/ics55_ecos_sram/releases/download/sram-v1-9bf1f08b87901ff376fae7d81d6ada10047012b7bde2c226a545d9df73eef6d3/ics55_ecos_sram_64x98_m4.tar.gz",
+      "sha256": "19932ac06e4a6d4ecd92a2ec36968494a435a624b79158a0e4e4cc1a601c8871",
+      "destination": ".cache/retrosoc/downloads/pdk/ics55/ics55_ecos_sram_64x98_m4.tar.gz",
       "license": "NOASSERTION"
     },
     "pdk_ics55_sram_4096x32_m8": {

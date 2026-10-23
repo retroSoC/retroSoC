@@ -168,6 +168,12 @@ polling, interrupts, errors, performance counters, and configuration locks.
 Reset-time NSS0 boot behavior and JTAG NOR programming are defined in the
 [XPI V2 controller contract](../docs/ip/xpi.md).
 
+`<retrosoc/hal/xpi_psram.h>` adds an explicit optional ESP-PSRAM64H NSS1
+reference profile, identity/geometry checks and bounded mapped-DMA validation.
+It reserves LUT8..11, preserves NOR configuration, and never initializes RAM
+as a boot dependency. The caller owns pins, XPI quiescence, SRAM residency and
+DMA leases. See the [Tiny P8 runbook](../docs/ip/tiny-soc-r2-psram.md).
+
 `crt/inc/` is legacy or generated compatibility material. It is not an active
 public include root for the firmware build; new code must not add dependencies
 on it.
@@ -239,10 +245,15 @@ For the complete firmware, simulation, synthesis, and timing flow, see the
 
 Tiny uses the same `rs_` SDK and selects its generated memory, IRQ and capability
 headers through the committed profile. The generated memory-map header includes
-Tiny capability metadata, so public DMA headers report four channels without
+Tiny capability metadata, so public DMA headers report eight channels without
 requiring an application to reproduce private compiler flags. Unavailable IP
 drivers are omitted; Tiny SYSCTRL rejects unsupported lifecycle/PLL operations
 before MMIO. Startup skips external-RAM initialization and loads into SRAM.
+
+P6 selects the existing RNG/CRC/WS2812/Crypto/I2S/SDIO drivers. Crypto uses 4/5,
+audio uses 6/7 and channel 3 remains exclusively leased for a WS frame.
+I2C1, SDIO1, DVP and future DMA endpoints remain unsupported on Tiny. Shared
+Mini defaults are unchanged; Tiny does not acquire Mini's HP channel reservation.
 
 `<retrosoc/hal/watchdog.h>` provides `rs_watchdog_configure`, `rs_watchdog_start`,
 `rs_watchdog_service`, `rs_watchdog_get_status` and `rs_watchdog_clear_reset_cause`,

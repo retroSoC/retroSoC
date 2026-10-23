@@ -24,14 +24,14 @@ module i2s_recv (
   logic s_lrck_trg;
   logic [4:0] s_bit_cnt_d, s_bit_cnt_q;
   logic [4:0] s_bit_num;
-  logic s_first_bit_d, s_first_bit_q;
+  logic s_done_d, s_done_q;
   logic [23:0] s_recv_data_d, s_recv_data_q;
   logic [23:0] s_data_d, s_data_q;
 
 
   assign s_bit_num     = bitmode_i ? 5'd23 : 5'd15;
   assign data_o        = s_data_q;
-  assign done_o        = s_bit_cnt_q == s_bit_num;
+  assign done_o        = s_done_q;
   assign s_lrck_trg    = lrck_i ^ s_lrck_dely_q;
 
 
@@ -89,26 +89,25 @@ module i2s_recv (
   );
 
 
-  always_comb begin
-    s_first_bit_d = s_first_bit_q;
-    if (s_lrck_trg) s_first_bit_d = adcdat_i;
-  end
-  dffer #(
+  // I2S changes LRCK one bit before the next sample's MSB. The bit
+  // sampled on that transition is the current sample's LSB, not the next
+  // sample's first bit. Publish completion after data_o has captured it.
+  assign s_done_d = sclk_pos_i && s_lrck_trg;
+  dffr #(
       .DATA_WIDTH(1)
-  ) u_first_bit_dffer (
+  ) u_done_dffr (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-      .en_i   (sclk_pos_i),
-      .dat_i  (s_first_bit_d),
-      .dat_o  (s_first_bit_q)
+      .dat_i  (s_done_d),
+      .dat_o  (s_done_q)
   );
 
 
   always_comb begin
     s_data_d = s_data_q;
-    if ((!s_lrck_trg) && (s_bit_cnt_q == (s_bit_num - 1'b1))) begin
-      if (bitmode_i) s_data_d = {s_recv_data_d[22:0], s_first_bit_q};
-      else s_data_d = {8'd0, s_recv_data_d[14:0], s_first_bit_q};
+    if (s_lrck_trg) begin
+      if (bitmode_i) s_data_d = {s_recv_data_q[22:0], adcdat_i};
+      else s_data_d = {8'd0, s_recv_data_q[14:0], adcdat_i};
     end
   end
   dffer #(

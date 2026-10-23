@@ -419,7 +419,11 @@ rs_status_t rs_ws2812_dma_service(uint64_t now) {
         return rs_ws2812_dma_finish();
     }
     if ((transmitter_flags & RS_WS2812_STATUS_BUSY) == 0U) {
-        return rs_ws2812_dma_fail(RS_EIO);
+        /* Completion may occur between the interrupt and status reads, and
+         * sticky DONE can lag the core's idle transition. Observe terminal
+         * events on the next bounded service call; never refill an idle core.
+         * Errors, aborts and the deadline remain checked on every call. */
+        return RS_OK;
     }
     if (rs_ws2812_transfer.remaining == 0U) {
         rs_ws2812_write_register(RS_WS2812_INTR_STATE_OFFSET, RS_WS2812_INTR_FIFO_LOW);

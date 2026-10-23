@@ -301,15 +301,6 @@
       "user_access": "none"
     },
     {
-      "symbol": "APB4_I2C1",
-      "base": "0x10011000",
-      "size": "0x00001000",
-      "route": "apb4_periph",
-      "kind": "active",
-      "public": true,
-      "user_access": "rw"
-    },
-    {
       "symbol": "APB4_GPIO_ADMIN",
       "base": "0x10014000",
       "size": "0x00001000",
@@ -326,15 +317,6 @@
       "kind": "active",
       "public": true,
       "user_access": "none"
-    },
-    {
-      "symbol": "APB4_UART1",
-      "base": "0x10018000",
-      "size": "0x00001000",
-      "route": "apb4_periph",
-      "kind": "active",
-      "public": true,
-      "user_access": "rw"
     },
     {
       "symbol": "APB4_ARCHINFO",
@@ -399,6 +381,78 @@
       "public": true,
       "user_access": "rw",
       "burst": "incr16"
+    },
+    {
+      "symbol": "APB4_RNG",
+      "base": "0x20001000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_CRC",
+      "base": "0x20006000",
+      "size": "0x00001000",
+      "route": "apb4_system",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_WS2812",
+      "base": "0x10008000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_CRYPTO",
+      "base": "0x1000C000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_I2S",
+      "base": "0x10007000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_DVP",
+      "base": "0x1000E000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SDIO0",
+      "base": "0x1000F000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
+    },
+    {
+      "symbol": "APB4_SPI",
+      "base": "0x1001D000",
+      "size": "0x00001000",
+      "route": "apb4_periph",
+      "kind": "active",
+      "public": true,
+      "user_access": "none"
     }
   ],
   "legacy_rib": false,

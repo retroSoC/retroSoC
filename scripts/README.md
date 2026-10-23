@@ -26,6 +26,16 @@ Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 
+`spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
+entrypoints. It preserves attempt directories, source archives, command results
+and simulation verdicts under the selected Tiny build variant. It does not
+instantiate SPI in Tiny or implement central-DMA pacing. See the
+[SPI-P1 runbook](../docs/ip/spi-p1.md) for scope and pending qualification.
+
+`spi_p2.py` runs the focused V2.2 credit-pacing fixture and lint boundary.
+The product DMA remains V2.0/default-disabled until shared integration is
+qualified; this entrypoint does not wire Tiny SPI.
+
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
 schema and release validator; generated assets remain below the selected
@@ -125,9 +135,28 @@ SRAM CoreMark quick report into `meta/coremark.json`; it requires one valid
 `COREMARK_RESULT` record and `COREMARK_PASS`. Both reports complement, rather
 than replace, the common `SIM_TEST_PASS` simulation verdict.
 
+`setup_openc906.py` installs or updates (`--update`) the locked OpenC906
+source used by Mini product profiles and verifies the checked-out revision;
+the vendored checkout is never modified. `generate_openc906.py` resolves the
+upstream `C906_RTL_FACTORY/gen_rtl` filelists from that checkout, substitutes
+the reviewed overrides from `rtl/mini/ip_overrides/` (the hart-1
+`aq_sysio_kid.v`, the strong-order MMIO-window `sysmap.h`, the eight
+`aq_spsram_*.v` SRAM wrappers whose PDK-selectable macro path — stacked
+IHP130 `RM_IHPSG13_1P_*`, exact-geometry ICS55 `ics55_ecos_sram_*`, or tiled
+GF180 `gf180mcu_fd_ip_sram__sram*x8m8wm1` — is
+gated on `PDK_IHP130`/`PDK_ICS55`/`PDK_GF180`+`HAVE_SRAM_MACRO` without
+`PDK_BEHAV`, and
+the `gated_clk_cell.v`/`tdt_gated_clk_cell.v`/`BUFGCE.v` clock-gate overrides
+that select the process ICG cell under a `PDK_*` define without `PDK_BEHAV`),
+each pinned to
+the upstream file's SHA-256 so a locked-revision move forces review), and
+emits the single compilation unit `openc906_combined.v` below `build/`;
+generated RTL is never tracked.
+
 `generate_vexiiriscv.py` verifies the locked VexiiRiscv revision, rejects local
-source changes before and after generation, and generates the fixed HP core
-below `build/`; generated RTL is never tracked.
+source changes before and after generation, and generates the fixed Std-series
+core (preserved from the retired Mini HP configuration) below `build/`; generated
+RTL is never tracked.
 `setup_hp_linux.py` installs the locked OpenSBI, Linux, and Buildroot revisions
 and can resume a checkout left without `HEAD` by an interrupted fetch.
 `build_hp_linux.py` builds the RV64 `lp64d` userspace/OpenSBI image set with the repo-owned

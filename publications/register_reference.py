@@ -927,7 +927,6 @@ def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
         "mailbox": "hp_mailbox",
         "monitor": "fabric_monitor",
         "extensions": "extension",
-        "aclint": "clint",
         "wdg": "watchdog",
     }.get(ip, ip)
     candidates = [f"crt/include/retrosoc/hal/{alias}_regs.h", f"crt/src/hal/{alias}.c"]

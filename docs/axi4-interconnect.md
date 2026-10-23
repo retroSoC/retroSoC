@@ -30,19 +30,24 @@ master. Requests to one target use Common round-robin arbitration and retain
 ownership through `B` or `RLAST`. Misaligned, unsupported, cross-page, and
 cross-target transactions return `SLVERR`; unmapped addresses return `DECERR`.
 
-Hazard3 accesses APB4 registers through LP-to-PCLK async-safe bridges. HP MMIO
-is downsized and crosses HP-to-LP. Product access policy prevents the HP MMIO
-master from writing SYSCTRL/RCU, watchdog, and GPIO administration windows.
+Hazard3 accesses APB4 registers through LP-to-PCLK async-safe bridges. The HP
+core's single 128-bit AXI4 master is serialized by `axi4_downsizer_128to64`
+and split by `axi4_mmio_demux`: the `0x02000000-0x2FFFFFFF` window enters the
+MMIO chain, where it is downsized and crosses HP-to-LP, while every other
+address reaches HP data-plane master slot 0. Product access policy prevents
+the HP MMIO master from writing SYSCTRL/RCU, watchdog, and GPIO
+administration windows.
 
 ## HP data plane
 
 The native payload fabric is AXI64 with 32-bit addresses and seven-bit global
-IDs. It has nine masters:
+IDs. It has nine active masters over ten fixed slots (slot 1 is retired and
+tied idle; the ID-prefix map is preserved):
 
 | Index | Master | Adaptation |
 | ---: | --- | --- |
-| 0 | Vexii I-cache | native AXI64, source ID preserved |
-| 1 | Vexii D-cache | native AXI64, source ID preserved |
+| 0 | HP core (OpenC906) | single 128-bit AXI4 master serialized by `axi4_downsizer_128to64`, source ID preserved; four read credits and two write credits (the retired data port's write credits) |
+| 1 | retired HP D-cache slot | tied idle |
 | 2 | central DMA | PCLK-to-HP CDC, AXI32-to-64 |
 | 3 | I/O gateway A | USB2 and SDIO0, PCLK-to-HP CDC, AXI32-to-64 |
 | 4 | I/O gateway B | SDIO1 and SPI-SD, PCLK-to-HP CDC, AXI32-to-64 |
@@ -73,8 +78,7 @@ the integration RTL:
 
 | Master | Read targets | Write targets | Instruction | Attribute rule |
 | --- | --- | --- | --- | --- |
-| HP I-cache | all five memories | none | allowed | cache attributes preserved |
-| HP D-cache | all five memories | SRAM, SDRAM, QPI, OPI | denied | cache attributes preserved |
+| HP core | all five memories | SRAM, SDRAM, QPI, OPI | allowed | cache attributes preserved |
 | DMA, I/O A/B, LP gateway | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required |
 | GA2D | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; direct FILL/COPY/CONVERT/BLEND 2D engine, no hardware coherency |
 | JPEG | all five memories | SRAM, SDRAM, QPI, OPI | denied | `AxCACHE=0` required; one normal read and one normal write credit |
@@ -86,7 +90,7 @@ and records the immutable master identity and original decoded target.
 
 Per-target arbitration first selects the highest effective five-bit priority
 and then uses the Common round-robin arbiter among equal requesters. Normal
-classes are HP I/D 12, I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8, and LP gateway 2, with
+classes are HP core 12, I/O gateways 10, DMA/JPEG/EXT-H/GA2D 8, and LP gateway 2, with
 incoming AXI QoS able to raise a normal request up to 15. A continuously
 eligible request is promoted to 16 after 256 cycles. During recovery, the LP
 gateway is promoted to 31. Target backpressure is outside the service bound;

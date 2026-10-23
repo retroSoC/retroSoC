@@ -5,6 +5,7 @@
 +incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv
 +incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2
 +incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2
++incdir+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/sdlclkp
 /tech/sky130_io_sim_cells.v
 /clusterip/common/rtl/tech/ram.sv
 /tech/sky130_sram_sim_cells.sv
@@ -12,3 +13,4 @@
 /physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/clkinv/sky130_fd_sc_hd__clkinv_1.v
 /physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/mux2/sky130_fd_sc_hd__mux2_1.v
 /physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/xor2/sky130_fd_sc_hd__xor2_1.v
+/physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest/cells/sdlclkp/sky130_fd_sc_hd__sdlclkp_1.v

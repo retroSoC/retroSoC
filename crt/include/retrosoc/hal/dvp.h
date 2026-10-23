@@ -66,7 +66,13 @@ rs_status_t rs_dvp_get_status(rs_dvp_status_t *status);
 rs_status_t rs_dvp_interrupt_enable(uint32_t mask);
 rs_status_t rs_dvp_interrupt_clear(uint32_t mask);
 rs_status_t rs_dvp_interrupt_test(uint32_t mask);
+/* Single-snapshot helpers. Capacity is storage in 32-bit words, not the
+ * requested transfer length. DMA rejects odd active widths before starting;
+ * PIO stores a zero-padded halfword at every odd-width row end. Failed DMA
+ * cleanup must complete before a source abort/flush may discard its tail. */
 rs_status_t rs_dvp_capture_dma(uintptr_t destination, uint32_t word_capacity, rs_timeout_t timeout);
+rs_status_t rs_dvp_capture_pio(uintptr_t destination, uint32_t word_capacity,
+                               uint32_t expected_words, rs_timeout_t timeout);
 void ip_dvp_test(void);
 
 #endif

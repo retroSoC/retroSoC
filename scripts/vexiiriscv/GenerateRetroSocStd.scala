@@ -8,9 +8,11 @@ import vexiiriscv.misc.EmbeddedRiscvJtag
 
 import java.nio.file.{Files, Paths}
 
-/** Generates the fixed retroSoC RV64 application core. */
-object GenerateRetroSocHp extends App {
-  require(args.length == 1, "usage: GenerateRetroSocHp <output-directory>")
+/** Generates the fixed retroSoC Std-series RV64 application core configuration
+  * (preserved from the retired Mini HP configuration).
+  */
+object GenerateRetroSocStd extends App {
+  require(args.length == 1, "usage: GenerateRetroSocStd <output-directory>")
 
   val output = Paths.get(args(0)).toAbsolutePath.normalize
   Files.createDirectories(output)
@@ -120,6 +122,6 @@ object GenerateRetroSocHp extends App {
         )
       )
     )
-    VexiiRiscv(plugins).setDefinitionName("vexii_riscv_hp_generated")
+    VexiiRiscv(plugins).setDefinitionName("vexiiriscv_std_generated")
   }
 }

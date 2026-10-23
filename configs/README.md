@@ -22,10 +22,10 @@ and retained logs under
 `build/ihp130-2026-10-01-10-30-b2e490436ac7/npu/p6/`.
 `ci/ihp130-hp.mk` is the asymmetric Linux application profile. It starts HP
 from the external 72 MHz safe clock and LP from REF24, runs `hp_boot` entirely
-from 32 KiB on-chip SRAM, enables VexiiRiscv `Zicbom` with 64-byte blocks, and
-generates VexiiRiscv RTL only below the selected build variant. It is not part
-of the supported PR matrix until Linux boot, HP performance, synthesis, and
-timing evidence are qualified.
+from 32 KiB on-chip SRAM, and uses the locked pre-generated OpenC906 HP core
+(RV64GC, hart 1) whose combined RTL is emitted only below the selected build
+variant. It is not part of the supported PR matrix until Linux boot, HP
+performance, synthesis, and timing evidence are qualified.
 `ci/ihp130-rtthread.mk` selects the same RV64 HP hardware and LP loader for
 the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
 `make CONFIG=configs/ci/ihp130-rtthread.mk SIMU=VERILATOR hp-rtthread-sim`.
@@ -34,7 +34,10 @@ the pinned RT-Thread M-mode selftest. Run `make setup-hp-rtthread`, then
 SDRAM, performs the LP-only image loads, hands APU ownership to HP, and checks
 HP-submitted WAV/KWS jobs plus the LP-only register fault probe in the full-SoC
 Verilator simulation via `hp-apu-sim`.
-All PRODUCT profiles use `rv64imafdc_zicbom_max`; LP compiler/ISA remain RV32.
+Mini PRODUCT profiles use the locked OpenC906 HP core (RV64GC); HP images
+compile as `rv64imafdc_zicsr_zifencei`/`lp64d`, and the former
+`rv64imafdc_zicbom_max` VexiiRiscv configuration is preserved as the
+Std-series generator asset. LP compiler/ISA remain RV32.
 `ci/ihp130-xpi-flash-loader.mk` builds the SRAM-only XPI NOR service image used
 by GDB/OpenOCD; it is a programming utility, not a normal boot application.
 Start builds from a committed profile rather than setting an unreviewed mix of
@@ -75,15 +78,40 @@ for the matrix and its pending/current evidence boundary.
 
 The [2026-10-07 Tiny refreeze](../docs/ip/tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07)
 sets the default to ICS55 with `HAVE_PLL=YES` and SAFE24 boot.
-`ci/ics55-tiny.mk` implements that entrypoint with the PLL held off; standalone
-PLL backend tests do not enable RCU/SYS switching. `make SOC=TINY` selects this
+`ci/ics55-tiny.mk` boots with the PLL held off; R2-P7 adds explicit software
+requests for functional PLL192/240 transitions, subject to separate acceptance.
+`ci/ihp130-tiny-xin48.mk` and `ci/ihp130-tiny-xin96.mk` normalize their declared
+external input to REF24 at boot and permit no-PLL XIN transitions. See the
+[P7 runbook](../docs/ip/tiny-soc-r2-clock-reset.md) for the evidence boundary.
+`TINY_P7_ACCEPTANCE=YES APP=ci_smoke` selects the distinct RCU acceptance image
+and configuration digest; ordinary Tiny acceptance firmware remains the default.
+`TINY_P8_ACCEPTANCE=YES APP=ci_smoke` instead selects the optional XPI PSRAM
+transport image and its distinct digest. Populate the verification device with
+`TINY_SIM_ARGS=+tiny_p8_psram`; P7/P8/P9 acceptance selectors are mutually exclusive.
+See the [P8 runbook](../docs/ip/tiny-soc-r2-psram.md) for bounded DMA and evidence.
+`TINY_P9_ACCEPTANCE=YES APP=ci_smoke` selects the DVP camera capture image;
+use `TINY_SIM_ARGS='+tiny_psram +tiny_p9_camera'` for the pin-level camera
+model. The optional `TINY_P9_QUICK=YES` selector is a small focused smoke image,
+not QVGA/VGA acceptance. See the [P9 runbook](../docs/ip/tiny-soc-r2-dvp.md).
+`TINY_P10_ACCEPTANCE=YES APP=ci_smoke` selects the separate SAFE24 QVGA
+capture, CPU statistics and SDIO save/readback image. It is mutually exclusive
+with P7/P8/P9 acceptance flags and does not change the ordinary image or its
+configuration key. See the [P10 runbook](../docs/ip/tiny-soc-r2-system-performance.md).
+`TINY_P9_WORKLOAD=VGA_YUV422` selects the full 640x480 YUV422 image and
+changes its configuration digest. It requires P9 acceptance with QUICK=NO;
+the default `QVGA_RGB565` retains the existing configuration key. Pair the
+VGA image with `+tiny_p9_vga`; mismatched source geometry is not acceptance.
+For passive progress add `+tiny_p9_monitor +tiny_p9_monitor_log=<absolute-evidence-file>`;
+the separate log preserves firmware UART record boundaries.
+`make SOC=TINY` selects this
 committed profile, and `make SOC=TINY PDK=IHP130` selects explicit compatibility.
 Do not substitute Mini's `ci/ics55.mk` for Tiny. Acceptance evidence belongs in
 the Tiny ledger, and physical qualification remains pending.
 
 `ci/ihp130-tiny.mk` selects `SOC=TINY`, one RV32IMC Hazard3 (A disabled),
-128 KiB SRAM, AXI32/APB4, four DMA channels and the wired peripheral subset.
+128 KiB SRAM and AXI32/APB4. The P6 candidate adds eight-channel DMA and the
+frozen shared-peripheral integration; source presence is not phase acceptance.
 The profile uses 24 MHz, `HAVE_HP=NO`, `MINI_MODE=NONE`, CSR-enabled RV32IM
 firmware and `ld2_all_sram`. Both `bringup` and `ci_smoke` select Tiny acceptance
-firmware. Icarus and Verilator use the same pin-level Flash model. Other PDKs,
-wireless, external RAM and HP applications are rejected by the Tiny config gate.
+firmware. Icarus and Verilator use the same pin-level Flash model. PDKs other
+than IHP130/ICS55, external-RAM boot layouts and HP applications remain rejected.

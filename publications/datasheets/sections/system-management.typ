@@ -5,7 +5,7 @@
 #include "routing-reference.typ"
 
 == Multicore Operation and Resource Ownership <multicore-operation>
-Hazard3 is the *root-management hart*; VexiiRiscv is the application hart. Linux does not take
+Hazard3 is the *root-management hart*; OpenC906 is the application hart. Linux does not take
 over the SoC's root clock, reset, admission and recovery controls merely by booting. Decide
 which software owns each resource and buffer *before enabling interrupts or bus mastering*.
 

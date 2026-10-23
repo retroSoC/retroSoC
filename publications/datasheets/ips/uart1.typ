@@ -12,7 +12,7 @@
 
 #ip-reference("uart1","uart",5,shared:"uart0",legacy:[
 UART1 uses the *same 64-byte FIFO UART v3 ABI*, not a separate non-FIFO implementation. Its
-dedicated TX/RX pads serve the HP console. HP PLIC source 1 is distinct from the LP vector
+dedicated TX/RX pads serve the HP console. HP external source 1 (PLIC ID 17) is distinct from the LP vector
 number above. The initial Linux console uses OpenSBI/hvc0; a *native Linux UART driver remains
 a separate delivery item*.
 ])

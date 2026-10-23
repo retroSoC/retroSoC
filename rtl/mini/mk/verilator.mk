@@ -11,7 +11,7 @@ SOC_VSRC_HOME    += $(RTL_PATH)/dv/verilator/rtl
 SOC_COMPILE_HOME := $(BUILD_DIR)/emu_compile
 
 SOC_VXXFILES      := $(RTL_FLIST)
-SOC_VXXFILES      += $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv
+SOC_VXXFILES      += $(ROOT_PATH)/rtl/model/ESP_PSRAM64H.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/flash_read_byte_binder.sv
 SOC_VXXFILES      += $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv
@@ -51,7 +51,7 @@ VERILATOR_DEPFILE       := $(BUILD_DIR)/verilate.d
 VERILATOR_EMU           := $(BUILD_DIR)/emu
 RTL_LINT_STAMP          := $(RTL_LINT_DIR)/rtl-lint.stamp
 RTL_LINT_DEPFILE        := $(RTL_LINT_DIR)/rtl-lint.d
-VERILATOR_EXTRA_SOURCES := $(RTL_PATH)/dv/model/ESP_PSRAM64H.sv \
+VERILATOR_EXTRA_SOURCES := $(ROOT_PATH)/rtl/model/ESP_PSRAM64H.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/flash_read_byte_binder.sv \
                            $(RTL_PATH)/dv/verilator/rtl/QSPIFlash.sv \

@@ -1169,7 +1169,7 @@ Use [XPI V2](xpi.md) NSS1 with GPIO29 ALT0 (QFN pin 14), sharing the dedicated
 SCK/D0-3 wires with boot NOR on NSS0. The NSS1 aperture is
 `0x54000000..0x57FFFFFF` (64 MiB), not a promise of fitted RAM capacity. The
 reference verification geometry is the existing 8 MiB ESP-PSRAM64H model,
-currently `rtl/mini/dv/model/ESP_PSRAM64H.sv`: its valid mapped data range is
+currently `rtl/model/ESP_PSRAM64H.sv`: its valid mapped data range is
 `0x54000000..0x547FFFFF`. R2-P8 must place any reused device model under shared
 or Tiny-owned verification ownership without importing Mini product RTL or
 copying the separate `apb4_psram` controller. Model reuse alone does not

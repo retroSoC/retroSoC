@@ -4,7 +4,6 @@ PDK                := IHP130
 HAVE_PLL           := NO
 HAVE_HP            := YES
 APU_ENABLE_P7      := YES
-HP_CONFIG          := rv64imafdc_zicbom_max
 HAVE_SRAM_IF       := YES
 HAVE_SRAM_MACRO    := YES
 SRAM_SIZE_KIB      := 32

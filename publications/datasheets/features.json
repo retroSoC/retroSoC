@@ -35,9 +35,9 @@
     "One management hart slot in the reference integration."
   ],
   "aclint": [
-    "Two addressable hart slots; **HP consumes slot 1**.",
-    "Machine software and timer interrupts for the HP subsystem.",
-    "Separate address window from management CLINT."
+    "**Core-internal CLINT** of the OpenC906 HP hart (c900 layout).",
+    "Machine/supervisor timer and software interrupts; **no memory-mapped mtime**.",
+    "Decoded inside the core BIU; **no SoC register window**."
   ],
   "dma": [
     "**Eight channel contexts** share a 32-bit AXI master.",
@@ -181,9 +181,9 @@
     "Clock division and memory-pad mode through SYSCTRL."
   ],
   "plic": [
-    "32 source IDs, with **source 0 reserved**.",
-    "Two delivery contexts: machine and supervisor.",
-    "Priorities, masks, threshold and claim/complete semantics."
+    "**Core-internal PLIC** of the OpenC906 HP hart (c900 layout).",
+    "**16 SoC external sources**, delivered as PLIC ID = source + 16.",
+    "Machine/supervisor contexts; priorities, thresholds and claim/complete."
   ],
   "mpw-timer": [
     "**MPW-selectable** timer and divider.",

@@ -8,7 +8,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-// Pin-compatible functional model for the GF180 512x8 bit-write SRAM macro.
+// Pin-compatible functional models for the GF180 bit-write SRAM macros
+// (512x8 for the SoC SRAM, 64/128/256x8 for the C906 SRAM tiles).
 /* verilator lint_off DECLFILENAME */
 module gf180mcu_fd_ip_sram__sram512x8m8wm1 (
     // verilog_format: off -- preserve the PDK memory interface columns
@@ -24,6 +25,102 @@ module gf180mcu_fd_ip_sram__sram512x8m8wm1 (
     // verilog_format: on
 );
   logic [7:0] s_storage_q[0:511];
+
+  always_ff @(posedge CLK) begin
+    if (!CEN && (VDD !== 1'b0) && (VSS !== 1'b1)) begin
+      if (GWEN) begin
+        Q <= s_storage_q[A];
+      end else begin
+        for (int unsigned bit_index = 0; bit_index < 8; bit_index++) begin
+          if (!WEN[bit_index]) begin
+            s_storage_q[A][bit_index] <= D[bit_index];
+          end
+        end
+      end
+    end
+  end
+endmodule
+/* verilator lint_on DECLFILENAME */
+
+/* verilator lint_off DECLFILENAME */
+module gf180mcu_fd_ip_sram__sram256x8m8wm1 (
+    // verilog_format: off -- preserve the PDK memory interface columns
+    input  logic       CLK,
+    input  logic       CEN,
+    input  logic       GWEN,
+    input  logic [7:0] WEN,
+    input  logic [7:0] A,
+    input  logic [7:0] D,
+    output logic [7:0] Q,
+    inout  wire        VDD,
+    inout  wire        VSS
+    // verilog_format: on
+);
+  logic [7:0] s_storage_q[0:255];
+
+  always_ff @(posedge CLK) begin
+    if (!CEN && (VDD !== 1'b0) && (VSS !== 1'b1)) begin
+      if (GWEN) begin
+        Q <= s_storage_q[A];
+      end else begin
+        for (int unsigned bit_index = 0; bit_index < 8; bit_index++) begin
+          if (!WEN[bit_index]) begin
+            s_storage_q[A][bit_index] <= D[bit_index];
+          end
+        end
+      end
+    end
+  end
+endmodule
+/* verilator lint_on DECLFILENAME */
+
+/* verilator lint_off DECLFILENAME */
+module gf180mcu_fd_ip_sram__sram128x8m8wm1 (
+    // verilog_format: off -- preserve the PDK memory interface columns
+    input  logic       CLK,
+    input  logic       CEN,
+    input  logic       GWEN,
+    input  logic [7:0] WEN,
+    input  logic [6:0] A,
+    input  logic [7:0] D,
+    output logic [7:0] Q,
+    inout  wire        VDD,
+    inout  wire        VSS
+    // verilog_format: on
+);
+  logic [7:0] s_storage_q[0:127];
+
+  always_ff @(posedge CLK) begin
+    if (!CEN && (VDD !== 1'b0) && (VSS !== 1'b1)) begin
+      if (GWEN) begin
+        Q <= s_storage_q[A];
+      end else begin
+        for (int unsigned bit_index = 0; bit_index < 8; bit_index++) begin
+          if (!WEN[bit_index]) begin
+            s_storage_q[A][bit_index] <= D[bit_index];
+          end
+        end
+      end
+    end
+  end
+endmodule
+/* verilator lint_on DECLFILENAME */
+
+/* verilator lint_off DECLFILENAME */
+module gf180mcu_fd_ip_sram__sram64x8m8wm1 (
+    // verilog_format: off -- preserve the PDK memory interface columns
+    input  logic       CLK,
+    input  logic       CEN,
+    input  logic       GWEN,
+    input  logic [7:0] WEN,
+    input  logic [5:0] A,
+    input  logic [7:0] D,
+    output logic [7:0] Q,
+    inout  wire        VDD,
+    inout  wire        VSS
+    // verilog_format: on
+);
+  logic [7:0] s_storage_q[0:63];
 
   always_ff @(posedge CLK) begin
     if (!CEN && (VDD !== 1'b0) && (VSS !== 1'b1)) begin

@@ -3,6 +3,9 @@
 This record covers the two P1 findings approved for follow-up on
 `bab01352f8f7c80e39546b04e3ed37a3d927f475` plus the existing P3 worktree.
 It does not approve Mini fabric enablement or advance TINY-R2-P4.
+Earlier sections retain their original development status and attribution;
+the source-bound campaign below records completed validation on `3e46cc8`.
+The final section separately records the subsequent two HAL race fixes.
 
 ## Retained Tiny Icarus finding: closed
 
@@ -182,6 +185,10 @@ STA observations qualify a new physical operating point.
 
 ## Compiler-matrix execution corrections (2026-10-09)
 
+The intermediate snapshots below are historical. The final source-bound results
+later in this record supersede their in-progress status without relabeling any
+failed attempt or earlier artifact.
+
 The initial flat-image collector could not read `_stack_point` from its symbol
 listing. Flat placement now falls back to the retained linker map's explicit
 `PROVIDE (_stack_point = .)` value; the exact SRAM endpoint and 4 KiB stack
@@ -286,3 +293,280 @@ the selected target's successful simulation checks. This behavioral-only run
 provides no Mini synthesis, netlist, STA or physical evidence. Mini lint baseline
 differences remain non-blocking observations, separately retained in the
 `56f28cd9230c` variant's `meta/rtl-lint-warnings.json`.
+
+## Final source-bound P3 matrix (2026-10-10)
+
+After the external style commit and the publication/configuration corrections
+settled, the final campaign was run against commit
+`3e46cc80e2d2243233d284b7cd9583714b0773bb`, source digest
+`a7fc5112cd6f20df956243c4d081a6a31ede6192cd270e3c13340557b0e58776`.
+Its master record is
+`build/ics55-tiny-performance-2026-10-09-17-10-53cc6674d532/meta/tiny-r2-p3/matrix/attempt-3jy5g5vo/record.json`;
+the final report is in the same root at `meta/tiny-r2-p3/report.json`.
+
+All eight cases pass image collection, normal Tiny acceptance and three cold
+Verilator runs. The selected native Icarus cases also pass three cold runs:
+
+- `compat-os-flat`: 7464.762, 7891.159 and 7428.430 seconds;
+- `perf-o2-lto-flat`: 5841.742, 5890.497 and 6149.375 seconds;
+- `perf-o2-plain-banked`: 5951.447, 6345.716 and 5964.039 seconds.
+
+The collector validates Tiny `TEST_STATUS`/`SIM_TEST_PASS`, forbidden markers,
+matched retained image/model/tool artifacts, source digests, three repetitions,
+and cross-simulator sample identity. `report.json` remains
+`measurement_complete`; the ledger's human phase gate is still required.
+
+The earlier 09-25, 15-10 and 16-45 campaigns remain historical: source changes
+during execution included the `352b200` style commit, the configuration/publication
+repairs, and the performance profile's trailing-newline change. Their raw passing
+samples and provenance failures are retained and are not relabeled as final
+evidence. The final campaign uses the complete committed corrections in `3e46cc8`.
+
+### Current validation and commands
+
+The tested primary platform is TINY/ICS55, external SAFE24 with HAVE_PLL=YES
+but the PLL parked off. CPU and the existing 128 KiB main SRAM remain at SYS24.
+The IHP130 compatibility profile keeps no PLL. Dependencies, warning baselines,
+metrics policy, hardware integration and the frozen specification blob
+`7e19de49d49efaafacccfa85671e314d53dd15a4` are unchanged by this validation.
+
+After activating `.cache/retrosoc/development/tiny-r2-p1/activate.sh`, the matrix
+and final report commands were:
+
+```sh
+make CONFIG=configs/benchmark/ics55-tiny-performance.mk SOC=TINY PDK=ICS55 \
+  BUILD_TIMESTAMP=2026-10-09-17-10 SOC_SIM_TIME=21600 JOBS=3 \
+  TINY_P3_RESUME=NO tiny-r2-p3-matrix
+make CONFIG=configs/benchmark/ics55-tiny-performance.mk SOC=TINY PDK=ICS55 \
+  BUILD_TIMESTAMP=2026-10-09-17-10 tiny-r2-p3-report
+```
+
+The current full Pytest run reports **1629 passed, 1 skipped** in 4200.10 seconds.
+The one skipped PDF inspection test requires `pypdf`, absent from this environment;
+it is not a hardware or simulation pass. Its command, complete log and result are
+in the matrix root under `meta/tiny-r2-p3/quality/pytest.{log,json}`. The previous
+4 failures and 94 fixture errors remain in their old logs; they are resolved by
+the configuration declaration and publication/source-fixture corrections in
+`3e46cc8`. The focused correction check also passed 149 tests with the same one
+PDF skip. No PDF or publication source revision was advanced by these checks.
+
+`ruff check .`, dependency-lock validation and `git diff --check` pass. The
+current C format/policy/host and RTL format/style/readiness checks pass; their
+exact Make command and outputs are retained under
+`meta/tiny-r2-p3/quality/policy.{log,json}`. These are the repository's mechanical
+quality checks, not complete MISRA certification; no new deviation is recorded.
+
+Regression dry-runs selected TINY explicitly for both PDKs and MINI with
+`--behavioral-only`. Tiny nightly resolves to the same commands as PR, so it was
+not executed a second time. The final executions were:
+
+```sh
+BUILD_TIMESTAMP=2026-10-09-19-55 python3 scripts/regress.py --root . --suite pr --soc TINY --pdk ICS55
+BUILD_TIMESTAMP=2026-10-09-19-56 python3 scripts/regress.py --root . --suite pr --soc TINY --pdk IHP130
+JAVA_TOOL_OPTIONS=-Dsbt.server.forcestart=true BUILD_TIMESTAMP=2026-10-09-19-57 \
+  python3 scripts/regress.py --root . --suite pr --soc MINI --pdk ICS55 --behavioral-only
+```
+
+All three exit zero. Current evidence roots and results are:
+
+| Scope | Evidence root below `build/` | Result |
+| --- | --- | --- |
+| Tiny ICS55 PR | `ics55-tiny-2026-10-09-19-55-42d5beccb726/` | `meta/tiny-r2-p3/regress-ics55.{log,json}`; behavioral/JTAG, netlist boot, synthesis and STA commands pass |
+| Tiny IHP130 PR | `ihp130-tiny-2026-10-09-19-56-bff91e3529ba/` | `meta/tiny-r2-p3/regress-ihp130.{log,json}`; same target-specific gates pass |
+| Mini ICS55 behavioral-only | `ics55-2026-10-09-19-57-d1cacf6d3b62/` | `meta/tiny-r2-p3/regress-mini.{log,json}`; SDRAM Verilator and Icarus assembly boot pass |
+
+Each Tiny PR's HAVE_SVA=YES Verilator acceptance has its separate configuration
+variant, identified in the retained command/log. Mini's SDRAM run uses
+`dc24d22ad53d` and assembly boot uses `ec9e1f2e9c2c` at the same 19-57 timestamp.
+Mini behavioral-only supplies no synthesis, netlist, STA or physical evidence.
+
+The additional IHP130 performance/banked normal-firmware check also passes:
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk SOC=TINY PDK=IHP130 \
+  BUILD_TIMESTAMP=2026-10-10-00-13 SW_ISA_PROFILE=TINY_PERF SW_OPT=O2 SW_LTO=NO \
+  LINK_TYPE=ld2_tiny_banked SIMU=VERILATOR firmware sim
+```
+
+Its root is `build/ihp130-tiny-2026-10-10-00-13-8648aa4845d9/`, with the exact
+command/result at `meta/tiny-r2-p3/performance-banked.{log,json}` and strict Tiny
+simulation check at `sim/verilator/result-sim-check.json`. This is normal
+firmware compatibility; it is not an additional IHP130 compiler measurement matrix.
+
+The ICS55 platform auditor captured inputs before this execution and successfully
+produced `meta/tiny-ics55-p1/report.json` in the actual APP=ci_smoke variant. This
+reuses the platform audit under P3; its original phase label is unchanged. Metrics
+were explicitly collected in each actual synthesis/STA variant rather than the
+regression runner's final default-bringup observation directory:
+
+| TINY PDK | Cells | Reported library area | Max WNS (ns) | Max TNS (ns) |
+| --- | ---: | ---: | ---: | ---: |
+| ICS55 | 197677 | 1786686.260799 | -41.14 | -508669.53 |
+| IHP130 | 208547 | 9109320.296998 | -94.28 | -1594880.00 |
+
+Both min WNS/TNS values are zero in these smoke reports. Full reports are at
+`sta/opensta/timing_metrics.rpt` and `meta/metrics.json` within the corresponding
+APP=ci_smoke roots. Library area is not placed/routed die area; negative margins
+remain unclosed. No 96/192/240 MHz operation, routed/PVT signoff or physical
+qualification is claimed, and no half-rate main-SRAM fallback is introduced.
+
+Lint comparisons remain non-blocking observations: ICS55 Tiny has 459 new
+signatures relative to its baseline, IHP130 Tiny 403, and Mini ICS55 1536 new /
+118 resolved; all three have zero increased signatures. Counts are not attribution
+of every warning to P3. The reports are in each timestamp's lint variant
+(`303f95040df3`, `2dc2e5c747e5`, and `56f28cd9230c` respectively), under
+`meta/rtl-lint-warnings.json`. Baselines were not edited.
+
+### Software measurements and remaining boundaries
+
+Each row below uses the retained P3 workload (1024 words, four jobs, 4096 CPU
+iterations, seed `0x12345678`). Cycle counts are raw measured windows; the report
+also retains the separate empty-window calibration, retired instructions, bus
+observations and CPI. These are different compiler/layout binaries, not a
+matched-binary architectural speedup claim.
+
+| Case | BIN bytes | CPU cycles | Copy cycles | Burst-16 DMA cycles | Chunk-256 cycles | Observed stack bytes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| compat-os-flat | 11132 | 98682 | 164096 | 18881 | 511389 | 692 |
+| perf-o2-plain-flat | 10148 | 73951 | 127157 | 16520 | 373812 | 648 |
+| perf-o2-lto-flat | 8592 | 73974 | 127180 | 13980 | 339167 | 552 |
+| perf-o3-plain-flat | 10404 | 73951 | 127157 | 16058 | 372690 | 628 |
+| perf-o3-lto-flat | 9872 | 73974 | 127180 | 13980 | 339167 | 564 |
+| perf-os-plain-flat | 8000 | 74064 | 139487 | 18421 | 394248 | 692 |
+| perf-os-lto-flat | 6360 | 74064 | 139484 | 14169 | 343769 | 584 |
+| perf-o2-plain-banked | 10184 | 73954 | 114875 | 16523 | 374016 | 648 |
+
+Compare compatible Os with performance Os to hold optimization/layout fixed;
+compare performance O2 with/without LTO to isolate that selection; compare the
+two O2/no-LTO rows for placement. BIN bytes exclude BSS, and observed stack use
+does not prove a static upper bound. Each image reserves at least 4096 stack
+bytes. Bank conflicts remain unavailable because P4 hardware is not implemented.
+The original P1 binaries and their historical phase/source identities are retained.
+
+Current Mini PIO compatibility is additionally retained at
+`build/ics55-2026-10-09-20-00-d0c568d0142e/meta/tiny-r2-p3/pio-retry/evidence.json`.
+The initial default 180-second attempt emits SIM_TEST_TIMEOUT despite emulator
+exit zero, and fails the simulation checker. A retry of the identical model and
+BIN with `--fast-flash -t 1800` passes in 323.930 seconds, including 4/16/33/65-word
+frames, IRQ count 5, exact waveform/reset-low checks, underflow/abort recovery,
+and observer totals `frames=6 completed=4 underflows=1 aborts=2 dma_starts=0`.
+The evidence records the before/after model and BIN hashes, command, manifest,
+compile/run logs and a post-build recheck of 487 compiled input sizes/mtimes.
+It is explicitly a post-build audit; neither the failed timeout nor the original
+unsupported Mini DMA attempt is relabeled as a passing run.
+
+Product-integrated WS2812 DMA/IRQ service budgets remain deferred under approved
+option A to an actual supported route, including Tiny R2-P6. Full-product,
+physical, silicon and publication-PDF qualification remain outside these results.
+Human review and acceptance of TINY-R2-P3 are required before authorizing any
+R2-P4 implementation; this execution does not automatically advance a phase.
+
+## Subsequent P1 HAL race fixes (2026-10-10)
+
+This approved follow-up starts from `3e46cc80e2d2243233d284b7cd9583714b0773bb`
+and preserves the preceding uncommitted documentation/evidence updates. The
+specification remains blob `7e19de49d49efaafacccfa85671e314d53dd15a4`.
+Only `crt/src/hal/dma.c`, `crt/src/hal/ws2812.c` and
+`tests/c/test_runtime.c` change executable/test source. No public interface,
+register, RTL, profile, dependency, warning baseline or metric policy changes.
+
+- WS2812: completing between INTR_STATE and STATUS reads no longer produces a
+  false I/O error. Idle without an observed sticky DONE retains ownership and
+  returns to the caller; the next bounded service checks error, abort, deadline
+  and completion again. No refill is admitted to an idle core. DMA response
+  draining and source-buffer lifetime rules are unchanged.
+- DMA: one outer interrupt save/restore spans legacy TCD configuration,
+  descriptor publication and START, including ownership rejection. Nested HAL
+  helpers preserve the saved mask; the blocking completion wait is outside this
+  critical section. Test-only IRQ hooks model a pending ISR at mask restoration
+  and do not appear in target builds.
+- Deterministic production-HAL host tests cover an ISR trying to lease the
+  channel during TCD publication, rejection without modifying an existing lease,
+  an initially masked caller, completion between WS2812 register reads, delayed
+  sticky DONE, genuine error/abort and expiry while idle. Existing final-B drain,
+  timeout ownership and 16-word FIFO admission tests remain enabled.
+
+New evidence is rooted at
+`build/ics55-tiny-2026-10-10-09-00-b4aa59f3e5d9/meta/tiny-r2-p3-races/`.
+The timestamp is a fixed build label; each structured result records actual UTC
+start/end times. `source.json` records the base revision, dirty state, locked
+tool identities, input hashes, source archive and worktree patch. Its combined
+ICS55/IHP130 source/test/spec digest is
+`dfa171fc1adbdfc5c7c9d31ef4ac7ba1a66710caac0fb13b869ddac89186b2f7`.
+This digest's input set differs from the earlier compiler-matrix input set.
+
+Before fixes, `host-red.{log,json}` records host test exit 10 (TCD race).
+After the TCD fix alone, `host-ws-red.{log,json}` records exit 11 (WS2812 race).
+Both fail the enclosing Make command. `host-green.{log,json}` passes after both
+fixes; `policy.{log,json}` additionally covers the final error/abort/deadline and
+interrupt-mask cases, C formatting and policy checks. `focused.{log,json}` has
+156 passing tests, including P3, Tiny baseline, DMA/register parity, WS2812 RTL
+and publication API behavior. No new MISRA deviation is introduced. These are
+partial project checks, not complete MISRA certification.
+
+Commands run with the existing locked environment:
+
+```sh
+source .cache/retrosoc/development/tiny-r2-p1/activate.sh
+make sw-format-check sw-policy-check sw-host-test
+python3 -m pytest -q tests/test_tiny_r2_p3.py tests/test_tiny.py \
+  tests/test_tiny_r2_baseline.py tests/test_dma.py \
+  tests/test_dma_register_parity.py tests/test_ws2812.py \
+  tests/test_publication_api_bundle.py
+ruff check .
+git diff --check
+python3 scripts/regress.py --root . --suite pr --soc TINY --pdk ICS55 --dry-run
+python3 scripts/regress.py --root . --suite nightly --soc TINY --pdk ICS55 --dry-run
+python3 scripts/regress.py --root . --suite pr --soc TINY --pdk IHP130 --dry-run
+python3 scripts/regress.py --root . --suite pr --soc MINI --pdk ICS55 --behavioral-only --dry-run
+BUILD_TIMESTAMP=2026-10-10-09-00 JOBS=3 JAVA_TOOL_OPTIONS=-Dsbt.server.forcestart=true \
+  python3 scripts/regress.py --root . --suite pr --soc TINY --pdk ICS55
+BUILD_TIMESTAMP=2026-10-10-09-00 JOBS=3 JAVA_TOOL_OPTIONS=-Dsbt.server.forcestart=true \
+  python3 scripts/regress.py --root . --suite pr --soc TINY --pdk IHP130
+BUILD_TIMESTAMP=2026-10-10-09-00 JOBS=3 JAVA_TOOL_OPTIONS=-Dsbt.server.forcestart=true \
+  python3 scripts/regress.py --root . --suite pr --soc MINI --pdk ICS55 --behavioral-only
+JAVA_TOOL_OPTIONS=-Dsbt.server.forcestart=true make CONFIG=configs/ci/ics55.mk \
+  SOC=MINI PDK=ICS55 APP=ci_smoke WS2812_P3_ACCEPTANCE=YES HAVE_CSR=YES \
+  LINK_TYPE=ld2_all_sram SIMU=VERILATOR VERILATOR_SIM_ARGS=--fast-flash \
+  SOC_SIM_TIME=3600 BUILD_TIMESTAMP=2026-10-10-09-00 JOBS=3 firmware sim
+```
+
+Regression dry-runs passed; Tiny PR and nightly select identical commands, so
+the long run is not duplicated. All three regression executions passed once;
+their exact commands and verdicts are retained as
+`regress-{tiny-ics55,tiny-ihp130,mini-ics55}.{log,json}` in the new evidence root.
+Durations are 3210.491 seconds (Tiny ICS55), 2205.505 seconds (Tiny IHP130),
+and 3170.591 seconds (Mini ICS55 behavioral-only). Mini PIO passes once in
+423.766 seconds including build, with 4/16/33/65-word frames, five IRQs and
+observer totals `frames=6 completed=4 underflows=1 aborts=2 dma_starts=0`.
+Its variant is `build/ics55-2026-10-10-09-00-d0c568d0142e/`.
+
+`audit.py` and `evidence.json` retain the final artifact audit: all 1287 captured
+source/test/spec inputs are unchanged, 487 Mini PIO compiled inputs retain their
+recorded sizes/mtimes, and the firmware/model/log/result hashes are recorded.
+The Mini model audit is explicitly post-build. Eight ordinary regression
+simulations are independently checked against their executable success marker,
+command exit and forbidden-error rules. All selected targets, including the
+current Mini assembly fixture, require `SIM_TEST_PASS`; UART output is not used
+to infer success. This evidence is in addition to the separate PIO audit.
+
+Current Tiny synthesis/netlist/STA results are in
+`build/ics55-tiny-2026-10-10-09-00-42d5beccb726/` and
+`build/ihp130-tiny-2026-10-10-09-00-bff91e3529ba/`. Both netlist checks pass;
+STA command success does not mean timing closure. Observed max WNS/TNS remain
+-41.14 ns / -508669.53 ns (ICS55) and -94.28 ns / -1594880.00 ns (IHP130),
+with min WNS/TNS zero. Raw reports are `sta/opensta/timing_metrics.rpt`.
+Lint baseline comparisons still fail as non-blocking regression observations:
+459 new signatures for ICS55 Tiny, 403 for IHP130 Tiny, and 1536 new / 118
+resolved for Mini, with zero increased signatures. No baseline was changed.
+Build logs also retain a roughly four-second generated-file clock-skew warning;
+these were fresh variant builds, and the input audit passed.
+
+The old compiler/layout matrix, full Pytest and earlier timing observations stay
+bound to `3e46cc8`; they are not reattributed to this follow-up. The compiler
+matrix and full Pytest are not rerun for these isolated C changes (no build or
+Python implementation changes). Product-integrated WS2812 DMA/IRQ budgets remain
+deferred under option A; no Mini DMA-to-MMIO route is added. Human P3 acceptance
+and separate approval are still required before R2-P4. Per the maintainer's
+instruction, long checks default to a single execution; additional repetitions
+need a concrete failure/inconsistency or an explicit frozen acceptance rule.

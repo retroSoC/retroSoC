@@ -257,7 +257,7 @@ are permitted and are not hardware ROM implementations.
 
 AEAD/HMAC, new key sizes, CRT, masking/blinding, HUK/key ladders, Linux crypto
 drivers, private DMA, ECC/MBIST/secure scan and side-channel certification remain
-deferred. Vexii and APU storage are outside this refreeze.
+deferred. OpenC906 and APU storage are outside this refreeze.
 
 ### Physical layout and implementation boundary
 
@@ -818,7 +818,8 @@ python3 scripts/crypto_p1.py quality --variant-root build/<block-variant>
 For the CI manifest use `APP=ci_smoke HAVE_CSR=YES`, the existing
 `ld2_all_sram`, `SIMU=VERILATOR` and `HAVE_SVA=YES` overrides. The firmware
 runner records its complete build/simulation command, per-run manifest, input
-hashes including generated VexiiRiscv and selected PDK model inputs, ELF/log/
+hashes including the generated OpenC906 filelist/manifest and selected PDK
+model inputs, ELF/log/
 result hashes and command exit status. The report rejects
 missing, changed or unsuccessful runs. These helpers do not invoke Pytest.
 

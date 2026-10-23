@@ -7,7 +7,20 @@ Use `make CONFIG=configs/ci/ics55-tiny.mk setup` followed by
 `make CONFIG=configs/ci/ics55-tiny.mk firmware sim`. IHP130/no PLL remains
 explicit compatibility through `configs/ci/ihp130-tiny.mk`. See the
 [platform runbook](../../docs/ip/tiny-ics55-platform.md) for source-bound
-validation; backend frequency tests are not SYS switching or timing qualification.
+validation of the historical SAFE24 platform. The
+[R2-P7 runbook](../../docs/ip/tiny-soc-r2-clock-reset.md) describes the integrated
+RCU, runtime domains and separate acceptance evidence. Backend frequency tests
+alone are not full-SoC or physical qualification.
+
+The [R2-P4 implementation](../../docs/ip/tiny-soc-r2-local-memory.md) connects the
+official dual-port CPU to four independently serviced 32 KiB local SRAM groups.
+The 32 physical macros and register ABI are unchanged. Only non-SRAM CPU work
+uses the tagged slow path. The [P5 implementation](../../docs/ip/tiny-soc-r2-concurrent-fabric.md)
+replaces external serialization with independent target ownership and APB
+branches. The [P6 candidate](../../docs/ip/tiny-soc-r2-shared-integration.md)
+activates the SDIO ingress, eight-channel DMA, RNG/CRC/WS2812/Crypto and the
+existing I2S master path. Its validation and acceptance remain in the ledger.
+Source presence alone is not completed phase or physical qualification.
 
 `top` owns product integration, `address_map`, `pin_map` and `integration` own
 canonical address, pad, IRQ and clock/reset inputs, `filelist` selects sources,
@@ -43,8 +56,8 @@ final timing closure is mandatory. Software/DMA scheduling is `TINY-R2-P3`, loca
 `TINY-R2-P9`, system qualification `TINY-R2-P10` and complete-product physical
 qualification `TINY-R2-P11` (historical IHP130 title; now default ICS55).
 Legacy `TINY-P0` through `TINY-P12` remain in
-the contract history. The committed RTL/profile still implements the initial
-24 MHz/no-PLL/four-channel design; no faster CPU/SRAM or PLL timing support
+the contract history. The P6 candidate retains SAFE24 with eight DMA channels;
+ICS55's present PLL stays off. No faster CPU/SRAM or PLL timing support
 follows from this freeze or the `HAVE_PLL` selector alone.
 
 The R2-P2 candidate keeps that executable clock/memory configuration and adds
@@ -73,13 +86,25 @@ qualified external-I/O rates. `PIOLITE-P5` may join R2-P11 physical work only
 on the same PIO-inclusive source and configuration with both evidence sets.
 The original R2 phase IDs/titles and performance-only scope remain intact.
 
-Camera GPIO12-23 ALT1 remains mutually exclusive with I2S. DMA2/request 11,
-optional XPI NSS1 PSRAM at `0x54000000` through GPIO29 and shared CAM_XCLK
-retain their existing target contracts. RCU target 14 and DVP capabilities
-stay unsupported until actual integration. `TINY-R2-P8` and `TINY-R2-P9`
-require pin-level XPI PSRAM and full-frame readback, not fast-flash or
-separate-controller evidence.
+Camera GPIO12-23 ALT1 is now integrated and remains mutually exclusive with
+I2S. DVP uses APB4 `0x1000E000`, IRQ15, DMA2/request11, the existing pixel CDC
+FIFO and RCU target14. Optional XPI NSS1 PSRAM at `0x54000000` through GPIO29
+and shared CAM_XCLK retain their existing target contracts. `TINY-R2-P8` and
+`TINY-R2-P9` require pin-level XPI PSRAM and full-frame readback, not
+fast-flash or a separate controller; physical sensor and rate qualification
+remain later evidence.
 No camera/PSRAM rate is qualified by this freeze.
+
+The [P8 implementation](../../docs/ip/tiny-soc-r2-psram.md) adds explicit optional
+NSS1 initialization and CPU/DMA mapped-data verification through a shared
+pin-level PSRAM model. It preserves SRAM-only boot and does not integrate DVP.
+The verification ledger owns phase acceptance and remaining qualification gaps.
+
+The [P10 campaign](../../docs/ip/tiny-soc-r2-system-performance.md) adds
+source-bound single-execution performance replays and a separate QVGA
+capture/CPU-statistics/SDIO-save image. Passive testbench observers supplement
+the existing counters without changing production RTL or public interfaces.
+Full regression and final physical qualification remain explicit obligations.
 
 The separately approved [SPI extension](../../docs/ip/spi.md) adds SPI0 to the
 future standard Tiny product, with its own `SPI-P0` through `SPI-P5` phases.
@@ -88,8 +113,8 @@ FIFOs, APB4 `0x1001D000..0x1001DFFF`, IRQ25 and RCU target16. DMA V2.2 adds
 paced fixed-MMIO requests `SPI_TX=16` / `SPI_RX=17`; payload MMIO retains
 single-beat transactions. TX borrows channel3 and RX channel2 only after
 prior owners fully drain and release them. No extra AXI master, DMA channel,
-SRAM capacity or pad is added. None of these paths exists in the current
-24 MHz/no-PLL/four-channel RTL/profile.
+SRAM capacity or pad is added. SPI and its requests remain absent from the
+SAFE24 P6 candidate.
 
 The frozen Gen1 routes add only GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI, GPIO30
 ALT1 MISO and GPIO31 ALT1 CS_N. Write-only display mode uses ordinary GPIO30

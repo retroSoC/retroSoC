@@ -47,6 +47,26 @@ east = GPIO[15:0], west = GPIO[31:16]; the `power_pads` counts come from
 
 ## Constraints
 
+`LIBRELANE_IO_PROFILE=default` preserves the ordinary GPIO scenario and writes
+to `physical/librelane/tiny/chip/` within the selected build variant.
+`LIBRELANE_IO_PROFILE=camera` selects a separate scenario under `chip-camera/`;
+its doctor/result metadata also has a camera suffix. Both SDC and chip-config
+generators receive `--io-profile`, and unknown profiles are rejected.
+
+The camera scenario declares GPIO20 as the pixel clock and assigns GPIO12-19,
+GPIO21 and GPIO22 input delays to that clock, excluding their ordinary output
+constraints. The config's clock-port list includes GPIO20. The default
+scenario treats those pads, including GPIO20, as ordinary GPIO and does not
+create a pixel clock. GPIO23 retains its existing output constraint. These
+are separate pin-function scenarios; they do not qualify simultaneous audio
+and camera ownership. Audio-specific timing remains a separate physical gap.
+
+The camera period of 83.333333333 ns and input max delay of 20% of that period
+are development assumptions, not measured sensor/board timing. Asynchronous
+clock groups must not remove camera-data-to-pixel-register timing paths.
+The row-size remediation validates generated constraints and mode isolation
+without running a new LibreLane physical campaign.
+
 The SDC constrains the external clock at 24 MHz and JTAG at 10 MHz, defines a
 generated system clock at the top-level clock buffer, and keeps the two groups
 asynchronous. Mid-PnR timing report passes are skipped because LibreLane 3.0.5

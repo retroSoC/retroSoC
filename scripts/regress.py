@@ -27,15 +27,18 @@ CI_SMOKE_VERILATOR_VALUES = (
 CI_SMOKE_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_all_sram",
-    "SOC_SIM_TIME=1800",
+    # The merged HP subsystem roughly doubled the hosted Verilator runtime of
+    # this acceptance step; keep the next existing budget tier.
+    "SOC_SIM_TIME=3600",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 CI_SMOKE_SDRAM_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_sdram",
     # Hosted Verilator executes the expanded peripheral acceptance workload
-    # slowly when LP code and accelerator traffic share the SDRAM target.
-    "SOC_SIM_TIME=3600",
+    # slowly when LP code and accelerator traffic share the SDRAM target; the
+    # merged HP subsystem needs roughly 4400 s locally, so double the tier.
+    "SOC_SIM_TIME=7200",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
@@ -72,8 +75,8 @@ PR_COMMANDS = (
 )
 TINY_PR_COMMANDS = (
     ("configs/ci/ihp130-tiny.mk", RTL_LINT_VALUES),
-    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "LINK_TYPE=ld2_all_sram", "SIMU=VERILATOR", "SOC_SIM_TIME=1800", "HAVE_CSR=YES", "HAVE_SVA=YES", "firmware", "sim")),
-    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SIMU=IVERILOG", "firmware", "sim")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "TINY_P7_ACCEPTANCE=YES", "LINK_TYPE=ld2_all_sram", "SIMU=VERILATOR", "SOC_SIM_TIME=3600", "TINY_SIM_TIMEOUT=6000000", "HAVE_CSR=YES", "HAVE_SVA=YES", "TINY_SIM_ARGS=+p7_monitor", "firmware", "sim")),
+    ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "TINY_P7_ACCEPTANCE=YES", "SIMU=IVERILOG", "TINY_SIM_TIMEOUT=6000000", "TINY_SIM_ARGS=+p7_monitor", "TINY_RUN=timeout --foreground 14400s $(VVP) $(SIM_BUILD_ROOT)/simv", "firmware", "sim")),
     ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SYNTH=YOSYS", "synth")),
     ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "SIMU=IVERILOG", "netsim-boot")),
     ("configs/ci/ihp130-tiny.mk", ("APP=ci_smoke", "STA=OPENSTA", "sta")),
@@ -83,8 +86,12 @@ TINY_PROFILES = {"IHP130": "configs/ci/ihp130-tiny.mk", "ICS55": "configs/ci/ics
 
 
 def tiny_commands(pdk: str) -> tuple:
-    return tuple((TINY_PROFILES[pdk], (*values, "TINY_SIM_ARGS=+tiny_jtag_smoke")
-                  if "sim" in values else values) for _, values in TINY_PR_COMMANDS)
+    commands = []
+    for _, values in TINY_PR_COMMANDS:
+        if "sim" in values and not any(value.startswith("TINY_SIM_ARGS=") for value in values):
+            values = (*values, "TINY_SIM_ARGS=+tiny_jtag_smoke")
+        commands.append((TINY_PROFILES[pdk], values))
+    return tuple(commands)
 
 
 PR_COMMANDS = (*PR_COMMANDS, *TINY_PR_COMMANDS)

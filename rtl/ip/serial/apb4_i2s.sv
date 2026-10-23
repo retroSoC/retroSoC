@@ -41,6 +41,8 @@ module apb4_i2s (
     output logic          tx_underrun_evt_o,
     output logic          rx_overrun_evt_o,
     output logic          rx_flush_busy_o,
+    output logic          lifecycle_idle_o,
+    output logic          lifecycle_reset_ready_o,
     apb4_if.slave         apb4,
     axi4_stream_if.sink   tx_axis,
     axi4_stream_if.source rx_axis,
@@ -120,6 +122,36 @@ module apb4_i2s (
   logic s_tx_underrun_sys;
   logic s_rx_overrun_sys;
   logic s_tx_flush_sent_d, s_tx_flush_sent_q;
+  logic s_cfg_ready;
+  logic [31:0] s_cfg_sent_d, s_cfg_sent_q;
+  logic s_audio_used_d, s_audio_used_q;
+
+  // A disabled host which has never enabled its PHY may change host clock
+  // even when AUDIO is absent. After use, require the disabled configuration
+  // to reach AUDIO, empty FIFOs, and completed flush acknowledgements.
+  assign s_cfg_sent_d = s_cfg_ready ? s_cfg_sys : s_cfg_sent_q;
+  assign s_audio_used_d = s_audio_used_q || s_cfg_sys[`APB4_I2S__CFG_ENABLE];
+  assign lifecycle_reset_ready_o = s_tx_src_ready && !s_tx_flush_busy && !s_rx_flush_busy;
+  assign lifecycle_idle_o = !s_cfg_sys[`APB4_I2S__CFG_ENABLE] &&
+      !s_stream_tx_en && !s_stream_rx_en &&
+      (!s_audio_used_q || ((s_cfg_sent_q == s_cfg_sys) && s_cfg_ready &&
+       s_tx_level == 0 && s_rx_level == 0 && !s_tx_flush_busy && !s_rx_flush_busy));
+  dffr #(
+      .DATA_WIDTH(32)
+  ) u_cfg_sent (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_cfg_sent_d),
+      .dat_o  (s_cfg_sent_q)
+  );
+  dffr #(
+      .DATA_WIDTH(1)
+  ) u_audio_used (
+      .clk_i  (clk_i),
+      .rst_n_i(rst_n_i),
+      .dat_i  (s_audio_used_d),
+      .dat_o  (s_audio_used_q)
+  );
 
   assign s_cmd_sys = {s_cmd_rx_flush, s_cmd_tx_flush};
   assign s_tx_src_clear = s_cmd_tx_flush && !s_tx_flush_sent_q && !s_tx_src_clear_busy;
@@ -191,7 +223,7 @@ module apb4_i2s (
       .src_rst_n_i(rst_n_i),
       .src_data_i (s_cfg_sys),
       .src_valid_i(1'b1),
-      .src_ready_o(),
+      .src_ready_o(s_cfg_ready),
       .dst_clk_i  (clk_aud_i),
       .dst_rst_n_i(rst_aud_n_i),
       .dst_data_o (s_cfg_aud),

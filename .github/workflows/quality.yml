@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # Historical publication fixtures are materialized with git archive.
+          # Keep the immutable revisions named by tests available locally.
+          fetch-depth: 0
 
       - name: Restore pip cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
@@ -87,6 +91,9 @@ jobs:
           python3 rtl/managed/clusterip/setup.py
           python3 rtl/ip/setup.py
 
+      - name: Prepare historical publication dependencies
+        run: python3 tests/publication_history.py prepare
+
       - name: Set up locked IHP130 PDK
         run: make CONFIG=configs/ci/ihp130.mk setup-pdk
 
@@ -117,7 +124,7 @@ jobs:
       - name: Set up locked test tools
         uses: ./.github/actions/locked-tools
         with:
-          tools: verilator sv2v iverilog yosys
+          tools: verilator sv2v iverilog yosys riscv_gnu
 
       - name: Set up locked accelerator references
         run: make setup-apu-reference setup-apu-kws-reference setup-npu-reference

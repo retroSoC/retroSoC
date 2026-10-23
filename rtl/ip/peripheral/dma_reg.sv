@@ -11,11 +11,13 @@
 `include "dma_define.svh"
 
 module dma_reg #(
-    parameter int NumChannels       = 4,
-    parameter bit EnableStreams     = 1'b1,
-    parameter int ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
-    parameter int DataWidth         = 32,
-    parameter int MaxBurstBeats     = 16
+    parameter int          NumChannels       = 4,
+    parameter bit          EnableStreams     = 1'b1,
+    parameter int          ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
+    parameter int          DataWidth         = 32,
+    parameter int          MaxBurstBeats     = 16,
+    parameter logic [31:0] IpVersion         = 32'h0002_0000,
+    parameter logic [31:0] SupportedRequests = 32'h0000_3fff
 ) (
     // verilog_format: off -- APB4/configuration and status vector groups follow the register ABI.
     input  logic                           clk_i,
@@ -58,12 +60,12 @@ module dma_reg #(
     input  logic [ChannelIndexWidth-1:0]   first_error_channel_i,
     input  logic [8:0]                     first_error_status_i,
     input  logic [15:0]                    first_error_addr_hi_i,
-    input  logic [15:0]                    request_status_i,
+    input  logic [31:0]                    request_status_i,
+    input  logic [31:0]                    supported_requests_i,
     output logic                           irq_o
     // verilog_format: on
 );
   localparam logic [31:0] IpId = 32'h444D_4134;
-  localparam logic [31:0] IpVersion = 32'h0002_0000;
   localparam logic [31:0] ChannelBase = {20'd0, `APB4_DMA__CH_BASE};
   localparam logic [31:0] ChannelStride = {20'd0, `APB4_DMA__CH_STRIDE};
 
@@ -133,7 +135,8 @@ module dma_reg #(
                           (s_offset == `APB4_DMA__IRQ_ENABLE) ||
                           (s_offset == `APB4_DMA__IRQ_TEST) ||
                           (s_offset == `APB4_DMA__ERROR_SUMMARY) ||
-                          (s_offset == `APB4_DMA__REQUEST_STATUS);
+                          (s_offset == `APB4_DMA__REQUEST_STATUS) ||
+                          (s_offset == `APB4_DMA__SUPPORTED_REQUESTS);
   assign s_channel_valid = (s_offset_ext >= ChannelBase) &&
                            (s_offset_ext < (ChannelBase + (NumChannels * ChannelStride)));
   assign s_channel_index = ChannelIndexWidth'((s_offset_ext - ChannelBase) >> 7);
@@ -176,7 +179,8 @@ module dma_reg #(
     if (s_write && s_global_valid &&
         ((s_offset == `APB4_DMA__IP_ID) || (s_offset == `APB4_DMA__IP_VERSION) ||
          (s_offset == `APB4_DMA__CAPABILITY) || (s_offset == `APB4_DMA__GLOBAL_STATUS) ||
-         (s_offset == `APB4_DMA__REQUEST_STATUS))) begin
+         (s_offset == `APB4_DMA__REQUEST_STATUS) ||
+         (s_offset == `APB4_DMA__SUPPORTED_REQUESTS))) begin
       s_access_err = 1'b1;
     end
     if (s_write && s_channel_valid &&
@@ -373,7 +377,8 @@ module dma_reg #(
         {{(3 - ChannelIndexWidth) {1'b0}}, first_error_channel_i},
         first_error_valid_i
       };
-      `APB4_DMA__REQUEST_STATUS: s_read_data = {16'd0, request_status_i};
+      `APB4_DMA__REQUEST_STATUS: s_read_data = request_status_i;
+      `APB4_DMA__SUPPORTED_REQUESTS: s_read_data = supported_requests_i;
       default: begin
         if (s_channel_valid) begin
           unique case (s_channel_offset)

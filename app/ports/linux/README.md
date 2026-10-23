@@ -1,7 +1,7 @@
 # HP Linux Port
 
 This directory owns the Buildroot external tree, device tree, kernel config,
-and integration metadata for the fixed RV64 VexiiRiscv HP core. Linux,
+and integration metadata for the fixed RV64GC T-Head OpenC906 HP core. Linux,
 OpenSBI, Buildroot, toolchains, and all generated images remain below `.cache/`
 or `build/` and are not tracked.
 

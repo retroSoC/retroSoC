@@ -29,9 +29,9 @@
     - JTAG debug with coordinated hart reset.
 
     *Memory and interconnect*
-    - *128 KiB SRAM*, 32 banks of 4 KiB.
+    - *128 KiB SRAM*, four independently serviced 32 KiB groups backed by 32 banks of 4 KiB.
     - Native AXI32 memory paths and one APB4 island.
-    - CPU and DMA share one active transaction globally.
+    - Independent local instruction/data ports and target-local external ownership.
     - XPI NOR boot and SRAM-resident application layout.
 
     *DMA and control*
@@ -103,16 +103,18 @@ The document uses the approved Mini visual language; all product facts and sourc
 
 = System Architecture
 == Processor and Integration <tiny-core>
-Hazard3 is hart zero. The shared wrapper selects the C and M extensions and disables A for Tiny. Its AHB-Lite bus terminates
-at a direct AXI32 adapter. JTAG supports the implemented halt/resume, register and system-bus debug path; debug hart reset
-waits for the adapter to become idle instead of abandoning an accepted transaction.
+Hazard3 is hart zero. The locked dual-port wrapper selects the C and M extensions and disables A for Tiny. Instruction fetch
+and load/store use independent AHB ports through separate local SRAM frontends; non-SRAM accesses use the tagged slow path.
+JTAG supports halt/resume, register access and halted-hart abstract-command memory access, without an independent system-bus master.
+Debug hart reset first halts the hart and drains accepted local I/D and slow-path responses. SRAM and unrelated DMA work stay active.
 
 The system has no application hart, MMU/Linux platform, hardware cache-coherent multicore organization or product extension
 slots. CPU-visible SRAM, XPI and APB routes are the implemented interconnect. The single-hart architecture does not remove
 the need for software/DMA buffer ownership and fences.
 #architecture()
 #source-note("rtl/tiny/top/retrosoc_tiny.sv",title:"Tiny product integration and parameters")
-#source-note("rtl/ip/core/mgmt_core_wrapper.sv",title:"CPU ISA, AHB adapter and debug wrapper")
+#source-note("rtl/tiny/top/tiny_cpu_wrapper.sv",title:"Dual-port CPU ISA, AHB ports and debug wrapper")
+#source-note("rtl/tiny/top/tiny_sram.sv",title:"Four local SRAM groups and external attachment")
 
 == Clock, Reset and Operating State <tiny-clock>
 CPU, AXI, APB, RTC and watchdog share the configured 24 MHz system clock. CLINT derives a 1 MHz tick. JTAG has its own
@@ -130,9 +132,18 @@ advertised as a qualified voltage/frequency operating point.
 #source-note("rtl/tiny/integration/clock_reset_domains.json",title:"Clock/reset inventory and debug crossings")
 
 == Bus Transactions, Arbitration and Errors <tiny-bus>
-The two initiators are CPU and DMA. They share *one active read or write transaction globally*. The fabric saves source,
-direction, address and attributes, forwards the request, and retains ownership until the terminal B or RLAST handshake.
-Read/write request arbitration is round-robin; it is not a throughput guarantee or an unrestricted liveness guarantee.
+The two active external initiators are CPU slow path and DMA. A third ingress is reserved for future SDIO integration and
+has no active producer. Each SRAM group, XPI memory endpoint and APB peripheral has independent transaction ownership.
+CPU slow traffic admits one combined operation; DMA can have one read and one write outstanding across different targets.
+Each target admits one combined read or write. CPU local instruction/data requests remain independently arbitrated within
+each SRAM group. Saved ownership includes accepted address and response buffers and lasts through the upstream B/RLAST handshake.
+Owner arbitration is round-robin with fair direction selection. Progress bounds require a running clock and peer progress.
+Separate APB bridges keep independent controls outside a FIFO-waiting peripheral's transaction.
+
+Fault accounting counts each failed transaction once, including errors before the final read beat. Simultaneous events
+increment the saturating count individually; first-fault metadata uses ascending owner, instruction before data, then read
+before write. CPU is owner0, DMA owner1, and owner2 is reserved. FAULT_DETAIL retains raw AXI response2/3. Clearing validity
+does not clear the count, and a simultaneous hardware event wins over clear.
 
 Memory transfers support naturally aligned 1/2/4-byte beats and up to 16 INCR beats. Single-beat FIXED is also admitted.
 The complete address span must remain within one decoded target and one 4 KiB page without overflow. MMIO accepts only

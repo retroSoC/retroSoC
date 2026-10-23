@@ -181,6 +181,16 @@ watermark, RX watermark, AXI error, sequence error, timeout, and abort done.
 The IRQ output is the OR of enabled sticky sources. The first error snapshot is
 also sticky and records code, AXI/device address, slot, and LUT PC.
 
+Error events carry the matching code/address/slot/PC bundle on the same
+sampling edge. Later errors can set their interrupt causes while the first
+snapshot remains held. Mapped request/beat rejection before LUT execution
+reports PC zero; core errors report the core's fault PC. Polling uses device
+address zero, matching its issued request, and polling-budget expiry reports
+PC zero because it is not an instruction fault. These fields must not retain
+unrelated metadata from a previous indirect or mapped transaction. The
+existing error-snapshot W1C priority and interrupt set/clear behavior remain
+unchanged; no register, error encoding or response-latency change is made.
+
 ## APB4 Register ABI
 
 All registers are 32-bit and require word-aligned APB accesses. Unsupported,

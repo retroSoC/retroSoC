@@ -15,20 +15,22 @@ package dma_pkg;
 
   localparam logic [1:0] DMA_WIDTH_32 = 2'd2;
 
-  localparam logic [3:0] DMA_REQUEST_SOFTWARE = 4'd0;
-  localparam logic [3:0] DMA_REQUEST_I2S_TX = 4'd1;
-  localparam logic [3:0] DMA_REQUEST_I2S_RX = 4'd2;
-  localparam logic [3:0] DMA_REQUEST_QSPI_TX = 4'd3;
-  localparam logic [3:0] DMA_REQUEST_QSPI_RX = 4'd4;
-  localparam logic [3:0] DMA_REQUEST_UART_TX = 4'd5;
-  localparam logic [3:0] DMA_REQUEST_UART_RX = 4'd6;
-  localparam logic [3:0] DMA_REQUEST_I2C0_TX = 4'd7;
-  localparam logic [3:0] DMA_REQUEST_I2C0_RX = 4'd8;
-  localparam logic [3:0] DMA_REQUEST_I2C1_TX = 4'd9;
-  localparam logic [3:0] DMA_REQUEST_I2C1_RX = 4'd10;
-  localparam logic [3:0] DMA_REQUEST_DVP_RX = 4'd11;
-  localparam logic [3:0] DMA_REQUEST_CRYPTO_IN = 4'd12;
-  localparam logic [3:0] DMA_REQUEST_CRYPTO_OUT = 4'd13;
+  localparam logic [4:0] DMA_REQUEST_SOFTWARE = 5'd0;
+  localparam logic [4:0] DMA_REQUEST_I2S_TX = 5'd1;
+  localparam logic [4:0] DMA_REQUEST_I2S_RX = 5'd2;
+  localparam logic [4:0] DMA_REQUEST_QSPI_TX = 5'd3;
+  localparam logic [4:0] DMA_REQUEST_QSPI_RX = 5'd4;
+  localparam logic [4:0] DMA_REQUEST_UART_TX = 5'd5;
+  localparam logic [4:0] DMA_REQUEST_UART_RX = 5'd6;
+  localparam logic [4:0] DMA_REQUEST_I2C0_TX = 5'd7;
+  localparam logic [4:0] DMA_REQUEST_I2C0_RX = 5'd8;
+  localparam logic [4:0] DMA_REQUEST_I2C1_TX = 5'd9;
+  localparam logic [4:0] DMA_REQUEST_I2C1_RX = 5'd10;
+  localparam logic [4:0] DMA_REQUEST_DVP_RX = 5'd11;
+  localparam logic [4:0] DMA_REQUEST_CRYPTO_IN = 5'd12;
+  localparam logic [4:0] DMA_REQUEST_CRYPTO_OUT = 5'd13;
+  localparam logic [4:0] DMA_REQUEST_SPI_TX = 5'd16;
+  localparam logic [4:0] DMA_REQUEST_SPI_RX = 5'd17;
 
   localparam logic [3:0] DMA_ERROR_NONE = 4'd0;
   localparam logic [3:0] DMA_ERROR_CONFIG = 4'd1;

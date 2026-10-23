@@ -299,6 +299,13 @@ int main(void) {
     }
 #endif
     __asm__ volatile("fence rw, rw" ::: "memory");
+#if defined(RS_HP_JTAG_DEBUG)
+    /* Select the HP (C906) JTAG target before release; the select register is
+     * writable only while the HP is held. Used by HP debug sessions. */
+    if (rs_sysctrl_select_hp_debug(true) != RS_OK) {
+        rs_hp_boot_fail(UINT8_C(20));
+    }
+#endif
     if ((rs_hp_mailbox_clear_lp_interrupt() != RS_OK) ||
         (rs_sysctrl_set_hp_release(true) != RS_OK) ||
         (rs_sysctrl_get_hp_status(&hp_status) != RS_OK) || !hp_status.released) {

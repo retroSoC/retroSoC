@@ -180,3 +180,47 @@ The standalone IP does not allocate memory, perform cache maintenance,
 implement an IOMMU/firewall, or provide a hosted/runtime C API. The SoC
 integration only supplies the two native AXI/APB/IRQ/pad paths; the SDK driver
 is maintained by a separate workstream.
+
+## Tiny SAFE24 integration
+
+Tiny R2-P6 connects instance 0 to external AXI owner 2, its independent APB
+branch and IRQ10, and GPIO0..5. Instance 1 remains absent and its public SDK
+operations return `RS_ENOTSUP` before MMIO. These bindings do not replace the
+Mini mappings above. The 24 MHz input permits at most 12 MHz SDCLK; enumeration
+still starts at 400 kHz and the SDK caps later protocol requests at input/2.
+
+R6 is retained as the complete 48-bit frame in RESP. RCA therefore occupies
+bits 39:24, above the payload status and CRC/end bits. The shared initialization
+helper uses this field rather than bits 31:16; no register or public API changes.
+
+The command sender enables its first output bit at its scheduled launch. A
+command admitted on an already running SDCLK rising edge must not expose an
+extra start bit. Directed pad sampling covers repeated command admission at
+both half-cycle phases in Icarus and Verilator. The card model collects the
+complete 48-bit frame after its start bit, including the pulled-high end bit
+after host output release; host output-enable is not the frame length oracle.
+
+The transmit wait indication also covers the last bit of a word when its
+successor is unavailable. The core pauses SDCLK before the next word's launch,
+while retaining the current driven bit and draining the high half-cycle. This
+prevents an idle bit from becoming the next word's MSB under memory backpressure.
+A 1024-byte four-lane DMA case inserts 24 system cycles between read beats and
+checks every card byte, CRC status and descriptor retirement through real
+three-state lines. Inactive lanes stay pulled high in the card's token/tail checks.
+
+Card-to-memory DMA retains descriptor ownership across every AXI burst, rather
+than publishing DONE after the first 64 bytes. Receive backpressure stops the
+next SDCLK launch as soon as a complete word is held; a registered stop loses
+the next card bit. The roundtrip fixture delays descriptor fetch as well as
+payload supply, checks all 1024 received bytes and successful final writeback.
+Its card emits all sixteen CRC bits in order; earlier manual-model tests did
+not reject the skipped CRC bit. These fixes preserve the native one-read/one-write
+capacity, descriptor layout, register ABI and interrupt/error lifecycle.
+
+The existing verification card keeps its manually scheduled standalone mode.
+Tiny selects its optional SDHC enumeration responses with 1024 512-byte blocks
+and default-speed-only capability. Its board fixture checks the observed wire
+command, direction, width and length, then calls the existing data-stimulus API
+at DATA_START. All payload and response bits cross the real pads. This checks
+the repository controller/SDK contract; it does not qualify arbitrary card
+response timing, SD protocol compliance, a physical card or an electrical rate.

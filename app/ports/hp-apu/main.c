@@ -25,7 +25,7 @@
 #define HP_MAILBOX_HP_DOORBELL   UINT32_C(0x2C)
 #define HP_MAILBOX_HP_INTR_STATE UINT32_C(0x40)
 
-#define HP_CBO_LINE_BYTES        UINT32_C(64)
+#define HP_CACHE_LINE_BYTES      UINT32_C(64)
 #define HP_MAILBOX_BUDGET        UINT32_C(0x08000000)
 #define HP_JOB_BUDGET            UINT32_C(0x08000000)
 #define HP_JOB_TERMINAL                                                                            \
@@ -77,24 +77,26 @@ static void hp_uart_puthex(uint32_t value) {
     }
 }
 
-static void hp_cbo_clean(uint32_t address, uint32_t bytes) {
-    uint32_t cursor = address & ~(HP_CBO_LINE_BYTES - 1U);
+static void hp_dcache_clean(uint32_t address, uint32_t bytes) {
+    uint32_t cursor = address & ~(HP_CACHE_LINE_BYTES - 1U);
     const uint32_t end = address + bytes;
 
     while (cursor < end) {
-        __asm__ volatile("cbo.clean 0(%0)" ::"r"(cursor) : "memory");
-        cursor += HP_CBO_LINE_BYTES;
+        /* OpenC906 dcache.cva: clean the 64-byte D-cache line at cursor. */
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x5" ::"r"(cursor) : "memory");
+        cursor += HP_CACHE_LINE_BYTES;
     }
     __asm__ volatile("fence rw, rw" ::: "memory");
 }
 
-static void hp_cbo_inval(uint32_t address, uint32_t bytes) {
-    uint32_t cursor = address & ~(HP_CBO_LINE_BYTES - 1U);
+static void hp_dcache_inval(uint32_t address, uint32_t bytes) {
+    uint32_t cursor = address & ~(HP_CACHE_LINE_BYTES - 1U);
     const uint32_t end = address + bytes;
 
     while (cursor < end) {
-        __asm__ volatile("cbo.inval 0(%0)" ::"r"(cursor) : "memory");
-        cursor += HP_CBO_LINE_BYTES;
+        /* OpenC906 dcache.iva: invalidate the 64-byte D-cache line at cursor. */
+        __asm__ volatile(".insn r 0x0b, 0x0, 0x01, x0, %0, x6" ::"r"(cursor) : "memory");
+        cursor += HP_CACHE_LINE_BYTES;
     }
     __asm__ volatile("fence rw, rw" ::: "memory");
 }
@@ -200,7 +202,7 @@ static bool hp_submit_wav(volatile rs_apu_release_page_t *page) {
         !hp_range_in(page->output_address, page->output_capacity, write_base, write_limit)) {
         return false;
     }
-    hp_cbo_clean(page->wav_address, page->wav_bytes);
+    hp_dcache_clean(page->wav_address, page->wav_bytes);
     *hp_reg(apu + RS_APU_ABI_JOB_CONTROL) = 0U;
     *hp_reg(apu + RS_APU_ABI_JOB_INPUT_ADDRESS) = page->wav_address;
     *hp_reg(apu + RS_APU_ABI_JOB_INPUT_LENGTH) = page->wav_bytes;
@@ -221,7 +223,7 @@ static bool hp_submit_wav(volatile rs_apu_release_page_t *page) {
     if ((page->wav_status & (UINT32_C(1) << RS_APU_ABI_JOB_STATUS_DONE)) == 0U) {
         return false;
     }
-    hp_cbo_inval(page->output_address, page->wav_output_bytes);
+    hp_dcache_inval(page->output_address, page->wav_output_bytes);
     page->wav_output_crc =
         hp_crc32((volatile const uint8_t *)(uintptr_t)page->output_address, page->wav_output_bytes);
     page->hp_steps |= RS_APU_RELEASE_STEP_WAV_DONE;
@@ -240,7 +242,7 @@ static bool hp_submit_kws(volatile rs_apu_release_page_t *page) {
     }
     *hp_reg(apu + RS_APU_ABI_KWS_CONTROL) = UINT32_C(3);
     page->hp_steps |= RS_APU_RELEASE_STEP_KWS_ARM;
-    hp_cbo_clean(page->kws_address, page->kws_bytes);
+    hp_dcache_clean(page->kws_address, page->kws_bytes);
     *hp_reg(apu + RS_APU_ABI_JOB_CONTROL) = UINT32_C(1);
     *hp_reg(apu + RS_APU_ABI_JOB_INPUT_ADDRESS) = page->kws_address;
     *hp_reg(apu + RS_APU_ABI_JOB_INPUT_LENGTH) = page->kws_bytes;
@@ -295,7 +297,7 @@ static void hp_publish(volatile rs_apu_release_page_t *page, uint32_t summary) {
 
     page->hp_steps |= RS_APU_RELEASE_STEP_PUBLISH;
     page->result_magic = RS_APU_RELEASE_RESULT_MAGIC;
-    hp_cbo_clean(RS_APU_RELEASE_PAGE_ADDRESS, RS_APU_RELEASE_PAGE_BYTES);
+    hp_dcache_clean(RS_APU_RELEASE_PAGE_ADDRESS, RS_APU_RELEASE_PAGE_BYTES);
     mailbox[HP_MAILBOX_HP_EVENT / 4U] = RS_APU_RELEASE_EVENT_DONE;
     mailbox[HP_MAILBOX_HP_ARG0 / 4U] = summary;
     mailbox[HP_MAILBOX_HP_SEQUENCE / 4U] = RS_APU_RELEASE_MAILBOX_SEQUENCE;
@@ -340,7 +342,7 @@ void main(void) {
         }
     }
     hp_milestone("MAILBOX");
-    hp_cbo_inval(RS_APU_RELEASE_PAGE_ADDRESS, RS_APU_RELEASE_PAGE_BYTES);
+    hp_dcache_inval(RS_APU_RELEASE_PAGE_ADDRESS, RS_APU_RELEASE_PAGE_BYTES);
     page->hp_steps = RS_APU_RELEASE_STEP_MAILBOX;
     if ((code != RS_APU_RELEASE_JOB_RUN) || (argument != RS_APU_RELEASE_PAGE_ADDRESS) ||
         (page->magic != RS_APU_RELEASE_PAGE_MAGIC) ||

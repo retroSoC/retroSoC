@@ -1,13 +1,21 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /* Copyright (c) 2026 Yuchi Miao */
 
+#include <sbi/riscv_asm.h>
+#include <sbi/riscv_encoding.h>
 #include <sbi/riscv_io.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_platform.h>
+#include <sbi/sbi_timer.h>
 #include <sbi_utils/ipi/aclint_mswi.h>
-#include <sbi_utils/timer/aclint_mtimer.h>
+#include <sbi_utils/irqchip/fdt_irqchip.h>
 
-#define RETROSOC_HP_ACLINT_BASE          0x02000000UL
+/* Internal C906 CLINT (thead,c900-clint), decoded by the core BIU. */
+#define RETROSOC_HP_CLINT_BASE           0x0C000000UL
+#define RETROSOC_HP_CLINT_MTIMECMP_LO    0x4000UL
+#define RETROSOC_HP_CLINT_MTIMECMP_HI    0x4004UL
+#define RETROSOC_HP_CLINT_STIMECMP_LO    0xD000UL
+#define RETROSOC_HP_CLINT_STIMECMP_HI    0xD004UL
 #define RETROSOC_HP_UART_BASE            0x10018000UL
 #define RETROSOC_HP_UART_BAUD_INT        78U
 #define RETROSOC_HP_UART_BAUD_FRAC       32U
@@ -27,24 +35,69 @@
 #define RETROSOC_HP_UART_FIFO_FLUSH      0x03U
 #define RETROSOC_HP_UART_ERROR_ALL       0x7FU
 
+/* C906 resets with caches and the BPU disabled (mhcr=0) and does not
+ * initialize the cache/predictor RAMs; the upstream reference crt0
+ * (smart_run/tests/lib/crt0.s) invalidates them via mcor before enabling
+ * mhcr. Uncached SDRAM execution is ~100x slower. MMIO windows stay
+ * strong-order non-cacheable via the sysmap override. */
+#define RETROSOC_HP_CSR_MCOR             0x7c2U
+#define RETROSOC_HP_MCOR_INVALIDATE_ALL  0x30013UL /* BTB|BHT|DCACHE|ICACHE */
+#define RETROSOC_HP_CSR_MHCR             0x7c1U
+#define RETROSOC_HP_MHCR_CACHES_BPU      0x7fUL /* IE|DE|WA|RSE|BPE|BTBE */
+
+/* The OpenC906 RTL resets mxstatus.MAEE (bit 21) to 1, contrary to the user
+ * manual's stated reset value of 0 (aq_cp0_ext_csr.v). With MAEE set, S-mode
+ * page attributes come from the T-Head extended PTE bits [63:59], which a
+ * stock mainline kernel never programs: every translated page becomes
+ * non-cacheable and the C906 raises a store/AMO access fault (cause 7) for
+ * any AMO on such a page (aq_lsu_ag.v: !mmu_ca && ag_pipe_amo), e.g. the
+ * kernel's first set_cpu_online amoor.d. Clearing MAEE makes translated
+ * accesses follow the sysmap override (RAM cacheable, MMIO strong-order
+ * device), so the stock kernel works without T-Head PBMT errata. */
+#define RETROSOC_HP_CSR_MXSTATUS         0x7c0U
+#define RETROSOC_HP_MXSTATUS_MAEE        (1UL << 21)
+
 static const u32 s_hart_index_to_id[] = {1U};
 
 static struct aclint_mswi_data s_mswi = {
-    .addr = RETROSOC_HP_ACLINT_BASE,
+    .addr = RETROSOC_HP_CLINT_BASE,
     .size = ACLINT_MSWI_SIZE,
-    .first_hartid = 0U,
-    .hart_count = 2U,
+    .first_hartid = 1U,
+    .hart_count = 1U,
 };
 
-static struct aclint_mtimer_data s_mtimer = {
-    .mtime_freq = 1000000UL,
-    .mtime_addr = RETROSOC_HP_ACLINT_BASE + 0xBFF8UL,
-    .mtime_size = ACLINT_DEFAULT_MTIME_SIZE,
-    .mtimecmp_addr = RETROSOC_HP_ACLINT_BASE + 0x4000UL,
-    .mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE,
-    .first_hartid = 0U,
-    .hart_count = 2U,
-    .has_64bit_mmio = false,
+/* No memory-mapped mtime: the SoC drives mtime into the core. */
+static u64 retrosoc_hp_timer_value(void) {
+    return csr_read(CSR_TIME);
+}
+
+static void retrosoc_hp_mtimecmp_write(u64 value) {
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_LO));
+    writel_relaxed((u32)(value >> 32U),
+                   (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_HI));
+    writel_relaxed((u32)value, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_MTIMECMP_LO));
+}
+
+static void retrosoc_hp_timer_event_start(u64 next_event) {
+    retrosoc_hp_mtimecmp_write(next_event);
+}
+
+static void retrosoc_hp_timer_event_stop(void) {
+    retrosoc_hp_mtimecmp_write(~0ULL);
+}
+
+static int retrosoc_hp_timer_warm_init(void) {
+    retrosoc_hp_timer_event_stop();
+    return 0;
+}
+
+static struct sbi_timer_device s_timer = {
+    .name = "retrosoc-hp-c906-clint",
+    .timer_freq = 1000000UL,
+    .timer_value = retrosoc_hp_timer_value,
+    .timer_event_start = retrosoc_hp_timer_event_start,
+    .timer_event_stop = retrosoc_hp_timer_event_stop,
+    .warm_init = retrosoc_hp_timer_warm_init,
 };
 
 static void retrosoc_hp_uart_write(u32 offset, u32 value) {
@@ -79,6 +132,22 @@ static int retrosoc_hp_early_init(bool cold_boot) {
         return 0;
     }
 
+    csr_write(RETROSOC_HP_CSR_MCOR, RETROSOC_HP_MCOR_INVALIDATE_ALL);
+    csr_write(RETROSOC_HP_CSR_MHCR, RETROSOC_HP_MHCR_CACHES_BPU);
+    csr_clear(RETROSOC_HP_CSR_MXSTATUS, RETROSOC_HP_MXSTATUS_MAEE);
+
+    /* Park both internal-CLINT compare registers. The C906 ORs the hardware
+     * supervisor-timer line into mip.STIP (aq_cp0_trap_csr.v: st_int && CLINTEE,
+     * and the RTL resets CLINTEE to 1), so an unparked STIMECMP wedges S-mode
+     * with an infinite supervisor-timer interrupt the moment the kernel enables
+     * sie.STIE. The compare registers' 0xFFFF_FFFF reset values are not
+     * guaranteed to be applied (the hold-reset produces no async negedge in
+     * Verilator), so park them explicitly at cold boot. */
+    retrosoc_hp_mtimecmp_write(~0ULL);
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_LO));
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_HI));
+    writel_relaxed((u32)-1, (void *)(RETROSOC_HP_CLINT_BASE + RETROSOC_HP_CLINT_STIMECMP_LO));
+
     retrosoc_hp_uart_write(RETROSOC_HP_UART_CTRL_REG, 0U);
     retrosoc_hp_uart_write(RETROSOC_HP_UART_FIFO_CTRL_REG, RETROSOC_HP_UART_FIFO_FLUSH);
     retrosoc_hp_uart_write(RETROSOC_HP_UART_ERROR_REG, RETROSOC_HP_UART_ERROR_ALL);
@@ -93,18 +162,23 @@ static int retrosoc_hp_early_init(bool cold_boot) {
 }
 
 static int retrosoc_hp_timer_init(void) {
-    return aclint_mtimer_cold_init(&s_mtimer, NULL);
+    sbi_timer_set_device(&s_timer);
+    return 0;
 }
 
 static const struct sbi_platform_operations s_platform_operations = {
     .early_init = retrosoc_hp_early_init,
+    /* Initialize the C906-internal PLIC from the boot FDT: the thead,c900-plic
+     * match applies the T-Head M-to-S delegation quirk that S-mode interrupt
+     * delivery requires. */
+    .irqchip_init = fdt_irqchip_init,
     .timer_init = retrosoc_hp_timer_init,
 };
 
 const struct sbi_platform platform = {
     .opensbi_version = OPENSBI_VERSION,
     .platform_version = SBI_PLATFORM_VERSION(1U, 0U),
-    .name = "retroSoC RV64 HP",
+    .name = "retroSoC OpenC906 HP",
     .features = SBI_PLATFORM_DEFAULT_FEATURES,
     .hart_count = 1U,
     .hart_stack_size = SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,

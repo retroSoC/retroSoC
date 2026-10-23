@@ -25,7 +25,7 @@ def build(args: argparse.Namespace) -> None:
     subprocess.run(
         [
             compiler,
-            "-march=rv64imafdc_zicbom_zicsr_zifencei",
+            "-march=rv64imafdc_zicsr_zifencei",
             "-mabi=lp64d",
             "-nostdlib",
             "-nostartfiles",

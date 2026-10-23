@@ -53,6 +53,13 @@ module dma_formal;
   wire [  1:0]  tx_channel;
   wire [ 31:0]  tx_channel_bytes_done;
   wire [ 31:0]  tx_channel_len;
+  wire [  1:0]  scenario;
+  wire          tcd_mode;
+  wire          tcd_read_owner_valid;
+  wire          tcd_parse;
+  wire          tcd_loaded;
+  wire          tcd_fetch_pending;
+  wire          tcd_abort;
   wire          awvalid;
   wire          awready;
   wire          awid;
@@ -180,6 +187,13 @@ module dma_formal;
       .tx_channel            (tx_channel),
       .tx_channel_bytes_done (tx_channel_bytes_done),
       .tx_channel_len        (tx_channel_len),
+      .scenario              (scenario),
+      .tcd_mode              (tcd_mode),
+      .tcd_read_owner_valid  (tcd_read_owner_valid),
+      .tcd_parse             (tcd_parse),
+      .tcd_loaded            (tcd_loaded),
+      .tcd_fetch_pending     (tcd_fetch_pending),
+      .tcd_abort             (tcd_abort),
       .awvalid               (awvalid),
       .awready               (awready),
       .awid                  (awid),
@@ -462,10 +476,13 @@ module dma_formal;
       if (arvalid) begin
         assert (arid == 1'b0);
         assert (arsize == 3'd2);
-        assert (arlen <= 8'd3);
+        assert (arlen <= 8'd15);
         assert ((arburst == 2'b00) || (arburst == 2'b01));
         assert (araddr[1:0] == 2'b00);
-        if (arburst == 2'b00) begin
+        if (araddr == 32'h2000_0000) begin
+          assert (arburst == 2'b01);
+          assert (arlen == 8'd15);
+        end else if (arburst == 2'b00) begin
           assert (arlen == 8'd0);
         end else begin
           assert ({1'b0, araddr[11:0]} + (({5'd0, arlen} + 13'd1) << 2) <= 13'd4096);
@@ -514,6 +531,16 @@ module dma_formal;
         end
         if (f_past_valid && done[channel] && !$past(done[channel])) begin
           assert ($past(f_completion_event[channel]));
+        end
+      end
+
+      if (tcd_mode) begin
+        if (tcd_abort) begin
+          assert (!tcd_loaded);
+          assert (!tcd_fetch_pending);
+        end
+        if (f_past_valid && $past(tcd_parse) && $past(tcd_abort)) begin
+          assert (!tcd_loaded);
         end
       end
 

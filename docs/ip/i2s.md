@@ -105,6 +105,15 @@ change.
 in `[23:0]`. `TKEEP` and `TSTRB` are `4'hF`. I2S RX does not assert `TLAST`.
 DMA asserts `TLAST` on the final programmed TX word.
 
+The P6 integration regression uses alternating sample least-significant bits
+in both 16- and 24-bit pin-level loopback. It exposed a receiver defect that
+combined the preceding sample's last bit with the next sample. The corrected
+receiver appends the bit sampled at the LRCK transition to the preceding
+sample's shifted bits and registers completion after that value is available.
+This preserves the host register/stream ABI and does not add slave mode.
+The register frontend uses PWRITE for transfer direction. In particular, a
+write with zero byte strobes cannot be reinterpreted as a side-effecting RX read.
+
 ## HAL Sequence
 
 Mini applications should use `rs_i2s_configure()`, `rs_i2s_enable()`, and either

@@ -39,6 +39,19 @@ def main() -> int:
     if default_failure:
         rejected.append(default_failure.group(0))
 
+    flow_result_path = args.result.with_name("result-sim.json")
+    flow_status = None
+    if flow_result_path.is_file():
+        try:
+            flow_result = json.loads(flow_result_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            flow_result = {}
+        flow_status = flow_result.get("status", "invalid")
+        # PIDs are namespace-local and can be reused. A durable terminal
+        # verdict, not a liveness guess from this process, establishes success.
+        if flow_status != "passed" or flow_result.get("exit_code") != 0:
+            missing.append("successful terminal run_flow result")
+
     passed = not missing and not rejected
     report = {
         "schema_version": 1,
@@ -48,6 +61,8 @@ def main() -> int:
         "missing_markers": missing,
         "rejected_matches": sorted(set(rejected)),
     }
+    if flow_status is not None:
+        report["flow_status"] = flow_status
     atomic_write(args.result, json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(f"simulation check: {report['status']} ({args.result.resolve()})")
     return int(not passed)

@@ -84,6 +84,12 @@ static rs_status_t rs_uart_flow_gpio_configure(const rs_uart_config_t *config) {
     };
     rs_status_t status = RS_OK;
 
+#ifdef RS_SOC_TINY
+    status = rs_gpio_configure(8U, &pin_config);
+    if (status == RS_OK) {
+        status = rs_gpio_configure(9U, &pin_config);
+    }
+#endif
     if (config->auto_cts_enable) {
         status = rs_gpio_configure(RS_UART_CTS_GPIO, &pin_config);
     }
@@ -106,6 +112,11 @@ rs_status_t rs_uart_configure(const rs_uart_config_t *config, rs_timeout_t timeo
         return RS_EINVAL;
     }
 
+#ifdef RS_SOC_TINY
+    if (config->auto_cts_enable || config->auto_rts_enable) {
+        return RS_ENOTSUP;
+    }
+#endif
     RS_UART_CTRL = 0U;
     while (((RS_UART_STATUS & (RS_UART_STATUS_TX_BUSY | RS_UART_STATUS_RX_BUSY)) != 0U) &&
            (timeout != 0U)) {

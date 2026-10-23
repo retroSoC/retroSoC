@@ -3,6 +3,11 @@
 #include <stddef.h>
 
 #include <retrosoc/hal/dma.h>
+#include <retrosoc/hal/spi_regs.h>
+
+#ifndef RS_SOC_APB4_SPI_BASE
+#define RS_SOC_APB4_SPI_BASE UINT32_C(0x1001D000)
+#endif
 
 static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool increment) {
     uintptr_t last_address;
@@ -19,12 +24,26 @@ static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool in
 
 static bool rs_dma_request_valid(const rs_dma_config_t *config) {
 #ifdef RS_SOC_TINY
-    if (config->kind != RS_DMA_KIND_MM_TO_MM) {
+    const uint32_t request_mask = UINT32_C(0x000339FF);
+    if (((uint32_t)config->request >= 32U) ||
+        ((request_mask & (UINT32_C(1) << (uint32_t)config->request)) == 0U)) {
         return false;
     }
 #endif
     switch (config->kind) {
     case RS_DMA_KIND_MM_TO_MM:
+#ifdef RS_SOC_TINY
+        if ((config->request == RS_DMA_REQUEST_SPI_TX) ||
+            (config->request == RS_DMA_REQUEST_SPI_RX)) {
+            const uintptr_t tx_aperture = (uintptr_t)RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_TXDATA;
+            const uintptr_t rx_aperture = (uintptr_t)RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_RXDATA;
+            return ((config->byte_count % sizeof(uint32_t)) == 0U) &&
+                   (((config->request == RS_DMA_REQUEST_SPI_TX) && config->source_increment &&
+                     !config->destination_increment && config->destination == tx_aperture) ||
+                    ((config->request == RS_DMA_REQUEST_SPI_RX) && !config->source_increment &&
+                     config->destination_increment && config->source == rx_aperture));
+        }
+#endif
         return (config->request == RS_DMA_REQUEST_SOFTWARE) ||
                ((config->request >= RS_DMA_REQUEST_XPI_TX) &&
                 (config->request <= RS_DMA_REQUEST_I2C1_RX));
@@ -95,14 +114,18 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
     }
     kind = (tcd->control >> RS_DMA_TCD_KIND_SHIFT) & UINT32_C(0x7);
     request = (tcd->control >> RS_DMA_TCD_REQUEST_SHIFT) & UINT32_C(0xF);
+    if ((tcd->control & RS_DMA_TCD_REQUEST_HIGH) != UINT32_C(0)) {
+        request |= UINT32_C(0x10);
+    }
     burst = (tcd->control >> RS_DMA_TCD_BURST_SHIFT) & UINT32_C(0x1F);
 #ifdef RS_SOC_TINY
-    if (kind != (uint32_t)RS_DMA_KIND_MM_TO_MM) {
+    const uint32_t request_mask = UINT32_C(0x000339FF);
+    if ((request >= 32U) || ((request_mask & (UINT32_C(1) << request)) == 0U)) {
         return RS_ENOTSUP;
     }
 #endif
     if ((kind > (uint32_t)RS_DMA_KIND_STREAM_TO_MM) ||
-        (request > (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT) || (burst > RS_DMA_MAX_BURST_BEATS) ||
+        (request > (uint32_t)RS_DMA_REQUEST_SPI_RX) || (burst > RS_DMA_MAX_BURST_BEATS) ||
         ((tcd->source & UINT32_C(0x3)) != UINT32_C(0)) ||
         ((tcd->destination & UINT32_C(0x3)) != UINT32_C(0))) {
         return RS_EINVAL;
@@ -112,11 +135,30 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
         return RS_EINVAL;
     }
     if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) &&
-        !((request == (uint32_t)RS_DMA_REQUEST_SOFTWARE) ||
-          ((request >= (uint32_t)RS_DMA_REQUEST_XPI_TX) &&
-           (request <= (uint32_t)RS_DMA_REQUEST_I2C1_RX)))) {
+        !(
+#ifdef RS_SOC_TINY
+            (request == (uint32_t)RS_DMA_REQUEST_SPI_TX) ||
+            (request == (uint32_t)RS_DMA_REQUEST_SPI_RX) ||
+#endif
+            (request == (uint32_t)RS_DMA_REQUEST_SOFTWARE) ||
+            ((request >= (uint32_t)RS_DMA_REQUEST_XPI_TX) &&
+             (request <= (uint32_t)RS_DMA_REQUEST_I2C1_RX)))) {
         return RS_EINVAL;
     }
+#ifdef RS_SOC_TINY
+    if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) && (request == (uint32_t)RS_DMA_REQUEST_SPI_TX) &&
+        (((tcd->control & RS_DMA_TCD_SRC_INC) == UINT32_C(0)) ||
+         ((tcd->control & RS_DMA_TCD_DST_INC) != UINT32_C(0)) ||
+         (tcd->destination != (uint32_t)(RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_TXDATA)))) {
+        return RS_EINVAL;
+    }
+    if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_MM) && (request == (uint32_t)RS_DMA_REQUEST_SPI_RX) &&
+        (((tcd->control & RS_DMA_TCD_SRC_INC) != UINT32_C(0)) ||
+         ((tcd->control & RS_DMA_TCD_DST_INC) == UINT32_C(0)) ||
+         (tcd->source != (uint32_t)(RS_SOC_APB4_SPI_BASE + RS_SPI_ABI_DMA_RXDATA)))) {
+        return RS_EINVAL;
+    }
+#endif
     if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_STREAM) &&
         (!((request == (uint32_t)RS_DMA_REQUEST_I2S_TX) ||
            (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_IN)) ||

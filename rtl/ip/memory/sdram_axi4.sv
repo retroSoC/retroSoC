@@ -128,6 +128,11 @@ module sdram_axi4 (
   logic                           s_rd_id_d;
   logic            [         1:0] s_rd_resp_q;
   logic            [         1:0] s_rd_resp_d;
+  // Original burst length, registered at accept: WRAP stepping needs the
+  // total geometry, which the decrementing remaining-beat count cannot
+  // reconstruct.
+  logic            [         7:0] s_rd_len_q;
+  logic            [         7:0] s_rd_len_d;
 
   sdram_wr_state_e                s_wr_state_q;
   sdram_wr_state_e                s_wr_state_d;
@@ -145,6 +150,8 @@ module sdram_axi4 (
   logic                           s_wr_id_d;
   logic            [         1:0] s_wr_resp_q;
   logic            [         1:0] s_wr_resp_d;
+  logic            [         7:0] s_wr_len_q;
+  logic            [         7:0] s_wr_len_d;
 
   logic                           s_rd_err_event_d;
   logic                           s_wr_err_event_d;
@@ -307,6 +314,31 @@ module sdram_axi4 (
   assign error_code_o = s_err_code_q;
   assign error_addr_o = s_err_addr_q;
 
+  // Per-beat address stepping uses the registered original burst geometry so
+  // WRAP boundaries survive mid-burst: the previous remaining-beats-based
+  // mask arithmetic produced wrong wrap-back addresses for mid-line starts.
+  logic [31:0] s_rd_step_addr;
+  logic [31:0] s_wr_step_addr;
+
+  axi4_addr_gen #(
+      .ADDR_WIDTH(32)
+  ) u_rd_addr_gen (
+      .alen_i  (s_rd_len_q),
+      .asize_i (s_rd_size_q),
+      .aburst_i(s_rd_burst_q),
+      .addr_i  (s_rd_addr_q),
+      .addr_o  (s_rd_step_addr)
+  );
+  axi4_addr_gen #(
+      .ADDR_WIDTH(32)
+  ) u_wr_addr_gen (
+      .alen_i  (s_wr_len_q),
+      .asize_i (s_wr_size_q),
+      .aburst_i(s_wr_burst_q),
+      .addr_i  (s_wr_addr_q),
+      .addr_o  (s_wr_step_addr)
+  );
+
   fifo #(
       .DATA_WIDTH  (CmdWidth),
       .BUFFER_DEPTH(2)
@@ -396,6 +428,7 @@ module sdram_axi4 (
     s_rd_frag_d      = s_rd_frag_q;
     s_rd_size_d      = s_rd_size_q;
     s_rd_burst_d     = s_rd_burst_q;
+    s_rd_len_d       = s_rd_len_q;
     s_rd_id_d        = s_rd_id_q;
     s_rd_resp_d      = s_rd_resp_q;
     s_ar_pop         = 1'b0;
@@ -436,6 +469,7 @@ module sdram_axi4 (
             s_rd_left_d = s_ar_len + 8'd1;
             s_rd_size_d = s_ar_size;
             s_rd_burst_d = s_ar_burst;
+            s_rd_len_d = s_ar_len;
             s_rd_id_d = s_ar_id;
             rd_frag = fragment_beats(s_ar_addr, s_ar_len + 8'd1, s_ar_len, s_ar_size, s_ar_burst);
             s_rd_frag_d = rd_frag;
@@ -461,19 +495,11 @@ module sdram_axi4 (
           end
           s_r_push      = 1'b1;
           s_r_push_data = {rd_data_rdata_i, (s_rd_left_q == 8'd1), s_rd_resp_d, s_rd_id_q};
-          if (s_rd_burst_q == `AXI4_BURST_TYPE_FIXED) begin
-            next_rd_addr = s_rd_addr_q;
-          end else begin
-            next_rd_addr = s_rd_addr_q + (32'd1 << s_rd_size_q);
-            if ((s_rd_burst_q == `AXI4_BURST_TYPE_WRAP) && (beats_to_wrap(
-                    s_rd_addr_q, s_rd_left_q - 8'd1, s_rd_size_q, s_rd_burst_q
-                ) == 8'd1)) begin
-              next_rd_addr = s_rd_addr_q & ~((32'd1 << s_rd_size_q) - 1'b1);
-              next_rd_addr = next_rd_addr - (((32'(s_rd_left_q) - 32'd1) << s_rd_size_q));
-            end
-          end
-          s_rd_addr_d = next_rd_addr;
-          s_rd_left_d = s_rd_left_q - 8'd1;
+          // Step with the original geometry: FIXED holds, INCR increments,
+          // WRAP wraps at the total-burst boundary (mid-line starts included).
+          next_rd_addr  = s_rd_step_addr;
+          s_rd_addr_d   = next_rd_addr;
+          s_rd_left_d   = s_rd_left_q - 8'd1;
           if (s_rd_frag_q != 4'd0) begin
             s_rd_frag_d = s_rd_frag_q - 4'd1;
           end else if (s_rd_left_q == 8'd1) begin
@@ -512,6 +538,7 @@ module sdram_axi4 (
     s_wr_frag_d      = s_wr_frag_q;
     s_wr_size_d      = s_wr_size_q;
     s_wr_burst_d     = s_wr_burst_q;
+    s_wr_len_d       = s_wr_len_q;
     s_wr_id_d        = s_wr_id_q;
     s_wr_resp_d      = s_wr_resp_q;
     s_aw_pop         = 1'b0;
@@ -553,6 +580,7 @@ module sdram_axi4 (
             s_wr_left_d = s_aw_len + 8'd1;
             s_wr_size_d = s_aw_size;
             s_wr_burst_d = s_aw_burst;
+            s_wr_len_d = s_aw_len;
             s_wr_id_d = s_aw_id;
             wr_frag = fragment_beats(s_aw_addr, s_aw_len + 8'd1, s_aw_len, s_aw_size, s_aw_burst);
             s_wr_frag_d = wr_frag;
@@ -574,9 +602,9 @@ module sdram_axi4 (
           if (s_w_data[0] != (s_wr_left_q == 8'd1)) begin
             s_wr_resp_d = `AXI4_RESP_SLAVE_ERROR;
           end
-          if (s_wr_burst_q != `AXI4_BURST_TYPE_FIXED) begin
-            s_wr_addr_d = s_wr_addr_q + (32'd1 << s_wr_size_q);
-          end
+          // Step with the original geometry; this also gives WRAP writes a
+          // correct wrap-back instead of running past the boundary.
+          s_wr_addr_d = s_wr_step_addr;
           s_wr_left_d = s_wr_left_q - 8'd1;
           if (s_wr_frag_q != 4'd0) begin
             s_wr_frag_d = s_wr_frag_q - 4'd1;
@@ -632,6 +660,7 @@ module sdram_axi4 (
       s_rd_frag_q   <= '0;
       s_rd_size_q   <= '0;
       s_rd_burst_q  <= '0;
+      s_rd_len_q    <= '0;
       s_rd_id_q     <= '0;
       s_rd_resp_q   <= `AXI4_RESP_OKAY;
       s_wr_state_q  <= WrIdle;
@@ -640,6 +669,7 @@ module sdram_axi4 (
       s_wr_frag_q   <= '0;
       s_wr_size_q   <= '0;
       s_wr_burst_q  <= '0;
+      s_wr_len_q    <= '0;
       s_wr_id_q     <= '0;
       s_wr_resp_q   <= `AXI4_RESP_OKAY;
       s_err_event_q <= 1'b0;
@@ -652,6 +682,7 @@ module sdram_axi4 (
       s_rd_frag_q <= s_rd_frag_d;
       s_rd_size_q <= s_rd_size_d;
       s_rd_burst_q <= s_rd_burst_d;
+      s_rd_len_q <= s_rd_len_d;
       s_rd_id_q <= s_rd_id_d;
       s_rd_resp_q <= s_rd_resp_d;
       s_wr_state_q <= s_wr_state_d;
@@ -660,6 +691,7 @@ module sdram_axi4 (
       s_wr_frag_q <= s_wr_frag_d;
       s_wr_size_q <= s_wr_size_d;
       s_wr_burst_q <= s_wr_burst_d;
+      s_wr_len_q <= s_wr_len_d;
       s_wr_id_q <= s_wr_id_d;
       s_wr_resp_q <= s_wr_resp_d;
       s_err_event_q <= s_rd_err_event_d || s_wr_err_event_d;

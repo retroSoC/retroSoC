@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,32 +19,45 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_hp_profile_and_locked_generator_contract() -> None:
     lock = json.loads((ROOT / "dependencies/dependencies.lock.json").read_text(encoding="utf-8"))
-    vexii = lock["sources"]["vexiiriscv"]
-    assert vexii["revision"] == "ef7da4134ff11ec6a681d0632123b232b853b046"
-    assert vexii["recursive"] is True
-    assert vexii["destination"].startswith(".cache/")
+    openc906 = lock["sources"]["openc906"]
+    assert openc906["url"] == "https://github.com/XUANTIE-RV/openc906.git"
+    assert len(openc906["revision"]) == 40
+    assert openc906["destination"].startswith(".cache/")
+    assert openc906["license"] == "Apache-2.0"
 
     profile = (ROOT / "configs/ci/ihp130-hp.mk").read_text(encoding="utf-8")
     assert "HAVE_HP" in profile and "YES" in profile
-    assert "rv64imafdc_zicbom_max" in profile
+    assert "HP_CONFIG" not in profile
     assert "APP" in profile and "hp_boot" in profile
     assert "LINK_TYPE" in profile and "ld2_all_sram" in profile
 
-    generator = (ROOT / "scripts/vexiiriscv/GenerateRetroSocHp.scala").read_text(
-        encoding="utf-8"
-    )
+    generator = (ROOT / "scripts/generate_openc906.py").read_text(encoding="utf-8")
     for requirement in (
-        "param.xlen = 64",
-        "param.physicalWidth = 32",
-        'param.addISA("m", "a", "f", "d", "c", "s", "u", "zicbom", "zicntr", "zihpm")',
-        "param.decoders = 2",
-        "param.lanes = 2",
-        "param.fetchL1Ways = 4",
-        "param.lsuL1Ways = 4",
-        "param.resetVector = 0x38000000L",
-        "param.plugins(hartId = 1)",
+        'GENERATED_MODULE = "openC906"',
+        '"C906_RTL_FACTORY/gen_rtl/cpu/rtl/aq_sysio_kid.v"',
+        '"C906_RTL_FACTORY/gen_rtl/mmu/rtl/sysmap.h"',
+        "C906_asic_rtl.fl",
+        "tdt_dmi_top_rtl.fl",
     ):
         assert requirement in generator
+
+    # The Mini LP/HP contract keeps the HP core at hart 1; upstream hardwires
+    # mhartid to 0, so the build substitutes a reviewed override file.
+    override = (ROOT / "rtl/mini/ip_overrides/aq_sysio_kid.v").read_text(encoding="utf-8")
+    assert "assign sysio_core_hartid[2:0] = 3'd1;" in override
+    assert "b0c06eb1f8b3bae663bd8b87eac89ff48e68a57f" in override
+
+    # The sysmap override marks the Mini MMIO window (and the core-internal
+    # CLINT/PLIC window) strong-order non-cacheable per the C906 user manual.
+    sysmap = (ROOT / "rtl/mini/ip_overrides/sysmap.h").read_text(encoding="utf-8")
+    assert "`define SYSMAP_BASE_ADDR1  28'h30000" in sysmap
+    assert "`define SYSMAP_FLG1        5'b10011" in sysmap
+
+    wrapper = (ROOT / "rtl/mini/top/hp_core_wrapper.sv").read_text(encoding="utf-8")
+    assert "HpResetVector = 40'h00_3800_0000" in wrapper
+    assert "HpApbBase = 40'h00_0800_0000" in wrapper
+    assert "openC906 u_openc906" in wrapper
+    assert "tdt_dmi_top u_tdt_dmi_top" in wrapper
 
 
 def test_makefile_uses_path_resolved_sbt() -> None:
@@ -77,8 +91,13 @@ def test_hp_address_and_sysctrl_contract() -> None:
         (ROOT / "rtl/mini/address_map/memory_map.json").read_text(encoding="utf-8")
     )
     regions = {region["symbol"]: region for region in document["regions"]}
-    assert regions["HP_ACLINT"]["base"] == "0x02000000"
-    assert regions["HP_PLIC"]["base"] == "0x0C000000"
+    # The C906 internal CLINT/PLIC window is decoded inside the core BIU and
+    # never reaches the SoC fabric; the map records it as reserved.
+    assert "HP_ACLINT" not in regions
+    assert "HP_PLIC" not in regions
+    assert regions["HP_C906_SYS"]["base"] == "0x08000000"
+    assert regions["HP_C906_SYS"]["size"] == "0x08000000"
+    assert regions["HP_C906_SYS"]["kind"] == "reserved"
     assert regions["APB4_UART1"]["base"] == "0x10018000"
     assert regions["APB4_HP_MAILBOX"]["base"] == "0x10019000"
     assert regions["APB4_RESOURCE_CTRL"]["base"] == "0x2000A000"
@@ -89,15 +108,244 @@ def test_hp_address_and_sysctrl_contract() -> None:
     assert registers["DEBUG_SELECT"] == "0xAC"
 
 
-def test_generated_vexii_rtl_is_not_tracked() -> None:
+def test_generated_hp_core_rtl_is_not_tracked() -> None:
     tracked = subprocess.run(
-        ["git", "ls-files", "*vexii_riscv_hp_generated*"],
+        ["git", "ls-files", "*vexiiriscv_std_generated*", "*vexii_riscv_hp_generated*"],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
     ).stdout
     assert tracked == ""
+    tracked = subprocess.run(
+        ["git", "ls-files", "*generated/openc906*"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert tracked == ""
+
+
+def _run_c906_boot_tb(tmp_path: Path, *, sram_macros: str | None) -> None:
+    """Build and run the focused hp_core_wrapper boot testbench."""
+    verilator = shutil.which("verilator")
+    openc906 = ROOT / ".cache/retrosoc/sources/openc906"
+    if verilator is None or not (openc906 / "C906_RTL_FACTORY").is_dir():
+        return
+    try:
+        cross = subprocess.run(
+            ["python3", str(ROOT / "scripts/hp_tools.py"), "--root", str(ROOT)],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except subprocess.CalledProcessError:
+        return
+    if not Path(cross + "gcc").is_file():
+        return
+
+    payload_dir = tmp_path / "payload"
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT / "scripts/build_hp_smoke.py"),
+            "--source",
+            str(ROOT / "app/ports/linux/smoke/start.S"),
+            "--linker",
+            str(ROOT / "app/ports/linux/smoke/linker.ld"),
+            "--output",
+            str(payload_dir),
+            "--cross",
+            cross,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = payload_dir / "images/hp_smoke.bin"
+    assert payload.is_file()
+
+    generated = tmp_path / "generated"
+    subprocess.run(
+        [
+            "python3",
+            str(ROOT / "scripts/generate_openc906.py"),
+            "--root",
+            str(ROOT),
+            "--source",
+            str(openc906),
+            "--output",
+            str(generated),
+            "--manifest",
+            str(generated / "manifest.json"),
+            "--lock",
+            str(ROOT / "dependencies/dependencies.lock.json"),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    hex_image = tmp_path / "hp_smoke.hex"
+    hex_image.write_text(
+        "".join(f"{byte:02x}\n" for byte in payload.read_bytes()), encoding="utf-8"
+    )
+
+    common = ROOT / "rtl/managed/clusterip/common/rtl"
+    output = tmp_path / "hp_c906_boot_tb"
+    ccache_tmp = tmp_path / "ccache"
+    ccache_tmp.mkdir()
+    command = [
+        verilator,
+        "--binary",
+        "--timing",
+        "-Wno-fatal",
+        "--top-module",
+        "hp_c906_boot_tb",
+        "-I" + str(common / "interface"),
+        "-I" + str(common / "utils"),
+        "-I" + str(common),
+        "-I" + str(common / "cdc"),
+        "-I" + str(ROOT / "rtl/mini/top"),
+        f"+define+HP_SMOKE_HEX=\"{hex_image}\"",
+    ]
+    macro_incdirs: list[Path] = []
+    if sram_macros == "ihp130":
+        # IHP130 macro path for the eight C906 SRAM wrappers (integration
+        # manual chapter 3): the override files select RM_IHPSG13_1P_* macros
+        # when PDK_IHP130+HAVE_SRAM_MACRO are defined without PDK_BEHAV, and
+        # FUNCTIONAL puts the macro models in zero-delay functional mode. The
+        # ICG overrides select sg13g2_slgcp_1, which needs the standard-cell
+        # and UDP model files (mirrors pdk_ihp130.fl).
+        ihp130 = ROOT / "physical/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref"
+        macro_defines = ["+define+PDK_IHP130", "+define+HAVE_SRAM_MACRO", "+define+FUNCTIONAL"]
+        macro_models = [
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_1024x32_c2_bm_bist.v",
+            ihp130 / "sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v",
+            ihp130 / "sg13g2_stdcell/verilog/sg13g2_udp.v",
+            ihp130 / "sg13g2_stdcell/verilog/sg13g2_stdcell.v",
+        ]
+    elif sram_macros == "ics55":
+        # ICS55 macro path: the override files select the exact-geometry
+        # ics55_ecos_sram_* macros when PDK_ICS55+HAVE_SRAM_MACRO are defined
+        # without PDK_BEHAV; the ICG overrides select ICGX1H7R from the H7CR
+        # functional cell models. Mirrors pdk_ics55.fl (+define+functional).
+        ics55_names = (
+            "ics55_ecos_sram_1024x16_m8",
+            "ics55_ecos_sram_2048x32_m8",
+            "ics55_ecos_sram_256x59_m4",
+            "ics55_ecos_sram_1024x64_m8",
+            "ics55_ecos_sram_128x8_m8",
+            "ics55_ecos_sram_64x58_m4",
+            "ics55_ecos_sram_64x88_m4",
+            "ics55_ecos_sram_64x98_m4",
+        )
+        macro_defines = ["+define+PDK_ICS55", "+define+HAVE_SRAM_MACRO", "+define+functional"]
+        macro_models = [
+            ROOT / ".cache/retrosoc/pdk/ics55/ics55_h7cr_functional.v",
+            *(
+                ROOT / ".cache/retrosoc/pdk/ics55/sram" / name / "verilog" / f"{name}_core.v"
+                for name in ics55_names
+            ),
+        ]
+    elif sram_macros == "sky130":
+        # ICG-only path (manual chapter 3): PDK_SKY130 without PDK_BEHAV
+        # selects sky130_fd_sc_hd__sdlclkp_1 for the clock-gating cells; the
+        # SRAM wrappers have no SKY130 branch and stay behavioral. Mirrors
+        # pdk_sky130.fl (+define+FUNCTIONAL); the cell dir incdir resolves
+        # the wrapper's `include chain (base module and UDP model).
+        sdlclkp_dir = (
+            ROOT / "physical/pdk/skywater-pdk/libraries/sky130_fd_sc_hd/latest"
+            / "cells/sdlclkp"
+        )
+        macro_defines = ["+define+PDK_SKY130", "+define+HAVE_SRAM_MACRO", "+define+FUNCTIONAL"]
+        macro_models = [sdlclkp_dir / "sky130_fd_sc_hd__sdlclkp_1.v"]
+        macro_incdirs = [sdlclkp_dir]
+    elif sram_macros == "gf180":
+        # GF180 macro path: PDK_GF180+HAVE_SRAM_MACRO without PDK_BEHAV
+        # selects the gf180mcu_fd_ip_sram__sram*x8m8wm1 tiles for the SRAM
+        # wrappers and gf180mcu_fd_sc_mcu7t5v0__icgtp_1 for the ICG cells.
+        # Both sim models are repo-owned (rtl/tech/gf180_*_sim_cells.*): the
+        # vendor icgtp functional model references a UDP primitive that the
+        # locked GF180 checkout does not ship, and the vendor SRAM verilog is
+        # timing-only.
+        macro_defines = ["+define+PDK_GF180", "+define+HAVE_SRAM_MACRO"]
+        macro_models = [
+            ROOT / "rtl/tech/gf180_seq_sim_cells.v",
+            ROOT / "rtl/tech/gf180_sram_sim_cells.sv",
+        ]
+        macro_incdirs = []
+    else:
+        macro_defines = []
+        macro_models = []
+        macro_incdirs = []
+    if any(not model.is_file() for model in macro_models):
+        return
+    command += [*macro_defines, *(str(model) for model in macro_models)]
+    command += ["-I" + str(incdir) for incdir in macro_incdirs]
+    command += [
+        str(common / "interface/axi4_if.sv"),
+        str(common / "interface/axi4_addr_gen.sv"),
+        str(common / "utils/register.sv"),
+        str(common / "utils/xchecker.sv"),
+        str(common / "utils/spill_register.sv"),
+        str(common / "utils/bin2gray.sv"),
+        str(common / "utils/gray2bin.sv"),
+        str(common / "cdc/cdc_sync.sv"),
+        str(common / "cdc/cdc_rst_ctrlr.sv"),
+        str(common / "cdc/cdc_2phase.sv"),
+        str(common / "clkrst/rst_sync.sv"),
+        str(common / "clkrst/clk_int_div.sv"),
+        str(ROOT / "rtl/ip/util/soc_common_cdc.sv"),
+        str(ROOT / "rtl/mini/top/axi4_downsizer_128to64.sv"),
+        str(ROOT / "rtl/mini/top/axi4_mmio_demux.sv"),
+        str(ROOT / "rtl/mini/top/axi4_downsizer_64to32.sv"),
+        str(ROOT / "rtl/mini/top/axi4_address_gate.sv"),
+        str(ROOT / "rtl/mini/top/axi4_async_bridge.sv"),
+        str(ROOT / "rtl/mini/top/hp_core_wrapper.sv"),
+        "-f",
+        str(generated / "openc906.fl"),
+        str(ROOT / "tests/rtl/hp_c906_boot_tb.sv"),
+        "-Mdir",
+        str(tmp_path / "obj"),
+        "-o",
+        str(output),
+    ]
+    subprocess.run(
+        command,
+        check=True,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "CCACHE_DIR": str(ccache_tmp), "CCACHE_TEMPDIR": str(ccache_tmp)},
+    )
+    result = subprocess.run([output], check=True, text=True, capture_output=True)
+    assert "HP_C906_BOOT_TEST_PASS" in result.stdout
+
+
+def test_c906_boots_smoke_payload_in_focused_tb(tmp_path: Path) -> None:
+    """Boot the real HP smoke payload on the hp_core_wrapper integration."""
+    _run_c906_boot_tb(tmp_path, sram_macros=None)
+
+
+def test_c906_boots_smoke_payload_with_ihp130_sram_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 SRAM wrappers on IHP130 macros."""
+    _run_c906_boot_tb(tmp_path, sram_macros="ihp130")
+
+
+def test_c906_boots_smoke_payload_with_ics55_sram_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 SRAM wrappers on ICS55 macros."""
+    _run_c906_boot_tb(tmp_path, sram_macros="ics55")
+
+
+def test_c906_boots_smoke_payload_with_sky130_icg(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 clock gates on SKY130 ICG cells."""
+    _run_c906_boot_tb(tmp_path, sram_macros="sky130")
+
+
+def test_c906_boots_smoke_payload_with_gf180_macros(tmp_path: Path) -> None:
+    """Boot the same payload with the C906 on GF180 SRAM macros + ICG cells."""
+    _run_c906_boot_tb(tmp_path, sram_macros="gf180")
 
 
 def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
@@ -108,8 +356,9 @@ def test_hp_smoke_payload_uses_hart1_platform_abi() -> None:
     assert "HP_SMOKE_READY" in source
     assert "0x10012000" in source
     assert "0x2000a000" in source.lower()
-    assert "cbo.clean" in source
-    assert "cbo.inval" in source
+    # C906 cache maintenance: custom-0 dcache.cva/dcache.iva (no Zicbom).
+    assert ".insn r 0x0b, 0x0, 0x01, x0, a0, x5" in source
+    assert ".insn r 0x0b, 0x0, 0x01, x0, a0, x6" in source
     assert source.count(".balign 64") >= 4
     for marker in ("HP_GA2D_START", "HP_GA2D_PASS", "HP_GA2D_FAIL", "HP_GA2D_CACHE"):
         assert marker in source
@@ -128,7 +377,7 @@ def test_hp_smoke_p5_npu_payload_has_stack_cache_and_polling_plan() -> None:
     assert "rs_npu_irq_enable(0U)" in acceptance
     assert "rs_npu_irq_ack(RS_NPU_IRQ_ALL)" in acceptance
     assert '"--extra-source"' in builder and '"--include"' in builder
-    assert '"-march=rv64imafdc_zicbom_zicsr_zifencei"' in builder
+    assert '"-march=rv64imafdc_zicsr_zifencei"' in builder
     assert '"-mabi=lp64d"' in builder
     assert "require_rv64_elf(elf)" in builder
     assert 'images / "hp_smoke.bin"' in builder
@@ -140,8 +389,8 @@ def test_hp_apu_profile_and_payload_use_the_rv64_product_contract() -> None:
     builder = (ROOT / "scripts/build_hp_apu.py").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
-    assert "HP_CONFIG          := rv64imafdc_zicbom_max" in profile
-    assert '"-march=rv64imafdc_zicbom_zicsr_zifencei"' in builder
+    assert "HP_CONFIG" not in profile
+    assert '"-march=rv64imafdc_zicsr_zifencei"' in builder
     assert '"-mabi=lp64d"' in builder
     assert "require_rv64_elf(elf)" in builder
     assert 'images / "rootfs.cpio"' in builder
@@ -161,7 +410,7 @@ def test_hp_apu_profile_and_payload_use_the_rv64_product_contract() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
-    assert "HP_CONFIG          rv64imafdc_zicbom_max" in completed.stdout
+    assert "HP_CONFIG" not in completed.stdout
 
 
 def test_hp_smoke_simulation_requires_ga2d_result_and_cache_lifecycle_markers() -> None:
@@ -219,7 +468,8 @@ def test_linux_build_uses_external_opensbi_platform_and_actual_initrd_end() -> N
     ).read_text(encoding="utf-8")
     assert "s_hart_index_to_id[] = {1U}" in platform
     assert "RETROSOC_HP_UART_BASE" in platform
-    assert "aclint_mtimer_cold_init" in platform
+    assert "retrosoc-hp-c906-clint" in platform
+    assert "aclint_mswi_cold_init" in platform
 
 
 def test_hp_linux_effective_config_is_fail_closed(tmp_path: Path) -> None:
@@ -287,5 +537,6 @@ def test_hp_linux_device_tree_compiles_and_can_patch_initrd_end(tmp_path: Path) 
     ).splitlines()
     assert "no-map" in properties
     dts = (ROOT / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8")
-    assert '"zicbom"' in dts
-    assert "riscv,cbom-block-size = <64>;" in dts
+    assert '"thead,c906"' in dts
+    assert '"thead,c900-plic"' in dts
+    assert '"thead,c900-clint"' in dts

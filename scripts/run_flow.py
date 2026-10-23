@@ -124,24 +124,22 @@ def main() -> int:
     args.result.parent.mkdir(parents=True, exist_ok=True)
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
-    atomic_write(
-        args.result,
-        json.dumps(
-            {
-                "schema_version": 1,
-                "tool": args.tool,
-                "command": command,
-                "started_at": started.isoformat(),
-                "status": "running",
-                "log": str(args.log.resolve()),
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n",
-    )
+    running_result = {
+        "schema_version": 1,
+        "tool": args.tool,
+        "command": command,
+        "started_at": started.isoformat(),
+        "status": "running",
+        "parent_pid": os.getpid(),
+        "log": str(args.log.resolve()),
+    }
+    atomic_write(args.result, json.dumps(running_result, indent=2, sort_keys=True) + "\n")
 
     def interrupt_flow(_signum: int, _frame: object) -> None:
+        # A launcher can deliver SIGINT followed by SIGTERM. Do not let a
+        # second signal interrupt process-group cleanup or result persistence.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGINT, interrupt_flow)
@@ -169,6 +167,8 @@ def main() -> int:
                 pass_fds=jobserver_fds(),
                 start_new_session=True,
             )
+            running_result["child_pid"] = process.pid
+            atomic_write(args.result, json.dumps(running_result, indent=2, sort_keys=True) + "\n")
             assert process.stdout is not None
             if args.stream_bytes:
                 while chunk := os.read(process.stdout.fileno(), 4096):
@@ -193,11 +193,25 @@ def main() -> int:
                 returncode = process.wait()
     except KeyboardInterrupt:
         error_message = "interrupted"
+        # Persist cancellation before the bounded cleanup wait. If the outer
+        # executor subsequently kills this wrapper, the file must not imply
+        # that the job is still running or that its child finished normally.
+        cancelled = dict(running_result, status="interrupted", exit_code=130,
+                         interrupted_at=datetime.now(timezone.utc).isoformat(),
+                         child_cleanup_pending=process is not None)
+        atomic_write(args.result, json.dumps(cancelled, indent=2, sort_keys=True) + "\n")
         if process is not None:
             terminate_process_group(process)
         returncode = 130
     except (OSError, subprocess.SubprocessError) as error:
         error_message = str(error)
+        if process is not None:
+            terminate_process_group(process)
+    except BaseException as error:
+        error_message = f"unexpected {type(error).__name__}: {error}"
+        if process is not None:
+            terminate_process_group(process)
+        returncode = 1
 
     finished = datetime.now(timezone.utc)
     result = {
@@ -211,8 +225,13 @@ def main() -> int:
         "peak_rss_kib": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
         "exit_code": returncode,
         "status": "interrupted" if returncode == 130 else ("passed" if returncode == 0 else "failed"),
+        "parent_pid": os.getpid(),
         "log": str(args.log.resolve()),
     }
+    if process is not None:
+        result["child_pid"] = process.pid
+        result["child_exit_code"] = process.returncode
+        result["child_cleanup_pending"] = process.returncode is None
     if error_message:
         result["error"] = error_message
     if args.success_marker:

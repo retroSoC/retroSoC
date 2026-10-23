@@ -18,18 +18,22 @@ module dvp_core (
     input  logic [127:0] cfg_i,
     /* verilator lint_on UNUSEDSIGNAL */
     input  logic         cfg_valid_i,
+    input  logic         cfg_cancel_i,
     input  logic [  1:0] cmd_i,
+    input  logic [  5:0] error_clear_i,
     output logic         cfg_ready_o,
     input  logic         push_ready_i,
     output logic         push_valid_o,
     output logic [ 41:0] push_data_o,
     output logic         active_o,
+    output logic         capture_idle_o,
     output logic         frame_start_toggle_o,
     output logic         line_done_toggle_o,
     output logic         frame_done_toggle_o,
     output logic         error_toggle_o,
     output logic [  5:0] error_flags_o,
-    output logic [127:0] frame_stats_o,
+    output logic [  5:0] error_events_o,
+    output logic [`APB4_DVP__FRAME_STATS_WIDTH-1:0] frame_stats_o,
     output logic         frame_stats_valid_o,
     input  logic         frame_stats_ready_i,
     input  logic         href_i,
@@ -63,13 +67,15 @@ module dvp_core (
   logic [15:0] s_word_q;
   logic [31:0] s_frm_seq_q;
   logic [31:0] s_pixel_total_q;
-  logic [15:0] s_word_total_q;
+  logic [31:0] s_word_total_q;
   logic [31:0] s_drop_count_q;
   logic [ 5:0] s_err_flags_q;
   logic        s_out_valid_q;
   logic [41:0] s_out_data_q;
   logic        s_stat_pending_q;
   logic        s_first_word_q;
+  logic        s_snapshot_done_q;
+  logic        s_cfg_en_q;
 
   logic        s_vsync_active;
   logic        s_href_active;
@@ -99,10 +105,12 @@ module dvp_core (
                               (s_byte_swap ? {dat_i, s_first_byte_q} :
                                               {s_first_byte_q, dat_i});
 
-  assign cfg_ready_o = !s_stat_pending_q;
+  assign cfg_ready_o = !s_stat_pending_q && !s_frm_active_q;
   assign push_valid_o = s_out_valid_q;
   assign push_data_o = s_out_data_q;
   assign active_o = s_frm_active_q;
+  assign capture_idle_o = !s_frm_active_q && (!s_en || s_snapshot_done_q) &&
+                          !s_out_valid_q && !s_stat_pending_q && !frame_stats_valid_o;
 
   always_comb begin
     s_en          = cfg_i[96];
@@ -141,6 +149,9 @@ module dvp_core (
       s_out_data_q         <= '0;
       s_stat_pending_q     <= 1'b0;
       s_first_word_q       <= 1'b0;
+      s_snapshot_done_q    <= 1'b0;
+      s_cfg_en_q           <= 1'b0;
+      error_events_o       <= '0;
       frame_start_toggle_o <= 1'b0;
       line_done_toggle_o   <= 1'b0;
       frame_done_toggle_o  <= 1'b0;
@@ -148,6 +159,9 @@ module dvp_core (
       frame_stats_o        <= '0;
       frame_stats_valid_o  <= 1'b0;
     end else begin
+      // New errors below win over a simultaneous acknowledged W1C.
+      s_err_flags_q       <= s_err_flags_q & ~error_clear_i;
+      error_events_o      <= '0;
       s_vsync_q           <= s_vsync_active;
       s_href_q            <= s_href_active;
       frame_stats_valid_o <= 1'b0;
@@ -158,18 +172,31 @@ module dvp_core (
         frame_stats_valid_o <= 1'b1;
       end
 
-      if (cfg_valid_i && !s_frm_active_q) begin
-        if ((s_frm_width == 0) || (s_frm_height == 0) || (s_format > 2'd1) ||
-            (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0)))) begin
-          s_err_flags_q[`APB4_DVP__ERROR_CONFIG] <= 1'b1;
-          error_toggle_o                         <= ~error_toggle_o;
+      // A pre-ABORT config can retire after the abort pulse. It must not
+      // undo the stopped state or masquerade as a subsequent rearm.
+      if (cfg_valid_i && !cfg_cancel_i && !s_frm_active_q) begin
+        s_cfg_en_q <= s_en;
+        if (!s_en || !s_cfg_en_q) s_snapshot_done_q <= 1'b0;
+        if (s_en && ((s_frm_width == 0) || (s_frm_height == 0) || (s_format > 2'd1) ||
+            (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0))))) begin
+          s_err_flags_q[`APB4_DVP__ERROR_CONFIG]  <= 1'b1;
+          error_events_o[`APB4_DVP__ERROR_CONFIG] <= 1'b1;
+          error_toggle_o                          <= ~error_toggle_o;
         end
-        if (!s_en) s_frm_active_q <= 1'b0;
+        if (!s_en) begin
+          s_frm_active_q    <= 1'b0;
+          s_snapshot_done_q <= 1'b0;
+        end
       end
       if (cmd_i[`APB4_DVP__COMMAND_ABORT]) begin
-        s_frm_active_q                        <= 1'b0;
-        s_err_flags_q[`APB4_DVP__ERROR_ABORT] <= 1'b1;
-        error_toggle_o                        <= ~error_toggle_o;
+        s_frm_active_q                         <= 1'b0;
+        s_snapshot_done_q                      <= 1'b1;
+        s_out_valid_q                          <= 1'b0;
+        s_byte_phase_q                         <= 1'b0;
+        s_word_phase_q                         <= 1'b0;
+        s_err_flags_q[`APB4_DVP__ERROR_ABORT]  <= 1'b1;
+        error_events_o[`APB4_DVP__ERROR_ABORT] <= 1'b1;
+        error_toggle_o                         <= ~error_toggle_o;
       end
       if (cmd_i[`APB4_DVP__COMMAND_FLUSH]) begin
         s_out_valid_q  <= 1'b0;
@@ -177,8 +204,16 @@ module dvp_core (
         s_word_phase_q <= 1'b0;
       end
 
-      if (s_en && s_vsync_rise) begin
+      if (s_en && s_vsync_rise && !s_snapshot_done_q && !(|cmd_i)) begin
         if (s_frm_active_q) begin
+          if ((s_line_q != s_frm_height) ||
+              (s_pixel_total_q != (s_crop_en ?
+                  ((32'(s_crop_width)) * (32'(s_crop_height))) :
+                  ((32'(s_frm_width)) * (32'(s_frm_height)))))) begin
+            s_err_flags_q[`APB4_DVP__ERROR_SIZE]  <= 1'b1;
+            error_events_o[`APB4_DVP__ERROR_SIZE] <= 1'b1;
+            error_toggle_o                        <= ~error_toggle_o;
+          end
           frame_done_toggle_o <= ~frame_done_toggle_o;
           frame_stats_o <= {
             s_drop_count_q, s_word_total_q, s_pixel_total_q, s_line_q, s_frm_seq_q + 1'b1
@@ -186,7 +221,8 @@ module dvp_core (
           s_stat_pending_q <= 1'b1;
           s_frm_seq_q <= s_frm_seq_q + 1'b1;
           if (s_snap) begin
-            s_frm_active_q <= 1'b0;
+            s_frm_active_q    <= 1'b0;
+            s_snapshot_done_q <= 1'b1;
           end else begin
             s_line_q        <= '0;
             s_pixel_q       <= '0;
@@ -204,10 +240,24 @@ module dvp_core (
         end
       end
 
-      if (s_frm_active_q && s_href_active) begin
+      if (s_frm_active_q && s_href_active && s_vsync_active) begin
+        s_err_flags_q[`APB4_DVP__ERROR_SYNC]  <= 1'b1;
+        error_events_o[`APB4_DVP__ERROR_SYNC] <= 1'b1;
+        error_toggle_o                        <= ~error_toggle_o;
+      end
+
+      if (s_frm_active_q && s_href_active && !(|cmd_i)) begin
         if (!s_byte_phase_q) begin
           s_first_byte_q <= dat_i;
           s_byte_phase_q <= 1'b1;
+        end else if (s_pixel_q >= s_frm_width) begin
+          // Count source pixels, including those outside the crop. Stop at
+          // the first extra pixel, before the 16-bit column can wrap.
+          s_err_flags_q[`APB4_DVP__ERROR_SIZE]  <= 1'b1;
+          error_events_o[`APB4_DVP__ERROR_SIZE] <= 1'b1;
+          error_toggle_o                        <= ~error_toggle_o;
+          s_frm_active_q                        <= 1'b0;
+          s_byte_phase_q                        <= 1'b0;
         end else begin
           if (s_crop_line && s_crop_pixel) begin
             if (!s_word_phase_q) begin
@@ -222,10 +272,11 @@ module dvp_core (
               s_word_phase_q <= 1'b0;
               s_word_total_q <= s_word_total_q + 1'b1;
             end else begin
-              s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
-              s_drop_count_q                           <= s_drop_count_q + 1'b1;
-              error_toggle_o                           <= ~error_toggle_o;
-              s_frm_active_q                           <= 1'b0;
+              s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW]  <= 1'b1;
+              error_events_o[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
+              s_drop_count_q                            <= s_drop_count_q + 1'b1;
+              error_toggle_o                            <= ~error_toggle_o;
+              s_frm_active_q                            <= 1'b0;
             end
             s_pixel_total_q <= s_pixel_total_q + 1'b1;
           end
@@ -234,11 +285,24 @@ module dvp_core (
         end
       end
 
-      if (s_frm_active_q && s_href_fall) begin
+      if (s_frm_active_q && s_href_fall && !(|cmd_i)) begin
         line_done_toggle_o <= ~line_done_toggle_o;
         s_line_q           <= s_line_q + 1'b1;
         s_pixel_q          <= '0;
         s_byte_phase_q     <= 1'b0;
+        // Aggregate frame totals cannot detect compensating long/short rows.
+        if (s_pixel_q != s_frm_width) begin
+          s_err_flags_q[`APB4_DVP__ERROR_SIZE]  <= 1'b1;
+          error_events_o[`APB4_DVP__ERROR_SIZE] <= 1'b1;
+          error_toggle_o                        <= ~error_toggle_o;
+          s_frm_active_q                        <= 1'b0;
+        end
+        if (s_byte_phase_q) begin
+          s_err_flags_q[`APB4_DVP__ERROR_PARTIAL]  <= 1'b1;
+          error_events_o[`APB4_DVP__ERROR_PARTIAL] <= 1'b1;
+          error_toggle_o                           <= ~error_toggle_o;
+          s_frm_active_q                           <= 1'b0;
+        end
         if (s_word_phase_q && (!s_out_valid_q || push_ready_i)) begin
           s_out_data_q   <= {s_first_word_q, 1'b1, 4'b0011, 4'b0011, 16'd0, s_word_q[15:0]};
           s_out_valid_q  <= 1'b1;
@@ -246,14 +310,14 @@ module dvp_core (
           s_word_phase_q <= 1'b0;
           s_word_total_q <= s_word_total_q + 1'b1;
         end else if (s_word_phase_q) begin
-          s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
-          error_toggle_o                           <= ~error_toggle_o;
-          s_frm_active_q                           <= 1'b0;
+          s_err_flags_q[`APB4_DVP__ERROR_OVERFLOW]  <= 1'b1;
+          error_events_o[`APB4_DVP__ERROR_OVERFLOW] <= 1'b1;
+          error_toggle_o                            <= ~error_toggle_o;
+          s_frm_active_q                            <= 1'b0;
         end
       end
     end
   end
 
-  // SYNC, SIZE and PARTIAL are reserved until their capture paths are implemented.
-  assign error_flags_o = {s_err_flags_q[5:4], 3'b000, s_err_flags_q[0]};
+  assign error_flags_o = s_err_flags_q;
 endmodule

@@ -3,7 +3,7 @@
 /model/uart_model.sv
 /device_model/mic.sv
 /device_model/w25q128jvxim.sv
-/model/ESP_PSRAM64H.sv
+/device_model/ESP_PSRAM64H.sv
 /model/DVP_CAMERA.sv
 /third_party/model/sdram/sdr.v
 /tb/retrosoc_tb.sv

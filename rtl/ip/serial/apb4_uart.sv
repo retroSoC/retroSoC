@@ -13,6 +13,7 @@ module apb4_uart #(
     parameter int RxFifoDepth = 64
 ) (
     // verilog_format: off -- preserve reviewed column alignment
+    output logic lifecycle_idle_o,
     input  logic  clk_i,
     input  logic  rst_n_i,
     output logic  dma_tx_stall_o,
@@ -53,8 +54,10 @@ module apb4_uart #(
   logic        s_tx_flow_blocked;
   logic        s_cts_change;
 
-  assign uart.tx_o  = s_tx;
-  assign uart.irq_o = s_irq;
+  assign lifecycle_idle_o = !s_tx_busy && !s_rx_active && !s_tx_data_valid && !s_rx_en && !s_break;
+
+  assign uart.tx_o        = s_tx;
+  assign uart.irq_o       = s_irq;
 
   uart_reg #(
       .TxFifoDepth(TxFifoDepth),

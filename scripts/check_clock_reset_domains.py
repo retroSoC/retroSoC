@@ -16,6 +16,8 @@ CDC_PRIMITIVES = {
     "async_fifo",
     "async_reqack",
     "axi4_async_bridge",
+    "tiny_axi4_async_bridge",
+    "tiny_apb_async_bridge",
     "cdc_2phase",
     "cdc_fifo",
     "cdc_sync",
@@ -129,6 +131,22 @@ def validate(document_path: Path, root: Path) -> None:
     raw_crossings = document.get("crossings")
     if not isinstance(raw_crossings, list):
         raise ValueError("crossings must be a list")
+    generated = document.get("generated_apb_crossings")
+    if generated is not None:
+        if (document.get("clock_contract") != "TINY-R2-P7" or
+                generated.get("generator") != "scripts/generate_tiny.py" or
+                generated.get("primitive") != "tiny_apb_async_bridge" or
+                generated.get("source") != "system"):
+            raise ValueError("unrecognized generated APB crossing contract")
+        expected = {"aon": ["clint", "archinfo"], "memory": ["xpi"],
+                    "peripheral": ["gpio", "uart0", "timer0", "timer1", "i2c0", "dma",
+                    "pwm", "rtc", "wdg", "rng", "crc", "ws2812", "crypto", "i2s", "dvp",
+                    "spi"]}
+        if (generated.get("destinations") != expected or
+                generated.get("same_clock_isolation") != ["sdio"] or
+                generated.get("native_system") != ["sysctrl", "sram"] or
+                not set(expected).issubset(names)):
+            raise ValueError("P7 generated APB domain assignment mismatch")
     crossing_names: set[str] = set()
     for index, value in enumerate(raw_crossings):
         field = f"crossings[{index}]"

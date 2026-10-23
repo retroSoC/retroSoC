@@ -51,13 +51,12 @@ PDK_BEHAV         ?= NO
 HAVE_SVA          ?= NO
 APU_ENABLE_P7     ?= NO
 HAVE_HP           ?= $(if $(filter TINY,$(SOC)),NO,YES)
-HP_CONFIG         ?= rv64imafdc_zicbom_max
 BUILD_RELEASE     ?= NO
 JTAG_IDCODE       ?= DEADBEEF
 EXT_CLK_HZ        ?= 72000000
 AUD_CLK_HZ        ?= 18432000
 CLINT_TIMEBASE_HZ ?= 1000000
-MGMT_CPU_CLK_HZ   := $(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ))
+MGMT_CPU_CLK_HZ   := $(if $(filter TINY,$(SOC)),24000000,$(if $(filter PRODUCT,$(MINI_MODE)),24000000,$(EXT_CLK_HZ)))
 # Reset-state peripheral clock: the PCLK divider in the clock/reset subsystem
 # resets to passthrough on the LP root clock, so PCLK starts at the management
 # CPU frequency until software programs a different divider.
@@ -76,27 +75,41 @@ RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lo
 RTL_TOP ?= retrosoc_tb
 
 # SW
-ISA                  ?= RV32IM
-HAVE_CSR             ?= NO
-FIRMWARE_NAME        ?= retrosoc_fw
-APP                  ?= shell
-LINK_TYPE            ?= ld2_sram
-SW_ISA_PROFILE       ?= COMPAT
-SW_OPT               ?= APP
-SW_LTO               ?= NO
-WS2812_P3_ACCEPTANCE ?= NO
-COREMARK_MODE        ?= quick
-NPU_P5_ACCEPTANCE    ?= NO
-NPU_P6_ACCEPTANCE    ?= NO
-NPU_P6_WORKLOAD      ?= kws
-HP_PERF_MIN_RATIO    ?= 2.5
-HP_CROSS             ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
-LP_COREMARK_REPORT   ?=
-HP_COREMARK_REPORT   ?=
+ISA                    ?= RV32IM
+HAVE_CSR               ?= NO
+FIRMWARE_NAME          ?= retrosoc_fw
+APP                    ?= shell
+LINK_TYPE              ?= ld2_sram
+SW_ISA_PROFILE         ?= COMPAT
+SW_OPT                 ?= APP
+SW_LTO                 ?= NO
+WS2812_P3_ACCEPTANCE   ?= NO
+TINY_P7_ACCEPTANCE     ?= NO
+TINY_P8_ACCEPTANCE     ?= NO
+TINY_P9_ACCEPTANCE     ?= NO
+TINY_P9_QUICK          ?= NO
+TINY_P9_WORKLOAD       ?= QVGA_RGB565
+TINY_P10_ACCEPTANCE    ?= NO
+TINY_SPI_P3_ACCEPTANCE ?= NO
+TINY_SPI_P4_ACCEPTANCE ?= NO
+COREMARK_MODE          ?= quick
+NPU_P5_ACCEPTANCE      ?= NO
+# Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
+# for HP bring-up sessions, behavior-neutral when off. Debug runs are not
+# qualification evidence, so the knob deliberately stays out of the variant
+# key; rebuilds require touching the app source.
+HP_JTAG_DEBUG      ?= NO
+NPU_P6_ACCEPTANCE  ?= NO
+NPU_P6_WORKLOAD    ?= kws
+HP_PERF_MIN_RATIO  ?= 2.5
+HP_CROSS           ?= $(shell $(PYTHON) $(ROOT_PATH)/scripts/hp_tools.py --root $(ROOT_PATH))
+LP_COREMARK_REPORT ?=
+HP_COREMARK_REPORT ?=
 
 BUILD_ROOT         ?= $(ROOT_PATH)/build
 CACHE_ROOT         ?= $(ROOT_PATH)/.cache/retrosoc
 VEXIIRISCV_ROOT    ?= $(ROOT_PATH)/.cache/retrosoc/sources/vexiiriscv
+OPENC906_ROOT      ?= $(ROOT_PATH)/.cache/retrosoc/sources/openc906
 SBT                ?= sbt
 BUILD_TIMESTAMP    ?= $(shell date '+%Y-%m-%d-%H-%M')
 BUILD_TIMESTAMP    := $(BUILD_TIMESTAMP)
@@ -117,7 +130,7 @@ JOBS               ?= $(shell count=$$(nproc 2>/dev/null || printf '1'); \
 else printf '%s' "$$count"; fi)
 LOCAL_RTL_FILES    ?=
 CONFIG_KEY_VARS    := SOC MINI_MODE PDK HAVE_PLL HAVE_SRAM_IF HAVE_SRAM_MACRO SRAM_SIZE_KIB PDK_BEHAV HAVE_SVA APU_ENABLE_P7 \
-                   HAVE_HP HP_CONFIG BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
+                   HAVE_HP BUILD_RELEASE JTAG_IDCODE EXT_CLK_HZ AUD_CLK_HZ CLINT_TIMEBASE_HZ MGMT_CPU_CLK_HZ \
                    ISA HAVE_CSR APP LINK_TYPE COREMARK_MODE RTL_TOP FIRMWARE_NAME
 CONFIG_KEY_VARS    += NPU_P5_ACCEPTANCE NPU_P6_ACCEPTANCE NPU_P6_WORKLOAD
 # Preserve existing baseline keys; experimental software inputs have distinct variants.
@@ -126,6 +139,30 @@ CONFIG_KEY_VARS += SW_ISA_PROFILE SW_OPT SW_LTO
 endif
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += WS2812_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_P7_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P7_ACCEPTANCE
+endif
+ifeq ($(TINY_P8_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P8_ACCEPTANCE
+endif
+ifeq ($(TINY_P9_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P9_ACCEPTANCE
+ifneq ($(TINY_P9_WORKLOAD),QVGA_RGB565)
+CONFIG_KEY_VARS += TINY_P9_WORKLOAD
+endif
+endif
+ifeq ($(TINY_P9_QUICK),YES)
+CONFIG_KEY_VARS += TINY_P9_QUICK
+endif
+ifeq ($(TINY_P10_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_P10_ACCEPTANCE
+endif
+ifeq ($(TINY_SPI_P3_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_SPI_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_SPI_P4_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -142,8 +179,8 @@ SW_BUILD_DIR            := $(VARIANT_ROOT)/sw
 SIM_TOOL_NAME           := $(shell printf '%s' '$(SIMU)' | tr '[:upper:]' '[:lower:]')
 SIM_BUILD_ROOT          := $(VARIANT_ROOT)/sim/$(SIM_TOOL_NAME)
 META_DIR                := $(VARIANT_ROOT)/meta
-HP_GENERATED_DIR        := $(VARIANT_ROOT)/generated/vexiiriscv
-HP_GENERATED_RTL        := $(HP_GENERATED_DIR)/vexii_riscv_hp_generated.v
+HP_GENERATED_DIR        := $(VARIANT_ROOT)/generated/openc906
+HP_GENERATED_FL         := $(HP_GENERATED_DIR)/openc906.fl
 HP_GENERATED_MANIFEST   := $(HP_GENERATED_DIR)/manifest.json
 HP_GENERATED_STAMP      := $(HP_GENERATED_DIR)/.stamp
 APU_P5_DIR              := $(VARIANT_ROOT)/apu/p5
@@ -243,7 +280,6 @@ VALID_SYNTH_RECIPE  := balanced area speed
 VALID_STA           := NONE OPENSTA
 VALID_PDK           := ICS55 IHP130 SKY130 GF180
 VALID_BOOL          := YES NO
-VALID_HP_CONFIG     := rv64imafdc_zicbom_max
 VALID_ISA           := RV32E RV32I RV32IM
 VALID_APP           := benchmark bringup ci_smoke coremark debug hp_boot shell xpi_flash_loader apu_release
 VALID_LINK_TYPE     := xip jtag_sram ld2_all_sram ld2_sram ld2_psram ld2_sdram ld2_tiny_banked
@@ -269,7 +305,6 @@ $(call validate_value,PDK_BEHAV,$(VALID_BOOL))
 $(call validate_value,HAVE_SVA,$(VALID_BOOL))
 $(call validate_value,APU_ENABLE_P7,$(VALID_BOOL))
 $(call validate_value,HAVE_HP,$(VALID_BOOL))
-$(call validate_value,HP_CONFIG,$(VALID_HP_CONFIG))
 $(call validate_value,BUILD_RELEASE,$(VALID_BOOL))
 $(call validate_value,WAVE,$(VALID_BOOL))
 $(call validate_value,FORMAL,$(VALID_BOOL))
@@ -281,12 +316,61 @@ $(call validate_value,APP,$(VALID_APP))
 $(call validate_value,LINK_TYPE,$(VALID_LINK_TYPE))
 $(call validate_value,COREMARK_MODE,$(VALID_COREMARK_MODE))
 $(call validate_value,NPU_P5_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,HP_JTAG_DEBUG,$(VALID_BOOL))
 $(call validate_value,NPU_P6_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,NPU_P6_WORKLOAD,kws vww)
 $(call validate_value,SW_ISA_PROFILE,COMPAT TINY_PERF)
 $(call validate_value,SW_OPT,APP O2 O3 Os)
 $(call validate_value,SW_LTO,$(VALID_BOOL))
 $(call validate_value,WS2812_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P7_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P8_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P9_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_P9_QUICK,$(VALID_BOOL))
+$(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(TINY_P10_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),TINY/ci_smoke/YES/NO/NO/NO/NO)
+$(error TINY_P10_ACCEPTANCE requires Tiny ci_smoke with CSR and no P7/P8/P9 acceptance image)
+endif
+endif
+ifeq ($(TINY_SPI_P3_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO)
+$(error TINY_SPI_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO)
+$(error TINY_SPI_P4_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+$(call validate_value,TINY_P9_WORKLOAD,QVGA_RGB565 VGA_YUV422 RECOVERY)
+ifneq ($(TINY_P9_WORKLOAD),QVGA_RGB565)
+ifneq ($(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),YES/NO)
+$(error Selected P9 workload requires TINY_P9_ACCEPTANCE=YES TINY_P9_QUICK=NO)
+endif
+endif
+ifeq ($(TINY_P8_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE),TINY/ci_smoke/YES/NO)
+$(error TINY_P8_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES TINY_P7_ACCEPTANCE=NO)
+endif
+endif
+ifeq ($(TINY_P9_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO)
+$(error TINY_P9_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES and no P7/P8 acceptance image)
+endif
+endif
+ifeq ($(TINY_P9_QUICK),YES)
+ifneq ($(TINY_P9_ACCEPTANCE),YES)
+$(error TINY_P9_QUICK requires TINY_P9_ACCEPTANCE=YES)
+endif
+endif
+ifeq ($(TINY_P7_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR),TINY/ci_smoke/YES)
+$(error TINY_P7_ACCEPTANCE requires SOC=TINY APP=ci_smoke HAVE_CSR=YES)
+endif
+endif
 ifeq ($(WS2812_P3_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR),MINI/ci_smoke/YES)
 $(error WS2812_P3_ACCEPTANCE requires SOC=MINI APP=ci_smoke HAVE_CSR=YES)
@@ -383,7 +467,7 @@ endif
 
 ifeq ($(STA),OPENSTA)
 ifeq ($(HAVE_PLL),YES)
-ifneq ($(SOC)/$(PDK)/$(TINY_SAFE24_PLL_OFF),TINY/ICS55/YES)
+ifneq ($(SOC)/$(PDK)/$(TINY_R2_P7),TINY/ICS55/YES)
 $(error STA=OPENSTA requires a qualified PDK PLL timing profile; HAVE_PLL=YES is unsupported)
 endif
 endif
@@ -420,6 +504,8 @@ endif
 
 ifeq ($(HAVE_SVA), NO)
     DEF_LIST += +define+SV_ASSRT_DISABLE
+else ifeq ($(SOC),TINY)
+    DEF_LIST += +define+HAVE_SVA
 endif
 
 ifeq ($(HAVE_HP), YES)
@@ -472,6 +558,28 @@ include physical/librelane/mini/Makefile
 endif
 include physical/ecc/Makefile
 
+.PHONY: spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report
+spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p1.py $(patsubst spi-p1-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS) \
+	  $(if $(SPI_P1_COMMON_ROOT),--common-variant-root $(SPI_P1_COMMON_ROOT),) \
+	  $(if $(filter spi-p1-formal,$@),$(if $(SPI_P1_FORMAL_REUSE_ROOT),--formal-reuse-root $(SPI_P1_FORMAL_REUSE_ROOT),),)
+
+.PHONY: spi-p2-lint spi-p2-rtl spi-p2-report
+spi-p2-lint spi-p2-rtl spi-p2-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p2.py $(patsubst spi-p2-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
+.PHONY: spi-p3-lint spi-p3-rtl spi-p3-report
+spi-p3-lint spi-p3-rtl spi-p3-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p3.py $(patsubst spi-p3-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
+.PHONY: spi-p4-lint spi-p4-rtl spi-p4-report
+spi-p4-lint spi-p4-rtl spi-p4-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p4.py $(patsubst spi-p4-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
 .PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report
 crypto-p0-constants: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/crypto_p0.py constants --variant-root $(VARIANT_ROOT)
@@ -522,7 +630,7 @@ crypto-p2-report: manifest
 	  --netlist-root $(CRYPTO_P2_NETLIST_ROOT) --sta-root $(CRYPTO_P2_STA_ROOT) \
 	  --physical-root $(CRYPTO_P2_PHYSICAL_ROOT)
 
-.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
+.PHONY: help config doctor setup setup-regression setup-mpw setup-vexiiriscv setup-openc906 setup-clusterip setup-ip setup-pdk setup-app setup-apu-reference setup-apu-kws-reference apu-p5-bundle apu-p5-corpus apu-p7-model apu-p9-coefficients apu-p9-evidence apu-p9-memory-ab setup-hp-linux hp-linux hp-bundle hp-linux-sim hp-smoke-bundle hp-smoke-sim hp-apu-bundle hp-apu-sim \
 	clean-all purge-cache manifest check-warnings metrics check-metrics package commercial-package \
 	regress-smoke regress-rtl regress-pr regress-nightly sim-asm format format-check sw-format sw-format-check mk-format \
 	mk-format-check rtl-format rtl-format-check rtl-style-check rtl-migrate-connections rtl-migrate-names sw-policy-check sw-host-test \
@@ -532,7 +640,7 @@ crypto-p2-report: manifest
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
-	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all vexii-generate
+	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate
 .NOTPARALLEL: setup
 
 help:
@@ -578,7 +686,7 @@ help:
 	  '  npu-p5-host                run compiler, generated-C, executor, and ABI tests' \
 	  '  npu-p5-rtl                 run frozen model inputs through Icarus and Verilator' \
 	  '  npu-p5-lp-sim              run LP interrupt bare-metal NPU acceptance' \
-	  '  npu-p5-hp-sim              run HP polling/Zicbom bare-metal NPU acceptance' \
+	  '  npu-p5-hp-sim              run HP polling/XTheadCmo bare-metal NPU acceptance' \
 	  '  npu-p5-report              validate and assemble retained P5 evidence' \
 	  '  npu-p6-corpus              build deterministic 100-case qualification shards' \
 	  '  npu-p6-formal              close DMA, context, and control bounded proofs' \
@@ -607,7 +715,8 @@ help:
 	  '  soc-topology               generate the selected internal SoC integration artifacts' \
 	  '  check-soc-topology         validate the canonical internal SoC integration map' \
 	  '  user-extensions            generate the selected scalar user-extension bindings' \
-	  '  vexii-generate             generate the locked HP VexiiRiscv RTL below build/' \
+	  '  openc906-prepare           emit the locked HP OpenC906 filelist below build/' \
+	  '  std-vexii-generate         generate the Std-series VexiiRiscv RTL below build/ (Std asset)' \
 	  '  check-user-extensions      validate the canonical user-extension map' \
 	  '  check-clock-reset-domains  validate the root clock/reset and CDC inventory' \
 	  '  rtl-lint | check-rtl-lint  run/check strict Verilator RTL lint warnings' \
@@ -655,7 +764,7 @@ config:
 	  HAVE_PLL '$(HAVE_PLL)' HAVE_SRAM_IF '$(HAVE_SRAM_IF)' \
 	  HAVE_SRAM_MACRO '$(HAVE_SRAM_MACRO)' SRAM_SIZE_KIB '$(SRAM_SIZE_KIB)' \
 	  PDK_BEHAV '$(PDK_BEHAV)' HAVE_SVA '$(HAVE_SVA)' APU_ENABLE_P7 '$(APU_ENABLE_P7)' \
-	  HAVE_HP '$(HAVE_HP)' HP_CONFIG '$(HP_CONFIG)' BUILD_RELEASE '$(BUILD_RELEASE)' \
+	  HAVE_HP '$(HAVE_HP)' BUILD_RELEASE '$(BUILD_RELEASE)' \
 	  JTAG_IDCODE '$(JTAG_IDCODE)' EXT_CLK_HZ '$(EXT_CLK_HZ)' AUD_CLK_HZ '$(AUD_CLK_HZ)' \
 	  CLINT_TIMEBASE_HZ '$(CLINT_TIMEBASE_HZ)' MGMT_CPU_CLK_HZ '$(MGMT_CPU_CLK_HZ)' \
 	  ISA '$(ISA)' HAVE_CSR '$(HAVE_CSR)' APP '$(APP)' \
@@ -691,7 +800,7 @@ setup: setup-tiny
 setup-tiny:
 	python3 $(ROOT_PATH)/scripts/setup_tiny.py --pdk $(PDK)
 else
-setup: setup-mpw setup-vexiiriscv setup-clusterip setup-ip setup-pdk setup-app
+setup: setup-mpw setup-openc906 setup-clusterip setup-ip setup-pdk setup-app
 endif
 
 setup-regression:
@@ -709,6 +818,9 @@ setup-mpw:
 
 setup-vexiiriscv:
 	python3 $(ROOT_PATH)/scripts/setup_vexiiriscv.py
+
+setup-openc906:
+	python3 $(ROOT_PATH)/scripts/setup_openc906.py
 
 setup-clusterip:
 	python3 $(ROOT_PATH)/rtl/managed/clusterip/setup.py
@@ -1102,18 +1214,39 @@ npu-p5-lp-sim: firmware sim
 		--require 'NPU_P5_LP model=kws' --require 'SIM_TEST_PASS code=0'
 
 ifeq ($(HAVE_HP),YES)
-$(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_vexiiriscv.py \
-	$(ROOT_PATH)/scripts/vexiiriscv/GenerateRetroSocHp.scala $(LOCK_FILE)
-	python3 $(ROOT_PATH)/scripts/generate_vexiiriscv.py \
-		--root $(ROOT_PATH) --source $(VEXIIRISCV_ROOT) --output $(HP_GENERATED_DIR) \
-		--manifest $(HP_GENERATED_MANIFEST) --lock $(LOCK_FILE) --sbt $(SBT)
+$(HP_GENERATED_STAMP): $(ROOT_PATH)/scripts/generate_openc906.py \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_sysio_kid.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_biu_write_channel.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/sysmap.h \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_1024x16.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_2048x32.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_256x59.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_1024x64.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_128x8.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x58.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x88.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/aq_spsram_64x98.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/gated_clk_cell.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/tdt_gated_clk_cell.v \
+	$(ROOT_PATH)/rtl/mini/ip_overrides/BUFGCE.v $(LOCK_FILE)
+	python3 $(ROOT_PATH)/scripts/generate_openc906.py \
+		--root $(ROOT_PATH) --source $(OPENC906_ROOT) --output $(HP_GENERATED_DIR) \
+		--manifest $(HP_GENERATED_MANIFEST) --lock $(LOCK_FILE)
 	@touch $@
 
-vexii-generate: $(HP_GENERATED_STAMP)
+openc906-prepare: $(HP_GENERATED_STAMP)
 else
-vexii-generate:
-	@printf '%s\n' 'HAVE_HP=NO; no VexiiRiscv RTL is required'
+openc906-prepare:
+	@printf '%s\n' 'HAVE_HP=NO; no OpenC906 RTL is required'
 endif
+
+# Std-series asset: the VexiiRiscv generator no longer participates in the
+# Mini build; it is preserved here for the future Std performance core.
+STD_VEXII_DIR := $(VARIANT_ROOT)/generated/vexiiriscv
+std-vexii-generate:
+	python3 $(ROOT_PATH)/scripts/generate_vexiiriscv.py \
+		--root $(ROOT_PATH) --source $(VEXIIRISCV_ROOT) --output $(STD_VEXII_DIR) \
+		--manifest $(STD_VEXII_DIR)/manifest.json --lock $(LOCK_FILE) --sbt $(SBT)
 
 clean-all:
 	python3 $(ROOT_PATH)/scripts/clean.py --root $(ROOT_PATH) --path $(abspath $(BUILD_ROOT))
