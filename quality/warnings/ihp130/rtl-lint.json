@@ -76,6 +76,11 @@
       "signature": "038169101e64ed24"
     },
     {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_penable_flop'",
+      "signature": "0391eab9e74f6869"
+    },
+    {
       "count": 7,
       "example": "PINMISSING:$ROOT/rtl/tech/tc_io.sv:<line>: Instance has missing pin: 'iovdd'",
       "signature": "03a1cd14ac4187b7"
@@ -267,8 +272,18 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/rtl/mini/dv/verilator/rtl/retrosoc_top.sv:<line>: Signal is not used: 's_uart1_tx'",
+      "signature": "09158a1e7468c46f"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_XNOR'",
       "signature": "0973116d3d4b3b32"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Signal is not used: 'A_RW_ACCESS'",
+      "signature": "0a1beedabc4f9343"
     },
     {
       "count": 1,
@@ -409,6 +424,11 @@
       "count": 1,
       "example": "STMTDLY:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_1024x32_c2_bm_bist.v:<line>: Ignoring delay on this statement due to --no-timing",
       "signature": "0d5f78e2f1441349"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_pwrite_flop'",
+      "signature": "0d7309c9da1d718e"
     },
     {
       "count": 1,
@@ -582,6 +602,11 @@
     },
     {
       "count": 1,
+      "example": "PINCONNECTEMPTY:$ROOT/rtl/ip/core/mgmt_core_wrapper.sv:<line>: Instance pin connected by name with empty reference: 'reset_pending_o'",
+      "signature": "14ca616e7bd4aba9"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/security/crypto_montgomery_sram.sv:<line>: Bits of signal are not used: 'resp_i'[52:42,9:0]",
       "signature": "14ede1edabcd1b89"
     },
@@ -712,6 +737,11 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_penable_flop'",
+      "signature": "190cfdd1fd30c02b"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'vpu_group_0_xx_ex3_eu_sel'[9:1]",
       "signature": "193d3aa1ff82a9e9"
     },
@@ -749,6 +779,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'ex1_norm_src0'[63:32]",
       "signature": "19a0d8957641daba"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Signal is not used: 'A_W_ACCESS'",
+      "signature": "19ed3d0115490b66"
     },
     {
       "count": 1,
@@ -1066,6 +1101,11 @@
       "signature": "26395b6936321f95"
     },
     {
+      "count": 2,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'clock_hz_i'",
+      "signature": "26421a3f788c14b7"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'single1_denorm_shift_num'",
       "signature": "266a2f87b4e99cb8"
@@ -1094,6 +1134,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'pmpaddr11_value'[0]",
       "signature": "272833bf278ca960"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDPARAM:$ROOT/rtl/ip/peripheral/dma_reg.sv:<line>: Parameter is not used: 'SupportedRequests'",
+      "signature": "279174e2e7a03491"
     },
     {
       "count": 1,
@@ -1139,6 +1184,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/multimedia/npu_job_decoder.sv:<line>: Bits of signal are not used: 's_w14'[15:0]",
       "signature": "29050cce6d09b07c"
+    },
+    {
+      "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Signal is not driven, nor used: 'notifier'",
+      "signature": "29266b8b3bdb3bc1"
     },
     {
       "count": 1,
@@ -1657,6 +1707,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'user_select_o'",
+      "signature": "3b24b1cf3657d0d2"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'bound1_cmp_result'[6:0]",
       "signature": "3b3b1ee6bf6fc0fc"
     },
@@ -1694,11 +1749,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMEVENT4'",
       "signature": "3c7e39bdb12c336a"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'WEN'[30:24,22:16,14:8,6:0]",
-      "signature": "3c8d430e4e87bee9"
     },
     {
       "count": 1,
@@ -2032,6 +2082,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'open_drain_o'",
+      "signature": "485c14f066e9a425"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'vpu_group_2_xx_ex4_rm'",
       "signature": "488ad278c100b0d6"
     },
@@ -2229,6 +2284,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MEDELEG'",
       "signature": "4fcb995a51d1180a"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'output_enable_o'",
+      "signature": "4fd8909e700f5584"
     },
     {
       "count": 1,
@@ -2632,6 +2692,11 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_pprot_flop'",
+      "signature": "5ca5dc39ff6d2e32"
+    },
+    {
+      "count": 1,
       "example": "SPECIFYIGN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_4096x16_c3_bm_bist.v:<line>: Ignoring unsupported: specify block construct",
       "signature": "5d1973d4e31c5a59"
     },
@@ -2664,11 +2729,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'SHPMCNT26'",
       "signature": "5d7496c960645df4"
-    },
-    {
-      "count": 2,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'clk_en_bf_latch'",
-      "signature": "5d8287c7de07ba6e"
     },
     {
       "count": 1,
@@ -2932,6 +2992,11 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_top_0.x_aq_core.x_aq_idu_top.x_aq_idu_id_dp.ex1_int_inst_data'",
+      "signature": "664a734f8063c58d"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'idu_vidu_ex1_vec_gateclk_sel'",
       "signature": "666bbdbf4d10699f"
     },
@@ -3007,6 +3072,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_system.sv:<line>: Instance has missing pin: 'pclk_hz_i'",
+      "signature": "68d82e839e0d559a"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'EXCEPT_LOAD_ALIGN'",
       "signature": "68e41749beb432ef"
     },
@@ -3019,6 +3089,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_SEXT_H'",
       "signature": "6948290459384437"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'alt_select_o'",
+      "signature": "694fa82ef16d33a7"
     },
     {
       "count": 1,
@@ -3417,6 +3492,11 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_psel_flop'",
+      "signature": "7b3418aeca8d11a3"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'int_sec_infor'[0]",
       "signature": "7b5f7be4c22e80c4"
     },
@@ -3459,6 +3539,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'dt_trig_en'",
       "signature": "7caa31e03bebfd2b"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_psel_flop'",
+      "signature": "7cbdbb2a92a9cb89"
     },
     {
       "count": 1,
@@ -3617,6 +3702,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'spi_error_o'",
+      "signature": "8439cfa62c0104aa"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'pred_btb_cur_pc'[39:16]",
       "signature": "843c3175a89af6b9"
     },
@@ -3717,6 +3807,11 @@
     },
     {
       "count": 1,
+      "example": "STMTDLY:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Ignoring delay on this statement due to --no-timing",
+      "signature": "86ba415accf5a4c7"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_BINV'",
       "signature": "86dee1ac98e2b32f"
     },
@@ -3809,6 +3904,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_config.vh:<line>: Parameter is not used: 'EXTENSION_ZBA'",
       "signature": "8a3798b1b9139660"
+    },
+    {
+      "count": 2,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'lifecycle_reset_ready_o'",
+      "signature": "8a5e072b3532ce7c"
     },
     {
       "count": 1,
@@ -3962,6 +4062,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'user_handoff_o'",
+      "signature": "8e9f0cf1bd237113"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'ex2_l8_0_result'",
       "signature": "8ec59943261a5af1"
     },
@@ -3999,11 +4104,6 @@
       "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'MTIMECMPH1'",
       "signature": "91491bf14cea49f3"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'WEN'[86:44,42:0]",
-      "signature": "919845240f1fe8ce"
     },
     {
       "count": 1,
@@ -4149,6 +4249,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'PMPCFG3'",
       "signature": "95ca581541c3c170"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'spi_start_pending_o'",
+      "signature": "95ea304db236b814"
     },
     {
       "count": 1,
@@ -4324,6 +4429,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'BHALF_WIDTH'",
       "signature": "9a9fb324e68ff84a"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'spi_credit_valid_o'",
+      "signature": "9ad8b0e233960f7b"
     },
     {
       "count": 1,
@@ -4576,6 +4686,11 @@
       "signature": "a3a2cef6f858e478"
     },
     {
+      "count": 14,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'lifecycle_idle_o'",
+      "signature": "a3ce05d657f2df18"
+    },
+    {
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'vpu_group_2_xx_ex4_sel'",
       "signature": "a3e311bfa69d69e1"
@@ -4611,9 +4726,9 @@
       "signature": "a53f80e0303404df"
     },
     {
-      "count": 2,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'SE'",
-      "signature": "a54c066cd6d106b8"
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'alt_enable_o'",
+      "signature": "a5595ccfcecff9ac"
     },
     {
       "count": 1,
@@ -4774,6 +4889,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'vpu_group_3_xx_ex4_func'",
       "signature": "aa8f8f054d51eea8"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_top_0.x_aq_core.x_aq_idu_top.x_aq_idu_id_dp.ex1_vec_inst_data'",
+      "signature": "ab2ae27ac53bd7fa"
     },
     {
       "count": 1,
@@ -5227,8 +5347,18 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_psec_flop'",
+      "signature": "bc72555e5616802f"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_ops.vh:<line>: Parameter is not used: 'ALUOP_MAXU'",
       "signature": "bcc80c4cfe4e47c7"
+    },
+    {
+      "count": 3,
+      "example": "WIDTHTRUNC:$ROOT/rtl/ip/peripheral/dma_axi4_master.sv:<line>: Operator ASSIGNW expects 1 bits on the Assign RHS, but Assign RHS's COND generates 4 bits.",
+      "signature": "bcd83e0042c7360e"
     },
     {
       "count": 1,
@@ -5461,6 +5591,11 @@
       "signature": "c54331448f63ac73"
     },
     {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_pwdata_flop'",
+      "signature": "c543e6757a8d6839"
+    },
+    {
       "count": 2,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'cp0_dtu_satp'[63:60,43:0]",
       "signature": "c570446551c8df7e"
@@ -5552,13 +5687,18 @@
     },
     {
       "count": 1,
+      "example": "UNDRIVEN:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v:<line>: Signal is not driven: 'notifier'",
+      "signature": "c86d9cad649b2f89"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'PADDR'",
       "signature": "c870722fcf77f49c"
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'WEN'[96,94:48,46:0]",
-      "signature": "c88ca90242161764"
+      "example": "BLKSEQ:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_udp.v:<line>: Blocking assignment '=' in sequential logic process",
+      "signature": "c88318f3b48b1033"
     },
     {
       "count": 1,
@@ -5584,6 +5724,11 @@
       "count": 3,
       "example": "WIDTHTRUNC:$ROOT/rtl/ip/multimedia/npu_scheduler.sv:<line>: Operator ASSIGNDLY expects 13 bits on the Assign RHS, but Assign RHS's ADD generates 17 bits.",
       "signature": "c98fe2a7d6e66623"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'spi_credit_retire_o'",
+      "signature": "c9ccbe8efe951095"
     },
     {
       "count": 1,
@@ -5647,6 +5792,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Signal is not used: 'A_BIST_RW_ACCESS'",
+      "signature": "cba38c1a1e5fb446"
+    },
+    {
+      "count": 1,
       "example": "WIDTHTRUNC:$ROOT/rtl/ip/multimedia/npu_scheduler.sv:<line>: Operator ASSIGNDLY expects 13 bits on the Assign RHS, but Assign RHS's COND generates 16 bits.",
       "signature": "cbc9e987be4f0593"
     },
@@ -5699,6 +5849,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MSTATUSH'",
       "signature": "cd85a79d76923750"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_paddr_flop'",
+      "signature": "cdb182eee05330fc"
     },
     {
       "count": 1,
@@ -5814,11 +5969,6 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$ROOT/rtl/managed/clusterip/common/rtl/interface/axi4_if.sv:<line>: Signal is not used: 'buser'",
       "signature": "d2e40b3430f973f6"
-    },
-    {
-      "count": 1,
-      "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'WEN'[56:29,27:0]",
-      "signature": "d2f309c24778c526"
     },
     {
       "count": 1,
@@ -5977,11 +6127,6 @@
     },
     {
       "count": 1,
-      "example": "UNUSEDSIGNAL:$ROOT/rtl/ip/multimedia/dvp_core.sv:<line>: Bits of signal are not used: 's_err_flags_q'[3:1]",
-      "signature": "da1045467462ab5c"
-    },
-    {
-      "count": 1,
       "example": "PINCONNECTEMPTY:$BUILD/generated/pin_map/rtl/retrosoc_asic_verilator_bindings.svh:<line>: Instance pin connected by name with empty reference: 'gpio_6_io_pad'",
       "signature": "da214ececa878a17"
     },
@@ -6052,6 +6197,11 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'entry_data'",
+      "signature": "dcdf329231df9c98"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'MHPMCNT16'",
       "signature": "dd09b5f46fd921d4"
     },
@@ -6114,6 +6264,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'aarpostexec_zero'",
       "signature": "df1140cd3b4a4daa"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_pwdata_flop'",
+      "signature": "df12612a54f4e1f3"
     },
     {
       "count": 1,
@@ -6252,11 +6407,6 @@
     },
     {
       "count": 1,
-      "example": "SYNCASYNCNET:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal flopped as both synchronous and async: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_mp_clk_top.apb_clk_en_f'",
-      "signature": "e46b9b8c91c01d42"
-    },
-    {
-      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'MHPMCOUNTER14'",
       "signature": "e4c6db149262b5eb"
     },
@@ -6307,8 +6457,18 @@
     },
     {
       "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_pprot_flop'",
+      "signature": "e69f472f177ade54"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal is not used: 'pred_bht_pc'",
       "signature": "e6e31c96d4796743"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_plic_kid_busif.x_prio_1tox_matrix.mst_paddr_flop'",
+      "signature": "e6e85c4f2ddc5f0d"
     },
     {
       "count": 1,
@@ -6477,6 +6637,11 @@
     },
     {
       "count": 1,
+      "example": "UNUSEDSIGNAL:$ROOT/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_64x64_c2_bm_bist.v:<line>: Signal is not used: 'A_BIST_W_ACCESS'",
+      "signature": "eb38e627e00feeee"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'OFFSET_DATA3'",
       "signature": "eb43ec433e99bb4f"
     },
@@ -6617,6 +6782,11 @@
     },
     {
       "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/ip/core/mgmt_core_wrapper.sv:<line>: Instance has missing pin: 'system_rst_n_i'",
+      "signature": "ee8d688d44be1d44"
+    },
+    {
+      "count": 1,
       "example": "UNUSEDPARAM:$ROOT/rtl/managed/hazard3/hdl/hazard3_csr_addr.vh:<line>: Parameter is not used: 'TCONTROL'",
       "signature": "eee1f40880b0c327"
     },
@@ -6674,6 +6844,11 @@
       "count": 1,
       "example": "UNUSEDSIGNAL:$BUILD/generated/openc906/openc906_combined.v:<line>: Bits of signal are not used: 'ex2_double_sub_inc1_r'[56,1:0]",
       "signature": "f0cc32df993afcbb"
+    },
+    {
+      "count": 1,
+      "example": "MULTIDRIVEN:$BUILD/generated/openc906/openc906_combined.v:<line>: Signal has multiple driving blocks with different clocking: 'retrosoc_top.u_retrosoc_asic.u_retrosoc.u_hp_subsystem.u_hp_core_wrapper.u_openc906.x_aq_plic_top.x_csky_apb_1tox_matrix.mst_pwrite_flop'",
+      "signature": "f0f8486d61577a7d"
     },
     {
       "count": 1,
@@ -6849,6 +7024,11 @@
       "count": 1,
       "example": "UNUSEDPARAM:$BUILD/generated/openc906/openc906_combined.v:<line>: Parameter is not used: 'SHPMCNT27'",
       "signature": "f7999f4f222ec2db"
+    },
+    {
+      "count": 1,
+      "example": "PINMISSING:$ROOT/rtl/mini/top/apb4_periph.sv:<line>: Instance has missing pin: 'spi_status_o'",
+      "signature": "f826e5190f4dc295"
     },
     {
       "count": 3,
