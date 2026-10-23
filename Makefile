@@ -92,6 +92,7 @@ TINY_P9_QUICK          ?= NO
 TINY_P9_WORKLOAD       ?= QVGA_RGB565
 TINY_P10_ACCEPTANCE    ?= NO
 TINY_SPI_P3_ACCEPTANCE ?= NO
+TINY_SPI_P4_ACCEPTANCE ?= NO
 COREMARK_MODE          ?= quick
 NPU_P5_ACCEPTANCE      ?= NO
 NPU_P6_ACCEPTANCE      ?= NO
@@ -154,6 +155,9 @@ CONFIG_KEY_VARS += TINY_P10_ACCEPTANCE
 endif
 ifeq ($(TINY_SPI_P3_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_SPI_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_SPI_P4_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -321,14 +325,20 @@ $(call validate_value,TINY_P9_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_P9_QUICK,$(VALID_BOOL))
 $(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
 ifeq ($(TINY_P10_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),TINY/ci_smoke/YES/NO/NO/NO/NO)
 $(error TINY_P10_ACCEPTANCE requires Tiny ci_smoke with CSR and no P7/P8/P9 acceptance image)
 endif
 endif
 ifeq ($(TINY_SPI_P3_ACCEPTANCE),YES)
-ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO)
-$(error TINY_SPI_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no R2 acceptance image)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO)
+$(error TINY_SPI_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO)
+$(error TINY_SPI_P4_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
 endif
 endif
 $(call validate_value,TINY_P9_WORKLOAD,QVGA_RGB565 VGA_YUV422 RECOVERY)
@@ -559,6 +569,11 @@ spi-p2-lint spi-p2-rtl spi-p2-report: manifest
 .PHONY: spi-p3-lint spi-p3-rtl spi-p3-report
 spi-p3-lint spi-p3-rtl spi-p3-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/spi_p3.py $(patsubst spi-p3-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
+.PHONY: spi-p4-lint spi-p4-rtl spi-p4-report
+spi-p4-lint spi-p4-rtl spi-p4-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/spi_p4.py $(patsubst spi-p4-%,%,$@) \
 	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
 
 .PHONY: crypto-p0-constants crypto-p0-rtl crypto-p0-baseline crypto-p0-report

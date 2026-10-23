@@ -56,6 +56,7 @@ TEST_SOURCES = (
     "rtl/managed/clusterip/rtc/sw/src/rtc.c",
     "app/media/src/video_player.c",
     "app/media/src/wav_audio.c",
+    "app/board/src/st7789vi_math.c",
     "app/benchmark/npu/npu_p6_reference.c",
     "tests/c/test_runtime.c",
 )
@@ -140,6 +141,8 @@ def main() -> int:
             str(root / "crt/include"),
             "-I",
             str(root / "app/media/include"),
+            "-I",
+            str(root / "app/board/include"),
             "-I",
             str(root / "app/benchmark/npu"),
             "-o",

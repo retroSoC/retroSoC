@@ -27,6 +27,7 @@
 #include <retrosoc/hal/npu.h>
 #include <retrosoc/hal/psram.h>
 #include <retrosoc/hal/xpi_psram.h>
+#include <retrosoc/board/st7789vi.h>
 #include <retrosoc/hal/resource.h>
 #include <retrosoc/hal/sdram.h>
 #include <retrosoc/hal/sdio.h>
@@ -1297,6 +1298,52 @@ static int test_tiny_dma_spi_aperture(void) {
     descriptor.control |= RS_DMA_TCD_SRC_INC;
     if (rs_tiny_dma_tcd_validate(3U, &descriptor) != RS_EINVAL) {
         return 11;
+    }
+    return 0;
+}
+
+static int test_st7789vi_patterns(void) {
+    rs_st7789vi_window_t window = {0U, 0U, 319U, 239U};
+    uint32_t pixels;
+    uint32_t bytes;
+    uint32_t words;
+
+    if (rs_st7789vi_pattern(RS_ST7789VI_STAGE_BARS, 0U, 0U) != UINT16_C(0xFFFF) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_BARS, 0U, 319U) != UINT16_C(0x0000) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_BARS, 100U, 80U) != UINT16_C(0x07FF)) {
+        return 1;
+    }
+    if (rs_st7789vi_pattern(RS_ST7789VI_STAGE_GRADIENT, 0U, 0U) != UINT16_C(0x0000) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_GRADIENT, 239U, 319U) != UINT16_C(0xFF7F)) {
+        return 2;
+    }
+    if (rs_st7789vi_pattern(RS_ST7789VI_STAGE_ODD_A, 3U, 4U) != UINT16_C(0xFFFF) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_ODD_A, 3U, 5U) != UINT16_C(0x0000) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_ODD_B, 200U, 100U) != UINT16_C(0x07E0) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_ROTATION, 1U, 1U) != UINT16_C(0x0820) ||
+        rs_st7789vi_pattern(RS_ST7789VI_STAGE_FINAL, 0U, 0U) != UINT16_C(0xFFFF) ||
+        rs_st7789vi_pattern(UINT32_C(99), 0U, 0U) != UINT16_C(0x0000)) {
+        return 3;
+    }
+    if (rs_st7789vi_window_cells(&window, &pixels, &bytes, &words) != RS_OK ||
+        pixels != UINT32_C(76800) || bytes != UINT32_C(153600) || words != UINT32_C(38400)) {
+        return 4;
+    }
+    window = (rs_st7789vi_window_t){100U, 100U, 116U, 108U};
+    if (rs_st7789vi_window_cells(&window, &pixels, &bytes, &words) != RS_OK ||
+        pixels != UINT32_C(153) || bytes != UINT32_C(306) || words != UINT32_C(77)) {
+        return 5;
+    }
+    window = (rs_st7789vi_window_t){10U, 10U, 9U, 10U};
+    if (rs_st7789vi_window_cells(&window, &pixels, &bytes, &words) != RS_EINVAL) {
+        return 6;
+    }
+    window = (rs_st7789vi_window_t){0U, 0U, 320U, 239U};
+    if (rs_st7789vi_window_cells(&window, &pixels, &bytes, &words) != RS_EINVAL) {
+        return 7;
+    }
+    if (rs_st7789vi_window_cells(NULL, &pixels, &bytes, &words) != RS_EINVAL) {
+        return 8;
     }
     return 0;
 }
@@ -3650,6 +3697,7 @@ int main(void) {
         test_tiny_dma_config_validation(),
         test_spi_divider_from_hz(),
         test_tiny_dma_spi_aperture(),
+        test_st7789vi_patterns(),
         test_dvp_hal(),
         test_p9_frame_layout(),
         test_p10_frame_statistics(),

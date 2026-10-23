@@ -41,6 +41,13 @@ module retrosoc_tiny_tb;
       .vsync_o(s_dvp_vsync),
       .dat_o  (s_dvp_data)
   );
+  tiny_st7789_panel u_st7789_panel (
+      .sck_i      (s_gpio_27),
+      .csn_i      (s_gpio_31),
+      .mosi_i     (s_gpio_28),
+      .dc_i       (s_gpio_30),
+      .test_done_i(u_dut.s_test_done)
+  );
   assign s_gpio_12 = s_p9_camera_population ? s_dvp_data[0] : 1'bz;
   assign s_gpio_13 = s_p9_camera_population ? s_dvp_data[1] : 1'bz;
   assign s_gpio_14 = s_p9_camera_population ? s_dvp_data[2] : 1'bz;

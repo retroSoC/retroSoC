@@ -1,6 +1,7 @@
 /dv/tiny_qspi_nor.sv
 /device_model/ESP_PSRAM64H.sv
 /dv/tiny_dvp_camera.sv
+/dv/tiny_st7789_panel.sv
 /tests/rtl/sdio_native_model.sv
 /dv/retrosoc_tiny_tb.sv
 /dv/tiny_p10_observer.sv

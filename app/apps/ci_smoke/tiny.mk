@@ -26,3 +26,12 @@ endif
 ifeq ($(TINY_SPI_P3_ACCEPTANCE),YES)
 APP_SRCS := $(ROOT_PATH)/app/apps/ci_smoke/tiny_spi_p3.c
 endif
+ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
+APP_SRCS     := $(ROOT_PATH)/app/apps/ci_smoke/tiny_spi_p4.c
+APP_SRCS     += $(ROOT_PATH)/app/board/src/st7789vi.c
+APP_SRCS     += $(ROOT_PATH)/app/board/src/st7789vi_math.c
+APP_INC_DIRS += $(ROOT_PATH)/app/board/include
+ifeq ($(SIMU),IVERILOG)
+APP_CFLAGS += -DRS_ST7789VI_QUICK
+endif
+endif

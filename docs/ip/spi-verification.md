@@ -112,6 +112,50 @@ SPI request allocation, the full post-fix Pytest campaign and product
 regressions are unrun. Product instances
 retain V2.0/default-disabled SPI.
 
+## SPI-P4 sub-stage A checkpoint (2026-10-23)
+
+The approved staged preflight (display-first, camera/PSRAM cases deferred to
+sub-stage B pending R2-P8/R2-P9 acceptance) is implemented on the committed
+SPI-P3 base. New content: the project-owned ST7789VI four-wire adapter
+(`app/board/st7789vi.c`, pure pattern/window math in `st7789vi_math.c`), the
+`TINY_SPI_P4_ACCEPTANCE` image (`app/apps/ci_smoke/tiny_spi_p4.c`), the
+pin-independent panel oracle (`rtl/tiny/dv/tiny_st7789_panel.sv`), the
+golden checker and focused contracts (`scripts/spi_p4.py`,
+`tests/test_spi_p4.py`) and host tests (`test_st7789vi_patterns` in
+`tests/c/test_runtime.c`). The [runbook](spi-p4.md) records the contract.
+
+Three defects found by the bring-up and fixed with evidence: (1) the
+committed integration wired the SPI `gpio_ready_i` to the GPIO APB bridge's
+transaction-level ready, which drops on every GPIO access and faulted any
+mid-session D/C change required by the frozen contract; it now uses
+GPIO-clock/reset-level availability (`retrosoc_tiny.sv`). (2) The adapter
+issued `END` after non-held segments, which only HELD permits. (3) HAL
+lifecycle gaps: `rs_spi_acquire` now also waits `BUS_IDLE` before returning a
+usable session, `rs_spi_recover` waits wire-state Disabled (RECOVER retains
+the session), and `rs_spi_release` skips the DISABLE step when the session is
+already Disabled. SPI-P3 acceptance remains passing after the HAL changes
+(`SIM_TEST_PASS Tiny cycles=1037899`).
+
+Sub-stage A acceptance, all with the independent panel oracle and golden
+geometry/pixel/FNV-1a checks passing (`spi_p4.py check`, zero problems,
+violations=0, 8/8 windows, 21 commands): Verilator passes on both profiles at
+`SIM_TEST_PASS Tiny cycles=43019427`
+(`build/ics55-tiny-2026-10-23-01-37-106e35060a8e/`,
+`build/ihp130-tiny-2026-10-23-01-38-616e0604657d/`); Icarus behavioral passes
+on both profiles with the QUICK delay/geometry variant at
+`SIM_TEST_PASS Tiny cycles=2710932`
+(`build/ics55-tiny-2026-10-23-01-34-106e35060a8e/`,
+`build/ihp130-tiny-2026-10-23-01-39-616e0604657d/`). The image covers
+discovery/configuration, panel init ordering (SLPOUT/DISPON checked),
+full-screen color bars and gradient, odd rectangles, a rotation variant, an
+abort/recover/release/reacquire case with a clean final window, and
+cycle/payload measurements. Full Pytest: 2102 passed, 1 skipped (optional
+`pypdf`), 0 failed in 4442.19 s.
+
+Sub-stage B (V21/V22: PSRAM-source display, sequential capture/verify/SD,
+SRAM-vs-PSRAM performance) remains gated on R2-P8/R2-P9 human acceptance.
+SPI-P5 stays deferred; `phase_accepted` stays false.
+
 ## SPI-P3 implementation checkpoint (2026-10-21)
 
 The current authorized worktree integrates SPI-P2 into Tiny with APB4
