@@ -147,6 +147,7 @@ def split_npu_conditions(body: str) -> tuple[str, list[tuple[str, str]]]:
     allowed = {f"defined({name})" for name in NPU_DEFINES}
     allowed.add("||".join(f"defined({name})" for name in NPU_DEFINES))
     allowed.add(f"!defined({NPU_DEFINES[1]})")
+    allowed.add("defined(RS_HP_JTAG_DEBUG)")
     for line in body.splitlines():
         directive = line.strip()
         if directive.startswith("#if "):

@@ -5108,6 +5108,7 @@
         9,
         18,
         18,
+        20,
         10,
         18,
         19,
@@ -5142,7 +5143,8 @@
         "16": "Cache-clean request, P5 GA2D cache mailbox event, clean acknowledgement, or HP-held confirmation failed.",
         "17": "GA2D handoff back to LP or LP-owned safe-idle confirmation failed.",
         "18": "NPU handoff to HP failed, or the RT-Thread ready message reported failure or mismatched identity.",
-        "19": "NPU handoff back to LP failed, or the RT-Thread IRQ command/final verdict failed."
+        "19": "NPU handoff back to LP failed, or the RT-Thread IRQ command/final verdict failed.",
+        "20": "HP JTAG debug target selection before LP release failed."
       }
     }
   },
