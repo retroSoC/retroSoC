@@ -36,8 +36,9 @@ CI_SMOKE_SDRAM_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_sdram",
     # Hosted Verilator executes the expanded peripheral acceptance workload
-    # slowly when LP code and accelerator traffic share the SDRAM target.
-    "SOC_SIM_TIME=3600",
+    # slowly when LP code and accelerator traffic share the SDRAM target; the
+    # merged HP subsystem needs roughly 4400 s locally, so double the tier.
+    "SOC_SIM_TIME=7200",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 RTL_LINT_VALUES = ("SIMU=VERILATOR", "HAVE_SVA=YES", "rtl-lint")
