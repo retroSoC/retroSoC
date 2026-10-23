@@ -1318,6 +1318,12 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
                     assert "TINY_P7_ACCEPTANCE=YES" in values
                     assert "TINY_SIM_TIMEOUT=6000000" in values
                     assert "TINY_SIM_ARGS=+p7_monitor" in values
+                elif "LINK_TYPE=ld2_sdram" in values:
+                    assert simulation_timeout == ["SOC_SIM_TIME=3600"]
+                elif profile == "configs/ci/ihp130.mk":
+                    # The merged HP subsystem roughly doubled this step's
+                    # hosted runtime; it shares the next budget tier.
+                    assert simulation_timeout == ["SOC_SIM_TIME=3600"]
                 else:
                     assert simulation_timeout == ["SOC_SIM_TIME=1800"]
                 assert "LINK_TYPE=ld2_all_sram" in values
@@ -1621,7 +1627,7 @@ def test_pdk_pr_regressions_cover_firmware_rtl_and_selected_netlist_target() -> 
         if pdk == "IHP130":
             assert "LINK_TYPE=ld2_all_sram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values
-            assert "SOC_SIM_TIME=1800" in verilator_values
+            assert "SOC_SIM_TIME=3600" in verilator_values
         else:
             assert "LINK_TYPE=ld2_sdram" in verilator_values
             assert "VERILATOR_SIM_ARGS=--fast-flash" in verilator_values

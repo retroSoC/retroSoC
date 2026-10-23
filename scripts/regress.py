@@ -27,7 +27,9 @@ CI_SMOKE_VERILATOR_VALUES = (
 CI_SMOKE_SIM_VALUES = (
     CI_SMOKE_APP_VALUE,
     "LINK_TYPE=ld2_all_sram",
-    "SOC_SIM_TIME=1800",
+    # The merged HP subsystem roughly doubled the hosted Verilator runtime of
+    # this acceptance step; keep the next existing budget tier.
+    "SOC_SIM_TIME=3600",
     *CI_SMOKE_VERILATOR_VALUES,
 )
 CI_SMOKE_SDRAM_SIM_VALUES = (
