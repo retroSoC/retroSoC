@@ -1,5 +1,54 @@
 # Tiny MCU Verification Record
 
+## TINY-R2-P8/P9/P10 human acceptance (2026-10-25)
+
+The maintainer explicitly confirmed human acceptance of TINY-R2-P8,
+TINY-R2-P9 and TINY-R2-P10 in the development session. The accepted
+checkpoint is `4466ad0e97b0bce4b9174dfd88dd199fca344ad5` on `dev`, which
+raises the ICS55 `TINY_P9_NETLIST_WALL_TIMEOUT` default to 14400 seconds.
+All seven CI workflows for that commit completed successfully (quality run
+40098377127, development-environment 40098377121, smoke 40098377168, gf180
+40098377223, sky130 40098377238, ics55 40098377215, ihp130 40098377145).
+
+The refreshed P8 campaign passed on both profiles (evidence roots
+`build/ics55-tiny-2026-10-23-19-00-f5281272385f/meta/tiny-r2-p8/` and
+`build/ihp130-tiny-2026-10-23-19-01-63130ad79b73/meta/tiny-r2-p8/`): the
+28-test focused suite, full firmware with `P8_RESULT code=0` (2534635 cycles
+on ICS55, 2283118 on IHP130), synthesis, netlist boot (36449/36069 cycles),
+observational STA and capture/report.
+
+P9 has all six source-bound full-frame workloads `workload_passed`
+(RECOVERY 3097113, QVGA_RGB565 18601599, VGA_YUV422 73938934 cycles,
+identical on both PDKs) and complete refreshed backend chains on both
+profiles (IHP130 `build/ihp130-tiny-2026-10-23-18-59-6879efac2bd8/meta/tiny-r2-p9/backend/`
+with DVP 175649 cycles; ICS55 `build/ics55-tiny-2026-10-24-15-03-8d025610711f/meta/tiny-r2-p9/backend/`
+with `SIM_TEST_PASS Tiny cycles=177541` in 12886.6 seconds).
+
+P10 acceptance rests on two complete reports plus the P7 lifecycle legs.
+IHP130: `build/ihp130-tiny-2026-10-23-18-51-6879efac2bd8/meta/tiny-r2-p10/report/report.json`
+is `selected_gates_complete` with zero gaps. ICS55: the single-timestamp
+campaign `2026-10-24-21-30` passed matched, software, audio, camera and
+backend on the clean accepted commit; `build/ics55-tiny-2026-10-24-21-30-8d025610711f/meta/tiny-r2-p10/report/report.json`
+is `selected_gates_complete` with zero gaps, and all five stage records
+share execution source digest
+`13bdfaaaa90d6ec4dbc8d8d6bb541c9221ee2fd529ecdcfeaed28974eea4b6f3`.
+Its netlist-dvp passed with `SIM_TEST_PASS Tiny cycles=177541` in 8383.8
+seconds on a quiet host; the earlier loaded-host pass needed 13317.1
+seconds, motivating the 14400-second budget. P7 lifecycle acceptance passed
+on both profiles (`P7_LIFECYCLE_PASS`, 3859487/3863255 cycles).
+
+The retained ICS55 netlist-dvp host timeouts (exit 124) are budget/host
+runtime evidence, not DUT failures; no verdict rule, forbidden-marker set or
+TEST_STATUS requirement was weakened and no historical record was relabeled.
+Full long-running Icarus firmware, complete PR/nightly regression, fresh VGA,
+physical/PVT/board qualification and final complete-product timing closure
+remain deferred or unrun as recorded below; observational negative STA,
+warning deltas and observe-mode metrics are not reclassified. Historical
+pending-human-review statements below describe their original checkpoints.
+Generated collector records keep `phase_accepted=false`; human acceptance is
+recorded here. This acceptance does not imply final complete-product
+qualification.
+
 ## Tiny Icarus behavioral repair (2026-10-22)
 
 The Tiny Icarus behavioral flow failed elaboration with 29 errors on both
