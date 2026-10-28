@@ -153,8 +153,332 @@ cycle/payload measurements. Full Pytest: 2102 passed, 1 skipped (optional
 `pypdf`), 0 failed in 4442.19 s.
 
 Sub-stage B (V21/V22: PSRAM-source display, sequential capture/verify/SD,
-SRAM-vs-PSRAM performance) remains gated on R2-P8/R2-P9 human acceptance.
-SPI-P5 stays deferred; `phase_accepted` stays false.
+SRAM-vs-PSRAM performance) is authorized by the R2-P8/R2-P9/P10 human
+acceptance recorded on 2026-10-25 in
+[tiny-soc-verification.md](tiny-soc-verification.md#tiny-r2-p8p9p10-human-acceptance-2026-10-25).
+Its implementation and fresh evidence remain a separate work item; this note
+does not relabel the accepted sub-stage A results as B coverage. Initial B
+bring-up on `dev@76901df4` passed A, QVGA capture/readback and PSRAM display,
+then failed the first SRAM chunk with result code 14 after 13054.528 s
+(`build/ics55-tiny-2026-10-25-07-52-35b6184dae5c/`). A QUICK-A diagnostic
+reproduced the failure after 5318.140 s
+(`build/ics55-tiny-2026-10-25-11-43-35b6184dae5c/`): SPI fault 4, TX FIFO
+level 8, and a write error at `0x1001d054`. The integrated DMA statically
+enabled the SPI request-ready inputs and had no SPI-to-DMA backpressure path,
+so fast SRAM jobs overflowed the frozen credit contract. This was a P2/P3
+integration omission, not a firmware-data failure or an architecture
+contradiction; no smaller-job workaround or verdict relaxation is accepted.
+
+The repair exposes live TX/RX admission from `apb4_spi`, passes it through
+`apb4_dma`, and uses it only for SPI request readiness. Admission requires the
+corresponding enabled binding, FIFO data/capacity, and no pending credit or
+response. `spi_start_pending_o` follows registered busy SPI jobs rather than
+readiness-filtered arbiter candidates, preserving binding/drain coverage without
+a combinational readiness loop. The DMA scheduler, bursts, credit reservation/
+retirement, and register ABI are unchanged. Mini ties the new input to zero and
+keeps SPI disabled; the SPI-enabled P9 fixture ties both bits to preserve its
+prior standalone behavior.
+
+The production-IP dynamic fixture proves TX-full and RX-empty stalls, delayed
+R/B retirement, an in-flight B response across both abort commands, drain and
+RECOVER, release/reacquire, clean TX pixels, and RX data/tail integrity on both
+Verilator and Icarus. Each final focused stage passes 19 tests, including this
+fixture and the panel-oracle cases
+(`build/ics55-tiny-2026-10-25-20-05-35b6184dae5c/meta/spi-p4/`). Tiny lint has
+no `UNOPTFLAT`; Mini lint and DMA prove/cover also pass, in 131.497 s and
+67.543 s respectively (`build/ihp130-2026-10-25-14-51-f1560e642e06/`). Eleven
+affected DMA/WS2812/P9 consumer tests and the RTL formatter/owned-style checks
+also pass. The separate `check-rtl-lint` command still fails because the
+committed ICS55 Tiny warning baseline is absent, not because of a
+repair-specific diagnostic; no baseline was edited.
+
+An intermediate full A+B run reached `SIM_TEST_PASS Tiny cycles=94360540` but
+was correctly rejected by the independent checker
+(`build/ics55-tiny-2026-10-25-14-51-35b6184dae5c/`): code 1 marked CS rising
+with residual bits during the legal B partial-frame abort, and the 128-cycle
+done delay ended before `SPI_P4_RESULT` could be transmitted. The frozen SPI-P1
+contract explicitly includes a valid partial-frame abort. The panel model now
+distinguishes that case from an invalid complete-window truncation, while
+unexpected aborts and residual bits after a complete window remain rejected.
+The new oracle fixture passes both simulators with two legal partial aborts and
+one invalid residual-bit case. The P4 done limit is now 65536 cycles, allowing
+the required UART result without changing TEST_STATUS ordering or checker
+expectations.
+
+Final ICS55 Verilator A+B evidence passes both required gates
+(`build/ics55-tiny-2026-10-25-20-05-35b6184dae5c/`): `SIM_TEST_PASS Tiny
+cycles=94425948`, no forbidden markers, and `spi_p4.py check` exits zero with an
+empty problem list (`meta/spi-p4/check/record.json`). The panel reports 42
+commands, 11 windows, FNV-1a `0x85007c9e`, and zero violations. SD save/readback
+passes 150 chunks/300 blocks/153600 bytes with FNV `0xc198adc5`; the B abort
+prefix is 143 pixels with `aborted=1`. `SPI_P4_RESULT` reports code 0 and the
+simulator wall time is 17936.478 s.
+
+V22 measurements at SCK 12000000 Hz are:
+
+- PSRAM: 3434872 frame/CPU cycles, 572592 instructions, 143119666 ns,
+  715485 ppm utilization, TX stalls 885796, longest TX wait 235, DMA stalls
+  3264041, FIFO min/max/final 0/0/0, one chunk.
+- SRAM: 7394659 frame/CPU cycles, 895851 instructions, 308110791 ns,
+  332347 ppm utilization, TX stalls 380250, longest TX wait 0, DMA stalls
+  2266350, FIFO min/max/final 2/8/0, 150 chunks.
+
+Each display window has exactly 38400 central-DMA reads and writes and 153600 B
+in each direction. Passive maximum read/write latency is 77/18 cycles for PSRAM
+and 5/18 for SRAM. P9 accepted/delivered words are both 38400. Icarus, the full
+simulator matrix, and physical qualification remain separate obligations;
+SPI-P5 stays deferred and `phase_accepted` stays false.
+
+## SPI-P4 sub-stage B matrix checkpoint (2026-10-26)
+
+The matrix uses the dirty `dev@76901df4400b9a92918a8a8ed49cf849f751f423`
+worktree containing the admission repair and the partial-abort/done-limit
+corrections above. No commit, warning-baseline or verdict-rule change was made.
+The 14:51 run remains rejected; its TEST_STATUS marker is not acceptance.
+
+### Simulation commands and verdicts
+
+ICS55 Verilator A+B:
+
+```sh
+make CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke TINY_SPI_P4_ACCEPTANCE=YES \
+  BUILD_TIMESTAMP=2026-10-25-20-05 TINY_SIM_TIMEOUT=300000000 SOC_SIM_TIME=28800 \
+  TINY_SIM_ARGS='+tiny_spi_p4 +tiny_psram +tiny_p9_camera +tiny_p9_half_ns=500 +tiny_p10_camera' \
+  firmware sim > build/spi_p4_full_2005.log 2>&1
+python3 scripts/spi_p4.py check \
+  --variant-root build/ics55-tiny-2026-10-25-20-05-35b6184dae5c --pdk ICS55 \
+  --log build/ics55-tiny-2026-10-25-20-05-35b6184dae5c/sim/verilator/sim.log
+```
+
+PASS: exit 0, no forbidden markers, 94425948 cycles, checker `problems=[]`, and
+`phase_accepted=false`. The root is
+`build/ics55-tiny-2026-10-25-20-05-35b6184dae5c/`; simulator wall time is
+17936.478 s.
+
+IHP130 Verilator A+B:
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk APP=ci_smoke TINY_SPI_P4_ACCEPTANCE=YES \
+  BUILD_TIMESTAMP=2026-10-26-01-16 TINY_SIM_TIMEOUT=300000000 SOC_SIM_TIME=28800 \
+  TINY_SIM_ARGS='+tiny_spi_p4 +tiny_psram +tiny_p9_camera +tiny_p9_half_ns=500 +tiny_p10_camera' \
+  firmware sim > build/spi_p4_ihp130_verilator_0116.log 2>&1
+python3 scripts/spi_p4.py check \
+  --variant-root build/ihp130-tiny-2026-10-26-01-16-995377fb20d0 --pdk IHP130 \
+  --log build/ihp130-tiny-2026-10-26-01-16-995377fb20d0/sim/verilator/sim.log
+```
+
+PASS: exit 0, no forbidden markers, 94425948 cycles, checker `problems=[]`, and
+`phase_accepted=false`. The root is
+`build/ihp130-tiny-2026-10-26-01-16-995377fb20d0/`; simulator wall time is
+12303.707 s. Capture is 76800 pixels/153600 bytes/38400 words, SD is 150
+chunks/300 blocks with readback=1, and the B abort prefix is 143 pixels, all
+matching the ICS55 accepted run. Both logs carry the same V22 measurements
+above.
+
+The active ICS55 Icarus command is:
+
+```sh
+make CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke SIMU=IVERILOG \
+  TINY_SPI_P4_ACCEPTANCE=YES BUILD_TIMESTAMP=2026-10-26-11-19 \
+  TINY_SIM_TIMEOUT=300000000 SOC_SIM_TIME=288000 \
+  TINY_SIM_ARGS='+tiny_spi_p4 +tiny_psram +tiny_p9_camera +tiny_p9_half_ns=500 +tiny_p10_camera +tiny_p9_progress' \
+  firmware sim > build/spi_p4_ics55_iverilog_1119.log 2>&1
+```
+
+The active IHP130 Icarus replacement, explicitly authorized after its previous
+attempt hit the outer timeout, is:
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk APP=ci_smoke SIMU=IVERILOG \
+  TINY_SPI_P4_ACCEPTANCE=YES BUILD_TIMESTAMP=2026-10-26-15-20 \
+  TINY_SIM_TIMEOUT=300000000 SOC_SIM_TIME=288000 \
+  TINY_SIM_ARGS='+tiny_spi_p4 +tiny_psram +tiny_p9_camera +tiny_p9_half_ns=500 +tiny_p10_camera +tiny_p9_progress' \
+  firmware sim > build/spi_p4_ihp130_iverilog_1520.log 2>&1
+```
+
+Both were launched with Bash background execution and `disable_timeout=true`;
+their result commands invoke `vvp` directly with `+max_cycles=300000000`, not a
+wall-timeout wrapper. Roots are
+`build/ics55-tiny-2026-10-26-11-19-35b6184dae5c/` and
+`build/ihp130-tiny-2026-10-26-15-20-995377fb20d0/`. Both have completed
+naturally with `status=passed`, exit 0, `SIM_TEST_PASS Tiny cycles=53810943` and
+zero forbidden markers. Wall times are 121321.334 s for ICS55 and 114295.959 s
+for IHP130. Applying the accepted QUICK-A reduction (2710932 versus 43019427 A
+cycles) to the 94425948-cycle full-A+B result gave a planning estimate of
+54117453 cycles, not a measured verdict; the actual common Icarus cycle count is
+53810943.
+
+The ICS55 progress observer produced concrete log contamination, including
+`sim.log` lines 639-645 (`SPI_P4_MEASURE`), the V22 records and the required
+`SPI_P4_SD` record at lines 5433-5439. This is an observer/stream defect, not a
+design-behavior verdict. The run finished naturally with zero forbidden markers,
+panel `violations=0`, P9 38400/38400 words and raw full-size capture/SD values:
+76800 pixels, 153600 bytes, 38400 words, 150 chunks/300 blocks, readback=1, FNV
+`0xc198adc5`, a 143-pixel abort and result code 0. Those values occur in a mixed
+progress/UART stream and are not intact line-oriented acceptance records.
+
+The initial checker exited 1 with `ValueError` in `records()` while parsing the
+split `SPI_P4_SD` record. Its traceback is retained at
+`build/ics55-tiny-2026-10-26-11-19-35b6184dae5c/sim/iverilog/checker-stdout.log`.
+The frozen contract constrains record content and independent oracle behavior,
+not atomic stdout framing. The checker now consumes only complete, well-formed
+`P9_TB_PROGRESS` records, including their newline, and preserves every other
+character in order. Malformed progress is rejected before parsing, and malformed
+SPI records produce checker problems rather than an uncaught exception. No raw
+log text was edited or filtered, and every existing content/count/checksum check
+remains active. Positive, corruption, malformed-observer and truncated-record
+tests pass (13 P4 tests; 21 focused tests). Both full QUICK checkers exit 0 with
+`problems=[]` and `status=passed`; records are under
+`build/ics55-tiny-2026-10-26-11-19-35b6184dae5c/meta/spi-p4/check/record.json`
+and `build/ihp130-tiny-2026-10-26-15-20-995377fb20d0/meta/spi-p4/check/record.json`.
+IHP130 has the same observer interleaving and complete full-size B evidence.
+Both legs are SIM PASS / CHECKER PASS; `phase_accepted` remains false. Future
+progress-enabled acceptance should still prefer `+tiny_p9_monitor` with a
+dedicated `+tiny_p9_monitor_log=` path to avoid the hazard at its source. The
+executed checker commands are:
+
+```sh
+python3 scripts/spi_p4.py check \
+  --variant-root build/ics55-tiny-2026-10-26-11-19-35b6184dae5c --pdk ICS55 \
+  --quick --log build/ics55-tiny-2026-10-26-11-19-35b6184dae5c/sim/iverilog/sim.log
+python3 scripts/spi_p4.py check \
+  --variant-root build/ihp130-tiny-2026-10-26-15-20-995377fb20d0 --pdk IHP130 \
+  --quick --log build/ihp130-tiny-2026-10-26-15-20-995377fb20d0/sim/iverilog/sim.log
+```
+
+The interrupted Icarus attempts are retained, not relabeled as hangs or failed
+firmware:
+
+| Profile / root | Result and boundary |
+| --- | --- |
+| ICS55 `build/ics55-tiny-2026-10-26-01-17-35b6184dae5c/` | `interrupted`, exit 130, 32376.440 s after the 32400 s outer launch/task timeout; empty buffered log, no hang proof |
+| ICS55 `build/ics55-tiny-2026-10-26-10-19-35b6184dae5c/` | `interrupted`, exit 130, 3552.792 s; manually stopped to add progress visibility although healthy, an unnecessary interruption and not a design failure |
+| IHP130 `build/ihp130-tiny-2026-10-26-04-43-995377fb20d0/` | `interrupted`, exit 130, 32378.289 s after the 32400 s outer launch/task timeout; empty buffered log, no hang proof; replaced by the authorized detached 15:20 run |
+
+P3 compatibility was rerun with the standard 20000000-cycle budget:
+
+```sh
+make CONFIG=configs/ci/ics55-tiny.mk APP=ci_smoke TINY_SPI_P3_ACCEPTANCE=YES \
+  BUILD_TIMESTAMP=2026-10-26-01-19 TINY_SIM_TIMEOUT=20000000 \
+  firmware sim > build/spi_p4_p3_ics55_verilator_0119.log 2>&1
+make CONFIG=configs/ci/ihp130-tiny.mk APP=ci_smoke TINY_SPI_P3_ACCEPTANCE=YES \
+  BUILD_TIMESTAMP=2026-10-26-01-20 TINY_SIM_TIMEOUT=20000000 \
+  firmware sim > build/spi_p4_p3_ihp130_verilator_0120.log 2>&1
+```
+
+Both PASS with `SIM_TEST_PASS Tiny cycles=1050629`, exit 0, and
+`result-sim-check.json` passed with no rejected matches. Roots are
+`build/ics55-tiny-2026-10-26-01-19-d1eafd9db70e/` and
+`build/ihp130-tiny-2026-10-26-01-20-e29716f7754c/`. The measured increase from
+the older 1037899-cycle reference is 12730 cycles; it is reported rather than
+normalized away.
+
+### Host, consumer and quality regressions
+
+The full host suite was first run with `python3 -m pytest -q`: 2121 passed, 1
+skipped in 4731.77 s (`build/spi_p4_full_host_pytest_recheck.log`). After the
+lossless progress-reassembly repair, the complete suite was rerun: 2123 passed,
+1 skipped in 5494.46 s
+(`build/spi_p4_full_host_pytest_progress_reassembly.log`). After exact-abort and
+panel-review closure, the final complete run reports 2124 passed, 1 skipped in
+4771.54 s (`build/spi_p4_full_host_pytest_exact_abort.log`). The skip in each run
+is the optional `pypdf` retrieval test. An earlier run had three failures caused
+by the missing explicit block-top admission-output connection in
+`tests/rtl/spi_test_body.svh`; that fixture repair preceded the passing rerun.
+SPI-P1 recheck passed 52 tests in 59.65 s
+(`build/spi_p1_recheck_0239.pytest.log`).
+
+The final focused command and result are:
+
+```sh
+python3 -m pytest -q tests/test_spi_dma_admit.py tests/test_spi_p4.py \
+  tests/test_spi_p3.py tests/test_spi_register_parity.py \
+  --basetemp=build/spi-p4-exact-abort-focused
+```
+
+PASS: 22 tests in 42.81 s (`build/spi_p4_exact_abort_focused.pytest.log`). This
+includes SPI-V12 admission/recovery, panel-oracle cases, positive/negative
+progress reassembly, and exact abort-prefix coverage. The earlier 21-test result
+is retained at `build/spi_p4_focused_progress_reassembly.pytest.log`, and the
+20:05 focused-stage records remain under
+`build/ics55-tiny-2026-10-25-20-05-35b6184dae5c/meta/spi-p4/`.
+
+Affected-consumer commands and results:
+
+```sh
+python3 -m pytest -q tests/test_dma.py tests/test_ws2812.py \
+  tests/test_tiny_r2_p9.py::test_p9_dvp_dma_drain \
+  --basetemp=build/spi-dma-consumers-final
+python3 -m pytest -q tests/test_xpi_io.py tests/test_dvp.py tests/test_gpio.py \
+  tests/test_tiny_r2_p6.py::test_dma_sdk_request_matrix \
+  tests/test_tiny_r2_p7.py::test_tiny_xpi_cdc_has_split_reset_endpoints \
+  tests/test_tiny_r2_p8.py --basetemp=build/spi-p4-consumers-0121
+```
+
+The first passes 11 tests in 127.01 s
+(`build/spi_dma_consumers_final.pytest.log`); the second passes 22 in 26.86 s
+(`build/spi_p4_consumers_0121.pytest.log`). Mini lint and DMA formal prove/cover
+also pass in 131.497 s and 67.543 s under
+`build/ihp130-2026-10-25-14-51-f1560e642e06/`. No dedicated executable
+legacy-LCD/LVGL acceptance gate was found, so that compatibility remains a
+residual gap; the XPI/DVP/GPIO tests are not relabeled as an LVGL acceptance run.
+
+Final source rechecks pass: `ruff check .`,
+`make BUILD_TIMESTAMP=2026-10-26-15-12 sw-host-test sw-format-check sw-policy-check`,
+`make BUILD_TIMESTAMP=2026-10-26-15-13 rtl-format-check rtl-style-check`, and
+`git diff --check`. The post-reassembly Ruff, focused 21-test and full host
+results are listed above. These are mechanical checks, not complete MISRA
+certification; no new MISRA deviation was needed. `check-rtl-lint` still fails
+only because
+`quality/warnings/ics55-tiny/rtl-lint.json` is absent. Actual Tiny lint has no
+`UNOPTFLAT`, and no baseline was created or edited.
+
+### Standalone synthesis and remaining gates
+
+The fast block-level smoke used:
+
+```sh
+make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 HAVE_SVA=YES \
+  SIMU=VERILATOR SYNTH=YOSYS STA=OPENSTA JOBS=4 \
+  BUILD_TIMESTAMP=2026-10-26-02-39 spi-p1-synth
+```
+
+PASS under `build/ics55-tiny-2026-10-26-02-39-6a9ffe98980c/meta/spi-p1/synth/`:
+`status=passed`, `phase_accepted=false`, balanced mapping at 41667 ps, 7439
+cells, Liberty area 19286.12, two 256-bit payload FIFOs and zero SRAM macros.
+The same synthesis command with `BUILD_TIMESTAMP=2026-10-26-01-18` also passed
+under `build/ics55-tiny-2026-10-26-01-18-6a9ffe98980c/meta/spi-p1/synth/`.
+These are standalone ICS55 block-synthesis results only. IHP130 block synthesis,
+netlist simulation and STA were not run in this campaign; full synthesis,
+netlist/STA and physical qualification remain deferred to SPI-P5.
+
+Both Icarus A+B legs pass simulation and the full checker after lossless
+progress-interruption reassembly, completing the four-simulator A+B matrix.
+Icarus uses QUICK only for A geometry/delays, never for the 153600-byte B
+workload. The observer hazard and separate-stream preference remain documented.
+The other remaining gaps are full-A Icarus geometry, dedicated legacy-LCD/LVGL
+acceptance, complete physical/timing/vendor/board/silicon qualification and human
+review. `phase_accepted` remains false.
+
+### Independent review closure (2026-10-28)
+
+The read-only finalize review found one P1 and one P3 in verification
+collateral. The P1 checker accepted any nonempty aborted prefix. It now requires
+exactly 544 pixels for A window 7 and 143 for B window 11; zero and every other
+nonzero prefix are rejected with explicit actual/expected messages. The positive
+B fixture uses 143 rather than 1024, and new negative cases cover 0, 1, 400 and
+1024 on both abort windows plus a cleared abort flag. A synthetic accepted-log
+variant with 1024 B pixels fails with `window 11: abort pixels 1024 != 143`
+(`build/spi_p4_wrong_abort_prefix.check.log`). All four original accepted logs
+pass again with exact-length enforcement active.
+
+The P3 fixture now covers complete-window odd pixel-byte count (violation 4)
+and non-pixel-mode residual bits at CS rise (violation 1). Both simulators pass
+`SIM_TEST_PASS ST7789_ORACLE partial_abort=2 residual_rejected=2
+odd_pixel_rejected=1`; the production panel model is unchanged. The focused
+suite passes 22 tests in 42.81 s (`build/spi_p4_exact_abort_focused.pytest.log`).
+These fixes close the review findings without a long simulation rerun or any
+verdict relaxation. `phase_accepted` remains false.
 
 ## SPI-P3 implementation checkpoint (2026-10-21)
 
