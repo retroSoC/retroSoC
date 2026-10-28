@@ -117,6 +117,7 @@ module retrosoc_tiny (
   logic [31:0] s_gpio_user_select, s_gpio_user_handoff, s_gpio_alt_enable;
   logic [31:0] s_gpio_alt_select, s_gpio_output_enable, s_gpio_open_drain;
   logic [1:0] s_spi_credit_valid, s_spi_credit_retire, s_spi_dma_start_pending;
+  logic [1:0] s_spi_admit_ready;
   logic [3:0] s_spi_dma_status;
   logic       s_spi_dma_error;
   // Commit strobes are register-visible inside the SPI shell; the SoC has no consumer yet.
@@ -962,6 +963,7 @@ axi4_error_slave #(
       .output_enable_o    (s_spi_output_enable),
       .irq_o              (s_spi_irq),
       .credit_commit_o    (s_spi_credit_commit),
+      .dma_admit_ready_o  (s_spi_admit_ready),
       .session_owned_o    (s_spi_session_owned),
       .lifecycle_idle_o   (s_spi_lifecycle_idle),
       .apb4               (u_spi_apb4_if)
@@ -1087,6 +1089,7 @@ cdc_sync #(
       .dvp_rx_axis        (u_dvp_rx_axis_if),
       .crypto_in_axis     (u_crypto_tx_axis_if),
       .crypto_out_axis    (u_crypto_rx_axis_if),
+      .spi_admit_ready_i  (s_spi_admit_ready),
       .spi_credit_valid_o (s_spi_credit_valid),
       .spi_credit_retire_o(s_spi_credit_retire),
       .spi_start_pending_o(s_spi_dma_start_pending),

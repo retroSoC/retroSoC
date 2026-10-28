@@ -236,7 +236,8 @@ module crypto_dma_v2_tb;
       .i2s_rx_axis          (i2s_rx_axis),
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
-      .crypto_out_axis      (crypto_out_axis)
+      .crypto_out_axis      (crypto_out_axis),
+      .spi_admit_ready_i    (2'b00)
   );
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin

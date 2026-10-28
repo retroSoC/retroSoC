@@ -461,18 +461,19 @@ axi4_stream_if #(
       .NumChannels(8),
       .FifoDepth  (32)
   ) u_apb4_dma (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .dma_xfer_done_o(s_dma_xfer_done),
-      .irq_o          (s_dma_irq),
-      .hw_trg         (u_dma_req_if),
-      .apb4           (u_dma_apb4_if),
-      .axi4           (dma_axi4),
-      .i2s_tx_axis    (u_dma_i2s_tx_axis_if),
-      .i2s_rx_axis    (u_dma_i2s_rx_axis_if),
-      .dvp_rx_axis    (u_dvp_rx_axis_if),
-      .crypto_in_axis (u_crypto_in_axis_if),
-      .crypto_out_axis(u_crypto_out_axis_if)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .dma_xfer_done_o  (s_dma_xfer_done),
+      .irq_o            (s_dma_irq),
+      .hw_trg           (u_dma_req_if),
+      .apb4             (u_dma_apb4_if),
+      .axi4             (dma_axi4),
+      .i2s_tx_axis      (u_dma_i2s_tx_axis_if),
+      .i2s_rx_axis      (u_dma_i2s_rx_axis_if),
+      .dvp_rx_axis      (u_dvp_rx_axis_if),
+      .crypto_in_axis   (u_crypto_in_axis_if),
+      .crypto_out_axis  (u_crypto_out_axis_if),
+      .spi_admit_ready_i(2'b00)
   );
 
   apb4_crypto u_apb4_crypto (

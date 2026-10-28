@@ -252,7 +252,8 @@ module ws2812_refill_tb;
       .i2s_rx_axis          (i2s_rx_axis),
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
-      .crypto_out_axis      (crypto_out_axis)
+      .crypto_out_axis      (crypto_out_axis),
+      .spi_admit_ready_i    (2'b00)
   );
 
   assign dma_done  = dma_done_vector[3];

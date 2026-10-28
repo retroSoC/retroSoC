@@ -117,18 +117,19 @@ module dma_reg_tb;
   end
 
   apb4_dma u_apb4_dma (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .dma_xfer_done_o(xpi_done_o),
-      .irq_o          (irq_o),
-      .hw_trg         (req),
-      .apb4           (apb4),
-      .axi4           (axi4),
-      .i2s_tx_axis    (i2s_tx_axis),
-      .i2s_rx_axis    (i2s_rx_axis),
-      .dvp_rx_axis    (dvp_rx_axis),
-      .crypto_in_axis (crypto_in_axis),
-      .crypto_out_axis(crypto_out_axis)
+      .clk_i            (clk_i),
+      .rst_n_i          (rst_n_i),
+      .dma_xfer_done_o  (xpi_done_o),
+      .irq_o            (irq_o),
+      .hw_trg           (req),
+      .apb4             (apb4),
+      .axi4             (axi4),
+      .i2s_tx_axis      (i2s_tx_axis),
+      .i2s_rx_axis      (i2s_rx_axis),
+      .dvp_rx_axis      (dvp_rx_axis),
+      .crypto_in_axis   (crypto_in_axis),
+      .crypto_out_axis  (crypto_out_axis),
+      .spi_admit_ready_i(2'b00)
   );
 
   task automatic apb_write(input logic [31:0] address, input logic [31:0] data,

@@ -25,6 +25,7 @@ module apb4_spi_block_top (
     output logic        output_enable_o,
     output logic        irq_o,
     output logic [ 1:0] credit_commit_o,
+    output logic [ 1:0] dma_admit_ready_o,
     output logic        session_owned_o,
     output logic        lifecycle_idle_o,
     input  logic [31:0] paddr_i,
@@ -77,6 +78,7 @@ module apb4_spi_block_top (
       .output_enable_o    (output_enable_o),
       .irq_o              (irq_o),
       .credit_commit_o    (credit_commit_o),
+      .dma_admit_ready_o  (dma_admit_ready_o),
       .session_owned_o    (session_owned_o),
       .lifecycle_idle_o   (lifecycle_idle_o),
       .apb4               (s_apb4)

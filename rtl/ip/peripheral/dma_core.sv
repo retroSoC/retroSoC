@@ -67,6 +67,7 @@ module dma_core #(
     output logic [8:0]                     first_error_status_o,
     output logic [15:0]                    first_error_addr_hi_o,
     output logic [31:0]                    request_status_o,
+    input  logic [1:0]                     spi_admit_ready_i,
     output logic [1:0]                     spi_credit_valid_o,
     output logic [1:0]                     spi_credit_retire_o,
     output logic [1:0]                     spi_start_pending_o,
@@ -415,34 +416,38 @@ module dma_core #(
         s_spi_error           = s_spi_error | s_err_q[s_write_owner_q];
         if (s_axi_write_done) spi_credit_retire_o[0] = 1'b1;
       end
-      if (s_read_rr_valid && (s_req_q[s_read_rr_selected] == DMA_REQUEST_SPI_RX) &&
-          (s_src_base_q[s_read_rr_selected] == SpiRxAddress) && !s_axi_read_busy)
-        spi_start_pending_o[1] = 1'b1;
-      if (s_write_rr_valid && (s_req_q[s_write_rr_selected] == DMA_REQUEST_SPI_TX) &&
-          (s_dst_base_q[s_write_rr_selected] == SpiTxAddress) && !s_axi_write_busy)
-        spi_start_pending_o[0] = 1'b1;
+      for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+        if (s_busy_q[channel] && (s_req_q[channel] == DMA_REQUEST_SPI_RX) &&
+            (s_src_base_q[channel] == SpiRxAddress))
+          spi_start_pending_o[1] = 1'b1;
+        if (s_busy_q[channel] && (s_req_q[channel] == DMA_REQUEST_SPI_TX) &&
+            (s_dst_base_q[channel] == SpiTxAddress))
+          spi_start_pending_o[0] = 1'b1;
+      end
     end
     spi_error_o = s_spi_error;
   end
 
   always_comb begin
-    s_req_ready                         = '0;
-    s_req_ready[DMA_REQUEST_SOFTWARE]   = 1'b1;
-    s_req_ready[DMA_REQUEST_I2S_TX]     = EnableStreams && req.i2s_tx_proc;
-    s_req_ready[DMA_REQUEST_I2S_RX]     = EnableStreams && req.i2s_rx_proc;
-    s_req_ready[DMA_REQUEST_QSPI_TX]    = req.qspi_tx_proc;
-    s_req_ready[DMA_REQUEST_QSPI_RX]    = req.qspi_rx_proc;
-    s_req_ready[DMA_REQUEST_UART_TX]    = req.uart_tx_proc;
-    s_req_ready[DMA_REQUEST_UART_RX]    = req.uart_rx_proc;
-    s_req_ready[DMA_REQUEST_I2C0_TX]    = req.i2c0_tx_proc;
-    s_req_ready[DMA_REQUEST_I2C0_RX]    = req.i2c0_rx_proc;
-    s_req_ready[DMA_REQUEST_I2C1_TX]    = req.i2c1_tx_proc;
-    s_req_ready[DMA_REQUEST_I2C1_RX]    = req.i2c1_rx_proc;
-    s_req_ready[DMA_REQUEST_DVP_RX]     = EnableStreams;
-    s_req_ready[DMA_REQUEST_CRYPTO_IN]  = EnableStreams && req.crypto_in_proc;
+    s_req_ready = '0;
+    s_req_ready[DMA_REQUEST_SOFTWARE] = 1'b1;
+    s_req_ready[DMA_REQUEST_I2S_TX] = EnableStreams && req.i2s_tx_proc;
+    s_req_ready[DMA_REQUEST_I2S_RX] = EnableStreams && req.i2s_rx_proc;
+    s_req_ready[DMA_REQUEST_QSPI_TX] = req.qspi_tx_proc;
+    s_req_ready[DMA_REQUEST_QSPI_RX] = req.qspi_rx_proc;
+    s_req_ready[DMA_REQUEST_UART_TX] = req.uart_tx_proc;
+    s_req_ready[DMA_REQUEST_UART_RX] = req.uart_rx_proc;
+    s_req_ready[DMA_REQUEST_I2C0_TX] = req.i2c0_tx_proc;
+    s_req_ready[DMA_REQUEST_I2C0_RX] = req.i2c0_rx_proc;
+    s_req_ready[DMA_REQUEST_I2C1_TX] = req.i2c1_tx_proc;
+    s_req_ready[DMA_REQUEST_I2C1_RX] = req.i2c1_rx_proc;
+    s_req_ready[DMA_REQUEST_DVP_RX] = EnableStreams;
+    s_req_ready[DMA_REQUEST_CRYPTO_IN] = EnableStreams && req.crypto_in_proc;
     s_req_ready[DMA_REQUEST_CRYPTO_OUT] = EnableStreams && req.crypto_out_proc;
-    s_req_ready[DMA_REQUEST_SPI_TX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_TX];
-    s_req_ready[DMA_REQUEST_SPI_RX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_RX];
+    s_req_ready[DMA_REQUEST_SPI_TX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_TX] &&
+        spi_admit_ready_i[0];
+    s_req_ready[DMA_REQUEST_SPI_RX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_RX] &&
+        spi_admit_ready_i[1];
   end
   assign request_status_o = s_req_ready;
 
