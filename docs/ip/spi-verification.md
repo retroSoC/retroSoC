@@ -6,6 +6,40 @@ not existing hardware capability. At freeze, SPI RTL, DMA V2.2, native routing,
 HAL/display software and physical qualification are not delivered. Historical
 Tiny, SPI-SD, XPI, DMA and PIO evidence does not automatically cover this IP.
 
+## SPI-P4 human acceptance (2026-10-28)
+
+The maintainer explicitly confirmed human acceptance of SPI-P4 (sub-stages A
+and B, SPI-V21/V22) in the development session. The accepted checkpoint is
+`31e386143fa3bc95bbf2a69f1fb4748db0ed0b2c` on `dev`, including the live
+SPI/DMA admission repair, the sub-stage B implementation and the evidence
+documentation. All seven CI workflows for that commit completed successfully
+(quality 40621707384, development-environment 40621707312, smoke 40621707417,
+gf180 40621707326, sky130 40621707335, ics55 40621707415, ihp130 40621707485).
+
+Sub-stage A remains as recorded below. Sub-stage B passed the full A+B
+workload on both profiles with Verilator (94425948 cycles) and Icarus QUICK-A
+(53810943 cycles), zero forbidden markers and independent checker
+problems=[]: 76800 pixels/153600 bytes, SD 150 chunks/300 blocks with
+readback FNV 0xc198adc5, and the exact 143-pixel legal abort (A abort 544).
+The live-admission repair changes no register ABI or Mini behavior; SPI-V12
+dynamic admission and Mini formal prove/cover pass. V22 measurements record
+PSRAM versus SRAM sourcing (3434872 vs 7394659 frame cycles, utilization
+715485/332347 ppm, measured SCK 12000000 Hz) as measurements only.
+
+The independent review findings are closed: exact 544/143-pixel abort
+enforcement with wrong-prefix rejection, and new panel-oracle negative
+fixtures on both simulators. Full host Pytest: 2124 passed, 1 skipped. P3
+acceptance passes on both profiles (1050629 cycles). ICS55 standalone SPI
+block synthesis passes (7439 cells). The rejected 14:51 run remains rejected.
+
+Remaining gaps are unchanged: Icarus full-A geometry is covered only by
+Verilator; no dedicated legacy-LCD/LVGL executable gate exists;
+check-rtl-lint remains blocked by the absent ICS55 Tiny warning baseline
+(actual lint passes, no baseline edited); IHP130 block synthesis, netlist
+simulation, STA and physical/Pad/board/silicon qualification remain deferred
+to SPI-P5 and the final complete-product campaign. Generated records keep
+phase_accepted=false; human acceptance is recorded here.
+
 ## SPI-P1 review-closure checkpoint (2026-10-19)
 
 The approved eight-file repair closes two missing verification obligations
