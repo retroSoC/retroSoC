@@ -86,6 +86,7 @@ module retrosoc_tiny_tb;
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
+  integer       s_done_limit = 128;
   logic   [7:0] s_uart_byte;
   `include "tiny_jtag_smoke.svh"
 
@@ -112,6 +113,7 @@ module retrosoc_tiny_tb;
     end
     if ($value$plusargs("max_cycles=%d", s_max_cycles)) begin
     end
+    if ($test$plusargs("tiny_spi_p4")) s_done_limit = 65536;
     repeat (20) @(posedge s_clk);
     @(negedge s_clk);
     s_reset_driver = 1'b1;
@@ -121,13 +123,13 @@ module retrosoc_tiny_tb;
         if (u_dut.s_test_pass !== 1'b1 || (^s_test_code) === 1'bx)
           $fatal(1, "SIM_TEST_FAIL code=%0d", s_test_code);
         s_done_cycles = s_done_cycles + 1;
-        if (s_done_cycles >= 128 && s_jtag_checks_done) begin
+        if (s_done_cycles >= s_done_limit && s_jtag_checks_done) begin
           $display("SIM_TEST_PASS Tiny cycles=%0d", s_cycles);
           $finish;
         end
       end
     end
-    if (s_done_cycles != 128) $fatal(1, "SIM_TEST_TIMEOUT Tiny cycles=%0d", s_cycles);
+    if (s_done_cycles != s_done_limit) $fatal(1, "SIM_TEST_TIMEOUT Tiny cycles=%0d", s_cycles);
   end
 
 `ifndef RETROSOC_SOC__TINY_NETLIST

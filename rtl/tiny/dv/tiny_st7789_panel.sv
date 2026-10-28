@@ -57,10 +57,10 @@ module tiny_st7789_panel (
     integer expected;
     integer aborted;
     begin
-      pairs = s_win_bytes / 2;
-      if ((s_win_bytes % 2) != 0) record_violation(4);
-      expected  = (s_win_x1 - s_win_x0 + 1) * (s_win_y1 - s_win_y0 + 1);
-      aborted   = (pairs < expected) ? 1 : 0;
+      pairs    = s_win_bytes / 2;
+      expected = (s_win_x1 - s_win_x0 + 1) * (s_win_y1 - s_win_y0 + 1);
+      aborted  = (pairs < expected) ? 1 : 0;
+      if ((s_win_bytes % 2) != 0 && !aborted) record_violation(4);
       s_windows = s_windows + 1;
       s_pixels  = s_pixels + pairs;
       $display(
@@ -149,7 +149,10 @@ module tiny_st7789_panel (
   always @(posedge csn_i) begin
     if (s_enabled) begin
       if (s_bit_count != 0) begin
-        record_violation(1);
+        if (!s_pixel_mode ||
+            ((s_win_bytes / 2) >=
+             ((s_win_x1 - s_win_x0 + 1) * (s_win_y1 - s_win_y0 + 1))))
+          record_violation(1);
         s_bit_count = 0;
       end
       if (s_pixel_mode) close_window;

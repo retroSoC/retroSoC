@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <retrosoc/core/status.h>
+#include <retrosoc/hal/spi.h>
 
 #define RS_ST7789VI_WIDTH            UINT16_C(320)
 #define RS_ST7789VI_HEIGHT           UINT16_C(240)
@@ -29,9 +30,28 @@ typedef struct {
     uint16_t y1;
 } rs_st7789vi_window_t;
 
+typedef struct {
+    uint32_t chunks;
+    uint32_t frames;
+    uint32_t payload_bytes;
+    uint32_t transport_words;
+    uint32_t tx_stall_cycles;
+    uint32_t rx_stall_cycles;
+    uint32_t longest_tx_wait_cycles;
+    uint32_t longest_rx_wait_cycles;
+    uint32_t tx_fifo_min;
+    uint32_t tx_fifo_max;
+    uint32_t tx_fifo_final;
+    uint32_t clock_hz;
+    uint32_t divider;
+    uint64_t dma_stall_cycles;
+} rs_st7789vi_dma_measurement_t;
+
 uint16_t rs_st7789vi_pattern(uint32_t stage, uint32_t row, uint32_t col);
 rs_status_t rs_st7789vi_window_cells(const rs_st7789vi_window_t *window, uint32_t *pixels,
                                      uint32_t *bytes, uint32_t *words);
+rs_status_t rs_st7789vi_buffer_layout(const rs_st7789vi_window_t *window, uintptr_t source,
+                                      uint32_t capacity_bytes, uint32_t *pixels, uint32_t *words);
 
 rs_status_t rs_st7789vi_init(uint8_t rotation);
 rs_status_t rs_st7789vi_set_rotation(uint8_t madctl);
@@ -39,5 +59,13 @@ rs_status_t rs_st7789vi_begin_pixels(const rs_st7789vi_window_t *window, rs_time
 rs_status_t rs_st7789vi_fill_window(const rs_st7789vi_window_t *window, uint32_t stage,
                                     uint32_t *workspace, uint32_t workspace_words,
                                     rs_timeout_t timeout);
+rs_status_t rs_st7789vi_start_buffer(const rs_st7789vi_window_t *window, rs_spi_dma_job_t *job,
+                                     rs_timeout_t timeout);
+rs_status_t rs_st7789vi_display_buffer(const rs_st7789vi_window_t *window,
+                                       const volatile uint32_t *source, uint32_t capacity_bytes,
+                                       uint32_t *workspace, uint32_t workspace_words,
+                                       rs_dma_session_t *session,
+                                       rs_st7789vi_dma_measurement_t *measurement,
+                                       rs_timeout_t timeout);
 
 #endif

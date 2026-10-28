@@ -1219,6 +1219,44 @@ static int test_spi_divider_from_hz(void) {
     return 0;
 }
 
+static int test_spi_transport_layout(void) {
+    uint32_t payload;
+    uint32_t words;
+    uint32_t bytes;
+
+    if ((rs_spi_transport_layout(UINT32_C(76800), true, &payload, &words, &bytes) != RS_OK) ||
+        (payload != UINT32_C(153600)) || (words != UINT32_C(38400)) ||
+        (bytes != UINT32_C(153600))) {
+        return 1;
+    }
+    if ((rs_spi_transport_layout(153U, false, &payload, &words, &bytes) != RS_OK) ||
+        (payload != 153U) || (words != 39U) || (bytes != 156U) ||
+        (rs_spi_transport_layout(3U, true, &payload, &words, &bytes) != RS_OK) || (payload != 6U) ||
+        (words != 2U) || (bytes != 8U)) {
+        return 2;
+    }
+    if ((rs_spi_transport_layout(UINT32_C(0xFFFFFFFC), false, &payload, &words, &bytes) != RS_OK) ||
+        (payload != UINT32_C(0xFFFFFFFC)) || (words != UINT32_C(0x3FFFFFFF)) ||
+        (bytes != UINT32_C(0xFFFFFFFC)) ||
+        (rs_spi_transport_layout(UINT32_C(0x7FFFFFFE), true, &payload, &words, &bytes) != RS_OK) ||
+        (payload != UINT32_C(0xFFFFFFFC)) || (bytes != UINT32_C(0xFFFFFFFC))) {
+        return 3;
+    }
+    if ((rs_spi_transport_layout(0U, false, &payload, &words, &bytes) != RS_EINVAL) ||
+        (rs_spi_transport_layout(UINT32_MAX, false, &payload, &words, &bytes) != RS_EINVAL) ||
+        (rs_spi_transport_layout(UINT32_MAX, true, &payload, &words, &bytes) != RS_EINVAL) ||
+        (rs_spi_transport_layout(UINT32_C(0xFFFFFFFD), false, &payload, &words, &bytes) !=
+         RS_EINVAL) ||
+        (rs_spi_transport_layout(UINT32_C(0x7FFFFFFF), true, &payload, &words, &bytes) !=
+         RS_EINVAL) ||
+        (rs_spi_transport_layout(1U, false, NULL, &words, &bytes) != RS_EINVAL) ||
+        (rs_spi_transport_layout(1U, false, &payload, NULL, &bytes) != RS_EINVAL) ||
+        (rs_spi_transport_layout(1U, false, &payload, &words, NULL) != RS_EINVAL)) {
+        return 4;
+    }
+    return 0;
+}
+
 static int test_tiny_dma_spi_aperture(void) {
     rs_dma_config_t config = {
         .kind = RS_DMA_KIND_MM_TO_MM,
@@ -1344,6 +1382,33 @@ static int test_st7789vi_patterns(void) {
     }
     if (rs_st7789vi_window_cells(NULL, &pixels, &bytes, &words) != RS_EINVAL) {
         return 8;
+    }
+    window = (rs_st7789vi_window_t){0U, 0U, 319U, 239U};
+    if ((rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0x54010000), UINT32_C(153600),
+                                   &pixels, &words) != RS_OK) ||
+        (pixels != UINT32_C(76800)) || (words != UINT32_C(38400)) ||
+        (rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0x54010000), UINT32_C(153599),
+                                   &pixels, &words) != RS_EINVAL) ||
+        (rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0x54010002), UINT32_C(153600),
+                                   &pixels, &words) != RS_EINVAL)) {
+        return 9;
+    }
+    window = (rs_st7789vi_window_t){100U, 100U, 116U, 108U};
+    if ((rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0x30000000), 308U, &pixels,
+                                   &words) != RS_OK) ||
+        (rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0x30000000), 306U, &pixels,
+                                   &words) != RS_EINVAL)) {
+        return 10;
+    }
+    window = (rs_st7789vi_window_t){0U, 0U, 2U, 0U};
+    if (rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0xFFFFFFFC), 8U, &pixels, &words) !=
+        RS_EINVAL) {
+        return 11;
+    }
+    window = (rs_st7789vi_window_t){0U, 0U, 1U, 0U};
+    if (rs_st7789vi_buffer_layout(&window, (uintptr_t)UINT32_C(0xFFFFFFFC), 4U, &pixels, &words) !=
+        RS_OK) {
+        return 12;
     }
     return 0;
 }
@@ -3696,6 +3761,7 @@ int main(void) {
         test_dma_config_validation(),
         test_tiny_dma_config_validation(),
         test_spi_divider_from_hz(),
+        test_spi_transport_layout(),
         test_tiny_dma_spi_aperture(),
         test_st7789vi_patterns(),
         test_dvp_hal(),

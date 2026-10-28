@@ -68,6 +68,7 @@ realtime        access_accept_time;
     .output_enable_o    (output_enable_o),
     .irq_o              (irq_o),
     .credit_commit_o    (credit_commit_o),
+    .dma_admit_ready_o  (),
     .session_owned_o    (session_owned),
     .lifecycle_idle_o   (lifecycle_idle),
     .paddr_i            (paddr_i),
