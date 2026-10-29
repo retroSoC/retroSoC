@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-software-runtime","Current HP software identity")
 #change-start("v05-emphasis-software-runtime","Selected body emphasis: software runtime")
 #import "../system-figures.typ": sequence-diagram
 #import "../diagram-packages.typ": storage-figures
@@ -110,3 +111,5 @@ hardware routes and @fault-code-reference for interpreting captured results.
 #include "api-semantics.typ"
 
 #change-end("v05-emphasis-software-runtime")
+
+#change-end("v05-c906-20261022-sections-software-runtime")

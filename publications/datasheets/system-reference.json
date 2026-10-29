@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
+  "source_revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -88,7 +88,10 @@
     ".github/workflows/development-environment.yml",
     ".github/workflows/quality.yml",
     "CONTRIBUTING.md",
-    "docs/git-workflow.md"
+    "docs/git-workflow.md",
+    "docs/hp-rv64-validation.md",
+    "docs/ip/crypto-verification.md",
+    "configs/ci/ics55.mk"
   ],
   "support": [
     {
@@ -259,8 +262,8 @@
       "id": "dma",
       "title": "DMA Controller",
       "implementation": "Integrated",
-      "scope": "Eight channel contexts share a 32-bit AXI master.",
-      "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
+      "scope": "Eight AXI32 channels; direct/finite TCD and selected streams. SPI disabled.",
+      "dependencies": "Mini channel ownership, optional single-hart lease and terminal drain. V2.0 identity; request bitmap 0x3FFF.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
@@ -499,7 +502,7 @@
       "implementation": "Integrated",
       "scope": "Read-only identity, configuration and topology discovery.",
       "dependencies": "No additional off-chip component implied; use the selected clock/reset and access policy.",
-      "hal": "Register/platform interface; no standalone HAL example indexed.",
+      "hal": "Published core discovery API and a syntax-checked example; no standalone native Linux driver is established here.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Source reviewed",
       "sources": [
@@ -704,7 +707,7 @@
       "title": "DVP Capture",
       "implementation": "Integrated",
       "scope": "8-bit parallel RGB565/YUV422 capture.",
-      "dependencies": "Parallel camera, sensor configuration and pixel clock.",
+      "dependencies": "Mini camera pads/PCLK, RAW routing and DMA channel 3; exact frame/count/drain completion.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
@@ -853,8 +856,8 @@
       "id": "crypto",
       "title": "Crypto Controller",
       "implementation": "Integrated",
-      "scope": "AES-128/192/256, SHA-224/256 and raw RSA-2048.",
-      "dependencies": "LP-controlled buffers and key lifecycle; no secure key-store claim.",
+      "scope": "AES-128/192/256, SHA-224/256 and raw RSA-2048; V2 SRAM initialization and scrub.",
+      "dependencies": "LP-only control, running PCLK, verified/locked constants and drained DMA before zeroize.",
       "hal": "Published API and syntax example; see the IP chapter.",
       "linux": "Native driver support not established in this publication.",
       "verification": "Tests available",
@@ -863,7 +866,10 @@
         "docs/ip/crypto.md",
         "publications/examples/crypto.c",
         "rtl/ip/security/apb4_crypto.sv",
-        "rtl/ip/security/crypto_pkg.sv"
+        "rtl/ip/security/crypto_pkg.sv",
+        "crt/src/hal/crypto_lifecycle.c",
+        "rtl/ip/security/crypto_mem_ctrl.sv",
+        "rtl/ip/security/crypto_mem_pkg.sv"
       ],
       "tests": [
         "tests/test_crypto.py"
@@ -994,10 +1000,10 @@
     },
     {
       "id": "hp-ready-wait",
-      "title": "Linux ready service does not complete loader acceptance",
-      "impact": "The supplied rootfs publishes the initial ready checkpoint but does not provide the later GA2D result and cache-clean service required by the current hp_boot acceptance sequence.",
-      "trigger": "Using the ready-only Linux service where the loader expects the full acceptance mailbox protocol.",
-      "workaround": "Pair the loader with a matching acceptance payload or service. Current polling is bounded by iteration budgets and missing handshakes fail their stage; an initial ready message is not a terminal pass.",
+      "title": "Workload-specific HP terminal handshakes",
+      "impact": "Ordinary Linux terminates after the exact userspace ready handshake; smoke additionally requires GA2D and cache-clean/resource-return checkpoints. A UART marker alone is not the final LP TEST_STATUS.",
+      "trigger": "Using a ready-only Linux helper as a smoke/NPU acceptance payload, or treating a common log marker as a workload-independent pass.",
+      "workaround": "Use the V2 workload discriminator and matching payload; require each selected terminal checkpoint and the LP sticky verdict. RT-Thread has its own ready/IRQ acknowledgement sequence.",
       "applies_to": "Reviewed v0.5 PRODUCT snapshot; MPW differences are stated separately.",
       "sources": [
         "app/apps/hp_boot/main.c",
@@ -1172,6 +1178,69 @@
         "rtl/ip/multimedia/apb4_npu.sv",
         "scripts/npu_compiler.py",
         "crt/src/hal/npu.c"
+      ]
+    },
+    {
+      "id": "dma-burst-discovery",
+      "title": "DMA maximum-burst discovery field truncation",
+      "impact": "The four-bit CAPABILITY maximum-burst field reads zero although the configured and supported limit is 16 beats.",
+      "trigger": "Inferring a transfer length directly from bits 27:24 in the current Mini DMA instance.",
+      "workaround": "Use the source-bound 16-beat Mini integration/SDK limit and preserve this discrepancy in version-sensitive software. A publication correction does not change RTL.",
+      "sources": [
+        "rtl/ip/peripheral/dma_reg.sv",
+        "rtl/mini/top/apb4_periph.sv",
+        "crt/include/retrosoc/hal/dma_regs.h"
+      ],
+      "applies_to": "Reviewed Mini PRODUCT at 9ab05c6404c02b5f2c927539b5c681b46f778b9f; retained from the 798-page baseline."
+    },
+    {
+      "id": "crypto-maintenance",
+      "title": "Crypto initialization and erase completion require running PCLK",
+      "impact": "Reset/zeroize invalidates state before the asynchronous scrub is finished. Key/engine access before READY fails; timeout does not prove erasure or release DMA ownership.",
+      "trigger": "Skipping CRYC1 initialization, stopping PCLK during maintenance, racing IRQ_TEST or reusing a timed-out stream buffer.",
+      "workaround": "Serialize lifecycle operations, initialize with the supplied SDK image, drain DMA and check actual scrub/READY/error predicates. Physical security certification remains unprovided.",
+      "sources": [
+        "rtl/ip/security/crypto_mem_ctrl.sv",
+        "crt/src/hal/crypto_lifecycle.c"
+      ],
+      "applies_to": "Reviewed Mini PRODUCT at 9ab05c6404c02b5f2c927539b5c681b46f778b9f; retained from the 798-page baseline."
+    },
+    {
+      "id": "npu-p6-loader-owner",
+      "title": "NPU-P6 continuation and GA2D pre-release ownership use different guards",
+      "impact": "The P6 compile-time path reuses the Linux transport and continues into the GA2D/cache tail, while the earlier GA2D handoff is guarded by workload SMOKE. The source path is not a demonstrated complete P6 acceptance.",
+      "trigger": "RS_NPU_P6_ACCEPTANCE with workload 1 in the current generic hp_boot loader.",
+      "workaround": "Review the matching payload and ownership protocol in a separate integration task before claiming P6 completion. Do not relabel this payload as Linux or alter RTL/SDK through the publication workflow.",
+      "sources": [
+        "app/apps/hp_boot/main.c",
+        "scripts/run_npu_p6_verilator.py",
+        "docs/hp-rv64-validation.md"
+      ],
+      "applies_to": "Reviewed Mini PRODUCT at 9ab05c6404c02b5f2c927539b5c681b46f778b9f; retained from the 798-page baseline."
+    },
+    {
+      "id": "hp-address-truncation",
+      "title": "HP external addresses are limited to 32 bits",
+      "impact": "The wrapper forwards only C906 address bits 31:0; it does not reject nonzero bits 39:32 as a separate address fault.",
+      "trigger": "An HP mapping or physical access outside the Mini 32-bit address space.",
+      "workaround": "Keep all physical mappings and DMA addresses within the declared 32-bit map. Sv39 virtual addressing does not extend the SoC physical aperture.",
+      "applies_to": "Reviewed OpenC906 Mini PRODUCT snapshot.",
+      "sources": [
+        "rtl/mini/top/hp_core_wrapper.sv",
+        "app/ports/linux/linux/retrosoc_hp.dts"
+      ]
+    },
+    {
+      "id": "hp-source-stall-timeout",
+      "title": "A source-stalled write is not universally recoverable by a guard timeout",
+      "impact": "Guard timeout progress depends on source readiness; it cannot manufacture missing W data or preserve arbitrary partial writes.",
+      "trigger": "A source stops making the handshakes required by the guard after a write address is accepted.",
+      "workaround": "Use bounded lifecycle recovery and inspect the retained fault. The C906 AW/W ordering override fixes the documented write-order wedge but does not establish universal source-stall containment.",
+      "applies_to": "Reviewed OpenC906 Mini PRODUCT snapshot.",
+      "sources": [
+        "rtl/mini/top/axi4_target_guard.sv",
+        "rtl/mini/ip_overrides/aq_biu_write_channel.v",
+        "docs/hp-rv64-validation.md"
       ]
     }
   ],
@@ -1521,7 +1590,7 @@
         "label": "Crypto input",
         "transport": "MM-to-stream",
         "channel": "4",
-        "irq": null,
+        "irq": "crypto",
         "sources": [
           "rtl/ip/peripheral/dma_pkg.sv",
           "crt/include/retrosoc/hal/dma.h",
@@ -1532,6 +1601,10 @@
           {
             "file": "rtl/mini/top/apb4_periph.sv",
             "text": ".crypto_in_axis(u_crypto_in_axis_if)"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".irq_o(s_crypto_irq)"
           }
         ]
       },
@@ -1545,7 +1618,7 @@
         "label": "Crypto output",
         "transport": "Stream-to-MM",
         "channel": "5",
-        "irq": null,
+        "irq": "crypto",
         "sources": [
           "rtl/ip/peripheral/dma_pkg.sv",
           "crt/include/retrosoc/hal/dma.h",
@@ -1556,6 +1629,10 @@
           {
             "file": "rtl/mini/top/apb4_periph.sv",
             "text": ".crypto_out_axis(u_crypto_out_axis_if)"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".irq_o(s_crypto_irq)"
           }
         ]
       }
@@ -1866,6 +1943,22 @@
           "rtl/mini/top/soc_data_plane.sv",
           "rtl/mini/integration/soc_topology.json",
           "docs/ip/ga2d.md"
+        ]
+      },
+      {
+        "id": "npu",
+        "ips": [
+          "npu"
+        ],
+        "name": "NPU descriptor/data DMA",
+        "master": "9",
+        "irq": "npu",
+        "hp_signal": "resource_irq_hp_i[8]",
+        "sources": [
+          "rtl/mini/top/apb4_periph.sv",
+          "rtl/mini/top/soc_data_plane.sv",
+          "rtl/mini/integration/soc_topology.json",
+          "docs/ip/npu.md"
         ]
       }
     ],
@@ -3381,6 +3474,364 @@
       "rtl/mini/ip_overrides/aq_sysio_kid.v",
       "rtl/mini/top/hp_core_wrapper.sv",
       "tests/test_xpi_flash_tool.py"
+    ],
+    "c906_technology": [
+      {
+        "id": "c906-ihp130",
+        "ips": [
+          "hp-aclint",
+          "hp-plic"
+        ],
+        "pdk": "IHP130",
+        "selection": "PDK_IHP130; PDK_BEHAV absent. SRAM additionally requires HAVE_SRAM_MACRO.",
+        "sram": "Eight wrappers use RM_IHPSG13_1P macros with width/depth stacking.",
+        "icg": "sg13g2_slgcp_1",
+        "boundary": "Functional macro views; BIST tied off. No new physical, timing or LEC qualification.",
+        "sources": [
+          "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+          "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+          "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+          "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+          "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+          "rtl/mini/ip_overrides/gated_clk_cell.v",
+          "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+          "rtl/mini/ip_overrides/BUFGCE.v",
+          "docs/ip/hp-platform.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifdef PDK_IHP130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "sg13g2_slgcp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifdef PDK_IHP130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "sg13g2_slgcp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifdef PDK_IHP130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "sg13g2_slgcp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X16_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X64_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_128X8_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_2048X32_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_256X59_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X58_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X88_IHP130_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+            "text": "`ifdef PDK_IHP130\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X98_IHP130_"
+          }
+        ],
+        "evidence": "Source integration; no matching physical qualification report attached"
+      },
+      {
+        "id": "c906-ics55",
+        "ips": [
+          "hp-aclint",
+          "hp-plic"
+        ],
+        "pdk": "ICS55",
+        "selection": "PDK_ICS55; PDK_BEHAV absent. SRAM additionally requires HAVE_SRAM_MACRO.",
+        "sram": "Eight exact-geometry OpenECOS SRAM macros; direct active-low port mapping.",
+        "icg": "ICGX1H7R",
+        "boundary": "Use the eight locked releases. ICG scan enable is combined with enable where the cell has no separate test pin.",
+        "sources": [
+          "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+          "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+          "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+          "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+          "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+          "rtl/mini/ip_overrides/gated_clk_cell.v",
+          "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+          "rtl/mini/ip_overrides/BUFGCE.v",
+          "docs/ip/hp-platform.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifdef PDK_ICS55"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "ICGX1H7R u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifdef PDK_ICS55"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "ICGX1H7R u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifdef PDK_ICS55"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "ICGX1H7R u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X16_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X64_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_128X8_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_2048X32_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_256X59_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X58_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X88_ICS55_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+            "text": "`ifdef PDK_ICS55\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X98_ICS55_"
+          }
+        ],
+        "evidence": "Source integration; no matching physical qualification report attached"
+      },
+      {
+        "id": "c906-gf180",
+        "ips": [
+          "hp-aclint",
+          "hp-plic"
+        ],
+        "pdk": "GF180",
+        "selection": "PDK_GF180; PDK_BEHAV absent. SRAM additionally requires HAVE_SRAM_MACRO.",
+        "sram": "Eight wrappers use 64/128/256/512 x 8 bit-write tiles with width/depth stacking.",
+        "icg": "gf180mcu_fd_sc_mcu7t5v0__icgtp_1",
+        "boundary": "Simulation uses repo-owned functional SRAM models; vendor timing-only views are not functional models.",
+        "sources": [
+          "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+          "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+          "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+          "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+          "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+          "rtl/mini/ip_overrides/gated_clk_cell.v",
+          "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+          "rtl/mini/ip_overrides/BUFGCE.v",
+          "docs/ip/hp-platform.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifdef PDK_GF180"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "gf180mcu_fd_sc_mcu7t5v0__icgtp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifdef PDK_GF180"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "gf180mcu_fd_sc_mcu7t5v0__icgtp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifdef PDK_GF180"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "gf180mcu_fd_sc_mcu7t5v0__icgtp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X16_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_1024X64_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_128X8_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_2048X32_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_256X59_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X58_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X88_GF180_"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+            "text": "`ifdef PDK_GF180\n`ifdef HAVE_SRAM_MACRO\n`ifndef PDK_BEHAV\n`define _AQ_SPSRAM_64X98_GF180_"
+          }
+        ],
+        "evidence": "Source integration; no matching physical qualification report attached"
+      },
+      {
+        "id": "c906-sky130",
+        "ips": [
+          "hp-aclint",
+          "hp-plic"
+        ],
+        "pdk": "SKY130",
+        "selection": "PDK_SKY130; PDK_BEHAV absent. SRAM additionally requires HAVE_SRAM_MACRO.",
+        "sram": "C906 SRAM stays behavioral: the locked byte-mask OpenRAM macro cannot implement per-bit write enables.",
+        "icg": "sky130_fd_sc_hd__sdlclkp_1",
+        "boundary": "The process ICG path can be selected independently of a compatible SRAM replacement.",
+        "sources": [
+          "rtl/mini/ip_overrides/aq_spsram_1024x16.v",
+          "rtl/mini/ip_overrides/aq_spsram_1024x64.v",
+          "rtl/mini/ip_overrides/aq_spsram_128x8.v",
+          "rtl/mini/ip_overrides/aq_spsram_2048x32.v",
+          "rtl/mini/ip_overrides/aq_spsram_256x59.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x58.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x88.v",
+          "rtl/mini/ip_overrides/aq_spsram_64x98.v",
+          "rtl/mini/ip_overrides/gated_clk_cell.v",
+          "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+          "rtl/mini/ip_overrides/BUFGCE.v",
+          "docs/ip/hp-platform.md"
+        ],
+        "bindings": [
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "`ifdef PDK_SKY130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/gated_clk_cell.v",
+            "text": "sky130_fd_sc_hd__sdlclkp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "`ifdef PDK_SKY130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/tdt_gated_clk_cell.v",
+            "text": "sky130_fd_sc_hd__sdlclkp_1 u_icg ("
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifndef PDK_BEHAV"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "`ifdef PDK_SKY130"
+          },
+          {
+            "file": "rtl/mini/ip_overrides/BUFGCE.v",
+            "text": "sky130_fd_sc_hd__sdlclkp_1 u_icg ("
+          }
+        ],
+        "evidence": "Source integration; no matching physical qualification report attached"
+      }
     ]
   },
   "retrieval": {
@@ -4034,7 +4485,7 @@
           "`RIB_RESP_SLVERR": "Target/slave error.",
           "`RIB_RESP_TIMEOUT": "Transaction timeout."
         },
-        "observation": "FAULT_STATUS.REASON [4:2], only meaningful with PENDING. Capture address, master, write direction and FAULT_DETAIL together.",
+        "observation": "FAULT_STATUS.REASON [4:2], only meaningful with PENDING. Capture address, master, write direction and FAULT_DETAIL together. The numeric mapping is RIB-based even when a native data-plane reason is selected; do not use its label alone to diagnose native faults.",
         "handling": "Preserve the first event before W1C of PENDING. Clearing permits a later event to replace the captured fields; the counter is separate.",
         "link": "sysctrl",
         "sources": [
@@ -4065,7 +4516,7 @@
           "RIB_RESP_RESERVED": "Reserved target decode.",
           "RIB_RESP_BURSTERR": "Burst shape/length rejected; SYSCTRL reason uses its default mapping when this detail is captured."
         },
-        "observation": "RIB response code; SYSCTRL FAULT_DETAIL preserves the selected fault detail. Its numeric namespace differs from FAULT_STATUS.REASON.",
+        "observation": "RIB response namespace applies to a selected local bus fault. SYSCTRL FAULT_DETAIL instead forwards native reason[2:0] when the data-plane source wins priority. It is not a universal RIB code; correlate the native monitor record and address.",
         "handling": "Follow the SYSCTRL capture sequence. A response code is not independently cleared by software.",
         "link": "sysctrl",
         "sources": [
@@ -4934,7 +5385,7 @@
           "publications/datasheets/register-profiles.json"
         ],
         "boundary": "Static source-derived mappings; no runtime result is implied.",
-        "limitations": "Generated HP artifact/cache capacity remains unconfirmed.",
+        "limitations": "Vendor-source cache defaults are documented; a generated HP artifact and matching implementation qualification remain unprovided.",
         "reports": []
       },
       {
@@ -5598,12 +6049,12 @@
           },
           {
             "id": "npu-p2-shell-irq",
-            "title": "NPU P2 shell ownership and IRQ route",
+            "title": "NPU discovery, ownership and interrupt acceptance",
             "kind": "test-fail",
             "code": 17,
             "trigger": "rs_ci_smoke_npu_irq(",
-            "coverage": "Hand resource 9 to LP through the Resource Controller quiesce/acknowledge round trip, read back the shell identity/capability, and verify the IRQ_TEST-injected event reaches external ordinal 31 and clears by W1C.",
-            "boundary": "Covers the P2 register shell and interrupt route only; EXECUTION_READY stays clear, the private master is tied idle, and no job, DMA, or operator behavior is exercised."
+            "coverage": "Hand resource 9 to LP, check the current identity and P4 capability word, then inject IRQ_TEST and verify delivery at external ordinal 31 (LP vector bit 33) and W1C acknowledgement.",
+            "boundary": "Ordinary smoke checks discovery and the interrupt route. With RS_NPU_P5_ACCEPTANCE, this routine additionally executes the selected KWS graph, verifies DONE, descriptor/counter counts, another completion IRQ and byte-exact output. This bounded workload does not establish full-corpus or physical qualification."
           },
           {
             "id": "apu",
@@ -7319,108 +7770,205 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b",
-    "checked_date": "2026-09-23",
-    "checked_at": "2026-09-23T08:26:42Z",
-    "boundary": "Observed public GitHub workflow status for this exact commit. Unfinished runs have no conclusion. Installation, environment checking and runtime regression are separate evidence; workflow outcomes do not qualify unexecuted physical or silicon stages.",
+    "revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+    "checked_date": "2026-10-23",
+    "checked_at": "2026-10-23T05:32:03Z",
+    "boundary": "Exact-commit CI observation; workflow/job/step status is separate from exact-profile hardware reports. Unfinished work has no passing verdict.",
     "runs": [
       {
+        "run_id": 39904024563,
         "name": "quality",
-        "run_id": 35833990836,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024563",
         "status": "in_progress",
         "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990836",
-        "scope": "Repository quality checks and script/RTL fixture tests",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "scope": "Repository quality gates",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "observations": []
       },
       {
+        "run_id": 39904024450,
+        "name": "regression-gf180",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024450",
+        "status": "in_progress",
+        "conclusion": null,
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "observations": []
+      },
+      {
+        "run_id": 39904024521,
         "name": "regression-smoke",
-        "run_id": 35833991124,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024521",
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991124",
-        "scope": "Bounded IHP130 smoke regression",
-        "note": "Selected workflow stages completed successfully. No per-IP corpus or physical qualification is inferred."
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Workflow result only; no complete Mini HP, multimedia or physical qualification is inferred.",
+        "observations": []
       },
       {
-        "name": "regression-ihp130",
-        "run_id": 35833991071,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991071",
-        "scope": "IHP130 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
-      },
-      {
+        "run_id": 39904024530,
         "name": "regression-sky130",
-        "run_id": 35833991199,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024530",
         "status": "in_progress",
         "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991199",
-        "scope": "SKY130 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "observations": []
       },
       {
-        "name": "regression-gf180",
-        "run_id": 35833991194,
-        "status": "in_progress",
-        "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991194",
-        "scope": "GF180 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
-      },
-      {
+        "run_id": 39904024570,
         "name": "regression-ics55",
-        "run_id": 35833991306,
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024570",
         "status": "in_progress",
         "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833991306",
-        "scope": "ICS55 hosted behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred."
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "observations": []
       },
       {
-        "name": "development-environment",
-        "run_id": 35833990893,
+        "run_id": 39904024523,
+        "name": "regression-ihp130",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024523",
         "status": "in_progress",
         "conclusion": null,
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893",
-        "scope": "Docker/Nix installation, environment checks and hosted IHP130 behavioral regression",
-        "note": "No terminal conclusion has been observed. No per-IP corpus or physical qualification is inferred.",
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "observations": []
+      },
+      {
+        "run_id": 39904024572,
+        "name": "development-environment",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572",
+        "status": "in_progress",
+        "conclusion": null,
+        "scope": "Workflow-specific committed profiles and stages",
+        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
         "observations": [
           {
-            "name": "docker: Build Docker development environment",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
-          },
-          {
-            "name": "docker: Run IHP130 regression in development environment",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null,
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965761"
-          },
-          {
-            "name": "nix: Install Nix",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
-          },
-          {
-            "name": "nix: Check Nix flake",
+            "name": "nix / IHP130 regression / Check out repository",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
             "scope": "environment-check",
             "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
+            "conclusion": "success"
           },
           {
-            "name": "nix: Run IHP130 regression in development environment",
-            "scope": "runtime-regression",
+            "name": "nix / IHP130 regression / Restore locked IHP130 sources",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "environment-check",
             "status": "completed",
-            "conclusion": "success",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/35833990893/job/107092965933"
+            "conclusion": "success"
+          },
+          {
+            "name": "nix / IHP130 regression / Restore SBT dependency cache",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "nix / IHP130 regression / Restore Verilator compiler cache",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "nix / IHP130 regression / Build Docker development environment",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "nix / IHP130 regression / Install Nix",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "nix / IHP130 regression / Check Nix flake",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "nix / IHP130 regression / Run IHP130 regression in development environment",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "runtime-regression",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "name": "nix / IHP130 regression / Upload reports and structured results",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+            "scope": "environment-check",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "docker / IHP130 regression / Check out repository",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "docker / IHP130 regression / Restore locked IHP130 sources",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "docker / IHP130 regression / Restore SBT dependency cache",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "docker / IHP130 regression / Restore Verilator compiler cache",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "docker / IHP130 regression / Build Docker development environment",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "docker / IHP130 regression / Install Nix",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "installation",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "docker / IHP130 regression / Check Nix flake",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "docker / IHP130 regression / Run IHP130 regression in development environment",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "runtime-regression",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "name": "docker / IHP130 regression / Upload reports and structured results",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+            "scope": "environment-check",
+            "status": "pending",
+            "conclusion": null
           }
         ]
       }

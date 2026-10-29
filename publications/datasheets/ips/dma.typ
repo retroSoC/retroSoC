@@ -40,6 +40,12 @@ UART0 uses channel 0; I2C0 and I2C1 use channels 1 and 2. I2S and DVP use bulk c
 Channels 0-5 retain defined endpoint ownership, channel 6 is reserved for HP boot and channel
 7 is reserved. Crypto streaming and other endpoint details remain defined by the DMA contract;
 drivers must not silently share a context.
+
+The optional software session API acquires an idle channel, clears inherited TCD state and
+retains a caller-owned session object. Unleased commands are rejected while that lease exists.
+After successful terminal completion or confirmed abort/drain, release the same session object.
+This single-hart guard supplements the hardware owner and cache rules; it is not inter-hart
+mutual exclusion. With CSR support disabled, it does not provide interrupt masking either.
 ])
 
 #context metadata((kind:"ip-end",id:"dma",page:here().page()))

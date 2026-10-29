@@ -5342,7 +5342,7 @@
       },
       {
         "id": "aes",
-      "title": "AES SRAM engine\nkey schedule / modes",
+        "title": "AES SRAM engine\nkey schedule / modes",
         "x": 0.0,
         "y": 3.5,
         "w": 4.0,
@@ -5371,16 +5371,16 @@
           "rtl/ip/security/apb4_crypto.sv",
           "rtl/ip/security/crypto_aes_sram_engine.sv"
         ],
-      "instance_source": {
-        "file": "rtl/ip/security/apb4_crypto.sv",
-        "name": "u_aes",
-        "module": "crypto_aes_sram_engine",
-        "declaration_file": "rtl/ip/security/crypto_aes_sram_engine.sv"
-      }
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_aes",
+          "module": "crypto_aes_sram_engine",
+          "declaration_file": "rtl/ip/security/crypto_aes_sram_engine.sv"
+        }
       },
       {
         "id": "sha",
-      "title": "SHA SRAM engine\nschedule / compression",
+        "title": "SHA SRAM engine\nschedule / compression",
         "x": 6.3,
         "y": 3.5,
         "w": 4.0,
@@ -5403,16 +5403,16 @@
           "rtl/ip/security/apb4_crypto.sv",
           "rtl/ip/security/crypto_sha2_sram_engine.sv"
         ],
-      "instance_source": {
-        "file": "rtl/ip/security/apb4_crypto.sv",
-        "name": "u_sha",
-        "module": "crypto_sha2_sram_engine",
-        "declaration_file": "rtl/ip/security/crypto_sha2_sram_engine.sv"
-      }
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_sha",
+          "module": "crypto_sha2_sram_engine",
+          "declaration_file": "rtl/ip/security/crypto_sha2_sram_engine.sv"
+        }
       },
       {
         "id": "rsa",
-      "title": "RSA SRAM core\nprepare / exponentiation",
+        "title": "RSA SRAM core\nprepare / exponentiation",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -5425,9 +5425,9 @@
             "side": "north"
           },
           {
-          "id": "p6",
-          "direction": "out",
-          "width": 32,
+            "id": "p6",
+            "direction": "out",
+            "width": 32,
             "side": "south"
           }
         ],
@@ -5435,12 +5435,12 @@
           "rtl/ip/security/apb4_crypto.sv",
           "rtl/ip/security/crypto_rsa_sram_core.sv"
         ],
-      "instance_source": {
-        "file": "rtl/ip/security/apb4_crypto.sv",
-        "name": "u_rsa",
-        "module": "crypto_rsa_sram_core",
-        "declaration_file": "rtl/ip/security/crypto_rsa_sram_core.sv"
-      }
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_rsa",
+          "module": "crypto_rsa_sram_core",
+          "declaration_file": "rtl/ip/security/crypto_rsa_sram_core.sv"
+        }
       },
       {
         "id": "stream",
@@ -5488,16 +5488,16 @@
       },
       {
         "id": "rsa_words",
-      "title": "APB storage portals\nresult / progress status",
+        "title": "APB storage portals\nresult / progress status",
         "x": 12.6,
         "y": 0.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
           {
-          "id": "p6",
-          "direction": "in",
-          "width": 32,
+            "id": "p6",
+            "direction": "in",
+            "width": 32,
             "side": "north"
           }
         ],
@@ -5513,19 +5513,19 @@
         "kind": "control",
         "label": "START",
         "style": "zigzag",
-      "bindings": [
-        {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "text": ".start_i(s_start[0])"
-        }
-      ],
-      "instance_ports": [
-        {
-          "node": "aes",
-          "port": "start_i",
-          "expression": "s_start[0]"
-        }
-      ],
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[0])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "aes",
+            "port": "start_i",
+            "expression": "s_start[0]"
+          }
+        ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5534,19 +5534,19 @@
         "kind": "control",
         "label": "START",
         "style": "direct",
-      "bindings": [
-        {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "text": ".start_i(s_start[1])"
-        }
-      ],
-      "instance_ports": [
-        {
-          "node": "sha",
-          "port": "start_i",
-          "expression": "s_start[1]"
-        }
-      ],
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[1])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "sha",
+            "port": "start_i",
+            "expression": "s_start[1]"
+          }
+        ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5555,19 +5555,19 @@
         "kind": "control",
         "label": "START",
         "style": "zigzag",
-      "bindings": [
-        {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "text": ".start_i(s_start[2])"
-        }
-      ],
-      "instance_ports": [
-        {
-          "node": "rsa",
-          "port": "start_i",
-          "expression": "s_start[2]"
-        }
-      ],
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[2])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "rsa",
+            "port": "start_i",
+            "expression": "s_start[2]"
+          }
+        ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5576,19 +5576,19 @@
         "kind": "data",
         "label": "INPUT / 32",
         "style": "direct",
-      "bindings": [
-        {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "text": ".input_data_i(s_aes_dma_active ? crypto_in_axis.tdata : s_wdata)"
-        }
-      ],
-      "instance_ports": [
-        {
-          "node": "aes",
-          "port": "input_data_i",
-          "expression": "s_aes_dma_active ? crypto_in_axis.tdata : s_wdata"
-        }
-      ],
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".input_data_i(s_aes_dma_active ? crypto_in_axis.tdata : s_wdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "aes",
+            "port": "input_data_i",
+            "expression": "s_aes_dma_active ? crypto_in_axis.tdata : s_wdata"
+          }
+        ],
         "zigzag-dir": "horizontal"
       },
       {
@@ -5626,20 +5626,20 @@
         "kind": "data",
         "label": "INPUT / 32",
         "style": "direct",
-      "bindings": [
-        {
-          "file": "rtl/ip/security/apb4_crypto.sv",
-          "text": ".input_data_i(s_sha_dma_active ? crypto_in_axis.tdata : s_wdata)"
-        }
-      ],
-      "instance_ports": [
-        {
-          "node": "sha",
-          "port": "input_data_i",
-          "expression": "s_sha_dma_active ? crypto_in_axis.tdata : s_wdata"
-        }
-      ],
-      "zigzag-dir": "horizontal"
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".input_data_i(s_sha_dma_active ? crypto_in_axis.tdata : s_wdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "sha",
+            "port": "input_data_i",
+            "expression": "s_sha_dma_active ? crypto_in_axis.tdata : s_wdata"
+          }
+        ],
+        "zigzag-dir": "horizontal"
       },
       {
         "from": "rsa.p6",
@@ -7268,7 +7268,7 @@
         ]
       }
     ],
-    "note": "The LP CLINT and HP ACLINT share this RTL family but own separate register windows and interrupt routing. HP logical contexts are not additional physical harts."
+    "note": "This SoC CLINT serves the LP hart. Its 64-bit timebase also feeds OpenC906, whose local interrupt controller is core-internal and does not share this SoC register bank."
   },
   "hp-aclint": {
     "nodes": [
@@ -7399,7 +7399,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "The OpenC906 CLINT is decoded inside the core BIU within the 0x08000000 system window and never appears on the SoC fabric. There is no memory-mapped mtime: the SoC drives the 64-bit time value into the core and software reads the time CSR."
+    "note": "The OpenC906 CLINT is decoded inside the core BIU at 0x0C000000 within the 0x08000000 system window and never appears on the SoC fabric. There is no memory-mapped mtime: the SoC drives the 64-bit time value into the core and software reads the time CSR."
   },
   "hp-plic": {
     "nodes": [
@@ -8925,7 +8925,7 @@
         "from": "cfg_packet.out",
         "to": "cfg.p0",
         "kind": "control",
-        "label": "CFG + EPOCH / 129",
+        "label": "PACKET / 129",
         "style": "direct",
         "bindings": [
           {
@@ -9007,7 +9007,7 @@
         "from": "applied.out",
         "to": "core.p1",
         "kind": "control",
-        "label": "APPLIED CFG / 128",
+        "label": "CFG / 128",
         "style": "direct",
         "bindings": [
           {
@@ -10233,7 +10233,7 @@
           {
             "id": "p3",
             "direction": "out",
-            "width": 32,
+            "width": 64,
             "side": "east"
           }
         ],
@@ -10250,7 +10250,7 @@
       },
       {
         "id": "memory",
-        "title": "AXI32 master\nHP data-plane adapter",
+        "title": "AXI64 master\nHP data-plane connection",
         "x": 12.6,
         "y": 0.0,
         "w": 4.0,
@@ -10259,7 +10259,7 @@
           {
             "id": "p3",
             "direction": "in",
-            "width": 32,
+            "width": 64,
             "side": "west"
           }
         ],
@@ -10365,7 +10365,7 @@
         "from": "dma.p3",
         "to": "memory.p3",
         "kind": "data",
-        "label": "AXI4 / 32",
+        "label": "AXI4 / 64",
         "style": "direct",
         "bindings": [
           {
@@ -10379,7 +10379,8 @@
             "port": "axi4",
             "expression": "ext_h_axi4"
           }
-        ]
+        ],
+        "width": 64
       }
     ],
     "note": "EXT-H data-master admission is capability- and lifecycle-gated. Its DMA path is bounded by read/write ACLs, timeout and quiesce/reset state. Stream and local-SRAM support follow the committed slot definition."

@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-hp-aclint","Internal C906 CLINT integration boundary")
 
 #import "../ip-reference.typ": inline, subhead
 #import "../diagram-packages.typ": circuit-diagram
@@ -15,8 +16,9 @@
 #let r=data.regions.find(r=>r.symbol=="HP_C906_SYS")
 
 The HP local timer and software interrupt function is *internal to the OpenC906 core*: the core
-BIU decodes the T-Head c900 CLINT layout inside the reserved system window at #code(r.base_hex)
-(size #r.size_label), which never appears as a SoC fabric target. This chapter therefore has
+BIU decodes the T-Head c900 CLINT at #code(data.system_reference.product_details.c906.clint_base),
+inside the reserved system window at #code(r.base_hex) (size #r.size_label).
+The internal CLINT is not a SoC fabric target. This chapter therefore has
 *no SoC register table*; register-bit detail follows the T-Head C906 manuals, which remain
 outside this publication's scope together with the CPU ISA/CSR manuals.
 
@@ -40,3 +42,5 @@ outside this publication's scope together with the CPU ISA/CSR manuals.
 ]
 
 #context metadata((kind:"ip-end",id:"hp-aclint",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-hp-aclint")

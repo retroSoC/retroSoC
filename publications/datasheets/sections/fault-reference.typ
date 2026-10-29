@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-fault-reference","Current source identities and JTAG failure mapping")
 #change-start("v05-emphasis-fault-reference","Selected body emphasis: fault reference")
 #import "../ip-reference.typ": inline
 
@@ -14,6 +15,7 @@ acknowledging or resetting anything*. The detailed register and recovery contrac
 @system-diagnostics remain authoritative. The global address lookup is @global-register-index.
 
 == Diagnostic Code Namespaces
+#change-start("v05-dev-20261022-fault-namespaces","Selected native versus local fault source and RIB-based normalization")
 #for group in data.system_reference.retrieval.codes {
   block(breakable:false,sticky:true)[
     #heading(level:3,group.title)
@@ -31,6 +33,8 @@ acknowledging or resetting anything*. The detailed register and recovery contrac
     #source(group.source,title:"Encoding declaration / producing branch")
   ]
 }
+
+#change-end("v05-dev-20261022-fault-namespaces")
 
 == Status Registers and Capture Points
 The following diagnostic fields reuse the register reference with source-checked decoding
@@ -131,3 +135,5 @@ different measurements. This appendix supplies no new successful hardware run.
 #source-note("docs/engineering.md",title:"Regression verdict and evidence rules")
 
 #change-end("v05-emphasis-fault-reference")
+
+#change-end("v05-c906-20261022-sections-fault-reference")

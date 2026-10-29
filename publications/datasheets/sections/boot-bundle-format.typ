@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-dev-20261022-boot-bundle","Previously undelivered V2 workload discriminators and image validation")
 #change-start("v05-emphasis-boot-bundle-format","Selected body emphasis: boot bundle format")
 #import "../diagram-packages.typ": binary-figures, storage-figures
 #let bundle = data.system_reference.software.bundle_reference
@@ -94,3 +95,5 @@ The example values are recalculated from the actual packager rather than maintai
 #storage-figures("software-boot",section:"software")
 
 #change-end("v05-emphasis-boot-bundle-format")
+
+#change-end("v05-dev-20261022-boot-bundle")

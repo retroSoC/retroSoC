@@ -26,7 +26,11 @@ from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, sha256  # noqa: E402
 from scripts.check_clock_reset_domains import validate as validate_clocks  # noqa: E402
 from publications.register_reference import collect_registers  # noqa: E402
+from publications.mini_integration_reference import (  # noqa: E402
+    SOURCES as MINI_BINDING_SOURCES, collect_mini_bindings, profile_values,
+)
 from publications.chapter_reference import collect_chapters  # noqa: E402
+from publications.c906_reference import source_paths as c906_source_paths  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
 from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
@@ -74,33 +78,18 @@ def load_generator(name: str, relative: str) -> Any:
     return module
 
 
-def profile_values(path: Path) -> dict[str, str]:
-    """These committed profiles deliberately use only literal Make assignments."""
-    result: dict[str, str] = {}
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        line = line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        match = re.fullmatch(r"([A-Z][A-Z0-9_]*)\s*:?=\s*([A-Za-z0-9_.+-]+)", line)
-        if not match:
-            raise ValueError(f"unsupported profile expression at {path}:{number}")
-        if match[1] in result:
-            raise ValueError(f"duplicate profile assignment: {match[1]}")
-        result[match[1]] = match[2]
-    return result
-
-
 def validate_source(config: dict[str, Any]) -> None:
     revision = config["source_revision"]
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("source_revision must be a full reviewed Git commit")
     # Documentation commits may follow the hardware snapshot, but changed technical
     # inputs must be reviewed before advertising them in this datasheet.
-    changed = git("diff", "--name-only", revision, "--", "rtl", "crt", "app", "configs", "docs")
+    changed = git("diff", "--name-only", revision, "--", "rtl", "crt", "app", "configs", "docs",
+                  "dependencies/dependencies.lock.json", "scripts/generate_openc906.py", "Makefile")
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
     for name, dependency in load_lock()["sources"].items():
-        if name.startswith("cluster_") or name in {"hazard3", "mpw"}:
+        if name.startswith("cluster_") or name in {"hazard3", "mpw", "openc906"}:
             checkout = ROOT / dependency["destination"]
             if not (checkout / ".git").exists():
                 raise ValueError(f"managed source {name} missing; run setup")
@@ -108,6 +97,7 @@ def validate_source(config: dict[str, Any]) -> None:
                 "status", "--porcelain", root=checkout
             ):
                 raise ValueError(f"managed source {name} differs from its lock; run setup --update")
+    c906_source_paths(ROOT, validate=True)
 
 
 def validate_catalog(catalog: list[dict], regions: list[dict], irqs: list[dict]) -> None:
@@ -156,7 +146,8 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     catalog = read_json(ROOT / "publications/datasheets/ip-catalog.json")
     irq_data = [dataclasses.asdict(i) for i in sorted(irqs, key=lambda i: i.core_bit)]
     validate_catalog(catalog, regions, irq_data)
-    register_data = collect_registers()
+    mini_bindings = collect_mini_bindings(ROOT, product)
+    register_data = collect_registers(mini_bindings)
     system_reference = collect_system_reference(ROOT, config["source_revision"])
     waveforms, waveform_audit = collect_waveforms(ROOT)
     for region in regions:
@@ -202,9 +193,10 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         "extensions": read_json(ROOT / "rtl/mini/integration/user_extensions.json"),
         "mpw": read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
         "managed_sources": [
-            d for n, d in load_lock()["sources"].items() if n.startswith("cluster_") or n == "mpw"
+            d for n, d in load_lock()["sources"].items() if n.startswith("cluster_") or n in {"mpw", "openc906"}
         ],
         "registers": register_data,
+        "mini_bindings": mini_bindings,
         "chapters": collect_chapters(register_data),
         "waveforms": waveforms,
         "waveform_audit": waveform_audit,
@@ -234,7 +226,7 @@ def gpio_label(mode: Any) -> str:
 
 def prepare(lock: dict, update: bool) -> None:
     for name, dependency in lock["sources"].items():
-        if name.startswith("cluster_") or name in {"hazard3", "mpw"}:
+        if name.startswith("cluster_") or name in {"hazard3", "mpw", "openc906"}:
             ensure_git_repo(
                 dependency["url"],
                 ROOT / dependency["destination"],
@@ -320,6 +312,11 @@ def source_hashes(
     }
     for entry in catalog:
         paths.update(entry["sources"])
+    paths.update(MINI_BINDING_SOURCES)
+    paths.update(c906_source_paths(ROOT))
+    for item in read_json(ROOT / "publications/datasheets/ip-content.json").values():
+        for correction in item.get("prose_corrections", []):
+            paths.update(binding["file"] for binding in correction["bindings"])
     paths.update(waveform_source_paths(read_json(ROOT / "publications/datasheets/waveforms.json")))
     paths.update(system_source_paths(read_json(ROOT / "publications/datasheets/system-reference.json")))
     paths.update(

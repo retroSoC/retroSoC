@@ -5,16 +5,17 @@ an English product document with a separate MPW compatibility appendix. It does
 not define or change RTL, register ABIs, build profiles or hardware quality policy.
 The canonical RTL/configuration inputs remain authoritative.
 
-The current working source includes the Mini RV64/Sv39 migration, V2 workload
-bundle checks, and minimal Linux `/init` handoff. RT-Thread's M-mode BSP and
-acceptance evidence are documented in [HP RV64 validation](../docs/hp-rv64-validation.md).
-The HP core is being switched from VexiiRiscv to the locked T-Head OpenC906
-(default RV64GC configuration, core-internal c900 CLINT/PLIC, mhartid 1 via a
-reviewed override); the Mini publication now describes that integration, and the
-Overview drops the former HP ACLINT/HP PLIC SoC-peripheral labels (43 labels).
-These edits do not advance `mini.json.source_revision` or relabel an existing
-PDF. Review and commit the implementation snapshot before producing a matching
-new PDF; the source-drift check remains mandatory.
+The **2026-10-22 Mini v0.5 DRAFT OpenC906 refresh** reviews dev source
+`9ab05c6404c02b5f2c927539b5c681b46f778b9f`: the locked RV64GC/Sv39 OpenC906,
+core-internal c900 CLINT/PLIC, V2 workload bundles, Linux `/init`, RT-Thread,
+and the selected SRAM/clock-gating paths. The Overview has 43 integrated labels;
+the retained HP interrupt chapters describe core-internal integration boundaries.
+The implementation snapshot and publication edits are distinct; prior PDFs retain
+their original identity. Strict source checks remain mandatory. The
+[content review](datasheets/content-review.md) separates adequate retained content,
+updates, source discrepancies and missing evidence. Dated results in
+[HP RV64 validation](../docs/hp-rv64-validation.md) retain their original core,
+configuration and report scope.
 
 ## Tiny Gen1 datasheet
 
@@ -26,6 +27,21 @@ Its output and `latest-tiny` record are separate; the existing Mini entrypoint,
 templates, configuration, review and delivered PDF are unchanged.
 
 ## Mini datasheet
+
+The current round uses `v05-c906-20261022-` change markers and compares against
+the retained 798-page Rill PDF with SHA-256
+`49c3e20e7568e20baaa75f104e71b7e526f33aa7231bed03dbcde5893712da93`.
+Its date and full SHA are in `mini.json`; page-dependent review/validation records
+belong to the final artifact. Earlier edition descriptions below remain historical.
+The main reference is still IHP130 PRODUCT / 32 KiB SRAM / no PLL. Mini's ICS55
+profile also enables 32 KiB macro-backed SRAM; Tiny's PLL/RCU policy is separate.
+
+Selected register values now follow the actual Mini instance and profile through
+`mini_integration_reference.py`. APU P5/P9 identities, Crypto macro selection,
+DMA discovery and technology pad capabilities must agree with their prose and
+diagrams. Missing or ambiguous selected source headings fail collection. Shared
+SPI/PIO definitions do not enable them in Mini. The DMA burst-discovery truncation
+and NPU-P6 workload/ownership discrepancy are documented, not repaired here.
 
 The prototype chip brand is **Rill（清溪）**. Its bilingual label replaces the
 visible document ID in the existing cover metadata line; running headers prefix
@@ -51,7 +67,7 @@ register/bitfield and software reference chapters. Each actual IP starts on a
 new page; UART/SDIO instances share their common register descriptions.
 CPU ISA/CSR manuals remain outside this publication's scope.
 
-The current 2026-09-22 refresh retains v0.5 DRAFT and binds it to reviewed dev commit
+The historical 2026-09-22 refresh retained v0.5 DRAFT and bound it to reviewed dev commit
 `c3de7c602a7ca0f0f9ade9d3ffb59339bc34fb8b`. NPU retains its independent chapter
 after APU. The reviewed contract contains 42 IP chapters and 109 frozen entries;
 the nine-category Overview contains 45 labels. Existing register anchors remain
@@ -68,7 +84,7 @@ for the delivered PDF snapshot.
 MP3 remains a reserved trap entry. Default PRODUCT keeps KWS gated off; the P9
 acceptance profile advertises capability `0x3FD` and digest `0x63E96066`.
 APU KWS storage includes 15 coefficient and 17 proof-memo macro wrappers in the
-qualified configuration; physical replacement remains evidence-bound. NPU has
+dedicated P9 configuration; physical replacement remains evidence-bound. NPU has
 eight executable operator classes, 64 KiB private SRAM and
 an integrated eight-beat AXI64 DMA limit; its reusable DMA default is not the
 deployed limit. Native Linux NPU/ASoC support is not inferred from HP smoke code.
@@ -292,6 +308,10 @@ configuration in `datasheets/style.typ`; update the standard together with
 intentional layout changes and verify actual spacing in the rendered PDF.
 The publication converter preserves real nested lists and explicit step numbers;
 its regressions are covered by `tests/test_publication_prose.py`.
+Imported legacy paragraphs and table headers can be reconciled through explicit
+`ip-content.json.prose_corrections` entries. Each correction must match exactly
+one selected paragraph, `table_header` or `table_cell` and retain executable source bindings;
+missing, ambiguous or drifted evidence fails the build.
 
 ### Detailed IP reference sources
 

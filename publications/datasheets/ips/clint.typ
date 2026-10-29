@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-clint","LP timebase and core-internal HP timer boundary")
 
 #import "../ip-reference.typ": ip-reference
 
@@ -17,3 +18,5 @@ interrupt controller.
 ])
 
 #context metadata((kind:"ip-end",id:"clint",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-clint")

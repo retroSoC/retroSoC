@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-resource","C906 ownership and interrupt context")
 
 #import "../ip-reference.typ": ip-reference
 
@@ -14,7 +15,7 @@
 *Ten resources* are managed: central DMA, USB2, SDIO0, SDIO1, SPI-SD, EXT-H, JPEG,
 APU, GA2D and NPU. Resource ABI 1.2 reports ten slots. Resource 9 owns the native-HP
 NPU, including LP vector 33 / HP external source 12 (PLIC ID 28) steering. Resource 8 routes the GA2D
-its IRQ according to its current owner and controls its private AXI64 lifecycle.
+IRQ according to its current owner and controls its private AXI64 lifecycle.
 GA2D supports FILL, COPY, bit-exact CONVERT, opaque alpha BLEND, A8 fixed-color
 foreground masks, and exact equal background/destination in-place composition.
 RGB565, RGB888, XRGB8888, and ARGB8888 are color surfaces; A8 is BLEND
@@ -31,3 +32,5 @@ See @npu for descriptor execution and the distinction between coordinated clock 
 resource quiesce and cancellation/drain.
 
 #context metadata((kind:"ip-end",id:"resource",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-resource")

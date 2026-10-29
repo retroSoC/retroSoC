@@ -1915,7 +1915,7 @@
     ],
     "review_note": "Replaced resource-busy/cache-handoff prose with actual admission, idle, acknowledgement and owner ports. Reviewed owner-write guards.",
     "parameters": {
-      "ResourceCount": 9
+      "ResourceCount": 10
     },
     "parameter_note": "The reviewed resource-controller integration tracks ten resource positions."
   },
@@ -1990,7 +1990,7 @@
     ],
     "review_note": "Removed invented SNAPSHOT and snapshot-valid signals; used actual control decode and live/snapshot register arrays.",
     "parameters": {
-      "NumMasters": 9,
+      "NumMasters": 10,
       "NumTargets": 6
     },
     "parameter_note": "Reference monitor parameters are ten masters and six target positions."

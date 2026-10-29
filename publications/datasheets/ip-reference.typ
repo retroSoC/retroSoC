@@ -16,6 +16,8 @@
   }
 }
 
+#let summary-access(value) = if value=="Unsupported" {"N/A"} else if value=="RO/unsupported" {"RO*"} else {value}
+
 #let subhead(ip, name, depth) = [
   #{
     show heading: it => heading-layout(it,before:rhythm.minor-before,after:rhythm.minor-after)
@@ -89,7 +91,7 @@
       show underline: omit-link-underline
       ds-table(family+"-summary-"+group.id,group.title,
         ([Offset],[Register],[Access],[Reset],[Description]),
-        registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),r.access,inline(r.reset),inline(r.description))),
+        registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),summary-access(r.access),inline(r.reset),inline(r.description))),
         widths:(0.55fr,1.6fr,0.6fr,1.1fr,2.6fr))
     }
   }
@@ -121,6 +123,10 @@
 
 #let ip-reference(id, family, depth, shared:none, legacy:none, register-family:none, software-note:none, functional-note:none, protocol-note:none) = {
   change-start("v05-emphasis-ip-"+id,"Selected feature, programming and limitation emphasis: "+upper(id))
+  let c906-refresh=family in ("sdio","sysctrl","monitor","extensions")
+  if c906-refresh {change-start("v05-c906-20261022-ip-"+id,"Current C906 master and IRQ context: "+upper(id))}
+  let current-refresh=family in ("psram","rtc","jpeg","sysctrl","crc","rng","extensions","xpi","spisd","sram","opipsram","sdram","usb2","sdio","gpio","dma","pwm","ws2812","i2s","dvp","apu","crypto","archinfo","resource","monitor")
+  if current-refresh {change-start("v05-dev-20261022-ip-"+id,"Current Mini integration, register and software reference: "+upper(id))}
   let chapter=data.chapters.at(family)
   let revised=id in ("sysctrl","resource","monitor","apu","i2s")
   if revised {change-start("dev-ip-"+id,chapter.title+" current implementation and register reference")}
@@ -143,8 +149,9 @@
   binary-figures(id,"functional")
   if functional-note!=none {functional-note}
   storage-figures(id)
+  if current-refresh {change-end("v05-dev-20261022-ip-"+id)}
   subhead(id,"Protocol and Timing",depth)
-  [For common APB4/AXI4/stream handshake rules, see @common-protocols.]
+  par[For common APB4/AXI4/stream handshake rules, see @common-protocols.]
   if protocol-note!=none {protocol-note}
   binary-figures(id,"protocol")
   if shared==none {
@@ -153,16 +160,23 @@
       timing(family+"-exception",[#chapter.title waiting, fault or recovery example.])
     }
   } else {
-    [Common protocol and timing follow #link(label("detail-"+shared+"-protocol-and-timing"))[the shared implementation description].
+    par[Common protocol and timing follow #link(label("detail-"+shared+"-protocol-and-timing"))[the shared implementation description].
     The instance's address, pins, IRQ routing and software ownership remain those listed above.]
   }
-  if shared==none { register-section(family,depth) }
+  if shared==none {
+    let register-refresh=family in ("i2s","psram","opipsram","sdio","usb2","jpeg","rtc","wdg","sysctrl","crc","rng","i2c","gpio","dma","pwm","dvp","apu","crypto","archinfo","resource","monitor","extensions")
+    if register-refresh {change-start("v05-dev-20261022-registers-"+id,"Selected-profile register fields and discovery: "+upper(id))}
+    register-section(family,depth)
+    if register-refresh {change-end("v05-dev-20261022-registers-"+id)}
+  }
   else {
     subhead(id,"Register Interface",depth)
     let target=if register-family==none { family } else {register-family}
     [Use the #link(label("detail-"+target+"-register-summary"))[shared register summary] and
     #link(label("detail-"+target+"-register-description"))[field descriptions] with this instance's base address.]
   }
+  let software-refresh=family in ("sdio","dma","dvp","ws2812","crypto")
+  if software-refresh {change-start("v05-dev-20261022-software-"+id,"Current API sequence, completion and recovery: "+upper(id))}
   subhead(id,"Software",depth)
   if id=="uart1" {
     [The generic UART HAL example configures UART0. UART1 shares the register ABI but has its own base address, dedicated TX/RX, HP PLIC route and no DMA/RTS/CTS binding. Use the HP console integration or a driver explicitly bound to UART1; do not apply UART0 pad configuration to it.]
@@ -187,5 +201,7 @@
     source-note(chapter.reference,title:"Detailed interface contract and source provenance")
   }
   if revised {change-end("dev-ip-"+id)}
+  if software-refresh {change-end("v05-dev-20261022-software-"+id)}
+  if c906-refresh {change-end("v05-c906-20261022-ip-"+id)}
   change-end("v05-emphasis-ip-"+id)
 }

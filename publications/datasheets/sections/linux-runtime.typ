@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-linux-runtime","C906 startup, interrupts and userspace acceptance")
+#change-start("v05-dev-20261022-linux","RV64 minimal userspace, firmware reservation and Linux DMA evidence boundary")
 #change-start("v05-emphasis-linux-runtime","Selected body emphasis: linux runtime")
 #import "../system-figures.typ": sequence-diagram
 #let platform = data.system_reference.software.platform
@@ -9,16 +11,21 @@ LP remains the separate management firmware processor. The platform's software-i
 descriptor targets the core-internal CLINT with first hart ID 1 and hart count 1; that storage
 range is not a declaration that Linux runs on both harts. The *kernel configuration disables SMP*.
 
-The early platform setup programs UART1, registers its polled console and initializes machine
-software-interrupt support. Timer initialization registers a custom timer device that reads
+Cold initialization invalidates the cache/predictor state through MCOR before enabling
+caches and prediction through MHCR. It clears MXSTATUS.MAEE so translated accesses use the
+reviewed sysmap attributes, and parks *both MTIMECMP and STIMECMP* before supervisor code
+can enable timer interrupts. It then programs UART1, registers its polled console and
+initializes machine software-interrupt support. Timer initialization registers a custom timer device that reads
 the time CSR and programs the core-internal MTIMECMP; there is *no memory-mapped mtime*.
+The irqchip callback initializes the internal PLIC from the DTB, including the T-Head
+machine-to-supervisor delegation behavior required for S-mode external interrupts.
 Console writes
 wait while TX is full; this loop has *no local timeout*. These implemented callbacks do not
 establish that all optional SBI services or all peripherals have native Linux drivers.
 
 #figure(sequence-diagram((
   [*LP handoff* \ Existing bundle validation \ Release HP at OpenSBI],
-  [*OpenSBI on hart 1* \ UART1 SBI console \ CLINT timer/MSWI setup],
+  [*OpenSBI on hart 1* \ Cache / attribute setup \ Timers / PLIC / console],
   [*FW_JUMP* \ Enter Linux Image \ Pass the prepared DTB],
   [*Kernel / initramfs* \ SBI early console and hvc0 \ Run /init],
   [*Rootfs ready service* \ Print ready text \ Publish mailbox fields],
@@ -81,6 +88,11 @@ smoke workload. A rootfs message alone is not the final SYSCTRL verdict.
 Resource ownership and non-coherent buffer rules still apply after Linux starts. Follow
 @software-support before choosing a driver path, and @multicore-operation for later LP/HP
 transactions. This description adds no new successful boot or board-validation claim.
+The supplied minimal kernel leaves CONFIG_RISCV_ISA_ZICBOM disabled, and the custom OpenSBI
+platform does not enable the corresponding S-mode cache-block-operation permissions.
+The HP uses T-Head cache-maintenance instructions; this platform does *not* establish native Linux
+non-coherent DMA support. The M-mode cache-clean smoke and a future S-mode DMA driver
+qualification are separate evidence.
 #source-note("app/ports/linux/hp_ready.c",title:"Ready message and actual mailbox write order")
 #source-note("app/ports/linux/init",title:"Minimal userspace acceptance checks")
 #source-note("crt/src/hal/hp_mailbox.c",title:"Event, argument and sequence register purposes")
@@ -88,3 +100,7 @@ transactions. This description adds no new successful boot or board-validation c
 #change-end("v05-refresh-linux-mailbox")
 
 #change-end("v05-emphasis-linux-runtime")
+
+#change-end("v05-dev-20261022-linux")
+
+#change-end("v05-c906-20261022-sections-linux-runtime")

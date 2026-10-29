@@ -177,7 +177,7 @@
     },
     {
       "id": "lp_core",
-      "label": "Hazard3\nRV32IM",
+      "label": "Hazard3 RV32\nFW: RV32IM",
       "x": 28,
       "y": 4.793103448275862,
       "w": 27,
@@ -273,7 +273,7 @@
     },
     {
       "id": "hp_core",
-      "label": "OpenC906\nI$ / D$ / FPU / MMU",
+      "label": "OpenC906 RV64\nI$ / D$ / FPU / MMU",
       "x": 107,
       "y": 4.793103448275862,
       "w": 43,

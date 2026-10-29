@@ -98,6 +98,7 @@ electrical conditions remain those of @electrical-specifications.
 #source-note("docs/ip/jpeg.md",title:"JPEG functional and performance qualification boundary")
 
 = Known Limitations and Revision Compatibility <known-limitations>
+#change-start("v05-dev-20261022-limitations","Current workload, discovery and maintenance limitations")
 #change-end("dev-performance")
 #change-start("v05-refresh-limitations","Current feature gates and revision limitations")
 The following items describe the reviewed implementation and its publication boundary. They
@@ -129,6 +130,7 @@ establish compatibility.
 }
 
 == Revision Identification and Compatibility
+#change-end("v05-dev-20261022-limitations")
 Before driver initialization, compare the selected profile and expected ABI with ARCHINFO,
 IP identification/version and capability fields where implemented. Some blocks share a register
 bank or expose compatibility windows; discover the actual interface rather than assuming every

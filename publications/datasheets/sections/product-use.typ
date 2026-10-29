@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-product-use","Selected configuration and processor availability")
+#change-start("v05-dev-20261022-product-use","Current configuration, software support and per-IP availability")
 #change-start("v05-emphasis-product-use","Selected body emphasis: product use")
 #change-start("dev-product-availability","Current IP availability and media-composition limits")
 #import "../system-figures.typ": *
@@ -46,16 +48,10 @@ does not establish all optional modes in a standard or a compliance certificate.
 + Start with the reference profile and identify the memory needed by the application.
   Confirm that mapped capacity, fitted device capacity and linker placement agree.
 + Check shared-pad exclusion and external clock/PHY requirements before allocating GPIOs.
-+ Check ARCHINFO and IP capabilities/version; reject unsupported setup or DMA.
++ Check ARCHINFO and IP capabilities/version; reject unsupported setup or DMA. On a mismatch,
+  *stop initialization* and record the image/profile and diagnostic identity.
 + Match the firmware or Linux path to the support matrix in @software-support. Keep unsupported
   resources under LP control until an appropriate driver and handoff protocol are supplied.
-
-On a probe mismatch, *stop initialization* and report the image/profile and diagnostic identity.
-Reserved or disabled registers do not prove compatibility; see @known-limitations.
-#block(above:5pt,below:0pt)[
-  #text(9pt)[#source("publications/datasheets/mini.json",title:"Configuration identity") ·
-    #source("rtl/mini/integration/soc_topology.json",title:"Resource and access policy")]
-]
 
 #pagebreak()
 == Typical Applications and System Configurations <typical-applications>
@@ -136,3 +132,7 @@ the conditions in @performance-characterization rather than adding individual IP
 #change-end("v05-refresh-product-use")
 
 #change-end("v05-emphasis-product-use")
+
+#change-end("v05-dev-20261022-product-use")
+
+#change-end("v05-c906-20261022-sections-product-use")

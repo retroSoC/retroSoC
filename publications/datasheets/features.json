@@ -108,7 +108,8 @@
   "crypto": [
     "AES-128/192/256, SHA-224/256 and **raw RSA-2048**.",
     "PIO and central-DMA streaming paths.",
-    "Protected key/exponent readback; no claim of a secure key vault or certification."
+    "Protected key/exponent readback; no claim of a secure key vault or certification.",
+    "**V2 initialization is mandatory**; six private SRAM banks and acknowledged zeroize completion."
   ],
   "mailbox": [
     "**Separate LP-to-HP and HP-to-LP** payload banks.",

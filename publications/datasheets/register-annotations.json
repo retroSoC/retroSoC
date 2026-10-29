@@ -471,6 +471,86 @@
           "expression": "s_stream_q"
         }
       ]
+    },
+    "main.CLK_DIV": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "SCLK",
+          "description": "Sclk.",
+          "reset": "0x0",
+          "expression": "`APB4_I2S__CLK_SCLK_LSB"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "LRCK",
+          "description": "Lrck.",
+          "reset": "0x0",
+          "expression": "`APB4_I2S__CLK_LRCK_LSB"
+        },
+        {
+          "lsb": 16,
+          "msb": 23,
+          "name": "MCLK",
+          "description": "Mclk.",
+          "reset": "0x0",
+          "expression": "`APB4_I2S__CLK_MCLK_LSB"
+        },
+        {
+          "lsb": 24,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/serial/i2s_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/serial/i2s_reg.sv",
+          "text": "localparam logic [31:0] ClkDivMask = 32'h00FF_FFFF;"
+        }
+      ],
+      "review_source": "rtl/ip/serial/i2s_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
+    },
+    "main.FIFO_TH": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "UPBOUND",
+          "description": "Upbound.",
+          "reset": "0xff",
+          "expression": "`APB4_I2S__FIFO_UPBOUND_LSB"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "LOWBOUND",
+          "description": "Lowbound.",
+          "reset": "0x0",
+          "expression": "`APB4_I2S__FIFO_LOWBOUND_LSB"
+        },
+        {
+          "lsb": 16,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/serial/i2s_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/serial/i2s_reg.sv",
+          "text": "localparam logic [31:0] FifoThMask = 32'h0000_FFFF;"
+        }
+      ],
+      "review_source": "rtl/ip/serial/i2s_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     }
   },
   "ws2812": {
@@ -678,6 +758,125 @@
       ],
       "access": "WO",
       "reset": "Not retained"
+    },
+    "main.IP_VERSION": {
+      "description": "Mini integration reports V2.0 0x00020000. The shared implementation includes additive discovery; SPI/V2.2 capability is not enabled here."
+    },
+    "main.SUPPORTED_REQUESTS": {
+      "description": "Read-only integrated request bitmap: Mini implements selectors 0..13, returning 0x00003FFF. Present in this source snapshot even though IP_VERSION remains V2.0.",
+      "fields": [
+        {
+          "name": "REQUESTS",
+          "lsb": 0,
+          "msb": 13,
+          "description": "Implemented Mini request selectors 0 through 13; transfer-kind rules still apply.",
+          "expression": "supported_requests_i[13:0]",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 14,
+          "msb": 31,
+          "description": "Reads zero; no Mini SPI/PIO endpoint.",
+          "expression": "18'd0",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.REQUEST_STATUS": {
+      "description": "Live request-ready bitmap, masked by the implemented Mini endpoints. Bits 14..31 are zero; readiness does not replace channel ownership or completion.",
+      "fields": [
+        {
+          "name": "READY",
+          "lsb": 0,
+          "msb": 13,
+          "description": "Live pacing readiness for Mini requests 0..13.",
+          "expression": "s_req_ready[13:0]",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 14,
+          "msb": 31,
+          "description": "Unimplemented request positions; reads zero.",
+          "expression": "18'd0",
+          "reset": "0"
+        }
+      ]
+    },
+    "ch.REQUEST_SEL": {
+      "description": "Stored request selector. Mini supports values 0..13 subject to transfer-kind validation. Other encodings cannot enable an absent endpoint.",
+      "fields": [
+        {
+          "name": "REQUEST",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Full stored selector; only the documented Mini values and kind combinations are accepted.",
+          "expression": "s_req_sel_q[(s_channel_index*32)+:32]",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.CAPABILITY": {
+      "description": "Mini: eight 32-bit channels, descriptor support and three stream-kind encoding. The 4-bit maximum-burst field truncates configured 16 to zero; the actual supported limit is 16 beats.",
+      "fields": [
+        {
+          "name": "DESCRIPTOR",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Finite linked-list TCD support.",
+          "expression": "1'b1",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 7,
+          "description": "Reads zero.",
+          "expression": "7'd0",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "CHANNELS",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Eight implemented channel contexts.",
+          "expression": "8'(NumChannels)",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "DATA_WIDTH",
+          "lsb": 16,
+          "msb": 23,
+          "description": "32-bit AXI data width.",
+          "expression": "8'(DataWidth)",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "MAX_BURST_FIELD",
+          "lsb": 24,
+          "msb": 27,
+          "description": "Readback is zero due to 4-bit truncation of 16; use the documented 16-beat integration limit.",
+          "expression": "4'(MaxBurstBeats)",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "STREAM_KINDS",
+          "lsb": 28,
+          "msb": 30,
+          "description": "Implemented stream-kind encoding; not a channel count.",
+          "expression": "(EnableStreams ? 3'd3 : 3'd0)",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 31,
+          "msb": 31,
+          "description": "Reads zero.",
+          "expression": "1'b0",
+          "reset": "Register reset applies"
+        }
+      ]
     }
   },
   "sysctrl": {
@@ -753,6 +952,145 @@
     "clock.MEM_PAD_STATUS": {
       "reset": "9",
       "notes": "Reset: present=1, QPI mode=1, lock=0, fault=0."
+    },
+    "main.FAULT_MASTER": {
+      "description": "First captured source master. For a selected native data-plane fault, IDs 0..9 are HP memory, retired/idle slot 1, central DMA, gateway A, gateway B, LP gateway, JPEG, EXT-H, GA2D and NPU. Otherwise this field contains the zero-extended local bus master ID.",
+      "notes": "Native data-plane faults have priority over simultaneous local bus faults. SYSCTRL does not expose a separate origin tag; correlate the Fabric Monitor record and fault address before interpreting this namespace.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/retrosoc.sv",
+          "text": "assign u_sysctrl_if.fault_master_i = s_data_plane_fault_valid_pclk ? s_data_plane_fault_master_pclk : {1'b0, s_bus_fault_master};"
+        },
+        {
+          "file": "rtl/mini/top/soc_data_plane.sv",
+          "text": "axi4_master_idle u_hp_retired_idle (.axi4(u_master_axi4[1]));"
+        }
+      ],
+      "review_source": "rtl/mini/top/retrosoc.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.FAULT_DETAIL": {
+      "description": "First selected three-bit fault detail. Local bus faults use the RIB response namespace; native data-plane faults forward the low three bits of their native reason.",
+      "notes": "The current SYSCTRL reason logic still applies its RIB-based numeric mapping to this selected detail. For native faults, FAULT_STATUS.REASON can therefore describe a different cause; preserve the Fabric Monitor native reason and capture context. This publication documents that source behavior without changing RTL.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/retrosoc.sv",
+          "text": "assign u_sysctrl_if.fault_code_i = s_data_plane_fault_valid_pclk ? s_data_plane_fault_reason_pclk[2:0] : s_bus_fault_code;"
+        }
+      ],
+      "review_source": "rtl/mini/top/retrosoc.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.TEST_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "PASS",
+          "description": "Pass.",
+          "reset": "0x0",
+          "expression": "`APB4_SYSCTRL__TEST_STATUS_PASS"
+        },
+        {
+          "lsb": 1,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/peripheral/sysctrl_core.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "CODE",
+          "description": "Code.",
+          "reset": "0x0",
+          "expression": "`APB4_SYSCTRL__TEST_STATUS_CODE"
+        },
+        {
+          "lsb": 16,
+          "msb": 30,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/peripheral/sysctrl_core.sv"
+        },
+        {
+          "lsb": 31,
+          "msb": 31,
+          "name": "VALID",
+          "description": "Valid.",
+          "reset": "0x0",
+          "expression": "`APB4_SYSCTRL__TEST_STATUS_VALID"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "TestStatus: read_data_o = {s_test_done_q, 15'd0, s_test_code_q, 7'd0, s_test_pass_q};"
+        }
+      ],
+      "review_source": "rtl/ip/peripheral/sysctrl_core.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
+    },
+    "clock.CLK_HP_REQ": {
+      "fields": [
+        {
+          "name": "PLL_CFG",
+          "lsb": 0,
+          "msb": 2,
+          "description": "Retained requested PLL selection, shared with PLL_CFG.",
+          "expression": "s_pll_cfg_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 29,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        },
+        {
+          "name": "FORCE_SAFE",
+          "lsb": 30,
+          "msb": 30,
+          "description": "Write one to issue the force-safe clock command; reads zero.",
+          "expression": "write_data_i[30]",
+          "reset": "0x0"
+        },
+        {
+          "name": "APPLY",
+          "lsb": 31,
+          "msb": 31,
+          "description": "Write one to request application of the PLL selection; reads zero.",
+          "expression": "write_data_i[31]",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Use full-word writes and issue APPLY and FORCE_SAFE separately. The PLL selector and APPLY path are gated by PSTRB[0], although APPLY is bit 31; FORCE_SAFE enters the clock-command path on an accepted write. Observe PLL_STATUS and CLK_STATUS for the respective response. The reference IHP130 profile has no PLL, so a PLL request does not establish a supported PLL operating point.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "ClockHpReq: read_data_o = {29'd0, s_pll_cfg_q};"
+        },
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "assign s_pll_cfg_write_en = write_valid_i && write_strobe_i[0] && ((write_offset_i == PllCfg) || (write_offset_i == ClockHpReq));"
+        },
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "assign s_pll_apply = write_valid_i && write_strobe_i[0] && (((write_offset_i == PllCmd) && write_data_i[`APB4_SYSCTRL__PLL_CMD_APPLY]) || ((write_offset_i == ClockHpReq) && write_data_i[31]));"
+        },
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "((write_offset_i == ClockHpReq) && write_data_i[30])"
+        },
+        {
+          "file": "rtl/ip/peripheral/sysctrl_core.sv",
+          "text": "default: s_clock_req_data_d = {4'd3, 27'd0, write_data_i[30]};"
+        }
+      ]
     }
   },
   "psram": {
@@ -763,7 +1101,7 @@
           "msb": 0,
           "name": "INIT",
           "description": "Init.",
-          "reset": "Register reset applies",
+          "reset": "See register",
           "expression": "`PSRAM_COMMAND_INIT"
         },
         {
@@ -771,7 +1109,7 @@
           "msb": 1,
           "name": "RECOVER",
           "description": "Recover.",
-          "reset": "Register reset applies",
+          "reset": "See register",
           "expression": "`PSRAM_COMMAND_RECOVER"
         },
         {
@@ -779,27 +1117,43 @@
           "msb": 2,
           "name": "ABORT",
           "description": "Abort.",
-          "reset": "Register reset applies",
+          "reset": "See register",
           "expression": "`PSRAM_COMMAND_ABORT"
         },
         {
           "lsb": 3,
           "msb": 7,
           "name": "Reserved",
-          "description": "Reserved; write zero.",
-          "reset": "Not retained",
-          "expression": "32'd0"
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/memory/psram_reg.sv"
         },
         {
           "lsb": 8,
-          "msb": 31,
+          "msb": 9,
           "name": "CHIP",
           "description": "Chip.",
-          "reset": "Register reset applies",
+          "reset": "See register",
           "expression": "`PSRAM_COMMAND_CHIP_LSB"
+        },
+        {
+          "lsb": 10,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/memory/psram_reg.sv"
         }
       ],
-      "reset": "Not retained (command/data port)"
+      "reset": "Not retained (command/data port)",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/memory/psram_reg.sv",
+          "text": "!s_chip_en_q[apb4.pwdata[9:8]]"
+        }
+      ],
+      "review_source": "rtl/ip/memory/psram_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "main.INTR_TEST": {
       "fields": [
@@ -1293,7 +1647,7 @@
           "name": "DEFAULT",
           "lsb": 1,
           "msb": 1,
-          "description": "Write one to request default.",
+          "description": "Reserved command in this implementation: clears valid/dirty and sets the selected context error; it does not load default coding tables.",
           "reset": "Register reset applies",
           "expression": "reviewed semantic field"
         },
@@ -1315,7 +1669,13 @@
         }
       ],
       "access": "WO",
-      "reset": "Not retained"
+      "reset": "Not retained",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/jpeg_table_store.sv",
+          "text": "if (portal_default_i) begin s_context_valid_d[portal_context_i] = 1'b0; s_context_dirty_d[portal_context_i] = 1'b0; s_context_err_d[portal_context_i] = 1'b1; end"
+        }
+      ]
     },
     "main.DOORBELL": {
       "fields": [
@@ -1446,7 +1806,77 @@
       "access": "RW"
     },
     "main.JOB_CONFIG": {
-      "access": "RW"
+      "access": "RW",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "ENCODE",
+          "description": "Encode.",
+          "reset": "0x0",
+          "expression": "`APB4_JPEG__JOB_CONFIG_ENCODE"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "AUTO_HEADER",
+          "description": "Auto header.",
+          "reset": "0x0",
+          "expression": "`APB4_JPEG__JOB_CONFIG_AUTO_HEADER"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "STRICT",
+          "description": "Strict.",
+          "reset": "0x0",
+          "expression": "`APB4_JPEG__JOB_CONFIG_STRICT"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "METADATA",
+          "description": "Metadata request flag; the current admission predicate rejects a set bit.",
+          "reset": "0x0",
+          "expression": "`APB4_JPEG__JOB_CONFIG_METADATA"
+        },
+        {
+          "lsb": 4,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apb4_jpeg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 9,
+          "name": "TABLE",
+          "description": "Two-bit table-context selection.",
+          "reset": "0x0",
+          "expression": "`APB4_JPEG__JOB_CONFIG_TABLE"
+        },
+        {
+          "lsb": 10,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apb4_jpeg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apb4_jpeg.sv",
+          "text": "!s_job_config[`APB4_JPEG__JOB_CONFIG_METADATA]"
+        },
+        {
+          "file": "rtl/ip/multimedia/apb4_jpeg.sv",
+          "text": ".context_i (s_job_config[9:8]),"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apb4_jpeg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "main.IMAGE_SIZE": {
       "access": "RW",
@@ -1665,7 +2095,57 @@
     "main.KWS_INPUT_CONFIG": {
       "access": "RW",
       "description": "Capture rate, physical channel count, and sample precision for continuous KWS input.",
-      "notes": "Default PRODUCT has EnableP7=0; both reads and writes of this offset return an APB error. The stored reset value does not establish an enabled KWS input path."
+      "notes": "Default PRODUCT has EnableP7=0; both reads and writes of this offset return an APB error. The stored reset value does not establish an enabled KWS input path.",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 16,
+          "name": "RATE_HZ",
+          "description": "Input rate: 16000, 48000 or 96000 Hz.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 17,
+          "msb": 18,
+          "name": "CHANNELS",
+          "description": "Physical channel count; the current KWS consumer requires two.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 19,
+          "msb": 19,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_kws_engine.sv"
+        },
+        {
+          "lsb": 20,
+          "msb": 25,
+          "name": "SAMPLE_BITS",
+          "description": "Input precision; 16 or 24 bits.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 26,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_kws_engine.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_kws_engine.sv",
+          "text": "assign s_config_valid = (input_config_i[31:26] == 6'd0) && !input_config_i[19] && (input_config_i[18:17] == 2'd2) && ((input_config_i[16:0] == 17'd16000) || (input_config_i[16:0] == 17'd48000) || (input_config_i[16:0] == 17'd96000)) && ((input_config_i[25:20] == 6'd16) || (input_config_i[25:20] == 6'd24));"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_kws_engine.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
     },
     "main.COMMAND": {
       "fields": [
@@ -1846,10 +2326,64 @@
       "reset": "Not retained (command/data port)"
     },
     "main.IP_VERSION": {
-      "description": "P9 uses additive APB interface V1.2 (0x00010002), preserving the frozen V1.0/V1.1 offsets and accepted fields while adding coefficient discovery and loading."
+      "description": "Reference PRODUCT uses V1.1 (0x00010001) with EnableP5=1 and EnableP7=0. The dedicated P9 acceptance profile uses V1.2 (0x00010002)."
     },
     "main.CAPABILITY1": {
-      "description": "Expanded P5 geometry is 0x01827020: 32 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding."
+      "description": "Expanded P5 geometry is 0x01827020: 32 KiB control store, 112 KiB local data, two channels, and 96 kHz maximum source-rate encoding.",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "CONTROL_KIB",
+          "description": "Control-store capacity in KiB; 32 in the selected expanded P5 instance.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "DATA_KIB",
+          "description": "Local data SRAM capacity in KiB; 112.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 16,
+          "msb": 17,
+          "name": "MAX_CHANNELS",
+          "description": "Maximum primitive channel count; two.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 18,
+          "msb": 25,
+          "name": "MAX_RATE_KHZ",
+          "description": "Maximum source-rate encoding in kHz; 96. This is not sustained-throughput or physical qualification.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 26,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "localparam logic [31:0] Capability1 = (EnableP5 || EnableP7) ? 32'h0182_7020 : 32'h0182_7010;"
+        },
+        {
+          "file": "docs/ip/apu.md",
+          "text": "max source-rate kHz `[25:18]`"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_reg.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
     },
     "main.JOB_INPUT_CONFIG": {
       "fields": [
@@ -1987,6 +2521,614 @@
       "review_source": "rtl/ip/multimedia/apu_define.svh",
       "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06.",
       "reset": "0"
+    },
+    "main.CAPABILITY0": {
+      "description": "Reference PRODUCT reads 0x000001BD: WAV/FLAC transport, private DMA, ring, streams, sequencer and resampler; MP3 and KWS are disabled. P9 reads 0x000003FD with KWS/APUC support."
+    },
+    "main.ABI_DIGEST": {
+      "description": "Reference PRODUCT reads zero; the separately selected P9 configuration reports 0x63E96066. This value identifies ABI capability, not validation success.",
+      "fields": [
+        {
+          "name": "DIGEST",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Selected configuration ABI digest; zero in the reference PRODUCT profile.",
+          "expression": "AbiDigest",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.STREAM_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "TX_ACTIVE",
+          "description": "Tx active.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_TX_ACTIVE"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "RX_ACTIVE",
+          "description": "Rx active.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_RX_ACTIVE"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "TX_EMPTY",
+          "description": "Tx empty.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_TX_EMPTY"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "TX_FULL",
+          "description": "Tx full.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_TX_FULL"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "RX_EMPTY",
+          "description": "Rx empty.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_RX_EMPTY"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "RX_FULL",
+          "description": "Rx full.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_RX_FULL"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "TX_UNDERRUN",
+          "description": "Tx underrun.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_TX_UNDERRUN"
+        },
+        {
+          "lsb": 7,
+          "msb": 7,
+          "name": "RX_OVERRUN",
+          "description": "Rx overrun.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_RX_OVERRUN"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "TX_COUNT",
+          "description": "Saturating count of consumed TX words in the current route epoch; not FIFO occupancy.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_TX_COUNT"
+        },
+        {
+          "lsb": 16,
+          "msb": 23,
+          "name": "RX_COUNT",
+          "description": "Saturating count of accepted RX words in the current route epoch; not FIFO occupancy.",
+          "reset": "See register",
+          "expression": "`APB4_APU__STREAM_STATUS_RX_COUNT"
+        },
+        {
+          "lsb": 24,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_stream_router.sv"
+        }
+      ],
+      "reset": "0x00000014",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_stream_router.sv",
+          "text": "assign status_o = { 8'd0, s_rx_words_q, s_tx_words_q, s_rx_overrun_q, s_tx_underrun_q, s_rx_full, s_rx_empty, s_tx_full, s_tx_empty, s_rx_active, s_tx_active };"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_stream_router.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.OWNER_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 1,
+          "name": "OWNER",
+          "description": "Two-bit resource owner encoding; bits 7:2 are reserved zero.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__OWNER_STATUS_OWNER"
+        },
+        {
+          "lsb": 2,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 8,
+          "name": "LOCK",
+          "description": "Lock.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__OWNER_STATUS_LOCK"
+        },
+        {
+          "lsb": 9,
+          "msb": 9,
+          "name": "QUIESCE",
+          "description": "Quiesce.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__OWNER_STATUS_QUIESCE"
+        },
+        {
+          "lsb": 10,
+          "msb": 10,
+          "name": "RESET",
+          "description": "Reset.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__OWNER_STATUS_RESET"
+        },
+        {
+          "lsb": 11,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "s_read_data = {21'd0, resource_reset_i, quiesce_i, owner_lock_i, 6'd0, owner_i};"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_reg.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.STREAM_WATERMARK": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "RX_HIGH",
+          "description": "RX occupancy threshold for the rising high-water event.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "TX_LOW",
+          "description": "TX occupancy threshold for the falling low-water event.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        },
+        {
+          "lsb": 16,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__STREAM_WATERMARK: s_read_data = {16'd0, s_stream_watermark_q};"
+        },
+        {
+          "file": "rtl/ip/multimedia/apb4_apu.sv",
+          "text": ".tx_low_watermark_i"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_reg.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.RING_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "ACTIVE",
+          "description": "Active.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_ACTIVE"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "STALLED_UNOWNED",
+          "description": "Stalled unowned.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_STALLED_UNOWNED"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "EMPTY",
+          "description": "Empty.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_EMPTY"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "ERROR",
+          "description": "Error.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_ERROR"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "WRAPPED",
+          "description": "Wrapped.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_WRAPPED"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "COALESCE_PENDING",
+          "description": "Coalesce pending.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_COALESCE_PENDING"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "WRITEBACK_PENDING",
+          "description": "Writeback pending.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_WRITEBACK_PENDING"
+        },
+        {
+          "lsb": 7,
+          "msb": 7,
+          "name": "STOPPED_ON_ERROR",
+          "description": "Stopped on error.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_STOPPED_ON_ERROR"
+        },
+        {
+          "lsb": 8,
+          "msb": 15,
+          "name": "PENDING_COUNT",
+          "description": "Pending count.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_PENDING_COUNT"
+        },
+        {
+          "lsb": 16,
+          "msb": 23,
+          "name": "LAST_INDEX",
+          "description": "Last index.",
+          "reset": "See register",
+          "expression": "`APB4_APU__RING_STATUS_LAST_INDEX"
+        },
+        {
+          "lsb": 24,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_ring_scheduler.sv"
+        }
+      ],
+      "reset": "0x00000004",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_ring_scheduler.sv",
+          "text": "assign ring_status_o = { 8'd0, s_last_index_q, s_pending_q, s_stopped_q, s_writeback_pending, s_pending_q != 8'd0, s_wrapped_q, s_ring_err_q, (s_head_q == ring_tail_i) && (s_state_q == Idle), s_state_q == Stalled, s_active_q };"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_ring_scheduler.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.JOB_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "BUSY",
+          "description": "Busy.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_BUSY"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "DONE",
+          "description": "Done.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_DONE"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "ERROR",
+          "description": "Error.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_ERROR"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "ABORTED",
+          "description": "Aborted.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_ABORTED"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "DIRECT_ACTIVE",
+          "description": "Direct active.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_DIRECT_ACTIVE"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "INPUT_PENDING",
+          "description": "Input pending.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_INPUT_PENDING"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "OUTPUT_PENDING",
+          "description": "Output pending.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_OUTPUT_PENDING"
+        },
+        {
+          "lsb": 7,
+          "msb": 7,
+          "name": "WRITEBACK_PENDING",
+          "description": "Writeback pending.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_WRITEBACK_PENDING"
+        },
+        {
+          "lsb": 8,
+          "msb": 13,
+          "name": "ERROR_CODE",
+          "description": "Error code.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_ERROR_CODE"
+        },
+        {
+          "lsb": 14,
+          "msb": 17,
+          "name": "STAGE",
+          "description": "Stage.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_STAGE"
+        },
+        {
+          "lsb": 18,
+          "msb": 19,
+          "name": "AXI_RESPONSE",
+          "description": "Axi response.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__JOB_STATUS_AXI_RESPONSE"
+        },
+        {
+          "lsb": 20,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_ring_scheduler.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_ring_scheduler.sv",
+          "text": "assign job_status_o = { 12'd0, s_job_resp_q, s_job_stage_q, s_job_code_q, s_writeback_pending, 1'b0, (s_state_q == FetchRequest) || (s_state_q == FetchData), 1'b0, s_job_aborted_q, s_job_err_q, s_job_done_q, s_job_busy_q };"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_ring_scheduler.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.KWS_COEFF_STATUS": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "BUSY",
+          "description": "Busy.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_BUSY"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "VALID",
+          "description": "Valid.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_VALID"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "LOCKED",
+          "description": "Locked.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_LOCKED"
+        },
+        {
+          "lsb": 3,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_kws_coeff_loader.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 8,
+          "name": "SIZE_ERROR",
+          "description": "Size error.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_SIZE_ERROR"
+        },
+        {
+          "lsb": 9,
+          "msb": 9,
+          "name": "HEADER_ERROR",
+          "description": "Header error.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_HEADER_ERROR"
+        },
+        {
+          "lsb": 10,
+          "msb": 10,
+          "name": "CRC_ERROR",
+          "description": "Crc error.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_CRC_ERROR"
+        },
+        {
+          "lsb": 11,
+          "msb": 11,
+          "name": "PADDING_ERROR",
+          "description": "Padding error.",
+          "reset": "0x0",
+          "expression": "`APB4_APU__KWS_COEFF_STATUS_PADDING_ERROR"
+        },
+        {
+          "lsb": 12,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/multimedia/apu_kws_coeff_loader.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_kws_coeff_loader.sv",
+          "text": "assign status_o = {20'd0, s_stat_q[11:8], 5'd0, s_lock_q, s_valid_q, busy_o};"
+        }
+      ],
+      "review_source": "rtl/ip/multimedia/apu_kws_coeff_loader.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.RING_DOORBELL": {
+      "fields": [
+        {
+          "name": "KICK",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Write the full-word value 1 to request a ring rescan.",
+          "expression": "s_ring_kick",
+          "reset": "Not retained"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "Not retained"
+        }
+      ],
+      "notes": "Requires full PSTRB and ring-kick admission. All other values are rejected. Reads are unsupported and return an APB error; use the ring status to observe progress.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "s_write_err = (apb4.pstrb != 4'hf) || (apb4.pwdata != 32'd1) || !ring_kick_allowed_i;"
+        },
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__RING_DOORBELL: s_ring_kick = 1'b1;"
+        }
+      ]
+    },
+    "main.KWS_COEFF_COMMAND": {
+      "fields": [
+        {
+          "name": "LOAD",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Write the full-word value 1 to request the coefficient load.",
+          "expression": "s_coefficient_load",
+          "reset": "Not retained"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "Not retained"
+        }
+      ],
+      "notes": "Default Mini PRODUCT has EnableP7=0 and rejects this command. A separately enabled configuration requires LP ownership, idle/quiesced state, disabled KWS, unlocked coefficients, no valid model and a valid aligned 61504-byte image within the read ACL. Reads are unsupported; inspect KWS_COEFF_STATUS and the completion event.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "s_write_unsupported = !EnableP7; s_write_err = s_write_unsupported || (apb4.pstrb != 4'hf) || (apb4.pwdata != 32'd1) || !core_idle_i || !quiesce_i || (owner_i != 2'd0) || s_kws_control_q[0] || kws_coeff_status_i[2] || kws_model_status_i[1] || (s_kws_coeff_cfg_q[0][5:0] != 6'd0) || (s_kws_coeff_cfg_q[1] != 32'd61504) || s_kws_coeff_image_end[32] || (s_kws_coeff_cfg_q[0] < s_acl_q[0]) || (s_kws_coeff_image_end[31:0] > s_acl_q[1]);"
+        },
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__KWS_COEFF_COMMAND: s_coefficient_load = 1'b1;"
+        }
+      ]
+    },
+    "main.PERF_DECODED_FRAMES_LO": {
+      "description": "Reserved decoded-frame counter ABI location; reads zero in this implementation, including after a snapshot. It is not an implemented measurement.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__PERF_DECODED_FRAMES_LO, `APB4_APU__PERF_DECODED_FRAMES_HI: s_read_data = 32'd0;"
+        }
+      ]
+    },
+    "main.PERF_DECODED_FRAMES_HI": {
+      "description": "Reserved decoded-frame counter ABI location; reads zero in this implementation, including after a snapshot. It is not an implemented measurement.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__PERF_DECODED_FRAMES_LO, `APB4_APU__PERF_DECODED_FRAMES_HI: s_read_data = 32'd0;"
+        }
+      ]
+    },
+    "main.PERF_KWS_CYCLES_LO": {
+      "description": "Reserved KWS-cycle counter ABI location; reads zero in this implementation, including after a snapshot. It is not an implemented measurement.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__PERF_KWS_CYCLES_LO, `APB4_APU__PERF_KWS_CYCLES_HI: s_read_data = 32'd0;"
+        }
+      ]
+    },
+    "main.PERF_KWS_CYCLES_HI": {
+      "description": "Reserved KWS-cycle counter ABI location; reads zero in this implementation, including after a snapshot. It is not an implemented measurement.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/multimedia/apu_reg.sv",
+          "text": "`APB4_APU__PERF_KWS_CYCLES_LO, `APB4_APU__PERF_KWS_CYCLES_HI: s_read_data = 32'd0;"
+        }
+      ]
     }
   },
   "npu": {
@@ -4203,14 +5345,70 @@
       "description": "Storage initialization, verification, scrub, lock and fault state.",
       "reset": "0x00000004",
       "fields": [
-        {"lsb": 0, "msb": 0, "name": "READY", "description": "Constants are valid and locked, erasure is complete, and no memory fault is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_READY"},
-        {"lsb": 1, "msb": 1, "name": "TABLE_VALID", "description": "The committed constants image passed validation.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_VALID"},
-        {"lsb": 2, "msb": 2, "name": "SCRUB_BUSY", "description": "Reset or zeroize scrubbing is active.", "reset": "1", "expression": "`APB4_CRYPTO__MEM_STATUS_SCRUB_BUSY"},
-        {"lsb": 3, "msb": 3, "name": "LOAD_ACTIVE", "description": "A TABLE_DATA loading transaction is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_LOAD_ACTIVE"},
-        {"lsb": 4, "msb": 4, "name": "VERIFY_BUSY", "description": "Full storage readback and CRC verification is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_VERIFY_BUSY"},
-        {"lsb": 5, "msb": 5, "name": "TABLE_LOCKED", "description": "The verified constants banks remain locked until hard/PCLK reset; zeroize does not unlock them.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_LOCKED"},
-        {"lsb": 6, "msb": 6, "name": "FAULT", "description": "A sticky storage lifecycle fault is active.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_STATUS_FAULT"},
-        {"lsb": 7, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "25'd0"}
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "READY",
+          "description": "Constants are valid and locked, erasure is complete, and no memory fault is active.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_READY"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "TABLE_VALID",
+          "description": "The committed constants image passed validation.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_VALID"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "SCRUB_BUSY",
+          "description": "Reset or zeroize scrubbing is active.",
+          "reset": "1",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_SCRUB_BUSY"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "LOAD_ACTIVE",
+          "description": "A TABLE_DATA loading transaction is active.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_LOAD_ACTIVE"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "VERIFY_BUSY",
+          "description": "Full storage readback and CRC verification is active.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_VERIFY_BUSY"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "TABLE_LOCKED",
+          "description": "The verified constants banks remain locked until hard/PCLK reset; zeroize does not unlock them.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_TABLE_LOCKED"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "FAULT",
+          "description": "A sticky storage lifecycle fault is active.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_STATUS_FAULT"
+        },
+        {
+          "lsb": 7,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "25'd0"
+        }
       ]
     },
     "main.MEM_CONTROL": {
@@ -4218,10 +5416,38 @@
       "description": "One-hot storage lifecycle command; zero is a no-op.",
       "reset": "Not retained (command/data port)",
       "fields": [
-        {"lsb": 0, "msb": 0, "name": "BEGIN", "description": "Begin a new ordered constants load.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_BEGIN"},
-        {"lsb": 1, "msb": 1, "name": "COMMIT", "description": "Commit the complete image and start readback verification.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_COMMIT"},
-        {"lsb": 2, "msb": 2, "name": "CANCEL", "description": "Cancel an unlocked load attempt and start cleanup.", "reset": "Not retained", "expression": "`APB4_CRYPTO__MEM_CONTROL_CANCEL"},
-        {"lsb": 3, "msb": 31, "name": "Reserved", "description": "Reserved; write zero.", "reset": "Not retained", "expression": "29'd0"}
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "BEGIN",
+          "description": "Begin a new ordered constants load.",
+          "reset": "Not retained",
+          "expression": "`APB4_CRYPTO__MEM_CONTROL_BEGIN"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "COMMIT",
+          "description": "Commit the complete image and start readback verification.",
+          "reset": "Not retained",
+          "expression": "`APB4_CRYPTO__MEM_CONTROL_COMMIT"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "CANCEL",
+          "description": "Cancel an unlocked load attempt and start cleanup.",
+          "reset": "Not retained",
+          "expression": "`APB4_CRYPTO__MEM_CONTROL_CANCEL"
+        },
+        {
+          "lsb": 3,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reserved; write zero.",
+          "reset": "Not retained",
+          "expression": "29'd0"
+        }
       ]
     },
     "main.TABLE_ID": {
@@ -4229,7 +5455,14 @@
       "description": "Frozen CRYC1 constants-image identity.",
       "reset": "0x43525901",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "ID", "description": "CRYC1 image identifier.", "reset": "0x43525901", "expression": "`APB4_CRYPTO__TABLE_ID_VALUE"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "ID",
+          "description": "CRYC1 image identifier.",
+          "reset": "0x43525901",
+          "expression": "`APB4_CRYPTO__TABLE_ID_VALUE"
+        }
       ]
     },
     "main.TABLE_WORDS": {
@@ -4237,8 +5470,22 @@
       "description": "Accepted ordered payload word count; BEGIN, CANCEL and reset clear it.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 11, "name": "WORDS", "description": "Accepted word count from 0 through 2048.", "reset": "0", "expression": "s_table_words"},
-        {"lsb": 12, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "20'd0"}
+        {
+          "lsb": 0,
+          "msb": 11,
+          "name": "WORDS",
+          "description": "Accepted word count from 0 through 2048.",
+          "reset": "0",
+          "expression": "s_table_words"
+        },
+        {
+          "lsb": 12,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "20'd0"
+        }
       ]
     },
     "main.TABLE_DATA": {
@@ -4246,7 +5493,14 @@
       "description": "Auto-incrementing full-word constants loader input.",
       "reset": "Not retained (command/data port)",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "DATA", "description": "Next constants-image word; full PSTRB is required.", "reset": "Not retained", "expression": "write data"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "DATA",
+          "description": "Next constants-image word; full PSTRB is required.",
+          "reset": "Not retained",
+          "expression": "write data"
+        }
       ]
     },
     "main.TABLE_CRC": {
@@ -4254,7 +5508,14 @@
       "description": "CRC from the last complete full-storage readback.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "CRC", "description": "Readback CRC; zero until verification completes.", "reset": "0", "expression": "s_table_crc"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "CRC",
+          "description": "Readback CRC; zero until verification completes.",
+          "reset": "0",
+          "expression": "s_table_crc"
+        }
       ]
     },
     "main.MEM_ERROR": {
@@ -4262,11 +5523,46 @@
       "description": "First storage lifecycle error with physical bank and row context.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 7, "name": "CODE", "description": "First lifecycle error code; values 1 through 6 are defined.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_CODE_MASK"},
-        {"lsb": 8, "msb": 10, "name": "BANK", "description": "Physical bank index; non-addressed errors report zero.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_BANK_MASK"},
-        {"lsb": 11, "msb": 20, "name": "ROW", "description": "Physical row index; non-addressed errors report zero.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_ROW_MASK"},
-        {"lsb": 21, "msb": 30, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "10'd0"},
-        {"lsb": 31, "msb": 31, "name": "VALID", "description": "The first-error record is valid.", "reset": "0", "expression": "`APB4_CRYPTO__MEM_ERROR_VALID"}
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "CODE",
+          "description": "First lifecycle error code; values 1 through 6 are defined.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_ERROR_CODE_MASK"
+        },
+        {
+          "lsb": 8,
+          "msb": 10,
+          "name": "BANK",
+          "description": "Physical bank index; non-addressed errors report zero.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_ERROR_BANK_MASK"
+        },
+        {
+          "lsb": 11,
+          "msb": 20,
+          "name": "ROW",
+          "description": "Physical row index; non-addressed errors report zero.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_ERROR_ROW_MASK"
+        },
+        {
+          "lsb": 21,
+          "msb": 30,
+          "name": "Reserved",
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "10'd0"
+        },
+        {
+          "lsb": 31,
+          "msb": 31,
+          "name": "VALID",
+          "description": "The first-error record is valid.",
+          "reset": "0",
+          "expression": "`APB4_CRYPTO__MEM_ERROR_VALID"
+        }
       ]
     },
     "main.MEM_CYCLES": {
@@ -4274,7 +5570,14 @@
       "description": "Active PCLK cycles in the current or last verify/scrub operation.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Maintenance cycle count, excluding loader inter-write gaps.", "reset": "0", "expression": "s_mem_cycles"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "CYCLES",
+          "description": "Maintenance cycle count, excluding loader inter-write gaps.",
+          "reset": "0",
+          "expression": "s_mem_cycles"
+        }
       ]
     },
     "main.AES_BYTES_IN": {
@@ -4282,7 +5585,14 @@
       "description": "Accepted AES input byte count.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "COUNT", "description": "Bytes accepted for the current or last AES operation.", "reset": "0", "expression": "s_aes_bytes_in"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "COUNT",
+          "description": "Bytes accepted for the current or last AES operation.",
+          "reset": "0",
+          "expression": "s_aes_bytes_in"
+        }
       ]
     },
     "main.AES_BYTES_OUT": {
@@ -4290,7 +5600,14 @@
       "description": "Consumed AES output byte count.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "COUNT", "description": "Bytes consumed from the current or last AES operation.", "reset": "0", "expression": "s_aes_bytes_out"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "COUNT",
+          "description": "Bytes consumed from the current or last AES operation.",
+          "reset": "0",
+          "expression": "s_aes_bytes_out"
+        }
       ]
     },
     "main.AES_CYCLES": {
@@ -4298,7 +5615,14 @@
       "description": "AES operation cycle count.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last AES operation.", "reset": "0", "expression": "s_aes_cycles"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "CYCLES",
+          "description": "Cycles in the current or last AES operation.",
+          "reset": "0",
+          "expression": "s_aes_cycles"
+        }
       ]
     },
     "main.SHA_CYCLES": {
@@ -4306,7 +5630,14 @@
       "description": "SHA operation cycle count.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last SHA operation.", "reset": "0", "expression": "s_sha_cycles"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "CYCLES",
+          "description": "Cycles in the current or last SHA operation.",
+          "reset": "0",
+          "expression": "s_sha_cycles"
+        }
       ]
     },
     "main.RSA_CYCLES": {
@@ -4314,7 +5645,14 @@
       "description": "RSA operation cycle count.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 31, "name": "CYCLES", "description": "Cycles in the current or last RSA operation.", "reset": "0", "expression": "s_rsa_cycles"}
+        {
+          "lsb": 0,
+          "msb": 31,
+          "name": "CYCLES",
+          "description": "Cycles in the current or last RSA operation.",
+          "reset": "0",
+          "expression": "s_rsa_cycles"
+        }
       ]
     },
     "main.RSA_PROGRESS": {
@@ -4322,9 +5660,30 @@
       "description": "RSA private-operation flag and exponent position.",
       "reset": "0",
       "fields": [
-        {"lsb": 0, "msb": 0, "name": "PRIVATE", "description": "The active operation uses the private exponent path.", "reset": "0", "expression": "s_regs_q.private_operation"},
-        {"lsb": 1, "msb": 11, "name": "EXPONENT_INDEX", "description": "Current exponent bit position.", "reset": "0", "expression": "s_regs_q.exponent_index"},
-        {"lsb": 12, "msb": 31, "name": "Reserved", "description": "Reserved; reads zero.", "reset": "0", "expression": "20'd0"}
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "PRIVATE",
+          "description": "The active operation uses the private exponent path.",
+          "reset": "0",
+          "expression": "s_regs_q.private_operation"
+        },
+        {
+          "lsb": 1,
+          "msb": 11,
+          "name": "EXPONENT_INDEX",
+          "description": "Current exponent bit position.",
+          "reset": "0",
+          "expression": "s_regs_q.exponent_index"
+        },
+        {
+          "lsb": 12,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reserved; reads zero.",
+          "reset": "0",
+          "expression": "20'd0"
+        }
       ]
     },
     "main.COMMAND": {
@@ -4713,7 +6072,7 @@
           "lsb": 0,
           "msb": 0,
           "name": "BUSY",
-          "description": "Engine busy; AES includes key expansion.",
+          "description": "SHA-2 engine is busy.",
           "reset": "Register reset applies",
           "expression": "rtl/ip/security/apb4_crypto.sv"
         },
@@ -4751,7 +6110,7 @@
         }
       ],
       "review_source": "rtl/ip/security/apb4_crypto.sv",
-      "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06."
+      "review_notes": "Engine-specific busy semantics reviewed on 2026-10-22."
     },
     "main.RSA_STATUS": {
       "fields": [
@@ -4759,7 +6118,7 @@
           "lsb": 0,
           "msb": 0,
           "name": "BUSY",
-          "description": "Engine busy; AES includes key expansion.",
+          "description": "RSA engine is busy.",
           "reset": "Register reset applies",
           "expression": "rtl/ip/security/apb4_crypto.sv"
         },
@@ -4805,46 +6164,301 @@
         }
       ],
       "review_source": "rtl/ip/security/apb4_crypto.sv",
-      "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06."
+      "review_notes": "Engine-specific busy semantics reviewed on 2026-10-22."
+    },
+    "main.IP_VERSION": {
+      "description": "Implemented V2 storage/init ABI 0x00020000; initialization and asynchronous erasure differ from the historical V1 lifecycle."
+    },
+    "main.STATUS": {
+      "description": "Engine busy bits 0..2, maintenance busy bit 3, READY bit 4, AES key valid bit 8 and RSA prepared bit 9. Reset scrub starts with maintenance busy; consume live state."
+    },
+    "main.CAPABILITY0": {
+      "description": "Reference IHP130 macro-backed configuration reads 0x03FFFFFF. Bit 24 requires the V2 initialization protocol; bit 25 describes selected SRAM mapping, not completed physical qualification.",
+      "fields": [
+        {
+          "name": "AES_128",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Advertised aes 128 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_128",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_192",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Advertised aes 192 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_192",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_256",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Advertised aes 256 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_256",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_DECRYPT",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Advertised aes decrypt function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_DECRYPT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_ECB",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Advertised aes ecb function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_ECB",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_CBC",
+          "lsb": 5,
+          "msb": 5,
+          "description": "Advertised aes cbc function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_CBC",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_CTR",
+          "lsb": 6,
+          "msb": 6,
+          "description": "Advertised aes ctr function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_CTR",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "AES_DMA",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Advertised aes dma function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_AES_DMA",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SHA_224",
+          "lsb": 8,
+          "msb": 8,
+          "description": "Advertised sha 224 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SHA_224",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SHA_256",
+          "lsb": 9,
+          "msb": 9,
+          "description": "Advertised sha 256 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SHA_256",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SHA_PADDING",
+          "lsb": 10,
+          "msb": 10,
+          "description": "Advertised sha padding function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SHA_PADDING",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SHA_DMA",
+          "lsb": 11,
+          "msb": 11,
+          "description": "Advertised sha dma function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SHA_DMA",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "RSA_2048",
+          "lsb": 12,
+          "msb": 12,
+          "description": "Advertised rsa 2048 function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_RSA_2048",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "RSA_PUBLIC",
+          "lsb": 13,
+          "msb": 13,
+          "description": "Advertised rsa public function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_RSA_PUBLIC",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "RSA_PRIVATE",
+          "lsb": 14,
+          "msb": 14,
+          "description": "Advertised rsa private function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_RSA_PRIVATE",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "RSA_VERIFY",
+          "lsb": 15,
+          "msb": 15,
+          "description": "Advertised rsa verify function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_RSA_VERIFY",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "PIO",
+          "lsb": 16,
+          "msb": 16,
+          "description": "Advertised pio function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_PIO",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "IRQ",
+          "lsb": 17,
+          "msb": 17,
+          "description": "Advertised irq function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_IRQ",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "ZEROIZE",
+          "lsb": 18,
+          "msb": 18,
+          "description": "Advertised zeroize function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_ZEROIZE",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SECRET_READ_PROTECT",
+          "lsb": 19,
+          "msb": 19,
+          "description": "Advertised secret read protect function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SECRET_READ_PROTECT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "CONCURRENT_ENGINES",
+          "lsb": 20,
+          "msb": 20,
+          "description": "Advertised concurrent engines function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_CONCURRENT_ENGINES",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "COUNTERS",
+          "lsb": 21,
+          "msb": 21,
+          "description": "Advertised counters function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_COUNTERS",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "APB_ERRORS",
+          "lsb": 22,
+          "msb": 22,
+          "description": "Advertised apb errors function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_APB_ERRORS",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "CENTRAL_DMA",
+          "lsb": 23,
+          "msb": 23,
+          "description": "Advertised central dma function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_CENTRAL_DMA",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "STORAGE_INIT",
+          "lsb": 24,
+          "msb": 24,
+          "description": "Advertised storage init function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_STORAGE_INIT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SRAM_MACRO",
+          "lsb": 25,
+          "msb": 25,
+          "description": "Advertised sram macro function; no independent qualification is implied.",
+          "expression": "RS_CRYPTO_CAP_SRAM_MACRO",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 26,
+          "msb": 31,
+          "description": "Reads zero.",
+          "expression": "6'd0",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.RSA_CFG": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 11,
+          "name": "EXPONENT_BITS",
+          "description": "Exponent bit count; valid admitted range is 1..2048.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/security/apb4_crypto.sv"
+        },
+        {
+          "lsb": 12,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/ip/security/apb4_crypto.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "text": "s_read_data = {20'd0, s_regs_q.exponent_bits};"
+        }
+      ],
+      "review_source": "rtl/ip/security/apb4_crypto.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
     }
   },
   "rtc": {
     "main.COMMAND": {
       "fields": [
         {
+          "name": "OPCODE",
           "lsb": 0,
-          "msb": 0,
-          "name": "Reserved",
-          "description": "Reserved; write zero.",
-          "reset": "Not retained",
-          "expression": "32'd0"
-        },
-        {
-          "lsb": 1,
-          "msb": 1,
-          "name": "STATUS_DONE",
-          "description": "Status done.",
-          "reset": "Register reset applies",
-          "expression": "`RTC_COMMAND_STATUS_DONE_MASK"
-        },
-        {
-          "lsb": 2,
           "msb": 2,
-          "name": "STATUS_ERROR",
-          "description": "Status error.",
-          "reset": "Register reset applies",
-          "expression": "`RTC_COMMAND_STATUS_ERROR_MASK"
+          "description": "1 APPLY_CONFIG; 2 SET_TIME; 3 SNAPSHOT; 4 CLEAR_EVENTS; 5 INJECT_EVENTS. Values 0, 6 and 7 are invalid.",
+          "expression": "pwdata_i[2:0]",
+          "reset": "Not retained"
         },
         {
+          "name": "Reserved",
           "lsb": 3,
           "msb": 31,
-          "name": "Reserved",
-          "description": "Reserved; write zero.",
-          "reset": "Not retained",
-          "expression": "32'd0"
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "Not retained"
         }
       ],
-      "reset": "Not retained (command/data port)"
+      "reset": "Not retained (command/data port)",
+      "description": "Write one numeric opcode in bits 2:0; commands are not independent mask bits.",
+      "notes": "PSTRB[0] must be set, the command link must be ready and COMMAND_STATUS must not be busy. Stage the corresponding configuration, time or event mask before issuing its opcode. Read COMMAND_STATUS for completion; this command port does not retain a readable status word.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv",
+          "text": "command_o.opcode = rtc_command_e'(pwdata_i[2:0]);"
+        },
+        {
+          "file": "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv",
+          "text": "s_write_value_valid = pstrb_i[0] && ((pwdata_i & ~`RTC_COMMAND_VALID_MASK) == 0) && (pwdata_i[2:0] >= `RTC_COMMAND_APPLY_CONFIG) && (pwdata_i[2:0] <= `RTC_COMMAND_INJECT_EVENTS) && command_ready_i && !s_command_busy_q;"
+        },
+        {
+          "file": "rtl/managed/clusterip/rtc/rtl/rtc_define.svh",
+          "text": "`define RTC_COMMAND_APPLY_CONFIG 3'd1 `define RTC_COMMAND_SET_TIME 3'd2 `define RTC_COMMAND_SNAPSHOT 3'd3 `define RTC_COMMAND_CLEAR_EVENTS 3'd4 `define RTC_COMMAND_INJECT_EVENTS 3'd5"
+        }
+      ]
     },
     "main.EVENT_CLEAR": {
       "fields": [
@@ -5039,45 +6653,174 @@
         }
       ],
       "reset": "Not retained (command/data port)"
+    },
+    "main.CONFIG": {
+      "fields": [
+        {
+          "name": "WINDOW_ENABLE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Enable the service-window check.",
+          "expression": "s_config_q[0]",
+          "reset": "0x0"
+        },
+        {
+          "name": "WARNING_ENABLE",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Enable the early-warning threshold.",
+          "expression": "s_config_q[1]",
+          "reset": "0x0"
+        },
+        {
+          "name": "DEBUG_FREEZE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Enable the configured debug-freeze behavior.",
+          "expression": "s_config_q[2]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Configuration locking is controlled by the separate CONFIG_LOCK register. Its bit-zero mask does not describe CONFIG.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv",
+          "text": "`WDG_CONFIG_OFFSET: prdata_o = {29'h0, s_config_q};"
+        },
+        {
+          "file": "rtl/managed/clusterip/wdg/rtl/wdg_define.svh",
+          "text": "`define WDG_CONFIG_WINDOW_ENABLE_MASK 32'h0000_0001 `define WDG_CONFIG_WARNING_ENABLE_MASK 32'h0000_0002 `define WDG_CONFIG_DEBUG_FREEZE_MASK 32'h0000_0004 `define WDG_CONFIG_VALID_MASK 32'h0000_0007"
+        }
+      ]
+    },
+    "main.COMMAND_STATUS": {
+      "fields": [
+        {
+          "name": "DONE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Sticky command completion; write one to clear.",
+          "expression": "s_command_done_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "ERROR",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Sticky command error; write one to clear.",
+          "expression": "s_command_error_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "OPCODE",
+          "lsb": 2,
+          "msb": 4,
+          "description": "Read-only last command opcode.",
+          "expression": "s_last_opcode_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "RESPONSE",
+          "lsb": 5,
+          "msb": 7,
+          "description": "Read-only last response code.",
+          "expression": "s_last_response_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 8,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Only DONE and ERROR may be written as W1C bits, with PSTRB[0] set. Write zero to the read-only opcode/response positions when acknowledging.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv",
+          "text": "24'h000000, s_last_response_q, s_last_opcode_q, s_command_error_q, s_command_done_q"
+        },
+        {
+          "file": "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv",
+          "text": "s_write_value_valid = pstrb_i[0] && ((pwdata_i & ~`WDG_COMMAND_STATUS_W1C_MASK) == 0);"
+        },
+        {
+          "file": "rtl/managed/clusterip/wdg/rtl/wdg_define.svh",
+          "text": "`define WDG_COMMAND_OPCODE_MASK 32'h0000_001C `define WDG_COMMAND_OPCODE_SHIFT 2 `define WDG_COMMAND_RESPONSE_MASK 32'h0000_00E0 `define WDG_COMMAND_RESPONSE_SHIFT 5 `define WDG_COMMAND_STATUS_W1C_MASK 32'h0000_0003"
+        }
+      ]
     }
   },
   "pwm": {
     "main.COMMAND": {
       "fields": [
         {
+          "name": "UPDATE",
           "lsb": 0,
           "msb": 0,
-          "name": "UPDATE",
-          "description": "Update.",
-          "reset": "Register reset applies",
-          "expression": "`PWM_COMMAND_UPDATE_MASK"
+          "description": "Request a shadow-register update.",
+          "expression": "s_masked_wdata[0]",
+          "reset": "Not retained"
         },
         {
+          "name": "SYNC",
           "lsb": 1,
           "msb": 1,
-          "name": "SYNC",
-          "description": "Sync.",
-          "reset": "Register reset applies",
-          "expression": "`PWM_COMMAND_SYNC_MASK"
+          "description": "Request software synchronization.",
+          "expression": "s_masked_wdata[1]",
+          "reset": "Not retained"
         },
         {
+          "name": "FAULT_TEST",
           "lsb": 2,
           "msb": 2,
-          "name": "FAULT_TEST",
-          "description": "Fault test.",
-          "reset": "Register reset applies",
-          "expression": "`PWM_COMMAND_FAULT_TEST_MASK"
+          "description": "Inject the software fault-test event.",
+          "expression": "s_masked_wdata[2]",
+          "reset": "Not retained"
         },
         {
+          "name": "STOP_ALL",
           "lsb": 3,
-          "msb": 31,
+          "msb": 3,
+          "description": "Request stop of all PWM timers.",
+          "expression": "s_masked_wdata[3]",
+          "reset": "Not retained"
+        },
+        {
           "name": "Reserved",
-          "description": "Reserved; write zero.",
-          "reset": "Not retained",
-          "expression": "32'd0"
+          "lsb": 4,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "Not retained"
         }
       ],
-      "reset": "Not retained (command/data port)"
+      "reset": "Not retained (command/data port)",
+      "description": "Write-one pulses for update, software sync, fault test and stop-all.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_define.svh",
+          "text": "`define PWM_COMMAND_STOP_ALL_MASK 32'h0000_0008 `define PWM_COMMAND_VALID_MASK 32'h0000_000F"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "s_command_d[0] = s_masked_wdata[0]; s_command_d[1] = s_masked_wdata[1]; s_command_d[2] = s_masked_wdata[2]; s_command_d[3] = s_masked_wdata[3];"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": ".stop_all_i (s_command_q[3]),"
+        }
+      ]
     },
     "main.INTR_TEST": {
       "fields": [
@@ -5259,6 +7002,17 @@
           "description": "No defined software function. Preserve zero when writing.",
           "reset": "0x0",
           "expression": "s_ctrl_q"
+        }
+      ],
+      "description": "Global module enable and debug-freeze selection.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "`PWM_CTRL_OFFSET: prdata_o = s_ctrl_q;"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_define.svh",
+          "text": "`define PWM_CTRL_ENABLE_MASK 32'h0000_0001 `define PWM_CTRL_DEBUG_FREEZE_MASK 32'h0000_0002 `define PWM_CTRL_VALID_MASK 32'h0000_0003"
         }
       ]
     },
@@ -5577,8 +7331,10 @@
         }
       ],
       "review_source": "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
-      "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06.",
-      "reset": "0"
+      "review_notes": "2026-10-22: PWM_CAPTURE1_CTRL_OFFSET read/write decode; this control register does not pop data.",
+      "reset": "0",
+      "access": "RW",
+      "description": "Enable, capture edges, filter and FIFO watermark; write only while capture is disabled."
     },
     "main.CAPTURE1_STATUS": {
       "fields": [
@@ -5624,7 +7380,9 @@
         }
       ],
       "review_source": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
-      "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06."
+      "review_notes": "2026-10-22: PWM_CAPTURE1_STATUS_OFFSET read decode; s_capture_pop[1] is qualified only by PWM_CAPTURE1_DATA_OFFSET.",
+      "access": "RO",
+      "description": "FIFO level, empty/full and watermark; reading status does not pop a timestamp."
     },
     "channel.ACTION": {
       "fields": [
@@ -5704,6 +7462,187 @@
       "review_source": "rtl/managed/clusterip/pwm/rtl/pwm_channel.sv",
       "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06.",
       "reset": "0"
+    },
+    "main.CLOCK_HZ": {
+      "description": "Mini static clock-reporting parameter: 72 MHz from SOC_EXT_CLK_HZ, with UseRuntimeClockHz disabled. This is not a PCLK measurement or automatic RCU tracking.",
+      "review_source": "rtl/mini/top/apb4_system.sv",
+      "review_notes": "2026-10-22: u_apb4_pwm binds PCLK_HZ to SOC_EXT_CLK_HZ and retains UseRuntimeClockHz=0."
+    },
+    "main.STATUS": {
+      "description": "Global module, timer, channel, fade, capture and fault observations.",
+      "fields": [
+        {
+          "name": "ENABLE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Current global module enable.",
+          "expression": "module_enable_i",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "TIMER_RUNNING",
+          "lsb": 1,
+          "msb": 2,
+          "description": "One running flag per timer.",
+          "expression": "s_timer_running",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "CHANNEL_ENABLE_OR_LOCK",
+          "lsb": 3,
+          "msb": 6,
+          "description": "Channel-enable bitmap; register bit 4 is channel 1 enable OR SAFETY_LOCK.",
+          "expression": "s_channel_enabled",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "FAULT_KILL",
+          "lsb": 7,
+          "msb": 7,
+          "description": "Fault kill is active.",
+          "expression": "s_fault_kill",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "TIMER_UPDATE_PENDING",
+          "lsb": 8,
+          "msb": 9,
+          "description": "Pending update per timer.",
+          "expression": "s_timer_update_pending",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "CHANNEL_UPDATE_PENDING",
+          "lsb": 10,
+          "msb": 13,
+          "description": "Pending update per channel.",
+          "expression": "s_channel_update_pending",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "FADE_RUNNING",
+          "lsb": 14,
+          "msb": 17,
+          "description": "Running fade per channel.",
+          "expression": "s_fade_running",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "CAPTURE_ENABLE",
+          "lsb": 18,
+          "msb": 18,
+          "description": "Capture unit enabled.",
+          "expression": "capture_enable_i",
+          "reset": "Dynamic"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 19,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "The wrapper ORs SAFETY_LOCK into register bit 4, which overlaps the channel-enable bitmap in this source revision. Use the dedicated SAFETY_LOCK register to identify the lock; bit 4 alone does not distinguish those two causes.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "`PWM_STATUS_OFFSET: prdata_o = s_status | {27'h0, s_safety_lock_q, 4'h0};"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
+          "text": "status_o = '0; status_o[0] = module_enable_i; status_o[2:1] = s_timer_running; status_o[6:3] = s_channel_enabled; status_o[7] = s_fault_kill; status_o[9:8] = s_timer_update_pending; status_o[13:10] = s_channel_update_pending; status_o[17:14] = s_fade_running; status_o[18] = capture_enable_i;"
+        }
+      ]
+    },
+    "channel.FADE_CTRL": {
+      "description": "Fade command pulses and retained gamma/segment configuration.",
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Write one to start the fade; this command bit reads zero.",
+          "expression": "s_masked_wdata[0]",
+          "reset": "0x0"
+        },
+        {
+          "name": "PAUSE",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Write one to pause the fade; this command bit reads zero.",
+          "expression": "s_masked_wdata[1]",
+          "reset": "0x0"
+        },
+        {
+          "name": "RESUME",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Write one to resume the fade; this command bit reads zero.",
+          "expression": "s_masked_wdata[2]",
+          "reset": "0x0"
+        },
+        {
+          "name": "STOP",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Write one to stop the fade; this command bit reads zero.",
+          "expression": "s_masked_wdata[3]",
+          "reset": "0x0"
+        },
+        {
+          "name": "GAMMA",
+          "lsb": 4,
+          "msb": 4,
+          "description": "Retained gamma mode enable.",
+          "expression": "s_channel_fade_gamma_q[channel]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 5,
+          "msb": 7,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        },
+        {
+          "name": "SEGMENTS",
+          "lsb": 8,
+          "msb": 11,
+          "description": "Retained gamma segment count; START in gamma mode requires 1 through 8.",
+          "expression": "s_channel_fade_segments_q[channel]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 12,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "A command write also updates GAMMA and any strobed SEGMENTS byte. Preserve the intended retained configuration when constructing the write. START requires a nonzero FADE_STEP and the normal channel access checks; command acceptance is not fade completion.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "20'h00000, s_channel_fade_segments_q[channel], 3'h0, s_channel_fade_gamma_q[channel], 4'h0"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "s_fade_command_d[channel] = s_masked_wdata[4:0];"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+          "text": "(!s_merged_word[0] || ((s_channel_fade_step_q[channel] != 0) && (!s_merged_word[4] || ((s_merged_word[11:8] >= 1) && (s_merged_word[11:8] <= `PWM_GAMMA_SEGMENT_COUNT)))))"
+        },
+        {
+          "file": "rtl/managed/clusterip/pwm/rtl/pwm_define.svh",
+          "text": "`define PWM_FADE_CTRL_START_MASK 32'h0000_0001 `define PWM_FADE_CTRL_PAUSE_MASK 32'h0000_0002 `define PWM_FADE_CTRL_RESUME_MASK 32'h0000_0004 `define PWM_FADE_CTRL_STOP_MASK 32'h0000_0008 `define PWM_FADE_CTRL_GAMMA_MASK 32'h0000_0010 `define PWM_FADE_CTRL_SEGMENTS_MASK 32'h0000_0F00"
+        }
+      ]
     }
   },
   "crc": {
@@ -5756,6 +7695,63 @@
         }
       ],
       "reset": "Not retained (command/data port)"
+    },
+    "main.CONFIG": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 1,
+          "name": "WIDTH",
+          "description": "CRC width encoding: 0 = 7, 1 = 8, 2 = 16, 3 = 32 bits.",
+          "reset": "Register reset applies",
+          "expression": "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "REFLECT_IN",
+          "description": "Reflect input bits.",
+          "reset": "Register reset applies",
+          "expression": "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "REFLECT_OUT",
+          "description": "Reflect output bits.",
+          "reset": "Register reset applies",
+          "expression": "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "BYTE_SWAP",
+          "description": "Byte-swap input words.",
+          "reset": "Register reset applies",
+          "expression": "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+        },
+        {
+          "lsb": 5,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+        }
+      ],
+      "notes": "Configuration locking belongs to the separate CONFIG_LOCK register. Its bit-zero mask must not be interpreted as part of CONFIG.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/crc/rtl/crc_define.svh",
+          "text": "`define CRC_CONFIG_WIDTH_MASK 32'h0000_0003"
+        },
+        {
+          "file": "rtl/managed/clusterip/crc/rtl/crc_define.svh",
+          "text": "`define CRC_CONFIG_LOCK_OFFSET 12'h02C"
+        }
+      ],
+      "review_source": "rtl/managed/clusterip/crc/rtl/crc_define.svh",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
     }
   },
   "rng": {
@@ -5795,6 +7791,39 @@
         }
       ],
       "reset": "Not retained (command/data port)"
+    },
+    "main.CONFIG": {
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 7,
+          "name": "WATERMARK",
+          "description": "FIFO data-ready watermark; all eight bits belong to this field.",
+          "reset": "Register reset applies",
+          "expression": "rtl/managed/clusterip/rng/rtl/rng_define.svh"
+        },
+        {
+          "lsb": 8,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "Reads zero; preserve zero when writing.",
+          "reset": "0",
+          "expression": "rtl/managed/clusterip/rng/rtl/rng_define.svh"
+        }
+      ],
+      "notes": "Configuration locking belongs to the separate CONFIG_LOCK register, not bit zero of this register.",
+      "source_bindings": [
+        {
+          "file": "rtl/managed/clusterip/rng/rtl/rng_define.svh",
+          "text": "`define RNG_CONFIG_WATERMARK_MASK 32'h0000_00FF"
+        },
+        {
+          "file": "rtl/managed/clusterip/rng/rtl/rng_define.svh",
+          "text": "`define RNG_CONFIG_LOCK_OFFSET 12'h024"
+        }
+      ],
+      "review_source": "rtl/managed/clusterip/rng/rtl/rng_define.svh",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
     }
   },
   "ps2": {
@@ -7748,7 +9777,49 @@
     },
     "main.CLOCK_CTRL": {
       "description": "Clock ctrl. The field descriptions and operation sequence define its use.",
-      "access": "RW"
+      "access": "RW",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "ENABLE",
+          "description": "Enable.",
+          "reset": "0x0",
+          "expression": "`APB4_SDIO__CLOCK_CTRL_ENABLE"
+        },
+        {
+          "lsb": 1,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 23,
+          "name": "HALF_PERIOD",
+          "description": "Half period.",
+          "reset": "0x5a",
+          "expression": "`APB4_SDIO__CLOCK_CTRL_HALF_PERIOD_LSB"
+        },
+        {
+          "lsb": 24,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "s_read_data = {8'd0, s_half_period_q, 7'd0, s_clock_en_q};"
+        }
+      ],
+      "review_source": "rtl/ip/storage/sdio_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "main.CLOCK_ACTUAL": {
       "description": "Clock actual. The field descriptions and operation sequence define its use.",
@@ -7783,8 +9854,71 @@
       "access": "RW"
     },
     "main.CMD_CFG": {
-      "description": "Cmd cfg. The field descriptions and operation sequence define its use.",
-      "access": "RW"
+      "description": "Command configuration has different write and readback layouts. The diagram identifies write fields and the packed readback overlay in bits 5:0.",
+      "access": "RW",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 5,
+          "name": "INDEX_OR_READBACK",
+          "description": "Write: six-bit command index, qualified by PSTRB[0]. Read: response type at [3:0], CRC-check state at bit 4 and index-check state at bit 5; command index is not read back.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 6,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 11,
+          "name": "RESP_WRITE",
+          "description": "Write response-type selection with PSTRB[1]; these bits read zero.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 12,
+          "msb": 12,
+          "name": "CRC_CHECK_WRITE",
+          "description": "Write CRC-check enable with PSTRB[1]; reads zero here.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 13,
+          "msb": 13,
+          "name": "INDEX_CHECK_WRITE",
+          "description": "Write index-check enable with PSTRB[1]; reads zero here.",
+          "reset": "Register reset applies",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 14,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "`APB4_SDIO__CMD_CFG: s_read_data = {26'd0, s_cmd_cfg_q};"
+        },
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "if (apb4.pstrb[0]) s_cmd_index_q <= apb4.pwdata[5:0]; if (apb4.pstrb[1]) s_cmd_cfg_q <= apb4.pwdata[13:8];"
+        }
+      ],
+      "review_source": "rtl/ip/storage/sdio_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately.",
+      "notes": "Do not read-modify-write this register as an ordinary symmetric configuration word. Keep the command index and response/check policy in software, then construct the complete write encoding."
     },
     "main.CMD_STATUS": {
       "description": "Current cmd status; see the field definitions and functional sequence.",
@@ -7820,7 +9954,74 @@
     },
     "main.DATA_CFG": {
       "description": "Data cfg. The field descriptions and operation sequence define its use.",
-      "access": "RW"
+      "access": "RW",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "DATA_DIRECTION",
+          "description": "Data direction.",
+          "reset": "0x0",
+          "expression": "s_data_cfg_q[0]"
+        },
+        {
+          "lsb": 1,
+          "msb": 3,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "DATA_DMA_ENABLE",
+          "description": "Data dma enable.",
+          "reset": "0x0",
+          "expression": "s_data_cfg_q[4]"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "DATA_BLOCK_MODE",
+          "description": "Data block mode.",
+          "reset": "0x0",
+          "expression": "s_data_cfg_q[5]"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "DATA_FIXED_ADDR",
+          "description": "Data fixed addr.",
+          "reset": "0x0",
+          "expression": "s_data_cfg_q[6]"
+        },
+        {
+          "lsb": 7,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/storage/sdio_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "assign bus_width_o = s_bus_width_q;"
+        },
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "assign data_direction_o = s_data_cfg_q[0];"
+        },
+        {
+          "file": "rtl/ip/storage/sdio_reg.sv",
+          "text": "assign data_dma_enable_o = s_data_cfg_q[4];"
+        }
+      ],
+      "review_source": "rtl/ip/storage/sdio_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately.",
+      "notes": "Bits 3:1 are stored/read back but have no active width consumer in this instance. Select bus width through BUS_CTRL; do not infer another data-width mode from the historical DATA_CFG_WIDTH_LSB macro."
     },
     "main.DATA_START": {
       "description": "Data start. The field descriptions and operation sequence define its use.",
@@ -8750,7 +10951,15 @@
       "access": "RO"
     },
     "main.GLOBAL_CTRL": {
-      "access": "RW"
+      "access": "RW",
+      "description": "Controller enable, global IRQ enable, soft-reset and abort pulses.",
+      "notes": "SOFT_RESET and ABORT are write pulses and read back as zero. This register updates its low control byte only when PSTRB[0] is set.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "s_global_ctrl_d[`APB4_USB2__GLOBAL_CTRL_SOFT_RESET] = 1'b0; s_global_ctrl_d[`APB4_USB2__GLOBAL_CTRL_ABORT] = 1'b0;"
+        }
+      ]
     },
     "main.GLOBAL_STATUS": {
       "access": "RO",
@@ -8858,7 +11067,55 @@
       "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06."
     },
     "main.PHY_CTRL": {
-      "access": "RW"
+      "access": "RW",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "PHY_RESET_N",
+          "description": "Phy reset n.",
+          "reset": "0x1",
+          "expression": "s_phy_ctrl_q[`APB4_USB2__PHY_CTRL_RESET_N]"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "PHY_SUSPEND",
+          "description": "Phy suspend.",
+          "reset": "0x0",
+          "expression": "s_phy_ctrl_q[`APB4_USB2__PHY_CTRL_SUSPEND]"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "REMOTE_WAKE",
+          "description": "Remote wake.",
+          "reset": "0x0",
+          "expression": "s_phy_ctrl_q[`APB4_USB2__PHY_CTRL_REMOTE_WAKE]"
+        },
+        {
+          "lsb": 3,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/usb/usb2_reg.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__PHY_CTRL: s_read_data = {29'd0, s_phy_ctrl_q};"
+        },
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__PHY_CTRL: if (apb4.pstrb[0]) s_phy_ctrl_d = apb4.pwdata[2:0];"
+        }
+      ],
+      "review_source": "rtl/ip/usb/usb2_reg.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately.",
+      "description": "PHY reset, suspend and remote-wake controls in bits 2:0. Viewport transactions use the separate ULPI_VIEWPORT register.",
+      "notes": "The legacy PHY_CTRL_VIEWPORT_* macro names do not place those fields in this register. Its upper 29 bits read zero and are not consumed by PHY_CTRL writes."
     },
     "main.PHY_STATUS": {
       "access": "RO",
@@ -8908,7 +11165,19 @@
       "review_notes": "Reviewed against the pinned implementation: explicit slices, write masks and consumer use; 2026-09-06."
     },
     "main.ULPI_VIEWPORT": {
-      "access": "RW"
+      "access": "RW",
+      "description": "ULPI transaction command and busy/readback state; the displayed fields describe reads.",
+      "notes": "Write a full word with START at bit 31, WRITE at bit 30, six-bit address at [21:16] and data at [7:0]; bits [29:22] and [15:8] must be zero. Readback instead places the retained address at [29:24], with BUSY at bit 31 and retained write data at [7:0]. Do not reuse a read word as a command. Read data/error are in ULPI_VIEWPORT_DATA.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "s_viewport_busy_q, 1'b0, s_viewport_addr_q, 16'd0, s_viewport_write_data_q"
+        },
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "s_viewport_addr_d = apb4.pwdata[21:16];"
+        }
+      ]
     },
     "main.ULPI_VIEWPORT_DATA": {
       "access": "RO"
@@ -8991,7 +11260,37 @@
       "access": "RO"
     },
     "main.PERF_CTRL": {
-      "access": "RW"
+      "access": "RW",
+      "description": "Write-one pulse to clear the implemented performance counters; reads zero.",
+      "fields": [
+        {
+          "name": "CLEAR",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Write-one pulse to clear the implemented performance counters; reads zero.",
+          "expression": "apb4.pwdata[0]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Use an aligned full-word write containing only the requested bit. The current write branch consumes PWDATA[0] directly rather than masking it with PSTRB. A read returns zero and cannot confirm completion.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__PERF_CTRL: s_perf_clear_d = apb4.pwdata[0];"
+        },
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__PERF_CTRL: s_read_data = 32'd0;"
+        }
+      ]
     },
     "main.DEVICE_CTRL": {
       "access": "RW",
@@ -9360,7 +11659,41 @@
       "access": "RO"
     },
     "main.RAM_BIST": {
-      "access": "RW"
+      "access": "RW",
+      "description": "Reserved BIST/debug request pulse; reads zero. No memory self-test is implemented by this request.",
+      "fields": [
+        {
+          "name": "REQUEST",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Reserved BIST/debug request pulse; reads zero. No memory self-test is implemented by this request.",
+          "expression": "apb4.pwdata[0]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 1,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Use an aligned full-word write containing only the requested bit. The current write branch consumes PWDATA[0] directly rather than masking it with PSTRB. A read returns zero and cannot confirm completion. The request is exposed only in DEBUG_STATUS bit 6; it is not MBIST or physical-memory qualification.",
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__RAM_BIST: s_ram_bist_start_d = apb4.pwdata[0];"
+        },
+        {
+          "file": "rtl/ip/usb/usb2_reg.sv",
+          "text": "`APB4_USB2__RAM_BIST: s_read_data = 32'd0;"
+        },
+        {
+          "file": "rtl/ip/usb/apb4_usb2.sv",
+          "text": "s_debug_stat[6] = s_ram_bist_start;"
+        }
+      ]
     },
     "main.DEBUG_STATUS": {
       "access": "RO",
@@ -9451,7 +11784,73 @@
     },
     "endpoint.CFG": {
       "access": "RW",
-      "description": "Cfg. The field descriptions and operation sequence define its use."
+      "description": "Cfg. The field descriptions and operation sequence define its use.",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "IN_ENABLE",
+          "description": "In enable.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_IN_ENABLE"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "OUT_ENABLE",
+          "description": "Out enable.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_OUT_ENABLE"
+        },
+        {
+          "lsb": 2,
+          "msb": 2,
+          "name": "IN_STALL",
+          "description": "In stall.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_IN_STALL"
+        },
+        {
+          "lsb": 3,
+          "msb": 3,
+          "name": "OUT_STALL",
+          "description": "Out stall.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_OUT_STALL"
+        },
+        {
+          "lsb": 4,
+          "msb": 5,
+          "name": "TYPE",
+          "description": "Type.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_TYPE_LSB"
+        },
+        {
+          "lsb": 6,
+          "msb": 15,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/usb/usb2_scheduler.sv"
+        },
+        {
+          "lsb": 16,
+          "msb": 31,
+          "name": "MAX_PACKET",
+          "description": "Max packet.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__ENDPOINT_CFG_MAX_PACKET_LSB"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_scheduler.sv",
+          "text": "endpoint_cfg_i[s_cmd_index][5:4]"
+        }
+      ],
+      "review_source": "rtl/ip/usb/usb2_scheduler.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "endpoint.RAM_IN": {
       "access": "RW",
@@ -9646,11 +12045,135 @@
     },
     "channel.CFG": {
       "access": "RW",
-      "description": "Cfg. The field descriptions and operation sequence define its use."
+      "description": "Cfg. The field descriptions and operation sequence define its use.",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 0,
+          "name": "ENABLE",
+          "description": "Enable.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_ENABLE"
+        },
+        {
+          "lsb": 1,
+          "msb": 1,
+          "name": "DIRECTION_IN",
+          "description": "Direction in.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_DIRECTION_IN"
+        },
+        {
+          "lsb": 2,
+          "msb": 3,
+          "name": "TYPE",
+          "description": "Type.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_TYPE_LSB"
+        },
+        {
+          "lsb": 4,
+          "msb": 4,
+          "name": "LOW_SPEED",
+          "description": "Low speed.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_LOW_SPEED"
+        },
+        {
+          "lsb": 5,
+          "msb": 5,
+          "name": "SETUP",
+          "description": "Setup.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_SETUP"
+        },
+        {
+          "lsb": 6,
+          "msb": 6,
+          "name": "PING_ENABLE",
+          "description": "Ping enable.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_PING_ENABLE"
+        },
+        {
+          "lsb": 7,
+          "msb": 15,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/usb/usb2_define.svh"
+        },
+        {
+          "lsb": 16,
+          "msb": 31,
+          "name": "MAX_PACKET",
+          "description": "Max packet.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_CFG_MAX_PACKET_LSB"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_define.svh",
+          "text": "`define APB4_USB2__CHANNEL_CFG_PING_ENABLE 6"
+        }
+      ],
+      "review_source": "rtl/ip/usb/usb2_define.svh",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "channel.TARGET": {
       "access": "RW",
-      "description": "Target. The field descriptions and operation sequence define its use."
+      "description": "Target. The field descriptions and operation sequence define its use.",
+      "fields": [
+        {
+          "lsb": 0,
+          "msb": 6,
+          "name": "ADDR",
+          "description": "Addr.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_TARGET_ADDR_LSB"
+        },
+        {
+          "lsb": 7,
+          "msb": 7,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/usb/usb2_scheduler.sv"
+        },
+        {
+          "lsb": 8,
+          "msb": 11,
+          "name": "ENDPOINT",
+          "description": "Endpoint.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_TARGET_ENDPOINT_LSB"
+        },
+        {
+          "lsb": 12,
+          "msb": 12,
+          "name": "TOGGLE",
+          "description": "Toggle.",
+          "reset": "0x0",
+          "expression": "`APB4_USB2__CHANNEL_TARGET_TOGGLE"
+        },
+        {
+          "lsb": 13,
+          "msb": 31,
+          "name": "Reserved",
+          "description": "No defined software function; write zero.",
+          "reset": "0",
+          "expression": "rtl/ip/usb/usb2_scheduler.sv"
+        }
+      ],
+      "source_bindings": [
+        {
+          "file": "rtl/ip/usb/usb2_scheduler.sv",
+          "text": "channel_target_i[s_cmd_index][6:0]"
+        }
+      ],
+      "review_source": "rtl/ip/usb/usb2_scheduler.sv",
+      "review_notes": "2026-10-22 packed-field audit against actual producer and consumer widths; write/read views are qualified separately."
     },
     "channel.INTERVAL": {
       "access": "RW",
@@ -9773,6 +12296,391 @@
     "channel.BYTES": {
       "access": "RO",
       "description": "Bytes. The field descriptions and operation sequence define its use."
+    }
+  },
+  "archinfo": {
+    "main.BUILD_ID_LO": {
+      "description": "Source revision bits 31:0 from generated build metadata. Build-dependent; the reusable module default is not the product value.",
+      "fields": [
+        {
+          "name": "BUILD_ID_LO",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Source revision bits 31:0 from generated build metadata.",
+          "expression": "BUILD_ID_LO",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.BUILD_ID_HI": {
+      "description": "Source revision bits 63:32 from generated build metadata. Build-dependent; the reusable module default is not the product value.",
+      "fields": [
+        {
+          "name": "BUILD_ID_HI",
+          "lsb": 0,
+          "msb": 31,
+          "description": "Source revision bits 63:32 from generated build metadata.",
+          "expression": "BUILD_ID_HI",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.CONFIG_ID": {
+      "description": "First 32 bits of the canonical configuration digest supplied by the build. Build-dependent; the reusable module default is not the product value.",
+      "fields": [
+        {
+          "name": "CONFIG_ID",
+          "lsb": 0,
+          "msb": 31,
+          "description": "First 32 bits of the canonical configuration digest supplied by the build.",
+          "expression": "CONFIG_ID",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.BUILD_STATUS": {
+      "description": "Generated provenance flags; inspect the actual firmware/RTL build metadata rather than assuming zero.",
+      "fields": [
+        {
+          "name": "DIRTY",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Tracked source changes were present when metadata was generated.",
+          "expression": "`ARCHINFO_BUILD_DIRTY_BIT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "LOCK_VALID",
+          "lsb": 1,
+          "msb": 1,
+          "description": "The generator accepted the dependency-lock structure.",
+          "expression": "`ARCHINFO_BUILD_LOCK_VALID_BIT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "RELEASE",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Explicit audited-build release selection; not a silicon qualification.",
+          "expression": "`ARCHINFO_BUILD_RELEASE_BIT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "SOURCE_KNOWN",
+          "lsb": 3,
+          "msb": 3,
+          "description": "A valid full Git source revision was available.",
+          "expression": "`ARCHINFO_BUILD_SOURCE_KNOWN_BIT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 31,
+          "description": "Generated as zero.",
+          "expression": "28'd0",
+          "reset": "0"
+        }
+      ]
+    },
+    "main.TOPOLOGY": {
+      "description": "Mini PRODUCT topology: 64 interrupt-vector positions, 32 GPIO, zero selectable user-core slots and one management hart. The separate fixed HP hart is not a selectable slot.",
+      "fields": [
+        {
+          "name": "MGMT_HARTS",
+          "lsb": 0,
+          "msb": 7,
+          "description": "One management hart.",
+          "expression": "ARCHINFO_MGMT_HART_COUNT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "USER_CORE_SLOTS",
+          "lsb": 8,
+          "msb": 15,
+          "description": "Zero selectable user-core slots; fixed HP is separate.",
+          "expression": "ARCHINFO_USER_CORE_COUNT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "GPIO_COUNT",
+          "lsb": 16,
+          "msb": 23,
+          "description": "32 physical GPIO positions.",
+          "expression": "ARCHINFO_GPIO_COUNT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "IRQ_VECTOR_WIDTH",
+          "lsb": 24,
+          "msb": 31,
+          "description": "64 vector positions; unallocated positions are not extra interrupts.",
+          "expression": "ARCHINFO_IRQ_COUNT",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.FEATURES0": {
+      "description": "Selected Mini feature word 0x0002FFFE: no PLL, SRAM interface/macros enabled and two fixed extension slots.",
+      "fields": [
+        {
+          "name": "HAVE_PLL",
+          "lsb": 0,
+          "msb": 0,
+          "description": "PLL disabled in this reference profile.",
+          "expression": "ARCHINFO_HAVE_PLL",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "HAVE_SRAM_IF",
+          "lsb": 1,
+          "msb": 1,
+          "description": "On-chip SRAM interface enabled.",
+          "expression": "ARCHINFO_HAVE_SRAM_IF",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "HAVE_SRAM_MACRO",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Macro-backed SRAM selected; not a physical-closure result.",
+          "expression": "ARCHINFO_HAVE_SRAM_MACRO",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "BASE_FEATURES",
+          "lsb": 3,
+          "msb": 15,
+          "description": "Fixed Mini integration bitmap from ARCHINFO_FEATURES0.",
+          "expression": "ARCHINFO_FEATURES0[15:3]",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "EXTENSION_SLOTS",
+          "lsb": 16,
+          "msb": 23,
+          "description": "Two fixed extension slots (EXT-L and EXT-H).",
+          "expression": "ARCHINFO_EXTENSION_COUNT",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 24,
+          "msb": 31,
+          "description": "Reads zero.",
+          "expression": "8'd0",
+          "reset": "Register reset applies"
+        }
+      ]
+    },
+    "main.TECHNOLOGY": {
+      "description": "Selected IHP130 ASIC target metadata, 0x02010082; target identity is not a manufacturing or timing result.",
+      "fields": [
+        {
+          "name": "PROCESS_NM",
+          "lsb": 0,
+          "msb": 15,
+          "description": "130 nm target identifier.",
+          "expression": "ARCHINFO_TECHNOLOGY[15:0]",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "PDK_ID",
+          "lsb": 16,
+          "msb": 23,
+          "description": "IHP130 PDK identifier 1.",
+          "expression": "ARCHINFO_TECHNOLOGY[23:16]",
+          "reset": "Register reset applies"
+        },
+        {
+          "name": "TARGET_CLASS",
+          "lsb": 24,
+          "msb": 31,
+          "description": "ASIC target class 2.",
+          "expression": "ARCHINFO_TECHNOLOGY[31:24]",
+          "reset": "Register reset applies"
+        }
+      ]
+    }
+  },
+  "monitor": {
+    "main.Status": {
+      "description": "Live idle bit 0, recovery bit 1 and flush-busy bit 2. Outstanding read count occupies bits 23:16; outstanding write count occupies bits 31:24. Bits 15:3 read zero.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "8'(outstanding_write_i), 8'(outstanding_read_i), 13'd0, flush_busy_i, recovery_i, idle_i"
+        }
+      ],
+      "review_source": "rtl/mini/top/fabric_monitor.sv",
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; retain selected Mini configuration/access restrictions."
+    },
+    "main.Control": {
+      "fields": [
+        {
+          "name": "ENABLE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Retained counter enable.",
+          "expression": "s_en_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "FREEZE",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Retained counter freeze.",
+          "expression": "s_freeze_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "CLEAR",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Write-one clear of counters, snapshots and captured fault state; reads zero.",
+          "expression": "apb4.pwdata[2]",
+          "reset": "0x0"
+        },
+        {
+          "name": "SNAPSHOT",
+          "lsb": 3,
+          "msb": 3,
+          "description": "Write-one capture of the current counter bank; reads zero.",
+          "expression": "apb4.pwdata[3]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 4,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Use full-word writes. CLEAR and SNAPSHOT must not be set together. Every accepted control write also replaces ENABLE and FREEZE, so preserve those intended states when issuing an action.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "s_read_data = {30'd0, s_freeze_q, s_en_q};"
+        },
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "((apb4.pstrb != 4'hF) || (apb4.pwdata[31:4] != 28'd0) || (apb4.pwdata[3] && apb4.pwdata[2]))"
+        },
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "s_en_q <= apb4.pwdata[0]; s_freeze_q <= apb4.pwdata[1];"
+        },
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "if (s_request && s_control_write && !s_write_error && apb4.pwdata[2]) begin"
+        },
+        {
+          "file": "rtl/mini/top/fabric_monitor.sv",
+          "text": "if (s_request && s_control_write && !s_write_error && apb4.pwdata[3]) begin"
+        }
+      ]
+    }
+  },
+  "extensions": {
+    "main.Command": {
+      "fields": [
+        {
+          "name": "QUIESCE",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Retained quiesce request.",
+          "expression": "s_quiesce_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "RESET",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Retained reset request.",
+          "expression": "s_reset_q",
+          "reset": "0x0"
+        },
+        {
+          "name": "CLEAR_FAULT",
+          "lsb": 2,
+          "msb": 2,
+          "description": "Write one to clear the sticky slot fault; reads zero.",
+          "expression": "cfg_apb4.pwdata[2]",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 3,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "Write the desired QUIESCE and RESET values together with CLEAR_FAULT. The current slot uses a nonzero PSTRB as write admission and consumes the complete PWDATA value; use full-word accesses.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "Command: s_apb4_rdata_d = {30'd0, s_reset_q, s_quiesce_q};"
+        },
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "s_cfg_write_legal = (cfg_apb4.pwdata & 32'hFFFF_FFF8) == 32'd0;"
+        },
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "s_quiesce_d = cfg_apb4.pwdata[0]; s_reset_d = cfg_apb4.pwdata[1]; if (cfg_apb4.pwdata[2]) begin s_fault_sticky_d = 1'b0; end"
+        },
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "assign s_write = s_req_accept && (|cfg_apb4.pstrb);"
+        }
+      ]
+    },
+    "main.DmaCommand": {
+      "fields": [
+        {
+          "name": "START",
+          "lsb": 0,
+          "msb": 0,
+          "description": "Write one to request EXT-H DMA start; rejected while DMA is busy.",
+          "expression": "s_dma_start_d",
+          "reset": "0x0"
+        },
+        {
+          "name": "ABORT",
+          "lsb": 1,
+          "msb": 1,
+          "description": "Write one to request EXT-H DMA abort.",
+          "expression": "s_dma_abort_d",
+          "reset": "0x0"
+        },
+        {
+          "name": "Reserved",
+          "lsb": 2,
+          "msb": 31,
+          "description": "Reserved; write zero. Reads zero where reads are supported.",
+          "expression": "32'd0",
+          "reset": "0x0"
+        }
+      ],
+      "notes": "EXT-L rejects writes to this offset. EXT-H accepts only bits 1:0 and returns zero on reads; pulses are not retained. Use full-word writes and DmaStatus for progress. Abort acceptance is not drain completion.",
+      "source_bindings": [
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "s_cfg_write_legal = KindExtH && ((cfg_apb4.pwdata & 32'hFFFF_FFFC) == 32'd0) && !(cfg_apb4.pwdata[0] && dma_busy_i);"
+        },
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "s_dma_start_d = cfg_apb4.pwdata[0]; s_dma_abort_d = cfg_apb4.pwdata[1];"
+        },
+        {
+          "file": "rtl/mini/top/extension_slot.sv",
+          "text": "DmaCommand: s_apb4_rdata_d = 32'd0;"
+        }
+      ]
     }
   }
 }

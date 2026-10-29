@@ -9,17 +9,17 @@
 #pagebreak()
 #include "sections/reading.typ"
 #pagebreak()
-#change-start("contents", "Contents", category:"navigation")
+#change-start("v05-c906-20261022-contents", "Contents", category:"navigation")
 #contents(depth:5)
-#change-end("contents")
+#change-end("v05-c906-20261022-contents")
 #pagebreak()
-#change-start("table-directory", "List of tables", category:"navigation")
+#change-start("v05-c906-20261022-table-directory", "List of tables", category:"navigation")
 #figure-directory(tables:true)
-#change-end("table-directory")
+#change-end("v05-c906-20261022-table-directory")
 #pagebreak()
-#change-start("figure-directory", "List of figures", category:"navigation")
+#change-start("v05-c906-20261022-figure-directory", "List of figures", category:"navigation")
 #figure-directory()
-#change-end("figure-directory")
+#change-end("v05-c906-20261022-figure-directory")
 #pagebreak()
 #include "sections/architecture.typ"
 #include "sections/peripherals.typ"

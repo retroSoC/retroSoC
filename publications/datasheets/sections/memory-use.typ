@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-memory-use","C906 cache maintenance and non-coherent ownership")
 #change-start("v05-emphasis-memory-use","Selected body emphasis: memory use")
 #import "../system-figures.typ": sequence-diagram
 #import "../diagram-packages.typ": cache-boundary-diagram
@@ -97,3 +98,5 @@ transaction at the protocol level; retries require a new ownership decision.
 #source-note("app/ports/linux/linux/retrosoc_hp.dts",title:"Linux RAM and platform properties")
 
 #change-end("v05-emphasis-memory-use")
+
+#change-end("v05-c906-20261022-sections-memory-use")
