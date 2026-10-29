@@ -11,6 +11,23 @@ tooling.
   UART sampling, pulse-phase, and logic-capture cadence/count behavior. These
   are P1 host-model checks, not RTL, protocol-waveform, firmware, or
   operating-rate qualification.
+- `test_piolite_register_parity.py` checks exact handwritten SVH/C dictionaries,
+  the 119-entry APB register matrix, resets, fields, and ISA enums. Standalone
+  `piolite_exhaustive_tb.sv` executes all 65536 instruction words in the real SM
+  with 22257 legal and 43279 rejected one-tick differential outcomes. The
+  `piolite_{isa,core,fifo,apb,lifecycle,netlist}_tb.sv` fixtures add 29 directed
+  programs and independent pin/stream/FIFO/APB oracles on Verilator and Icarus.
+  The PL-V checklist covers CSR/access/error matrices, randomized pre-edge FIFO
+  activity, command/commit and first-fault races, saturation, and paused-DMA
+  progress. PAUSE candidates use a two-word region and a delay-1 SET_COUNT to
+  prove PC/delay retention, and cover IN/OUT/SET_COUNT/FLAG/HALT side effects;
+  live configuration/IMEM writes are rejected atomically in RUNNING, CLOSING,
+  and transport-active states. Formal runs preserve FIFO induction and add
+  full-top BMC/cover witnesses, exact assertion identities, and negative
+  deleted-assertion/missing-witness self-checks.
+  `piolite-p2-{lint,rtl,formal,synth,netsim,sta,report}` retains
+  source/tool/artifact-bound standalone evidence, not Tiny integration or a
+  qualified product operating point.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

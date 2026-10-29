@@ -2,6 +2,23 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "piolite-p2",
+      "paths": ["rtl/ip/piolite"],
+      "status": "prototype",
+      "baseline_revision": "cd39bdb837c4815636ac931fba0033a260aa146e",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration registers and two SM candidate-commit runtime registers",
+        "reset": "validity and runtime reset without payload-array initialization; CLOSING requires explicit recovery",
+        "clock_enable": "PCLK integer enables only; no generated SM clock",
+        "memory": "one 32x16 dual-read IMEM and four 8x32 Common FIFO payload arrays",
+        "pipeline": "registered APB response, combinational dual IMEM reads, atomic SM commit, held stream beats"
+      },
+      "waivers": []
+    },
+    {
       "name": "spi-p2",
       "paths": ["rtl/ip/serial/spi_dma_pacing.sv", "rtl/ip/peripheral/dma_core.sv",
                 "rtl/ip/peripheral/dma_reg.sv", "rtl/ip/peripheral/apb4_dma.sv"],

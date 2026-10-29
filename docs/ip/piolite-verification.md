@@ -380,13 +380,90 @@ slots 0..22 in their respective independent allocations. No IMEM enlargement,
 padding demonstration, protocol claim, or simultaneous all-application claim
 is made. P2-P5 requirements remain open as listed below.
 
+## PIOLITE-P2 Standalone Implementation Checkpoint (2026-10-30)
+
+The P2 implementation provides the two-SM RTL core, complete APB1.0 CSR map,
+handwritten C mirror/parity, pre-edge Common FIFO wrappers, local GPIO/stream
+lifecycle adapters, independent BFMs/assertions, and a fail-closed standalone
+driver. It has `phase_accepted=false`; Tiny integration, central DMA, profiles,
+dependencies, baselines, and the HAL loader remain unchanged.
+
+Final source-bound roots are
+`build/ihp130-tiny-2026-10-30-05-15-b09f17c85292/meta/piolite-p2/` and
+`build/ics55-tiny-2026-10-30-05-15-c524d3273238/meta/piolite-p2/`, both at
+24 MHz. The following commands passed on each PDK (substitute the shown config
+and matching root):
+
+```sh
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=VERILATOR piolite-p2-lint piolite-p2-rtl
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=IVERILOG piolite-p2-rtl
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 piolite-p2-formal
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SYNTH=YOSYS piolite-p2-synth
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=IVERILOG piolite-p2-netsim
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 STA=OPENSTA piolite-p2-sta
+make CONFIG=configs/ci/ihp130-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 piolite-p2-report
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=VERILATOR piolite-p2-lint piolite-p2-rtl
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=IVERILOG piolite-p2-rtl
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 piolite-p2-formal
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SYNTH=YOSYS piolite-p2-synth
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 SIMU=IVERILOG piolite-p2-netsim
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 STA=OPENSTA piolite-p2-sta
+make CONFIG=configs/ci/ics55-tiny.mk BUILD_TIMESTAMP=2026-10-30-05-15 piolite-p2-report
+```
+
+`piolite_exhaustive_tb.sv` executes every one of the 65536 instruction words in
+`piolite_sm` on both simulators. It records exactly 22257 legal and 43279
+rejected encodings and compares complete one-tick runtime state, flag and FIFO
+side effects against P1-generated records. Twenty-nine longer differential
+programs cover divider/delay, packing, branch/wrap, and fault boundaries. The
+independent PL-V checklist closes PL-V01/03/04/05/06/07/08 at P2 scope: all
+119 CSR offsets and access classes, reserved/unaligned/partial-strobe and
+unimplemented-SM errors, X/Y 0/1/65535, exact shift thresholds, pre-edge and
+512-operation randomized FIFO activity, command/commit and first-fault races,
+saturating counters, and paused execution while DMA progresses. Each required
+`PIOLITE_P2_COVER` marker occurs exactly once per simulator. A two-word
+region gives every non-HALT candidate a PC1 successor, and a delay-1 SET_COUNT
+makes EXEC_PHASE non-vacuous. PAUSE is accepted on the first execution tick for
+IN/autopush, OUT/autopull/pins, SET_COUNT, FLAG, and HALT candidates; every
+pre-commit PC, shift/count, X/Y, pin, FIFO/flag/event, divider, and retirement
+value is retained. Illegal
+configuration and IMEM writes return PSLVERR atomically without changing
+requested state in RUNNING, CLOSING, and DISABLED-with-active-transport cases.
+
+Formal evidence retains FIFO basecase and temporal induction at depth 16 (17
+assertions), adds full-top BMC at depth 12 (28 assertions), and completes a
+24-step cover campaign with all six required Yosys witnesses: APB PREADY, SM
+RUNNING, SM commit, CLOSING, nonzero fault, and nonzero OE. Exact assertion-name
+sets and each indexed cover-site witness are mandatory; the driver rejects a
+deleted assertion and a deleted named witness in generated negative self-checks.
+Bounds and assumptions are recorded in `formal-bounds.json`: synchronous reset
+release, aligned/full-word APB accesses, stable GPIO readiness/filtering with
+arbitrary ownership loss, inactive DMA job-owned flags, and symbolic stream
+sidebands. VCD is disabled only for cover; YW witnesses are mandatory. Bounded
+proofs do not establish external liveness, analog CDC, or product timing.
+`setup_helpers.py` is included in the refreshed producer identity.
+
+Both block flows verify two SMs, one 512-bit IMEM, four 256-bit FIFO payload
+arrays, no latches, foreign cells, or four-SM geometry. IHP130 reports 34070
+cells/area 449058.897; ICS55 reports 31133 cells/area 67359.88. Mapped-netlist
+simulation and aggregate reports pass on both. OpenSTA reports setup/hold
+WNS/TNS 0.00 with the retained unconstrained-endpoint and missing-I/O-delay
+warnings; these are observational results, not timing closure or a rate claim.
+
+Focused host validation passed 199 tests plus Ruff, RTL format/style/readiness,
+C format/policy/host, and whitespace checks. The normative `docs/ip/piolite.md`
+hash remains a producer input; this verification ledger is post-run reporting
+output and no longer self-invalidates evidence. P3+ integration, central-DMA
+V2.1/GPIO/RCU drain and handoff, firmware/application qualification, final
+PVT/physical/pad/silicon evidence, and independent phase review remain open.
+
 ## Freeze Record and Remaining Gaps
 
 | Phase | Status |
 | --- | --- |
 | PIOLITE-P0 | Documentation freeze complete; local links/anchor, command dry-runs, unchanged legacy/R2 IDs and QFN64/ALT tables, documentation-only scope and whitespace checks passed on 2026-10-04 |
 | PIOLITE-P1 | Host model, assembler, focused tests and actual 32-word footprints added on 2026-10-28; `phase_accepted: false`; Tiny integration and protocol qualification remain absent |
-| PIOLITE-P2 | Not started: core, CSR/ISA parity and standalone RTL/formal/synthesis evidence absent |
+| PIOLITE-P2 | Standalone core/CSR/parity, exhaustive and directed dual-simulator, PL-V checklist, full-top formal, IHP130/ICS55 synthesis/netlist and observational STA evidence added on 2026-10-30; `phase_accepted=false`; independent review and P3+ product acceptance remain open |
 | PIOLITE-P3 | Not started: R2-dependent Tiny wiring, DMA V2.1 and GPIO/RCU/HAL lifecycle absent |
 | PIOLITE-P4 | Not started: complete SDK/application and dual-simulator/contention qualification absent |
 | PIOLITE-P5 | Not started: PIO-inclusive IHP130 timing, physical, Pad/package and silicon evidence absent |

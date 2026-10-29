@@ -227,6 +227,19 @@
       "npu_scheduler.sv",
       "npu_vector.sv"
     ],
+    "rtl/ip/piolite": [
+      "apb4_piolite.sv",
+      "piolite_core.sv",
+      "piolite_define.svh",
+      "piolite_dma_adapter.sv",
+      "piolite_fifo.sv",
+      "piolite_gpio_guard.sv",
+      "piolite_if.sv",
+      "piolite_imem.sv",
+      "piolite_pkg.sv",
+      "piolite_reg.sv",
+      "piolite_sm.sv"
+    ],
     "rtl/ip/peripheral": [
       "apb4_clint.sv",
       "apb4_dma.sv",

@@ -1,0 +1,282 @@
+#ifndef RETROSOC_HAL_PIOLITE_REGS_H
+#define RETROSOC_HAL_PIOLITE_REGS_H
+
+#include <stdint.h>
+
+/* PIO-lite APB/ISA 1.0. Constants do not imply a mapped product instance. */
+#define RS_PIOLITE_ABI_APB4_IP_ID                  UINT32_C(0x000)
+#define RS_PIOLITE_ABI_APB4_IP_VERSION             UINT32_C(0x004)
+#define RS_PIOLITE_ABI_APB4_ISA_VERSION            UINT32_C(0x008)
+#define RS_PIOLITE_ABI_APB4_CAPABILITY             UINT32_C(0x00c)
+#define RS_PIOLITE_ABI_APB4_ROUTABLE_MASK          UINT32_C(0x010)
+#define RS_PIOLITE_ABI_APB4_CLOCK_HZ               UINT32_C(0x014)
+#define RS_PIOLITE_ABI_APB4_FLAGS                  UINT32_C(0x018)
+#define RS_PIOLITE_ABI_APB4_FLAG_SET               UINT32_C(0x01c)
+#define RS_PIOLITE_ABI_APB4_FLAG_CLEAR             UINT32_C(0x020)
+#define RS_PIOLITE_ABI_APB4_IRQ_STATUS             UINT32_C(0x024)
+#define RS_PIOLITE_ABI_APB4_IRQ_ENABLE             UINT32_C(0x028)
+#define RS_PIOLITE_ABI_APB4_TX_BIND                UINT32_C(0x02c)
+#define RS_PIOLITE_ABI_APB4_RX_BIND                UINT32_C(0x030)
+#define RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS       UINT32_C(0x034)
+#define RS_PIOLITE_ABI_APB4_IMEM_VALID             UINT32_C(0x038)
+#define RS_PIOLITE_ABI_APB4_OWNED_MASK             UINT32_C(0x03c)
+#define RS_PIOLITE_ABI_APB4_START                  UINT32_C(0x040)
+#define RS_PIOLITE_ABI_APB4_PAUSE                  UINT32_C(0x044)
+#define RS_PIOLITE_ABI_APB4_RESUME                 UINT32_C(0x048)
+#define RS_PIOLITE_ABI_APB4_DISABLE                UINT32_C(0x04c)
+#define RS_PIOLITE_ABI_APB4_ABORT                  UINT32_C(0x050)
+#define RS_PIOLITE_ABI_APB4_SM_RESET               UINT32_C(0x054)
+#define RS_PIOLITE_ABI_APB4_BLOCK_RESET            UINT32_C(0x058)
+#define RS_PIOLITE_ABI_APB4_IMEM_BASE              UINT32_C(0x100)
+#define RS_PIOLITE_ABI_APB4_IMEM_END               UINT32_C(0x17c)
+#define RS_PIOLITE_ABI_APB4_SM0_BASE               UINT32_C(0x200)
+#define RS_PIOLITE_ABI_APB4_SM1_BASE               UINT32_C(0x280)
+#define RS_PIOLITE_ABI_APB4_SM_STRIDE              UINT32_C(0x080)
+#define RS_PIOLITE_ABI_APB4_SM_STATUS              UINT32_C(0x000)
+#define RS_PIOLITE_ABI_APB4_SM_CONFIG              UINT32_C(0x004)
+#define RS_PIOLITE_ABI_APB4_SM_DIV                 UINT32_C(0x008)
+#define RS_PIOLITE_ABI_APB4_SM_PROGRAM             UINT32_C(0x00c)
+#define RS_PIOLITE_ABI_APB4_SM_WRAP                UINT32_C(0x010)
+#define RS_PIOLITE_ABI_APB4_SM_IN_PINS             UINT32_C(0x014)
+#define RS_PIOLITE_ABI_APB4_SM_OUT_PINS            UINT32_C(0x018)
+#define RS_PIOLITE_ABI_APB4_SM_SET_PINS            UINT32_C(0x01c)
+#define RS_PIOLITE_ABI_APB4_SM_CLAIM_MASK          UINT32_C(0x020)
+#define RS_PIOLITE_ABI_APB4_SM_OUTPUT_MASK         UINT32_C(0x024)
+#define RS_PIOLITE_ABI_APB4_SM_INITIAL_VALUE       UINT32_C(0x028)
+#define RS_PIOLITE_ABI_APB4_SM_INITIAL_OE          UINT32_C(0x02c)
+#define RS_PIOLITE_ABI_APB4_SM_INITIAL_XY          UINT32_C(0x030)
+#define RS_PIOLITE_ABI_APB4_SM_SHIFT_LIMITS        UINT32_C(0x034)
+#define RS_PIOLITE_ABI_APB4_SM_TEST_SELECT         UINT32_C(0x038)
+#define RS_PIOLITE_ABI_APB4_SM_WATERMARKS          UINT32_C(0x03c)
+#define RS_PIOLITE_ABI_APB4_SM_TXDATA              UINT32_C(0x040)
+#define RS_PIOLITE_ABI_APB4_SM_RXDATA              UINT32_C(0x044)
+#define RS_PIOLITE_ABI_APB4_SM_FIFO_LEVELS         UINT32_C(0x048)
+#define RS_PIOLITE_ABI_APB4_SM_EVENTS              UINT32_C(0x04c)
+#define RS_PIOLITE_ABI_APB4_SM_EVENT_ENABLE        UINT32_C(0x050)
+#define RS_PIOLITE_ABI_APB4_SM_FAULT               UINT32_C(0x054)
+#define RS_PIOLITE_ABI_APB4_SM_PC                  UINT32_C(0x058)
+#define RS_PIOLITE_ABI_APB4_SM_ISR                 UINT32_C(0x05c)
+#define RS_PIOLITE_ABI_APB4_SM_OSR                 UINT32_C(0x060)
+#define RS_PIOLITE_ABI_APB4_SM_XY                  UINT32_C(0x064)
+#define RS_PIOLITE_ABI_APB4_SM_SHIFT_COUNTS        UINT32_C(0x068)
+#define RS_PIOLITE_ABI_APB4_SM_TICK_COUNT          UINT32_C(0x06c)
+#define RS_PIOLITE_ABI_APB4_SM_TX_STALL_COUNT      UINT32_C(0x070)
+#define RS_PIOLITE_ABI_APB4_SM_RX_STALL_COUNT      UINT32_C(0x074)
+#define RS_PIOLITE_ABI_APB4_SM_RETIRED_COUNT       UINT32_C(0x078)
+#define RS_PIOLITE_ABI_APB4_SM_EXEC_PHASE          UINT32_C(0x07c)
+#define RS_PIOLITE_ABI_APB4_ID_VALUE               UINT32_C(0x50494f4c)
+#define RS_PIOLITE_ABI_APB4_VERSION_VALUE          UINT32_C(0x00010000)
+#define RS_PIOLITE_ABI_APB4_ISA_VALUE              UINT32_C(0x00010000)
+#define RS_PIOLITE_ABI_APB4_CAPABILITY_VALUE       UINT32_C(0x08082002)
+#define RS_PIOLITE_ABI_APB4_ROUTES_VALUE           UINT32_C(0xffffffff)
+#define RS_PIOLITE_ABI_APB4_DIV_RESET              UINT32_C(0x00000001)
+#define RS_PIOLITE_ABI_APB4_SHIFT_LIMITS_RESET     UINT32_C(0x00002020)
+#define RS_PIOLITE_ABI_APB4_WATERMARKS_RESET       UINT32_C(0x00000100)
+#define RS_PIOLITE_ABI_APB4_IMEM_WORDS             32U
+#define RS_PIOLITE_ABI_APB4_IMEM_WORD_STRIDE       4U
+#define RS_PIOLITE_ABI_APB4_SM_COUNT               2U
+#define RS_PIOLITE_ABI_APB4_FIFO_DEPTH             8U
+#define RS_PIOLITE_ABI_APB4_IRQ_MASK               UINT32_C(0x03030f03)
+#define RS_PIOLITE_ABI_STATUS_STATE                0U
+#define RS_PIOLITE_ABI_STATUS_STALL                4U
+#define RS_PIOLITE_ABI_STATUS_LAST_FIFO_FAILED     8U
+#define RS_PIOLITE_ABI_CONFIG_AUTOPULL             0U
+#define RS_PIOLITE_ABI_CONFIG_AUTOPUSH             1U
+#define RS_PIOLITE_ABI_CONFIG_TX_RIGHT             2U
+#define RS_PIOLITE_ABI_CONFIG_RX_RIGHT             3U
+#define RS_PIOLITE_ABI_CONFIG_TEST_PIN_ENABLE      4U
+#define RS_PIOLITE_ABI_DIV_VALUE                   0U
+#define RS_PIOLITE_ABI_PROGRAM_BASE                0U
+#define RS_PIOLITE_ABI_PROGRAM_LEN                 8U
+#define RS_PIOLITE_ABI_PROGRAM_ENTRY               16U
+#define RS_PIOLITE_ABI_WRAP_BOTTOM                 0U
+#define RS_PIOLITE_ABI_WRAP_TOP                    8U
+#define RS_PIOLITE_ABI_IN_PINS_BASE                0U
+#define RS_PIOLITE_ABI_IN_PINS_WIDTH               8U
+#define RS_PIOLITE_ABI_OUT_PINS_BASE               0U
+#define RS_PIOLITE_ABI_OUT_PINS_WIDTH              8U
+#define RS_PIOLITE_ABI_SET_PINS_BASE               0U
+#define RS_PIOLITE_ABI_SET_PINS_WIDTH              8U
+#define RS_PIOLITE_ABI_CLAIM_MASK_PINS             0U
+#define RS_PIOLITE_ABI_OUTPUT_MASK_PINS            0U
+#define RS_PIOLITE_ABI_INITIAL_VALUE_PINS          0U
+#define RS_PIOLITE_ABI_INITIAL_OE_PINS             0U
+#define RS_PIOLITE_ABI_INITIAL_XY_X                0U
+#define RS_PIOLITE_ABI_INITIAL_XY_Y                16U
+#define RS_PIOLITE_ABI_SHIFT_LIMITS_TX_BITS        0U
+#define RS_PIOLITE_ABI_SHIFT_LIMITS_RX_BITS        8U
+#define RS_PIOLITE_ABI_TEST_SELECT_GPIO            0U
+#define RS_PIOLITE_ABI_TEST_SELECT_FLAG            8U
+#define RS_PIOLITE_ABI_WATERMARKS_TX_LOW           0U
+#define RS_PIOLITE_ABI_WATERMARKS_RX_HIGH          8U
+#define RS_PIOLITE_ABI_FIFO_LEVELS_TX              0U
+#define RS_PIOLITE_ABI_FIFO_LEVELS_RX              8U
+#define RS_PIOLITE_ABI_EVENTS_HALT                 0U
+#define RS_PIOLITE_ABI_EVENTS_ABORT                1U
+#define RS_PIOLITE_ABI_EVENTS_FAULT                2U
+#define RS_PIOLITE_ABI_EVENTS_TX_STALL             3U
+#define RS_PIOLITE_ABI_EVENTS_RX_STALL             4U
+#define RS_PIOLITE_ABI_EVENTS_FIFO_FAIL            5U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_HALT           0U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_ABORT          1U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_FAULT          2U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_TX_STALL       3U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_RX_STALL       4U
+#define RS_PIOLITE_ABI_EVENT_ENABLE_FIFO_FAIL      5U
+#define RS_PIOLITE_ABI_FAULT_CODE                  0U
+#define RS_PIOLITE_ABI_FAULT_PC                    8U
+#define RS_PIOLITE_ABI_SHIFT_COUNTS_ISR            0U
+#define RS_PIOLITE_ABI_SHIFT_COUNTS_OSR            8U
+#define RS_PIOLITE_ABI_EXEC_PHASE_DIV              0U
+#define RS_PIOLITE_ABI_EXEC_PHASE_DELAY            16U
+#define RS_PIOLITE_ABI_TX_BIND_SM                  0U
+#define RS_PIOLITE_ABI_TX_BIND_CHANNEL             8U
+#define RS_PIOLITE_ABI_TX_BIND_ENABLE              31U
+#define RS_PIOLITE_ABI_RX_BIND_SM                  0U
+#define RS_PIOLITE_ABI_RX_BIND_CHANNEL             8U
+#define RS_PIOLITE_ABI_RX_BIND_ENABLE              31U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_TX_JOB     0U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_RX_JOB     1U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_TX_HELD    2U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_RX_HELD    3U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_TX_CLOSING 4U
+#define RS_PIOLITE_ABI_TRANSPORT_STATUS_RX_CLOSING 5U
+#define RS_PIOLITE_ABI_IRQ_STATUS_SM0              0U
+#define RS_PIOLITE_ABI_IRQ_STATUS_SM1              1U
+#define RS_PIOLITE_ABI_IRQ_STATUS_FLAGS            8U
+#define RS_PIOLITE_ABI_IRQ_STATUS_TX_LEVEL         16U
+#define RS_PIOLITE_ABI_IRQ_STATUS_RX_LEVEL         24U
+#define RS_PIOLITE_ABI_STATE_DISABLED              0U
+#define RS_PIOLITE_ABI_STATE_RUNNING               1U
+#define RS_PIOLITE_ABI_STATE_PAUSED                2U
+#define RS_PIOLITE_ABI_STATE_HALTED                3U
+#define RS_PIOLITE_ABI_STATE_CLOSING               4U
+#define RS_PIOLITE_ABI_STALL_NONE                  0U
+#define RS_PIOLITE_ABI_STALL_PIN                   1U
+#define RS_PIOLITE_ABI_STALL_FLAG                  2U
+#define RS_PIOLITE_ABI_STALL_TX                    3U
+#define RS_PIOLITE_ABI_STALL_RX                    4U
+#define RS_PIOLITE_ABI_FAULT_NONE                  0U
+#define RS_PIOLITE_ABI_FAULT_ILLEGAL_INSTRUCTION   1U
+#define RS_PIOLITE_ABI_FAULT_INVALID_FETCH         2U
+#define RS_PIOLITE_ABI_FAULT_PROGRAM_BOUNDS        3U
+#define RS_PIOLITE_ABI_FAULT_SHIFT_BOUNDS          4U
+#define RS_PIOLITE_ABI_FAULT_PIN_AUTHORIZATION     5U
+#define RS_PIOLITE_ABI_FAULT_OWNERSHIP_FILTER      6U
+#define RS_PIOLITE_ABI_FAULT_GPIO_READY            7U
+#define RS_PIOLITE_ABI_FAULT_STREAM_BEAT           8U
+#define RS_PIOLITE_ABI_OPCODE_CTRL                 0U
+#define RS_PIOLITE_ABI_OPCODE_SET_PIN              1U
+#define RS_PIOLITE_ABI_OPCODE_SET_DIR              2U
+#define RS_PIOLITE_ABI_OPCODE_SET_COUNT            3U
+#define RS_PIOLITE_ABI_OPCODE_IN                   4U
+#define RS_PIOLITE_ABI_OPCODE_OUT                  5U
+#define RS_PIOLITE_ABI_OPCODE_MOVE                 6U
+#define RS_PIOLITE_ABI_OPCODE_FIFO                 7U
+#define RS_PIOLITE_ABI_OPCODE_WAIT                 8U
+#define RS_PIOLITE_ABI_OPCODE_BRANCH               9U
+#define RS_PIOLITE_ABI_OPCODE_FLAG                 10U
+#define RS_PIOLITE_ABI_CTRL_NOP                    0U
+#define RS_PIOLITE_ABI_CTRL_HALT                   1U
+#define RS_PIOLITE_ABI_CTRL_CLEAR_ISR              2U
+#define RS_PIOLITE_ABI_CTRL_CLEAR_OSR              3U
+#define RS_PIOLITE_ABI_IN_PINS                     0U
+#define RS_PIOLITE_ABI_IN_X                        1U
+#define RS_PIOLITE_ABI_IN_Y                        2U
+#define RS_PIOLITE_ABI_IN_ZERO                     3U
+#define RS_PIOLITE_ABI_OUT_PINS                    0U
+#define RS_PIOLITE_ABI_OUT_DIRECTIONS              1U
+#define RS_PIOLITE_ABI_OUT_X                       2U
+#define RS_PIOLITE_ABI_OUT_Y                       3U
+#define RS_PIOLITE_ABI_OUT_DISCARD                 4U
+#define RS_PIOLITE_ABI_MOVE_ISR                    0U
+#define RS_PIOLITE_ABI_MOVE_OSR                    1U
+#define RS_PIOLITE_ABI_MOVE_X                      2U
+#define RS_PIOLITE_ABI_MOVE_Y                      3U
+#define RS_PIOLITE_ABI_MOVE_ZERO                   4U
+#define RS_PIOLITE_ABI_MOVE_ONES                   5U
+#define RS_PIOLITE_ABI_FIFO_PULL                   0U
+#define RS_PIOLITE_ABI_FIFO_PUSH                   1U
+#define RS_PIOLITE_ABI_FIFO_NONBLOCKING            0U
+#define RS_PIOLITE_ABI_FIFO_BLOCKING               1U
+#define RS_PIOLITE_ABI_WAIT_PIN                    0U
+#define RS_PIOLITE_ABI_WAIT_FLAG                   1U
+#define RS_PIOLITE_ABI_BRANCH_ALWAYS               0U
+#define RS_PIOLITE_ABI_BRANCH_X_ZERO               1U
+#define RS_PIOLITE_ABI_BRANCH_Y_ZERO               2U
+#define RS_PIOLITE_ABI_BRANCH_DEC_X_NONZERO        3U
+#define RS_PIOLITE_ABI_BRANCH_DEC_Y_NONZERO        4U
+#define RS_PIOLITE_ABI_BRANCH_TEST_PIN_HIGH        5U
+#define RS_PIOLITE_ABI_BRANCH_FIFO_FAILED          6U
+#define RS_PIOLITE_ABI_BRANCH_TEST_FLAG_SET        7U
+#define RS_PIOLITE_ABI_FLAG_CLEAR                  0U
+#define RS_PIOLITE_ABI_FLAG_SET                    1U
+
+typedef enum {
+    RS_PIOLITE_OPCODE_CTRL = 0,
+    RS_PIOLITE_OPCODE_SET_PIN = 1,
+    RS_PIOLITE_OPCODE_SET_DIR = 2,
+    RS_PIOLITE_OPCODE_SET_COUNT = 3,
+    RS_PIOLITE_OPCODE_IN = 4,
+    RS_PIOLITE_OPCODE_OUT = 5,
+    RS_PIOLITE_OPCODE_MOVE = 6,
+    RS_PIOLITE_OPCODE_FIFO = 7,
+    RS_PIOLITE_OPCODE_WAIT = 8,
+    RS_PIOLITE_OPCODE_BRANCH = 9,
+    RS_PIOLITE_OPCODE_FLAG = 10
+} rs_piolite_opcode_e;
+
+typedef enum {
+    RS_PIOLITE_BRANCH_ALWAYS = 0,
+    RS_PIOLITE_BRANCH_X_ZERO = 1,
+    RS_PIOLITE_BRANCH_Y_ZERO = 2,
+    RS_PIOLITE_BRANCH_DEC_X_NONZERO = 3,
+    RS_PIOLITE_BRANCH_DEC_Y_NONZERO = 4,
+    RS_PIOLITE_BRANCH_TEST_PIN_HIGH = 5,
+    RS_PIOLITE_BRANCH_FIFO_FAILED = 6,
+    RS_PIOLITE_BRANCH_TEST_FLAG_SET = 7
+} rs_piolite_branch_condition_e;
+
+typedef enum {
+    RS_PIOLITE_CTRL_NOP = 0,
+    RS_PIOLITE_CTRL_HALT = 1,
+    RS_PIOLITE_CTRL_CLEAR_ISR = 2,
+    RS_PIOLITE_CTRL_CLEAR_OSR = 3
+} rs_piolite_ctrl_command_e;
+
+typedef enum {
+    RS_PIOLITE_IN_PINS = 0,
+    RS_PIOLITE_IN_X = 1,
+    RS_PIOLITE_IN_Y = 2,
+    RS_PIOLITE_IN_ZERO = 3
+} rs_piolite_in_source_e;
+
+typedef enum {
+    RS_PIOLITE_OUT_PINS = 0,
+    RS_PIOLITE_OUT_DIRECTIONS = 1,
+    RS_PIOLITE_OUT_X = 2,
+    RS_PIOLITE_OUT_Y = 3,
+    RS_PIOLITE_OUT_DISCARD = 4
+} rs_piolite_out_destination_e;
+
+typedef enum {
+    RS_PIOLITE_MOVE_ISR = 0,
+    RS_PIOLITE_MOVE_OSR = 1,
+    RS_PIOLITE_MOVE_X = 2,
+    RS_PIOLITE_MOVE_Y = 3,
+    RS_PIOLITE_MOVE_ZERO = 4,
+    RS_PIOLITE_MOVE_ONES = 5
+} rs_piolite_move_source_e;
+
+typedef enum { RS_PIOLITE_FIFO_PULL = 0, RS_PIOLITE_FIFO_PUSH = 1 } rs_piolite_fifo_operation_e;
+
+typedef enum {
+    RS_PIOLITE_FIFO_NONBLOCKING = 0,
+    RS_PIOLITE_FIFO_BLOCKING = 1
+} rs_piolite_fifo_mode_e;
+
+typedef enum { RS_PIOLITE_WAIT_PIN = 0, RS_PIOLITE_WAIT_FLAG = 1 } rs_piolite_wait_source_e;
+
+typedef enum { RS_PIOLITE_FLAG_CLEAR = 0, RS_PIOLITE_FLAG_SET = 1 } rs_piolite_flag_action_e;
+
+#endif
