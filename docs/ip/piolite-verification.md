@@ -7,6 +7,31 @@ model, assembler, RTL, firmware, performance or physical result below is
 marked passed by this freeze. Existing Tiny/R2/DMA/GPIO evidence does not
 automatically cover the new feature.
 
+## PIOLITE-P1 human acceptance (2026-10-30)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `921a4abfcc099a479892f26883e7ca1cc3b50c19` on `dev`,
+with the CI repair `449829e1` (locked OpenC906 installation) on top. All
+seven CI workflows for `449829e1` completed successfully (quality run
+40880078177, development-environment 40880078202, smoke 40880078376, gf180
+40880078425, sky130 40880078184, ics55 40880078215, ihp130 40880078227).
+
+PIOLITE-P1 delivers the ISA1.0 reference model, strict assembler and
+deterministic C objects, ten handwritten application programs and host-side
+tests. Evidence: 176 focused tests including exhaustive 65536-word ISA
+checking (22257 legal/43279 rejected), all 16 delay values,
+lifecycle/publication/authorization coverage and independent application
+behavior tests; full host Pytest 2300 passed, 1 skipped; ruff, C11 syntax
+checks and byte-identical rebuilds pass. Application/pair footprints fit the
+shared 32-word store: pulse generate+capture 20, UART TX+RX 24, IR TX+RX 23.
+Seven independent review rounds closed twelve defects and three coverage
+gaps, all re-verified by independent probes; `phase_accepted=false` remains
+in generated records while acceptance is recorded here.
+
+This acceptance does not imply RTL, Tiny GPIO/DMA/RCU integration, protocol
+waveform/rate qualification or physical closure; those remain P2-P5 work.
+
 ## Configuration and Evidence Identity
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
