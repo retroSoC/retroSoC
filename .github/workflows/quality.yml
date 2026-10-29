@@ -39,6 +39,7 @@ jobs:
             physical/pdk/IHP-Open-PDK
             physical/pdk/icsprout55-pdk
             .cache/retrosoc/sources/ics55_ecos_pll
+            .cache/retrosoc/sources/openc906
             rtl/managed/third_party
             .cache/retrosoc/pdk
             .cache/retrosoc/stamps
@@ -88,6 +89,7 @@ jobs:
       - name: Set up locked RTL dependencies
         run: |
           python3 setup.py
+          python3 scripts/setup_openc906.py
           python3 rtl/managed/clusterip/setup.py
           python3 rtl/ip/setup.py
 
