@@ -1,0 +1,24 @@
+.program uart_tx
+.entry idle
+.wrap_bottom idle
+.wrap_top again
+.in 0, 0
+.out 0, 1
+.set 0, 1
+.tx_bits 8, right, auto
+.rx_bits 32, right, manual
+.test none, 0
+.packing 1, 0, 8
+.clock_ticks 8, stretchable
+idle: SET_PIN 1 [7]
+start: SET_PIN 0 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+OUT PINS, 1 [7]
+SET_PIN 1 [6]
+again: BRANCH ALWAYS, start

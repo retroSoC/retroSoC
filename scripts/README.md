@@ -10,6 +10,18 @@ bit-accurate P4 primitive model. They accept only the APU instruction language
 and deliberately have no C, ELF, RV32, dynamic linking, or runtime
 code-generation path.
 
+`piolite_isa.py`, `piolite_model.py`, and `piolite_asm.py` implement the frozen
+Tiny PIO-lite ISA1.0 encoding/allocation objects, two-SM PCLK reference model,
+and strict deterministic assembler/C-object emitter. They are host-only P1
+verification tools: they do not integrate a peripheral, provide a HAL ABI, or
+qualify protocol waveforms or rates. Assemble a handwritten source into a
+selected build variant with:
+
+```sh
+python3 scripts/piolite_asm.py app/asm/piolite/uart_tx.piolite \
+  build/<variant>/generated/piolite/uart_tx.c
+```
+
 `setup_apu_reference.py` installs the checksum-pinned libFLAC and official
 FLAC corpus as host-only P5 verification inputs and builds libFLAC with Ogg
 disabled below the selected build variant. These inputs never enter firmware,

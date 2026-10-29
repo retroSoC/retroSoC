@@ -1,0 +1,21 @@
+; Emit 65535 minus the number of high-phase countdown passes.
+.program pulse_capture
+.entry wait_high
+.wrap_bottom wait_high
+.wrap_top again
+.in 3, 1
+.out 0, 0
+.set 0, 0
+.tx_bits 32, right, manual
+.rx_bits 32, right, manual
+.test 3, 0
+.packing 0, 0, 16
+.clock_ticks 2, stretchable
+wait_high: WAIT PIN, 1, 3
+MOVE X, ONES
+high: BRANCH TEST_PIN_HIGH, count
+BRANCH ALWAYS, complete
+count: BRANCH DEC_X_NONZERO, high
+complete: MOVE ISR, X
+FIFO PUSH, BLOCKING
+again: BRANCH ALWAYS, wait_high

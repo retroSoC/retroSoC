@@ -4,6 +4,13 @@ This directory contains tests for deterministic SDK behavior and build/quality
 tooling.
 
 - `c/test_runtime.c` is the host C test program used by `make sw-host-test`.
+- `test_piolite_isa.py`, `test_piolite_model.py`, and
+  `test_piolite_assembler.py` cover every ISA1.0 encoding, independent two-SM
+  cycle/packing traces, strict source diagnostics, deterministic C objects,
+  atomic shared-store allocation, application/pair footprints, and independent
+  UART sampling, pulse-phase, and logic-capture cadence/count behavior. These
+  are P1 host-model checks, not RTL, protocol-waveform, firmware, or
+  operating-rate qualification.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

@@ -1,0 +1,22 @@
+; One initial sample plus 32767 two-tick loop samples = 32768 samples.
+.program logic_capture
+.entry initialize
+.wrap_bottom initialize
+.wrap_top done
+.in 8, 8
+.out 0, 0
+.set 0, 0
+.tx_bits 32, right, manual
+.rx_bits 32, right, auto
+.test none, 0
+.packing 0, 32768, 8
+.clock_ticks 2, stretchable
+initialize: MOVE X, ONES
+MOVE OSR, X
+OUT DISCARD, 1
+MOVE X, OSR
+IN PINS, 8
+CTRL NOP
+loop: IN PINS, 8
+BRANCH DEC_X_NONZERO, loop
+done: CTRL HALT
