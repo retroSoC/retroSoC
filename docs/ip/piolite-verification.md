@@ -7,6 +7,39 @@ model, assembler, RTL, firmware, performance or physical result below is
 marked passed by this freeze. Existing Tiny/R2/DMA/GPIO evidence does not
 automatically cover the new feature.
 
+## PIOLITE-P2 human acceptance (2026-10-30)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `6f5638ffe19c2f49bd0b7a72345e65d1d0b4556c` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+40976648015, development-environment 40976647971, smoke 40976647966, gf180
+40976647856, sky130 40976647834, ics55 40976647877, ihp130 40976648011).
+
+PIOLITE-P2 delivers the standalone two-SM core, shared 32x16 IMEM, per-SM
+8x32 FIFOs, complete APB1.0/ISA1.0 register behavior, handwritten C mirror and
+parity, GPIO guard and local stream lifecycle adapters. Final evidence roots
+are `build/ihp130-tiny-2026-10-30-05-15-b09f17c85292/meta/piolite-p2/` and
+`build/ics55-tiny-2026-10-30-05-15-c524d3273238/meta/piolite-p2/`. Both
+simulators execute all 65536 instruction words with 22257 legal and 43279
+rejected encodings, plus 29 longer differential programs and the complete
+PL-V01/03/04/05/06/07/08 checklist. Formal evidence includes 17 FIFO
+assertions, 28 full-top BMC assertions, six named cover witnesses and negative
+self-checks on both PDKs. Synthesis, mapped-netlist simulation and aggregate
+reports pass on both. Observational STA retains unconstrained endpoints and
+missing I/O-delay warnings; no timing-closure claim is made.
+
+Full host Pytest passed 2417 tests with one optional `pypdf` skip. Ruff, RTL
+format/style/readiness, C format/policy/host and whitespace checks pass. Three
+independent review rounds closed every finding; the third found no actionable
+issue. `phase_accepted=false` remains in generated records while acceptance is
+recorded here.
+
+This acceptance is limited to the frozen standalone P2 scope. It does not
+imply Tiny topology/GPIO/DMA/RCU integration, central-DMA V2.1, HAL loader,
+firmware or application qualification, 48/60 MHz operation, complete-product
+physical/timing closure or silicon qualification; those remain P3-P5 work.
+
 ## PIOLITE-P1 human acceptance (2026-10-30)
 
 The maintainer's standing development goal explicitly authorizes automatic
