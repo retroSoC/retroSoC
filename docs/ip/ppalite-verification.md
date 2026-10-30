@@ -6,6 +6,42 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
+## PPALITE-P1 human acceptance (2026-10-30)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `b51b3ccfc2fc3127e8802f7a559821fca254a974` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41040983032, development-environment 41040983170, smoke 41040983389, gf180
+41040983302, sky130 41040983472, ics55 41040983028, ihp130 41040983326).
+
+PPALITE-P1 delivers the standalone stream pixel core, APB/register behavior,
+SVH/C register mirror, scalar and stream reference models, deterministic vectors
+and negative/lifecycle/error coverage. Final evidence roots are
+`build/ics55-tiny-2026-10-30-17-17-c524d3273238/meta/ppalite-p1/` and
+`build/ihp130-tiny-2026-10-30-17-17-b09f17c85292/meta/ppalite-p1/`. Both
+simulators and both final mapped netlists execute all 97 ordered vectors and
+the associated negative, lifecycle and error cases. Formal evidence includes
+13 FIFO assertions, 21 top-level BMC assertions, four cover witnesses and
+negative self-checks on both PDKs. Synthesis, mapped-netlist simulation and
+aggregate reports pass on both. Mapping reports 12603 cells and area 31022.88
+for ICS55, and 13150 cells and area 192112.263 for IHP130. Only the 66-bit input
+and 272-bit output FIFO memories are inferred, with no line/frame RAM and a
+32-bit packing register. Observational STA retains missing I/O delays and
+unconstrained endpoints; no timing-closure claim is made.
+
+Full host Pytest passed 2452 tests with one optional `pypdf` skip. Ruff, RTL
+format/style/readiness, C format/policy/host, both Tiny firmware builds,
+regression dry-runs and whitespace checks pass. Independent review rounds 1-8
+and the final test-driver review found no remaining actionable issue.
+`phase_accepted=false` remains in generated records while acceptance is
+recorded here.
+
+This acceptance is limited to the frozen standalone P1 scope. It does not imply
+DVP source repair, Tiny route/DMA/RCU integration, a complete HAL, camera or
+application qualification, or complete-product physical/timing qualification;
+those remain P2-P5 work.
+
 ## Configuration and Evidence Identity
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the
