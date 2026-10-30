@@ -2,6 +2,23 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "ppalite-p1",
+      "paths": ["rtl/ip/ppalite"],
+      "status": "prototype",
+      "baseline_revision": "3377619431adf2a9cef37604ece84c9415dd5a4a",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration and next-state stream-control registers",
+        "reset": "validity, pointers and runtime clear on reset/flush without payload-array erasure claims",
+        "clock_enable": "PCLK only; no generated pixel clock",
+        "memory": "two 32-bit input slots with tail bits, one 8x32 output FIFO and one 32-bit packing register",
+        "pipeline": "validated input slots, one logical pixel per cycle, held row tails and pre-edge output FIFO"
+      },
+      "waivers": []
+    },
+    {
       "name": "piolite-p2",
       "paths": ["rtl/ip/piolite"],
       "status": "prototype",

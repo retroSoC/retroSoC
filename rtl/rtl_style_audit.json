@@ -240,6 +240,17 @@
       "piolite_reg.sv",
       "piolite_sm.sv"
     ],
+    "rtl/ip/ppalite": [
+      "apb4_ppalite.sv",
+      "ppalite_core.sv",
+      "ppalite_decimator.sv",
+      "ppalite_define.svh",
+      "ppalite_fifo.sv",
+      "ppalite_if.sv",
+      "ppalite_packer.sv",
+      "ppalite_reg.sv",
+      "ppalite_stream_guard.sv"
+    ],
     "rtl/ip/peripheral": [
       "apb4_clint.sv",
       "apb4_dma.sv",

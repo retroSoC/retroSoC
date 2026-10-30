@@ -123,6 +123,7 @@
       "I2S_",
       "PSRAM_",
       "PIOLITE_",
+      "PPALITE_",
       "SDIO_",
       "SDRAM_",
       "SPISD_",

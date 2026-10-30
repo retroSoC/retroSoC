@@ -563,6 +563,11 @@ piolite-p2-lint piolite-p2-rtl piolite-p2-formal piolite-p2-synth piolite-p2-net
 	$(PYTHON) $(ROOT_PATH)/scripts/piolite_p2.py $(patsubst piolite-p2-%,%,$@) \
 	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS)
 
+.PHONY: ppalite-p1-lint ppalite-p1-rtl ppalite-p1-formal ppalite-p1-synth ppalite-p1-netsim ppalite-p1-sta ppalite-p1-report
+ppalite-p1-lint ppalite-p1-rtl ppalite-p1-formal ppalite-p1-synth ppalite-p1-netsim ppalite-p1-sta ppalite-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/ppalite_p1.py $(patsubst ppalite-p1-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS)
+
 .PHONY: spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report
 spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/spi_p1.py $(patsubst spi-p1-%,%,$@) \

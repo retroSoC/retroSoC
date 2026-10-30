@@ -28,6 +28,22 @@ tooling.
   `piolite-p2-{lint,rtl,formal,synth,netsim,sta,report}` retains
   source/tool/artifact-bound standalone evidence, not Tiny integration or a
   qualified product operating point.
+- `test_ppalite_model.py` checks independent scalar pixel/layout oracles and
+  `test_ppalite_register_parity.py` checks the 40-entry handwritten APB1.0
+  SVH/C mirror with RAW/PROCESS integration capability absent.
+  `test_ppalite_p1.py` covers the fail-closed standalone driver. The
+  `ppalite_{core,stream,apb,fifo,netlist}_tb.sv` fixtures run 97 independent
+  format/geometry vectors on Verilator and Icarus, randomized gaps/backpressure,
+  pre-edge FIFO conservation, malformed and excess input, checked layout,
+  atomic commands and source/transport guard lifecycle. Formal covers FIFO
+  induction, bounded top properties and named witnesses.
+  `ppalite_bfm_selftest_tb.sv` checks case-equality sidebands; its unknown
+  ID/DEST/STRB cases run on four-state Icarus and are explicitly not applicable
+  to two-state Verilator coverage. Empty, missing, duplicate or reordered vector
+  execution markers fail closed.
+  `ppalite-p1-{lint,rtl,formal,synth,netsim,sta,report}` binds source, tools and
+  artifacts to standalone P1 evidence; it does not wire a Tiny instance, repair
+  DVP, admit DMA, or qualify a product operating point.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked
