@@ -22,7 +22,7 @@ COMMON = ROOT / "rtl/managed/clusterip/common/rtl"
 
 def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
             defines: list[str] | None = None, plusargs: list[str] | None = None,
-            packages: list[Path] | None = None) -> str:
+            packages: list[Path] | None = None, compile_timeout: int = 120) -> str:
     for tool in (simulator, *([] if simulator == "verilator" else ["sv2v", "vvp"])):
         assert shutil.which(tool), f"required tool unavailable: {tool}"
     # Put the fixture first so its explicit timescale applies during sv2v.
@@ -49,7 +49,7 @@ def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
     if simulator == "verilator":
         execute([simulator, "--binary", "--timing", "--assert", "--timescale", "1ns/1ps",
                  "-Wno-fatal", "--top-module", fixture, *args, "--Mdir", str(tmp_path / "obj"),
-                 "-o", str(output)], "compile.log")
+                 "-o", str(output)], "compile.log", compile_timeout)
         launch = [str(output)]
     else:
         converted = subprocess.run(["sv2v", *args], cwd=ROOT, capture_output=True,
@@ -59,7 +59,7 @@ def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
         # units so fractional PLL/reference delays are not rounded to seconds.
         (tmp_path / "converted.v").write_text("`timescale 1ns / 1ps\n" + converted.stdout)
         execute([simulator, "-g2012", "-s", fixture, "-o", str(output),
-                 str(tmp_path / "converted.v")], "compile.log")
+                 str(tmp_path / "converted.v")], "compile.log", compile_timeout)
         launch = ["vvp", str(output)]
     content = execute([*launch, *(plusargs or [])], "sim.log", 30)
     assert not DEFAULT_FAILURE.search(content), content

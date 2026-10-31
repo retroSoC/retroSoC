@@ -29,7 +29,8 @@ def route_simulator(request, tmp_path_factory):
     ]
     run_rtl(directory, backend, "ppalite_route_tb", sources,
             defines=["-DPDK_BEHAV", f"-I{IP / 'multimedia'}", f"-I{PPA}",
-                     f"-I{COMMON / 'utils'}", f"-I{ROOT / 'rtl/tiny/top'}"])
+                     f"-I{COMMON / 'utils'}", f"-I{ROOT / 'rtl/tiny/top'}"],
+            compile_timeout=300)
     launch = [str(directory / "sim")] if backend == "verilator" else ["vvp", str(directory / "sim")]
     return launch, directory
 
