@@ -6,6 +6,49 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
+## PPALITE-P2 human acceptance (2026-10-31)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `b04d90d76ae768c06f218b862487118c4a3244fc` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41183829421, development-environment 41183829423, smoke 41183829425, gf180
+41183829462, sky130 41183829432, ics55 41183829440, ihp130 41183829416).
+
+PPALITE-P2 delivers DVP source qualification, RAW bypass and RAW/PROCESS
+routing, requested source-enable gating, APB direction/strobe guards, and
+non-flushing close/abort/fault cleanup. Final standalone evidence roots are
+`build/ics55-tiny-2026-10-31-12-23-c524d3273238/meta/ppalite-p2/` and
+`build/ihp130-tiny-2026-10-31-12-23-b09f17c85292/meta/ppalite-p2/`. The 80
+recorded source inputs in each aggregate report match the accepted revision or
+its locked managed sources. Both Verilator and Icarus execute all 18 ordered
+route/source cases; both final mapped netlists execute the same 18 cases.
+Formal evidence includes 21 BMC assertions at bound 24, five cover witnesses at
+bound 32, and a deleted-assertion negative self-check. Lint, formal, synthesis,
+mapped-netlist simulation and aggregate reports pass on both PDKs. Mapping
+reports 44798 cells and area 139325.2 for ICS55, and 45071 cells and area
+863635.0086 for IHP130. Only the 66-bit and 272-bit PPALite FIFO memories are
+inferred, alongside the existing 128x42 DVP FIFO; no line/frame RAM is added
+and packing uses a 32-bit register.
+
+Full host Pytest passed 2488 tests with one optional `pypdf` skip; the focused
+P2/DVP/model/Tiny suite passed 161 tests. Ruff, RTL format/style/readiness, C
+format/policy/host, both Tiny firmware builds and whitespace checks pass. The
+final Mini behavioral compatibility regression passes Verilator at 12443276
+cycles and Icarus with its configured verdict. The final Tiny/IHP130 PR
+regression passes Verilator and Icarus at 3859487 cycles, and its boot netlist
+simulation passes at 36069 cycles. The final independent review returned MERGE
+with no P0-P3 findings. `phase_accepted=false` remains in generated records
+while acceptance is recorded here.
+
+Observational standalone STA retains missing I/O delays and unconstrained
+endpoints. Setup WNS/TNS are -144.57/-794308.88 ps for ICS55 and
+-135.47/-744834.88 ps for IHP130; hold WNS/TNS are zero. No timing-closure or
+qualified operating-frequency claim is made. This acceptance is limited to the
+frozen P2 scope: it does not deliver real central-DMA/RCU/SDK integration,
+camera/memory/display application qualification, or complete-product
+physical/timing qualification; those remain P3-P5 work.
+
 ## PPALITE-P1 human acceptance (2026-10-30)
 
 The maintainer's standing development goal explicitly authorizes automatic
