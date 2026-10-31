@@ -1,8 +1,21 @@
-module apb4_ppalite (
+`include "ppalite_define.svh"
+
+module apb4_ppalite #(
+    parameter bit ExternalRoute = 1'b0
+) (
     input  logic                clk_i,
     input  logic                rst_n_i,
     input  logic         [31:0] clock_hz_i,
     input  logic                route_idle_i,
+    input  logic                route_i,
+    input  logic                route_change_i,
+    output logic                route_write_o,
+    output logic                route_value_o,
+    output logic         [ 2:0] processing_format_o,
+    output logic         [ 2:0] capture_state_o,
+    output logic                capture_arm_o,
+    output logic                capture_close_o,
+    output logic                processor_idle_o,
     input  logic                source_ready_i,
     input  logic                source_quiet_i,
     input  logic                source_done_i,
@@ -11,6 +24,8 @@ module apb4_ppalite (
     input  logic         [31:0] source_words_i,
     input  logic         [31:0] source_geometry_i,
     input  logic         [ 7:0] source_err_i,
+    input  logic                source_config_err_i,
+    input  logic                source_stats_err_i,
     input  logic                transport_ready_i,
     input  logic                transport_idle_i,
     input  logic                transport_done_i,
@@ -54,6 +69,11 @@ module apb4_ppalite (
 `endif
 );
   ppalite_if u_ctrl ();
+  assign capture_state_o = u_ctrl.state;
+  assign capture_arm_o = u_ctrl.cmd[`PPALITE_COMMAND_ARM];
+  assign capture_close_o = u_ctrl.close;
+  assign processor_idle_o = u_ctrl.local_idle && (u_ctrl.input_level == 2'd0) &&
+                            (u_ctrl.output_level == 4'd0);
 `ifdef PPALITE_FORMAL_TOP
   assign formal_state_o    = u_ctrl.state;
   assign formal_core_err_o = u_ctrl.core_err;
@@ -75,30 +95,39 @@ module apb4_ppalite (
   assign pslverr_o     = u_apb.pslverr;
 `endif
 
-  ppalite_reg u_reg (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .clock_hz_i       (clock_hz_i),
-      .route_idle_i     (route_idle_i),
-      .source_ready_i   (source_ready_i),
-      .source_quiet_i   (source_quiet_i),
-      .source_done_i    (source_done_i),
-      .source_stopped_i (source_stopped_i),
-      .source_sequence_i(source_sequence_i),
-      .source_words_i   (source_words_i),
-      .source_geometry_i(source_geometry_i),
-      .source_err_i     (source_err_i),
-      .transport_ready_i(transport_ready_i),
-      .transport_idle_i (transport_idle_i),
-      .transport_done_i (transport_done_i),
-      .transport_err_i  (transport_err_i),
-      .irq_o            (irq_o),
+  ppalite_reg #(
+      .ExternalRoute(ExternalRoute)
+  ) u_reg (
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .clock_hz_i         (clock_hz_i),
+      .route_idle_i       (route_idle_i),
+      .route_i            (route_i),
+      .route_change_i     (route_change_i),
+      .route_write_o      (route_write_o),
+      .route_value_o      (route_value_o),
+      .processing_format_o(processing_format_o),
+      .source_ready_i     (source_ready_i),
+      .source_quiet_i     (source_quiet_i),
+      .source_done_i      (source_done_i),
+      .source_stopped_i   (source_stopped_i),
+      .source_sequence_i  (source_sequence_i),
+      .source_words_i     (source_words_i),
+      .source_geometry_i  (source_geometry_i),
+      .source_err_i       (source_err_i),
+      .source_config_err_i(source_config_err_i),
+      .source_stats_err_i (source_stats_err_i),
+      .transport_ready_i  (transport_ready_i),
+      .transport_idle_i   (transport_idle_i),
+      .transport_done_i   (transport_done_i),
+      .transport_err_i    (transport_err_i),
+      .irq_o              (irq_o),
 `ifdef PPALITE_SCALAR_APB
-      .apb4             (u_apb),
+      .apb4               (u_apb),
 `else
-      .apb4             (apb4),
+      .apb4               (apb4),
 `endif
-      .ctrl             (u_ctrl)
+      .ctrl               (u_ctrl)
   );
 
   ppalite_core u_core (

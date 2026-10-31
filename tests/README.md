@@ -44,6 +44,16 @@ tooling.
   `ppalite-p1-{lint,rtl,formal,synth,netsim,sta,report}` binds source, tools and
   artifacts to standalone P1 evidence; it does not wire a Tiny instance, repair
   DVP, admit DMA, or qualify a product operating point.
+- `test_ppalite_p2.py` executes 18 real-DVP/PPALite route cases on both
+  simulators: processed completion/release, source-update and DMA-START races,
+  RAW parity and odd tails, repeated snapshots, missing PIXCLK, unilateral source
+  reset, malformed rows outside crop, exact DMA admission, dropped-row drain,
+  cancelled-enable reapplication, direction/strobe mismatch, CLOSING guards and
+  ABORT/fault-versus-start priorities.
+  `ppalite_route_formal.sv` supplies route BMC and named cover witnesses.
+  `ppalite-p2-{lint,rtl,formal,synth,netsim,sta,report}` binds these standalone
+  source-guard and route checks to current source/artifacts; it does not wire a
+  Tiny product instance, admit real central-DMA traffic or claim timing closure.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

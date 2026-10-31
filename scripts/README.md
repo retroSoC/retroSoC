@@ -48,6 +48,12 @@ instantiate SPI in Tiny or implement central-DMA pacing. See the
 The product DMA remains V2.0/default-disabled until shared integration is
 qualified; this entrypoint does not wire Tiny SPI.
 
+`ppalite_p2.py` runs the real-DVP/PPALite standalone route and source-guard
+fixtures through explicit `ppalite-p2-*` Make targets. It preserves source/tool
+identities, command results, formal witnesses and mapped artifacts below the
+selected Tiny variant. It does not instantiate PPALite in the product topology,
+admit central-DMA traffic or establish complete-product timing closure.
+
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
 schema and release validator; generated assets remain below the selected

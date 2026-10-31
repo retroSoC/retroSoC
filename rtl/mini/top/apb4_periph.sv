@@ -582,14 +582,29 @@ axi4_stream_if #(
       .clint          (u_clint_if)
   );
 
+  /* verilator lint_off PINCONNECTEMPTY */
   axi4s_dvp u_axi4_dvp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .apb4   (u_dvp_apb4_if),
-      .rx_axis(u_dvp_rx_axis_if),
-      .dvp    (dvp),
-      .irq_o  (s_dvp_irq)
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .apb4                      (u_dvp_apb4_if),
+      .rx_axis                   (u_dvp_rx_axis_if),
+      .dvp                       (dvp),
+      .irq_o                     (s_dvp_irq),
+      .source_config_o           (),
+      .source_config_pending_o   (),
+      .source_command_pending_o  (),
+      .source_flush_pending_o    (),
+      .source_status_valid_o     (),
+      .source_capture_idle_o     (),
+      .source_active_o           (),
+      .source_enabled_o          (),
+      .source_requested_enabled_o(),
+      .source_fifo_empty_o       (),
+      .source_frame_stats_o      (),
+      .source_frame_stats_valid_o(),
+      .source_error_o            ()
   );
+  /* verilator lint_on PINCONNECTEMPTY */
 
   apb4_sdio u_apb4_sdio0 (
       .clk_i   (clk_i),

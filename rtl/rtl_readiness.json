@@ -19,6 +19,23 @@
       "waivers": []
     },
     {
+      "name": "ppalite-p2",
+      "paths": ["rtl/ip/multimedia", "rtl/ip/ppalite", "rtl/tiny/top/ppalite_route_ctrl.sv"],
+      "status": "prototype",
+      "baseline_revision": "5b8f243f1f4726b1788b9fc922ba19216b9447d7",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration registers plus retained route, applied-source snapshot and guard response state",
+        "reset": "RAW reset default; source reset/readiness closes capture while route remains retained until the full barrier",
+        "clock_enable": "PCLK host/control with existing PIXCLK CDC; no new generated clock",
+        "memory": "existing 512-byte DVP FIFO and two PPALite stream buffers; no line or frame RAM",
+        "pipeline": "exclusive combinational RAW/PROCESS stream route, guarded APB responses and immutable per-job source snapshot"
+      },
+      "waivers": []
+    },
+    {
       "name": "piolite-p2",
       "paths": ["rtl/ip/piolite"],
       "status": "prototype",

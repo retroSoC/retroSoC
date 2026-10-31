@@ -29,6 +29,8 @@ module dvp_reg (
     input  logic         error_valid_i,
     input  logic [ 5:0]  error_clear_done_i,
     output logic [ 5:0]  error_clear_o,
+    output logic [ 5:0]  source_error_o,
+    output logic         source_requested_enabled_o,
     input  logic [`APB4_DVP__FRAME_STATS_WIDTH-1:0] frame_stats_i,
     input  logic         frame_stats_valid_i,
     output logic [127:0] cfg_o,
@@ -118,6 +120,8 @@ module dvp_reg (
                           apb4.pwdata[`APB4_DVP__COMMAND_ABORT];
   assign rx_pop_o = s_accept && !s_write && !stream_enable_o && (s_offset == `APB4_DVP_RXDATA);
   assign irq_o = |(s_intr_stat_q & s_intr_en_q);
+  assign source_error_o = s_err_q;
+  assign source_requested_enabled_o = s_ctrl_q[`APB4_DVP__CTRL_ENABLE];
   assign error_clear_o = (s_accept && s_write && !s_access_err &&
                           s_offset == `APB4_DVP_ERROR_STATUS && apb4.pstrb[0]) ?
                           apb4.pwdata[5:0] : 6'd0;

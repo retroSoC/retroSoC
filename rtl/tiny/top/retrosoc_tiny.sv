@@ -1053,16 +1053,31 @@ cdc_sync #(
       .apb4(u_wdg_apb4_if),
       .wdg (u_wdg_if)
   );
+  /* verilator lint_off PINCONNECTEMPTY */
   axi4s_dvp u_dvp (
-      .clk_i                  (s_dvp_clk),
-      .rst_n_i                (s_dvp_rst_n),
-      .apb4                   (u_dvp_apb4_if),
-      .rx_axis                (u_dvp_rx_axis_if),
-      .dvp                    (u_dvp_if),
-      .irq_o                  (s_dvp_irq),
-      .lifecycle_idle_o       (s_dvp_idle),
-      .lifecycle_reset_ready_o(s_dvp_reset_ready)
+      .clk_i                     (s_dvp_clk),
+      .rst_n_i                   (s_dvp_rst_n),
+      .apb4                      (u_dvp_apb4_if),
+      .rx_axis                   (u_dvp_rx_axis_if),
+      .dvp                       (u_dvp_if),
+      .irq_o                     (s_dvp_irq),
+      .lifecycle_idle_o          (s_dvp_idle),
+      .lifecycle_reset_ready_o   (s_dvp_reset_ready),
+      .source_config_o           (),
+      .source_config_pending_o   (),
+      .source_command_pending_o  (),
+      .source_flush_pending_o    (),
+      .source_status_valid_o     (),
+      .source_capture_idle_o     (),
+      .source_active_o           (),
+      .source_enabled_o          (),
+      .source_requested_enabled_o(),
+      .source_fifo_empty_o       (),
+      .source_frame_stats_o      (),
+      .source_frame_stats_valid_o(),
+      .source_error_o            ()
   );
+  /* verilator lint_on PINCONNECTEMPTY */
   apb4_dma #(
       .NumChannels          (8),
       .MaxBurstBeats        (16),

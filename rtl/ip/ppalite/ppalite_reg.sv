@@ -1,10 +1,17 @@
 `include "ppalite_define.svh"
 
-module ppalite_reg (
+module ppalite_reg #(
+    parameter bit ExternalRoute = 1'b0
+) (
     input  logic                       clk_i,
     input  logic                       rst_n_i,
     input  logic                [31:0] clock_hz_i,
     input  logic                       route_idle_i,
+    input  logic                       route_i,
+    input  logic                       route_change_i,
+    output logic                       route_write_o,
+    output logic                       route_value_o,
+    output logic                [ 2:0] processing_format_o,
     input  logic                       source_ready_i,
     input  logic                       source_quiet_i,
     input  logic                       source_done_i,
@@ -13,6 +20,8 @@ module ppalite_reg (
     input  logic                [31:0] source_words_i,
     input  logic                [31:0] source_geometry_i,
     input  logic                [ 7:0] source_err_i,
+    input  logic                       source_config_err_i,
+    input  logic                       source_stats_err_i,
     input  logic                       transport_ready_i,
     input  logic                       transport_idle_i,
     input  logic                       transport_done_i,
@@ -27,6 +36,7 @@ module ppalite_reg (
   logic [31:0] s_shadow_destination_q;
   logic [31:0] s_shadow_capacity_q;
   logic        s_route_q;
+  logic        s_route_current;
   logic        s_owner_q;
   logic        s_result_valid_q;
   logic [31:0] s_job_sequence_q;
@@ -93,6 +103,13 @@ module ppalite_reg (
   endfunction
 
   assign s_req_accept = apb4.psel && apb4.penable && !s_ready_q;
+  assign s_route_current = ExternalRoute ? route_i : s_route_q;
+  assign route_value_o = apb4.pwdata[0];
+  assign route_write_o = s_req_accept && apb4.pwrite &&
+      ({20'd0, apb4.paddr[11:0]} == `APB4_PPALITE__ROUTE) &&
+      (apb4.paddr[1:0] == 2'd0) && (apb4.pstrb == 4'hf) &&
+      (apb4.paddr[11:8] == 4'd0) && (apb4.pwdata[31:1] == 31'd0);
+  assign processing_format_o = s_shadow_cfg_q[2:0];
   assign s_cfg_valid = valid_cfg(s_shadow_cfg_q);
   assign s_size_valid = (s_shadow_size_q[15:0] != 16'd0) && (s_shadow_size_q[31:16] != 16'd0);
   assign s_sampling_valid = valid_sampling(s_shadow_sampling_q, s_shadow_size_q);
@@ -121,6 +138,8 @@ module ppalite_reg (
   logic        s_monitor_active;
   logic        s_source_done_valid;
   logic        s_source_done_fault;
+  logic        s_abort_close;
+  logic        s_fault_close;
   logic [31:0] s_expected_input_words;
 
   assign s_expected_input_words = (({16'd0, ctrl.input_size[15:0]} + 32'd1) >> 1) *
@@ -129,27 +148,33 @@ module ppalite_reg (
       (ctrl.state == `PPALITE_STATE_RUNNING) || (ctrl.state == `PPALITE_STATE_DRAINING) ||
       (ctrl.state == `PPALITE_STATE_VERIFY));
   assign s_source_done_valid = s_monitor_active && source_done_i && !s_source_done_q &&
-      (ctrl.input_done || ctrl.input_done_event) &&
-      (source_words_i == s_expected_input_words) &&
+      !source_stats_err_i && (source_words_i == s_expected_input_words) &&
       (source_sequence_i == s_expected_source_sequence);
-  assign s_source_done_fault = s_monitor_active && source_done_i && !s_source_done_valid;
-  assign ctrl.close = ctrl.cmd[`PPALITE_COMMAND_ABORT] || s_source_done_fault ||
-      (s_monitor_active && (ctrl.excess || (source_err_i != 8'd0) ||
+  assign s_source_done_fault = s_monitor_active &&
+      ((source_done_i && !s_source_done_valid) || source_stats_err_i);
+  assign s_abort_close = s_req_accept && apb4.pwrite && (apb4.pstrb == 4'hf) &&
+      ({20'd0, apb4.paddr[11:0]} == `APB4_PPALITE__COMMAND) && (apb4.pwdata == 32'd8) &&
+      (ctrl.state != `PPALITE_STATE_IDLE) && s_owner_q;
+  assign s_fault_close = s_source_done_fault ||
+      (s_monitor_active && (ctrl.excess || (source_err_i != 8'd0) || source_config_err_i ||
        (transport_err_i != 8'd0) || (ctrl.core_err != 8'd0) ||
        (source_geometry_i != ctrl.input_size)));
+  assign ctrl.close = s_abort_close || s_fault_close;
   assign s_finalize_valid = (ctrl.state == `PPALITE_STATE_VERIFY) && s_owner_q &&
       ctrl.input_done && ctrl.pipe_done && s_source_done_q && s_dma_done_q && source_quiet_i &&
       source_stopped_i && transport_idle_i && (s_source_err_q == 8'd0) &&
       (s_dma_err_q == 8'd0) && (ctrl.core_err == 8'd0) &&
       (source_err_i == 8'd0) && (transport_err_i == 8'd0) && !source_done_i && !ctrl.excess &&
+      !source_config_err_i && !source_stats_err_i &&
       (source_geometry_i == ctrl.input_size) && (source_words_i == ctrl.input_words) &&
       (source_sequence_i == s_expected_source_sequence);
   assign s_release_valid = (ctrl.state == `PPALITE_STATE_COMPLETE) && s_owner_q &&
       s_result_valid_q && ctrl.pipe_done && source_quiet_i && source_stopped_i &&
       transport_idle_i && (s_source_err_q == 8'd0) && (s_dma_err_q == 8'd0) &&
       (ctrl.core_err == 8'd0) && (source_err_i == 8'd0) && (transport_err_i == 8'd0) &&
-      !ctrl.excess && !source_done_i && (source_geometry_i == ctrl.input_size) &&
-      (source_words_i == ctrl.input_words) && (source_sequence_i == s_expected_source_sequence);
+      !ctrl.excess && !source_done_i && !source_config_err_i && !source_stats_err_i &&
+      (source_geometry_i == ctrl.input_size) && (source_words_i == ctrl.input_words) &&
+      (source_sequence_i == s_expected_source_sequence);
 
   always_comb begin
     s_status      = 32'd0;
@@ -168,7 +193,7 @@ module ppalite_reg (
     s_cmd_valid = 1'b0;
     case (apb4.pwdata[5:0])
       6'b000001:
-      s_cmd_valid = s_layout_valid && s_route_q &&
+      s_cmd_valid = s_layout_valid && s_route_current &&
           (ctrl.state == `PPALITE_STATE_IDLE) && !s_owner_q && route_idle_i &&
           source_ready_i && source_quiet_i && transport_ready_i && transport_idle_i &&
           (source_geometry_i == s_shadow_size_q) && (source_err_i == 8'd0) &&
@@ -180,7 +205,7 @@ module ppalite_reg (
       s_cmd_valid = (ctrl.state == `PPALITE_STATE_CLOSING) && s_owner_q &&
           source_quiet_i && source_stopped_i && transport_idle_i && ctrl.local_idle;
       6'b100000:
-      s_cmd_valid = !s_route_q && (ctrl.state == `PPALITE_STATE_IDLE) &&
+      s_cmd_valid = !s_route_current && (ctrl.state == `PPALITE_STATE_IDLE) &&
           !s_owner_q && route_idle_i && source_quiet_i && transport_idle_i && ctrl.local_idle;
       default: s_cmd_valid = (apb4.pwdata[5:0] == 6'd0);
     endcase
@@ -196,7 +221,7 @@ module ppalite_reg (
       `APB4_PPALITE__CAPABILITY: s_read_data = `APB4_PPALITE__CAPABILITY_VALUE;
       `APB4_PPALITE__BUFFER_CAPABILITY: s_read_data = `APB4_PPALITE__BUFFER_VALUE;
       `APB4_PPALITE__CLOCK_HZ: s_read_data = clock_hz_i;
-      `APB4_PPALITE__ROUTE: s_read_data = {31'd0, s_route_q};
+      `APB4_PPALITE__ROUTE: s_read_data = {31'd0, s_route_current};
       `APB4_PPALITE__STATUS: s_read_data = s_status;
       `APB4_PPALITE__CONFIG: s_read_data = s_shadow_cfg_q;
       `APB4_PPALITE__INPUT_SIZE: s_read_data = s_shadow_size_q;
@@ -247,7 +272,8 @@ module ppalite_reg (
       })
         `APB4_PPALITE__ROUTE:
         s_access_err = s_access_err || (apb4.pwdata[31:1] != 31'd0) ||
-            (ctrl.state != `PPALITE_STATE_IDLE) || s_owner_q || !route_idle_i;
+            (ExternalRoute ? !route_change_i :
+             ((ctrl.state != `PPALITE_STATE_IDLE) || s_owner_q || !route_idle_i));
         `APB4_PPALITE__COMMAND:
         s_access_err = s_access_err || (apb4.pwdata[31:6] != 26'd0) || !s_cmd_valid;
         `APB4_PPALITE__CONFIG:
@@ -285,8 +311,9 @@ module ppalite_reg (
     ctrl.output_stall_event,
     ctrl.cmd[`PPALITE_COMMAND_ABORT],
     (s_monitor_active && (s_first_err_q == 8'd0) &&
-      (ctrl.excess || (source_err_i != 8'd0) || (transport_err_i != 8'd0) ||
-       (ctrl.core_err != 8'd0) || (source_geometry_i != ctrl.input_size) || s_source_done_fault)),
+      (ctrl.excess || (source_err_i != 8'd0) || source_config_err_i ||
+       (transport_err_i != 8'd0) || (ctrl.core_err != 8'd0) ||
+       (source_geometry_i != ctrl.input_size) || s_source_done_fault)),
     (ctrl.cmd[`PPALITE_COMMAND_FINALIZE] && s_finalize_valid),
     (ctrl.pipe_done && (ctrl.state == `PPALITE_STATE_DRAINING))
   };
@@ -463,8 +490,8 @@ module ppalite_reg (
           20'd0, apb4.paddr[11:0]
         })
           `APB4_PPALITE__ROUTE: begin
-            s_route_d = apb4.pwdata[0];
-            if (s_route_q != apb4.pwdata[0]) s_result_valid_d = 1'b0;
+            if (!ExternalRoute) s_route_d = apb4.pwdata[0];
+            if (s_route_current != apb4.pwdata[0]) s_result_valid_d = 1'b0;
           end
           `APB4_PPALITE__CONFIG: begin
             s_shadow_cfg_d   = apb4.pwdata;
@@ -592,8 +619,11 @@ module ppalite_reg (
           if (source_err_i != 8'd0) begin
             s_first_err_d    = `PPALITE_ERROR_SOURCE;
             s_err_position_d = 32'hffff_ffff;
-          end else if (source_geometry_i != ctrl.input_size) begin
+          end else if (source_config_err_i || (source_geometry_i != ctrl.input_size)) begin
             s_first_err_d    = `PPALITE_ERROR_SOURCE_CONFIG;
+            s_err_position_d = 32'hffff_ffff;
+          end else if (source_stats_err_i) begin
+            s_first_err_d    = `PPALITE_ERROR_GEOMETRY;
             s_err_position_d = 32'hffff_ffff;
           end else if ((ctrl.core_err != 8'd0) &&
               ((ctrl.core_err <= 8'd4) || (!s_source_done_fault && !ctrl.excess))) begin

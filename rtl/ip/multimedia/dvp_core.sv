@@ -178,7 +178,9 @@ module dvp_core (
         s_cfg_en_q <= s_en;
         if (!s_en || !s_cfg_en_q) s_snapshot_done_q <= 1'b0;
         if (s_en && ((s_frm_width == 0) || (s_frm_height == 0) || (s_format > 2'd1) ||
-            (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0))))) begin
+            (s_crop_en && ((s_crop_width == 0) || (s_crop_height == 0) ||
+             ({1'b0, s_crop_x} + {1'b0, s_crop_width} > {1'b0, s_frm_width}) ||
+             ({1'b0, s_crop_y} + {1'b0, s_crop_height} > {1'b0, s_frm_height}))))) begin
           s_err_flags_q[`APB4_DVP__ERROR_CONFIG]  <= 1'b1;
           error_events_o[`APB4_DVP__ERROR_CONFIG] <= 1'b1;
           error_toggle_o                          <= ~error_toggle_o;
@@ -228,6 +230,7 @@ module dvp_core (
             s_pixel_q       <= '0;
             s_pixel_total_q <= '0;
             s_word_total_q  <= '0;
+            s_drop_count_q  <= '0;
           end
         end else begin
           s_frm_active_q       <= 1'b1;
@@ -237,6 +240,7 @@ module dvp_core (
           s_pixel_q            <= '0;
           s_pixel_total_q      <= '0;
           s_word_total_q       <= '0;
+          s_drop_count_q       <= '0;
         end
       end
 

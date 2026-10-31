@@ -311,7 +311,6 @@ module ppalite_core (
       .slot_data_o       (s_slot_data),
       .slot_halfword_o   (s_slot_halfword),
       .input_done_o      (ctrl.input_done),
-      .input_done_event_o(ctrl.input_done_event),
       .framing_event_o   (s_framing_event),
       .framing_position_o(s_framing_position),
       .excess_o          (s_excess_err),

@@ -468,6 +468,7 @@
       "user_ip_wrapper.sv"
     ],
     "rtl/tiny/top": [
+      "ppalite_route_ctrl.sv",
       "retrosoc_tiny.sv",
       "retrosoc_tiny_asic.sv",
       "tiny_archinfo.sv",

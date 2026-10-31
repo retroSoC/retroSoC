@@ -13,7 +13,6 @@ interface ppalite_if;
   logic        close;
   logic        started;
   logic        input_done;
-  logic        input_done_event;
   logic        excess;
   logic [31:0] excess_position;
   logic        local_idle;
@@ -36,7 +35,7 @@ interface ppalite_if;
   modport registers(
       output cfg, input_size, sampling, output_size, row_bytes,
              stride_bytes, valid_bytes, transport_bytes, expected_words, cmd, state, close,
-      input started, input_done, input_done_event, excess, excess_position, local_idle,
+      input started, input_done, excess, excess_position, local_idle,
             pipe_done, input_words, input_pixels, input_lines, sel_pixels, output_words,
             output_lines, input_stall_cycles, output_stall_cycles, output_stall_event, input_level,
             output_level, output_high_water, core_err, err_position
@@ -44,7 +43,7 @@ interface ppalite_if;
   modport core(
       input cfg, input_size, sampling, output_size, row_bytes,
             stride_bytes, valid_bytes, transport_bytes, expected_words, cmd, state, close,
-      output started, input_done, input_done_event, excess, excess_position, local_idle,
+      output started, input_done, excess, excess_position, local_idle,
              pipe_done, input_words,
              input_pixels, input_lines, sel_pixels, output_words, output_lines,
              input_stall_cycles, output_stall_cycles, output_stall_event, input_level,

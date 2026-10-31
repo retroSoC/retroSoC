@@ -20,7 +20,6 @@ module ppalite_stream_guard (
     output logic [31:0] slot_data_o,
     output logic        slot_halfword_o,
     output logic        input_done_o,
-    output logic        input_done_event_o,
     output logic        framing_event_o,
     output logic [31:0] framing_position_o,
     output logic        excess_o,
@@ -55,8 +54,6 @@ module ppalite_stream_guard (
   assign ready_o = active_i && !s_done_q && !s_full && (err_o == 8'd0) && !s_framing_err;
   assign s_accept = valid_i && ready_o && !s_framing_err;
   assign input_done_o = s_done_q;
-  assign input_done_event_o = valid_i && !s_done_q && !s_full && (err_o == 8'd0) &&
-      !s_framing_err && last_i && ({1'b0, s_y_q} + 17'd1 == {1'b0, height_i});
   assign slot_halfword_o = s_slot_data[32];
   assign slot_data_o = s_slot_data[31:0];
 
