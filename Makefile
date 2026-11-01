@@ -75,26 +75,26 @@ RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lo
 RTL_TOP ?= retrosoc_tb
 
 # SW
-ISA                    ?= RV32IM
-HAVE_CSR               ?= NO
-FIRMWARE_NAME          ?= retrosoc_fw
-APP                    ?= shell
-LINK_TYPE              ?= ld2_sram
-SW_ISA_PROFILE         ?= COMPAT
-SW_OPT                 ?= APP
-SW_LTO                 ?= NO
-WS2812_P3_ACCEPTANCE   ?= NO
-TINY_P7_ACCEPTANCE     ?= NO
-TINY_P8_ACCEPTANCE     ?= NO
-TINY_P9_ACCEPTANCE     ?= NO
-TINY_P9_QUICK          ?= NO
-TINY_P9_WORKLOAD       ?= QVGA_RGB565
-TINY_P10_ACCEPTANCE    ?= NO
-TINY_SPI_P3_ACCEPTANCE ?= NO
-TINY_SPI_P4_ACCEPTANCE ?= NO
+ISA                        ?= RV32IM
+HAVE_CSR                   ?= NO
+FIRMWARE_NAME              ?= retrosoc_fw
+APP                        ?= shell
+LINK_TYPE                  ?= ld2_sram
+SW_ISA_PROFILE             ?= COMPAT
+SW_OPT                     ?= APP
+SW_LTO                     ?= NO
+WS2812_P3_ACCEPTANCE       ?= NO
+TINY_P7_ACCEPTANCE         ?= NO
+TINY_P8_ACCEPTANCE         ?= NO
+TINY_P9_ACCEPTANCE         ?= NO
+TINY_P9_QUICK              ?= NO
+TINY_P9_WORKLOAD           ?= QVGA_RGB565
+TINY_P10_ACCEPTANCE        ?= NO
+TINY_SPI_P3_ACCEPTANCE     ?= NO
+TINY_SPI_P4_ACCEPTANCE     ?= NO
 TINY_PPALITE_P3_ACCEPTANCE ?= NO
-COREMARK_MODE          ?= quick
-NPU_P5_ACCEPTANCE      ?= NO
+COREMARK_MODE              ?= quick
+NPU_P5_ACCEPTANCE          ?= NO
 # Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
 # for HP bring-up sessions, behavior-neutral when off. Debug runs are not
 # qualification evidence, so the knob deliberately stays out of the variant
