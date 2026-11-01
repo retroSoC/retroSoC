@@ -17,6 +17,7 @@
 #include <retrosoc/hal/extension.h>
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/dvp.h>
+#include <retrosoc/hal/ppalite.h>
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/i2c.h>
@@ -75,12 +76,14 @@ volatile uint32_t rs_fabric_monitor_test_mmio[1024];
 volatile uint32_t rs_resource_test_mmio[1024];
 volatile uint32_t rs_tiny_rcu_test_mmio[1024];
 volatile uint32_t rs_dma_test_mmio[1024];
+volatile uint32_t rs_ppalite_test_mmio[1024];
 static uint32_t ws_registers[16];
 static uint32_t ws_pushed;
 static uint32_t ws_pixels[33];
 static uint32_t ws_idle_on_interrupt_read;
 static uint32_t dma_irq_enabled = 8U;
 static bool dma_irq_pending;
+static bool dma_ppalite_cleanup_race;
 static rs_dma_session_t dma_irq_owner;
 static rs_status_t dma_irq_result;
 
@@ -110,6 +113,12 @@ void rs_dma_test_irq_restore(uint32_t saved) {
                                             .burst_beats = 1U};
             dma_irq_result = rs_dma_session_configure(&dma_irq_owner, &config);
         }
+    }
+    if (dma_ppalite_cleanup_race &&
+        (rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_COMMAND / 4U] == 1U) &&
+        (RS_DMA_CH_REG(2U, RS_DMA_CH_REG_CTRL) == RS_DMA_CH_CTRL_RESET)) {
+        dma_ppalite_cleanup_race = false;
+        RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
     }
 }
 
@@ -3687,6 +3696,161 @@ static int test_tiny_rcu_boundaries(void) {
     return 0;
 }
 
+rs_status_t rs_tiny_ppalite_probe(rs_ppalite_info_t *info);
+rs_status_t rs_tiny_ppalite_configure(const rs_ppalite_config_t *config);
+rs_status_t rs_tiny_ppalite_select_route(rs_ppalite_route_t route, rs_timeout_t timeout);
+rs_status_t rs_tiny_ppalite_capture_begin(rs_ppalite_session_t *session,
+                                          const rs_ppalite_config_t *config, uintptr_t destination,
+                                          uint32_t capacity_bytes, rs_timeout_t timeout);
+rs_status_t rs_tiny_ppalite_recover(rs_ppalite_session_t *session, rs_timeout_t timeout);
+
+static int test_ppalite_hal(void) {
+    rs_ppalite_config_t config = {
+        .input_format = RS_PPALITE_INPUT_YUYV,
+        .source = {.format = RS_DVP_FORMAT_YUV422,
+                   .frame_width = 319U,
+                   .frame_height = 239U,
+                   .snapshot = true,
+                   .stream_enable = true},
+        .step_x = 2U,
+        .step_y = 2U,
+        .phase_x = 1U,
+        .phase_y = 0U,
+        .output_gray8 = true,
+    };
+    rs_ppalite_layout_t layout = {0};
+    rs_ppalite_info_t info;
+    rs_dma_session_t dma_session = {0};
+    rs_ppalite_session_t ppa_session = {0};
+    rs_dma_session_t dma_probe = {0};
+    const uint32_t fifo_levels[] = {UINT32_C(0x10), UINT32_C(0x70), UINT32_C(0x80)};
+    const rs_dma_config_t dma_config = {
+        .kind = RS_DMA_KIND_STREAM_TO_MM,
+        .request = RS_DMA_REQUEST_DVP_RX,
+        .source = 0U,
+        .destination = UINT32_C(0x54000C00),
+        .byte_count = 8U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = false,
+        .destination_increment = true,
+        .burst_beats = 4U,
+    };
+
+    if ((rs_ppalite_probe(&info) != RS_ENOTSUP) || (info.capability != 0U) ||
+        (rs_ppalite_layout(&config, UINT32_C(0x30000000), 19200U, &layout) != RS_OK) ||
+        (layout.width != 159U) || (layout.height != 120U) || (layout.row_bytes != 159U) ||
+        (layout.stride_bytes != 160U) || (layout.valid_bytes != 19080U) ||
+        (layout.transport_bytes != 19200U) || (layout.expected_words != 4800U)) {
+        return 1;
+    }
+    config.source.frame_width = 5U;
+    config.source.frame_height = 3U;
+    config.phase_x = 0U;
+    if ((rs_ppalite_layout(&config, UINT32_C(0x30000000), 8U, &layout) != RS_OK) ||
+        (layout.width != 3U) || (layout.height != 2U) || (layout.row_bytes != 3U) ||
+        (layout.stride_bytes != 4U) || (layout.valid_bytes != 6U) ||
+        (layout.transport_bytes != 8U) || (layout.expected_words != 2U) ||
+        (rs_ppalite_layout(&config, UINT32_C(0x30000002), 8U, &layout) != RS_EINVAL) ||
+        (rs_ppalite_layout(&config, UINT32_C(0x30000000), 4U, &layout) != RS_EINVAL) ||
+        (rs_ppalite_layout(&config, UINT32_C(0xFFFFFFFC), 8U, &layout) != RS_EINVAL)) {
+        return 2;
+    }
+    config.input_format = RS_PPALITE_INPUT_RGB565_BE;
+    config.source.format = RS_DVP_FORMAT_RGB565;
+    if (rs_ppalite_layout(&config, UINT32_C(0x30000000), 8U, &layout) != RS_ENOTSUP) {
+        return 3;
+    }
+    config.output_gray8 = false;
+    if ((rs_ppalite_layout(&config, UINT32_C(0x30000000), 16U, &layout) != RS_OK) ||
+        (layout.row_bytes != 6U) || (layout.stride_bytes != 8U) || (layout.valid_bytes != 12U) ||
+        (layout.transport_bytes != 16U)) {
+        return 4;
+    }
+    config.phase_x = 2U;
+    if (rs_ppalite_layout(&config, UINT32_C(0x30000000), 16U, &layout) != RS_EINVAL) {
+        return 5;
+    }
+    config.phase_x = 0U;
+    if ((rs_dma_session_acquire(&dma_session, 2U) != RS_OK) ||
+        (rs_dma_session_configure(&dma_session, &dma_config) != RS_OK) ||
+        (rs_dma_session_start(&dma_session) != RS_OK)) {
+        return 6;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    if (rs_dma_session_abort_wait(&dma_session, 1U) != RS_ETIMEOUT) {
+        return 7;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    if ((rs_dma_session_abort_wait(&dma_session, 2U) != RS_OK) ||
+        (rs_dma_session_reset(&dma_session) != RS_OK) ||
+        (rs_dma_session_release(&dma_session) != RS_OK)) {
+        return 8;
+    }
+    for (uint32_t index = 0U; index < 1024U; ++index) {
+        rs_ppalite_test_mmio[index] = 0U;
+    }
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_IP_ID / 4U] = RS_PPALITE_ABI_APB4_ID_VALUE;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_IP_VERSION / 4U] = RS_PPALITE_ABI_APB4_VERSION_VALUE;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_CAPABILITY / 4U] = UINT32_C(0x000003FF);
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_BUFFER_CAPABILITY / 4U] =
+        RS_PPALITE_ABI_APB4_BUFFER_VALUE;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_DMA_BINDING / 4U] =
+        RS_PPALITE_ABI_APB4_DMA_BINDING_VALUE;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_CLOCK_HZ / 4U] = UINT32_C(24000000);
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_ROUTE / 4U] = RS_PPALITE_ROUTE_PROCESS;
+    if ((rs_tiny_ppalite_probe(&info) != RS_OK) || (rs_tiny_ppalite_configure(&config) != RS_OK) ||
+        (rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_INPUT_SIZE / 4U] != UINT32_C(0x00030005)) ||
+        (rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_SAMPLING / 4U] != UINT32_C(0x00000005)) ||
+        (rs_tiny_ppalite_select_route(RS_PPALITE_ROUTE_PROCESS, 2U) != RS_OK) ||
+        (rs_tiny_dvp_capture_dma(UINT32_C(0x54000C00), 8U, 20U) != RS_ENOTSUP)) {
+        return 9;
+    }
+    for (uint32_t index = 0U; index < 64U; ++index) {
+        dvp_registers[index] = 0U;
+    }
+    dvp_registers[2] = 4U;
+    dvp_test_channel = 2U;
+    dvp_test_started = false;
+    dvp_test_snapshot_done = false;
+    dvp_test_no_clock = false;
+    dvp_test_hold_response = false;
+    dvp_test_truncate_words = false;
+    dvp_test_size_error = false;
+    dvp_test_control_pending = 0U;
+    dvp_test_applied_control = 0U;
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V22;
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = UINT32_C(1) << RS_DMA_REQUEST_DVP_RX;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_STATUS / 4U] = UINT32_C(0xC000);
+    for (uint32_t index = 0U; index < (sizeof(fifo_levels) / sizeof(fifo_levels[0])); ++index) {
+        ppa_session = (rs_ppalite_session_t){0};
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_COMMAND / 4U] = 0U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_FIFO_LEVELS / 4U] = fifo_levels[index];
+        if ((rs_tiny_ppalite_capture_begin(&ppa_session, &config, UINT32_C(0x54000C00), 16U, 2U) !=
+             RS_ETIMEOUT) ||
+            ppa_session.acquired ||
+            (rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_COMMAND / 4U] != 0U)) {
+            return 10;
+        }
+    }
+    ppa_session = (rs_ppalite_session_t){0};
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_FIFO_LEVELS / 4U] = 0U;
+    dma_ppalite_cleanup_race = true;
+    if ((rs_tiny_ppalite_capture_begin(&ppa_session, &config, UINT32_C(0x54000C00), 16U, 2U) !=
+         RS_EIO) ||
+        !ppa_session.acquired || (rs_dma_session_acquire(&dma_probe, 2U) != RS_EIO)) {
+        return 11;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = 0U;
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_FIFO_LEVELS / 4U] = UINT32_C(0x80);
+    if ((rs_tiny_ppalite_recover(&ppa_session, 2U) != RS_OK) || ppa_session.acquired ||
+        (rs_dma_session_acquire(&dma_probe, 2U) != RS_OK) ||
+        (rs_dma_session_release(&dma_probe) != RS_OK)) {
+        return 12;
+    }
+    rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_ROUTE / 4U] = RS_PPALITE_ROUTE_RAW;
+    return 0;
+}
+
 static int test_p9_frame_layout(void) {
     uint32_t words = 0U;
     if (rs_p9_frame_words(640U, 480U, &words) != RS_OK || words != 153600U ||
@@ -3765,6 +3929,7 @@ int main(void) {
         test_tiny_dma_spi_aperture(),
         test_st7789vi_patterns(),
         test_dvp_hal(),
+        test_ppalite_hal(),
         test_p9_frame_layout(),
         test_p10_frame_statistics(),
         test_opipsram_helpers(),

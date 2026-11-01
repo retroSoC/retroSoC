@@ -95,7 +95,8 @@ def collect_mini_bindings(root: Path, product: dict[str, str]) -> dict:
     expected_dma = {"AddrWidth": 32, "DataWidth": 32, "NumChannels": 8, "MaxBurstBeats": 16,
                     "FifoDepth": 32, "RequestMask": 0x3FFF, "SupportedRequests": 0x3FFF,
                     "IpVersion": 0x20000, "EnableStreams": 1, "EnableSpi": 0,
-                    "EnableOriginQualifier": 0, "SpiTxAddress": 0, "SpiRxAddress": 0}
+                    "EnableOriginQualifier": 0, "EnablePpaliteGuard": 0,
+                    "SpiTxAddress": 0, "SpiRxAddress": 0}
     if dma != expected_dma or re.search(r"\bapb4_spi\b", strip_comments(top)):
         raise ValueError("Mini DMA integration changed; Tiny SPI/PIO routes are not Mini capabilities")
     if instance_parameters(top, "apb4_xpi", "u_apb4_xpi"):

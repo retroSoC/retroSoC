@@ -60,6 +60,8 @@ typedef struct {
 rs_status_t rs_dvp_probe(uint32_t *version, uint32_t *capability);
 rs_status_t rs_dvp_configure(const rs_dvp_config_t *config);
 rs_status_t rs_dvp_start(void);
+rs_status_t rs_dvp_start_with_timeout(rs_timeout_t timeout);
+rs_status_t rs_dvp_stop(rs_timeout_t timeout);
 rs_status_t rs_dvp_abort(void);
 rs_status_t rs_dvp_flush(void);
 rs_status_t rs_dvp_get_status(rs_dvp_status_t *status);

@@ -23,6 +23,7 @@ module dma_core #(
     parameter bit          EnableStreams         = 1'b1,
     parameter bit          EnableSpi             = 1'b0,
     parameter bit          EnableOriginQualifier = 1'b0,
+    parameter bit          EnablePpaliteGuard    = 1'b0,
     parameter logic [31:0] SpiTxAddress          = 32'd0,
     parameter logic [31:0] SpiRxAddress          = 32'd0
 ) (
@@ -67,6 +68,7 @@ module dma_core #(
     output logic [8:0]                     first_error_status_o,
     output logic [15:0]                    first_error_addr_hi_o,
     output logic [31:0]                    request_status_o,
+    input  logic                           ppalite_route_i,
     input  logic [1:0]                     spi_admit_ready_i,
     output logic [1:0]                     spi_credit_valid_o,
     output logic [1:0]                     spi_credit_retire_o,
@@ -1355,7 +1357,10 @@ module dma_core #(
           s_tcd_parse_q <= 1'b0;
           if (s_abort_q[s_tcd_read_owner_q]) begin
             s_tcd_loaded_q[s_tcd_read_owner_q] <= 1'b0;
-          end else if (!RequestMask[{s_tcd_word7_q[s_tcd_read_owner_q][25],
+          end else if ((EnablePpaliteGuard && ppalite_route_i &&
+                        ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                          s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_DVP_RX)) ||
+              !RequestMask[{s_tcd_word7_q[s_tcd_read_owner_q][25],
                             s_tcd_word7_q[s_tcd_read_owner_q][15:12]}] ||
               (!EnableStreams && (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM)) ||
               s_err_q[s_tcd_read_owner_q] ||

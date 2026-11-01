@@ -54,6 +54,14 @@ tooling.
   `ppalite-p2-{lint,rtl,formal,synth,netsim,sta,report}` binds these standalone
   source-guard and route checks to current source/artifacts; it does not wire a
   Tiny product instance, admit real central-DMA traffic or claim timing closure.
+- `test_ppalite_p3.py` checks Tiny APB/IRQ27/RCU17 metadata and acceptance-image
+  isolation. `ppalite_dma_guard_tb.sv` executes real APB admission on both
+  simulators: exact direct DMA2 configuration, stale DONE, repeated START,
+  processed-TCD rejection, DONE-before-RELEASE ownership, ABORT/drained RESET,
+  DMA readiness loss and RAW bypass. The P1 APB fixture also proves held-output
+  recovery without extra payload. `tests/c/test_runtime.c` adds deterministic
+  PPALite layout, absent/present HAL, RAW-route rejection, complete FIFO-level
+  checks, and ARM-failure DMA cleanup with retained leases on cleanup failure.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

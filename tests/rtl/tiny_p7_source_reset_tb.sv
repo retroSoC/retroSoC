@@ -19,10 +19,12 @@ module tiny_p7_source_reset_tb;
   assign u_wdg_if.reset_req_o = 0;
   logic s_dma_clk, s_dma_rst_n;
   logic s_periph_apply = 0, s_periph_reset_command = 1;
-  logic [13:0] s_periph_request = 14'h200;
-  logic [13:0] s_periph_idle, s_periph_idle_ref;
-  logic [13:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
-  logic [13:0] s_gate_ref, s_held_ref, s_ready_ref, s_periph_reset_done;
+  logic [17:0] s_periph_request = 18'h200;
+  logic [17:0] s_periph_idle, s_periph_idle_ref;
+  logic [17:0] s_rcu_idle_ref;
+  logic        s_ppa_source_quiet_ref = 1'b1;
+  logic [17:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
+  logic [17:0] s_gate_ref, s_held_ref, s_ready_ref, s_periph_reset_done;
   logic s_bus_idle_ref, s_periph_block, s_periph_done, s_block_pclk;
   logic [ 4:0] s_periph_fault;
   logic [31:0] s_clock_timeout = 256;
@@ -34,10 +36,16 @@ module tiny_p7_source_reset_tb;
   logic [                             2:0] s_owner_idle;
   logic [`RETROSOC_TINY__TARGET_COUNT-1:0] s_target_idle;
   logic [`RETROSOC_TINY__LEAF_COUNT-2:0] s_apb_cdc_idle = '1, s_apb_cdc_ready = '1;
+  assign s_actual_gate[17]    = s_gate_request[17];
+  assign s_actual_gate[16:14] = 0;
   assign s_actual_gate[13:10] = 0;
   assign s_actual_gate[8:0]   = 0;
+  assign s_reset_held[17]     = s_local_reset[17];
+  assign s_reset_held[16:14]  = 0;
   assign s_reset_held[13:10]  = 0;
   assign s_reset_held[8:0]    = 0;
+  assign s_reset_ready[17]    = !s_local_reset[17];
+  assign s_reset_ready[16:14] = 0;
   assign s_reset_ready[13:10] = 0;
   assign s_reset_ready[8:0]   = 0;
 
@@ -115,7 +123,7 @@ module tiny_p7_source_reset_tb;
       .write_origin_channel_i(3'd0),
       .axi4                  (u_dma_pclk_axi4_if)
   );
-  assign s_periph_idle = {4'hf, !(rd_busy || wr_busy || rd_start || wr_start), 9'h1ff};
+  assign s_periph_idle = {1'b1, 3'hf, 4'hf, !(rd_busy || wr_busy || rd_start || wr_start), 9'h1ff};
 
   logic hold_ar = 0, hold_aw = 0, hold_w = 0, hold_r = 0, hold_b = 0;
   logic target_rd = 0, target_wr = 0;
@@ -280,11 +288,21 @@ module tiny_p7_source_reset_tb;
   task automatic completion(input logic [4:0] expected_fault);
     while (!s_periph_done) @(negedge s_ref_clk);
     if (s_periph_fault !== expected_fault ||
-        (expected_fault == 0 && s_periph_reset_done !== 14'h200) ||
+        (expected_fault == 0 && s_periph_reset_command &&
+         (s_periph_reset_done !== s_periph_request)) ||
         (expected_fault != 0 && s_local_reset != 0))
       $fatal(1, "SIM_TEST_FAIL reset command result fault=%h", s_periph_fault);
     @(negedge s_ref_clk);
     if (expected_fault == 0) ready();
+  endtask
+  task automatic gate_completion(input logic [4:0] expected_fault);
+    while (!s_periph_done) @(negedge s_ref_clk);
+    if ((s_periph_fault !== expected_fault) ||
+        ((expected_fault == 0) != (s_actual_gate[17] == 1'b1)))
+      $fatal(
+          1, "SIM_TEST_FAIL PPALite gate result fault=%h gate=%b", s_periph_fault, s_actual_gate[17]
+      );
+    @(negedge s_ref_clk);
   endtask
   task automatic require_draining;
     repeat (48) @(negedge s_ref_clk);
@@ -408,7 +426,22 @@ module tiny_p7_source_reset_tb;
     hold_r            = 0;
     ready();
     recovery_read();
-    $display("SIM_TEST_PASS Tiny P7 production source reset local=4 timeout=2 system=1");
+    s_periph_request       = 18'h20000;
+    s_periph_reset_command = 1'b1;
+    s_ppa_source_quiet_ref = 1'b0;
+    reset_command();
+    completion(5'b00010);
+    s_ppa_source_quiet_ref = 1'b1;
+    reset_command();
+    completion(0);
+    s_periph_reset_command = 1'b0;
+    s_ppa_source_quiet_ref = 1'b0;
+    reset_command();
+    gate_completion(5'b00010);
+    s_ppa_source_quiet_ref = 1'b1;
+    reset_command();
+    gate_completion(0);
+    $display("SIM_TEST_PASS Tiny P7 production source reset local=4 timeout=4 system=1 quiet=2");
     $finish;
   end
   initial begin

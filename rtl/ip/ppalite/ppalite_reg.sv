@@ -1,7 +1,8 @@
 `include "ppalite_define.svh"
 
 module ppalite_reg #(
-    parameter bit ExternalRoute = 1'b0
+    parameter bit          ExternalRoute   = 1'b0,
+    parameter logic [31:0] CapabilityValue = `APB4_PPALITE__CAPABILITY_VALUE
 ) (
     input  logic                       clk_i,
     input  logic                       rst_n_i,
@@ -12,6 +13,9 @@ module ppalite_reg #(
     output logic                       route_write_o,
     output logic                       route_value_o,
     output logic                [ 2:0] processing_format_o,
+    output logic                [31:0] job_destination_o,
+    output logic                [31:0] job_transport_bytes_o,
+    output logic                       capture_arm_request_o,
     input  logic                       source_ready_i,
     input  logic                       source_quiet_i,
     input  logic                       source_done_i,
@@ -103,6 +107,13 @@ module ppalite_reg #(
   endfunction
 
   assign s_req_accept = apb4.psel && apb4.penable && !s_ready_q;
+  assign capture_arm_request_o = s_req_accept && apb4.pwrite && (apb4.pstrb == 4'hf) &&
+      (apb4.paddr[1:0] == 2'd0) && (apb4.paddr[11:8] == 4'd0) &&
+      ({20'd0, apb4.paddr[11:0]} == `APB4_PPALITE__COMMAND) && (apb4.pwdata == 32'd1) &&
+      s_layout_valid && s_route_current && (ctrl.state == `PPALITE_STATE_IDLE) && !s_owner_q &&
+      route_idle_i && source_ready_i && source_quiet_i &&
+      (source_geometry_i == s_shadow_size_q) && (source_err_i == 8'd0) &&
+      (transport_err_i == 8'd0);
   assign s_route_current = ExternalRoute ? route_i : s_route_q;
   assign route_value_o = apb4.pwdata[0];
   assign route_write_o = s_req_accept && apb4.pwrite &&
@@ -110,6 +121,8 @@ module ppalite_reg #(
       (apb4.paddr[1:0] == 2'd0) && (apb4.pstrb == 4'hf) &&
       (apb4.paddr[11:8] == 4'd0) && (apb4.pwdata[31:1] == 31'd0);
   assign processing_format_o = s_shadow_cfg_q[2:0];
+  assign job_destination_o = s_shadow_destination_q;
+  assign job_transport_bytes_o = s_owner_q ? ctrl.transport_bytes : s_transport[31:0];
   assign s_cfg_valid = valid_cfg(s_shadow_cfg_q);
   assign s_size_valid = (s_shadow_size_q[15:0] != 16'd0) && (s_shadow_size_q[31:16] != 16'd0);
   assign s_sampling_valid = valid_sampling(s_shadow_sampling_q, s_shadow_size_q);
@@ -203,7 +216,7 @@ module ppalite_reg #(
       6'b001000: s_cmd_valid = s_owner_q;
       6'b010000:
       s_cmd_valid = (ctrl.state == `PPALITE_STATE_CLOSING) && s_owner_q &&
-          source_quiet_i && source_stopped_i && transport_idle_i && ctrl.local_idle;
+          source_quiet_i && source_stopped_i && transport_idle_i;
       6'b100000:
       s_cmd_valid = !s_route_current && (ctrl.state == `PPALITE_STATE_IDLE) &&
           !s_owner_q && route_idle_i && source_quiet_i && transport_idle_i && ctrl.local_idle;
@@ -218,7 +231,7 @@ module ppalite_reg #(
     })
       `APB4_PPALITE__IP_ID: s_read_data = `APB4_PPALITE__ID_VALUE;
       `APB4_PPALITE__IP_VERSION: s_read_data = `APB4_PPALITE__VERSION_VALUE;
-      `APB4_PPALITE__CAPABILITY: s_read_data = `APB4_PPALITE__CAPABILITY_VALUE;
+      `APB4_PPALITE__CAPABILITY: s_read_data = CapabilityValue;
       `APB4_PPALITE__BUFFER_CAPABILITY: s_read_data = `APB4_PPALITE__BUFFER_VALUE;
       `APB4_PPALITE__CLOCK_HZ: s_read_data = clock_hz_i;
       `APB4_PPALITE__ROUTE: s_read_data = {31'd0, s_route_current};

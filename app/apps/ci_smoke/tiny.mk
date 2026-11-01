@@ -35,3 +35,6 @@ ifeq ($(SIMU),IVERILOG)
 APP_CFLAGS += -DRS_ST7789VI_QUICK
 endif
 endif
+ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
+APP_SRCS := $(ROOT_PATH)/app/apps/ci_smoke/tiny_ppalite_p3.c
+endif

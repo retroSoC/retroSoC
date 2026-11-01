@@ -668,6 +668,23 @@ task automatic run_lifecycle_races;
   wr(12'h018, 32'h10, 1'b0);
   $display("PPALITE_P1_COVER PPL-V15 partial-packer-abort-recovery");
 
+  setup_negative(32'h0001_0004);
+  u_stream_bfm.send_word(32'h02030001, 4'hf, 4'hf, 1'b1, 1'b0, 1'b0, 0);
+  u_stream_bfm.send_word(32'h06050407, 4'hf, 4'hf, 1'b0, 1'b1, 1'b0, 0);
+  repeat (4) @(negedge clk_i);
+  if (!out_valid || (stream_output_count != 32'd0))
+    $fatal(1, "PPALITE held-output recovery setup failed");
+  wr(12'h018, 32'd8, 1'b0);
+  if (!out_valid) $fatal(1, "PPALITE abort withdrew held output before recovery");
+  wr(12'h018, 32'h10, 1'b0);
+  if (out_valid || (stream_output_count != 32'd0))
+    $fatal(1, "PPALITE recovery emitted or retained old output");
+  check_reg(12'h05c, 32'd0);
+  rd(12'h01c, vector_mem[60000]);
+  if ((vector_mem[60000][2:0] != 3'd0) || vector_mem[60000][8])
+    $fatal(1, "PPALITE held-output recovery retained ownership");
+  $display("PPALITE_P1_COVER PPL-V13 held-output-abort-recovery");
+
   $display("PPALITE_STAGE stale-arm-start");
   complete_single_frame();
   wr(12'h018, 32'd4, 1'b0);

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MulanPSL-2.0
 `include "mmap_define.svh"
 `include "tiny_topology.svh"
+`include "ppalite_define.svh"
 
 module retrosoc_tiny (
     input  logic                 clk_i,
@@ -89,15 +90,17 @@ module retrosoc_tiny (
   logic [31:0] s_clkout_control;
   logic s_clkout, s_clkout_enable;
   logic s_clkout_idle_ref;
-  logic [16:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
-  logic [16:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
+  logic [17:0] s_gate_request, s_local_reset, s_actual_gate, s_reset_held, s_reset_ready;
+  logic [17:0] s_gate_ref, s_held_ref, s_ready_ref, s_disabled_sys;
   logic s_periph_apply, s_periph_reset_command, s_periph_block, s_periph_done;
-  logic [16:0] s_periph_request, s_periph_reset_done;
+  logic [17:0] s_periph_request, s_periph_reset_done;
   logic [4:0] s_periph_fault;
   logic       s_bus_idle_ref;
   logic s_boot_release_d, s_boot_release_q;
   logic s_wfi_gate_sys;
-  logic [16:0] s_periph_idle, s_periph_idle_ref;
+  logic [17:0] s_periph_idle, s_periph_idle_ref;
+  logic [17:0] s_rcu_idle_ref;
+  logic        s_ppa_source_quiet_ref;
   logic s_xpi_idle, s_xpi_idle_ref;
   logic s_pwm_write, s_crc_write;
   logic [ 4:0] s_clock_fault;
@@ -110,6 +113,40 @@ module retrosoc_tiny (
   logic s_i2s_tx_stall, s_i2s_rx_stall;
   logic s_i2s_reset_ready;
   logic s_dvp_irq, s_dvp_idle, s_dvp_reset_ready;
+  logic s_dma_lifecycle_idle, s_dma_idle_pclk, s_dma_tcd_idle;
+  logic s_ppa_dma_idle;
+  logic s_ppalite_irq, s_ppalite_active, s_ppalite_active_ref;
+  logic s_ppa_route, s_ppa_route_idle, s_ppa_route_change, s_ppa_route_write, s_ppa_route_value;
+  logic [2:0] s_ppa_processing_format, s_ppa_capture_state;
+  logic
+      s_ppa_capture_arm_request,
+      s_ppa_capture_arm,
+      s_ppa_capture_release,
+      s_ppa_capture_close,
+      s_ppa_processor_idle;
+  logic [31:0] s_ppa_job_destination, s_ppa_job_transport_bytes;
+  logic s_ppa_source_ready, s_ppa_source_quiet, s_ppa_source_done, s_ppa_source_stopped;
+  logic [31:0] s_ppa_source_sequence, s_ppa_source_words, s_ppa_source_geometry;
+  logic [7:0] s_ppa_source_err;
+  logic s_ppa_source_config_err, s_ppa_source_stats_err;
+  logic s_ppa_transport_ready, s_ppa_transport_idle, s_ppa_transport_admitted;
+  logic s_ppa_transport_done, s_ppa_stream_isolated;
+  logic [7:0] s_ppa_transport_err;
+  logic s_ppa_process_valid, s_ppa_process_ready, s_ppa_processed_valid, s_ppa_processed_ready;
+  logic [31:0] s_ppa_process_data, s_ppa_processed_data;
+  logic [3:0] s_ppa_process_keep, s_ppa_process_strb, s_ppa_processed_keep, s_ppa_processed_strb;
+  logic s_ppa_process_id, s_ppa_process_dest, s_ppa_process_user, s_ppa_process_last;
+  logic s_ppa_processed_id, s_ppa_processed_dest, s_ppa_processed_user, s_ppa_processed_last;
+  logic s_ppa_dma_start;
+  logic s_dvp_dma_start_pending, s_dvp_dma_busy, s_dvp_dma_done;
+  logic [31:0] s_dvp_dma_bytes_done, s_dvp_dma_err_stat;
+  logic [127:0] s_dvp_source_cfg;
+  logic s_dvp_source_cfg_pending, s_dvp_source_cmd_pending, s_dvp_source_flush_pending;
+  logic s_dvp_source_stat_valid, s_dvp_source_capture_idle, s_dvp_source_active;
+  logic s_dvp_source_enabled, s_dvp_source_requested_enabled, s_dvp_source_fifo_empty;
+  logic [143:0] s_dvp_source_frame_stats;
+  logic         s_dvp_source_frame_stats_valid;
+  logic [  5:0] s_dvp_source_error;
   logic s_spi_sck, s_spi_mosi, s_spi_cs_n, s_spi_output_enable, s_spi_miso;
   logic s_spi_irq, s_spi_session_owned, s_spi_lifecycle_idle;
   logic [1:0] s_spi_origin;
@@ -127,7 +164,21 @@ module retrosoc_tiny (
   logic [4:0] s_spi_request;
   logic s_done_pclk_rst_n, s_done_mem_rst_n;
   `include "tiny_apb_interfaces.svh"
-ahbl_if u_cpu_ahbl_if[2] (
+apb4_if u_dvp_source_apb4_if (
+      .pclk   (s_dvp_clk),
+      .presetn(s_dvp_rst_n)
+  );
+  apb4_if u_dma_guarded_apb4_if (
+      .pclk   (s_dma_clk),
+      .presetn(s_dma_rst_n)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_ppalite_rx_axis_if (
+      .aclk   (s_dma_clk),
+      .aresetn(s_dma_rst_n)
+  );
+  ahbl_if u_cpu_ahbl_if[2] (
       .hclk   (s_exec_clk),
       .hresetn(s_core_rst_n)
   );
@@ -414,7 +465,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   assign s_reset_ready[15] = 1'b0;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(17)
+      .DATA_WIDTH(18)
   ) u_gate_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -423,7 +474,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(17)
+      .DATA_WIDTH(18)
   ) u_held_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -432,7 +483,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(17)
+      .DATA_WIDTH(18)
   ) u_ready_feedback (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
@@ -441,7 +492,7 @@ ahbl_if u_cpu_ahbl_if[2] (
   );
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(17)
+      .DATA_WIDTH(18)
   ) u_disabled_sync (
       .clk_i  (s_exec_clk),
       .rst_n_i(s_fabric_rst_n),
@@ -464,7 +515,7 @@ ahbl_if u_cpu_ahbl_if[2] (
       .apply_i        (s_periph_apply),
       .reset_command_i(s_periph_reset_command),
       .request_i      (s_periph_request),
-      .idle_i         (s_periph_idle_ref),
+      .idle_i         (s_rcu_idle_ref),
       .bus_idle_i     (s_bus_idle_ref),
       .gate_actual_i  (s_gate_ref),
       .reset_held_i   (s_held_ref),
@@ -494,20 +545,53 @@ ahbl_if u_cpu_ahbl_if[2] (
       .pwm_idle_o (s_periph_idle[6]),
       .crc_idle_o (s_periph_idle[12])
   );
-  assign s_periph_idle[0]  = s_cpu_bus_idle;
-  assign s_periph_idle[1]  = !s_spi_session_owned && !(|s_gpio_user_select);
+  assign s_ppalite_active = s_ppa_capture_state != `PPALITE_STATE_IDLE;
+  assign s_periph_idle[0] = s_cpu_bus_idle;
+  assign s_periph_idle[1] = !s_spi_session_owned && !(|s_gpio_user_select) && !s_ppalite_active;
   assign s_periph_idle[11] = !s_rng_en && !s_rng_valid;
   assign s_periph_idle[15] = 1'b1;
   assign s_periph_idle[16] = s_spi_lifecycle_idle;
-  assign s_spi_request     = u_spi_apb4_if.pwrite ? 5'd16 : 5'd17;
+  assign s_periph_idle[17] = !s_ppa_route && s_ppa_processor_idle && s_ppa_transport_idle &&
+      s_dvp_idle && !s_ppalite_active;
+  assign s_spi_request = u_spi_apb4_if.pwrite ? 5'd16 : 5'd17;
   cdc_sync #(
       .STAGE     (2),
-      .DATA_WIDTH(17)
+      .DATA_WIDTH(18)
   ) u_periph_idle_sync (
       .clk_i  (s_ref_clk),
       .rst_n_i(s_por_rst_n),
       .dat_i  (s_periph_idle),
       .dat_o  (s_periph_idle_ref)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_ppa_source_quiet_sync (
+      .clk_i  (s_ref_clk),
+      .rst_n_i(s_por_rst_n),
+      .dat_i  (s_ppa_source_quiet),
+      .dat_o  (s_ppa_source_quiet_ref)
+  );
+  assign s_rcu_idle_ref = {
+    s_periph_idle_ref[17] && s_ppa_source_quiet_ref, s_periph_idle_ref[16:0]
+  };
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_ppalite_active_sync (
+      .clk_i  (s_ref_clk),
+      .rst_n_i(s_por_rst_n),
+      .dat_i  (s_ppalite_active),
+      .dat_o  (s_ppalite_active_ref)
+  );
+  cdc_sync #(
+      .STAGE     (2),
+      .DATA_WIDTH(1)
+  ) u_dma_idle_pclk_sync (
+      .clk_i  (s_ppalite_clk),
+      .rst_n_i(s_leaf_rst_n[23]),
+      .dat_i  (s_dma_idle_sys),
+      .dat_o  (s_dma_idle_pclk)
   );
   cdc_sync #(
       .STAGE     (2),
@@ -823,7 +907,7 @@ axi4_error_slave #(
       .PllPresent (TinyPllPresent),
       .PllProfiles(TinyPllPresent),
       .XinHzValue (`SOC_EXT_CLK_HZ),
-      .TargetMask (17'h17fff)
+      .TargetMask (18'h37fff)
   ) u_sysctrl (
       .clk_i           (s_exec_clk),
       .rst_n_i         (s_sysctrl_rst_n),
@@ -850,6 +934,7 @@ axi4_error_slave #(
       .periph_request_o(s_periph_request),
       .clkout_control_o(s_clkout_control),
       .clkout_idle_i   (s_clkout_idle_ref),
+      .camera_active_i (s_ppalite_active_ref),
       .clock_fault_i   (s_clock_fault),
       .clock_current_i (s_backend_current),
       .pll_locked_i    (s_pll_locked),
@@ -883,7 +968,7 @@ axi4_error_slave #(
       .ref_clk_i        (clk_i),
       .rst_n_i          (rst_n_i),
       .idle_i           (s_clock_safe),
-      .clients_idle_i   ((&s_periph_idle_ref[16:1]) && s_xpi_idle_ref),
+      .clients_idle_i   ((&s_periph_idle_ref[17:1]) && s_xpi_idle_ref),
       .warm_reset_i     (u_wdg_if.reset_req_o),
       .system_request_i (s_system_reset),
       .command_ack_i    (s_cpu_clock_idle && s_target_idle[`RETROSOC_TINY__TARGET_SYSCTRL]),
@@ -1053,31 +1138,198 @@ cdc_sync #(
       .apb4(u_wdg_apb4_if),
       .wdg (u_wdg_if)
   );
-  /* verilator lint_off PINCONNECTEMPTY */
+  assign s_ppa_dma_idle = s_dma_lifecycle_idle && s_dma_tcd_idle &&
+      s_dma_admission_idle && s_dma_idle_pclk;
+  ppalite_route_ctrl u_ppalite_route (
+      .clk_i                     (s_ppalite_clk),
+      .rst_n_i                   (s_leaf_rst_n[23]),
+      .dvp_apb4                  (u_dvp_apb4_if),
+      .source_apb4               (u_dvp_source_apb4_if),
+      .route_write_i             (s_ppa_route_write),
+      .route_value_i             (s_ppa_route_value),
+      .processing_format_i       (s_ppa_processing_format),
+      .capture_state_i           (s_ppa_capture_state),
+      .capture_arm_i             (s_ppa_capture_arm),
+      .capture_close_i           (s_ppa_capture_close),
+      .processor_idle_i          (s_ppa_processor_idle),
+      .route_o                   (s_ppa_route),
+      .route_idle_o              (s_ppa_route_idle),
+      .route_change_o            (s_ppa_route_change),
+      .dma_idle_i                (s_ppa_dma_idle),
+      .dma_start_i               (s_ppa_dma_start),
+      .transport_idle_i          (s_ppa_transport_idle),
+      .transport_admitted_i      (s_ppa_transport_admitted),
+      .stream_isolated_i         (s_ppa_stream_isolated),
+      .source_config_i           (s_dvp_source_cfg),
+      .source_config_pending_i   (s_dvp_source_cfg_pending),
+      .source_command_pending_i  (s_dvp_source_cmd_pending),
+      .source_flush_pending_i    (s_dvp_source_flush_pending),
+      .source_status_valid_i     (s_dvp_source_stat_valid),
+      .source_capture_idle_i     (s_dvp_source_capture_idle),
+      .source_active_i           (s_dvp_source_active),
+      .source_enabled_i          (s_dvp_source_enabled),
+      .source_requested_enabled_i(s_dvp_source_requested_enabled),
+      .source_fifo_empty_i       (s_dvp_source_fifo_empty),
+      .source_lifecycle_idle_i   (s_dvp_idle),
+      .source_frame_stats_i      (s_dvp_source_frame_stats),
+      .source_frame_stats_valid_i(s_dvp_source_frame_stats_valid),
+      .source_error_i            (s_dvp_source_error),
+      .source_ready_o            (s_ppa_source_ready),
+      .source_quiet_o            (s_ppa_source_quiet),
+      .source_done_o             (s_ppa_source_done),
+      .source_stopped_o          (s_ppa_source_stopped),
+      .source_sequence_o         (s_ppa_source_sequence),
+      .source_words_o            (s_ppa_source_words),
+      .source_geometry_o         (s_ppa_source_geometry),
+      .source_err_o              (s_ppa_source_err),
+      .source_config_err_o       (s_ppa_source_config_err),
+      .source_stats_err_o        (s_ppa_source_stats_err),
+      .dvp_valid_i               (u_dvp_rx_axis_if.tvalid),
+      .dvp_ready_o               (u_dvp_rx_axis_if.tready),
+      .dvp_data_i                (u_dvp_rx_axis_if.tdata),
+      .dvp_keep_i                (u_dvp_rx_axis_if.tkeep),
+      .dvp_strb_i                (u_dvp_rx_axis_if.tstrb),
+      .dvp_id_i                  (u_dvp_rx_axis_if.tid),
+      .dvp_dest_i                (u_dvp_rx_axis_if.tdest),
+      .dvp_user_i                (u_dvp_rx_axis_if.tuser),
+      .dvp_last_i                (u_dvp_rx_axis_if.tlast),
+      .process_valid_o           (s_ppa_process_valid),
+      .process_ready_i           (s_ppa_process_ready),
+      .process_data_o            (s_ppa_process_data),
+      .process_keep_o            (s_ppa_process_keep),
+      .process_strb_o            (s_ppa_process_strb),
+      .process_id_o              (s_ppa_process_id),
+      .process_dest_o            (s_ppa_process_dest),
+      .process_user_o            (s_ppa_process_user),
+      .process_last_o            (s_ppa_process_last),
+      .processed_valid_i         (s_ppa_processed_valid),
+      .processed_ready_o         (s_ppa_processed_ready),
+      .processed_data_i          (s_ppa_processed_data),
+      .processed_keep_i          (s_ppa_processed_keep),
+      .processed_strb_i          (s_ppa_processed_strb),
+      .processed_id_i            (s_ppa_processed_id),
+      .processed_dest_i          (s_ppa_processed_dest),
+      .processed_user_i          (s_ppa_processed_user),
+      .processed_last_i          (s_ppa_processed_last),
+      .dma_valid_o               (u_ppalite_rx_axis_if.tvalid),
+      .dma_ready_i               (u_ppalite_rx_axis_if.tready),
+      .dma_data_o                (u_ppalite_rx_axis_if.tdata),
+      .dma_keep_o                (u_ppalite_rx_axis_if.tkeep),
+      .dma_strb_o                (u_ppalite_rx_axis_if.tstrb),
+      .dma_id_o                  (u_ppalite_rx_axis_if.tid),
+      .dma_dest_o                (u_ppalite_rx_axis_if.tdest),
+      .dma_user_o                (u_ppalite_rx_axis_if.tuser),
+      .dma_last_o                (u_ppalite_rx_axis_if.tlast)
+  );
   axi4s_dvp u_dvp (
       .clk_i                     (s_dvp_clk),
       .rst_n_i                   (s_dvp_rst_n),
-      .apb4                      (u_dvp_apb4_if),
+      .apb4                      (u_dvp_source_apb4_if),
       .rx_axis                   (u_dvp_rx_axis_if),
       .dvp                       (u_dvp_if),
       .irq_o                     (s_dvp_irq),
       .lifecycle_idle_o          (s_dvp_idle),
       .lifecycle_reset_ready_o   (s_dvp_reset_ready),
-      .source_config_o           (),
-      .source_config_pending_o   (),
-      .source_command_pending_o  (),
-      .source_flush_pending_o    (),
-      .source_status_valid_o     (),
-      .source_capture_idle_o     (),
-      .source_active_o           (),
-      .source_enabled_o          (),
-      .source_requested_enabled_o(),
-      .source_fifo_empty_o       (),
-      .source_frame_stats_o      (),
-      .source_frame_stats_valid_o(),
-      .source_error_o            ()
+      .source_config_o           (s_dvp_source_cfg),
+      .source_config_pending_o   (s_dvp_source_cfg_pending),
+      .source_command_pending_o  (s_dvp_source_cmd_pending),
+      .source_flush_pending_o    (s_dvp_source_flush_pending),
+      .source_status_valid_o     (s_dvp_source_stat_valid),
+      .source_capture_idle_o     (s_dvp_source_capture_idle),
+      .source_active_o           (s_dvp_source_active),
+      .source_enabled_o          (s_dvp_source_enabled),
+      .source_requested_enabled_o(s_dvp_source_requested_enabled),
+      .source_fifo_empty_o       (s_dvp_source_fifo_empty),
+      .source_frame_stats_o      (s_dvp_source_frame_stats),
+      .source_frame_stats_valid_o(s_dvp_source_frame_stats_valid),
+      .source_error_o            (s_dvp_source_error)
   );
-  /* verilator lint_on PINCONNECTEMPTY */
+  apb4_ppalite #(
+      .ExternalRoute  (1'b1),
+      .CapabilityValue(32'h0000_03ff)
+  ) u_ppalite (
+      .clk_i                (s_ppalite_clk),
+      .rst_n_i              (s_ppalite_rst_n),
+      .clock_hz_i           (s_pclk_report_q),
+      .route_idle_i         (s_ppa_route_idle),
+      .route_i              (s_ppa_route),
+      .route_change_i       (s_ppa_route_change),
+      .route_write_o        (s_ppa_route_write),
+      .route_value_o        (s_ppa_route_value),
+      .processing_format_o  (s_ppa_processing_format),
+      .job_destination_o    (s_ppa_job_destination),
+      .job_transport_bytes_o(s_ppa_job_transport_bytes),
+      .capture_state_o      (s_ppa_capture_state),
+      .capture_arm_request_o(s_ppa_capture_arm_request),
+      .capture_arm_o        (s_ppa_capture_arm),
+      .capture_release_o    (s_ppa_capture_release),
+      .capture_close_o      (s_ppa_capture_close),
+      .processor_idle_o     (s_ppa_processor_idle),
+      .source_ready_i       (s_ppa_source_ready),
+      .source_quiet_i       (s_ppa_source_quiet),
+      .source_done_i        (s_ppa_source_done),
+      .source_stopped_i     (s_ppa_source_stopped),
+      .source_sequence_i    (s_ppa_source_sequence),
+      .source_words_i       (s_ppa_source_words),
+      .source_geometry_i    (s_ppa_source_geometry),
+      .source_err_i         (s_ppa_source_err),
+      .source_config_err_i  (s_ppa_source_config_err),
+      .source_stats_err_i   (s_ppa_source_stats_err),
+      .transport_ready_i    (s_ppa_transport_ready),
+      .transport_idle_i     (s_ppa_transport_idle),
+      .transport_done_i     (s_ppa_transport_done),
+      .transport_err_i      (s_ppa_transport_err),
+      .in_valid_i           (s_ppa_process_valid),
+      .in_ready_o           (s_ppa_process_ready),
+      .in_data_i            (s_ppa_process_data),
+      .in_keep_i            (s_ppa_process_keep),
+      .in_strb_i            (s_ppa_process_strb),
+      .in_id_i              (s_ppa_process_id),
+      .in_dest_i            (s_ppa_process_dest),
+      .in_user_i            (s_ppa_process_user),
+      .in_last_i            (s_ppa_process_last),
+      .out_valid_o          (s_ppa_processed_valid),
+      .out_ready_i          (s_ppa_processed_ready),
+      .out_data_o           (s_ppa_processed_data),
+      .out_keep_o           (s_ppa_processed_keep),
+      .out_strb_o           (s_ppa_processed_strb),
+      .out_last_o           (s_ppa_processed_last),
+      .out_id_o             (s_ppa_processed_id),
+      .out_dest_o           (s_ppa_processed_dest),
+      .out_user_o           (s_ppa_processed_user),
+      .irq_o                (s_ppalite_irq),
+      .apb4                 (u_ppalite_apb4_if)
+  );
+  ppalite_dma_guard #(
+      .NumChannels  (8),
+      .MaxBurstBeats(4)
+  ) u_ppalite_dma_guard (
+      .clk_i                (s_dma_clk),
+      .rst_n_i              (s_leaf_rst_n[23]),
+      .host_apb4            (u_dma_apb4_if),
+      .dma_apb4             (u_dma_guarded_apb4_if),
+      .route_i              (s_ppa_route),
+      .capture_state_i      (s_ppa_capture_state),
+      .capture_arm_request_i(s_ppa_capture_arm_request),
+      .capture_release_i    (s_ppa_capture_release),
+      .capture_close_i      (s_ppa_capture_close),
+      .job_destination_i    (s_ppa_job_destination),
+      .job_transport_bytes_i(s_ppa_job_transport_bytes),
+      .dma_rst_n_i          (s_dma_rst_n),
+      .dma_ready_i          (s_dma_cdc_ready),
+      .dma_start_pending_i  (s_dvp_dma_start_pending),
+      .dma_busy_i           (s_dvp_dma_busy),
+      .dma_done_i           (s_dvp_dma_done),
+      .dma_bytes_done_i     (s_dvp_dma_bytes_done),
+      .dma_error_status_i   (s_dvp_dma_err_stat),
+      .dma_start_o          (s_ppa_dma_start),
+      .transport_ready_o    (s_ppa_transport_ready),
+      .transport_idle_o     (s_ppa_transport_idle),
+      .transport_admitted_o (s_ppa_transport_admitted),
+      .transport_done_o     (s_ppa_transport_done),
+      .transport_err_o      (s_ppa_transport_err),
+      .stream_isolated_o    (s_ppa_stream_isolated)
+  );
   apb4_dma #(
       .NumChannels          (8),
       .MaxBurstBeats        (16),
@@ -1088,20 +1340,22 @@ cdc_sync #(
       .EnableStreams        (1'b1),
       .EnableSpi            (1'b1),
       .EnableOriginQualifier(1'b1),
+      .EnablePpaliteGuard   (1'b1),
       .SpiTxAddress         (32'h1001_d054),
       .SpiRxAddress         (32'h1001_d058)
   ) u_dma (
-      .lifecycle_idle_o   (s_periph_idle[9]),
+      .lifecycle_idle_o   (s_dma_lifecycle_idle),
       .clk_i              (s_dma_clk),
       .rst_n_i            (s_dma_rst_n),
+      .ppalite_route_i    (s_ppa_route),
       .dma_xfer_done_o    (s_dma_done),
       .irq_o              (s_dma_irq),
       .hw_trg             (u_dma_req_if),
-      .apb4               (u_dma_apb4_if),
+      .apb4               (u_dma_guarded_apb4_if),
       .axi4               (u_dma_pclk_axi4_if),
       .i2s_tx_axis        (u_i2s_tx_axis_if),
       .i2s_rx_axis        (u_i2s_rx_axis_if),
-      .dvp_rx_axis        (u_dvp_rx_axis_if),
+      .dvp_rx_axis        (u_ppalite_rx_axis_if),
       .crypto_in_axis     (u_crypto_tx_axis_if),
       .crypto_out_axis    (u_crypto_rx_axis_if),
       .spi_admit_ready_i  (s_spi_admit_ready),
@@ -1109,7 +1363,13 @@ cdc_sync #(
       .spi_credit_retire_o(s_spi_credit_retire),
       .spi_start_pending_o(s_spi_dma_start_pending),
       .spi_status_o       (s_spi_dma_status),
-      .spi_error_o        (s_spi_dma_error)
+      .spi_error_o        (s_spi_dma_error),
+      .tcd_idle_o         (s_dma_tcd_idle),
+      .dvp_start_pending_o(s_dvp_dma_start_pending),
+      .dvp_busy_o         (s_dvp_dma_busy),
+      .dvp_done_o         (s_dvp_dma_done),
+      .dvp_bytes_done_o   (s_dvp_dma_bytes_done),
+      .dvp_error_status_o (s_dvp_dma_err_stat)
   );
   assign u_dma_req_if.i2s_tx_proc     = !s_i2s_tx_stall;
   assign u_dma_req_if.i2s_rx_proc     = !s_i2s_rx_stall;
@@ -1123,7 +1383,8 @@ cdc_sync #(
   assign u_dma_req_if.i2c0_rx_proc    = !s_dma_stall[5];
   assign u_dma_req_if.i2c1_tx_proc    = 1'b0;
   assign u_dma_req_if.i2c1_rx_proc    = 1'b0;
-  assign s_periph_idle[14]            = s_dvp_idle && s_dma_idle_sys;
+  assign s_periph_idle[9]             = s_dma_lifecycle_idle && !s_ppalite_active;
+  assign s_periph_idle[14]            = s_dvp_idle && s_dma_idle_sys && !s_ppalite_active;
 
   // Host logic remains SAFE24. Audio reset waits for its own clock, never CPU boot.
   tc_clk_buf u_audio_clock_buffer (

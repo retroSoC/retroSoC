@@ -139,12 +139,14 @@ and arithmetic SCK12/24/30 MHz ceilings are not qualified pad rates. See the
 [SPI evidence ledger](../../docs/ip/spi-verification.md) for pending gates.
 
 The separately approved [PPALite extension](../../docs/ip/ppalite.md) is a
-future standard camera-inline PCLK processor, with APB4 `0x1001E000..0x1001EFFF`,
+standard camera-inline PCLK processor, with APB4 `0x1001E000..0x1001EFFF`,
 IRQ27 and RCU target17. It performs YUV Y extraction/gray display mapping,
 RGB565 ordering, fixed1/2/4 sampling and row-aligned packing after the existing
 DVP CDC FIFO. RAW remains default; PROCESS exclusively uses the same
 DVP_RX11/DMA2 path. No Pad/pinmux, user-SRAM, DMA request/channel or AXI-owner
-change is made. Full source/route/lifecycle wiring is required before capability.
+change is made. P3 wires the source/route guards, private direct-DMA2 admission,
+lifecycle protection and bounded SDK; P4/P5 application and physical evidence
+remain separate.
 
 `PPALITE-P0..P5` preserves prior phases. P2 must close or reuse qualified DVP
 error/statistic/snapshot/CDC fixes, retaining its ABI and512 B payload FIFO.
@@ -152,7 +154,10 @@ P3 depends on applicable R2-P6/P7, P4 on R2-P8/P9 and display's SPI stages.
 RAW/PROCESS changes require source/processor and all-DMA quiescence; repeated
 frames in a fixed PROCESS route do not stop unrelated channels. Completion
 requires source integrity, exact padded layout and final memory responses,
-not PIPE_DONE alone. Missing-clock cleanup retains failed ownership.
+not PIPE_DONE alone. Unowned RAW global clock quiesce uses DVP lifecycle idle,
+so absent PIXCLK does not block unrelated global clock switching. Local PPALite
+gate/reset additionally requires SOURCE_QUIET; PROCESS and capture cleanup
+still require source acknowledgement and retain failed ownership.
 See the [PPALite ledger](../../docs/ip/ppalite-verification.md); full product
 qualification requires the same PPALite/PIO/SPI-inclusive source and netlist.
 

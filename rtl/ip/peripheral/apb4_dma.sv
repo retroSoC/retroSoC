@@ -20,6 +20,7 @@ module apb4_dma #(
     parameter bit          EnableStreams         = 1'b1,
     parameter bit          EnableSpi             = 1'b0,
     parameter bit          EnableOriginQualifier = 1'b0,
+    parameter bit          EnablePpaliteGuard    = 1'b0,
     parameter logic [31:0] SpiTxAddress          = 32'd0,
     parameter logic [31:0] SpiRxAddress          = 32'd0
 ) (
@@ -27,6 +28,7 @@ module apb4_dma #(
     output logic lifecycle_idle_o,
     input  logic          clk_i,
     input  logic          rst_n_i,
+    input  logic          ppalite_route_i,
     output logic          dma_xfer_done_o,
     output logic          irq_o,
     dma_req_if.dut        hw_trg,
@@ -42,7 +44,13 @@ module apb4_dma #(
     output logic [1:0]    spi_credit_retire_o,
     output logic [1:0]    spi_start_pending_o,
     output logic [3:0]    spi_status_o,
-    output logic          spi_error_o
+    output logic          spi_error_o,
+    output logic          tcd_idle_o,
+    output logic          dvp_start_pending_o,
+    output logic          dvp_busy_o,
+    output logic          dvp_done_o,
+    output logic [31:0]   dvp_bytes_done_o,
+    output logic [31:0]   dvp_error_status_o
     // verilog_format: on
 );
   logic [     NumChannels*32-1:0] s_ch_cfg;
@@ -146,6 +154,7 @@ module apb4_dma #(
       .RequestMask          (RequestMask),
       .EnableSpi            (EnableSpi),
       .EnableOriginQualifier(EnableOriginQualifier),
+      .EnablePpaliteGuard   (EnablePpaliteGuard),
       .SpiTxAddress         (SpiTxAddress),
       .SpiRxAddress         (SpiRxAddress),
       .EnableStreams        (EnableStreams),
@@ -195,6 +204,7 @@ module apb4_dma #(
       .first_error_status_o (s_first_err_stat),
       .first_error_addr_hi_o(s_first_err_addr_hi),
       .request_status_o     (s_req_stat),
+      .ppalite_route_i      (ppalite_route_i),
       .xpi_xfer_done_o      (dma_xfer_done_o),
       .req                  (hw_trg),
       .axi4                 (axi4),
@@ -211,6 +221,29 @@ module apb4_dma #(
       .spi_error_o          (spi_error_o)
   );
   logic s_bus_busy;
+  logic s_tcd_idle;
   assign s_bus_busy       = axi4.awvalid || axi4.arvalid || axi4.wvalid;
   assign lifecycle_idle_o = !(|s_busy) && !(|s_start) && !s_bus_busy;
+  always_comb begin
+    s_tcd_idle = 1'b1;
+    for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      if ((s_tcd_head[channel*32+:32] != 32'd0) && (s_tcd_count[channel*32+:32] != 32'd0)) begin
+        s_tcd_idle = 1'b0;
+      end
+    end
+  end
+  assign tcd_idle_o = s_tcd_idle;
+  if (NumChannels > 2) begin : gen_dvp_sideband
+    assign dvp_start_pending_o = s_start[2];
+    assign dvp_busy_o          = s_busy[2];
+    assign dvp_done_o          = s_done[2];
+    assign dvp_bytes_done_o    = s_bytes_done[2*32+:32];
+    assign dvp_error_status_o  = s_err_stat[2*32+:32];
+  end else begin : gen_no_dvp_sideband
+    assign dvp_start_pending_o = 1'b0;
+    assign dvp_busy_o          = 1'b0;
+    assign dvp_done_o          = 1'b0;
+    assign dvp_bytes_done_o    = 32'd0;
+    assign dvp_error_status_o  = 32'd0;
+  end
 endmodule

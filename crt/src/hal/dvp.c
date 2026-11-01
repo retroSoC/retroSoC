@@ -69,6 +69,22 @@ static void rs_dvp_write(uint32_t offset, uint32_t value) {
 #endif
 }
 
+static rs_status_t rs_dvp_raw_route_allowed(void) {
+#if defined(RS_SOC_HAS_PPALITE) && (RS_SOC_HAS_PPALITE != 0U)
+#ifdef RS_PPALITE_TEST_MMIO
+    extern volatile uint32_t rs_ppalite_test_mmio[1024];
+    if (rs_ppalite_test_mmio[UINT32_C(0x014) / 4U] != 0U) {
+        return RS_ENOTSUP;
+    }
+#else
+    if (RS_SOC_REG32(RS_SOC_APB4_PPALITE_BASE, UINT32_C(0x014)) != 0U) {
+        return RS_ENOTSUP;
+    }
+#endif
+#endif
+    return RS_OK;
+}
+
 static rs_status_t rs_dvp_clear_errors(rs_timeout_t timeout) {
     if (rs_dvp_read(RS_DVP_ERROR_STATUS_OFFSET) == 0U) {
         return RS_OK;
@@ -98,8 +114,12 @@ static rs_status_t rs_dvp_rearm(rs_timeout_t timeout) {
         rs_dvp_read(RS_DVP_ERROR_STATUS_OFFSET) != 0U) {
         return RS_EIO;
     }
-    rs_dvp_write(RS_DVP_CTRL_OFFSET, rs_dvp_read(RS_DVP_CTRL_OFFSET) & ~RS_DVP_CTRL_ENABLE_MASK);
-    return rs_dvp_wait_disabled(timeout);
+    if ((rs_dvp_read(RS_DVP_CTRL_OFFSET) & RS_DVP_CTRL_ENABLE_MASK) != 0U) {
+        rs_dvp_write(RS_DVP_CTRL_OFFSET,
+                     rs_dvp_read(RS_DVP_CTRL_OFFSET) & ~RS_DVP_CTRL_ENABLE_MASK);
+        return rs_dvp_wait_disabled(timeout);
+    }
+    return RS_OK;
 }
 
 static bool rs_dvp_config_valid(const rs_dvp_config_t *config) {
@@ -173,6 +193,23 @@ static rs_status_t rs_dvp_start_bounded(rs_timeout_t timeout) {
 
 rs_status_t rs_dvp_start(void) {
     return rs_dvp_start_bounded(RS_TIMEOUT_DEFAULT);
+}
+
+rs_status_t rs_dvp_start_with_timeout(rs_timeout_t timeout) {
+    return rs_dvp_start_bounded(timeout);
+}
+
+rs_status_t rs_dvp_stop(rs_timeout_t timeout) {
+    const uint32_t required = RS_DVP_STATUS_FIFO_EMPTY_MASK;
+    rs_dvp_write(RS_DVP_CTRL_OFFSET, rs_dvp_read(RS_DVP_CTRL_OFFSET) & ~RS_DVP_CTRL_ENABLE_MASK);
+    while (timeout-- != 0U) {
+        const uint32_t status = rs_dvp_read(RS_DVP_STATUS_OFFSET);
+        if (((status & RS_DVP_STATUS_ENABLE_MASK) == 0U) &&
+            ((status & RS_DVP_STATUS_ACTIVE_MASK) == 0U) && ((status & required) == required)) {
+            return (rs_dvp_read(RS_DVP_ERROR_STATUS_OFFSET) == 0U) ? RS_OK : RS_EIO;
+        }
+    }
+    return RS_ETIMEOUT;
 }
 
 rs_status_t rs_dvp_abort(void) {
@@ -287,7 +324,12 @@ rs_status_t rs_dvp_capture_dma(uintptr_t destination, uint32_t word_capacity,
     rs_status_t result;
     uint32_t words;
     uint32_t pixels;
-    const uint32_t previous_frame = rs_dvp_read(RS_DVP_FRAME_COUNT_OFFSET);
+    uint32_t previous_frame;
+    result = rs_dvp_raw_route_allowed();
+    if (result != RS_OK) {
+        return result;
+    }
+    previous_frame = rs_dvp_read(RS_DVP_FRAME_COUNT_OFFSET);
     result = rs_dvp_layout(destination, word_capacity, true, &words, &pixels);
     if (result != RS_OK) {
         return result;
@@ -357,6 +399,10 @@ rs_status_t rs_dvp_capture_pio(uintptr_t destination, uint32_t word_capacity,
     uint32_t words = 0U;
     uint32_t layout_words;
     uint32_t pixels;
+    const rs_status_t route_status = rs_dvp_raw_route_allowed();
+    if (route_status != RS_OK) {
+        return route_status;
+    }
     if (rs_dma_get_status(RS_DVP_DMA_CHANNEL, &dma_status) != RS_OK || dma_status.busy ||
         dma_status.suspended) {
         return RS_EIO;

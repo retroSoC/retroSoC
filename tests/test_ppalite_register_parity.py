@@ -47,9 +47,18 @@ def test_exact_dictionary_offsets_and_values():
         assert rtl["STATE_" + name] == index
 
 
-def test_no_product_integration_or_hal_is_advertised():
-    assert not (ROOT / "crt/include/retrosoc/hal/ppalite.h").exists()
-    assert not (ROOT / "crt/src/hal/ppalite.c").exists()
+def test_tiny_integration_is_explicit_and_capability_is_bounded():
+    assert (ROOT / "crt/include/retrosoc/hal/ppalite.h").is_file()
+    assert (ROOT / "crt/src/hal/ppalite.c").is_file()
     for profile in ("ics55-tiny.mk", "ihp130-tiny.mk"):
         assert "PPALITE" not in (ROOT / "configs/ci" / profile).read_text().upper()
-    assert all("/ppalite/" not in path.read_text() for path in (ROOT / "rtl/tiny/filelist").glob("*.fl"))
+    filelists = "\n".join(path.read_text() for path in (ROOT / "rtl/tiny/filelist").glob("*.fl"))
+    assert "/ip/ppalite/apb4_ppalite.sv" in filelists
+    assert "/top/ppalite_route_ctrl.sv" in filelists
+    assert "/top/ppalite_dma_guard.sv" in filelists
+    top = (ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text()
+    assert ".CapabilityValue(32'h0000_03ff)" in top
+    assert "u_ppalite_dma_guard" in top
+    assert "s_ppalite_irq" in top
+    rtl, c = mirrors()
+    assert rtl["APB4_CAPABILITY_VALUE"] == c["APB4_CAPABILITY_VALUE"] == 0xFF
