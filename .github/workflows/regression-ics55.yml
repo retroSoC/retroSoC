@@ -22,3 +22,4 @@ jobs:
       pdk: ICS55
       profile: configs/ci/ics55.mk
       retention_days: 30
+      timeout_minutes: 480
