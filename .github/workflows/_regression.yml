@@ -40,6 +40,21 @@ on:
         required: false
         default: false
         type: boolean
+      tiny_p7_iverilog:
+        description: Include, exclude, or isolate the Tiny P7 Icarus acceptance command
+        required: false
+        default: include
+        type: string
+      tiny_p7_iverilog_timeout_seconds:
+        description: Wall timeout for the Tiny P7 Icarus acceptance command
+        required: false
+        default: 14400
+        type: number
+      artifact_suffix:
+        description: Optional suffix for the uploaded report artifact name
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -129,12 +144,14 @@ jobs:
         run: >-
           python3 scripts/regress.py --root . --suite "${{ inputs.suite }}"
           --pdk "${{ inputs.pdk }}" --behavioral-only
+          --tiny-p7-iverilog "${{ inputs.tiny_p7_iverilog }}"
+          --tiny-p7-iverilog-timeout-seconds "${{ inputs.tiny_p7_iverilog_timeout_seconds }}"
 
       - name: Upload reports and structured results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          name: ${{ inputs.suite }}-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ inputs.suite }}-regression-${{ github.run_id }}-${{ github.run_attempt }}${{ inputs.artifact_suffix }}
           path: |
             build/**/meta/*.json
             build/**/formal/**/*.sby
