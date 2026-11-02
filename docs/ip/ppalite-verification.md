@@ -6,6 +6,53 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
+## PPALITE-P3 human acceptance (2026-11-02)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `07cde48e11ed504e0b939d286bf0e0dfcdb924d6` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41392640690, development-environment 41392640659, smoke 41392640732, gf180
+41392640716, sky130 41392640801, ics55 41392640714, ihp130 41392640723).
+The final independent reviews of the phase and the CI isolation fix found no
+actionable issues.
+
+PPALITE-P3 delivers Tiny PPALite APB/IRQ27/RCU17 integration, exclusive
+request-11/DMA2 PROCESS admission, complete-job drain and lifecycle handling,
+and bounded SDK operations without adding a DMA encoding, master or channel.
+P3-focused ICS55/IHP130 Verilator and ICS55 Icarus acceptance reports
+`PPALITE_P3_RESULT code=0 valid=1 transport=32` and `SIM_TEST_PASS Tiny
+cycles=1915584`. Final evidence roots are
+`build/ics55-tiny-2026-11-01-14-32-8d025610711f/` and
+`build/ihp130-tiny-2026-11-01-14-43-6879efac2bd8/`. Both final PR regressions
+pass Verilator and Icarus at 4124615 cycles for ICS55 and 3880463 cycles for
+IHP130; their boot netlist simulations pass at 36449 and 36069 cycles
+respectively. The final IHP130 nightly regression also passes. Mini evidence
+is limited to shared-IP behavioral compatibility, not a PPALite rollout.
+
+The IHP130 CI regression completes its main job 125107168300 and isolated
+Tiny-P7 Icarus job 125107168472 successfully. The isolated job preserves the
+6000000-cycle limit and forbidden-marker verdicts, and reports `SIM_TEST_PASS
+Tiny cycles=3880463` with `P7_LIFECYCLE_PASS gated_cycles=71619
+dma_responses_while_gated=64 warm_resets=1`. Its evidence is artifact
+`pr-regression-41392640723-1-tiny-p7-iverilog` (artifact 13123579921); the main
+artifact is `pr-regression-41392640723-1` (artifact 13119804781).
+
+Full host Pytest passed 2496 tests with one optional `pypdf` skip. The focused
+script-tool suite passed 90 tests; Ruff, YAML, Actionlint and affected
+regression dry-runs pass. Final `check-warnings` passes on both PDKs; RTL lint
+also records non-blocking warning observations, and metrics remain in observe
+mode. The metrics records report top area 2820068.104705 with 503770 top cells
+for ICS55, and 15568735.963242 with 531677 top cells for IHP130.
+`phase_accepted=false` remains in generated collector records while acceptance
+is recorded here.
+
+Observational SAFE24 STA retains negative WNS/TNS. No timing-closure, physical
+signoff, qualified operating-frequency or silicon-validation claim is made.
+This acceptance is limited to frozen P3 integration: camera/memory/display
+application qualification remains P4, and complete-product timing and physical
+qualification remains the joint P5 campaign.
+
 ## PPALITE-P2 human acceptance (2026-10-31)
 
 The maintainer's standing development goal explicitly authorizes automatic
