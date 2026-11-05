@@ -7,7 +7,7 @@ module tiny_sysctrl #(
     parameter bit                 PllPresent  = 1'b0,
     parameter bit                 PllProfiles = 1'b0,
     parameter int unsigned        XinHzValue  = 24_000_000,
-    parameter logic        [16:0] TargetMask  = 17'd0
+    parameter logic        [17:0] TargetMask  = 18'd0
 ) (
     input  logic                clk_i,
     input  logic                rst_n_i,
@@ -37,13 +37,14 @@ module tiny_sysctrl #(
     output logic         [31:0] clock_timeout_o,
     input  logic                periph_done_i,
     input  logic         [ 4:0] periph_fault_i,
-    input  logic         [16:0] gate_actual_i,
-    input  logic         [16:0] reset_done_i,
+    input  logic         [17:0] gate_actual_i,
+    input  logic         [17:0] reset_done_i,
     output logic                periph_apply_o,
     output logic                periph_reset_o,
-    output logic         [16:0] periph_request_o,
+    output logic         [17:0] periph_request_o,
     output logic         [31:0] clkout_control_o,
     input  logic                clkout_idle_i,
+    input  logic                camera_active_i,
     output logic                perf_enable_o,
     output logic                perf_clear_o,
     output logic                test_done_o,
@@ -106,7 +107,7 @@ module tiny_sysctrl #(
   logic [1:0] s_clk_latched_d, s_clk_latched_q;
   logic s_system_reset_d, s_system_reset_q;
   logic s_periph_apply_d, s_periph_apply_q, s_periph_reset_d, s_periph_reset_q;
-  logic [16:0] s_periph_mask_d, s_periph_mask_q;
+  logic [17:0] s_periph_mask_d, s_periph_mask_q;
   logic [3:0] s_active_cmd_d, s_active_cmd_q;
   logic s_clock_apply_d, s_clock_apply_q;
   logic s_rcu_busy_d, s_rcu_busy_q;
@@ -310,7 +311,7 @@ module tiny_sysctrl #(
         s_rcu_read_data = s_gate_req_q;
         s_rcu_writable  = 1'b1;
       end
-      GateStatus: s_rcu_read_data = {15'd0, gate_actual_i};
+      GateStatus: s_rcu_read_data = {14'd0, gate_actual_i};
       ResetRequest: begin
         s_rcu_read_data = s_rst_req_q;
         s_rcu_writable  = 1'b1;
@@ -338,7 +339,7 @@ module tiny_sysctrl #(
       MemHz: s_rcu_read_data = s_mem_hz_q;
       PclkHz: s_rcu_read_data = s_pclk_hz_q;
       ClintHz: s_rcu_read_data = 32'd1_000_000;
-      TargetCapability: s_rcu_read_data = {15'd0, TargetMask};
+      TargetCapability: s_rcu_read_data = {14'd0, TargetMask};
       ClkoutControl: begin
         s_rcu_read_data = s_clkout_control_q;
         s_rcu_writable  = 1'b1;
@@ -354,9 +355,9 @@ module tiny_sysctrl #(
       ClockRequest: s_rcu_config_err = s_rcu_busy_q || u_rcu_dst.pwdata[31:2] != 0;
       TimeoutRefCycles: s_rcu_config_err = s_rcu_busy_q || u_rcu_dst.pwdata == 0;
       GateRequest:
-      s_rcu_config_err = s_rcu_busy_q || (u_rcu_dst.pwdata & ~{15'd0, TargetMask}) != 0;
+      s_rcu_config_err = s_rcu_busy_q || (u_rcu_dst.pwdata & ~{14'd0, TargetMask}) != 0;
       ResetRequest:
-      s_rcu_config_err = s_rcu_busy_q || (u_rcu_dst.pwdata & ~{15'd0, TargetMask[16:1], 1'b0}) != 0;
+      s_rcu_config_err = s_rcu_busy_q || (u_rcu_dst.pwdata & ~{14'd0, TargetMask[17:1], 1'b0}) != 0;
       ResetCause: s_rcu_config_err = u_rcu_dst.pwdata[31:6] != 0;
       RcuFault: s_rcu_config_err = u_rcu_dst.pwdata[31:5] != 0;
       RcuIrqState, RcuIrqEnable: s_rcu_config_err = u_rcu_dst.pwdata[31:2] != 0;
@@ -364,14 +365,14 @@ module tiny_sysctrl #(
         s_rcu_config_err = s_rcu_busy_q;
         unique case (u_rcu_dst.pwdata)
           32'd1:
-          s_rcu_config_err |= s_clkout_control_q[2:0] != 0 || !clkout_idle_i ||
+          s_rcu_config_err |= camera_active_i || s_clkout_control_q[2:0] != 0 || !clkout_idle_i ||
               !(s_clk_req_q == 0 || (s_clk_req_q == 1 && !PllPresent) ||
                 (s_clk_req_q >= 2 && PllPresent && PllProfiles));
-          32'd2: s_rcu_config_err |= TargetMask == 0 || (s_gate_req_q & ~{15'd0, TargetMask}) != 0;
+          32'd2: s_rcu_config_err |= TargetMask == 0 || (s_gate_req_q & ~{14'd0, TargetMask}) != 0;
           32'd4:
           s_rcu_config_err |= s_rst_req_q == 0 ||
-              (s_rst_req_q & ~{15'd0, TargetMask[16:1], 1'b0}) != 0 ||
-              (s_rst_req_q & {15'd0, gate_actual_i}) != 0;
+              (s_rst_req_q & ~{14'd0, TargetMask[17:1], 1'b0}) != 0 ||
+              (s_rst_req_q & {14'd0, gate_actual_i}) != 0;
           32'd8: begin
           end
           default: s_rcu_config_err = 1'b1;
@@ -379,6 +380,7 @@ module tiny_sysctrl #(
       end
       ClkoutControl:
       s_rcu_config_err = s_rcu_busy_q ||
+          (camera_active_i && (u_rcu_dst.pwdata != s_clkout_control_q)) ||
           (u_rcu_dst.pwdata & 32'hff00_00f8) != 0 || u_rcu_dst.pwdata[2:0] > 4 ||
           (u_rcu_dst.pwdata[2:0] != 0 && (s_clkout_control_q[2:0] != 0 ||
            !clkout_idle_i || u_rcu_dst.pwdata[23:8] == 0 ||
@@ -436,16 +438,16 @@ module tiny_sysctrl #(
             s_rcu_busy_d       = 1'b1;
             s_active_cmd_d     = 4'd8;
           end else if (TargetMask != 0 && u_rcu_dst.pwdata == 2 &&
-                       (s_gate_req_q & ~{15'd0, TargetMask}) == 0) begin
-            s_periph_mask_d  = s_gate_req_q[16:0];
+                       (s_gate_req_q & ~{14'd0, TargetMask}) == 0) begin
+            s_periph_mask_d  = s_gate_req_q[17:0];
             s_periph_reset_d = 1'b0;
             s_periph_apply_d = 1'b1;
             s_rcu_busy_d     = 1'b1;
             s_active_cmd_d   = 4'd2;
           end else if (u_rcu_dst.pwdata == 4 && s_rst_req_q != 0 &&
-                       (s_rst_req_q & ~{15'd0, TargetMask[16:1], 1'b0}) == 0 &&
-                       (s_rst_req_q & {15'd0, gate_actual_i}) == 0) begin
-            s_periph_mask_d  = s_rst_req_q[16:0];
+                       (s_rst_req_q & ~{14'd0, TargetMask[17:1], 1'b0}) == 0 &&
+                       (s_rst_req_q & {14'd0, gate_actual_i}) == 0) begin
+            s_periph_mask_d  = s_rst_req_q[17:0];
             s_periph_reset_d = 1'b1;
             s_periph_apply_d = 1'b1;
             s_reset_done_d   = 0;
@@ -505,7 +507,7 @@ module tiny_sysctrl #(
     if (periph_done_i) begin
       s_rcu_busy_d   = 1'b0;
       s_active_cmd_d = 0;
-      s_reset_done_d = {15'd0, reset_done_i};
+      s_reset_done_d = {14'd0, reset_done_i};
       if (s_periph_reset_q && reset_done_i != 0) s_reset_cause_d[5] = 1'b1;
       s_rcu_irq_state_d[0] = 1'b1;
     end
@@ -611,7 +613,7 @@ module tiny_sysctrl #(
       .dat_o  (s_clk_latched_q)
   );
   dffr #(
-      .DATA_WIDTH(23)
+      .DATA_WIDTH(24)
   ) u_periph_command (
       .clk_i  (clk_ref_i),
       .rst_n_i(rst_ref_n_i),

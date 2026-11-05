@@ -1,0 +1,22 @@
+.program ir_tx
+.entry load_mark
+.wrap_bottom load_mark
+.wrap_top again
+.in 0, 0
+.out 0, 0
+.set 12, 1
+.tx_bits 16, right, manual
+.rx_bits 32, right, manual
+.test none, 0
+.packing 2, 0, 16
+.clock_ticks 3, stretchable
+load_mark: FIFO PULL, BLOCKING
+MOVE X, OSR
+load_space: FIFO PULL, BLOCKING
+MOVE Y, OSR
+mark: SET_PIN 1
+SET_PIN 0
+BRANCH DEC_X_NONZERO, mark
+space: SET_PIN 0
+BRANCH DEC_Y_NONZERO, space
+again: BRANCH ALWAYS, load_mark

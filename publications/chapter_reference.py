@@ -113,6 +113,14 @@ def blocks_from_markdown(text: str) -> list[dict]:
 def section_text(path: Path, titles: list[str]) -> list[dict]:
     source = path.read_text(encoding="utf-8")
     headings = list(re.finditer(r"^(#{1,6}) (.+)$", source, re.M))
+    if len(titles) != len(set(titles)):
+        raise ValueError(f"duplicate requested publication section: {path}")
+    for title in titles:
+        count = sum(head[2] == title for head in headings)
+        if count != 1:
+            raise ValueError(
+                f"publication section must match exactly once: {path}: {title!r} ({count} matches)"
+            )
     selected = []
     for index, head in enumerate(headings):
         if head[2] not in titles:
@@ -128,6 +136,38 @@ def section_text(path: Path, titles: list[str]) -> list[dict]:
     return selected
 
 
+def apply_prose_corrections(sections: list[dict], corrections: list[dict], root: Path) -> None:
+    """Reconcile selected legacy prose with explicit current-source bindings."""
+    blocks = [block for section in sections for block in section["blocks"]]
+    def normalize(text: str) -> str:
+        return re.sub(r"\s+", "", text)
+    for correction in corrections:
+        before, after = correction["before"], correction["after"]
+        if not before or not after or not correction.get("bindings"):
+            raise ValueError("prose correction requires text and executable source bindings")
+        target = correction.get("target", "paragraph")
+        if target == "paragraph":
+            matches = [(block, "text") for block in blocks
+                       if block["kind"] == "paragraph" and block["text"] == before]
+        elif target == "table_header":
+            matches = [(block["headers"], index) for block in blocks if block["kind"] == "table"
+                       for index, text in enumerate(block["headers"]) if text == before]
+        elif target == "table_cell":
+            matches = [(row, index) for block in blocks if block["kind"] == "table"
+                       for row in block["rows"] for index, text in enumerate(row) if text == before]
+        else:
+            raise ValueError("unknown prose correction target")
+        if len(matches) != 1:
+            raise ValueError(f"prose correction must match exactly one selected {target}")
+        for binding in correction["bindings"]:
+            path = (root / binding["file"]).resolve()
+            if (not path.is_relative_to(root.resolve()) or not binding["text"]
+                    or normalize(binding["text"]) not in normalize(path.read_text(encoding="utf-8"))):
+                raise ValueError(f"prose correction source binding changed: {binding['file']}")
+        container, key = matches[0]
+        container[key] = after
+
+
 def collect_chapters(registers: dict) -> dict:
     content = json.loads((ROOT / "publications/datasheets/ip-content.json").read_text())
     features = json.loads((ROOT / "publications/datasheets/features.json").read_text())
@@ -139,6 +179,8 @@ def collect_chapters(registers: dict) -> dict:
         source = ROOT / item.get("reference", registers[family]["document"])
         item["functional"] = section_text(source, item["function_sections"])
         item["software"] = section_text(source, item["software_sections"])
+        apply_prose_corrections(item["functional"] + item["software"],
+                               item.get("prose_corrections", []), ROOT)
         item["reference"] = item.get("reference", registers[family]["document"])
         item["example"] = ""
         if item.get("example_file"):

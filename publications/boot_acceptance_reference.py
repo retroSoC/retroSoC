@@ -300,6 +300,13 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
         if binding not in wait_body:
             raise ValueError("HP boot mailbox token/error matching changed")
     main, gated = split_npu_conditions(function_body(source, "main"))
+    debug_blocks = [compact(body) for condition, body in gated
+                    if condition == "defined(RS_HP_JTAG_DEBUG)"]
+    expected_debug = "if(rs_sysctrl_select_hp_debug(true)!=RS_OK){rs_hp_boot_fail(UINT8_C(20));}"
+    raw_main = compact(function_body(source, "main"))
+    if (debug_blocks != [expected_debug]
+            or raw_main.index(expected_debug) > raw_main.index("rs_sysctrl_set_hp_release(true)")):
+        raise ValueError("HP JTAG debug selection must be guarded and precede HP release")
     main = compact(main)
     phases = (
         "rs_hp_boot_read_header(&header);",
@@ -384,4 +391,5 @@ def collect_boot_acceptance(root: Path, function_body: Callable[[str, str], str]
             "rootfs_ready_only": True, "linux_ready_is_terminal": True,
             "smoke_terminal_requires_cache_handoff": True,
             "npu_p6_reuses_linux_transport": True,
+            "jtag_debug_before_release": True, "jtag_debug_failure_code": 20,
             "failure_reset_requires_no_hp_ga2d_owner": True}

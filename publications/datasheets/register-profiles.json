@@ -1807,9 +1807,7 @@
       "rtl/mini/top/resource_controller.sv"
     ],
     "parameters": {
-      "NumMasters": 8,
-      "NumTargets": 6,
-      "ResourceCount": 9
+      "ResourceCount": 10
     },
     "groups": [
       {
@@ -1828,7 +1826,7 @@
         "strip": "^",
         "base": 256,
         "stride": 32,
-        "count": 9
+        "count": 10
       }
     ],
     "support": []
@@ -1840,9 +1838,8 @@
       "rtl/mini/top/fabric_monitor.sv"
     ],
     "parameters": {
-      "NumMasters": 9,
-      "NumTargets": 6,
-      "ResourceCount": 8
+      "NumMasters": 10,
+      "NumTargets": 6
     },
     "groups": [
       {
@@ -1861,7 +1858,7 @@
         "strip": "^",
         "base": 256,
         "stride": 32,
-        "count": 9
+        "count": 10
       },
       {
         "id": "target",

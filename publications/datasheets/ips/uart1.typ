@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-uart1","C906 application console context")
 
 #import "../ip-reference.typ": ip-reference
 
@@ -18,3 +19,5 @@ a separate delivery item*.
 ])
 
 #context metadata((kind:"ip-end",id:"uart1",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-uart1")

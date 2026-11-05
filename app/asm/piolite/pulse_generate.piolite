@@ -1,0 +1,25 @@
+; Two 16-bit FIFO words program one finite HIGH then LOW pulse in ticks.
+.program pulse_generate
+.entry load_high
+.wrap_bottom load_high
+.wrap_top halt
+.in 0, 0
+.out 0, 0
+.set 2, 1
+.tx_bits 16, right, manual
+.rx_bits 32, right, manual
+.test none, 0
+.packing 2, 0, 16
+.clock_ticks 1, stretchable
+load_high: FIFO PULL, BLOCKING
+MOVE X, OSR
+load_low: FIFO PULL, BLOCKING
+MOVE Y, OSR
+prepare_high: BRANCH DEC_X_NONZERO, prepare_low
+prepare_low: BRANCH DEC_Y_NONZERO, high
+high: SET_PIN 1
+high_wait: BRANCH DEC_X_NONZERO, high_wait
+low: SET_PIN 0
+low_wait: BRANCH DEC_Y_NONZERO, low_wait
+done: SET_PIN 1
+halt: CTRL HALT

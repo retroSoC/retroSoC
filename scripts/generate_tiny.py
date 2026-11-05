@@ -18,7 +18,8 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 TINY = ROOT / "rtl/tiny"
 RCU_TARGETS = {"gpio": 1, "uart0": 2, "i2c0": 3, "timer0": 4, "timer1": 5,
                "pwm": 6, "i2s": 7, "sdio": 8, "dma": 9, "ws2812": 10,
-               "rng": 11, "crc": 12, "crypto": 13, "dvp": 14, "spi": 16}
+               "rng": 11, "crc": 12, "crypto": 13, "dvp": 14, "spi": 16,
+               "ppalite": 17}
 
 
 def read_topology(path: Path, memory_map: Path) -> dict:
@@ -43,9 +44,9 @@ def read_topology(path: Path, memory_map: Path) -> dict:
         "cpu_combined_outstanding": 1, "dma_direction_outstanding": 1,
         "sdio_direction_outstanding": 1, "target_combined_outstanding": 1,
         "sram_targets": [0, 1, 2, 3], "xpi_target": 4, "apb_target_base": 5,
-        "decode_error_target": 27, "protocol_error_target": 28, "target_count": 29,
+        "decode_error_target": 28, "protocol_error_target": 29, "target_count": 30,
     }:
-        raise ValueError("Tiny SPI-P3 requires three active owners and 29 targets")
+        raise ValueError("Tiny PPALITE-P3 requires three active owners and 30 targets")
     if document.get("irq_vector_width") != 32 or document.get("external_irq_count") != 30:
         raise ValueError("Tiny requires a 32-bit IRQ vector and 30 external inputs")
     names: set[str] = set()
@@ -65,10 +66,10 @@ def read_topology(path: Path, memory_map: Path) -> dict:
             assigned.add(region)
     if assigned != {r for r in regions if r.startswith("APB4_")}:
         raise ValueError("Tiny topology must route every APB region")
-    if len(document["apb_targets"]) != 22:
-        raise ValueError("Tiny SPI-P3 requires twenty-two independent APB targets")
+    if len(document["apb_targets"]) != 23:
+        raise ValueError("Tiny PPALITE-P3 requires twenty-three independent APB targets")
     target_names = [target["name"] for target in document["apb_targets"]]
-    if len(set(target_names)) != 22 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
+    if len(set(target_names)) != 23 or any(re.fullmatch(r"[a-z][a-z0-9_]*", name) is None
                                          for name in target_names):
         raise ValueError("Tiny APB target names must be unique identifiers")
     if sorted(item["pin"] for item in document["gpio_alt_functions"]) != list(range(32)):
@@ -150,7 +151,7 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
                  "#define RS_SOC_HAS_DVP 1U\n#define RS_SOC_DVP_DMA_CHANNEL 2U\n"
                  "#define RS_SOC_DVP_DMA_BURST_BEATS 4U\n#define RS_SOC_RNG_QUALIFIED 0U\n"
                  "#define RS_SOC_HAS_SPI 1U\n#define RS_SOC_SPI_DMA_TX 16U\n"
-                 "#define RS_SOC_SPI_DMA_RX 17U\n"
+                 "#define RS_SOC_SPI_DMA_RX 17U\n#define RS_SOC_HAS_PPALITE 1U\n"
                  f"#define RS_SOC_TECHNOLOGY_ID 0x{platform['technology']:08X}U\n"
                  f"#define RS_SOC_PLL_PRESENT {platform['pll_present']}U\n"
                  f"#define RS_SOC_GPIO_HAS_PULLS {platform['gpio_pulls']}U\n#endif\n")

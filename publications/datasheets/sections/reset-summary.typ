@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-dev-20261022-reset","Workload-specific startup and lifecycle prerequisites")
 #change-start("v05-emphasis-reset-summary","Selected body emphasis: reset summary")
 
 === Reset-State Summary and Initialization Dependencies <reset-summary>
@@ -66,3 +67,5 @@ approved physical implementation for those properties.
 
 
 #change-end("v05-emphasis-reset-summary")
+
+#change-end("v05-dev-20261022-reset")

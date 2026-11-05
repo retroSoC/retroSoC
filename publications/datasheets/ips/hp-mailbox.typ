@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-hp-mailbox","C906 mailbox software context")
 
 #import "../ip-reference.typ": ip-reference
 
@@ -17,3 +18,5 @@ Base address: #code(r.base_hex). Window size: #r.size_label. LP IRQ25 and HP ext
 ])
 
 #context metadata((kind:"ip-end",id:"hp-mailbox",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-hp-mailbox")

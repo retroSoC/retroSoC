@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-release-verification","Current CI and core-specific evidence boundaries")
+#change-start("v05-dev-20261022-evidence","Exact-source CI observation and dated historical evidence")
 #change-start("v05-emphasis-release-verification","Selected body emphasis: release verification")
 
 == Release Verification Summary <release-verification>
@@ -49,6 +51,28 @@ identified run and cannot qualify stages that it did not execute.
 }
 
 === Historical reports and current-source gaps
+The preceding source snapshot #code("3062aec09ba2"), observed at
+#code("2026-10-23T04:51:26Z"), had passing quality and smoke workflows but failed
+GF180, SKY130, ICS55 and IHP130 regression workflows. Its Docker runtime step failed
+while Nix runtime was still in progress. The subsequent reviewed commit changes
+only the Mini #code("ci_smoke") Verilator wall-time budget from 1800 to 3600 seconds
+and its contract tests; RTL, firmware and verdict-marker rules are unchanged.
+This timeout-budget correction does not itself establish a passing rerun. The
+current-commit observations above and the earlier failed runs remain separate evidence.
+#source-note("scripts/regress.py",title:"Current Mini smoke timeout selection")
+#link("https://github.com/retroSoC/retroSoC/actions/runs/39889921334")[Earlier IHP130 regression result]
+
+#ds-table("c906-evidence-boundaries",[Core-migration evidence and retained qualification boundaries],
+  ([Record],[Repository narrative / source scope],[Publication treatment]),
+  (([Earlier VexiiRiscv HP],[Pre-migration RV64, runtime and cache acceptance records.],[Historical core only; those runs do not qualify OpenC906.]),
+   ([OpenC906 runtime record],[The C906 section dated 2026-10-10 records smoke and RT-Thread verdicts, earlier bounded Linux frontiers, and later userspace /init plus terminal SIM_TEST_PASS after the write-channel fix.],[Preserve the reported progression and source identity. Matching raw run artifacts for this document commit are not attached; this is not a new local execution result.]),
+   ([OpenC906 macro-model record],[The repository records focused IHP130/ICS55/GF180 SRAM boot checks and process-specific ICG checks, including the SKY130 SRAM fallback.],[Functional-model results apply only to their recorded variants. Synthesis, netlist, STA, LEC and physical/silicon qualification remain separately required.])),
+  widths:(0.8fr,1.65fr,1.75fr))
+The historical Linux write wedge is recorded as corrected by the controlled BIU AW/W
+ordering override. Earlier bounded stops remain useful diagnostics, not the final reported
+frontier. The independent source-stalled-write timeout limitation remains documented.
+#source-note("docs/hp-rv64-validation.md",title:"C906 runtime progression, macro-model records and unrun physical gates")
+
 #ds-table("historical-accelerator-evidence",[Earlier recorded results and their publication boundary],
   ([Record],[What the repository records],[Current-source interpretation]),
   (([GA2D / 2026-09-18],[P6 directed/randomized/lifecycle tests and block-level synthesis, netlist and STA records.],[The historical 24 MHz behavioral rates are not current-product guarantees. The documented 48 MHz slow-corner block STA did not close; full-product physical closure remained pending.]),
@@ -84,12 +108,13 @@ target was not met; the NPU arithmetic peak at an assumed clock is not model thr
 #ds-table("rtl-maturity-record",[Recorded RTL maturity and qualification context],
   ([Target],[Declared stage],[Baseline / configuration],[Required evidence]),
   data.system_reference.retrieval.verification.readiness.map(r=>(r.name,r.status,
-    [#if r.baseline_revision==none {[Not recorded]} else {code(r.baseline_revision)} /
-      #if r.configuration_digest==none {[not recorded]} else {code(r.configuration_digest)}],
+    [#if r.baseline_revision==none {[Not recorded]} else {link("https://github.com/retroSoC/retroSoC/commit/"+r.baseline_revision,code(r.baseline_revision.slice(0,12)))} /
+      #if r.configuration_digest==none {[not recorded]} else {code(r.configuration_digest.slice(0,12))}],
     if r.required_evidence.len()==0 {[No evidence entries recorded]} else {str(r.required_evidence.len())+" entries"})),
   widths:(0.8fr,0.7fr,1.5fr,1fr))
 
-The declared stage is read from the repository's readiness record. Passing its schema or
+Displayed identities use twelve-character prefixes; the linked commit and source readiness
+record retain the full values. The declared stage is read from that record. Passing its schema or
 policy check does not move a target to a later stage. Publication lint, data extraction,
 link checks and PDF rendering qualify this document build only. Their results are delivered
 with the PDF rather than inserted as SoC simulation or silicon evidence.
@@ -108,3 +133,7 @@ separate coverage statements.
 #change-end("v05-refresh-ci")
 
 #change-end("v05-emphasis-release-verification")
+
+#change-end("v05-dev-20261022-evidence")
+
+#change-end("v05-c906-20261022-sections-release-verification")

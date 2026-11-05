@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-software","C906 payload and pre-release JTAG branch")
+#change-start("v05-dev-20261022-software","V2 workload-specific boot, RT-Thread and Mini configuration boundaries")
 #change-start("v05-emphasis-software","Selected body emphasis: software")
 #change-start("dev-software","NPU/APU support, boot ownership and current application diagnostics")
 #import "../figures.typ": *
@@ -17,7 +19,8 @@ likewise do not supply a native Linux driver. See @apu and @npu for their softwa
 
 #figure(boot-diagram(), caption:[Linux image loading and ready checkpoint. Smoke and NPU-P6 acceptance continue through the later protocol.])<boot-flow>
 
-The HP bundle contains locked OpenSBI, Linux, device-tree and initramfs inputs. LP validates
+The Linux workload bundle contains locked OpenSBI, Linux, device-tree and initramfs inputs.
+Smoke and RT-Thread each carry one executable in the same V2 transport. LP validates
 the header and payload bounds, attempts transfer with the boot DMA context and CRC, and
 falls back to a software copy/CRC if that attempt fails. It fences memory, clears the LP
 mailbox interrupt and requests HP release. It then waits for the expected readiness event;
@@ -57,21 +60,41 @@ port guide for the generated output layout and boot packaging commands.
   total size, fixed entry order, flash bounds, destination bounds and header CRC.
 + For each entry, attempt the DMA TCD transfer with expected CRC and check status, transferred
   length and CRC result. If that attempt fails, execute the existing software-copy/CRC fallback.
-+ Probe the mailbox, confirm that GA2D is safely idle under LP ownership, transfer it to HP,
-  and confirm HP-owned safe idle. NPU ownership participates only when
++ Probe the mailbox. *Only the smoke workload* transfers GA2D from confirmed LP-owned idle
+  to confirmed HP-owned idle before HP release. NPU ownership participates only when
   #code(boot.npu_defines.join(" or ")) is compiled.
-+ Apply the memory fence, clear the LP mailbox interrupt, request release, and check the
++ Apply the memory fence. If #code("HP_JTAG_DEBUG=YES") selected the compiled debug branch,
+  select the HP JTAG target *while HP is still held*; failure terminates with result code
+  #boot.jtag_debug_failure_code. Then clear the LP mailbox interrupt, request release, and check the
   immediate HP status result. Observe #code("HP_BOOT_RELEASED") only as a release checkpoint.
-+ Wait for the exact ready event, argument and sequence. #code("HP_LINUX_READY") marks this
-  checkpoint. Ordinary Linux terminates successfully here; smoke continues, and the dedicated
-  NPU-P6 build reuses the four-entry Linux transport but also continues.
-+ Send the GA2D start command and wait for the result message with its distinct sequence.
++ Select the workload-specific terminal path. RT-Thread requires its ready event followed by
+  a mailbox interrupt command and acknowledgement. Ordinary Linux requires the exact Linux-ready
+  event, argument and sequence, then LP writes TEST_STATUS. #code("HP_LINUX_READY") alone is diagnostic.
++ For smoke, and for the dedicated NPU-P6 continuation, send the GA2D start command and wait
+  for the result message with its distinct sequence.
   Confirm GA2D safe idle before requesting HP hold.
-+ Observe the cache-clean request, receive the cache message, acknowledge clean state and
++ On that continuation path, observe the cache-clean request, receive the cache message, acknowledge clean state and
   confirm HP held without a forced fault. Return GA2D to LP and verify safe idle; return NPU
   as well when its acceptance option is enabled. Only then write the sticky successful verdict.
 
-#ds-table("hp-boot-mailbox-checkpoints",[Required HP-to-LP acceptance messages],
+The NPU-P6 build reuses workload 1's four-entry transport for its corpus payload; it is not an
+ordinary Linux image. In this snapshot its compile-time branch continues to the GA2D/cache
+tail, while the earlier GA2D ownership transfer is guarded by workload SMOKE. *That source-path
+mismatch remains an integration review item*, not evidence of a complete current P6 pass.
+Do not change the workload tag or infer missing ownership work from the ready marker.
+
+#minor-title("RT-Thread runtime boundary")
+The dedicated RV64 M-mode BSP uses the locked RT-Thread v5.3.0 source and lp64d toolchain.
+Its acceptance checks scheduling, integer context preservation, IPC, timer timeouts and the
+LP-issued mailbox interrupt round trip. The recorded context test does not qualify FCSR or
+floating-point task preservation. LP alone publishes the final sticky verdict.
+#source-note("docs/hp-rv64-validation.md",title:"Dated smoke/RT-Thread evidence and Linux coverage limits")
+The C906 BSP initializes cache/predictor state before entering C and uses the internal
+CLINT/PLIC layout. Its mailbox doorbell is PLIC ID 18. Bare-metal smoke, APU and NPU
+payloads use the C906 cache-maintenance encodings; older VexiiRiscv images and Zicbom
+instruction sequences must be rebuilt for the current core rather than reused by filename.
+
+#ds-table("hp-boot-mailbox-checkpoints",[Linux/smoke-path HP-to-LP messages; RT-Thread uses its separate handshake],
   ([Checkpoint],[Event],[Argument],[Sequence]),
   boot.messages.map(r=>(r.title,str(r.event),code("0x"+upper(str(r.argument,base:16))),str(r.sequence))),
   widths:(1.65fr,0.45fr,1.15fr,0.65fr))
@@ -208,8 +231,9 @@ with a broad "supported" label.
 == SoC Integration
 The committed product profiles instantiate fixed LP/HP harts and EXT-L/EXT-H slots. IHP130,
 GF180, SKY130 and ICS55 have different macro availability and validation boundaries. The
-IHP130 reference enables the 32 KiB SRAM interface and macro; committed ICS55 profiles
-intentionally keep SRAM and PLL disabled unless a separate reviewed local setup is used.
+IHP130 reference enables the 32 KiB SRAM interface and macro. The current Mini ICS55 CI
+profile also enables 32 KiB SRAM and its macro, while keeping HAVE_PLL=NO. Tiny's ICS55
+PLL/SAFE24 lifecycle is a separate product contract and does not change Mini's clock policy.
 
 Canonical memory, topology and pin generators emit build-local bindings. Managed IPs,
 toolchains and external inputs are revision-locked. This document does not modify those
@@ -257,3 +281,7 @@ named FPGA board; the missing circuit and acceptance records remain listed in @r
 #source-note("fpga/mini/starrysky_v2.xdc",title:"Existing board-specific FPGA constraint input")
 
 #change-end("v05-emphasis-software")
+
+#change-end("v05-dev-20261022-software")
+
+#change-end("v05-c906-20261022-sections-software")

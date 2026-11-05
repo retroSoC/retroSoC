@@ -58,6 +58,7 @@ module tiny_sysctrl_tb;
       .periph_request_o(),
       .clkout_control_o(),
       .clkout_idle_i   (1'b1),
+      .camera_active_i (1'b0),
       .pll_locked_i    (1'b0),
       .pll_selected_i  (1'b0),
       .warm_reset_i    (warm_reset),

@@ -19,7 +19,11 @@
     "software_sections": [
       "HAL and JTAG Flash Programming"
     ],
-    "notes": [],
+    "notes": [
+      "The Mini data-master policy permits **mapped reads only** through its data plane. The reusable XPI mapped-write implementation and Tiny NSS1 PSRAM integration do not override that product policy; program Flash through the documented indirect path.",
+      "A mapped read retains its physical command's final word until STOP/chip-select completion, so a late sequence fault is not reported after a successful AXI terminal beat. Errors retain matching address, slot and LUT-PC metadata on the event edge.",
+      "Capture ERROR_STATUS and its metadata before acknowledgement. Poll-timeout metadata uses device address zero and PC zero; a rejection before LUT execution also reports PC zero. These are scoped diagnostics, not a completed write or an external-device qualification."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -132,6 +136,26 @@
       "APB FIFO / local DMA",
       "SPI-SD command/data",
       "SCK / CS / MOSI / MISO"
+    ],
+    "prose_corrections": [
+      {
+        "before": "Clock stop and FIFO pause complete the current high phase and stop low. MOSI and CS change on falling phase events; MISO is sampled on rising phase events. Power-up training generates exactly 80 rising edges while CS is high. The 72 MHz Mini profile uses half-period 90 for 400 kHz initialization, 2 for 18 MHz default operation, and 1 for an explicitly verified 36 MHz high-speed mode. The theoretical wire ceiling at 36 MHz is 4.5 MB/s before command, token, CRC, card busy, and AXI overhead.",
+        "after": "Clock stop and FIFO pause complete the current high phase and stop low. MOSI and CS change on falling phase events; MISO is sampled on rising phase events. Power-up training generates exactly 80 rising edges while CS is high. For a 72 MHz input, the calculation uses half-period 90 for 400 kHz initialization, 2 for 18 MHz default operation, and 1 for an explicitly verified 36 MHz high-speed mode. The theoretical wire ceiling at 36 MHz is 4.5 MB/s before command, token, CRC, card busy, and AXI overhead. Mini supplies PCLK to this engine while its InputClockHz parameter retains 72 MHz. Use the actual PCLK in software timing calculations; CLOCK_ACTUAL is static arithmetic and does not measure the pin rate.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "apb4_spisd u_apb4_spisd (.clk_i(clk_i)"
+          },
+          {
+            "file": "rtl/mini/top/retrosoc.sv",
+            "text": ".clk_i(clk_pclk_i)"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_spisd.sv",
+            "text": "parameter int InputClockHz = 72_000_000"
+          }
+        ]
+      }
     ]
   },
   "sdio": {
@@ -152,7 +176,10 @@
     "software_sections": [
       "Software sequencing and integration contract"
     ],
-    "notes": [],
+    "notes": [
+      "Both Mini instances retain the **static 72 MHz InputClockHz default**; their new runtime-clock input is disabled by the deployed parameter. CLOCK_ACTUAL is a programmed calculation, not a frequency measurement or automatic RCU tracking.",
+      "The current receive path stalls the card clock before a pending word would be lost. **Descriptor ownership persists across every required AXI burst** and is returned only after terminal writeback. A single burst response is not completion of a larger descriptor."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -198,6 +225,56 @@
       "APB FIFO / local DMA",
       "SD command/data engine",
       "CLK / CMD / DAT[3:0]"
+    ],
+    "prose_corrections": [
+      {
+        "before": "Each wrapper's AXI interface is a native 32-bit master. The SoC assigns `sdio0` and `sdio1` to AXI master IDs 3 and 4, respectively; management, user, and central DMA retain IDs 0, 1, and 2. The per-master wait counters are snapshotted by SystemCtrl at `0x08C/0x090` and `0x094/0x098`.",
+        "after": "Each SDIO wrapper uses a native 32-bit AXI interface. SDIO0 shares I/O gateway A with APU and USB2; SDIO1 shares gateway B with SPI-SD. These gateways enter the HP data fabric as masters 3 and 4. HP instruction/data traffic shares master 0; slot 1 is retired and tied idle. Central DMA uses master 2, and the LP memory gateway uses master 5. Local wrapper IDs and the prefixed HP transaction identity are separate namespaces. Use the Fabric Monitor for gateway/master observations and the controller for local completion.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".dcache(sdio0_axi4)"
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".mmio(sdio1_axi4)"
+          },
+          {
+            "file": "rtl/mini/integration/soc_topology.json",
+            "text": "\"name\": \"io_gateway_a\""
+          },
+          {
+            "file": "rtl/mini/integration/soc_topology.json",
+            "text": "\"name\": \"io_gateway_b\""
+          },
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": "axi4_master_idle u_hp_retired_idle (.axi4(u_master_axi4[1]));"
+          }
+        ]
+      },
+      {
+        "before": "Clock stop completes a high phase and stops only low. Command/data output changes occur on launch phase enables; command/data inputs are consumed on sample phase enables. The current SoC profile is 72 MHz, so its evidence boundary is 400 kHz, 24 MHz, and 36 MHz integer-divider modes. A 50 MHz SDCLK requires a separately validated `clk_i >= 100 MHz` environment. No statement about pad, package, board, voltage, or I/O timing signoff follows from the RTL clock test.",
+        "after": "Clock stop completes a high phase and stops only low. Command/data output changes occur on launch phase enables; command/data inputs are consumed on sample phase enables. The component timing examples use a 72 MHz input for 400 kHz, 24 MHz and 36 MHz integer-divider modes. Mini actually clocks both controllers from PCLK; the static 72 MHz CLOCK_ACTUAL calculation does not measure that clock or follow RCU changes. Calculate divisors and timeouts from the actual PCLK before enabling the interface. A 50 MHz SDCLK requires a separately validated `clk_i >= 100 MHz` environment. No statement about pad, package, board, voltage, or I/O timing signoff follows from the RTL clock test.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/retrosoc.sv",
+            "text": ".clk_i(clk_pclk_i)"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "apb4_sdio u_apb4_sdio0 (.clk_i(clk_i)"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": "parameter int InputClockHz = 72_000_000"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": "parameter bit UseRuntimeClockHz = 1'b0"
+          }
+        ]
+      }
     ]
   },
   "sram": {
@@ -238,6 +315,48 @@
       "AXI read/write",
       "Banked SRAM",
       "AXI data / response"
+    ],
+    "prose_corrections": [
+      {
+        "before": "`SRAM_SIZE_KIB` is part of the reproducible configuration digest and accepts only `4`, `16`, `32`, `64`, or `128`. IHP130, GF180, and SKY130 CI profiles select `32`; ICS55 keeps the SRAM absent. IHP130 benchmark/CoreMark profiles retain `128`. The address-map generator uses the selected value for RTL decode macros, SDK base/size/end constants, and the linker `LENGTH(SRAM)`.",
+        "after": "`SRAM_SIZE_KIB` is part of the reproducible configuration digest and accepts only `4`, `16`, `32`, `64`, or `128`. IHP130, GF180, and SKY130 CI profiles select `32`; the current Mini ICS55 CI profile also enables `32` KiB with its macro backend. IHP130 benchmark/CoreMark profiles retain `128`. The address-map generator uses the selected value for RTL decode macros, SDK base/size/end constants, and the linker `LENGTH(SRAM)`.",
+        "bindings": [
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "HAVE_SRAM_IF := YES"
+          },
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "HAVE_SRAM_MACRO := YES"
+          },
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "SRAM_SIZE_KIB := 32"
+          }
+        ]
+      },
+      {
+        "before": "`tc_sram_1024x32` and `tc_sram_4096x32` remain the stable technology boundaries. Behavioral simulation uses the Common byte-mask RAM model. IHP130 maps to `RM_IHPSG13_1P_1024x32_c2_bm_bist`. GF180 composes four byte lanes across two `gf180mcu_fd_ip_sram__sram512x8m8wm1` depth halves and registers the address high bit for synchronous read selection. SKY130 maps to the OpenRAM-generated `sky130_sram_4kbyte_1rw_32x1024_8`. Its Liberty-compatible logical boundary exports 32 data bits and hides OpenRAM's required physical spare column; a future physical adapter must tie the spare enable and spare input low. The required spare row expands the macro address port to 11 bits, so the wrapper ties its high bit low and exposes exactly logical addresses 0 through 1023. ICS55 pairs two 4096x32 macros for the 32 KiB AXI64 product target, but its committed profiles keep the macro disabled. Bank count, rather than technology depth or width, implements every product size.",
+        "after": "`tc_sram_1024x32` and `tc_sram_4096x32` remain the stable technology boundaries. Behavioral simulation uses the Common byte-mask RAM model. IHP130 maps to `RM_IHPSG13_1P_1024x32_c2_bm_bist`. GF180 composes four byte lanes across two `gf180mcu_fd_ip_sram__sram512x8m8wm1` depth halves and registers the address high bit for synchronous read selection. SKY130 maps to the OpenRAM-generated `sky130_sram_4kbyte_1rw_32x1024_8`. Its Liberty-compatible logical boundary exports 32 data bits and hides OpenRAM's required physical spare column; a future physical adapter must tie the spare enable and spare input low. The required spare row expands the macro address port to 11 bits, so the wrapper ties its high bit low and exposes exactly logical addresses 0 through 1023. ICS55 pairs two 4096x32 macros for the 32 KiB AXI64 product target, and the current Mini ICS55 CI profile enables that macro backend. Bank count, rather than technology depth or width, implements every product size.",
+        "bindings": [
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "HAVE_SRAM_IF := YES"
+          },
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "HAVE_SRAM_MACRO := YES"
+          },
+          {
+            "file": "configs/ci/ics55.mk",
+            "text": "SRAM_SIZE_KIB := 32"
+          },
+          {
+            "file": "rtl/tech/tc_sram.sv",
+            "text": "ics55_ecos_sram_4096x32_m8 u_sram"
+          }
+        ]
+      }
     ]
   },
   "psram": {
@@ -370,6 +489,42 @@
       "AXI read/write",
       "Profile sequencer + PHY",
       "CK / CS / DQ / RWDS"
+    ],
+    "prose_corrections": [
+      {
+        "before": "The PHY divides `clk_phy_i` by two to produce external `ck_o`. The Mini SoC version 1 integration connects the PHY and system clocks together. With the committed 72 MHz system clock this produces a 36 MHz external clock. A later integration may provide a qualified 144-200 MHz PHY clock to produce a 72-100 MHz external clock without changing the IP interface.",
+        "after": "At the reset phase-divisor setting, the PHY divides clk_phy_i by two to produce external ck_o; larger programmed phase divisors reduce that rate. Mini drives the OPI interface and PHY from the same memory-domain input, clk_mem_i. The selected reference derives this input from external 72 MHz divided by two, so the PHY input is 36 MHz and nominal external CK is 18 MHz. These are digital configuration calculations; external-device timing, delay calibration and physical qualification remain separate.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_clock_reset_subsystem.sv",
+            "text": "clk_int_even_div_static #(.DIV_VALUE_WIDTH(1)) u_mem_clk_div2 (.clk_i(s_ext72_clk_buf)"
+          },
+          {
+            "file": "rtl/mini/top/soc_clock_reset_subsystem.sv",
+            "text": "assign mem_clk_o = s_mem_clk_div2;"
+          },
+          {
+            "file": "configs/ci/ihp130.mk",
+            "text": "EXT_CLK_HZ := 72000000"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "apb4_opipsram u_apb4_opipsram (.clk_i(clk_mem_i)"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": ".clk_phy_i(clk_mem_i)"
+          },
+          {
+            "file": "rtl/ip/memory/opipsram_phy.sv",
+            "text": "assign s_phase_div = (s_clk_config_q[15:0] == 16'd0) ? 16'd1 : s_clk_config_q[15:0];"
+          },
+          {
+            "file": "rtl/ip/memory/opipsram_phy.sv",
+            "text": "s_ck_d = ~s_ck_q;"
+          }
+        ]
+      }
     ]
   },
   "sdram": {
@@ -435,6 +590,34 @@
       "AXI read/write",
       "Burst and bank engine",
       "SDRAM command / DQ"
+    ],
+    "prose_corrections": [
+      {
+        "before": "All timing registers are SDRAM-clock cycle counts. After reset the controller auto-initializes with 36 MHz / CAS2 / BL2 / write-burst / close-page defaults so current firmware can use the window without a software reinit. Software may later write timings and issue `COMMAND.INIT` or `COMMAND.REINIT`.",
+        "after": "All timing registers are SDRAM-clock cycle counts. Reset selects automatic initialization, CAS2, BL2, write-burst and close-page mode. The timing defaults were calculated for a 36 MHz SDRAM clock; they do not establish the deployed clock rate. Mini supplies the 36 MHz memory-domain input to this controller, and CLKDIV=0 divides it by two to a nominal 18 MHz external SDRAM clock. Recalculate timing, refresh and power-up counts for the actual clock and fitted device before relying on the window; software can use COMMAND.INIT or COMMAND.REINIT.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_clock_reset_subsystem.sv",
+            "text": "clk_int_even_div_static #(.DIV_VALUE_WIDTH(1)) u_mem_clk_div2 (.clk_i(s_ext72_clk_buf)"
+          },
+          {
+            "file": "rtl/mini/top/soc_clock_reset_subsystem.sv",
+            "text": "assign mem_clk_o = s_mem_clk_div2;"
+          },
+          {
+            "file": "configs/ci/ihp130.mk",
+            "text": "EXT_CLK_HZ := 72000000"
+          },
+          {
+            "file": "rtl/mini/top/retrosoc.sv",
+            "text": "axi4_sdram u_axi4_sdram (.clk_i(clk_mem_i)"
+          },
+          {
+            "file": "rtl/ip/memory/sdram_clkgen.sv",
+            "text": "assign s_div_clk_d = s_div_cnt_q == div_i ? ~s_div_clk_q : s_div_clk_q;"
+          }
+        ]
+      }
     ]
   },
   "gpio": {
@@ -454,7 +637,9 @@
     "software_sections": [
       "Software and verification"
     ],
-    "notes": [],
+    "notes": [
+      "GPIO pad capabilities come from the selected technology package. **IHP130 and behavioral pads advertise no configurable CMOS input mode or internal pull-up/pull-down**. Digital GPIO features do not supply missing electrical pad functions; use appropriate board resistors."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -522,7 +707,13 @@
     "software_sections": [
       "Programming model"
     ],
-    "notes": [],
+    "notes": [
+      "**Mini keeps IP_VERSION 0x00020000.** The shared RTL now decodes SUPPORTED_REQUESTS at 0x028 and Mini returns 0x00003FFF. This additive register is present in this snapshot despite older V2.0 prose describing it as absent.",
+      "Mini leaves EnableSpi and EnableOriginQualifier clear. Requests 16/17, Tiny SPI FIFO credits, PIO-lite and PPALite routes are **not Mini capabilities**. The HAL rejects the extended SPI requests on this version; a shared enum or register definition is not an integrated endpoint.",
+      "CAPABILITY is 0x30200801. Its four-bit maximum-burst field reads zero because the implementation truncates configured 16 to four bits. **The integrated limit remains 16 beats**; do not interpret the field as zero permitted beats or invent a different encoding.",
+      "The optional `rs_dma_session_*` API provides a **single-hart software lease** and prevents conflicting unleased HAL commands. It does not replace LP/HP hardware resource ownership or provide a cross-hart lock. Keep the session object alive and unchanged until release; timeout never releases it.",
+      "`rs_dma_supports_request()` gates extended selectors using the version and bitmap, but returns RS_OK directly for selectors below 16. **That return is not an endpoint-presence probe**; Mini still requires the documented request/kind combinations and the 0x00003FFF hardware mask."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -561,6 +752,30 @@
       {
         "name": "rs_dma_resume",
         "signature": "rs_status_t rs_dma_resume(uint32_t channel);"
+      },
+      {
+        "name": "rs_dma_supports_request",
+        "signature": "rs_status_t rs_dma_supports_request(rs_dma_request_t request);"
+      },
+      {
+        "name": "rs_dma_session_acquire",
+        "signature": "rs_status_t rs_dma_session_acquire(rs_dma_session_t *session, uint32_t channel);"
+      },
+      {
+        "name": "rs_dma_session_configure",
+        "signature": "rs_status_t rs_dma_session_configure(rs_dma_session_t *session, const rs_dma_config_t *config);"
+      },
+      {
+        "name": "rs_dma_session_start",
+        "signature": "rs_status_t rs_dma_session_start(rs_dma_session_t *session);"
+      },
+      {
+        "name": "rs_dma_session_abort",
+        "signature": "rs_status_t rs_dma_session_abort(rs_dma_session_t *session);"
+      },
+      {
+        "name": "rs_dma_session_release",
+        "signature": "rs_status_t rs_dma_session_release(rs_dma_session_t *session);"
       }
     ],
     "api_header": "crt/include/retrosoc/hal/dma.h",
@@ -746,7 +961,9 @@
     "software_sections": [
       "Programming Sequence"
     ],
-    "notes": [],
+    "notes": [
+      "Mini binds PCLK_HZ to the 72 MHz external-clock configuration and leaves UseRuntimeClockHz disabled. The engine itself runs on PCLK. CLOCK_HZ therefore reports a static parameter, not the current PCLK; calculate output and capture timing from the actual peripheral clock."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -1119,6 +1336,22 @@
       "Descriptors / memory",
       "DMA + packet RAM",
       "ULPI transaction link"
+    ],
+    "prose_corrections": [
+      {
+        "before": "USB DMA is AXI master 6; management, user, central DMA, SDIO0, SDIO1, and SPI-SD retain masters 0..5. Transfers are 32-bit INCR bursts with at most 16 beats and never cross 4 KiB. The engine permits one read or write operation at a time and checks every response. Descriptor control and runtime words are written back before hardware clears `OWN`.",
+        "after": "The USB DMA is a native AXI32 initiator sharing I/O gateway A with APU and SDIO0. That gateway enters the HP data fabric as master 3; local initiator IDs and prefixed HP transaction IDs are separate. Transfers are 32-bit INCR bursts with at most 16 beats and never cross 4 KiB. The engine permits one read or write operation at a time and checks every response. Descriptor control and runtime words are written back before hardware clears `OWN`.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/soc_data_plane.sv",
+            "text": ".mmio(usb2_axi4)"
+          },
+          {
+            "file": "rtl/mini/integration/soc_topology.json",
+            "text": "\"name\": \"io_gateway_a\""
+          }
+        ]
+      }
     ]
   },
   "archinfo": {
@@ -1136,7 +1369,10 @@
     "software_sections": [
       "Software Rules"
     ],
-    "notes": [],
+    "notes": [
+      "**Build and configuration identities are generated per hardware/firmware build.** BUILD_ID, CONFIG_ID and BUILD_STATUS are build-dependent; the zero defaults of the reusable register block are not this product's identity.",
+      "The reference PRODUCT topology is 0x40200001, FEATURES0 is 0x0002FFFE and TECHNOLOGY is 0x02010082. The topology reports **zero selectable user-core slots**, not the absence of the fixed RV64 HP hart. These values describe integration, not board or silicon qualification."
+    ],
     "software_steps": [
       "Read a snapshot through core/archinfo.h and **validate build identity** before using configuration-dependent drivers.",
       "Use **discovered memory/topology/technology capabilities**.",
@@ -1291,7 +1527,7 @@
     "function_sections": [],
     "software_sections": [],
     "notes": [
-      "There is **no memory-mapped mtime**: the SoC drives the shared 64-bit time value from the management CLINT into the core, and HP software reads the time CSR. The compare value is programmed through the core-internal window; the supplied OpenSBI platform writes MTIMECMP at window offsets 0x4000/0x4004 with the 1 MHz reference timebase. Changing a CPU PLL setting does not redefine this reference.",
+      "There is **no memory-mapped mtime**: the SoC drives the shared 64-bit time value from the management CLINT into the core, and HP software reads the time CSR. The compare value is programmed through the core-internal window; the supplied OpenSBI platform writes MTIMECMP at CLINT-relative offsets 0x4000/0x4004 (absolute 0x0C004000/0x0C004004) with the 1 MHz reference timebase. Changing a CPU PLL setting does not redefine this reference.",
       "Machine and supervisor timer/software interrupts follow the c900 per-hart order (M-SW, M-timer, S-SW, S-timer), as declared by the supplied device tree. The management CLINT at 0x10020000 is a separate LP-owned peripheral with its own chapter."
     ],
     "software_steps": [
@@ -1399,10 +1635,12 @@
       "Scope",
       "Cache Maintenance"
     ],
-    "software_sections": [
-      "Delivery Boundary"
+    "software_sections": [],
+    "notes": [
+      "The repeated register bank covers **resources 0 through 9**, including NPU resource 9. Use 0x100 + index * 0x20 within the APB window; a nine-entry table would omit an existing implemented resource.",
+      "Owner/lock, quiesce-gated handoff, cache acknowledgement and IRQ routing are implemented. Directed test sources cover these controls, but **a test source or an older reported run is not a current-profile pass**.",
+      "CONTROL.QUIESCE blocks new addressed-master work and waits for outstanding traffic to drain; shared I/O gateways are conservatively blocked together. CONTROL.RESET also masks IRQs but is **not a universal downstream-engine reset or power-isolation mechanism**. Apply each IP's local lifecycle acknowledgement and recovery contract before reuse."
     ],
-    "notes": [],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -1440,6 +1678,64 @@
       "LP ownership request",
       "Quiesce + idle handshake",
       "Owner / IRQ route"
+    ],
+    "prose_corrections": [
+      {
+        "target": "table_header",
+        "before": "HP PLIC source",
+        "after": "HP SoC source (PLIC ID = source + 16)",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/hp_core_wrapper.sv",
+            "text": ".pad_plic_int_vld({224'd0, plic_src_i})"
+          },
+          {
+            "file": ".cache/retrosoc/sources/openc906/C906_RTL_FACTORY/gen_rtl/cpu/rtl/openC906.v",
+            "text": "assign plic_int_vld[`PLIC_INT_NUM+15:0] = {pad_plic_int_vld[`PLIC_INT_NUM-1:0],14'b0,l2c_plic_ecc_int_vld,1'b0};"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "s_hp_plic_source[11] = resource_irq_hp_i[7]; s_hp_plic_source[12] = resource_irq_hp_i[8];"
+          }
+        ]
+      },
+      {
+        "before": "For resources 0 through 7, owner `0` routes the resource interrupt to the existing LP vector. Owner `1` removes it from LP and routes it to the listed HP PLIC source. Resource 8 routes the GA2D raw IRQ to LP vector 32/external ordinal 30 for owner `0`, or HP PLIC source 11 for owner `1`. Resource 9 routes the NPU raw IRQ to LP vector 33/external ordinal 31 for owner `0`, or HP PLIC source 12 for owner `1`. Reset masks both routes. Hardware never delivers one resource interrupt to both owners.",
+        "after": "For resources 0 through 7, owner `0` routes the interrupt to the existing LP vector. Owner `1` removes it from LP and routes it to the HP SoC source listed above; the core presents that source to software as **PLIC ID = source + 16**. Resource 8 routes GA2D to LP vector 32/external ordinal 30 for owner `0`, or HP SoC source 11 (**PLIC ID 27**) for owner `1`. Resource 9 routes NPU to LP vector 33/external ordinal 31 for owner `0`, or HP SoC source 12 (**PLIC ID 28**) for owner `1`. Reset masks both routes. Hardware never delivers one resource interrupt to both owners.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/hp_core_wrapper.sv",
+            "text": ".pad_plic_int_vld({224'd0, plic_src_i})"
+          },
+          {
+            "file": ".cache/retrosoc/sources/openc906/C906_RTL_FACTORY/gen_rtl/cpu/rtl/openC906.v",
+            "text": "assign plic_int_vld[`PLIC_INT_NUM+15:0] = {pad_plic_int_vld[`PLIC_INT_NUM-1:0],14'b0,l2c_plic_ecc_int_vld,1'b0};"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "s_hp_plic_source[11] = resource_irq_hp_i[7]; s_hp_plic_source[12] = resource_irq_hp_i[8];"
+          }
+        ]
+      },
+      {
+        "target": "table_cell",
+        "before": "NPU shell",
+        "after": "NPU execution engine",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "apb4_npu u_apb4_npu ("
+          },
+          {
+            "file": "rtl/ip/multimedia/apb4_npu.sv",
+            "text": "npu_dma #("
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "s_hp_plic_source[12] = resource_irq_hp_i[8];"
+          }
+        ]
+      }
     ]
   },
   "monitor": {
@@ -1454,13 +1750,14 @@
     ],
     "function_sections": [
       "Scope",
-      "Master Counter Banks",
       "Target Counter Banks"
     ],
     "software_sections": [
       "Software and Verification"
     ],
-    "notes": [],
+    "notes": [
+      "The snapshot banks cover **masters 0 through 9** and targets 0 through 5. Master 9 is NPU; the sixth target is the error path, not another memory aperture. Capture a new snapshot before reading the indexed counters."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -1524,7 +1821,10 @@
     "software_sections": [
       "HAL Sequence"
     ],
-    "notes": [],
+    "notes": [
+      "The I2S receiver samples the preceding word's LSB on the LRCK transition and publishes completion after the captured data is available. Preserve the **one-bit I2S framing delay**; this change adds no left-justified, TDM or slave mode.",
+      "New shared-IP lifecycle outputs are not a new Mini RCU interface. Follow the existing resource/clock policy and acknowledged FIFO flush before reuse; a stopped AUDIO clock can prevent a used path from completing its flush."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -1588,7 +1888,11 @@
     "software_sections": [
       "DMA and Software Contract"
     ],
-    "notes": [],
+    "notes": [
+      "**Mini uses the RAW camera path and bulk DMA channel 3.** The shared Tiny camera routing, channel 2, XPI PSRAM target and future PPALite processing path do not describe this product.",
+      "Configuration, abort and error-clear requests cross the camera clock domain with acknowledged epochs. **Wait for the acknowledged idle state**, not only the APB command write. A configuration accepted before abort cannot silently rearm that aborted capture.",
+      "Snapshot helpers rearm through an acknowledged disable/enable sequence. Success requires a new frame, exact pixel/word counts, empty FIFO and completed destination writes. WORD_COUNT is a full 32-bit captured counter. DMA capture rejects an odd active width; PIO preserves the zero-padded halfword at each odd row end."
+    ],
     "software_steps": [
       "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
       "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
@@ -1719,7 +2023,8 @@
       "The loader checks header, ABI, bounds, entry descriptors and CRC before publishing valid/lock state. Rejected or aborted loads must leave stale instructions unexecutable.",
       "Direct jobs use JOB_* staging registers; ring jobs use descriptor ownership and producer/consumer rules. Buffer limits, codec entry bounds, ownership, quiesce and transport completion participate in admission and termination.",
       "The codec controller coordinates parser microcode, transport and processing primitives. Private DMA moves input/output while the stream router connects permitted audio paths. Capabilities do not waive rate, format, microcode or lifecycle checks.",
-      "On a fault, inspect retained stage/address/detail and consumed/produced counts, acknowledge the correct IRQ causes, and stop or reset the appropriate lifecycle level before reusing buffers."
+      "On a fault, inspect retained stage/address/detail and consumed/produced counts, acknowledge the correct IRQ causes, and stop or reset the appropriate lifecycle level before reusing buffers.",
+      "PERF_DECODED_FRAMES_LO/HI and PERF_KWS_CYCLES_LO/HI are reserved ABI locations that **read zero in this implementation**, including after a snapshot. Their names do not provide decoded-frame or KWS-cycle measurements; use the implemented result and counter fields within their documented scope."
     ],
     "software_steps": [
       "Probe information and capability through rs_apu_probe; **reject codecs and formats not advertised** by this snapshot.",
@@ -1853,19 +2158,35 @@
       "Key/operand storage"
     ],
     "function_sections": [
-      "Implemented MVP",
       "Data and Operation Contract",
       "Security Boundary and Claims"
     ],
     "software_sections": [],
-    "notes": [],
+    "notes": [
+      "**This integration implements the V2 storage lifecycle**, with IP_VERSION 0x00020000. The reference enables SRAM macros and returns CAPABILITY0 0x03FFFFFF; the inferred-bank fallback reports 0x01FFFFFF and requires independent configuration review.",
+      "Six private 1024-by-32 banks provide **24 KiB of physical storage**: two constant banks and four mutable engine banks. This storage is not a new CPU memory aperture and does not consume the selected 32 KiB system SRAM.",
+      "**Initialize before key loading or an engine START.** Reset clears logical validity and starts scrub; the engines remain unavailable until the two-bank CRYC1 image is loaded, read back, CRC-checked and locked. READY is the admission condition, not the reset value of a control register.",
+      "CRYC1 contains **2048 little-endian words / 8192 bytes**, including required zero padding. TABLE_ID is 0x43525901 and the payload CRC is 0x99CA52FE. The SDK supplies the exact constants; no external key material belongs in this image.",
+      "An accepted ZEROIZE command immediately invalidates mutable state and then performs asynchronous scrub/readback. **Command acceptance is not erase completion.** Valid locked constants survive explicit zeroize; hard/PCLK reset invalidates them. PCLK must run throughout maintenance.",
+      "Memory errors retain their first code/bank/row in MEM_ERROR. Load errors 1-4 permit a new BEGIN after cleanup; scrub/readback or progress faults 5-6 remain latched until hard reset. W1C acknowledges a diagnostic; it cannot restore READY or certify erasure."
+    ],
     "software_steps": [
-      "Confirm the instance base address, **active clock/reset domain and resource owner** before accessing registers.",
-      "Read the identification/capability registers where present, then follow the configuration and transfer sequence above. **Do not write configuration fields while an operation forbids it**.",
-      "Use **bounded completion checks**; inspect and clear the documented event/error fields. Transfer shared-buffer ownership with the required fences and cache maintenance."
+      "Obtain LP control and serialize lifecycle calls with engine setup and IRQ_TEST. **Keep PCLK running** and retain ownership of all active DMA buffers.",
+      "Call `rs_crypto_init(timeout)` and check its result before loading keys or starting AES/SHA/RSA. It validates identity, waits for reset scrub, uploads CRYC1 and checks the completed readback CRC.",
+      "Use the selected algorithm API with its byte order, alignment and length restrictions. **Wait for the algorithm-specific terminal result** before consuming output.",
+      "Before zeroize, stop the DMA producers/consumers and confirm accepted traffic has drained. `rs_crypto_zeroize_wait(timeout)` rejects an active DMA engine or pending AES DMA output.",
+      "On timeout or error, capture MEM_STATUS, MEM_ERROR and engine/DMA status. **Do not infer erasure, reset completion or buffer release from timeout.** Resume the documented recovery only after the lifecycle state is known."
     ],
     "example_file": "publications/examples/crypto.c",
     "api": [
+      {
+        "name": "rs_crypto_init",
+        "signature": "rs_status_t rs_crypto_init(rs_timeout_t timeout);"
+      },
+      {
+        "name": "rs_crypto_zeroize_wait",
+        "signature": "rs_status_t rs_crypto_zeroize_wait(rs_timeout_t timeout);"
+      },
       {
         "name": "rs_crypto_aes_set_key",
         "signature": "rs_status_t rs_crypto_aes_set_key(const uint8_t *key, size_t key_bytes, rs_timeout_t timeout);"
@@ -2089,6 +2410,26 @@
       "EXT-H memory request",
       "Bounded AXI copy",
       "Memory / fault / IRQ"
+    ],
+    "prose_corrections": [
+      {
+        "before": "For EXT-H, the central Resource Controller owner is the interrupt-routing authority. LP ownership delivers the slot event on LP IRQ 28; HP ownership delivers it on HP PLIC source 3, never both. The local `OWNER` register remains an ABI-compatible mirror, and `rs_extension_set_owner()` updates both through the Resource HAL. Quiesce or reset blocks new EXT-H AXI addresses and STATUS does not report idle until the DMA and address gate have drained.",
+        "after": "For EXT-H, the central Resource Controller owner is the interrupt-routing authority. LP ownership delivers the slot event on LP IRQ 28; HP ownership delivers it on HP SoC source 3 (PLIC ID 19), never both. The local `OWNER` register remains an ABI-compatible mirror, and `rs_extension_set_owner()` updates both through the Resource HAL. Quiesce or reset blocks new EXT-H AXI addresses and STATUS does not report idle until the DMA and address gate have drained.",
+        "bindings": [
+          {
+            "file": "rtl/mini/top/hp_core_wrapper.sv",
+            "text": ".pad_plic_int_vld({224'd0, plic_src_i})"
+          },
+          {
+            "file": ".cache/retrosoc/sources/openc906/C906_RTL_FACTORY/gen_rtl/cpu/rtl/openC906.v",
+            "text": "assign plic_int_vld[`PLIC_INT_NUM+15:0] = {pad_plic_int_vld[`PLIC_INT_NUM-1:0],14'b0,l2c_plic_ecc_int_vld,1'b0};"
+          },
+          {
+            "file": "rtl/mini/top/apb4_periph.sv",
+            "text": "s_hp_plic_source[3] = ext_h_hp_irq_i;"
+          }
+        ]
+      }
     ]
   },
   "mpw-timer": {

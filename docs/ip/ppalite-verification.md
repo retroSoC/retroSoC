@@ -6,6 +6,132 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
+## PPALITE-P3 human acceptance (2026-11-02)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `07cde48e11ed504e0b939d286bf0e0dfcdb924d6` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41392640690, development-environment 41392640659, smoke 41392640732, gf180
+41392640716, sky130 41392640801, ics55 41392640714, ihp130 41392640723).
+The final independent reviews of the phase and the CI isolation fix found no
+actionable issues.
+
+PPALITE-P3 delivers Tiny PPALite APB/IRQ27/RCU17 integration, exclusive
+request-11/DMA2 PROCESS admission, complete-job drain and lifecycle handling,
+and bounded SDK operations without adding a DMA encoding, master or channel.
+P3-focused ICS55/IHP130 Verilator and ICS55 Icarus acceptance reports
+`PPALITE_P3_RESULT code=0 valid=1 transport=32` and `SIM_TEST_PASS Tiny
+cycles=1915584`. Final evidence roots are
+`build/ics55-tiny-2026-11-01-14-32-8d025610711f/` and
+`build/ihp130-tiny-2026-11-01-14-43-6879efac2bd8/`. Both final PR regressions
+pass Verilator and Icarus at 4124615 cycles for ICS55 and 3880463 cycles for
+IHP130; their boot netlist simulations pass at 36449 and 36069 cycles
+respectively. The final IHP130 nightly regression also passes. Mini evidence
+is limited to shared-IP behavioral compatibility, not a PPALite rollout.
+
+The IHP130 CI regression completes its main job 125107168300 and isolated
+Tiny-P7 Icarus job 125107168472 successfully. The isolated job preserves the
+6000000-cycle limit and forbidden-marker verdicts, and reports `SIM_TEST_PASS
+Tiny cycles=3880463` with `P7_LIFECYCLE_PASS gated_cycles=71619
+dma_responses_while_gated=64 warm_resets=1`. Its evidence is artifact
+`pr-regression-41392640723-1-tiny-p7-iverilog` (artifact 13123579921); the main
+artifact is `pr-regression-41392640723-1` (artifact 13119804781).
+
+Full host Pytest passed 2496 tests with one optional `pypdf` skip. The focused
+script-tool suite passed 90 tests; Ruff, YAML, Actionlint and affected
+regression dry-runs pass. Final `check-warnings` passes on both PDKs; RTL lint
+also records non-blocking warning observations, and metrics remain in observe
+mode. The metrics records report top area 2820068.104705 with 503770 top cells
+for ICS55, and 15568735.963242 with 531677 top cells for IHP130.
+`phase_accepted=false` remains in generated collector records while acceptance
+is recorded here.
+
+Observational SAFE24 STA retains negative WNS/TNS. No timing-closure, physical
+signoff, qualified operating-frequency or silicon-validation claim is made.
+This acceptance is limited to frozen P3 integration: camera/memory/display
+application qualification remains P4, and complete-product timing and physical
+qualification remains the joint P5 campaign.
+
+## PPALITE-P2 human acceptance (2026-10-31)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `b04d90d76ae768c06f218b862487118c4a3244fc` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41183829421, development-environment 41183829423, smoke 41183829425, gf180
+41183829462, sky130 41183829432, ics55 41183829440, ihp130 41183829416).
+
+PPALITE-P2 delivers DVP source qualification, RAW bypass and RAW/PROCESS
+routing, requested source-enable gating, APB direction/strobe guards, and
+non-flushing close/abort/fault cleanup. Final standalone evidence roots are
+`build/ics55-tiny-2026-10-31-12-23-c524d3273238/meta/ppalite-p2/` and
+`build/ihp130-tiny-2026-10-31-12-23-b09f17c85292/meta/ppalite-p2/`. The 80
+recorded source inputs in each aggregate report match the accepted revision or
+its locked managed sources. Both Verilator and Icarus execute all 18 ordered
+route/source cases; both final mapped netlists execute the same 18 cases.
+Formal evidence includes 21 BMC assertions at bound 24, five cover witnesses at
+bound 32, and a deleted-assertion negative self-check. Lint, formal, synthesis,
+mapped-netlist simulation and aggregate reports pass on both PDKs. Mapping
+reports 44798 cells and area 139325.2 for ICS55, and 45071 cells and area
+863635.0086 for IHP130. Only the 66-bit and 272-bit PPALite FIFO memories are
+inferred, alongside the existing 128x42 DVP FIFO; no line/frame RAM is added
+and packing uses a 32-bit register.
+
+Full host Pytest passed 2488 tests with one optional `pypdf` skip; the focused
+P2/DVP/model/Tiny suite passed 161 tests. Ruff, RTL format/style/readiness, C
+format/policy/host, both Tiny firmware builds and whitespace checks pass. The
+final Mini behavioral compatibility regression passes Verilator at 12443276
+cycles and Icarus with its configured verdict. The final Tiny/IHP130 PR
+regression passes Verilator and Icarus at 3859487 cycles, and its boot netlist
+simulation passes at 36069 cycles. The final independent review returned MERGE
+with no P0-P3 findings. `phase_accepted=false` remains in generated records
+while acceptance is recorded here.
+
+Observational standalone STA retains missing I/O delays and unconstrained
+endpoints. Setup WNS/TNS are -144.57/-794308.88 ps for ICS55 and
+-135.47/-744834.88 ps for IHP130; hold WNS/TNS are zero. No timing-closure or
+qualified operating-frequency claim is made. This acceptance is limited to the
+frozen P2 scope: it does not deliver real central-DMA/RCU/SDK integration,
+camera/memory/display application qualification, or complete-product
+physical/timing qualification; those remain P3-P5 work.
+
+## PPALITE-P1 human acceptance (2026-10-30)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `b51b3ccfc2fc3127e8802f7a559821fca254a974` on `dev`.
+All seven CI workflows for that revision completed successfully (quality run
+41040983032, development-environment 41040983170, smoke 41040983389, gf180
+41040983302, sky130 41040983472, ics55 41040983028, ihp130 41040983326).
+
+PPALITE-P1 delivers the standalone stream pixel core, APB/register behavior,
+SVH/C register mirror, scalar and stream reference models, deterministic vectors
+and negative/lifecycle/error coverage. Final evidence roots are
+`build/ics55-tiny-2026-10-30-17-17-c524d3273238/meta/ppalite-p1/` and
+`build/ihp130-tiny-2026-10-30-17-17-b09f17c85292/meta/ppalite-p1/`. Both
+simulators and both final mapped netlists execute all 97 ordered vectors and
+the associated negative, lifecycle and error cases. Formal evidence includes
+13 FIFO assertions, 21 top-level BMC assertions, four cover witnesses and
+negative self-checks on both PDKs. Synthesis, mapped-netlist simulation and
+aggregate reports pass on both. Mapping reports 12603 cells and area 31022.88
+for ICS55, and 13150 cells and area 192112.263 for IHP130. Only the 66-bit input
+and 272-bit output FIFO memories are inferred, with no line/frame RAM and a
+32-bit packing register. Observational STA retains missing I/O delays and
+unconstrained endpoints; no timing-closure claim is made.
+
+Full host Pytest passed 2452 tests with one optional `pypdf` skip. Ruff, RTL
+format/style/readiness, C format/policy/host, both Tiny firmware builds,
+regression dry-runs and whitespace checks pass. Independent review rounds 1-8
+and the final test-driver review found no remaining actionable issue.
+`phase_accepted=false` remains in generated records while acceptance is
+recorded here.
+
+This acceptance is limited to the frozen standalone P1 scope. It does not imply
+DVP source repair, Tiny route/DMA/RCU integration, a complete HAL, camera or
+application qualification, or complete-product physical/timing qualification;
+those remain P2-P5 work.
+
 ## Configuration and Evidence Identity
 
 - Current normative default: TINY/ICS55, `HAVE_PLL=YES`, SAFE24 boot under the

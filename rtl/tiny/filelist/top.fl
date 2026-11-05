@@ -12,6 +12,8 @@
 /top/tiny_managed_lifecycle.sv
 /top/tiny_peripheral_leaf.sv
 /top/tiny_peripheral_control.sv
+/top/ppalite_route_ctrl.sv
+/top/ppalite_dma_guard.sv
 /top/tiny_clock_output.sv
 /top/tiny_clock_gate.sv
 /top/tiny_sram_port_if.sv

@@ -2,6 +2,57 @@
   "schema_version": 1,
   "targets": [
     {
+      "name": "ppalite-p1",
+      "paths": ["rtl/ip/ppalite"],
+      "status": "prototype",
+      "baseline_revision": "3377619431adf2a9cef37604ece84c9415dd5a4a",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration and next-state stream-control registers",
+        "reset": "validity, pointers and runtime clear on reset/flush without payload-array erasure claims",
+        "clock_enable": "PCLK only; no generated pixel clock",
+        "memory": "two 32-bit input slots with tail bits, one 8x32 output FIFO and one 32-bit packing register",
+        "pipeline": "validated input slots, one logical pixel per cycle, held row tails and pre-edge output FIFO"
+      },
+      "waivers": []
+    },
+    {
+      "name": "ppalite-p2",
+      "paths": ["rtl/ip/multimedia", "rtl/ip/ppalite", "rtl/tiny/top/ppalite_route_ctrl.sv"],
+      "status": "prototype",
+      "baseline_revision": "5b8f243f1f4726b1788b9fc922ba19216b9447d7",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration registers plus retained route, applied-source snapshot and guard response state",
+        "reset": "RAW reset default; source reset/readiness closes capture while route remains retained until the full barrier",
+        "clock_enable": "PCLK host/control with existing PIXCLK CDC; no new generated clock",
+        "memory": "existing 512-byte DVP FIFO and two PPALite stream buffers; no line or frame RAM",
+        "pipeline": "exclusive combinational RAW/PROCESS stream route, guarded APB responses and immutable per-job source snapshot"
+      },
+      "waivers": []
+    },
+    {
+      "name": "piolite-p2",
+      "paths": ["rtl/ip/piolite"],
+      "status": "prototype",
+      "baseline_revision": "cd39bdb837c4815636ac931fba0033a260aa146e",
+      "configuration_digest": null,
+      "configuration_profiles": ["configs/ci/ics55-tiny.mk", "configs/ci/ihp130-tiny.mk"],
+      "required_evidence": [],
+      "synthesis_intent": {
+        "registers": "Common scalar/configuration registers and two SM candidate-commit runtime registers",
+        "reset": "validity and runtime reset without payload-array initialization; CLOSING requires explicit recovery",
+        "clock_enable": "PCLK integer enables only; no generated SM clock",
+        "memory": "one 32x16 dual-read IMEM and four 8x32 Common FIFO payload arrays",
+        "pipeline": "registered APB response, combinational dual IMEM reads, atomic SM commit, held stream beats"
+      },
+      "waivers": []
+    },
+    {
       "name": "spi-p2",
       "paths": ["rtl/ip/serial/spi_dma_pacing.sv", "rtl/ip/peripheral/dma_core.sv",
                 "rtl/ip/peripheral/dma_reg.sv", "rtl/ip/peripheral/apb4_dma.sv"],

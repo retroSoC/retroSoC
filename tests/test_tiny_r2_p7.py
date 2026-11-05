@@ -22,7 +22,7 @@ COMMON = ROOT / "rtl/managed/clusterip/common/rtl"
 
 def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
             defines: list[str] | None = None, plusargs: list[str] | None = None,
-            packages: list[Path] | None = None) -> str:
+            packages: list[Path] | None = None, compile_timeout: int = 120) -> str:
     for tool in (simulator, *([] if simulator == "verilator" else ["sv2v", "vvp"])):
         assert shutil.which(tool), f"required tool unavailable: {tool}"
     # Put the fixture first so its explicit timescale applies during sv2v.
@@ -49,7 +49,7 @@ def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
     if simulator == "verilator":
         execute([simulator, "--binary", "--timing", "--assert", "--timescale", "1ns/1ps",
                  "-Wno-fatal", "--top-module", fixture, *args, "--Mdir", str(tmp_path / "obj"),
-                 "-o", str(output)], "compile.log")
+                 "-o", str(output)], "compile.log", compile_timeout)
         launch = [str(output)]
     else:
         converted = subprocess.run(["sv2v", *args], cwd=ROOT, capture_output=True,
@@ -59,7 +59,7 @@ def run_rtl(tmp_path: Path, simulator: str, fixture: str, extra: list[Path],
         # units so fractional PLL/reference delays are not rounded to seconds.
         (tmp_path / "converted.v").write_text("`timescale 1ns / 1ps\n" + converted.stdout)
         execute([simulator, "-g2012", "-s", fixture, "-o", str(output),
-                 str(tmp_path / "converted.v")], "compile.log")
+                 str(tmp_path / "converted.v")], "compile.log", compile_timeout)
         launch = ["vvp", str(output)]
     content = execute([*launch, *(plusargs or [])], "sim.log", 30)
     assert not DEFAULT_FAILURE.search(content), content
@@ -111,7 +111,7 @@ def source_reset_bindings(tmp_path: Path) -> None:
                                           "u_held_feedback", "u_ready_feedback")),
     )]
     blocks.append(instance(generated, "tiny_peripheral_leaf", "u_dma_lifecycle"))
-    for source, lhs in ((top, "s_fabric_rst_n"), (top, "s_clock_safe"),
+    for source, lhs in ((top, "s_fabric_rst_n"), (top, "s_clock_safe"), (top, "s_rcu_idle_ref"),
                         (generated, "s_xpi_rst_n"), (generated, "s_reset_ready[9]")):
         matches = re.findall(rf"\bassign\s+{re.escape(lhs)}\s*=[^;]*;", source)
         assert len(matches) == 1, lhs
@@ -223,7 +223,7 @@ def check_p7_target_capability(top: str, firmware: str) -> None:
     instances = re.findall(r"\btiny_sysctrl\s*#\(([^;]*?)\)\s*u_sysctrl\s*\(", top)
     if len(instances) != 1:
         raise ValueError("missing or ambiguous production SYSCTRL instance")
-    targets = re.findall(r"\.TargetMask\s*\(\s*17'h([0-9a-fA-F_]+)\s*\)", instances[0])
+    targets = re.findall(r"\.TargetMask\s*\(\s*18'h([0-9a-fA-F_]+)\s*\)", instances[0])
     expected = re.findall(
         r"^\s*#define RS_P7_EXPECTED_TARGET_CAPABILITY\s+UINT32_C\(0x([0-9a-fA-F]+)\)\s*$",
         firmware, re.MULTILINE)
@@ -231,8 +231,8 @@ def check_p7_target_capability(top: str, firmware: str) -> None:
         raise ValueError("missing or ambiguous target capability definition")
     # Freeze the implemented set independently of both handwritten sources.
     # The HAL's 0x3ffff architecture mask also admits unimplemented targets.
-    if int(targets[0].replace("_", ""), 16) != 0x17FFF or int(expected[0], 16) != 0x17FFF:
-        raise ValueError("target capability differs from the DVP-inclusive contract")
+    if int(targets[0].replace("_", ""), 16) != 0x37FFF or int(expected[0], 16) != 0x37FFF:
+        raise ValueError("target capability differs from the PPALite-inclusive contract")
     main = re.findall(r"\bint\s+main\s*\(void\)\s*\{(.*)", firmware, re.DOTALL)
     guard = (
         r"\bif\s*\(\s*rs_tiny_rcu_get_snapshot\(&snapshot\)\s*!=\s*RS_OK\s*\|\|\s*"
@@ -250,15 +250,15 @@ def test_tiny_p7_target_capability_parity() -> None:
 
 
 @pytest.mark.parametrize(("source", "old", "new"), [
-    ("firmware", "UINT32_C(0x00017FFF)", "UINT32_C(0x00003FFF)"),
-    ("top", "17'h17fff", "17'h03fff"),
-    *[("firmware", "UINT32_C(0x00017FFF)", f"UINT32_C({value})")
+    ("firmware", "UINT32_C(0x00037FFF)", "UINT32_C(0x00003FFF)"),
+    ("top", "18'h37fff", "18'h03fff"),
+    *[("firmware", "UINT32_C(0x00037FFF)", f"UINT32_C({value})")
       for value in ("0x00007FFF", "0x0000FFFF", "0x00027FFF", "0x0003FFFF")],
     ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY", "false"),
     ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY",
      "(snapshot.target_capability & RS_P7_EXPECTED_TARGET_CAPABILITY) != RS_P7_EXPECTED_TARGET_CAPABILITY"),
     ("firmware", "#define RS_P7_EXPECTED_TARGET_CAPABILITY", "#define RS_P7_UNUSED_CAPABILITY"),
-    ("top", ".TargetMask (17'h17fff)", ".UnusedMask (17'h17fff)"),
+    ("top", ".TargetMask (18'h37fff)", ".UnusedMask (18'h37fff)"),
 ])
 def test_tiny_p7_target_capability_rejects_drift(source: str, old: str, new: str) -> None:
     sources = {"top": (ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text(),

@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-ips-hp-plic","Internal C906 PLIC integration boundary")
 
 #import "../ip-reference.typ": inline, subhead
 #import "../diagram-packages.typ": circuit-diagram
@@ -38,3 +39,5 @@ outside this publication's scope together with the CPU ISA/CSR manuals.
 ]
 
 #context metadata((kind:"ip-end",id:"hp-plic",page:here().page()))
+
+#change-end("v05-c906-20261022-ips-hp-plic")

@@ -141,7 +141,7 @@ def validate(document_path: Path, root: Path) -> None:
         expected = {"aon": ["clint", "archinfo"], "memory": ["xpi"],
                     "peripheral": ["gpio", "uart0", "timer0", "timer1", "i2c0", "dma",
                     "pwm", "rtc", "wdg", "rng", "crc", "ws2812", "crypto", "i2s", "dvp",
-                    "spi"]}
+                    "spi", "ppalite"]}
         if (generated.get("destinations") != expected or
                 generated.get("same_clock_isolation") != ["sdio"] or
                 generated.get("native_system") != ["sysctrl", "sram"] or

@@ -1,0 +1,24 @@
+.program uart_rx
+.entry wait_start
+.wrap_bottom wait_start
+.wrap_top again
+.in 1, 1
+.out 0, 0
+.set 0, 0
+.tx_bits 32, right, manual
+.rx_bits 8, right, auto
+.test none, 0
+.packing 0, 1, 8
+.clock_ticks 8, stretchable
+wait_start: WAIT PIN, 0, 1
+CTRL NOP [10]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+IN PINS, 1 [7]
+WAIT PIN, 1, 1
+again: BRANCH ALWAYS, wait_start

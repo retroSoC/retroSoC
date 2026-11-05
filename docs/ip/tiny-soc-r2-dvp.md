@@ -271,7 +271,7 @@ The new `netsim-dvp` target uses `app/asm/tiny_p9_netlist.S` to route GPIO
 camera inputs, check the DVP ABI, capture 16x8 via PIO, verify all 64 words
 and statistics, then write TEST_STATUS. It shares the mapped netlist with
 `netsim-boot` but writes separate `netl/dvp/` logs and uses a 300000-cycle guard.
-`TINY_P9_NETLIST_WALL_TIMEOUT` defaults to 10800 seconds for ICS55 and 7200
+`TINY_P9_NETLIST_WALL_TIMEOUT` defaults to 14400 seconds for ICS55 and 7200
 for IHP130, matching this campaign's explicit measured-speed budgets. The
 original 1800-second IHP130 attempt timed out, while the identical compact image
 passes a Verilator diagnostic in 177716 cycles. Mapped DVP completion is

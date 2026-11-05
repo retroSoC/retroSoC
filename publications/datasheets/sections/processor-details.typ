@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-processor-details","Core capabilities and SRAM/ICG implementation boundaries")
 #change-start("v05-emphasis-processor-details","Selected body emphasis: processor details")
 #let cpu = data.system_reference.product_details.cpu
 
@@ -13,7 +14,7 @@ ISA/CSR manuals. A software compiler option does not remove a hardware extension
    ([Execution width],[RV32 integration.],[RV64 (#code(cpu.hp_isa_base) base); the core drives 40-bit addresses over a 32-bit physical fabric.]),
    ([Configured extensions],cpu.lp_extensions.join(", "),[#cpu.hp_isa.join(", ") (the RV64GC set).]),
    ([Privilege],[Machine-mode configuration, U_MODE = #cpu.lp.U_MODE.],[M/S/U per the C906 default configuration; the supplied software platform declares #cpu.hp_mmu.]),
-   ([Protection],[PMP_REGIONS = #cpu.lp.PMP_REGIONS.],[PMP per the T-Head C906 manuals; entry geometry is not separately extracted in this publication.]),
+   ([Protection],[PMP_REGIONS = #cpu.lp.PMP_REGIONS.],[Eight PMP regions selected by the locked core configuration; register semantics remain in the C906 manual.]),
    ([Reset entry],code(data.reset_address),code(cpu.hp.resetVector)),
    ([Trap / counter configuration],[MTVEC_INIT: #code(cpu.lp.MTVEC_INIT) \ Machine CSR: #cpu.lp.CSR_M_MANDATORY / counters: #cpu.lp.CSR_COUNTER.],[No memory-mapped mtime; HP software reads the time CSR.]),
    ([Debug],[DEBUG_SUPPORT = #cpu.lp.DEBUG_SUPPORT \ Breakpoint triggers: #cpu.lp.BREAKPOINT_TRIGGERS.],[JTAG debug through the core-internal Debug Module and the external DTM; the debug system-bus master is unconnected.]),
@@ -29,16 +30,17 @@ configuration *must remain consistent with the core that is actually integrated 
 ==== Cache geometry and evidence basis
 #ds-table("processor-cache-evidence",[Cache and vendored-core evidence boundaries],
   ([Item],[Recorded configuration],[Qualification]),
-  (([HP instruction cache],[32 KiB in the default OpenC906 configuration.],[Vendored default configuration; see the qualification note below.]),
-   ([HP data cache],[32 KiB in the default OpenC906 configuration; 64-byte lines.],[Vendored default configuration; see the qualification note below.]),
+  (([HP instruction cache],[32 KiB in the default OpenC906 configuration.],[ICACHE_32K is checked in the locked cpu_cfig.h.]),
+   ([HP data cache],[32 KiB in the default OpenC906 configuration; 64-byte lines.],[DCACHE_32K is checked in the locked cpu_cfig.h; supplied software maintains 64-byte lines.]),
    ([Cache total capacity],cpu.hp_cache_capacity,[Do not relabel a configured feature as a tested or silicon capability.]),
    ([Cache maintenance],[T-Head extended operations (XTheadCmo custom-0 dcache clean/invalidate by address) on 64-byte lines; no Zicbom CBO block.],[Used by the supplied HP smoke image; the extended instruction set must be enabled in the machine status CSR first.]),
    ([Locked HP source],[#code(cpu.hp_revision.slice(0,12))],[The full dependency revision is recorded in the lock and publication manifest.]),
-   ([Vendored HP RTL],cpu.generated_artifact_basis,[The Mini mhartid = #cpu.hp.hartId assignment comes from the reviewed override file, not from editing the vendored checkout.])),
+   ([Vendored HP RTL],cpu.generated_artifact_basis,[Upstream target hashes, the complete selected source list and local override hashes are retained in the publication manifest.])),
   widths:(0.8fr,1.7fr,1.65fr))
 The vendored OpenC906 checkout is a locked, managed input; the C906 user and integration
 manuals ship with it and remain the register/CSR reference. This publication lists only
-integration-visible settings and does not re-derive upstream implementation parameters.
+integration-visible settings and checks the selected default configuration; it does not
+replace the CPU manuals or qualify a frequency, cache latency or physical memory path.
 
 ==== System window and address decode
 The HP core decodes its internal CLINT/PLIC window at #code(cpu.hp.sysWindowBase) inside the
@@ -46,6 +48,33 @@ core BIU; the matching 128 MiB SoC range is reserved and never reaches the exter
 The reset vector #code(cpu.hp.resetVector) and the 32-bit physical fabric are unchanged by the
 core swap. Per-hart identity is fixed at integration time: the LP Hazard3 reports mhartid 0
 and the HP OpenC906 reports mhartid 1 through the reviewed override.
+
+The external wrapper forwards *only address bits 31:0*. It does not produce a separate
+upper-address fault when C906 bits 39:32 are nonzero. Keep all physical mappings within
+the declared 32-bit map; Sv39 describes virtual translation, not an expanded physical aperture.
+The sysmap override makes 0x02000000-0x2FFFFFFF strong-order, non-cacheable device memory.
+The MMIO demultiplexer uses that same half-open window, while the internal CLINT/PLIC
+accesses terminate inside the core before reaching the external bus.
+
+==== SRAM and integrated clock-gating selection
+#ds-table("c906-technology",[OpenC906 wrapper selection and evidence boundaries],
+  ([Process / selection],[SRAM path],[Clock gate / qualification boundary]),
+  data.system_reference.product_details.c906_technology.map(r=>(
+    [*#r.pdk* \ #r.selection],r.sram,[#code(r.icg) \ #r.boundary])),
+  widths:(1.05fr,1.45fr,1.7fr))
+With #code("PDK_BEHAV=YES"), the eight SRAM wrappers retain the upstream behavioral
+memory instances. The ordinary core/debug gate fallback is pass-through; BUFGCE retains
+its latch-based behavioral gate. A process ICG selection does not require a compatible SRAM
+macro, and #code("HAVE_SRAM_MACRO") alone does not select a qualified physical implementation.
+The dedicated #code("TDT_GATED_CELL") branch retains its upstream precedence.
+
+During HP reset, the integration asserts the ICG scan-enable input so gated state can
+initialize. Depth-stacked SRAM wrappers register the selected bank for readback. These
+source-level implementation choices are distinct from macro characterization, clock-tree
+closure, LEC and complete-product physical acceptance. The committed behavioral profiles
+and explicit non-behavioral test variants must remain separately identified.
+#source-note("docs/ip/hp-platform.md",title:"Eight SRAM wrappers, process mappings and clock-gate selection")
+#source-note("docs/hp-rv64-validation.md",title:"Scoped C906 macro-model and boot evidence; unrun physical gates")
 
 Before deploying a new HP image, retain the lock revision, vendored source identity, override
 file and software build identity together. Check the core/device-tree feature agreement and
@@ -60,3 +89,5 @@ two harts into a symmetric cache-coherent SMP platform.
 ]
 
 #change-end("v05-emphasis-processor-details")
+
+#change-end("v05-c906-20261022-sections-processor-details")

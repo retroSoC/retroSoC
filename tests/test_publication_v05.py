@@ -47,7 +47,7 @@ def test_merge_recovery_preserves_publication_contracts(data):
     assert '(name:"Functional",fill:"left-half")' in overview
     assert "v05-rill-cover" in overview
     assert "64 dense MACs" in overview
-    assert "fixed KWS in the P7 configuration" in overview
+    assert "KWS/APUC in the P9 acceptance profile; MP3 unsupported" in overview
     assert "Ten-master fabric" in architecture
     assert "GA2D slot 8 and NPU slot 9" in architecture
     assert software["boot_acceptance"]["linux_ready_is_terminal"]

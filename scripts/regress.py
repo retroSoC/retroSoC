@@ -94,6 +94,44 @@ def tiny_commands(pdk: str) -> tuple:
     return tuple(commands)
 
 
+def is_tiny_p7_iverilog(values: tuple[str, ...]) -> bool:
+    return "SIMU=IVERILOG" in values and any(value.startswith("TINY_RUN=") for value in values)
+
+
+def select_tiny_p7_iverilog(
+    commands: tuple[tuple[str, tuple[str, ...]], ...], selection: str
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    if selection == "include":
+        return commands
+    selected = tuple(
+        (profile, values)
+        for profile, values in commands
+        if is_tiny_p7_iverilog(values) == (selection == "only")
+    )
+    if not selected:
+        raise ValueError(f"Tiny P7 Icarus selection {selection!r} has no commands")
+    return selected
+
+
+def with_tiny_p7_iverilog_timeout(
+    commands: tuple[tuple[str, tuple[str, ...]], ...], seconds: int
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    if seconds <= 0:
+        raise ValueError("Tiny P7 Icarus timeout must be positive")
+    return tuple(
+        (
+            profile,
+            tuple(
+                f"TINY_RUN=timeout --foreground {seconds}s $(VVP) $(SIM_BUILD_ROOT)/simv"
+                if value.startswith("TINY_RUN=")
+                else value
+                for value in values
+            ),
+        )
+        for profile, values in commands
+    )
+
+
 PR_COMMANDS = (*PR_COMMANDS, *TINY_PR_COMMANDS)
 SMOKE_COMMANDS = (
     ("configs/ci/ihp130.mk", RTL_LINT_VALUES),
@@ -297,6 +335,18 @@ def main() -> int:
         action="store_true",
         help="skip synthesis, STA, netlist simulation, and synthesis-recipe metrics",
     )
+    parser.add_argument(
+        "--tiny-p7-iverilog",
+        choices=("include", "exclude", "only"),
+        default="include",
+        help="include, exclude, or isolate the long Tiny P7 Icarus acceptance command",
+    )
+    parser.add_argument(
+        "--tiny-p7-iverilog-timeout-seconds",
+        type=int,
+        default=14400,
+        help="wall timeout for the Tiny P7 Icarus command (default: 14400)",
+    )
     args = parser.parse_args()
     try:
         if args.soc == "TINY":
@@ -319,6 +369,13 @@ def main() -> int:
         profiles = tuple(profile for profile in profiles if profile not in TINY_PROFILES.values())
         if not commands:
             parser.error(f"suite {args.suite} has no {args.soc} configuration for this PDK")
+    try:
+        commands = select_tiny_p7_iverilog(commands, args.tiny_p7_iverilog)
+        commands = with_tiny_p7_iverilog_timeout(
+            commands, args.tiny_p7_iverilog_timeout_seconds
+        )
+    except ValueError as error:
+        parser.error(str(error))
     if args.netsim_boot_only:
         commands = with_netsim_boot_only(commands)
     if args.behavioral_only:

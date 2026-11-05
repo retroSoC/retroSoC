@@ -10,6 +10,18 @@ bit-accurate P4 primitive model. They accept only the APU instruction language
 and deliberately have no C, ELF, RV32, dynamic linking, or runtime
 code-generation path.
 
+`piolite_isa.py`, `piolite_model.py`, and `piolite_asm.py` implement the frozen
+Tiny PIO-lite ISA1.0 encoding/allocation objects, two-SM PCLK reference model,
+and strict deterministic assembler/C-object emitter. They are host-only P1
+verification tools: they do not integrate a peripheral, provide a HAL ABI, or
+qualify protocol waveforms or rates. Assemble a handwritten source into a
+selected build variant with:
+
+```sh
+python3 scripts/piolite_asm.py app/asm/piolite/uart_tx.piolite \
+  build/<variant>/generated/piolite/uart_tx.c
+```
+
 `setup_apu_reference.py` installs the checksum-pinned libFLAC and official
 FLAC corpus as host-only P5 verification inputs and builds libFLAC with Ogg
 disabled below the selected build variant. These inputs never enter firmware,
@@ -35,6 +47,12 @@ instantiate SPI in Tiny or implement central-DMA pacing. See the
 `spi_p2.py` runs the focused V2.2 credit-pacing fixture and lint boundary.
 The product DMA remains V2.0/default-disabled until shared integration is
 qualified; this entrypoint does not wire Tiny SPI.
+
+`ppalite_p2.py` runs the real-DVP/PPALite standalone route and source-guard
+fixtures through explicit `ppalite-p2-*` Make targets. It preserves source/tool
+identities, command results, formal witnesses and mapped artifacts below the
+selected Tiny variant. It does not instantiate PPALite in the product topology,
+admit central-DMA traffic or establish complete-product timing closure.
 
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0

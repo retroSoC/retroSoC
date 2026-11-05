@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-system-management","Current processor and resource ownership")
 #change-start("v05-emphasis-system-management","Selected body emphasis: system management")
 #import "../system-figures.typ": sequence-diagram
 
@@ -155,3 +156,5 @@ target-timeout and warm-flush conditions need distinct recovery decisions.
 #source-note("docs/engineering.md",title:"Simulation verdict and reproducibility rules")
 
 #change-end("v05-emphasis-system-management")
+
+#change-end("v05-c906-20261022-sections-system-management")

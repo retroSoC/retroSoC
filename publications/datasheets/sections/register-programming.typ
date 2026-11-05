@@ -22,6 +22,10 @@ lead back to the same register definitions used in this chapter's access convent
    ([Reserved / unsupported],[The offset or field is not a supported software feature.],[Follow stated reserved-bit rules; reject unsupported modes and preserve defined state.])),
   widths:(0.85fr,1.55fr,1.75fr))
 
+Compact register tables use *N/A* for unsupported access and *RO\** for readable
+status with unsupported write/control behavior. The detailed register record retains
+the complete access qualification and any bus-error or sticky-error side effects.
+
 For an event that arrives concurrently with a software acknowledgement, the IP's stated
 hardware-set versus software-clear priority applies. No single priority rule is imposed on
 all peripherals. Clear only events already captured by the handler and re-check pending state

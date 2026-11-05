@@ -47,6 +47,8 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
     if expression in {"'0", "'1"}:
         return 0 if expression == "'0" else 0xFFFFFFFF
     expression = expression.replace("$clog2", "clog2")
+    expression = expression.replace("&&", " and ").replace("||", " or ")
+    expression = re.sub(r"!(?!=)", " not ", expression).strip()
     expression = re.sub(r"(?:\w+|\d+)'\(([^()]+)\)", r"(\1)", expression)
     conditional = split_top(expression, "?")
     if len(conditional) == 2:
@@ -89,10 +91,15 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
                     comparisons[type(node.ops[0])](visit(node.left), visit(node.comparators[0]))
                 )
         if isinstance(node, ast.UnaryOp):
+            if isinstance(node.op, ast.Not):
+                return int(not visit(node.operand))
             if isinstance(node.op, ast.USub):
                 return -visit(node.operand)
             if isinstance(node.op, ast.Invert):
                 return ~visit(node.operand)
+        if isinstance(node, ast.BoolOp) and isinstance(node.op, (ast.And, ast.Or)):
+            values = [bool(visit(value)) for value in node.values]
+            return int(all(values) if isinstance(node.op, ast.And) else any(values))
         if (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Name)
@@ -127,6 +134,44 @@ def split_top(text: str, separator: str = ",") -> list[str]:
 def strip_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", lambda m: "\n" * m[0].count("\n"), text, flags=re.S)
     return re.sub(r"//[^\n]*", "", text)
+
+
+def select_conditionals(text: str, definitions: dict[str, bool]) -> str:
+    """Select explicitly reviewed RTL guards, preserving source line numbers.
+
+    This is not an RTL preprocessor: unknown guards fail closed. Callers must
+    supply each Boolean selection from the selected product configuration.
+    """
+    stack = []
+    active = True
+    lines = []
+    for line in text.splitlines(keepends=True):
+        directive = re.fullmatch(r"\s*`(ifdef|ifndef|elsif|else|endif)(?:\s+(\w+))?\s*", line)
+        if not directive:
+            lines.append(line if active else "\n" * line.count("\n"))
+            continue
+        command, name = directive.groups()
+        if command in {"ifdef", "ifndef", "elsif"}:
+            if name not in definitions or type(definitions[name]) is not bool:
+                raise ValueError(f"unreviewed publication preprocessor guard: {name}")
+            selected = definitions[name] if command != "ifndef" else not definitions[name]
+        if command in {"ifdef", "ifndef"}:
+            stack.append([active, selected, False])
+            active = active and selected
+        elif not stack:
+            raise ValueError("unbalanced publication preprocessor guard")
+        elif command == "endif":
+            active = stack.pop()[0]
+        else:
+            parent, taken, had_else = stack[-1]
+            if had_else:
+                raise ValueError("duplicate/late publication preprocessor branch")
+            active = parent and not taken and (command == "else" or selected)
+            stack[-1] = [parent, taken or command == "else" or selected, command == "else"]
+        lines.append("\n" * line.count("\n"))
+    if stack:
+        raise ValueError("unclosed publication preprocessor guard")
+    return "".join(lines)
 
 
 def named_argument(text: str, name: str) -> str | None:
@@ -215,7 +260,7 @@ def source_model(text: str, constants: dict) -> dict:
             )
         except ValueError:
             continue
-        for variable in variables.split(","):
+        for variable in split_top(variables):
             found = re.match(r"\s*(\w+)", variable)
             if found:
                 widths[found[1]] = width
@@ -640,7 +685,7 @@ def refine_fields(record: dict, spec: dict, definitions: dict, model: dict) -> l
                 continue
             tail = symbol[len(prefix) :]
             if tail in {"ALL", "MASK"} or re.search(
-                r"(?:VALID|WRITABLE|ALL|IMMUTABLE)_MASK$|_(?:SHIFT|WIDTH|MIN|MAX)$", tail
+                r"(?:VALID|WRITABLE|ALL|IMMUTABLE)_MASK$|_(?:SHIFT|WIDTH|MIN|MAX|MSB)$", tail
             ):
                 continue
             value = constants[symbol]
@@ -664,7 +709,10 @@ def refine_fields(record: dict, spec: dict, definitions: dict, model: dict) -> l
         for index, (low, high, name, symbol) in enumerate(entries):
             if high is None:
                 scalar_use = re.search(r"\[\s*`" + re.escape(symbol) + r"\s*\]", model["text"])
-                if scalar_use:
+                paired_msb = symbol.removesuffix("_LSB") + "_MSB"
+                if symbol.endswith("_LSB") and paired_msb in constants:
+                    high = constants[paired_msb]
+                elif scalar_use or symbol.endswith("_BIT"):
                     high = low
                 elif index + 1 < len(entries):
                     high = entries[index + 1][0] - 1
@@ -709,11 +757,32 @@ def refine_fields(record: dict, spec: dict, definitions: dict, model: dict) -> l
     return sorted(result, key=lambda f: f["lsb"])
 
 
+def annotation_sources(annotations: dict, root: Path) -> list[str]:
+    """Keep reviewed field widths and integration notes tied to literal producers."""
+    sources = []
+    for key, annotation in annotations.items():
+        if "source_bindings" not in annotation:
+            continue
+        bindings = annotation["source_bindings"]
+        if not bindings:
+            raise ValueError(f"register annotation {key}: empty source bindings")
+        for binding in bindings:
+            path = root / binding["file"]
+            expected = " ".join(binding["text"].split())
+            if not expected or not path.is_file() or expected not in " ".join(path.read_text(encoding="utf-8").split()):
+                raise ValueError(f"register annotation {key}: source binding changed: {binding['file']}")
+            sources.append(binding["file"])
+    return list(dict.fromkeys(sources))
+
+
 def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
+    reviewed_sources = annotation_sources(annotations, ROOT)
     paths = list(dict.fromkeys(spec.get("defines", []) + spec["rtl"]))
     memory_map = spec.get("memory_map", "rtl/mini/address_map/memory_map.json")
     definitions, constants = parse_definitions(paths, spec.get("parameters", {}), memory_map)
     text = "\n".join(strip_comments((ROOT / p).read_text(encoding="utf-8")) for p in spec["rtl"])
+    if "conditionals" in spec:
+        text = select_conditionals(text, spec["conditionals"])
     model = source_model(text, constants)
     model["definitions"] = definitions
     for name, definition in definitions.items():
@@ -941,6 +1010,8 @@ def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
     for record in records:
         record["c_source"] = c_source
     paths += spec.get("support", [])
+    paths += spec.get("binding_sources", [])
+    paths += reviewed_sources
     if c_source:
         paths.append(c_source)
     return {
@@ -952,10 +1023,24 @@ def extract_profile(ip: str, spec: dict, annotations: dict) -> dict:
     }
 
 
-def collect_registers() -> dict[str, dict]:
+def collect_registers(bindings: dict | None = None) -> dict[str, dict]:
+    from publications.mini_integration_reference import (
+        bind_register_profiles, collect_mini_bindings, selected_profile, validate_register_bindings,
+    )
+
     specs = json.loads(PROFILE.read_text(encoding="utf-8"))
+    if bindings is None:
+        bindings = collect_mini_bindings(ROOT, selected_profile(ROOT))
+    specs = bind_register_profiles(specs, bindings)
     annotations = json.loads(ANNOTATIONS.read_text(encoding="utf-8"))
     result = {ip: extract_profile(ip, spec, annotations.get(ip, {})) for ip, spec in specs.items()}
+    for register in result["archinfo"]["registers"]:
+        if register["name"] in {"BUILD_ID_LO", "BUILD_ID_HI", "CONFIG_ID", "BUILD_STATUS"}:
+            register.pop("rtl_reset", None)
+            register["reset"] = "Build-dependent"
+            for field in register["fields"]:
+                field["reset"] = "0" if field["name"] == "Reserved" else "Build-dependent"
+    validate_register_bindings(result, bindings)
     validate_reference(result)
     return result
 
@@ -980,6 +1065,9 @@ def validate_reference(reference: dict) -> None:
             ]
             if sorted(bits) != list(range(32)):
                 raise ValueError(f"overlapping or incomplete bit layout: {ip}/{key}")
+            if ("W" in register["access"] and
+                    all(field["name"] == "Reserved" for field in register["fields"])):
+                raise ValueError(f"writable register has no documented data or command field: {ip}/{key}")
             if register["width"] != 32:
                 raise ValueError(f"unsupported register width: {ip}/{key}")
             try:

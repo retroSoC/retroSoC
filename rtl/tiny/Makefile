@@ -160,7 +160,7 @@ netsim-boot: netcomp tiny-boot-image | manifest
 TINY_P9_NETLIST_ELF := $(SW_BUILD_DIR)/tiny_p9_netlist.elf
 # The unchanged compact image needs about 178k cycles when executing from XPI.
 # Retain the cycle guard and allow slower gate models enough host time.
-TINY_P9_NETLIST_WALL_TIMEOUT ?= $(if $(filter ICS55,$(PDK)),10800,7200)
+TINY_P9_NETLIST_WALL_TIMEOUT ?= $(if $(filter ICS55,$(PDK)),14400,7200)
 $(TINY_P9_NETLIST_ELF): $(ROOT_PATH)/app/asm/tiny_p9_netlist.S $(FILELIST_STAMP)
 	@mkdir -p $(@D)
 	$(CC) -march=rv32im_zicsr -mabi=ilp32 -nostdlib -I$(MEMORY_MAP_C_DIR) -I$(SOC_TOPOLOGY_INCLUDE_DIR) \

@@ -407,7 +407,8 @@ def test_p6_map_irq_request_and_pin_contract():
         "rng": 16, "ws2812": 17, "crypto": 23, "i2s": 8, "sdio": 10}
     assert irqs["dvp"] == 15
     assert irqs["spi"] == 25
-    assert {19, 24, 26, 27}.isdisjoint(irqs.values())
+    assert irqs["ppalite"] == 27
+    assert {19, 24, 26}.isdisjoint(irqs.values())
     assert irqs["rcu"] == 31
     pins = topology["gpio_alt_functions"]
     assert pins[9]["alt0"]["inputs"] == ["u_uart0_if.rx_i"]

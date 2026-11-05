@@ -461,18 +461,26 @@ axi4_stream_if #(
       .NumChannels(8),
       .FifoDepth  (32)
   ) u_apb4_dma (
-      .clk_i          (clk_i),
-      .rst_n_i        (rst_n_i),
-      .dma_xfer_done_o(s_dma_xfer_done),
-      .irq_o          (s_dma_irq),
-      .hw_trg         (u_dma_req_if),
-      .apb4           (u_dma_apb4_if),
-      .axi4           (dma_axi4),
-      .i2s_tx_axis    (u_dma_i2s_tx_axis_if),
-      .i2s_rx_axis    (u_dma_i2s_rx_axis_if),
-      .dvp_rx_axis    (u_dvp_rx_axis_if),
-      .crypto_in_axis (u_crypto_in_axis_if),
-      .crypto_out_axis(u_crypto_out_axis_if)
+      .clk_i              (clk_i),
+      .rst_n_i            (rst_n_i),
+      .ppalite_route_i    (1'b0),
+      .dma_xfer_done_o    (s_dma_xfer_done),
+      .irq_o              (s_dma_irq),
+      .hw_trg             (u_dma_req_if),
+      .apb4               (u_dma_apb4_if),
+      .axi4               (dma_axi4),
+      .i2s_tx_axis        (u_dma_i2s_tx_axis_if),
+      .i2s_rx_axis        (u_dma_i2s_rx_axis_if),
+      .dvp_rx_axis        (u_dvp_rx_axis_if),
+      .crypto_in_axis     (u_crypto_in_axis_if),
+      .crypto_out_axis    (u_crypto_out_axis_if),
+      .spi_admit_ready_i  (2'b00),
+      .tcd_idle_o         (),
+      .dvp_start_pending_o(),
+      .dvp_busy_o         (),
+      .dvp_done_o         (),
+      .dvp_bytes_done_o   (),
+      .dvp_error_status_o ()
   );
 
   apb4_crypto u_apb4_crypto (
@@ -581,14 +589,29 @@ axi4_stream_if #(
       .clint          (u_clint_if)
   );
 
+  /* verilator lint_off PINCONNECTEMPTY */
   axi4s_dvp u_axi4_dvp (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .apb4   (u_dvp_apb4_if),
-      .rx_axis(u_dvp_rx_axis_if),
-      .dvp    (dvp),
-      .irq_o  (s_dvp_irq)
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .apb4                      (u_dvp_apb4_if),
+      .rx_axis                   (u_dvp_rx_axis_if),
+      .dvp                       (dvp),
+      .irq_o                     (s_dvp_irq),
+      .source_config_o           (),
+      .source_config_pending_o   (),
+      .source_command_pending_o  (),
+      .source_flush_pending_o    (),
+      .source_status_valid_o     (),
+      .source_capture_idle_o     (),
+      .source_active_o           (),
+      .source_enabled_o          (),
+      .source_requested_enabled_o(),
+      .source_fifo_empty_o       (),
+      .source_frame_stats_o      (),
+      .source_frame_stats_valid_o(),
+      .source_error_o            ()
   );
+  /* verilator lint_on PINCONNECTEMPTY */
 
   apb4_sdio u_apb4_sdio0 (
       .clk_i   (clk_i),

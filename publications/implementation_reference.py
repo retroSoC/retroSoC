@@ -7,12 +7,15 @@ import re
 from pathlib import Path
 
 from publications.programming_reference import clean_source
+from publications.c906_reference import SOURCES as C906_SOURCES, collect_c906
 
-COLLECTIONS = ("reset", "interfaces", "formats", "interoperability", "physical")
+COLLECTIONS = ("reset", "interfaces", "formats", "interoperability", "physical", "c906_technology")
 
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
+    if "cpu" in spec:
+        paths.update(C906_SOURCES)
     for key in COLLECTIONS:
         for row in spec.get(key, []):
             paths.update(row.get("sources", []))
@@ -122,7 +125,7 @@ def validate_details(spec: dict, ids: set[str], root: Path, active_limits: set[s
         for row in rows:
             if not row.get("sources") or not set(row.get("ips", [])) <= ids:
                 raise ValueError(f"missing source or unknown implementation IP: {row['id']}")
-            if collection in {"interfaces", "formats", "interoperability"} and not row.get("bindings"):
+            if collection in {"interfaces", "formats", "interoperability", "c906_technology"} and not row.get("bindings"):
                 raise ValueError(f"capability claim lacks binding: {row['id']}")
             for binding in row.get("bindings", []):
                 text = (root / binding["file"]).read_text(encoding="utf-8")
@@ -139,6 +142,8 @@ def validate_details(spec: dict, ids: set[str], root: Path, active_limits: set[s
                     raise ValueError(f"untraceable reset value: {row['id']}")
             if collection == "interfaces" and row["evidence"] != "Source-level subset; no compliance report attached":
                 raise ValueError("interface qualification requires separately reviewed report support")
+            if collection == "c906_technology" and row.get("evidence") != "Source integration; no matching physical qualification report attached":
+                raise ValueError("C906 macro qualification requires separately reviewed report support")
             if collection == "interoperability":
                 if row["classification"] not in {"Format-compatible", "Conversion required", "Conditional", "Blocked"}:
                     raise ValueError("invalid interoperability classification")
@@ -164,14 +169,15 @@ def collect_details(root: Path, spec: dict, ids: set[str], active_limits: set[st
         raise ValueError("incomplete firmware/core profile identity")
     lock = json.loads((root / "dependencies/dependencies.lock.json").read_text(encoding="utf-8"))
     result = copy.deepcopy(spec)
+    result["c906"] = collect_c906(root)
     result["cpu"] = {
         "lp": lp, "hp": hp, "hp_isa": identity["extensions"], "build": build,
         "hp_isa_base": identity["isa_base"], "hp_mmu": identity["mmu"],
         "hp_compatible": identity["compatible"],
         "lp_extensions": [name.removeprefix("EXTENSION_") for name, value in lp.items() if name.startswith("EXTENSION_") and value == "1"],
         "hp_revision": lock["sources"]["openc906"]["revision"],
-        "generated_artifact_basis": "Pre-generated vendored OpenC906 RTL at the locked revision, with the reviewed retroSoC hart-ID override; no new core generation",
-        "hp_cache_capacity": "Default OpenC906 configuration (32 KiB instruction + 32 KiB data L1 per the T-Head C906 manuals); not independently re-measured",
+        "generated_artifact_basis": "Locked pre-generated OpenC906 RTL with guarded hart-ID, sysmap, AW/W ordering, SRAM and ICG overrides; the managed checkout is unchanged",
+        "hp_cache_capacity": "32 KiB instruction + 32 KiB data L1, checked against the locked cpu_cfig.h; configured capacity, not a performance measurement",
     }
     result["service_results"] = [{"executed": str(e).lower(), "passed": str(p).lower(),
                                  "meaning": programming_result({"executed": e, "passed": p})}

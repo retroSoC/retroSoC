@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-appendices","Same-version C906 revision and provenance")
 #change-start("v05-emphasis-appendices","Selected body emphasis: appendices")
 #import "../figures.typ": *
 
@@ -38,22 +39,25 @@ selectable user cores or user IPs.
 #include "../ips/mpw-gpio.typ"
 
 = Appendix: Product Direction
+#change-start("v05-dev-20261022-family","Independent Tiny implementation and asymmetric RV32/RV64 Mini positioning")
 == Product Series
-#ds-table("family", [Family positioning - roadmap context],
+#ds-table("family", [Family positioning and implementation boundaries],
   ([Series], [Intended role], [Status in this datasheet]),
-  (([Tiny], [MCU and connectivity endpoint], [Roadmap context]),
-   ([Mini], [Asymmetric RV32 embedded control and lightweight Linux], [Current documented integration]),
+  (([Tiny], [Independent single-core wired MCU], [Separate implemented product and publication; not specified by this book]),
+   ([Mini], [RV32 management plus RV64 application/Linux core], [Current documented integration]),
    ([Std], [Graphical RV32 Linux edge system], [Roadmap context]),
    ([Pro], [Higher-performance RV64 graphical system], [Roadmap context])),
   widths:(0.5fr,1.8fr,1.2fr),
 )
-The product ladder expresses intended positioning. It does not advertise implemented Tiny,
-Std or Pro profiles or measured performance for a future device. The current Mini integrates
+Tiny has its own executable profiles and integration under #code("rtl/tiny"); it is not a
+Mini mode. Its current source and dated datasheet have separate revision and evidence boundaries.
+Std and Pro remain roadmap targets with no implemented-product claim here. The current Mini integrates
 the independently documented GA2D and NPU subsets; neither establishes a future-family feature
 set or commercial qualification. *Only the reviewed Mini snapshot is specified here*.
 #source-note("docs/soc-family-positioning.md", title:"Family roadmap and scope")
 
 == Roadmap
+#change-end("v05-dev-20261022-family")
 #placeholder[Reviewed release and silicon roadmap]
 #tbd[Release dates, derivative differences, process/package selections and future accelerator
 milestones have *not been established as product commitments* in this datasheet.]
@@ -83,6 +87,7 @@ number is used to imply completion.
 #include "fault-reference.typ"
 
 = Document Control
+#change-start("v05-dev-20261022-document-control","Current revision history and source provenance")
 == Revision History
 #change-start("v05-refresh-revision", "Same-version dev revision history")
 #ds-table("revisions", [Document revision history],
@@ -93,7 +98,10 @@ number is used to imply completion.
    ([2026-09-17],[0.4 DRAFT],[Refresh the reviewed dev snapshot; add the independent GA2D P5 reference and 41-IP/108-entry structure. Synchronize APU V1/V2 and gated KWS, nine-master fabric, JPEG admission, LP external IRQ and scoped CI evidence. Retain the approved layout and unadorned repository footer.],[Yuchi Miao / ECOS Team]),
    ([2026-09-22],[0.5 DRAFT],[Initial v0.5, reviewed ca4b06d30456: add the NPU chapter and 42-IP/109-entry structure. Synchronize ten-master/resource integration, configured APU KWS/digest and bare-metal acceptance, GA2D P6 and long-burst conversion. Separate current CI state, historical reports and missing qualification.],[Yuchi Miao / ECOS Team]),
    ([2026-09-22],[0.5 DRAFT],[Same-version dev refresh: correct bounded HP acceptance and mailbox purposes; align APU availability and loading order; add development-environment evidence boundaries and linked task navigation. Preserve the existing IP structure and hardware interfaces.],[Yuchi Miao / ECOS Team]),
-   ([2026-09-22],[0.5 DRAFT],[Presentation revision: add the cover email contact and partial Functional mark; emphasize selected capability, programming, limitation and evidence phrases. Bind the reviewed current dev source and CI observation; hardware statements and interfaces are retained.],[Yuchi Miao / ECOS Team])),
+   ([2026-09-22],[0.5 DRAFT],[Presentation revision: add the cover email contact and partial Functional mark; emphasize selected capability, programming, limitation and evidence phrases. Bind the reviewed current dev source and CI observation; hardware statements and interfaces are retained.],[Yuchi Miao / ECOS Team]),
+   ([2026-09-23],[0.5 DRAFT],[Rill bilingual brand presentation in the retained header geometry; previous delivered 779-page baseline.],[Yuchi Miao / ECOS Team]),
+   ([2026-10-22],[0.5 DRAFT],[Reviewed 95c243b70955 refresh, delivered as 798 pages: reconcile RV64/V2 workloads, Mini-selected register capabilities, Crypto V2 initialization, DMA discovery/session limits and shared-IP recovery.],[Yuchi Miao / ECOS Team]),
+   ([#doc.date],[0.5 DRAFT],[OpenC906 refresh: fixed RV64GC core, single AXI128-to-64 path, internal CLINT/PLIC, C906 initialization/cache maintenance and SRAM/ICG selection. Retain prior register corrections, 42 IP chapters, 109 entries and scoped evidence.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify
@@ -143,3 +151,7 @@ Maintainer: #doc.maintainer \
 Project: #link("https://github.com/retroSoC/retroSoC")[retroSoC source repository]
 
 #change-end("v05-emphasis-appendices")
+
+#change-end("v05-dev-20261022-document-control")
+
+#change-end("v05-c906-20261022-sections-appendices")

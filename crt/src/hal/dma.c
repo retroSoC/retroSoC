@@ -183,6 +183,28 @@ rs_status_t rs_dma_session_abort(rs_dma_session_t *session) {
                              : rs_dma_command(session->channel, RS_DMA_CH_CTRL_ABORT, session);
 }
 
+rs_status_t rs_dma_session_abort_wait(rs_dma_session_t *session, rs_timeout_t timeout) {
+    rs_dma_status_t status;
+    rs_status_t result;
+
+    if (session == NULL) {
+        return RS_EINVAL;
+    }
+    result = rs_dma_session_abort(session);
+    while ((result == RS_OK) && (timeout-- != 0U)) {
+        result = rs_dma_get_status(session->channel, &status);
+        if ((result == RS_OK) && !status.busy) {
+            return RS_OK;
+        }
+    }
+    return (result == RS_OK) ? RS_ETIMEOUT : result;
+}
+
+rs_status_t rs_dma_session_reset(rs_dma_session_t *session) {
+    return (session == NULL) ? RS_EINVAL
+                             : rs_dma_command(session->channel, RS_DMA_CH_CTRL_RESET, session);
+}
+
 rs_status_t rs_dma_session_release(rs_dma_session_t *session) {
     uint32_t saved;
     if ((session == NULL) || !rs_dma_channel_valid(session->channel)) {

@@ -215,6 +215,8 @@ def credit_values(text: str, function: str, masters: int) -> list[int]:
 
 
 def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) -> dict:
+    from publications.c906_reference import plic_offset
+
     validate_programming(spec, ids, root, revision)
     result = copy.deepcopy(spec)
     sdk_text = (root / "crt/include/retrosoc/hal/dma.h").read_text()
@@ -235,9 +237,18 @@ def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) ->
     topology = json.loads((root / "rtl/mini/integration/soc_topology.json").read_text())
     interrupts = {row["name"]: row["core_bit"] for row in topology["interrupts"]}
     wiring = clean_source((root / "rtl/mini/top/apb4_periph.sv").read_text())
+    routed_engine_signals = re.findall(
+        r"s_hp_plic_source\[\d+\]=(resource_irq_hp_i\[\d+\]|ext_h_hp_irq_i);", wiring)
+    engine_signals = [row["hp_signal"] for row in result["engines"]]
+    if (set(engine_signals) != set(routed_engine_signals)
+            or len(engine_signals) != len(routed_engine_signals)):
+        raise ValueError("private DMA engine interrupt coverage mismatch")
     for row in result["dma_routes"]:
         if row["irq"] is not None and row["irq"] not in interrupts:
             raise ValueError(f"unknown endpoint interrupt: {row['id']}")
+        named_irqs = set(row["ips"]) & interrupts.keys()
+        if row["number"] and len(named_irqs) == 1 and row["irq"] not in named_irqs:
+            raise ValueError(f"DMA endpoint interrupt omitted or changed: {row['id']}")
         row["lp_irq"] = ("Client-dependent" if row["number"] == 0 else
                          str(interrupts[row["irq"]]) if row["irq"] else "No separate line")
     for row in result["engines"]:
@@ -247,6 +258,7 @@ def collect_programming(root: Path, spec: dict, ids: set[str], revision: str) ->
         if len(routed) != 1:
             raise ValueError(f"HP interrupt routing changed: {row['id']}")
         row["lp_irq"], row["hp_irq"] = interrupts[row["irq"]], int(routed[0])
+        row["hp_plic_id"] = row["hp_irq"] + plic_offset(root)
     crossbar = (root / "rtl/mini/top/axi4_data_crossbar.sv").read_text()
     masters = len(topology["data_master_policies"])
     result["read_credits"] = credit_values(crossbar, "master_read_limit", masters)

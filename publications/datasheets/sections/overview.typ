@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-overview","Overview and current processor identity")
+#change-start("v05-dev-20261022-overview","Updated source identity, RV64 HP and profile-qualified feature summary")
 #import "../figures.typ": *
 
 // Publication status is explicit; successful build/tests do not change these marks.
@@ -67,7 +69,7 @@
   - Stereo 16/24-bit I2S master; 8-bit RGB565/YUV422 DVP with crop/snapshot capture.
   - Baseline JPEG encode/decode up to 2048 × 2048, with private DMA.
   - GA2D fill/copy/convert/opaque blend and A8 masks.
-  - APU WAV/FLAC decode; fixed KWS in the P7 configuration; MP3 unsupported.
+  - APU WAV/FLAC decode; KWS/APUC in the P9 acceptance profile; MP3 unsupported.
   - AES-128/192/256, SHA-224/256 and raw RSA-2048; programmable CRC.
   - RNG source remains unqualified for production entropy.
 
@@ -113,3 +115,7 @@ experimentation, education and ASIC prototyping.
 #change-end("v05-refresh-identity")
 
 #change-end("v05-emphasis-overview")
+
+#change-end("v05-dev-20261022-overview")
+
+#change-end("v05-c906-20261022-sections-overview")

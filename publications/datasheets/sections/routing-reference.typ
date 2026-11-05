@@ -1,5 +1,7 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-routing-reference","C906 external sources and software PLIC IDs")
 #change-start("v05-emphasis-routing-reference","Selected body emphasis: routing reference")
+#change-start("v05-dev-20261022-routing","Crypto endpoint interrupt and complete NPU private-master route")
 #let programming = data.system_reference.programming
 
 == DMA Request, Interrupt and Event Routing <dma-routing>
@@ -19,8 +21,8 @@ selector zero has no dedicated peripheral request wire. WS2812 uses that softwar
 
 The endpoint IRQ column identifies the peripheral's own event line where one exists; it is
 *not the DMA transfer-completion interrupt*. Central DMA channel events aggregate at the DMA
-resource's LP IRQ or HP external source according to the central resource owner. Crypto has no
-separate LP vector entry in this integration; inspect its register status and DMA completion path.
+resource's LP IRQ or HP external source according to the central resource owner. Crypto's own
+event line is *LP vector bit 23*; check Crypto status and central-DMA completion separately.
 
 === Software channel allocation
 #ds-table("dma-channel-conventions",[Current SDK and application channel conventions],
@@ -39,9 +41,9 @@ descriptors or 2D operation merely from fields in the descriptor structure.
 
 === Private DMA masters and owner-directed completion
 #ds-table("private-dma-routes",[Central and private-master routes with owner-directed interrupts],
-  ([Engine],[Native master / gateway],[LP vector bit],[HP external source]),
-  programming.engines.map(r=>(link(label(r.id),r.name),r.master,str(r.lp_irq),str(r.hp_irq))),
-  widths:(1.2fr,1.5fr,0.65fr,0.7fr))
+  ([Engine],[Native master / gateway],[LP vector bit],[HP source / PLIC ID]),
+  programming.engines.map(r=>(link(label(r.id),r.name),r.master,str(r.lp_irq),[#{str(r.hp_irq)} / #{str(r.hp_plic_id)}])),
+  widths:(1.15fr,1.4fr,0.65fr,0.85fr))
 These HP source numbers are read from the actual SoC interrupt wiring. On the OpenC906
 core-internal PLIC, software addresses each one as *PLIC ID = source + 16*. The Resource Controller
 selects one owner's route and masks routes according to its lifecycle contract; it does not
@@ -69,3 +71,6 @@ PIO handling or a separately implemented extension; do not discard the partial-w
 #source-note("rtl/ip/peripheral/dma_core.sv",title:"Start validation, endpoint exclusion and stream acceptance")
 
 #change-end("v05-emphasis-routing-reference")
+#change-end("v05-dev-20261022-routing")
+
+#change-end("v05-c906-20261022-sections-routing-reference")

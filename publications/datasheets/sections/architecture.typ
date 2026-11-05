@@ -1,4 +1,6 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-architecture","OpenC906 topology and reserved internal address window")
+#change-start("v05-dev-20261022-architecture","RV64 processor configuration and source-bound system integration")
 #change-start("v05-emphasis-architecture","Selected body emphasis: architecture")
 #import "../figures.typ": *
 #import "../waveforms.typ": timing
@@ -34,6 +36,7 @@ fabric targets. OpenSBI/Linux inputs and the vendored core revision are dependen
 #source-note("docs/lp-hp-architecture.md", title:"LP/HP architecture and boot contract")
 
 #include "processor-details.typ"
+#change-end("v05-dev-20261022-architecture")
 
 == Interconnect
 === AXI4 and APB4 Interfaces
@@ -61,7 +64,8 @@ byte strobes, burst limits, access permissions and IP-specific side effects rema
 #timing("axis",[AXI4-Stream backpressure and end-of-transfer example.])
 
 === Interconnect Matrix
-The #data.policies.len() initiator identities access #data.targets.len() memory targets. The crossbar arbitrates reads and
+The #data.policies.len() initiator identity slots address #data.targets.len() memory targets;
+slot 1 is retired and tied idle. HP instruction and data traffic share slot 0. The crossbar arbitrates reads and
 writes separately for each target. I/O gateway A combines USB2, SDIO0 and the APU private
 master; gateway B combines SDIO1 and SPI-SD. JPEG occupies slot 6, EXT-H slot 7,
 GA2D slot 8 and NPU slot 9.
@@ -182,3 +186,5 @@ Claim/complete and priority rules follow the T-Head C906 manuals.
 #change-end("dev-architecture")
 
 #change-end("v05-emphasis-architecture")
+
+#change-end("v05-c906-20261022-sections-architecture")

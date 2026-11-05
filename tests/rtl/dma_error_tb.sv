@@ -20,6 +20,7 @@ module dma_error_tb;
   logic   [NumChannels*32-1:0] burst_cfg_i = '0;
   logic   [NumChannels*32-1:0] tcd_head_i = '0;
   logic   [NumChannels*32-1:0] tcd_count_i = '0;
+  logic                        ppalite_route_i = 1'b0;
   logic   [NumChannels*32-1:0] crc_expected_i = '0;
   logic   [   NumChannels-1:0] start_i = '0;
   logic   [   NumChannels-1:0] suspend_i = '0;
@@ -68,18 +69,20 @@ module dma_error_tb;
   integer                      max_write_beats = 0;
   integer                      stream_tx_count = 0;
   integer                      stream_rx_count = 0;
+  integer                      dvp_rx_count = 0;
   logic   [              31:0] written_addr                     [0:127];
   logic   [              31:0] written_data                     [0:127];
   logic   [               3:0] written_strb                     [0:127];
   logic   [              31:0] stream_tx_data                   [  0:7];
   logic                        stream_tx_last                   [  0:7];
   logic                        rx_driver_valid_q = 1'b0;
+  logic                        dvp_driver_valid_q = 1'b0;
   logic   [              31:0] rx_driver_data_q = 32'h5100_0000;
   logic   [               3:0] rx_driver_keep_q = 4'hF;
   logic                        rx_driver_last_q = 1'b0;
   logic                        stream_tx_ready_enable = 1'b1;
   logic                        write_accept_enable = 1'b1;
-  logic   [              31:0] tcd_mem                          [ 0:15];
+  logic   [              31:0] tcd_mem                          [ 0:31];
 
   dma_req_if req ();
   axi4_if axi4 (
@@ -110,7 +113,7 @@ module dma_error_tb;
   always #5 clk_i = ~clk_i;
 
   function automatic logic [31:0] model_read_data(input logic [31:0] address);
-    if ((address >= TcdBase) && (address < (TcdBase + 32'd64))) begin
+    if ((address >= TcdBase) && (address < (TcdBase + 32'd128))) begin
       model_read_data = tcd_mem[(address-TcdBase)>>2];
     end else begin
       model_read_data = 32'hA500_0000 + ((address - SourceBase) >> 2);
@@ -142,22 +145,25 @@ module dma_error_tb;
   assign i2s_rx_axis.tdest = '0;
   assign i2s_rx_axis.tuser = '0;
   assign i2s_rx_axis.tvalid = rx_driver_valid_q;
-  assign dvp_rx_axis.tdata = '0;
-  assign dvp_rx_axis.tkeep = '0;
-  assign dvp_rx_axis.tstrb = '0;
-  assign dvp_rx_axis.tlast = 1'b0;
+  assign dvp_rx_axis.tdata = 32'hD110_0000;
+  assign dvp_rx_axis.tkeep = 4'hF;
+  assign dvp_rx_axis.tstrb = 4'hF;
+  assign dvp_rx_axis.tlast = 1'b1;
   assign dvp_rx_axis.tid = '0;
   assign dvp_rx_axis.tdest = '0;
   assign dvp_rx_axis.tuser = '0;
-  assign dvp_rx_axis.tvalid = 1'b0;
-  assign crypto_in_axis.tready = 1'b0;
-  assign crypto_out_axis.tdata = '0;
-  assign crypto_out_axis.tkeep = '0;
-  assign crypto_out_axis.tstrb = '0;
-  assign crypto_out_axis.tlast = 1'b0;
-  assign crypto_out_axis.tid = '0;
-  assign crypto_out_axis.tdest = '0;
-  assign crypto_out_axis.tuser = '0;
+  assign dvp_rx_axis.tvalid = dvp_driver_valid_q;
+  always @(posedge clk_i) begin
+    if (dvp_rx_axis.tvalid && dvp_rx_axis.tready) dvp_rx_count <= dvp_rx_count + 1;
+  end
+  assign crypto_in_axis.tready  = 1'b0;
+  assign crypto_out_axis.tdata  = '0;
+  assign crypto_out_axis.tkeep  = '0;
+  assign crypto_out_axis.tstrb  = '0;
+  assign crypto_out_axis.tlast  = 1'b0;
+  assign crypto_out_axis.tid    = '0;
+  assign crypto_out_axis.tdest  = '0;
+  assign crypto_out_axis.tuser  = '0;
   assign crypto_out_axis.tvalid = 1'b0;
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -246,9 +252,10 @@ module dma_error_tb;
   end
 
   dma_core #(
-      .NumChannels  (NumChannels),
-      .MaxBurstBeats(16),
-      .FifoDepth    (16)
+      .NumChannels       (NumChannels),
+      .MaxBurstBeats     (16),
+      .FifoDepth         (16),
+      .EnablePpaliteGuard(1'b1)
   ) u_dma_core (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
@@ -290,6 +297,7 @@ module dma_error_tb;
       .first_error_status_o (first_error_status_o),
       .first_error_addr_hi_o(first_error_addr_hi_o),
       .request_status_o     (request_status_o),
+      .ppalite_route_i      (ppalite_route_i),
       .xpi_xfer_done_o      (xpi_xfer_done_o),
       .req                  (req),
       .axi4                 (axi4),
@@ -297,7 +305,8 @@ module dma_error_tb;
       .i2s_rx_axis          (i2s_rx_axis),
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
-      .crypto_out_axis      (crypto_out_axis)
+      .crypto_out_axis      (crypto_out_axis),
+      .spi_admit_ready_i    (2'b00)
   );
 
   task automatic configure_channel(input integer channel, input logic [2:0] kind,
@@ -419,6 +428,39 @@ module dma_error_tb;
       $fatal(1, "DMA TCD fetch transfer failed count=%0d", write_count);
     end
 
+    for (integer index = 0; index < 32; index++) begin
+      tcd_mem[index] = 32'd0;
+    end
+    tcd_mem[0]         = TcdBase + 32'd64;
+    tcd_mem[1]         = CopySource + 32'h200;
+    tcd_mem[2]         = CopyDestination + 32'h200;
+    tcd_mem[3]         = 32'd8;
+    tcd_mem[7]         = 32'h0101_0007;
+    tcd_mem[17]        = 32'd0;
+    tcd_mem[18]        = CopyDestination + 32'h300;
+    tcd_mem[19]        = 32'd8;
+    tcd_mem[23]        = 32'h0101_B207;
+    tcd_head_i[0+:32]  = TcdBase;
+    tcd_count_i[0+:32] = 32'd2;
+    write_before       = write_count;
+    ppalite_route_i    = 1'b1;
+    dvp_driver_valid_q = 1'b1;
+    start_channel(0);
+    wait_terminal(0);
+    dvp_driver_valid_q = 1'b0;
+    tcd_head_i[0+:32]  = 32'd0;
+    tcd_count_i[0+:32] = 32'd0;
+    ppalite_route_i    = 1'b0;
+    if (!error_o[0] || (error_status_o[3:0] != 4'd1) ||
+        (write_count != (write_before + 2)) || (dvp_rx_count != 0) ||
+        (written_data[write_before] != model_read_data(
+            CopySource + 32'h200
+        )) || (written_data[write_before+1] != model_read_data(
+            CopySource + 32'h204
+        ))) begin
+      $fatal(1, "SIM_TEST_FAIL PROCESS TCD request 11 was not rejected before payload");
+    end
+
     configure_channel(0, 3'd0, 4'd0, CopySource, 1'b1, CopyDestination + 32'h100, 1'b1, 32'd6, 2'd1,
                       5'd16);
     write_before = write_count;
@@ -450,7 +492,7 @@ module dma_error_tb;
     start_channel(1);
     wait_terminal(1);
     if (!error_o[1] || !first_error_valid_o || (first_error_channel_o != 2'd1) ||
-        (write_count != 26)) begin
+        (write_count != 28)) begin
       $fatal(1, "DMA read error was not isolated to its channel");
     end
     error_mode = 1'b0;
@@ -474,7 +516,7 @@ module dma_error_tb;
     drive_rx_beat(32'h5100_0001, 4'hF, 1'b1);
     wait_terminal(3);
     if (error_o[3] || (stream_rx_count != 2) || !stream_last_o[3] ||
-        (written_data[26] != 32'h5100_0000) || (written_data[27] != 32'h5100_0001)) begin
+        (written_data[28] != 32'h5100_0000) || (written_data[29] != 32'h5100_0001)) begin
       $fatal(1, "DMA AXI4-Stream RX did not write the programmed byte count");
     end
 

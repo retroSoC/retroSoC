@@ -1,0 +1,26 @@
+; Emit complemented high and low countdowns for software pulse framing.
+.program ir_rx
+.entry wait_high
+.wrap_bottom wait_high
+.wrap_top again
+.in 13, 1
+.out 0, 0
+.set 0, 0
+.tx_bits 32, right, manual
+.rx_bits 32, right, manual
+.test 13, 0
+.packing 0, 0, 16
+.clock_ticks 2, stretchable
+wait_high: WAIT PIN, 1, 13
+MOVE X, ONES
+high: BRANCH TEST_PIN_HIGH, high_count
+BRANCH ALWAYS, high_done
+high_count: BRANCH DEC_X_NONZERO, high
+high_done: MOVE ISR, X
+FIFO PUSH, BLOCKING
+MOVE X, ONES
+low: BRANCH TEST_PIN_HIGH, low_done
+low_count: BRANCH DEC_X_NONZERO, low
+low_done: MOVE ISR, X
+FIFO PUSH, BLOCKING
+again: BRANCH ALWAYS, wait_high

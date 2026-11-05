@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-clock-programming","Fixed OpenC906 identity in clock usage")
 #change-start("v05-emphasis-clock-programming","Selected body emphasis: clock programming")
 #let examples = data.system_reference.programming.timing
 
@@ -90,3 +91,5 @@ The resulting buffer budget is worked through in @software-memory-budget.
 #source-note("rtl/ip/serial/i2s_clkgen.sv",title:"I2S divider edge behavior")
 
 #change-end("v05-emphasis-clock-programming")
+
+#change-end("v05-c906-20261022-sections-clock-programming")

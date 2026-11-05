@@ -1341,6 +1341,74 @@ def test_verilator_simulations_use_uniform_timeout() -> None:
                 assert "HAVE_SVA=YES" in values
 
 
+def test_tiny_p7_iverilog_timeout_preserves_acceptance_budget() -> None:
+    for pdk in ("IHP130", "ICS55"):
+        commands, _ = select_regression("pr", pdk)
+        matches = [
+            values
+            for _, values in commands
+            if "SIMU=IVERILOG" in values
+            and any(value.startswith("TINY_RUN=") for value in values)
+        ]
+        assert len(matches) == 1
+        values = matches[0]
+        assert "TINY_RUN=timeout --foreground 14400s $(VVP) $(SIM_BUILD_ROOT)/simv" in values
+        assert "TINY_SIM_TIMEOUT=6000000" in values
+
+        only = run(
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "pr",
+            "--pdk",
+            pdk,
+            "--tiny-p7-iverilog",
+            "only",
+            "--tiny-p7-iverilog-timeout-seconds",
+            "19800",
+            "--dry-run",
+        )
+        assert only.stdout.count("TINY_RUN=timeout --foreground 19800s") == 1
+        assert "TINY_SIM_TIMEOUT=6000000" in only.stdout
+        assert "TINY_P7_ACCEPTANCE=YES LINK_TYPE=ld2_all_sram" not in only.stdout
+
+        excluded = run(
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "pr",
+            "--pdk",
+            pdk,
+            "--tiny-p7-iverilog",
+            "exclude",
+            "--dry-run",
+        )
+        assert "TINY_RUN=" not in excluded.stdout
+        assert "TINY_P7_ACCEPTANCE=YES LINK_TYPE=ld2_all_sram" in excluded.stdout
+
+
+def test_ihp130_workflow_isolates_long_tiny_p7_iverilog() -> None:
+    workflow = (ROOT / ".github/workflows/regression-ihp130.yml").read_text()
+    reusable = (ROOT / ".github/workflows/_regression.yml").read_text()
+
+    assert "tiny_p7_iverilog: exclude" in workflow
+    assert "tiny_p7_iverilog: only" in workflow
+    assert "tiny_p7_iverilog_timeout_seconds: 19800" in workflow
+    assert "timeout_minutes: 360" in workflow
+    assert "timeout_minutes: 480" not in workflow
+    assert "artifact_suffix: -tiny-p7-iverilog" in workflow
+    assert '--tiny-p7-iverilog "${{ inputs.tiny_p7_iverilog }}"' in reusable
+    assert (
+        '--tiny-p7-iverilog-timeout-seconds '
+        '"${{ inputs.tiny_p7_iverilog_timeout_seconds }}"' in reusable
+    )
+    assert "${{ inputs.artifact_suffix }}" in reusable
+
+
 def test_verilator_has_no_external_core_selection() -> None:
     command_line = (ROOT / "rtl/mini/dv/verilator/csrc/main.cpp").read_text(encoding="utf-8")
     wrapper = (ROOT / "rtl/mini/dv/verilator/rtl/retrosoc_top.sv").read_text(encoding="utf-8")

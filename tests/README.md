@@ -4,6 +4,64 @@ This directory contains tests for deterministic SDK behavior and build/quality
 tooling.
 
 - `c/test_runtime.c` is the host C test program used by `make sw-host-test`.
+- `test_piolite_isa.py`, `test_piolite_model.py`, and
+  `test_piolite_assembler.py` cover every ISA1.0 encoding, independent two-SM
+  cycle/packing traces, strict source diagnostics, deterministic C objects,
+  atomic shared-store allocation, application/pair footprints, and independent
+  UART sampling, pulse-phase, and logic-capture cadence/count behavior. These
+  are P1 host-model checks, not RTL, protocol-waveform, firmware, or
+  operating-rate qualification.
+- `test_piolite_register_parity.py` checks exact handwritten SVH/C dictionaries,
+  the 119-entry APB register matrix, resets, fields, and ISA enums. Standalone
+  `piolite_exhaustive_tb.sv` executes all 65536 instruction words in the real SM
+  with 22257 legal and 43279 rejected one-tick differential outcomes. The
+  `piolite_{isa,core,fifo,apb,lifecycle,netlist}_tb.sv` fixtures add 29 directed
+  programs and independent pin/stream/FIFO/APB oracles on Verilator and Icarus.
+  The PL-V checklist covers CSR/access/error matrices, randomized pre-edge FIFO
+  activity, command/commit and first-fault races, saturation, and paused-DMA
+  progress. PAUSE candidates use a two-word region and a delay-1 SET_COUNT to
+  prove PC/delay retention, and cover IN/OUT/SET_COUNT/FLAG/HALT side effects;
+  live configuration/IMEM writes are rejected atomically in RUNNING, CLOSING,
+  and transport-active states. Formal runs preserve FIFO induction and add
+  full-top BMC/cover witnesses, exact assertion identities, and negative
+  deleted-assertion/missing-witness self-checks.
+  `piolite-p2-{lint,rtl,formal,synth,netsim,sta,report}` retains
+  source/tool/artifact-bound standalone evidence, not Tiny integration or a
+  qualified product operating point.
+- `test_ppalite_model.py` checks independent scalar pixel/layout oracles and
+  `test_ppalite_register_parity.py` checks the 40-entry handwritten APB1.0
+  SVH/C mirror with RAW/PROCESS integration capability absent.
+  `test_ppalite_p1.py` covers the fail-closed standalone driver. The
+  `ppalite_{core,stream,apb,fifo,netlist}_tb.sv` fixtures run 97 independent
+  format/geometry vectors on Verilator and Icarus, randomized gaps/backpressure,
+  pre-edge FIFO conservation, malformed and excess input, checked layout,
+  atomic commands and source/transport guard lifecycle. Formal covers FIFO
+  induction, bounded top properties and named witnesses.
+  `ppalite_bfm_selftest_tb.sv` checks case-equality sidebands; its unknown
+  ID/DEST/STRB cases run on four-state Icarus and are explicitly not applicable
+  to two-state Verilator coverage. Empty, missing, duplicate or reordered vector
+  execution markers fail closed.
+  `ppalite-p1-{lint,rtl,formal,synth,netsim,sta,report}` binds source, tools and
+  artifacts to standalone P1 evidence; it does not wire a Tiny instance, repair
+  DVP, admit DMA, or qualify a product operating point.
+- `test_ppalite_p2.py` executes 18 real-DVP/PPALite route cases on both
+  simulators: processed completion/release, source-update and DMA-START races,
+  RAW parity and odd tails, repeated snapshots, missing PIXCLK, unilateral source
+  reset, malformed rows outside crop, exact DMA admission, dropped-row drain,
+  cancelled-enable reapplication, direction/strobe mismatch, CLOSING guards and
+  ABORT/fault-versus-start priorities.
+  `ppalite_route_formal.sv` supplies route BMC and named cover witnesses.
+  `ppalite-p2-{lint,rtl,formal,synth,netsim,sta,report}` binds these standalone
+  source-guard and route checks to current source/artifacts; it does not wire a
+  Tiny product instance, admit real central-DMA traffic or claim timing closure.
+- `test_ppalite_p3.py` checks Tiny APB/IRQ27/RCU17 metadata and acceptance-image
+  isolation. `ppalite_dma_guard_tb.sv` executes real APB admission on both
+  simulators: exact direct DMA2 configuration, stale DONE, repeated START,
+  processed-TCD rejection, DONE-before-RELEASE ownership, ABORT/drained RESET,
+  DMA readiness loss and RAW bypass. The P1 APB fixture also proves held-output
+  recovery without extra payload. `tests/c/test_runtime.c` adds deterministic
+  PPALite layout, absent/present HAL, RAW-route rejection, complete FIFO-level
+  checks, and ARM-failure DMA cleanup with retained leases on cleanup failure.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

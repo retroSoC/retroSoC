@@ -97,3 +97,11 @@
 /ip/multimedia/dvp_core.sv
 /ip/multimedia/dvp_reg.sv
 /ip/multimedia/axi4s_dvp.sv
+/ip/ppalite/ppalite_if.sv
+/ip/ppalite/ppalite_fifo.sv
+/ip/ppalite/ppalite_decimator.sv
+/ip/ppalite/ppalite_packer.sv
+/ip/ppalite/ppalite_stream_guard.sv
+/ip/ppalite/ppalite_core.sv
+/ip/ppalite/ppalite_reg.sv
+/ip/ppalite/apb4_ppalite.sv

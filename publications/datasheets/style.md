@@ -18,6 +18,40 @@ do not silently apply an older proposal instead.
 
 ## Content refresh and evidence rules
 
+### Product binding and extraction completeness
+
+Resolve reusable-IP values through the selected product instance and committed
+profile. Module defaults are not deployed values. Trace APU enable propagation,
+Crypto macro guards, DMA channel/request limits and technology pad capabilities;
+unknown guards or changed product bindings require review. Shared RTL and Tiny
+capabilities must not silently become Mini specifications.
+Repeated register-bank counts must also follow the deployed instance. Check the
+last resource/master index explicitly; presence of the register definitions and
+an IP chapter does not prove that every repeated instance is documented.
+
+Every explicitly selected source section must match exactly one heading. Missing,
+duplicate or renamed headings fail collection instead of silently omitting prose.
+An empty selection is permitted for deliberately handwritten chapters. When source
+prose is stale, provide reviewed publication wording and record the discrepancy
+without rewriting RTL or weakening source checks.
+Publication-only paragraph corrections must match exactly one selected paragraph
+and include executable configuration/RTL bindings. Reject changed or missing
+text/bindings, retain the original passage in the correction record and hash every
+bound source. Reconcile actual clock wiring separately from a controller's static
+clock-reporting parameter or the frequency used to calculate reset timing counts.
+
+Assess implementation state and document coverage separately for every frozen
+entry: covered/retained, update required, source/specification discrepancy and
+missing evidence. Give concrete advice for retained chapters too. Preserve the
+practical effects of discovery defects, asynchronous completion, stopped-clock
+maintenance and workload-specific ownership.
+
+Compare the previous delivered PDF with both current sources and the updated
+publication. Previously committed but undelivered prose is a delivery change, not
+a newly implemented feature. Current markers describe semantic changes; source
+link/date changes and pagination are separate. Preserve the existing cover geometry,
+logo reserve, body emphasis and diagram type-size rules.
+
 Bind each refresh to the complete reviewed dev commit SHA, not a moving branch
 name or an abbreviated hash. Record when the branch and its CI were checked in
 UTC; this observation time is separate from the publication date. Recheck before
@@ -64,6 +98,36 @@ claims or a vendor's release-status policy into Mini. Source/spec discrepancies
 and missing measurements need explicit follow-up advice, not invented values.
 
 ## System-use content and evidence
+
+### Core migration and implementation boundaries
+
+After a core migration, reconcile core identity, ISA and privilege, cache geometry
+and maintenance, physical/virtual address widths, master slots, IRQ namespaces,
+debug/reset, firmware startup and evidence across every publication layer. Keep
+the original chapter/IP anchors; replace retired SoC register descriptions with
+the current integration boundary and remove stale index links. A retained master
+slot or numeric credit does not prove that an initiator is connected.
+
+Distinguish core-internal decode from the SoC fabric map. An aperture reserved in
+the fabric can host registers decoded inside the CPU; do not present it as an
+LP-accessible peripheral. Show hardware source numbers and software interrupt IDs
+separately, with the implemented translation checked against producer wiring.
+An address-width reduction must state whether high bits are rejected or discarded.
+
+Record the exact managed core revision and all applied override hashes. Verify
+the pinned upstream targets before interpreting the overrides; line-ending
+conversion is an input-integrity problem to repair from locked Git objects,
+not a reason to change expected hashes. Keep the managed tree content unchanged.
+
+For SRAM and clock gates, publish a configuration matrix with the PDK, behavioral
+guard, macro-enable conditions, concrete model/cell and fallback. A functional
+macro model, real cell name or successful boot does not establish synthesis,
+LEC, timing or physical qualification. Preserve default and explicit test variants.
+
+Keep old-core results historical. When a narrative records a sequence of failed
+frontiers and a later fix, retain that progression without treating either an
+intermediate stop or a later narrative as a newly executed current-source test.
+Current Reported pass entries still require matching raw artifacts and context.
 
 The publication includes a complete system-use reference around the detailed IP
 chapters. Keep the cover and Overview, then place Product Configuration and
@@ -240,14 +304,41 @@ decode coverage, preserve EXT-L/EXT-H capability restrictions, and keep RCU in
 the SYSCTRL bank. Do not interpret a memory data aperture as a register window.
 
 Retain repeated-bank formulas instead of expanding every channel/array element.
+Cross-IP engine tables must cover every implemented owner-directed completion
+route in the actual PLIC assignments. Named DMA endpoint IRQs must agree with
+the canonical interrupt inventory; never infer an absent peripheral interrupt
+from its separate DMA completion path.
 Show the element-zero instance-relative offset, first absolute address, stride,
 valid index range, access and reset meaning. State the 32-bit access width and
 link each register name to its existing description. Numeric addresses and names
 use the existing code face; register-name links remain blue without underlines.
 Long names may break at underscores without changing their visible spelling.
+In narrow access columns, display unsupported accesses as `N/A`; retain the full
+unsupported-operation meaning in the register description and extracted record.
+Display `RO/unsupported` as `RO*` and define it as readable status with unsupported
+write/control behavior. Keep long identifiers at 9 pt and insert explicit breaks
+at underscores before they intrude into adjacent columns. Shorten displayed commit
+and configuration hashes to twelve characters in narrow evidence tables; retain
+full identities in the linked source records and build manifest.
 Preserve conditional, dynamic and non-retained reset descriptions. Instance
 overrides require reviewed decoder/parameter bindings. Check the complete expanded
 address set for overlap and window bounds even though the PDF uses compact rows.
+
+Do not infer a field width only from the next macro or a similarly named register.
+Use explicit masks, producer concatenations, consumer slices or a reviewed ABI
+layout; bind corrective annotations to source text and fail when it changes.
+In particular, `CONFIG_LOCK` fields do not belong to `CONFIG`, a highest-position
+field can span multiple bits, and gaps between flags remain reserved.
+Honor explicit `_LSB`/`_MSB` pairs and single `_BIT` declarations before heuristic
+inference. Compare written slices with readback packing; when they differ, label
+both views and forbid an assumed symmetric read-modify-write sequence. Macro
+prefixes alone do not prove the register that consumes a control field.
+Read-zero command positions are not reserved write positions. Review both write
+admission and the downstream pulse consumer, including strobe rules and retained
+configuration updated by the same write. Keep numeric opcodes separate from
+independent command masks. A writable decoder case with only reserved documented
+bits fails validation. Document tied-zero measurements and overlapping readback
+bits as implementation limitations; do not replace them with intended behavior.
 
 Diagnostic tables identify the producing module and field before the value.
 Enums, independent mask bits, field positions, application result bytes and

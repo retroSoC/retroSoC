@@ -75,25 +75,26 @@ RTL_PATH := $(ROOT_PATH)/rtl/$(shell printf '%s' '$(SOC)' | tr '[:upper:]' '[:lo
 RTL_TOP ?= retrosoc_tb
 
 # SW
-ISA                    ?= RV32IM
-HAVE_CSR               ?= NO
-FIRMWARE_NAME          ?= retrosoc_fw
-APP                    ?= shell
-LINK_TYPE              ?= ld2_sram
-SW_ISA_PROFILE         ?= COMPAT
-SW_OPT                 ?= APP
-SW_LTO                 ?= NO
-WS2812_P3_ACCEPTANCE   ?= NO
-TINY_P7_ACCEPTANCE     ?= NO
-TINY_P8_ACCEPTANCE     ?= NO
-TINY_P9_ACCEPTANCE     ?= NO
-TINY_P9_QUICK          ?= NO
-TINY_P9_WORKLOAD       ?= QVGA_RGB565
-TINY_P10_ACCEPTANCE    ?= NO
-TINY_SPI_P3_ACCEPTANCE ?= NO
-TINY_SPI_P4_ACCEPTANCE ?= NO
-COREMARK_MODE          ?= quick
-NPU_P5_ACCEPTANCE      ?= NO
+ISA                        ?= RV32IM
+HAVE_CSR                   ?= NO
+FIRMWARE_NAME              ?= retrosoc_fw
+APP                        ?= shell
+LINK_TYPE                  ?= ld2_sram
+SW_ISA_PROFILE             ?= COMPAT
+SW_OPT                     ?= APP
+SW_LTO                     ?= NO
+WS2812_P3_ACCEPTANCE       ?= NO
+TINY_P7_ACCEPTANCE         ?= NO
+TINY_P8_ACCEPTANCE         ?= NO
+TINY_P9_ACCEPTANCE         ?= NO
+TINY_P9_QUICK              ?= NO
+TINY_P9_WORKLOAD           ?= QVGA_RGB565
+TINY_P10_ACCEPTANCE        ?= NO
+TINY_SPI_P3_ACCEPTANCE     ?= NO
+TINY_SPI_P4_ACCEPTANCE     ?= NO
+TINY_PPALITE_P3_ACCEPTANCE ?= NO
+COREMARK_MODE              ?= quick
+NPU_P5_ACCEPTANCE          ?= NO
 # Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
 # for HP bring-up sessions, behavior-neutral when off. Debug runs are not
 # qualification evidence, so the knob deliberately stays out of the variant
@@ -163,6 +164,9 @@ CONFIG_KEY_VARS += TINY_SPI_P3_ACCEPTANCE
 endif
 ifeq ($(TINY_SPI_P4_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_SPI_P4_ACCEPTANCE
+endif
+ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_PPALITE_P3_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -330,6 +334,12 @@ $(call validate_value,TINY_P9_QUICK,$(VALID_BOOL))
 $(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_PPALITE_P3_ACCEPTANCE,$(VALID_BOOL))
+ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO)
+$(error TINY_PPALITE_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
 ifeq ($(TINY_P10_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P9_QUICK),TINY/ci_smoke/YES/NO/NO/NO/NO)
 $(error TINY_P10_ACCEPTANCE requires Tiny ci_smoke with CSR and no P7/P8/P9 acceptance image)
@@ -557,6 +567,21 @@ else
 include physical/librelane/mini/Makefile
 endif
 include physical/ecc/Makefile
+
+.PHONY: piolite-p2-lint piolite-p2-rtl piolite-p2-formal piolite-p2-synth piolite-p2-netsim piolite-p2-sta piolite-p2-report
+piolite-p2-lint piolite-p2-rtl piolite-p2-formal piolite-p2-synth piolite-p2-netsim piolite-p2-sta piolite-p2-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/piolite_p2.py $(patsubst piolite-p2-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS)
+
+.PHONY: ppalite-p1-lint ppalite-p1-rtl ppalite-p1-formal ppalite-p1-synth ppalite-p1-netsim ppalite-p1-sta ppalite-p1-report
+ppalite-p1-lint ppalite-p1-rtl ppalite-p1-formal ppalite-p1-synth ppalite-p1-netsim ppalite-p1-sta ppalite-p1-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/ppalite_p1.py $(patsubst ppalite-p1-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS)
+
+.PHONY: ppalite-p2-lint ppalite-p2-rtl ppalite-p2-formal ppalite-p2-synth ppalite-p2-netsim ppalite-p2-sta ppalite-p2-report
+ppalite-p2-lint ppalite-p2-rtl ppalite-p2-formal ppalite-p2-synth ppalite-p2-netsim ppalite-p2-sta ppalite-p2-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/ppalite_p2.py $(patsubst ppalite-p2-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --jobs $(JOBS)
 
 .PHONY: spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report
 spi-p1-lint spi-p1-rtl spi-p1-formal spi-p1-synth spi-p1-netsim spi-p1-sta spi-p1-report: manifest

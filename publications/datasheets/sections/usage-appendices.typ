@@ -1,4 +1,5 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-usage-appendices","Current core terminology and usage navigation")
 #change-start("v05-emphasis-usage-appendices","Selected body emphasis: usage appendices")
 #import "../diagram-packages.typ": storage-figures
 
@@ -139,3 +140,5 @@ and record the discrepancy rather than silently copying the older statement.
 #source-note("docs/README.md",title:"Engineering document map")
 
 #change-end("v05-emphasis-usage-appendices")
+
+#change-end("v05-c906-20261022-sections-usage-appendices")

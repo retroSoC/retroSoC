@@ -64,3 +64,23 @@ rs_status_t rs_st7789vi_window_cells(const rs_st7789vi_window_t *window, uint32_
     *words = (count + 1U) / 2U;
     return RS_OK;
 }
+
+rs_status_t rs_st7789vi_buffer_layout(const rs_st7789vi_window_t *window, uintptr_t source,
+                                      uint32_t capacity_bytes, uint32_t *pixels, uint32_t *words) {
+    uint32_t bytes;
+    uint32_t transport_bytes;
+
+    if ((source == (uintptr_t)0U) || ((source & (sizeof(uint32_t) - 1U)) != (uintptr_t)0U) ||
+        (source > (uintptr_t)UINT32_MAX)) {
+        return RS_EINVAL;
+    }
+    if (rs_st7789vi_window_cells(window, pixels, &bytes, words) != RS_OK) {
+        return RS_EINVAL;
+    }
+    transport_bytes = *words * sizeof(uint32_t);
+    if ((capacity_bytes < transport_bytes) ||
+        (source > (uintptr_t)UINT32_MAX - (uintptr_t)(transport_bytes - 1U))) {
+        return RS_EINVAL;
+    }
+    return RS_OK;
+}

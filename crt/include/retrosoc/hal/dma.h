@@ -126,6 +126,8 @@ rs_status_t rs_dma_session_acquire(rs_dma_session_t *session, uint32_t channel);
 rs_status_t rs_dma_session_configure(rs_dma_session_t *session, const rs_dma_config_t *config);
 rs_status_t rs_dma_session_start(rs_dma_session_t *session);
 rs_status_t rs_dma_session_abort(rs_dma_session_t *session);
+rs_status_t rs_dma_session_abort_wait(rs_dma_session_t *session, rs_timeout_t timeout);
+rs_status_t rs_dma_session_reset(rs_dma_session_t *session);
 rs_status_t rs_dma_session_release(rs_dma_session_t *session);
 
 #define RS_DMA_TCD_VALID          UINT32_C(0x00000001)

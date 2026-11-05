@@ -37,9 +37,9 @@
     ],
     "xpi_target": 4,
     "apb_target_base": 5,
-    "decode_error_target": 27,
-    "protocol_error_target": 28,
-    "target_count": 29
+    "decode_error_target": 28,
+    "protocol_error_target": 29,
+    "target_count": 30
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,
@@ -178,6 +178,12 @@
       "regions": [
         "APB4_SPI"
       ]
+    },
+    {
+      "name": "ppalite",
+      "regions": [
+        "APB4_PPALITE"
+      ]
     }
   ],
   "interrupts": [
@@ -275,6 +281,11 @@
       "name": "spi",
       "core_bit": 25,
       "signal": "s_spi_irq"
+    },
+    {
+      "name": "ppalite",
+      "core_bit": 27,
+      "signal": "s_ppalite_irq"
     },
     {
       "name": "rcu",

@@ -29,6 +29,7 @@ module apb4_spi #(
     session_owned_o,
     lifecycle_idle_o,
     output logic         [ 1:0] credit_commit_o,
+    output logic         [ 1:0] dma_admit_ready_o,
            apb4_if.slave        apb4
 );
   spi_ctrl_if u_ctrl ();
@@ -98,9 +99,13 @@ module apb4_spi #(
       .apb4               (apb4),
       .ctrl               (u_ctrl)
   );
-  assign credit_commit_o  = s_credit_commit;
-  assign session_owned_o  = s_stat.status[5];
+  assign credit_commit_o = s_credit_commit;
+  assign session_owned_o = s_stat.status[5];
   assign lifecycle_idle_o = s_stat.status[10] && s_stat.status[11] && !s_stat.status[5];
+  assign dma_admit_ready_o[0] = EnableDma && s_cfg.tx_binding[31] && u_ctrl.tx_ready &&
+      !s_credit_pending[0];
+  assign dma_admit_ready_o[1] = EnableDma && s_cfg.rx_binding[31] && u_ctrl.rx_ready &&
+      !s_credit_pending[1];
   spi_master_core u_master_core (
       .apb_pending_i      (s_fifo_pending),
       .clk_i              (clk_i),

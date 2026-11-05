@@ -1,6 +1,8 @@
 #import "../style.typ": *
+#change-start("v05-c906-20261022-sections-register-index","Removal of retired SoC interrupt-controller registers")
+#change-start("v05-dev-20261022-register-index","Updated selected-profile register values and discovery entries")
 #change-start("v05-emphasis-register-index","Selected body emphasis: register index")
-#import "../ip-reference.typ": inline
+#import "../ip-reference.typ": inline, summary-access
 
 = Appendix: Global Register and Address Index <global-register-index>
 The index covers #data.system_reference.retrieval.register_index.definitions published
@@ -22,6 +24,21 @@ reference. It does not promise the value of a later live status read. Register a
 also *does not grant an initiator access* or establish that an optional feature is available.
 
 #let index = data.system_reference.retrieval.register_index
+#let register-name(value) = {
+  // Explicit line breaks keep long identifiers clear of the address column.
+  let lines=()
+  let current=""
+  for part in value.split("_") {
+    if current!="" and current.len()+part.len()+1>23 {
+      lines.push(current+"_")
+      current=part
+    } else {
+      current+=if current=="" {part} else {"_"+part}
+    }
+  }
+  lines.push(current)
+  lines.map(code).join(linebreak())
+}
 #let bank-table(bank) = {
   // Keep the EXT-H bank boundary stable beside the preceding qualified EXT-L table.
   if bank.region=="APB4_EXT_H" {pagebreak(weak:true)}
@@ -34,11 +51,11 @@ also *does not grant an initiator access* or establish that an optional feature 
     ds-table("lookup-"+bank.id,[#bank.region register address index],
       ([Offset],[Register / definition],[Absolute address / array],[Access],[Reset]),
       bank.rows.map(r=>(code(r.offset_hex),
-        link(label(r.link),code((if r.group=="main" {r.name} else {r.group+"."+r.name}).replace("_","_\u{200b}"))),
+        link(label(r.link),register-name(if r.group=="main" {r.name} else {r.group+"."+r.name})),
         [#code(r.first_hex)#if r.count>1 {[
           #linebreak() + n × #code("0x"+str(r.stride,base:16))
           #linebreak() n = 0…#(r.count - 1)
-        ]}],r.access,inline(r.reset))),
+        ]}],summary-access(r.access),inline(r.reset))),
       widths:(0.55fr,1.6fr,1.2fr,0.9fr,1.1fr))
   }
 }
@@ -65,3 +82,7 @@ the canonical topology and the selected register decoder.
 #source-note("publications/datasheets/system-reference.json",title:"Register-window mapping and reviewed instance qualifications")
 
 #change-end("v05-emphasis-register-index")
+
+#change-end("v05-dev-20261022-register-index")
+
+#change-end("v05-c906-20261022-sections-register-index")

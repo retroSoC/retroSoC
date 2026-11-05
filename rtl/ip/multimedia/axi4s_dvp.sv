@@ -33,10 +33,32 @@ module axi4s_dvp (
     dvp_if.dut            dvp,
     output logic          irq_o,
     output logic          lifecycle_idle_o,
-    output logic          lifecycle_reset_ready_o
+    output logic          lifecycle_reset_ready_o,
+    output logic [127:0]  source_config_o,
+    output logic          source_config_pending_o,
+    output logic          source_command_pending_o,
+    output logic          source_flush_pending_o,
+    output logic          source_status_valid_o,
+    output logic          source_capture_idle_o,
+    output logic          source_active_o,
+    output logic          source_enabled_o,
+    output logic          source_requested_enabled_o,
+    output logic          source_fifo_empty_o,
+    output logic [`APB4_DVP__FRAME_STATS_WIDTH-1:0] source_frame_stats_o,
+    output logic          source_frame_stats_valid_o,
+    output logic [  5:0]  source_error_o
     // verilog_format: on
 );
   localparam int DvpPayloadWidth = 42;
+  localparam int DvpBufferDepth = 128;
+
+`ifndef SYNTHESIS
+  initial begin
+    if (DvpPayloadWidth != 42 || DvpBufferDepth != 128) begin
+      $fatal(1, "DVP payload FIFO contract changed");
+    end
+  end
+`endif
 
   logic [127:0] s_cfg_sys;
   logic         s_cfg_v_sys;
@@ -61,6 +83,7 @@ module axi4s_dvp (
   logic s_err_report_ready, s_err_report_valid;
   logic [  5:0] s_err_report_sys;
   logic [127:0] s_cfg_pclk_q;
+  logic [127:0] s_cfg_applied_pclk_q;
   logic         s_cfg_v_pclk;
   logic         s_cfg_rdy_pclk;
   logic [  1:0] s_cmd_sys;
@@ -93,7 +116,7 @@ module axi4s_dvp (
   logic                                    s_clear_accept_sys;
   logic                                    s_clear_accept_pclk;
   logic [                             5:0] s_clear_done;
-  logic [                            12:0] s_stat_sys;
+  logic [                           140:0] s_stat_sys;
   logic                                    s_stat_valid_sys;
   logic                                    s_stream_en;
   logic                                    s_fifo_src_ready;
@@ -183,35 +206,37 @@ module axi4s_dvp (
   );
 
   dvp_reg u_dvp_reg (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .apb4               (apb4),
-      .active_i           (s_active),
-      .enabled_i          (s_stat_sys[7]),
-      .fifo_empty_i       (s_fifo_empty_sys),
-      .fifo_full_i        (s_fifo_full_sys),
-      .rx_data_i          (s_fifo_rx_data),
-      .frame_start_i      (s_frame_start_event),
-      .line_done_i        (s_line_done_event),
-      .frame_done_i       (s_frame_done_event),
-      .error_event_i      (s_err_report_valid),
-      .error_events_i     (s_err_report_sys),
-      .error_flags_i      (s_err_flags_sys),
-      .error_valid_i      (s_stat_valid_sys),
-      .error_clear_done_i (s_clear_done),
-      .error_clear_o      (s_err_clear),
-      .frame_stats_i      (s_frm_stats_sys),
-      .frame_stats_valid_i(s_frm_stats_v_sys),
-      .cfg_o              (s_cfg_sys),
-      .cfg_valid_o        (s_cfg_v_sys),
-      .cfg_ready_i        (s_cfg_rdy_sys),
-      .cmd_abort_o        (s_cmd_abort_sys),
-      .cmd_flush_o        (s_cmd_flush_sys),
-      .cmd_valid_o        (s_cmd_v_sys),
-      .cmd_ready_i        (s_cmd_rdy_sys && !s_cmd_busy_q),
-      .rx_pop_o           (s_rx_pop),
-      .stream_enable_o    (s_stream_en),
-      .irq_o              (irq_o)
+      .clk_i                     (clk_i),
+      .rst_n_i                   (rst_n_i),
+      .apb4                      (apb4),
+      .active_i                  (s_active),
+      .enabled_i                 (s_stat_sys[7]),
+      .fifo_empty_i              (s_fifo_empty_sys),
+      .fifo_full_i               (s_fifo_full_sys),
+      .rx_data_i                 (s_fifo_rx_data),
+      .frame_start_i             (s_frame_start_event),
+      .line_done_i               (s_line_done_event),
+      .frame_done_i              (s_frame_done_event),
+      .error_event_i             (s_err_report_valid),
+      .error_events_i            (s_err_report_sys),
+      .error_flags_i             (s_err_flags_sys),
+      .error_valid_i             (s_stat_valid_sys),
+      .error_clear_done_i        (s_clear_done),
+      .error_clear_o             (s_err_clear),
+      .source_error_o            (source_error_o),
+      .source_requested_enabled_o(source_requested_enabled_o),
+      .frame_stats_i             (s_frm_stats_sys),
+      .frame_stats_valid_i       (s_frm_stats_v_sys),
+      .cfg_o                     (s_cfg_sys),
+      .cfg_valid_o               (s_cfg_v_sys),
+      .cfg_ready_i               (s_cfg_rdy_sys),
+      .cmd_abort_o               (s_cmd_abort_sys),
+      .cmd_flush_o               (s_cmd_flush_sys),
+      .cmd_valid_o               (s_cmd_v_sys),
+      .cmd_ready_i               (s_cmd_rdy_sys && !s_cmd_busy_q),
+      .rx_pop_o                  (s_rx_pop),
+      .stream_enable_o           (s_stream_en),
+      .irq_o                     (irq_o)
   );
 
   cdc_2phase #(
@@ -246,6 +271,15 @@ module axi4s_dvp (
       .rst_n_i(s_pclk_rst_n),
       .dat_i  (s_cfg_v_pclk && s_cfg_rdy_pclk && !s_cfg_apply_pclk_q),
       .dat_o  (s_cfg_apply_pclk_q)
+  );
+  dffer #(
+      .DATA_WIDTH(128)
+  ) u_config_applied_snapshot (
+      .clk_i  (s_pclk_sel),
+      .rst_n_i(s_pclk_rst_n),
+      .en_i   (s_cfg_apply_pclk_q && !s_cfg_cancel_apply),
+      .dat_i  (s_cfg_pclk_q),
+      .dat_o  (s_cfg_applied_pclk_q)
   );
   dffr #(
       .DATA_WIDTH(1)
@@ -354,7 +388,7 @@ module axi4s_dvp (
 
   cdc_fifo_warm_flush #(
       .DATA_WIDTH  (DvpPayloadWidth),
-      .BUFFER_DEPTH(128)
+      .BUFFER_DEPTH(DvpBufferDepth)
   ) u_dvp_payload_fifo (
       .src_clk_i       (s_pclk_sel),
       .src_rst_n_i     (s_pclk_rst_n),
@@ -442,17 +476,18 @@ module axi4s_dvp (
   );
   /* verilator lint_off PINCONNECTEMPTY */
   cdc_2phase #(
-      .DATA_WIDTH(13)
+      .DATA_WIDTH(141)
   ) u_status_cdc (
       .src_clk_i(s_pclk_sel),
       .src_rst_n_i(s_pclk_rst_n),
       .src_data_i({
+        s_cfg_applied_pclk_q,
         !s_fifo_src_clear_busy,
         s_cmd_epoch_pclk_q,
         s_cfg_epoch_pclk_q,
         s_capture_idle_pclk && !s_fifo_src_clear_busy && !(|s_err_pending_q) && s_err_report_ready,
         s_clear_epoch_pclk_q,
-        s_cfg_pclk_q[96],
+        s_cfg_applied_pclk_q[96],
         s_active_pclk,
         s_err_flags_pclk
       }),
@@ -566,6 +601,18 @@ module axi4s_dvp (
   assign lifecycle_idle_o = !s_ctrl_pending && (!s_stat_seen_q || s_stat_sys[9]) &&
                             s_fifo_empty_sys && !s_fifo_dst_clear_busy && !rx_axis.tvalid;
   assign lifecycle_reset_ready_o = s_stat_seen_q && lifecycle_idle_o && s_stat_sys[12];
+  assign source_config_o = s_stat_sys[140:13];
+  assign source_config_pending_o = s_cfg_v_sys || s_cfg_busy_q;
+  assign source_command_pending_o = s_cmd_v_sys || s_cmd_busy_q || s_clear_busy_q ||
+                                    (|s_clear_pending_q);
+  assign source_flush_pending_o = s_fifo_dst_clear_busy;
+  assign source_status_valid_o = s_stat_seen_q;
+  assign source_capture_idle_o = s_stat_sys[9];
+  assign source_active_o = s_active;
+  assign source_enabled_o = s_stat_sys[7];
+  assign source_fifo_empty_o = s_fifo_empty_sys;
+  assign source_frame_stats_o = s_frm_stats_sys;
+  assign source_frame_stats_valid_o = s_frm_stats_v_sys;
 
   dvp_core u_dvp_core (
       .clk_i               (s_pclk_sel),

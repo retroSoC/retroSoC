@@ -2,5 +2,9 @@
 
 rs_status_t example_crypto(const uint8_t *key, size_t key_bytes, rs_timeout_t timeout)
 {
+    rs_status_t result = rs_crypto_init(timeout);
+    if (result != RS_OK) {
+        return result;
+    }
     return rs_crypto_aes_set_key(key, key_bytes, timeout);
 }

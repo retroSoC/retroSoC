@@ -251,9 +251,14 @@ drivers are omitted; Tiny SYSCTRL rejects unsupported lifecycle/PLL operations
 before MMIO. Startup skips external-RAM initialization and loads into SRAM.
 
 P6 selects the existing RNG/CRC/WS2812/Crypto/I2S/SDIO drivers. Crypto uses 4/5,
-audio uses 6/7 and channel 3 remains exclusively leased for a WS frame.
-I2C1, SDIO1, DVP and future DMA endpoints remain unsupported on Tiny. Shared
-Mini defaults are unchanged; Tiny does not acquire Mini's HP channel reservation.
+audio uses 6/7 and channel 3 remains exclusively leased for a WS frame. Tiny DVP
+uses channel 2. PPALite adds a bounded, caller-owned capture/session HAL on the
+same channel with non-flushing source stop and explicit abort/recover/release;
+ARM-failure cleanup drains and resets accepted DMA work before releasing its
+lease, and retains that lease if bounded cleanup fails. Legacy RAW helpers
+reject PROCESS without probing absent products. I2C1 and
+SDIO1 remain unsupported. Shared Mini defaults are unchanged; Tiny does not
+acquire Mini's HP channel reservation.
 
 `<retrosoc/hal/watchdog.h>` provides `rs_watchdog_configure`, `rs_watchdog_start`,
 `rs_watchdog_service`, `rs_watchdog_get_status` and `rs_watchdog_clear_reset_cause`,
