@@ -15,15 +15,77 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  scripts:
+  impact:
+    uses: ./.github/workflows/_change-impact.yml
+
+  fast:
     runs-on: ubuntu-22.04
-    timeout-minutes: 90
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          # Historical publication fixtures are materialized with git archive.
-          # Keep the immutable revisions named by tests available locally.
+          fetch-depth: 0
+
+      - name: Restore pip cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Install pinned quality tools
+        run: >-
+          python3 -m pip install
+          --requirement requirements/build.txt
+          --requirement requirements/ci.txt
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes clang-format-14
+
+      - name: Set up locked RTL formatter
+        uses: ./.github/actions/locked-tools
+        with:
+          tools: verible
+
+      - name: Install pinned actionlint
+        env:
+          GOBIN: ${{ runner.temp }}/actionlint-bin
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "${GOBIN}" >> "${GITHUB_PATH}"
+
+      - name: Validate dependency lock
+        run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
+
+      - name: Run fast quality checks
+        run: make check-fast
+
+      - name: Record agent context
+        run: python3 scripts/agent_control.py context --root . --output build/engineering/agent-context.json
+
+      - name: Upload fast reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-fast-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/engineering/*.json
+            build/**/meta/documentation-check.json
+            build/**/meta/skill-eval-static.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  fixtures:
+    needs: impact
+    if: needs.impact.outputs.quality_fixtures == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
           fetch-depth: 0
 
       - name: Restore pip cache
@@ -83,9 +145,6 @@ jobs:
         with:
           tools: verible
 
-      - name: Validate dependency lock
-        run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
-
       - name: Set up locked RTL dependencies
         run: |
           python3 setup.py
@@ -105,24 +164,6 @@ jobs:
       - name: Validate SoC integration topology
         run: make check-soc-topology check-user-extensions check-clock-reset-domains
 
-      - name: Lint Python
-        run: ruff check .
-
-      - name: Check source formatting
-        run: make format-check
-
-      - name: Check all self-owned RTL style rules
-        run: make rtl-style-check-all
-
-      - name: Check RTL readiness records
-        run: make rtl-readiness-check-all
-
-      - name: Check embedded C safety policy
-        run: make sw-policy-check
-
-      - name: Run embedded C host tests
-        run: make sw-host-test
-
       - name: Set up locked test tools
         uses: ./.github/actions/locked-tools
         with:
@@ -132,27 +173,52 @@ jobs:
         run: make setup-apu-reference setup-apu-kws-reference setup-npu-reference
 
       - name: Test scripts and RTL fixtures
-        run: python3 -m pytest -q
-
-      - name: Lint YAML
-        run: yamllint .github .yamllint.yml
-
-      - name: Install pinned actionlint
-        env:
-          GOBIN: ${{ runner.temp }}/actionlint-bin
         run: |
-          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-          echo "${GOBIN}" >> "${GITHUB_PATH}"
+          mkdir -p build/pytest
+          python3 -m pytest -q \
+            --junitxml=build/pytest/junit.xml \
+            --durations=25 --durations-min=0.1
 
-      - name: Lint GitHub Actions
-        run: actionlint
+      - name: Upload fixture reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-fixtures-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/pytest/junit.xml
+            build/**/meta/*.json
+            build/**/*.log
+          if-no-files-found: warn
+          retention-days: 30
 
-      - name: Validate regression definitions
+  quality-gate:
+    needs: [impact, fast, fixtures]
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Aggregate quality verdict
         run: |
-          python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk GF180 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk ICS55 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite pr --pdk SKY130 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite nightly --pdk IHP130 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite nightly-extra --pdk IHP130 --behavioral-only --dry-run
-          python3 scripts/regress.py --root . --suite smoke --pdk IHP130 --dry-run
+          args=(gate
+            --job impact=${{ needs.impact.result }}
+            --job fast=${{ needs.fast.result }}
+            --job fixtures=${{ needs.fixtures.result }}
+            --label quality
+            --output build/ci-summary/quality.json
+            --step-summary "${GITHUB_STEP_SUMMARY}")
+          if [[ "${{ needs.impact.outputs.quality_fixtures }}" == "false" ]]; then
+            args+=(--allow-skip fixtures)
+          fi
+          python3 scripts/ci_summary.py "${args[@]}"
+
+      - name: Upload quality summary
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-summary/quality.json
+          if-no-files-found: error
+          retention-days: 30

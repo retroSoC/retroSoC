@@ -29,3 +29,27 @@ jobs:
       profile: configs/ci/ihp130.mk
       retention_days: 90
       timeout_minutes: 180
+
+  tiny-p7-iverilog-ihp130:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: IHP130
+      profile: configs/ci/ihp130-tiny.mk
+      retention_days: 90
+      timeout_minutes: 360
+      tiny_p7_iverilog: only
+      tiny_p7_iverilog_timeout_seconds: 19800
+      artifact_suffix: -tiny-p7-iverilog-ihp130
+
+  tiny-p7-iverilog-ics55:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: ICS55
+      profile: configs/ci/ics55-tiny.mk
+      retention_days: 90
+      timeout_minutes: 480
+      tiny_p7_iverilog: only
+      tiny_p7_iverilog_timeout_seconds: 19800
+      artifact_suffix: -tiny-p7-iverilog-ics55

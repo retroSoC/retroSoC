@@ -1,0 +1,49 @@
+name: full-flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      pdk:
+        description: PDK matrix to execute
+        required: true
+        default: IHP130
+        type: choice
+        options: [IHP130, GF180, ICS55, SKY130]
+      runner:
+        description: ubuntu-22.04 or a provisioned high-memory runner label
+        required: true
+        default: ubuntu-22.04
+        type: string
+      timeout_minutes:
+        description: Maximum job duration
+        required: true
+        default: 720
+        type: number
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-flow-${{ inputs.pdk }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-flow:
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: ${{ inputs.pdk }}
+      profile: >-
+        ${{
+          inputs.pdk == 'IHP130' && 'configs/ci/ihp130.mk' ||
+          inputs.pdk == 'GF180' && 'configs/ci/gf180.mk' ||
+          inputs.pdk == 'ICS55' && 'configs/ci/ics55.mk' ||
+          'configs/ci/sky130.mk'
+        }}
+      runner: ${{ inputs.runner }}
+      timeout_minutes: ${{ inputs.timeout_minutes }}
+      behavioral_only: false
+      tiny_p7_iverilog: include
+      change_mode: full
+      retention_days: 90
+      artifact_suffix: -full-flow

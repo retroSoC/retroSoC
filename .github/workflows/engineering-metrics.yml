@@ -1,0 +1,47 @@
+name: engineering-metrics
+
+on:
+  schedule:
+    - cron: "23 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Number of recent runs and pull requests to sample
+        required: true
+        default: 30
+        type: number
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: engineering-metrics
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Collect delivery and CI metrics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SAMPLE_LIMIT: ${{ inputs.limit || 30 }}
+        run: >-
+          python3 scripts/engineering_metrics.py collect
+          --repository "${{ github.repository }}"
+          --limit "${SAMPLE_LIMIT}"
+          --output build/engineering/metrics.json
+
+      - name: Upload engineering metrics
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: engineering-metrics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/engineering/metrics.json
+          if-no-files-found: error
+          retention-days: 90

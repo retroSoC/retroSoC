@@ -40,10 +40,25 @@ on:
         required: false
         default: false
         type: boolean
-      tiny_p7_iverilog:
-        description: Include, exclude, or isolate the Tiny P7 Icarus acceptance command
+      behavioral_only:
+        description: Skip synthesis, netlist simulation, OpenSTA, and synthesis-recipe metrics
         required: false
-        default: include
+        default: true
+        type: boolean
+      change_mode:
+        description: Path-based auto selection or an unconditional full matrix
+        required: false
+        default: auto
+        type: string
+      runner:
+        description: GitHub-hosted label or an explicitly provisioned high-memory runner
+        required: false
+        default: ubuntu-22.04
+        type: string
+      tiny_p7_iverilog:
+        description: Include, exclude, or isolate the Tiny P7 Icarus acceptance command; excluded by default from PR jobs
+        required: false
+        default: exclude
         type: string
       tiny_p7_iverilog_timeout_seconds:
         description: Wall timeout for the Tiny P7 Icarus acceptance command
@@ -60,14 +75,31 @@ permissions:
   contents: read
 
 jobs:
+  impact:
+    uses: ./.github/workflows/_change-impact.yml
+    with:
+      mode: ${{ inputs.change_mode }}
+
   regression:
-    runs-on: ubuntu-22.04
+    needs: impact
+    if: >-
+      ${{
+        (inputs.suite == 'smoke' && needs.impact.outputs.regression_smoke == 'true') ||
+        (inputs.suite != 'smoke' && inputs.pdk == 'IHP130' && needs.impact.outputs.regression_ihp130 == 'true') ||
+        (inputs.suite != 'smoke' && inputs.pdk == 'GF180' && needs.impact.outputs.regression_gf180 == 'true') ||
+        (inputs.suite != 'smoke' && inputs.pdk == 'ICS55' && needs.impact.outputs.regression_ics55 == 'true') ||
+        (inputs.suite != 'smoke' && inputs.pdk == 'SKY130' && needs.impact.outputs.regression_sky130 == 'true')
+      }}
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Record run start
+        run: echo "RUN_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_ENV}"
 
       - name: Restore locked source dependencies
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
@@ -141,11 +173,44 @@ jobs:
         run: make CONFIG=${{ inputs.profile }} formal-doctor
 
       - name: Run ${{ inputs.suite }} regression
-        run: >-
-          python3 scripts/regress.py --root . --suite "${{ inputs.suite }}"
-          --pdk "${{ inputs.pdk }}" --behavioral-only
-          --tiny-p7-iverilog "${{ inputs.tiny_p7_iverilog }}"
-          --tiny-p7-iverilog-timeout-seconds "${{ inputs.tiny_p7_iverilog_timeout_seconds }}"
+        id: regression
+        env:
+          BEHAVIORAL_ONLY: ${{ inputs.behavioral_only }}
+          SUITE: ${{ inputs.suite }}
+          PDK: ${{ inputs.pdk }}
+          TINY_P7_IVERILOG: ${{ inputs.tiny_p7_iverilog }}
+          TINY_P7_TIMEOUT: ${{ inputs.tiny_p7_iverilog_timeout_seconds }}
+        run: |
+          set -euo pipefail
+          args=(--root . --suite "${SUITE}" --pdk "${PDK}"
+                --tiny-p7-iverilog "${TINY_P7_IVERILOG}"
+                --tiny-p7-iverilog-timeout-seconds "${TINY_P7_TIMEOUT}")
+          if [[ "${BEHAVIORAL_ONLY}" == "true" ]]; then
+            args+=(--behavioral-only)
+          fi
+          python3 scripts/regress.py "${args[@]}"
+
+      - name: Summarize CI evidence
+        if: always()
+        env:
+          BEHAVIORAL_ONLY: ${{ inputs.behavioral_only }}
+          SUITE: ${{ inputs.suite }}
+          PDK: ${{ inputs.pdk }}
+          RUN_STATUS: ${{ steps.regression.outcome }}
+          ARTIFACT_SUFFIX: ${{ inputs.artifact_suffix }}
+        run: |
+          set -euo pipefail
+          args=(--root . --build-root build --since "${RUN_STARTED}"
+                --label "${SUITE}-${PDK}" --profile "${{ inputs.profile }}"
+                --pdk "${PDK}" --suite "${SUITE}" --run-status "${RUN_STATUS}"
+                --output "build/ci-summary/${SUITE}-${PDK}${ARTIFACT_SUFFIX}.json"
+                --step-summary "${GITHUB_STEP_SUMMARY}")
+          if [[ "${BEHAVIORAL_ONLY}" == "true" ]]; then
+            args+=(--behavioral-only)
+          elif [[ "${SUITE}" != "smoke" ]]; then
+            args+=(--require-full-flow)
+          fi
+          python3 scripts/ci_summary.py collect "${args[@]}"
 
       - name: Upload reports and structured results
         if: always()
@@ -153,6 +218,7 @@ jobs:
         with:
           name: ${{ inputs.suite }}-regression-${{ github.run_id }}-${{ github.run_attempt }}${{ inputs.artifact_suffix }}
           path: |
+            build/ci-summary/*.json
             build/**/meta/*.json
             build/**/formal/**/*.sby
             build/**/formal/**/*.smt2
@@ -163,3 +229,43 @@ jobs:
             build/**/*.rpt
           if-no-files-found: warn
           retention-days: ${{ inputs.retention_days }}
+
+  regression-gate:
+    needs: [impact, regression]
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Aggregate regression verdict
+        env:
+          EXPECTED: >-
+            ${{
+              (inputs.suite == 'smoke' && needs.impact.outputs.regression_smoke == 'true') ||
+              (inputs.suite != 'smoke' && inputs.pdk == 'IHP130' && needs.impact.outputs.regression_ihp130 == 'true') ||
+              (inputs.suite != 'smoke' && inputs.pdk == 'GF180' && needs.impact.outputs.regression_gf180 == 'true') ||
+              (inputs.suite != 'smoke' && inputs.pdk == 'ICS55' && needs.impact.outputs.regression_ics55 == 'true') ||
+              (inputs.suite != 'smoke' && inputs.pdk == 'SKY130' && needs.impact.outputs.regression_sky130 == 'true')
+            }}
+        run: |
+          args=(gate
+            --job impact=${{ needs.impact.result }}
+            --job regression=${{ needs.regression.result }}
+            --label "${{ inputs.suite }}-${{ inputs.pdk }}"
+            --output "build/ci-summary/regression-gate-${{ inputs.suite }}-${{ inputs.pdk }}${{ inputs.artifact_suffix }}.json"
+            --step-summary "${GITHUB_STEP_SUMMARY}")
+          if [[ "${EXPECTED}" == "false" ]]; then
+            args+=(--allow-skip regression)
+          fi
+          python3 scripts/ci_summary.py "${args[@]}"
+
+      - name: Upload regression gate summary
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: regression-gate-${{ inputs.suite }}-${{ inputs.pdk }}-${{ github.run_id }}-${{ github.run_attempt }}${{ inputs.artifact_suffix }}
+          path: build/ci-summary/regression-gate-*.json
+          if-no-files-found: error
+          retention-days: 30

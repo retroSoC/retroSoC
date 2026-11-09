@@ -26,6 +26,9 @@ truth wins.
   GitHub workflows define the active build and regression behavior.
 - `quality/embedded_c_policy.json`, `quality/warnings/`, and
   `quality/metrics/policy.json` define the active quality policy.
+  `quality/change_impact.json` defines conservative CI selection,
+  `quality/ownership.json` records review ownership, and
+  `quality/release-candidate.schema.json` defines release evidence.
 - [rtl/README.md](rtl/README.md) defines the self-owned SystemVerilog naming,
   register-state, macro, and formatting conventions.
 - [docs/rtl-coding-style.md](docs/rtl-coding-style.md) is the normative
@@ -146,13 +149,15 @@ and why. CI is authoritative for toolchain-dependent flows.
 | Python/build tooling | `ruff check .` and `python3 -m pytest -q`. |
 | Dependency-lock or setup changes | `python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json`, affected setup update/doctor flow, Pytest, and affected regression. |
 | GitHub Actions or CI definitions | `yamllint .github .yamllint.yml`, `actionlint`, and `python3 scripts/regress.py --root . --suite pr --dry-run` plus `--suite nightly --dry-run`. |
+| Agent or engineering controls | Run `make check-fast`; review `make validation-plan`, intentional skips, and behavior-eval traces when Skills change. |
 | RTL, configuration, linker, or hardware-facing changes | Run the affected firmware build and simulator; use `make regress-pr` for the supported PR matrix and `make regress-nightly` for extended coverage. |
 
-The fast CI quality gate also validates the dependency lock, Python lint,
-embedded-C formatting and policy, host tests, Pytest, YAML, GitHub Actions, and
-both regression definitions. The regression CI runs supported Verilator and
-Icarus simulations, Yosys synthesis, Icarus netlist simulation, OpenSTA timing,
-warning checks, and metric collection.
+The fast CI quality gate validates the dependency lock, Python lint,
+embedded-C formatting and policy, host tests, agent controls, YAML, GitHub
+Actions, and regression definitions. A separate fixtures job runs the complete
+Pytest suite for affected changes. Hosted PR regression remains behavioral-only;
+synthesis, netlist simulation, and OpenSTA require the manual full-flow workflow
+or retained local evidence, while formal proofs use the explicit formal shards.
 
 ## Regression Verdicts and Known Conditions
 
@@ -170,6 +175,10 @@ warning checks, and metric collection.
 - `check-metrics` records firmware size, area, cell count, timing, and flow
   duration. It is non-blocking in the regression runner, including if a future
   policy changes the standalone command into a gate.
+- PR regressions keep the Icarus assembly self-test. The multi-hour Tiny P7
+  Icarus acceptance command runs in dedicated nightly jobs for IHP130 and ICS55
+  instead of blocking every PR. Explicit include/only and full-flow runs retain
+  the same acceptance command and verdict requirements.
 - Verilator currently runs through `scripts/run_flow.py`, which captures the
   emulator stdout in a pipe. UART output can therefore appear only after a
   newline or when simulation ends. Treat `sim.log` and `result-sim*.json` as

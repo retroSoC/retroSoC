@@ -24,7 +24,7 @@ This does not change warning/metrics policy or another product's gates.
 | Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
-| Nightly | `configs/ci/ihp130.mk` | repeated behavioral IHP130 regression and CoreMark |
+| Nightly | `configs/ci/ihp130.mk` | repeated behavioral IHP130 regression, CoreMark, and dedicated Tiny P7 Icarus jobs for IHP130/ICS55 |
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
 Regression Verilator firmware simulations override the profiles' manual
@@ -43,6 +43,13 @@ capabilities, RNG integration, SDRAM 8/16/32-bit access in a reserved tail
 scratch area, and test-status completion within the CI time budget;
 `bringup` retains the full automatic application-information report for
 manual runs.
+
+PR regressions retain the Icarus assembly self-test for the serial XPI and
+PSRAM paths, but do not run the multi-hour Tiny P7 Icarus acceptance command by
+default. That command moves to two dedicated nightly jobs for IHP130 and ICS55,
+each with a 19800-second inner budget and independent job limits. This changes
+when the coverage runs, not its verdict or acceptance requirements. Explicit
+`--tiny-p7-iverilog only|include` and full-flow runs retain the long command.
 
 ARCHINFO ABI exposes immutable build, configuration, topology, feature, and
 technology identity. Its register specification, driver, standalone tests, and
@@ -274,8 +281,9 @@ The IHP130 smoke workflow enables `formal-doctor` so hosted CI checks that the
 locked SBY and Bitwuzla tools are present. It does not run `make formal`: the
 GA2D cover bound is 199 steps with a 7200s task budget, which does not fit the
 60-minute smoke job. Full PDK regressions also skip those PDK-independent
-protocol proofs. Run `make CONFIG=<profile> formal` locally or on a longer
-job when the complete proof suite is required.
+protocol proofs. `formal.yml` runs the explicit per-proof targets in longer
+bounded jobs weekly or on demand. Run `make CONFIG=<profile> formal` locally
+when the aggregate proof suite is required.
 
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
@@ -331,39 +339,82 @@ area/cell count, and WNS/TNS. A change that affects an interface, register map,
 reset, timing contract, or CDC is not a formatting-only change. Logical-equivalent
 changes after freeze must retain the baseline revision and equivalence evidence.
 
+## Agent Engineering Controls
+
+`.agents/task.schema.json` defines the host-neutral task handoff. It binds the
+base revision, scope, approval, targets, profiles, execution mode, and evidence;
+run-specific packets remain below `build/`. Validate one with
+`make agent-task-check TASK=<task.json>`. The Skill registry and shared
+references live below `.agents/skills/`.
+
+`make agent-context` writes the current revision's profiles and CI capabilities.
+`make validation-plan` uses `quality/change_impact.json` to produce a
+machine-readable matrix and exact regression commands. Unknown paths or a
+classification failure select the full matrix. Push, scheduled, and manual full
+events always select full coverage. `make check-fast` is the common static,
+host, agent, YAML/Actions, ownership, and regression-definition entrypoint.
+
+`make skill-eval-static` validates Skill structure only. `make skill-eval-smoke`
+executes three real read-only Codex scenarios in isolated Git workspaces and
+records traces, model metadata, command counts, token usage, and deterministic
+grades. A static corpus check is never a behavior pass. Other agent hosts can be
+graded against the same normalized trace contract.
+
+`make engineering-metrics` collects GitHub workflow and PR metadata below the
+build root. `engineering-metrics.yml` repeats this collection weekly. Metrics
+are segmented by workflow and PR category, and are not individual performance
+targets or proof of agent-authored task success.
+
 ## CI And Releases
 
-`quality.yml` validates C, Makefile, and self-owned RTL formatting as well as
-Python, YAML, GitHub Actions, the dependency lock, and the complete Pytest
-suite. The test environment restores the locked IHP130 PDK and APU reference
-corpus plus the NPU models, inputs, and oracle sources, installs the locked
-third-party simulation models, and installs the locked Verilator, Icarus,
-sv2v, and Yosys tools before Pytest so required RTL, netlist, timing-model, and
-corpus fixtures execute. `regression-smoke.yml`
-provides fast IHP130 feedback; the four PDK regression workflows remain
-required PR coverage and do not repeat the format checks.
+`quality.yml` splits `fast`, `fixtures`, and `quality-gate`. Fast checks run
+before any PDK or large reference setup. The fixtures job retains the complete
+Pytest suite with JUnit/duration output, locked IHP130 and Tiny ICS55 PDKs,
+third-party models, APU/NPU references, and required tools. An intentional skip
+is accepted only when the change classifier selects it; impact, fast, fixtures,
+and cancellation failures cannot be hidden by the aggregate gate.
 
-Self-owned RTL also passes `rtl-style-check`, which applies the ownership-aware
-rules in `rtl/rtl_style_manifest.json`. New positional module connections,
-legacy `always @` blocks, and unjustified explicit nets are rejected in changed
-self-owned RTL. Formal/DV, PDK, generated, and managed RTL use separate
-validation profiles and are not mechanically rewritten by the root formatter.
-Quality CI also runs `rtl-readiness-check-all` to validate the maturity record.
-GitHub-hosted regression currently passes `--behavioral-only`, so it provides
-behavioral and warning evidence but skips SoC Yosys synthesis, netlist
-simulation, OpenSTA, and synthesis-recipe metrics. The locked tools are still
-installed and checked. This temporary policy avoids the unresolved JPEG
-synthesis-memory peak. Local full regressions retain those stages and remain the
-source of synthesis and timing evidence until hosted coverage is restored.
-`development-environment.yml` independently builds Docker and installs Nix,
-checks each resulting tool environment, and runs the same hosted IHP130 PR
-command set. It verifies environment reproducibility but does not expand the
-behavioral-only evidence boundary.
-`nightly.yml` repeats the fixed IHP130 architecture as two parallel behavioral
-jobs: the PR IHP130 matrix and the extra CoreMark coverage. Source dependencies,
-locked tool archives, and Verilator `ccache` use
+`_change-impact.yml` applies the conservative PR matrix. Pure documentation and
+Skill-only work avoid hardware jobs, publication/test changes retain the relevant
+fixtures, embedded C retains IHP130/smoke, and Tiny-only changes retain its
+supported PDKs. Shared RTL, build, dependency, configuration, quality, CI, and
+unknown changes select every applicable job. `contribution.yml` checks PR
+base/head/title, new commit subjects, and ownership records.
+
+Self-owned RTL passes `rtl-style-check-all`, which applies the ownership-aware
+rules in `rtl/rtl_style_manifest.json`. Quality CI also runs
+`rtl-readiness-check-all` to validate the maturity record.
+
+GitHub-hosted PR regression still passes `--behavioral-only`, providing
+behavioral and warning evidence while skipping SoC Yosys synthesis, netlist
+simulation, OpenSTA, and synthesis-recipe metrics. This temporary policy avoids
+the unresolved JPEG synthesis-memory peak. `scripts/ci_summary.py` binds results
+to the current run start and marks skipped physical stages `NOT_RUN`.
+`full-flow.yml` is an explicit manual entrypoint that requires those stages and
+can select a provisioned high-memory runner. The default hosted label is not
+represented as a solution to the resource limitation.
+
+`formal.yml` runs explicit per-proof targets as bounded parallel jobs weekly or
+on demand. Smoke `formal_checks` still checks only the environment. A successful
+SV2V conversion or doctor run is not a completed proof.
+
+`development-environment.yml` retains Docker and Nix IHP130 verification for
+full-matrix, environment, dependency, and build-entry changes rather than
+repeating both environments for every unrelated PR. `nightly.yml` retains its
+IHP130 PR and CoreMark jobs and adds dedicated long Icarus jobs for IHP130 and
+ICS55. Source dependencies, locked tool archives, and Verilator `ccache` use
 separate cache keys.
 
-Tags matching `v*` run `release.yml`. The release contains a flattened SystemVerilog export, a source
-tarball, build manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. `make package` creates the
-same files locally below `dist/<variant>/`.
+Tags matching `v*` run `release.yml`, now guarded by the tracked
+`quality/release-candidate.json` and its schema. A candidate declares `main`, the
+lock digest, release-PR approval, required stages, workflow names, and accepted
+non-required gaps. The validator resolves the tag, current `origin/main`, the
+APPROVED release review, and successful workflow runs dynamically; a tracked
+candidate never embeds its own future SHA or future run IDs. Required local
+artifacts are hash-checked and accepted gaps cannot overlap required stages.
+Existing release assets are not overwritten on rerun.
+
+The release package retains the flattened SystemVerilog export, source tarball,
+build manifest, dependency lock, CycloneDX SBOM, and `SHA256SUMS`. `make package`
+creates the same files locally below `dist/<variant>/`. Version numbers do not
+prove RTL readiness, timing closure, physical signoff, or silicon qualification.

@@ -1390,22 +1390,53 @@ def test_tiny_p7_iverilog_timeout_preserves_acceptance_budget() -> None:
         assert "TINY_RUN=" not in excluded.stdout
         assert "TINY_P7_ACCEPTANCE=YES LINK_TYPE=ld2_all_sram" in excluded.stdout
 
+        default_pr = run(
+            sys.executable,
+            str(ROOT / "scripts/regress.py"),
+            "--root",
+            str(ROOT),
+            "--suite",
+            "pr",
+            "--pdk",
+            pdk,
+            "--dry-run",
+        )
+        assert "TINY_RUN=" not in default_pr.stdout
 
-def test_ihp130_workflow_isolates_long_tiny_p7_iverilog() -> None:
+    default_nightly = run(
+        sys.executable,
+        str(ROOT / "scripts/regress.py"),
+        "--root",
+        str(ROOT),
+        "--suite",
+        "nightly",
+        "--pdk",
+        "IHP130",
+        "--dry-run",
+    )
+    assert "TINY_RUN=timeout --foreground 14400s" in default_nightly.stdout
+
+
+def test_long_tiny_p7_iverilog_moves_from_pr_to_nightly() -> None:
     workflow = (ROOT / ".github/workflows/regression-ihp130.yml").read_text()
+    nightly = (ROOT / ".github/workflows/nightly.yml").read_text()
     reusable = (ROOT / ".github/workflows/_regression.yml").read_text()
 
+    assert "tiny-p7-iverilog:" not in workflow
     assert "tiny_p7_iverilog: exclude" in workflow
-    assert "tiny_p7_iverilog: only" in workflow
-    assert "tiny_p7_iverilog_timeout_seconds: 19800" in workflow
-    assert "timeout_minutes: 360" in workflow
-    assert "timeout_minutes: 480" not in workflow
-    assert "artifact_suffix: -tiny-p7-iverilog" in workflow
-    assert '--tiny-p7-iverilog "${{ inputs.tiny_p7_iverilog }}"' in reusable
-    assert (
-        '--tiny-p7-iverilog-timeout-seconds '
-        '"${{ inputs.tiny_p7_iverilog_timeout_seconds }}"' in reusable
-    )
+    assert nightly.count("tiny_p7_iverilog: only") == 2
+    assert nightly.count("tiny_p7_iverilog_timeout_seconds: 19800") == 2
+    assert "pdk: IHP130" in nightly
+    assert "pdk: ICS55" in nightly
+    assert "timeout_minutes: 360" in nightly
+    assert "timeout_minutes: 480" in nightly
+    assert "artifact_suffix: -tiny-p7-iverilog-ihp130" in nightly
+    assert "artifact_suffix: -tiny-p7-iverilog-ics55" in nightly
+    assert "default: exclude" in reusable
+    assert "TINY_P7_IVERILOG: ${{ inputs.tiny_p7_iverilog }}" in reusable
+    assert "TINY_P7_TIMEOUT: ${{ inputs.tiny_p7_iverilog_timeout_seconds }}" in reusable
+    assert '--tiny-p7-iverilog "${TINY_P7_IVERILOG}"' in reusable
+    assert '--tiny-p7-iverilog-timeout-seconds "${TINY_P7_TIMEOUT}"' in reusable
     assert "${{ inputs.artifact_suffix }}" in reusable
 
 
@@ -1843,19 +1874,21 @@ def test_nightly_extra_regression_skips_pr_netsim() -> None:
 def test_nightly_workflow_splits_netsim_from_extended_recipes() -> None:
     nightly = (ROOT / ".github/workflows/nightly.yml").read_text()
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
+    root_makefile = (ROOT / "Makefile").read_text()
 
     assert "suite: pr" in nightly
     assert "timeout_minutes: 360" in nightly
     assert "suite: nightly-extra" in nightly
     assert "timeout_minutes: 180" in nightly
     assert "suite: nightly\n" not in nightly
-    assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in quality
+    assert "make check-fast" in quality
+    assert "--suite nightly-extra --pdk IHP130 --behavioral-only --dry-run" in root_makefile
 
 
 def test_quality_runs_accelerator_tests_with_locked_references_and_simulators() -> None:
     quality = (ROOT / ".github/workflows/quality.yml").read_text()
 
-    assert "timeout-minutes: 90" in quality
+    assert "timeout-minutes: 120" in quality
     assert "tools: verilator sv2v iverilog yosys riscv_gnu" in quality
     assert "fetch-depth: 0" in quality
     assert "rtl/managed/third_party" in quality
@@ -1887,10 +1920,10 @@ def test_quality_prepares_required_ics55_inputs_even_on_cache_miss() -> None:
     import yaml
 
     quality = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
-    steps = quality["jobs"]["scripts"]["steps"]
+    steps = quality["jobs"]["fixtures"]["steps"]
     command = "make CONFIG=configs/ci/ics55-tiny.mk SOC=TINY PDK=ICS55 setup-pdk"
     setup = next(step for step in steps if step.get("run") == command)
-    pytest_step = next(step for step in steps if step.get("run") == "python3 -m pytest -q")
+    pytest_step = next(step for step in steps if step["name"] == "Test scripts and RTL fixtures")
     assert steps.index(setup) < steps.index(pytest_step)
     assert "if" not in setup and not setup.get("continue-on-error", False)
     cache = next(step for step in steps if step.get("name") == "Restore locked source dependencies")

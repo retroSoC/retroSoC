@@ -159,6 +159,12 @@ make help
 # Check source formatting and embedded C policy/host tests
 make format-check
 make sw-policy-check sw-host-test
+
+# Run the shared fast quality and agent-control checks
+make check-fast
+
+# Inspect the deterministic changed-file validation matrix
+make validation-plan
 ```
 
 | Validation flow | Command |
@@ -169,7 +175,9 @@ make sw-policy-check sw-host-test
 | Extended local regression | `make regress-nightly` |
 
 Prepare the multi-PDK inputs with `make setup-regression` before the full PR
-matrix. Profile setup does not install every optional reference corpus; follow
+matrix. PR regressions keep the Icarus assembly self-test, while the multi-hour
+Tiny P7 Icarus acceptance command runs in dedicated nightly jobs for IHP130 and
+ICS55. Profile setup does not install every optional reference corpus; follow
 any additional prerequisites in the affected IP or test guide. For debugging,
 benchmarks, and HP software, use the dedicated guides linked below.
 

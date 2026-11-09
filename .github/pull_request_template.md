@@ -34,6 +34,7 @@ Do not imply synthesis, timing, or silicon signoff from behavioral CI alone. -->
 
 - [ ] The base is `dev`, or a maintainer has identified this as release integration.
 - [ ] The scope, related issues/specifications, and compatibility impact are clear.
+- [ ] The validation matrix is reviewed and every intentional skip is identified.
 - [ ] Relevant documentation and tests are updated; validation and missing gates are reported.
 - [ ] No unintended generated files, credentials, or managed-source edits are included; dependency changes use the lock and shared setup flow.
 - [ ] Applicable MISRA deviations and warning-baseline changes are identified for review, or explicitly marked N/A above.
