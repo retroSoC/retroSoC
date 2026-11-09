@@ -480,6 +480,23 @@ def markdown_files(root: Path) -> list[Path]:
     return [Path(path) for path in output.splitlines() if path]
 
 
+GENERATED_INPUT_PREFIXES = (
+    "build/",
+    "dist/",
+    ".cache/",
+    ".sw_build/",
+    "rtl/managed/",
+    "physical/pdk/",
+    "app/coremark/coremark-main/",
+    "app/fatfs/ff16/",
+    "app/lvgl/lvgl-main/",
+)
+
+
+def is_generated_input(path: str) -> bool:
+    return any(path.startswith(prefix) for prefix in GENERATED_INPUT_PREFIXES)
+
+
 def documentation_issues(root: Path) -> list[str]:
     issues: list[str] = []
     for relative in markdown_files(root):
@@ -495,11 +512,11 @@ def documentation_issues(root: Path) -> list[str]:
             else:
                 destination = path.parent / unquote(parsed.path)
             try:
-                destination.resolve().relative_to(root.resolve())
+                relative_destination = destination.resolve().relative_to(root.resolve())
             except ValueError:
                 issues.append(f"{relative}: link leaves repository: {target}")
                 continue
-            if not destination.exists():
+            if not destination.exists() and not is_generated_input(relative_destination.as_posix()):
                 issues.append(f"{relative}: broken local link: {target}")
         paragraphs = re.split(r"\n\s*\n", text)
         previous = ""

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -203,3 +204,20 @@ def test_github_outputs_and_context_are_machine_readable(tmp_path: Path) -> None
 
 def test_repository_documentation_links_and_duplicate_blocks() -> None:
     assert documentation_issues(ROOT) == []
+
+
+def test_documentation_checker_exempts_only_generated_inputs(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/guide.md").write_text(
+        "[build](../build/artifact.json)\n"
+        "[managed](../rtl/managed/mpw/ip/user.sv)\n"
+        "[missing](missing.md)\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "-C", str(tmp_path), "add", "docs/guide.md"], check=True)
+    issues = documentation_issues(tmp_path)
+    assert len(issues) == 1
+    assert "missing.md" in issues[0]
+    assert "build/artifact.json" not in issues[0]
+    assert "managed/mpw" not in issues[0]
