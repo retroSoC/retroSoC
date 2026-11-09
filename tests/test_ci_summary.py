@@ -124,3 +124,22 @@ def test_formal_summary_requires_actual_solver_result(tmp_path: Path) -> None:
     missing = collect_coverage(args(tmp_path, behavioral_only=False, executed_formal=True, require_formal=True))
     assert missing["overall_status"] == "FAIL"
     assert any(item["stage"] == "formal" and item["status"] == "NOT_RUN" for item in missing["coverage"])
+
+
+def test_existing_result_schemas_are_accepted_without_weakening_verdict(tmp_path: Path) -> None:
+    initialize_git(tmp_path)
+    debug = tmp_path / "build/current/sim/verilator/debug/result-debug-sim.json"
+    debug.parent.mkdir(parents=True, exist_ok=True)
+    debug.write_text(json.dumps({"status": "passed", "started_at": "2026-11-08T00:01:00Z"}), encoding="utf-8")
+    check = tmp_path / "build/current/sim/verilator/result-sim-check.json"
+    check.write_text(json.dumps({"flow_status": "passed", "status": "passed"}), encoding="utf-8")
+
+    document = collect_coverage(args(tmp_path))
+    assert document["overall_status"] == "PASS"
+    assert document["issues"] == []
+    assert any(item["time_basis"] == "mtime" for item in document["results"])
+
+    check.write_text(json.dumps({"flow_status": "failed", "status": "failed"}), encoding="utf-8")
+    document = collect_coverage(args(tmp_path))
+    assert document["overall_status"] == "FAIL"
+    assert any(item["stage"] == "behavioral" and item["status"] == "FAIL" for item in document["coverage"])

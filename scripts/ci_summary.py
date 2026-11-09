@@ -41,19 +41,28 @@ def collect_results(build_root: Path, root: Path, since: datetime) -> tuple[list
         except ValueError as error:
             issues.append(str(error))
             continue
-        started = data.get("started_at")
-        if not started:
-            issues.append(f"result has no started_at and is not accepted: {path}")
+        status = data.get("status") or data.get("flow_status")
+        if not status:
+            issues.append(f"result has no status and is not accepted: {path}")
             continue
+        started = data.get("started_at")
+        time_basis = "started_at"
+        if not started:
+            started = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+            time_basis = "mtime"
         if parse_time(started) < since:
             continue
+        exit_code = data.get("exit_code")
+        if exit_code is None:
+            exit_code = 0 if status == "passed" else 1
         results.append(
             {
                 "path": relative(path, root),
                 "tool": data.get("tool"),
-                "status": data.get("status"),
-                "exit_code": data.get("exit_code"),
+                "status": status,
+                "exit_code": exit_code,
                 "started_at": started,
+                "time_basis": time_basis,
                 "finished_at": data.get("finished_at"),
                 "duration_seconds": data.get("duration_seconds"),
                 "command": data.get("command"),

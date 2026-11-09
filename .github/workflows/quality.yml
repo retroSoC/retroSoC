@@ -56,6 +56,24 @@ jobs:
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           echo "${GOBIN}" >> "${GITHUB_PATH}"
 
+      - name: Restore host-test source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/wdg
+            rtl/managed/third_party
+          key: quality-fast-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Set up host-test sources
+        run: python3 rtl/managed/clusterip/setup.py
+
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 
