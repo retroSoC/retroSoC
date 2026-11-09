@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "read_only": true,
+    "max_commands": 80,
+    "forbidden_command_patterns": [
+      "\\bgit\\s+(?:commit|push|reset|rebase|clean|checkout|switch|restore)\\b",
+      "\\b(?:rm|mv|cp|chmod|chown)\\b",
+      "\\b(?:make|python3?)\\s+[^\\n]*(?:format|synth|netsim|\\bsta\\b|\\bsim\\b|formal\\b)"
+    ]
+  },
+  "core_skill_case_counts": {
+    "retrosoc-feature-design": 10,
+    "retrosoc-feature-implementation": 11,
+    "retrosoc-feature-review": 10
+  },
+  "cases": [
+    {"id":"design-01","skill":"retrosoc-feature-design","source_eval":1,"should_trigger":true,"required_terms":["repository","recommendation"]},
+    {"id":"design-02","skill":"retrosoc-feature-design","source_eval":2,"should_trigger":true,"live":false},
+    {"id":"design-03","skill":"retrosoc-feature-design","source_eval":3,"should_trigger":true,"expected_route":"retrosoc-feature-review","smoke":true},
+    {"id":"design-04","skill":"retrosoc-feature-design","source_eval":4,"should_trigger":true,"required_terms":["TINY"]},
+    {"id":"design-05","skill":"retrosoc-feature-design","source_eval":5,"should_trigger":true,"live":false},
+    {"id":"design-06","skill":"retrosoc-feature-design","source_eval":6,"should_trigger":true,"required_terms":["PRO","planned"]},
+    {"id":"design-07","skill":"retrosoc-feature-design","source_eval":7,"should_trigger":true,"required_terms":["target"]},
+    {"id":"design-08","skill":"retrosoc-feature-design","source_eval":8,"should_trigger":true,"required_terms":["shared"]},
+    {"id":"design-09","skill":"retrosoc-feature-design","source_eval":9,"should_trigger":true,"required_terms":["TINY"]},
+    {"id":"design-10","skill":"retrosoc-feature-design","source_eval":10,"should_trigger":false},
+
+    {"id":"implementation-01","skill":"retrosoc-feature-implementation","source_eval":1,"should_trigger":true,"allowed_verdicts":["IMPLEMENTABLE","ARCH_CHANGE_REQUIRED","SPEC_CONFLICT","BLOCKED"]},
+    {"id":"implementation-02","skill":"retrosoc-feature-implementation","source_eval":2,"should_trigger":true,"live":false},
+    {"id":"implementation-03","skill":"retrosoc-feature-implementation","source_eval":3,"should_trigger":true,"allowed_verdicts":["SPEC_CONFLICT","BLOCKED"]},
+    {"id":"implementation-04","skill":"retrosoc-feature-implementation","source_eval":4,"should_trigger":true,"allowed_verdicts":["IMPLEMENTABLE","ARCH_CHANGE_REQUIRED","SPEC_CONFLICT","BLOCKED"]},
+    {"id":"implementation-05","skill":"retrosoc-feature-implementation","source_eval":5,"should_trigger":true,"allowed_verdicts":["SPEC_CONFLICT","ARCH_CHANGE_REQUIRED"]},
+    {"id":"implementation-06","skill":"retrosoc-feature-implementation","source_eval":6,"should_trigger":true,"allowed_verdicts":["SPEC_CONFLICT"],"smoke":true},
+    {"id":"implementation-07","skill":"retrosoc-feature-implementation","source_eval":7,"should_trigger":true,"allowed_verdicts":["BLOCKED"]},
+    {"id":"implementation-08","skill":"retrosoc-feature-implementation","source_eval":8,"should_trigger":true,"allowed_verdicts":["IMPLEMENTABLE","ARCH_CHANGE_REQUIRED","SPEC_CONFLICT","BLOCKED"]},
+    {"id":"implementation-09","skill":"retrosoc-feature-implementation","source_eval":9,"should_trigger":true,"allowed_verdicts":["IMPLEMENTABLE","BLOCKED"]},
+    {"id":"implementation-10","skill":"retrosoc-feature-implementation","source_eval":10,"should_trigger":true,"live":false},
+    {"id":"implementation-11","skill":"retrosoc-feature-implementation","source_eval":11,"should_trigger":true,"live":false},
+
+    {"id":"review-01","skill":"retrosoc-feature-review","source_eval":1,"should_trigger":true,"allowed_next_actions":["INVESTIGATE"]},
+    {"id":"review-02","skill":"retrosoc-feature-review","source_eval":2,"should_trigger":true,"allowed_next_actions":["FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
+    {"id":"review-03","skill":"retrosoc-feature-review","source_eval":3,"should_trigger":true,"allowed_next_actions":["RUN_GATES"],"required_terms":["NOT_RUN"],"smoke":true},
+    {"id":"review-04","skill":"retrosoc-feature-review","source_eval":4,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
+    {"id":"review-05","skill":"retrosoc-feature-review","source_eval":5,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
+    {"id":"review-06","skill":"retrosoc-feature-review","source_eval":6,"should_trigger":true,"allowed_next_actions":["RUN_GATES","INVESTIGATE"]},
+    {"id":"review-07","skill":"retrosoc-feature-review","source_eval":7,"should_trigger":true,"allowed_next_actions":["RUN_GATES"]},
+    {"id":"review-08","skill":"retrosoc-feature-review","source_eval":8,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
+    {"id":"review-09","skill":"retrosoc-feature-review","source_eval":9,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
+    {"id":"review-10","skill":"retrosoc-feature-review","source_eval":10,"should_trigger":true,"allowed_next_actions":["RUN_GATES"]}
+  ]
+}

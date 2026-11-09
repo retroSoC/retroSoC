@@ -20,11 +20,11 @@ do not require an IP feature slug, frozen phase, or design-freeze ceremony.
 
 ## Invocation and stages
 
-In ChatGPT Work select `@retrosoc-feature-design` or
-`@retrosoc-feature-review`. In Codex use `$retrosoc-feature-design`,
-`$retrosoc-feature-implementation`, or `$retrosoc-feature-review`.
-The review examples below use Codex syntax; replace `$` with `@` when running
-the review skill in ChatGPT Work.
+Use the host's explicit Skill invocation syntax. The examples below use `$` for
+`retrosoc-feature-design`, `retrosoc-feature-implementation`, and
+`retrosoc-feature-review`; hosts that use `@` can adapt the same Skill names
+without changing their contracts. Durable handoffs use
+[task.schema.json](task.schema.json).
 
 | Stage or mode | Skill | Plan mode | File changes | Human decision |
 | --- | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ Additional constraints:
 
 ## 1. Research a feature
 
-Host: ChatGPT Work, Plan mode. This example is an illustrative new Mini IP;
+Host: any compatible agent host, Plan mode. This example is an illustrative new Mini IP;
 replace the feature and target fields for another product.
 
 ```text
@@ -105,7 +105,7 @@ and open questions. Human Gate 1 approves this design before `freeze`.
 
 ## 2. Freeze the approved specification
 
-Host: ChatGPT Work, outside Plan mode; documentation only.
+Host: any compatible agent host, outside Plan mode; documentation only.
 
 ```text
 @retrosoc-feature-design
@@ -126,7 +126,7 @@ preflight prompt containing the target SoCs, phase, profile/PDK and constraints.
 
 ## 3. Preflight one frozen phase
 
-Host: Codex, Plan mode or read-only. The phase below is illustrative; use the
+Host: any compatible agent host, Plan mode or read-only. The phase below is illustrative; use the
 ID/title in the actual frozen specification.
 
 ```text
@@ -152,7 +152,7 @@ for Mini does not authorize substituting Tiny or adding a second series.
 
 ## 4. Implement and continue
 
-Host: Codex, outside Plan mode. In the same task, explicitly approve the
+Host: any compatible agent host, outside Plan mode. In the same task, explicitly approve the
 preflight and implement only that phase:
 
 ```text
@@ -249,7 +249,7 @@ otherwise it reports the missing prerequisites or scope change. Do not invent
 
 ## 7. Diagnose and fix
 
-Host: Codex or ChatGPT Work; diagnosis is read-only.
+Host: any compatible agent host; diagnosis is read-only.
 
 ```text
 $retrosoc-feature-review
@@ -283,7 +283,7 @@ other existing consumers if the fix touches shared IP.
 
 ## 8. Review the implementation
 
-Host: Codex or ChatGPT Work; read-only. Replace `dev...HEAD` with the intended
+Host: any compatible agent host; read-only. Replace `dev...HEAD` with the intended
 commit range or `uncommitted changes` when the work is not committed.
 
 ```text
@@ -336,7 +336,7 @@ coverage; `--behavioral-only` runs do not supply physical-flow evidence.
 
 ## 10. Finalize evidence
 
-Host: Codex or ChatGPT Work; read-only. Missing physical results remain gaps.
+Host: any compatible agent host; read-only. Missing physical results remain gaps.
 
 ```text
 $retrosoc-feature-review

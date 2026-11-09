@@ -44,26 +44,22 @@ Once `docs/ip/<feature>.md` is frozen, derive the slug from that path and do not
 create aliases. Never infer design approval merely because a research result
 exists.
 
-## Resolve target SoCs
+## Resolve target SoCs and shared rules
 
-Resolve `Target SoCs` from the current request, approved hand-off, frozen
-specification, or an explicitly selected committed profile. Normalize series
-names such as Tiny/Mini/Std/Pro to TINY/MINI/STD/PRO for the hand-off; this does
-not make those names valid build arguments. Do not default to Mini or interpret
-an unspecified target as every series. Ask only if the target remains missing
-or ambiguous; surface conflicting target, specification, or profile values.
+Read the [shared task contract](../shared/task-contract.md) for host-neutral
+invocation, input/target resolution, constraint vocabulary, and structured
+handoffs. Read the [shared evidence contract](../shared/evidence.md) before
+claiming validation coverage.
 
 Read `docs/soc-family-positioning.md` and the selected product contracts to
-distinguish implemented baselines from planned targets. Tiny and Mini currently
-have executable profiles; Std and Pro are roadmap targets. Recheck this status
-in committed profiles and build rules rather than treating it as permanent.
-Research and freeze remain useful without an executable platform: identify
-missing integration, software, dependencies, and validation work explicitly.
-Do not claim the proposed profile or platform already exists.
+distinguish implemented baselines from planned targets. Recheck committed
+profiles and build rules rather than treating current product support as
+permanent. Research and freeze remain useful without an executable platform:
+identify missing integration, software, dependencies, and validation work
+explicitly. Do not claim a proposed profile or platform already exists.
 
 For each target, identify its product RTL, topology/address map, filelists,
-SDK/application composition, and available configurations. Read Mini LP/HP
-guidance only when Mini or that architecture is involved. Do not carry CPU
+SDK/application composition, and available configurations. Do not carry CPU
 topology, bus widths, DMA channels, IRQ allocation, clocks, or memory assumptions
 from one series into another.
 
@@ -72,22 +68,6 @@ and capability differences. Freeze the requested target list and explicitly
 deferred targets, without enlarging a single-series task into a family rollout.
 Keep existing specification paths; do not clone a shared register contract into
 conflicting per-series documents.
-
-## Additional constraints
-
-Normalize prompt-specific constraints as:
-
-- `MUST`: required for the task;
-- `MUST NOT`: prohibited;
-- `PREFER`: select only when compatible with stronger requirements;
-- `DEFER`: explicitly outside the current stage or phase;
-- `ACCEPTANCE`: an objectively verifiable completion condition.
-
-During research, classify constraints as confirmed, recommended, assumed, or
-open. During freeze, write every approved long-lived `MUST`, `MUST NOT`,
-`DEFER`, and `ACCEPTANCE` item into the normative specification. Record a
-`PREFER` item only when the approved design selects it. Expose conflicts instead
-of silently weakening a repository contract.
 
 ## Read repository truth first
 
@@ -176,6 +156,9 @@ document. Verify links and commands, then run `git diff --check`. Do not modify
 RTL, firmware, build configuration, warning baselines, or metrics policy.
 
 ## Handoff
+
+Use the [agent task schema](../../task.schema.json) for durable handoffs and
+keep a generated human-readable prompt as a compatibility view.
 
 Report the target SoCs, feature slug, specification paths, selected
 profiles/PDKs or missing inputs, stable phase IDs/titles, and deferred work.

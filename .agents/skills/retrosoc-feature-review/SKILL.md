@@ -38,37 +38,23 @@ approval, a diff range, or a failure artifact when multiple candidates exist.
 
 ## Resolve target SoCs and evidence
 
-Resolve `Target SoCs` from the current request, approved hand-off, frozen
-specification, or selected committed profiles. Do not default to Mini or
-expand an ambiguous request to all products. Inspect the current product
-contracts, profiles, and build/regression rules; ask only for unresolved target
-ambiguity. Report a target/profile/specification conflict without silently
-substituting another series.
+Read the [shared task contract](../shared/task-contract.md) for host-neutral
+invocation, target resolution, and constraint precedence. Read the [shared
+evidence contract](../shared/evidence.md) and bind every claim to its target,
+profile, PDK, source revision, effective configuration, and build variant.
 
 Read `docs/soc-family-positioning.md` to distinguish supported baselines from
-roadmap targets, and verify executable support in the repository. Std/Pro
-planning can be reviewed without an executable platform, but missing profiles
-and validation must remain explicit gaps. Do not infer support from a family
-name or a proposed configuration.
+roadmap targets, and verify executable support in the repository. Planned
+targets can be reviewed, but missing profiles and validation evidence remain
+explicit gaps. Do not infer support from a family name or proposed configuration.
 
-Resolve each target's architecture, topology/address map, filelist, and software
-composition. Mini LP/HP assumptions, bus widths, DMA/IRQ allocations, and
-clock/reset behavior apply only where that product's contract requires them.
-For shared-IP changes, inspect compatibility of affected existing consumers
-as well as the requested integration; do not demand an unrelated feature rollout.
+Resolve each target's architecture, topology/address map, filelists, and software
+composition. Do not transfer Mini LP/HP assumptions to another series. For
+shared-IP changes, inspect compatibility of affected existing consumers as well
+as the requested integration; do not demand an unrelated feature rollout.
 
-Bind every evidence claim to its target SoC, profile, PDK, source revision, and
-build variant. Reports for another product, an older revision, or a different
-configuration may provide labeled baseline comparisons but cannot prove the
-current target passes. Preserve frozen phase IDs/titles, including `TINY-P4`,
-and relate findings to the applicable target and phase where available.
-
-## Additional constraints
-
-Normalize prompt-specific constraints as `MUST`, `MUST NOT`, `PREFER`,
-`DEFER`, and `ACCEPTANCE`. Review normative behavior against the frozen
-specification and any extra constraints explicitly included in the approved
-task hand-off. Treat an unapproved temporary constraint as context, not as a
+Preserve frozen phase IDs/titles and relate findings to the applicable target
+and phase where available. An unapproved temporary constraint is context, not a
 new requirement. Report any conflict that requires specification refreeze or
 architecture approval.
 
@@ -180,6 +166,9 @@ verify subsequent regression stages completed. Never treat boot smoke as the
 full SDK, DMA, IRQ, or feature acceptance campaign.
 
 ## Handoff
+
+Record the handoff with the [agent task schema](../../task.schema.json) and
+retain matching evidence paths.
 
 End with one next action:
 
