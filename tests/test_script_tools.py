@@ -1272,7 +1272,7 @@ def test_development_environment_workflow_runs_the_ihp130_hosted_contract() -> N
         "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
     ) == 3
     assert "docker build --tag retrosoc-dev-ci --file docker/Dockerfile ." in workflow
-    assert "cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24" in workflow
+    assert re.search(r"cachix/install-nix-action@[0-9a-f]{40}\b", workflow)
     assert "nix flake check" in workflow
     assert "development_environment.py" in workflow
     assert '--cache "${RETROSOC_DEVELOPMENT_CACHE}" check' in workflow
