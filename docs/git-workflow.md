@@ -269,8 +269,9 @@ After GitHub reports `MERGED`, the same command deletes the local and remote
 topic branches only when the worktree is clean and the PR head belongs to the
 canonical repository. It switches the main worktree to `dev` or removes a clean
 linked worktree, verifies that the local branch is contained in the PR merge
-commit, then deletes it without forcing. Dirty worktrees, unmerged local
-commits, non-canonical branches, and protected `dev`/`main` branches are left
-untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
+commit, then deletes it without forcing. The deletion uses `origin/dev` as its
+merge reference even when the main worktree is on an unrelated branch. Dirty
+worktrees, unmerged local commits, non-canonical branches, and protected
+`dev`/`main` branches are left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
 mechanism. Already-absent remote refs are treated as successful cleanup; other
 API errors fail.

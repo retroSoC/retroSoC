@@ -120,6 +120,24 @@ def test_cleanup_removes_clean_linked_worktree(tmp_path: Path) -> None:
     assert deleted == [("retroSoC/retroSoC", "feat/example")]
 
 
+def test_cleanup_removes_linked_worktree_with_unrelated_main_branch(tmp_path: Path) -> None:
+    pull = make_repo(tmp_path)
+    git(tmp_path, "checkout", "-qb", "fix/unrelated", "HEAD~1")
+    linked = tmp_path.parent / "linked"
+    git(tmp_path, "worktree", "add", str(linked), "feat/example")
+    deleted = []
+    warnings = cleanup_merged_branch(
+        linked,
+        pull,
+        remote_delete=lambda repository, branch, root: deleted.append((repository, branch)),
+    )
+    assert warnings == []
+    assert not linked.exists()
+    assert current_branch(tmp_path) == "fix/unrelated"
+    assert not local_branch_exists(tmp_path, "feat/example")
+    assert deleted == [("retroSoC/retroSoC", "feat/example")]
+
+
 def test_cleanup_preserves_dirty_worktree_and_remote_branch(tmp_path: Path) -> None:
     pull = make_repo(tmp_path)
     (tmp_path / "untracked.txt").write_text("preserve me\n", encoding="utf-8")

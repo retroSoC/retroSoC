@@ -105,7 +105,16 @@ def cleanup_merged_branch(
     elif current == branch:
         run_ok(["git", "-C", str(main_root), "worktree", "remove", str(root.resolve())], main_root)
     if local_branch_exists(main_root, branch):
-        result = git(main_root, "branch", "-d", branch)
+        result = git(
+            main_root,
+            "-c",
+            f"branch.{branch}.remote=origin",
+            "-c",
+            f"branch.{branch}.merge=refs/heads/dev",
+            "branch",
+            "-d",
+            branch,
+        )
         if result.returncode:
             warnings.append(f"local branch could not be deleted safely: {branch}: {result.stderr.strip()}")
     if warnings:
