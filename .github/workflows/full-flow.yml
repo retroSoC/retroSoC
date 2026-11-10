@@ -28,18 +28,58 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  full-flow:
+  ihp130:
+    if: inputs.pdk == 'IHP130'
     uses: ./.github/workflows/_regression.yml
     with:
       suite: pr
-      pdk: ${{ inputs.pdk }}
-      profile: >-
-        ${{
-          inputs.pdk == 'IHP130' && 'configs/ci/ihp130.mk' ||
-          inputs.pdk == 'GF180' && 'configs/ci/gf180.mk' ||
-          inputs.pdk == 'ICS55' && 'configs/ci/ics55.mk' ||
-          'configs/ci/sky130.mk'
-        }}
+      pdk: IHP130
+      profile: configs/ci/ihp130.mk
+      runner: ${{ inputs.runner }}
+      timeout_minutes: ${{ inputs.timeout_minutes }}
+      behavioral_only: false
+      tiny_p7_iverilog: include
+      change_mode: full
+      retention_days: 90
+      artifact_suffix: -full-flow
+
+  gf180:
+    if: inputs.pdk == 'GF180'
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: GF180
+      profile: configs/ci/gf180.mk
+      runner: ${{ inputs.runner }}
+      timeout_minutes: ${{ inputs.timeout_minutes }}
+      behavioral_only: false
+      tiny_p7_iverilog: include
+      change_mode: full
+      retention_days: 90
+      artifact_suffix: -full-flow
+
+  ics55:
+    if: inputs.pdk == 'ICS55'
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: ICS55
+      profile: configs/ci/ics55.mk
+      runner: ${{ inputs.runner }}
+      timeout_minutes: ${{ inputs.timeout_minutes }}
+      behavioral_only: false
+      tiny_p7_iverilog: include
+      change_mode: full
+      retention_days: 90
+      artifact_suffix: -full-flow
+
+  sky130:
+    if: inputs.pdk == 'SKY130'
+    uses: ./.github/workflows/_regression.yml
+    with:
+      suite: pr
+      pdk: SKY130
+      profile: configs/ci/sky130.mk
       runner: ${{ inputs.runner }}
       timeout_minutes: ${{ inputs.timeout_minutes }}
       behavioral_only: false

@@ -2791,3 +2791,16 @@ def test_clean_all_stays_within_repository(tmp_path: Path) -> None:
     )
     assert not link.exists()
     assert external.is_dir()
+
+
+def test_full_flow_dispatch_uses_explicit_pdk_profiles() -> None:
+    workflow = (ROOT / ".github/workflows/full-flow.yml").read_text()
+    for pdk, profile in (
+        ("IHP130", "configs/ci/ihp130.mk"),
+        ("GF180", "configs/ci/gf180.mk"),
+        ("ICS55", "configs/ci/ics55.mk"),
+        ("SKY130", "configs/ci/sky130.mk"),
+    ):
+        assert f"if: inputs.pdk == '{pdk}'" in workflow
+        assert f"profile: {profile}" in workflow
+    assert "inputs.pdk == 'IHP130' &&" not in workflow
