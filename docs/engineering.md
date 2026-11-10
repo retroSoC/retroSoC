@@ -239,8 +239,8 @@ limit to reach a complete receive path and export its witness. `opipsram` uses
 depth 40 for prove, cover, and BMC; prove and cover retain a 300-second limit,
 while BMC uses 600 seconds to preserve the full bound on variable-speed hosted
 runners. `dma` uses a
-depth-24 BMC task, depth-32 covers, and a 120-second per-task limit for the narrowest supported four-channel,
-32-bit/4-beat/4-word `dma_core` configuration. Its constrained native AXI4
+depth-24 BMC task, depth-32 covers, and a 600-second hosted per-task limit for the narrowest supported four-channel,
+32-bit/4-beat/4-word `dma_core` configuration. The local default remains 120 seconds. Its constrained native AXI4
 responder and AXI4-Stream environment prove source stability under
 backpressure, FIFO bounds, transaction-owner stability, abort draining,
 channel accounting and terminal isolation, and observable AXI burst rules;
@@ -353,6 +353,8 @@ machine-readable matrix and exact regression commands. Unknown paths or a
 classification failure select the full matrix. Push, scheduled, and manual full
 events always select full coverage. `make check-fast` is the common static,
 host, agent, YAML/Actions, ownership, and regression-definition entrypoint.
+`scripts/pr_workflow.py` implements CI-green auto-merge with merge commits and
+safe merged-branch cleanup; it never bypasses checks or dirty worktrees.
 
 `make skill-eval-static` validates Skill structure only. `make skill-eval-smoke`
 executes three real read-only Codex scenarios in isolated Git workspaces and

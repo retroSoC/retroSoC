@@ -76,8 +76,14 @@ def validate_ownership(root: Path) -> tuple[list[str], list[str]]:
     policy = document.get("review_policy", {})
     if policy.get("mode") not in {"sole_maintainer", "peer_review"}:
         issues.append("review_policy.mode must be sole_maintainer or peer_review")
-    if policy.get("agent_approval_allowed") is not False:
-        issues.append("review_policy must prohibit agent approval")
+    if policy.get("agent_approval_allowed") is not True:
+        issues.append("review_policy must allow agent merge under the auto_merge policy")
+    from scripts.pr_workflow import auto_merge_policy
+
+    try:
+        auto_merge_policy(root)
+    except RuntimeError as error:
+        issues.append(str(error))
     if policy.get("mode") == "sole_maintainer":
         if policy.get("self_approval_allowed") is not True:
             issues.append("sole_maintainer mode must allow maintainer self-approval")

@@ -199,3 +199,8 @@ permit advertising an unqualified operating point.
 3. Report validation results, applicable MISRA deviations, and explicitly
    identify unrun gates.
 4. Mention any remaining hardware, timing, vendor, or simulator coverage gap.
+5. With `auto_merge` enabled in `quality/ownership.json`, use
+  `scripts/pr_workflow.py` only after all checks pass. It creates a merge commit
+  and cleans the merged topic branch only when the worktree is clean. Do not
+  merge failed or pending checks, bypass branch protection, or delete unmerged
+  or dirty work.
