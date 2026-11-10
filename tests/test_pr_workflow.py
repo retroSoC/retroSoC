@@ -153,6 +153,28 @@ def test_cleanup_rejects_unmerged_pr(tmp_path: Path) -> None:
         cleanup_merged_branch(tmp_path, pull)
 
 
+@pytest.mark.parametrize("message", ["gh: Not Found (HTTP 404)\n", "gh: Reference does not exist (HTTP 422)\n"])
+def test_remote_delete_ignores_missing_reference(monkeypatch: pytest.MonkeyPatch, message: str) -> None:
+    from scripts.pr_workflow import remote_branch_delete
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.run",
+        lambda command, cwd: subprocess.CompletedProcess(command, 1, stdout="", stderr=message),
+    )
+    remote_branch_delete("retroSoC/retroSoC", "feat/example", Path.cwd())
+
+
+def test_remote_delete_rejects_other_failures(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import remote_branch_delete
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.run",
+        lambda command, cwd: subprocess.CompletedProcess(command, 1, stdout="", stderr="gh: Forbidden (HTTP 403)\n"),
+    )
+    with pytest.raises(RuntimeError, match="Forbidden"):
+        remote_branch_delete("retroSoC/retroSoC", "feat/example", Path.cwd())
+
+
 def test_merge_marks_draft_pr_ready_before_merging(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
 

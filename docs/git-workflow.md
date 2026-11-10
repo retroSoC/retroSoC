@@ -272,4 +272,5 @@ linked worktree, verifies that the local branch is contained in the PR merge
 commit, then deletes it without forcing. Dirty worktrees, unmerged local
 commits, non-canonical branches, and protected `dev`/`main` branches are left
 untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
-mechanism.
+mechanism. Already-absent remote refs are treated as successful cleanup; other
+API errors fail.

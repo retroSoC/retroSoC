@@ -60,7 +60,9 @@ def worktree_main_root(root: Path) -> Path:
 
 def remote_branch_delete(repository: str, branch: str, root: Path) -> None:
     result = run(["gh", "api", "-X", "DELETE", f"repos/{repository}/git/refs/heads/{branch}"], root)
-    if result.returncode and "404" not in result.stderr and "Not Found" not in result.stderr:
+    error = (result.stderr or "").lower()
+    missing = "404" in error or "not found" in error or ("422" in error and "reference does not exist" in error)
+    if result.returncode and not missing:
         raise RuntimeError(result.stderr)
 
 
