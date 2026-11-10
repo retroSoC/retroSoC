@@ -204,7 +204,11 @@ repackaging, or publication of proprietary results.
 
 ## Validation versus evidence
 
-The repository's Skill tests validate metadata, links, invocation examples,
-and eval corpus structure. They do not execute these prompts or certify agent
-behavior. Actual publication, restoration, upgrades, physical runs, and their
-qualification require separately requested execution and matching artifacts.
+The repository's static Skill tests validate metadata, links, invocation
+examples, the registry, and eval corpus structure. They do not execute prompts
+or certify agent behavior. `make skill-eval-static` performs only those checks.
+`make skill-eval-smoke` executes three read-only Codex scenarios in isolated Git
+workspaces and retains traces and deterministic grades. Other hosts can produce
+the same trace contract for independent grading. Actual publication,
+restoration, upgrades, physical runs, and their qualification require separately
+requested execution and matching artifacts.

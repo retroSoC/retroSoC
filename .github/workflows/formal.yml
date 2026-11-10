@@ -1,0 +1,139 @@
+name: formal
+
+on:
+  schedule:
+    - cron: "41 3 * * 0"
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: ubuntu-22.04 or a provisioned runner with additional resources
+        required: true
+        default: ubuntu-22.04
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: formal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  proof:
+    name: formal-${{ matrix.proof }}
+    runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        proof:
+          - bus
+          - rib-adapter
+          - rib2apb
+          - sysctrl
+          - pll-rcu
+          - gpio
+          - ws2812
+          - uart
+          - i2c
+          - timer
+          - clint
+          - dvp
+          - i2s
+          - psram
+          - onchip-ram
+          - opipsram
+          - dma
+          - ga2d
+          - apu
+          - apu-kws
+          - apu-p9
+          - apu-loader
+          - apu-loader-p5
+          - apu-sequencer
+          - gateway-a
+          - sdio
+          - npu_dma
+          - npu-context
+          - npu-control
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Record run start
+        run: echo "RUN_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_ENV}"
+
+      - name: Restore locked source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            physical/pdk/IHP-Open-PDK
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/wdg
+            rtl/managed/third_party
+            rtl/managed/mpw
+            .cache/retrosoc/pdk
+            .cache/retrosoc/stamps
+          key: formal-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Restore locked toolchains
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/downloads
+            .cache/retrosoc/toolchains
+          key: tools-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Install build Python dependency
+        run: python3 -m pip install --requirement requirements/build.txt
+
+      - name: Set up locked formal tools
+        uses: ./.github/actions/locked-tools
+        with:
+          tools: verilator sv2v iverilog yosys sby bitwuzla sbt riscv_gnu
+
+      - name: Set up locked source dependencies
+        run: make CONFIG=configs/ci/ihp130.mk setup
+
+      - name: Check formal environment
+        run: make CONFIG=configs/ci/ihp130.mk formal-doctor
+
+      - name: Prove formal-${{ matrix.proof }}
+        id: proof
+        run: make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal-${{ matrix.proof }}
+
+      - name: Summarize formal evidence
+        if: always()
+        run: >-
+          python3 scripts/ci_summary.py collect
+          --root . --build-root build --since "${RUN_STARTED}"
+          --label "formal-${{ matrix.proof }}"
+          --profile configs/ci/ihp130.mk --pdk IHP130 --suite formal
+          --executed-formal --require-formal
+          --run-status "${{ steps.proof.outcome }}"
+          --output "build/ci-summary/formal-${{ matrix.proof }}.json"
+          --step-summary "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload formal reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: formal-${{ matrix.proof }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-summary/*.json
+            build/**/meta/formal.json
+            build/**/formal/**/*.sby
+            build/**/formal/**/*.smt2
+            build/**/formal/**/*.vcd
+            build/**/formal/**/*.yw
+            build/**/formal/**/status
+            build/**/*.log
+          if-no-files-found: warn
+          retention-days: 30

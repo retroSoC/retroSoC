@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "default_classification": "full",
+  "classes": [
+    {
+      "name": "agents",
+      "patterns": [".agents/**", "AGENTS.md", "tests/test_agent_skills.py", "tests/test_skill_eval.py"]
+    },
+    {
+      "name": "documentation",
+      "patterns": ["*.md", "docs/**/*.md", ".github/**/*.md"]
+    },
+    {
+      "name": "publication",
+      "patterns": ["publications/**", "tests/test_publication*.py"]
+    },
+    {
+      "name": "quality",
+      "patterns": ["tests/**"]
+    },
+    {
+      "name": "embedded_c",
+      "patterns": ["crt/**", "app/**"]
+    },
+    {
+      "name": "tiny_rtl",
+      "patterns": ["rtl/tiny/**", "configs/ci/*tiny*.mk"]
+    },
+    {
+      "name": "full",
+      "patterns": [
+        "Makefile",
+        "pyproject.toml",
+        "setup.py",
+        "flake.nix",
+        "flake.lock",
+        "scripts/**",
+        "dependencies/**",
+        "requirements/**",
+        "configs/**",
+        "quality/**",
+        ".github/**",
+        "docker/**",
+        "physical/**",
+        "fpga/**",
+        "rtl/**",
+        "app/coremark/**",
+        "app/fatfs/**",
+        "app/lvgl/**",
+        "app/middleware/**",
+        "app/network/**",
+        "app/ports/**"
+      ]
+    }
+  ],
+  "job_policy": {
+    "documentation": {
+      "quality_fixtures": false,
+      "skill_eval": false,
+      "regression_smoke": false,
+      "regression_ihp130": false,
+      "regression_gf180": false,
+      "regression_ics55": false,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "agents": {
+      "quality_fixtures": false,
+      "skill_eval": true,
+      "regression_smoke": false,
+      "regression_ihp130": false,
+      "regression_gf180": false,
+      "regression_ics55": false,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "publication": {
+      "quality_fixtures": true,
+      "skill_eval": false,
+      "regression_smoke": false,
+      "regression_ihp130": false,
+      "regression_gf180": false,
+      "regression_ics55": false,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "quality": {
+      "quality_fixtures": true,
+      "skill_eval": false,
+      "regression_smoke": false,
+      "regression_ihp130": false,
+      "regression_gf180": false,
+      "regression_ics55": false,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "embedded_c": {
+      "quality_fixtures": true,
+      "skill_eval": false,
+      "regression_smoke": true,
+      "regression_ihp130": true,
+      "regression_gf180": false,
+      "regression_ics55": false,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "tiny_rtl": {
+      "quality_fixtures": true,
+      "skill_eval": false,
+      "regression_smoke": false,
+      "regression_ihp130": true,
+      "regression_gf180": false,
+      "regression_ics55": true,
+      "regression_sky130": false,
+      "development_environment": false
+    },
+    "full": {
+      "quality_fixtures": true,
+      "skill_eval": false,
+      "regression_smoke": true,
+      "regression_ihp130": true,
+      "regression_gf180": true,
+      "regression_ics55": true,
+      "regression_sky130": true,
+      "development_environment": true
+    }
+  }
+}

@@ -86,9 +86,13 @@ tooling.
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks feature and engineering-workflow skill metadata,
   local references, eval corpora, default invocation contracts, and documented
-  entrypoints. Run it with `python3 -m pytest -q tests/test_agent_skills.py`.
-  These are static checks; the eval corpus is reusable scenario data, not proof
-  that an agent executed publication, dependency, or hardware workflows.
+  entrypoints. `test_agent_control.py` covers task contracts and conservative
+  change selection; `test_skill_eval.py` covers isolated behavior-trace grading;
+  `test_engineering_metrics.py`, `test_ci_summary.py`, and
+  `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
+  PR/release governance. Run fast agent checks with `make check-fast`. Static
+  corpus checks are not proof that an agent executed a workflow; live behavior
+  results require retained traces from `make skill-eval-smoke`.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
@@ -122,9 +126,6 @@ tooling.
   `test_crypto_p1_evidence.py` checks that stale source/logs or a failed command
   cannot qualify an earlier firmware PASS; these Pytest cases are not run when
   the maintainer has disabled Pytest.
-  `crypto_response_fault_tb.sv` independently checks delayed, duplicate,
-  stale-epoch and missing SRAM responses while the default product store keeps
-  its fixed one-cycle behavior.
   `crypto_response_fault_tb.sv` independently checks delayed, duplicate,
   stale-epoch and missing SRAM responses while the default product store keeps
   its fixed one-cycle behavior.

@@ -70,6 +70,7 @@ following table is a navigation aid, not a replacement for those requirements.
 | RTL, hardware configuration, or linker inputs | Run the affected firmware and simulation, formatting/style checks, and the applicable PR/extended regression from the repository contract. |
 | Dependencies or setup | Validate the lock, exercise the affected setup/doctor flow, and run the applicable tests and regression. |
 | CI definitions | Run YAML and Actions lint plus the required regression definition dry-runs. |
+| Agent or engineering controls | Run `make check-fast`; use `make validation-plan` to review the selected matrix and every intentional skip. |
 
 For example, an affected IHP130 firmware build uses:
 
@@ -123,6 +124,13 @@ applicable contract. Maintainers coordinate the owners in
 merge. Owner-controlled dependency, build, CI, quality, and release changes
 need the relevant owners' review. Documented review expectations do not imply
 that a particular GitHub branch-protection rule has been configured.
+
+While `@maksyuki` is the only eligible reviewer, the repository uses
+`sole_maintainer` mode in `quality/ownership.json`: peer approval is not
+numerically required because GitHub does not permit author self-approval. The
+human maintainer retains the same review and merge obligations, and agents do
+not gain approval or merge permission. Restore peer CODEOWNERS approval when a
+second eligible reviewer is available.
 
 ## Merge and follow up
 

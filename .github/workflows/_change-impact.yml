@@ -1,0 +1,72 @@
+name: change impact
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: Path-based auto selection or an unconditional full matrix
+        required: false
+        default: auto
+        type: string
+    outputs:
+      classification:
+        value: ${{ jobs.impact.outputs.classification }}
+      quality_fast:
+        value: ${{ jobs.impact.outputs.quality_fast }}
+      quality_fixtures:
+        value: ${{ jobs.impact.outputs.quality_fixtures }}
+      skill_eval:
+        value: ${{ jobs.impact.outputs.skill_eval }}
+      regression_smoke:
+        value: ${{ jobs.impact.outputs.regression_smoke }}
+      regression_ihp130:
+        value: ${{ jobs.impact.outputs.regression_ihp130 }}
+      regression_gf180:
+        value: ${{ jobs.impact.outputs.regression_gf180 }}
+      regression_ics55:
+        value: ${{ jobs.impact.outputs.regression_ics55 }}
+      regression_sky130:
+        value: ${{ jobs.impact.outputs.regression_sky130 }}
+      development_environment:
+        value: ${{ jobs.impact.outputs.development_environment }}
+
+permissions:
+  contents: read
+
+jobs:
+  impact:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      classification: ${{ steps.plan.outputs.classification }}
+      quality_fast: ${{ steps.plan.outputs.quality_fast }}
+      quality_fixtures: ${{ steps.plan.outputs.quality_fixtures }}
+      skill_eval: ${{ steps.plan.outputs.skill_eval }}
+      regression_smoke: ${{ steps.plan.outputs.regression_smoke }}
+      regression_ihp130: ${{ steps.plan.outputs.regression_ihp130 }}
+      regression_gf180: ${{ steps.plan.outputs.regression_gf180 }}
+      regression_ics55: ${{ steps.plan.outputs.regression_ics55 }}
+      regression_sky130: ${{ steps.plan.outputs.regression_sky130 }}
+      development_environment: ${{ steps.plan.outputs.development_environment }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Select validation matrix
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          args=(--root . --event "${EVENT_NAME}" --mode "${INPUT_MODE}"
+                --output build/change-impact/plan.json
+                --github-output "${GITHUB_OUTPUT}"
+                --step-summary "${GITHUB_STEP_SUMMARY}")
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--base "origin/${BASE_REF}" --head HEAD)
+          fi
+          python3 scripts/agent_control.py plan "${args[@]}"

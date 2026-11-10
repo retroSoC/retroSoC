@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verified-open-source-flows:
+  ihp130-open-source-flows:
     uses: ./.github/workflows/_regression.yml
     with:
       suite: pr
@@ -23,15 +23,3 @@ jobs:
       profile: configs/ci/ihp130.mk
       retention_days: 30
       tiny_p7_iverilog: exclude
-
-  tiny-p7-iverilog:
-    uses: ./.github/workflows/_regression.yml
-    with:
-      suite: pr
-      pdk: IHP130
-      profile: configs/ci/ihp130-tiny.mk
-      retention_days: 30
-      timeout_minutes: 360
-      tiny_p7_iverilog: only
-      tiny_p7_iverilog_timeout_seconds: 19800
-      artifact_suffix: -tiny-p7-iverilog

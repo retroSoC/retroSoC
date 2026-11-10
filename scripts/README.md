@@ -38,6 +38,16 @@ Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 
+`agent_control.py` validates host-neutral task packets, produces revision-bound
+agent context and changed-file validation plans, and checks repository Markdown.
+`skill_eval.py` validates the Skill registry and executes isolated, read-only
+behavior evaluations with deterministic grades. `engineering_metrics.py`
+collects workflow and PR metrics without source or credential content.
+`ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
+and NOT_RUN. `check_contribution.py` validates PR metadata, CODEOWNERS, and
+release-candidate evidence. Use the corresponding Make targets and host tests
+instead of duplicating these rules in workflow shell.
+
 `spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
 entrypoints. It preserves attempt directories, source archives, command results
 and simulation verdicts under the selected Tiny build variant. It does not

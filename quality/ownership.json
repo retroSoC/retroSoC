@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "review_policy": {
+    "mode": "sole_maintainer",
+    "self_approval_allowed": true,
+    "agent_approval_allowed": false,
+    "required_approving_review_count": 0,
+    "require_code_owner_reviews": false,
+    "rationale": "Only @maksyuki can review PRs. The human maintainer retains review and merge responsibility; agents cannot approve or merge. Required CI contexts are activated after their workflows merge."
+  },
+  "entries": [
+    {"path": "/Makefile", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/dependencies/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/configs/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/scripts/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/.agents/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/.github/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/quality/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/rtl/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/crt/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/app/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/tests/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/physical/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/docs/", "owners": ["@maksyuki"], "backup_owners": []},
+    {"path": "/publications/", "owners": ["@maksyuki"], "backup_owners": []}
+  ]
+}

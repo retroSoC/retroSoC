@@ -48,6 +48,18 @@
       "prompt": "Target SoCs: TINY, MINI. Design a shared UART filtering extension. MUST retain the register ABI; ACCEPTANCE preserve existing product behavior and document their integration differences.",
       "expected_output": "Separate the common UART contract from each target's clocks, capabilities, DMA/IRQ routing, configuration and validation mapping, without enabling unrelated features or duplicating divergent register contracts.",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Research a small GPIO input-filter architecture for TINY. Compare feasible approaches and identify the affected profile without implementing code.",
+      "expected_output": "Implicitly activate the design skill, perform read-only repository-grounded research for TINY, and do not route to implementation before design approval.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Fix a one-line typo in the root contribution guide. Do not create a feature specification or modify RTL.",
+      "expected_output": "Do not activate the feature design skill for an ordinary documentation fix; keep the change outside the feature-freeze workflow.",
+      "files": []
     }
   ]
 }

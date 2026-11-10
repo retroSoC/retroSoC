@@ -1,4 +1,4 @@
-# Build and dependency controls require explicit maintainer review.
+# Engineering controls and subsystem changes require explicit maintainer review.
 /Makefile @maksyuki
 /dependencies/ @maksyuki
 /configs/ @maksyuki
@@ -6,3 +6,10 @@
 /.agents/ @maksyuki
 /.github/ @maksyuki
 /quality/ @maksyuki
+/rtl/ @maksyuki
+/crt/ @maksyuki
+/app/ @maksyuki
+/tests/ @maksyuki
+/physical/ @maksyuki
+/docs/ @maksyuki
+/publications/ @maksyuki

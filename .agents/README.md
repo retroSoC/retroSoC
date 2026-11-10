@@ -14,14 +14,19 @@ execution framework.
 
 ## Available Skills
 
-| Skill | Primary host | Responsibility |
+| Skill | Primary use | Responsibility |
 | --- | --- | --- |
-| [retrosoc-feature-design](skills/retrosoc-feature-design/SKILL.md) | ChatGPT Work | Research and freeze the common IP contract and selected products' integration. |
-| [retrosoc-feature-implementation](skills/retrosoc-feature-implementation/SKILL.md) | Codex | Preflight and implement one phase with target-specific validation. |
-| [retrosoc-feature-review](skills/retrosoc-feature-review/SKILL.md) | ChatGPT Work or Codex | Diagnose failures, review changes, and report evidence separately by target. |
-| [retrosoc-datasheet](skills/retrosoc-datasheet/SKILL.md) | Codex | Inspect, update, or validate source-bound Typst publications and PDFs. |
-| [retrosoc-dependency-maintenance](skills/retrosoc-dependency-maintenance/SKILL.md) | Codex | Inspect, restore, or upgrade locked inputs without confusing restoration with a version change. |
-| [retrosoc-physical-flow](skills/retrosoc-physical-flow/SKILL.md) | Codex | Preflight, run, resume, or summarize supported physical implementation flows. |
+| [retrosoc-feature-design](skills/retrosoc-feature-design/SKILL.md) | Architecture | Research and freeze the common IP contract and selected products' integration. |
+| [retrosoc-feature-implementation](skills/retrosoc-feature-implementation/SKILL.md) | Delivery | Preflight and implement one phase with target-specific validation. |
+| [retrosoc-feature-review](skills/retrosoc-feature-review/SKILL.md) | Assurance | Diagnose failures, review changes, and report evidence separately by target. |
+| [retrosoc-datasheet](skills/retrosoc-datasheet/SKILL.md) | Publication | Inspect, update, or validate source-bound Typst publications and PDFs. |
+| [retrosoc-dependency-maintenance](skills/retrosoc-dependency-maintenance/SKILL.md) | Dependencies | Inspect, restore, or upgrade locked inputs without confusing restoration with a version change. |
+| [retrosoc-physical-flow](skills/retrosoc-physical-flow/SKILL.md) | Physical evidence | Preflight, run, resume, or summarize supported physical implementation flows. |
+
+The [Skill registry](skills/registry.json) records owners, entrypoints, and eval
+suites. Use the [agent task schema](task.schema.json) for durable, host-neutral
+handoffs and the [shared task contract](skills/shared/task-contract.md) and
+[evidence contract](skills/shared/evidence.md) for common rules.
 
 Invoke a skill explicitly when handing work between stages:
 
@@ -53,11 +58,10 @@ For shared IP, keep a common functional contract and explicit per-series
 integration differences. Verify affected existing consumers without treating
 that as permission to add the feature to other products.
 
-ChatGPT Work uses Plan mode for the design `research` stage. After a maintainer
-approves the design, run the `freeze` stage outside Plan mode to write the
-specification. Codex uses Plan mode or a read-only permission profile for
-`preflight`; `implement` runs outside Plan mode and handles one approved phase.
-Review and diagnosis are read-only. Fixes return to the implementation skill.
+Use the host's Plan mode or a read-only permission profile for design `research`
+and implementation `preflight`. After maintainer approval, run `freeze` or
+`implement` outside Plan mode with the minimum required write scope. Review and
+diagnosis are read-only. Fixes return to the implementation skill.
 
 ## Feature Human Gates
 
@@ -112,11 +116,13 @@ the target, profile, PDK, source revision, and build variant.
 
 ## Validation
 
-Skill metadata, references, and eval corpora are checked by Pytest. Changes to
-this directory require the applicable documentation, JSON, Pytest, and
-whitespace checks listed in the root agent contract. Hardware gates remain
-proportionate to the feature work performed through the skills.
+Skill metadata, references, the registry, and eval corpora are checked by
+`make skill-eval-static` and Pytest. Changes to this directory require the
+applicable documentation, JSON, Pytest, and whitespace checks listed in the root
+agent contract. Hardware gates remain proportionate to the feature work.
 
-Corpus validation checks structure and referenced fixtures, not agent behavior.
-Run workflow execution or independent behavioral evals only when requested;
-do not describe a static corpus check as a completed hardware/publication run.
+Static corpus validation does not prove agent behavior. `make skill-eval-smoke`
+executes three read-only Codex scenarios in isolated Git workspaces and retains
+traces and deterministic grades. The runner and model are recorded explicitly;
+a static result is never described as a completed behavior, hardware, or
+publication run. Other hosts can emit the same trace schema for grading.

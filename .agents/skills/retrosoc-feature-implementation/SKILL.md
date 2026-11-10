@@ -46,11 +46,16 @@ such as `TINY-P4` verbatim; `Phase N - Title` is only a new-phase example. Do no
 "next phase" from repository state and do not rename or renumber a frozen
 phase.
 
-For `implement`, accept an approved preflight only from the current Codex
-conversation, a plan pasted into the prompt, or a maintainer-approved document
-explicitly named by the user. A plan's existence is not evidence of approval.
+For `implement`, accept an approved preflight only from the current host
+conversation, a schema-valid task packet, a plan pasted into the prompt, or a
+maintainer-approved document explicitly named by the user. A plan's existence is
+not evidence of approval.
 
 ## Resolve target SoCs and configurations
+
+Read the [shared task contract](../shared/task-contract.md) and the
+[shared evidence contract](../shared/evidence.md) for target resolution,
+constraint precedence, structured approvals, and validation evidence.
 
 Resolve `Target SoCs` from the current request, approved hand-off, frozen
 specification, or an explicitly selected committed profile. Do not default to
@@ -82,14 +87,10 @@ integration changes distinguishable in the plan and hand-off.
 
 ## Additional constraints
 
-Normalize prompt-specific constraints as `MUST`, `MUST NOT`, `PREFER`,
-`DEFER`, and `ACCEPTANCE`. Apply repository policy first, the frozen
-specification second, and only then approved prompt-specific constraints that
-do not conflict. Treat `MUST` and `MUST NOT` as mandatory, use `PREFER` only
-when compatible, exclude `DEFER` work, and use `ACCEPTANCE` to verify the
-result. A temporary constraint cannot override architecture, ABI, DMA,
-interrupt, clock/reset, CDC/RDC, or verification requirements in the frozen
-contract.
+Apply the constraint vocabulary and precedence in the
+[shared task contract](../shared/task-contract.md). A temporary constraint
+cannot override architecture, ABI, safety, or verification requirements in the
+frozen contract.
 
 During preflight, return `SPEC_CONFLICT` when a temporary constraint contradicts
 the frozen contract, or `ARCH_CHANGE_REQUIRED` when satisfying it needs an
