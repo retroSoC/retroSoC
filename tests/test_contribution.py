@@ -45,6 +45,18 @@ def release_repository(tmp_path: Path, required_stages: list[str] | None = None)
     (root / "quality").mkdir()
     (root / "dependencies/dependencies.lock.json").write_text('{"locked": true}\n', encoding="utf-8")
     lock_digest = hashlib.sha256((root / "dependencies/dependencies.lock.json").read_bytes()).hexdigest()
+    ownership = {
+        "schema_version": 1,
+        "review_policy": {
+            "mode": "sole_maintainer",
+            "self_approval_allowed": True,
+            "agent_approval_allowed": False,
+            "required_approving_review_count": 0,
+            "require_code_owner_reviews": False,
+        },
+        "entries": [{"path": "/Makefile", "owners": ["@maksyuki"], "backup_owners": []}],
+    }
+    (root / "quality/ownership.json").write_text(json.dumps(ownership, indent=2) + "\n", encoding="utf-8")
     candidate = {
         "schema_version": 1,
         "version": "v1.2.3",
@@ -137,7 +149,7 @@ def test_release_validation_rejects_stale_runs_and_unapproved_review(tmp_path: P
         approval_lookup=lambda _repository, _reference: approval,
     )
     assert f"release workflow quality has no successful run at {revision}" in issues
-    assert "release approval pull request has no APPROVED review decision" in issues
+    assert "sole-maintainer release PR must not have changes requested" in issues
     assert verified == []
 
 
@@ -164,3 +176,21 @@ def test_release_validation_rejects_modified_candidate_and_moved_main(tmp_path: 
     assert "release candidate content must match the released tag" in issues
     assert "release candidate version does not match the tag" in issues
     assert "release candidate dependency lock digest is stale" in issues
+
+
+def test_release_validation_accepts_sole_maintainer_without_peer_review(tmp_path: Path) -> None:
+    root, revision = release_repository(tmp_path)
+    runs, approval = release_lookups(revision)
+    approval["reviewDecision"] = ""
+    approval["reviews"] = []
+    issues, verified = validate_release(
+        root,
+        "v1.2.3",
+        root / "quality/release-candidate.json",
+        "main",
+        "retroSoC/retroSoC",
+        run_lookup=lambda _repository, _revision: runs,
+        approval_lookup=lambda _repository, _reference: approval,
+    )
+    assert issues == []
+    assert verified[0]["id"] == 42

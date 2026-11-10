@@ -410,10 +410,12 @@ separate cache keys.
 Tags matching `v*` run `release.yml`, now guarded by the tracked
 `quality/release-candidate.json` and its schema. A candidate declares `main`, the
 lock digest, release-PR approval, required stages, workflow names, and accepted
-non-required gaps. The validator resolves the tag, current `origin/main`, the
-APPROVED release review, and successful workflow runs dynamically; a tracked
-candidate never embeds its own future SHA or future run IDs. Required local
-artifacts are hash-checked and accepted gaps cannot overlap required stages.
+non-required gaps. The validator resolves the tag, current `origin/main`, and
+successful workflow runs dynamically; a tracked candidate never embeds its own
+future SHA or future run IDs. `sole_maintainer` accepts a merged release PR with
+the named maintainer's approval record, while peer mode requires an APPROVED
+review. Required local artifacts are hash-checked and accepted gaps cannot
+overlap required stages.
 Existing release assets are not overwritten on rerun.
 
 The release package retains the flattened SystemVerilog export, source tarball,

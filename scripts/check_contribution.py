@@ -207,17 +207,29 @@ def validate_release(
             decision = lookup_approval(repository, reference)
             if decision.get("state") != "MERGED" or not decision.get("mergedAt"):
                 issues.append("release approval pull request is not merged")
-            if decision.get("reviewDecision") != "APPROVED":
-                issues.append("release approval pull request has no APPROVED review decision")
             if (decision.get("mergeCommit") or {}).get("oid") != revision:
                 issues.append("release approval merge commit does not match the tag")
-            reviewers = {
-                (review.get("author") or {}).get("login")
-                for review in decision.get("reviews", [])
-                if review.get("state") == "APPROVED"
-            }
-            if approved_by[1:] not in reviewers:
-                issues.append(f"release approver {approved_by} has no APPROVED review on the release PR")
+            policy = read_json(root / "quality/ownership.json").get("review_policy", {})
+            if policy.get("mode") == "sole_maintainer":
+                owners = {
+                    owner
+                    for entry in read_json(root / "quality/ownership.json")["entries"]
+                    for owner in entry["owners"]
+                }
+                if approved_by not in owners:
+                    issues.append(f"release approver {approved_by} is not a repository CODEOWNER")
+                if decision.get("reviewDecision") not in {"", "APPROVED"}:
+                    issues.append("sole-maintainer release PR must not have changes requested")
+            else:
+                if decision.get("reviewDecision") != "APPROVED":
+                    issues.append("release approval pull request has no APPROVED review decision")
+                reviewers = {
+                    (review.get("author") or {}).get("login")
+                    for review in decision.get("reviews", [])
+                    if review.get("state") == "APPROVED"
+                }
+                if approved_by[1:] not in reviewers:
+                    issues.append(f"release approver {approved_by} has no APPROVED review on the release PR")
         except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
             issues.append(f"cannot verify release approval: {error}")
 

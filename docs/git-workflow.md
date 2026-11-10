@@ -246,8 +246,9 @@ immutable `vMAJOR.MINOR.PATCH` tag only after its required workflows succeed.
 The [release schema](../quality/release-candidate.schema.json) defines the lock
 digest, approval, stages, workflow names, and accepted gaps. The
 [release workflow](../.github/workflows/release.yml) verifies the tag against
-current `origin/main`, the APPROVED review, and matching successful runs; it does
-not overwrite existing assets.
+current `origin/main` and matching successful runs. `sole_maintainer` accepts a
+merged release PR with the named maintainer's approval record; peer mode
+requires an APPROVED review. Existing assets are not overwritten.
 
 Do not move or reuse published release tags. Follow
 [Engineering Workflow](engineering.md) for artifacts and release validation;
