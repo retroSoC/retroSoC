@@ -113,7 +113,7 @@ jobs:
       - name: Prove formal-dma with hosted budget
         if: matrix.proof == 'dma'
         id: proof_dma
-        run: make CONFIG=configs/ci/ihp130.mk FORMAL=YES FORMAL_TIMEOUT=600 formal-dma
+        run: make CONFIG=configs/ci/ihp130.mk FORMAL=YES FORMAL_DMA_TIMEOUT=600 formal-dma
 
       - name: Summarize formal evidence
         if: always()

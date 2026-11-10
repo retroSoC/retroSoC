@@ -2811,4 +2811,4 @@ def test_formal_workflow_has_targeted_dma_budget() -> None:
     workflow = (ROOT / ".github/workflows/formal.yml").read_text()
     assert "if: matrix.proof != 'dma'" in workflow
     assert "if: matrix.proof == 'dma'" in workflow
-    assert "FORMAL_TIMEOUT=600" in workflow
+    assert "FORMAL_DMA_TIMEOUT=600" in workflow
