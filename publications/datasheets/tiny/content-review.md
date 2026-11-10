@@ -1,6 +1,6 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
-Reviewed source: `fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04` from `dev`.
+Reviewed source: `dba9d209a2ddce4aceb6cc0256beae7ea7fdc496` from `dev`.
 Main profile: `configs/ci/ics55-tiny.mk`; compatibility: `configs/ci/ihp130-tiny.mk`.
 The approved update reviews the R2-P3..P10 and SPI-P1..P4 increment from the
 v0.1 source `9c706ba0ff1da1028c299cfff573010a86dfd7ce`.
@@ -88,8 +88,9 @@ eight channels, three AXI owners, pad map and main SRAM capacity are retained.
 The review follows the route/DMA guard, source epoch/error/configuration
 handshakes, DVP crop/stop changes, RCU guards and bounded HAL lifecycle.
 
-At submission, remote `dev` advanced to `fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04`.
-The 19-file synchronization delta changes CI dispatch/formal budgets, PR workflow
+At submission, remote `dev` advanced through `fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04`
+to `dba9d209a2ddce4aceb6cc0256beae7ea7fdc496`.
+The combined 19-file synchronization delta changes CI dispatch/formal budgets, local-only GA2D evidence, PR workflow
 and ownership guidance; it changes no RTL, HAL, hardware profile or dependency.
 `AGENTS.md` and `docs/engineering.md` are hashed publication inputs, so this
 reviewed policy-only advance is included in the final source identity and rebuilt
