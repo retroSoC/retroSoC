@@ -64,10 +64,14 @@ input allows a provisioned high-memory runner; no such capacity is inferred from
 the default `ubuntu-22.04` label. A full-flow summary requires synthesis, netlist,
 and STA evidence and retains failed attempts.
 
-`workflows/formal.yml` runs the explicit per-proof targets as bounded parallel
-jobs on its weekly schedule or manual dispatch. Smoke `formal_checks` still runs
-only `formal-doctor`; it is not proof evidence. SV2V conversion alone is not a
-proof pass.
+`workflows/formal.yml` runs the explicit per-proof targets except GA2D as
+bounded parallel jobs on its weekly schedule or manual dispatch. GA2D remains a
+local acceptance target because its diagnostic peak RSS was about 121 GiB;
+hosted attempts lacked a proof verdict. Its local bounds and 7200s task budget
+are unchanged. A hosted success does not cover GA2D, and missing local evidence
+is not a proof pass. See [Formal Protocol Proofs](../docs/engineering.md#formal-protocol-proofs)
+for the exact local command and evidence requirements. Smoke `formal_checks`
+still runs only `formal-doctor`; SV2V conversion alone is not a proof pass.
 
 `workflows/development-environment.yml` verifies Docker and Nix for environment,
 dependency, build-entry, scheduled, and full-matrix changes instead of repeating
