@@ -1,7 +1,7 @@
 # Tiny Gen1 v0.2 DRAFT chapter review
 
-Reviewed source 5f460ee02b5403cb3d4a7ae4905bf21173536f53. Main profile configs/ci/ics55-tiny.mk. Compatibility configs/ci/ihp130-tiny.mk.
-PDF 425 pages. SHA-256 6b6896afa02276b90c1b984870cc34789ddf3ec738063cff5f12cae81929dbb2.
+Reviewed source fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04. Main profile configs/ci/ics55-tiny.mk. Compatibility configs/ci/ihp130-tiny.mk.
+PDF 425 pages. SHA-256 ba2215ed3e95fac1cf2ad4b7fd9360696dda6f76fedcfde0b44b78bda81ce68c.
 
 The source refresh adds PPALite P3 and reconciles DVP/DMA/RCU while retaining the Mini-aligned style. This map contains 86 major/IP entries, 132 navigation entries and 23 IP chapters. The independent closing page is PDF page 425.
 

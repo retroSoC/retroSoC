@@ -1,6 +1,6 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
-Reviewed source: `5f460ee02b5403cb3d4a7ae4905bf21173536f53` from `dev`.
+Reviewed source: `fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04` from `dev`.
 Main profile: `configs/ci/ics55-tiny.mk`; compatibility: `configs/ci/ihp130-tiny.mk`.
 The approved update reviews the R2-P3..P10 and SPI-P1..P4 increment from the
 v0.1 source `9c706ba0ff1da1028c299cfff573010a86dfd7ce`.
@@ -87,6 +87,13 @@ routing and exact request-11/DMA2 direct admission. The existing request mask,
 eight channels, three AXI owners, pad map and main SRAM capacity are retained.
 The review follows the route/DMA guard, source epoch/error/configuration
 handshakes, DVP crop/stop changes, RCU guards and bounded HAL lifecycle.
+
+At submission, remote `dev` advanced to `fdd1565d57e953aff9a2fa34adb7d3f0ecac6e04`.
+The 19-file synchronization delta changes CI dispatch/formal budgets, PR workflow
+and ownership guidance; it changes no RTL, HAL, hardware profile or dependency.
+`AGENTS.md` and `docs/engineering.md` are hashed publication inputs, so this
+reviewed policy-only advance is included in the final source identity and rebuilt
+manifest. The earlier 5f460ee0 publication and validation remain separately identified.
 
 The new chapter includes all 40 SV/C-matched registers, processing formats,
 per-row padding and geometry, completion/recovery ordering, circuit/storage/
