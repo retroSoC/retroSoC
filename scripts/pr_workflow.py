@@ -111,12 +111,16 @@ def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
             "--repo",
             repository,
             "--json",
-            "state,baseRefName,headRefName,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
+            "state,isDraft,baseRefName,headRefName,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
         ]
     )
 
 
-def merge_pr(repository: str, number: int, root: Path) -> None:
+def merge_pr(repository: str, number: int, root: Path, pull: dict[str, Any]) -> None:
+    if pull.get("isDraft"):
+        ready = run(["gh", "pr", "ready", str(number), "--repo", repository], root)
+        if ready.returncode:
+            raise RuntimeError(f"failed to mark PR ready: {ready.stderr}")
     result = run(["gh", "pr", "merge", str(number), "--repo", repository, "--merge"], root)
     if result.returncode:
         raise RuntimeError(f"merge failed: {result.stderr}")
@@ -175,7 +179,7 @@ def watch_and_merge(
         if checks_green(result):
             pull = view_pr(repository, number, root)
             if pull.get("state") != "MERGED":
-                merge_pr(repository, number, root)
+                merge_pr(repository, number, root, pull)
                 pull = view_pr(repository, number, root)
             if pull.get("state") != "MERGED":
                 raise RuntimeError("GitHub did not report the PR as merged")

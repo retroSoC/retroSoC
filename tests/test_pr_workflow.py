@@ -97,3 +97,32 @@ def test_cleanup_rejects_unmerged_pr(tmp_path: Path) -> None:
     pull["state"] = "OPEN"
     with pytest.raises(RuntimeError, match="before the PR is merged"):
         cleanup_merged_branch(tmp_path, pull)
+
+
+def test_merge_marks_draft_pr_ready_before_merging(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = []
+
+    def fake_run(command, _cwd):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("scripts.pr_workflow.run", fake_run)
+    from scripts.pr_workflow import merge_pr
+
+    merge_pr("retroSoC/retroSoC", 231, Path.cwd(), {"isDraft": True})
+    assert calls[0][2] == "ready"
+    assert calls[1][2] == "merge"
+
+
+def test_merge_does_not_mark_ready_pr_again(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = []
+
+    def fake_run(command, _cwd):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("scripts.pr_workflow.run", fake_run)
+    from scripts.pr_workflow import merge_pr
+
+    merge_pr("retroSoC/retroSoC", 230, Path.cwd(), {"isDraft": False})
+    assert [command[2] for command in calls] == ["merge"]
