@@ -182,6 +182,7 @@ Never combine a review verdict with an unreviewed patch. After the next action,
 include one complete, copyable, single-stage English prompt for implementation,
 diagnosis, review, missing gates, or specification refreeze. Include the
 feature slug, target SoCs, exact phase when applicable, specification path,
-profile/PDK mapping, diff range, and matching evidence paths. For `MERGE`,
-provide a human-only merge checklist instead of an agent execution prompt;
-do not merge or push.
+profile/PDK mapping, diff range, and matching evidence paths. For `MERGE`, provide the CI-green auto-merge command
+`python3 scripts/pr_workflow.py --pr <number> --root .`. It merges only after
+all checks pass and cleans the merged topic branch only when the worktree is
+clean; do not bypass it with ad-hoc merge or push commands.

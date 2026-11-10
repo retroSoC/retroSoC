@@ -71,8 +71,10 @@ diagnosis are read-only. Fixes return to the implementation skill.
 3. A maintainer reviews P0/P1 findings, CI, and local full-flow evidence before
    merge.
 
-Feature stages retain their manual hand-offs. The skills do not create pull
-requests, post review comments, or advance a human gate on their own.
+Feature stages retain their design and architecture approval gates. Once a PR's
+checks are all green, `scripts/pr_workflow.py` may merge it with a merge commit
+and clean the merged local and remote topic branches. It must not merge pending
+or failed checks, dirty worktrees, or non-canonical branches.
 
 ## Engineering workflows
 

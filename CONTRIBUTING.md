@@ -128,9 +128,10 @@ that a particular GitHub branch-protection rule has been configured.
 While `@maksyuki` is the only eligible reviewer, the repository uses
 `sole_maintainer` mode in `quality/ownership.json`: peer approval is not
 numerically required because GitHub does not permit author self-approval. The
-human maintainer retains the same review and merge obligations, and agents do
-not gain approval or merge permission. Restore peer CODEOWNERS approval when a
-second eligible reviewer is available.
+human maintainer retains design and architecture approval obligations. The
+`auto_merge` policy allows CI-green PRs to merge with merge commits and safe
+cleanup, never bypassing checks or dirty worktrees. Restore peer CODEOWNERS
+approval when a second eligible reviewer is available.
 
 ## Merge and follow up
 

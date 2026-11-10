@@ -353,6 +353,8 @@ machine-readable matrix and exact regression commands. Unknown paths or a
 classification failure select the full matrix. Push, scheduled, and manual full
 events always select full coverage. `make check-fast` is the common static,
 host, agent, YAML/Actions, ownership, and regression-definition entrypoint.
+`scripts/pr_workflow.py` implements CI-green auto-merge with merge commits and
+safe merged-branch cleanup; it never bypasses checks or dirty worktrees.
 
 `make skill-eval-static` validates Skill structure only. `make skill-eval-smoke`
 executes three real read-only Codex scenarios in isolated Git workspaces and
