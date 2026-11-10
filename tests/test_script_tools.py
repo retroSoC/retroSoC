@@ -2804,3 +2804,4 @@ def test_full_flow_dispatch_uses_explicit_pdk_profiles() -> None:
         assert f"if: inputs.pdk == '{pdk}'" in workflow
         assert f"profile: {profile}" in workflow
     assert "inputs.pdk == 'IHP130' &&" not in workflow
+    assert "timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}" in workflow

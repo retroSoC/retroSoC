@@ -36,7 +36,7 @@ jobs:
       pdk: IHP130
       profile: configs/ci/ihp130.mk
       runner: ${{ inputs.runner }}
-      timeout_minutes: ${{ inputs.timeout_minutes }}
+      timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
       tiny_p7_iverilog: include
       change_mode: full
@@ -51,7 +51,7 @@ jobs:
       pdk: GF180
       profile: configs/ci/gf180.mk
       runner: ${{ inputs.runner }}
-      timeout_minutes: ${{ inputs.timeout_minutes }}
+      timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
       tiny_p7_iverilog: include
       change_mode: full
@@ -66,7 +66,7 @@ jobs:
       pdk: ICS55
       profile: configs/ci/ics55.mk
       runner: ${{ inputs.runner }}
-      timeout_minutes: ${{ inputs.timeout_minutes }}
+      timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
       tiny_p7_iverilog: include
       change_mode: full
@@ -81,7 +81,7 @@ jobs:
       pdk: SKY130
       profile: configs/ci/sky130.mk
       runner: ${{ inputs.runner }}
-      timeout_minutes: ${{ inputs.timeout_minutes }}
+      timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
       tiny_p7_iverilog: include
       change_mode: full
