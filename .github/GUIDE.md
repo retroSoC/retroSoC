@@ -94,10 +94,12 @@ names, and any accepted non-required gaps. The validator resolves the tag and
 successful workflow runs dynamically, so the candidate does not attempt the
 impossible task of embedding its own future commit SHA or run IDs.
 
-A release requires an APPROVED review by the named maintainer, a merge commit
-matching the tag and current `origin/main`, successful required workflow runs,
-and valid hashes for any required local artifacts. Existing release assets are
-not overwritten on rerun. See `quality/release-candidate.schema.json` and
+A release requires a merge commit matching the tag and current `origin/main`,
+successful required workflow runs, and valid hashes for required local
+artifacts. In `sole_maintainer` mode, a merged release PR with the named
+maintainer's approval record is sufficient; peer mode instead requires an
+APPROVED review by that maintainer. Existing release assets are not overwritten
+on rerun. See `quality/release-candidate.schema.json` and
 `scripts/check_contribution.py`.
 
 Keep Actions pinned by commit ID and use the dependency lock rather than adding
