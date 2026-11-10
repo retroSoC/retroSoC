@@ -258,15 +258,18 @@ should not publish tags.
 ## CI-green auto merge and cleanup
 
 `quality/ownership.json` enables `auto_merge`: after every required check passes,
-`python3 scripts/pr_workflow.py --pr <number> --root .` creates a merge commit
-into `dev` without another manual confirmation. Pending, failed, empty, or
-cancelled checks prevent merging. The command never overrides branch protection
-or uses squash/rebase integration.
+`python3 scripts/pr_workflow.py --pr <number> --root .` enables GitHub's native
+auto-merge with a merge commit into `dev` without another manual confirmation.
+The helper checks all contexts required by branch protection, including gates
+that have not yet been scheduled. Pending, failed, empty, or cancelled checks
+prevent merging. The command never overrides branch protection or uses
+squash/rebase integration.
 
 After GitHub reports `MERGED`, the same command deletes the local and remote
 topic branches only when the worktree is clean and the PR head belongs to the
 canonical repository. It switches the main worktree to `dev` or removes a clean
-linked worktree, then deletes the merged local branch. Dirty worktrees,
-unmerged work, non-canonical branches, and protected `dev`/`main` branches are
-left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second
-cleanup mechanism.
+linked worktree, verifies that the local branch is contained in the PR merge
+commit, then deletes it without forcing. Dirty worktrees, unmerged local
+commits, non-canonical branches, and protected `dev`/`main` branches are left
+untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
+mechanism.

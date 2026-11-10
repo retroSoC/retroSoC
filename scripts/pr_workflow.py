@@ -85,6 +85,17 @@ def cleanup_merged_branch(
     if not clean_worktree(root):
         return ["worktree is dirty; keep the merged branch and worktree unchanged"]
     main_root = worktree_main_root(root)
+    merge_commit = pull.get("mergeCommit", {}).get("oid")
+    if not merge_commit:
+        raise RuntimeError("merged PR has no merge commit; refusing cleanup")
+    run_ok(["git", "fetch", "origin", "dev"], main_root)
+    run_ok(["git", "cat-file", "-e", f"{merge_commit}^{{commit}}"], main_root)
+    if local_branch_exists(main_root, branch):
+        contained = git(main_root, "merge-base", "--is-ancestor", branch, merge_commit)
+        if contained.returncode == 1:
+            return [f"local branch has unmerged commits; keep {branch} and its worktree unchanged"]
+        if contained.returncode:
+            raise RuntimeError(contained.stderr)
     current = current_branch(root)
     if current == branch and root.resolve() == main_root.resolve():
         run_ok(["git", "switch", "dev"], main_root)
@@ -92,7 +103,7 @@ def cleanup_merged_branch(
     elif current == branch:
         run_ok(["git", "-C", str(main_root), "worktree", "remove", str(root.resolve())], main_root)
     if local_branch_exists(main_root, branch):
-        result = git(main_root, "branch", "-D", branch)
+        result = git(main_root, "branch", "-d", branch)
         if result.returncode:
             warnings.append(f"local branch could not be deleted safely: {branch}: {result.stderr.strip()}")
     if warnings:
@@ -121,18 +132,43 @@ def merge_pr(repository: str, number: int, root: Path, pull: dict[str, Any]) -> 
         ready = run(["gh", "pr", "ready", str(number), "--repo", repository], root)
         if ready.returncode:
             raise RuntimeError(f"failed to mark PR ready: {ready.stderr}")
-    result = run(["gh", "pr", "merge", str(number), "--repo", repository, "--merge"], root)
+    result = run(["gh", "pr", "merge", str(number), "--repo", repository, "--merge", "--auto"], root)
     if result.returncode:
         raise RuntimeError(f"merge failed: {result.stderr}")
+
+
+def required_check_contexts(repository: str, base: str, root: Path) -> list[str]:
+    protection = gh_json(["api", f"repos/{repository}/branches/{base}/protection/required_status_checks"])
+    required = sorted({check["context"] for check in protection.get("checks", [])})
+    if not required:
+        raise RuntimeError(f"no required checks are configured for {base}; refusing to merge")
+    return required
+
+
+def native_auto_merge_enabled(repository: str, number: int, root: Path) -> bool:
+    pull = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    request = pull.get("auto_merge")
+    if request is None:
+        return False
+    if request.get("merge_method") != "MERGE":
+        raise RuntimeError("existing auto-merge request must use a merge commit")
+    return True
 
 
 def checks_result(root: Path, number: int, repository: str) -> subprocess.CompletedProcess[str]:
     return run(["gh", "pr", "checks", str(number), "--repo", repository], root)
 
 
-def checks_green(result: subprocess.CompletedProcess[str]) -> bool:
+def checks_green(result: subprocess.CompletedProcess[str], required: list[str] | None = None) -> bool:
     output = result.stdout.strip()
-    return result.returncode == 0 and bool(output) and "pending" not in output and "queued" not in output
+    lines = output.splitlines()
+    reported = {line.split("\t", 1)[0] for line in lines}
+    return (
+        result.returncode == 0
+        and bool(lines)
+        and set(required or []).issubset(reported)
+        and not any(marker in output.lower() for marker in ("pending", "queued", "in_progress"))
+    )
 
 
 def checks_failed(result: subprocess.CompletedProcess[str]) -> bool:
@@ -168,29 +204,30 @@ def watch_and_merge(
     auto_merge_policy(root)
     if interval <= 0:
         raise ValueError("interval must be positive")
+    previous_output = ""
     while True:
-        result = checks_result(root, number, repository)
-        if result.stdout.strip():
-            print(result.stdout, end="" if result.stdout.endswith("\n") else "\n", flush=True)
-        if result.stderr.strip():
-            print(result.stderr, end="" if result.stderr.endswith("\n") else "\n", file=sys.stderr, flush=True)
-        if not result.stdout.strip():
-            raise RuntimeError("no checks were reported; refusing to merge")
-        if checks_green(result):
-            pull = view_pr(repository, number, root)
-            if pull.get("state") != "MERGED":
-                merge_pr(repository, number, root, pull)
-                pull = view_pr(repository, number, root)
-            if pull.get("state") != "MERGED":
-                raise RuntimeError("GitHub did not report the PR as merged")
+        pull = view_pr(repository, number, root)
+        if pull.get("state") == "MERGED":
             if cleanup:
                 warnings = cleanup_merged_branch(root, pull, delete_remote=delete_remote)
                 for warning in warnings:
                     print(f"cleanup warning: {warning}", file=sys.stderr)
             print(f"PR #{number} merged", flush=True)
             return
+        required = required_check_contexts(repository, pull["baseRefName"], root)
+        result = checks_result(root, number, repository)
+        output = result.stdout + (result.stderr or "")
+        if output != previous_output:
+            print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            previous_output = output
+        if not result.stdout.strip():
+            raise RuntimeError("no checks were reported; refusing to merge")
         if checks_failed(result):
             raise RuntimeError(f"PR #{number} checks failed; no merge or cleanup attempted")
+        if checks_green(result, required):
+            if not native_auto_merge_enabled(repository, number, root):
+                merge_pr(repository, number, root, pull)
+                print(f"PR #{number} native auto-merge enabled; waiting for GitHub", flush=True)
         time.sleep(interval)
 
 
