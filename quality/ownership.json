@@ -3,10 +3,17 @@
   "review_policy": {
     "mode": "sole_maintainer",
     "self_approval_allowed": true,
-    "agent_approval_allowed": false,
+    "agent_approval_allowed": true,
     "required_approving_review_count": 0,
     "require_code_owner_reviews": false,
-    "rationale": "Only @maksyuki can review PRs. The human maintainer retains review and merge responsibility; agents cannot approve or merge. Required CI contexts are activated after their workflows merge."
+    "rationale": "Only @maksyuki can review PRs. CI-green auto-merge is explicitly authorized with merge commits and safe cleanup; agents never bypass checks, dirty worktrees, or non-canonical branches."
+  },
+  "auto_merge": {
+    "enabled": true,
+    "strategy": "merge_commit",
+    "require_green_checks": true,
+    "cleanup_merged_branches": true,
+    "allow_dirty_worktree": false
   },
   "entries": [
     {"path": "/Makefile", "owners": ["@maksyuki"], "backup_owners": []},

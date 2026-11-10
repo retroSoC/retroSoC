@@ -40,10 +40,12 @@ agent self-approval.
 
 While only `@maksyuki` can review PRs, `review_policy.mode` is
 `sole_maintainer`: GitHub does not require a peer approval count, because an
-author cannot approve their own PR. The human maintainer still reviews and
-merges manually, agents cannot approve or merge, and required CI contexts are
-enabled after their workflows merge. Peer CODEOWNERS approval is restored when
-another eligible reviewer is available.
+author cannot approve their own PR. `auto_merge` allows CI-green PRs to merge
+with merge commits and safe cleanup, while design and architecture approvals
+remain manual. The helper checks every required protected context before
+enabling GitHub's native auto-merge. Failed or pending checks, dirty worktrees,
+and non-canonical branches always block merging and cleanup. Peer CODEOWNERS
+approval is restored when another eligible reviewer is available.
 
 ## Regression and evidence
 
