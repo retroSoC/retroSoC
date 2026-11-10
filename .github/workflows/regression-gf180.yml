@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verified-open-source-flows:
+  gf180-open-source-flows:
     uses: ./.github/workflows/_regression.yml
     with:
       suite: pr

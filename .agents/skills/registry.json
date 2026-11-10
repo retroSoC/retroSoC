@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "task_contract": ".agents/task.schema.json",
+  "behavior_evals": ".agents/skills/behavior-evals.json",
+  "skills": [
+    {
+      "name": "retrosoc-feature-design",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-feature-design/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-feature-design/evals/evals.json"
+    },
+    {
+      "name": "retrosoc-feature-implementation",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-feature-implementation/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-feature-implementation/evals/evals.json"
+    },
+    {
+      "name": "retrosoc-feature-review",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-feature-review/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-feature-review/evals/evals.json"
+    },
+    {
+      "name": "retrosoc-datasheet",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-datasheet/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-datasheet/evals/evals.json"
+    },
+    {
+      "name": "retrosoc-dependency-maintenance",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-dependency-maintenance/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-dependency-maintenance/evals/evals.json"
+    },
+    {
+      "name": "retrosoc-physical-flow",
+      "owner": "@maksyuki",
+      "contract_version": 1,
+      "entrypoint": ".agents/skills/retrosoc-physical-flow/SKILL.md",
+      "eval_suite": ".agents/skills/retrosoc-physical-flow/evals/evals.json"
+    }
+  ]
+}

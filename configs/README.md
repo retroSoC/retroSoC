@@ -2,7 +2,7 @@
 
 This directory contains committed Make configuration profiles. Each profile
 selects SoC, PDK, ISA, CSR support, application, linker layout, and the
-supported validation tier. `MINI_MODE=PRODUCT` fixes Hazard3 and VexiiRiscv as
+supported validation tier. `MINI_MODE=PRODUCT` fixes Hazard3 and OpenC906 as
 LP/HP harts and exposes one fixed EXT-L plus one fixed EXT-H slot. The separate
 `cluster/mini-mpw.mk` profile retains C0-C3 and the selectable user-IP mux.
 

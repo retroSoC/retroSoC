@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["invoked_skills", "verdict", "route", "summary"],
+  "properties": {
+    "invoked_skills": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "verdict": {"type": "string"},
+    "route": {"type": "string"},
+    "summary": {"type": "string"}
+  }
+}

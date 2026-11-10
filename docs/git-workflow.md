@@ -83,6 +83,11 @@ docs: explain contribution validation
 ci: prepare locked simulation fixtures
 ```
 
+`contribution.yml` checks the PR base, head branch, title, and new commit
+subjects in the selected range. Git-generated merge and revert subjects retain
+their standard exception. Run `make validation-plan` before requesting review
+when the change can affect CI selection.
+
 Write a concise English summary of what changes. Use the body to explain why,
 compatibility implications, and relevant evidence. Reference related issues
 or specifications; use a closing reference only when the change actually
@@ -235,9 +240,15 @@ To find a lost local commit, inspect `git reflog`, verify the candidate with
 `git branch recovery/topic COMMIT_SHA`. Reflogs are local and expire; they
 are not a durable backup and do not generally recover uncommitted file edits.
 
-Maintainers choose and review the release revision on `main`, verify the
-applicable release evidence, and publish the intended `v*` tag. Such tags
-trigger the existing [release workflow](../.github/workflows/release.yml).
+Maintainers choose and review the release revision on `main`, add a tracked
+`quality/release-candidate.json` through the approved release PR, and publish an
+immutable `vMAJOR.MINOR.PATCH` tag only after its required workflows succeed.
+The [release schema](../quality/release-candidate.schema.json) defines the lock
+digest, approval, stages, workflow names, and accepted gaps. The
+[release workflow](../.github/workflows/release.yml) verifies the tag against
+current `origin/main`, the APPROVED review, and matching successful runs; it does
+not overwrite existing assets.
+
 Do not move or reuse published release tags. Follow
 [Engineering Workflow](engineering.md) for artifacts and release validation;
 ordinary contribution pushes should name their topic branch explicitly and

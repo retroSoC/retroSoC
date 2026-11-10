@@ -1,0 +1,59 @@
+name: skill-evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner with a configured Codex CLI and approved model access
+        required: true
+        default: ubuntu-22.04
+        type: string
+      model:
+        description: Optional explicit model name recorded in the evidence
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-evals-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Check Codex runner
+        run: |
+          if ! command -v codex >/dev/null 2>&1; then
+            echo "Codex CLI is required on the selected runner; no behavior result is claimed." >&2
+            exit 2
+          fi
+          codex --version
+
+      - name: Run isolated read-only Skill evaluations
+        env:
+          CODEX_MODEL: ${{ inputs.model }}
+        run: |
+          args=(--root . --smoke --timeout 600 --output build/agent-evals/smoke)
+          if [[ -n "${CODEX_MODEL}" ]]; then
+            args+=(--model "${CODEX_MODEL}")
+          fi
+          python3 scripts/skill_eval.py run "${args[@]}"
+
+      - name: Upload behavior evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: skill-evals-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/agent-evals/smoke/*.json
+            build/agent-evals/smoke/*.jsonl
+            build/agent-evals/smoke/*.log
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "retroSoC release candidate evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "version",
+    "release_branch",
+    "dependency_lock_sha256",
+    "approval",
+    "required_stages",
+    "checks",
+    "accepted_gaps"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "version": {"type": "string"},
+    "release_branch": {"const": "main"},
+    "dependency_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approved_by", "reference"],
+      "properties": {
+        "approved_by": {"type": "string", "pattern": "^@"},
+        "reference": {"type": "string", "pattern": "^https://"}
+      }
+    },
+    "required_stages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["behavioral", "synthesis", "netlist_simulation", "sta", "formal", "physical", "silicon"]
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "stages"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "stages": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": ["behavioral", "synthesis", "netlist_simulation", "sta", "formal", "physical", "silicon"]
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "required"],
+        "properties": {
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "accepted_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "reason", "approved_by"],
+        "properties": {
+          "stage": {
+            "enum": ["behavioral", "synthesis", "netlist_simulation", "sta", "formal", "physical", "silicon"]
+          },
+          "reason": {"type": "string", "minLength": 1},
+          "approved_by": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

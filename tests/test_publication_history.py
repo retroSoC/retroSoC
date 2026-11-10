@@ -114,12 +114,12 @@ def test_historical_fetch_rejects_unpinned_revision(tmp_path: Path, revision: st
 def test_quality_prepares_history_before_offline_pytest() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = yaml.safe_load((root / ".github/workflows/quality.yml").read_text())
-    steps = workflow["jobs"]["scripts"]["steps"]
+    steps = workflow["jobs"]["fixtures"]["steps"]
     checkout = next(step for step in steps if step["name"] == "Check out repository")
     assert checkout["with"]["fetch-depth"] == 0
     dependencies = next(step for step in steps if step["name"] == "Set up locked RTL dependencies")
     preparation = next(step for step in steps
                        if step.get("run") == "python3 tests/publication_history.py prepare")
-    tests = next(step for step in steps if step.get("run") == "python3 -m pytest -q")
+    tests = next(step for step in steps if step["name"] == "Test scripts and RTL fixtures")
     assert steps.index(dependencies) < steps.index(preparation) < steps.index(tests)
     assert "if" not in preparation and not preparation.get("continue-on-error", False)
