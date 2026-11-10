@@ -1,0 +1,7837 @@
+{
+  "xpi": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 registers\nLUT / slot configuration",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv",
+          "rtl/ip/storage/xpi_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "name": "u_xpi_reg",
+          "module": "xpi_reg",
+          "declaration_file": "rtl/ip/storage/xpi_reg.sv"
+        }
+      },
+      {
+        "id": "indirect",
+        "title": "Indirect / status polling\nPIO and stream byte path",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 8,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv",
+          "rtl/ip/storage/xpi_indirect.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "name": "u_xpi_indirect",
+          "module": "xpi_indirect",
+          "declaration_file": "rtl/ip/storage/xpi_indirect.sv"
+        }
+      },
+      {
+        "id": "mm",
+        "title": "Memory-map adapter\nAXI32 transactions",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 8,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv",
+          "rtl/ip/storage/xpi_mm.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "name": "u_xpi_mm",
+          "module": "xpi_mm",
+          "declaration_file": "rtl/ip/storage/xpi_mm.sv"
+        }
+      },
+      {
+        "id": "owner",
+        "title": "Request / byte arbitration\nwrapper ownership state",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 8,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 8,
+            "side": "north"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 8,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 8,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv"
+        ]
+      },
+      {
+        "id": "core",
+        "title": "LUT command sequencer\nserial transfer core",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 8,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 8,
+            "side": "west"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "in",
+            "width": 4,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "name": "u_xpi_core",
+          "module": "`APB4_XPI_CORE_MODULE"
+        },
+        "port_margins": {
+          "south": [
+            10,
+            10
+          ]
+        }
+      },
+      {
+        "id": "pads",
+        "title": "XPI interface\nCS / SCK / IO",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "out",
+            "width": 4,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_xpi.sv"
+        ],
+        "port_margins": {
+          "north": [
+            10,
+            10
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "indirect.p0",
+        "kind": "control",
+        "label": "START",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".indirect_start_o(s_indirect_start)"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".indirect_start_i(s_indirect_start)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_indirect_start",
+            "bits": 1
+          },
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_indirect_start",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "indirect_start_o",
+            "expression": "s_indirect_start"
+          },
+          {
+            "node": "indirect",
+            "port": "indirect_start_i",
+            "expression": "s_indirect_start"
+          }
+        ]
+      },
+      {
+        "from": "mm.p1",
+        "to": "owner.p1",
+        "kind": "data",
+        "label": "TX / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".core_tx_data_o(s_mm_tx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_mm_tx_data",
+            "bits": 8
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "mm",
+            "port": "core_tx_data_o",
+            "expression": "s_mm_tx_data"
+          }
+        ]
+      },
+      {
+        "from": "indirect.p2",
+        "to": "owner.p2",
+        "kind": "data",
+        "label": "TX / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".core_tx_data_o(s_indirect_tx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_indirect_tx_data",
+            "bits": 8
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "indirect",
+            "port": "core_tx_data_o",
+            "expression": "s_indirect_tx_data"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "owner.p3",
+        "to": "core.p3",
+        "kind": "data",
+        "label": "TX / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": "assign s_core_tx_data = (s_owner_q == OwnerMm) ? s_mm_tx_data : s_indirect_tx_data;"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".tx_data_i(s_core_tx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_core_tx_data",
+            "bits": 8
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "tx_data_i",
+            "expression": "s_core_tx_data"
+          }
+        ]
+      },
+      {
+        "from": "core.p4",
+        "to": "owner.p4",
+        "kind": "data",
+        "label": "RX / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".rx_data_o(s_core_rx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "scope": "apb4_xpi",
+            "symbol": "s_core_rx_data",
+            "bits": 8
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "rx_data_o",
+            "expression": "s_core_rx_data"
+          }
+        ]
+      },
+      {
+        "from": "core.p5",
+        "to": "pads.p5",
+        "kind": "data",
+        "label": "OUT",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_xpi.sv",
+            "text": ".xpi(xpi)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "xpi",
+            "expression": "xpi"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "pads.pad_rx",
+        "to": "core.pad_rx",
+        "label": "IN / 4",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/xpi_if.sv",
+            "text": "logic [3:0] io_di_i;"
+          }
+        ]
+      }
+    ],
+    "note": "Memory-mapped and indirect requests share the LUT/serial engine. Tiny uses AXI32: NOR programming remains indirect, while initialized NSS1 PSRAM admits the qualified memory-write path. Apertures and fitted capacity are distinct. XPI OUT groups SCK, NSS[3:0], IO output[3:0] and output enables[3:0]; IN is IO input[3:0].",
+    "title": "XPI Universal Controller"
+  },
+  "sdio": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_sdio.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_sdio.sv",
+          "rtl/ip/storage/sdio_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_sdio.sv",
+          "name": "u_sdio_reg",
+          "module": "sdio_reg",
+          "declaration_file": "rtl/ip/storage/sdio_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Native SD command / data\nPIO / DMA sequencing",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "in",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_sdio.sv",
+          "rtl/ip/storage/sdio_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/storage/apb4_sdio.sv",
+          "name": "u_sdio_core",
+          "module": "sdio_core",
+          "declaration_file": "rtl/ip/storage/sdio_core.sv"
+        }
+      },
+      {
+        "id": "memory",
+        "title": "Private AXI32 DMA\nshared memory fabric",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_sdio.sv"
+        ]
+      },
+      {
+        "id": "pads",
+        "title": "SD card pads\n1-bit / 4-bit data",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "out",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/storage/apb4_sdio.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "ARG / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".cmd_arg_o(s_cmd_arg)"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".cmd_arg_i(s_cmd_arg)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "scope": "apb4_sdio",
+            "symbol": "s_cmd_arg",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "scope": "apb4_sdio",
+            "symbol": "s_cmd_arg",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "cmd_arg_o",
+            "expression": "s_cmd_arg"
+          },
+          {
+            "node": "core",
+            "port": "cmd_arg_i",
+            "expression": "s_cmd_arg"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "PIO RX / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".pio_rdata_o(s_pio_rdata)"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".pio_rdata_i(s_pio_rdata)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "scope": "apb4_sdio",
+            "symbol": "s_pio_rdata",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "scope": "apb4_sdio",
+            "symbol": "s_pio_rdata",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "pio_rdata_o",
+            "expression": "s_pio_rdata"
+          },
+          {
+            "node": "reg",
+            "port": "pio_rdata_i",
+            "expression": "s_pio_rdata"
+          }
+        ]
+      },
+      {
+        "from": "core.p3",
+        "to": "memory.p3",
+        "kind": "data",
+        "label": "AXI4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".dma_axi4(dma_axi4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "dma_axi4",
+            "expression": "dma_axi4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p4",
+        "to": "pads.p4",
+        "kind": "data",
+        "label": "OUT",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": "assign sdio.dat_do_o = u_sdio_core_if.dat_do_o;"
+          },
+          {
+            "file": "rtl/ip/storage/apb4_sdio.sv",
+            "text": ".sdio(u_sdio_core_if)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "sdio",
+            "expression": "u_sdio_core_if"
+          }
+        ]
+      },
+      {
+        "from": "pads.pad_rx",
+        "to": "core.pad_rx",
+        "label": "IN",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/storage/sdio_if.sv",
+            "text": "input cmd_di_i, output cmd_do_o, output dat_oe_o, input dat_di_i, output dat_do_o"
+          }
+        ]
+      }
+    ],
+    "note": "Only native host0 is integrated. Descriptor/status traffic and payload share its private SYS-domain AXI32 master; central DMA channel completion is not SDIO completion. SD OUT groups SCK, CMD output/enable and DAT output/enable[3:0]; IN groups CMD input and DAT input[3:0].",
+    "title": "Native SD/SDIO Host (SDIO0)"
+  },
+  "gpio": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_gpio.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_gpio.sv",
+          "rtl/ip/peripheral/gpio_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_gpio.sv",
+          "name": "u_gpio_reg",
+          "module": "gpio_reg",
+          "declaration_file": "rtl/ip/peripheral/gpio_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Input filtering\nGPIO mux / pad control",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "user_rx",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_gpio.sv",
+          "rtl/ip/peripheral/gpio_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_gpio.sv",
+          "name": "u_gpio_core",
+          "module": "gpio_core",
+          "declaration_file": "rtl/ip/peripheral/gpio_core.sv"
+        }
+      },
+      {
+        "id": "pads",
+        "title": "GPIO pad interface\n32 digital pins",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "pad_rx",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_gpio.sv"
+        ]
+      },
+      {
+        "id": "user",
+        "title": "Restricted user interface\nTiny outputs tied zero",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          },
+          {
+            "id": "user_rx",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_gpio.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "OUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".data_out_o(s_data_out)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".data_out_i(s_data_out)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "scope": "apb4_gpio",
+            "symbol": "s_data_out",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "scope": "apb4_gpio",
+            "symbol": "s_data_out",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "data_out_o",
+            "expression": "s_data_out"
+          },
+          {
+            "node": "core",
+            "port": "data_out_i",
+            "expression": "s_data_out"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "IN / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".data_in_o(s_data_in)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".data_in_i(s_data_in)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "scope": "apb4_gpio",
+            "symbol": "s_data_in",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "scope": "apb4_gpio",
+            "symbol": "s_data_in",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "data_in_o",
+            "expression": "s_data_in"
+          },
+          {
+            "node": "reg",
+            "port": "data_in_i",
+            "expression": "s_data_in"
+          }
+        ]
+      },
+      {
+        "from": "core.p3",
+        "to": "pads.p3",
+        "kind": "data",
+        "label": "OUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/gpio_core.sv",
+            "text": "assign gpio.do_o[pin] = open_drain_i[pin] ? 1'b0 : s_selected_data[pin];"
+          }
+        ]
+      },
+      {
+        "from": "user.p4",
+        "to": "core.p4",
+        "kind": "data",
+        "label": "OUT",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_gpio.sv",
+            "text": ".user_gpio(user_gpio)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "user_gpio",
+            "expression": "user_gpio"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "pads.pad_rx",
+        "to": "core.pad_rx",
+        "label": "IN / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/gpio_core.sv",
+            "text": ".dat_i (gpio.di_i)"
+          }
+        ]
+      },
+      {
+        "from": "core.user_rx",
+        "to": "user.user_rx",
+        "label": "IN / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/gpio_core.sv",
+            "text": "assign user_gpio.di_i = s_input_filtered_q;"
+          }
+        ]
+      }
+    ],
+    "note": "The management/user register views share 32 GPIOs. Tiny ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls.",
+    "title": "General-Purpose Input/Output (GPIO)"
+  },
+  "dma": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\nregister interface",
+        "x": 0,
+        "y": 7,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/apb4_dma.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32
+          }
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "8 channel\nregister contexts",
+        "x": 0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/dma_reg.sv"
+        ],
+        "ports": [
+          {
+            "id": "apb",
+            "side": "north",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "cfg",
+            "side": "east",
+            "direction": "out",
+            "width": 256
+          },
+          {
+            "id": "start",
+            "side": "east",
+            "direction": "out",
+            "width": 8
+          },
+          {
+            "id": "status",
+            "side": "east",
+            "direction": "in",
+            "width": 8
+          }
+        ]
+      },
+      {
+        "id": "core",
+        "title": "Channel scheduling\nFIFO / CRC control",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/dma_core.sv"
+        ],
+        "ports": [
+          {
+            "id": "cfg",
+            "side": "west",
+            "direction": "in",
+            "width": 256
+          },
+          {
+            "id": "start",
+            "side": "west",
+            "direction": "in",
+            "width": 8
+          },
+          {
+            "id": "status",
+            "side": "west",
+            "direction": "out",
+            "width": 8
+          },
+          {
+            "id": "req",
+            "side": "east",
+            "direction": "out",
+            "width": 1
+          },
+          {
+            "id": "read",
+            "side": "east",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "write",
+            "side": "east",
+            "direction": "out",
+            "width": 32
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32
+          },
+          {
+            "id": "in",
+            "side": "south",
+            "direction": "in",
+            "width": 32
+          }
+        ]
+      },
+      {
+        "id": "master",
+        "title": "AXI4 read/write\ntransaction engine",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/dma_axi4_master.sv"
+        ],
+        "ports": [
+          {
+            "id": "req",
+            "side": "west",
+            "direction": "in",
+            "width": 1
+          },
+          {
+            "id": "read",
+            "side": "west",
+            "direction": "out",
+            "width": 32
+          },
+          {
+            "id": "write",
+            "side": "west",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "axi",
+            "side": "south",
+            "direction": "out",
+            "width": 32
+          }
+        ]
+      },
+      {
+        "id": "streams",
+        "title": "I2S / DVP / Crypto\nstream endpoints",
+        "x": 6.3,
+        "y": 0,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/apb4_dma.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "north",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "out",
+            "width": 32
+          }
+        ]
+      },
+      {
+        "id": "memory",
+        "title": "Admission + PCLK/SYS CDC\nTiny AXI32 fabric",
+        "x": 12.6,
+        "y": 0,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/peripheral/apb4_dma.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "north",
+            "direction": "in",
+            "width": 32
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.out",
+        "to": "reg.apb",
+        "label": "APB4 / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".apb4(apb4)"
+          }
+        ]
+      },
+      {
+        "from": "reg.cfg",
+        "to": "core.cfg",
+        "label": "CFG / 8ch",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".ch_cfg_o(s_ch_cfg)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".ch_cfg_i(s_ch_cfg)"
+          }
+        ]
+      },
+      {
+        "from": "reg.start",
+        "to": "core.start",
+        "label": "START",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".start_o(s_start)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".start_i(s_start)"
+          }
+        ]
+      },
+      {
+        "from": "core.status",
+        "to": "reg.status",
+        "label": "BUSY",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".busy_o(s_busy)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".busy_i(s_busy)"
+          }
+        ]
+      },
+      {
+        "from": "core.req",
+        "to": "master.req",
+        "label": "RD request",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_core.sv",
+            "text": ".read_start_valid_i(s_axi_read_start_valid)"
+          }
+        ]
+      },
+      {
+        "from": "master.read",
+        "to": "core.read",
+        "label": "READ / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_core.sv",
+            "text": ".read_data_o(s_axi_read_data)"
+          }
+        ]
+      },
+      {
+        "from": "core.write",
+        "to": "master.write",
+        "label": "WRITE / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_core.sv",
+            "text": ".write_data_i(s_axi_write_data)"
+          }
+        ]
+      },
+      {
+        "from": "master.axi",
+        "to": "memory.axi",
+        "label": "AXI4 / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/dma_core.sv",
+            "text": ".axi4(axi4)"
+          }
+        ]
+      },
+      {
+        "from": "core.out",
+        "to": "streams.out",
+        "label": "TX / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".i2s_tx_axis(i2s_tx_axis)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".crypto_in_axis(crypto_in_axis)"
+          }
+        ]
+      },
+      {
+        "from": "streams.in",
+        "to": "core.in",
+        "label": "RX / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".i2s_rx_axis(i2s_rx_axis)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".dvp_rx_axis(dvp_rx_axis)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".crypto_out_axis(crypto_out_axis)"
+          }
+        ]
+      }
+    ],
+    "note": "Tiny selects 8 channels and 32 payload words per channel. I2S/DVP/Crypto stream paths and SPI requests 16/17 retain their distinct admission and completion rules. The diagram shows selected paths, not an extra master per channel.",
+    "title": "Direct Memory Access (DMA)"
+  },
+  "timer": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_timer.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_timer.sv",
+          "rtl/ip/peripheral/timer_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_timer.sv",
+          "name": "u_timer_reg",
+          "module": "timer_reg",
+          "declaration_file": "rtl/ip/peripheral/timer_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Timer channel\nprescaler / compare",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_timer.sv",
+          "rtl/ip/peripheral/timer_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_timer.sv",
+          "name": "u_timer_core",
+          "module": "timer_core",
+          "declaration_file": "rtl/ip/peripheral/timer_core.sv"
+        }
+      },
+      {
+        "id": "debug",
+        "title": "Debug halt input",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_timer.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "LOAD / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".load_o(s_load)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".load_i(s_load)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "scope": "apb4_timer",
+            "symbol": "s_load",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "scope": "apb4_timer",
+            "symbol": "s_load",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "load_o",
+            "expression": "s_load"
+          },
+          {
+            "node": "core",
+            "port": "load_i",
+            "expression": "s_load"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "control",
+        "label": "TIMEOUT",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".timeout_event_o(s_timeout_event)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".timeout_event_i(s_timeout_event)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "scope": "apb4_timer",
+            "symbol": "s_timeout_event",
+            "bits": 1
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "scope": "apb4_timer",
+            "symbol": "s_timeout_event",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "timeout_event_o",
+            "expression": "s_timeout_event"
+          },
+          {
+            "node": "reg",
+            "port": "timeout_event_i",
+            "expression": "s_timeout_event"
+          }
+        ]
+      },
+      {
+        "from": "debug.p3",
+        "to": "core.p3",
+        "kind": "control",
+        "label": "HALTED",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "text": ".debug_halted_i(debug_halted_i)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_timer.sv",
+            "scope": "apb4_timer",
+            "symbol": "debug_halted_i",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "debug_halted_i",
+            "expression": "debug_halted_i"
+          }
+        ]
+      }
+    ],
+    "note": "TIM0 and TIM1 instantiate this common PCLK-domain timer. Each has its own base and IRQ. Debug halt can freeze counting without proving peripheral transaction completion.",
+    "title": "General-Purpose Timers (TIM0, TIM1)"
+  },
+  "rtc": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 interface\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "APB register bank",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "name": "u_rtc_reg",
+          "module": "rtc_reg",
+          "declaration_file": "rtl/managed/clusterip/rtc/rtl/rtc_reg.sv"
+        }
+      },
+      {
+        "id": "request",
+        "title": "Command mailbox\nclock-domain crossing",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "name": "u_command_mailbox",
+          "module": "async_reqack",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "RTC counter / calendar\nindependent clock domain",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "rtl/managed/clusterip/rtc/rtl/rtc_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "name": "u_rtc_core",
+          "module": "rtc_core",
+          "declaration_file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv"
+        }
+      },
+      {
+        "id": "response",
+        "title": "Response mailbox\nclock-domain crossing",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+          "name": "u_response_mailbox",
+          "module": "async_reqack",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        }
+      },
+      {
+        "id": "event",
+        "title": "Wake request",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "WRITE enable",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "request.p1",
+        "kind": "control",
+        "label": "CMD valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".command_valid_o(s_command_valid_apb)"
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".src_valid_i(s_command_valid_apb)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_command_valid_apb",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_command_valid_apb",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "command_valid_o",
+            "expression": "s_command_valid_apb"
+          },
+          {
+            "node": "request",
+            "port": "src_valid_i",
+            "expression": "s_command_valid_apb"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "request.p2",
+        "to": "core.p2",
+        "kind": "control",
+        "label": "CMD valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".dst_valid_o(s_command_valid_rtc)"
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".command_valid_i(s_command_valid_rtc)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_command_valid_rtc",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_command_valid_rtc",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "request",
+            "port": "dst_valid_o",
+            "expression": "s_command_valid_rtc"
+          },
+          {
+            "node": "core",
+            "port": "command_valid_i",
+            "expression": "s_command_valid_rtc"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p3",
+        "to": "response.p3",
+        "kind": "control",
+        "label": "RSP valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".response_valid_o(s_response_valid_rtc)"
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".src_valid_i(s_response_valid_rtc)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_response_valid_rtc",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_response_valid_rtc",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "response_valid_o",
+            "expression": "s_response_valid_rtc"
+          },
+          {
+            "node": "response",
+            "port": "src_valid_i",
+            "expression": "s_response_valid_rtc"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "response.p4",
+        "to": "reg.p4",
+        "kind": "control",
+        "label": "RSP valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".dst_valid_o(s_response_valid_apb)"
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".response_valid_i(s_response_valid_apb)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_response_valid_apb",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "scope": "apb4_rtc",
+            "symbol": "s_response_valid_apb",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "response",
+            "port": "dst_valid_o",
+            "expression": "s_response_valid_apb"
+          },
+          {
+            "node": "reg",
+            "port": "response_valid_i",
+            "expression": "s_response_valid_apb"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p5",
+        "to": "event.p5",
+        "kind": "control",
+        "label": "WAKE",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv",
+            "text": ".wake_o(rtc.wake_o)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "wake_o",
+            "expression": "rtc.wake_o"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "The shared implementation uses command/response clock crossings. Tiny supplies normalized AON REF24 to the functional RTC input. This is not evidence of battery retention or operation without XIN.",
+    "title": "Real-Time Clock (RTC)"
+  },
+  "wdg": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 interface\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "APB register bank",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "name": "u_wdg_reg",
+          "module": "wdg_reg",
+          "declaration_file": "rtl/managed/clusterip/wdg/rtl/wdg_reg.sv"
+        }
+      },
+      {
+        "id": "request",
+        "title": "Command mailbox\nclock-domain crossing",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "name": "u_command_mailbox",
+          "module": "async_reqack",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Watchdog window / counter\nindependent clock domain",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "rtl/managed/clusterip/wdg/rtl/wdg_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "name": "u_wdg_core",
+          "module": "wdg_core",
+          "declaration_file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv"
+        }
+      },
+      {
+        "id": "response",
+        "title": "Response mailbox\nclock-domain crossing",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+          "name": "u_response_mailbox",
+          "module": "async_reqack",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/cdc/async_reqack.sv"
+        }
+      },
+      {
+        "id": "event",
+        "title": "System reset request",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "WRITE enable",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "request.p1",
+        "kind": "control",
+        "label": "CMD valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".command_valid_o(s_command_valid_apb)"
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".src_valid_i(s_command_valid_apb)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_command_valid_apb",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_command_valid_apb",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "command_valid_o",
+            "expression": "s_command_valid_apb"
+          },
+          {
+            "node": "request",
+            "port": "src_valid_i",
+            "expression": "s_command_valid_apb"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "request.p2",
+        "to": "core.p2",
+        "kind": "control",
+        "label": "CMD valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".dst_valid_o(s_command_valid_wdg)"
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".command_valid_i(s_command_valid_wdg)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_command_valid_wdg",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_command_valid_wdg",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "request",
+            "port": "dst_valid_o",
+            "expression": "s_command_valid_wdg"
+          },
+          {
+            "node": "core",
+            "port": "command_valid_i",
+            "expression": "s_command_valid_wdg"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p3",
+        "to": "response.p3",
+        "kind": "control",
+        "label": "RSP valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".response_valid_o(s_response_valid_wdg)"
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".src_valid_i(s_response_valid_wdg)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_response_valid_wdg",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_response_valid_wdg",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "response_valid_o",
+            "expression": "s_response_valid_wdg"
+          },
+          {
+            "node": "response",
+            "port": "src_valid_i",
+            "expression": "s_response_valid_wdg"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "response.p4",
+        "to": "reg.p4",
+        "kind": "control",
+        "label": "RSP valid",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".dst_valid_o(s_response_valid_apb)"
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".response_valid_i(s_response_valid_apb)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_response_valid_apb",
+            "bits": 1
+          },
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "scope": "apb4_wdg",
+            "symbol": "s_response_valid_apb",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "response",
+            "port": "dst_valid_o",
+            "expression": "s_response_valid_apb"
+          },
+          {
+            "node": "reg",
+            "port": "response_valid_i",
+            "expression": "s_response_valid_apb"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p5",
+        "to": "event.p5",
+        "kind": "control",
+        "label": "RESET request",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv",
+            "text": ".reset_req_o(wdg.reset_req_o)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "reset_req_o",
+            "expression": "wdg.reset_req_o"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "Command/response crossings separate APB access and watchdog operation. Tiny uses AON REF24 for functional timekeeping and retains the documented whole-system reset and reset-cause boundaries.",
+    "title": "Watchdog (WDG)"
+  },
+  "pwm": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 register interface",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "PWM channel state\ncounters / comparators",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 4,
+            "side": "east"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+          "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+          "name": "u_pwm_reg",
+          "module": "pwm_reg",
+          "declaration_file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv"
+        }
+      },
+      {
+        "id": "pads",
+        "title": "PWM output pairs\nfault / sync / capture",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 4,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "R/W",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ]
+      },
+      {
+        "from": "reg.p1",
+        "to": "apb.p1",
+        "kind": "data",
+        "label": "RDATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+            "text": ".prdata_o(apb4.prdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "prdata_o",
+            "expression": "apb4.prdata"
+          }
+        ]
+      },
+      {
+        "from": "reg.p2",
+        "to": "pads.p2",
+        "kind": "data",
+        "label": "PWM / 4",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+            "text": ".pwm_o(pwm.pwm_o)"
+          },
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/pwm_if.sv",
+            "text": "logic [3:0] pwm_o;"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwm_o",
+            "expression": "pwm.pwm_o"
+          }
+        ]
+      },
+      {
+        "from": "pads.p3",
+        "to": "reg.p3",
+        "kind": "control",
+        "label": "FAULT / 1",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv",
+            "text": ".fault_i(pwm.fault_i)"
+          },
+          {
+            "file": "rtl/managed/clusterip/pwm/rtl/pwm_if.sv",
+            "text": "logic fault_i;"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "fault_i",
+            "expression": "pwm.fault_i"
+          }
+        ]
+      }
+    ],
+    "note": "Tiny uses the actual committed PCLK report and four waveform outputs. The shared fault/sync/capture interface does not establish a board pin assignment beyond the Tiny GPIO map.",
+    "title": "Pulse Width Modulation (PWM)"
+  },
+  "uart0": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\nregister interface",
+        "x": 0,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/apb4_uart.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 32
+          }
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nTX / RX FIFOs",
+        "x": 6.3,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/uart_reg.sv"
+        ],
+        "ports": [
+          {
+            "id": "apb",
+            "side": "west",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "tx",
+            "side": "east",
+            "direction": "out",
+            "width": 8
+          },
+          {
+            "id": "rx",
+            "side": "east",
+            "direction": "in",
+            "width": 12
+          },
+          {
+            "id": "level",
+            "side": "south",
+            "direction": "out",
+            "width": 7
+          }
+        ],
+        "port_margins": {
+          "east": [
+            0,
+            25
+          ]
+        }
+      },
+      {
+        "id": "core",
+        "title": "Baud generator\nTX / RX engines",
+        "x": 12.6,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/uart_core.sv"
+        ],
+        "ports": [
+          {
+            "id": "tx",
+            "side": "west",
+            "direction": "in",
+            "width": 8
+          },
+          {
+            "id": "rx",
+            "side": "west",
+            "direction": "out",
+            "width": 12
+          },
+          {
+            "id": "allow",
+            "side": "west",
+            "direction": "in",
+            "width": 1
+          },
+          {
+            "id": "txpad",
+            "side": "south",
+            "direction": "out",
+            "width": 1
+          },
+          {
+            "id": "rxpad",
+            "side": "south",
+            "direction": "in",
+            "width": 1
+          }
+        ]
+      },
+      {
+        "id": "flow",
+        "title": "CTS synchronizer\nRTS / start control",
+        "x": 6.3,
+        "y": 1.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/uart_flow_ctrl.sv"
+        ],
+        "ports": [
+          {
+            "id": "cts",
+            "side": "west",
+            "direction": "in",
+            "width": 1
+          },
+          {
+            "id": "rts",
+            "side": "west",
+            "direction": "out",
+            "width": 1
+          },
+          {
+            "id": "level",
+            "side": "north",
+            "direction": "in",
+            "width": 7
+          },
+          {
+            "id": "allow",
+            "side": "east",
+            "direction": "out",
+            "width": 1
+          }
+        ]
+      },
+      {
+        "id": "modem",
+        "title": "CTS_n tied low\nRTS_n not routed",
+        "x": 0,
+        "y": 1.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/apb4_uart.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "cts",
+            "side": "east",
+            "direction": "out",
+            "width": 1
+          },
+          {
+            "id": "rts",
+            "side": "east",
+            "direction": "in",
+            "width": 1
+          }
+        ]
+      },
+      {
+        "id": "pads",
+        "title": "UART0 TX / RX\nGPIO8/9 ALT0",
+        "x": 12.6,
+        "y": 1.5,
+        "w": 4.0,
+        "h": 1.8,
+        "sources": [
+          "rtl/ip/serial/apb4_uart.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "tx",
+            "side": "north",
+            "direction": "in",
+            "width": 1
+          },
+          {
+            "id": "rx",
+            "side": "north",
+            "direction": "out",
+            "width": 1
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.out",
+        "to": "reg.apb",
+        "label": "APB4 / 32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".apb4(apb4)"
+          }
+        ]
+      },
+      {
+        "from": "reg.tx",
+        "to": "core.tx",
+        "label": "TX / 8",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".tx_data_o(s_tx_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".tx_data_i(s_tx_data)"
+          }
+        ]
+      },
+      {
+        "from": "core.rx",
+        "to": "reg.rx",
+        "label": "RX / 12",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rx_data_o(s_rx_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rx_data_i(s_rx_data)"
+          }
+        ]
+      },
+      {
+        "from": "reg.level",
+        "to": "flow.level",
+        "label": "LEVEL / 7",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rx_level_o(s_rx_level)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rx_level_i(s_rx_level)"
+          }
+        ]
+      },
+      {
+        "from": "modem.cts",
+        "to": "flow.cts",
+        "label": "CTS_n",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".cts_n_async_i(uart.cts_n_i)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "assign u_uart0_if.cts_n_i = 1'b0;"
+          }
+        ]
+      },
+      {
+        "from": "flow.rts",
+        "to": "modem.rts",
+        "label": "RTS_n",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rts_n_o(uart.rts_n_o)"
+          }
+        ]
+      },
+      {
+        "from": "flow.allow",
+        "to": "core.allow",
+        "label": "START",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".tx_start_allowed_o(s_tx_start_allowed)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".tx_start_allowed_i(s_tx_start_allowed)"
+          }
+        ]
+      },
+      {
+        "from": "core.txpad",
+        "to": "pads.tx",
+        "label": "TX",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".tx_o(s_tx)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": "assign uart.tx_o = s_tx;"
+          }
+        ]
+      },
+      {
+        "from": "pads.rx",
+        "to": "core.rxpad",
+        "label": "RX",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_uart.sv",
+            "text": ".rx_i(uart.rx_i)"
+          }
+        ]
+      }
+    ],
+    "note": "Tiny routes TX/RX on GPIO8/9 ALT0, ties CTS_n low and provides no external RTS route. Shared flow-control registers do not create external flow-control pads. TX and RX FIFO widths differ because receive entries retain error metadata.",
+    "title": "Management UART (UART0)"
+  },
+  "i2c": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2c.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 12,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 8,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2c.sv",
+          "rtl/ip/serial/i2c_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2c.sv",
+          "name": "u_i2c_reg",
+          "module": "i2c_reg",
+          "declaration_file": "rtl/ip/serial/i2c_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "I2C command engine\nSCL / SDA timing",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 12,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 8,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2c.sv",
+          "rtl/ip/serial/i2c_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2c.sv",
+          "name": "u_i2c_core",
+          "module": "i2c_core",
+          "declaration_file": "rtl/ip/serial/i2c_core.sv"
+        }
+      },
+      {
+        "id": "filter",
+        "title": "Input synchronizer\nSCL / SDA filters",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2c.sv",
+          "rtl/ip/serial/i2c_filter.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2c.sv",
+          "name": "u_i2c_filter",
+          "module": "i2c_filter",
+          "declaration_file": "rtl/ip/serial/i2c_filter.sv"
+        }
+      },
+      {
+        "id": "pads",
+        "title": "Open-drain\nSCL / SDA pads",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2c.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "CMD / 12",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".cmd_data_o(s_cmd_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".cmd_data_i(s_cmd_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_cmd_data",
+            "bits": 12
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_cmd_data",
+            "bits": 12
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "cmd_data_o",
+            "expression": "s_cmd_data"
+          },
+          {
+            "node": "core",
+            "port": "cmd_data_i",
+            "expression": "s_cmd_data"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "RX / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".rx_data_o(s_rx_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".rx_data_i(s_rx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_rx_data",
+            "bits": 8
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_rx_data",
+            "bits": 8
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "rx_data_o",
+            "expression": "s_rx_data"
+          },
+          {
+            "node": "reg",
+            "port": "rx_data_i",
+            "expression": "s_rx_data"
+          }
+        ]
+      },
+      {
+        "from": "filter.p3",
+        "to": "core.p3",
+        "kind": "data",
+        "label": "SDA sample",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".sda_o(s_sda_filtered)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".sda_i(s_sda_filtered)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_sda_filtered",
+            "bits": 1
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_sda_filtered",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "filter",
+            "port": "sda_o",
+            "expression": "s_sda_filtered"
+          },
+          {
+            "node": "core",
+            "port": "sda_i",
+            "expression": "s_sda_filtered"
+          }
+        ]
+      },
+      {
+        "from": "pads.p4",
+        "to": "filter.p4",
+        "kind": "data",
+        "label": "SDA input",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".sda_async_i(i2c.sda_i)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "filter",
+            "port": "sda_async_i",
+            "expression": "i2c.sda_i"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p5",
+        "to": "pads.p5",
+        "kind": "control",
+        "label": "SDA pull low",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "text": ".sda_pull_low_o(s_sda_pull_low)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2c.sv",
+            "scope": "apb4_i2c",
+            "symbol": "s_sda_pull_low",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "sda_pull_low_o",
+            "expression": "s_sda_pull_low"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "One I2C0 controller is integrated on GPIO10/11. Command and receive words have different widths. Configure timing for the committed PCLK and external pull-up/capacitance conditions.",
+    "title": "Inter-Integrated Circuit (I2C0)"
+  },
+  "ws2812": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_ws2812.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 24,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_ws2812.sv",
+          "rtl/ip/serial/ws2812_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_ws2812.sv",
+          "name": "u_ws2812_reg",
+          "module": "ws2812_reg",
+          "declaration_file": "rtl/ip/serial/ws2812_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Bit-period engine\nframe / reset sequencer",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 24,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_ws2812.sv",
+          "rtl/ip/serial/ws2812_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_ws2812.sv",
+          "name": "u_ws2812_core",
+          "module": "ws2812_core",
+          "declaration_file": "rtl/ip/serial/ws2812_core.sv"
+        }
+      },
+      {
+        "id": "pads",
+        "title": "WS2812 data output",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_ws2812.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "PIXEL / 24",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".data_o(s_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".data_i(s_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "scope": "apb4_ws2812",
+            "symbol": "s_data",
+            "bits": 24
+          },
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "scope": "apb4_ws2812",
+            "symbol": "s_data",
+            "bits": 24
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "data_o",
+            "expression": "s_data"
+          },
+          {
+            "node": "core",
+            "port": "data_i",
+            "expression": "s_data"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "control",
+        "label": "POP",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".data_pop_o(s_data_pop)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".data_pop_i(s_data_pop)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "scope": "apb4_ws2812",
+            "symbol": "s_data_pop",
+            "bits": 1
+          },
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "scope": "apb4_ws2812",
+            "symbol": "s_data_pop",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "data_pop_o",
+            "expression": "s_data_pop"
+          },
+          {
+            "node": "reg",
+            "port": "data_pop_i",
+            "expression": "s_data_pop"
+          }
+        ]
+      },
+      {
+        "from": "core.p3",
+        "to": "pads.p3",
+        "kind": "data",
+        "label": "DATA",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "text": ".dat_o(s_dat)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_ws2812.sv",
+            "scope": "apb4_ws2812",
+            "symbol": "s_dat",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "dat_o",
+            "expression": "s_dat"
+          }
+        ]
+      }
+    ],
+    "note": "The pixel FIFO feeds the PCLK-domain serializer. GPIO26 ownership continues through the reset-low interval; FIFO empty and DMA completion are not wire completion.",
+    "title": "WS2812 LED Output"
+  },
+  "archinfo": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 register interface",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Architecture constants\ndevice-ID read policy",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+          "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+          "name": "u_archinfo_reg",
+          "module": "archinfo_reg",
+          "declaration_file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv"
+        }
+      },
+      {
+        "id": "id",
+        "title": "ID valid=0 / read-enable=0\nTiny identity adapter",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+          "rtl/tiny/top/tiny_archinfo.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "R/W",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ]
+      },
+      {
+        "from": "reg.p1",
+        "to": "apb.p1",
+        "kind": "data",
+        "label": "RDATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+            "text": ".prdata_o(apb4.prdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "prdata_o",
+            "expression": "apb4.prdata"
+          }
+        ]
+      },
+      {
+        "from": "id.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "DEVICE ID",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv",
+            "text": ".device_id_i(device_id_i)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "device_id_i",
+            "expression": "device_id_i"
+          }
+        ]
+      }
+    ],
+    "note": "The Tiny adapter supplies the TINY SoC identity and selected profile metadata. Device-ID valid/read-enable are tied zero, so device-ID payload reads return APB error.",
+    "title": "Architecture Information (ARCHINFO)"
+  },
+  "clint": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 control\n32-bit register access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_clint.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Register bank\nconfiguration / status",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 64,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 64,
+            "side": "east"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_clint.sv",
+          "rtl/ip/peripheral/clint_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_clint.sv",
+          "name": "u_clint_reg",
+          "module": "clint_reg",
+          "declaration_file": "rtl/ip/peripheral/clint_reg.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Time counter / comparator\nsoftware interrupt state",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 64,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 64,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_clint.sv",
+          "rtl/ip/peripheral/clint_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/peripheral/apb4_clint.sv",
+          "name": "u_clint_core",
+          "module": "clint_core",
+          "declaration_file": "rtl/ip/peripheral/clint_core.sv"
+        }
+      },
+      {
+        "id": "tick",
+        "title": "AON 1 MHz tick",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_clint.sv"
+        ]
+      },
+      {
+        "id": "irq",
+        "title": "Hart 0 local IRQ\ncore positions 0/1",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          },
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/ip/peripheral/apb4_clint.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "data",
+        "label": "APB4 / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".apb4(apb4)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "apb4",
+            "expression": "apb4"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "LOAD / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".mtime_load_value_o(s_mtime_load_value)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".mtime_load_value_i(s_mtime_load_value)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "scope": "apb4_clint",
+            "symbol": "s_mtime_load_value",
+            "bits": 64
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "scope": "apb4_clint",
+            "symbol": "s_mtime_load_value",
+            "bits": 64
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "mtime_load_value_o",
+            "expression": "s_mtime_load_value"
+          },
+          {
+            "node": "core",
+            "port": "mtime_load_value_i",
+            "expression": "s_mtime_load_value"
+          }
+        ]
+      },
+      {
+        "from": "core.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "TIME / 64",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".mtime_o(s_mtime)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".mtime_i(s_mtime)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "scope": "apb4_clint",
+            "symbol": "s_mtime",
+            "bits": 64
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "scope": "apb4_clint",
+            "symbol": "s_mtime",
+            "bits": 64
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "mtime_o",
+            "expression": "s_mtime"
+          },
+          {
+            "node": "reg",
+            "port": "mtime_i",
+            "expression": "s_mtime"
+          }
+        ]
+      },
+      {
+        "from": "tick.p3",
+        "to": "core.p3",
+        "kind": "control",
+        "label": "TICK",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".tick_i(timebase_tick_i)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "scope": "apb4_clint",
+            "symbol": "timebase_tick_i",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "tick_i",
+            "expression": "timebase_tick_i"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p4",
+        "to": "irq.p4",
+        "kind": "control",
+        "label": "Timer IRQ",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".timer_irq_o(s_timer_irq)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "timer_irq_o",
+            "expression": "s_timer_irq"
+          }
+        ]
+      },
+      {
+        "from": "reg.p5",
+        "to": "irq.p5",
+        "kind": "control",
+        "label": "Software IRQ",
+        "style": "dodge",
+        "bindings": [
+          {
+            "file": "rtl/ip/peripheral/apb4_clint.sv",
+            "text": ".msip_o(s_msip)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "msip_o",
+            "expression": "s_msip"
+          }
+        ],
+        "zigzag-dir": "horizontal",
+        "dodge-y": 1.7,
+        "dodge-margins": [
+          0,
+          0
+        ]
+      }
+    ],
+    "note": "One hart uses software/timer core positions 0/1. The time counter advances from the 1 MHz AON-derived tick; it is not a peripheral PCLK divider.",
+    "title": "Local Interrupt Controller (CLINT)"
+  },
+  "i2s": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 registers\nPIO / stream selection",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2s.sv",
+          "rtl/ip/serial/i2s_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2s.sv",
+          "name": "u_i2s_reg",
+          "module": "i2s_reg",
+          "declaration_file": "rtl/ip/serial/i2s_reg.sv"
+        }
+      },
+      {
+        "id": "tx",
+        "title": "TX CDC FIFO\nPCLK to AUDIO",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2s.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2s.sv",
+          "name": "u_tx_cdc_fifo",
+          "module": "cdc_fifo_warm_flush"
+        }
+      },
+      {
+        "id": "rx",
+        "title": "RX CDC FIFO\nAUDIO to PCLK",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2s.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2s.sv",
+          "name": "u_rx_cdc_fifo",
+          "module": "cdc_fifo_warm_flush"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Audio-clock engine\nslot / serial timing",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "in",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2s.sv",
+          "rtl/ip/serial/i2s_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/serial/apb4_i2s.sv",
+          "name": "u_i2s_core",
+          "module": "i2s_core",
+          "declaration_file": "rtl/ip/serial/i2s_core.sv"
+        },
+        "port_margins": {
+          "south": [
+            10,
+            10
+          ]
+        }
+      },
+      {
+        "id": "pads",
+        "title": "I2S pad interface\nMCLK / BCLK / LRCK / SD",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "out",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_i2s.sv"
+        ],
+        "port_margins": {
+          "north": [
+            10,
+            10
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "tx.p0",
+        "kind": "data",
+        "label": "TX / 32",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": "assign s_tx_src_data = s_stream_tx_en ? tx_axis.tdata : s_tx_pio_data;"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".src_data_i(s_tx_src_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_tx_src_data",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "tx",
+            "port": "src_data_i",
+            "expression": "s_tx_src_data"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "tx.p1",
+        "to": "core.p1",
+        "kind": "data",
+        "label": "TX / 32",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".dst_data_o(s_tx_dst_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".tx_data_i(s_tx_dst_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_tx_dst_data",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_tx_dst_data",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "tx",
+            "port": "dst_data_o",
+            "expression": "s_tx_dst_data"
+          },
+          {
+            "node": "core",
+            "port": "tx_data_i",
+            "expression": "s_tx_dst_data"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p2",
+        "to": "rx.p2",
+        "kind": "data",
+        "label": "RX / 32",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": "assign s_rx_src_data = s_core_rx_data;"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".rx_data_o(s_core_rx_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_core_rx_data",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "rx_data_o",
+            "expression": "s_core_rx_data"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "rx.p3",
+        "to": "reg.p3",
+        "kind": "data",
+        "label": "RX / 32",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": "assign s_rx_pop_data = s_rx_dst_data;"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".dst_data_o(s_rx_dst_data)"
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".rx_pop_data_i(s_rx_pop_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_rx_dst_data",
+            "bits": 32
+          },
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "scope": "apb4_i2s",
+            "symbol": "s_rx_pop_data",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "rx",
+            "port": "dst_data_o",
+            "expression": "s_rx_dst_data"
+          },
+          {
+            "node": "reg",
+            "port": "rx_pop_data_i",
+            "expression": "s_rx_pop_data"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p4",
+        "to": "pads.p4",
+        "kind": "data",
+        "label": "OUT",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_i2s.sv",
+            "text": ".i2s(i2s)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "i2s",
+            "expression": "i2s"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "pads.pad_rx",
+        "to": "core.pad_rx",
+        "label": "ADC / 1",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/i2s_core.sv",
+            "text": ".adcdat_i (i2s.adcdat_i)"
+          }
+        ]
+      }
+    ],
+    "note": "Control/FIFO transport uses PCLK; serialization uses AUDIO. Tiny has no APU/KWS routing. Master-only audio modes and external clock/device qualification remain separate. I2S OUT groups MCLK, BCLK, LRCK and DAC data; ADC is the returning serial data line.",
+    "title": "Inter-IC Sound (I2S)"
+  },
+  "dvp": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 registers\ncapture / stream control",
+        "x": 0.0,
+        "y": 10.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 128,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/ip/multimedia/dvp_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_dvp_reg",
+          "module": "dvp_reg",
+          "declaration_file": "rtl/ip/multimedia/dvp_reg.sv"
+        }
+      },
+      {
+        "id": "cfg_packet",
+        "title": "Packet assembly\n128-bit CFG + epoch",
+        "x": 6.3,
+        "y": 10.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 128,
+            "side": "west"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 129,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      },
+      {
+        "id": "cfg",
+        "title": "Configuration CDC\n129-bit epoch packet",
+        "x": 12.6,
+        "y": 10.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 129,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 129,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_dvp_config_cdc",
+          "module": "cdc_2phase",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/cdc/cdc_2phase.sv"
+        }
+      },
+      {
+        "id": "cfg_split",
+        "title": "Epoch / payload split\npacket[127:0]",
+        "x": 12.6,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 129,
+            "side": "north"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 128,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      },
+      {
+        "id": "applied",
+        "title": "Applied configuration\npixel-domain register",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "direction": "in",
+            "width": 128,
+            "side": "east"
+          },
+          {
+            "id": "out",
+            "direction": "out",
+            "width": 128,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_applied_config",
+          "module": "dffer",
+          "declaration_file": "rtl/managed/clusterip/common/rtl/utils/register.sv"
+        }
+      },
+      {
+        "id": "core",
+        "title": "Pixel-domain core\nRGB / YUV packing",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 128,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 8,
+            "side": "south"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 42,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/ip/multimedia/dvp_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_dvp_core",
+          "module": "dvp_core",
+          "declaration_file": "rtl/ip/multimedia/dvp_core.sv"
+        }
+      },
+      {
+        "id": "pads",
+        "title": "Camera inputs\nPCLK / VSYNC / HREF / D8",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 8,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      },
+      {
+        "id": "fifo",
+        "title": "Payload CDC FIFO\nPIX to PCLK",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 42,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 42,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "name": "u_dvp_payload_fifo",
+          "module": "cdc_fifo_warm_flush"
+        }
+      },
+      {
+        "id": "sink",
+        "title": "PIO / stream sink\ncentral DMA endpoint",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 42,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/multimedia/axi4s_dvp.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "cfg_packet.in",
+        "kind": "control",
+        "label": "CFG / 128",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".cfg_o(s_cfg_sys)"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".src_data_i({!s_cfg_epoch_q, s_cfg_sys})"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "cfg_o",
+            "expression": "s_cfg_sys"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_cfg_sys",
+            "bits": 128
+          }
+        ]
+      },
+      {
+        "from": "cfg_packet.out",
+        "to": "cfg.p0",
+        "kind": "control",
+        "label": "PACKET / 129",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "cdc_2phase #(.DATA_WIDTH(129)) u_dvp_config_cdc"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".src_data_i({!s_cfg_epoch_q, s_cfg_sys})"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "cfg",
+            "port": "src_data_i",
+            "expression": "{!s_cfg_epoch_q, s_cfg_sys}"
+          }
+        ],
+        "signals": []
+      },
+      {
+        "from": "cfg.p1",
+        "to": "cfg_split.in",
+        "kind": "control",
+        "label": "PACKET / 129",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dst_data_o(s_cfg_packet_pclk)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "cfg",
+            "port": "dst_data_o",
+            "expression": "s_cfg_packet_pclk"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_cfg_packet_pclk",
+            "bits": 129
+          }
+        ]
+      },
+      {
+        "from": "cfg_split.out",
+        "to": "applied.in",
+        "kind": "control",
+        "label": "PAYLOAD / 128",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "dffer #(.DATA_WIDTH(128)) u_applied_config"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dat_i(s_cfg_packet_pclk[127:0])"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".en_i(s_cfg_v_pclk && s_cfg_rdy_pclk && !s_cfg_apply_pclk_q)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "applied",
+            "port": "dat_i",
+            "expression": "s_cfg_packet_pclk[127:0]"
+          }
+        ],
+        "signals": []
+      },
+      {
+        "from": "applied.out",
+        "to": "core.p1",
+        "kind": "control",
+        "label": "CFG / 128",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dat_o(s_cfg_pclk_q)"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".cfg_i(s_cfg_pclk_q)"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".cfg_valid_i(s_cfg_apply_pclk_q)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "applied",
+            "port": "dat_o",
+            "expression": "s_cfg_pclk_q"
+          },
+          {
+            "node": "core",
+            "port": "cfg_i",
+            "expression": "s_cfg_pclk_q"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_cfg_pclk_q",
+            "bits": 128
+          }
+        ]
+      },
+      {
+        "from": "pads.p2",
+        "to": "core.p2",
+        "kind": "data",
+        "label": "PIXEL / 8",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dat_i(dvp.dat_i)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "dat_i",
+            "expression": "dvp.dat_i"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.p3",
+        "to": "fifo.p3",
+        "kind": "data",
+        "label": "PAYLOAD / 42",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".push_data_o(s_core_push_data)"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".src_data_i(s_core_push_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_core_push_data",
+            "bits": 42
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_core_push_data",
+            "bits": 42
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "core",
+            "port": "push_data_o",
+            "expression": "s_core_push_data"
+          },
+          {
+            "node": "fifo",
+            "port": "src_data_i",
+            "expression": "s_core_push_data"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "fifo.p4",
+        "to": "sink.p4",
+        "kind": "data",
+        "label": "FIFO / 42",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": ".dst_data_o(s_fifo_dst_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "scope": "axi4s_dvp",
+            "symbol": "s_fifo_dst_data",
+            "bits": 42
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "fifo",
+            "port": "dst_data_o",
+            "expression": "s_fifo_dst_data"
+          }
+        ]
+      }
+    ],
+    "note": "The configuration crossing carries 128 payload bits plus an epoch. The pixel/event FIFO stores 42 bits including payload metadata, while the DMA stream carries 32-bit words. No continuous-frame-rate claim is implied.",
+    "title": "Digital Video Port (DVP)"
+  },
+  "crypto": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 register logic\ncommand / key / operands",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv"
+        ]
+      },
+      {
+        "id": "aes",
+        "title": "AES SRAM engine\nkey schedule / modes",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv",
+          "rtl/ip/security/crypto_aes_sram_engine.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_aes",
+          "module": "crypto_aes_sram_engine",
+          "declaration_file": "rtl/ip/security/crypto_aes_sram_engine.sv"
+        }
+      },
+      {
+        "id": "sha",
+        "title": "SHA SRAM engine\nschedule / compression",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv",
+          "rtl/ip/security/crypto_sha2_sram_engine.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_sha",
+          "module": "crypto_sha2_sram_engine",
+          "declaration_file": "rtl/ip/security/crypto_sha2_sram_engine.sv"
+        }
+      },
+      {
+        "id": "rsa",
+        "title": "RSA SRAM core\nprepare / exponentiation",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          },
+          {
+            "id": "p6",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv",
+          "rtl/ip/security/crypto_rsa_sram_core.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "name": "u_rsa",
+          "module": "crypto_rsa_sram_core",
+          "declaration_file": "rtl/ip/security/crypto_rsa_sram_core.sv"
+        }
+      },
+      {
+        "id": "stream",
+        "title": "PIO / stream selection\ninput and result words",
+        "x": 0.0,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv"
+        ]
+      },
+      {
+        "id": "sha_words",
+        "title": "PIO / stream selection\nSHA payload words",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv"
+        ]
+      },
+      {
+        "id": "rsa_words",
+        "title": "APB storage portals\nresult / progress status",
+        "x": 12.6,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p6",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/security/apb4_crypto.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "aes.p0",
+        "kind": "control",
+        "label": "START",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[0])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "aes",
+            "port": "start_i",
+            "expression": "s_start[0]"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p1",
+        "to": "sha.p1",
+        "kind": "control",
+        "label": "START",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[1])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "sha",
+            "port": "start_i",
+            "expression": "s_start[1]"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p2",
+        "to": "rsa.p2",
+        "kind": "control",
+        "label": "START",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".start_i(s_start[2])"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "rsa",
+            "port": "start_i",
+            "expression": "s_start[2]"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "stream.p3",
+        "to": "aes.p3",
+        "kind": "data",
+        "label": "INPUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".input_data_i(s_aes_dma_active ? crypto_in_axis.tdata : s_wdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "aes",
+            "port": "input_data_i",
+            "expression": "s_aes_dma_active ? crypto_in_axis.tdata : s_wdata"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "aes.p4",
+        "to": "stream.p4",
+        "kind": "data",
+        "label": "OUTPUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".output_data_o(s_aes_output_data)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "scope": "apb4_crypto",
+            "symbol": "s_aes_output_data",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "aes",
+            "port": "output_data_o",
+            "expression": "s_aes_output_data"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "sha_words.p5",
+        "to": "sha.p5",
+        "kind": "data",
+        "label": "INPUT / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".input_data_i(s_sha_dma_active ? crypto_in_axis.tdata : s_wdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "sha",
+            "port": "input_data_i",
+            "expression": "s_sha_dma_active ? crypto_in_axis.tdata : s_wdata"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "rsa.p6",
+        "to": "rsa_words.p6",
+        "kind": "data",
+        "label": "PROGRESS / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/security/apb4_crypto.sv",
+            "text": ".progress_o(s_rsa_progress)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "rsa",
+            "port": "progress_o",
+            "expression": "s_rsa_progress"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "Shown control and data paths belong to the current SRAM-backed AES/SHA2/RSA implementation. Tiny has 24 KiB of private PCLK-domain storage; initialization, scrub and accepted DMA work have separate completion boundaries.",
+    "title": "Cryptographic Accelerator (Crypto)"
+  },
+  "crc": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 register interface",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/crc/rtl/apb4_crc.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "CRC state / update\npolynomial datapath",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+          "rtl/managed/clusterip/crc/rtl/crc_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+          "name": "u_crc_reg",
+          "module": "crc_reg",
+          "declaration_file": "rtl/managed/clusterip/crc/rtl/crc_reg.sv"
+        }
+      },
+      {
+        "id": "words",
+        "title": "APB payload words\nsoftware-owned stream",
+        "x": 6.3,
+        "y": 0.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/crc/rtl/apb4_crc.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "R/W",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ]
+      },
+      {
+        "from": "reg.p1",
+        "to": "apb.p1",
+        "kind": "data",
+        "label": "RDATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+            "text": ".prdata_o(apb4.prdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "prdata_o",
+            "expression": "apb4.prdata"
+          }
+        ]
+      },
+      {
+        "from": "words.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "WDATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+            "text": ".pwdata_i(apb4.pwdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwdata_i",
+            "expression": "apb4.pwdata"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "APB payload words update the programmed CRC state. This is not a dedicated central-DMA stream endpoint and CRC is not authentication.",
+    "title": "Cyclic Redundancy Check (CRC)"
+  },
+  "rng": {
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "APB4 register interface",
+        "x": 0.0,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rng/rtl/apb4_rng.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Entropy conditioning\nhealth / output state",
+        "x": 6.3,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+          "rtl/managed/clusterip/rng/rtl/rng_reg.sv"
+        ],
+        "instance_source": {
+          "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+          "name": "u_rng_reg",
+          "module": "rng_reg",
+          "declaration_file": "rtl/managed/clusterip/rng/rtl/rng_reg.sv"
+        }
+      },
+      {
+        "id": "entropy",
+        "title": "Entropy provider\nqualification boundary",
+        "x": 12.6,
+        "y": 3.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/managed/clusterip/rng/rtl/apb4_rng.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "kind": "control",
+        "label": "R/W",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "text": ".pwrite_i(apb4.pwrite)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "pwrite_i",
+            "expression": "apb4.pwrite"
+          }
+        ]
+      },
+      {
+        "from": "reg.p1",
+        "to": "apb.p1",
+        "kind": "data",
+        "label": "RDATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "text": ".prdata_o(apb4.prdata)"
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "prdata_o",
+            "expression": "apb4.prdata"
+          }
+        ]
+      },
+      {
+        "from": "entropy.p2",
+        "to": "reg.p2",
+        "kind": "data",
+        "label": "DATA / 32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "text": ".entropy_data_i(entropy_data_i)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "scope": "apb4_rng",
+            "symbol": "entropy_data_i",
+            "bits": 32
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "entropy_data_i",
+            "expression": "entropy_data_i"
+          }
+        ]
+      },
+      {
+        "from": "reg.p3",
+        "to": "entropy.p3",
+        "kind": "control",
+        "label": "READY",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "text": ".entropy_ready_o(entropy_ready_o)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+            "scope": "apb4_rng",
+            "symbol": "entropy_ready_o",
+            "bits": 1
+          }
+        ],
+        "instance_ports": [
+          {
+            "node": "reg",
+            "port": "entropy_ready_o",
+            "expression": "entropy_ready_o"
+          }
+        ]
+      }
+    ],
+    "note": "The entropy-source handshake feeds health, conditioning and FIFO logic. Actual entropy quality and cryptographic suitability remain unqualified.",
+    "title": "Random Number Generator (RNG)"
+  },
+  "sram": {
+    "title": "Tiny SRAM local and external paths",
+    "nodes": [
+      {
+        "id": "local",
+        "title": "CPU local I / D\n2 independent ports",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv"
+        ]
+      },
+      {
+        "id": "group",
+        "title": "Four 32 KiB groups\nthree-client arbitration",
+        "x": 6.3,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv",
+          "rtl/tiny/top/tiny_sram_group.sv"
+        ]
+      },
+      {
+        "id": "external",
+        "title": "Four external AXI32\ngroup adapters",
+        "x": 12.6,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv"
+        ]
+      },
+      {
+        "id": "banks",
+        "title": "32 technology macros\n8 x 4 KiB per group",
+        "x": 6.3,
+        "y": 0.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sram_group.sv"
+        ]
+      },
+      {
+        "id": "apb",
+        "title": "APB discovery\nexternal-path counters",
+        "x": 0,
+        "y": 0.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "local.p0",
+        "to": "group.p0",
+        "label": "Local request",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": "u_ports[client].wdata = local_ports[client].wdata;"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "west"
+        ],
+        "guided-center": [
+          50,
+          -50
+        ]
+      },
+      {
+        "from": "group.p1",
+        "to": "local.p1",
+        "label": "Read /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sram_group.sv",
+            "text": "ports[client].rdata = s_rsp_data_q[client];"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sram_group.sv",
+            "scope": "tiny_sram_group",
+            "symbol": "s_rsp_data_q",
+            "bits": 32,
+            "select": "[0]"
+          }
+        ],
+        "guided-sides": [
+          "north",
+          "east"
+        ],
+        "guided-center": [
+          -50,
+          50
+        ]
+      },
+      {
+        "from": "external.p2",
+        "to": "group.p2",
+        "label": "AXI attachment",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".memory (u_ports[2])"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "east"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "group.p3",
+        "to": "banks.p3",
+        "label": "Data /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sram_group.sv",
+            "text": "logic [31:0] s_bank_data [8];"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sram_group.sv",
+            "scope": "tiny_sram_group",
+            "symbol": "s_bank_data",
+            "bits": 32,
+            "select": "[0]"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "group.p4",
+        "to": "apb.p4",
+        "label": "Counters /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".perf_read_requests_i (s_count_q[0])"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "scope": "tiny_sram",
+            "symbol": "s_count_q",
+            "select": "[0]",
+            "bits": 32
+          }
+        ],
+        "guided-sides": [
+          "west",
+          "north"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      }
+    ],
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+  },
+  "sysctrl": {
+    "title": "Tiny SYSCTRL diagnostics and RCU subregion",
+    "nodes": [
+      {
+        "id": "apb",
+        "title": "SYSCTRL APB4\nregister view",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "Sticky first fault\nand terminal result",
+        "x": 6.3,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 8,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      },
+      {
+        "id": "fault",
+        "title": "Fabric and local faults\nowner / response / address",
+        "x": 12.6,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "rcu",
+        "title": "RCU subregion\noffsets 0x100..0x15C",
+        "x": 0,
+        "y": 0.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      },
+      {
+        "id": "test",
+        "title": "Acceptance outputs\nDONE / PASS / CODE",
+        "x": 12.6,
+        "y": 0.5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 8,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "apb.p0",
+        "to": "reg.p0",
+        "label": "Writes /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "text": "s_test_d = apb4.pwdata & 32'h8000_ff01;"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "west"
+        ],
+        "guided-center": [
+          50,
+          -50
+        ]
+      },
+      {
+        "from": "fault.p1",
+        "to": "reg.p1",
+        "label": "Address /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "text": "input logic [31:0] fault_addr_i,"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "scope": "tiny_sysctrl",
+            "symbol": "fault_addr_i",
+            "bits": 32
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "east"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "reg.p2",
+        "to": "rcu.p2",
+        "label": "Subregion decode",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "text": "assign s_rcu_selected = apb4.paddr[11:8] == 4'h1;"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "reg.p3",
+        "to": "test.p3",
+        "label": "Code /8",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "text": "output logic [ 7:0] test_code_o,"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "scope": "tiny_sysctrl",
+            "symbol": "test_code_o",
+            "bits": 8
+          }
+        ],
+        "guided-sides": [
+          "east",
+          "north"
+        ],
+        "guided-center": [
+          50,
+          -50
+        ]
+      }
+    ],
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+  },
+  "rcu": {
+    "title": "Tiny RCU register, backend and leaf lifecycle",
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "SYSCTRL RCU registers\nAON request / status",
+        "x": 0,
+        "y": 8,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 2,
+            "side": "east"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 18,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      },
+      {
+        "id": "backend",
+        "title": "Drain / park / switch\nclock backend",
+        "x": 6.3,
+        "y": 8,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 2,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 5,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ]
+      },
+      {
+        "id": "leaf",
+        "title": "Peripheral lifecycle\ngates and resets",
+        "x": 12.6,
+        "y": 8,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 18,
+            "side": "west"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "status",
+        "title": "Committed rates\nfault and reset causes",
+        "x": 0,
+        "y": 2,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 5,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_sysctrl.sv"
+        ]
+      },
+      {
+        "id": "domains",
+        "title": "SYS / MEM / PCLK\nclock and reset outputs",
+        "x": 6.3,
+        "y": 2,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ]
+      },
+      {
+        "id": "users",
+        "title": "CPU and peripheral\nidle acknowledgements",
+        "x": 12.6,
+        "y": 2,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          },
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "backend.p0",
+        "label": "Profile /2",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".profile_i (s_clock_profile)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "backend.p1",
+        "to": "domains.p1",
+        "label": "Clock/reset bundle",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "output logic sys_clk_o,"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "backend.p2",
+        "to": "status.p2",
+        "label": "Fault /5",
+        "kind": "control",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "output logic [ 4:0] fault_code_o,"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "scope": "tiny_clock_reset_subsystem",
+            "symbol": "fault_code_o",
+            "bits": 5
+          }
+        ],
+        "guided-sides": [
+          "west",
+          "north"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "reg.p3",
+        "to": "leaf.p3",
+        "label": "Target mask /18",
+        "kind": "control",
+        "style": "dodge",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "text": "output logic [17:0] periph_request_o,"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_sysctrl.sv",
+            "scope": "tiny_sysctrl",
+            "symbol": "periph_request_o",
+            "bits": 18
+          }
+        ],
+        "dodge-y": 11,
+        "dodge-sides": [
+          "east",
+          "west"
+        ]
+      },
+      {
+        "from": "users.p4",
+        "to": "backend.p4",
+        "label": "Drain idle",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clients_idle_i ((&s_periph_idle_ref[17:1]) && s_xpi_idle_ref)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "leaf.p5",
+        "to": "users.p5",
+        "label": "Gate/reset control",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".periph_request_o (s_periph_request)"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+  },
+  "spi": {
+    "title": "SPI0 session, transport and pad guard",
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 register bank\norigin / request / channel",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 2,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_spi.sv"
+        ]
+      },
+      {
+        "id": "pacing",
+        "title": "DMA pacing and credits\nqualified bindings",
+        "x": 12.6,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 2,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_spi.sv",
+          "rtl/ip/serial/spi_dma_pacing.sv"
+        ]
+      },
+      {
+        "id": "guard",
+        "title": "GPIO route / claim guard\nreadiness and handback",
+        "x": 0,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_spi.sv",
+          "rtl/ip/serial/spi_gpio_guard.sv"
+        ]
+      },
+      {
+        "id": "core",
+        "title": "Session and wire engine\nsetup / shift / held-CS",
+        "x": 6.3,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 16,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 16,
+            "side": "east"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": null,
+            "side": "south",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "in",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/spi_master_core.sv"
+        ],
+        "port_margins": {
+          "south": [
+            10,
+            10
+          ]
+        }
+      },
+      {
+        "id": "packer",
+        "title": "32-bit word packer\nTX / RX FIFOs",
+        "x": 12.6,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 16,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 16,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/spi_master_core.sv",
+          "rtl/ip/serial/spi_word_packer.sv"
+        ]
+      },
+      {
+        "id": "pads",
+        "title": "SPI GPIO pads\nSCK / MOSI / MISO / CS",
+        "x": 6.3,
+        "y": -1,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": null,
+            "side": "north",
+            "bundle": true
+          },
+          {
+            "id": "pad_rx",
+            "direction": "out",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/ip/serial/apb4_spi.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "port_margins": {
+          "north": [
+            10,
+            10
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "core.p0",
+        "label": "CTRL bundle",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "text": ".ctrl (u_ctrl)"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "pacing.p1",
+        "to": "reg.p1",
+        "label": "Credit /2",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "text": "logic [1:0] s_credit_valid, s_credit_retire, s_credit_commit;"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "scope": "apb4_spi",
+            "symbol": "s_credit_valid",
+            "bits": 2
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "guard.p2",
+        "to": "core.p2",
+        "label": "Ready /32",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "text": ".ready_pins_i (s_ready)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "packer.p3",
+        "to": "core.p3",
+        "label": "TX /16",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/spi_master_core.sv",
+            "text": ".tx_frame_o (s_tx_frame)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/spi_master_core.sv",
+            "scope": "spi_master_core",
+            "symbol": "s_tx_frame",
+            "bits": 16
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p4",
+        "to": "packer.p4",
+        "label": "RX /16",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/spi_master_core.sv",
+            "text": ".rx_frame_i (s_rx_frame)"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/ip/serial/spi_master_core.sv",
+            "scope": "spi_master_core",
+            "symbol": "s_rx_frame",
+            "bits": 16
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "core.p5",
+        "to": "pads.p5",
+        "label": "OUT",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "text": ".mosi_o (mosi_o)"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "pads.pad_rx",
+        "to": "core.pad_rx",
+        "label": "MISO / 1",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/serial/apb4_spi.sv",
+            "text": ".miso_i (miso_i)"
+          }
+        ]
+      }
+    ],
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied. SPI OUT groups SCK, MOSI and chip selects; MISO is the returning serial data line."
+  },
+  "system-fabric": {
+    "title": "Tiny system fabric and CPU local paths",
+    "nodes": [
+      {
+        "id": "cpu",
+        "title": "Hazard3 local/slow decode\nSYS",
+        "x": 0,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "dma",
+        "title": "Central DMA + admission\nPCLK to SYS CDC",
+        "x": 6.3,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "sdio",
+        "title": "SDIO private DMA\nSYS",
+        "x": 12.6,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "fabric",
+        "title": "AXI32 target-local fabric\nthree external owners",
+        "x": 6.3,
+        "y": 5,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p5",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "p6",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "ram",
+        "title": "Four SRAM groups\nlocal and external ports",
+        "x": 0,
+        "y": 0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_sram.sv"
+        ]
+      },
+      {
+        "id": "xpi",
+        "title": "XPI MEM target\nSYS to MEM CDC",
+        "x": 6.3,
+        "y": 0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p5",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "apb",
+        "title": "Independent APB branches\nSYS / AON / PCLK / MEM",
+        "x": 12.6,
+        "y": 0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p6",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "cpu.p0",
+        "to": "fabric.p0",
+        "label": "Slow AXI32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".slow_axi4 (u_masters_axi4_if[0])"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "west"
+        ],
+        "guided-center": [
+          50,
+          -50
+        ]
+      },
+      {
+        "from": "dma.p1",
+        "to": "fabric.p1",
+        "label": "DMA AXI32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dst_axi4 (u_masters_axi4_if[1])"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "sdio.p2",
+        "to": "fabric.p2",
+        "label": "SDIO AXI32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".sink (u_masters_axi4_if[2])"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "east"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "cpu.p3",
+        "to": "ram.p3",
+        "label": "Local I/D",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".local_ports (u_cpu_local_if)"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "fabric.p4",
+        "to": "ram.p4",
+        "label": "Group AXI32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".sink (u_sram_axi4_if[group])"
+          }
+        ],
+        "guided-sides": [
+          "west",
+          "north"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "fabric.p5",
+        "to": "xpi.p5",
+        "label": "AXI32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".src_axi4 (u_targets_axi4_if[4])"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "fabric.p6",
+        "to": "apb.p6",
+        "label": "APB controls",
+        "kind": "control",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "`include \"tiny_apb_bridges.svh\""
+          }
+        ],
+        "guided-sides": [
+          "east",
+          "north"
+        ],
+        "guided-center": [
+          50,
+          -50
+        ]
+      }
+    ],
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+  },
+  "system-clocks": {
+    "title": "Tiny clock and reset domains",
+    "nodes": [
+      {
+        "id": "xin",
+        "title": "XIN / normalized REF24\nAON control source",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ]
+      },
+      {
+        "id": "backend",
+        "title": "Safe source / PLL / dividers\nREF24 control",
+        "x": 6.3,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 1,
+            "side": "east"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 1,
+            "side": "west"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 1,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ]
+      },
+      {
+        "id": "sys",
+        "title": "SYS\nCPU / SRAM / fabric / SDIO",
+        "x": 12.6,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 1,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "mem",
+        "title": "MEM\nXPI NOR / PSRAM",
+        "x": 0,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "pclk",
+        "title": "PCLK\nDMA / peripherals / Crypto",
+        "x": 6.3,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 1,
+            "side": "north"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "external",
+        "title": "AUDIO / camera PIX / TCK\nexternal clock domains",
+        "x": 12.6,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "xin.p0",
+        "to": "backend.p0",
+        "label": "Reference",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "input logic ref_clk_i,"
+          }
+        ],
+        "signals": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "scope": "tiny_clock_reset_subsystem",
+            "symbol": "ref_clk_i",
+            "bits": 1
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "backend.p1",
+        "to": "sys.p1",
+        "label": "SYS clock",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".sys_clk_o (s_backend_sys_clk)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "backend.p2",
+        "to": "mem.p2",
+        "label": "MEM clock",
+        "kind": "control",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".mem_clk_o (s_backend_mem_clk)"
+          }
+        ],
+        "guided-sides": [
+          "west",
+          "north"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "backend.p3",
+        "to": "pclk.p3",
+        "label": "PCLK",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".pclk_o (s_backend_pclk)"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "AUDIO, camera pixel and TCK are independently supplied domains and are intentionally not drawn as backend clock outputs. Reset/crossing barriers remain required. SAFE24 and PLL profiles are digital modes, not silicon speed ratings."
+  },
+  "system-media": {
+    "title": "Tiny media and external-memory composition",
+    "nodes": [
+      {
+        "id": "dvp",
+        "title": "DVP + exclusive route\nRAW / PPALite PROCESS",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "dma",
+        "title": "Central DMA 2\nstream receive",
+        "x": 6.3,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p0",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p1",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "psram",
+        "title": "XPI NSS1 PSRAM\ninitialized frame storage",
+        "x": 12.6,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p1",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p2",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "crt/src/hal/xpi_psram.c"
+        ]
+      },
+      {
+        "id": "cpu",
+        "title": "CPU consumer / staging\nimmutable completed frame",
+        "x": 12.6,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p2",
+            "direction": "in",
+            "width": 32,
+            "side": "north"
+          },
+          {
+            "id": "p3",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "p4",
+            "direction": "out",
+            "width": 32,
+            "side": "west"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "spi",
+        "title": "SPI display + DMA 3\nwire-completion boundary",
+        "x": 6.3,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p3",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "sdio",
+        "title": "SDIO private DMA\nSRAM bounce buffers",
+        "x": 0,
+        "y": 3,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "p4",
+            "direction": "in",
+            "width": 32,
+            "side": "east"
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "dvp.p0",
+        "to": "dma.p0",
+        "label": "Selected /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dvp_rx_axis(u_ppalite_rx_axis_if)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "dma.p1",
+        "to": "psram.p1",
+        "label": "Via AXI/XPI",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".mem_axi4 (u_xpi_mem_axi4_if)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "psram.p2",
+        "to": "cpu.p2",
+        "label": "After frame drain",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".slow_axi4 (u_masters_axi4_if[0])"
+          }
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "cpu.p3",
+        "to": "spi.p3",
+        "label": "TX /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".request_i (s_spi_request)"
+          }
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "cpu.p4",
+        "to": "sdio.p4",
+        "label": "CPU staged bounce",
+        "kind": "data",
+        "style": "dodge",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dma_axi4 (u_sdio_sys_axi4_if)"
+          }
+        ],
+        "dodge-y": 1,
+        "dodge-sides": [
+          "west",
+          "east"
+        ]
+      }
+    ],
+    "note": "Composition is sequential. Arrows after frame storage show software-owned transfer stages through the fabric, not direct point-to-point wires. Stop/drain capture before display or saving; camera and audio routes conflict. No concurrent pipeline or throughput is claimed. PPALite reduction precedes storage in PROCESS. Its P3 wiring does not qualify the P4 processed display/save application chain."
+  },
+  "ppalite": {
+    "title": "PPALite exclusive routing and pixel pipeline",
+    "note": "Logical PCLK data path after the existing DVP CDC. RAW bypass and PROCESS are exclusive. The route controller owns source barriers; DMA admission guards the existing channel 2. Stream arrows show data direction; READY returns upstream. No extra master or line/frame RAM is implied.",
+    "nodes": [
+      {
+        "id": "dvp",
+        "title": "DVP payload CDC\nexisting 128-word FIFO",
+        "x": 0,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 32
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "route",
+        "title": "RAW / PROCESS route\nsource ownership barrier",
+        "x": 6.3,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "dma",
+            "side": "east",
+            "direction": "out",
+            "width": 32
+          },
+          {
+            "id": "proc",
+            "side": "south",
+            "direction": "out",
+            "width": 32
+          },
+          {
+            "id": "ret",
+            "side": "south",
+            "direction": "in",
+            "width": 32
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/ppalite_route_ctrl.sv"
+        ]
+      },
+      {
+        "id": "dma",
+        "title": "Exact DMA2 admission\nrequest 11 / direct only",
+        "x": 12.6,
+        "y": 10,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32
+          }
+        ],
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/ppalite_dma_guard.sv"
+        ]
+      },
+      {
+        "id": "guard",
+        "title": "Framing / input slots\n2 words + validity",
+        "x": 0,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32
+          },
+          {
+            "id": "pixel",
+            "side": "east",
+            "direction": "out",
+            "width": 16
+          }
+        ],
+        "sources": [
+          "rtl/ip/ppalite/ppalite_core.sv",
+          "rtl/ip/ppalite/ppalite_stream_guard.sv"
+        ]
+      },
+      {
+        "id": "decimate",
+        "title": "Select / normalize\n1/2/4 steps; RGB or Y",
+        "x": 6.3,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "pixel",
+            "side": "west",
+            "direction": "in",
+            "width": 16
+          },
+          {
+            "id": "sample",
+            "side": "east",
+            "direction": "out",
+            "width": 16
+          },
+          {
+            "id": "cfg",
+            "side": "south",
+            "direction": "in",
+            "width": 6
+          }
+        ],
+        "sources": [
+          "rtl/ip/ppalite/ppalite_core.sv",
+          "rtl/ip/ppalite/ppalite_decimator.sv"
+        ]
+      },
+      {
+        "id": "pack",
+        "title": "Row packer / output FIFO\n32-bit packer; 8 words",
+        "x": 12.6,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "sample",
+            "side": "west",
+            "direction": "in",
+            "width": 16
+          },
+          {
+            "id": "out",
+            "side": "north",
+            "direction": "out",
+            "width": 32
+          }
+        ],
+        "sources": [
+          "rtl/ip/ppalite/ppalite_core.sv",
+          "rtl/ip/ppalite/ppalite_packer.sv"
+        ]
+      },
+      {
+        "id": "reg",
+        "title": "APB4 / armed snapshot\ncompletion and IRQ27",
+        "x": 6.3,
+        "y": -1,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {
+            "id": "cfg",
+            "side": "north",
+            "direction": "out",
+            "width": 6
+          }
+        ],
+        "sources": [
+          "rtl/ip/ppalite/ppalite_reg.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "dvp.out",
+        "to": "route.in",
+        "label": "Input /32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dvp_data_i(u_dvp_rx_axis_if.tdata)"
+          }
+        ]
+      },
+      {
+        "from": "route.dma",
+        "to": "dma.in",
+        "label": "Selected /32",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dma_data_o(u_ppalite_rx_axis_if.tdata)"
+          }
+        ]
+      },
+      {
+        "from": "route.proc",
+        "to": "guard.in",
+        "label": "PROCESS /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".process_data_o(s_ppa_process_data)"
+          }
+        ],
+        "guided-sides": [
+          "south",
+          "north"
+        ],
+        "guided-center": [
+          -50,
+          -50
+        ]
+      },
+      {
+        "from": "guard.pixel",
+        "to": "decimate.pixel",
+        "label": "Pixel /16",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/ppalite/ppalite_core.sv",
+            "text": ".pixel_i(s_pixel)"
+          }
+        ]
+      },
+      {
+        "from": "decimate.sample",
+        "to": "pack.sample",
+        "label": "Sample /16",
+        "kind": "data",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/ppalite/ppalite_core.sv",
+            "text": ".sample_i(s_sample)"
+          }
+        ]
+      },
+      {
+        "from": "pack.out",
+        "to": "route.ret",
+        "label": "Packed /32",
+        "kind": "data",
+        "style": "guided",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".processed_data_i(s_ppa_processed_data)"
+          }
+        ],
+        "guided-sides": [
+          "north",
+          "south"
+        ],
+        "guided-center": [
+          -50,
+          50
+        ]
+      },
+      {
+        "from": "reg.cfg",
+        "to": "decimate.cfg",
+        "label": "Format /6",
+        "kind": "control",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/ip/ppalite/ppalite_core.sv",
+            "text": ".format_i(ctrl.cfg[2:0])"
+          }
+        ]
+      }
+    ]
+  }
+}

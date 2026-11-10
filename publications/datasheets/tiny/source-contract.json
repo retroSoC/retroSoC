@@ -40,20 +40,12 @@
       268566528,
       65536
     ],
-    "APB4_I2C1": [
-      268505088,
-      4096
-    ],
     "APB4_GPIO_ADMIN": [
       268517376,
       4096
     ],
     "APB4_SRAM": [
       268529664,
-      4096
-    ],
-    "APB4_UART1": [
-      268533760,
       4096
     ],
     "APB4_ARCHINFO": [
@@ -79,6 +71,42 @@
     "XPI": [
       1342177280,
       268435456
+    ],
+    "APB4_RNG": [
+      536875008,
+      4096
+    ],
+    "APB4_CRC": [
+      536895488,
+      4096
+    ],
+    "APB4_WS2812": [
+      268468224,
+      4096
+    ],
+    "APB4_CRYPTO": [
+      268484608,
+      4096
+    ],
+    "APB4_I2S": [
+      268464128,
+      4096
+    ],
+    "APB4_DVP": [
+      268492800,
+      4096
+    ],
+    "APB4_SDIO0": [
+      268496896,
+      4096
+    ],
+    "APB4_SPI": [
+      268554240,
+      4096
+    ],
+    "APB4_PPALITE": [
+      268558336,
+      4096
     ]
   },
   "interrupts": {
@@ -88,56 +116,83 @@
     "timer0": 3,
     "timer1": 4,
     "i2c0": 7,
+    "i2s": 8,
     "xpi": 9,
+    "sdio": 10,
+    "dvp": 15,
     "pwm": 11,
     "rtc": 13,
     "watchdog_early_warning": 14,
+    "rng": 16,
+    "ws2812": 17,
     "gpio": 18,
-    "i2c1": 19,
     "dma": 20,
-    "uart1": 26
+    "crypto": 23,
+    "spi": 25,
+    "rcu": 31,
+    "ppalite": 27
   },
   "sources": [
-    "rtl/tiny/top/tiny_cpu_wrapper.sv",
-    "rtl/tiny/top/tiny_cpu_mem.sv",
-    "rtl/tiny/top/tiny_sram.sv",
-    "rtl/tiny/top/tiny_sram_group.sv",
-    "rtl/tiny/top/tiny_sram_axi4.sv",
-    "rtl/tiny/top/tiny_sram_port_if.sv",
-    "rtl/ip/core/mgmt_debug_wrapper.sv",
-    "rtl/ip/core/mgmt_debug_reset.sv",
-    "rtl/ip/interconnect/ahbl2axi4.sv",
-    "crt/arch/riscv/startup.S",
-    "crt/linker/ld2_all_sram.lds",
-    "crt/src/hal/dma_math.c",
-    "crt/src/hal/sysctrl.c",
-    "crt/src/core/archinfo.c",
-    "app/apps/ci_smoke/tiny.c",
-    "app/apps/ci_smoke/mcu_acceptance.S",
     "app/apps/bringup/tiny.mk",
+    "app/apps/ci_smoke/mcu_acceptance.S",
+    "app/apps/ci_smoke/tiny.c",
     "app/apps/ci_smoke/tiny.mk",
-    "scripts/generate_tiny.py",
-    "tests/test_tiny.py",
+    "app/apps/ci_smoke/tiny_ppalite_p3.c",
+    "configs/ci/ihp130-tiny-xin48.mk",
+    "configs/ci/ihp130-tiny-xin96.mk",
+    "crt/arch/riscv/startup.S",
+    "crt/include/retrosoc/hal/xpi_psram.h",
+    "crt/linker/ld2_all_sram.lds",
+    "crt/src/core/archinfo.c",
+    "crt/src/hal/dma_math.c",
+    "crt/src/hal/ppalite.c",
+    "crt/src/hal/ppalite_math.c",
+    "crt/src/hal/sysctrl.c",
+    "crt/src/hal/xpi_psram.c",
+    "docs/ip/piolite-verification.md",
+    "docs/ip/ppalite-verification.md",
+    "docs/ip/spi-p3.md",
+    "docs/ip/spi-p4.md",
+    "docs/ip/spi-verification.md",
+    "docs/ip/tiny-soc-r2-clock-reset.md",
+    "docs/ip/tiny-soc-r2-dvp.md",
+    "docs/ip/tiny-soc-r2-psram.md",
+    "docs/ip/tiny-soc-r2-shared-integration.md",
+    "docs/ip/tiny-soc-r2-system-performance.md",
+    "publications/tiny_v02_reference.py",
+    "rtl/ip/core/mgmt_debug_reset.sv",
+    "rtl/ip/core/mgmt_debug_wrapper.sv",
+    "rtl/ip/interconnect/ahbl2axi4.sv",
+    "rtl/ip/peripheral/gpio_pad_caps_pkg.sv",
+    "rtl/ip/ppalite/apb4_ppalite.sv",
+    "rtl/ip/ppalite/ppalite_core.sv",
+    "rtl/ip/ppalite/ppalite_decimator.sv",
+    "rtl/ip/ppalite/ppalite_define.svh",
+    "rtl/ip/ppalite/ppalite_fifo.sv",
+    "rtl/ip/ppalite/ppalite_if.sv",
+    "rtl/ip/ppalite/ppalite_packer.sv",
+    "rtl/ip/ppalite/ppalite_reg.sv",
+    "rtl/ip/ppalite/ppalite_stream_guard.sv",
+    "rtl/tiny/top/ppalite_dma_guard.sv",
+    "rtl/tiny/top/ppalite_route_ctrl.sv",
     "rtl/tiny/top/tiny_axi4_target.sv",
-    "rtl/tiny/top/tiny_fault_collector.sv"
+    "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+    "rtl/tiny/top/tiny_cpu_mem.sv",
+    "rtl/tiny/top/tiny_cpu_wrapper.sv",
+    "rtl/tiny/top/tiny_fault_collector.sv",
+    "rtl/tiny/top/tiny_peripheral_control.sv",
+    "rtl/tiny/top/tiny_rcu_regs.svh",
+    "rtl/tiny/top/tiny_sram.sv",
+    "rtl/tiny/top/tiny_sram_axi4.sv",
+    "rtl/tiny/top/tiny_sram_group.sv",
+    "rtl/tiny/top/tiny_sram_port_if.sv",
+    "scripts/generate_tiny.py",
+    "scripts/piolite_asm.py",
+    "scripts/piolite_isa.py",
+    "scripts/piolite_model.py",
+    "tests/test_tiny.py"
   ],
   "bindings": [
-    {
-      "file": "rtl/tiny/top/tiny_axi4_fabric.sv",
-      "text": [
-        "  function automatic logic [4:0] checked_target(input logic [31:0] addr_i, input logic [7:0] len_i,\n                                                input logic [2:0] size_i, input logic [1:0] burst_i,\n                                                input logic lock_i, input logic instruction_i);\n    logic [32:0] last_addr;\n    logic [ 4:0] decoded;\n    decoded   = decode_target(addr_i);\n    last_addr = {1'b0, addr_i} + (({25'd0, len_i} + 33'd1) << size_i) - 33'd1;\n    if (lock_i || (size_i > 3'd2) || (len_i > 8'd15) ||\n        ((addr_i & ((32'd1 << size_i) - 32'd1)) != 32'd0) ||\n        !((burst_i == 2'b01) || ((burst_i == 2'b00) && (len_i == 8'd0))) ||\n        last_addr[32] || (last_addr[31:12] != addr_i[31:12]) ||\n        (decode_target(\n            last_addr[31:0]\n        ) != decoded) || ((decoded >= 5'd5) && (decoded < DecodeErrorTarget) && (len_i != 8'd0)))\n      return ProtocolErrorTarget;\n    if (instruction_i && !(\n        `SOC_ADDR_IS_FLASH(addr_i)\n        || ((addr_i >= 32'h5000_0000) && (addr_i < 32'h5400_0000)))) begin\n      if ((decoded >= 5'd5) && (decoded < DecodeErrorTarget)) return ProtocolErrorTarget;\n      return DecodeErrorTarget;\n    end\n    return decoded;\n  endfunction",
-        "assign s_busy_d = (s_busy_q & ~s_done) | s_admit;",
-        "assign owner_idle_o[owner] = !(s_busy_q[2*owner] || s_busy_q[2*owner+1]);",
-        "assign s_eligible[2*owner] = rst_n_i && owner_idle_o[owner] && masters[owner].arvalid && (!masters[owner].awvalid || !s_cpu_prefer_write_q);",
-        "assign s_eligible[2*owner+1] = rst_n_i && owner_idle_o[owner] && masters[owner].awvalid && (!masters[owner].arvalid || s_cpu_prefer_write_q);"
-      ]
-    },
-    {
-      "file": "crt/src/hal/dma_math.c",
-      "text": [
-        "#ifdef RS_SOC_TINY\n    const uint32_t request_mask = UINT32_C(0x000339FF);\n    if (((uint32_t)config->request >= 32U) ||\n        ((request_mask & (UINT32_C(1) << (uint32_t)config->request)) == 0U)) {\n        return false;\n    }\n#endif"
-      ]
-    },
     {
       "file": "crt/arch/riscv/startup.S",
       "text": [
@@ -145,34 +200,9 @@
       ]
     },
     {
-      "file": "rtl/tiny/top/retrosoc_tiny.sv",
-      "text": [
-        ".RTC_CLOCK_HZ(24_000_000)",
-        ".WDG_CLOCK_HZ(24_000_000)",
-        ".RESET_PULSE_CYCLES(8)",
-        "assign uart1_tx_o = 1'b1;"
-      ]
-    },
-    {
       "file": "rtl/ip/peripheral/dma_reg.sv",
       "text": [
         "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'd3 : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
-      ]
-    },
-    {
-      "file": "crt/include/retrosoc/hal/dma.h",
-      "text": [
-        "#define RS_DMA_TCD_VALID          UINT32_C(0x00000001)",
-        "#define RS_DMA_TCD_SRC_INC        UINT32_C(0x00000002)",
-        "#define RS_DMA_TCD_DST_INC        UINT32_C(0x00000004)",
-        "#define RS_DMA_TCD_CRC_ENABLE     UINT32_C(0x00000008)",
-        "#define RS_DMA_TCD_CRC_FINAL      UINT32_C(0x00000010)",
-        "#define RS_DMA_TCD_INT_DONE       UINT32_C(0x00000020)",
-        "#define RS_DMA_TCD_INT_ERROR      UINT32_C(0x00000040)",
-        "#define RS_DMA_TCD_KIND_SHIFT     8U",
-        "#define RS_DMA_TCD_REQUEST_SHIFT  12U",
-        "#define RS_DMA_TCD_PRIORITY_SHIFT 16U",
-        "#define RS_DMA_TCD_BURST_SHIFT    20U"
       ]
     },
     {
@@ -195,6 +225,84 @@
         ".flush_i(1'b0)",
         "AbortWrite: begin",
         "if (s_terminal) s_req_d.state = Idle;"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": [
+        ".TargetMask(18'h37fff)",
+        ".EnableWfiGate(1'b1)",
+        ".PreserveDebug(1'b1)",
+        ".PllProfiles(TinyPllPresent)",
+        ".HasPullUp(gpio_pad_caps_pkg::HasPullUp)",
+        ".HasPullDown(gpio_pad_caps_pkg::HasPullDown)"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/tiny_sysctrl.sv",
+      "text": [
+        "assign s_rcu_selected = apb4.paddr[11:8] == 4'h1;",
+        "s_mem_hz_d = s_sys_hz_d > 120_000_000 ? s_sys_hz_d / 2 : s_sys_hz_d;",
+        "s_rcu_read_data = 32'h0000_0201 | (PllPresent ? 32'h100 : 32'h2) | (PllProfiles ? 32'hc : 32'd0) | (TargetMask != 0 ? 32'h1800 : 32'd0);"
+      ]
+    },
+    {
+      "file": "crt/include/retrosoc/hal/dma.h",
+      "text": [
+        "#define RS_DMA_TCD_REQUEST_HIGH UINT32_C(0x02000000)",
+        "RS_DMA_REQUEST_SPI_TX = 16",
+        "RS_DMA_REQUEST_SPI_RX = 17"
+      ]
+    },
+    {
+      "file": "rtl/ip/serial/spi_define.svh",
+      "text": [
+        "`define APB4_SPI__CAPABILITY_VALUE 32'h00003f7f"
+      ]
+    },
+    {
+      "file": "configs/ci/ihp130-tiny-xin48.mk",
+      "text": [
+        "SOC := TINY",
+        "PDK := IHP130",
+        "HAVE_PLL := NO",
+        "EXT_CLK_HZ := 48000000",
+        "SRAM_SIZE_KIB := 128"
+      ]
+    },
+    {
+      "file": "configs/ci/ihp130-tiny-xin96.mk",
+      "text": [
+        "SOC := TINY",
+        "PDK := IHP130",
+        "HAVE_PLL := NO",
+        "EXT_CLK_HZ := 96000000",
+        "SRAM_SIZE_KIB := 128"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": [
+        ".EnablePpaliteGuard(1'b1)",
+        ".ExternalRoute(1'b1)",
+        ".CapabilityValue(32'h0000_03ff)",
+        ".dvp_rx_axis(u_ppalite_rx_axis_if)",
+        ".camera_active_i(s_ppalite_active_ref)"
+      ]
+    },
+    {
+      "file": "rtl/tiny/top/tiny_sysctrl.sv",
+      "text": [
+        "s_rcu_config_err |= camera_active_i || s_clkout_control_q[2:0] != 0 || !clkout_idle_i ||",
+        "(camera_active_i && (u_rcu_dst.pwdata != s_clkout_control_q))"
+      ]
+    },
+    {
+      "file": "crt/src/hal/dvp.c",
+      "text": [
+        "static rs_status_t rs_dvp_raw_route_allowed(void)",
+        "rs_status_t rs_dvp_start_with_timeout(rs_timeout_t timeout)",
+        "rs_status_t rs_dvp_stop(rs_timeout_t timeout)"
       ]
     }
   ]

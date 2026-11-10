@@ -3,13 +3,19 @@
     "id": "xpi",
     "family": "xpi",
     "title": "XPI Universal Controller",
-    "depth": 3
+    "depth": 5
+  },
+  {
+    "id": "sdio",
+    "family": "sdio",
+    "title": "Native SD/SDIO Host (SDIO0)",
+    "depth": 5
   },
   {
     "id": "sram",
     "family": "sram",
     "title": "On-Chip SRAM",
-    "depth": 3
+    "depth": 5
   },
   {
     "id": "gpio",
@@ -27,60 +33,108 @@
     "id": "timer",
     "family": "timer",
     "title": "General-Purpose Timers (TIM0, TIM1)",
-    "depth": 3
-  },
-  {
-    "id": "pwm",
-    "family": "pwm",
-    "title": "Pulse Width Modulation (PWM)",
-    "depth": 3
+    "depth": 4
   },
   {
     "id": "rtc",
     "family": "rtc",
     "title": "Real-Time Clock (RTC)",
-    "depth": 3
+    "depth": 4
   },
   {
     "id": "wdg",
     "family": "wdg",
     "title": "Watchdog (WDG)",
-    "depth": 3
+    "depth": 4
+  },
+  {
+    "id": "pwm",
+    "family": "pwm",
+    "title": "Pulse Width Modulation (PWM)",
+    "depth": 4
   },
   {
     "id": "uart0",
     "family": "uart",
     "title": "Management UART (UART0)",
-    "depth": 3
-  },
-  {
-    "id": "uart1",
-    "family": "uart",
-    "title": "Second UART (UART1)",
-    "depth": 3
+    "depth": 5
   },
   {
     "id": "i2c",
     "family": "i2c",
-    "title": "Inter-Integrated Circuit (I2C0, I2C1)",
-    "depth": 3
+    "title": "Inter-Integrated Circuit (I2C0)",
+    "depth": 4
   },
   {
-    "id": "sysctrl",
-    "family": "sysctrl",
-    "title": "System Controller (SYSCTRL)",
-    "depth": 3
+    "id": "spi",
+    "family": "spi",
+    "title": "Serial Peripheral Interface (SPI0)",
+    "depth": 4
   },
   {
-    "id": "clint",
-    "family": "clint",
-    "title": "Local Interrupt Controller (CLINT)",
-    "depth": 3
+    "id": "ws2812",
+    "family": "ws2812",
+    "title": "WS2812 LED Output",
+    "depth": 4
   },
   {
     "id": "archinfo",
     "family": "archinfo",
     "title": "Architecture Information (ARCHINFO)",
-    "depth": 3
+    "depth": 4
+  },
+  {
+    "id": "sysctrl",
+    "family": "sysctrl",
+    "title": "System Controller (SYSCTRL)",
+    "depth": 4
+  },
+  {
+    "id": "rcu",
+    "family": "rcu",
+    "title": "Reset and Clock Unit (RCU)",
+    "depth": 4
+  },
+  {
+    "id": "clint",
+    "family": "clint",
+    "title": "Local Interrupt Controller (CLINT)",
+    "depth": 4
+  },
+  {
+    "id": "i2s",
+    "family": "i2s",
+    "title": "Inter-IC Sound (I2S)",
+    "depth": 4
+  },
+  {
+    "id": "dvp",
+    "family": "dvp",
+    "title": "Digital Video Port (DVP)",
+    "depth": 4
+  },
+  {
+    "id": "ppalite",
+    "family": "ppalite",
+    "title": "Streaming Pixel Processor (PPALite)",
+    "depth": 4
+  },
+  {
+    "id": "crypto",
+    "family": "crypto",
+    "title": "Cryptographic Accelerator (Crypto)",
+    "depth": 4
+  },
+  {
+    "id": "crc",
+    "family": "crc",
+    "title": "Cyclic Redundancy Check (CRC)",
+    "depth": 4
+  },
+  {
+    "id": "rng",
+    "family": "rng",
+    "title": "Random Number Generator (RNG)",
+    "depth": 4
   }
 ]

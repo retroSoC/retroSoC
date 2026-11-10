@@ -3,15 +3,18 @@
   "document_id": "RS-TINY-DS",
   "brand_name": "Rill",
   "brand_name_zh": "清溪",
-  "version": "0.1",
+  "version": "0.2",
   "status": "DRAFT",
-  "date": "2026-09-25",
+  "date": "2026-11-10",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "9c706ba0ff1da1028c299cfff573010a86dfd7ce",
-  "profile": "configs/ci/ihp130-tiny.mk",
-  "change_prefix": "tiny-v01-",
+  "source_revision": "dba9d209a2ddce4aceb6cc0256beae7ea7fdc496",
+  "profile": "configs/ci/ics55-tiny.mk",
+  "change_prefix": "tiny-v02-mini-alignment-20261029-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",
-  "filename": "retrosoc-tiny-gen1-datasheet.pdf"
+  "filename": "retrosoc-tiny-gen1-datasheet.pdf",
+  "compatibility_profiles": [
+    "configs/ci/ihp130-tiny.mk"
+  ]
 }

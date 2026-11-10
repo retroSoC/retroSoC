@@ -1,9 +1,9 @@
+#import "engineering-figures.typ": circuit-figure
 #import "@preview/cetz:0.5.2" as cetz
-#import "@preview/bytefield:0.0.8" as bf
 #import "style.typ": *
 
-#let diagram(id, body, caption) = block(width:100%,breakable:false)[
-  #context metadata((kind:"tiny-diagram",id:id,page:here().page()))
+#let diagram(id, body, caption, package:"cetz") = block(width:100%,breakable:false)[
+  #context metadata((kind:"tiny-diagram",id:id,package:package,page:here().page()))
   #figure(body,caption:caption)
 ]
 #let schematic(nodes, routes, height:90) = {
@@ -25,23 +25,83 @@
     }
   })
 }
-#let architecture() = diagram("tiny-architecture",schematic((
-  (5,4,65,19,[Hazard3 dual-port · hart 0 \ RV32IMC · A disabled]),
-  (104,4,63,19,[JTAG / debug transport \ External TCK domain]),
-  (5,37,65,15,[I/D decode + slow adapter]),
-  (104,37,63,15,[Four-channel DMA \ AXI32 master]),
-  (30,69,112,19,[Tiny AXI32 fabric \ Independent target ownership]),
-  (0,110,40,22,[128 KiB SRAM \ 4 × 32 KiB groups]),
-  (44,110,40,22,[XPI read path \ Flash alias / NOR]),
-  (88,110,40,22,[16 APB4 branches \ One per peripheral]),
-  (132,110,40,22,[Error responders \ DECERR / SLVERR]),
-),(
-  ((104,13),(70,13)),((37,23),(37,37)),
-  ((5,44),(0,44),(0,103),(6,103),(6,110)),
-  ((37,52),(37,61),(60,61),(60,69)),((135,52),(135,61),(112,61),(112,69)),
-  ((45,88),(45,99),(20,99),(20,110)),((70,88),(70,103),(64,103),(64,110)),
-  ((103,88),(103,103),(108,103),(108,110)),((127,88),(127,99),(152,99),(152,110)),
-),height:134),[Tiny Gen1 integration. The left branch represents independent local I/D paths bypassing the external fabric. System logic uses the configured 24 MHz clock; JTAG is asynchronous.])
+#let architecture()=circuit-figure("system-fabric")
+#let clock-tree()=circuit-figure("system-clocks")
+
+#let overview()=diagram("tiny-overview",cetz.canvas({
+ import cetz.draw: rect, content, line, circle
+  let category-icon(kind, x, y) = {
+    let pen = 0.6pt + gold
+    if kind == 0 {
+      rect((x - 0.11,y - 0.11),(x + 0.11,y + 0.11),stroke:pen)
+      for d in (-0.065,0.065) {
+        line((x + d,y - 0.18),(x + d,y - 0.11),stroke:pen)
+        line((x + d,y + 0.11),(x + d,y + 0.18),stroke:pen)
+        line((x - 0.18,y + d),(x - 0.11,y + d),stroke:pen)
+        line((x + 0.11,y + d),(x + 0.18,y + d),stroke:pen)
+      }
+    } else if kind == 1 {
+      for d in (-0.11,0,0.11) {
+        rect((x - 0.16,y + d - 0.035),(x + 0.16,y + d + 0.035),stroke:pen)
+      }
+    } else if kind == 2 {
+      for (n,d) in (-0.12,0,0.12).enumerate() {
+        line((x - 0.17,y + d),(x + 0.17,y + d),stroke:pen)
+        circle((x + if n == 1 {0.07} else {-0.06},y + d),radius:0.04,fill:pale-gold,stroke:pen)
+      }
+    } else if kind == 3 {
+      rect((x - 0.17,y + 0.01),(x - 0.01,y + 0.15),stroke:pen)
+      rect((x + 0.01,y - 0.15),(x + 0.17,y - 0.01),stroke:pen)
+      line((x - 0.09,y + 0.01),(x - 0.09,y - 0.08),(x + 0.01,y - 0.08),stroke:pen)
+      line((x + 0.09,y - 0.01),(x + 0.09,y + 0.08),(x - 0.01,y + 0.08),stroke:pen)
+    } else if kind == 4 {
+      line((x - 0.17,y + 0.08),(x + 0.17,y + 0.08),(x + 0.10,y + 0.15),stroke:pen)
+      line((x + 0.17,y - 0.08),(x - 0.17,y - 0.08),(x - 0.10,y - 0.15),stroke:pen)
+    } else if kind == 5 {
+      circle((x,y),radius:0.17,stroke:pen)
+      line((x,y + 0.11),(x,y),(x + 0.09,y - 0.04),stroke:pen)
+    } else if kind == 6 {
+      rect((x - 0.10,y - 0.12),(x + 0.10,y + 0.10),stroke:pen)
+      line((x - 0.06,y + 0.10),(x - 0.06,y + 0.18),stroke:pen)
+      line((x + 0.06,y + 0.10),(x + 0.06,y + 0.18),stroke:pen)
+      line((x,y - 0.12),(x,y - 0.19),(x + 0.16,y - 0.19),stroke:pen)
+    } else if kind == 7 {
+      rect((x - 0.18,y - 0.13),(x + 0.18,y + 0.13),stroke:pen,radius:0.03)
+      line((x - 0.05,y - 0.075),(x + 0.075,y),(x - 0.05,y + 0.075),(x - 0.05,y - 0.075),stroke:pen)
+    } else {
+      line((x - 0.15,y + 0.12),(x,y + 0.17),(x + 0.15,y + 0.12),
+        (x + 0.12,y - 0.07),(x,y - 0.18),(x - 0.12,y - 0.07),(x - 0.15,y + 0.12),stroke:pen)
+    }
+  }
+
+ let labels=("sysctrl":"SYSCTRL","rcu":"RCU","clint":"CLINT","archinfo":"ARCHINFO",
+  "xpi":"XPI","sram":"128 KiB SRAM","dma":"8-channel DMA","gpio":"GPIO","timer":"TIM0 / TIM1",
+  "pwm":"PWM","rtc":"RTC","wdg":"WDG","uart0":"UART0","i2c":"I2C0","spi":"SPI0","sdio":"SDIO0",
+  "i2s":"I2S","dvp":"DVP","ppalite":"PPALite","ws2812":"WS2812","crypto":"Crypto","crc":"CRC","rng":"RNG")
+ let icons=(0,2,5,6,7,8)
+ rect((0,0),(17.2,-10.8),fill:white,stroke:0.85pt+ink,radius:0.20)
+ line((0.4,-0.29),(2.7,-0.29),stroke:1.4pt+gold)
+ content((8.6,-0.85),block(width:16.4cm)[#text(12pt,weight:"semibold",doc.title)])
+ line((0.4,-1.45),(16.8,-1.45),stroke:0.45pt+muted)
+ let w=(16.4-0.6)/3
+ for (i,group) in data.overview.enumerate() {
+  let x=0.4+calc.rem(i,3)*(w+0.3)
+  let top=-1.7-calc.floor(i/3)*4.3
+  rect((x,top - 4),(x+w,top),fill:white,stroke:0.55pt+muted,radius:0.10)
+  rect((x+0.035,top - 0.65),(x+w - 0.035,top - 0.035),fill:pale-gold,stroke:none,radius:0.07)
+  category-icon(icons.at(i),x+0.38,top - 0.335)
+  content((x+0.72+(w - 0.92)/2,top - 0.335),block(width:(w - 0.92)*1cm)[#text(9.5pt,weight:"semibold",group.title)])
+  let h=(2.95-(group.ids.len()-1)*0.10)/group.ids.len()
+  for (j,id) in group.ids.enumerate() {
+   let y=top - 0.85-j*(h+0.10)
+   rect((x+0.2,y - h),(x+w - 0.2,y),fill:gray,stroke:0.5pt+muted,radius:0.10)
+   content((x+w/2,y - h/2),block(width:(w - 0.4)*1cm - 6pt)[
+    #set par(leading:rhythm.inventory-leading)
+    #align(center,text(9pt,weight:"regular",labels.at(id)))
+   ])
+  }
+ }
+}),[Integrated Tiny IP inventory, organized by function.])
 
 #let ip-diagram(entry) = {
   let children=entry.nodes.slice(1)
@@ -66,20 +126,23 @@
   diagram(id,schematic(nodes,paths,height:items.len()*23-5),caption)
 }
 
-#let tcd-diagram() = {
-  let names=("next_ptr":"Next","source":"Source","destination":"Destination","byte_count":"Byte count",
-    "source_stride":"Src stride","destination_stride":"Dst stride","y_count":"Rows","reserved":"Rsvd",
-    "control":"Control","crc_expected":"CRC expect","crc_seed":"CRC seed","crc_result":"CRC result",
-    "status":"Status","bytes_done":"Bytes done","error_status":"Error","reserved_tail":"Reserved","reserved_tail2":"Reserved")
-  let fields=()
-  for field in data.tcd {
-    if calc.rem(field.offset,16)==0 {fields.push(bf.note(left)[#("0x"+upper(str(field.offset,base:16)))])}
-    fields.push(bf.bytes(field.bytes,fill:if field.role=="reserved" {gray} else if field.role=="HAL result" {rgb("#E7EFF6")} else {pale-gold})[#{names.at(field.name)}])
+#let access-matrix()=diagram("tiny-access-matrix",cetz.canvas(length:1mm,{
+ import cetz.draw: rect, content
+ let widths=(48,31,31,31,31)
+ let rows=(
+  ("Request origin","Main SRAM","XPI aperture","APB controls","Fabric owner"),
+  ("CPU local I / D","Direct group","-","-","Local ports"),
+  ("CPU slow path","Via fabric","Via fabric","Via bridges","0"),
+  ("Central DMA","Via fabric","Via fabric","Via bridges","1"),
+  ("SDIO private DMA","Via fabric","Via fabric","Via bridges","2"))
+ for (r,row) in rows.enumerate() {
+  let x=0
+  for (c,value) in row.enumerate() {
+   rect((x,-r*14),(x+widths.at(c),-(r+1)*14),fill:if r==0 or c==0 {pale-gold} else {gray},stroke:0.6pt+ink)
+   content((x+widths.at(c)/2,-r*14-7),block(width:(widths.at(c)-4)*1mm)[
+    #set par(leading:rhythm.diagram-leading)
+    #align(center,text(9pt,weight:"regular",value))])
+   x+=widths.at(c)
   }
-  diagram("dma-tcd",{
-    set text(font:"Inter",size:9pt)
-    show: bf.bf-config.with(row-height:27pt,field-font-size:9pt,note-font-size:9pt,header-font-size:9pt,stroke:0.6pt+ink)
-    bf.bytefield(bpr:128,msb:right,pre:(36pt,),post:(),
-      bf.bitheader(0,[0],32,[4],64,[8],96,[12],numbers:none,angle:0deg,text-size:9pt),..fields)
-  },[DMA TCD: four 16-byte rows. Gold: configuration; blue: HAL result fields; gray: reserved.])
-}
+ }
+}),[Tiny connection matrix. Entries show fabric connectivity, not permission for every transaction. Admission, endpoint and private-DMA address rules still apply.])

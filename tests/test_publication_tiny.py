@@ -1,4 +1,4 @@
-"""Historical Tiny publication contracts remain separate from P6 source support."""
+"""Historical Tiny publication contracts remain separate from the current book."""
 from __future__ import annotations
 
 import os
@@ -30,9 +30,10 @@ def test_historical_publication_contracts(tmp_path, revision):
 
 def test_current_source_cannot_relabel_historical_publication():
     config = tiny.read(ROOT / tiny.BOOK / "tiny.json")
-    assert config["source_revision"] == "9c706ba0ff1da1028c299cfff573010a86dfd7ce"
-    with pytest.raises(ValueError, match="DMA parameters changed"):
-        tiny.collect(config)
+    assert config["version"] == "0.2"
+    old = dict(config, source_revision="9c706ba0ff1da1028c299cfff573010a86dfd7ce")
+    with pytest.raises(ValueError, match="technical sources differ"):
+        tiny.collect(old)
 
 
 @pytest.mark.parametrize("before,after", [

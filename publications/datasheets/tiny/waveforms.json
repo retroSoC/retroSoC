@@ -42,8 +42,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only. Local bus clock; the Tiny domain depends on the instance.",
+    "clock_domain": "Selected APB endpoint clock; instance-specific Tiny domain",
     "signals": {
       "pclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
@@ -99,7 +99,7 @@
       "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
       "rtl/tiny/top/retrosoc_tiny.sv"
     ],
-    "review_note": "Split the former ADDR / DATA lane; retained the valid APB wait-state ordering.",
+    "review_note": "Split the former ADDR / DATA lane; retained the valid APB wait-state ordering. The interface clock name does not place every APB endpoint in PCLK.",
     "parameters": {
       "APB_ADDR_WIDTH": 32,
       "APB_DATA_WIDTH": 32
@@ -147,8 +147,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only. Tiny domain: SYS. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
     "signals": {
       "aclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -252,8 +252,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data. Tiny domain: MEM. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny MEM; SAFE24 does not remove declared crossings",
     "signals": {
       "nss_o[0]": {
         "file": "rtl/ip/storage/xpi_if.sv",
@@ -339,8 +339,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled. Tiny domain: SYS. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
     "signals": {
       "aclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -431,8 +431,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "user_select_i[0]": {
         "file": "rtl/ip/peripheral/gpio_core.sv",
@@ -524,8 +524,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "start_i[0]": {
         "file": "rtl/ip/peripheral/dma_core.sv",
@@ -569,11 +569,11 @@
     ],
     "review_note": "Replaced descriptor-ready, AXI/stream-work and completion-IRQ pseudo-signals with actual channel start/status/progress ports.",
     "parameters": {
-      "NumChannels": 4,
+      "NumChannels": 8,
       "DataWidth": 32,
       "AddrWidth": 32
     },
-    "parameter_note": "Tiny selects four channels, 32-bit transfers and no stream endpoints."
+    "parameter_note": "Tiny selects eight channels, 32-bit memory transfers and implemented stream endpoints; this example uses channel 0."
   },
   "timer": {
     "source": {
@@ -607,8 +607,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "s_tick": {
         "file": "rtl/ip/peripheral/timer_core.sv",
@@ -694,8 +694,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "timer_counter_o[0]": {
         "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
@@ -770,8 +770,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "command_valid_i": {
         "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
@@ -837,8 +837,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "active_o": {
         "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
@@ -895,8 +895,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "tx_o": {
         "file": "rtl/ip/serial/uart_core.sv",
@@ -930,8 +930,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "scl_i": {
         "file": "rtl/ip/serial/i2c_core.sv",
@@ -990,8 +990,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "tick_i": {
         "file": "rtl/ip/peripheral/clint_core.sv",
@@ -1071,8 +1071,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper PCLK domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied. Tiny binds this interface/core to the system clock; illustrative order only, not measured timing.",
-    "clock_domain": "Tiny system clock, 24 MHz configured target",
+    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper APB clock domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "paddr_i": {
         "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
@@ -1122,5 +1122,448 @@
       "rtl/tiny/top/retrosoc_tiny.sv"
     ],
     "review_note": "Used the actual combinational archinfo_reg ports; corrected the fictitious PCLK/APB-read signal labels."
+  },
+  "sdio": {
+    "source": {
+      "signal": [
+        {
+          "name": "sck_o",
+          "wave": "p...|...."
+        },
+        {
+          "name": "cmd_oe_o",
+          "wave": "1..0....."
+        },
+        {
+          "name": "cmd_do_o",
+          "wave": "0101|...."
+        },
+        {
+          "name": "cmd_di_i",
+          "wave": "1...|0101"
+        },
+        {
+          "name": "dat_oe_o",
+          "wave": "=........",
+          "data": [
+            "0x0"
+          ]
+        },
+        {
+          "name": "dat_di_i",
+          "wave": "x...|=..x",
+          "data": [
+            "read data"
+          ]
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: sdio_if. Clock: sdio_core.clk_i; sck_o samples card responses/data. Four-bit SDR read excerpt; command, response and data intervals are compressed and do not depict their full frames. Command/data drive enables remain distinct from sampled input values.",
+    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
+    "signals": {
+      "sck_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "sck_o",
+        "meaning": "SD serial clock excerpt.",
+        "polarity": "rising-edge"
+      },
+      "cmd_oe_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_oe_o",
+        "meaning": "Host releases CMD for a response.",
+        "polarity": "active-high"
+      },
+      "cmd_do_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_do_o",
+        "meaning": "Representative outgoing command bits.",
+        "polarity": "data"
+      },
+      "cmd_di_i": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "cmd_di_i",
+        "meaning": "Representative incoming response bits.",
+        "polarity": "data"
+      },
+      "dat_oe_o": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "dat_oe_o",
+        "meaning": "Controller data output disabled for read.",
+        "polarity": "data"
+      },
+      "dat_di_i": {
+        "file": "rtl/ip/storage/sdio_if.sv",
+        "scope": "sdio_if",
+        "symbol": "dat_di_i",
+        "meaning": "Four-bit card data excerpt.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/sdio_core.sv",
+      "rtl/ip/storage/sdio_data.sv",
+      "rtl/ip/storage/sdio_if.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Split the synthetic CMD and DAT lanes into real direction-specific interface signals; removed the unrelated DMA-request annotation."
+  },
+  "i2s": {
+    "source": {
+      "signal": [
+        {
+          "name": "sclk_o",
+          "wave": "p...|...p..."
+        },
+        {
+          "name": "lrck_o",
+          "wave": "0...|1......"
+        },
+        {
+          "name": "dacdat_o",
+          "wave": "0101|.0101.0"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: i2s_if. Clock: i2s_core.clk_i; sclk_o serial sampling edges. Stereo I2S bit excerpt: a channel MSB begins one bit clock after the lrck_o transition. The break omits intervening bit clocks; channel words are not represented as a bus on dacdat_o.",
+    "clock_domain": "Tiny AUDIO; SAFE24 does not remove declared crossings",
+    "signals": {
+      "sclk_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "sclk_o",
+        "meaning": "Serial bit clock.",
+        "polarity": "rising-edge"
+      },
+      "lrck_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "lrck_o",
+        "meaning": "Channel-select clock.",
+        "polarity": "active-high"
+      },
+      "dacdat_o": {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "scope": "i2s_if",
+        "symbol": "dacdat_o",
+        "meaning": "Scalar serial DAC data, illustrative bit values.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_i2s.sv",
+      "rtl/ip/serial/i2s_core.sv",
+      "rtl/ip/serial/i2s_send.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Replaced BCLK/LRCK aliases with interface members and replaced the scalar-data bus shading. Removed synthetic word-valid lane."
+  },
+  "dvp": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_i",
+          "wave": "p........"
+        },
+        {
+          "name": "vsync_i",
+          "wave": "10......."
+        },
+        {
+          "name": "href_i",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "dat_i",
+          "wave": "x.====x..",
+          "data": [
+            "B0",
+            "B1",
+            "B2",
+            "B3"
+          ]
+        },
+        {
+          "name": "push_valid_o",
+          "wave": "0.....10."
+        },
+        {
+          "name": "push_ready_i",
+          "wave": "1........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: dvp_core. Clock: clk_i is the captured pixel-clock domain. RGB565 excerpt with positive HREF and active-high VSYNC configuration. Two bytes form a pixel; two pixels form the 32-bit payload in one output record. Full frame/line lengths and partial-line records are omitted.",
+    "clock_domain": "Tiny raw PIXCLK; SAFE24 does not remove declared crossings",
+    "signals": {
+      "clk_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "clk_i",
+        "meaning": "Pixel-domain sampling clock.",
+        "polarity": "rising-edge"
+      },
+      "vsync_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "vsync_i",
+        "meaning": "Illustrative frame boundary with configured active-high polarity.",
+        "polarity": "active-high"
+      },
+      "href_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "href_i",
+        "meaning": "Active line byte interval.",
+        "polarity": "active-high"
+      },
+      "dat_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "dat_i",
+        "meaning": "Camera input bytes in RGB565 mode.",
+        "polarity": "data"
+      },
+      "push_valid_o": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "push_valid_o",
+        "meaning": "A 32-bit record is offered after four input bytes.",
+        "polarity": "active-high"
+      },
+      "push_ready_i": {
+        "file": "rtl/ip/multimedia/dvp_core.sv",
+        "scope": "dvp_core",
+        "symbol": "push_ready_i",
+        "meaning": "Output queue has space in this example.",
+        "polarity": "active-high"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/multimedia/dvp_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Mapped pixel-domain input and output record handshake; removed synthetic stream TLAST, which belongs to downstream stream packing."
+  },
+  "ws2812": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_xfer_data_q[23]",
+          "wave": "0...1..."
+        },
+        {
+          "name": "s_bit_cycle_q",
+          "wave": "========",
+          "data": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "0",
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "name": "dat_o",
+          "wave": "10..1.0."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Scope: ws2812_core. Clock: clk_i; example bit_cycles_i = 4. Two serial symbols in an already active transfer: t0h_cycles = 1, t1h_cycles = 2 and bit_cycles = 4 are illustrative settings, not qualified electrical limits. Bytes are sent most-significant bit first.",
+    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "signals": {
+      "s_xfer_data_q[23]": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "s_xfer_data_q",
+        "meaning": "Current most-significant serial bit.",
+        "polarity": "active-high"
+      },
+      "s_bit_cycle_q": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "s_bit_cycle_q",
+        "meaning": "Bit-cycle position within each symbol.",
+        "polarity": "data"
+      },
+      "dat_o": {
+        "file": "rtl/ip/serial/ws2812_core.sv",
+        "scope": "ws2812_core",
+        "symbol": "dat_o",
+        "meaning": "Serial output uses shorter high time for zero than one.",
+        "polarity": "data"
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/ws2812_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Replaced fictitious separate zero/one outputs with the actual current-bit selector and one dat_o output. Reviewed dat_o = s_bit_cycle_q < s_high_cycles."
+  },
+  "spi": {
+    "source": {
+      "signal": [
+        {
+          "name": "s_spi_cs_n",
+          "wave": "10.....1."
+        },
+        {
+          "name": "s_spi_sck",
+          "wave": "0p...|.0."
+        },
+        {
+          "name": "s_spi_mosi",
+          "wave": "00101|.0."
+        },
+        {
+          "name": "s_spi_output_enable",
+          "wave": "1........"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Mode-0 TX excerpt inside an owned session. The break compresses intervening serial bits. GPIO ownership is already established; setup/hold counts, DMA traffic and full frames are not shown. This is not a measured latency or electrical waveform.",
+    "clock_domain": "Tiny PCLK; derived serial SCK",
+    "signals": {
+      "s_spi_cs_n": {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "scope": "retrosoc_tiny",
+        "symbol": "s_spi_cs_n",
+        "polarity": "active-low",
+        "meaning": "Active-low session chip select."
+      },
+      "s_spi_sck": {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "scope": "retrosoc_tiny",
+        "symbol": "s_spi_sck",
+        "polarity": "rising-edge",
+        "meaning": "Derived mode-0 serial clock."
+      },
+      "s_spi_mosi": {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "scope": "retrosoc_tiny",
+        "symbol": "s_spi_mosi",
+        "polarity": "data",
+        "meaning": "Illustrative outgoing data bits."
+      },
+      "s_spi_output_enable": {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "scope": "retrosoc_tiny",
+        "symbol": "s_spi_output_enable",
+        "polarity": "active-high",
+        "meaning": "Pad driving is permitted while the session owns its routes."
+      }
+    },
+    "review_sources": [
+      "rtl/ip/serial/apb4_spi.sv",
+      "rtl/ip/serial/spi_phase_ctrl.sv",
+      "rtl/ip/serial/spi_master_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "Actual Tiny top-level SPI pad nets; CPOL=0/CPHA=0 illustrative excerpt. Full frames and service intervals are omitted."
+  },
+  "ppalite": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_i",
+          "wave": "p......."
+        },
+        {
+          "name": "out_valid_o",
+          "wave": "01...0.."
+        },
+        {
+          "name": "out_ready_i",
+          "wave": "0...10.."
+        },
+        {
+          "name": "out_data_o",
+          "wave": "x=...x..",
+          "data": [
+            "row tail"
+          ]
+        },
+        {
+          "name": "out_last_o",
+          "wave": "01...0.."
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "note": "Illustrative final output word stalled before acceptance. Data and row-end metadata stay stable; accepting this word does not by itself prove SOURCE_DONE, memory response drain or RESULT_VALID. Example cycles only.",
+    "clock_domain": "Tiny PCLK",
+    "signals": {
+      "clk_i": {
+        "file": "rtl/ip/ppalite/ppalite_core.sv",
+        "scope": "ppalite_core",
+        "symbol": "clk_i",
+        "polarity": "rising-edge",
+        "meaning": "PPALite PCLK."
+      },
+      "out_valid_o": {
+        "file": "rtl/ip/ppalite/ppalite_core.sv",
+        "scope": "ppalite_core",
+        "symbol": "out_valid_o",
+        "polarity": "active-high",
+        "meaning": "Word stays offered while READY is low."
+      },
+      "out_ready_i": {
+        "file": "rtl/ip/ppalite/ppalite_core.sv",
+        "scope": "ppalite_core",
+        "symbol": "out_ready_i",
+        "polarity": "active-high",
+        "meaning": "VALID and READY jointly accept the word."
+      },
+      "out_data_o": {
+        "file": "rtl/ip/ppalite/ppalite_core.sv",
+        "scope": "ppalite_core",
+        "symbol": "out_data_o",
+        "polarity": "data",
+        "meaning": "Stable output word, including row padding."
+      },
+      "out_last_o": {
+        "file": "rtl/ip/ppalite/ppalite_core.sv",
+        "scope": "ppalite_core",
+        "symbol": "out_last_o",
+        "polarity": "active-high",
+        "meaning": "End of the illustrated row, held with the word."
+      }
+    },
+    "review_sources": [
+      "rtl/ip/ppalite/ppalite_core.sv",
+      "rtl/ip/ppalite/ppalite_packer.sv"
+    ],
+    "review_note": "Output READY/VALID interface; this representative handshake is not a simulator trace or measured latency."
   }
 }

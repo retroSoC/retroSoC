@@ -18,7 +18,10 @@ sys.path.insert(0, str(ROOT))
 from publications.tiny_reference import BOOK, MANAGED, collect, read, validate_configuration  # noqa: E402
 from publications.package_reference import directory_hashes, package_records, validate_package_closure  # noqa: E402
 from publications.structure_reference import validate_structure  # noqa: E402
+from publications.tiny_publication_reference import validate_chapter_pages, validate_navigation  # noqa: E402
+from publications.tiny_diagram_reference import coverage as diagram_coverage, validate_rendered  # noqa: E402
 from publications.report_changes import repository_footer_pages  # noqa: E402
+from publications.page_reference import collect_page_roles, read_page_roles, validate_footer_pages, validate_page_roles  # noqa: E402
 from scripts.dependency_lock import load_lock  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
 from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, sha256  # noqa: E402
@@ -81,6 +84,11 @@ def inputs(data: dict) -> dict[str, str]:
                   "publications/waveform_reference.py", "publications/structure_reference.py", "publications/package_reference.py",
                   "publications/report_changes.py", "publications/page_reference.py", "scripts/rtl/generate_memory_map.py",
                   "scripts/rtl/generate_pin_map.py", "scripts/check_clock_reset_domains.py"})
+    paths.update({"publications/tiny_v02_reference.py", "tests/test_publication_tiny_refresh.py"})
+    paths.update({"publications/tiny_diagram_reference.py", "publications/tiny_publication_reference.py",
+                  "publications/circuit_reference.py", "publications/format_reference.py",
+                  "publications/storage_reference.py", "publications/implementation_reference.py",
+                  "tests/test_publication_tiny_alignment.py"})
     return {path: sha256(ROOT / path) for path in sorted(paths)}
 
 
@@ -131,24 +139,38 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     atomic_write(out / "typst.log", result.stdout + result.stderr)
     if result.returncode or "warning:" in result.stderr:
         raise ValueError("Tiny Typst build failed or warned:\n" + result.stderr)
-    query = '(headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,label:repr(h.at("label",default:none)),page:h.location().page())),items:query(metadata).map(it=>it.value))'
+    query = ('(headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,label:repr(h.at("label",default:none)),page:h.location().page())),'
+             'items:query(metadata).map(it=>it.value),regions:query(<table-continuation-region>).map(region=>{'
+             'let pos=region.location().position();(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
+             'width:region.width.length.pt(),height:region.height.length.pt())}))')
     result = subprocess.run([executable, "eval", query, "--in", config["entrypoint"], *options], cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
     if result.returncode or "warning:" in result.stderr:
         raise ValueError("Tiny layout query failed:\n" + result.stderr)
     layout = json.loads(result.stdout)
     validate_structure(read(ROOT / BOOK / "structure-contract.json"), layout["headings"], data["chapter_index"])
+    validate_navigation(read(ROOT / BOOK / "navigation-contract.json"), layout["headings"])
+    validate_chapter_pages(layout["headings"], layout["items"], data["chapter_index"])
+    validate_rendered(data["illustrations"], layout["items"])
     validate_rendered_registers(data, layout["items"])
     write(out / "document-structure.json", layout["headings"])
     write(out / "layout.json", layout["items"])
+    write(out / "layout-regions.json", layout["regions"])
+    write(out / "page-roles.json", collect_page_roles(layout["items"]))
+    write(out / "register-index.json", data["register_index"])
     write(out / "ip-pages.json", [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") in {"ip-start", "ip-end"}])
     write(out / "waveform-audit.json", data["waveform_audit"])
     diagrams = [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") == "tiny-diagram"]
     write(out / "diagram-inventory.json", diagrams)
+    write(out / "diagram-coverage.json", diagram_coverage(data["illustrations"], read(ROOT / BOOK / "navigation-contract.json")))
     manifest = dict(document=config, inputs=hashes, assets=media, pdf_sha256=sha256(pdf),
                     publication_checkout=dict(head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), path=str(ROOT)),
                     typst=lock["publication_tools"]["typst"]["version"], media_revision=lock["sources"]["publication_media"]["revision"],
                     packages={p["identity"]: p["sha256"] for p in package_records(lock)},
                     document_structure_sha256=sha256(out / "document-structure.json"), diagram_inventory_sha256=sha256(out / "diagram-inventory.json"))
+    manifest["page_roles_sha256"] = sha256(out / "page-roles.json")
+    manifest["layout_regions_sha256"] = sha256(out / "layout-regions.json")
+    manifest["records"] = {name: sha256(out / name) for name in
+                           ("data.json", "layout.json", "ip-pages.json", "waveform-audit.json", "register-index.json", "diagram-coverage.json")}
     write(out / "manifest.json", manifest)
     atomic_write(LATEST, str(out) + "\n")
     print(f"Built {pdf}")
@@ -167,16 +189,55 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     reader = PdfReader(pdf)
     if reader.metadata.title != data["document"]["title"] or data["document"]["document_id"] not in reader.metadata.keywords:
         raise ValueError("Tiny PDF identity mismatch")
-    if repository_footer_pages(reader) != list(range(1, len(reader.pages) + 1)):
-        raise ValueError("Tiny repository footer missing")
+    roles = read_page_roles(pdf.parent, manifest, len(reader.pages))
+    closing = validate_page_roles(roles, len(reader.pages))
+    if len(closing) != 1:
+        raise ValueError("Tiny requires its unique final closing page")
+    validate_footer_pages(repository_footer_pages(reader), len(reader.pages), roles)
+    for filename, expected in manifest.get("records", {}).items():
+        if sha256(pdf.parent / filename) != expected:
+            raise ValueError(f"Tiny output record changed: {filename}")
+    for filename, key in [("layout-regions.json", "layout_regions_sha256"),
+                          ("document-structure.json", "document_structure_sha256"),
+                          ("diagram-inventory.json", "diagram_inventory_sha256")]:
+        if sha256(pdf.parent / filename) != manifest[key]:
+            raise ValueError(f"Tiny layout record changed: {filename}")
+    regions = read(pdf.parent / "layout-regions.json")
     layout = read(pdf.parent / "ip-pages.json")
     register_count = validate_rendered_registers(data, read(pdf.parent / "layout.json"))
     starts = [r["id"] for r in layout if r["kind"] == "ip-start"]
     ends = [r["id"] for r in layout if r["kind"] == "ip-end"]
     if starts != ends or starts != [r["id"] for r in data["chapter_index"]]:
         raise ValueError("Tiny IP chapter coverage missing")
+    start_pages = [r["page"] for r in layout if r["kind"] == "ip-start"]
+    if len(set(start_pages)) != len(start_pages):
+        raise ValueError("Tiny IP chapters must start on independent pages")
+    validate_structure(read(ROOT / BOOK / "structure-contract.json"),
+                       read(pdf.parent / "document-structure.json"), data["chapter_index"])
+    validate_navigation(read(ROOT / BOOK / "navigation-contract.json"), read(pdf.parent / "document-structure.json"))
+    validate_chapter_pages(read(pdf.parent / "document-structure.json"), layout, data["chapter_index"])
+    validate_rendered(data["illustrations"], read(pdf.parent / "layout.json"))
+    if read(pdf.parent / "diagram-coverage.json") != diagram_coverage(data["illustrations"], read(ROOT / BOOK / "navigation-contract.json")):
+        raise ValueError("Tiny diagram coverage differs from current reviewed data")
     if not reader.outline:
         raise ValueError("Tiny bookmarks missing")
+    bookmark_pages = []
+    def walk_bookmarks(items):
+        for item in items:
+            if isinstance(item, list):
+                walk_bookmarks(item)
+            else:
+                page = reader.get_destination_page_number(item)
+                if page is not None:
+                    bookmark_pages.append((item.title, page + 1))
+    walk_bookmarks(reader.outline)
+    detail_titles = {"Features and Block Diagram", "Functional Description", "Protocol and Timing",
+                     "Register Summary", "Register Description", "Software"}
+    for identifier in starts:
+        first = next(r["page"] for r in layout if r["kind"] == "ip-start" and r["id"] == identifier)
+        last = next(r["page"] for r in layout if r["kind"] == "ip-end" and r["id"] == identifier)
+        if not detail_titles <= {title for title, page in bookmark_pages if first <= page <= last}:
+            raise ValueError(f"Tiny IP detail bookmarks missing: {identifier}")
     internal = 0
     for page in reader.pages:
         if not (page.extract_text() or "").strip():
@@ -197,13 +258,33 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     with pdfplumber.open(pdf) as rendered:
         for page in rendered.pages:
             for char in page.chars:
-                if char["text"].strip() and char["size"] < 8.45:
+                if not char["text"].strip():
+                    continue
+                continuation = any(r["kind"] == "table-continuation" and r["page"] == page.page_number
+                                   and char["x0"] >= r["x"] - 0.3 and char["x1"] <= r["x"] + r["width"] + 0.3
+                                   and char["top"] >= r["y"] - 0.3 and char["bottom"] <= r["y"] + r["height"] + 0.3
+                                   for r in regions)
+                # A quarter turn makes PDFMiner report the glyph advance as size.
+                matrix = char.get("matrix", ())
+                quarter_turn = (len(matrix) == 6 and abs(matrix[0]) < 1e-8 and abs(matrix[3]) < 1e-8
+                                and abs(matrix[1]) > 1e-8 and abs(matrix[2]) > 1e-8)
+                size = char["width"] if quarter_turn else char["size"]
+                if size < (8.45 if continuation else 8.95):
                     raise ValueError(f"Tiny undersized text on page {page.page_number}: {char['text']}")
+                if char["x0"] < -0.5 or char["x1"] > page.width + 0.5 or char["top"] < -0.5 or char["bottom"] > page.height + 0.5:
+                    raise ValueError(f"Tiny text outside page {page.page_number}")
             footer = page.crop((0, page.height - 45, page.width, page.height)).extract_text() or ""
-            if f"{page.page_number} / {len(rendered.pages)}" not in footer:
+            if page.page_number in closing:
+                if footer.strip():
+                    raise ValueError("Tiny closing page must have no printed footer")
+                if "Disclaimer and Copyright Notice" not in (page.extract_text() or ""):
+                    raise ValueError("Tiny closing notice missing")
+            elif f"{page.page_number} / {len(rendered.pages)}" not in footer:
                 raise ValueError("Tiny printed footer numbering mismatch")
     result = dict(pages=len(reader.pages), internal_links=internal, ip_chapters=len(starts),
-                  pdf_sha256=manifest["pdf_sha256"], fonts_embedded=True, register_definitions=register_count, source_inputs=len(manifest["inputs"]))
+                  pdf_sha256=manifest["pdf_sha256"], fonts_embedded=True, register_definitions=register_count, source_inputs=len(manifest["inputs"]),
+                  navigation_entries=len(read(ROOT / BOOK / "navigation-contract.json")["entries"]),
+                  figures=len(read(pdf.parent / "diagram-inventory.json")), deep_ip_bookmarks=True)
     write(pdf.parent / "check-report.json", result)
     print("Tiny PDF checks passed:", result)
     return result
@@ -230,7 +311,7 @@ def main() -> int:
             if not args.source_only:
                 assets(lock)
                 check_pdf(args.pdf or Path(LATEST.read_text().strip()) / config["filename"], data)
-            print("Tiny source checks passed: configuration, 14 IPs, registers, maps, interrupts, pads and waveforms")
+            print(f"Tiny source checks passed: configuration, {len(data['catalog'])} IPs, registers, maps, interrupts, pads and waveforms")
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"tiny datasheet: {error}\n")
     return 0

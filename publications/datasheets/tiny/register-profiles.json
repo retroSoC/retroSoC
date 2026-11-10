@@ -228,7 +228,11 @@
       "rtl/ip/peripheral/gpio_if.sv",
       "rtl/ip/peripheral/user_gpio_if.sv"
     ],
-    "memory_map": "rtl/tiny/address_map/memory_map.json"
+    "memory_map": "rtl/tiny/address_map/memory_map.json",
+    "binding_sources": [
+      "rtl/ip/peripheral/gpio_pad_caps_pkg.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ]
   },
   "dma": {
     "document": "docs/ip/dma.md",
@@ -240,11 +244,8 @@
       "rtl/ip/peripheral/dma_pkg.sv"
     ],
     "parameters": {
-      "NumChannels": 4,
-      "ChannelIndexWidth": 2,
-      "EnableStreams": 0,
-      "DataWidth": 32,
-      "MaxBurstBeats": 16
+      "NumChannels": 8,
+      "ChannelIndexWidth": 3
     },
     "groups": [
       {
@@ -263,7 +264,7 @@
         "strip": "^APB4_DMA__CH_",
         "base": 256,
         "stride": 128,
-        "count": 4,
+        "count": 8,
         "exclude": [
           "APB4_DMA__CH_BASE",
           "APB4_DMA__CH_STRIDE",
@@ -742,5 +743,592 @@
       "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv"
     ],
     "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "rng": {
+    "document": "rtl/managed/clusterip/rng/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/rng/rtl/rng_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/rng/rtl/rng_reg.sv"
+    ],
+    "parameters": {
+      "PCLK_HZ": 24000000,
+      "RTC_CLOCK_HZ": 24000000,
+      "WDG_CLOCK_HZ": 24000000,
+      "FIFO_DEPTH": 8
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "RNG_.+_OFFSET",
+        "strip": "^RNG_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "RNG_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "RNG_INTR_"
+      ],
+      "INTR_TEST": [
+        "RNG_INTR_"
+      ]
+    },
+    "support": [
+      "rtl/managed/clusterip/rng/rtl/apb4_rng.sv",
+      "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+      "rtl/managed/clusterip/rng/rtl/rng_deterministic_source.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "crc": {
+    "document": "rtl/managed/clusterip/crc/doc/datasheet.md",
+    "defines": [
+      "rtl/managed/clusterip/crc/rtl/crc_define.svh"
+    ],
+    "rtl": [
+      "rtl/managed/clusterip/crc/rtl/crc_reg.sv"
+    ],
+    "parameters": {
+      "PCLK_HZ": 24000000,
+      "RTC_CLOCK_HZ": 24000000,
+      "WDG_CLOCK_HZ": 24000000,
+      "FIFO_DEPTH": 8
+    },
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "CRC_.+_OFFSET",
+        "strip": "^CRC_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "CRC_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "CRC_INTR_"
+      ],
+      "INTR_TEST": [
+        "CRC_INTR_"
+      ]
+    },
+    "support": [
+      "rtl/managed/clusterip/crc/rtl/apb4_crc.sv",
+      "rtl/managed/clusterip/crc/rtl/crc_core.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "ws2812": {
+    "document": "docs/ip/ws2812.md",
+    "defines": [
+      "rtl/ip/serial/ws2812_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/serial/ws2812_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_WS2812_.+",
+        "strip": "^APB4_WS2812_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "WS2812_INTR_"
+      ],
+      "INTR_ENABLE": [
+        "WS2812_INTR_"
+      ],
+      "INTR_STATUS": [
+        "WS2812_INTR_"
+      ],
+      "INTR_TEST": [
+        "WS2812_INTR_"
+      ],
+      "ERROR_STATUS": [
+        "WS2812_ERROR_"
+      ]
+    },
+    "signal_widths": {
+      "s_fifo_level": 5
+    },
+    "support": [
+      "rtl/ip/serial/apb4_ws2812.sv",
+      "rtl/ip/serial/ws2812_core.sv",
+      "rtl/ip/serial/ws2812_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "crypto": {
+    "document": "docs/ip/crypto.md",
+    "defines": [
+      "rtl/ip/security/crypto_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/security/apb4_crypto.sv",
+      "rtl/ip/security/crypto_pkg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_CRYPTO__.+",
+        "strip": "^APB4_CRYPTO__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      },
+      {
+        "id": "aes_key",
+        "title": "AES_KEY words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 320,
+        "stride": 4,
+        "count": 8
+      },
+      {
+        "id": "aes_iv",
+        "title": "AES_IV words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 352,
+        "stride": 4,
+        "count": 4
+      },
+      {
+        "id": "aes_chain",
+        "title": "AES_CHAIN words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 368,
+        "stride": 4,
+        "count": 4
+      },
+      {
+        "id": "sha_digest",
+        "title": "SHA_DIGEST words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 576,
+        "stride": 4,
+        "count": 8
+      },
+      {
+        "id": "rsa_modulus",
+        "title": "RSA_MODULUS words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 1024,
+        "stride": 4,
+        "count": 64
+      },
+      {
+        "id": "rsa_exponent",
+        "title": "RSA_EXPONENT words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 1536,
+        "stride": 4,
+        "count": 64
+      },
+      {
+        "id": "rsa_base",
+        "title": "RSA_BASE words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 2048,
+        "stride": 4,
+        "count": 64
+      },
+      {
+        "id": "rsa_result",
+        "title": "RSA_RESULT words",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 2560,
+        "stride": 4,
+        "count": 64
+      }
+    ],
+    "field_aliases": {
+      "IRQ_STATE": [
+        "APB4_CRYPTO__IRQ_"
+      ],
+      "IRQ_ENABLE": [
+        "APB4_CRYPTO__IRQ_"
+      ],
+      "IRQ_TEST": [
+        "APB4_CRYPTO__IRQ_"
+      ]
+    },
+    "extra": [
+      {
+        "group": "aes_key",
+        "name": "WORD",
+        "offset": 0,
+        "access": "WO (secret storage)",
+        "reset": "0",
+        "description": "AES key words; writes stage key material and reads are rejected with PSLVERR and return no secret material.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "AES key words; writes stage key material and reads are rejected with PSLVERR and return no secret material.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "aes_iv",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RW",
+        "reset": "0",
+        "description": "AES initial vector words.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "AES initial vector words.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "aes_chain",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RO",
+        "reset": "0",
+        "description": "AES chaining-state words, returned in the documented byte order.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "AES chaining-state words, returned in the documented byte order.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "sha_digest",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RO",
+        "reset": "0",
+        "description": "SHA digest words, most significant word first.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "SHA digest words, most significant word first.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "rsa_modulus",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RW",
+        "reset": "0",
+        "description": "RSA modulus, least significant word first.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "RSA modulus, least significant word first.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "rsa_exponent",
+        "name": "WORD",
+        "offset": 0,
+        "access": "WO (secret storage)",
+        "reset": "0",
+        "description": "RSA exponent; least significant word first. Reads are rejected with PSLVERR and return no secret material.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "RSA exponent; least significant word first. Reads are rejected with PSLVERR and return no secret material.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "rsa_base",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RW",
+        "reset": "0",
+        "description": "RSA base operand, least significant word first.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "RSA base operand, least significant word first.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      },
+      {
+        "group": "rsa_result",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RO",
+        "reset": "0",
+        "description": "RSA result, least significant word first; consume only when result-valid is asserted.",
+        "fields": [
+          {
+            "name": "DATA",
+            "lsb": 0,
+            "msb": 31,
+            "description": "RSA result, least significant word first; consume only when result-valid is asserted.",
+            "reset": "Register reset applies",
+            "expression": "reviewed semantic field"
+          }
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/security/crypto_aes_sram_core.sv",
+      "rtl/ip/security/crypto_aes_sram_engine.sv",
+      "rtl/ip/security/crypto_mem_ctrl.sv",
+      "rtl/ip/security/crypto_montgomery_sram.sv",
+      "rtl/ip/security/crypto_rsa_sram_core.sv",
+      "rtl/ip/security/crypto_sha2_sram_engine.sv",
+      "rtl/ip/security/crypto_sram_store.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json",
+    "conditionals": {
+      "HAVE_SRAM_MACRO": true
+    }
+  },
+  "i2s": {
+    "document": "docs/ip/i2s.md",
+    "defines": [
+      "rtl/ip/serial/i2s_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/serial/i2s_reg.sv",
+      "rtl/ip/serial/i2s_pkg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_I2S_.+",
+        "strip": "^APB4_I2S_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "APB4_I2S__INTR_"
+      ],
+      "INTR_ENABLE": [
+        "APB4_I2S__INTR_"
+      ],
+      "INTR_STATUS": [
+        "APB4_I2S__INTR_"
+      ],
+      "INTR_TEST": [
+        "APB4_I2S__INTR_"
+      ],
+      "ERROR_STATUS": [
+        "I2S_ERROR_"
+      ],
+      "CTRL": [
+        "APB4_I2S__CTRL_"
+      ],
+      "COMMAND": [
+        "APB4_I2S__COMMAND_"
+      ],
+      "STATUS": [
+        "APB4_I2S__STATUS_"
+      ],
+      "STREAM_CTRL": [
+        "APB4_I2S__STREAM_"
+      ],
+      "FORMAT": [
+        "APB4_I2S__FORMAT_"
+      ],
+      "CLK_DIV": [
+        "APB4_I2S__CLK_"
+      ],
+      "FIFO_TH": [
+        "APB4_I2S__FIFO_"
+      ]
+    },
+    "support": [
+      "rtl/ip/serial/apb4_i2s.sv",
+      "rtl/ip/serial/i2s_clkgen.sv",
+      "rtl/ip/serial/i2s_core.sv",
+      "rtl/ip/serial/i2s_recv.sv",
+      "rtl/ip/serial/i2s_send.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "sdio": {
+    "document": "docs/ip/sdio.md",
+    "defines": [
+      "rtl/ip/storage/sdio_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/storage/sdio_reg.sv",
+      "rtl/ip/storage/sdio_pkg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_SDIO__.+",
+        "strip": "^APB4_SDIO__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "IRQ_STATE": [
+        "APB4_SDIO__IRQ_"
+      ],
+      "IRQ_ENABLE": [
+        "APB4_SDIO__IRQ_"
+      ],
+      "IRQ_TEST": [
+        "APB4_SDIO__IRQ_"
+      ],
+      "CAPABILITY": [
+        "APB4_SDIO__CAP_"
+      ]
+    },
+    "support": [
+      "rtl/ip/storage/apb4_sdio.sv",
+      "rtl/ip/storage/sdio_clock.sv",
+      "rtl/ip/storage/sdio_command.sv",
+      "rtl/ip/storage/sdio_core.sv",
+      "rtl/ip/storage/sdio_crc16.sv",
+      "rtl/ip/storage/sdio_crc7.sv",
+      "rtl/ip/storage/sdio_data.sv",
+      "rtl/ip/storage/sdio_dma.sv",
+      "rtl/ip/storage/sdio_dma_descriptor.sv",
+      "rtl/ip/storage/sdio_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "dvp": {
+    "document": "docs/ip/dvp.md",
+    "defines": [
+      "rtl/ip/multimedia/dvp_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/multimedia/dvp_reg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "Register bank",
+        "pattern": "APB4_DVP_[^_].+",
+        "strip": "^APB4_DVP_",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "field_aliases": {
+      "INTR_STATE": [
+        "APB4_DVP__INTR_"
+      ],
+      "INTR_ENABLE": [
+        "APB4_DVP__INTR_"
+      ],
+      "INTR_STATUS": [
+        "APB4_DVP__INTR_"
+      ],
+      "INTR_TEST": [
+        "DVP_INTR_"
+      ],
+      "ERROR_STATUS": [
+        "APB4_DVP__ERROR_"
+      ]
+    },
+    "support": [
+      "rtl/ip/multimedia/axi4s_dvp.sv",
+      "rtl/ip/multimedia/dvp_core.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
+  },
+  "spi": {
+    "document": "docs/ip/spi.md",
+    "defines": [
+      "rtl/ip/serial/spi_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/serial/spi_reg.sv",
+      "rtl/ip/serial/spi_pkg.sv"
+    ],
+    "parameters": {},
+    "memory_map": "rtl/tiny/address_map/memory_map.json",
+    "groups": [
+      {
+        "id": "main",
+        "title": "SPI0 session and transport registers",
+        "pattern": "APB4_SPI__.+",
+        "strip": "^APB4_SPI__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      }
+    ],
+    "support": [
+      "rtl/ip/serial/apb4_spi.sv",
+      "rtl/ip/serial/spi_master_core.sv",
+      "rtl/ip/serial/spi_ctrl_if.sv",
+      "rtl/ip/serial/spi_phase_ctrl.sv",
+      "rtl/ip/serial/spi_dma_pacing.sv",
+      "rtl/ip/serial/spi_gpio_guard.sv"
+    ]
   }
 }
