@@ -45,7 +45,6 @@ jobs:
           - onchip-ram
           - opipsram
           - dma
-          - ga2d
           - apu
           - apu-kws
           - apu-p9

@@ -120,6 +120,24 @@ def test_cleanup_removes_clean_linked_worktree(tmp_path: Path) -> None:
     assert deleted == [("retroSoC/retroSoC", "feat/example")]
 
 
+def test_cleanup_removes_linked_worktree_with_unrelated_main_branch(tmp_path: Path) -> None:
+    pull = make_repo(tmp_path)
+    git(tmp_path, "checkout", "-qb", "fix/unrelated", "HEAD~1")
+    linked = tmp_path.parent / "linked"
+    git(tmp_path, "worktree", "add", str(linked), "feat/example")
+    deleted = []
+    warnings = cleanup_merged_branch(
+        linked,
+        pull,
+        remote_delete=lambda repository, branch, root: deleted.append((repository, branch)),
+    )
+    assert warnings == []
+    assert not linked.exists()
+    assert current_branch(tmp_path) == "fix/unrelated"
+    assert not local_branch_exists(tmp_path, "feat/example")
+    assert deleted == [("retroSoC/retroSoC", "feat/example")]
+
+
 def test_cleanup_preserves_dirty_worktree_and_remote_branch(tmp_path: Path) -> None:
     pull = make_repo(tmp_path)
     (tmp_path / "untracked.txt").write_text("preserve me\n", encoding="utf-8")
@@ -151,6 +169,28 @@ def test_cleanup_rejects_unmerged_pr(tmp_path: Path) -> None:
     pull["state"] = "OPEN"
     with pytest.raises(RuntimeError, match="before the PR is merged"):
         cleanup_merged_branch(tmp_path, pull)
+
+
+@pytest.mark.parametrize("message", ["gh: Not Found (HTTP 404)\n", "gh: Reference does not exist (HTTP 422)\n"])
+def test_remote_delete_ignores_missing_reference(monkeypatch: pytest.MonkeyPatch, message: str) -> None:
+    from scripts.pr_workflow import remote_branch_delete
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.run",
+        lambda command, cwd: subprocess.CompletedProcess(command, 1, stdout="", stderr=message),
+    )
+    remote_branch_delete("retroSoC/retroSoC", "feat/example", Path.cwd())
+
+
+def test_remote_delete_rejects_other_failures(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import remote_branch_delete
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.run",
+        lambda command, cwd: subprocess.CompletedProcess(command, 1, stdout="", stderr="gh: Forbidden (HTTP 403)\n"),
+    )
+    with pytest.raises(RuntimeError, match="Forbidden"):
+        remote_branch_delete("retroSoC/retroSoC", "feat/example", Path.cwd())
 
 
 def test_merge_marks_draft_pr_ready_before_merging(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -60,7 +60,9 @@ def worktree_main_root(root: Path) -> Path:
 
 def remote_branch_delete(repository: str, branch: str, root: Path) -> None:
     result = run(["gh", "api", "-X", "DELETE", f"repos/{repository}/git/refs/heads/{branch}"], root)
-    if result.returncode and "404" not in result.stderr and "Not Found" not in result.stderr:
+    error = (result.stderr or "").lower()
+    missing = "404" in error or "not found" in error or ("422" in error and "reference does not exist" in error)
+    if result.returncode and not missing:
         raise RuntimeError(result.stderr)
 
 
@@ -103,7 +105,16 @@ def cleanup_merged_branch(
     elif current == branch:
         run_ok(["git", "-C", str(main_root), "worktree", "remove", str(root.resolve())], main_root)
     if local_branch_exists(main_root, branch):
-        result = git(main_root, "branch", "-d", branch)
+        result = git(
+            main_root,
+            "-c",
+            f"branch.{branch}.remote=origin",
+            "-c",
+            f"branch.{branch}.merge=refs/heads/dev",
+            "branch",
+            "-d",
+            branch,
+        )
         if result.returncode:
             warnings.append(f"local branch could not be deleted safely: {branch}: {result.stderr.strip()}")
     if warnings:
