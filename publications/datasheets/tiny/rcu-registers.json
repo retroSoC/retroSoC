@@ -1,0 +1,506 @@
+[
+  {
+    "name": "ID",
+    "offset": 256,
+    "access": "RO",
+    "reset": "0x54524355",
+    "description": "Tiny RCU identity, ASCII TRCU.",
+    "fields": [
+      [
+        "ID",
+        0,
+        31,
+        "Tiny RCU identifier."
+      ]
+    ]
+  },
+  {
+    "name": "VERSION",
+    "offset": 260,
+    "access": "RO",
+    "reset": "0x00010000",
+    "description": "RCU register ABI version 1.0.",
+    "fields": [
+      [
+        "MINOR",
+        0,
+        15,
+        "Minor ABI revision."
+      ],
+      [
+        "MAJOR",
+        16,
+        31,
+        "Major ABI revision."
+      ]
+    ]
+  },
+  {
+    "name": "CAPABILITY",
+    "offset": 264,
+    "access": "RO",
+    "reset": "0x1B0D",
+    "description": "Selected clock backend and lifecycle capabilities; IHP130 compatibility reads 0x00001A03.",
+    "fields": [
+      [
+        "SAFE24",
+        0,
+        0,
+        "Safe24."
+      ],
+      [
+        "XIN_PROFILE",
+        1,
+        1,
+        "Xin profile."
+      ],
+      [
+        "PLL192",
+        2,
+        2,
+        "Pll192."
+      ],
+      [
+        "PLL240",
+        3,
+        3,
+        "Pll240."
+      ],
+      [
+        "PLL_PRESENT",
+        8,
+        8,
+        "Physical PLL macro selected; this is not a lock or timing qualification flag."
+      ],
+      [
+        "CLKOUT",
+        9,
+        9,
+        "Clock output control exists."
+      ],
+      [
+        "GATING",
+        11,
+        11,
+        "Target gating is implemented."
+      ],
+      [
+        "LOCAL_RESET",
+        12,
+        12,
+        "Target local-reset sequencing is implemented."
+      ]
+    ]
+  },
+  {
+    "name": "CLOCK_REQUEST",
+    "offset": 268,
+    "access": "RW",
+    "reset": "0",
+    "description": "Requested profile; CLOCK_APPLY performs the bounded drain/switch sequence.",
+    "fields": [
+      [
+        "PROFILE",
+        0,
+        1,
+        "0 SAFE24; 1 direct XIN on no-PLL compatibility; 2 PLL192; 3 PLL240 on ICS55."
+      ]
+    ]
+  },
+  {
+    "name": "CLOCK_CURRENT",
+    "offset": 272,
+    "access": "RO",
+    "reset": "0",
+    "description": "Committed profile. Read rate snapshots after completion, including fallback.",
+    "fields": [
+      [
+        "PROFILE",
+        0,
+        1,
+        "0 SAFE24; 1 direct XIN on no-PLL compatibility; 2 PLL192; 3 PLL240 on ICS55."
+      ]
+    ]
+  },
+  {
+    "name": "COMMAND",
+    "offset": 276,
+    "access": "WO",
+    "reset": "Not retained",
+    "description": "Write exactly one operation bit: 1 clock, 2 gate, 4 local reset, or 8 system reset. Reads zero.",
+    "fields": [
+      [
+        "CLOCK_APPLY",
+        0,
+        0,
+        "Clock apply."
+      ],
+      [
+        "GATE_APPLY",
+        1,
+        1,
+        "Gate apply."
+      ],
+      [
+        "RESET_APPLY",
+        2,
+        2,
+        "Reset apply."
+      ],
+      [
+        "SYSTEM_RESET",
+        3,
+        3,
+        "System reset."
+      ]
+    ]
+  },
+  {
+    "name": "STATUS",
+    "offset": 280,
+    "access": "RO",
+    "reset": "Dynamic",
+    "description": "Live operation, source and fault observations; after cold reset SAFE_SOURCE is set. PLL status is external.",
+    "fields": [
+      [
+        "BUSY",
+        0,
+        0,
+        "Busy."
+      ],
+      [
+        "SAFE_SOURCE",
+        1,
+        1,
+        "Safe source."
+      ],
+      [
+        "PLL_LOCKED",
+        2,
+        2,
+        "Pll locked."
+      ],
+      [
+        "PLL_SELECTED",
+        3,
+        3,
+        "Pll selected."
+      ],
+      [
+        "FAULT",
+        4,
+        4,
+        "Fault."
+      ],
+      [
+        "ACTIVE_COMMAND",
+        8,
+        11,
+        "Accepted command bitmask, zero after completion."
+      ]
+    ]
+  },
+  {
+    "name": "TIMEOUT",
+    "offset": 284,
+    "access": "RW",
+    "reset": "240000",
+    "description": "Transition budget in REF24 cycles; zero is rejected.",
+    "fields": [
+      [
+        "REF_CYCLES",
+        0,
+        31,
+        "Hardware transition/drain budget, not a software polling-iteration count."
+      ]
+    ]
+  },
+  {
+    "name": "GATE_REQUEST",
+    "offset": 288,
+    "access": "RW",
+    "reset": "0",
+    "description": "Desired stopped-target mask; apply with GATE_APPLY after clients release ownership.",
+    "fields": [
+      [
+        "TARGETS",
+        0,
+        17,
+        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+      ]
+    ]
+  },
+  {
+    "name": "GATE_STATUS",
+    "offset": 292,
+    "access": "RO",
+    "reset": "Dynamic",
+    "description": "Actual target gates observed by the backend; read after command completion.",
+    "fields": [
+      [
+        "TARGETS",
+        0,
+        17,
+        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+      ]
+    ]
+  },
+  {
+    "name": "RESET_REQUEST",
+    "offset": 296,
+    "access": "RW",
+    "reset": "0",
+    "description": "Selected local-reset targets. CPU bit 0 and unsupported target bits are rejected.",
+    "fields": [
+      [
+        "TARGETS",
+        0,
+        17,
+        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+      ]
+    ]
+  },
+  {
+    "name": "RESET_DONE",
+    "offset": 300,
+    "access": "RO",
+    "reset": "0",
+    "description": "Completed local resets for the last accepted operation; not inferred from a write to COMMAND.",
+    "fields": [
+      [
+        "TARGETS",
+        0,
+        17,
+        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+      ]
+    ]
+  },
+  {
+    "name": "RESET_CAUSE",
+    "offset": 304,
+    "access": "RW1C",
+    "reset": "1",
+    "description": "Sticky reset causes; hardware set wins over clear. Warm system reset retains this record.",
+    "fields": [
+      [
+        "EXTERNAL",
+        0,
+        0,
+        "External."
+      ],
+      [
+        "SOFTWARE_SYSTEM",
+        1,
+        1,
+        "Software system."
+      ],
+      [
+        "WATCHDOG",
+        2,
+        2,
+        "Watchdog."
+      ],
+      [
+        "CLOCK_FAILURE",
+        3,
+        3,
+        "Clock failure."
+      ],
+      [
+        "DEBUG_HART",
+        4,
+        4,
+        "Debug hart."
+      ],
+      [
+        "LOCAL_RESET",
+        5,
+        5,
+        "Local reset."
+      ]
+    ]
+  },
+  {
+    "name": "FAULT",
+    "offset": 308,
+    "access": "RW1C",
+    "reset": "0",
+    "description": "Sticky lifecycle faults; clearing does not repair a clock, drain traffic or release resource ownership.",
+    "fields": [
+      [
+        "FAULTS",
+        0,
+        4,
+        "Bit 0 invalid/busy configuration; remaining bits report backend drain/source/lifecycle failure. Preserve the full mask during recovery."
+      ]
+    ]
+  },
+  {
+    "name": "IRQ_STATE",
+    "offset": 312,
+    "access": "RW1C",
+    "reset": "0",
+    "description": "Sticky completion and fault causes. A new hardware event wins over acknowledgement.",
+    "fields": [
+      [
+        "DONE",
+        0,
+        0,
+        "Done."
+      ],
+      [
+        "FAULT",
+        1,
+        1,
+        "Fault."
+      ]
+    ]
+  },
+  {
+    "name": "IRQ_ENABLE",
+    "offset": 316,
+    "access": "RW",
+    "reset": "0",
+    "description": "Enable completion/fault delivery on core input bit 31.",
+    "fields": [
+      [
+        "DONE",
+        0,
+        0,
+        "Done."
+      ],
+      [
+        "FAULT",
+        1,
+        1,
+        "Fault."
+      ]
+    ]
+  },
+  {
+    "name": "XIN_HZ",
+    "offset": 320,
+    "access": "RO",
+    "reset": "24000000",
+    "description": "Configured external reference input rate. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "Configured external reference input rate."
+      ]
+    ]
+  },
+  {
+    "name": "REF_HZ",
+    "offset": 324,
+    "access": "RO",
+    "reset": "24000000",
+    "description": "Normalized always-on reference rate. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "Normalized always-on reference rate."
+      ]
+    ]
+  },
+  {
+    "name": "SYS_HZ",
+    "offset": 328,
+    "access": "RO",
+    "reset": "24000000",
+    "description": "Committed CPU, SRAM and fabric clock rate. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "Committed CPU, SRAM and fabric clock rate."
+      ]
+    ]
+  },
+  {
+    "name": "MEM_HZ",
+    "offset": 332,
+    "access": "RO",
+    "reset": "24000000",
+    "description": "Committed XPI clock rate. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "Committed XPI clock rate."
+      ]
+    ]
+  },
+  {
+    "name": "PCLK_HZ",
+    "offset": 336,
+    "access": "RO",
+    "reset": "24000000",
+    "description": "Committed peripheral clock rate. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "Committed peripheral clock rate."
+      ]
+    ]
+  },
+  {
+    "name": "CLINT_HZ",
+    "offset": 340,
+    "access": "RO",
+    "reset": "1000000",
+    "description": "CLINT timebase rate; independent of the selected SYS profile. Units are Hz; SYS/MEM/PCLK change after a completed RCU transition.",
+    "fields": [
+      [
+        "HZ",
+        0,
+        31,
+        "CLINT timebase rate; independent of the selected SYS profile."
+      ]
+    ]
+  },
+  {
+    "name": "TARGET_CAP",
+    "offset": 344,
+    "access": "RO",
+    "reset": "0x37FFF",
+    "description": "Implemented target bitmap: bits 0..14, SPI0 bit 16 and PPALite bit 17. PIO-lite bit 15 is absent.",
+    "fields": [
+      [
+        "TARGETS",
+        0,
+        17,
+        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+      ]
+    ]
+  },
+  {
+    "name": "CLKOUT",
+    "offset": 348,
+    "access": "RW",
+    "reset": "0",
+    "description": "Disable and wait for idle before changing source/divider. Output frequency is source/(2*half_period), at most the implemented 24 MHz digital ceiling.",
+    "fields": [
+      [
+        "SOURCE",
+        0,
+        2,
+        "0 off, 1 REF24, 2 SYS, 3 MEM, 4 PCLK."
+      ],
+      [
+        "HALF_PERIOD",
+        8,
+        23,
+        "Nonzero integer half period when enabled; reset leaves CLKOUT off."
+      ]
+    ]
+  }
+]

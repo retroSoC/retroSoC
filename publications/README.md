@@ -21,7 +21,9 @@ configuration and report scope.
 
 The independent [Tiny Gen1 publication](datasheets/tiny/README.md) uses the same
 visual language with Tiny-only configuration, register/IRQ/pad extraction,
-fourteen IP chapters and its own source/structure/evidence checks. Run
+twenty-three current IP chapters and its own source/structure/evidence checks. The
+v0.2 DRAFT uses ICS55 as its main reference, with explicit IHP130 compatibility;
+retired UART1/I2C1 interfaces remain in a migration appendix. Run
 `python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.
 Its output and `latest-tiny` record are separate; the existing Mini entrypoint,
 templates, configuration, review and delivered PDF are unchanged.

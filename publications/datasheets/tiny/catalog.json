@@ -3,7 +3,7 @@
     "id": "xpi",
     "family": "xpi",
     "title": "XPI Universal Controller",
-    "depth": 3,
+    "depth": 5,
     "regions": [
       "FLASH",
       "APB4_XPI",
@@ -12,43 +12,88 @@
     "irqs": [
       "xpi"
     ],
-    "summary": "Four-chip-select SDR serial-memory controller; pin-level boot uses NOR on NSS0.",
+    "summary": "Shared XPI V2 transport for NSS0 NOR and explicitly initialized NSS1 PSRAM.",
     "features": [
-      "Four chip selects; 16 programmable LUT sequences.",
-      "Single, dual and quad SDR phases; mapped reads plus indirect PIO/DMA and status polling.",
-      "64-word TX and RX staging FIFOs; device-specific commands and timing remain software responsibilities."
+      "Four chip-select slots and **16 programmable LUT sequences**; single/dual/quad SDR phases.",
+      "NSS0 NOR boot; optional **8 MiB reference PSRAM** on NSS1/GPIO29 ALT0.",
+      "Mapped reads and slot-qualified writes, indirect PIO/DMA and status polling; one shared serial engine."
     ],
     "paragraphs": [
-      "The Flash alias at address zero and XPI aperture route to the same command engine. They are address windows, not two independent memories. The boot setup is the implemented NOR profile on NSS0; other chip selects are not qualified board configurations.",
-      "Memory reads and indirect operations share the controlled transaction engine. A write to a mapped Flash address is not a Flash program command. Execute erase/program service from SRAM with all users of the affected memory quiesced.",
-      "LUT phase widths, dummy cycles, clock divider and device/page bounds must match the selected NOR. Unsupported modes, FIFO starvation and device timeout require status inspection and bounded recovery. The generic controller does not imply DDR, HyperBus or arbitrary-device compatibility."
+      "Flash alias and XPI apertures route to one engine. NSS0 retains the boot NOR profile; memory-mapped writes are not a NOR program command. Execute erase/program and PSRAM reconfiguration **from SRAM** with interrupts and other XPI users coordinated.",
+      "The selected ESP-PSRAM64H helper reserves slot 1 and LUT sequences 8..11, checks identity and enters QPI before enabling mapped access. Its real 8 MiB range is 0x54000000..0x547FFFFF, inside a 64 MiB slot aperture. The aperture size is not installed capacity. Boot does not depend on this optional RAM.",
+      "Software owns the XPI session and provides inactive-high NSS1 bias. A clock change or reset invalidates that session; stop all users and **reinitialize before publishing buffers**. Missing or unrecognized devices leave the mapped slot disabled; cleanup timeout requires coordinated recovery.",
+      "The reviewed reference profile uses SCK=MEM/2, six read dummy clocks and bounded CS timing. Direct PSRAM DMA uses aligned 32-bit words, **at most four-beat bursts** and the configured 1 KiB serial boundary; align four-beat jobs to 16 bytes. These are validated digital/model settings, not a physical part speed grade.",
+      "Do not conflate serial-command completion, accepted AXI writes and released software ownership. Drain final bus responses and verify data/guards before reusing a captured or displayed frame."
     ],
     "steps": [
-      "Identify the actual NOR and configure the supported slot, timing and LUT while idle.",
+      "Identify the actual NOR and configure the supported slot, timing and LUT **while idle**.",
       "Keep the executing service and its working state in SRAM before erase/program.",
       "Configure source/destination ranges and the supported DMA request, then start and use a bounded wait.",
       "Inspect engine/FIFO/device status, verify completion and contents as required before making an updated image executable."
     ],
     "nodes": [
       "APB registers / LUT",
-      "Mapped read frontend",
-      "Transaction / SDR PHY",
-      "TX / RX FIFOs",
-      "NSS[3:0] / SCK / DQ[3:0]"
+      "NOR boot / mapped frontend",
+      "SDR serial engine / MEM",
+      "TX / RX staging FIFOs",
+      "NSS0 NOR / NSS1 PSRAM"
     ],
     "sources": [
       "rtl/tiny/top/retrosoc_tiny.sv",
       "docs/ip/xpi.md",
+      "docs/ip/tiny-soc-r2-psram.md",
       "rtl/ip/storage/xpi_reg.sv",
-      "rtl/ip/storage/xpi_pkg.sv"
+      "crt/src/hal/xpi_psram.c"
     ],
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
+    "id": "sdio",
+    "family": "sdio",
+    "title": "Native SD/SDIO Host (SDIO0)",
+    "depth": 5,
+    "regions": [
+      "APB4_SDIO0"
+    ],
+    "irqs": [
+      "sdio"
+    ],
+    "summary": "Native SD/SDIO host with private AXI32 DMA, fabric owner 2.",
+    "features": [
+      "Native 1-bit/4-bit SDR command/data path on GPIO0-5 ALT0.",
+      "Private **descriptor-based AXI32 DMA**, external fabric owner 2.",
+      "Independent progress and contention with CPU and central DMA."
+    ],
+    "paragraphs": [
+      "SDIO0 is a SYS-domain native SD/SDIO host at 0x1000F000. Its private DMA is fabric owner 2; it does not consume a central-DMA request or one of its eight channels.",
+      "Follow card identification/enumeration, response and block-transfer rules. The software protocol request is capped at half the actual controller input clock; external-card timing and protocol compliance still require independent qualification.",
+      "Descriptor, data and status writeback traffic share the private master. Preserve descriptor and buffer lifetime through **final status/response**, not merely command completion. The accepted P10/SPI-P4 snapshot path uses bounded SRAM bounce buffers to save and read back PSRAM frames; it is not direct PSRAM-to-SDIO DMA or a filesystem.",
+      "Card removal, CRC/response errors and timeout require explicit status capture, abort/recovery and ownership cleanup. Do not silently substitute an SPI-mode SD path or advertise a second host."
+    ],
+    "steps": [
+      "Select GPIO0-5 and initialize the actual card at a safe protocol rate.",
+      "Prepare aligned bounded descriptors/buffers and publish them before start.",
+      "Check command, data, DMA and **status writeback completion**; compare readback where required.",
+      "On failure drain/recover before descriptors or buffers are reused."
+    ],
+    "nodes": [
+      "APB / SYS control",
+      "Command + 1/4-bit data",
+      "Private descriptor DMA",
+      "AXI32 owner 2 / GPIO0-5"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/sdio.md",
+      "rtl/ip/storage/sdio_dma.sv"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
   },
   {
     "id": "sram",
     "family": "sram",
     "title": "On-Chip SRAM",
-    "depth": 3,
+    "depth": 5,
     "regions": [
       "SRAM",
       "APB4_SRAM"
@@ -56,25 +101,25 @@
     "irqs": [],
     "summary": "128 KiB on-chip SRAM; AXI32 data and one APB discovery/counter window.",
     "features": [
-      "32 banks of 4 KiB in the selected profile.",
+      "**32 banks of 4 KiB** in the selected profile.",
       "32-bit AXI data, one-bit ID; byte writes and supported memory bursts.",
       "SRAM code, data, BSS and stack; reset does not erase memory."
     ],
     "paragraphs": [
       "The Tiny top overrides the reusable SRAM to 128 KiB and 32-bit data. The native memory aperture is 0x30000000 through 0x3001FFFF. APB registers describe the integrated configuration and observations; they are not another storage aperture.",
-      "Technology macros are selected by the IHP130 profile. Logical bank capacity is not a claim of timing closure, yield or physical area. Preserve byte-lane and natural alignment rules, and keep transfers within the decoded aperture.",
-      "Reset clears control state, not SRAM contents. Startup copies initialized sections from Flash and clears BSS explicitly. Stack placement at the SRAM end does not establish a measured maximum stack demand."
+      "Both reviewed profiles select 32 technology macros of 4 KiB, organized as **four independently serviced 32 KiB groups**. CPU local I/D and external AXI attachments arbitrate at the groups; this is not a single global CPU/DMA lock. Physical area, timing and bank concurrency require their own evidence.",
+      "Reset clears control state, **not SRAM contents**. Startup copies initialized sections from Flash and clears BSS explicitly. Stack placement at the SRAM end does not establish a measured maximum stack demand."
     ],
     "steps": [
       "Probe memory size, bank count and data width before using a linked image.",
-      "Compare ELF/MAP section sizes, buffers and stack margin against the actual 128 KiB region.",
+      "Compare ELF/MAP section sizes, buffers and stack margin against the **actual 128 KiB region**.",
       "Use naturally aligned memory transfers and preserve ownership while DMA is active.",
       "Read/reset counters according to their register semantics; reset is not data sanitization."
     ],
     "nodes": [
-      "AXI32 adapter",
-      "Bank / byte selection",
-      "32 x 4 KiB SRAM",
+      "CPU local I/D + AXI32",
+      "Four bank-group arbiters",
+      "32 x 4 KiB SRAM / SYS",
       "APB discovery / counters"
     ],
     "sources": [
@@ -98,20 +143,20 @@
     ],
     "summary": "32 physical GPIOs with management and restricted-user register windows.",
     "features": [
-      "Atomic set, clear and toggle outputs; mode, output-enable and open-drain control.",
+      "**Atomic set, clear and toggle** outputs; mode, output-enable and open-drain control.",
       "Per-pin interrupts and filtering; alternate functions from the Tiny pin map.",
       "Both windows address the same pads, not two GPIO banks."
     ],
     "paragraphs": [
-      "GPIO administration controls pad mode, filtering, masks and locks. The restricted window exposes only permitted data/event operations. The user-access mask starts clear; grant only the pins required by the application.",
-      "Tiny retains only its implemented alternate functions. Unavailable alternatives drive neither peripheral requests nor pads. UART TX/RX and XPI use dedicated pads and are not inferred from a Mini pin assignment.",
-      "Before changing a driven alternate function, disable its producer, release output enable and use the controller guard/ownership sequence. Electrical drive settings require a reviewed pad/board specification; a register field is not a voltage rating."
+      "GPIO administration controls pad mode, filtering, masks and locks. The restricted window exposes only permitted data/event operations. The **user-access mask starts clear**; grant only the pins required by the application.",
+      "Current peripheral routes come from the Tiny topology. UART0 uses GPIO8/9 and I2C0 uses GPIO10/11; retired dedicated UART outputs in the compatibility wrapper are not additional active UARTs. Input CMOS and pull capability are selected by the technology: ICS55 exposes all three capability bits; IHP130 exposes zero.",
+      "Before changing a driven alternate function, **disable its producer**, release output enable and use the controller guard/ownership sequence. Electrical drive settings require a reviewed pad/board specification; a register field is not a voltage rating."
     ],
     "steps": [
       "Confirm the Tiny alternate-function map and external circuit.",
       "Prepare output data before enabling the driver; set open-drain/pull behavior only as supported by the pad.",
       "Clear observed event causes before enabling the intended interrupt mask.",
-      "Use atomic aliases for concurrent updates and apply irreversible locks only after validation."
+      "Use atomic aliases for concurrent updates and apply irreversible locks **only after validation**."
     ],
     "nodes": [
       "APB user / admin",
@@ -138,31 +183,33 @@
     "irqs": [
       "dma"
     ],
-    "summary": "Four channel contexts share one AXI32 master; memory-mapped endpoints only.",
+    "summary": "Eight contexts share one AXI32 central-DMA master with memory and stream endpoints.",
     "features": [
-      "Four channels; direct transfers and 64-byte linked TCDs.",
-      "32-bit transfers, up to 16 beats, 32-word FIFO per channel.",
-      "Request mask 0x07F9; stream modes are disabled in Tiny."
+      "**Eight channels**; direct transfers and **64-byte aligned TCDs**.",
+      "32-bit memory transfers, up to 16 beats and 32-word per-channel FIFOs; narrower endpoint limits still apply.",
+      "DMA V2.2, request mask 0x000339FF, stream kinds and SPI origin/admission qualification."
     ],
     "paragraphs": [
-      "Channel conventions are 0 UART0, 1 I2C0, 2 I2C1 and 3 bulk/XPI. They are software allocation conventions for one shared engine. Reserve a channel and all buffers through completion or confirmed abort.",
-      "Only request 0 and requests 3 through 10 are enabled. UART1 has no DMA request binding. Request enum names for omitted peripherals in the shared SDK do not establish Tiny hardware support; invalid kinds/requests must be rejected.",
-      "The fabric admits only one read or write transaction globally. CPU and DMA contend for that admission; burst length times bus width is not sustained throughput. A software wait timeout does not prove the engine is idle.",
-      "TCDs remain 64 bytes and require 64-byte alignment. Stride fields and y_count do not advertise 2D transfers: current validation requires zero strides and at most one row. Do not modify a descriptor or data buffer while hardware may still consume it.",
-      "The CAPABILITY maximum-burst field currently casts the configured 16 beats to four bits and therefore reads zero. The implemented parameter and SDK limit remain 16. Treat this as a discovery-encoding limitation; do not infer a zero-length engine or a qualified performance result from that field."
+      "Default software leases are UART0=0, I2C0=1, camera=2, serialized bulk=3, Crypto=4/5 and I2S=6/7. Borrow camera DMA2 for memory work only when its owner is inactive.",
+      "Enabled requests are software 0, I2S 1/2, XPI 3/4, UART0 5/6, I2C0 7/8, DVP 11, Crypto 12/13 and SPI 16/17. I2C1 9/10 and PIO-lite 14/15 remain absent. SDIO has a separate AXI master rather than a central-DMA request.",
+      "**One read and one write** may be outstanding for DMA across independently serviced targets. CPU local SRAM and SDIO can progress at other targets; same-target traffic contends. Burst and wire rates are not sustained application throughput.",
+      "TCDs retain the 64-byte layout. Request bits 3:0 use control[15:12]; request bit 4 uses control[25] (RS_DMA_TCD_REQUEST_HIGH). Retain the high bit for SPI16/17 and validate DMA identity, request, kind and endpoint before submission.",
+      "SPI pacing admits only the bound channel, matching source/destination port, direction, request and reserved transport credit. Pending descriptor fetch, admission and final response all contribute to ownership. Abort or software timeout does not release channel, descriptor or payload storage until **terminal drain is confirmed**.",
+      "PPALite PROCESS uses exact armed direct request 11/DMA2 transfers; processed TCDs are rejected. RAW and the request/channel counts remain unchanged.",
+      "The four-bit maximum-burst discovery field **reads zero** when configured 16 is truncated. Actual reusable transport permits 16 beats; PSRAM and SPI impose their own smaller bounds. Preserve this encoding discrepancy separately from the implemented limit."
     ],
     "steps": [
-      "Check channel < 4, MM-to-MM kind, 32-bit width, nonzero bounded length and an enabled request.",
-      "Prepare aligned descriptors/buffers and publish them with the required memory ordering.",
-      "Configure, start, then wait with a bounded software budget; distinguish submission from completion.",
-      "On failure capture error address/response and progress, request abort, and confirm terminal/drained state before reuse."
+      "Reserve channel, endpoints, aligned TCDs and buffers; reject unsupported request/kind/size combinations.",
+      "Publish descriptors with memory ordering; configure request and bounded transfer geometry.",
+      "Start and wait for the required controller, DMA and bus terminal conditions; inspect byte counts and errors.",
+      "On timeout, **keep ownership, abort/drain** according to the endpoint contract, then recover and release explicitly."
     ],
     "nodes": [
-      "APB / 4 channel state",
-      "TCD fetch / validation",
-      "4 x 32-word FIFOs",
-      "Shared AXI32 master",
-      "Memory / paced I/O windows"
+      "APB / 8 channel state",
+      "TCD / V2.2 selectors",
+      "8 x 32-word FIFOs",
+      "AXI32 master / PCLK to SYS",
+      "Streams / SPI credit admission"
     ],
     "sources": [
       "rtl/tiny/top/retrosoc_tiny.sv",
@@ -176,7 +223,7 @@
     "id": "timer",
     "family": "timer",
     "title": "General-Purpose Timers (TIM0, TIM1)",
-    "depth": 3,
+    "depth": 4,
     "regions": [
       "APB4_TIM0",
       "APB4_TIM1"
@@ -188,16 +235,16 @@
     "summary": "Two 32-bit timer instances with prescalers and interrupt support.",
     "features": [
       "Free-running, periodic and one-shot modes.",
-      "16-bit prescalers and two compare channels per instance.",
+      "**16-bit prescalers** and two compare channels per instance.",
       "Debug-freeze integration; no additional advanced timer."
     ],
     "paragraphs": [
-      "TIM0 and TIM1 share one register definition but have separate base addresses and IRQ bits. Program the selected timer against the actual 24 MHz system clock, not the CLINT microsecond timebase.",
-      "A delay API has both a requested time interval and a separate software polling budget. A zero polling budget or timeout is not proof that a previously running timer stopped.",
+      "TIM0 and TIM1 share one register definition but have separate base addresses and IRQ bits. Program the selected timer against the **actual committed PCLK** (24 MHz in SAFE24), not the CLINT microsecond timebase.",
+      "A delay API has both a requested time interval and a **separate software polling budget**. A zero polling budget or timeout is not proof that a previously running timer stopped.",
       "Use documented status/W1C handling and capture event causes before rearming. Debug halt may stop counting when configured; it does not prevent all register access or provide a system-wide freeze."
     ],
     "steps": [
-      "Stop the selected timer before changing prescale/reload/compare values.",
+      "**Stop the selected timer** before changing prescale/reload/compare values.",
       "Compute timing from its functional clock and check representable range.",
       "Clear stale events, configure interrupt selection and start.",
       "Acknowledge observed events, recheck pending state and verify stop on recovery."
@@ -216,52 +263,10 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
-    "id": "pwm",
-    "family": "pwm",
-    "title": "Pulse Width Modulation (PWM)",
-    "depth": 3,
-    "regions": [
-      "APB4_PWM"
-    ],
-    "irqs": [
-      "pwm"
-    ],
-    "summary": "Two internal timers and four waveform output channels with capture/fault control.",
-    "features": [
-      "Four PWM outputs, two capture inputs and fault/synchronization routes.",
-      "Shadow configuration and documented update boundaries.",
-      "Functional clock parameter is 24 MHz in Tiny."
-    ],
-    "paragraphs": [
-      "PWM outputs and capture/fault inputs are selected through Tiny GPIO alternate functions. The reusable block has timer/operator state, not an unrestricted programmable I/O processor.",
-      "Shadow values become active at the configured update event. Writing a duty field alone does not guarantee an immediate glitch-free transition. Establish safe output levels before enabling external power circuitry.",
-      "Capture entries and overflow status require coherent reads and explicit acknowledgement. Fault handling and debug-halt behavior must be checked with the actual pin route; no electrical frequency limit is qualified here."
-    ],
-    "steps": [
-      "Probe ABI and use the actual system clock in timing calculations.",
-      "Keep outputs inactive while programming timer/operator/channel state.",
-      "Latch shadow values at the selected boundary, then enable output routes.",
-      "On fault, preserve status and disable/recover outputs before clearing the cause."
-    ],
-    "nodes": [
-      "APB / shadow registers",
-      "Timer / operator update",
-      "4 waveform channels",
-      "Capture / fault / IRQ"
-    ],
-    "sources": [
-      "rtl/tiny/top/retrosoc_tiny.sv",
-      "rtl/managed/clusterip/pwm/doc/datasheet.md",
-      "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
-      "rtl/managed/clusterip/pwm/rtl/pwm_pkg.sv"
-    ],
-    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
-  },
-  {
     "id": "rtc",
     "family": "rtc",
     "title": "Real-Time Clock (RTC)",
-    "depth": 3,
+    "depth": 4,
     "regions": [
       "APB4_RTC"
     ],
@@ -271,19 +276,19 @@
     "summary": "64-bit seconds, 1/256-second subsecond time, alarms and wake status.",
     "features": [
       "Two alarms, periodic wake and calibration controls.",
-      "Atomic time snapshot and command/response interface.",
-      "Tiny clocks the RTC from the system clock, not a separate sleep crystal."
+      "**Atomic time snapshot** and command/response interface.",
+      "AON REF24 timekeeping; independent of SYS switching, but not an independent oscillator."
     ],
     "paragraphs": [
-      "The managed RTC engine is configured for 24 MHz and is wired to the same system clock as the MCU. Its separate logical clock/reset ports do not establish an independent low-power timing source.",
-      "Time reads use the documented snapshot/command sequence. Poll command completion before assuming a write has taken effect. Alarm interrupt and wake signals are separate; SYSCTRL exposes both live and sticky wake observations.",
+      "The managed RTC engine uses **AON REF24 at 24 MHz**. SYS clock changes do not change its timebase. This logical always-on clock domain does not establish battery retention or operation without XIN.",
+      "Time reads use the documented snapshot/command sequence. **Poll command completion** before assuming a write has taken effect. Alarm interrupt and wake signals are separate; SYSCTRL exposes both live and sticky wake observations.",
       "Battery-backed retention, oscillator accuracy, calendar drift and deep-sleep operation remain unspecified. A digital counter resolution is not a measured time accuracy."
     ],
     "steps": [
       "Probe the engine and configure it against the actual clock.",
       "Set time through the bounded command API and verify completion.",
       "Configure alarm/periodic selections and clear prior causes before enabling events.",
-      "Read snapshots consistently and capture wake/IRQ causes before acknowledgement."
+      "Read snapshots consistently and capture wake/IRQ causes **before acknowledgement**."
     ],
     "nodes": [
       "APB command bridge",
@@ -303,7 +308,7 @@
     "id": "wdg",
     "family": "wdg",
     "title": "Watchdog (WDG)",
-    "depth": 3,
+    "depth": 4,
     "regions": [
       "APB4_WDG"
     ],
@@ -312,19 +317,19 @@
     ],
     "summary": "Window watchdog with early warning and whole-system reset request.",
     "features": [
-      "24 MHz system-clock reference in Tiny.",
-      "Two-key service, window checking and retained reset-cause observation.",
+      "AON REF24 watchdog reference; separate from SYS profile switching.",
+      "**Two-key service**, window checking and retained reset-cause observation.",
       "Eight watchdog-clock reset-request cycles in this integration."
     ],
     "paragraphs": [
-      "Configure timing and window policy while inactive, then start and service using the prescribed key sequence. An early or malformed service can request reset just as an expired timeout can.",
+      "Configure timing and window policy **while inactive**, then start and service using the prescribed key sequence. An early or malformed service can request reset just as an expired timeout can.",
       "Tiny routes the watchdog request into system reset generation. Its own reset/retention boundary is distinct from the reset it requests; the acceptance application checks retained reset_count on reboot.",
-      "Because the watchdog uses the same system clock, it does not guarantee recovery from a failed system clock or provide independent deep-sleep supervision. The current integration is not a safety certificate."
+      "Because the watchdog uses the **same AON REF24 clock**, it does not guarantee recovery from a failed AON REF24 clock or provide independent deep-sleep supervision. The current integration is not a safety certificate."
     ],
     "steps": [
       "Probe status and inspect retained reset cause before starting a new diagnostic campaign.",
       "Program prescaler, timeout, window and warning policy while inactive.",
-      "Start once and service inside the allowed window with bounded checks.",
+      "Start once and service **inside the allowed window** with bounded checks.",
       "After reset distinguish watchdog reboot from fresh power-on and retain diagnostic evidence."
     ],
     "nodes": [
@@ -342,10 +347,52 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
+    "id": "pwm",
+    "family": "pwm",
+    "title": "Pulse Width Modulation (PWM)",
+    "depth": 4,
+    "regions": [
+      "APB4_PWM"
+    ],
+    "irqs": [
+      "pwm"
+    ],
+    "summary": "Two internal timers and four waveform output channels with capture/fault control.",
+    "features": [
+      "**Four PWM outputs**, two capture inputs and fault/synchronization routes.",
+      "Shadow configuration and documented update boundaries.",
+      "Runtime PCLK reporting; 24 MHz at SAFE24, updated after RCU transition."
+    ],
+    "paragraphs": [
+      "PWM outputs and capture/fault inputs are selected through Tiny GPIO alternate functions. The reusable block has timer/operator state, not an unrestricted programmable I/O processor.",
+      "Shadow values become active at the **configured update event**. Writing a duty field alone does not guarantee an immediate glitch-free transition. Establish safe output levels before enabling external power circuitry.",
+      "Capture entries and overflow status require coherent reads and **explicit acknowledgement**. Fault handling and debug-halt behavior must be checked with the actual pin route; no electrical frequency limit is qualified here."
+    ],
+    "steps": [
+      "Probe ABI and read the actual reported PCLK before timing calculations.",
+      "**Keep outputs inactive** while programming timer/operator/channel state.",
+      "Latch shadow values at the selected boundary, then enable output routes.",
+      "On fault, preserve status and disable/recover outputs before clearing the cause."
+    ],
+    "nodes": [
+      "APB / shadow registers",
+      "Timer / operator update",
+      "4 waveform channels",
+      "Capture / fault / IRQ"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/pwm/doc/datasheet.md",
+      "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_pkg.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
     "id": "uart0",
     "family": "uart",
     "title": "Management UART (UART0)",
-    "depth": 3,
+    "depth": 5,
     "regions": [
       "APB4_UART0"
     ],
@@ -355,19 +402,19 @@
     "summary": "Primary console UART with 64-byte transmit and receive FIFOs.",
     "features": [
       "Fractional baud generation, 5-8 data bits, parity, break and diagnostics.",
-      "Dedicated TX/RX pads; UART0 DMA requests available.",
-      "RTS/CTS require the selected GPIO alternate routes."
+      "**GPIO8/9 ALT0 TX/RX**; central-DMA requests 5/6.",
+      "Tiny **does not route RTS/CTS**; unsupported flow-control configuration is rejected."
     ],
     "paragraphs": [
-      "The shared rs_uart_* convenience HAL targets UART0. It is the normal Tiny diagnostic console. Configure baud against 24 MHz and the permitted fractional divider range; sampling margin remains a board/peer requirement.",
-      "FIFO acceptance is not completed wire transmission. A UART write timeout can leave a transmitted/queued prefix. Preserve protocol framing and inspect RX error flags instead of blindly retrying an entire message.",
+      "The shared rs_uart_* convenience HAL targets UART0. It is the normal Tiny diagnostic console. Configure baud against the **committed PCLK** and the permitted fractional divider range; sampling margin remains a board/peer requirement.",
+      "FIFO acceptance is not completed wire transmission. A UART write timeout can leave a **transmitted/queued prefix**. Preserve protocol framing and inspect RX error flags instead of blindly retrying an entire message.",
       "The polling budget is consumed while the FIFO blocks progress and is shared across the call. It is not a duration in milliseconds and cannot bound a stalled bus access."
     ],
     "steps": [
-      "Configure baud, framing and optional flow-control routing before enabling the peer.",
+      "Configure baud and framing for the current PCLK with flow control disabled.",
       "Clear stale error/event state and use bounded FIFO operations.",
       "Reserve channel 0 when using UART0 DMA, and follow buffer lifetime rules.",
-      "Wait for the required queue/serializer completion boundary before changing framing or disabling clocks."
+      "Wait for the required **queue/serializer completion boundary** before changing framing or disabling clocks."
     ],
     "nodes": [
       "APB / baud registers",
@@ -383,81 +430,38 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
-    "id": "uart1",
-    "family": "uart",
-    "title": "Second UART (UART1)",
-    "depth": 3,
-    "regions": [
-      "APB4_UART1"
-    ],
-    "irqs": [
-      "uart1"
-    ],
-    "summary": "Second UART instance with dedicated TX/RX and its own interrupt.",
-    "features": [
-      "Same UART v3 register ABI and 64-byte FIFOs.",
-      "PIO/IRQ integration; no Tiny UART1 DMA request route.",
-      "CTS input is tied permissive; no dedicated RTS/CTS pad pair."
-    ],
-    "paragraphs": [
-      "UART1 has its own base and core IRQ bit 26. The generic UART0 helper must not be mistaken for an instance-selecting UART1 API. Use the correct base/register contract or the documented Tiny loopback acceptance source.",
-      "The instance reuses the UART FIFO, divider, framing and error semantics. Tiny ties its CTS input low and leaves the DMA stall outputs unconnected to requests; shared register fields do not create the omitted routing.",
-      "Loopback acceptance is a source-level test facility. It does not qualify an external baud rate, cable, voltage domain or Linux driver."
-    ],
-    "steps": [
-      "Select the UART1 base and confirm framing/divider settings before use.",
-      "Use PIO or core IRQ bit 26; do not allocate a UART0 DMA selector for UART1.",
-      "Handle RX error entries and use bounded TX/RX waits.",
-      "Confirm serializer idle before changing framing, then clear only captured interrupt causes."
-    ],
-    "nodes": [
-      "UART1 APB bank",
-      "64-byte TX / RX FIFOs",
-      "Framing / fractional divider",
-      "Dedicated TX/RX / IRQ26"
-    ],
-    "sources": [
-      "rtl/tiny/top/retrosoc_tiny.sv",
-      "docs/ip/uart.md",
-      "rtl/ip/serial/uart_reg.sv"
-    ],
-    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
-  },
-  {
     "id": "i2c",
     "family": "i2c",
-    "title": "Inter-Integrated Circuit (I2C0, I2C1)",
-    "depth": 3,
+    "title": "Inter-Integrated Circuit (I2C0)",
+    "depth": 4,
     "regions": [
-      "APB4_I2C0",
-      "APB4_I2C1"
+      "APB4_I2C0"
     ],
     "irqs": [
-      "i2c0",
-      "i2c1"
+      "i2c0"
     ],
-    "summary": "Two controller-mode I2C instances with command/receive queues.",
+    "summary": "One controller-mode I2C instance on GPIO10/11 ALT0.",
     "features": [
-      "7-bit/10-bit addressing, repeated START and clock stretching.",
-      "Sixteen-entry command and RX queues; arbitration and recovery reporting.",
-      "DMA pacing uses channels 1 and 2 by software convention."
+      "**7-bit and 10-bit addressing**; command and receive FIFOs.",
+      "Open-drain SCL/SDA with bounded NACK/error handling.",
+      "I2C0 central-DMA requests 7/8; I2C1 is not instantiated."
     ],
     "paragraphs": [
-      "I2C0 and I2C1 share the register layout but have separate base addresses, GPIO alternate routes and IRQ bits. They are controllers, not target/slave peripherals. Board pull-ups and compatible voltage levels are required.",
-      "The queued command grammar and FIFO limits define how START, data, repeated START and STOP are submitted. A NACK is an observed protocol outcome; do not treat command FIFO acceptance as a successful bus transaction.",
-      "Use bounded transaction and recovery waits. Arbitration loss, stuck-low lines or clock stretching require inspection and a bus-safe recovery sequence rather than concurrent driving or automatic infinite retry."
+      "Only I2C0 is instantiated at 0x10006000, core interrupt input 7. The shared driver supports other product instances, but Tiny rejects I2C1 before MMIO. Its old window and DMA requests are absent.",
+      "Program timing against the committed peripheral rate and external pull-ups/capacitance. Clock changes require **idle clients and timing reconfiguration**. A queued command, FIFO empty or DMA transfer return is not automatically completed serial I/O.",
+      "Handle NACK, arbitration/bus errors and timeout with explicit status capture and the supported recovery sequence. **Release external SDA/SCL drivers** before alternate-function changes; electrical rise time and peripheral compatibility need board evidence."
     ],
     "steps": [
-      "Select the bus, verify its GPIO route and calculate timing from 24 MHz.",
+      "Select the bus, verify its GPIO route and calculate timing from the committed PCLK (24 MHz in SAFE24).",
       "Ensure the bus is released, clear stale events and configure supported address mode.",
-      "Submit the documented command sequence and inspect terminal/NACK/arbitration status.",
+      "Submit the documented command sequence and inspect **terminal/NACK/arbitration status**.",
       "Recover and release lines before retrying; preserve timeout/error context."
     ],
     "nodes": [
-      "APB / timing / status",
-      "16-entry command queue",
-      "START / shift / STOP engine",
-      "RX queue / IRQ / DMA pacing"
+      "APB / I2C0 control",
+      "Command / RX FIFOs",
+      "SCL/SDA controller",
+      "GPIO10/11 ALT0"
     ],
     "sources": [
       "rtl/tiny/top/retrosoc_tiny.sv",
@@ -467,10 +471,134 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
+    "id": "spi",
+    "family": "spi",
+    "title": "Serial Peripheral Interface (SPI0)",
+    "depth": 4,
+    "regions": [
+      "APB4_SPI"
+    ],
+    "irqs": [
+      "spi"
+    ],
+    "summary": "PCLK-domain master with GPIO-guarded sessions and qualified DMA ports.",
+    "features": [
+      "Master modes 0-3, **8/16-bit frames**, selectable bit order and held-CS segments.",
+      "TX-only, RX-only or full duplex; separate eight-word 32-bit FIFOs.",
+      "GPIO guard, **session ownership**, finite quotas and V2.2 central-DMA admission."
+    ],
+    "paragraphs": [
+      "SPI0 uses GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI and GPIO31 ALT1 CS_N. GPIO30 ALT1 is MISO, or ordinary GPIO D/C in write-only display personality; the personalities are mutually exclusive.",
+      "A session is acquired only when GPIO routing and readiness agree. SCK=PCLK/(2*DIV). Configuration changes require the documented **disabled/unowned or clean segment boundary**; HELD and ARMED are not lifecycle-idle states.",
+      "Transport packs 8/16-bit wire frames into 32-bit words. FRAME_COUNT defines a finite quota; reject zero and overflow before ARM. Matching request16/17, origin, bound channel, direction and reserved credit are all required at DMA ports. CPU and DMA ports are distinct.",
+      "The current raw CAPABILITY value is 0x00003F7F: **DMA discovery bit 7 remains zero** despite the connected Tiny V2.2 DMA path. Treat this as a source/specification discrepancy. Document actual routing and qualified workload evidence separately; this publication does not change the hardware or driver probe.",
+      "Successful completion includes **wire completion**, clean packers/FIFOs, fulfilled TX/RX quotas and **drained descriptor/admission/responses**. A software timeout retains all resources. ABORT closes admission; RECOVER and explicit release/reacquisition follow confirmed cleanup.",
+      "The ST7789VI-style reference uses 8-bit commands with D/C low and big-endian RGB565 byte streams with D/C high. SPI-P4 covers panel patterns and a sequential capture/verify/display/SD workflow, including direct immutable-PSRAM display and 1024-byte SRAM chunking. It is not parallel video, an arbitrary panel driver or physical panel qualification."
+    ],
+    "steps": [
+      "Validate Tiny/DMA identity, select the complete GPIO personality and acquire the session.",
+      "Configure timing and finite segment geometry; bind the leased DMA channel before ARM.",
+      "Publish immutable data, ARM and START; update D/C **only at clean held-CS boundaries**.",
+      "Wait for wire, quotas and drain; on failure retain ownership through abort/recovery, then release explicitly."
+    ],
+    "nodes": [
+      "APB / session + GPIO guard",
+      "Finite quota / DMA credits",
+      "TX/RX packing + FIFOs",
+      "8/16-bit phase engine / pads"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/spi.md",
+      "docs/ip/spi-p3.md",
+      "docs/ip/spi-p4.md",
+      "rtl/ip/serial/spi_reg.sv"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "ws2812",
+    "family": "ws2812",
+    "title": "WS2812 LED Output",
+    "depth": 4,
+    "regions": [
+      "APB4_WS2812"
+    ],
+    "irqs": [
+      "ws2812"
+    ],
+    "summary": "Finite RGB LED serializer on GPIO26 ALT0.",
+    "features": [
+      "**24-bit RGB wire frames** on GPIO26 ALT0.",
+      "Programmable high/low/reset timing, FIFO watermarks and finite DMA refill."
+    ],
+    "paragraphs": [
+      "WS2812 uses PCLK and GPIO26 ALT0. Compute pulse widths from the **actual committed PCLK**; a clock transition cannot interrupt an active wire frame.",
+      "Bulk channel 3 remains leased across all refill batches until the **final wire frame and reset interval** complete. DMA completion only proves movement into the controller, not that the LED wire has reached its idle boundary.",
+      "The retained P6/P10 model checks cover finite frame/refill workloads. They do not establish arbitrary-strip electrical loading, LED compatibility or uninterrupted output at every clock ratio."
+    ],
+    "steps": [
+      "Claim GPIO26 and the bulk channel, then program timing for the current clock.",
+      "Fill/arm the finite frame and refill before the bounded service deadline.",
+      "Wait for **wire/reset completion**, inspect errors, then release channel and pin ownership."
+    ],
+    "nodes": [
+      "APB / PCLK timing",
+      "FIFO / refill watermark",
+      "24-bit serializer",
+      "GPIO26 ALT0"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/ws2812.md"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "archinfo",
+    "family": "archinfo",
+    "title": "Architecture Information (ARCHINFO)",
+    "depth": 4,
+    "regions": [
+      "APB4_ARCHINFO"
+    ],
+    "irqs": [],
+    "summary": "Read-only Tiny identity and build/configuration discovery.",
+    "features": [
+      "Tiny SOC_ID 0x54494E59; **128 KiB SRAM** and 24 MHz reference clock.",
+      "Topology 0x20200001; ICS55 FEATURES0=0x00007FFF and TECHNOLOGY=0x02040037. IHP130 compatibility is 0x00007FFE / 0x02010082.",
+      "No provisioned unique device ID is advertised."
+    ],
+    "paragraphs": [
+      "The owned Tiny adapter replaces the managed block's fixed SoC identity while retaining its register ABI. BUILD_ID, CONFIG_ID and BUILD_STATUS are supplied by **generated build metadata**; they must not be published as default zero values for a built image.",
+      "Read and **validate Tiny identity** before interpreting product-specific capabilities or selecting a firmware layout. The build/profile identity is distinct from a silicon lot/serial number.",
+      "Device-ID inputs are tied invalid/read-disabled. Their register offsets do not establish a provisioned unique identity, secure key storage or production traceability."
+    ],
+    "steps": [
+      "Read discovery through the SDK and validate the build identity.",
+      "Confirm Tiny SOC_ID, one-hart topology, 128 KiB memory and active capabilities.",
+      "Reject mismatched images/configurations **before hardware initialization**.",
+      "Read device ID only when qualified and enabled; this integration does not supply it."
+    ],
+    "nodes": [
+      "APB read-only ABI",
+      "Build / config metadata",
+      "Tiny identity override",
+      "Capability / device-ID gate"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/archinfo/doc/datasheet.md",
+      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
+      "rtl/tiny/top/tiny_archinfo.sv"
+    ],
+    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+  },
+  {
     "id": "sysctrl",
     "family": "sysctrl",
     "title": "System Controller (SYSCTRL)",
-    "depth": 3,
+    "depth": 4,
     "regions": [
       "APB4_SYSCTRL"
     ],
@@ -479,17 +607,18 @@
     "features": [
       "Sticky first-fault address, master, response and saturating event count.",
       "CPU/DMA wait-counter snapshot; live/sticky RTC wake status.",
-      "First full-word valid TEST_STATUS result remains sticky until reset."
+      "**First full-word valid** TEST_STATUS result remains sticky until reset."
     ],
     "paragraphs": [
-      "Only the decoded Tiny offsets below are implemented. Compatibility identity reads do not create selectable cores, a PLL or an application processor. Other offsets fail; writes to read-only locations, unaligned accesses and partial writes return APB error.",
-      "FAULT_STATUS captures the first pending event. Clearing pending permits a subsequent fault record; FAULT_COUNT counts events independently and saturates. Capture address/master/response before clearing.",
-      "PERF_CTRL controls wait counters and snapshots. Read low/high words from the captured snapshot, not from independently changing live values. A wait count is not end-to-end throughput.",
-      "TEST_STATUS accepts a full-word write with VALID set only while the prior result is invalid. Reserved input bits are masked; the terminal result is not UART text. A later result cannot overwrite the first valid one before reset."
+      "Only the decoded Tiny offsets below are implemented. Compatibility identity reads do not create selectable cores, an application processor; clock control is provided by the separate RCU subregion. Other offsets fail; writes to read-only locations, unaligned accesses and partial writes return APB error.",
+      "FAULT_STATUS captures the first pending event. Clearing pending permits a subsequent fault record; FAULT_COUNT counts events independently and saturates. Capture address/master/response **before clearing**.",
+      "PERF_CTRL controls wait counters and snapshots. Read low/high words from the **captured snapshot**, not from independently changing live values. A wait count is not end-to-end throughput.",
+      "TEST_STATUS accepts a full-word write with VALID set only while the prior result is invalid. Reserved input bits are masked; the terminal result is not UART text. A later result **cannot overwrite the first valid one** before reset.",
+      "The RCU uses offsets 0x100..0x15C within this same 4 KiB window, through an acknowledged AON crossing. Its independent chapter owns those register definitions; the global address index lists each address once."
     ],
     "steps": [
       "Use the Tiny identity before choosing control operations.",
-      "Read and preserve pending fault status/address/master/detail before W1C acknowledgement.",
+      "Read and preserve pending fault status/address/master/detail **before W1C acknowledgement**.",
       "Enable/capture CPU and DMA wait counters through PERF_CTRL and then read both snapshot words.",
       "For automated acceptance write VALID, PASS and result code once; an earlier failure cannot be replaced by a later pass."
     ],
@@ -507,10 +636,54 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
+    "id": "rcu",
+    "family": "rcu",
+    "title": "Reset and Clock Unit (RCU)",
+    "depth": 4,
+    "regions": [],
+    "irqs": [
+      "rcu"
+    ],
+    "summary": "AON-domain clock, reset and lifecycle controls inside SYSCTRL.",
+    "features": [
+      "AON-owned profile, gate, reset, cause/fault and CLKOUT controls.",
+      "ICS55 **SAFE24 boot with PLL off**; functional PLL192/PLL240 requests.",
+      "IHP130 no-PLL compatibility; bounded drain and source recovery."
+    ],
+    "paragraphs": [
+      "RCU occupies SYSCTRL+0x100..0x15C (0x1000B100..0x1000B15C), with core input 31. It is a subregion of the existing SYSCTRL window, not another APB address decoder.",
+      "AON owns REF24 timekeeping, CLINT and RTC/WDG functional timing. SYS serves CPU/main SRAM/fabric/SDIO; MEM serves XPI; PCLK serves central DMA and peripherals including private Crypto SRAM. AUDIO remains a separate optional source.",
+      "ICS55 boots SAFE24 with the PLL parked off. Functional requests select SYS/MEM/PCLK of **192/96/48 MHz or 240/120/60 MHz**. These digital profiles and simulator observations **do not establish a silicon frequency rating**. IHP130 has no PLL; its explicit XIN variants normalize the control reference to 24 MHz.",
+      "Clock commands close new admissions, **drain accepted work**, park on REF24, qualify the new source and **publish rate snapshots before reopening**. A failed drain preserves live work. Lock timeout returns SAFE24; stopped PLL recovery uses system/CDC reset, while lost XIN requires restored input and external reset.",
+      "Local reset holds five actual leaf edges and waits for synchronized release and bus readiness. SPI and DVP lifecycle, absent AUDIO, held bus responses and active DMA leases retain their endpoint-specific obligations. Current non-CPU commands conservatively drain all central-DMA work.",
+      "TARGET_CAP is 0x00037FFF: targets 0..14, SPI0 at 16 and PPALite at 17 are implemented; PIO-lite at 15 is absent. Active PPALite capture rejects clock apply and changed CLKOUT writes. Local gate/reset also requires RAW route, processor/transport idle and source quiet.",
+      "Warm system reset returns SAFE24 and resets functional RTC/WDG state while preserving main SRAM contents and recorded cause/fault/debug state. CPU WFI gates only its leaf; unrelated DMA can continue. Clock domains are not independent power islands or an always-powered battery domain."
+    ],
+    "steps": [
+      "Read the current profile, rates, target capability and sticky causes.",
+      "Stop owners and drain clients; set a nonzero REF24 transition budget.",
+      "Submit one supported command and wait with the bounded SDK operation.",
+      "Read actual committed profile/rates and faults; reconfigure affected endpoints and **reinitialize PSRAM before reuse**."
+    ],
+    "nodes": [
+      "SYSCTRL subregion / AON",
+      "Admission / drain barriers",
+      "Clock backend / rate snapshots",
+      "Leaf gates / reset / CLKOUT"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/tiny/top/tiny_sysctrl.sv",
+      "docs/ip/tiny-soc-r2-clock-reset.md"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied.",
+    "register_region": "APB4_SYSCTRL"
+  },
+  {
     "id": "clint",
     "family": "clint",
     "title": "Local Interrupt Controller (CLINT)",
-    "depth": 3,
+    "depth": 4,
     "regions": [
       "APB4_CLINT"
     ],
@@ -521,19 +694,19 @@
     "summary": "Machine software interrupt and 64-bit timer for hart slot zero.",
     "features": [
       "Core interrupt bits 0 and 1 are local software/timer causes.",
-      "1 MHz timebase derived from the 24 MHz system clock.",
+      "**1 MHz timebase** derived from AON REF24; unaffected by SYS profile switching.",
       "64-bit time and compare are accessed as RV32 words."
     ],
     "paragraphs": [
       "Tiny has one management hart and uses hart slot zero. CLINT is distinct from the external interrupt vector and does not provide a PLIC.",
-      "Read time using a coherent high/low/high retry sequence. Update compare with the documented safe word order so an intermediate value does not trigger an unintended interrupt.",
-      "The 1 MHz timebase supports timing measurements/deadlines, while peripheral dividers still use their own 24 MHz engine clock. A software busy-loop count is not this timebase."
+      "Read time using a **coherent high/low/high retry sequence**. Update compare with the documented **safe word order** so an intermediate value does not trigger an unintended interrupt.",
+      "The 1 MHz timebase supports timing measurements/deadlines, while peripheral dividers still use their own committed engine clock. A software busy-loop count is not this timebase."
     ],
     "steps": [
       "Use slot zero and the CLINT base from the generated Tiny map.",
       "Read coherent time through the SDK helper.",
       "Mask/prepare the timer cause and update compare in safe word order.",
-      "Handle and rearm the appropriate local cause; do not subtract two to form an external IRQ ordinal."
+      "Handle and rearm the **appropriate local cause**; do not subtract two to form an external IRQ ordinal."
     ],
     "nodes": [
       "APB word accesses",
@@ -549,43 +722,262 @@
     "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
   },
   {
-    "id": "archinfo",
-    "family": "archinfo",
-    "title": "Architecture Information (ARCHINFO)",
-    "depth": 3,
+    "id": "i2s",
+    "family": "i2s",
+    "title": "Inter-IC Sound (I2S)",
+    "depth": 4,
     "regions": [
-      "APB4_ARCHINFO"
+      "APB4_I2S"
     ],
-    "irqs": [],
-    "summary": "Read-only Tiny identity and build/configuration discovery.",
+    "irqs": [
+      "i2s"
+    ],
+    "summary": "Stereo audio master with PCLK control and a separate AUDIO engine.",
     "features": [
-      "Tiny SOC_ID 0x54494E59; 128 KiB SRAM and 24 MHz reference clock.",
-      "Topology 0x20200001, features 0x00007FFE and technology 0x02010082.",
-      "No provisioned unique device ID is advertised."
+      "**Stereo 16/24-bit master** transport; separate TX/RX streams.",
+      "PCLK control and asynchronous AUDIO engine with explicit reset readiness.",
+      "Channels 6/7 and requests 1/2 by convention."
     ],
     "paragraphs": [
-      "The owned Tiny adapter replaces the managed block's fixed SoC identity while retaining its register ABI. BUILD_ID, CONFIG_ID and BUILD_STATUS are supplied by generated build metadata; they must not be published as default zero values for a built image.",
-      "Read and validate Tiny identity before interpreting product-specific capabilities or selecting a firmware layout. The build/profile identity is distinct from a silicon lot/serial number.",
-      "Device-ID inputs are tied invalid/read-disabled. Their register offsets do not establish a provisioned unique identity, secure key storage or production traceability."
+      "Tiny integrates the I2S master on GPIO12-17 ALT0. AUDIO is an external/reference clock domain and may be absent at boot; the ordinary CPU release does not wait for it.",
+      "Control uses PCLK while serial timing uses AUDIO. The retained acceptance uses 18.432 MHz audio reference; the profile AUD_CLK_HZ setting and actual supplied AUDIO source must be identified separately.",
+      "GPIO12-17 overlap the DVP camera profile. **Stop and drain both streams**, release their pads and confirm reset barriers before changing personality. **Missing AUDIO edges** cannot produce a successful engine reset completion.",
+      "The integrated serial path is master-only. Generic SDK declarations or a second clock domain do not establish slave mode, continuous underrun-free audio or board codec qualification."
     ],
     "steps": [
-      "Read discovery through the SDK and validate the build identity.",
-      "Confirm Tiny SOC_ID, one-hart topology, 128 KiB memory and active capabilities.",
-      "Reject mismatched images/configurations before hardware initialization.",
-      "Read device ID only when qualified and enabled; this integration does not supply it."
+      "Provide AUDIO and select the **complete ALT0 group**; validate buffer format.",
+      "Configure timing and reserve TX/RX channels before starting.",
+      "Monitor FIFO and stream errors; stop/drain both directions before route or clock changes."
     ],
     "nodes": [
-      "APB read-only ABI",
-      "Build / config metadata",
-      "Tiny identity override",
-      "Capability / device-ID gate"
+      "APB / PCLK control",
+      "TX/RX asynchronous FIFOs",
+      "AUDIO master serializer",
+      "GPIO12-17 ALT0"
     ],
     "sources": [
       "rtl/tiny/top/retrosoc_tiny.sv",
-      "rtl/managed/clusterip/archinfo/doc/datasheet.md",
-      "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
-      "rtl/tiny/top/tiny_archinfo.sv"
+      "docs/ip/i2s.md",
+      "docs/ip/tiny-soc-r2-shared-integration.md"
     ],
-    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied."
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "dvp",
+    "family": "dvp",
+    "title": "Digital Video Port (DVP)",
+    "depth": 4,
+    "regions": [
+      "APB4_DVP"
+    ],
+    "irqs": [
+      "dvp"
+    ],
+    "summary": "8-bit camera capture and crop engine with an asynchronous pixel domain.",
+    "features": [
+      "**8-bit RGB565/YUV422** input with snapshot and crop controls.",
+      "GPIO12-23 ALT1 camera profile; asynchronous raw PIXCLK.",
+      "DVP_RX request 11 / DMA channel 2; optional initialized XPI PSRAM destination."
+    ],
+    "paragraphs": [
+      "DVP at 0x1000E000 uses core input 15 and GPIO12-23 ALT1. GPIO23 is CAM_XCLK from the same RCU CLKOUT generator also routable to GPIO28 ALT0; the two routes are mirrors, not independent clocks.",
+      "Snapshot success requires frame completion, DMA completion with the **exact byte count**, **all final destination responses drained** and no DVP/DMA/XPI errors. A frame-done interrupt alone cannot publish a valid frame or justify flushing the tail FIFO.",
+      "For RAW capture, even active widths use the DMA helper and odd widths retain the PIO helper. Both RAW helpers reject PROCESS with RS_ENOTSUP. PROCESS uses the PPALite row-aligned transport contract, which also supports odd active widths. A larger allocation never changes the programmed frame length.",
+      "Tiny places an exclusive RAW/PROCESS route after the existing payload CDC. PROCESS locks source configuration and observes coherent configuration, error, geometry and sequence handshakes through finalization. rs_dvp_stop is a non-flushing disable/drain operation; ABORT is reserved for ordered failure cleanup. Crop extent must fit the configured frame; dropped-pixel statistics restart for each frame.",
+      "Loss of PIXCLK, malformed synchronization, overflow and partial frames invalidate the capture. Preserve diagnostics and bus response obligations during abort/rearm. PCLK/APB stays available without PIXCLK, but engine reset readiness requires the applicable **real clock edges**.",
+      "The QVGA/VGA and recovery records are bounded simulator/model results. They do not establish continuous FPS, a sensor register protocol, JPEG encoding or physical camera timing."
+    ],
+    "steps": [
+      "Stop conflicting I2S/PWM routes; configure GPIO and inactive CLKOUT before camera enable.",
+      "Initialize PSRAM explicitly and validate destination bounds, format, crop and exact byte count.",
+      "Start snapshot/DMA2 and wait for every required completion and drain condition.",
+      "Stop capture, **verify full frame and guard bytes**, then allow CPU/display/SD consumers."
+    ],
+    "nodes": [
+      "APB / PCLK control",
+      "PIXCLK capture / crop",
+      "Asynchronous RX FIFO",
+      "DMA2 request11 / PSRAM"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/dvp.md",
+      "docs/ip/tiny-soc-r2-dvp.md",
+      "rtl/ip/multimedia/axi4s_dvp.sv",
+      "rtl/ip/multimedia/dvp_core.sv",
+      "crt/src/hal/dvp.c"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "ppalite",
+    "family": "ppalite",
+    "title": "Streaming Pixel Processor (PPALite)",
+    "depth": 4,
+    "regions": [
+      "APB4_PPALITE"
+    ],
+    "irqs": [
+      "ppalite"
+    ],
+    "summary": "PCLK camera-stream reduction before the first memory write, with exclusive RAW/PROCESS routing.",
+    "features": [
+      "**One finite frame**; RGB565 byte/channel normalization or YUV422 luma extraction.",
+      "Independent **1/2/4 sampling steps**; GRAY8 or RGB565 output with four-byte row alignment.",
+      "**Request 11 / DMA2** reuse; APB4 0x1001E000, IRQ27, RCU target 17; no new pins or AXI master.",
+      "Two input words, eight output words and a 32-bit packer; **no line or frame RAM**."
+    ],
+    "paragraphs": [
+      "Tiny wires the complete P3 path with CAPABILITY=0x000003FF. Reset selects RAW bypass. PROCESS sends the DVP stream through PPALite and returns only that result to the existing DVP_RX endpoint. The two routes are exclusive; there is no simultaneous RAW/processed fanout.",
+      "Registers occupy offsets 0x000..0x09C. Accesses must be word-aligned and writes use all four byte strobes. Reads of COMMAND, writes to read-only or undefined offsets, reserved write bits and illegal state/command combinations return an APB error without accepting the operation. IRQ_STATE is write-one-to-clear with simultaneous hardware set taking priority.",
+      "All PPALite logic runs in PCLK after the existing DVP PIXCLK-to-PCLK FIFO. Input formats are RGB565_BE=0, RGB565_LE=1, YUYV=2, UYVY=3, YVYU=4 and VYUY=5. PROCESS requires DVP byte/pixel swap disabled and matching post-crop geometry. RGB input supports RGB565 only; YUV input discards chroma and preserves Y without range expansion, producing GRAY8 or replicated gray RGB565.",
+      "DVP chronological bytes b0,b1,b2,b3 arrive as {b2,b3,b0,b1}; the first pixel is the low halfword. Canonical RGB565 output places the first pixel low and its low byte in the low memory lane. Optional output byte swap acts within each RGB565 pixel, not across pixels. RGB_SWAP is legal only for RGB input; output byte swap is illegal for GRAY8.",
+      "DVP owns cropping. Each input dimension is 1..65535. Step codes 0/1/2 select 1/2/4; code 3 is invalid. Each phase must be smaller than its step and input dimension. Output dimension is ceil((input - phase)/step). Dropped pixels and rows still participate in framing and error checks.",
+      "ROW_BYTES is output width times one or two bytes. STRIDE_BYTES rounds each row up to four bytes. VALID_BYTES is ROW_BYTES times output height; TRANSPORT_BYTES is STRIDE_BYTES times output height and EXPECTED_WORDS is transport divided by four. **Padding is per row** and carries zero bytes; consumers must honor stride. A 5x3 YUV source sampled 2x2 to GRAY8 produces 3x2 pixels, six valid bytes, eight transport bytes and two DMA words.",
+      "PROCESS admits only direct stream-to-memory request 11 on channel 2 with the exact armed destination and transport count. Wrong channels, mismatched configuration, repeated starts and processed TCDs are rejected. Other requests retain their existing behavior. The DMA channel and all accepted memory responses remain owned until the complete job drains.",
+      "**PIPE_DONE is not frame validity.** FINALIZE requires matching source sequence, geometry and raw counts; source stopped without flushing, source quiet, exact DMA completion, terminal response drain and no late source/core/transport error. Only COMPLETE plus RESULT_VALID permits the immutable frame metadata to be consumed.",
+      "Route changes require the global DVP/DMA idle barrier; RELEASE keeps the selected route for the next frame. Abort first closes admission and drains accepted DMA work, then isolates and stops/flushes the source, and RECOVER ends ownership only after acknowledgements. **A timeout retains ownership**. Do not reset unrelated DMA or fabricate tail data.",
+      "RCU target 17 cannot gate/reset an active processor or a retained PROCESS route. Active capture also prevents clock-profile changes and changed CLKOUT programming; GPIO/DVP/DMA lifecycle barriers remain coupled. P3 integration does not establish camera/display workload qualification, continuous video throughput or physical operating frequency."
+    ],
+    "steps": [
+      "Reserve camera pads, CLKOUT, destination storage and DMA2; initialize any PSRAM and select PROCESS while all route participants are idle.",
+      "Use rs_ppalite_layout and validate capacity/stride; pass a zero-initialized persistent session to capture_begin. Inspect acquired after any failure.",
+      "capture_start starts the exact DMA job before the DVP snapshot. capture_wait stops the source without flushing, checks final counts/errors and performs FINALIZE.",
+      "On success, use only the returned valid frame and its stride; release explicitly. On failure, retain the session and storage until bounded abort/recover succeeds."
+    ],
+    "nodes": [
+      "APB4 / job snapshot",
+      "Source guard / 2 input slots",
+      "Decimator / format conversion",
+      "Row packer / 8-word FIFO",
+      "Exclusive route / DMA2 admission"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/tiny/top/ppalite_route_ctrl.sv",
+      "rtl/tiny/top/ppalite_dma_guard.sv",
+      "rtl/ip/ppalite/ppalite_core.sv",
+      "rtl/ip/ppalite/ppalite_reg.sv",
+      "docs/ip/ppalite.md",
+      "docs/ip/ppalite-verification.md",
+      "crt/src/hal/ppalite.c",
+      "crt/src/hal/ppalite_math.c"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Historical P3 acceptance is recorded at 07cde48e11ed504e0b939d286bf0e0dfcdb924d6; no current-source hardware campaign was run for this publication. P4 application and P5 complete-product qualification remain separate."
+  },
+  {
+    "id": "crypto",
+    "family": "crypto",
+    "title": "Cryptographic Accelerator (Crypto)",
+    "depth": 4,
+    "regions": [
+      "APB4_CRYPTO"
+    ],
+    "irqs": [
+      "crypto"
+    ],
+    "summary": "Macro-backed AES/SHA2/raw RSA engine with 24 KiB private storage.",
+    "features": [
+      "AES-128/192/256, SHA-224/256 and raw RSA-2048 operations.",
+      "**Six private 4 KiB macro banks** on PCLK, separate from the 128 KiB main SRAM.",
+      "Central-DMA stream requests 12/13; initialization and explicit scrub/zeroize lifecycle."
+    ],
+    "paragraphs": [
+      "Tiny selects the macro-backed Crypto integration with 24 KiB private working storage. This memory does not reduce or extend the CPU-visible main SRAM aperture.",
+      "Wait for storage/table initialization and **verified readiness before loading keys** or submitting a job. A capability bit identifies a supported operation, not a completed key load, validated protocol or side-channel qualification.",
+      "Channels 4/5 conventionally serve input/output streams. Preserve key, message, result and descriptor ownership until **accelerator completion, DMA completion and final transport drain** agree. Use bounded waits, inspect engine errors and perform the documented zeroize/scrub recovery.",
+      "Raw RSA is a modular-arithmetic primitive. Padding, authentication, secure boot, key provisioning and production entropy are application/platform responsibilities; hardware support alone provides none of these guarantees."
+    ],
+    "steps": [
+      "Initialize and wait for READY/TABLE_VALID before key and context setup.",
+      "Validate operation geometry, reserve streams and publish immutable inputs.",
+      "Wait for accelerator and DMA completion; capture errors and result.",
+      "Drain, zeroize/scrub when required, and **verify completion before release**."
+    ],
+    "nodes": [
+      "APB / job lifecycle",
+      "AES / SHA2 / RSA engines",
+      "6 x 4 KiB private SRAM",
+      "DMA input / output streams"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "docs/ip/crypto.md",
+      "rtl/ip/security/apb4_crypto.sv"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "crc",
+    "family": "crc",
+    "title": "Cyclic Redundancy Check (CRC)",
+    "depth": 4,
+    "regions": [
+      "APB4_CRC"
+    ],
+    "irqs": [],
+    "summary": "Programmable error-detection engine with PIO and coordinated bulk feeds.",
+    "features": [
+      "Programmable CRC width, **polynomial, seed and reflection/byte ordering**.",
+      "PIO and coordinated bulk-channel data feeds; no standalone CRC interrupt is wired."
+    ],
+    "paragraphs": [
+      "CRC at 0x20006000 provides error-detection arithmetic. CRC is not encryption, authentication or protection against malicious modification.",
+      "Configure width, polynomial, seed and byte/reflection order to match the wire or storage format. Preserve the **exact byte sequence** across CPU and DMA feeds; do not compare checksums using incompatible pixel/word byte ordering.",
+      "Bulk DMA channel 3 is shared by CRC, XPI, WS2812 and display use by software convention. An application lease lasts through **completion and result capture**; a FIFO or DMA event alone must not transfer ownership to another client."
+    ],
+    "steps": [
+      "Acquire any required bulk-channel lease and configure the CRC state.",
+      "Feed the exact bounded byte stream **without concurrent writers**.",
+      "Wait for completion, read the result and release the lease."
+    ],
+    "nodes": [
+      "APB configuration",
+      "Input data / byte order",
+      "Programmable CRC engine",
+      "Result / shared bulk service"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/crc/doc/datasheet.md"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
+  },
+  {
+    "id": "rng",
+    "family": "rng",
+    "title": "Random Number Generator (RNG)",
+    "depth": 4,
+    "regions": [
+      "APB4_RNG"
+    ],
+    "irqs": [
+      "rng"
+    ],
+    "summary": "PCLK-domain random-source FIFO and health/control interface.",
+    "features": [
+      "FIFO-based entropy-source interface with **alarms and health status**.",
+      "Bounded SDK reads; source quality is an independent integration requirement."
+    ],
+    "paragraphs": [
+      "The managed RNG is integrated into Tiny PCLK at 0x20001000. The publication describes its digital FIFO and health/control ABI; it does not certify entropy, unpredictability or cryptographic suitability.",
+      "A deterministic verification source and source-level health checks are **not production randomness qualification**. Inspect readiness, startup and health/fault status before consuming data; use the bounded SDK operation and preserve partial/error semantics."
+    ],
+    "steps": [
+      "Configure the selected source and alarm policy while idle.",
+      "Wait within a bounded budget; inspect health and FIFO state.",
+      "On a fault, **stop consumers** and diagnose/reinitialize the source before reuse."
+    ],
+    "nodes": [
+      "APB control / health",
+      "Selected source interface",
+      "Conditioning / FIFO",
+      "IRQ and bounded read"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/managed/clusterip/rng/doc/datasheet.md"
+    ],
+    "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
   }
 ]

@@ -1,0 +1,1677 @@
+{
+  "width_mm": 172,
+  "height_mm": 205,
+  "routing": {
+    "arrow_length_mm": 1,
+    "arrow_width_mm": 0.8,
+    "visible_shaft_mm": 1,
+    "arrow_clearance_mm": 0.5,
+    "stroke_pt": 0.65
+  },
+  "sources": [
+    "rtl/tiny/integration/soc_topology.json",
+    "rtl/tiny/integration/clock_reset_domains.json",
+    "rtl/tiny/top/retrosoc_tiny.sv",
+    "rtl/tiny/top/tiny_cpu_mem.sv",
+    "rtl/tiny/top/tiny_cpu_wrapper.sv",
+    "rtl/tiny/top/tiny_sram.sv",
+    "scripts/generate_tiny.py",
+    "rtl/tiny/pin_map/pin_map.json"
+  ],
+  "bindings": [
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".cpu (u_cpu_ahbl_if), .local_ports (u_cpu_local_if), .slow_axi4 (u_masters_axi4_if[0])"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".local_ports (u_cpu_local_if), .external_ports (u_sram_axi4_if), .cfg_apb4 (u_sram_apb4_if)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".source (u_dma_pclk_axi4_if), .sink (u_dma_admitted_axi4_if)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".src_axi4 (u_dma_admitted_axi4_if), .dst_axi4 (u_masters_axi4_if[1])"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".source (u_sdio_sys_axi4_if), .sink (u_masters_axi4_if[2])"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".src_axi4 (u_targets_axi4_if[4]), .dst_axi4 (u_xpi_mem_axi4_if)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".mem_axi4 (u_xpi_mem_axi4_if), .apb4 (u_xpi_apb4_if)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": "`include \"tiny_apb_bridges.svh\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"name\": \"jtag_tck_i_pad\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"name\": \"jtag_tms_i_pad\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"name\": \"jtag_tdi_i_pad\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"name\": \"jtag_tdo_o_pad\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"name\": \"jtag_trst_n_i_pad\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"signal\": \"u_xpi_if.sck_o\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"prefix\": \"xpi_nss\", \"suffix\": \"_o_pad\", \"count\": 4"
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"prefix\": \"xpi_dat\", \"suffix\": \"_io_pad\", \"count\": 4"
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.sck_o\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.cmd_di_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.dat_di_i[0]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.dat_di_i[1]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.dat_di_i[2]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_sdio_if.dat_di_i[3]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2s_if.sclk_o\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2s_if.lrck_o\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2s_if.dacdat_o\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2s_if.adcdat_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.pclk_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.href_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.vsync_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[0]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[1]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[2]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[3]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[4]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[5]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[6]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_dvp_if.dat_i[7]\""
+    },
+    {
+      "file": "rtl/tiny/pin_map/pin_map.json",
+      "text": "\"prefix\": \"gpio_\", \"suffix\": \"_io_pad\", \"count\": 32"
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_uart0_if.tx_o\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_uart0_if.rx_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2c0_if.scl_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_i2c0_if.sda_i\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"s_spi_sck\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"s_spi_cs_n\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"s_spi_mosi\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"s_spi_miso\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_pwm_if.pwm_o[0]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_pwm_if.pwm_o[1]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_pwm_if.pwm_o[2]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_pwm_if.pwm_o[3]\""
+    },
+    {
+      "file": "rtl/tiny/integration/soc_topology.json",
+      "text": "\"u_ws2812_if.dat_o\""
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".process_data_o(s_ppa_process_data)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".in_data_i(s_ppa_process_data)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".apb4(u_ppalite_apb4_if)"
+    }
+  ],
+  "panels": [
+    {
+      "domain": "jtag",
+      "label": "TCK",
+      "x": 1,
+      "y": 1,
+      "w": 30,
+      "h": 26
+    },
+    {
+      "domain": "system",
+      "label": "SYS",
+      "x": 32,
+      "y": 1,
+      "w": 139,
+      "h": 84
+    },
+    {
+      "domain": "peripheral",
+      "label": "PCLK",
+      "x": 1,
+      "y": 86,
+      "w": 42,
+      "h": 42
+    },
+    {
+      "domain": "peripheral",
+      "x": 1,
+      "y": 108,
+      "w": 91,
+      "h": 96
+    },
+    {
+      "domain": "system",
+      "label": "SYS APB4",
+      "x": 48,
+      "y": 87,
+      "w": 46,
+      "h": 19,
+      "label_y": 103.6
+    },
+    {
+      "domain": "aon",
+      "label": "AON REF24",
+      "x": 95,
+      "y": 108,
+      "w": 25,
+      "h": 65
+    },
+    {
+      "domain": "memory",
+      "label": "MEM",
+      "x": 121,
+      "y": 86,
+      "w": 50,
+      "h": 46
+    },
+    {
+      "domain": "audio",
+      "label": "AUDIO",
+      "x": 123,
+      "y": 172,
+      "w": 48,
+      "h": 16
+    },
+    {
+      "domain": "dvp_pixel",
+      "label": "PIX",
+      "x": 123,
+      "y": 187,
+      "w": 48,
+      "h": 17
+    },
+    {
+      "domain": "peripheral",
+      "label": "PCLK",
+      "x": 122,
+      "y": 149,
+      "w": 49,
+      "h": 22
+    }
+  ],
+  "nodes": [
+    {
+      "id": "jtag",
+      "label": "JTAG DTM",
+      "domain": "jtag",
+      "x": 4,
+      "y": 14,
+      "w": 25,
+      "h": 10,
+      "role": "block"
+    },
+    {
+      "id": "dmi",
+      "label": "DMI CDC",
+      "domain": "jtag",
+      "x": 33,
+      "y": 14,
+      "w": 20,
+      "h": 10,
+      "role": "bridge"
+    },
+    {
+      "id": "cpu",
+      "label": "Hazard3",
+      "domain": "system",
+      "x": 57,
+      "y": 14,
+      "w": 36,
+      "h": 10,
+      "role": "block"
+    },
+    {
+      "id": "cpu-mem",
+      "label": "CPU memory frontend",
+      "domain": "system",
+      "x": 57,
+      "y": 37,
+      "w": 36,
+      "h": 12,
+      "role": "block"
+    },
+    {
+      "id": "sram",
+      "label": "Main SRAM\n4 × 32 KiB",
+      "domain": "system",
+      "x": 107,
+      "y": 37,
+      "w": 28,
+      "h": 12,
+      "role": "block",
+      "ip": "sram"
+    },
+    {
+      "id": "sdio",
+      "label": "SDIO0 host\nSYS APB4 isolation",
+      "domain": "system",
+      "x": 141,
+      "y": 13,
+      "w": 26,
+      "h": 14,
+      "role": "block",
+      "ip": "sdio",
+      "apb_target": "sdio"
+    },
+    {
+      "id": "sdio-dma",
+      "label": "Private DMA",
+      "domain": "system",
+      "x": 141,
+      "y": 36,
+      "w": 26,
+      "h": 11,
+      "role": "block"
+    },
+    {
+      "id": "sdio-admission",
+      "label": "SDIO admission",
+      "domain": "system",
+      "x": 141,
+      "y": 54,
+      "w": 26,
+      "h": 10,
+      "role": "block"
+    },
+    {
+      "id": "fabric",
+      "label": "SYS AXI32 fabric",
+      "domain": "system",
+      "x": 35,
+      "y": 71,
+      "w": 132,
+      "h": 12,
+      "role": "rail"
+    },
+    {
+      "id": "dma-cdc",
+      "label": "AXI CDC\nPCLK → SYS",
+      "domain": "system",
+      "x": 6,
+      "y": 71,
+      "w": 24,
+      "h": 12,
+      "role": "bridge"
+    },
+    {
+      "id": "dma-admission",
+      "label": "DMA admission",
+      "domain": "peripheral",
+      "x": 6,
+      "y": 93,
+      "w": 34,
+      "h": 10,
+      "role": "block"
+    },
+    {
+      "id": "dma",
+      "label": "Central DMA · 8 ch",
+      "domain": "peripheral",
+      "x": 6,
+      "y": 112,
+      "w": 34,
+      "h": 11,
+      "role": "block",
+      "ip": "dma",
+      "apb_target": "dma"
+    },
+    {
+      "id": "sram-cfg",
+      "label": "SRAM cfg",
+      "domain": "system",
+      "x": 50,
+      "y": 93,
+      "w": 19,
+      "h": 10,
+      "role": "block",
+      "apb_target": "sram"
+    },
+    {
+      "id": "sysctrl",
+      "label": "SYSCTRL",
+      "domain": "system",
+      "x": 74,
+      "y": 93,
+      "w": 19,
+      "h": 10,
+      "role": "block",
+      "ip": "sysctrl",
+      "apb_target": "sysctrl"
+    },
+    {
+      "id": "pclk-apb",
+      "label": "APB4 CDC\nper target",
+      "domain": "peripheral",
+      "x": 53,
+      "y": 111,
+      "w": 35,
+      "h": 12,
+      "role": "bridge"
+    },
+    {
+      "id": "pclk-rail",
+      "label": "APB4",
+      "domain": "peripheral",
+      "x": 44.5,
+      "y": 130,
+      "w": 4.5,
+      "h": 72,
+      "role": "rail",
+      "rotate": true
+    },
+    {
+      "id": "aon-apb",
+      "label": "APB4 CDC\nto AON",
+      "domain": "aon",
+      "x": 96,
+      "y": 93,
+      "w": 22,
+      "h": 10,
+      "role": "bridge"
+    },
+    {
+      "id": "aon-rail",
+      "label": "",
+      "domain": "aon",
+      "x": 116,
+      "y": 115,
+      "w": 2,
+      "h": 21,
+      "role": "rail"
+    },
+    {
+      "id": "clint",
+      "label": "CLINT",
+      "domain": "aon",
+      "x": 96,
+      "y": 116,
+      "w": 17,
+      "h": 7,
+      "role": "block",
+      "ip": "clint",
+      "apb_target": "clint"
+    },
+    {
+      "id": "archinfo",
+      "label": "ARCHINFO",
+      "domain": "aon",
+      "x": 96,
+      "y": 128,
+      "w": 17,
+      "h": 7,
+      "role": "block",
+      "ip": "archinfo",
+      "apb_target": "archinfo"
+    },
+    {
+      "id": "rcu",
+      "label": "RCU",
+      "domain": "aon",
+      "x": 97,
+      "y": 144,
+      "w": 20,
+      "h": 7,
+      "role": "block",
+      "ip": "rcu"
+    },
+    {
+      "id": "rtc-tick",
+      "label": "RTC timing",
+      "domain": "aon",
+      "x": 97,
+      "y": 156,
+      "w": 20,
+      "h": 7,
+      "role": "block"
+    },
+    {
+      "id": "wdg-tick",
+      "label": "WDG timing",
+      "domain": "aon",
+      "x": 97,
+      "y": 165,
+      "w": 20,
+      "h": 7,
+      "role": "block"
+    },
+    {
+      "id": "xpi-axi",
+      "label": "AXI CDC\nto MEM",
+      "domain": "memory",
+      "x": 123,
+      "y": 93,
+      "w": 21,
+      "h": 11,
+      "role": "bridge"
+    },
+    {
+      "id": "xpi-apb",
+      "label": "APB4 CDC\nto MEM",
+      "domain": "memory",
+      "x": 147,
+      "y": 93,
+      "w": 22,
+      "h": 11,
+      "role": "bridge"
+    },
+    {
+      "id": "xpi",
+      "label": "XPI controller",
+      "domain": "memory",
+      "x": 128,
+      "y": 115,
+      "w": 36,
+      "h": 13,
+      "role": "block",
+      "ip": "xpi",
+      "apb_target": "xpi"
+    },
+    {
+      "id": "xpi-pins",
+      "label": "NOR / optional NSS1 PSRAM",
+      "domain": "memory",
+      "x": 122,
+      "y": 137,
+      "w": 48,
+      "h": 9,
+      "role": "io"
+    },
+    {
+      "id": "gpio",
+      "label": "GPIO / AF",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 130,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "gpio",
+      "apb_target": "gpio"
+    },
+    {
+      "id": "uart0",
+      "label": "UART0",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 139,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "uart0",
+      "apb_target": "uart0"
+    },
+    {
+      "id": "i2c0",
+      "label": "I2C0",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 148,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "i2c",
+      "apb_target": "i2c0"
+    },
+    {
+      "id": "spi",
+      "label": "SPI0",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 157,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "spi",
+      "apb_target": "spi"
+    },
+    {
+      "id": "timer0",
+      "label": "TIM0",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 166,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "timer",
+      "apb_target": "timer0"
+    },
+    {
+      "id": "timer1",
+      "label": "TIM1",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 175,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "apb_target": "timer1"
+    },
+    {
+      "id": "pwm",
+      "label": "PWM",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 184,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "pwm",
+      "apb_target": "pwm"
+    },
+    {
+      "id": "ws2812",
+      "label": "WS2812",
+      "domain": "peripheral",
+      "x": 23,
+      "y": 193,
+      "w": 18,
+      "h": 7,
+      "role": "block",
+      "ip": "ws2812",
+      "apb_target": "ws2812"
+    },
+    {
+      "id": "crc",
+      "label": "CRC",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 130,
+      "w": 34,
+      "h": 7,
+      "role": "block",
+      "ip": "crc",
+      "apb_target": "crc"
+    },
+    {
+      "id": "rng",
+      "label": "RNG",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 139,
+      "w": 34,
+      "h": 7,
+      "role": "block",
+      "ip": "rng",
+      "apb_target": "rng"
+    },
+    {
+      "id": "crypto",
+      "label": "Crypto",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 148,
+      "w": 34,
+      "h": 7,
+      "role": "block",
+      "ip": "crypto",
+      "apb_target": "crypto"
+    },
+    {
+      "id": "rtc",
+      "label": "RTC registers",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 156,
+      "w": 34,
+      "h": 7,
+      "role": "block",
+      "ip": "rtc",
+      "apb_target": "rtc"
+    },
+    {
+      "id": "wdg",
+      "label": "WDG registers",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 165,
+      "w": 34,
+      "h": 7,
+      "role": "block",
+      "ip": "wdg",
+      "apb_target": "wdg"
+    },
+    {
+      "id": "i2s",
+      "label": "I2S registers / FIFO",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 178,
+      "w": 34,
+      "h": 8,
+      "role": "block",
+      "ip": "i2s",
+      "apb_target": "i2s"
+    },
+    {
+      "id": "dvp",
+      "label": "DVP registers / FIFO",
+      "domain": "peripheral",
+      "x": 55,
+      "y": 193,
+      "w": 34,
+      "h": 8,
+      "role": "block",
+      "ip": "dvp",
+      "apb_target": "dvp"
+    },
+    {
+      "id": "audio",
+      "label": "I2S serial engine",
+      "domain": "audio",
+      "x": 125,
+      "y": 178,
+      "w": 43,
+      "h": 8,
+      "role": "block"
+    },
+    {
+      "id": "pixel",
+      "label": "DVP sampler",
+      "domain": "dvp_pixel",
+      "x": 125,
+      "y": 193,
+      "w": 43,
+      "h": 8,
+      "role": "block"
+    },
+    {
+      "id": "ppalite",
+      "label": "PPALite / route",
+      "domain": "peripheral",
+      "x": 126,
+      "y": 156,
+      "w": 41,
+      "h": 11,
+      "role": "block",
+      "ip": "ppalite",
+      "apb_target": "ppalite"
+    }
+  ],
+  "edges": [
+    {
+      "id": "jtag-dmi",
+      "from": "jtag",
+      "to": "dmi",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "debug-dmi",
+      "from": "dmi",
+      "to": "cpu",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "crossing": "debug_dmi"
+    },
+    {
+      "id": "cpu-ahb",
+      "from": "cpu",
+      "to": "cpu-mem",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "I/D AHB-Lite",
+        "x": 75,
+        "y": 30.5
+      }
+    },
+    {
+      "id": "cpu-local",
+      "from": "cpu-mem",
+      "to": "sram",
+      "kind": "data",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "Local I/D",
+        "x": 100,
+        "y": 34
+      }
+    },
+    {
+      "id": "cpu-slow",
+      "from": "cpu-mem",
+      "to": "fabric",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.30303030303030304,
+      "via": [],
+      "arrow": true,
+      "owner": "cpu_slow",
+      "label": {
+        "text": "CPU slow · owner 0",
+        "x": 75,
+        "y": 57.5
+      }
+    },
+    {
+      "id": "sram-axi",
+      "from": "fabric",
+      "to": "sram",
+      "kind": "data",
+      "source_side": "north",
+      "target_side": "south",
+      "source_position": 0.6515151515151515,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "SRAM group ports",
+        "x": 121,
+        "y": 57.5
+      }
+    },
+    {
+      "id": "dma-admit",
+      "from": "dma",
+      "to": "dma-admission",
+      "kind": "data",
+      "source_side": "north",
+      "target_side": "south",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "dma-axi",
+      "from": "dma-admission",
+      "to": "dma-cdc",
+      "kind": "data",
+      "source_side": "north",
+      "target_side": "south",
+      "source_position": 0.35294117647058826,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "crossing": "dma_axi"
+    },
+    {
+      "id": "dma-owner",
+      "from": "dma-cdc",
+      "to": "fabric",
+      "kind": "data",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "owner": "central_dma",
+      "label": {
+        "text": "Owner 1",
+        "x": 28,
+        "y": 67.7
+      }
+    },
+    {
+      "id": "sdio-private",
+      "from": "sdio",
+      "to": "sdio-dma",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "sdio-admit",
+      "from": "sdio-dma",
+      "to": "sdio-admission",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "sdio-owner",
+      "from": "sdio-admission",
+      "to": "fabric",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.9015151515151515,
+      "via": [],
+      "arrow": true,
+      "owner": "sdio",
+      "label": {
+        "text": "Owner 2",
+        "x": 154,
+        "y": 67.2
+      }
+    },
+    {
+      "id": "sdio-apb",
+      "from": "fabric",
+      "to": "sdio",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "east",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [
+        [
+          170,
+          77
+        ],
+        [
+          170,
+          20
+        ]
+      ],
+      "arrow": true
+    },
+    {
+      "id": "sram-apb",
+      "from": "fabric",
+      "to": "sram-cfg",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.1856060606060606,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "sysctrl-apb",
+      "from": "fabric",
+      "to": "sysctrl",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.36742424242424243,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-apb",
+      "from": "fabric",
+      "to": "pclk-apb",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.2689393939393939,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-rail",
+      "from": "pclk-apb",
+      "to": "pclk-rail",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [
+        [
+          70.5,
+          126
+        ],
+        [
+          46.75,
+          126
+        ]
+      ],
+      "arrow": false
+    },
+    {
+      "id": "pclk-dma",
+      "from": "pclk-rail",
+      "to": "dma",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.027777777777777776,
+      "target_position": 0.5,
+      "via": [
+        [
+          42.5,
+          132
+        ],
+        [
+          42.5,
+          117.5
+        ]
+      ],
+      "arrow": true
+    },
+    {
+      "id": "pclk-gpio",
+      "from": "pclk-rail",
+      "to": "gpio",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.04861111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-uart0",
+      "from": "pclk-rail",
+      "to": "uart0",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.1736111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-i2c0",
+      "from": "pclk-rail",
+      "to": "i2c0",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.2986111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-spi",
+      "from": "pclk-rail",
+      "to": "spi",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.4236111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-timer0",
+      "from": "pclk-rail",
+      "to": "timer0",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.5486111111111112,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-timer1",
+      "from": "pclk-rail",
+      "to": "timer1",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.6736111111111113,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-pwm",
+      "from": "pclk-rail",
+      "to": "pwm",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.7986111111111112,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-ws2812",
+      "from": "pclk-rail",
+      "to": "ws2812",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.9236111111111112,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-crc",
+      "from": "pclk-rail",
+      "to": "crc",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.04861111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-rng",
+      "from": "pclk-rail",
+      "to": "rng",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.1736111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-crypto",
+      "from": "pclk-rail",
+      "to": "crypto",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.2986111111111111,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-rtc",
+      "from": "pclk-rail",
+      "to": "rtc",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.4097222222222222,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-wdg",
+      "from": "pclk-rail",
+      "to": "wdg",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5347222222222222,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-i2s",
+      "from": "pclk-rail",
+      "to": "i2s",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.7222222222222223,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-dvp",
+      "from": "pclk-rail",
+      "to": "dvp",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.9305555555555556,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "aon-apb",
+      "from": "fabric",
+      "to": "aon-apb",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5454545454545454,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "aon-rail",
+      "from": "aon-apb",
+      "to": "aon-rail",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [
+        [
+          119.6,
+          98
+        ],
+        [
+          119.6,
+          114
+        ],
+        [
+          117,
+          114
+        ]
+      ],
+      "arrow": false
+    },
+    {
+      "id": "aon-clint",
+      "from": "aon-rail",
+      "to": "clint",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.21428571428571427,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "aon-archinfo",
+      "from": "aon-rail",
+      "to": "archinfo",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.7857142857142857,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "rcu-commands",
+      "from": "sysctrl",
+      "to": "rcu",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [
+        [
+          94.5,
+          98
+        ],
+        [
+          94.5,
+          147.5
+        ]
+      ],
+      "arrow": true,
+      "crossing": "rcu_commands",
+      "label": {
+        "text": "CMD CDC",
+        "x": 106.5,
+        "y": 140
+      }
+    },
+    {
+      "id": "rtc-timing",
+      "from": "rtc",
+      "to": "rtc-tick",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "wdg-timing",
+      "from": "wdg",
+      "to": "wdg-tick",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "xpi-axi",
+      "from": "fabric",
+      "to": "xpi-axi",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.7462121212121212,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "crossing": "xpi_mem_axi"
+    },
+    {
+      "id": "xpi-apb",
+      "from": "fabric",
+      "to": "xpi-apb",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.9318181818181818,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "xpi-data",
+      "from": "xpi-axi",
+      "to": "xpi",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.1527777777777778,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "xpi-control",
+      "from": "xpi-apb",
+      "to": "xpi",
+      "kind": "control",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.8333333333333334,
+      "via": [],
+      "arrow": true
+    },
+    {
+      "id": "xpi-io",
+      "from": "xpi",
+      "to": "xpi-pins",
+      "kind": "data",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "SCK / NSS[3:0] / IO[3:0]",
+        "x": 146,
+        "y": 132.5
+      }
+    },
+    {
+      "id": "i2s-fifos",
+      "from": "i2s",
+      "to": "audio",
+      "kind": "stream",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.5,
+      "target_position": 0.5,
+      "via": [],
+      "arrow": true,
+      "crossing": "i2s_tx_samples",
+      "reverse_crossing": "i2s_rx_samples",
+      "duplex": true,
+      "label": {
+        "text": "TX/RX CDC FIFOs",
+        "x": 107,
+        "y": 182
+      }
+    },
+    {
+      "id": "dvp-payload",
+      "from": "pixel",
+      "to": "dvp",
+      "kind": "stream",
+      "source_side": "west",
+      "target_side": "east",
+      "source_position": 0.3000000000000007,
+      "target_position": 0.3000000000000007,
+      "via": [],
+      "arrow": true,
+      "crossing": "dvp_payload",
+      "label": {
+        "text": "Payload FIFO",
+        "x": 107,
+        "y": 195.4
+      }
+    },
+    {
+      "id": "dvp-config",
+      "from": "dvp",
+      "to": "pixel",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.7749999999999986,
+      "target_position": 0.7749999999999986,
+      "via": [],
+      "arrow": true,
+      "crossing": "dvp_configuration",
+      "label": {
+        "text": "Config CDC",
+        "x": 107,
+        "y": 199.2
+      }
+    },
+    {
+      "id": "pclk-ppalite",
+      "from": "pclk-rail",
+      "to": "ppalite",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.6111111111111112,
+      "target_position": 0.5,
+      "via": [
+        [
+          121,
+          174
+        ],
+        [
+          121,
+          161.5
+        ]
+      ],
+      "arrow": true
+    }
+  ],
+  "pin_labels": [
+    {
+      "x": 16.5,
+      "y": 33,
+      "width": 27,
+      "text": "TCK / TMS / TDI\nTDO / TRSTn",
+      "leader": [
+        [
+          16.5,
+          24
+        ],
+        [
+          16.5,
+          28
+        ]
+      ]
+    },
+    {
+      "x": 154,
+      "y": 7.7,
+      "width": 34,
+      "text": "SCK / CMD / DAT[3:0]",
+      "leader": [
+        [
+          154,
+          10
+        ],
+        [
+          154,
+          13
+        ]
+      ]
+    },
+    {
+      "x": 151.5,
+      "y": 174.8,
+      "width": 28,
+      "text": "SCLK / LRCK / SD"
+    },
+    {
+      "x": 151.5,
+      "y": 189.9,
+      "width": 31,
+      "text": "PCLK / D[7:0] / sync"
+    },
+    {
+      "x": 10,
+      "y": 133.5,
+      "width": 20,
+      "text": "GPIO[31:0]",
+      "leader": [
+        [
+          20.8,
+          133.5
+        ],
+        [
+          23,
+          133.5
+        ]
+      ]
+    },
+    {
+      "x": 10,
+      "y": 142.5,
+      "width": 20,
+      "text": "TX/RX*",
+      "leader": [
+        [
+          20.8,
+          142.5
+        ],
+        [
+          23,
+          142.5
+        ]
+      ]
+    },
+    {
+      "x": 10,
+      "y": 151.5,
+      "width": 20,
+      "text": "SCL/SDA*",
+      "leader": [
+        [
+          20.8,
+          151.5
+        ],
+        [
+          23,
+          151.5
+        ]
+      ]
+    },
+    {
+      "x": 10,
+      "y": 160.5,
+      "width": 20,
+      "text": "SCK/CSn*\nMOSI/MISO*",
+      "leader": [
+        [
+          20.8,
+          160.5
+        ],
+        [
+          23,
+          160.5
+        ]
+      ]
+    },
+    {
+      "x": 10,
+      "y": 187.5,
+      "width": 20,
+      "text": "PWM[3:0]*",
+      "leader": [
+        [
+          20.8,
+          187.5
+        ],
+        [
+          23,
+          187.5
+        ]
+      ]
+    },
+    {
+      "x": 10,
+      "y": 196.5,
+      "width": 20,
+      "text": "DOUT*",
+      "leader": [
+        [
+          20.8,
+          196.5
+        ],
+        [
+          23,
+          196.5
+        ]
+      ]
+    }
+  ]
+}

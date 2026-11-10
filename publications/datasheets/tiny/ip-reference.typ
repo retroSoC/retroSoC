@@ -1,5 +1,6 @@
 #import "style.typ": *
-#import "diagrams.typ": ip-diagram
+#import "engineering-figures.typ": circuit-figure, binary-figures, storage-figures
+#import "diagrams.typ": flow
 #import "waveforms.typ": timing
 #let inline(value) = {
   // A deliberately limited inline grammar: explicit strong spans and raw code.
@@ -96,20 +97,26 @@
   [Bit-layout cells refer to the numbered field rows below each diagram. Reserved bits must
   be handled as specified by the register; register access checks still apply to the full word.]
   for register in reference.registers {
-    context metadata((kind:"tiny-register",family:family,key:register.key,page:here().page()))
-    block(above:rhythm.register-before,below:rhythm.metadata-after,breakable:false,sticky:true)[
-      #show heading: it => heading-layout(it,before:0pt,after:rhythm.register-after)
-      #set text(size:9pt)
-      #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
-      #heading(level:depth+2,numbering:none,outlined:false,bookmarked:true,register.name)
-      #label("reg-"+family+"-"+register.key)
-      #text(9pt,fill:muted)[#register.group · offset #code("0x"+str(register.offset,base:16)) · #register.access · reset #inline(register.reset)]
-      #linebreak()
-      #source(register.source,title:"RTL definition",line:register.line)
-      #if register.c_source!=none { [ · ]; source(register.c_source,title:"C ABI / HAL") }
+    // A field table may continue independently. Its bit map needs the register identity on the same page.
+    block(width:100%,above:rhythm.register-before,below:rhythm.bits-space,breakable:false)[
+      #context metadata((kind:"tiny-register",family:family,key:register.key,page:here().page()))
+      #block(above:0pt,below:rhythm.metadata-after)[
+        #show heading: it => heading-layout(it,before:0pt,after:rhythm.register-after)
+        #set text(size:9pt)
+        #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
+        #heading(level:depth+2,numbering:none,outlined:false,bookmarked:true,register.name)
+        #label("reg-"+family+"-"+register.key)
+        #text(9pt,fill:muted)[#register.group · offset #code("0x"+str(register.offset,base:16)) · #register.access · reset #inline(register.reset)]
+        #linebreak()
+        #source(register.source,title:"RTL definition",line:register.line)
+        #if register.c_source!=none { [ · ]; source(register.c_source,title:"C ABI / HAL") }
+      ]
+      #par(inline(register.description))
+      #block(above:rhythm.bits-space,below:0pt)[
+        #context metadata((kind:"tiny-register-bits",family:family,key:register.key,page:here().page()))
+        #bit-layout(register)
+      ]
     ]
-    par(inline(register.description))
-    block(breakable:false,above:rhythm.bits-space,below:rhythm.bits-space,bit-layout(register))
     let fields=register.fields.sorted(key:f=>-f.msb)
     ds-table("fields-"+family+"-"+register.key,[#register.name field descriptions],
       ([\#],[Bits],[Field],[Reset],[Description]),
@@ -121,36 +128,37 @@
 
 
 #let reference(entry) = {
-  pagebreak(weak:true)
-  context metadata((kind:"ip-start",id:entry.id,page:here().page()))
-  [#heading(level:3,entry.title)#label(entry.id)]
   ip(entry.id)
-  minor-title("Features and functional organization")
+  subhead(entry.id,"Features and Block Diagram",entry.depth)
   list(..entry.features.map(inline))
-  ip-diagram(entry)
-  minor-title("Functional description and integration boundary")
+  circuit-figure(entry.id)
+  subhead(entry.id,"Functional Description",entry.depth)
   for paragraph in entry.paragraphs {par(inline(paragraph))}
-  minor-title("Protocol and representative timing")
-  [The common AXI/APB rules in @tiny-bus and this instance's access rules both apply.
-    *Example waveforms show ordering and stable handshakes, not guaranteed cycle latency or electrical timing.*]
-  timing(if entry.family in data.waveforms {entry.family} else {"apb4"},[#entry.title representative transaction.],instance:entry.id)
-  if entry.id=="uart1" {
-    minor-title("Shared register reference")
-    [Use the @uart0 register definition with the UART1 base and IRQ from this chapter.
-      *Do not use the UART0 convenience HAL or DMA route as a UART1 binding.*]
-  } else {register-section(entry.family,3)}
-  minor-title("Software sequence and recovery")
-  enum(..entry.steps.map(inline))
-  if entry.id!="uart1" {
-    let api=data.apis.at(entry.family)
-    if api.len()>0 {ds-table("api-"+entry.id,[#entry.title selected SDK interfaces],([Function],[Declaration]),
-      api.map(a=>(code(a.name),code(a.signature))),widths:(1fr,3fr))}
-    if entry.family in data.examples {
-      code-block(raw(data.examples.at(entry.family),block:true,lang:"c"),breakable:true)
-      text(9pt,fill:muted)[Syntax-checked API fragment; clocks, pins, memory and arguments must already be valid.
-        Submission is not necessarily transfer completion.]
-    }
+  for (id,record) in data.illustrations.flows.pairs().filter(((id,r))=>r.owner==entry.id) {
+    flow(id,record.steps.map(inline),[#record.title. #record.note])
+    for path in record.sources {source-note(path,title:"Lifecycle source: "+path.split("/").last())}
   }
-  source-note(data.registers.at(entry.family).document,title:"Register and detailed interface contract")
-  context metadata((kind:"ip-end",id:entry.id,page:here().page()))
+  binary-figures(entry.id,"functional")
+  if entry.id=="dma" {[See @tiny-dma-format for the descriptor fields, controls and buffer lifetime.]}
+  storage-figures(entry.id)
+  subhead(entry.id,"Protocol and Timing",entry.depth)
+  [The common AXI/APB rules in @tiny-bus and this instance's access rules both apply.
+    *Example waveforms show ordering and stable handshakes, not guaranteed latency or electrical timing.*]
+  binary-figures(entry.id,"protocol")
+  timing(if entry.family in data.waveforms {entry.family} else {"apb4"},[#entry.title representative transaction.],instance:entry.id)
+  register-section(entry.family,entry.depth)
+  subhead(entry.id,"Software",entry.depth)
+  enum(..entry.steps.map(inline))
+  let api=data.apis.at(entry.family)
+  if api.len()>0 {ds-table("api-"+entry.id,[#entry.title selected SDK interfaces],([Function],[Declaration]),
+    api.map(a=>(code(a.name),code(a.signature))),widths:(1fr,2.8fr))}
+  if entry.family in data.examples {
+    block(breakable:false)[
+      #minor-title("Minimal SDK call example")
+      #code-block(raw(data.examples.at(entry.family),block:true,lang:"c"))
+      #text(9pt,fill:muted)[Syntax-checked API fragment; clocks, pins, memory and arguments must already be valid.
+        Submission is not necessarily transfer completion.]
+      #source-note(data.registers.at(entry.family).document,title:"Register and detailed interface contract")
+    ]
+  } else {source-note(data.registers.at(entry.family).document,title:"Register and detailed interface contract")}
 }

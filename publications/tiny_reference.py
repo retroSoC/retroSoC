@@ -29,8 +29,11 @@ ARCHINFO = "rtl/tiny/top/tiny_archinfo.sv"
 CPU = "rtl/tiny/top/tiny_cpu_wrapper.sv"
 CPU_MEM = "rtl/tiny/top/tiny_cpu_mem.sv"
 SRAM = "rtl/tiny/top/tiny_sram.sv"
-FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo"}
-MANAGED = {"publication_media", "hazard3", "cluster_common", "cluster_archinfo", "cluster_pwm", "cluster_rtc", "cluster_wdg"}
+FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo",
+            "rng", "crc", "ws2812", "crypto", "i2s", "sdio", "dvp", "spi"}
+MANAGED = {"publication_media", "hazard3", "cluster_common", "cluster_archinfo", "cluster_pwm", "cluster_rtc", "cluster_wdg",
+           "cluster_crc", "cluster_rng"}
+PROFILES = {"configs/ci/ics55-tiny.mk": ("ICS55", "YES"), "configs/ci/ihp130-tiny.mk": ("IHP130", "NO")}
 SUPPORTED_SYSCTRL = {
     "CORESEL", "IPSEL", "USER_CORE_RESET", "USER_CORE_STATUS", "FAULT_STATUS", "FAULT_ADDR",
     "FAULT_COUNT", "FAULT_MASTER", "FAULT_DETAIL", "PERF_CTRL", "PERF_MGMT_WAIT_LO",
@@ -60,9 +63,13 @@ def require_snippets(root: Path, path: str, snippets: list[str]) -> None:
             raise ValueError(f"Tiny behavior binding changed: {path}: {snippet}")
 
 
-def facts(root: Path = ROOT) -> dict:
-    profile = profile_values(root / "configs/ci/ihp130-tiny.mk")
-    required = {"SOC": "TINY", "PDK": "IHP130", "HAVE_HP": "NO", "HAVE_PLL": "NO",
+def facts(root: Path = ROOT, profile_path: str = "configs/ci/ics55-tiny.mk") -> dict:
+    if profile_path not in PROFILES:
+        raise ValueError("Tiny publication profile is not a reviewed product configuration")
+    profile = profile_values(root / profile_path)
+    pdk, pll = PROFILES[profile_path]
+    required = {"SOC": "TINY", "PDK": pdk, "HAVE_HP": "NO", "HAVE_PLL": pll,
+                "HAVE_SRAM_MACRO": "YES", "CLINT_TIMEBASE_HZ": "1000000",
                 "SRAM_SIZE_KIB": "128", "EXT_CLK_HZ": "24000000", "ISA": "RV32IM",
                 "HAVE_CSR": "YES", "LINK_TYPE": "ld2_all_sram"}
     if any(profile.get(key) != value for key, value in required.items()):
@@ -75,25 +82,27 @@ def facts(root: Path = ROOT) -> dict:
     cpu = instance_parameters(top, "tiny_cpu_wrapper", "u_cpu")
     if ram != {"CapacityKiB": 128, "DataWidth": 32, "IdWidth": 1} or ram_reg.get("Present") != 1:
         raise ValueError("Tiny SRAM parameters changed")
-    # P4 changes local routing, not physical geometry or the book's IHP130
-    # compatibility selection. Snapshot enforcement still precedes publication.
     topology = read_topology(root / TOPOLOGY, root / MAP)
     require_snippets(root, TOP, ["tiny_sram u_sram", "gen_sram_attachment", "axi4_connector u_connector",
                                ".ID_WIDTH(1)", ".DATA_WIDTH(32)"])
     require_snippets(root, SRAM, ["group < 4", "tiny_sram_group u_group"])
-    if dma != {"NumChannels": 4, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x7F9, "EnableStreams": 0}:
+    if dma != {"NumChannels": 8, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x339FF,
+               "SupportedRequests": 0x339FF, "IpVersion": 0x20002, "EnableStreams": 1, "EnableSpi": 1,
+               "EnableOriginQualifier": 1, "EnablePpaliteGuard": 1,
+               "SpiTxAddress": 0x1001D054, "SpiRxAddress": 0x1001D058}:
         raise ValueError("Tiny DMA parameters changed")
-    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "ResetSyncStages": 5}:
+    if topology["dma_channels"] != dma["NumChannels"] or int(topology["dma_request_mask"], 0) != dma["RequestMask"]:
+        raise ValueError("Tiny DMA topology and instance disagree")
+    if cpu != {"ExternalIrqCount": 30, "EnableAtomics": 0, "ResetSyncStages": 5, "EnableWfiGate": 1, "PreserveDebug": 1}:
         raise ValueError("Tiny CPU integration changed")
     require_snippets(root, RESET_TREE, [".STAGE(5)", "assign cpu_ready_rst_n_o = &leaf_rst_n_o;"])
     require_snippets(root, CPU, ["hazard3_cpu_2port", ".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
     require_snippets(root, CPU_MEM, [".TwoCycleErrors(1'b1)", "ErrorFirst", "ErrorLast"])
-    require_snippets(root, TOP, ["u_masters_axi4_if[3]", "u_targets_axi4_if[23]",
-                               "assign u_masters_axi4_if[2].arvalid = 1'b0;",
-                               "assign u_masters_axi4_if[2].awvalid = 1'b0;",
-                               ".slow_axi4(u_masters_axi4_if[0])",
-                               ".axi4(u_masters_axi4_if[1])", ".cfg_apb4(u_sram_apb4_if)",
-                               "assign s_tick = s_tick_count_q == 5'd23;"])
+    require_snippets(root, TOP, ["u_masters_axi4_if[3]", "u_targets_axi4_if[`RETROSOC_TINY__TARGET_COUNT]",
+                               ".cfg_apb4(u_sram_apb4_if)", ".TargetMask(18'h37fff)"])
+    ppalite = instance_parameters(top, "apb4_ppalite", "u_ppalite")
+    if ppalite != {"ExternalRoute": 1, "CapabilityValue": 0x3FF}:
+        raise ValueError("Tiny PPALite integration parameters changed")
     require_snippets(root, SYSCTRL, ["(apb4.paddr[1:0] != 2'd0)", "(apb4.pstrb != 4'hf)",
                                    "if (!s_test_q[31] && apb4.pwdata[31]) s_test_d = apb4.pwdata & 32'h8000_ff01;",
                                    "if (!s_fault_stat_d[0])", "if (rtc_wake_i) s_wake_d = 1'b1;"])
@@ -107,10 +116,11 @@ def facts(root: Path = ROOT) -> dict:
     arch_text = arch_text.replace("`RETROSOC_TINY__TECHNOLOGY", f"32'h{platform['technology']:08x}")
     arch = instance_parameters(arch_text.split(".BUILD_ID")[0] + ") u_archinfo (", "apb4_archinfo", "u_archinfo")
     if arch != {"REFERENCE_CLOCK_HZ": 24000000, "SRAM_BYTES": 131072, "TOPOLOGY": 0x20200001,
-                "FEATURES0": 0x7FFE, "TECHNOLOGY": 0x02010082}:
+                "FEATURES0": platform["features0"], "TECHNOLOGY": platform["technology"]}:
         raise ValueError("Tiny discovery parameters changed")
     require_snippets(root, ARCHINFO, ["32'h5449_4e59 : u_info_apb4_if.prdata", ".device_id_valid_i(1'b0)", ".device_id_read_enable_i(1'b0)"])
-    return {"profile": profile, "sram": ram, "dma": dma, "cpu": cpu, "archinfo": arch,
+    return {"profile": profile, "profile_path": profile_path, "sram": ram, "dma": dma, "cpu": cpu, "archinfo": arch,
+            "ppalite": ppalite,
             "fabric": topology["fabric"],
             "hardware_isa": "RV32IMC", "firmware_isa": profile["ISA"], "soc_id": 0x54494E59,
             "system_hz": int(profile["EXT_CLK_HZ"]), "timebase_hz": int(profile["CLINT_TIMEBASE_HZ"])}
@@ -143,7 +153,7 @@ def sysctrl_registers(root: Path) -> dict:
     offsets = {r["symbol"]: int(r["offset"], 0) for r in read(root / MAP)["sysctrl_registers"]}
     definitions = {
         "FAULT_STATUS": ("RW1C", "Sticky first fault. Bit 0 clears pending; a new fault can win after clear.", [("PENDING", 0, 0, "A fault record is pending."), ("WRITE", 1, 1, "Faulting transaction was a write."), ("CLASS", 2, 4, "1: decode error; 2: protocol/target error.")]),
-        "FAULT_MASTER": ("RO", "Master of the captured first fault.", [("MASTER", 0, 1, "0 CPU, 1 DMA, 2 reserved SDIO ingress; SDIO is not integrated.")]),
+        "FAULT_MASTER": ("RO", "Master of the captured first fault.", [("MASTER", 0, 1, "0 CPU slow path, 1 central DMA, 2 SDIO private DMA.")]),
         "FAULT_DETAIL": ("RO", "Captured AXI response code.", [("RESPONSE", 0, 1, "AXI RRESP/BRESP encoding.")]),
         "PERF_CTRL": ("RW / command", "Enable counters, clear counters/snapshots or capture a coherent pair. Clear takes precedence over snapshot.", [("ENABLE", 0, 0, "Counter enable state."), ("CLEAR", 1, 1, "Write-one pulse; reads zero."), ("SNAPSHOT", 2, 2, "Write-one pulse; reads zero.")]),
         "TEST_STATUS": ("RW sticky", "First full-word valid result is sticky until system reset; write mask 0x8000FF01.", [("PASS", 0, 0, "Pass when valid is set."), ("CODE", 8, 15, "Application-defined result code."), ("VALID", 31, 31, "The first valid write locks the result.")]),
@@ -173,9 +183,14 @@ def collect_registers(fact: dict, root: Path = ROOT) -> dict:
     if set(profiles) != FAMILIES or any(s.get("memory_map") != MAP for s in profiles.values()):
         raise ValueError("Tiny register families must be independent of Mini")
     profiles["sram"]["parameters"].update(CapacityKiB=fact["sram"]["CapacityKiB"], BankCount=32, DataBytes=4)
-    profiles["dma"]["parameters"].update(NumChannels=fact["dma"]["NumChannels"], EnableStreams=0, ChannelIndexWidth=2)
+    profiles["dma"]["parameters"].update(fact["dma"], ChannelIndexWidth=3)
     profiles["dma"]["groups"][1]["count"] = fact["dma"]["NumChannels"]
     profiles["archinfo"]["parameters"].update(fact["archinfo"])
+    pulls = int(fact["profile"]["PDK"] == "ICS55")
+    profiles["gpio"]["parameters"].update(HasInputCmos=pulls, HasPullUp=pulls, HasPullDown=pulls)
+    profiles["pwm"]["parameters"]["UseRuntimeClockHz"] = 1
+    annotations["dma"]["main.IP_VERSION"]["reset"] = hex(fact["dma"]["IpVersion"])
+    annotations["dma"]["main.SUPPORTED_REQUESTS"]["reset"] = hex(fact["dma"]["SupportedRequests"])
     result = {name: registers.extract_profile(name, spec, annotations.get(name, {})) for name, spec in profiles.items()}
     info = result["archinfo"]
     info["sources"].append(ARCHINFO)
@@ -188,8 +203,12 @@ def collect_registers(fact: dict, root: Path = ROOT) -> dict:
             reg.pop("rtl_reset", None)
             reg["reset"] = "Build-dependent"
             for f in reg["fields"]:
-                f["reset"] = "Build-dependent"
+                f["reset"] = "0" if f["name"] == "Reserved" else "Build-dependent"
     result["sysctrl"] = sysctrl_registers(root)
+    from publications.tiny_v02_reference import apply_integration, ppalite_registers, rcu_registers
+    result["rcu"] = rcu_registers(fact, root)
+    result["ppalite"] = ppalite_registers(fact, root)
+    apply_integration(result, fact, root)
     registers.validate_reference(result)
     validate_register_inventory(result, read(root / BOOK / "register-contract.json"))
     return result
@@ -210,10 +229,12 @@ def validate_evidence(value: dict) -> None:
 
 def validate_configuration(config: dict) -> None:
     expected = {"title": "retroSoC Tiny Gen1", "document_id": "RS-TINY-DS", "status": "DRAFT",
-                "profile": "configs/ci/ihp130-tiny.mk", "entrypoint": "publications/datasheets/tiny/datasheet.typ",
+                "profile": "configs/ci/ics55-tiny.mk", "entrypoint": "publications/datasheets/tiny/datasheet.typ",
                 "filename": "retrosoc-tiny-gen1-datasheet.pdf"}
     if any(config.get(key) != value for key, value in expected.items()):
         raise ValueError("Tiny publication configuration cannot select another product or claim release")
+    if config.get("compatibility_profiles") != ["configs/ci/ihp130-tiny.mk"]:
+        raise ValueError("Tiny compatibility profile inventory changed")
 
 
 def validate_maps(root: Path, fact: dict) -> tuple:
@@ -229,7 +250,8 @@ def validate_maps(root: Path, fact: dict) -> tuple:
 
 def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     validate_configuration(config)
-    fact = facts()
+    fact = facts(profile_path=config["profile"])
+    compatibility = [facts(profile_path=path) for path in config["compatibility_profiles"]]
     reset, regions, topology = validate_maps(ROOT, fact)
     pads, _ = read_pins(ROOT / PINS)
     validate_clocks(ROOT / CLOCKS, ROOT)
@@ -241,11 +263,17 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     index = read(ROOT / BOOK / "chapter-index.json")
     frozen_ids = read(ROOT / BOOK / "structure-contract.json")["ip_ids"]
     if ([r["id"] for r in catalog] != [r["id"] for r in index] or [r["id"] for r in index] != frozen_ids
-            or len(catalog) != 14 or any(r["family"] not in refs for r in catalog)):
-        raise ValueError("Tiny IP inventory must contain the fourteen reviewed chapters")
+            or len(catalog) != 23 or any(r["family"] not in refs for r in catalog)):
+        raise ValueError("Tiny IP inventory must contain the twenty-three reviewed chapters")
     assigned = {r for row in catalog for r in row["regions"]}
     if assigned != {r["symbol"] for r in regions} or sum(len(r["regions"]) for r in catalog) != len(assigned):
         raise ValueError("Tiny catalog misses an address region")
+    from publications.tiny_v02_reference import validate_catalog, package_rows
+    register_index = validate_catalog(catalog, refs, regions, topology)
+    overview = read(ROOT / BOOK / "overview-groups.json")
+    overview_ids = [name for group in overview for name in group["ids"]]
+    if len(overview_ids) != len(set(overview_ids)) or set(overview_ids) != set(frozen_ids):
+        raise ValueError("Tiny overview must cover each current IP exactly once")
     waves = read(ROOT / BOOK / "waveforms.json")
     audit = validate_waveforms(waves, ROOT)
     evidence = read(ROOT / BOOK / "evidence.json")
@@ -254,6 +282,7 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     paths = {MAP, TOPOLOGY, PINS, CLOCKS, TOP, RESET_TREE, SYSCTRL, ARCHINFO, "scripts/generate_tiny.py", config["profile"],
              "docs/ip/tiny-soc.md", "docs/ip/tiny-soc-verification.md", "dependencies/dependencies.lock.json", "LICENSE"}
     paths.update(contract["sources"])
+    paths.update(config["compatibility_profiles"])
     paths.update(b["file"] for b in contract["bindings"])
     paths.update(wave_sources(waves))
     for item in refs.values():
@@ -261,14 +290,16 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
         paths.add(item["document"])
     for row in catalog:
         paths.update(row["sources"])
-    for template in (ROOT / BOOK).glob("*.typ"):
+    for template in (ROOT / BOOK).rglob("*.typ"):
         paths.update(re.findall(r'source(?:-note)?\(\s*"([^"]+)"', template.read_text(encoding="utf-8")))
     examples, apis = {}, {}
     for family in refs:
         alias = {"sram": "onchip_sram", "wdg": "watchdog"}.get(family, family)
         header = "crt/include/retrosoc/" + ("core/archinfo.h" if family == "archinfo" else f"hal/{alias}.h")
-        paths.add(header)
-        declarations = re.findall(r"\b((?:rs_status_t|void|bool|uint\d+_t)\s+(rs_\w+)\s*\([^;{}]*\));", (ROOT / header).read_text(encoding="utf-8"))
+        headers = [header] + (["crt/include/retrosoc/hal/xpi_psram.h"] if family == "xpi" else [])
+        paths.update(headers)
+        declarations = re.findall(r"\b((?:rs_status_t|void|bool|uint\d+_t)\s+(rs_\w+)\s*\([^;{}]*\));",
+                                  "\n".join((ROOT / path).read_text(encoding="utf-8") for path in headers))
         apis[family] = [dict(name=name, signature=" ".join(signature.split()) + ";") for signature, name in declarations
                         if family != "sysctrl" or any(term in name for term in ("fault", "perf", "test_status", "rtc_wake"))]
         path = ROOT / "publications/examples/tiny" / f"{family}.c"
@@ -284,6 +315,13 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
         raise ValueError("Tiny TCD layout changed")
     tcd = [dict(name=name, offset=getattr(layout, name).offset, bytes=ctypes.sizeof(types[kind]),
                 role="reserved" if "reserved" in name else "HAL result" if name in {"crc_result", "status", "bytes_done", "error_status"} else "configuration") for kind, name in members]
+    from publications.tiny_diagram_reference import collect as collect_illustrations
+    from publications.tiny_publication_reference import diagnostics
+    illustrations = collect_illustrations(ROOT, catalog, regions)
+    diagnostic_reference = diagnostics(ROOT, refs)
+    paths.update(illustrations["source_paths"])
+    paths.update({"publications/tiny_diagram_reference.py", "publications/tiny_publication_reference.py",
+                  "crt/include/retrosoc/core/status.h", "crt/include/retrosoc/hal/spi_regs.h"})
     for relative in paths:
         if relative.startswith("rtl/mini/") or not (ROOT / relative).is_file():
             raise ValueError(f"Tiny source missing or product leak: {relative}")
@@ -296,9 +334,13 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
             raise ValueError("Tiny technical sources differ from reviewed snapshot:\n" + changed)
     for r in regions:
         r.update(base_hex=f"0x{r['base']:08X}", end_hex=f"0x{r['end']:08X}", size_label=f"{r['size'] // 1024} KiB")
-    return dict(document=config, facts=fact, reset_address=f"0x{reset:08X}", regions=regions, interrupts=topology["interrupts"], gpio=topology["gpio_alt_functions"],
-                pads=[dataclasses.asdict(p) for p in pads], clocks=read(ROOT / CLOCKS)["domains"], registers=refs, catalog=catalog,
+    return dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
+                package=package_rows(ROOT), reset_address=f"0x{reset:08X}", regions=sorted(regions, key=lambda r: r["base"]),
+                interrupts=sorted(topology["interrupts"], key=lambda r: r["core_bit"]), gpio=topology["gpio_alt_functions"],
+                pads=[dataclasses.asdict(p) for p in pads], power_pads=read(ROOT / PINS)["power_pads"],
+                clocks=read(ROOT / CLOCKS)["domains"], registers=refs, catalog=catalog,
                 chapter_index=index, waveforms=waves, waveform_audit=audit, source_paths=sorted(paths),
                 managed_sources=[v for k, v in lock["sources"].items() if k in MANAGED],
                 wave_renderer="/" + lock["archives"]["typst_wavy"]["destination"] + "/wavy.js",
-                evidence=copy.deepcopy(evidence), examples=examples, apis=apis, tcd=tcd)
+                evidence=copy.deepcopy(evidence), examples=examples, apis=apis, tcd=tcd,
+                illustrations=illustrations, diagnostics=diagnostic_reference)
