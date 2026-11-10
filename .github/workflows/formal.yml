@@ -106,8 +106,14 @@ jobs:
         run: make CONFIG=configs/ci/ihp130.mk formal-doctor
 
       - name: Prove formal-${{ matrix.proof }}
+        if: matrix.proof != 'dma'
         id: proof
         run: make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal-${{ matrix.proof }}
+
+      - name: Prove formal-dma with hosted budget
+        if: matrix.proof == 'dma'
+        id: proof_dma
+        run: make CONFIG=configs/ci/ihp130.mk FORMAL=YES FORMAL_TIMEOUT=600 formal-dma
 
       - name: Summarize formal evidence
         if: always()
@@ -117,7 +123,7 @@ jobs:
           --label "formal-${{ matrix.proof }}"
           --profile configs/ci/ihp130.mk --pdk IHP130 --suite formal
           --executed-formal --require-formal
-          --run-status "${{ steps.proof.outcome }}"
+          --run-status "${{ steps.proof.outcome || steps.proof_dma.outcome }}"
           --output "build/ci-summary/formal-${{ matrix.proof }}.json"
           --step-summary "${GITHUB_STEP_SUMMARY}"
 

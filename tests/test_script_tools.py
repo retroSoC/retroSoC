@@ -2805,3 +2805,10 @@ def test_full_flow_dispatch_uses_explicit_pdk_profiles() -> None:
         assert f"profile: {profile}" in workflow
     assert "inputs.pdk == 'IHP130' &&" not in workflow
     assert "timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}" in workflow
+
+
+def test_formal_workflow_has_targeted_dma_budget() -> None:
+    workflow = (ROOT / ".github/workflows/formal.yml").read_text()
+    assert "if: matrix.proof != 'dma'" in workflow
+    assert "if: matrix.proof == 'dma'" in workflow
+    assert "FORMAL_TIMEOUT=600" in workflow
