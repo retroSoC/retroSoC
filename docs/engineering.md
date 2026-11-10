@@ -278,12 +278,31 @@ SBY configuration, SMT2 model, logs, traces, task status, and structured
 verdict are stored below
 `build/<variant>/formal/<proof>/` and `build/<variant>/meta/formal.json`.
 The IHP130 smoke workflow enables `formal-doctor` so hosted CI checks that the
-locked SBY and Bitwuzla tools are present. It does not run `make formal`: the
-GA2D cover bound is 199 steps with a 7200s task budget, which does not fit the
-60-minute smoke job. Full PDK regressions also skip those PDK-independent
-protocol proofs. `formal.yml` runs the explicit per-proof targets in longer
-bounded jobs weekly or on demand. Run `make CONFIG=<profile> formal` locally
-when the aggregate proof suite is required.
+locked SBY and Bitwuzla tools are present. It does not run `make formal`. Full
+PDK regressions also skip those PDK-independent protocol proofs. `formal.yml`
+runs the other explicit per-proof targets in longer bounded jobs weekly or on
+demand. Run `make CONFIG=<profile> formal` locally when the aggregate proof
+suite is required.
+
+GA2D is intentionally local-only rather than a GitHub-hosted matrix entry. A
+diagnostic run at `c73a9f52` completed prove and cover in about 85 minutes with
+a measured peak RSS of `127214812 kB` (about 121 GiB); two hosted attempts were
+cancelled without a proof verdict. This measurement guides capacity selection,
+not a universal memory requirement or a clean-release verdict. Its manifest
+records the retained documentation-only dirty state.
+
+The local acceptance contract remains depth 36, cover depth 199, and a 7200s
+per-task budget. Prepare and execute it with:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk formal-doctor
+/usr/bin/time -v make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal-ga2d
+```
+
+Retain the manifest, prove/cover status, solver logs, and `/usr/bin/time` output.
+Acceptance evidence must match the exact clean source revision and input state.
+A successful hosted run does not include GA2D, and missing local GA2D evidence
+is `NOT_RUN`, never `PASS`.
 
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
@@ -396,9 +415,10 @@ to the current run start and marks skipped physical stages `NOT_RUN`.
 can select a provisioned high-memory runner. The default hosted label is not
 represented as a solution to the resource limitation.
 
-`formal.yml` runs explicit per-proof targets as bounded parallel jobs weekly or
-on demand. Smoke `formal_checks` still checks only the environment. A successful
-SV2V conversion or doctor run is not a completed proof.
+`formal.yml` runs explicit per-proof targets other than local-only GA2D as
+bounded parallel jobs weekly or on demand. Smoke `formal_checks` still checks
+only the environment. A successful SV2V conversion or doctor run is not a
+completed proof, and a hosted workflow success does not include GA2D evidence.
 
 `development-environment.yml` retains Docker and Nix IHP130 verification for
 full-matrix, environment, dependency, and build-entry changes rather than

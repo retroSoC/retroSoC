@@ -541,6 +541,22 @@ def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
     assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
 
 
+def test_ga2d_formal_is_local_only_with_unchanged_bounds() -> None:
+    workflow = (ROOT / ".github/workflows/formal.yml").read_text(encoding="utf-8")
+    proof_matrix = workflow.split("matrix:\n        proof:\n", 1)[1].split("    steps:", 1)[0]
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    engineering = (ROOT / "docs/engineering.md").read_text(encoding="utf-8")
+
+    assert "- ga2d\n" not in proof_matrix
+    assert "- dma\n" in proof_matrix
+    assert re.search(r"^FORMAL_GA2D_DEPTH\s+\?= 36$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 199$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
+    assert "FORMAL=YES formal-ga2d" in engineering
+    assert "127214812 kB" in engineering
+    assert "missing local GA2D evidence\nis `NOT_RUN`, never `PASS`" in engineering
+
+
 def test_ga2d_formal_target_uses_the_p5_production_hierarchy() -> None:
     formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
     filelist_generator = (
