@@ -278,3 +278,14 @@ worktrees, unmerged local commits, non-canonical branches, and protected
 `dev`/`main` branches are left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
 mechanism. Already-absent remote refs are treated as successful cleanup; other
 API errors fail.
+
+After every feature integration into `dev`, also run:
+
+```sh
+git fetch --prune
+```
+
+This removes local remote-tracking references whose corresponding remote
+branches no longer exist. It is required in addition to topic-branch cleanup
+and does not delete local branches, stash entries, uncommitted changes, or
+build artifacts.
