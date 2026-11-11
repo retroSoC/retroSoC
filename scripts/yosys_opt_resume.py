@@ -35,8 +35,8 @@ yosys write_rtlil $::env(OPT_OUTPUT)
 
 def split_synth_script(text: str) -> tuple[str, str]:
     count = text.count(OPT_COMMAND)
-    if count != 1:
-        raise ValueError(f"expected exactly one plain `yosys opt` command, found {count}")
+    if count == 0:
+        raise ValueError("expected at least one plain `yosys opt` command")
     prefix, suffix = text.split(OPT_COMMAND, 1)
     return prefix, suffix
 

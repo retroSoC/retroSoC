@@ -109,15 +109,16 @@ def test_resume_rejects_changed_input_and_invalid_state(tmp_path: Path) -> None:
 
 
 def test_synth_script_split_preserves_all_other_commands() -> None:
-    text = "yosys opt -full\nyosys opt\nyosys opt -fast\n"
+    text = "yosys opt -full\nyosys opt\nyosys opt -fast\nyosys opt\n"
     frontend = frontend_script(text)
     backend = backend_script(text)
     assert "yosys opt -full\n" in frontend
     assert "yosys opt_expr\nyosys opt_merge -nomux\nyosys write_rtlil $::env(OPT_PRELOOP)\n" in frontend
+    assert "yosys opt\n" not in frontend
     assert "yosys opt -full\n" not in backend
     assert backend.startswith("yosys read_rtlil $::env(OPT_FINAL)\n")
-    assert backend.endswith("yosys opt -fast\n")
-    assert "yosys opt\n" not in backend
+    assert backend.endswith("yosys opt -fast\nyosys opt\n")
+    assert backend.count("yosys opt\n") == 1
 
 
 def test_synthesis_driver_runs_frontend_optimizer_and_backend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
