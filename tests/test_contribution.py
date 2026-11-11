@@ -194,3 +194,142 @@ def test_release_validation_accepts_sole_maintainer_without_peer_review(tmp_path
     )
     assert issues == []
     assert verified[0]["id"] == 42
+
+
+def add_local_evidence(root: Path) -> str:
+    revision = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+    variant = root / "build/ihp130-test"
+    summary_path = root / "build/ci-summary/formal-ga2d.json"
+    manifest_path = variant / "meta/manifest.json"
+    results = []
+    for step in ("prove", "cover"):
+        result_path = variant / f"formal/ga2d/result-{step}.json"
+        log_path = variant / f"formal/ga2d/{step}.log"
+        result_path.parent.mkdir(parents=True, exist_ok=True)
+        result_path.write_text('{"status": "passed"}\n', encoding="utf-8")
+        log_path.write_text("PASS\n", encoding="utf-8")
+        results.append(
+            {
+                "path": result_path.relative_to(root).as_posix(),
+                "tool": f"formal-sby-{step}",
+                "status": "passed",
+                "exit_code": 0,
+                "log": log_path.relative_to(root).as_posix(),
+                "peak_rss_kib": 12345,
+            }
+        )
+    summary = {
+        "schema_version": 1,
+        "source_revision": revision,
+        "label": "formal-ga2d",
+        "profile": "configs/ci/ihp130.mk",
+        "pdk": "IHP130",
+        "suite": "formal",
+        "overall_status": "PASS",
+        "coverage": [{"stage": "formal", "status": "PASS"}],
+        "results": results,
+        "issues": [],
+    }
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    manifest = {
+        "profile": "ihp130",
+        "configuration": {"PDK": "IHP130"},
+        "repository": {"commit": revision, "dirty": False},
+    }
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    candidate_path = root / "quality/release-candidate.json"
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    candidate["local_checks"] = [
+        {
+            "stage": "formal",
+            "proof": "ga2d",
+            "summary": summary_path.relative_to(root).as_posix(),
+            "manifest": manifest_path.relative_to(root).as_posix(),
+        }
+    ]
+    candidate_path.write_text(json.dumps(candidate, indent=2) + "\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "test: local formal evidence"], check=True)
+    revision = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+    summary["source_revision"] = revision
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    manifest["repository"]["commit"] = revision
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "tag", "-d", "v1.2.3"], check=True)
+    subprocess.run(["git", "-C", str(root), "tag", "v1.2.3"], check=True)
+    return revision
+
+
+def verify_release(root: Path, revision: str):
+    runs, approval = release_lookups(revision)
+    return validate_release(
+        root,
+        "v1.2.3",
+        root / "quality/release-candidate.json",
+        "main",
+        "retroSoC/retroSoC",
+        run_lookup=lambda _repository, _revision: runs,
+        approval_lookup=lambda _repository, _reference: approval,
+    )
+
+
+def test_release_validation_accepts_local_formal_evidence(tmp_path: Path) -> None:
+    root, _ = release_repository(tmp_path, ["behavioral", "formal"])
+    revision = add_local_evidence(root)
+    issues, verified = verify_release(root, revision)
+    assert issues == []
+    assert any(item["event"] == "local" and item["stages"] == ["formal"] for item in verified)
+
+
+def test_release_validation_rejects_dirty_local_formal_evidence(tmp_path: Path) -> None:
+    root, _ = release_repository(tmp_path, ["behavioral", "formal"])
+    revision = add_local_evidence(root)
+    candidate = json.loads((root / "quality/release-candidate.json").read_text(encoding="utf-8"))
+    manifest_path = root / candidate["local_checks"][0]["manifest"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["repository"]["dirty"] = True
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    issues, _ = verify_release(root, revision)
+    assert "local formal manifest must record a clean source worktree" in issues
+    assert "required release stage has no successful evidence: formal" in issues
+
+
+def test_release_validation_rejects_stale_local_formal_evidence(tmp_path: Path) -> None:
+    root, _ = release_repository(tmp_path, ["behavioral", "formal"])
+    revision = add_local_evidence(root)
+    candidate = json.loads((root / "quality/release-candidate.json").read_text(encoding="utf-8"))
+    summary_path = root / candidate["local_checks"][0]["summary"]
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["source_revision"] = "0" * 40
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    issues, _ = verify_release(root, revision)
+    assert "local formal summary revision does not match the release" in issues
+    assert "required release stage has no successful evidence: formal" in issues
+
+
+def test_release_validation_rejects_missing_local_cover(tmp_path: Path) -> None:
+    root, _ = release_repository(tmp_path, ["behavioral", "formal"])
+    revision = add_local_evidence(root)
+    candidate = json.loads((root / "quality/release-candidate.json").read_text(encoding="utf-8"))
+    summary_path = root / candidate["local_checks"][0]["summary"]
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["results"] = [result for result in summary["results"] if result["tool"] != "formal-sby-cover"]
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    issues, _ = verify_release(root, revision)
+    assert "local formal evidence is missing passing cover" in issues
+    assert "required release stage has no successful evidence: formal" in issues
+
+
+def test_release_validation_rejects_tampered_local_summary(tmp_path: Path) -> None:
+    root, _ = release_repository(tmp_path, ["behavioral", "formal"])
+    revision = add_local_evidence(root)
+    candidate = json.loads((root / "quality/release-candidate.json").read_text(encoding="utf-8"))
+    summary_path = root / candidate["local_checks"][0]["summary"]
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["overall_status"] = "FAIL"
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    issues, _ = verify_release(root, revision)
+    assert "local formal summary is not a passing result" in issues
+    assert "required release stage has no successful evidence: formal" in issues
