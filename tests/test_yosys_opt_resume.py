@@ -109,7 +109,15 @@ def test_resume_rejects_changed_input_and_invalid_state(tmp_path: Path) -> None:
 
 
 def test_synth_script_split_preserves_all_other_commands() -> None:
-    text = "set script_dir [file dirname [info script]]\nyosys opt -full\nyosys opt\nyosys opt -fast\nyosys opt\n"
+    text = (
+        "set script_dir [file dirname [info script]]\n"
+        "source $script_dir/common.tcl\n"
+        "source $script_dir/init_tech.tcl\n"
+        "yosys opt -full\n"
+        "yosys opt\n"
+        "yosys opt -fast\n"
+        "yosys opt\n"
+    )
     frontend = frontend_script(text)
     backend = backend_script(text)
     assert "set script_dir $::env(YOSYS_SCRIPT_DIR)" in frontend
@@ -120,7 +128,12 @@ def test_synth_script_split_preserves_all_other_commands() -> None:
     assert "yosys opt_expr\nyosys opt_merge -nomux\nyosys write_rtlil $::env(OPT_PRELOOP)\n" in frontend
     assert "yosys opt\n" not in frontend
     assert "yosys opt -full\n" not in backend
-    assert backend.startswith("set script_dir $::env(YOSYS_SCRIPT_DIR)\nyosys read_rtlil $::env(OPT_FINAL)\n")
+    assert backend.startswith(
+        "set script_dir $::env(YOSYS_SCRIPT_DIR)\n"
+        "source $script_dir/common.tcl\n"
+        "source $script_dir/init_tech.tcl\n"
+        "yosys read_rtlil $::env(OPT_FINAL)\n"
+    )
     assert backend.endswith("yosys opt -fast\nyosys opt\n")
     assert backend.count("yosys opt\n") == 1
 
@@ -136,17 +149,27 @@ def test_synthesis_driver_runs_frontend_optimizer_and_backend(tmp_path: Path, mo
         "endmodule\n",
         encoding="utf-8",
     )
+    (tmp_path / "common.tcl").write_text("set report_dir $::env(REPORTS)\n", encoding="utf-8")
+    (tmp_path / "init_tech.tcl").write_text('set tech_loaded "yes"\n', encoding="utf-8")
+    reports = tmp_path / "reports"
+    reports.mkdir()
     script = tmp_path / "synth.tcl"
     script.write_text(
+        "set script_dir [file dirname [info script]]\n"
+        "source $script_dir/common.tcl\n"
+        "source $script_dir/init_tech.tcl\n"
         f"yosys read_verilog {source}\n"
         "yosys hierarchy -check -top test\n"
         "yosys proc\n"
         "yosys opt\n"
+        'if {$tech_loaded ne "yes"} {error "technology setup missing"}\n'
+        'yosys tee -q -o "${report_dir}/backend.rpt" stat\n'
         "yosys write_verilog -norename $::env(NETLIST)\n",
         encoding="utf-8",
     )
     netlist = tmp_path / "netlist.v"
     monkeypatch.setenv("NETLIST", str(netlist))
+    monkeypatch.setenv("REPORTS", str(reports))
 
     summary = run_synthesis(tmp_path, script, tmp_path / "work", max_iterations=8, iteration_timeout=60, frontend_timeout=60)
 
@@ -155,6 +178,7 @@ def test_synthesis_driver_runs_frontend_optimizer_and_backend(tmp_path: Path, mo
     assert summary["opt"]["completed_iterations"] == 2
     assert summary["backend"]["status"] == "passed"
     assert netlist.is_file()
+    assert (reports / "backend.rpt").is_file()
     assert (tmp_path / "work/synthesis-summary.json").is_file()
 
 

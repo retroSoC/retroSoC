@@ -51,11 +51,14 @@ def frontend_script(text: str) -> str:
 
 
 def backend_script(text: str) -> str:
-    _, suffix = split_synth_script(text)
-    script = preserve_script_directory("yosys read_rtlil $::env(OPT_FINAL)\n" + suffix)
-    if "set script_dir [file dirname [info script]]" in text and not script.startswith("set script_dir $::env(YOSYS_SCRIPT_DIR)"):
-        script = "set script_dir $::env(YOSYS_SCRIPT_DIR)\n" + script
-    return script
+    prefix, suffix = split_synth_script(text)
+    setup_commands = {
+        "set script_dir [file dirname [info script]]",
+        "source $script_dir/common.tcl",
+        "source $script_dir/init_tech.tcl",
+    }
+    setup = "".join(line for line in prefix.splitlines(keepends=True) if line.strip() in setup_commands)
+    return preserve_script_directory(setup + "yosys read_rtlil $::env(OPT_FINAL)\n" + suffix)
 
 
 def sha256(path: Path) -> str:
