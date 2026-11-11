@@ -415,24 +415,6 @@ to the current run start and marks skipped physical stages `NOT_RUN`.
 can select a provisioned high-memory runner. The default hosted label is not
 represented as a solution to the resource limitation.
 
-Before increasing a synthesis timeout, use `scripts/yosys_progress.py` to
-inspect the existing phase logs without another synthesis run:
-
-```sh
-python3 scripts/yosys_progress.py \
-  --log build/<variant>/syn/yosys/retrosoc_asic.log \
-  --summary build/ci-summary/pr-IHP130-full-flow.json \
-  --manifest build/<variant>/meta/manifest.json \
-  --output build/engineering/yosys-opt-full-progress.json
-```
-
-The report separates phase steps, actual `Executing ... pass` records, rerun
-markers, elapsed time, and subsequent-phase boundaries. It preserves the
-synthesis exit result and manifest revision. Missing subsequent phases do not
-prove an infinite optimization loop or a memory problem. A manifest revision
-that differs from the current worktree is labeled as a comparison, not current
-acceptance evidence.
-
 `formal.yml` runs explicit per-proof targets other than local-only GA2D as
 bounded parallel jobs weekly or on demand. Smoke `formal_checks` still checks
 only the environment. A successful SV2V conversion or doctor run is not a
