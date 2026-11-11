@@ -64,7 +64,10 @@ contracts. This preserves coverage without holding every PR open for hours.
 `workflows/full-flow.yml` is an explicit manual full-flow entrypoint. Its runner
 input allows a provisioned high-memory runner; no such capacity is inferred from
 the default `ubuntu-22.04` label. A full-flow summary requires synthesis, netlist,
-and STA evidence and retains failed attempts.
+and STA evidence and retains failed attempts. `scripts/yosys_progress.py`
+provides read-only phase-step, executing-pass, rerun-marker, and elapsed-time
+analysis before any timeout increase. Missing subsequent phases are not treated
+as proof of an infinite loop or insufficient memory.
 
 `workflows/formal.yml` runs the explicit per-proof targets except GA2D as
 bounded parallel jobs on its weekly schedule or manual dispatch. GA2D remains a

@@ -44,7 +44,10 @@ agent context and changed-file validation plans, and checks repository Markdown.
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
-and NOT_RUN. `check_contribution.py` validates PR metadata, CODEOWNERS, and
+and NOT_RUN. `yosys_progress.py` summarizes phase steps, executing-pass counts,
+rerun markers, elapsed time, and result/source boundaries without another
+synthesis run or an unsupported convergence diagnosis.
+`check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass
 and cleans merged branches only when the worktree is clean and the PR head is
 canonical. Use the corresponding Make targets and host tests instead of
