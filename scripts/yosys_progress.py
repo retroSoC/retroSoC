@@ -19,7 +19,7 @@ from scripts.setup_helpers import atomic_write  # noqa: E402
 
 PASS_RE = re.compile(r"^\[(?P<seconds>\d+(?:\.\d+)?)\]\s+(?P<phase>\d+)\.(?P<iteration>\d+)\.\s+(?P<message>.+)$")
 EXECUTING_RE = re.compile(r"Executing (?P<name>[A-Z_]+) pass")
-REMOVED_RE = re.compile(r"Removed (?P<count>\d+) cells\.")
+REMOVED_RE = re.compile(r"Removed (?:a total of )?(?P<count>\d+) cells\.")
 
 
 def analyze(

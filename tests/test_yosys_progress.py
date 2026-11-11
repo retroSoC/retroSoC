@@ -29,7 +29,7 @@ def test_counts_iterations_without_claiming_nonconvergence(tmp_path: Path) -> No
             continue
         pass_name = "OPT_DFF" if iteration % 2 else "OPT_EXPR"
         lines.append(f"[{iteration + 1}.0] 45.{iteration}. Executing {pass_name} pass")
-    lines.extend(["[168.0] Removed 3 cells.", "[169.0] Removed 0 cells."])
+    lines.extend(["[168.0] Removed 3 cells.", "[168.5] Removed a total of 4 cells.", "[169.0] Removed 0 cells."])
     log.write_text("\n".join(lines) + "\n", encoding="utf-8")
     revision = "a" * 40
     manifest = tmp_path / "manifest.json"
@@ -48,8 +48,8 @@ def test_counts_iterations_without_claiming_nonconvergence(tmp_path: Path) -> No
     assert metrics["elapsed_seconds"] == 166.0
     assert metrics["pass_counts"] == {"OPT_DFF": 83, "OPT_EXPR": 83}
     assert metrics["phase_complete"] is False
-    assert metrics["removed_cell_events"] == 1
-    assert metrics["removed_cells_reported"] == 3
+    assert metrics["removed_cell_events"] == 2
+    assert metrics["removed_cells_reported"] == 7
     assert document["synthesis"]["exit_code"] == 124
     assert document["source"] == {
         "revision": revision,
