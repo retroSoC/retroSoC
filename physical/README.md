@@ -28,3 +28,14 @@ Generated layout, report, and database outputs must remain outside tracked
 source paths. Treat PDK-dependent physical-design results as toolchain-specific
 evidence and record the selected profile, PDK, and validation command when
 handing off a change. See [Engineering Workflow](../docs/engineering.md).
+
+For Yosys synthesis, `YOSYS_OPT_RESUME=YES` selects the resumable plain-`opt`
+driver in `scripts/yosys_opt_resume.py`; the default is `NO`, which preserves
+the native command. The optional path writes checkpoints and structured results
+below the selected variant's `syn/yosys/opt-resume/` directory and resumes only
+with a matching input digest and state. `YOSYS_OPT_ITERATION_TIMEOUT` defaults
+to 600 seconds and `YOSYS_OPT_MAX_ITERATIONS` to 64; the existing
+`YOSYS_TIMEOUT` remains 10800 seconds. Timeout, malformed state, or exhaustion
+of the iteration limit is a failure, not a pass. The driver does not reduce
+optimization or provide synthesis, timing, physical, or release signoff by
+itself.

@@ -53,6 +53,15 @@ re-running proofs and requires a clean revision-matched manifest. Optional
 local formal evidence. `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
+`yosys_opt_resume.py` provides an opt-in resumable plain-`opt` driver. It
+keeps the native initial `opt_expr`/`opt_merge -nomux` and iterative
+`opt_muxtree`/`opt_reduce`/`opt_merge`/`opt_dff`/`opt_clean`/`opt_expr`
+sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
+on timeout, malformed state, changed input, or the iteration limit. Invoke it
+through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
+`YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
+state, never a dirty or unrelated worktree. This is synthesis infrastructure,
+not timing, netlist, or release evidence by itself.
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass
 and cleans merged branches only when the worktree is clean and the PR head is
