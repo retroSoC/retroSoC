@@ -246,11 +246,11 @@ def test_native_auto_merge_requires_merge_commit(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr("scripts.pr_workflow.gh_json", lambda command: {"auto_merge": None})
     assert not native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
     monkeypatch.setattr(
-        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "MERGE"}}
+        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "merge"}}
     )
     assert native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
     monkeypatch.setattr(
-        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "SQUASH"}}
+        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "squash"}}
     )
     with pytest.raises(RuntimeError, match="must use a merge commit"):
         native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
