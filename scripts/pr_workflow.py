@@ -161,7 +161,7 @@ def native_auto_merge_enabled(repository: str, number: int, root: Path) -> bool:
     request = pull.get("auto_merge")
     if request is None:
         return False
-    if request.get("merge_method") != "MERGE":
+    if str(request.get("merge_method", "")).upper() != "MERGE":
         raise RuntimeError("existing auto-merge request must use a merge commit")
     return True
 
