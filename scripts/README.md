@@ -47,8 +47,11 @@ agent context and changed-file validation plans, and checks repository Markdown.
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
-and NOT_RUN. `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_workflow.py` merges only after all checks pass
+and NOT_RUN. `formal_local_evidence.py` assembles existing local results without
+re-running proofs and requires a clean revision-matched manifest. Optional
+`local_checks` in a release candidate apply the same source and proof checks to
+local formal evidence. `check_contribution.py` validates PR metadata, CODEOWNERS,
+and release-candidate evidence. `pr_workflow.py` merges only after all checks pass
 and cleans merged branches only when the worktree is clean and the PR head is
 canonical. Use the corresponding Make targets and host tests instead of
 duplicating these rules in workflow shell.

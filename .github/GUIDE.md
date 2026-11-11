@@ -104,11 +104,13 @@ impossible task of embedding its own future commit SHA or run IDs.
 
 A release requires a merge commit matching the tag and current `origin/main`,
 successful required workflow runs, and valid hashes for required local
-artifacts. In `sole_maintainer` mode, a merged release PR with the named
-maintainer's approval record is sufficient; peer mode instead requires an
-APPROVED review by that maintainer. Existing release assets are not overwritten
-on rerun. See `quality/release-candidate.schema.json` and
-`scripts/check_contribution.py`.
+artifacts. Optional `local_checks` allow revision-matched local formal evidence
+instead of a hosted proof job. The validator requires a clean manifest and
+passing prove/cover results; it does not embed self-referential summary hashes.
+In `sole_maintainer` mode, a merged release PR with the named maintainer's
+approval record is sufficient; peer mode instead requires an APPROVED review by
+that maintainer. Existing release assets are not overwritten on rerun. See
+`quality/release-candidate.schema.json` and `scripts/check_contribution.py`.
 
 Keep Actions pinned by commit ID and use the dependency lock rather than adding
 ad-hoc downloads. Validate workflow changes with `yamllint .github .yamllint.yml`,

@@ -244,7 +244,10 @@ Maintainers choose and review the release revision on `main`, add a tracked
 `quality/release-candidate.json` through the approved release PR, and publish an
 immutable `vMAJOR.MINOR.PATCH` tag only after its required workflows succeed.
 The [release schema](../quality/release-candidate.schema.json) defines the lock
-digest, approval, stages, workflow names, and accepted gaps. The
+digest, approval, stages, workflow names, and accepted gaps. Optional
+`local_checks` reference revision-matched local formal summaries and manifests.
+Their content is validated for clean inputs and passing prove/cover results;
+revision-bearing summary hashes are not embedded in the candidate. The
 [release workflow](../.github/workflows/release.yml) verifies the tag against
 current `origin/main` and matching successful runs. `sole_maintainer` accepts a
 merged release PR with the named maintainer's approval record; peer mode
