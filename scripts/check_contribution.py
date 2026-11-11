@@ -130,6 +130,94 @@ def gh_approval(repository: str, reference: str) -> dict[str, Any]:
     )
 
 
+def local_artifact_path(root: Path, value: Any, label: str, issues: list[str]) -> Path | None:
+    if not isinstance(value, str) or not value:
+        issues.append(f"local evidence {label} must be a repository-relative path")
+        return None
+    relative = Path(value)
+    if relative.is_absolute() or ".." in relative.parts:
+        issues.append(f"local evidence {label} must be repository-relative")
+        return None
+    path = (root / relative).resolve()
+    if not path.is_file():
+        issues.append(f"local evidence {label} is missing: {relative}")
+        return None
+    return path
+
+
+def existing_local_file(root: Path, value: Any) -> Path | None:
+    if not isinstance(value, str) or not value:
+        return None
+    candidate = Path(value)
+    candidate = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+    if not candidate.is_relative_to(root) or not candidate.is_file():
+        return None
+    return candidate
+
+
+def validate_local_formal(root: Path, check: dict[str, Any], revision: str) -> list[str]:
+    issues = []
+    proof = check.get("proof", "")
+    if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", proof) is None:
+        return ["local formal evidence requires a lowercase proof name"]
+    if check.get("stage") != "formal":
+        return [f"local evidence for {proof} must use the formal stage"]
+    paths = {}
+    for label in ("summary", "manifest"):
+        path = local_artifact_path(root, check.get(label), label, issues)
+        if path is not None:
+            paths[label] = path
+    if issues:
+        return issues
+    try:
+        summary = read_json(paths["summary"])
+        manifest = read_json(paths["manifest"])
+    except (OSError, ValueError, RuntimeError) as error:
+        return [f"cannot read local formal evidence: {error}"]
+    if not isinstance(summary, dict) or not isinstance(manifest, dict):
+        return ["local formal summary and manifest must be objects"]
+
+    if summary.get("source_revision") != revision:
+        issues.append("local formal summary revision does not match the release")
+    repository = manifest.get("repository", {})
+    if repository.get("commit") != revision:
+        issues.append("local formal manifest revision does not match the release")
+    if repository.get("dirty") is not False:
+        issues.append("local formal manifest must record a clean source worktree")
+    if summary.get("overall_status") != "PASS":
+        issues.append("local formal summary is not a passing result")
+    if summary.get("label") != f"formal-{proof}":
+        issues.append(f"local formal summary must be labeled formal-{proof}")
+    if summary.get("suite") != "formal":
+        issues.append("local formal summary must use the formal suite")
+    if summary.get("profile") != f"configs/ci/{manifest.get('profile')}.mk":
+        issues.append("local formal profile does not match the manifest")
+    if summary.get("pdk") != manifest.get("configuration", {}).get("PDK"):
+        issues.append("local formal PDK does not match the manifest")
+    formal_coverage = [item for item in summary.get("coverage", []) if item.get("stage") == "formal"]
+    if not formal_coverage or any(item.get("status") != "PASS" for item in formal_coverage):
+        issues.append("local formal coverage is not PASS")
+
+    for step in ("prove", "cover"):
+        suffix = f"/formal/{proof}/result-{step}.json"
+        matches = [
+            result
+            for result in summary.get("results", [])
+            if result.get("path", "").endswith(suffix)
+            and result.get("tool") == f"formal-sby-{step}"
+            and result.get("status") == "passed"
+            and result.get("exit_code") == 0
+        ]
+        if not matches:
+            issues.append(f"local formal evidence is missing passing {step}")
+        for result in matches:
+            if existing_local_file(root, result.get("path")) is None:
+                issues.append(f"local formal {step} result is missing: {result.get('path')}")
+            if existing_local_file(root, result.get("log")) is None:
+                issues.append(f"local formal {step} log is missing: {result.get('log')}")
+    return issues
+
+
 def validate_release(
     root: Path,
     tag: str,
@@ -178,7 +266,7 @@ def validate_release(
     missing = required - set(candidate)
     if missing:
         issues.append(f"release candidate missing fields: {sorted(missing)}")
-    unknown = set(candidate) - required - {"artifacts"}
+    unknown = set(candidate) - required - {"artifacts", "local_checks"}
     if unknown:
         issues.append(f"release candidate unknown fields: {sorted(unknown)}")
     if candidate.get("schema_version") != 1:
@@ -281,6 +369,29 @@ def validate_release(
                 "stages": stages,
             }
         )
+    local_checks = candidate.get("local_checks", [])
+    if not isinstance(local_checks, list):
+        issues.append("release local_checks must be an array")
+        local_checks = []
+    for check in local_checks:
+        if not isinstance(check, dict):
+            issues.append("local evidence entry must be an object")
+            continue
+        local_issues = validate_local_formal(root, check, revision)
+        issues.extend(local_issues)
+        if not local_issues:
+            stage = check["stage"]
+            verified_stages.add(stage)
+            verified_runs.append(
+                {
+                    "name": f"local-{check['proof']}",
+                    "event": "local",
+                    "head_sha": revision,
+                    "summary": check["summary"],
+                    "manifest": check["manifest"],
+                    "stages": [stage],
+                }
+            )
     for stage in required_stages:
         if stage not in verified_stages:
             issues.append(f"required release stage has no successful evidence: {stage}")

@@ -304,6 +304,25 @@ Acceptance evidence must match the exact clean source revision and input state.
 A successful hosted run does not include GA2D, and missing local GA2D evidence
 is `NOT_RUN`, never `PASS`.
 
+Assemble existing results without rerunning the proof:
+
+```sh
+python3 scripts/formal_local_evidence.py \
+  --root . --variant build/<variant> --proof ga2d \
+  --profile configs/ci/ihp130.mk --pdk IHP130 \
+  --since <UTC-run-start> --output build/ci-summary/formal-ga2d.json
+```
+
+The collector requires a clean revision-matched manifest and uses the existing
+`formal_results.py` and `ci_summary.py` contracts, including per-step peak RSS.
+A release candidate can reference the summary and manifest through optional
+`local_checks`. The validator requires matching release revision, `dirty=false`,
+formal PASS coverage, and passing prove/cover results and logs. It deliberately
+does not embed hashes of revision-bearing summaries in the candidate, avoiding
+a self-referential release commit. Independent log artifacts can still use the
+existing artifact-hash checks. Evidence from a `dev` commit cannot satisfy a
+different `main` merge commit; collect release evidence at the final revision.
+
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
 behavior. It is not asynchronous CDC/RDC signoff; implementation timing,
