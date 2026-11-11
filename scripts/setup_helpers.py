@@ -13,13 +13,14 @@ from pathlib import Path
 from typing import Iterable
 
 
-def run(command: Iterable[str], *, cwd: Path | None = None) -> None:
+def run(command: Iterable[str], *, cwd: Path | None = None, timeout: float | None = None) -> None:
     printable = " ".join(str(item) for item in command)
     print(f"+ {printable}")
     subprocess.run(
         [str(item) for item in command],
         cwd=cwd,
         check=True,
+        timeout=timeout,
     )
 
 
@@ -29,7 +30,46 @@ def git_output(repo: Path, *args: str) -> str:
     ).strip()
 
 
-def ensure_git_commit(url: str, destination: Path, revision: str) -> None:
+def fetch_git_repo(
+    destination: Path,
+    revision: str,
+    url: str = "origin",
+    *,
+    timeout: float = 300,
+    attempts: int = 3,
+    no_tags: bool = False,
+    no_write_fetch_head: bool = False,
+) -> None:
+    """Fetch a locked revision with a per-attempt timeout and bounded retries."""
+    if attempts < 1 or timeout <= 0:
+        raise ValueError("fetch attempts and timeout must be positive")
+    destination = destination.resolve()
+    command = ["git", "fetch"]
+    if no_tags:
+        command.append("--no-tags")
+    if no_write_fetch_head:
+        command.append("--no-write-fetch-head")
+    command.extend(("--depth", "1", url, revision))
+    for attempt in range(attempts):
+        try:
+            run(command, cwd=destination, timeout=timeout)
+            return
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            if attempt + 1 == attempts:
+                raise
+            delay = 2**attempt
+            print(f"[dependency] fetch retry {attempt + 2}/{attempts}: {destination.name} in {delay}s")
+            time.sleep(delay)
+
+
+def ensure_git_commit(
+    url: str,
+    destination: Path,
+    revision: str,
+    *,
+    fetch_timeout: float = 300,
+    fetch_attempts: int = 3,
+) -> None:
     """Fetch a locked historical object without switching the active checkout."""
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("historical dependency requires a full Git commit revision")
@@ -40,8 +80,15 @@ def ensure_git_commit(url: str, destination: Path, revision: str) -> None:
         git_output(destination, "cat-file", "-e", f"{revision}^{{commit}}")
     except subprocess.CalledProcessError:
         # No checkout/refspec: preserve HEAD, index, worktree and FETCH_HEAD.
-        run(("git", "fetch", "--no-tags", "--no-write-fetch-head", "--depth", "1",
-             url, revision), cwd=destination)
+        fetch_git_repo(
+            destination,
+            revision,
+            url,
+            timeout=fetch_timeout,
+            attempts=fetch_attempts,
+            no_tags=True,
+            no_write_fetch_head=True,
+        )
     if git_output(destination, "rev-parse", f"{revision}^{{commit}}") != revision:
         raise RuntimeError(f"historical dependency commit mismatch: {destination}: {revision}")
     print(f"[dependency] historical object available: {destination.name}: {revision}")
@@ -56,6 +103,8 @@ def ensure_git_repo(
     submodules: tuple[str, ...] = (),
     update: bool = False,
     allow_dirty: bool = False,
+    fetch_timeout: float = 300,
+    fetch_attempts: int = 3,
 ) -> None:
     destination = destination.resolve()
     created = False
@@ -63,13 +112,23 @@ def ensure_git_repo(
         destination.parent.mkdir(parents=True, exist_ok=True)
         run(("git", "init", str(destination)))
         run(("git", "remote", "add", "origin", url), cwd=destination)
-        run(("git", "fetch", "--depth", "1", "origin", revision), cwd=destination)
+        fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
         run(("git", "checkout", "--detach", "FETCH_HEAD"), cwd=destination)
         created = True
     elif not (destination / ".git").exists():
         raise RuntimeError(f"dependency path is not a Git repository: {destination}")
 
-    current = git_output(destination, "rev-parse", "HEAD")
+    try:
+        current = git_output(destination, "rev-parse", "HEAD")
+    except subprocess.CalledProcessError:
+        if git_output(destination, "status", "--porcelain"):
+            raise RuntimeError(f"unborn dependency has local changes: {destination}")
+        if git_output(destination, "remote", "get-url", "origin") != url:
+            raise RuntimeError(f"unborn dependency remote mismatch: {destination}")
+        fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
+        run(("git", "checkout", "--detach", "FETCH_HEAD"), cwd=destination)
+        current = git_output(destination, "rev-parse", "HEAD")
+        created = True
     dirty = git_output(destination, "status", "--porcelain")
     if current != revision:
         if not created and not update:
@@ -81,7 +140,7 @@ def ensure_git_repo(
         try:
             git_output(destination, "cat-file", "-e", f"{revision}^{{commit}}")
         except subprocess.CalledProcessError:
-            run(("git", "fetch", "--depth", "1", "origin", revision), cwd=destination)
+            fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
         run(("git", "checkout", "--detach", revision), cwd=destination)
     elif dirty and not allow_dirty:
         raise RuntimeError(f"pinned dependency has local changes: {destination}")

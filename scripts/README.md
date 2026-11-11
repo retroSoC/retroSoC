@@ -37,6 +37,9 @@ product filelist.
 Scripts are part of the build contract. Prefer existing helpers over ad-hoc
 shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
+`setup_helpers.py` bounds each Git fetch attempt and its retry count. It recovers
+an unborn checkout only when the worktree is clean and the remote matches the
+locked URL and revision; dirty or mismatched repositories are preserved.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
