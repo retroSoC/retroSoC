@@ -19,15 +19,12 @@
 
 # Directories
 # directory of the path to the last called Makefile (this one)
-YOSYS_DIR                   := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-YOSYS_BUILD                 := $(SYN_BUILD_ROOT)
-YOSYS_OUT                   := $(YOSYS_BUILD)/out
-YOSYS_TMP                   := $(YOSYS_BUILD)/tmp
-YOSYS_RPT                   := $(YOSYS_BUILD)/rpt
-YOSYS_TIMEOUT               ?= 10800
-YOSYS_OPT_RESUME            ?= NO
-YOSYS_OPT_ITERATION_TIMEOUT ?= 600
-YOSYS_OPT_MAX_ITERATIONS    ?= 64
+YOSYS_DIR     := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+YOSYS_BUILD   := $(SYN_BUILD_ROOT)
+YOSYS_OUT     := $(YOSYS_BUILD)/out
+YOSYS_TMP     := $(YOSYS_BUILD)/tmp
+YOSYS_RPT     := $(YOSYS_BUILD)/rpt
+YOSYS_TIMEOUT ?= 10800
 
 include $(YOSYS_DIR)/synth_config.mk
 
@@ -53,7 +50,8 @@ YOSYS_SCRIPTS        := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_con
 YOSYS_NATIVE_COMMAND = yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
 YOSYS_RESUME_COMMAND = python3 $(ROOT_PATH)/scripts/yosys_opt_resume.py --root $(ROOT_PATH) synth \
 	--script $(YOSYS_DIR)/script/synth.tcl --work-dir $(YOSYS_BUILD)/opt-resume \
-	--max-iterations $(YOSYS_OPT_MAX_ITERATIONS) --iteration-timeout $(YOSYS_OPT_ITERATION_TIMEOUT) \
+	--max-iterations $(if $(YOSYS_OPT_MAX_ITERATIONS),$(YOSYS_OPT_MAX_ITERATIONS),64) \
+	--iteration-timeout $(if $(YOSYS_OPT_ITERATION_TIMEOUT),$(YOSYS_OPT_ITERATION_TIMEOUT),600) \
 	--frontend-timeout $(YOSYS_TIMEOUT)
 YOSYS_COMMAND        = $(if $(filter YES,$(YOSYS_OPT_RESUME)),$(YOSYS_RESUME_COMMAND),$(YOSYS_NATIVE_COMMAND))
 

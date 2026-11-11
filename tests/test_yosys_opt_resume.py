@@ -157,8 +157,11 @@ def test_synthesis_driver_runs_frontend_optimizer_and_backend(tmp_path: Path, mo
 def test_makefile_defaults_to_native_synthesis() -> None:
     root = Path(__file__).resolve().parents[1]
     makefile = " ".join((root / "physical/smoke/syn/yosys/yosys.mk").read_text(encoding="utf-8").split())
-    assert "YOSYS_OPT_RESUME ?= NO" in makefile
-    assert "YOSYS_OPT_ITERATION_TIMEOUT ?= 600" in makefile
-    assert "YOSYS_OPT_MAX_ITERATIONS ?= 64" in makefile
+    assert "YOSYS_OPT_RESUME ?= NO" not in makefile
+    assert "YOSYS_OPT_ITERATION_TIMEOUT ?= 600" not in makefile
+    assert "YOSYS_OPT_MAX_ITERATIONS ?= 64" not in makefile
+    assert "--max-iterations $(if $(YOSYS_OPT_MAX_ITERATIONS),$(YOSYS_OPT_MAX_ITERATIONS),64)" in makefile
+    assert "--iteration-timeout $(if $(YOSYS_OPT_ITERATION_TIMEOUT),$(YOSYS_OPT_ITERATION_TIMEOUT),600)" in makefile
+    assert "YOSYS_TIMEOUT ?= 10800" in makefile
     assert "YOSYS_COMMAND = $(if $(filter YES,$(YOSYS_OPT_RESUME)),$(YOSYS_RESUME_COMMAND),$(YOSYS_NATIVE_COMMAND))" in makefile
     assert "yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl" in makefile
