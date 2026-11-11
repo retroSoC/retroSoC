@@ -109,14 +109,18 @@ def test_resume_rejects_changed_input_and_invalid_state(tmp_path: Path) -> None:
 
 
 def test_synth_script_split_preserves_all_other_commands() -> None:
-    text = "yosys opt -full\nyosys opt\nyosys opt -fast\nyosys opt\n"
+    text = "set script_dir [file dirname [info script]]\nyosys opt -full\nyosys opt\nyosys opt -fast\nyosys opt\n"
     frontend = frontend_script(text)
     backend = backend_script(text)
+    assert "set script_dir $::env(YOSYS_SCRIPT_DIR)" in frontend
+    assert "set script_dir $::env(YOSYS_SCRIPT_DIR)" in backend
+    assert "set script_dir [file dirname [info script]]" not in frontend
+    assert "set script_dir [file dirname [info script]]" not in backend
     assert "yosys opt -full\n" in frontend
     assert "yosys opt_expr\nyosys opt_merge -nomux\nyosys write_rtlil $::env(OPT_PRELOOP)\n" in frontend
     assert "yosys opt\n" not in frontend
     assert "yosys opt -full\n" not in backend
-    assert backend.startswith("yosys read_rtlil $::env(OPT_FINAL)\n")
+    assert backend.startswith("set script_dir $::env(YOSYS_SCRIPT_DIR)\nyosys read_rtlil $::env(OPT_FINAL)\n")
     assert backend.endswith("yosys opt -fast\nyosys opt\n")
     assert backend.count("yosys opt\n") == 1
 

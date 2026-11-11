@@ -41,14 +41,21 @@ def split_synth_script(text: str) -> tuple[str, str]:
     return prefix, suffix
 
 
+def preserve_script_directory(text: str) -> str:
+    return text.replace("set script_dir [file dirname [info script]]", "set script_dir $::env(YOSYS_SCRIPT_DIR)", 1)
+
+
 def frontend_script(text: str) -> str:
     prefix, _ = split_synth_script(text)
-    return prefix + "yosys opt_expr\nyosys opt_merge -nomux\nyosys write_rtlil $::env(OPT_PRELOOP)\n"
+    return preserve_script_directory(prefix + "yosys opt_expr\nyosys opt_merge -nomux\nyosys write_rtlil $::env(OPT_PRELOOP)\n")
 
 
 def backend_script(text: str) -> str:
     _, suffix = split_synth_script(text)
-    return "yosys read_rtlil $::env(OPT_FINAL)\n" + suffix
+    script = preserve_script_directory("yosys read_rtlil $::env(OPT_FINAL)\n" + suffix)
+    if "set script_dir [file dirname [info script]]" in text and not script.startswith("set script_dir $::env(YOSYS_SCRIPT_DIR)"):
+        script = "set script_dir $::env(YOSYS_SCRIPT_DIR)\n" + script
+    return script
 
 
 def sha256(path: Path) -> str:
@@ -273,7 +280,7 @@ def run_synthesis(
             log=work_dir / "frontend.log",
             result=frontend_result,
             timeout=frontend_timeout,
-            environment={"OPT_PRELOOP": str(preloop)},
+            environment={"OPT_PRELOOP": str(preloop), "YOSYS_SCRIPT_DIR": str(script.resolve().parent)},
         )
     summary = optimize(root, preloop, final, work_dir, max_iterations=max_iterations, iteration_timeout=iteration_timeout)
     backend_result = work_dir / "result-backend.json"
@@ -290,7 +297,7 @@ def run_synthesis(
             log=work_dir / "backend.log",
             result=backend_result,
             timeout=frontend_timeout,
-            environment={"OPT_FINAL": str(final)},
+            environment={"OPT_FINAL": str(final), "YOSYS_SCRIPT_DIR": str(script.resolve().parent)},
         )
     document = {"schema_version": 1, "status": "passed", "opt": summary, "backend": read_json(backend_result)}
     atomic_write(work_dir / "synthesis-summary.json", dump_json(document))
