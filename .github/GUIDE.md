@@ -80,12 +80,14 @@ still runs only `formal-doctor`; SV2V conversion alone is not a proof pass.
 
 `workflows/development-environment.yml` verifies Docker and Nix for environment,
 dependency, build-entry, scheduled, and full-matrix changes instead of repeating
-both environments for every unrelated PR. `workflows/engineering-metrics.yml`
-collects weekly delivery and CI metadata artifacts for engineering improvement,
-not individual performance evaluation. `workflows/skill-evals.yml` is a manual
-entrypoint for a runner with a configured Codex CLI and approved model access.
-It fails explicitly when that capability is absent and never converts static
-corpus validation into a behavior pass.
+both environments for every unrelated PR. The `locked-tools` action bounds apt
+updates to 180 seconds and installs to 600 seconds per attempt, with at most
+three attempts, so network failures cannot stall a job indefinitely.
+`workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
+artifacts for engineering improvement, not individual performance evaluation.
+`workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured
+Codex CLI and approved model access. It fails explicitly when that capability is
+absent and never converts static corpus validation into a behavior pass.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts
