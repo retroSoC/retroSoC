@@ -23,6 +23,15 @@ python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
 Then run the affected setup, doctor, test, and regression flow described in
 [Engineering Workflow](../docs/engineering.md).
 
+`setup_helpers.fetch_git_repo` uses at most three attempts with a 300-second
+per-attempt timeout by default. A failed initialization without HEAD is
+recoverable only when the worktree has no local changes and `origin` exactly
+matches the locked URL and revision; dirty or mismatched inputs fail without
+fetching or checkout. The `locked-tools` action independently limits apt
+updates to 180 seconds and package installation to 600 seconds per attempt,
+with at most three attempts. These limits do not change dependency versions,
+proof bounds, or hardware acceptance requirements.
+
 `sources.pdk_ics55_pll` locks OpenECOS `PLL_V02p1` at
 `6ebb1a8f7f4ccbccdb7f587664fdfe63cd39e61b`. Restore only its seven integration
 views with `python3 physical/pdk/setup.py --pdk ICS55 --component pll`, or as
