@@ -1,0 +1,636 @@
+[
+  {
+    "id": "xpi-fifos",
+    "chapters": [
+      "xpi"
+    ],
+    "title": "XPI transmit and receive FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/storage/apb4_xpi.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/storage/apb4_xpi.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 64,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/storage/apb4_xpi.sv"
+    ],
+    "bindings": [],
+    "note": "Each  FIFO stores 64 32-bit words. The indirect byte path consumes/produces lanes from these words; the wire lane count and LUT instruction width are separate properties."
+  },
+  {
+    "id": "sdio-pio",
+    "chapters": [
+      "sdio"
+    ],
+    "title": "Native SDIO PIO staging storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/storage/sdio_core.sv",
+        "symbols": [
+          "s_pio_tx_data_q",
+          "s_pio_tx_strb_q"
+        ],
+        "title": "PIO TX entries",
+        "depth": 4,
+        "bits": 36
+      },
+      {
+        "file": "rtl/ip/storage/sdio_core.sv",
+        "symbols": [
+          "s_pio_rdata_q"
+        ],
+        "title": "PIO RX holding word",
+        "depth": 1,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/storage/sdio_core.sv"
+    ],
+    "bindings": [],
+    "note": "PIO TX has four entries with a data word and four strobes. RX has one held 32-bit word with separate valid state. Descriptor DMA state is a separate path;  FIFO_STATUS is not evidence of an additional undocumented data  FIFO."
+  },
+  {
+    "id": "dma-channel-fifos",
+    "chapters": [
+      "dma"
+    ],
+    "title": "Central DMA per-channel buffering",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "instance": "u_data_fifo",
+        "title": "One channel data FIFO (8 instances)",
+        "depth": 32,
+        "bits": 32,
+        "parameters": {
+          "FifoDepth": 32
+        }
+      }
+    ],
+    "sources": [
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "text": ".NumChannels(8)"
+      },
+      {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "text": ".FifoDepth(32)"
+      }
+    ],
+    "note": "The Tiny integration selects eight channels and a 32-word  FIFO per channel. The cells illustrate one channel; channels do not share a single software-visible  FIFO. A 64-byte descriptor is separate from this payload storage."
+  },
+  {
+    "id": "uart-fifos",
+    "chapters": [
+      "uart0"
+    ],
+    "title": "UART shared FIFO geometry",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/uart_reg.sv",
+        "instance": "u_tx_fifo",
+        "title": "TX FIFO",
+        "depth": 64,
+        "bits": 8
+      },
+      {
+        "file": "rtl/ip/serial/uart_reg.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO: data + error metadata",
+        "depth": 64,
+        "bits": 12
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/uart_reg.sv"
+    ],
+    "bindings": [],
+    "note": "Tiny instantiates UART0 only. RX metadata is part of each stored entry, distinct from the 32-bit APB read width. UART0 DMA is connected; RTS/CTS are not exposed on Tiny pads."
+  },
+  {
+    "id": "i2c-fifos",
+    "chapters": [
+      "i2c"
+    ],
+    "title": "I2C command and receive storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/i2c_reg.sv",
+        "instance": "u_cmd_fifo",
+        "title": "Command FIFO",
+        "depth": 16,
+        "bits": 12
+      },
+      {
+        "file": "rtl/ip/serial/i2c_reg.sv",
+        "instance": "u_rx_fifo",
+        "title": "RX FIFO",
+        "depth": 16,
+        "bits": 8
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/i2c_reg.sv"
+    ],
+    "bindings": [],
+    "note": "Each I2C instance has a 16-entry command  FIFO and a separate 16-byte RX  FIFO. A command entry is 12 bits, including the byte and READ/RESTART/STOP/NACK controls; it is not a 16-bit payload."
+  },
+  {
+    "id": "ws2812-fifo",
+    "chapters": [
+      "ws2812"
+    ],
+    "title": "WS2812 pixel FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/ws2812_reg.sv",
+        "instance": "u_tx_fifo",
+        "title": "Pixel FIFO",
+        "depth": 16,
+        "bits": 24
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/ws2812_reg.sv"
+    ],
+    "bindings": [],
+    "note": "Sixteen 24-bit GRB entries feed the serializer. Frame length,  FIFO occupancy and the reset interval are independent state."
+  },
+  {
+    "id": "i2s-fifos",
+    "chapters": [
+      "i2s"
+    ],
+    "title": "I2S audio CDC storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "instance": "u_tx_cdc_fifo",
+        "title": "TX CDC FIFO",
+        "depth": 128,
+        "bits": 32
+      },
+      {
+        "file": "rtl/ip/serial/apb4_i2s.sv",
+        "instance": "u_rx_cdc_fifo",
+        "title": "RX CDC FIFO",
+        "depth": 128,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/apb4_i2s.sv"
+    ],
+    "bindings": [],
+    "note": "Separate 128-word FIFOs cross PCLK/AUDIO domains in opposite directions. Full/empty, flush completion and sample packing are separate from physical slot numbering."
+  },
+  {
+    "id": "dvp-fifo",
+    "chapters": [
+      "dvp"
+    ],
+    "title": "DVP pixel/event CDC FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+        "instance": "u_dvp_payload_fifo",
+        "title": "Pixel/event FIFO",
+        "depth": 128,
+        "bits": 42
+      }
+    ],
+    "sources": [
+      "rtl/ip/multimedia/axi4s_dvp.sv"
+    ],
+    "bindings": [],
+    "note": "128 entries store 32 data bits, four KEEP bits, four STRB bits and two frame/line markers. A partially filled final word retains its valid-lane metadata."
+  },
+  {
+    "id": "pwm-capture",
+    "chapters": [
+      "pwm"
+    ],
+    "title": "PWM per-channel capture FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
+        "instance": "u_capture_fifo",
+        "title": "One channel capture FIFO",
+        "depth": 4,
+        "bits": 32,
+        "defines": [
+          "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+        ]
+      }
+    ],
+    "sources": [
+      "rtl/managed/clusterip/pwm/rtl/pwm_capture.sv",
+      "rtl/managed/clusterip/pwm/rtl/pwm_define.svh"
+    ],
+    "bindings": [],
+    "note": "Each instantiated capture channel has a four-entry 32-bit  FIFO. Channel count, capture timing and overflow policy remain in the PWM contract; this is not a shared global queue."
+  },
+  {
+    "id": "rng-fifo",
+    "chapters": [
+      "rng"
+    ],
+    "title": "RNG entropy FIFO",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/managed/clusterip/rng/rtl/rng_core.sv",
+        "instance": "u_entropy_fifo",
+        "title": "Entropy word FIFO",
+        "depth": 8,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/managed/clusterip/rng/rtl/rng_core.sv"
+    ],
+    "bindings": [],
+    "note": "Eight words are buffered inside the RNG core. A filled  FIFO does not independently establish entropy-source quality; qualification and health-check status still gate use."
+  },
+  {
+    "id": "crypto-fifos",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "Crypto streaming FIFO storage",
+    "section": "functional",
+    "stores": [
+      {
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {
+          "Depth": 8
+        },
+        "title": "AES input FIFO",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {
+          "Depth": 8
+        },
+        "title": "AES output FIFO",
+        "depth": 8,
+        "bits": 37
+      },
+      {
+        "file": "rtl/ip/security/crypto_clearable_fifo.sv",
+        "instance": "u_payload",
+        "parameters": {
+          "Depth": 16
+        },
+        "title": "SHA input FIFO",
+        "depth": 16,
+        "bits": 37
+      }
+    ],
+    "sources": [
+      "rtl/ip/security/crypto_aes_sram_engine.sv",
+      "rtl/ip/security/crypto_clearable_fifo.sv",
+      "rtl/ip/security/crypto_sha2_sram_engine.sv"
+    ],
+    "bindings": [],
+    "note": "Entries carry data and valid-byte/LAST metadata. AES has independent input/output  FIFOs; SHA has an input  FIFO and separate digest state. Zeroize/abort and ownership rules remain mandatory."
+  },
+  {
+    "id": "rsa-vectors",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "RSA logical operand/result arrays",
+    "section": "functional",
+    "stores": [
+      {
+        "depth_ref": {
+          "file": "crt/include/retrosoc/hal/crypto_regs.h",
+          "constant": "RS_CRYPTO_RSA_WORDS"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "symbol": "s_wdata"
+        },
+        "title": "Modulus",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "depth_ref": {
+          "file": "crt/include/retrosoc/hal/crypto_regs.h",
+          "constant": "RS_CRYPTO_RSA_WORDS"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "symbol": "s_wdata"
+        },
+        "title": "Exponent",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "depth_ref": {
+          "file": "crt/include/retrosoc/hal/crypto_regs.h",
+          "constant": "RS_CRYPTO_RSA_WORDS"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "symbol": "s_wdata"
+        },
+        "title": "Base",
+        "depth": 64,
+        "bits": 32
+      },
+      {
+        "depth_ref": {
+          "file": "crt/include/retrosoc/hal/crypto_regs.h",
+          "constant": "RS_CRYPTO_RSA_WORDS"
+        },
+        "bits_ref": {
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "symbol": "s_wdata"
+        },
+        "title": "Result",
+        "depth": 64,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "crt/include/retrosoc/hal/crypto_regs.h",
+      "rtl/ip/security/apb4_crypto.sv",
+      "rtl/ip/security/crypto_rsa_sram_core.sv",
+      "rtl/ip/security/crypto_sram_store.sv"
+    ],
+    "bindings": [],
+    "note": "Each logical 2,048-bit APB aperture is shown as 64 little-endian 32-bit limb positions. P1 stores the live values in the shared private SRAM banks; the diagram does not imply separate arrays, persistent keys or a key-slot service."
+  },
+  {
+    "id": "sdio0-descriptor-storage",
+    "chapters": [
+      "sdio"
+    ],
+    "title": "SDIO linked-descriptor storage example",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Four illustrative descriptor positions",
+        "depth": 4,
+        "bits": 128,
+        "layout_ref": "sdio-descriptor",
+        "example": true
+      }
+    ],
+    "sources": [
+      "docs/ip/sdio.md"
+    ],
+    "bindings": [],
+    "note": "Four allocated descriptor positions illustrate a bounded chain; NEXT addresses and END terminate traversal, rather than implying adjacent hardware  FIFO slots. This is not a live occupancy snapshot or an allocation performed by the documentation. Descriptor layout, alignment and completion rules remain in the associated format description."
+  },
+  {
+    "id": "spi-fifos",
+    "title": "SPI transport-word FIFOs",
+    "chapters": [
+      "spi"
+    ],
+    "section": "functional",
+    "stores": [
+      {
+        "title": "TXFIFO",
+        "file": "rtl/ip/serial/spi_word_packer.sv",
+        "instance": "u_tx_fifo",
+        "depth": 8,
+        "bits": 32
+      },
+      {
+        "title": "RXFIFO",
+        "file": "rtl/ip/serial/spi_word_packer.sv",
+        "instance": "u_rx_fifo",
+        "depth": 8,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/serial/spi_word_packer.sv"
+    ],
+    "bindings": [],
+    "note": "Each  FIFO stores 8 32-bit transport words. Frame width, useful payload bytes and final partial-word validity are separate properties."
+  },
+  {
+    "id": "tiny-sram-groups",
+    "chapters": [
+      "sram"
+    ],
+    "title": "Tiny four-group SRAM organization",
+    "section": "functional",
+    "sources": [
+      "rtl/tiny/top/tiny_sram.sv",
+      "rtl/tiny/top/tiny_sram_group.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/tiny/top/tiny_sram.sv",
+        "text": "group < 4"
+      },
+      {
+        "file": "rtl/tiny/top/tiny_sram.sv",
+        "text": ".GroupBase(32'h3000_0000 + 32'(group) * 32'h8000)"
+      }
+    ],
+    "ranges": [
+      {
+        "name": "Group 0",
+        "base": 805306368,
+        "bytes": 32768
+      },
+      {
+        "name": "Group 1",
+        "base": 805339136,
+        "bytes": 32768
+      },
+      {
+        "name": "Group 2",
+        "base": 805371904,
+        "bytes": 32768
+      },
+      {
+        "name": "Group 3",
+        "base": 805404672,
+        "bytes": 32768
+      }
+    ],
+    "note": "Four independently serviced 32KiB groups total 128KiB. Each group uses eight 4 KiB technology macros and arbitrates local I/D with its external attachment. These are address ranges, not measured occupancy."
+  },
+  {
+    "id": "tiny-xpi-windows",
+    "chapters": [
+      "xpi"
+    ],
+    "title": "Tiny XPI apertures and device capacity",
+    "section": "functional",
+    "sources": [
+      "rtl/tiny/address_map/memory_map.json",
+      "crt/src/hal/xpi_psram.c"
+    ],
+    "bindings": [],
+    "region_symbols": [
+      "FLASH",
+      "XPI"
+    ],
+    "note": "Flash alias and XPI apertures are decoder ranges, not fitted memory capacity. NSS1 reference PSRAM is 8 MiB after explicit initialization; a 64 MiB chip-select slot is not an 8 MiB device size."
+  },
+  {
+    "id": "tiny-linker",
+    "chapters": [
+      "tiny-memory-budget",
+      "tiny-boot"
+    ],
+    "title": "Tiny Flash load and SRAM runtime placement",
+    "section": "linker",
+    "sources": [
+      "configs/ci/ics55-tiny.mk",
+      "crt/linker/ld2_all_sram.lds",
+      "crt/arch/riscv/startup.S"
+    ],
+    "bindings": [],
+    "profile": "configs/ci/ics55-tiny.mk",
+    "linker": "crt/linker/ld2_all_sram.lds",
+    "note": "VMA/LMA describe placement, not measured section size. .init remains in Flash; runtime initialized sections relocate to SRAM and BSS is zeroed. Stack, buffers and code share the same main SRAM capacity."
+  },
+  {
+    "id": "tiny-buffer-budgets",
+    "chapters": [
+      "tiny-memory-budget"
+    ],
+    "title": "Calculated payload and transport storage examples",
+    "section": "budget",
+    "sources": [
+      "docs/ip/dvp.md",
+      "crt/src/hal/i2s_math.c",
+      "crt/include/retrosoc/hal/dma.h"
+    ],
+    "bindings": [],
+    "derived": "worked-budgets",
+    "note": "Arithmetic examples only. DVP stride is bytes per line; I2S stride is transport bytes per stereo frame; descriptor stride is 64 bytes. These are not measured allocation or performance results."
+  },
+  {
+    "id": "crypto-private-sram",
+    "chapters": [
+      "crypto"
+    ],
+    "title": "Tiny Crypto private SRAM geometry",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "One private bank (six instances)",
+        "file": "rtl/ip/security/crypto_sram_store.sv",
+        "symbols": [
+          "s_storage_q"
+        ],
+        "depth": 1024,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/security/crypto_sram_store.sv",
+      "rtl/ip/security/crypto_mem_pkg.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/security/crypto_sram_store.sv",
+        "text": "bank < 6"
+      },
+      {
+        "file": "rtl/ip/security/crypto_sram_store.sv",
+        "text": "tc_sram_1024x32 u_sram"
+      }
+    ],
+    "note": "Six 1024 x 32 banks total 24576 bytes (24KiB), separate from main SRAM and not a CPU memory aperture. Constants and mutable engine state have different scrub/lock lifetimes. Selected technology mapping is not physical qualification."
+  },
+  {
+    "id": "ppalite-pipeline",
+    "chapters": [
+      "ppalite"
+    ],
+    "title": "PPALite bounded pipeline storage",
+    "section": "functional",
+    "stores": [
+      {
+        "title": "Input slots: data + halfword flag",
+        "file": "rtl/ip/ppalite/ppalite_fifo.sv",
+        "instance": "u_fifo",
+        "parameters": {
+          "DataWidth": 33,
+          "BufferDepth": 2
+        },
+        "depth": 2,
+        "bits": 33
+      },
+      {
+        "title": "Output words: data + frame/line flags",
+        "file": "rtl/ip/ppalite/ppalite_fifo.sv",
+        "instance": "u_fifo",
+        "parameters": {
+          "DataWidth": 34,
+          "BufferDepth": 8
+        },
+        "depth": 8,
+        "bits": 34
+      },
+      {
+        "title": "Partial output packing register",
+        "file": "rtl/ip/ppalite/ppalite_packer.sv",
+        "symbols": [
+          "s_pack_q"
+        ],
+        "depth": 1,
+        "bits": 32
+      }
+    ],
+    "sources": [
+      "rtl/ip/ppalite/ppalite_fifo.sv",
+      "rtl/ip/ppalite/ppalite_stream_guard.sv",
+      "rtl/ip/ppalite/ppalite_packer.sv"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_stream_guard.sv",
+        "text": "ppalite_fifo #(.DataWidth(33), .BufferDepth(2)) u_input_fifo"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_packer.sv",
+        "text": "ppalite_fifo #(.DataWidth(34), .BufferDepth(8)) u_output_fifo"
+      }
+    ],
+    "note": "Two 33-bit input slots and eight 34-bit output entries include metadata; each carries 32 payload bits. A separate 32-bit register assembles rows. The upstream DVP CDC retains 128 x 42 bits. There is no private line/frame RAM, and output reduction does not enlarge the raw sensor FIFO budget."
+  }
+]

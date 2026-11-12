@@ -12,6 +12,11 @@
 #let data = json(sys.inputs.at("data"))
 #let doc = data.document
 #let ip-chapters = json("chapter-index.json")
+#let reference-boot(facts) = if facts.profile.HAVE_PLL == "YES" {
+  [SAFE24, PLL parked off]
+} else {
+  [SAFE24, no PLL]
+}
 // RM0486-inspired spacing, adapted to the retained Inter sizes. Inter's
 // cap-height-to-baseline box is 7.639 pt at 10.5 pt and 6.548 pt at 9 pt.
 // Thus these leading values yield 12.6 / 10.8 pt baseline pitches, rather
@@ -284,9 +289,22 @@
   )
 }
 
+#let window-size(region) = {
+  let bytes = region.at("size", default: 0)
+  let mib = 1024 * 1024
+  if bytes >= mib and calc.rem(bytes, mib) == 0 {
+    str(int(bytes / mib)) + " MiB"
+  } else {
+    region.size_label
+  }
+}
+
 #let ip(id) = {
   let entry = data.catalog.find(e => e.id == id)
   let windows = data.regions.filter(r => r.symbol in entry.regions)
+  if entry.family=="rcu" {
+    windows=((symbol:"SYSCTRL + 0x100",base_hex:"0x1000B100",size_label:"96 bytes"),)
+  }
   let irqs = data.interrupts.filter(i => i.name in entry.irqs)
   block(above: rhythm.metadata-before, below: rhythm.metadata-after, breakable: false, sticky: true)[
     #entry.summary
@@ -296,7 +314,7 @@
       stroke: table-rules(3),
       table.header(..([Address window],[Base address],[Size]).map(h=>
         table.cell(fill:gray,text(weight:"semibold",h)))),
-      ..windows.map(r => (code(r.symbol), code(r.base_hex), r.size_label)).flatten(),
+      ..windows.map(r => (code(r.symbol), code(r.base_hex), window-size(r))).flatten(),
     )
     #block(above: rhythm.metadata-before)[
       *Core IRQ bit:* #if irqs.len() == 0 { [No dedicated source.] } else {
@@ -304,7 +322,7 @@
       }
     ]
     #for (n, p) in entry.sources.enumerate() {
-      source(p, title: if n == 0 { "Detailed contract / source" } else { "Additional source" })
+      source(p, title: if n == 0 { "Detailed contract / source" } else { p.split("/").last() })
       if n < entry.sources.len() - 1 { [ · ] }
     }
   ]

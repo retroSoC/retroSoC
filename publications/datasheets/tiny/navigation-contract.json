@@ -1,0 +1,667 @@
+{
+  "schema_version": 1,
+  "state": "frozen",
+  "depth": 5,
+  "entries": [
+    {
+      "level": 1,
+      "title": "Product Brief",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Features",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Overview",
+      "anchor": "tiny-overview"
+    },
+    {
+      "level": 2,
+      "title": "Product Configuration and Feature Availability",
+      "anchor": "tiny-configuration"
+    },
+    {
+      "level": 3,
+      "title": "Implemented scope and planned capabilities",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Typical Applications and System Configurations",
+      "anchor": "tiny-applications"
+    },
+    {
+      "level": 3,
+      "title": "Wired control and instrumentation",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Camera, display, audio and storage",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Reading this datasheet",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "System Architecture",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Introduction",
+      "anchor": "tiny-core"
+    },
+    {
+      "level": 3,
+      "title": "Management Processor and Local Memory",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Interconnect",
+      "anchor": "tiny-bus"
+    },
+    {
+      "level": 3,
+      "title": "AXI4 and APB4 Interfaces",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Address Mapping",
+      "anchor": "tiny-addresses"
+    },
+    {
+      "level": 2,
+      "title": "Memory Attributes and DMA Buffer Ownership",
+      "anchor": "tiny-memory-ownership"
+    },
+    {
+      "level": 2,
+      "title": "Clock and Reset",
+      "anchor": "tiny-clock"
+    },
+    {
+      "level": 2,
+      "title": "Interrupt System",
+      "anchor": "tiny-irq"
+    },
+    {
+      "level": 2,
+      "title": "DMA Request, Interrupt and Event Routing",
+      "anchor": "tiny-dma-routing"
+    },
+    {
+      "level": 2,
+      "title": "Bus Master Coordination and Resource Ownership",
+      "anchor": "tiny-master-ownership"
+    },
+    {
+      "level": 2,
+      "title": "Peripheral Coexistence and Resource Conflicts",
+      "anchor": "tiny-conflicts"
+    },
+    {
+      "level": 2,
+      "title": "Security and Access-Control Boundaries",
+      "anchor": "tiny-security"
+    },
+    {
+      "level": 2,
+      "title": "Debug, Diagnostics and Fault Recovery",
+      "anchor": "tiny-system-diagnostics"
+    },
+    {
+      "level": 2,
+      "title": "Register Access and Programming Conventions",
+      "anchor": "tiny-register-programming"
+    },
+    {
+      "level": 2,
+      "title": "Interface Standards and Supported Subsets",
+      "anchor": "tiny-interface-subsets"
+    },
+    {
+      "level": 2,
+      "title": "Peripherals",
+      "anchor": "tiny-peripherals"
+    },
+    {
+      "level": 3,
+      "title": "Memory Interface",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "Non-Volatile Memory (NVM)",
+      "anchor": null
+    },
+    {
+      "level": 5,
+      "title": "XPI Universal Controller",
+      "anchor": "xpi"
+    },
+    {
+      "level": 5,
+      "title": "Native SD/SDIO Host (SDIO0)",
+      "anchor": "sdio"
+    },
+    {
+      "level": 4,
+      "title": "Volatile Memory (VM)",
+      "anchor": null
+    },
+    {
+      "level": 5,
+      "title": "On-Chip SRAM",
+      "anchor": "sram"
+    },
+    {
+      "level": 3,
+      "title": "General-Purpose Input/Output (GPIO)",
+      "anchor": "gpio"
+    },
+    {
+      "level": 3,
+      "title": "Direct Memory Access (DMA)",
+      "anchor": "dma"
+    },
+    {
+      "level": 3,
+      "title": "Timers",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "General-Purpose Timers (TIM0, TIM1)",
+      "anchor": "timer"
+    },
+    {
+      "level": 4,
+      "title": "Real-Time Clock (RTC)",
+      "anchor": "rtc"
+    },
+    {
+      "level": 4,
+      "title": "Watchdog (WDG)",
+      "anchor": "wdg"
+    },
+    {
+      "level": 4,
+      "title": "Pulse Width Modulation (PWM)",
+      "anchor": "pwm"
+    },
+    {
+      "level": 3,
+      "title": "IO Interface",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "Universal Asynchronous Receiver/Transmitter (UART)",
+      "anchor": null
+    },
+    {
+      "level": 5,
+      "title": "Management UART (UART0)",
+      "anchor": "uart0"
+    },
+    {
+      "level": 4,
+      "title": "Inter-Integrated Circuit (I2C0)",
+      "anchor": "i2c"
+    },
+    {
+      "level": 4,
+      "title": "Serial Peripheral Interface (SPI0)",
+      "anchor": "spi"
+    },
+    {
+      "level": 4,
+      "title": "WS2812 LED Output",
+      "anchor": "ws2812"
+    },
+    {
+      "level": 4,
+      "title": "Architecture Information (ARCHINFO)",
+      "anchor": "archinfo"
+    },
+    {
+      "level": 4,
+      "title": "System Controller (SYSCTRL)",
+      "anchor": "sysctrl"
+    },
+    {
+      "level": 4,
+      "title": "Reset and Clock Unit (RCU)",
+      "anchor": "rcu"
+    },
+    {
+      "level": 4,
+      "title": "Local Interrupt Controller (CLINT)",
+      "anchor": "clint"
+    },
+    {
+      "level": 3,
+      "title": "Multimedia",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "Data Formats and Peripheral Interoperability",
+      "anchor": "tiny-media-formats"
+    },
+    {
+      "level": 4,
+      "title": "Inter-IC Sound (I2S)",
+      "anchor": "i2s"
+    },
+    {
+      "level": 4,
+      "title": "Digital Video Port (DVP)",
+      "anchor": "dvp"
+    },
+    {
+      "level": 4,
+      "title": "Streaming Pixel Processor (PPALite)",
+      "anchor": "ppalite"
+    },
+    {
+      "level": 3,
+      "title": "Encryption and Data Integrity",
+      "anchor": null
+    },
+    {
+      "level": 4,
+      "title": "Cryptographic Accelerator (Crypto)",
+      "anchor": "crypto"
+    },
+    {
+      "level": 4,
+      "title": "Cyclic Redundancy Check (CRC)",
+      "anchor": "crc"
+    },
+    {
+      "level": 4,
+      "title": "Random Number Generator (RNG)",
+      "anchor": "rng"
+    },
+    {
+      "level": 2,
+      "title": "Packaging",
+      "anchor": "tiny-pins"
+    },
+    {
+      "level": 3,
+      "title": "Pin Mapping",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "GPIO Alternate-Function Matrix",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Package Dimensions, Reflow and Reliability",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Electrical and Timing Specifications",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Software",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Boot Configuration, Initialization and Recovery",
+      "anchor": "tiny-boot"
+    },
+    {
+      "level": 2,
+      "title": "Programming, Image Maintenance and Service Procedures",
+      "anchor": "tiny-image-maintenance"
+    },
+    {
+      "level": 2,
+      "title": "Runtime, SDK and Shell",
+      "anchor": "tiny-runtime"
+    },
+    {
+      "level": 3,
+      "title": "SDK and Completion Semantics",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Linker Placement and Runtime Accounting",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Applications",
+      "anchor": "tiny-diagnostics"
+    },
+    {
+      "level": 2,
+      "title": "Software Support and Validated Configurations",
+      "anchor": "tiny-software-support"
+    },
+    {
+      "level": 1,
+      "title": "Implementation",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "SoC Integration",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "RTL Simulation",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "FPGA Verification",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Physical Design",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "PCB Hardware",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Product Direction",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Product Series",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Roadmap",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Technical Report",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Release Verification Summary",
+      "anchor": "tiny-evidence"
+    },
+    {
+      "level": 2,
+      "title": "Shuttle and Qualification Evidence",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Performance and Power Characterization",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Known Limitations and Revision Compatibility",
+      "anchor": "tiny-known-limitations"
+    },
+    {
+      "level": 2,
+      "title": "Implementation and Qualification Limitations",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Revision Identification and Compatibility",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Migration from v0.1",
+      "anchor": "tiny-migration"
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Software Memory and Buffer Requirements",
+      "anchor": "tiny-memory-budget"
+    },
+    {
+      "level": 2,
+      "title": "Linker Layout and Runtime Accounting",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Worked Buffer Budgets",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "DMA Descriptors and Buffer Lifetime",
+      "anchor": "tiny-dma-format"
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Terminology, Notation and Document Map",
+      "anchor": "tiny-document-map"
+    },
+    {
+      "level": 2,
+      "title": "Terminology and Units",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Reading Numbers and Status",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Document and Evidence Navigation",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Global Register and Address Index",
+      "anchor": "tiny-register-index"
+    },
+    {
+      "level": 2,
+      "title": "Tiny Register Instances",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "APB4_GPIO",
+      "anchor": "index-APB4_GPIO"
+    },
+    {
+      "level": 3,
+      "title": "APB4_UART0",
+      "anchor": "index-APB4_UART0"
+    },
+    {
+      "level": 3,
+      "title": "APB4_TIM0",
+      "anchor": "index-APB4_TIM0"
+    },
+    {
+      "level": 3,
+      "title": "APB4_TIM1",
+      "anchor": "index-APB4_TIM1"
+    },
+    {
+      "level": 3,
+      "title": "APB4_I2C0",
+      "anchor": "index-APB4_I2C0"
+    },
+    {
+      "level": 3,
+      "title": "APB4_I2S",
+      "anchor": "index-APB4_I2S"
+    },
+    {
+      "level": 3,
+      "title": "APB4_WS2812",
+      "anchor": "index-APB4_WS2812"
+    },
+    {
+      "level": 3,
+      "title": "APB4_XPI",
+      "anchor": "index-APB4_XPI"
+    },
+    {
+      "level": 3,
+      "title": "APB4_DMA",
+      "anchor": "index-APB4_DMA"
+    },
+    {
+      "level": 3,
+      "title": "APB4_SYSCTRL",
+      "anchor": "index-APB4_SYSCTRL"
+    },
+    {
+      "level": 3,
+      "title": "APB4_CRYPTO",
+      "anchor": "index-APB4_CRYPTO"
+    },
+    {
+      "level": 3,
+      "title": "APB4_DVP",
+      "anchor": "index-APB4_DVP"
+    },
+    {
+      "level": 3,
+      "title": "APB4_SDIO0",
+      "anchor": "index-APB4_SDIO0"
+    },
+    {
+      "level": 3,
+      "title": "APB4_GPIO_ADMIN",
+      "anchor": "index-APB4_GPIO_ADMIN"
+    },
+    {
+      "level": 3,
+      "title": "APB4_SRAM",
+      "anchor": "index-APB4_SRAM"
+    },
+    {
+      "level": 3,
+      "title": "APB4_SPI",
+      "anchor": "index-APB4_SPI"
+    },
+    {
+      "level": 3,
+      "title": "APB4_PPALITE",
+      "anchor": "index-APB4_PPALITE"
+    },
+    {
+      "level": 3,
+      "title": "APB4_CLINT",
+      "anchor": "index-APB4_CLINT"
+    },
+    {
+      "level": 3,
+      "title": "APB4_ARCHINFO",
+      "anchor": "index-APB4_ARCHINFO"
+    },
+    {
+      "level": 3,
+      "title": "APB4_RNG",
+      "anchor": "index-APB4_RNG"
+    },
+    {
+      "level": 3,
+      "title": "APB4_PWM",
+      "anchor": "index-APB4_PWM"
+    },
+    {
+      "level": 3,
+      "title": "APB4_RTC",
+      "anchor": "index-APB4_RTC"
+    },
+    {
+      "level": 3,
+      "title": "APB4_WDG",
+      "anchor": "index-APB4_WDG"
+    },
+    {
+      "level": 3,
+      "title": "APB4_CRC",
+      "anchor": "index-APB4_CRC"
+    },
+    {
+      "level": 1,
+      "title": "Appendix: Fault and Status Code Reference",
+      "anchor": "tiny-fault-reference"
+    },
+    {
+      "level": 2,
+      "title": "Diagnostic Code Namespaces",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Status Registers and Capture Points",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Firmware Application Results",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Automated Completion and Simulator Verdicts",
+      "anchor": null
+    },
+    {
+      "level": 1,
+      "title": "Document Control",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Revision History",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Sources and Reproducibility",
+      "anchor": "publication-provenance"
+    },
+    {
+      "level": 2,
+      "title": "License",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Document Status and Contact",
+      "anchor": null
+    }
+  ]
+}

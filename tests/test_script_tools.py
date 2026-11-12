@@ -541,6 +541,22 @@ def test_opipsram_formal_keeps_full_depth_with_hosted_runner_budget() -> None:
     assert "$(FORMAL_OPIPSRAM_BMC_TIMEOUT)s $(FORMAL_SBY)" in formal_makefile
 
 
+def test_ga2d_formal_is_local_only_with_unchanged_bounds() -> None:
+    workflow = (ROOT / ".github/workflows/formal.yml").read_text(encoding="utf-8")
+    proof_matrix = workflow.split("matrix:\n        proof:\n", 1)[1].split("    steps:", 1)[0]
+    formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
+    engineering = (ROOT / "docs/engineering.md").read_text(encoding="utf-8")
+
+    assert "- ga2d\n" not in proof_matrix
+    assert "- dma\n" in proof_matrix
+    assert re.search(r"^FORMAL_GA2D_DEPTH\s+\?= 36$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_COVER_DEPTH\s+\?= 199$", formal_makefile, re.MULTILINE)
+    assert re.search(r"^FORMAL_GA2D_TIMEOUT\s+\?= 7200$", formal_makefile, re.MULTILINE)
+    assert "FORMAL=YES formal-ga2d" in engineering
+    assert "127214812 kB" in engineering
+    assert "missing local GA2D evidence\nis `NOT_RUN`, never `PASS`" in engineering
+
+
 def test_ga2d_formal_target_uses_the_p5_production_hierarchy() -> None:
     formal_makefile = (ROOT / "rtl/mini/mk/formal.mk").read_text(encoding="utf-8")
     filelist_generator = (
@@ -941,6 +957,96 @@ def test_dependency_helpers_are_idempotent(tmp_path: Path) -> None:
     assert not partial.exists()
 
 
+def test_dependency_helper_recovers_unborn_checkout(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    run("git", "init", str(source))
+    run("git", "config", "user.email", "test@example.com", cwd=source)
+    run("git", "config", "user.name", "Test", cwd=source)
+    run("git", "config", "commit.gpgsign", "false", cwd=source)
+    (source / "dependency.txt").write_text("pinned\n", encoding="utf-8")
+    run("git", "add", "dependency.txt", cwd=source)
+    run("git", "commit", "-m", "pinned", cwd=source)
+    revision = run("git", "rev-parse", "HEAD", cwd=source).stdout.strip()
+    destination = tmp_path / "checkout"
+    destination.mkdir()
+    run("git", "init", str(destination))
+    run("git", "remote", "add", "origin", str(source), cwd=destination)
+
+    ensure_git_repo(str(source), destination, revision)
+
+    assert run("git", "rev-parse", "HEAD", cwd=destination).stdout.strip() == revision
+    assert (destination / "dependency.txt").read_text(encoding="utf-8") == "pinned\n"
+
+
+def test_dependency_helper_preserves_dirty_unborn_checkout(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    run("git", "init", str(source))
+    run("git", "config", "user.email", "test@example.com", cwd=source)
+    run("git", "config", "user.name", "Test", cwd=source)
+    (source / "dependency.txt").write_text("pinned\n", encoding="utf-8")
+    run("git", "add", "dependency.txt", cwd=source)
+    run("git", "commit", "-m", "pinned", cwd=source)
+    revision = run("git", "rev-parse", "HEAD", cwd=source).stdout.strip()
+    destination = tmp_path / "checkout"
+    destination.mkdir()
+    run("git", "init", str(destination))
+    run("git", "remote", "add", "origin", str(source), cwd=destination)
+    (destination / "keep.txt").write_text("do not delete\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="unborn dependency has local changes"):
+        ensure_git_repo(str(source), destination, revision)
+
+    assert (destination / "keep.txt").read_text(encoding="utf-8") == "do not delete\n"
+    assert subprocess.run(["git", "-C", str(destination), "rev-parse", "--verify", "HEAD"], capture_output=True).returncode != 0
+
+
+def test_fetch_git_repo_retries_with_timeout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from scripts.setup_helpers import fetch_git_repo
+
+    calls = []
+    sleeps = []
+
+    def flaky(command, *, cwd=None, timeout=None):
+        calls.append((tuple(command), cwd, timeout))
+        if len(calls) < 3:
+            raise subprocess.TimeoutExpired(command, timeout)
+
+    monkeypatch.setattr(setup_helpers, "run", flaky)
+    monkeypatch.setattr(setup_helpers.time, "sleep", sleeps.append)
+    fetch_git_repo(tmp_path, "a" * 40, "https://example.invalid/locked.git", timeout=7, attempts=3)
+
+    assert [call[2] for call in calls] == [7, 7, 7]
+    assert sleeps == [1, 2]
+    assert all(call[0][-2:] == ("https://example.invalid/locked.git", "a" * 40) for call in calls)
+
+
+def test_fetch_git_repo_stops_after_failed_attempts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from scripts.setup_helpers import fetch_git_repo
+
+    calls = []
+    sleeps = []
+
+    def fail(command, *, cwd=None, timeout=None):
+        calls.append(timeout)
+        raise subprocess.CalledProcessError(128, command)
+
+    monkeypatch.setattr(setup_helpers, "run", fail)
+    monkeypatch.setattr(setup_helpers.time, "sleep", sleeps.append)
+    with pytest.raises(subprocess.CalledProcessError):
+        fetch_git_repo(tmp_path, "a" * 40, timeout=3, attempts=2)
+
+    assert calls == [3, 3]
+    assert sleeps == [1]
+
+
+def test_locked_tools_action_limits_apt_retries() -> None:
+    action = (ROOT / ".github/actions/locked-tools/action.yml").read_text(encoding="utf-8")
+    assert 'until "$@"; do' in action
+    assert "attempts >= 3" in action
+    assert "180s sudo apt-get update -qq" in action
+    assert "600s sudo apt-get install" in action
+
+
 def test_dependency_helper_uses_fallback_url(tmp_path: Path) -> None:
     payload = tmp_path / "payload.bin"
     payload.write_bytes(b"verified fallback")
@@ -961,8 +1067,8 @@ def test_dependency_helper_limits_recursive_submodules(monkeypatch, tmp_path: Pa
     commands: list[tuple[str, ...]] = []
     revision = "a" * 40
 
-    def record(command, *, cwd=None) -> None:
-        del cwd
+    def record(command, *, cwd=None, timeout=None) -> None:
+        del cwd, timeout
         commands.append(tuple(command))
 
     def git_output_stub(repo: Path, *args: str) -> str:
@@ -2791,3 +2897,24 @@ def test_clean_all_stays_within_repository(tmp_path: Path) -> None:
     )
     assert not link.exists()
     assert external.is_dir()
+
+
+def test_full_flow_dispatch_uses_explicit_pdk_profiles() -> None:
+    workflow = (ROOT / ".github/workflows/full-flow.yml").read_text()
+    for pdk, profile in (
+        ("IHP130", "configs/ci/ihp130.mk"),
+        ("GF180", "configs/ci/gf180.mk"),
+        ("ICS55", "configs/ci/ics55.mk"),
+        ("SKY130", "configs/ci/sky130.mk"),
+    ):
+        assert f"if: inputs.pdk == '{pdk}'" in workflow
+        assert f"profile: {profile}" in workflow
+    assert "inputs.pdk == 'IHP130' &&" not in workflow
+    assert "timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}" in workflow
+
+
+def test_formal_workflow_has_targeted_dma_budget() -> None:
+    workflow = (ROOT / ".github/workflows/formal.yml").read_text()
+    assert "if: matrix.proof != 'dma'" in workflow
+    assert "if: matrix.proof == 'dma'" in workflow
+    assert "FORMAL_DMA_TIMEOUT=600" in workflow

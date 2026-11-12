@@ -1,0 +1,103 @@
+{
+  "psram-initialization": {
+    "owner": "xpi",
+    "title": "NSS1 PSRAM session establishment and invalidation",
+    "steps": [
+      "Reserve XPI, NSS1/GPIO29 and LUT 8..11; execute reconfiguration from SRAM",
+      "Read committed MEM rate; establish safe idle and device-select bias",
+      "Configure slot and commands; read device identity and enter QPI",
+      "Publish the 8 MiB ready session only after successful initialization",
+      "After clock/reset: invalidate assumptions and reinitialize before reuse"
+    ],
+    "sources": [
+      "crt/src/hal/xpi_psram.c",
+      "crt/include/retrosoc/hal/xpi_psram.h"
+    ],
+    "bindings": [
+      {
+        "file": "crt/src/hal/xpi_psram.c",
+        "text": "rs_status_t rs_xpi_psram_initialize"
+      },
+      {
+        "file": "crt/src/hal/xpi_psram.c",
+        "text": "device->capacity_bytes = RS_XPI_PSRAM_BYTES;"
+      }
+    ],
+    "note": "Source-level ownership ordering; no measured initialization-time or device-rate guarantee."
+  },
+  "rcu-transition": {
+    "owner": "rcu",
+    "title": "RCU clock transition and failure boundary",
+    "steps": [
+      "Close new admissions and request client quiescence",
+      "Drain all accepted work; retain ownership if drain fails",
+      "Park on the safe source and prepare conservative divisors",
+      "Qualify the requested source, switch and publish committed rates",
+      "On failure: preserve diagnostics and follow the source/reset recovery contract"
+    ],
+    "sources": [
+      "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+      "crt/src/hal/rcu.c"
+    ],
+    "bindings": [
+      {
+        "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+        "text": "Idle, Drain, Park, Program, Unlock, Lock, Divide, Switch, Commit, Recover, WarmDrain"
+      }
+    ],
+    "note": "Logical stages, not a cycle-duration diagram or permission to abandon accepted traffic."
+  },
+  "crypto-initialization": {
+    "owner": "crypto",
+    "title": "Crypto initialization, operation and erasure lifecycle",
+    "steps": [
+      "Keep PCLK running; wait for reset scrub and maintenance readiness",
+      "Load the CRYC1 constant image with required padding and checks",
+      "COMMIT; require READY, TABLE_VALID and TABLE_LOCKED",
+      "Configure key/operands and run the selected engine with owned buffers",
+      "Drain accepted DMA; ZEROIZE and observe actual scrub completion"
+    ],
+    "sources": [
+      "crt/src/hal/crypto_lifecycle.c",
+      "rtl/ip/security/crypto_mem_ctrl.sv"
+    ],
+    "bindings": [
+      {
+        "file": "crt/src/hal/crypto_lifecycle.c",
+        "text": "RS_CRYPTO_REG(RS_CRYPTO_REG_MEM_CONTROL) = RS_CRYPTO_MEM_CONTROL_COMMIT;"
+      },
+      {
+        "file": "crt/src/hal/crypto_lifecycle.c",
+        "text": "RS_CRYPTO_REG(RS_CRYPTO_REG_COMMAND) = RS_CRYPTO_COMMAND_ZEROIZE;"
+      }
+    ],
+    "note": "API return and timeout do not establish engine, DMA or erasure completion."
+  },
+  "ppalite-capture": {
+    "owner": "ppalite",
+    "title": "Processed-frame ownership and publication",
+    "steps": [
+      "Select PROCESS at a global idle barrier; validate source, layout and allocation",
+      "Configure DMA2 and source; ARM locks the matching job snapshot",
+      "Start DMA first, then DVP; consume every input pixel and pack selected rows",
+      "Stop DVP without flushing; wait for source epoch, pipeline and final DMA response drain",
+      "FINALIZE; require COMPLETE + RESULT_VALID before exposing a frame",
+      "RELEASE retains PROCESS; on failure abort/drain/isolate and RECOVER without releasing on timeout"
+    ],
+    "sources": [
+      "crt/src/hal/ppalite.c",
+      "rtl/ip/ppalite/ppalite_reg.sv"
+    ],
+    "bindings": [
+      {
+        "file": "crt/src/hal/ppalite.c",
+        "text": "rs_status_t rs_ppalite_capture_wait"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "assign s_finalize_valid = (ctrl.state == `PPALITE_STATE_VERIFY) && s_owner_q &&"
+      }
+    ],
+    "note": "Logical ordering only. Polling budgets are not elapsed-time guarantees; failed cleanup keeps ownership and buffer lifetime."
+  }
+}

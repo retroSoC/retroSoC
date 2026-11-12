@@ -53,6 +53,11 @@ structured results, and metric/report paths. Review warnings and metrics using
 their current executable policy; do not hand-edit signatures or silently
 promote observations into passes or gates.
 
+Use `scripts/yosys_progress.py` for read-only optimization-phase analysis before
+increasing a timeout. Separate phase steps, executing passes, rerun markers,
+elapsed time, and subsequent-phase boundaries; do not infer an infinite loop or
+resource exhaustion from a log boundary alone.
+
 Old runs and other targets can be labeled comparisons, not current acceptance.
 Missing cell count, area, WNS/TNS, clock/frequency, or signoff evidence stays
 missing. Never attach current source hashes to earlier binaries. Diagnose the

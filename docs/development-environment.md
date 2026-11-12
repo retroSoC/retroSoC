@@ -46,6 +46,13 @@ and runs regressions with the caller's user ID.
 The environment stamp and activation script are also world-readable so those
 runtime users can verify and activate the root-built environment.
 
+Git fetches use at most three bounded attempts, with a 300-second timeout per
+attempt. An interrupted checkout without HEAD is recovered only when it has no
+local changes and its remote exactly matches the locked source and revision.
+The `locked-tools` action independently limits apt updates to 180 seconds and
+package installation to 600 seconds per attempt, also with at most three
+attempts. These recovery limits do not change tool or dependency versions.
+
 ~~~sh
 python3 scripts/development_environment.py bootstrap
 source .cache/retrosoc/development/activate.sh

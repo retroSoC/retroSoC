@@ -40,10 +40,12 @@ agent self-approval.
 
 While only `@maksyuki` can review PRs, `review_policy.mode` is
 `sole_maintainer`: GitHub does not require a peer approval count, because an
-author cannot approve their own PR. The human maintainer still reviews and
-merges manually, agents cannot approve or merge, and required CI contexts are
-enabled after their workflows merge. Peer CODEOWNERS approval is restored when
-another eligible reviewer is available.
+author cannot approve their own PR. `auto_merge` allows CI-green PRs to merge
+with merge commits and safe cleanup, while design and architecture approvals
+remain manual. The helper checks every required protected context before
+enabling GitHub's native auto-merge. Failed or pending checks, dirty worktrees,
+and non-canonical branches always block merging and cleanup. Peer CODEOWNERS
+approval is restored when another eligible reviewer is available.
 
 ## Regression and evidence
 
@@ -62,21 +64,30 @@ contracts. This preserves coverage without holding every PR open for hours.
 `workflows/full-flow.yml` is an explicit manual full-flow entrypoint. Its runner
 input allows a provisioned high-memory runner; no such capacity is inferred from
 the default `ubuntu-22.04` label. A full-flow summary requires synthesis, netlist,
-and STA evidence and retains failed attempts.
+and STA evidence and retains failed attempts. `scripts/yosys_progress.py`
+provides read-only phase-step, executing-pass, rerun-marker, and elapsed-time
+analysis before any timeout increase. Missing subsequent phases are not treated
+as proof of an infinite loop or insufficient memory.
 
-`workflows/formal.yml` runs the explicit per-proof targets as bounded parallel
-jobs on its weekly schedule or manual dispatch. Smoke `formal_checks` still runs
-only `formal-doctor`; it is not proof evidence. SV2V conversion alone is not a
-proof pass.
+`workflows/formal.yml` runs the explicit per-proof targets except GA2D as
+bounded parallel jobs on its weekly schedule or manual dispatch. GA2D remains a
+local acceptance target because its diagnostic peak RSS was about 121 GiB;
+hosted attempts lacked a proof verdict. Its local bounds and 7200s task budget
+are unchanged. A hosted success does not cover GA2D, and missing local evidence
+is not a proof pass. See [Formal Protocol Proofs](../docs/engineering.md#formal-protocol-proofs)
+for the exact local command and evidence requirements. Smoke `formal_checks`
+still runs only `formal-doctor`; SV2V conversion alone is not a proof pass.
 
 `workflows/development-environment.yml` verifies Docker and Nix for environment,
 dependency, build-entry, scheduled, and full-matrix changes instead of repeating
-both environments for every unrelated PR. `workflows/engineering-metrics.yml`
-collects weekly delivery and CI metadata artifacts for engineering improvement,
-not individual performance evaluation. `workflows/skill-evals.yml` is a manual
-entrypoint for a runner with a configured Codex CLI and approved model access.
-It fails explicitly when that capability is absent and never converts static
-corpus validation into a behavior pass.
+both environments for every unrelated PR. The `locked-tools` action bounds apt
+updates to 180 seconds and installs to 600 seconds per attempt, with at most
+three attempts, so network failures cannot stall a job indefinitely.
+`workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
+artifacts for engineering improvement, not individual performance evaluation.
+`workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured
+Codex CLI and approved model access. It fails explicitly when that capability is
+absent and never converts static corpus validation into a behavior pass.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts
@@ -94,11 +105,15 @@ names, and any accepted non-required gaps. The validator resolves the tag and
 successful workflow runs dynamically, so the candidate does not attempt the
 impossible task of embedding its own future commit SHA or run IDs.
 
-A release requires an APPROVED review by the named maintainer, a merge commit
-matching the tag and current `origin/main`, successful required workflow runs,
-and valid hashes for any required local artifacts. Existing release assets are
-not overwritten on rerun. See `quality/release-candidate.schema.json` and
-`scripts/check_contribution.py`.
+A release requires a merge commit matching the tag and current `origin/main`,
+successful required workflow runs, and valid hashes for required local
+artifacts. Optional `local_checks` allow revision-matched local formal evidence
+instead of a hosted proof job. The validator requires a clean manifest and
+passing prove/cover results; it does not embed self-referential summary hashes.
+In `sole_maintainer` mode, a merged release PR with the named maintainer's
+approval record is sufficient; peer mode instead requires an APPROVED review by
+that maintainer. Existing release assets are not overwritten on rerun. See
+`quality/release-candidate.schema.json` and `scripts/check_contribution.py`.
 
 Keep Actions pinned by commit ID and use the dependency lock rather than adding
 ad-hoc downloads. Validate workflow changes with `yamllint .github .yamllint.yml`,

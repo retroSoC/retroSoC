@@ -12,10 +12,13 @@ documentation.
 - `change_impact.json` defines conservative changed-file CI selection; unknown
   paths and classification failures select the full matrix.
 - `ownership.json` records primary and backup review ownership plus the current
-  `sole_maintainer` policy. Missing backups are reported explicitly rather than
-  assigned to an agent; the human maintainer retains approval and merge duties.
+  `sole_maintainer` and `auto_merge` policies. Missing backups are reported
+  explicitly rather than assigned to an agent. CI-green auto-merge uses merge
+  commits and cleans merged branches only when the worktree is clean.
 - `release-candidate.schema.json` defines the evidence required from the tracked
-  `quality/release-candidate.json` supplied for an actual release.
+  `quality/release-candidate.json` supplied for an actual release. Optional
+  `local_checks` bind local formal evidence to the same clean release revision,
+  with semantic validation instead of self-referential summary hashes.
 
 Do not hand-edit generated warning signatures or promote metric gates without
 the review process in [Engineering Workflow](../docs/engineering.md). Run the

@@ -244,12 +244,48 @@ Maintainers choose and review the release revision on `main`, add a tracked
 `quality/release-candidate.json` through the approved release PR, and publish an
 immutable `vMAJOR.MINOR.PATCH` tag only after its required workflows succeed.
 The [release schema](../quality/release-candidate.schema.json) defines the lock
-digest, approval, stages, workflow names, and accepted gaps. The
+digest, approval, stages, workflow names, and accepted gaps. Optional
+`local_checks` reference revision-matched local formal summaries and manifests.
+Their content is validated for clean inputs and passing prove/cover results;
+revision-bearing summary hashes are not embedded in the candidate. The
 [release workflow](../.github/workflows/release.yml) verifies the tag against
-current `origin/main`, the APPROVED review, and matching successful runs; it does
-not overwrite existing assets.
+current `origin/main` and matching successful runs. `sole_maintainer` accepts a
+merged release PR with the named maintainer's approval record; peer mode
+requires an APPROVED review. Existing assets are not overwritten.
 
 Do not move or reuse published release tags. Follow
 [Engineering Workflow](engineering.md) for artifacts and release validation;
 ordinary contribution pushes should name their topic branch explicitly and
 should not publish tags.
+
+## CI-green auto merge and cleanup
+
+`quality/ownership.json` enables `auto_merge`: after every required check passes,
+`python3 scripts/pr_workflow.py --pr <number> --root .` enables GitHub's native
+auto-merge with a merge commit into `dev` without another manual confirmation.
+The helper checks all contexts required by branch protection, including gates
+that have not yet been scheduled. Pending, failed, empty, or cancelled checks
+prevent merging. The command never overrides branch protection or uses
+squash/rebase integration.
+
+After GitHub reports `MERGED`, the same command deletes the local and remote
+topic branches only when the worktree is clean and the PR head belongs to the
+canonical repository. It switches the main worktree to `dev` or removes a clean
+linked worktree, verifies that the local branch is contained in the PR merge
+commit, then deletes it without forcing. The deletion uses `origin/dev` as its
+merge reference even when the main worktree is on an unrelated branch. Dirty
+worktrees, unmerged local commits, non-canonical branches, and protected
+`dev`/`main` branches are left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
+mechanism. Already-absent remote refs are treated as successful cleanup; other
+API errors fail.
+
+After every feature integration into `dev`, also run:
+
+```sh
+git fetch --prune
+```
+
+This removes local remote-tracking references whose corresponding remote
+branches no longer exist. It is required in addition to topic-branch cleanup
+and does not delete local branches, stash entries, uncommitted changes, or
+build artifacts.

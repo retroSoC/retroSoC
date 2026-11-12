@@ -12,8 +12,18 @@ runs:
     - name: Install runtime packages
       shell: bash
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends \
+        retry_bounded() {
+          local attempts=0
+          until "$@"; do
+            attempts=$((attempts + 1))
+            if (( attempts >= 3 )); then
+              return 1
+            fi
+            sleep $((attempts * 10))
+          done
+        }
+        retry_bounded timeout --foreground --kill-after=5s 180s sudo apt-get update -qq
+        retry_bounded timeout --foreground --kill-after=5s 600s sudo apt-get install -y --no-install-recommends \
           ccache g++ libfl2 libgoogle-perftools4 libunwind8 make mold numactl zlib1g
 
     - name: Install checksum-verified tools

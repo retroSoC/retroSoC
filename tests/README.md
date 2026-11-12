@@ -90,7 +90,13 @@ tooling.
   change selection; `test_skill_eval.py` covers isolated behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
-  PR/release governance. Run fast agent checks with `make check-fast`. Static
+  PR/release governance. `test_formal_local_evidence.py` checks local result
+  collection and rejection of dirty or mismatched evidence.
+  `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
+  source-boundary analysis without inferring nonconvergence.
+  `test_pr_workflow.py` covers CI-green auto-merge and
+  safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
+  refusals. Run fast agent checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow; live behavior
   results require retained traces from `make skill-eval-smoke`.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and

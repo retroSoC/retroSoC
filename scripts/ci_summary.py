@@ -65,6 +65,7 @@ def collect_results(build_root: Path, root: Path, since: datetime) -> tuple[list
                 "time_basis": time_basis,
                 "finished_at": data.get("finished_at"),
                 "duration_seconds": data.get("duration_seconds"),
+                "peak_rss_kib": data.get("peak_rss_kib"),
                 "command": data.get("command"),
                 "log": data.get("log"),
             }

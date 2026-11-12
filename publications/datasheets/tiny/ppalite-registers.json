@@ -1,0 +1,1208 @@
+[
+  {
+    "name": "IP_ID",
+    "offset": 0,
+    "access": "RO",
+    "reset": "0x5050414C",
+    "description": "PPALite identification: ASCII PPAL.",
+    "fields": [
+      [
+        "IP_ID",
+        0,
+        31,
+        "PPALite identification: ASCII PPAL."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__IP_ID: s_read_data = `APB4_PPALITE__ID_VALUE;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_define.svh",
+        "text": "`define APB4_PPALITE__ID_VALUE 32'h5050414c"
+      }
+    ]
+  },
+  {
+    "name": "IP_VERSION",
+    "offset": 4,
+    "access": "RO",
+    "reset": "0x00010000",
+    "description": "Handwritten PPALite ABI 1.0.",
+    "fields": [
+      [
+        "IP_VERSION",
+        0,
+        31,
+        "Handwritten PPALite ABI 1.0."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__IP_VERSION: s_read_data = `APB4_PPALITE__VERSION_VALUE;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_define.svh",
+        "text": "`define APB4_PPALITE__VERSION_VALUE 32'h00010000"
+      }
+    ]
+  },
+  {
+    "name": "CAPABILITY",
+    "offset": 8,
+    "access": "RO",
+    "reset": "0x3FF",
+    "description": "Selected Tiny capability is 0x3FF; reusable core default 0xFF does not advertise route integration.",
+    "fields": [
+      [
+        "CAMERA",
+        0,
+        0,
+        "Camera."
+      ],
+      [
+        "GRAY8",
+        1,
+        1,
+        "Gray8."
+      ],
+      [
+        "RGB565",
+        2,
+        2,
+        "Rgb565."
+      ],
+      [
+        "RGB_SWAP",
+        3,
+        3,
+        "Rgb swap."
+      ],
+      [
+        "OUTPUT_BYTE_SWAP",
+        4,
+        4,
+        "Output byte swap."
+      ],
+      [
+        "STEP1",
+        5,
+        5,
+        "Step1."
+      ],
+      [
+        "STEP2",
+        6,
+        6,
+        "Step2."
+      ],
+      [
+        "STEP4",
+        7,
+        7,
+        "Step4."
+      ],
+      [
+        "RAW_BYPASS",
+        8,
+        8,
+        "Raw bypass."
+      ],
+      [
+        "PROCESS",
+        9,
+        9,
+        "Process."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__CAPABILITY: s_read_data = CapabilityValue;"
+      },
+      {
+        "file": "rtl/tiny/top/retrosoc_tiny.sv",
+        "text": ".CapabilityValue(32'h0000_03ff)"
+      }
+    ]
+  },
+  {
+    "name": "BUFFER_CAPABILITY",
+    "offset": 12,
+    "access": "RO",
+    "reset": "0x00200802",
+    "description": "Small pipeline storage; no line/frame RAM.",
+    "fields": [
+      [
+        "INPUT_WORDS",
+        0,
+        7,
+        "Two input words."
+      ],
+      [
+        "OUTPUT_WORDS",
+        8,
+        15,
+        "Eight output words."
+      ],
+      [
+        "WORD_BITS",
+        16,
+        23,
+        "32 data bits per word."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__BUFFER_CAPABILITY: s_read_data = `APB4_PPALITE__BUFFER_VALUE;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_define.svh",
+        "text": "`define APB4_PPALITE__BUFFER_VALUE 32'h00200802"
+      }
+    ]
+  },
+  {
+    "name": "CLOCK_HZ",
+    "offset": 16,
+    "access": "RO",
+    "reset": "Dynamic (SAFE24: 24000000)",
+    "description": "Current PCLK report; SAFE24 starts at 24000000 Hz.",
+    "fields": [
+      [
+        "CLOCK_HZ",
+        0,
+        31,
+        "Current PCLK report; SAFE24 starts at 24000000 Hz."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__CLOCK_HZ: s_read_data = clock_hz_i;"
+      }
+    ]
+  },
+  {
+    "name": "ROUTE",
+    "offset": 20,
+    "access": "RW",
+    "reset": "0",
+    "description": "Retained exclusive route: 0 RAW, 1 PROCESS. Changes require the complete source/DMA idle barrier.",
+    "fields": [
+      [
+        "PROCESS",
+        0,
+        0,
+        "Select PROCESS; reset selects RAW."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__ROUTE: s_read_data = {31'd0, s_route_current};"
+      }
+    ]
+  },
+  {
+    "name": "COMMAND",
+    "offset": 24,
+    "access": "WO",
+    "reset": "Not readable",
+    "description": "Write one command bit at a time; zero is a no-op. Read access errors. State/ownership prerequisites are enforced before side effects.",
+    "fields": [
+      [
+        "ARM",
+        0,
+        0,
+        "Arm command; see lifecycle description."
+      ],
+      [
+        "FINALIZE",
+        1,
+        1,
+        "Finalize command; see lifecycle description."
+      ],
+      [
+        "RELEASE",
+        2,
+        2,
+        "Release command; see lifecycle description."
+      ],
+      [
+        "ABORT",
+        3,
+        3,
+        "Abort command; see lifecycle description."
+      ],
+      [
+        "RECOVER",
+        4,
+        4,
+        "Recover command; see lifecycle description."
+      ],
+      [
+        "RESET",
+        5,
+        5,
+        "Reset command; see lifecycle description."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__COMMAND:"
+      }
+    ]
+  },
+  {
+    "name": "STATUS",
+    "offset": 28,
+    "access": "RO",
+    "reset": "Dynamic",
+    "description": "State and current completion barriers; reset state/ownership/done are zero, live quiet/idle bits depend on integration.",
+    "fields": [
+      [
+        "STATE",
+        0,
+        2,
+        "0 IDLE, 1 ARMED, 2 RUNNING, 3 DRAINING, 4 VERIFY, 5 COMPLETE, 6 CLOSING."
+      ],
+      [
+        "OWNER",
+        8,
+        8,
+        "Owner."
+      ],
+      [
+        "INPUT_DONE",
+        9,
+        9,
+        "Input done."
+      ],
+      [
+        "PIPE_DONE",
+        10,
+        10,
+        "Pipe done."
+      ],
+      [
+        "SOURCE_DONE",
+        11,
+        11,
+        "Source done."
+      ],
+      [
+        "DMA_DONE",
+        12,
+        12,
+        "Dma done."
+      ],
+      [
+        "RESULT_VALID",
+        13,
+        13,
+        "Result valid."
+      ],
+      [
+        "SOURCE_QUIET",
+        14,
+        14,
+        "Source quiet."
+      ],
+      [
+        "TRANSPORT_IDLE",
+        15,
+        15,
+        "Transport idle."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__STATUS: s_read_data = s_status;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "s_status[13] = s_result_valid_q;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "s_status[15] = transport_idle_i;"
+      }
+    ]
+  },
+  {
+    "name": "CONFIG",
+    "offset": 32,
+    "access": "RW",
+    "reset": "0",
+    "description": "Idle/unowned shadow format. Bit 3 and bits 31:7 must be zero; invalid combinations error.",
+    "fields": [
+      [
+        "INPUT_FORMAT",
+        0,
+        2,
+        "0 RGB565_BE, 1 RGB565_LE, 2 YUYV, 3 UYVY, 4 YVYU, 5 VYUY."
+      ],
+      [
+        "OUTPUT_GRAY8",
+        4,
+        4,
+        "One byte per output pixel; legal for YUV input only."
+      ],
+      [
+        "RGB_SWAP",
+        5,
+        5,
+        "Exchange R5/B5 on RGB input only."
+      ],
+      [
+        "OUTPUT_BYTE_SWAP",
+        6,
+        6,
+        "Exchange bytes within each RGB565 output pixel."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__CONFIG: s_read_data = s_shadow_cfg_q;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "valid_cfg = (value[31:7] == 25'd0) && !value[3] && (value[2:0] <= 3'd5) && !((value[2:0] < 3'd2) && value[4]) && !((value[2:0] >= 3'd2) && value[5]) && !(value[4] && value[6]);"
+      }
+    ]
+  },
+  {
+    "name": "INPUT_SIZE",
+    "offset": 36,
+    "access": "RW",
+    "reset": "0",
+    "description": "Idle/unowned shadow geometry. Both dimensions must be nonzero and consistent with DVP.",
+    "fields": [
+      [
+        "WIDTH",
+        0,
+        15,
+        "Post-crop width in pixels."
+      ],
+      [
+        "HEIGHT",
+        16,
+        31,
+        "Post-crop height in lines."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__INPUT_SIZE: s_read_data = s_shadow_size_q;"
+      }
+    ]
+  },
+  {
+    "name": "SAMPLING",
+    "offset": 40,
+    "access": "RW",
+    "reset": "0",
+    "description": "Shadow selection pattern; phases start at the first cropped pixel/line.",
+    "fields": [
+      [
+        "STEP_X",
+        0,
+        1,
+        "0/1/2 select 1/2/4; 3 invalid."
+      ],
+      [
+        "STEP_Y",
+        2,
+        3,
+        "0/1/2 select 1/2/4; 3 invalid."
+      ],
+      [
+        "PHASE_X",
+        8,
+        9,
+        "Less than X step and input width."
+      ],
+      [
+        "PHASE_Y",
+        16,
+        17,
+        "Less than Y step and input height."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__SAMPLING: s_read_data = s_shadow_sampling_q;"
+      }
+    ]
+  },
+  {
+    "name": "DMA_BINDING",
+    "offset": 44,
+    "access": "RO",
+    "reset": "0x00010B02",
+    "description": "Existing camera transport: channel 2, request 11; PROCESS permits direct transfers only.",
+    "fields": [
+      [
+        "CHANNEL",
+        0,
+        7,
+        "DMA channel 2."
+      ],
+      [
+        "REQUEST",
+        8,
+        15,
+        "DVP_RX request 11."
+      ],
+      [
+        "DIRECT_ONLY",
+        16,
+        16,
+        "Processed direct-only flag; this is not the DMA transfer-kind encoding."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__DMA_BINDING: s_read_data = `APB4_PPALITE__DMA_BINDING_VALUE;"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_define.svh",
+        "text": "`define APB4_PPALITE__DMA_BINDING_VALUE 32'h00010b02"
+      },
+      {
+        "file": "docs/ip/ppalite.md",
+        "text": "processed direct-only bit 16=1"
+      }
+    ]
+  },
+  {
+    "name": "DESTINATION",
+    "offset": 48,
+    "access": "RW",
+    "reset": "0",
+    "description": "Idle/unowned four-byte aligned destination address.",
+    "fields": [
+      [
+        "DESTINATION",
+        0,
+        31,
+        "Idle/unowned four-byte aligned destination address."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__DESTINATION: s_read_data = s_shadow_destination_q;"
+      }
+    ]
+  },
+  {
+    "name": "CAPACITY_BYTES",
+    "offset": 52,
+    "access": "RW",
+    "reset": "0",
+    "description": "Idle/unowned allocation capacity; must cover computed transport without address overflow.",
+    "fields": [
+      [
+        "CAPACITY_BYTES",
+        0,
+        31,
+        "Idle/unowned allocation capacity; must cover computed transport without address overflow."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__CAPACITY_BYTES: s_read_data = s_shadow_capacity_q;"
+      }
+    ]
+  },
+  {
+    "name": "OUTPUT_SIZE",
+    "offset": 56,
+    "access": "RO",
+    "reset": "0",
+    "description": "Output dimensions latched on accepted ARM.",
+    "fields": [
+      [
+        "WIDTH",
+        0,
+        15,
+        "Output width after selection, in pixels."
+      ],
+      [
+        "HEIGHT",
+        16,
+        31,
+        "Output height after selection, in lines."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__OUTPUT_SIZE: s_read_data = ctrl.output_size;"
+      }
+    ]
+  },
+  {
+    "name": "ROW_BYTES",
+    "offset": 60,
+    "access": "RO",
+    "reset": "0",
+    "description": "Logical bytes in one output row.",
+    "fields": [
+      [
+        "ROW_BYTES",
+        0,
+        31,
+        "Logical bytes in one output row."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__ROW_BYTES: s_read_data = ctrl.row_bytes;"
+      }
+    ]
+  },
+  {
+    "name": "STRIDE_BYTES",
+    "offset": 64,
+    "access": "RO",
+    "reset": "0",
+    "description": "Per-row transport bytes rounded up to four.",
+    "fields": [
+      [
+        "STRIDE_BYTES",
+        0,
+        31,
+        "Per-row transport bytes rounded up to four."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__STRIDE_BYTES: s_read_data = ctrl.stride_bytes;"
+      }
+    ]
+  },
+  {
+    "name": "VALID_BYTES",
+    "offset": 68,
+    "access": "RO",
+    "reset": "0",
+    "description": "Logical bytes in all output rows.",
+    "fields": [
+      [
+        "VALID_BYTES",
+        0,
+        31,
+        "Logical bytes in all output rows."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__VALID_BYTES: s_read_data = ctrl.valid_bytes;"
+      }
+    ]
+  },
+  {
+    "name": "TRANSPORT_BYTES",
+    "offset": 72,
+    "access": "RO",
+    "reset": "0",
+    "description": "Padded bytes in all output rows.",
+    "fields": [
+      [
+        "TRANSPORT_BYTES",
+        0,
+        31,
+        "Padded bytes in all output rows."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__TRANSPORT_BYTES: s_read_data = ctrl.transport_bytes;"
+      }
+    ]
+  },
+  {
+    "name": "EXPECTED_WORDS",
+    "offset": 76,
+    "access": "RO",
+    "reset": "0",
+    "description": "Exact 32-bit DMA word count.",
+    "fields": [
+      [
+        "EXPECTED_WORDS",
+        0,
+        31,
+        "Exact 32-bit DMA word count."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__EXPECTED_WORDS: s_read_data = ctrl.expected_words;"
+      }
+    ]
+  },
+  {
+    "name": "JOB_SEQUENCE",
+    "offset": 80,
+    "access": "RO",
+    "reset": "0",
+    "description": "Accepted ARM sequence; preserved across RECOVER.",
+    "fields": [
+      [
+        "JOB_SEQUENCE",
+        0,
+        31,
+        "Accepted ARM sequence; preserved across RECOVER."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__JOB_SEQUENCE: s_read_data = s_job_sequence_q;"
+      }
+    ]
+  },
+  {
+    "name": "SOURCE_SEQUENCE",
+    "offset": 84,
+    "access": "RO",
+    "reset": "0",
+    "description": "Matching completed DVP frame sequence.",
+    "fields": [
+      [
+        "SOURCE_SEQUENCE",
+        0,
+        31,
+        "Matching completed DVP frame sequence."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__SOURCE_SEQUENCE: s_read_data = s_source_sequence_q;"
+      }
+    ]
+  },
+  {
+    "name": "INPUT_WORDS",
+    "offset": 88,
+    "access": "RO",
+    "reset": "0",
+    "description": "Accepted raw 32-bit DVP words, including discarded pixels/lines.",
+    "fields": [
+      [
+        "INPUT_WORDS",
+        0,
+        31,
+        "Accepted raw 32-bit DVP words, including discarded pixels/lines."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__INPUT_WORDS: s_read_data = ctrl.input_words;"
+      }
+    ]
+  },
+  {
+    "name": "INPUT_PIXELS",
+    "offset": 92,
+    "access": "RO",
+    "reset": "0",
+    "description": "Consumed input pixels including discarded pixels.",
+    "fields": [
+      [
+        "INPUT_PIXELS",
+        0,
+        31,
+        "Consumed input pixels including discarded pixels."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__INPUT_PIXELS: s_read_data = ctrl.input_pixels;"
+      }
+    ]
+  },
+  {
+    "name": "INPUT_LINES",
+    "offset": 96,
+    "access": "RO",
+    "reset": "0",
+    "description": "Consumed input lines including discarded lines.",
+    "fields": [
+      [
+        "INPUT_LINES",
+        0,
+        31,
+        "Consumed input lines including discarded lines."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__INPUT_LINES: s_read_data = ctrl.input_lines;"
+      }
+    ]
+  },
+  {
+    "name": "SELECTED_PIXELS",
+    "offset": 100,
+    "access": "RO",
+    "reset": "0",
+    "description": "Selected output pixels.",
+    "fields": [
+      [
+        "SELECTED_PIXELS",
+        0,
+        31,
+        "Selected output pixels."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__SELECTED_PIXELS: s_read_data = ctrl.sel_pixels;"
+      }
+    ]
+  },
+  {
+    "name": "OUTPUT_WORDS",
+    "offset": 104,
+    "access": "RO",
+    "reset": "0",
+    "description": "Transferred padded output words.",
+    "fields": [
+      [
+        "OUTPUT_WORDS",
+        0,
+        31,
+        "Transferred padded output words."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__OUTPUT_WORDS: s_read_data = ctrl.output_words;"
+      }
+    ]
+  },
+  {
+    "name": "OUTPUT_LINES",
+    "offset": 108,
+    "access": "RO",
+    "reset": "0",
+    "description": "Transferred output row ends.",
+    "fields": [
+      [
+        "OUTPUT_LINES",
+        0,
+        31,
+        "Transferred output row ends."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__OUTPUT_LINES: s_read_data = ctrl.output_lines;"
+      }
+    ]
+  },
+  {
+    "name": "INPUT_STALL_CYCLES",
+    "offset": 112,
+    "access": "RO",
+    "reset": "0",
+    "description": "Saturating input stall cycle count for this job.",
+    "fields": [
+      [
+        "INPUT_STALL_CYCLES",
+        0,
+        31,
+        "Saturating input stall cycle count for this job."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__INPUT_STALL_CYCLES: s_read_data = ctrl.input_stall_cycles;"
+      }
+    ]
+  },
+  {
+    "name": "OUTPUT_STALL_CYCLES",
+    "offset": 116,
+    "access": "RO",
+    "reset": "0",
+    "description": "Saturating output stall cycle count for this job.",
+    "fields": [
+      [
+        "OUTPUT_STALL_CYCLES",
+        0,
+        31,
+        "Saturating output stall cycle count for this job."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__OUTPUT_STALL_CYCLES: s_read_data = ctrl.output_stall_cycles;"
+      }
+    ]
+  },
+  {
+    "name": "FIFO_LEVELS",
+    "offset": 120,
+    "access": "RO",
+    "reset": "0",
+    "description": "Current occupancy and job high-water mark.",
+    "fields": [
+      [
+        "INPUT_LEVEL",
+        0,
+        1,
+        "Current input slots occupied."
+      ],
+      [
+        "OUTPUT_LEVEL",
+        4,
+        7,
+        "Current output FIFO words."
+      ],
+      [
+        "OUTPUT_HIGH_WATER",
+        12,
+        15,
+        "Peak output FIFO words."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__FIFO_LEVELS:\n      s_read_data = {\n        16'd0, ctrl.output_high_water, 4'd0, ctrl.output_level, 2'd0, ctrl.input_level\n      };"
+      }
+    ]
+  },
+  {
+    "name": "IRQ_STATE",
+    "offset": 124,
+    "access": "RW1C",
+    "reset": "0",
+    "description": "Sticky events; write-one clear, simultaneous hardware set wins.",
+    "fields": [
+      [
+        "PIPE_DONE",
+        0,
+        0,
+        "Pipeline reaches its completion boundary."
+      ],
+      [
+        "FRAME_VALID",
+        1,
+        1,
+        "Successful FINALIZE."
+      ],
+      [
+        "FAULT",
+        2,
+        2,
+        "First observed job error."
+      ],
+      [
+        "ABORTED",
+        3,
+        3,
+        "Accepted ABORT event; still wait for drain/recovery."
+      ],
+      [
+        "OUTPUT_STALL",
+        4,
+        4,
+        "Output backpressure event."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__IRQ_STATE: s_read_data = {27'd0, s_irq_state_q};"
+      }
+    ]
+  },
+  {
+    "name": "IRQ_ENABLE",
+    "offset": 128,
+    "access": "RW",
+    "reset": "0",
+    "description": "Mask for IRQ27.",
+    "fields": [
+      [
+        "PIPE_DONE",
+        0,
+        0,
+        "Pipeline reaches its completion boundary."
+      ],
+      [
+        "FRAME_VALID",
+        1,
+        1,
+        "Successful FINALIZE."
+      ],
+      [
+        "FAULT",
+        2,
+        2,
+        "First observed job error."
+      ],
+      [
+        "ABORTED",
+        3,
+        3,
+        "Accepted ABORT event; still wait for drain/recovery."
+      ],
+      [
+        "OUTPUT_STALL",
+        4,
+        4,
+        "Output backpressure event."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__IRQ_ENABLE: s_read_data = {27'd0, s_irq_en_q};"
+      }
+    ]
+  },
+  {
+    "name": "IRQ_STATUS",
+    "offset": 132,
+    "access": "RO",
+    "reset": "0",
+    "description": "IRQ_STATE AND IRQ_ENABLE.",
+    "fields": [
+      [
+        "PIPE_DONE",
+        0,
+        0,
+        "Pipeline reaches its completion boundary."
+      ],
+      [
+        "FRAME_VALID",
+        1,
+        1,
+        "Successful FINALIZE."
+      ],
+      [
+        "FAULT",
+        2,
+        2,
+        "First observed job error."
+      ],
+      [
+        "ABORTED",
+        3,
+        3,
+        "Accepted ABORT event; still wait for drain/recovery."
+      ],
+      [
+        "OUTPUT_STALL",
+        4,
+        4,
+        "Output backpressure event."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__IRQ_STATUS: s_read_data = {27'd0, (s_irq_state_q & s_irq_en_q)};"
+      }
+    ]
+  },
+  {
+    "name": "FIRST_ERROR",
+    "offset": 136,
+    "access": "RO",
+    "reset": "0",
+    "description": "First job error code; capture diagnostics before recovery.",
+    "fields": [
+      [
+        "CODE",
+        0,
+        7,
+        "0 none, 1 source, 2 source configuration, 3 framing, 4 geometry, 5 output, 6 DMA, 7 abort."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__FIRST_ERROR: s_read_data = {24'd0, s_first_err_q};"
+      }
+    ]
+  },
+  {
+    "name": "ERROR_POSITION",
+    "offset": 140,
+    "access": "RO",
+    "reset": "0",
+    "description": "Post-crop detection coordinate when available; source/transport faults may have no exact pixel location.",
+    "fields": [
+      [
+        "X",
+        0,
+        15,
+        "X coordinate."
+      ],
+      [
+        "Y",
+        16,
+        31,
+        "Y coordinate."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__ERROR_POSITION: s_read_data = s_err_position_q;"
+      }
+    ]
+  },
+  {
+    "name": "SOURCE_ERROR",
+    "offset": 144,
+    "access": "RO",
+    "reset": "0",
+    "description": "Job source error byte: DVP bits 5:0 and lost source-status validity at bit 6; bit 7 is zero.",
+    "fields": [
+      [
+        "ERRORS",
+        0,
+        7,
+        "DVP errors in bits 5:0; bit 6 marks invalid source status while owned; bit 7 reads zero."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__SOURCE_ERROR: s_read_data = {24'd0, s_source_err_q};"
+      },
+      {
+        "file": "rtl/tiny/top/ppalite_route_ctrl.sv",
+        "text": "assign source_err_o = {1'b0, (s_owned && !source_status_valid_i), source_error_i};"
+      }
+    ]
+  },
+  {
+    "name": "DMA_ERROR",
+    "offset": 148,
+    "access": "RO",
+    "reset": "0",
+    "description": "Sticky transport-side error byte for the current job; retain the DMA channel error detail as well.",
+    "fields": [
+      [
+        "ERRORS",
+        0,
+        7,
+        "DMA error-status low byte, or 0x40 when DMA reset/readiness is lost; inspect channel detail and lifecycle state."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__DMA_ERROR: s_read_data = {24'd0, s_dma_err_q};"
+      }
+    ]
+  },
+  {
+    "name": "RESULT_CONFIG",
+    "offset": 152,
+    "access": "RO",
+    "reset": "0",
+    "description": "CONFIG snapshot associated with the armed/result job, not the current shadow configuration.",
+    "fields": [
+      [
+        "INPUT_FORMAT",
+        0,
+        2,
+        "0 RGB565_BE, 1 RGB565_LE, 2 YUYV, 3 UYVY, 4 YVYU, 5 VYUY."
+      ],
+      [
+        "OUTPUT_GRAY8",
+        4,
+        4,
+        "One byte per output pixel; legal for YUV input only."
+      ],
+      [
+        "RGB_SWAP",
+        5,
+        5,
+        "Exchange R5/B5 on RGB input only."
+      ],
+      [
+        "OUTPUT_BYTE_SWAP",
+        6,
+        6,
+        "Exchange bytes within each RGB565 output pixel."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__RESULT_CONFIG: s_read_data = s_result_cfg_q;"
+      }
+    ]
+  },
+  {
+    "name": "SOURCE_GEOMETRY",
+    "offset": 156,
+    "access": "RO",
+    "reset": "0",
+    "description": "Post-crop source geometry latched on ARM; the freeze describes full FRAME_SIZE, but current RTL selects crop size when enabled.",
+    "fields": [
+      [
+        "WIDTH",
+        0,
+        15,
+        "Post-crop width in pixels."
+      ],
+      [
+        "HEIGHT",
+        16,
+        31,
+        "Post-crop height in lines."
+      ]
+    ],
+    "bindings": [
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "`APB4_PPALITE__SOURCE_GEOMETRY: s_read_data = s_source_geometry_q;"
+      },
+      {
+        "file": "rtl/tiny/top/ppalite_route_ctrl.sv",
+        "text": "assign source_geometry_o = source_config_i[98] ? {source_config_i[95:80], source_config_i[79:64]} : {source_config_i[31:16], source_config_i[15:0]};"
+      },
+      {
+        "file": "rtl/ip/ppalite/ppalite_reg.sv",
+        "text": "s_source_geometry_d = source_geometry_i;"
+      }
+    ]
+  }
+]

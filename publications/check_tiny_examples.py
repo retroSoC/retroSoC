@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -16,15 +17,17 @@ from scripts.rtl.generate_memory_map import generate  # noqa: E402
 def check_examples(compiler: str) -> int:
     with tempfile.TemporaryDirectory(prefix="retrosoc-tiny-examples-") as location:
         generated = Path(location)
-        generate_bindings(read_topology(ROOT / "rtl/tiny/integration/soc_topology.json", ROOT / "rtl/tiny/address_map/memory_map.json"), generated)
+        generate_bindings(read_topology(ROOT / "rtl/tiny/integration/soc_topology.json", ROOT / "rtl/tiny/address_map/memory_map.json"), generated,
+                          pdk="ICS55", have_pll=True)
         generate(ROOT / "rtl/tiny/address_map/memory_map.json", generated / "memory_map", "YES", 128)
         includes = [ROOT / "crt/include", generated / "include", generated / "memory_map/include"]
-        includes += [ROOT / f"rtl/managed/clusterip/{name}/sw/include" for name in ("archinfo", "pwm", "rtc", "wdg")]
+        includes += [ROOT / f"rtl/managed/clusterip/{name}/sw/include" for name in ("archinfo", "pwm", "rtc", "wdg", "crc", "rng")]
         command = [compiler, "-std=c11", "-ffreestanding", "-Wall", "-Wextra", "-Werror", "-fsyntax-only", "-DRS_SOC_TINY=1"]
         for path in includes:
             command += ["-I", str(path)]
         examples = sorted((ROOT / "publications/examples/tiny").glob("*.c"))
-        if len(examples) != 13:
+        catalog = json.loads((ROOT / "publications/datasheets/tiny/catalog.json").read_text(encoding="utf-8"))
+        if {path.stem for path in examples} != {entry["family"] for entry in catalog}:
             raise ValueError("Tiny example inventory changed; review the complete set")
         for path in examples:
             subprocess.run([*command, str(path)], check=True, cwd=ROOT)

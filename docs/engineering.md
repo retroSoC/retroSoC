@@ -239,8 +239,8 @@ limit to reach a complete receive path and export its witness. `opipsram` uses
 depth 40 for prove, cover, and BMC; prove and cover retain a 300-second limit,
 while BMC uses 600 seconds to preserve the full bound on variable-speed hosted
 runners. `dma` uses a
-depth-24 BMC task, depth-32 covers, and a 120-second per-task limit for the narrowest supported four-channel,
-32-bit/4-beat/4-word `dma_core` configuration. Its constrained native AXI4
+depth-24 BMC task, depth-32 covers, and a 600-second hosted per-task limit for the narrowest supported four-channel,
+32-bit/4-beat/4-word `dma_core` configuration. The local default remains 120 seconds. Its constrained native AXI4
 responder and AXI4-Stream environment prove source stability under
 backpressure, FIFO bounds, transaction-owner stability, abort draining,
 channel accounting and terminal isolation, and observable AXI burst rules;
@@ -278,12 +278,31 @@ SBY configuration, SMT2 model, logs, traces, task status, and structured
 verdict are stored below
 `build/<variant>/formal/<proof>/` and `build/<variant>/meta/formal.json`.
 The IHP130 smoke workflow enables `formal-doctor` so hosted CI checks that the
-locked SBY and Bitwuzla tools are present. It does not run `make formal`: the
-GA2D cover bound is 199 steps with a 7200s task budget, which does not fit the
-60-minute smoke job. Full PDK regressions also skip those PDK-independent
-protocol proofs. `formal.yml` runs the explicit per-proof targets in longer
-bounded jobs weekly or on demand. Run `make CONFIG=<profile> formal` locally
-when the aggregate proof suite is required.
+locked SBY and Bitwuzla tools are present. It does not run `make formal`. Full
+PDK regressions also skip those PDK-independent protocol proofs. `formal.yml`
+runs the other explicit per-proof targets in longer bounded jobs weekly or on
+demand. Run `make CONFIG=<profile> formal` locally when the aggregate proof
+suite is required.
+
+GA2D is intentionally local-only rather than a GitHub-hosted matrix entry. A
+diagnostic run at `c73a9f52` completed prove and cover in about 85 minutes with
+a measured peak RSS of `127214812 kB` (about 121 GiB); two hosted attempts were
+cancelled without a proof verdict. This measurement guides capacity selection,
+not a universal memory requirement or a clean-release verdict. Its manifest
+records the retained documentation-only dirty state.
+
+The local acceptance contract remains depth 36, cover depth 199, and a 7200s
+per-task budget. Prepare and execute it with:
+
+```sh
+make CONFIG=configs/ci/ihp130.mk formal-doctor
+/usr/bin/time -v make CONFIG=configs/ci/ihp130.mk FORMAL=YES formal-ga2d
+```
+
+Retain the manifest, prove/cover status, solver logs, and `/usr/bin/time` output.
+Acceptance evidence must match the exact clean source revision and input state.
+A successful hosted run does not include GA2D, and missing local GA2D evidence
+is `NOT_RUN`, never `PASS`.
 
 The `pll_rcu` proof uses one formal clock for its system and external-clock
 inputs to verify the controller protocol independently of analogue clock
@@ -353,6 +372,8 @@ machine-readable matrix and exact regression commands. Unknown paths or a
 classification failure select the full matrix. Push, scheduled, and manual full
 events always select full coverage. `make check-fast` is the common static,
 host, agent, YAML/Actions, ownership, and regression-definition entrypoint.
+`scripts/pr_workflow.py` implements CI-green auto-merge with merge commits and
+safe merged-branch cleanup; it never bypasses checks or dirty worktrees.
 
 `make skill-eval-static` validates Skill structure only. `make skill-eval-smoke`
 executes three real read-only Codex scenarios in isolated Git workspaces and
@@ -394,9 +415,10 @@ to the current run start and marks skipped physical stages `NOT_RUN`.
 can select a provisioned high-memory runner. The default hosted label is not
 represented as a solution to the resource limitation.
 
-`formal.yml` runs explicit per-proof targets as bounded parallel jobs weekly or
-on demand. Smoke `formal_checks` still checks only the environment. A successful
-SV2V conversion or doctor run is not a completed proof.
+`formal.yml` runs explicit per-proof targets other than local-only GA2D as
+bounded parallel jobs weekly or on demand. Smoke `formal_checks` still checks
+only the environment. A successful SV2V conversion or doctor run is not a
+completed proof, and a hosted workflow success does not include GA2D evidence.
 
 `development-environment.yml` retains Docker and Nix IHP130 verification for
 full-matrix, environment, dependency, and build-entry changes rather than
@@ -408,10 +430,12 @@ separate cache keys.
 Tags matching `v*` run `release.yml`, now guarded by the tracked
 `quality/release-candidate.json` and its schema. A candidate declares `main`, the
 lock digest, release-PR approval, required stages, workflow names, and accepted
-non-required gaps. The validator resolves the tag, current `origin/main`, the
-APPROVED release review, and successful workflow runs dynamically; a tracked
-candidate never embeds its own future SHA or future run IDs. Required local
-artifacts are hash-checked and accepted gaps cannot overlap required stages.
+non-required gaps. The validator resolves the tag, current `origin/main`, and
+successful workflow runs dynamically; a tracked candidate never embeds its own
+future SHA or future run IDs. `sole_maintainer` accepts a merged release PR with
+the named maintainer's approval record, while peer mode requires an APPROVED
+review. Required local artifacts are hash-checked and accepted gaps cannot
+overlap required stages.
 Existing release assets are not overwritten on rerun.
 
 The release package retains the flattened SystemVerilog export, source tarball,

@@ -1,0 +1,55 @@
+[
+  {
+    "title": "System control",
+    "ids": [
+      "sysctrl",
+      "rcu",
+      "clint",
+      "archinfo"
+    ]
+  },
+  {
+    "title": "Memory and movement",
+    "ids": [
+      "xpi",
+      "sram",
+      "dma"
+    ]
+  },
+  {
+    "title": "Timing and pins",
+    "ids": [
+      "gpio",
+      "timer",
+      "pwm",
+      "rtc",
+      "wdg"
+    ]
+  },
+  {
+    "title": "Wired interfaces",
+    "ids": [
+      "uart0",
+      "i2c",
+      "spi",
+      "sdio"
+    ]
+  },
+  {
+    "title": "Media interfaces",
+    "ids": [
+      "i2s",
+      "dvp",
+      "ws2812",
+      "ppalite"
+    ]
+  },
+  {
+    "title": "Security and integrity",
+    "ids": [
+      "crypto",
+      "crc",
+      "rng"
+    ]
+  }
+]
