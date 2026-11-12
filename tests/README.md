@@ -62,6 +62,13 @@ tooling.
   recovery without extra payload. `tests/c/test_runtime.c` adds deterministic
   PPALite layout, absent/present HAL, RAW-route rejection, complete FIFO-level
   checks, and ARM-failure DMA cleanup with retained leases on cleanup failure.
+- `test_ppalite_p4.py` checks descriptor/stride-aware ST7789VI row display,
+  isolated P4 image composition, independent scalar capture/panel oracles,
+  stride-aware SD readback records, recovery and measurement records, and
+  corrupted-log rejection. The host C
+  suite covers invalid descriptors, odd-width row padding, byte order, capacity
+  and address overflow. These checks do not replace full-simulator acceptance
+  or continuous-camera/physical-rate qualification.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked

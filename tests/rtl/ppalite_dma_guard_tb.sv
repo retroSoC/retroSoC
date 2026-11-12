@@ -195,6 +195,7 @@ module ppalite_dma_guard_tb;
     dma_error_status_i = 32'd0;
     if (transport_admitted_o || !transport_ready_o)
       $fatal(1, "SIM_TEST_FAIL release did not clear admission without reset");
+    write_reg(32'h0200, 32'd16, 1'b0);
 
     capture_state_i = `PPALITE_STATE_RUNNING;
     dma_ready_i     = 1'b0;
@@ -214,7 +215,7 @@ module ppalite_dma_guard_tb;
     if (!transport_ready_o) $fatal(1, "SIM_TEST_FAIL reprogramming after DMA reset");
     route_i = 1'b0;
     write_reg(32'h020c, 32'h3000_0080, 1'b0);
-    if (forwarded_writes != 33)
+    if (forwarded_writes != 34)
       $fatal(1, "SIM_TEST_FAIL forwarded write accounting count=%0d", forwarded_writes);
 
     $display("SIM_TEST_PASS PPALITE_P3_DMA_GUARD writes=%0d", forwarded_writes);

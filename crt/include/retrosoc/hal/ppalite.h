@@ -64,6 +64,17 @@ typedef struct {
 } rs_ppalite_status_t;
 
 typedef struct {
+    uint32_t input_words;
+    uint32_t input_pixels;
+    uint32_t input_lines;
+    uint32_t output_words;
+    uint32_t output_lines;
+    uint32_t input_stall_cycles;
+    uint32_t output_stall_cycles;
+    uint32_t fifo_levels;
+} rs_ppalite_measurements_t;
+
+typedef struct {
     uintptr_t base;
     uint32_t capacity_bytes;
     uint16_t width;
@@ -105,6 +116,7 @@ rs_status_t rs_ppalite_capture_start(rs_ppalite_session_t *session, rs_timeout_t
 rs_status_t rs_ppalite_capture_wait(rs_ppalite_session_t *session, rs_ppalite_frame_t *frame,
                                     rs_timeout_t timeout);
 rs_status_t rs_ppalite_get_status(rs_ppalite_status_t *status);
+rs_status_t rs_ppalite_get_measurements(rs_ppalite_measurements_t *measurements);
 rs_status_t rs_ppalite_abort(rs_ppalite_session_t *session, rs_timeout_t timeout);
 rs_status_t rs_ppalite_recover(rs_ppalite_session_t *session, rs_timeout_t timeout);
 rs_status_t rs_ppalite_release(rs_ppalite_session_t *session, rs_timeout_t timeout);

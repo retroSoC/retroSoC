@@ -75,6 +75,12 @@ identities, command results, formal witnesses and mapped artifacts below the
 selected Tiny variant. It does not instantiate PPALite in the product topology,
 admit central-DMA traffic or establish complete-product timing closure.
 
+`ppalite_p4.py check` validates the Tiny camera/memory/save/display image with
+an independent scalar model, panel byte order and padding checks, recovery and
+measurement records, and the strict simulation verdict. It binds the report to
+the matching P4 manifest, firmware, simulator and log hashes below
+`meta/ppalite-p4/`; generated records keep `phase_accepted=false`.
+
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0
 schema and release validator; generated assets remain below the selected
