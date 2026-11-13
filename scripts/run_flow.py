@@ -124,6 +124,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--task-id")
     parser.add_argument("--timeout-seconds", type=positive_float)
     parser.add_argument("--heartbeat-seconds", type=positive_float, default=5.0)
+    parser.add_argument("--descendant-grace-seconds", type=positive_float, default=30.0)
     parser.add_argument("--script", type=Path)
     parser.add_argument("--input", dest="inputs", type=Path, action="append", default=[])
     parser.add_argument("--pdk")
@@ -163,6 +164,7 @@ def run_command(
     marker_seen = False
     rejected_matches: list[str] = []
     deadline_clock = started_clock + args.timeout_seconds if args.timeout_seconds else None
+    direct_exit_deadline = None
     next_heartbeat = started_clock + args.heartbeat_seconds
 
     def interrupt_flow(_signum: int, _frame: object) -> None:
@@ -207,11 +209,19 @@ def run_command(
                 if process.poll() is not None:
                     returncode = process.returncode
                     if process_group_exists(process.pid):
-                        error_message = "direct child exited while its process group remained active"
-                        if returncode == 0:
+                        if returncode != 0:
+                            error_message = "direct child failed while its process group remained active"
+                            stop_process(process)
+                            break
+                        if direct_exit_deadline is None:
+                            direct_exit_deadline = now + args.descendant_grace_seconds
+                        elif now >= direct_exit_deadline:
                             returncode = 1
-                        stop_process(process)
-                        break
+                            error_message = "direct child exited while its process group remained active"
+                            stop_process(process)
+                            break
+                    else:
+                        direct_exit_deadline = None
                 if now >= next_heartbeat:
                     running_result["heartbeat_at"] = utc_now()
                     running_result["child_cleanup_pending"] = process_group_exists(process.pid)
@@ -220,6 +230,8 @@ def run_command(
                 wait_seconds = args.heartbeat_seconds
                 if deadline_clock is not None:
                     wait_seconds = min(wait_seconds, max(0.01, deadline_clock - now))
+                if direct_exit_deadline is not None:
+                    wait_seconds = min(wait_seconds, max(0.01, direct_exit_deadline - now))
                 if not selector.select(wait_seconds):
                     continue
                 if args.stream_bytes:
@@ -275,10 +287,16 @@ def run_command(
         returncode = 1
 
     cleanup_pending = process_group_exists(process.pid) if process is not None else False
-    if cleanup_pending:
-        if returncode == 0:
-            returncode = 1
-        error_message = error_message or "process group remains active after cleanup"
+    if cleanup_pending and process is not None:
+        if returncode == 0 and direct_exit_deadline is not None:
+            while process_group_exists(process.pid) and time.monotonic() < direct_exit_deadline:
+                time.sleep(min(0.05, max(0.001, direct_exit_deadline - time.monotonic())))
+        if process_group_exists(process.pid):
+            stop_process(process)
+            if returncode == 0:
+                returncode = 1
+            error_message = error_message or "process group remains active after cleanup"
+        cleanup_pending = process_group_exists(process.pid)
     finished = datetime.now(timezone.utc)
     result = dict(
         running_result,

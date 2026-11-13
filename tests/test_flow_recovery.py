@@ -159,7 +159,7 @@ def test_cancel_uses_run_identity_and_terminates_wrapper(tmp_path: Path) -> None
             timeout=10,
         )
         assert cancelled.returncode == 0, cancelled.stderr
-        _, stderr = process.communicate(timeout=10)
+        _, stderr = process.communicate(timeout=15)
         assert process.returncode == 130, stderr
         final = json.loads(result.read_text(encoding="utf-8"))
         assert final["status"] == "interrupted"
@@ -194,7 +194,14 @@ def test_direct_parent_exit_cannot_leave_live_descendant_or_pass(tmp_path: Path)
         "-c",
         "import subprocess,time; child=subprocess.Popen(['sleep','30']); print(child.pid,flush=True); time.sleep(0.2)",
     ]
-    completed, document, log, _ = invoke(tmp_path, command)
+    completed, document, log, _ = invoke(
+        tmp_path,
+        command,
+        "--descendant-grace-seconds",
+        "0.1",
+        "--heartbeat-seconds",
+        "0.05",
+    )
     assert completed.returncode != 0
     assert document["status"] == "failed"
     assert "process group remained active" in document["error"]
@@ -203,6 +210,21 @@ def test_direct_parent_exit_cannot_leave_live_descendant_or_pass(tmp_path: Path)
         if not process_alive(descendant):
             break
         time.sleep(0.05)
+    assert not process_alive(descendant)
+
+
+def test_short_lived_descendant_can_finish_after_parent_exits(tmp_path: Path) -> None:
+    command = [
+        sys.executable,
+        "-u",
+        "-c",
+        "import subprocess; child=subprocess.Popen(['sleep','6']); print(child.pid,flush=True)",
+    ]
+    completed, document, log, _ = invoke(tmp_path, command, "--heartbeat-seconds", "0.1")
+    assert completed.returncode == 0, document
+    assert document["status"] == "passed"
+    assert document["child_cleanup_pending"] is False
+    descendant = int(log.read_text(encoding="utf-8").splitlines()[0])
     assert not process_alive(descendant)
 
 

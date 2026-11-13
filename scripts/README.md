@@ -65,9 +65,11 @@ source/script/input/environment/tool-lock digests, and resource evidence without
 storing environment values in those digests. `--status` reconciles stale runs,
 `--cancel` signals only a matching run identity, and `--resume` reuses a passing
 result only when every fingerprint matches; a failed attempt may resume only
-with identical inputs and receives a new run ID. Direct-child exit does not
-leave descendants running, and missing checkpoint digests or an active lease
-fails closed. Earlier results and logs remain under `result.json.attempts/`.
+with identical inputs and receives a new run ID. A zero-exit parent receives a
+bounded descendant grace period for normal compiler and cleanup processes;
+nonzero exits or descendants that outlast the grace period are terminated.
+Missing checkpoint digests or an active lease fails closed. Earlier results and
+logs remain under `result.json.attempts/`.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.

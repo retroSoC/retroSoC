@@ -96,7 +96,8 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
-  and process-group cleanup when a direct parent exits before its descendants.
+  bounded descendant completion after a normal parent exit, and process-group
+  cleanup when descendants outlive the grace period.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
