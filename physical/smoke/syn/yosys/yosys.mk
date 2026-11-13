@@ -79,7 +79,9 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS) | manifest
 		--env YOSYS_TARGET_PERIOD_PS=$(YOSYS_TARGET_PERIOD_PS) \
 		--env SV_FLIST=$(SV_FLIST) --env TOP_DESIGN=$(TOP_DESIGN) --env CONFIG=$(NETLIST_CONFIG) \
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
-		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
+		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) \
+		$(if $(filter YES,$(YOSYS_OPT_RESUME)),--resume --script $(YOSYS_DIR)/script/synth.tcl --pdk $(PDK) --soc $(SOC)) \
+		-- \
 		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
 		$(YOSYS_COMMAND)
 ifeq ($(SOC),TINY)

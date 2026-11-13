@@ -57,18 +57,31 @@ collects workflow and PR metrics without source or credential content.
 and NOT_RUN. `formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to
-local formal evidence. `yosys_progress.py` summarizes phase steps,
+local formal evidence.
+`flow_control.py` provides execution fingerprints, single-flight leases,
+process identity, cancellation, and attempt retention for long-running flows.
+`run_flow.py` records schema-v2 run/attempt, heartbeat, deadline, process-group,
+source/script/input/environment/tool-lock digests, and resource evidence without
+storing environment values in those digests. `--status` reconciles stale runs,
+`--cancel` signals only a matching run identity, and `--resume` reuses a passing
+result only when every fingerprint matches; a failed attempt may resume only
+with identical inputs and receives a new run ID. Direct-child exit does not
+leave descendants running, and missing checkpoint digests or an active lease
+fails closed. Earlier results and logs remain under `result.json.attempts/`.
+`yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
 `yosys_opt_resume.py` provides an opt-in resumable plain-`opt` driver. It
 keeps the native initial `opt_expr`/`opt_merge -nomux` and iterative
 `opt_muxtree`/`opt_reduce`/`opt_merge`/`opt_dff`/`opt_clean`/`opt_expr`
 sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
-on timeout, malformed state, changed input, or the iteration limit. Invoke it
-through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
+on timeout, malformed state, changed input, or the iteration limit. Schema-v2
+state and the synthesis manifest additionally bind execution fingerprints and
+checkpoint/output SHA-256 values. Legacy or corrupted state is never trusted.
+Invoke it through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
 `YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
-state, never a dirty or unrelated worktree. This is synthesis infrastructure,
-not timing, netlist, or release evidence by itself.
+state, never an unrelated worktree. This is synthesis infrastructure, not
+timing, netlist, or release evidence by itself.
 
 Mini/IHP130 Yosys backend completion is a dated **missing item**, explicitly
 deferred by the maintainer on 2026-11-12. The retained native plain-`opt`

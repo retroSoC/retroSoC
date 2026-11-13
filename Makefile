@@ -1361,7 +1361,7 @@ check-fast: snapshot-check format-check rtl-style-check-all rtl-readiness-check-
 	actionlint
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
-	  tests/test_contribution.py tests/test_pr_workflow.py
+	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_flow_recovery.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
 	python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run
