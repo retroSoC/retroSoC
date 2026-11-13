@@ -85,7 +85,9 @@ dependency, build-entry, scheduled, and full-matrix changes instead of repeating
 both environments for every unrelated PR. The `locked-tools` action bounds apt
 updates to 180 seconds and installs to 600 seconds per attempt, with at most
 three attempts and a bounded 120-second dpkg lock wait, so network failures and
-concurrent package-manager activity cannot stall a job indefinitely.
+concurrent package-manager activity cannot stall a job indefinitely. Reusable
+regressions record runner memory, disk, and `/usr/bin/time -v` resource usage so
+hosted resource failures remain diagnosable.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
 `workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured

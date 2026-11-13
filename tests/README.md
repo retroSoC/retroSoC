@@ -94,11 +94,16 @@ tooling.
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
   PR/release governance. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
+  `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  real cancellation and deadlines, stale-run reconciliation, retained attempts,
+  bounded descendant completion after a normal parent exit, zombie-member
+  exclusion, and process-group cleanup when descendants outlive the grace period.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
   complete frontend/optimizer/backend execution, bounded failure, retained
-  state, and input-digest validation with real Yosys fixtures.
+  state, execution fingerprints, and checkpoint/output digest validation with
+  real Yosys fixtures.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
   refusals. Run fast agent checks with `make check-fast`. Static

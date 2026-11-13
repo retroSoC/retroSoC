@@ -172,6 +172,12 @@ jobs:
         if: inputs.formal_checks
         run: make CONFIG=${{ inputs.profile }} formal-doctor
 
+      - name: Record runner resources
+        run: |
+          nproc
+          free -h
+          df -h .
+
       - name: Run ${{ inputs.suite }} regression
         id: regression
         env:
@@ -188,7 +194,7 @@ jobs:
           if [[ "${BEHAVIORAL_ONLY}" == "true" ]]; then
             args+=(--behavioral-only)
           fi
-          python3 scripts/regress.py "${args[@]}"
+          /usr/bin/time -v python3 scripts/regress.py "${args[@]}"
 
       - name: Summarize CI evidence
         if: always()
@@ -220,6 +226,7 @@ jobs:
           path: |
             build/ci-summary/*.json
             build/**/meta/*.json
+            build/**/result*.json
             build/**/formal/**/*.sby
             build/**/formal/**/*.smt2
             build/**/formal/**/*.vcd

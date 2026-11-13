@@ -101,6 +101,10 @@ Restore keeps the current lock; upgrade changes approved pins. A doctor, status,
 or package target may have mutating prerequisites: inspect the recipe before
 treating it as a read-only check. Preserve existing artifacts on resume and do
 not substitute another product, weaken checks, or infer missing evidence.
+Long flows use `run_flow.py --status`, `--cancel`, and explicit `--resume`.
+Active leases, changed execution fingerprints, uncertain process identities,
+and corrupted checkpoint/output digests block reuse; interrupted runs are not
+passes. Native commands remain the default unless a flow opts into resume.
 
 Keep regression and behavior-preserving RTL migration inside the existing
 implementation/review responsibilities through their linked references.
