@@ -181,9 +181,11 @@ def paginated_check_data(endpoint: str, key: str) -> list[dict[str, Any]]:
     raise RuntimeError(f"too many GitHub pages for {endpoint}")
 
 
-def context_verdict(status: str, conclusion: str | None) -> str:
+def context_verdict(status: str, conclusion: str | None, *, allow_skip: bool = False) -> str:
     if status.upper() != "COMPLETED":
         return "PENDING"
+    if allow_skip and (conclusion or "").lower() == "skipped":
+        return "SKIPPED"
     return "PASS" if (conclusion or "").lower() == "success" else "FAIL"
 
 
@@ -195,6 +197,7 @@ def evaluate_checks(
 ) -> dict[str, Any]:
     if not head_sha:
         raise RuntimeError("cannot evaluate checks without a head SHA")
+    required_set = set(required)
     contexts: dict[str, dict[str, Any]] = {}
     for run in sorted(check_runs, key=lambda item: int(item.get("id", 0)), reverse=True):
         name = run.get("name")
@@ -202,7 +205,9 @@ def evaluate_checks(
             continue
         contexts[name] = {
             "name": name,
-            "status": context_verdict(str(run.get("status", "")), run.get("conclusion")),
+            "status": context_verdict(
+                str(run.get("status", "")), run.get("conclusion"), allow_skip=name not in required_set
+            ),
             "conclusion": run.get("conclusion"),
             "url": run.get("html_url"),
         }
@@ -218,7 +223,6 @@ def evaluate_checks(
             "conclusion": item.get("state"),
             "url": item.get("target_url"),
         }
-    required_set = set(required)
     missing = sorted(required_set - set(contexts))
     verdicts = [item["status"] for item in contexts.values()]
     if any(item == "FAIL" for item in verdicts):
