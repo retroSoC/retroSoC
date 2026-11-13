@@ -95,8 +95,9 @@ Markdown evidence. The task packet may declare `resolves_gaps` for an explicit
 resolution task; unrelated work is not blocked by an unrelated gap.
 `make validation-gap-check` validates `quality/validation-gaps.json` and its
 review dates. `make worktree-registry` is dry-run by default and inventories
-registered and orphaned paths. Cleanup requires a clean merged branch and moves
-retained evidence before any removal.
+registered and orphaned paths. Cleanup requires a clean, merged, canonical branch
+below `build/agent-worktrees/` and moves retained evidence before any removal.
+Other worktrees are inventoried but never removed automatically.
 
 Maintenance tasks do not require feature slugs, frozen specifications, or phase
 IDs. Resolve targets from explicit inputs or unambiguous publication/profile
