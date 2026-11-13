@@ -11,6 +11,9 @@ documentation.
 - `metrics/` defines observational metric policy and future gate promotion.
 - `change_impact.json` defines conservative changed-file CI selection; unknown
   paths and classification failures select the full matrix.
+- `pytest-shards.json` defines four deterministic fixture shards and the exact
+  permitted optional-input skips. `pytest-durations.json` records source-bound
+  JUnit timing history used only for scheduling, never for a PASS verdict.
 - `validation-gaps.json` records owned deferred validation gaps, source scope,
   review dates, prohibited claims, and the evidence required for resolution.
 - `ownership.json` records primary and backup review ownership plus the current
