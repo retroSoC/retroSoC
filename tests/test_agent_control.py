@@ -289,6 +289,8 @@ def test_preflight_binds_task_plan_and_optional_github_probe(tmp_path: Path) -> 
     assert result["validation_plan"]["base"] == task["base_revision"]
     assert result["reviewed_source_snapshot"]["status"] == "PASS"
     assert result["github"]["status"] == "NOT_RUN"
+    assert len(result["dependency_lock_sha256"]) == 64
+    assert result["tools"] == [{"name": "git", "status": "PASS"}, {"name": "python3", "status": "PASS"}]
 
 
 def test_github_preflight_is_explicit_about_pending_and_permissions(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -314,3 +316,9 @@ def test_github_preflight_is_explicit_about_pending_and_permissions(monkeypatch:
     blocked = github_preflight(ROOT, args)
     assert blocked["status"] == "BLOCKED"
     assert blocked["issues"] == ["HTTP 403"]
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.required_check_contexts",
+        lambda repository, base, root: (_ for _ in ()).throw(OSError("gh is unavailable")),
+    )
+    assert github_preflight(ROOT, args)["issues"] == ["gh is unavailable"]

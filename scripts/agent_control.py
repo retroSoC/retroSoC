@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -603,7 +604,7 @@ def github_preflight(root: Path, args: argparse.Namespace) -> dict[str, Any]:
             report = checks_report(root, args.pr, args.repository, required)
             result.update(status=report["status"], head_sha=report["head_sha"], report=report)
         return result
-    except RuntimeError as error:
+    except (OSError, RuntimeError) as error:
         return {
             "status": "BLOCKED",
             "repository": args.repository,
@@ -612,10 +613,22 @@ def github_preflight(root: Path, args: argparse.Namespace) -> dict[str, Any]:
         }
 
 
+def local_tool_status(online: bool) -> list[dict[str, str]]:
+    tools = [
+        {"name": "git", "status": "PASS" if shutil.which("git") else "BLOCKED"},
+        {"name": "python3", "status": "PASS" if shutil.which("python3") else "BLOCKED"},
+    ]
+    if online:
+        tools.append({"name": "gh", "status": "PASS" if shutil.which("gh") else "BLOCKED"})
+    return tools
+
+
 def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
     root = args.root.resolve()
     task = read_json(args.task)
     issues = validate_task(task, root)
+    tools = local_tool_status(args.online)
+    issues.extend(f"required local tool is unavailable: {tool['name']}" for tool in tools if tool["status"] != "PASS")
     base = args.base or task.get("base_revision")
     plan = create_plan(
         argparse.Namespace(
@@ -658,6 +671,8 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "task_id": task.get("task_id"),
         "status": "BLOCKED" if issues else "READY",
         "issues": sorted(set(issues)),
+        "dependency_lock_sha256": hashlib.sha256((root / "dependencies/dependencies.lock.json").read_bytes()).hexdigest(),
+        "tools": tools,
         "worktree": worktree,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
