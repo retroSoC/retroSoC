@@ -102,10 +102,11 @@ Neither optimization equivalence nor behavioral CI closes this gap.
 using the same evidence, artifact, process, and gap records. `validation_gaps.py`
 validates ownership, review dates, and resolution conditions.
 `worktree_registry.py` inventories registered and orphaned worktrees in dry-run
-mode by default. Only clean, registered, non-detached branches contained in
-`origin/dev` are cleanup candidates; artifacts are moved to the main worktree's
-`build/agent-artifacts/` before non-forced cleanup. Dirty, unmerged, detached,
-orphaned, or evidence-conflicting paths are preserved.
+mode by default. Only clean, registered, canonical, non-detached branches under
+`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates;
+artifacts are moved to the main worktree's `build/agent-artifacts/` before
+non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
+evidence-conflicting paths are preserved.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass

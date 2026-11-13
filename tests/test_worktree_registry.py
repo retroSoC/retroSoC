@@ -27,13 +27,15 @@ def make_repo(root: Path) -> None:
     git(root, "checkout", "dev")
     git(root, "merge", "--no-ff", "-m", "merge feature", "feat/example")
     git(root, "update-ref", "refs/remotes/origin/dev", "dev")
-    git(root, "worktree", "add", str(root.parent / "linked"), "feat/example")
+    linked = root / "build/agent-worktrees/example"
+    linked.parent.mkdir(parents=True)
+    git(root, "worktree", "add", str(linked), "feat/example")
 
 
 def test_registry_dry_run_then_cleans_merged_branch(tmp_path: Path) -> None:
     root = tmp_path / "repo"
     make_repo(root)
-    linked = root.parent / "linked"
+    linked = root / "build/agent-worktrees/example"
     dry_run = reconcile_worktrees(root)
     assert dry_run["execution"] == "dry-run"
     assert dry_run["actions"] == []
@@ -51,7 +53,7 @@ def test_registry_dry_run_then_cleans_merged_branch(tmp_path: Path) -> None:
 def test_registry_preserves_artifacts_before_cleanup(tmp_path: Path) -> None:
     root = tmp_path / "repo"
     make_repo(root)
-    linked = root.parent / "linked"
+    linked = root / "build/agent-worktrees/example"
     packet = linked / "build/tasks/demo/task.json"
     packet.parent.mkdir(parents=True)
     packet.write_text(json.dumps({"task_id": "demo"}), encoding="utf-8")
@@ -72,9 +74,9 @@ def test_registry_preserves_artifacts_before_cleanup(tmp_path: Path) -> None:
 def test_registry_preserves_dirty_unmerged_and_detached_worktrees(tmp_path: Path) -> None:
     root = tmp_path / "repo"
     make_repo(root)
-    linked = root.parent / "linked"
+    linked = root / "build/agent-worktrees/example"
     (linked / "dirty.txt").write_text("keep\n", encoding="utf-8")
-    unmerged = root.parent / "unmerged"
+    unmerged = root / "build/agent-worktrees/unmerged"
     git(root, "checkout", "dev")
     git(root, "checkout", "-qb", "feat/unmerged")
     (root / "unmerged.txt").write_text("unmerged\n", encoding="utf-8")
@@ -82,18 +84,32 @@ def test_registry_preserves_dirty_unmerged_and_detached_worktrees(tmp_path: Path
     git(root, "commit", "-qm", "unmerged")
     git(root, "checkout", "dev")
     git(root, "worktree", "add", str(unmerged), "feat/unmerged")
-    detached = root.parent / "detached"
+    detached = root / "build/agent-worktrees/detached"
     git(root, "worktree", "add", "--detach", str(detached), "dev")
 
     document = reconcile_worktrees(root, execute=True)
     statuses = {Path(item["path"]).name: item["status"] for item in document["worktrees"]}
-    assert statuses["linked"] == "DIRTY"
+    assert statuses["example"] == "DIRTY"
     assert statuses["unmerged"] == "UNMERGED"
     assert statuses["detached"] == "DETACHED"
     assert document["actions"] == []
     assert (linked / "dirty.txt").is_file()
     assert unmerged.exists()
     assert detached.exists()
+
+
+def test_registry_preserves_noncanonical_worktree(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    external = root.parent / "external"
+    git(root, "branch", "feat/external", "dev")
+    git(root, "worktree", "add", str(external), "feat/external")
+    document = reconcile_worktrees(root, execute=True)
+    record = next(item for item in document["worktrees"] if item["path"] == str(external))
+    assert record["status"] == "NON_CANONICAL"
+    assert record["cleanup_eligible"] is False
+    assert external.exists()
+    assert git(root, "show-ref", "--verify", "--quiet", "refs/heads/feat/external").returncode == 0
 
 
 def test_registry_keeps_unregistered_orphan_directory(tmp_path: Path) -> None:

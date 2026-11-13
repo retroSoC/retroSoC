@@ -85,10 +85,13 @@ def evidence_summary(path: Path) -> dict[str, Any]:
 def inventory_record(main_root: Path, entry: dict[str, Any]) -> dict[str, Any]:
     path = Path(entry["path"]).resolve()
     branch = entry.get("branch")
+    canonical_root = main_root / "build/agent-worktrees"
     if entry.get("orphan"):
         status = "ORPHAN_DIRECTORY"
     elif path == main_root:
         status = "MAIN_WORKTREE"
+    elif not path.is_relative_to(canonical_root):
+        status = "NON_CANONICAL"
     elif entry.get("detached") or not branch:
         status = "DETACHED"
     elif git(path, "status", "--porcelain", "--untracked-files=all").stdout.strip():
