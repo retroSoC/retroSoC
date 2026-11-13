@@ -54,7 +54,12 @@ a static source list.
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
-and NOT_RUN. `formal_local_evidence.py` assembles existing local results without
+and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
+cancelled, dependency-integrity, and unknown failures, records job-step and
+resource summaries, and emits cache observations. `inspect` is dry-run by
+default. Only a first-attempt, same-head, recognized infrastructure failure is
+eligible for `inspect --execute`; all other failures preserve their verdict.
+`formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to
 local formal evidence.
