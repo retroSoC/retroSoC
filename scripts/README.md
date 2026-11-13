@@ -60,8 +60,12 @@ sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
 on timeout, malformed state, changed input, or the iteration limit. Invoke it
 through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
 `YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
-state, never a dirty or unrelated worktree. This is synthesis infrastructure,
-not timing, netlist, or release evidence by itself.
+state, never a dirty or unrelated worktree. Frontend/backend cache records bind
+the synthesis and support scripts, effective synthesis environment, filelist
+source contents, checkpoint and netlist identities. Changed identities rebuild
+the affected stage; corrupted checkpoint state fails instead of being reused.
+Without `SV_FLIST`, the frontend is always rebuilt. This is synthesis
+infrastructure, not timing, netlist, or release evidence by itself.
 
 Mini/IHP130 Yosys backend completion is a dated **missing item**, explicitly
 deferred by the maintainer on 2026-11-12. The retained native plain-`opt`
