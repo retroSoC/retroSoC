@@ -94,6 +94,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      JOBS: "2"
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -172,6 +173,12 @@ jobs:
         if: inputs.formal_checks
         run: make CONFIG=${{ inputs.profile }} formal-doctor
 
+      - name: Record runner resources
+        run: |
+          nproc
+          free -h
+          df -h .
+
       - name: Run ${{ inputs.suite }} regression
         id: regression
         env:
@@ -188,7 +195,7 @@ jobs:
           if [[ "${BEHAVIORAL_ONLY}" == "true" ]]; then
             args+=(--behavioral-only)
           fi
-          python3 scripts/regress.py "${args[@]}"
+          /usr/bin/time -v python3 scripts/regress.py "${args[@]}"
 
       - name: Summarize CI evidence
         if: always()
