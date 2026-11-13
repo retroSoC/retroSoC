@@ -226,6 +226,7 @@ jobs:
           path: |
             build/ci-summary/*.json
             build/**/meta/*.json
+            build/**/result*.json
             build/**/formal/**/*.sby
             build/**/formal/**/*.smt2
             build/**/formal/**/*.vcd

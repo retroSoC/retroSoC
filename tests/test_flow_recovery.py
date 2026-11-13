@@ -322,6 +322,21 @@ def test_fingerprint_rejects_changed_input_script_and_environment(tmp_path: Path
     assert "environment_sha256" in fingerprint_mismatches(changed_script, changed_environment)
 
 
+def test_process_group_ignores_zombie_members() -> None:
+    from scripts.flow_control import process_group_exists
+
+    child = subprocess.Popen(["true"], start_new_session=True)
+    try:
+        for _ in range(100):
+            if not process_alive(child.pid):
+                break
+            time.sleep(0.01)
+        assert not process_alive(child.pid)
+        assert not process_group_exists(child.pid)
+    finally:
+        child.wait(timeout=5)
+
+
 @pytest.mark.parametrize("field", ["parent_start_ticks", "child_start_ticks"])
 def test_cancel_refuses_uncertain_process_identity(tmp_path: Path, field: str) -> None:
     result = tmp_path / "cancel.json"

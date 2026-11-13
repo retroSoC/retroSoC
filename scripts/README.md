@@ -68,6 +68,8 @@ result only when every fingerprint matches; a failed attempt may resume only
 with identical inputs and receives a new run ID. A zero-exit parent receives a
 bounded descendant grace period for normal compiler and cleanup processes;
 nonzero exits or descendants that outlast the grace period are terminated.
+Process-group liveness ignores zombie members so completed children cannot be
+misclassified as active work.
 Missing checkpoint digests or an active lease fails closed. Earlier results and
 logs remain under `result.json.attempts/`.
 `yosys_progress.py` summarizes phase steps,

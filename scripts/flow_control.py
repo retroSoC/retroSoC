@@ -126,13 +126,27 @@ def pid_matches(pid: int | None, ticks: int | None) -> bool:
 
 
 def process_group_exists(pgid: int) -> bool:
+    if pgid <= 0:
+        raise ValueError("process group ID must be positive")
     try:
-        os.killpg(pgid, 0)
-        return True
-    except ProcessLookupError:
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                fields = (entry / "stat").read_text(encoding="utf-8").rsplit(")", 1)[1].split()
+                if int(fields[2]) == pgid and fields[0] not in {"Z", "X", "x"}:
+                    return True
+            except (OSError, IndexError, ValueError):
+                continue
         return False
-    except PermissionError:
-        return True
+    except OSError:
+        try:
+            os.killpg(pgid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
 
 
 def terminate_process_group(pgid: int, grace_seconds: float = 5.0) -> bool:
