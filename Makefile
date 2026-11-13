@@ -676,7 +676,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics check-fast
+	agent-context agent-task-check agent-preflight snapshot-check validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -769,6 +769,8 @@ help:
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
+	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
+	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
 	  '  skill-eval-smoke           run three live read-only Codex Skill evaluations' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
@@ -1326,6 +1328,19 @@ agent-task-check:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py task validate --root $(ROOT_PATH) --task $(TASK)
 
+agent-preflight:
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
+	  $(if $(BASE),--base $(BASE)) --head $(if $(HEAD),$(HEAD),HEAD) \
+	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
+	  --base-branch $(if $(BASE_BRANCH),$(BASE_BRANCH),dev) \
+	  $(if $(PR),--pr $(PR)) $(if $(ONLINE),--online) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-preflight.json)
+
+snapshot-check:
+	python3 $(ROOT_PATH)/scripts/agent_control.py snapshot --root $(ROOT_PATH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/reviewed-source-snapshot.json)
+
 validation-plan:
 	python3 $(ROOT_PATH)/scripts/agent_control.py plan --root $(ROOT_PATH) \
 	  --event $(if $(EVENT),$(EVENT),local) --mode $(if $(MODE),$(MODE),auto) \
@@ -1350,7 +1365,7 @@ engineering-metrics:
 	  --limit $(if $(LIMIT),$(LIMIT),30) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
 
-check-fast: format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
+check-fast: snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
 	yamllint .github .yamllint.yml
 	actionlint

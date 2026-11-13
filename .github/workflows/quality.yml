@@ -68,11 +68,16 @@ jobs:
             rtl/managed/clusterip/rng
             rtl/managed/clusterip/rtc
             rtl/managed/clusterip/wdg
+            rtl/managed/hazard3
+            rtl/managed/mpw
             rtl/managed/third_party
           key: quality-fast-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Set up host-test sources
-        run: python3 rtl/managed/clusterip/setup.py
+        run: |
+          python3 setup.py
+          python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
 
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
