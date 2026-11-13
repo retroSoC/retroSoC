@@ -270,7 +270,7 @@
     },
     {
       "level": 4,
-      "title": "Streaming Pixel Processor (PPALite)",
+      "title": "Streaming Pixel Processor (PPALITE)",
       "anchor": "ppalite"
     },
     {
@@ -280,7 +280,7 @@
     },
     {
       "level": 4,
-      "title": "Cryptographic Accelerator (Crypto)",
+      "title": "Cryptographic Accelerator (CRYPTO)",
       "anchor": "crypto"
     },
     {

@@ -7,7 +7,8 @@
  ([2026-09-25],[v0.1 DRAFT],[Initial IHP130/four-channel publication; original PDF retained.]),
  ([2026-10-29],[v0.2 DRAFT],[ICS55 main reference; 22 IP chapters; current R2/SPI integration and evidence.]),
  ([2026-10-29],[v0.2 DRAFT],[Same-version Mini hierarchy and engineering-figure alignment.]),
- (doc.date,[v0.2 DRAFT],[Source refresh: PPALite P3; DVP/DMA/RCU contracts; 23 integrated IP chapters.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-10],[v0.2 DRAFT],[Source refresh with PPALite P3, DVP/DMA/RCU contracts and 23 integrated IP chapters.]),
+ (doc.date,[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,
