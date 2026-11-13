@@ -43,6 +43,12 @@ locked URL and revision; dirty or mismatched repositories are preserved.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
+Its `preflight` command also checks task scope, base ancestry, worktree state,
+and the Tiny reviewed-source snapshot using the publication collector's actual
+source inventory. Workspace writes require a clean initial worktree. Online
+GitHub permission and PR-head probes are opt-in; local preflight is offline.
+`snapshot-check` runs the same drift check in the fast gate without duplicating
+a static source list.
 `skill_eval.py` validates the Skill registry and executes isolated, read-only
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.

@@ -23,6 +23,8 @@ always-run gate so a skipped job cannot silently satisfy a required check.
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
+  It restores the locked publication inputs and checks the Tiny reviewed-source
+  snapshot against the collector's actual inventory before long fixtures run.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references, then runs the complete Pytest suite with JUnit and
   duration reports. It is skipped only for classifications that do not need it.

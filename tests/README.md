@@ -86,8 +86,10 @@ tooling.
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks feature and engineering-workflow skill metadata,
   local references, eval corpora, default invocation contracts, and documented
-  entrypoints. `test_agent_control.py` covers task contracts and conservative
-  change selection; `test_skill_eval.py` covers isolated behavior-trace grading;
+  entrypoints. `test_agent_control.py` covers task contracts, conservative
+  change selection, scope enforcement, preflight, and real/mocked Tiny
+  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
   PR/release governance. `test_formal_local_evidence.py` checks local result
