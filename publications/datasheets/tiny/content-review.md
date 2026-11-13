@@ -1,6 +1,6 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
-Reviewed source: `dba9d209a2ddce4aceb6cc0256beae7ea7fdc496` from `dev`.
+Reviewed source: `f5f58a36758968e984a43159a3e155c56cbe1f38` from `dev`.
 Main profile: `configs/ci/ics55-tiny.mk`; compatibility: `configs/ci/ihp130-tiny.mk`.
 The approved update reviews the R2-P3..P10 and SPI-P1..P4 increment from the
 v0.1 source `9c706ba0ff1da1028c299cfff573010a86dfd7ce`.
@@ -172,3 +172,18 @@ manual old/new page comparisons accompany the final artifact. Publication
 checks are not new simulator, physical, board or silicon results. No RTL/HAL,
 MISRA deviation, dependency version, warning baseline or metric policy changes
 are introduced.
+
+## 2026-11-11 presentation and source review
+
+The reviewed source advances to `f5f58a36758968e984a43159a3e155c56cbe1f38`.
+The post-publication dev delta from `74404760308d80a86625a102866e68c188046674`
+changes seven CI, dependency-recovery and test/guide files. Tiny RTL, HAL,
+hardware profiles and locked dependency versions retain their reviewed values.
+
+The previous delivered 425-page PDF is retained with SHA-256
+`c411911532e0e2ddcf3f3ac9eaa85c7575b711b2d022a04bfb4120c0b4d27467`.
+The approved title suffixes become PPALITE and CRYPTO across Contents,
+headings and the matching navigation/structure records. The uppercase-only
+Contents emphasis rule is retained. Functional-architecture wire labels have
+transparent backgrounds and positions clear of their wires. Its note links to
+the application and PPALite chapters for the RAW/PROCESS data route.
