@@ -734,11 +734,19 @@ def gap_status(task: dict[str, Any], root: Path) -> dict[str, Any]:
         return {"status": "BLOCKED", "issues": [str(error)], "known_gaps": [], "resolving_gaps": []}
 
 
-def artifact_evidence(root: Path, task: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+def artifact_evidence(
+    root: Path,
+    task: dict[str, Any],
+    exclude_paths: set[Path] | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
     artifact_root = root / task["execution"]["artifact_root"]
+    excluded = {path.resolve() for path in (exclude_paths or set())}
+    current_revision = git_output(root, "rev-parse", "HEAD")
     records = []
     issues = []
     for path in sorted(artifact_root.rglob("*.json")):
+        if path.resolve() in excluded:
+            continue
         relative = path.relative_to(root).as_posix()
         record: dict[str, Any] = {"path": relative, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
         try:
@@ -761,8 +769,11 @@ def artifact_evidence(root: Path, task: dict[str, Any]) -> tuple[list[dict[str, 
                 ):
                     if key in data:
                         record[key] = data[key]
-                if data.get("source_revision") and data["source_revision"] != git_output(root, "rev-parse", "HEAD"):
-                    issues.append(f"artifact source revision differs from HEAD: {relative}")
+                if data.get("source_revision"):
+                    record["revision_match"] = data["source_revision"] == current_revision
+                    status = str(data.get("status", data.get("flow_status", ""))).lower()
+                    if not record["revision_match"] and status in {"pass", "passed"}:
+                        issues.append(f"current PASS artifact has a different source revision: {relative}")
             else:
                 record["status"] = "UNKNOWN"
         except (ValueError, OSError) as error:
@@ -772,11 +783,16 @@ def artifact_evidence(root: Path, task: dict[str, Any]) -> tuple[list[dict[str, 
     return records, issues
 
 
-def build_handoff(task: dict[str, Any], root: Path, next_action: str) -> dict[str, Any]:
+def build_handoff(
+    task: dict[str, Any],
+    root: Path,
+    next_action: str,
+    exclude_paths: set[Path] | None = None,
+) -> dict[str, Any]:
     if not next_action.strip():
         raise ValueError("handoff requires a non-empty next action")
     issues = validate_task(task, root)
-    artifacts, artifact_issues = artifact_evidence(root, task)
+    artifacts, artifact_issues = artifact_evidence(root, task, exclude_paths)
     issues.extend(artifact_issues)
     gaps = gap_status(task, root)
     issues.extend(gaps["issues"])
@@ -907,7 +923,12 @@ def main() -> int:
             task = read_json(args.task)
             issues = validate_task(task, args.root.resolve())
             if args.task_command == "handoff":
-                document = build_handoff(task, args.root.resolve(), args.next)
+                document = build_handoff(
+                    task,
+                    args.root.resolve(),
+                    args.next,
+                    exclude_paths={path for path in (args.output, args.markdown) if path is not None},
+                )
                 if args.markdown:
                     write_handoff_markdown(document, args.markdown, args.root.resolve())
                 emit_json(document, args.output)

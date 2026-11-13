@@ -405,6 +405,17 @@ def test_handoff_preserves_evidence_process_state_and_next_action(tmp_path: Path
     write_handoff_markdown(document, markdown, tmp_path)
     assert "NOT_RUN" in markdown.read_text(encoding="utf-8")
 
+    handoff_path = tmp_path / task["execution"]["artifact_root"] / "handoff.json"
+    handoff_path.write_text(json.dumps(document), encoding="utf-8")
+    repeated = build_handoff(task, tmp_path, "Repeat only the required handoff", exclude_paths={handoff_path})
+    assert repeated["status"] == "review"
+    assert all(item["path"] != handoff_path.relative_to(tmp_path).as_posix() for item in repeated["artifacts"])
+
+    result.write_text(json.dumps({"status": "passed", "source_revision": "0" * 40}), encoding="utf-8")
+    stale = build_handoff(task, tmp_path, "Reject stale passing evidence")
+    assert stale["status"] == "blocked"
+    assert any("different source revision" in issue for issue in stale["issues"])
+
     task["evidence"].append({"kind": "failed", "uri": "build/failed.json", "status": "FAIL"})
     blocked = build_handoff(task, tmp_path, "Diagnose the failed evidence")
     assert blocked["status"] == "blocked"
