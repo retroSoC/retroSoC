@@ -221,3 +221,149 @@ def test_documentation_checker_exempts_only_generated_inputs(tmp_path: Path) -> 
     assert "missing.md" in issues[0]
     assert "build/artifact.json" not in issues[0]
     assert "managed/mpw" not in issues[0]
+
+
+def test_scope_issues_enforce_allowed_and_forbidden_paths() -> None:
+    from scripts.agent_control import scope_issues
+
+    task = valid_task()
+    assert scope_issues(task, ["docs/engineering.md"]) == []
+    issues = scope_issues(task, ["rtl/tiny/top/tiny_sram.sv", "scripts/regress.py"])
+    assert issues == [
+        "path is forbidden by task scope: rtl/tiny/top/tiny_sram.sv",
+        "path is outside the task scope: rtl/tiny/top/tiny_sram.sv",
+        "path is outside the task scope: scripts/regress.py",
+    ]
+
+
+def test_tiny_snapshot_uses_real_reviewed_inventory() -> None:
+    from scripts.agent_control import tiny_snapshot_status
+
+    result = tiny_snapshot_status(ROOT)
+    assert result["status"] == "PASS", result
+    assert result["technical_source_count"] > 250
+    assert result["changed_files"] == []
+
+
+def test_tiny_snapshot_reports_drift_and_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    monkeypatch.setattr(
+        "publications.tiny_reference.collect",
+        lambda config, check_snapshot: {
+            "source_paths": ["docs/engineering.md", "publications/tiny_reference.py", "dependencies/dependencies.lock.json"]
+        },
+    )
+    monkeypatch.setattr(control, "git_output", lambda root, *arguments: "docs/engineering.md")
+    drift = control.tiny_snapshot_status(ROOT)
+    assert drift["status"] == "FAIL"
+    assert drift["changed_files"] == ["docs/engineering.md"]
+
+    monkeypatch.setattr(control, "git_output", lambda root, *arguments: "")
+    assert control.tiny_snapshot_status(ROOT)["status"] == "PASS"
+
+
+def test_preflight_binds_task_plan_and_optional_github_probe(tmp_path: Path) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    result = create_preflight(args)
+    assert result["status"] == "READY", result["issues"]
+    assert result["task_id"] == task["task_id"]
+    assert result["validation_plan"]["base"] == task["base_revision"]
+    assert result["reviewed_source_snapshot"]["status"] == "PASS"
+    assert result["github"]["status"] == "NOT_RUN"
+    assert len(result["dependency_lock_sha256"]) == 64
+    assert result["tools"] == [{"name": "git", "status": "PASS"}, {"name": "python3", "status": "PASS"}]
+
+
+def test_github_preflight_is_explicit_about_pending_and_permissions(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.agent_control import github_preflight
+
+    args = SimpleNamespace(online=True, repository="retroSoC/retroSoC", base_branch="dev", pr=None)
+    monkeypatch.setattr("scripts.pr_workflow.required_check_contexts", lambda repository, base, root: ["quality-gate"])
+    assert github_preflight(ROOT, args)["status"] == "PASS"
+
+    args.pr = 239
+    monkeypatch.setattr(
+        "scripts.pr_workflow.checks_report",
+        lambda root, number, repository, required: {"status": "PENDING", "head_sha": "b" * 40},
+    )
+    pending = github_preflight(ROOT, args)
+    assert pending["status"] == "PENDING"
+    assert pending["head_sha"] == "b" * 40
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.required_check_contexts",
+        lambda repository, base, root: (_ for _ in ()).throw(RuntimeError("HTTP 403")),
+    )
+    blocked = github_preflight(ROOT, args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["issues"] == ["HTTP 403"]
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.required_check_contexts",
+        lambda repository, base, root: (_ for _ in ()).throw(OSError("gh is unavailable")),
+    )
+    assert github_preflight(ROOT, args)["issues"] == ["gh is unavailable"]
+
+
+def test_preflight_rejects_dirty_workspace_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    task["execution"]["mode"] = "workspace-write"
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    real_git_output = control.git_output
+
+    def dirty_status(root: Path, *arguments: str) -> str:
+        if arguments[0] == "status":
+            return " M scripts/example.py"
+        return real_git_output(root, *arguments)
+
+    monkeypatch.setattr(control, "git_output", dirty_status)
+    result = control.create_preflight(args)
+    assert result["status"] == "BLOCKED"
+    assert "workspace-write preflight requires a clean worktree before execution" in result["issues"]
+
+
+def test_local_tool_probe_requires_gh_only_for_online_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    monkeypatch.setattr(control.shutil, "which", lambda name: None if name == "gh" else f"/usr/bin/{name}")
+    assert control.local_tool_status(False) == [
+        {"name": "git", "status": "PASS"},
+        {"name": "python3", "status": "PASS"},
+    ]
+    assert control.local_tool_status(True)[-1] == {"name": "gh", "status": "BLOCKED"}
