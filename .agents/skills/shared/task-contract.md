@@ -22,7 +22,11 @@ A task packet carries its schema and task IDs, base revision, targets, exact
 phase and specification when applicable, scope and non-goals, allowed and
 forbidden paths, acceptance criteria, profiles/PDKs, execution permissions,
 approval, worktree, artifacts, status, and evidence. Keep schema definitions in
-Git and run-specific packets below `build/`.
+Git and run-specific packets below `build/`. Use the optional `resolves_gaps`
+list only when this task intentionally resolves a named entry in
+`quality/validation-gaps.json`; otherwise do not use it to bypass validation.
+Generate the durable [handoff](../../handoff.schema.json) with the current task
+packet, retained evidence, and an explicit next action.
 
 A copied Prompt can be generated from the packet, but it is not the only source
 of truth. A plan's existence is not approval. Feature or high-risk writes need

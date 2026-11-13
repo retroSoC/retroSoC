@@ -31,3 +31,9 @@ Each CI summary is bound to its run start and current revision so historical
 `build/` results cannot satisfy a current run. Accepted release gaps are explicit
 human-reviewed exceptions and cannot include a stage marked required by the
 release candidate.
+
+Use `make agent-handoff TASK=<task.json> NEXT=<action>` for a revision-bound
+[handoff](../../handoff.schema.json) that lists evidence, artifacts, process
+state, known gaps, and the next action. Deferred or blocked validation gaps live
+in `quality/validation-gaps.json`; their evidence cannot become PASS without the
+listed resolution stages. Handoff is not approval or a replacement for CI.

@@ -106,6 +106,11 @@ tooling.
   complete frontend/optimizer/backend execution, bounded failure, retained
   state, execution fingerprints, and checkpoint/output digest validation with
   real Yosys fixtures.
+  `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
+  scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
+  covers dry-run inventory, merged-branch cleanup, artifact preservation, and
+  dirty/detached/unmerged/non-canonical/orphan refusal. `test_agent_control.py` also covers
+  JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
   refusals. Run fast agent checks with `make check-fast`. Static

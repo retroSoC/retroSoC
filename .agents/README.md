@@ -89,7 +89,15 @@ Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
 reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
 probe and `PR=<number>` adds a head-bound check report. A blocked preflight is
-not approval to continue.
+not approval to continue. Use `make agent-handoff TASK=<task.json> NEXT=<action>`
+to generate the [handoff schema](handoff.schema.json)-bound JSON and optional
+Markdown evidence. The task packet may declare `resolves_gaps` for an explicit
+resolution task; unrelated work is not blocked by an unrelated gap.
+`make validation-gap-check` validates `quality/validation-gaps.json` and its
+review dates. `make worktree-registry` is dry-run by default and inventories
+registered and orphaned paths. Cleanup requires a clean, merged, canonical branch
+below `build/agent-worktrees/` and moves retained evidence before any removal.
+Other worktrees are inventoried but never removed automatically.
 
 Maintenance tasks do not require feature slugs, frozen specifications, or phase
 IDs. Resolve targets from explicit inputs or unambiguous publication/profile

@@ -367,3 +367,90 @@ def test_local_tool_probe_requires_gh_only_for_online_checks(monkeypatch: pytest
         {"name": "python3", "status": "PASS"},
     ]
     assert control.local_tool_status(True)[-1] == {"name": "gh", "status": "BLOCKED"}
+
+
+def test_handoff_preserves_evidence_process_state_and_next_action(tmp_path: Path) -> None:
+    from scripts.agent_control import build_handoff, write_handoff_markdown
+
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.email", "handoff@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "Handoff"], check=True)
+    (tmp_path / "README.md").write_text("initial\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-qm", "initial"], check=True)
+    (tmp_path / "quality").mkdir()
+    (tmp_path / "quality/validation-gaps.json").write_text('{"schema_version": 1, "gaps": []}\n', encoding="utf-8")
+    revision = subprocess.check_output(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], text=True).strip()
+    task = valid_task()
+    task["base_revision"] = revision
+    task["status"] = "review"
+    task["evidence"] = [
+        {"kind": "unit", "uri": "build/tasks/docs-engineering-control/result.json", "status": "PASS"},
+        {"kind": "netlist", "uri": "build/tasks/docs-engineering-control/netlist.json", "status": "NOT_RUN"},
+    ]
+    result = tmp_path / task["execution"]["artifact_root"] / "result.json"
+    result.parent.mkdir(parents=True)
+    result.write_text(
+        json.dumps({"status": "passed", "source_revision": revision, "run_id": "run-1", "child_cleanup_pending": False}),
+        encoding="utf-8",
+    )
+    document = build_handoff(task, tmp_path, "Continue with the missing netlist evidence")
+    assert document["status"] == "review"
+    assert document["evidence_counts"] == {"PASS": 1, "FAIL": 0, "SKIPPED": 0, "NOT_RUN": 1}
+    assert document["next_action"] == "Continue with the missing netlist evidence"
+    assert document["artifacts"][0]["source_revision"] == revision
+    assert document["processes"][0]["child_cleanup_pending"] is False
+    assert document["known_gaps"] == []
+    markdown = tmp_path / "build/handoff.md"
+    write_handoff_markdown(document, markdown, tmp_path)
+    assert "NOT_RUN" in markdown.read_text(encoding="utf-8")
+
+    handoff_path = tmp_path / task["execution"]["artifact_root"] / "handoff.json"
+    handoff_path.write_text(json.dumps(document), encoding="utf-8")
+    repeated = build_handoff(task, tmp_path, "Repeat only the required handoff", exclude_paths={handoff_path})
+    assert repeated["status"] == "review"
+    assert all(item["path"] != handoff_path.relative_to(tmp_path).as_posix() for item in repeated["artifacts"])
+
+    result.write_text(json.dumps({"status": "passed", "source_revision": "0" * 40}), encoding="utf-8")
+    stale = build_handoff(task, tmp_path, "Reject stale passing evidence")
+    assert stale["status"] == "blocked"
+    assert any("different source revision" in issue for issue in stale["issues"])
+
+    task["evidence"].append({"kind": "failed", "uri": "build/failed.json", "status": "FAIL"})
+    blocked = build_handoff(task, tmp_path, "Diagnose the failed evidence")
+    assert blocked["status"] == "blocked"
+    assert "handoff contains failed evidence" in blocked["issues"]
+
+
+def test_gap_resolution_requires_an_explicit_task_declaration(tmp_path: Path) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["target_socs"] = ["MINI"]
+    task["validation"]["pdks"] = ["IHP130"]
+    task["acceptance"] = ["Complete synthesis and netlist evidence"]
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    blocked = create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert any("mini-yosys-backend" in issue for issue in blocked["issues"])
+
+    task["resolves_gaps"] = ["mini-yosys-backend"]
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    resolving = create_preflight(args)
+    assert resolving["status"] == "READY", resolving["issues"]
+    assert resolving["resolving_gaps"] == ["mini-yosys-backend"]

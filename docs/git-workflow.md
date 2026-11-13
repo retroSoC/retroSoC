@@ -292,3 +292,12 @@ This removes local remote-tracking references whose corresponding remote
 branches no longer exist. It is required in addition to topic-branch cleanup
 and does not delete local branches, stash entries, uncommitted changes, or
 build artifacts.
+
+For an inventory of agent worktrees, run `make worktree-registry` from the main
+worktree. It is dry-run by default and identifies orphaned, detached, dirty, and
+unmerged and non-canonical paths without deleting them. `EXECUTE=1` is restricted
+to clean, registered, non-detached branches below `build/agent-worktrees/` and
+contained in `origin/dev`; retained `build/` evidence is first moved to
+`build/agent-artifacts/`. Remote branch deletion and
+PR verdicts remain with `pr_workflow.py`; no registry cleanup bypasses branch
+protection or removes unresolved evidence.
