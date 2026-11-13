@@ -1043,8 +1043,9 @@ def test_locked_tools_action_limits_apt_retries() -> None:
     action = (ROOT / ".github/actions/locked-tools/action.yml").read_text(encoding="utf-8")
     assert 'until "$@"; do' in action
     assert "attempts >= 3" in action
-    assert "180s sudo apt-get update -qq" in action
-    assert "600s sudo apt-get install" in action
+    assert "180s sudo apt-get -o DPkg::Lock::Timeout=120 update -qq" in action
+    assert "600s sudo apt-get -o DPkg::Lock::Timeout=120 install" in action
+    assert action.count("DPkg::Lock::Timeout=120") == 2
 
 
 def test_dependency_helper_uses_fallback_url(tmp_path: Path) -> None:

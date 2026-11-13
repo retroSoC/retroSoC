@@ -101,6 +101,9 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
+  `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
+  complete frontend/optimizer/backend execution, bounded failure, retained
+  state, and input-digest validation with real Yosys fixtures.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
   refusals. Run fast agent checks with `make check-fast`. Static
