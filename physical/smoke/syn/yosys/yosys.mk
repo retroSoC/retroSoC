@@ -41,11 +41,19 @@ TOP_DESIGN ?= retrosoc_asic
 RTL_NAME   ?= retrosoc_asic
 SV_FLIST   := $(GENERATED_FL_DIR)/yosys.fl
 
-NETLIST        := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
-NETLIST_DEBUG  := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
-NETLIST_CONFIG := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
-YOSYS_DEPFILE  := $(YOSYS_BUILD)/yosys.d
-YOSYS_SCRIPTS  := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk
+NETLIST              := $(YOSYS_OUT)/$(RTL_NAME)_yosys.v
+NETLIST_DEBUG        := $(YOSYS_OUT)/$(RTL_NAME)_yosys_debug.v
+NETLIST_CONFIG       := $(YOSYS_OUT)/$(RTL_NAME)_yosys.config
+YOSYS_DEPFILE        := $(YOSYS_BUILD)/yosys.d
+YOSYS_SCRIPTS        := $(wildcard $(YOSYS_DIR)/script/*) $(YOSYS_DIR)/synth_config.mk $(YOSYS_DIR)/yosys.mk \
+	$(ROOT_PATH)/scripts/yosys_opt_resume.py
+YOSYS_NATIVE_COMMAND = yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
+YOSYS_RESUME_COMMAND = python3 $(ROOT_PATH)/scripts/yosys_opt_resume.py --root $(ROOT_PATH) synth \
+	--script $(YOSYS_DIR)/script/synth.tcl --work-dir $(YOSYS_BUILD)/opt-resume \
+	--max-iterations $(if $(YOSYS_OPT_MAX_ITERATIONS),$(YOSYS_OPT_MAX_ITERATIONS),64) \
+	--iteration-timeout $(if $(YOSYS_OPT_ITERATION_TIMEOUT),$(YOSYS_OPT_ITERATION_TIMEOUT),600) \
+	--frontend-timeout $(YOSYS_TIMEOUT)
+YOSYS_COMMAND        = $(if $(filter YES,$(YOSYS_OPT_RESUME)),$(YOSYS_RESUME_COMMAND),$(YOSYS_NATIVE_COMMAND))
 
 -include $(YOSYS_DEPFILE)
 
@@ -73,7 +81,7 @@ $(NETLIST): $(SV_FLIST) $(YOSYS_SCRIPTS) | manifest
 		--env PROJ_NAME=$(RTL_NAME) --env WORK=$(YOSYS_TMP) --env BUILD=$(YOSYS_OUT) \
 		--env REPORTS=$(YOSYS_RPT) --env NETLIST=$(NETLIST) -- \
 		timeout --foreground --kill-after=5s $(YOSYS_TIMEOUT)s \
-		yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl
+		$(YOSYS_COMMAND)
 ifeq ($(SOC),TINY)
 	python3 $(ROOT_PATH)/scripts/tiny_r2_p7.py --variant-root $(VARIANT_ROOT) audit-netlist \
 		--netlist $(NETLIST) --config $(NETLIST_CONFIG) --output $(YOSYS_BUILD)/tiny-r2-p7-netlist.json

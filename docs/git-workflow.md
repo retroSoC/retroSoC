@@ -244,7 +244,10 @@ Maintainers choose and review the release revision on `main`, add a tracked
 `quality/release-candidate.json` through the approved release PR, and publish an
 immutable `vMAJOR.MINOR.PATCH` tag only after its required workflows succeed.
 The [release schema](../quality/release-candidate.schema.json) defines the lock
-digest, approval, stages, workflow names, and accepted gaps. The
+digest, approval, stages, workflow names, and accepted gaps. Optional
+`local_checks` reference revision-matched local formal summaries and manifests.
+Their content is validated for clean inputs and passing prove/cover results;
+revision-bearing summary hashes are not embedded in the candidate. The
 [release workflow](../.github/workflows/release.yml) verifies the tag against
 current `origin/main` and matching successful runs. `sole_maintainer` accepts a
 merged release PR with the named maintainer's approval record; peer mode
@@ -275,3 +278,14 @@ worktrees, unmerged local commits, non-canonical branches, and protected
 `dev`/`main` branches are left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
 mechanism. Already-absent remote refs are treated as successful cleanup; other
 API errors fail.
+
+After every feature integration into `dev`, also run:
+
+```sh
+git fetch --prune
+```
+
+This removes local remote-tracking references whose corresponding remote
+branches no longer exist. It is required in addition to topic-branch cleanup
+and does not delete local branches, stash entries, uncommitted changes, or
+build artifacts.

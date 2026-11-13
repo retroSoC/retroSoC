@@ -64,6 +64,19 @@ def test_results_reject_stale_evidence(tmp_path: Path) -> None:
     assert [item["path"] for item in results] == ["build/current/sim/result-sim.json"]
 
 
+def test_result_preserves_peak_resource_usage(tmp_path: Path) -> None:
+    path = tmp_path / "build/current/formal/ga2d/result-cover.json"
+    result(path, "2026-11-08T00:01:00Z")
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["peak_rss_kib"] = 127214812
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    results, issues = collect_results(tmp_path / "build", tmp_path, parse_time("2026-11-08T00:00:00Z"))
+
+    assert issues == []
+    assert results[0]["peak_rss_kib"] == 127214812
+
+
 def test_behavioral_summary_marks_physical_stages_not_run(tmp_path: Path) -> None:
     initialize_git(tmp_path)
     result(tmp_path / "build/current/sim/result-sim.json", "2026-11-08T00:01:00Z")

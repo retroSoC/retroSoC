@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 import time
@@ -161,9 +162,92 @@ def native_auto_merge_enabled(repository: str, number: int, root: Path) -> bool:
     request = pull.get("auto_merge")
     if request is None:
         return False
-    if request.get("merge_method") != "MERGE":
+    if str(request.get("merge_method", "")).upper() != "MERGE":
         raise RuntimeError("existing auto-merge request must use a merge commit")
     return True
+
+
+def paginated_check_data(endpoint: str, key: str) -> list[dict[str, Any]]:
+    separator = "&" if "?" in endpoint else "?"
+    items: list[dict[str, Any]] = []
+    for page in range(1, 101):
+        document = gh_json(["api", f"{endpoint}{separator}per_page=100&page={page}"])
+        values = document[key]
+        if not isinstance(values, list):
+            raise RuntimeError(f"GitHub response field {key} is not a list")
+        items.extend(values)
+        if len(values) < 100:
+            return items
+    raise RuntimeError(f"too many GitHub pages for {endpoint}")
+
+
+def context_verdict(status: str, conclusion: str | None) -> str:
+    if status.upper() != "COMPLETED":
+        return "PENDING"
+    return "PASS" if (conclusion or "").lower() == "success" else "FAIL"
+
+
+def evaluate_checks(
+    head_sha: str,
+    required: list[str],
+    check_runs: list[dict[str, Any]],
+    statuses: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not head_sha:
+        raise RuntimeError("cannot evaluate checks without a head SHA")
+    contexts: dict[str, dict[str, Any]] = {}
+    for run in sorted(check_runs, key=lambda item: int(item.get("id", 0)), reverse=True):
+        name = run.get("name")
+        if not name or name in contexts:
+            continue
+        contexts[name] = {
+            "name": name,
+            "status": context_verdict(str(run.get("status", "")), run.get("conclusion")),
+            "conclusion": run.get("conclusion"),
+            "url": run.get("html_url"),
+        }
+    for item in sorted(statuses, key=lambda value: int(value.get("id", 0)), reverse=True):
+        name = item.get("context")
+        if not name or name in contexts:
+            continue
+        state = str(item.get("state", "")).upper()
+        verdict = "PASS" if state == "SUCCESS" else "PENDING" if state in {"PENDING", "EXPECTED"} else "FAIL"
+        contexts[name] = {
+            "name": name,
+            "status": verdict,
+            "conclusion": item.get("state"),
+            "url": item.get("target_url"),
+        }
+    required_set = set(required)
+    missing = sorted(required_set - set(contexts))
+    verdicts = [item["status"] for item in contexts.values()]
+    if any(item == "FAIL" for item in verdicts):
+        overall = "FAIL"
+    elif missing or any(item == "PENDING" for item in verdicts) or not verdicts:
+        overall = "PENDING"
+    else:
+        overall = "PASS"
+    return {
+        "schema_version": 1,
+        "head_sha": head_sha,
+        "required_contexts": sorted(required_set),
+        "missing_required_contexts": missing,
+        "contexts": [dict(contexts[name], required=name in required_set) for name in sorted(contexts)],
+        "status": overall,
+    }
+
+
+def checks_report(root: Path, number: int, repository: str, required: list[str]) -> dict[str, Any]:
+    del root
+    pull = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    head_sha = pull.get("head", {}).get("sha", "")
+    if not head_sha:
+        raise RuntimeError(f"PR #{number} has no head SHA")
+    check_runs = paginated_check_data(f"repos/{repository}/commits/{head_sha}/check-runs", "check_runs")
+    statuses = paginated_check_data(f"repos/{repository}/commits/{head_sha}/status", "statuses")
+    if not check_runs and not statuses:
+        raise RuntimeError(f"PR #{number} has no checks at {head_sha}; refusing to merge")
+    return evaluate_checks(head_sha, required, check_runs, statuses)
 
 
 def checks_result(root: Path, number: int, repository: str) -> subprocess.CompletedProcess[str]:
@@ -226,16 +310,14 @@ def watch_and_merge(
             print(f"PR #{number} merged", flush=True)
             return
         required = required_check_contexts(repository, pull["baseRefName"], root)
-        result = checks_result(root, number, repository)
-        output = result.stdout + (result.stderr or "")
+        report = checks_report(root, number, repository, required)
+        output = json.dumps(report, sort_keys=True)
         if output != previous_output:
-            print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            print(output, flush=True)
             previous_output = output
-        if not result.stdout.strip():
-            raise RuntimeError("no checks were reported; refusing to merge")
-        if checks_failed(result):
-            raise RuntimeError(f"PR #{number} checks failed; no merge or cleanup attempted")
-        if checks_green(result, required):
+        if report["status"] == "FAIL":
+            raise RuntimeError(f"PR #{number} checks failed at {report['head_sha']}; no merge or cleanup attempted")
+        if report["status"] == "PASS":
             if not native_auto_merge_enabled(repository, number, root):
                 merge_pr(repository, number, root, pull)
                 print(f"PR #{number} native auto-merge enabled; waiting for GitHub", flush=True)

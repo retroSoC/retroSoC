@@ -43,11 +43,50 @@ locked URL and revision; dirty or mismatched repositories are preserved.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
+Its `preflight` command also checks task scope, base ancestry, worktree state,
+local tools, the dependency-lock digest, and the Tiny reviewed-source snapshot
+using the publication collector's actual source inventory. Workspace writes
+require a clean initial worktree. Online
+GitHub permission and PR-head probes are opt-in; local preflight is offline.
+`snapshot-check` runs the same drift check in the fast gate without duplicating
+a static source list.
 `skill_eval.py` validates the Skill registry and executes isolated, read-only
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
-and NOT_RUN. `check_contribution.py` validates PR metadata, CODEOWNERS, and
+and NOT_RUN. `formal_local_evidence.py` assembles existing local results without
+re-running proofs and requires a clean revision-matched manifest. Optional
+`local_checks` in a release candidate apply the same source and proof checks to
+local formal evidence. `yosys_progress.py` summarizes phase steps,
+executing-pass counts, rerun markers, elapsed time, and result/source boundaries
+without another synthesis run or an unsupported convergence diagnosis.
+`yosys_opt_resume.py` provides an opt-in resumable plain-`opt` driver. It
+keeps the native initial `opt_expr`/`opt_merge -nomux` and iterative
+`opt_muxtree`/`opt_reduce`/`opt_merge`/`opt_dff`/`opt_clean`/`opt_expr`
+sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
+on timeout, malformed state, changed input, or the iteration limit. Invoke it
+through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
+`YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
+state, never a dirty or unrelated worktree. This is synthesis infrastructure,
+not timing, netlist, or release evidence by itself.
+
+Mini/IHP130 Yosys backend completion is a dated **missing item**, explicitly
+deferred by the maintainer on 2026-11-12. The retained native plain-`opt`
+baseline completed in 7361.58 seconds, with 775 SAT `$equiv` cells proven
+between native and checkpointed optimization and none unproven. At `dfbca171`,
+both resume variants converged after 30 iterations. Neither backend completed
+ABC technology mapping or produced a final netlist; both results have exit code
+124. The 10800-second parent timeout also left `yosys-abc` descendants running,
+and they were terminated when the work was deferred. A compact evidence set
+under `build/engineering/mini-yosys-deferred-dfbca171/` preserves both states,
+results, backend-log excerpts, and the full-flow command/verdict excerpt. Until
+a later revision completes the flow, this Mini synthesis is `INCOMPLETE`, and
+its netlist simulation, OpenSTA, and synthesis-dependent warning/metric stages
+are `NOT_RUN`. Behavioral CI success and the optimization equivalence proof do
+not close this gap or grant physical/release signoff. Backend scalability and
+descendant-process cleanup require separate follow-up.
+
+`check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass
 and cleans merged branches only when the worktree is clean and the PR head is
 canonical. Use the corresponding Make targets and host tests instead of

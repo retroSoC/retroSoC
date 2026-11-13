@@ -246,11 +246,11 @@ def test_native_auto_merge_requires_merge_commit(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr("scripts.pr_workflow.gh_json", lambda command: {"auto_merge": None})
     assert not native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
     monkeypatch.setattr(
-        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "MERGE"}}
+        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "merge"}}
     )
     assert native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
     monkeypatch.setattr(
-        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "SQUASH"}}
+        "scripts.pr_workflow.gh_json", lambda command: {"auto_merge": {"merge_method": "squash"}}
     )
     with pytest.raises(RuntimeError, match="must use a merge commit"):
         native_auto_merge_enabled("retroSoC/retroSoC", 230, Path.cwd())
@@ -269,8 +269,8 @@ def test_watch_waits_for_native_merge_without_duplicate_requests(monkeypatch: py
     monkeypatch.setattr("scripts.pr_workflow.view_pr", lambda repository, number, root: next(states))
     monkeypatch.setattr("scripts.pr_workflow.required_check_contexts", lambda repository, base, root: ["quality-gate"])
     monkeypatch.setattr(
-        "scripts.pr_workflow.checks_result",
-        lambda root, number, repository: subprocess.CompletedProcess([], 0, stdout="quality-gate\tpass\n"),
+        "scripts.pr_workflow.checks_report",
+        lambda root, number, repository, required: {"status": "PASS", "head_sha": "a" * 40},
     )
     monkeypatch.setattr("scripts.pr_workflow.native_auto_merge_enabled", lambda repository, number, root: next(queued))
     monkeypatch.setattr("scripts.pr_workflow.merge_pr", lambda repository, number, root, pull: merge_calls.append(number))
@@ -283,3 +283,108 @@ def test_watch_waits_for_native_merge_without_duplicate_requests(monkeypatch: py
     assert merge_calls == [230]
     assert cleanup_calls == ["MERGED"]
     assert sleeps == [60, 60]
+
+
+def run_result(identifier: int, name: str, status: str, conclusion: str | None) -> dict:
+    return {
+        "id": identifier,
+        "name": name,
+        "status": status,
+        "conclusion": conclusion,
+        "html_url": f"https://example.invalid/{identifier}",
+    }
+
+
+def test_structured_checks_require_every_visible_and_required_context() -> None:
+    from scripts.pr_workflow import evaluate_checks
+
+    required = ["quality-gate", "contribution-gate"]
+    passing = evaluate_checks(
+        "a" * 40,
+        required,
+        [run_result(1, "quality-gate", "COMPLETED", "success"), run_result(2, "contribution-gate", "COMPLETED", "success")],
+        [{"id": 3, "context": "external", "state": "SUCCESS"}],
+    )
+    assert passing["status"] == "PASS"
+    assert passing["head_sha"] == "a" * 40
+    assert len(passing["contexts"]) == 3
+
+    pending = evaluate_checks(
+        "b" * 40,
+        required,
+        [run_result(1, "quality-gate", "COMPLETED", "success"), run_result(2, "contribution-gate", "IN_PROGRESS", None)],
+        [{"id": 3, "context": "external", "state": "PENDING"}],
+    )
+    assert pending["status"] == "PENDING"
+
+    missing = evaluate_checks("c" * 40, required + ["release-gate"], passing["contexts"], [])
+    assert missing["status"] == "PENDING"
+    assert missing["missing_required_contexts"] == ["release-gate"]
+
+
+def test_structured_checks_fail_for_failure_non_success_and_stale_head() -> None:
+    from scripts.pr_workflow import evaluate_checks
+
+    failed = evaluate_checks(
+        "d" * 40,
+        ["quality-gate"],
+        [run_result(1, "quality-gate", "COMPLETED", "failure"), run_result(2, "fast", "COMPLETED", "success")],
+        [],
+    )
+    assert failed["status"] == "FAIL"
+    neutral = evaluate_checks("e" * 40, [], [run_result(1, "fast", "COMPLETED", "neutral")], [])
+    assert neutral["status"] == "FAIL"
+    external = evaluate_checks("f" * 40, [], [], [{"id": 1, "context": "external", "state": "ERROR"}])
+    assert external["status"] == "FAIL"
+    latest = evaluate_checks(
+        "0" * 40,
+        ["quality-gate"],
+        [run_result(1, "quality-gate", "COMPLETED", "success"), run_result(2, "quality-gate", "COMPLETED", "failure")],
+        [],
+    )
+    assert latest["status"] == "FAIL"
+    with pytest.raises(RuntimeError, match="without a head SHA"):
+        evaluate_checks("", [], [], [])
+
+
+def test_checks_report_binds_api_queries_to_pr_head(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import checks_report
+
+    calls = []
+
+    def fake_api(arguments):
+        calls.append(arguments)
+        endpoint = arguments[1]
+        if endpoint == "repos/retroSoC/retroSoC/pulls/239":
+            return {"head": {"sha": "ab" * 20}}
+        if endpoint.startswith(f"repos/retroSoC/retroSoC/commits/{'ab' * 20}/check-runs?"):
+            return {"check_runs": [run_result(1, "quality-gate", "COMPLETED", "success")]}
+        if endpoint.startswith(f"repos/retroSoC/retroSoC/commits/{'ab' * 20}/status?"):
+            return {"statuses": [{"id": 2, "context": "external", "state": "SUCCESS"}]}
+        raise AssertionError(endpoint)
+
+    monkeypatch.setattr("scripts.pr_workflow.gh_json", fake_api)
+    report = checks_report(Path.cwd(), 239, "retroSoC/retroSoC", ["quality-gate"])
+    assert report["status"] == "PASS"
+    assert report["head_sha"] == "ab" * 20
+    assert all("pulls/239" in call[1] or "ab" * 20 in call[1] for call in calls)
+
+    monkeypatch.setattr("scripts.pr_workflow.paginated_check_data", lambda endpoint, key: [])
+    with pytest.raises(RuntimeError, match="has no checks"):
+        checks_report(Path.cwd(), 239, "retroSoC/retroSoC", ["quality-gate"])
+
+
+def test_watch_rejects_failed_structured_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import watch_and_merge
+
+    pull = {"state": "OPEN", "baseRefName": "dev", "isDraft": False}
+    monkeypatch.setattr("scripts.pr_workflow.auto_merge_policy", lambda root: {})
+    monkeypatch.setattr("scripts.pr_workflow.view_pr", lambda repository, number, root: pull)
+    monkeypatch.setattr("scripts.pr_workflow.required_check_contexts", lambda repository, base, root: ["quality-gate"])
+    monkeypatch.setattr(
+        "scripts.pr_workflow.checks_report",
+        lambda root, number, repository, required: {"status": "FAIL", "head_sha": "d" * 40},
+    )
+    monkeypatch.setattr("scripts.pr_workflow.merge_pr", lambda repository, number, root, pull: pytest.fail("must not merge"))
+    with pytest.raises(RuntimeError, match="checks failed"):
+        watch_and_merge(Path.cwd(), "retroSoC/retroSoC", 230, 60)

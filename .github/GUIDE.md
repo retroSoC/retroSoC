@@ -23,6 +23,8 @@ always-run gate so a skipped job cannot silently satisfy a required check.
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
+  It restores the locked publication inputs and checks the Tiny reviewed-source
+  snapshot against the collector's actual inventory before long fixtures run.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references, then runs the complete Pytest suite with JUnit and
   duration reports. It is skipped only for classifications that do not need it.
@@ -64,7 +66,10 @@ contracts. This preserves coverage without holding every PR open for hours.
 `workflows/full-flow.yml` is an explicit manual full-flow entrypoint. Its runner
 input allows a provisioned high-memory runner; no such capacity is inferred from
 the default `ubuntu-22.04` label. A full-flow summary requires synthesis, netlist,
-and STA evidence and retains failed attempts.
+and STA evidence and retains failed attempts. `scripts/yosys_progress.py`
+provides read-only phase-step, executing-pass, rerun-marker, and elapsed-time
+analysis before any timeout increase. Missing subsequent phases are not treated
+as proof of an infinite loop or insufficient memory.
 
 `workflows/formal.yml` runs the explicit per-proof targets except GA2D as
 bounded parallel jobs on its weekly schedule or manual dispatch. GA2D remains a
@@ -79,7 +84,8 @@ still runs only `formal-doctor`; SV2V conversion alone is not a proof pass.
 dependency, build-entry, scheduled, and full-matrix changes instead of repeating
 both environments for every unrelated PR. The `locked-tools` action bounds apt
 updates to 180 seconds and installs to 600 seconds per attempt, with at most
-three attempts, so network failures cannot stall a job indefinitely.
+three attempts and a bounded 120-second dpkg lock wait, so network failures and
+concurrent package-manager activity cannot stall a job indefinitely.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
 `workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured
@@ -104,11 +110,13 @@ impossible task of embedding its own future commit SHA or run IDs.
 
 A release requires a merge commit matching the tag and current `origin/main`,
 successful required workflow runs, and valid hashes for required local
-artifacts. In `sole_maintainer` mode, a merged release PR with the named
-maintainer's approval record is sufficient; peer mode instead requires an
-APPROVED review by that maintainer. Existing release assets are not overwritten
-on rerun. See `quality/release-candidate.schema.json` and
-`scripts/check_contribution.py`.
+artifacts. Optional `local_checks` allow revision-matched local formal evidence
+instead of a hosted proof job. The validator requires a clean manifest and
+passing prove/cover results; it does not embed self-referential summary hashes.
+In `sole_maintainer` mode, a merged release PR with the named maintainer's
+approval record is sufficient; peer mode instead requires an APPROVED review by
+that maintainer. Existing release assets are not overwritten on rerun. See
+`quality/release-candidate.schema.json` and `scripts/check_contribution.py`.
 
 Keep Actions pinned by commit ID and use the dependency lock rather than adding
 ad-hoc downloads. Validate workflow changes with `yamllint .github .yamllint.yml`,

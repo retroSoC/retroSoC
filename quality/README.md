@@ -16,7 +16,9 @@ documentation.
   explicitly rather than assigned to an agent. CI-green auto-merge uses merge
   commits and cleans merged branches only when the worktree is clean.
 - `release-candidate.schema.json` defines the evidence required from the tracked
-  `quality/release-candidate.json` supplied for an actual release.
+  `quality/release-candidate.json` supplied for an actual release. Optional
+  `local_checks` bind local formal evidence to the same clean release revision,
+  with semantic validation instead of self-referential summary hashes.
 
 Do not hand-edit generated warning signatures or promote metric gates without
 the review process in [Engineering Workflow](../docs/engineering.md). Run the

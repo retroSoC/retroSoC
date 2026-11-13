@@ -85,6 +85,12 @@ checks and delivery without per-step confirmation. Ask only for a missing
 decision, permission, scope change, or recovery action that needs approval.
 Plan mode never authorizes mutations, regardless of the mode in the prompt.
 
+Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
+scope, base revision, worktree state, changed-file validation plan, and Tiny
+reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
+probe and `PR=<number>` adds a head-bound check report. A blocked preflight is
+not approval to continue.
+
 Maintenance tasks do not require feature slugs, frozen specifications, or phase
 IDs. Resolve targets from explicit inputs or unambiguous publication/profile
 context; global tool maintenance needs product selection only where affected

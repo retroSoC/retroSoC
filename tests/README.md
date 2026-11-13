@@ -86,11 +86,20 @@ tooling.
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks feature and engineering-workflow skill metadata,
   local references, eval corpora, default invocation contracts, and documented
-  entrypoints. `test_agent_control.py` covers task contracts and conservative
-  change selection; `test_skill_eval.py` covers isolated behavior-trace grading;
+  entrypoints. `test_agent_control.py` covers task contracts, conservative
+  change selection, scope enforcement, preflight, and real/mocked Tiny
+  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
-  PR/release governance. `test_pr_workflow.py` covers CI-green auto-merge and
+  PR/release governance. `test_formal_local_evidence.py` checks local result
+  collection and rejection of dirty or mismatched evidence.
+  `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
+  source-boundary analysis without inferring nonconvergence.
+  `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
+  complete frontend/optimizer/backend execution, bounded failure, retained
+  state, and input-digest validation with real Yosys fixtures.
+  `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
   refusals. Run fast agent checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow; live behavior

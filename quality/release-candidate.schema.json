@@ -68,6 +68,20 @@
         }
       }
     },
+    "local_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "proof", "summary", "manifest"],
+        "properties": {
+          "stage": {"const": "formal"},
+          "proof": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "summary": {"type": "string"},
+          "manifest": {"type": "string"}
+        }
+      }
+    },
     "accepted_gaps": {
       "type": "array",
       "items": {

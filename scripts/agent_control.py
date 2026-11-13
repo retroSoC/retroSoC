@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -536,6 +537,149 @@ def documentation_issues(root: Path) -> list[str]:
     return sorted(set(issues))
 
 
+def scope_issues(task: dict[str, Any], files: list[str]) -> list[str]:
+    scope = task.get("scope", {})
+    allowed = scope.get("allowed_paths", [])
+    forbidden = scope.get("forbidden_paths", [])
+    issues = []
+    for path in files:
+        if any(fnmatch.fnmatchcase(path, pattern) for pattern in forbidden):
+            issues.append(f"path is forbidden by task scope: {path}")
+        if allowed and not any(fnmatch.fnmatchcase(path, pattern) for pattern in allowed):
+            issues.append(f"path is outside the task scope: {path}")
+    return sorted(set(issues))
+
+
+def tiny_snapshot_status(root: Path) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "inventory": "publications/datasheets/tiny/tiny.json",
+        "status": "BLOCKED",
+        "issues": [],
+    }
+    try:
+        from publications import tiny_reference as tiny
+
+        config = tiny.read(root / tiny.BOOK / "tiny.json")
+        source_revision = config["source_revision"]
+        if not REVISION_RE.fullmatch(source_revision):
+            raise ValueError("Tiny source_revision must be a complete reviewed SHA")
+        collected = tiny.collect(config, check_snapshot=False)
+        technical = sorted(
+            path
+            for path in collected["source_paths"]
+            if not path.startswith("publications/") and path != "dependencies/dependencies.lock.json"
+        )
+        changed = git_output(root, "diff", "--name-only", source_revision, "--", *technical)
+        changed_files = sorted(path for path in changed.splitlines() if path)
+        result.update(
+            source_revision=source_revision,
+            technical_source_count=len(technical),
+            changed_files=changed_files,
+            status="FAIL" if changed_files else "PASS",
+            validation=(
+                "python3 -m pytest -q tests/test_publication_tiny_refresh.py "
+                "tests/test_publication_tiny_alignment.py"
+            ),
+        )
+    except (ImportError, KeyError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        result["issues"].append(str(error))
+    return result
+
+
+def github_preflight(root: Path, args: argparse.Namespace) -> dict[str, Any]:
+    if not args.online:
+        return {"status": "NOT_RUN", "repository": args.repository, "base": args.base_branch}
+    try:
+        from scripts.pr_workflow import checks_report, required_check_contexts
+
+        required = required_check_contexts(args.repository, args.base_branch, root)
+        result: dict[str, Any] = {
+            "status": "PASS",
+            "repository": args.repository,
+            "base": args.base_branch,
+            "required_contexts": required,
+        }
+        if args.pr is not None:
+            report = checks_report(root, args.pr, args.repository, required)
+            result.update(status=report["status"], head_sha=report["head_sha"], report=report)
+        return result
+    except (OSError, RuntimeError) as error:
+        return {
+            "status": "BLOCKED",
+            "repository": args.repository,
+            "base": args.base_branch,
+            "issues": [str(error)],
+        }
+
+
+def local_tool_status(online: bool) -> list[dict[str, str]]:
+    tools = [
+        {"name": "git", "status": "PASS" if shutil.which("git") else "BLOCKED"},
+        {"name": "python3", "status": "PASS" if shutil.which("python3") else "BLOCKED"},
+    ]
+    if online:
+        tools.append({"name": "gh", "status": "PASS" if shutil.which("gh") else "BLOCKED"})
+    return tools
+
+
+def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
+    root = args.root.resolve()
+    task = read_json(args.task)
+    issues = validate_task(task, root)
+    tools = local_tool_status(args.online)
+    issues.extend(f"required local tool is unavailable: {tool['name']}" for tool in tools if tool["status"] != "PASS")
+    base = args.base or task.get("base_revision")
+    plan = create_plan(
+        argparse.Namespace(
+            root=root,
+            base=base,
+            head=args.head,
+            files=None,
+            files_file=None,
+            mode="full" if task.get("validation", {}).get("mode") == "full" else args.mode,
+            event=args.event,
+        )
+    )
+    issues.extend(scope_issues(task, plan["changed_files"]))
+    if isinstance(base, str) and REVISION_RE.fullmatch(base):
+        ancestor = subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", base, args.head],
+            capture_output=True,
+            check=False,
+        )
+        if ancestor.returncode:
+            issues.append(f"task base_revision is not an ancestor of {args.head}: {base}")
+    worktree = {
+        "root": str(root),
+        "git_root": git_output(root, "rev-parse", "--show-toplevel"),
+        "clean": not git_output(root, "status", "--porcelain", "--untracked-files=all"),
+    }
+    if worktree["git_root"] != str(root):
+        issues.append(f"task root is not the Git worktree root: {root}")
+    if task.get("execution", {}).get("mode") == "workspace-write" and not worktree["clean"]:
+        issues.append("workspace-write preflight requires a clean worktree before execution")
+    snapshot = tiny_snapshot_status(root)
+    if snapshot["status"] != "PASS":
+        issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
+    github = github_preflight(root, args)
+    if github["status"] not in {"PASS", "NOT_RUN"}:
+        issues.append(f"GitHub preflight is {github['status']}")
+    issues.extend(f"github: {issue}" for issue in github.get("issues", []))
+    return {
+        "schema_version": 1,
+        "task_id": task.get("task_id"),
+        "status": "BLOCKED" if issues else "READY",
+        "issues": sorted(set(issues)),
+        "dependency_lock_sha256": hashlib.sha256((root / "dependencies/dependencies.lock.json").read_bytes()).hexdigest(),
+        "tools": tools,
+        "worktree": worktree,
+        "validation_plan": plan,
+        "reviewed_source_snapshot": snapshot,
+        "github": github,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -569,6 +713,23 @@ def parse_args() -> argparse.Namespace:
     docs = subparsers.add_parser("docs")
     docs.add_argument("--root", type=Path, default=ROOT)
     docs.add_argument("--output", type=Path)
+
+    snapshot = subparsers.add_parser("snapshot")
+    snapshot.add_argument("--root", type=Path, default=ROOT)
+    snapshot.add_argument("--output", type=Path)
+
+    preflight = subparsers.add_parser("preflight")
+    preflight.add_argument("--root", type=Path, default=ROOT)
+    preflight.add_argument("--task", type=Path, required=True)
+    preflight.add_argument("--base")
+    preflight.add_argument("--head", default="HEAD")
+    preflight.add_argument("--mode", choices=("auto", "full"), default="auto")
+    preflight.add_argument("--event", choices=("local", "pull_request"), default="local")
+    preflight.add_argument("--repository", default="retroSoC/retroSoC")
+    preflight.add_argument("--base-branch", default="dev")
+    preflight.add_argument("--pr", type=int)
+    preflight.add_argument("--online", action="store_true")
+    preflight.add_argument("--output", type=Path)
     return parser.parse_args()
 
 
@@ -610,7 +771,19 @@ def main() -> int:
             for issue in issues:
                 print(f"documentation: {issue}", file=sys.stderr)
             return int(bool(issues))
-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        if args.command == "snapshot":
+            result = tiny_snapshot_status(args.root.resolve())
+            emit_json(result, args.output)
+            for issue in result["issues"]:
+                print(f"snapshot: {issue}", file=sys.stderr)
+            return int(result["status"] != "PASS")
+        if args.command == "preflight":
+            result = create_preflight(args)
+            emit_json(result, args.output)
+            for issue in result["issues"]:
+                print(f"preflight: {issue}", file=sys.stderr)
+            return int(result["status"] != "READY")
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"agent control: {error}", file=sys.stderr)
         return 2
     raise AssertionError(args.command)
