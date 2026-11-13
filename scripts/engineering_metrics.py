@@ -66,6 +66,7 @@ def normalize_runs(document: dict[str, Any]) -> list[dict[str, Any]]:
                 "conclusion": run.get("conclusion"),
                 "head_branch": run.get("head_branch", run.get("headBranch")),
                 "head_sha": run.get("head_sha", run.get("headSha")),
+                "run_attempt": int(run.get("run_attempt", run.get("runAttempt", 1))),
                 "created_at": run.get("created_at", run.get("createdAt")),
                 "updated_at": run.get("updated_at", run.get("updatedAt")),
                 "duration_seconds": seconds_between(
@@ -121,6 +122,16 @@ def summarize(runs: list[dict[str, Any]], pulls: list[dict[str, Any]]) -> dict[s
                 "duration_seconds_median": median(durations),
                 "duration_seconds_p95": percentile(durations, 0.95),
                 "ci_minutes_total": round(sum(durations) / 60, 3),
+                "rerun_count": sum(max(int(run.get("run_attempt", 1)) - 1, 0) for run in selected),
+                "rerun_ci_minutes_total": round(
+                    sum(
+                        run["duration_seconds"]
+                        for run in selected
+                        if int(run.get("run_attempt", 1)) > 1 and run["duration_seconds"] is not None
+                    )
+                    / 60,
+                    3,
+                ),
             }
         )
     merged = [pull for pull in pulls if pull["merged_at"]]
