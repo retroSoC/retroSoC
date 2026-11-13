@@ -11,6 +11,8 @@ documentation.
 - `metrics/` defines observational metric policy and future gate promotion.
 - `change_impact.json` defines conservative changed-file CI selection; unknown
   paths and classification failures select the full matrix.
+- `validation-gaps.json` records owned deferred validation gaps, source scope,
+  review dates, prohibited claims, and the evidence required for resolution.
 - `ownership.json` records primary and backup review ownership plus the current
   `sole_maintainer` and `auto_merge` policies. Missing backups are reported
   explicitly rather than assigned to an agent. CI-green auto-merge uses merge

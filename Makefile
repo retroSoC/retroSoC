@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-preflight snapshot-check validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics check-fast
+	agent-context agent-task-check agent-handoff agent-preflight snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -759,6 +759,9 @@ help:
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
+	  '  agent-handoff              generate revision-bound JSON/Markdown handoff evidence' \
+	  '  validation-gap-check       validate owned deferred validation gaps' \
+	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
 	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
@@ -1318,6 +1321,22 @@ agent-task-check:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py task validate --root $(ROOT_PATH) --task $(TASK)
 
+agent-handoff:
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
+	@test -n '$(NEXT)' || { printf '%s\n' 'NEXT=<next action> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_control.py task handoff --root $(ROOT_PATH) --task $(TASK) \
+	  --next "$(NEXT)" --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-handoff.json) \
+	  $(if $(MARKDOWN),--markdown $(MARKDOWN))
+
+validation-gap-check:
+	python3 $(ROOT_PATH)/scripts/validation_gaps.py --root $(ROOT_PATH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/validation-gaps.json)
+
+worktree-registry:
+	python3 $(ROOT_PATH)/scripts/worktree_registry.py --root $(ROOT_PATH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/agent-worktrees/registry.json) \
+	  $(if $(EXECUTE),--execute)
+
 agent-preflight:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
@@ -1355,14 +1374,14 @@ engineering-metrics:
 	  --limit $(if $(LIMIT),$(LIMIT),30) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
 
-check-fast: snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
+check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
 	yamllint .github .yamllint.yml
 	actionlint
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_flow_recovery.py \
-	  tests/test_ci_recovery.py
+	  tests/test_ci_recovery.py tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
 	python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run

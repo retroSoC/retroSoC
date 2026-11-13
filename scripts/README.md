@@ -92,21 +92,20 @@ Invoke it through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
 state, never an unrelated worktree. This is synthesis infrastructure, not
 timing, netlist, or release evidence by itself.
 
-Mini/IHP130 Yosys backend completion is a dated **missing item**, explicitly
-deferred by the maintainer on 2026-11-12. The retained native plain-`opt`
-baseline completed in 7361.58 seconds, with 775 SAT `$equiv` cells proven
-between native and checkpointed optimization and none unproven. At `dfbca171`,
-both resume variants converged after 30 iterations. Neither backend completed
-ABC technology mapping or produced a final netlist; both results have exit code
-124. The 10800-second parent timeout also left `yosys-abc` descendants running,
-and they were terminated when the work was deferred. A compact evidence set
-under `build/engineering/mini-yosys-deferred-dfbca171/` preserves both states,
-results, backend-log excerpts, and the full-flow command/verdict excerpt. Until
-a later revision completes the flow, this Mini synthesis is `INCOMPLETE`, and
-its netlist simulation, OpenSTA, and synthesis-dependent warning/metric stages
-are `NOT_RUN`. Behavioral CI success and the optimization equivalence proof do
-not close this gap or grant physical/release signoff. Backend scalability and
-descendant-process cleanup require separate follow-up.
+Mini/IHP130 Yosys backend completion remains a maintainer-deferred missing item.
+The authoritative owned record is `quality/validation-gaps.json`, with scope,
+source revision, review date, prohibited claims, and resolution conditions.
+Retained evidence is under `build/engineering/mini-yosys-deferred-dfbca171/`.
+Neither optimization equivalence nor behavioral CI closes this gap.
+
+`agent_control.py task handoff` emits revision-bound JSON and optional Markdown
+using the same evidence, artifact, process, and gap records. `validation_gaps.py`
+validates ownership, review dates, and resolution conditions.
+`worktree_registry.py` inventories registered and orphaned worktrees in dry-run
+mode by default. Only clean, registered, non-detached branches contained in
+`origin/dev` are cleanup candidates; artifacts are moved to the main worktree's
+`build/agent-artifacts/` before non-forced cleanup. Dirty, unmerged, detached,
+orphaned, or evidence-conflicting paths are preserved.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass
