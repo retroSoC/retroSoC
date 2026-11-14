@@ -19,7 +19,9 @@ source revision, and [evidence contract](evidence.md).
    a test or mark a rerun as a fix without its new evidence.
 4. Use the current shard/fan-in summaries for fixtures. Missing, duplicate, or
    unexpectedly skipped evidence fails closed; cache observations are not
-   cached verdicts.
+   cached verdicts. For an opted-in parallel MINI run, retain
+   `parallel-iverilog.json` and both isolated result trees; either group failure
+   fails the regression. Never substitute this for nightly or full-flow evidence.
 
 ## Cancel, recover, and hand off long tasks
 

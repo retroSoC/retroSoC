@@ -78,7 +78,10 @@ synthesis-memory issue remains. `scripts/ci_summary.py` marks those stages
 `NOT_RUN` and filters out artifacts older than the current run start.
 Only the measured ICS55 PR matrix sets `products: '["MINI", "TINY"]'`; its two
 isolated product jobs retain one existing required aggregate gate and separate
-compiler caches/artifacts. The default `ALL` leaves other suites, nightly, and
+compiler caches/artifacts. On MINI pull requests only, the existing Icarus
+assembly self-test can overlap the remaining commands in the same runner with a
+separate `BUILD_TIMESTAMP`; both branches retain their verdicts and either failure
+fails the same required gate. The default `ALL` leaves other suites, nightly, and
 full-flow command selection unchanged. Cache results are observations, not
 cached test verdicts.
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import os
 import subprocess
 import sys
@@ -316,6 +317,84 @@ def run_observation(command: list[str], root: Path, environment: dict[str, str])
         )
 
 
+def split_iverilog_assembly(
+    commands: tuple[tuple[str, tuple[str, ...]], ...]
+) -> tuple[tuple[tuple[str, tuple[str, ...]], ...], tuple[tuple[str, tuple[str, ...]], ...]]:
+    selected = tuple(
+        (profile, values)
+        for profile, values in commands
+        if "sim-asm" in values and "SIMU=IVERILOG" in values
+    )
+    remaining = tuple((profile, values) for profile, values in commands if (profile, values) not in selected)
+    return remaining, selected
+
+
+def regression_command(profile: str, values: tuple[str, ...]) -> list[str]:
+    return ["make", f"CONFIG={profile}", *values]
+
+
+def run_command_group(
+    commands: tuple[tuple[str, tuple[str, ...]], ...],
+    root: Path,
+    environment: dict[str, str],
+) -> list[str]:
+    warnings = []
+    for profile, values in commands:
+        command = regression_command(profile, values)
+        print("+ " + " ".join(command), flush=True)
+        output = run_command(command, root, "firmware" in values, environment)
+        warnings.extend(self_owned_warnings(root, output))
+        if warnings:
+            return warnings
+    return warnings
+
+
+def run_parallel_iverilog(
+    primary: tuple[tuple[str, tuple[str, ...]], ...],
+    iverilog: tuple[tuple[str, tuple[str, ...]], ...],
+    root: Path,
+    environment: dict[str, str],
+) -> int:
+    if not primary or not iverilog:
+        raise ValueError("parallel Icarus requires non-empty primary and Icarus groups")
+    isolated_environment = dict(environment)
+    isolated_environment["BUILD_TIMESTAMP"] = environment["BUILD_TIMESTAMP"] + "-iverilog"
+    from scripts.flow_control import write_json
+
+    write_json(
+        root / "build/ci-summary/parallel-iverilog.json",
+        {
+            "schema_version": 1,
+            "mode": "parallel-iverilog",
+            "primary_commands": [regression_command(profile, values) for profile, values in primary],
+            "iverilog_commands": [regression_command(profile, values) for profile, values in iverilog],
+            "primary_build_timestamp": environment["BUILD_TIMESTAMP"],
+            "iverilog_build_timestamp": isolated_environment["BUILD_TIMESTAMP"],
+            "failure_policy": "both groups finish; either failure fails the regression",
+        },
+    )
+    warnings = []
+    failures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        groups = {
+            executor.submit(run_command_group, primary, root, environment): "primary",
+            executor.submit(run_command_group, iverilog, root, isolated_environment): "iverilog",
+        }
+        for future in concurrent.futures.as_completed(groups):
+            name = groups[future]
+            try:
+                group_warnings = future.result()
+            except (OSError, subprocess.SubprocessError) as error:
+                failures.append(f"{name}: {error}")
+                continue
+            warnings.extend(f"{name}: {warning}" for warning in group_warnings)
+    if warnings:
+        print("self-owned C compiler warnings:\n" + "\n".join(warnings), file=sys.stderr)
+    if failures:
+        print("parallel regression failures:\n" + "\n".join(failures), file=sys.stderr)
+    return int(bool(warnings or failures))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
@@ -324,6 +403,11 @@ def main() -> int:
     )
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--soc", choices=("MINI", "TINY"), help="run one product only")
+    parser.add_argument(
+        "--parallel-iverilog",
+        action="store_true",
+        help="overlap the isolated Icarus assembly self-test with the remaining MINI PR commands",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--netsim-boot-only",
@@ -381,16 +465,37 @@ def main() -> int:
     if args.behavioral_only:
         commands = behavioral_only(commands)
     environment = regression_environment()
-    for profile, values in commands:
-        command = ["make", f"CONFIG={profile}", *values]
-        print("+ " + " ".join(command), flush=True)
-        if not args.dry_run:
-            output = run_command(command, args.root, "firmware" in values, environment)
-            warnings = self_owned_warnings(args.root, output)
-            if warnings:
-                print("self-owned C compiler warnings:", flush=True)
-                print("\n".join(warnings), flush=True)
-                return 1
+    if args.parallel_iverilog:
+        if (
+            args.soc != "MINI"
+            or args.pdk != "ICS55"
+            or args.suite != "pr"
+            or not args.behavioral_only
+        ):
+            parser.error("--parallel-iverilog requires --suite pr --pdk ICS55 --soc MINI --behavioral-only")
+        primary, iverilog = split_iverilog_assembly(commands)
+        if args.dry_run:
+            for group in (primary, iverilog):
+                for profile, values in group:
+                    print("+ " + " ".join(regression_command(profile, values)), flush=True)
+        else:
+            try:
+                result = run_parallel_iverilog(primary, iverilog, args.root, environment)
+            except ValueError as error:
+                parser.error(str(error))
+            if result:
+                return result
+    else:
+        for profile, values in commands:
+            command = regression_command(profile, values)
+            print("+ " + " ".join(command), flush=True)
+            if not args.dry_run:
+                output = run_command(command, args.root, "firmware" in values, environment)
+                warnings = self_owned_warnings(args.root, output)
+                if warnings:
+                    print("self-owned C compiler warnings:", flush=True)
+                    print("\n".join(warnings), flush=True)
+                    return 1
     for profile in profiles:
         command = ["make", f"CONFIG={profile}", *RTL_LINT_OBSERVATION_VALUES]
         print("+ " + " ".join(command), flush=True)

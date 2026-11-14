@@ -21,6 +21,7 @@ jobs:
       suite: pr
       pdk: ICS55
       products: '["MINI", "TINY"]'
+      parallel_iverilog: ${{ github.event_name == 'pull_request' }}
       profile: configs/ci/ics55.mk
       retention_days: 30
       timeout_minutes: 480
