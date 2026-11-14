@@ -19,13 +19,18 @@ classification errors fail closed to the full matrix. Push, scheduled, and manua
 full-flow events do not use PR path skipping. Each heavy workflow retains an
 always-run gate so a skipped job cannot silently satisfy a required check.
 
-`workflows/quality.yml` is split into `fast`, four `fixtures` shards,
-`fixtures-fan-in`, and `quality-gate`:
+`workflows/quality.yml` is split into `fast`, `incremental-shadow`, four
+`fixtures` shards, `fixtures-fan-in`, and `quality-gate`:
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
   It restores the locked publication inputs and checks the Tiny reviewed-source
   snapshot against the collector's actual inventory before long fixtures run.
+- `incremental-shadow` compares source/input, tool-lock, configuration, and
+  complete test-manifest fingerprints with optional prior quality evidence. It
+  is disabled by default and never skips the full matrix. Missing or mismatched
+  evidence selects `RUN_FULL`; invalid evidence fails the quality gate. An
+  optional manual `source_run` binds comparison to a real run and artifact.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references. Each isolated matrix job collects the complete Pytest
   node-id manifest and executes its deterministic duration-weighted shard with

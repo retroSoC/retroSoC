@@ -99,7 +99,10 @@ tooling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
-  `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
+  sources, historical green evidence, tool/config/test-manifest identity,
+  tamper refusal, GitHub run/artifact binding, mandatory full events, and the
+  no-skip shadow workflow. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
   bounded descendant completion after a normal parent exit, zombie-member
   exclusion, and process-group cleanup when descendants outlive the grace period.

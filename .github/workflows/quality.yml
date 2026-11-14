@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      source_run:
+        description: Optional previous quality run ID used only for shadow comparison
+        required: false
+        type: string
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -99,6 +106,78 @@ jobs:
             build/**/meta/skill-eval-static.json
           if-no-files-found: warn
           retention-days: 14
+
+  incremental-shadow:
+    needs: impact
+    if: always() && needs.impact.result == 'success'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Restore pip cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Restore locked source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/wdg
+            rtl/managed/hazard3
+            rtl/managed/mpw
+            rtl/managed/third_party
+            .cache/retrosoc/sources/openc906
+          key: quality-shadow-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Install pinned quality tools
+        run: >-
+          python3 -m pip install
+          --requirement requirements/build.txt
+          --requirement requirements/ci.txt
+
+      - name: Set up locked source dependencies
+        run: |
+          python3 setup.py
+          python3 scripts/setup_openc906.py
+          python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
+
+      - name: Evaluate shadow reuse without skipping full jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+        run: |
+          BASE="$(git merge-base origin/dev HEAD)"
+          args=(--base "${BASE}" --head "${{ github.sha }}"
+                --event "${EVENT_NAME}" --output build/incremental-ci/shadow.json)
+          if [[ -n "${SOURCE_RUN}" ]]; then
+            args+=(--source-run "${SOURCE_RUN}")
+          fi
+          python3 scripts/incremental_ci.py "${args[@]}"
+          python3 -m json.tool build/incremental-ci/shadow.json
+
+      - name: Upload incremental shadow evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-incremental-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/incremental-ci/shadow.json
+          if-no-files-found: error
+          retention-days: 30
 
   fixtures:
     needs: impact
@@ -283,7 +362,7 @@ jobs:
           retention-days: 30
 
   quality-gate:
-    needs: [impact, fast, fixtures, fixtures-fan-in]
+    needs: [impact, fast, incremental-shadow, fixtures, fixtures-fan-in]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -296,6 +375,7 @@ jobs:
           args=(gate
             --job impact=${{ needs.impact.result }}
             --job fast=${{ needs.fast.result }}
+            --job incremental-shadow=${{ needs.incremental-shadow.result }}
             --job fixtures=${{ needs.fixtures.result }}
             --job fixtures-fan-in=${{ needs.fixtures-fan-in.result }}
             --label quality

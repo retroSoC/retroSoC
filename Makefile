@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -759,6 +759,7 @@ help:
 	  '  fixtures-plan              collect all Pytest IDs and write deterministic shards' \
 	  '  fixtures-shard             execute SHARD=<index> into OUTPUT=<directory>' \
 	  '  fixtures-verify            verify SHARD_DIRS="<directories>" exactly once' \
+	  '  incremental-shadow         compare complete CI fingerprints without skipping jobs' \
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
@@ -1425,6 +1426,14 @@ fixtures-verify:
 	  $(foreach directory,$(SHARD_DIRS),--shard-dir $(directory)) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/fan-in/summary.json)
 
+incremental-shadow:
+	python3 $(ROOT_PATH)/scripts/incremental_ci.py --root $(ROOT_PATH) \
+	  --base $(if $(BASE),$(BASE),origin/dev) --head $(if $(HEAD),$(HEAD),HEAD) \
+	  --event $(if $(EVENT),$(EVENT),pull_request) \
+	  $(if $(EVIDENCE),--evidence $(EVIDENCE)) $(if $(SOURCE_RUN),--source-run $(SOURCE_RUN)) \
+	  $(if $(EXECUTE),--execute) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/incremental-ci/shadow.json)
+
 check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
 	yamllint .github .yamllint.yml
@@ -1433,7 +1442,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
-	  tests/test_ci_recovery.py tests/test_pytest_shards.py \
+	  tests/test_ci_recovery.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
