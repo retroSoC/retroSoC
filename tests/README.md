@@ -92,7 +92,9 @@ tooling.
   behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
-  PR/release governance. `test_formal_local_evidence.py` checks local result
+  PR/release governance. Actual Git fixtures verify that lowercase `merge:`
+  subjects are accepted only for genuine multi-parent commits, without history
+  rewriting or accepting forged non-merge records. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, and cache states.
