@@ -9,6 +9,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -247,6 +248,39 @@ def previous_is_green(previous: dict[str, Any], required: list[str]) -> bool:
     )
 
 
+def validate_historical_identity(
+    root: Path,
+    previous: dict[str, Any],
+    workflow_head: str | None,
+    current_run: int | None,
+    pr_number: int | None,
+) -> bool:
+    if previous.get("workflow_head_sha") is None:
+        return False
+    if workflow_head is None:
+        raise ValueError("workflow-bound evidence requires the current workflow head")
+    previous_head = revision(root, previous.get("workflow_head_sha", ""))
+    if previous_head != previous["workflow_head_sha"]:
+        raise ValueError("historical workflow head is not canonical")
+    if subprocess.run(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", previous_head, workflow_head],
+        check=False,
+        capture_output=True,
+    ).returncode:
+        raise ValueError("historical workflow head is not an ancestor of the current workflow head")
+    if previous.get("pr_number") != pr_number or pr_number is None:
+        raise ValueError("historical evidence must belong to the current pull request")
+    run_id = previous.get("workflow_run_id")
+    if not isinstance(run_id, int) or isinstance(run_id, bool) or run_id <= 0:
+        raise ValueError("historical workflow run ID is missing")
+    if current_run is not None and run_id == current_run:
+        raise ValueError("current workflow run cannot be its own historical evidence")
+    attempt = previous.get("run_attempt")
+    if not isinstance(attempt, int) or isinstance(attempt, bool) or attempt <= 0:
+        raise ValueError("historical run attempt is missing")
+    return True
+
+
 def evaluate(
     root: Path,
     base: str,
@@ -255,6 +289,9 @@ def evaluate(
     event: str,
     execute: bool,
     required: list[str] | None = None,
+    workflow_head: str | None = None,
+    workflow_run_id: int | None = None,
+    pr_number: int | None = None,
 ) -> dict[str, Any]:
     policy = load_policy(root)
     if execute and (policy["mode"] != "execute" or policy["enabled"] is not True):
@@ -269,6 +306,14 @@ def evaluate(
     )
     if ancestry.returncode:
         raise ValueError(f"base is not an ancestor of head: {base}...{head}")
+    if workflow_head is not None:
+        workflow_head = revision(root, workflow_head)
+        if subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", workflow_head, head],
+            check=False,
+            capture_output=True,
+        ).returncode:
+            raise ValueError("workflow head is not an ancestor of the evaluated revision")
     current_plan = create_plan(root)
     current_manifest = manifest_from_plan(current_plan)
     current = job_fingerprint(root, job, head, current_manifest)
@@ -277,6 +322,9 @@ def evaluate(
         "job_id": job["id"],
         "base_revision": base,
         "source_revision": head,
+        "workflow_head_sha": workflow_head,
+        "workflow_run_id": workflow_run_id,
+        "pr_number": pr_number,
         "event": event,
         "mode": policy["mode"],
         "enabled": policy["enabled"],
@@ -296,7 +344,8 @@ def evaluate(
         result["reason"] = "no historical evidence was supplied"
         return result
     source_revision = revision(root, previous.get("source_revision", ""))
-    if subprocess.run(
+    workflow_bound = validate_historical_identity(root, previous, workflow_head, workflow_run_id, pr_number)
+    if not workflow_bound and subprocess.run(
         ["git", "-C", str(root), "merge-base", "--is-ancestor", source_revision, head],
         check=False,
         capture_output=True,
@@ -309,13 +358,19 @@ def evaluate(
         result["reason"] = "historical evidence is not a complete green verdict"
         return result
     previous_manifest = manifest_from_evidence(previous)
-    previous_fingerprint = job_fingerprint(root, job, source_revision, previous_manifest)
+    try:
+        previous_fingerprint = job_fingerprint(root, job, source_revision, previous_manifest)
+    except (subprocess.CalledProcessError, ValueError) as error:
+        raise EvidenceMissing("historical evaluated revision or its managed inputs are unavailable") from error
     for field in ("fingerprint", "input_sha256", "tool_lock_sha256", "config_sha256", "test_manifest_sha256"):
         if field in previous and previous[field] != previous_fingerprint[field]:
             raise ValueError(f"historical evidence {field} does not match its own source inputs")
     result["previous"] = {
         "source_revision": source_revision,
+        "workflow_head_sha": previous.get("workflow_head_sha"),
         "workflow_run_id": previous.get("workflow_run_id"),
+        "run_attempt": previous.get("run_attempt"),
+        "pr_number": previous.get("pr_number"),
         **previous_fingerprint,
     }
     inputs = set(current["input_files"]) | set(previous_fingerprint["input_files"])
@@ -340,7 +395,87 @@ def evaluate(
     return result
 
 
-def evidence_from_run(root: Path, repository: str, base_branch: str, source_revision: str, run_id: int | None) -> dict[str, Any]:
+def pull_request_matches(run: dict[str, Any], number: int) -> bool:
+    pulls = run.get("pull_requests")
+    return isinstance(pulls, list) and any(
+        isinstance(pull, dict) and pull.get("number") == number for pull in pulls
+    )
+
+
+def run_created_at(run: dict[str, Any]) -> datetime:
+    value = run.get("created_at")
+    if not isinstance(value, str):
+        raise ValueError("workflow run creation time is missing")
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def select_previous_quality_run(
+    repository: str,
+    pr_number: int,
+    current_run_id: int,
+    expected_head: str | None = None,
+) -> dict[str, Any]:
+    if pr_number <= 0 or current_run_id <= 0:
+        raise ValueError("PR and current workflow run IDs must be positive")
+    current = gh_json(["api", f"repos/{repository}/actions/runs/{current_run_id}"])
+    if current.get("name") != "quality" or current.get("event") != "pull_request":
+        raise ValueError("current run must be a pull_request quality run")
+    if not pull_request_matches(current, pr_number):
+        raise ValueError("current run does not belong to the requested PR")
+    if REVISION.fullmatch(current.get("head_sha", "")) is None:
+        raise ValueError("current workflow head is missing")
+    if expected_head is not None and current["head_sha"] != expected_head:
+        raise ValueError("current workflow head differs from the evaluated PR head")
+    current_created = run_created_at(current)
+    runs = paginated_check_data(
+        f"repos/{repository}/actions/runs?event=pull_request&status=success",
+        "workflow_runs",
+    )
+    candidates = []
+    for run in runs:
+        if (
+            run.get("id") == current_run_id
+            or run.get("name") != "quality"
+            or run.get("event") != "pull_request"
+            or run.get("status") != "completed"
+            or run.get("conclusion") != "success"
+            or not pull_request_matches(run, pr_number)
+        ):
+            continue
+        if REVISION.fullmatch(run.get("head_sha", "")) is None:
+            continue
+        if not isinstance(run.get("run_attempt"), int) or run["run_attempt"] <= 0:
+            continue
+        if run_created_at(run) < current_created:
+            candidates.append(run)
+    candidates.sort(key=lambda run: (run_created_at(run), run["id"]), reverse=True)
+    selected = None
+    if candidates:
+        if len(candidates) > 1 and run_created_at(candidates[0]) == run_created_at(candidates[1]):
+            raise EvidenceMissing("earlier quality runs have ambiguous creation order")
+        selected = candidates[0]
+    return {
+        "pr_number": pr_number,
+        "current_run_id": current_run_id,
+        "current_head_sha": current["head_sha"],
+        "current_created_at": current.get("created_at"),
+        "candidate_run_ids": [run["id"] for run in candidates],
+        "selected_run_id": selected["id"] if selected else None,
+        "selected_head_sha": selected["head_sha"] if selected else None,
+        "selected_run_attempt": selected["run_attempt"] if selected else None,
+        "selected_created_at": selected.get("created_at") if selected else None,
+    }
+
+
+def evidence_from_run(
+    root: Path,
+    repository: str,
+    base_branch: str,
+    source_revision: str,
+    run_id: int | None,
+    require_workflow_identity: bool = False,
+    pr_number: int | None = None,
+) -> dict[str, Any]:
     if run_id is None:
         document = gh_json(
             ["api", f"repos/{repository}/actions/runs?head_sha={source_revision}&status=success&per_page=20"]
@@ -354,6 +489,10 @@ def evidence_from_run(root: Path, repository: str, base_branch: str, source_revi
         run = gh_json(["api", f"repos/{repository}/actions/runs/{run_id}"])
     if run.get("head_sha") != source_revision or run.get("conclusion") != "success" or run.get("name") != "quality":
         raise ValueError("source run is not a successful quality run at the requested revision")
+    if require_workflow_identity and (
+        pr_number is None or not pull_request_matches(run, pr_number)
+    ):
+        raise ValueError("source run does not belong to the requested PR")
     required = required_check_contexts(repository, base_branch, root)
     check_runs = paginated_check_data(f"repos/{repository}/commits/{source_revision}/check-runs", "check_runs")
     statuses = paginated_check_data(f"repos/{repository}/commits/{source_revision}/status", "statuses")
@@ -387,11 +526,50 @@ def evidence_from_run(root: Path, repository: str, base_branch: str, source_revi
     if not summary_path.is_file():
         raise EvidenceMissing(f"fixture summary is missing for run {run_id}")
     summary = read_json(summary_path)
-    if summary.get("source_revision") != source_revision:
+    if require_workflow_identity:
+        for field in ("workflow_head_sha", "workflow_run_id", "run_attempt", "pr_number"):
+            if field not in summary:
+                raise EvidenceMissing(f"fixture summary lacks workflow identity: {field}")
+        if summary["workflow_head_sha"] != source_revision:
+            raise ValueError("fixture workflow head differs from the source run head")
+        if summary["workflow_run_id"] != run_id or summary["run_attempt"] != run.get("run_attempt", 1):
+            raise ValueError("fixture run or attempt differs from the source run")
+        if summary["pr_number"] != pr_number:
+            raise ValueError("fixture PR differs from the source run")
+        evaluated_revision = summary.get("source_revision", "")
+        if REVISION.fullmatch(evaluated_revision) is None:
+            raise ValueError("fixture evaluated revision is not a full Git revision")
+        if subprocess.run(
+            ["git", "-C", str(root), "cat-file", "-e", f"{evaluated_revision}^{{commit}}"],
+            capture_output=True,
+            check=False,
+        ).returncode:
+            from scripts.setup_helpers import fetch_git_repo
+
+            try:
+                fetch_git_repo(
+                    root,
+                    evaluated_revision,
+                    "origin",
+                    no_tags=True,
+                    no_write_fetch_head=True,
+                )
+            except subprocess.SubprocessError as error:
+                raise EvidenceMissing("historical evaluated revision cannot be restored") from error
+        if subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", source_revision, evaluated_revision],
+            capture_output=True,
+            check=False,
+        ).returncode:
+            raise ValueError("fixture evaluated revision does not contain its workflow head")
+    elif summary.get("source_revision") != source_revision:
         raise ValueError("fixture summary source revision differs from the source run head")
     summary["contexts"] = verdict["contexts"]
     summary["required_contexts"] = required
     summary["workflow_run_id"] = run_id
+    if require_workflow_identity:
+        summary["run_attempt"] = run.get("run_attempt", 1)
+        summary["pr_number"] = pr_number
     return summary
 
 
@@ -403,6 +581,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--event", choices=("pull_request", "push", "schedule", "workflow_dispatch", "release"), default="pull_request")
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--source-run", type=int)
+    parser.add_argument("--auto-previous", action="store_true")
+    parser.add_argument("--workflow-head")
+    parser.add_argument("--workflow-run", type=int)
+    parser.add_argument("--pr-number", type=int)
     parser.add_argument("--repository", default="retroSoC/retroSoC")
     parser.add_argument("--base-branch", default="dev")
     parser.add_argument("--execute", action="store_true")
@@ -412,9 +594,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    selection = None
     try:
-        if args.evidence and args.source_run:
+        if args.evidence and args.source_run is not None:
             raise ValueError("--evidence and --source-run are mutually exclusive")
+        if args.auto_previous and (args.evidence or args.source_run is not None):
+            raise ValueError("--auto-previous is mutually exclusive with explicit evidence")
         root = args.root.resolve()
         base = revision(root, args.base)
         previous = None
@@ -422,13 +607,51 @@ def main() -> int:
             previous = read_json(args.evidence)
         elif args.source_run is not None:
             previous = evidence_from_run(root, args.repository, args.base_branch, base, args.source_run)
-        result = evaluate(root, base, args.head, previous, args.event, args.execute)
+        elif args.auto_previous:
+            if args.workflow_head is None or args.workflow_run is None or args.pr_number is None:
+                raise ValueError("automatic history requires workflow head, current run, and PR number")
+            if args.event != "pull_request":
+                selection = {
+                    "status": "FULL_REQUIRED",
+                    "reason": "only pull_request events may select historical quality evidence",
+                }
+            else:
+                selection = select_previous_quality_run(
+                    args.repository,
+                    args.pr_number,
+                    args.workflow_run,
+                    args.workflow_head,
+                )
+                if selection["selected_run_id"] is not None:
+                    previous = evidence_from_run(
+                        root,
+                        args.repository,
+                        args.base_branch,
+                        selection["selected_head_sha"],
+                        selection["selected_run_id"],
+                        require_workflow_identity=True,
+                        pr_number=args.pr_number,
+                    )
+        result = evaluate(
+            root,
+            base,
+            args.head,
+            previous,
+            args.event,
+            args.execute,
+            workflow_head=args.workflow_head,
+            workflow_run_id=args.workflow_run,
+            pr_number=args.pr_number,
+        )
+        if selection is not None:
+            result["history_selection"] = selection
     except EvidenceMissing as error:
         result = {
             "schema_version": 1,
             "decision": "RUN_FULL",
             "reason": str(error),
             "issues": [],
+            "history_selection": selection,
         }
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         result = {"schema_version": 1, "decision": "INVALID", "issues": [str(error)]}

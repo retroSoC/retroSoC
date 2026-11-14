@@ -19,7 +19,10 @@ source revision, and [evidence contract](evidence.md).
    a test or mark a rerun as a fix without its new evidence.
 4. Use the current shard/fan-in summaries for fixtures. Missing, duplicate, or
    unexpectedly skipped evidence fails closed; cache observations are not
-   cached verdicts.
+   cached verdicts. Historical shadow comparisons must bind the same PR, an
+   earlier run, actual workflow head, evaluated revision, artifact, and complete
+   required contexts. Missing or unverifiable history means RUN_FULL; neither
+   a shadow recommendation nor a cache observation may skip required work.
 
 ## Cancel, recover, and hand off long tasks
 
