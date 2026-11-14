@@ -19,17 +19,23 @@ classification errors fail closed to the full matrix. Push, scheduled, and manua
 full-flow events do not use PR path skipping. Each heavy workflow retains an
 always-run gate so a skipped job cannot silently satisfy a required check.
 
-`workflows/quality.yml` is split into `fast`, `fixtures`, and `quality-gate`:
+`workflows/quality.yml` is split into `fast`, four `fixtures` shards,
+`fixtures-fan-in`, and `quality-gate`:
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
   It restores the locked publication inputs and checks the Tiny reviewed-source
   snapshot against the collector's actual inventory before long fixtures run.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
-  and APU/NPU references, then runs the complete Pytest suite with JUnit and
-  duration reports. It is skipped only for classifications that do not need it.
-- `quality-gate` accepts an intentional fixtures skip but never hides an impact,
-  fast, fixtures, or cancellation failure.
+  and APU/NPU references. Each isolated matrix job collects the complete Pytest
+  node-id manifest and executes its deterministic duration-weighted shard with
+  JUnit, process/resource, and cache evidence. The matrix is skipped only for
+  classifications that do not need it.
+- `fixtures-fan-in` downloads every shard and requires the complete collection
+  exactly once, with no failure or unregistered skip. Its source, tool inputs,
+  duration history, policy, and manifest digests must agree across all shards.
+- `quality-gate` accepts an intentional fixtures/fan-in skip but never hides an
+  impact, fast, shard, fan-in, or cancellation failure.
 
 The quality checkout retains repository history. After preparing current RTL
 dependencies, `python3 tests/publication_history.py prepare` fetches missing
@@ -57,6 +63,11 @@ approval is restored when another eligible reviewer is available.
 SoC Yosys synthesis, OpenSTA, and netlist simulation are filtered while the JPEG
 synthesis-memory issue remains. `scripts/ci_summary.py` marks those stages
 `NOT_RUN` and filters out artifacts older than the current run start.
+Only the measured ICS55 PR matrix sets `products: '["MINI", "TINY"]'`; its two
+isolated product jobs retain one existing required aggregate gate and separate
+compiler caches/artifacts. The default `ALL` leaves other suites, nightly, and
+full-flow command selection unchanged. Cache results are observations, not
+cached test verdicts.
 
 PR regressions keep the Icarus assembly self-test but exclude the multi-hour
 Tiny P7 Icarus command by default. `nightly.yml` runs that same command in

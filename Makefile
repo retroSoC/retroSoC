@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics check-fast
+	agent-context agent-task-check agent-handoff agent-preflight snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -756,6 +756,9 @@ help:
 	  '  check-warnings | metrics   analyze flow logs and reports' \
 	  '  check-metrics              apply the committed metrics policy' \
 	  '  check-fast                 run static, host, agent, and regression-definition checks' \
+	  '  fixtures-plan              collect all Pytest IDs and write deterministic shards' \
+	  '  fixtures-shard             execute SHARD=<index> into OUTPUT=<directory>' \
+	  '  fixtures-verify            verify SHARD_DIRS="<directories>" exactly once' \
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
@@ -1374,6 +1377,21 @@ engineering-metrics:
 	  --limit $(if $(LIMIT),$(LIMIT),30) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
 
+fixtures-plan:
+	python3 $(ROOT_PATH)/scripts/pytest_shards.py plan --root $(ROOT_PATH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/shards/plan.json)
+
+fixtures-shard:
+	@test -n '$(SHARD)' || { printf '%s\n' 'SHARD=<index> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/pytest_shards.py run --root $(ROOT_PATH) \
+	  --shard $(SHARD) --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/shard-$(SHARD))
+
+fixtures-verify:
+	@test -n '$(SHARD_DIRS)' || { printf '%s\n' 'SHARD_DIRS=<directories> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/pytest_shards.py verify --root $(ROOT_PATH) \
+	  $(foreach directory,$(SHARD_DIRS),--shard-dir $(directory)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/fan-in/summary.json)
+
 check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
 	yamllint .github .yamllint.yml
@@ -1381,7 +1399,8 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_flow_recovery.py \
-	  tests/test_ci_recovery.py tests/test_validation_gaps.py tests/test_worktree_registry.py
+	  tests/test_ci_recovery.py tests/test_pytest_shards.py \
+	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
 	python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run

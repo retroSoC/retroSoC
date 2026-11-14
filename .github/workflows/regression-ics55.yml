@@ -20,6 +20,7 @@ jobs:
     with:
       suite: pr
       pdk: ICS55
+      products: '["MINI", "TINY"]'
       profile: configs/ci/ics55.mk
       retention_days: 30
       timeout_minutes: 480

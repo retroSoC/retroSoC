@@ -96,6 +96,9 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, and cache states.
+  `test_pytest_shards.py` covers deterministic duration-based scheduling, real
+  collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
+  workflow gates, product matrices, and cache observations.
   `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
   bounded descendant completion after a normal parent exit, zombie-member

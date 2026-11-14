@@ -77,6 +77,15 @@ Process-group liveness ignores zombie members so completed children cannot be
 misclassified as active work.
 Missing checkpoint digests or an active lease fails closed. Earlier results and
 logs remain under `result.json.attempts/`.
+`pytest_shards.py` collects the complete node-id manifest and uses reviewed JUnit
+duration history for deterministic longest-processing-time scheduling. Its `run`
+command executes exactly one non-empty shard, while `verify` reconciles every
+plan, JUnit report, result digest, duplicate, missing test, and unexpected skip.
+`quality/pytest-shards.json` selects four shards and declares only the existing
+optional-input skips. Cache HIT/MISS/NOT_RUN observations are aggregated without
+caching verdicts. Use `make fixtures-plan`, `make fixtures-shard SHARD=<index>`,
+or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hosted
+CI runs isolated matrix jobs and an always-enforced fan-in.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
