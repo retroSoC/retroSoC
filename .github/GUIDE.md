@@ -47,7 +47,8 @@ dependencies, `python3 tests/publication_history.py prepare` fetches missing
 immutable dependency commits without changing active dependency HEADs or locks.
 
 `workflows/contribution.yml` validates PR base/head/title, new commit subjects,
-and CODEOWNERS consistency. `quality/ownership.json` records backup-owner gaps;
+and CODEOWNERS consistency. A lowercase `merge:` subject is accepted only for an
+actual multi-parent commit; plain text and forged non-merge records remain invalid. `quality/ownership.json` records backup-owner gaps;
 an empty backup is a warning for organizational follow-up, not permission for
 agent self-approval.
 
