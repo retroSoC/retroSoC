@@ -57,6 +57,12 @@ records Skill Git SHA, contract version, runner/model, input snapshot, and
 workspace tree. Static validation is never labeled behavior execution. Codex is
 the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
 Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+`skill_eval.py replay` grades explicit retained traces without starting a runner.
+It validates trace/input/Skill/workspace provenance and preserves current versus
+historical case identity. Invalid or failed grades fail the command; the report
+always records `behavior_execution=NOT_RUN` and zero runner invocations. Use
+`make skill-replay TRACES=<directory>`; static corpus checks alone are not a
+behavior replay, and replay does not qualify current code or hardware.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow

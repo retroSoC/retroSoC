@@ -159,6 +159,8 @@ and retains traces and deterministic grades. Codex remains the default runner;
 has no Bash, write, or delegation capability. Runner/model, Skill SHA,
 contract version, input snapshot, and workspace tree are recorded explicitly; a
 static result is never described as completed behavior, hardware, or publication
-work. Other hosts can emit the same trace schema for grading. The shared
+work. Other hosts can emit the same trace schema for grading. `make skill-replay
+TRACES=<directory>` rechecks retained traces without starting a runner or a
+canary; invalid or failed grades remain failures. The shared
 [engineering playbook](skills/shared/engineering-playbook.md) defines operational
 recovery, delivery, reuse, and contract-version boundaries.
