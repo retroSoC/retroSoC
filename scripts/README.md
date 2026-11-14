@@ -59,6 +59,12 @@ the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
 Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
+`delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
+coverage, successful main quality runs, and validated same-profile/same-tool
+metric samples. Merge queues are considered only for sustained integration
+conflicts with full merge_group gate coverage. Metric promotion still requires
+ten validated samples and a committed reviewed baseline. Evaluation is read-only
+and never enables a queue or gate by itself.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "merge_queue": {
+    "minimum_ready_prs": 3,
+    "minimum_conflicting_prs": 2,
+    "required_workflows": [
+      "quality.yml",
+      "contribution.yml",
+      "development-environment.yml",
+      "regression-ihp130.yml",
+      "regression-gf180.yml",
+      "regression-ics55.yml",
+      "regression-sky130.yml",
+      "regression-smoke.yml"
+    ]
+  },
+  "metrics": {
+    "required_samples": 10,
+    "require_reviewed_baseline": true
+  }
+}

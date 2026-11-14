@@ -102,7 +102,10 @@ tooling.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
-  no-skip shadow workflow. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  no-skip shadow workflow. `test_delivery_policy.py` covers merge-group parity,
+  ready/conflict thresholds, draft/fork exclusions, CI-success versus valid
+  metric-sample distinctions, duplicate/mixed sample rejection, reviewed
+  baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
   bounded descendant completion after a normal parent exit, zombie-member
   exclusion, and process-group cleanup when descendants outlive the grace period.
