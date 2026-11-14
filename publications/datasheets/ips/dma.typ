@@ -18,6 +18,15 @@
     #source-note("crt/src/hal/dma.c",title:"Current HAL descriptor result writeback")
   ]
 ],software-note:[
+  #change-start("v05-commercial-20261114-dma-recovery","Current shared-DMA abort and reset helpers")
+  #code("rs_dma_session_abort_wait(session, timeout)") first requests abort, then polls channel busy.
+  A zero budget still submits abort and returns timeout without a confirming poll. The budget counts
+  register polls, not elapsed microseconds; timeout does not establish drain. A bus error propagates.
+  #code("rs_dma_session_reset(session)") submits the session-owned reset command; its return does not
+  add a completion wait. Release the channel only after the documented idle/ownership checks.
+  #source-note("crt/src/hal/dma.c",title:"Current session abort-wait/reset implementation")
+  #change-end("v05-commercial-20261114-dma-recovery")
+
 
   #block(above:rhythm.metadata-before,below:rhythm.metadata-after,breakable:false)[
     #text(9pt)[Command submission, wait exhaustion and confirmed abort/drain: @api-completion.]

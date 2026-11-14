@@ -181,22 +181,32 @@
   set par(leading:rhythm.toc-leading,spacing:rhythm.toc-leading)
   set outline(indent:0pt)
   show outline: set heading(bookmarked:true)
-  // Include every numbered non-table figure, including native vector diagrams.
-  // Continuation notices and unnumbered register layouts are not figure entries.
-  let included(f) = (f.kind==table)==tables and f.numbering!=none and f.caption!=none
+  let included(f) = ((f.kind==table)==tables and f.numbering!=none and f.caption!=none
+    and (not tables or not repr(f.caption).contains("field descriptions")))
+  let is-register(f)=repr(f.caption).contains("register overview")
   let prefix(entry) = [#(entry.prefix()).]
   let peers = query(figure).filter(included)
   let widths = peers.map(f=>measure(prefix(outline.entry(1,f))).width)
   let prefix-width = calc.max(0pt,..widths)
-  show outline.entry: it => {
-    if included(it.element) {
-      block(above:rhythm.toc-leading,below:rhythm.toc-leading,breakable:false)[
-        #link(it.element.location(),it.indented(
-          box(width:prefix-width,prefix(it)),it.inner(),gap:rhythm.heading-gap))
-      ]
+  let directory(group)= {
+    show outline.entry: it => {
+      if included(it.element) and (group==none or is-register(it.element)==group) {
+        block(above:rhythm.toc-leading,below:rhythm.toc-leading,breakable:false)[
+          #link(it.element.location(),it.indented(
+            box(width:prefix-width,prefix(it)),it.inner(),gap:rhythm.heading-gap))
+        ]
+      }
     }
+    outline(title:none,target:figure)
   }
-  outline(title:if tables {[List of tables]} else {[List of figures]},target:figure)
+  heading(numbering:none,outlined:false,bookmarked:true,if tables {[List of tables]} else {[List of figures]})
+  if tables {
+    minor-title([Specifications, system use and board references])
+    directory(false)
+    minor-title([IP register overviews])
+    directory(true)
+    [Detailed field tables remain linked from each IP register overview and the global register address index.]
+  } else {directory(none)}
 }
 #let inline-code(body) = context {
   // Link scopes already select link-color; keep that semantic cue and underline.

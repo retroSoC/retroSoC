@@ -87,7 +87,7 @@
     {
       // Register-name links keep their blue color and destination, without decoration.
       show underline: omit-link-underline
-      ds-table(family+"-summary-"+group.id,group.title,
+      ds-table(family+"-summary-"+group.id,[#upper(family) / #group.title - register overview],
         ([Offset],[Register],[Access],[Reset],[Description]),
         registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),r.access,inline(r.reset),inline(r.description))),
         widths:(0.55fr,1.6fr,0.6fr,1.1fr,2.6fr))
@@ -118,7 +118,7 @@
       ]
     ]
     let fields=register.fields.sorted(key:f=>-f.msb)
-    ds-table("fields-"+family+"-"+register.key,[#register.name field descriptions],
+    ds-table("fields-"+family+"-"+register.key,[#upper(family) / #register.name field descriptions],
       ([\#],[Bits],[Field],[Reset],[Description]),
       fields.enumerate().map(((n,f))=>("F"+str(n+1),str(f.msb)+if f.msb!=f.lsb {":"+str(f.lsb)} else {""},code(f.name),inline(f.reset),inline(f.description))),
       widths:(0.25fr,0.5fr,1.1fr,0.75fr,2.3fr))
@@ -133,7 +133,9 @@
   list(..entry.features.map(inline))
   circuit-figure(entry.id)
   subhead(entry.id,"Functional Description",entry.depth)
+  if entry.id=="i2s" {change-start(doc.change_prefix+"i2s-audio-rate","I2S preset names and actual AUDIO reference")}
   for paragraph in entry.paragraphs {par(inline(paragraph))}
+  if entry.id=="i2s" {change-end(doc.change_prefix+"i2s-audio-rate")}
   for (id,record) in data.illustrations.flows.pairs().filter(((id,r))=>r.owner==entry.id) {
     flow(id,record.steps.map(inline),[#record.title. #record.note])
     for path in record.sources {source-note(path,title:"Lifecycle source: "+path.split("/").last())}
