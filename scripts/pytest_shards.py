@@ -290,12 +290,13 @@ def bind_workflow_identity(
     for field in ("workflow_run_id", "run_attempt", "pr_number"):
         if not isinstance(identity[field], int) or isinstance(identity[field], bool) or identity[field] <= 0:
             raise ValueError(f"{field} must be a positive integer")
-    if subprocess.run(
-        ["git", "-C", str(root), "merge-base", "--is-ancestor", identity["workflow_head_sha"], document["source_revision"]],
-        capture_output=True,
-        check=False,
-    ).returncode:
-        raise ValueError("workflow head is not an ancestor of the evaluated revision")
+    if identity["workflow_head_sha"] != document["source_revision"]:
+        try:
+            parents = git_output(root, "rev-list", "--parents", "-n", "1", document["source_revision"]).split()[1:]
+        except subprocess.CalledProcessError as error:
+            raise ValueError("evaluated revision is unavailable") from error
+        if len(parents) != 2 or identity["workflow_head_sha"] != parents[1]:
+            raise ValueError("workflow head must be the evaluated revision or the second parent of its merge commit")
     document.update(identity)
     return document
 

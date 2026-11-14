@@ -501,9 +501,34 @@ def test_fan_in_binds_optional_workflow_identity(repo: tuple[Path, str]) -> None
         "pr_number": 7,
     }
     assert bind_workflow_identity(document, root, identity)["pr_number"] == 7
+    (root / "docs/guide.md").write_text("next change\n", encoding="utf-8")
+    git(root, "add", "docs/guide.md")
+    git(root, "commit", "-qm", "next change")
+    current_head = git(root, "rev-parse", "HEAD")
+    merge = git(
+        root,
+        "commit-tree",
+        f"{current_head}^{{tree}}",
+        "-p",
+        base,
+        "-p",
+        current_head,
+        "-m",
+        "evaluated PR merge",
+    )
+    assert bind_workflow_identity(
+        {"source_revision": merge}, root, {**identity, "workflow_head_sha": current_head}
+    )["source_revision"] == merge
+    for invalid_head in (base, "f" * 40):
+        with pytest.raises(ValueError, match="second parent"):
+            bind_workflow_identity(
+                {"source_revision": merge}, root, {**identity, "workflow_head_sha": invalid_head}
+            )
+    with pytest.raises(ValueError, match="unavailable"):
+        bind_workflow_identity({"source_revision": "f" * 40}, root, identity)
     with pytest.raises(ValueError, match="incomplete"):
         bind_workflow_identity(document, root, {"workflow_head_sha": base})
-    with pytest.raises(ValueError, match="ancestor"):
+    with pytest.raises(ValueError, match="second parent"):
         bind_workflow_identity(
             {"source_revision": base},
             root,

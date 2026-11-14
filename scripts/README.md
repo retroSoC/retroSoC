@@ -120,8 +120,10 @@ test-manifest fingerprints. It can compare a local evidence JSON or a real
 GitHub quality run/artifact against the current revision. `--auto-previous`
 selects only an earlier successful quality run from the same PR, excluding the
 current run. Actual workflow head and evaluated merge revision are separate
-identities; fan-in optionally binds both to the run, attempt, and PR. Historical
-merge revisions need not be ancestors of the current merge revision, but the
+identities; fan-in optionally binds both to the run, attempt, and PR. Fan-in
+requires the evaluated revision to be either the actual PR head or a two-parent
+merge whose second parent is that head; an ordinary ancestor is not sufficient.
+Historical merge revisions need not be ancestors of the current merge revision, but the
 actual PR heads must remain ancestral and all source fingerprints must be
 recomputed. Missing history or unavailable source objects select `RUN_FULL`.
 Production policy is `shadow` with `enabled=false`: a matching result is only a
