@@ -96,6 +96,82 @@
       "uniqueItems": true,
       "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
     },
+    "coordination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "depends_on",
+        "inputs",
+        "outputs",
+        "write_set",
+        "lease",
+        "idempotency_key",
+        "budget",
+        "retry",
+        "attempt",
+        "integrator",
+        "allow_parallel"
+      ],
+      "properties": {
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+        },
+        "inputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "outputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^build/"}
+        },
+        "write_set": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "lease": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "ttl_seconds"],
+          "properties": {
+            "owner": {"type": "string", "minLength": 1},
+            "ttl_seconds": {"type": "integer", "minimum": 1, "maximum": 86400}
+          }
+        },
+        "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 128},
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["timeout_seconds", "max_runner_minutes"],
+          "properties": {
+            "timeout_seconds": {"type": "integer", "minimum": 60, "maximum": 86400},
+            "max_runner_minutes": {"type": "integer", "minimum": 1, "maximum": 10080}
+          }
+        },
+        "retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_attempts", "backoff_seconds", "categories"],
+          "properties": {
+            "max_attempts": {"type": "integer", "minimum": 1, "maximum": 3},
+            "backoff_seconds": {"type": "integer", "minimum": 0, "maximum": 3600},
+            "categories": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {"enum": ["infrastructure_failure"]}
+            }
+          }
+        },
+        "attempt": {"type": "integer", "minimum": 1},
+        "resume_from": {"type": "string", "pattern": "^build/"},
+        "integrator": {"type": "string", "minLength": 1},
+        "allow_parallel": {"type": "boolean"}
+      }
+    },
     "evidence": {
       "type": "array",
       "items": {

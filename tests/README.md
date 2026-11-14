@@ -103,6 +103,10 @@ tooling.
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
   bounded descendant completion after a normal parent exit, zombie-member
   exclusion, and process-group cleanup when descendants outlive the grace period.
+  `test_agent_dag.py` covers deterministic DAG waves, authorized disjoint
+  parallelism, serial integration, malformed graph refusal, write-set/worktree
+  conflicts, dependency PASS evidence, dry-run leases, identity checks, and
+  expired-lease recovery without starting agents.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
