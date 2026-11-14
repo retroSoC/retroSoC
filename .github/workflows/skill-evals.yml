@@ -20,6 +20,12 @@ on:
         required: true
         default: all
         type: string
+      agent:
+        description: Agent CLI used for isolated read-only evaluations
+        required: true
+        default: codex
+        type: choice
+        options: [codex, kimi]
       model:
         description: Optional explicit model name recorded in the evidence
         required: false
@@ -41,29 +47,32 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      - name: Check Codex runner
+      - name: Check evaluation runner
+        env:
+          EVAL_AGENT: ${{ inputs.agent || vars.RETROSOC_EVAL_AGENT || 'codex' }}
         run: |
-          if ! command -v codex >/dev/null 2>&1; then
-            echo "Codex CLI is required on the selected runner; no behavior result is claimed." >&2
+          if ! command -v "${EVAL_AGENT}" >/dev/null 2>&1; then
+            echo "${EVAL_AGENT} CLI is required on the selected runner; no behavior result is claimed." >&2
             exit 2
           fi
-          codex --version
+          "${EVAL_AGENT}" --version
 
       - name: Run isolated read-only Skill evaluations
         env:
-          CODEX_MODEL: ${{ inputs.model }}
+          EVAL_MODEL: ${{ inputs.model }}
+          EVAL_AGENT: ${{ inputs.agent || vars.RETROSOC_EVAL_AGENT || 'codex' }}
           EVAL_SCOPE: ${{ inputs.scope || 'smoke' }}
           EVAL_SKILL: ${{ inputs.skill || 'all' }}
         run: |
-          args=(--root . --timeout 600 --output "build/agent-evals/${EVAL_SCOPE}")
+          args=(--root . --runner "${EVAL_AGENT}" --timeout 600 --output "build/agent-evals/${EVAL_SCOPE}")
           if [[ "${EVAL_SCOPE}" == "smoke" ]]; then
             args+=(--smoke)
           fi
           if [[ "${EVAL_SKILL}" != "all" ]]; then
             args+=(--skill "${EVAL_SKILL}")
           fi
-          if [[ -n "${CODEX_MODEL}" ]]; then
-            args+=(--model "${CODEX_MODEL}")
+          if [[ -n "${EVAL_MODEL}" ]]; then
+            args+=(--model "${EVAL_MODEL}")
           fi
           python3 scripts/skill_eval.py run "${args[@]}"
 

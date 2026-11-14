@@ -147,8 +147,10 @@ applicable documentation, JSON, Pytest, and whitespace checks listed in the root
 agent contract. Hardware gates remain proportionate to the feature work.
 
 Static corpus validation does not prove agent behavior. `make skill-eval-smoke`
-executes one read-only Codex scenario per registered Skill in isolated Git
-workspaces and retains traces and deterministic grades. Runner/model, Skill SHA,
+executes one read-only scenario per registered Skill in isolated Git workspaces
+and retains traces and deterministic grades. Codex remains the default runner;
+`RUNNER=kimi` selects the [tool-restricted Kimi Agent](skill-eval-agent.md), which
+has no Bash, write, or delegation capability. Runner/model, Skill SHA,
 contract version, input snapshot, and workspace tree are recorded explicitly; a
 static result is never described as completed behavior, hardware, or publication
 work. Other hosts can emit the same trace schema for grading. The shared

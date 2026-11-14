@@ -121,9 +121,10 @@ tooling.
   and deferred reconciliation. Run fast agent checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 57 cases across six Skills, with one live smoke per Skill.
-  Provenance, contract migration, negative triggers, and canary configuration
-  are tested deterministically; live behavior results require retained traces
-  from `make skill-eval-smoke`.
+  Provenance, contract migration, negative triggers, Kimi tool-call parsing,
+  read-only runner boundaries, and canary configuration are tested
+  deterministically; live behavior results require retained traces from
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`).
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

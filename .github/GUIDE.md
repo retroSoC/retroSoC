@@ -108,10 +108,12 @@ not automatically retried.
 artifacts for engineering improvement, not individual performance evaluation.
 `workflows/skill-evals.yml` runs one read-only smoke case per registered Skill,
 or all live cases selected by Skill, with source/contract/input provenance and
-deterministic grades. A runner needs a configured Codex CLI and approved model
-access; absence is NOT_RUN, never a behavior pass. Weekly canaries require
+deterministic grades. A runner needs a configured Codex or Kimi CLI and approved
+model access; absence is NOT_RUN, never a behavior pass. The Kimi runner uses a
+read-only Agent without Bash, writes, or delegation. Weekly canaries require
 `RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
-remain disabled. Manual scope and per-Skill selection bound runner time.
+remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
+CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts

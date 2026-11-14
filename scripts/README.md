@@ -54,7 +54,9 @@ a static source list.
 behavior evaluations with deterministic grades. It retains v1 eval-config
 compatibility, requires migration documents for incompatible contracts, and
 records Skill Git SHA, contract version, runner/model, input snapshot, and
-workspace tree. Static validation is never labeled behavior execution.
+workspace tree. Static validation is never labeled behavior execution. Codex is
+the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
+Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,

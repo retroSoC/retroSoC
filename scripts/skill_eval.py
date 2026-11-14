@@ -210,6 +210,77 @@ def parse_jsonl(text: str) -> list[Any]:
     return events
 
 
+def walk_kimi_events(events: list[Any]) -> tuple[list[dict[str, Any]], list[Any], list[Any], dict[str, Any]]:
+    commands: list[dict[str, Any]] = []
+    changes: list[Any] = []
+    usage: list[Any] = []
+    text_parts: list[str] = []
+    by_id: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        if isinstance(event.get("usage"), dict):
+            usage.append(event["usage"])
+        if event.get("role") == "assistant":
+            content = event.get("content", "")
+            if isinstance(content, str) and content.strip():
+                text_parts.append(content)
+            elif isinstance(content, list):
+                text_parts.extend(
+                    part["text"]
+                    for part in content
+                    if isinstance(part, dict) and isinstance(part.get("text"), str)
+                )
+            for call in event.get("tool_calls", []):
+                function = call.get("function", {})
+                name = function.get("name", call.get("name", ""))
+                arguments = function.get("arguments", call.get("input", {}))
+                if isinstance(arguments, str):
+                    try:
+                        arguments = json.loads(arguments)
+                    except json.JSONDecodeError:
+                        arguments = {"input": arguments}
+                identifier = str(call.get("id", len(commands)))
+                command = arguments.get("command") if isinstance(arguments, dict) else None
+                record = {
+                    "id": identifier,
+                    "tool": name,
+                    "command": command or json.dumps(arguments, sort_keys=True),
+                    "exit_code": None,
+                    "status": "called",
+                }
+                commands.append(record)
+                by_id[identifier] = record
+                if name in {"Write", "Edit", "MultiEdit", "NotebookEdit"}:
+                    changes.append(arguments)
+        elif event.get("role") == "tool":
+            identifier = str(event.get("tool_call_id", ""))
+            if identifier in by_id:
+                by_id[identifier]["status"] = "failed" if event.get("is_error") else "completed"
+                by_id[identifier]["exit_code"] = event.get("exit_code", int(event.get("is_error") is True))
+    response: dict[str, Any] = {}
+    for text in reversed(text_parts):
+        candidate = text.strip()
+        fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", candidate, re.DOTALL)
+        if fenced:
+            candidate = fenced.group(1)
+        try:
+            value = json.loads(candidate)
+        except json.JSONDecodeError:
+            start = candidate.find("{")
+            end = candidate.rfind("}")
+            if start < 0 or end <= start:
+                continue
+            try:
+                value = json.loads(candidate[start : end + 1])
+            except json.JSONDecodeError:
+                continue
+        if isinstance(value, dict):
+            response = value
+            break
+    return commands, changes, usage, response
+
+
 def input_snapshot_sha256(case: dict[str, Any]) -> str:
     fields = {
         key: case[key]
@@ -336,6 +407,94 @@ def run_codex(
     }
 
 
+def run_kimi(
+    root: Path,
+    case: dict[str, Any],
+    output: Path,
+    model: str | None,
+    timeout: int,
+) -> dict[str, Any]:
+    output = output.resolve()
+    workspace = output / f"{case['id']}-workspace"
+    prepare_workspace(root, workspace)
+    agent_file = workspace / ".agents/skill-eval-agent.md"
+    raw_path = output / f"{case['id']}.jsonl"
+    stderr_path = output / f"{case['id']}.stderr.log"
+    before = repo_snapshot(workspace)
+    command = [
+        "kimi",
+        "--agent-file",
+        str(agent_file),
+        "--output-format",
+        "stream-json",
+        "--skills-dir",
+        str(workspace / ".agents/skills"),
+    ]
+    if model:
+        command.extend(("--model", model))
+    command.extend(("--prompt", evaluation_prompt(case)))
+    started = datetime.now(timezone.utc)
+    start_clock = time.monotonic()
+    try:
+        result = subprocess.run(
+            command,
+            cwd=workspace,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+        returncode = result.returncode
+        stdout = result.stdout
+        stderr = result.stderr
+        error = None if returncode == 0 else f"runner exited with status {returncode}"
+    except subprocess.TimeoutExpired as error_value:
+        returncode = 124
+        stdout = error_value.stdout or ""
+        stderr = error_value.stderr or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        error = f"runner timed out after {timeout} seconds"
+    atomic_write(raw_path, stdout)
+    atomic_write(stderr_path, stderr)
+    after = repo_snapshot(workspace)
+    commands, changes, usage, response = walk_kimi_events(parse_jsonl(stdout)) if stdout else ([], [], [], {})
+    if not response and returncode == 0:
+        error = "runner did not produce a structured response"
+    return {
+        "schema_version": 1,
+        "case": case,
+        "runner": "kimi",
+        "runner_version": subprocess.check_output(["kimi", "--version"], text=True).strip(),
+        "runner_agent_sha256": hashlib.sha256(agent_file.read_bytes()).hexdigest(),
+        "model": model or "runner-default",
+        "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_contract_version": case["skill_contract_version"],
+        "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
+        "input_snapshot_sha256": input_snapshot_sha256(case),
+        "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
+        "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
+        "workspace": str(workspace),
+        "started_at": started.isoformat(),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+        "duration_seconds": round(time.monotonic() - start_clock, 3),
+        "exit_code": returncode,
+        "error": error,
+        "response": response,
+        "commands": commands,
+        "file_changes": changes,
+        "usage": usage,
+        "repository_before": before,
+        "repository_after": after,
+        "repository_delta": sorted(set(after) - set(before)),
+        "raw_trace": str(raw_path),
+        "stderr": str(stderr_path),
+    }
+
+
 def check(checks: list[dict[str, Any]], identifier: str, passed: bool, details: Any) -> None:
     checks.append({"id": identifier, "pass": bool(passed), "details": details})
 
@@ -412,7 +571,7 @@ def parse_args() -> argparse.Namespace:
         command.add_argument("--case", action="append")
         command.add_argument("--smoke", action="store_true")
         if name == "run":
-            command.add_argument("--runner", choices=("codex",), default="codex")
+            command.add_argument("--runner", choices=("codex", "kimi"), default="codex")
             command.add_argument("--model")
             command.add_argument("--timeout", type=int, default=600)
             command.add_argument("--output", type=Path, required=True)
@@ -475,14 +634,23 @@ def main() -> int:
                     results.append({"case_id": case["id"], "status": "skipped", "reason": "live execution disabled for this fixture"})
                     continue
                 print(f"[skill-eval] {case['id']}", flush=True)
-                trace = run_codex(
-                    args.root.resolve(),
-                    case,
-                    args.output,
-                    args.root.resolve() / ".agents/skills/response.schema.json",
-                    args.model,
-                    args.timeout,
-                )
+                if args.runner == "kimi":
+                    trace = run_kimi(
+                        args.root.resolve(),
+                        case,
+                        args.output,
+                        args.model,
+                        args.timeout,
+                    )
+                else:
+                    trace = run_codex(
+                        args.root.resolve(),
+                        case,
+                        args.output,
+                        args.root.resolve() / ".agents/skills/response.schema.json",
+                        args.model,
+                        args.timeout,
+                    )
                 runner_versions.append(trace["runner_version"])
                 atomic_write(args.output / f"{case['id']}.trace.json", dump_json(trace))
                 result = grade_trace(trace, document["defaults"])

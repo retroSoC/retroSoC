@@ -227,9 +227,81 @@ def test_skill_eval_canary_is_opt_in_and_bounded() -> None:
     assert workflow["on"]["schedule"]
     inputs = workflow["on"]["workflow_dispatch"]["inputs"]
     assert inputs["scope"]["options"] == ["smoke", "all"]
+    assert inputs["agent"]["options"] == ["codex", "kimi"]
+    assert inputs["agent"]["default"] == "codex"
     job = workflow["jobs"]["smoke"]
     assert "RETROSOC_SKILL_EVALS_ENABLED" in job["if"]
     assert "480" in job["timeout-minutes"]
     run = next(step for step in job["steps"] if step["name"] == "Run isolated read-only Skill evaluations")
     assert "--smoke" in run["run"]
     assert "--skill" in run["run"]
+    assert "--runner" in run["run"]
+
+
+def test_kimi_event_parser_normalizes_tools_changes_usage_and_response() -> None:
+    from scripts.skill_eval import walk_kimi_events
+
+    events = [
+        {"role": "meta", "usage": {"input_tokens": 2}},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {"id": "skill-1", "function": {"name": "Skill", "arguments": '{"skill":"retrosoc-feature-review"}'}},
+                {"id": "write-1", "function": {"name": "Write", "arguments": {"path": "bad.txt"}}},
+            ],
+        },
+        {"role": "tool", "tool_call_id": "skill-1", "is_error": False},
+        {"role": "tool", "tool_call_id": "write-1", "is_error": True},
+        {"role": "assistant", "content": '```json\n{"invoked_skills":["retrosoc-feature-review"],"verdict":"RUN_GATES","route":"NONE","summary":"NOT_RUN"}\n```'},
+    ]
+    commands, changes, usage, response = walk_kimi_events(events)
+    assert [item["status"] for item in commands] == ["completed", "failed"]
+    assert commands[0]["tool"] == "Skill"
+    assert commands[1]["exit_code"] == 1
+    assert changes == [{"path": "bad.txt"}]
+    assert usage == [{"input_tokens": 2}]
+    assert response["verdict"] == "RUN_GATES"
+
+
+def test_kimi_eval_profile_has_no_write_shell_or_delegation_capability() -> None:
+    import yaml
+
+    text = (ROOT / ".agents/skill-eval-agent.md").read_text(encoding="utf-8")
+    metadata = yaml.safe_load(text.split("---", 2)[1])
+    assert set(metadata["tools"]) == {"Read", "Grep", "Glob", "Skill"}
+    assert metadata["subagents"] == []
+    assert {"Bash", "Write", "Edit", "Agent", "AgentSwarm"} <= set(metadata["disallowedTools"])
+
+
+def test_kimi_trace_binds_runner_profile(tmp_path: Path, monkeypatch) -> None:
+    from scripts.skill_eval import run_kimi
+
+    _, cases = load_cases(ROOT)
+    case = next(item for item in cases if item["id"] == "design-03")
+
+    def workspace(root, destination):
+        (destination / ".agents").mkdir(parents=True)
+        shutil.copy(root / ".agents/skill-eval-agent.md", destination / ".agents/skill-eval-agent.md")
+
+    monkeypatch.setattr("scripts.skill_eval.prepare_workspace", workspace)
+    monkeypatch.setattr("scripts.skill_eval.repo_snapshot", lambda root: [])
+    monkeypatch.setattr(
+        "scripts.skill_eval.git_output",
+        lambda root, *args: "b" * 40 if args[-1] == "HEAD^{tree}" else "a" * 40,
+    )
+    monkeypatch.setattr(subprocess, "check_output", lambda *args, **kwargs: "kimi-test\n")
+
+    def execute(command, **kwargs):
+        assert "--agent-file" in command
+        assert "--plan" not in command
+        response = '{"invoked_skills":["retrosoc-feature-design"],"verdict":"NONE","route":"retrosoc-feature-review","summary":"NOT_RUN"}'
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps({"role": "assistant", "content": response}) + "\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", execute)
+    trace = run_kimi(ROOT, case, tmp_path, "test-model", 60)
+    assert trace["runner"] == "kimi"
+    assert trace["runner_version"] == "kimi-test"
+    assert trace["runner_agent_sha256"]
+    assert trace["response"]["route"] == "retrosoc-feature-review"
+    assert trace["error"] is None
