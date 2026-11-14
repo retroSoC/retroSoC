@@ -49,7 +49,7 @@ def test_parallel_groups_have_isolated_build_identities(
     calls = []
 
     def fake_run(command, root, capture_output, environment):
-        calls.append((command, environment["BUILD_TIMESTAMP"]))
+        calls.append((command, dict(environment)))
         if "rtl-lint" in command or "sim-asm" in command:
             barrier.wait(timeout=5)
         return ""
@@ -61,19 +61,22 @@ def test_parallel_groups_have_isolated_build_identities(
     )
     assert result == 0
     assert len(calls) == len(primary) + len(iverilog)
-    timestamps = {
-        target: timestamp
-        for command, timestamp in calls
+    identities = {
+        target: environment
+        for command, environment in calls
         for target in command
         if target in {"sim", "sim-asm"}
     }
-    assert timestamps["sim-asm"] == "2026-11-14-00-00-iverilog"
-    assert timestamps["sim"] == "2026-11-14-00-00"
+    assert identities["sim-asm"]["BUILD_TIMESTAMP"] == "2026-11-14-00-00"
+    assert identities["sim"]["BUILD_TIMESTAMP"] == "2026-11-14-00-00"
+    assert identities["sim-asm"]["BUILD_ROOT"] == str(tmp_path / "build/parallel-iverilog")
+    assert "BUILD_ROOT" not in identities["sim"]
     plan = json.loads(
         (tmp_path / "build/ci-summary/parallel-iverilog.json").read_text(encoding="utf-8")
     )
     assert plan["failure_policy"] == "both groups finish; either failure fails the regression"
-    assert plan["iverilog_build_timestamp"] != plan["primary_build_timestamp"]
+    assert plan["iverilog_build_root"] == str(tmp_path / "build/parallel-iverilog")
+    assert plan["iverilog_build_timestamp"] == plan["primary_build_timestamp"]
 
 
 def test_parallel_failure_does_not_hide_the_other_group(

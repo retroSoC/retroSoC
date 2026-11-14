@@ -358,7 +358,7 @@ def run_parallel_iverilog(
     if not primary or not iverilog:
         raise ValueError("parallel Icarus requires non-empty primary and Icarus groups")
     isolated_environment = dict(environment)
-    isolated_environment["BUILD_TIMESTAMP"] = environment["BUILD_TIMESTAMP"] + "-iverilog"
+    isolated_environment["BUILD_ROOT"] = str((root / "build/parallel-iverilog").resolve())
     from scripts.flow_control import write_json
 
     write_json(
@@ -368,6 +368,8 @@ def run_parallel_iverilog(
             "mode": "parallel-iverilog",
             "primary_commands": [regression_command(profile, values) for profile, values in primary],
             "iverilog_commands": [regression_command(profile, values) for profile, values in iverilog],
+            "primary_build_root": str((root / "build").resolve()),
+            "iverilog_build_root": isolated_environment["BUILD_ROOT"],
             "primary_build_timestamp": environment["BUILD_TIMESTAMP"],
             "iverilog_build_timestamp": isolated_environment["BUILD_TIMESTAMP"],
             "failure_policy": "both groups finish; either failure fails the regression",

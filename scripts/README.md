@@ -66,8 +66,8 @@ conflicts with full merge_group gate coverage. Metric promotion still requires
 ten validated samples and a committed reviewed baseline. Evaluation is read-only
 and never enables a queue or gate by itself.
 `regress.py --parallel-iverilog` overlaps the existing Icarus assembly self-test
-with the remaining behavioral MINI commands, using a separate build timestamp and
-preserving both result trees. It is valid only for the ICS55 PR/MINI behavioral
+with the remaining behavioral MINI commands, using a separate build root while
+retaining the valid timestamp and preserving both result trees. It is valid only for the ICS55 PR/MINI behavioral
 path; both groups complete and either failure fails the regression. The workflow
 opts in only for pull requests; nightly/full-flow and other PDKs are unchanged.
 `build/ci-summary/parallel-iverilog.json` records both command lists and build
