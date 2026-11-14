@@ -524,6 +524,21 @@ def test_fan_in_binds_optional_workflow_identity(repo: tuple[Path, str]) -> None
             bind_workflow_identity(
                 {"source_revision": merge}, root, {**identity, "workflow_head_sha": invalid_head}
             )
+    git(root, "branch", "evaluated-merge", merge)
+    shallow = root.parent / "shallow"
+    subprocess.run(
+        ["git", "clone", "--quiet", "--depth", "1", "--branch", "evaluated-merge", f"file://{root}", str(shallow)],
+        check=True,
+        capture_output=True,
+    )
+    with pytest.raises(ValueError, match="second parent"):
+        bind_workflow_identity(
+            {"source_revision": merge}, shallow, {**identity, "workflow_head_sha": current_head}
+        )
+    git(shallow, "fetch", "--quiet", "--depth=2", "origin", "evaluated-merge")
+    assert bind_workflow_identity(
+        {"source_revision": merge}, shallow, {**identity, "workflow_head_sha": current_head}
+    )["source_revision"] == merge
     with pytest.raises(ValueError, match="unavailable"):
         bind_workflow_identity({"source_revision": "f" * 40}, root, identity)
     with pytest.raises(ValueError, match="incomplete"):
@@ -550,6 +565,12 @@ def test_history_workflow_binds_run_without_skipping_full_jobs() -> None:
     assert "--workflow-run" in run["run"]
     assert "--pr-number" in run["run"]
     assert "--execute" not in run["run"]
+    checkout = next(
+        step
+        for step in workflow["jobs"]["fixtures-fan-in"]["steps"]
+        if step["name"] == "Check out repository"
+    )
+    assert checkout["with"]["fetch-depth"] == "2"
     fan_in = next(
         step
         for step in workflow["jobs"]["fixtures-fan-in"]["steps"]
