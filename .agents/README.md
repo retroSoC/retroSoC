@@ -121,8 +121,9 @@ passes. Native commands remain the default unless a flow opts into resume.
 Keep regression and behavior-preserving RTL migration inside the existing
 implementation/review responsibilities through their linked references.
 Ordinary prose edits, small script fixes, and Git tasks do not require a new
-skill or an IP design freeze. No workflow here introduces a scheduled trigger
-or an automatic commit, push, or publication step.
+skill or an IP design freeze. Scheduled triggers are limited to explicitly
+opted-in, read-only Skill canaries; no workflow automatically commits, pushes,
+or publishes task content.
 
 ## Product-specific validation
 
@@ -146,7 +147,12 @@ applicable documentation, JSON, Pytest, and whitespace checks listed in the root
 agent contract. Hardware gates remain proportionate to the feature work.
 
 Static corpus validation does not prove agent behavior. `make skill-eval-smoke`
-executes three read-only Codex scenarios in isolated Git workspaces and retains
-traces and deterministic grades. The runner and model are recorded explicitly;
-a static result is never described as a completed behavior, hardware, or
-publication run. Other hosts can emit the same trace schema for grading.
+executes one read-only scenario per registered Skill in isolated Git workspaces
+and retains traces and deterministic grades. Codex remains the default runner;
+`RUNNER=kimi` selects the [tool-restricted Kimi Agent](skill-eval-agent.md), which
+has no Bash, write, or delegation capability. Runner/model, Skill SHA,
+contract version, input snapshot, and workspace tree are recorded explicitly; a
+static result is never described as completed behavior, hardware, or publication
+work. Other hosts can emit the same trace schema for grading. The shared
+[engineering playbook](skills/shared/engineering-playbook.md) defines operational
+recovery, delivery, reuse, and contract-version boundaries.

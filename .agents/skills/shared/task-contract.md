@@ -34,7 +34,11 @@ an explicit human approval reference and the approved plan digest. Approval for
 one target, phase, specification revision, or product does not authorize another.
 
 The [Skill registry](../registry.json) records ownership, entrypoints, contract
-versions, and eval corpora. The Git revision is the actual Skill version.
+versions, and eval corpora. The Git revision is the actual Skill version. Follow
+the [shared engineering playbook](engineering-playbook.md) for operational
+recovery, delivery, reuse thresholds, and contract migrations. Additive guidance
+and eval changes do not require a new contract version; incompatible inputs or
+outputs require a reviewed migration record.
 
 ## Resolve inputs and targets
 

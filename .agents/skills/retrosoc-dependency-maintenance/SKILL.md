@@ -8,7 +8,9 @@ description: Inspect, restore, or upgrade locked retroSoC dependencies and devel
 Keep installed inputs and reproducible configuration consistent. Read
 [AGENTS.md](../../../AGENTS.md), the
 [dependency guide](../../../dependencies/README.md), and the applicable
-[maintenance reference](references/maintenance.md) before acting.
+[maintenance reference](references/maintenance.md) before acting. Use the
+[shared engineering playbook](../shared/engineering-playbook.md) for CI recovery,
+long tasks, delivery, and evidence retention.
 
 ## Resolve intent and scope
 

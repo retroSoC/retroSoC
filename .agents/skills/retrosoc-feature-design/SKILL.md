@@ -49,7 +49,8 @@ exists.
 Read the [shared task contract](../shared/task-contract.md) for host-neutral
 invocation, input/target resolution, constraint vocabulary, and structured
 handoffs. Read the [shared evidence contract](../shared/evidence.md) before
-claiming validation coverage.
+claiming validation coverage. Use the [shared engineering playbook](../shared/engineering-playbook.md)
+for CI recovery, long-task lifecycle, native PR delivery, and evidence retention.
 
 Read `docs/soc-family-positioning.md` and the selected product contracts to
 distinguish implemented baselines from planned targets. Recheck committed

@@ -769,7 +769,7 @@ help:
 	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
-	  '  skill-eval-smoke           run three live read-only Codex Skill evaluations' \
+	  '  skill-eval-smoke           run six live read-only Skill evaluations (RUNNER=codex|kimi)' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
 	  '  format-check               check self-owned C, Makefile, and RTL formatting' \
@@ -1378,7 +1378,8 @@ skill-eval-static:
 
 skill-eval-smoke:
 	python3 $(ROOT_PATH)/scripts/skill_eval.py run --root $(ROOT_PATH) --smoke \
-	  $(if $(MODEL),--model $(MODEL)) --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
+	  $(if $(RUNNER),--runner $(RUNNER)) $(if $(MODEL),--model $(MODEL)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
 
 engineering-metrics:
 	python3 $(ROOT_PATH)/scripts/engineering_metrics.py collect \

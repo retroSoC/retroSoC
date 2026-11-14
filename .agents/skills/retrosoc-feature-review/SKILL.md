@@ -41,7 +41,9 @@ approval, a diff range, or a failure artifact when multiple candidates exist.
 Read the [shared task contract](../shared/task-contract.md) for host-neutral
 invocation, target resolution, and constraint precedence. Read the [shared
 evidence contract](../shared/evidence.md) and bind every claim to its target,
-profile, PDK, source revision, effective configuration, and build variant.
+profile, PDK, source revision, effective configuration, and build variant. Use
+the [shared engineering playbook](../shared/engineering-playbook.md) for CI
+classification, bounded recovery, native delivery, and cleanup evidence.
 
 Read `docs/soc-family-positioning.md` to distinguish supported baselines from
 roadmap targets, and verify executable support in the repository. Planned
