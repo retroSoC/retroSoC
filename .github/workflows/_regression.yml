@@ -50,6 +50,11 @@ on:
         required: false
         default: true
         type: boolean
+      parallel_iverilog:
+        description: Overlap the isolated MINI PR Icarus assembly self-test without dropping commands
+        required: false
+        default: false
+        type: boolean
       change_mode:
         description: Path-based auto selection or an unconditional full matrix
         required: false
@@ -203,6 +208,7 @@ jobs:
           PRODUCT: ${{ matrix.product }}
           TINY_P7_IVERILOG: ${{ inputs.tiny_p7_iverilog }}
           TINY_P7_TIMEOUT: ${{ inputs.tiny_p7_iverilog_timeout_seconds }}
+          PARALLEL_IVERILOG: ${{ inputs.parallel_iverilog }}
         run: |
           set -euo pipefail
           args=(--root . --suite "${SUITE}" --pdk "${PDK}"
@@ -213,6 +219,9 @@ jobs:
           fi
           if [[ "${BEHAVIORAL_ONLY}" == "true" ]]; then
             args+=(--behavioral-only)
+          fi
+          if [[ "${PARALLEL_IVERILOG}" == "true" && "${PRODUCT}" == "MINI" ]]; then
+            args+=(--parallel-iverilog)
           fi
           /usr/bin/time -v python3 scripts/regress.py "${args[@]}"
 

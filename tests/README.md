@@ -103,6 +103,9 @@ tooling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
+  `test_regress_parallel.py` checks exact MINI command preservation, real
+  two-group overlap, isolated build identities, failure propagation, recursive
+  result discovery, and the PR-only workflow guard.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
