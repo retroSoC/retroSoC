@@ -148,7 +148,7 @@ def cleanup_merged_branch(
 
 
 def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
-    return gh_json(
+    pull = gh_json(
         [
             "pr",
             "view",
@@ -156,9 +156,12 @@ def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
             "--repo",
             repository,
             "--json",
-            "state,isDraft,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
+            "state,isDraft,baseRefName,headRefName,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
         ]
     )
+    details = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    pull["headRefOid"] = details.get("head", {}).get("sha", "")
+    return pull
 
 
 def merge_pr(repository: str, number: int, root: Path, pull: dict[str, Any]) -> None:

@@ -463,3 +463,18 @@ def test_watch_rejects_failed_structured_checks(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr("scripts.pr_workflow.merge_pr", lambda repository, number, root, pull: pytest.fail("must not merge"))
     with pytest.raises(RuntimeError, match="checks failed"):
         watch_and_merge(Path.cwd(), "retroSoC/retroSoC", 230, 60)
+
+
+def test_view_pr_binds_head_through_rest_for_older_gh(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import view_pr
+
+    def fake_api(arguments):
+        if arguments[0] == "pr":
+            assert "headRefOid" not in arguments[-1]
+            return {"state": "OPEN", "headRefName": "ci/example"}
+        assert arguments == ["api", "repos/retroSoC/retroSoC/pulls/239"]
+        return {"head": {"sha": "ab" * 20}}
+
+    monkeypatch.setattr("scripts.pr_workflow.gh_json", fake_api)
+    pull = view_pr("retroSoC/retroSoC", 239, Path.cwd())
+    assert pull["headRefOid"] == "ab" * 20
