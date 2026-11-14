@@ -73,4 +73,7 @@ a `contract_migration` document explaining migration and compatibility evidence.
 Static corpus validation is not behavior execution. Run live evals only in the
 isolated read-only runner and retain its trace, runner/model, Skill SHA,
 contract version, input snapshot, workspace tree, and grades. An unavailable
-runner is NOT_RUN, not a behavior pass.
+runner is NOT_RUN, not a behavior pass. `make skill-replay TRACES=<directory>`
+rechecks retained traces without starting a runner; invalid identity, tampered
+input, or a failed grade remains a failure. Historical replay is not fresh
+behavior execution or evidence that current product behavior passed.
