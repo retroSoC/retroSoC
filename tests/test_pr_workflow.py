@@ -23,7 +23,8 @@ def make_repo(root: Path) -> dict:
     git(root, "config", "user.email", "workflow@example.invalid")
     git(root, "config", "user.name", "Workflow")
     (root / "README.md").write_text("initial\n", encoding="utf-8")
-    git(root, "add", "README.md")
+    (root / ".gitignore").write_text("build/\n", encoding="utf-8")
+    git(root, "add", "README.md", ".gitignore")
     git(root, "commit", "-qm", "initial")
     git(root, "checkout", "-qb", "dev")
     git(root, "checkout", "-qb", "feat/example")
@@ -105,7 +106,8 @@ def test_cleanup_preserves_unmerged_local_commits(tmp_path: Path) -> None:
 def test_cleanup_removes_clean_linked_worktree(tmp_path: Path) -> None:
     pull = make_repo(tmp_path)
     git(tmp_path, "switch", "dev")
-    linked = tmp_path.parent / "linked"
+    linked = tmp_path / "build/agent-worktrees/example"
+    linked.parent.mkdir(parents=True)
     git(tmp_path, "worktree", "add", str(linked), "feat/example")
     deleted = []
     warnings = cleanup_merged_branch(
@@ -123,7 +125,8 @@ def test_cleanup_removes_clean_linked_worktree(tmp_path: Path) -> None:
 def test_cleanup_removes_linked_worktree_with_unrelated_main_branch(tmp_path: Path) -> None:
     pull = make_repo(tmp_path)
     git(tmp_path, "checkout", "-qb", "fix/unrelated", "HEAD~1")
-    linked = tmp_path.parent / "linked"
+    linked = tmp_path / "build/agent-worktrees/example"
+    linked.parent.mkdir(parents=True)
     git(tmp_path, "worktree", "add", str(linked), "feat/example")
     deleted = []
     warnings = cleanup_merged_branch(
@@ -136,6 +139,48 @@ def test_cleanup_removes_linked_worktree_with_unrelated_main_branch(tmp_path: Pa
     assert current_branch(tmp_path) == "fix/unrelated"
     assert not local_branch_exists(tmp_path, "feat/example")
     assert deleted == [("retroSoC/retroSoC", "feat/example")]
+
+
+def test_cleanup_preserves_linked_artifacts_before_removal(tmp_path: Path) -> None:
+    pull = make_repo(tmp_path)
+    git(tmp_path, "switch", "dev")
+    linked = tmp_path / "build/agent-worktrees/example"
+    linked.parent.mkdir(parents=True)
+    git(tmp_path, "worktree", "add", str(linked), "feat/example")
+    packet = linked / "build/tasks/demo/task.json"
+    packet.parent.mkdir(parents=True)
+    packet.write_text('{"task_id": "demo"}\n', encoding="utf-8")
+    (linked / "build/result.json").write_text('{"status": "passed"}\n', encoding="utf-8")
+    deleted = []
+    warnings = cleanup_merged_branch(
+        linked,
+        pull,
+        remote_delete=lambda repository, branch, root: deleted.append((repository, branch)),
+    )
+    assert warnings == []
+    preserved = tmp_path / "build/agent-artifacts/demo"
+    assert (preserved / "result.json").is_file()
+    assert (preserved / "artifact-manifest.json").is_file()
+    assert not linked.exists()
+    assert deleted == [("retroSoC/retroSoC", "feat/example")]
+
+
+def test_cleanup_preserves_noncanonical_linked_worktree(tmp_path: Path) -> None:
+    pull = make_repo(tmp_path)
+    git(tmp_path, "switch", "dev")
+    linked = tmp_path.parent / "outside"
+    git(tmp_path, "worktree", "add", str(linked), "feat/example")
+    deleted = []
+    warnings = cleanup_merged_branch(
+        linked,
+        pull,
+        remote_delete=lambda repository, branch, root: deleted.append((repository, branch)),
+    )
+    assert len(warnings) == 1
+    assert "outside the canonical registry" in warnings[0]
+    assert linked.exists()
+    assert local_branch_exists(tmp_path, "feat/example")
+    assert deleted == []
 
 
 def test_cleanup_preserves_dirty_worktree_and_remote_branch(tmp_path: Path) -> None:
@@ -398,6 +443,10 @@ def test_checks_report_binds_api_queries_to_pr_head(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr("scripts.pr_workflow.paginated_check_data", lambda endpoint, key: [])
     with pytest.raises(RuntimeError, match="has no checks"):
         checks_report(Path.cwd(), 239, "retroSoC/retroSoC", ["quality-gate"])
+    pending = checks_report(Path.cwd(), 239, "retroSoC/retroSoC", ["quality-gate"], allow_empty=True)
+    assert pending["status"] == "PENDING"
+    assert pending["checks_pending"] is True
+    assert pending["missing_required_contexts"] == ["quality-gate"]
 
 
 def test_watch_rejects_failed_structured_checks(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -414,3 +463,18 @@ def test_watch_rejects_failed_structured_checks(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr("scripts.pr_workflow.merge_pr", lambda repository, number, root, pull: pytest.fail("must not merge"))
     with pytest.raises(RuntimeError, match="checks failed"):
         watch_and_merge(Path.cwd(), "retroSoC/retroSoC", 230, 60)
+
+
+def test_view_pr_binds_head_through_rest_for_older_gh(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.pr_workflow import view_pr
+
+    def fake_api(arguments):
+        if arguments[0] == "pr":
+            assert "headRefOid" not in arguments[-1]
+            return {"state": "OPEN", "headRefName": "ci/example"}
+        assert arguments == ["api", "repos/retroSoC/retroSoC/pulls/239"]
+        return {"head": {"sha": "ab" * 20}}
+
+    monkeypatch.setattr("scripts.pr_workflow.gh_json", fake_api)
+    pull = view_pr("retroSoC/retroSoC", 239, Path.cwd())
+    assert pull["headRefOid"] == "ab" * 20

@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.agent_control import read_json  # noqa: E402
 from scripts.engineering_metrics import gh_json  # noqa: E402
+from scripts.flow_control import write_json  # noqa: E402
+from scripts.worktree_registry import parse_worktrees, reconcile_worktrees  # noqa: E402
 
 
 def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -85,9 +87,19 @@ def cleanup_merged_branch(
     branch = pull["headRefName"]
     if branch in {"dev", "main"}:
         raise RuntimeError("refusing to delete a protected branch")
-    if not clean_worktree(root):
+    main_root = worktree_main_root(root).resolve()
+    current = current_branch(root)
+    target_root = root.resolve()
+    if current != branch:
+        matches = [
+            entry
+            for entry in parse_worktrees(root)[1]
+            if entry.get("branch") == branch and not entry.get("detached") and not entry.get("orphan")
+        ]
+        if len(matches) == 1:
+            target_root = Path(matches[0]["path"]).resolve()
+    if not clean_worktree(target_root):
         return ["worktree is dirty; keep the merged branch and worktree unchanged"]
-    main_root = worktree_main_root(root)
     merge_commit = pull.get("mergeCommit", {}).get("oid")
     if not merge_commit:
         raise RuntimeError("merged PR has no merge commit; refusing cleanup")
@@ -99,12 +111,22 @@ def cleanup_merged_branch(
             return [f"local branch has unmerged commits; keep {branch} and its worktree unchanged"]
         if contained.returncode:
             raise RuntimeError(contained.stderr)
-    current = current_branch(root)
-    if current == branch and root.resolve() == main_root.resolve():
+    if current == branch and target_root == main_root:
         run_ok(["git", "switch", "dev"], main_root)
         run_ok(["git", "merge", "--ff-only", "origin/dev"], main_root)
-    elif current == branch:
-        run_ok(["git", "-C", str(main_root), "worktree", "remove", str(root.resolve())], main_root)
+    elif target_root != main_root:
+        registry = reconcile_worktrees(target_root, execute=True, only_branch=branch)
+        if len(registry["actions"]) != 1 or registry["actions"][0]["status"] != "CLEANED":
+            detail = (
+                registry["actions"][0].get("warning", "non-canonical or ineligible worktree")
+                if registry["actions"]
+                else "worktree is outside the canonical registry"
+            )
+            return [f"worktree cleanup was not completed for {branch}: {detail}"]
+        write_json(
+            main_root / "build/agent-worktrees" / f"{branch.replace('/', '-')}-cleanup.json",
+            registry,
+        )
     if local_branch_exists(main_root, branch):
         result = git(
             main_root,
@@ -126,7 +148,7 @@ def cleanup_merged_branch(
 
 
 def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
-    return gh_json(
+    pull = gh_json(
         [
             "pr",
             "view",
@@ -137,6 +159,9 @@ def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
             "state,isDraft,baseRefName,headRefName,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
         ]
     )
+    details = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    pull["headRefOid"] = details.get("head", {}).get("sha", "")
+    return pull
 
 
 def merge_pr(repository: str, number: int, root: Path, pull: dict[str, Any]) -> None:
@@ -241,7 +266,13 @@ def evaluate_checks(
     }
 
 
-def checks_report(root: Path, number: int, repository: str, required: list[str]) -> dict[str, Any]:
+def checks_report(
+    root: Path,
+    number: int,
+    repository: str,
+    required: list[str],
+    allow_empty: bool = False,
+) -> dict[str, Any]:
     del root
     pull = gh_json(["api", f"repos/{repository}/pulls/{number}"])
     head_sha = pull.get("head", {}).get("sha", "")
@@ -249,9 +280,12 @@ def checks_report(root: Path, number: int, repository: str, required: list[str])
         raise RuntimeError(f"PR #{number} has no head SHA")
     check_runs = paginated_check_data(f"repos/{repository}/commits/{head_sha}/check-runs", "check_runs")
     statuses = paginated_check_data(f"repos/{repository}/commits/{head_sha}/status", "statuses")
-    if not check_runs and not statuses:
+    if not check_runs and not statuses and not allow_empty:
         raise RuntimeError(f"PR #{number} has no checks at {head_sha}; refusing to merge")
-    return evaluate_checks(head_sha, required, check_runs, statuses)
+    report = evaluate_checks(head_sha, required, check_runs, statuses)
+    if not check_runs and not statuses:
+        report["checks_pending"] = True
+    return report
 
 
 def checks_result(root: Path, number: int, repository: str) -> subprocess.CompletedProcess[str]:
