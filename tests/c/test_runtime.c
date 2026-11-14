@@ -1419,6 +1419,114 @@ static int test_st7789vi_patterns(void) {
         RS_OK) {
         return 12;
     }
+    {
+        rs_ppalite_frame_t frame = {
+            .base = UINT32_C(0x54010000),
+            .capacity_bytes = UINT32_C(38400),
+            .width = 159U,
+            .height = 120U,
+            .row_bytes = UINT32_C(318),
+            .stride_bytes = UINT32_C(320),
+            .valid_bytes = UINT32_C(38160),
+            .transport_bytes = UINT32_C(38400),
+            .valid = true,
+        };
+        rs_st7789vi_frame_layout_t layout;
+        window = (rs_st7789vi_window_t){0U, 0U, 158U, 119U};
+        if ((rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_OK) ||
+            (layout.frames_per_row != 159U) || (layout.payload_bytes_per_row != 318U) ||
+            (layout.transport_bytes_per_row != 320U) || !layout.frame16) {
+            return 13;
+        }
+        frame.result_config = UINT32_C(0x40);
+        frame.output_byte_swap = true;
+        if ((rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_OK) ||
+            (layout.frames_per_row != 318U) || layout.frame16) {
+            return 14;
+        }
+        frame.output_byte_swap = false;
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_ENOTSUP) {
+            return 15;
+        }
+        frame.output_byte_swap = true;
+        frame.result_config |= UINT32_C(0x10);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_ENOTSUP) {
+            return 16;
+        }
+        frame.result_config &= ~UINT32_C(0x10);
+        frame.valid = false;
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 17;
+        }
+        frame.valid = true;
+        frame.row_bytes = UINT32_C(320);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 18;
+        }
+        frame.row_bytes = UINT32_C(318);
+        frame.valid_bytes = UINT32_C(38162);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 19;
+        }
+        frame.valid_bytes = UINT32_C(38160);
+        frame.transport_bytes = UINT32_C(38404);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 20;
+        }
+        frame.transport_bytes = UINT32_C(38400);
+        frame.capacity_bytes = UINT32_C(38399);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 21;
+        }
+        frame.capacity_bytes = UINT32_C(38400);
+        frame.base = UINT32_C(0xFFFFFFFC);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 22;
+        }
+        frame.base = UINT32_C(0x54010000);
+        window.x1 = 159U;
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 23;
+        }
+        if ((rs_st7789vi_frame_layout(NULL, &frame, &layout) != RS_EINVAL) ||
+            (rs_st7789vi_frame_layout(&window, NULL, &layout) != RS_EINVAL) ||
+            (rs_st7789vi_frame_layout(&window, &frame, NULL) != RS_EINVAL)) {
+            return 24;
+        }
+    }
+    {
+        rs_ppalite_frame_t frame = {
+            .base = UINT32_C(0x1000),
+            .capacity_bytes = UINT32_C(8),
+            .width = 1U,
+            .height = 2U,
+            .row_bytes = UINT32_C(2),
+            .stride_bytes = UINT32_C(0x80000004),
+            .valid_bytes = UINT32_C(4),
+            .transport_bytes = UINT32_C(8),
+            .valid = true,
+        };
+        rs_st7789vi_frame_layout_t layout;
+        window = (rs_st7789vi_window_t){0U, 0U, 0U, 1U};
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_EINVAL) {
+            return 25;
+        }
+        frame.stride_bytes = UINT32_C(4);
+        if (rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_OK) {
+            return 26;
+        }
+        frame.height = 1U;
+        frame.valid_bytes = UINT32_C(2);
+        frame.transport_bytes = UINT32_C(4);
+        frame.capacity_bytes = UINT32_C(4);
+        frame.result_config = UINT32_C(0x40);
+        frame.output_byte_swap = true;
+        window = (rs_st7789vi_window_t){0U, 0U, 0U, 0U};
+        if ((rs_st7789vi_frame_layout(&window, &frame, &layout) != RS_OK) ||
+            (layout.frames_per_row != 2U) || layout.frame16) {
+            return 27;
+        }
+    }
     return 0;
 }
 
@@ -3699,6 +3807,7 @@ static int test_tiny_rcu_boundaries(void) {
 rs_status_t rs_tiny_ppalite_probe(rs_ppalite_info_t *info);
 rs_status_t rs_tiny_ppalite_configure(const rs_ppalite_config_t *config);
 rs_status_t rs_tiny_ppalite_select_route(rs_ppalite_route_t route, rs_timeout_t timeout);
+rs_status_t rs_tiny_ppalite_get_measurements(rs_ppalite_measurements_t *measurements);
 rs_status_t rs_tiny_ppalite_capture_begin(rs_ppalite_session_t *session,
                                           const rs_ppalite_config_t *config, uintptr_t destination,
                                           uint32_t capacity_bytes, rs_timeout_t timeout);
@@ -3848,6 +3957,26 @@ static int test_ppalite_hal(void) {
         return 12;
     }
     rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_ROUTE / 4U] = RS_PPALITE_ROUTE_RAW;
+    {
+        rs_ppalite_measurements_t measurements;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_INPUT_WORDS / 4U] = 15U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_INPUT_PIXELS / 4U] = 25U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_INPUT_LINES / 4U] = 5U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_OUTPUT_WORDS / 4U] = 2U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_OUTPUT_LINES / 4U] = 2U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_INPUT_STALL_CYCLES / 4U] = 17U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_OUTPUT_STALL_CYCLES / 4U] = 29U;
+        rs_ppalite_test_mmio[RS_PPALITE_ABI_APB4_FIFO_LEVELS / 4U] = UINT32_C(0x8000);
+        if ((rs_tiny_ppalite_get_measurements(&measurements) != RS_OK) ||
+            (measurements.input_words != 15U) || (measurements.input_pixels != 25U) ||
+            (measurements.input_lines != 5U) || (measurements.output_words != 2U) ||
+            (measurements.output_lines != 2U) || (measurements.input_stall_cycles != 17U) ||
+            (measurements.output_stall_cycles != 29U) ||
+            (measurements.fifo_levels != UINT32_C(0x8000)) ||
+            (rs_tiny_ppalite_get_measurements(NULL) != RS_EINVAL)) {
+            return 13;
+        }
+    }
     return 0;
 }
 

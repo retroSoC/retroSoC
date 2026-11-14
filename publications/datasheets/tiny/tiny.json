@@ -9,7 +9,7 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "f5f58a36758968e984a43159a3e155c56cbe1f38",
+  "source_revision": "a46543a2ed87e3a153285581e9dfec46bbf6ee35",
   "profile": "configs/ci/ics55-tiny.mk",
   "change_prefix": "tiny-v02-mini-alignment-20261029-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",

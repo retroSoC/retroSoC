@@ -70,7 +70,10 @@ source/script/input/environment/tool-lock digests, and resource evidence without
 storing environment values in those digests. `--status` reconciles stale runs,
 `--cancel` signals only a matching run identity, and `--resume` reuses a passing
 result only when every fingerprint matches; a failed attempt may resume only
-with identical inputs and receives a new run ID. A zero-exit parent receives a
+with identical inputs and receives a new run ID. The explicit
+`YOSYS_OPT_RESUME=YES`/`yosys_opt_resume.py synth` combination delegates these
+reuse decisions to the inner source-bound driver instead; no other command is
+exempt from the outer full-fingerprint check. A zero-exit parent receives a
 bounded descendant grace period for normal compiler and cleanup processes;
 nonzero exits or descendants that outlast the grace period are terminated.
 Process-group liveness ignores zombie members so completed children cannot be
@@ -94,12 +97,20 @@ keeps the native initial `opt_expr`/`opt_merge -nomux` and iterative
 `opt_muxtree`/`opt_reduce`/`opt_merge`/`opt_dff`/`opt_clean`/`opt_expr`
 sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
 on timeout, malformed state, changed input, or the iteration limit. Schema-v2
-state and the synthesis manifest additionally bind execution fingerprints and
-checkpoint/output SHA-256 values. Legacy or corrupted state is never trusted.
-Invoke it through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
+state and the synthesis manifest additionally bind execution fingerprints,
+optimizer-environment and checkpoint/output SHA-256 values before the first
+interruptible stage. Legacy or corrupted state is never trusted. Invoke it
+through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
 `YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
-state, never an unrelated worktree. This is synthesis infrastructure, not
-timing, netlist, or release evidence by itself.
+state, never an unrelated worktree. Frontend/backend cache records bind the
+synthesis and support scripts, effective synthesis environment, filelist source
+contents, checkpoint and netlist identities. With complete `SV_FLIST` source
+identity, classified script, stage-environment or output changes rebuild the
+affected stage only while source and tool identities remain valid. Git
+source-revision/state, tool-lock and unclassified environment changes fail
+closed. Without `SV_FLIST`, the frontend is always rebuilt and retained backend
+output drift fails closed. This is synthesis infrastructure, not timing,
+netlist, or release evidence by itself.
 
 Mini/IHP130 Yosys backend completion remains a maintainer-deferred missing item.
 The authoritative owned record is `quality/validation-gaps.json`, with scope,
@@ -143,6 +154,12 @@ fixtures through explicit `ppalite-p2-*` Make targets. It preserves source/tool
 identities, command results, formal witnesses and mapped artifacts below the
 selected Tiny variant. It does not instantiate PPALite in the product topology,
 admit central-DMA traffic or establish complete-product timing closure.
+
+`ppalite_p4.py check` validates the Tiny camera/memory/save/display image with
+an independent scalar model, panel byte order and padding checks, recovery and
+measurement records, and the strict simulation verdict. It binds the report to
+the matching P4 manifest, firmware, simulator and log hashes below
+`meta/ppalite-p4/`; generated records keep `phase_accepted=false`.
 
 `generate_apu_kws_rtl_constants.py` also emits the frozen APU-P9 APUC image
 and 15-bank layout manifest. `apu_kws_coeff.py` owns the independent APUC 1.0

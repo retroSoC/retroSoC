@@ -77,6 +77,86 @@ def test_resume_reuses_only_matching_passed_result(tmp_path: Path) -> None:
     assert log.read_text(encoding="utf-8") == "ok\n"
 
 
+def test_yosys_opt_resume_delegates_only_the_inner_driver(tmp_path: Path) -> None:
+    driver = tmp_path / "yosys_opt_resume.py"
+    driver.write_text("import os\nprint(os.environ['FLOW_TEST_VALUE'])\n", encoding="utf-8")
+    command = [
+        "timeout",
+        "--foreground",
+        "--kill-after=5s",
+        "20s",
+        sys.executable,
+        str(driver),
+        "--root",
+        str(tmp_path),
+        "synth",
+    ]
+    first, original, _, _ = invoke(
+        tmp_path,
+        command,
+        "--env",
+        "YOSYS_OPT_RESUME=YES",
+        "--env",
+        "FLOW_TEST_VALUE=initial",
+        "--script",
+        str(driver),
+        "--resume",
+    )
+    assert first.returncode == 0
+    assert original["attempt"] == 1
+
+    changed, retried, log, _ = invoke(
+        tmp_path,
+        command,
+        "--env",
+        "YOSYS_OPT_RESUME=YES",
+        "--env",
+        "FLOW_TEST_VALUE=changed",
+        "--script",
+        str(driver),
+        "--resume",
+    )
+    assert changed.returncode == 0
+    assert retried["attempt"] == 2
+    assert retried["run_id"] != original["run_id"]
+    assert log.read_text(encoding="utf-8") == "changed\n"
+
+
+@pytest.mark.parametrize("mode", ["unrelated", "argument", "opt"])
+def test_yosys_opt_resume_rejects_token_and_subcommand_lookalikes(tmp_path: Path, mode: str) -> None:
+    driver = tmp_path / "yosys_opt_resume.py"
+    driver.write_text("import os\nprint(os.environ['FLOW_TEST_VALUE'])\n", encoding="utf-8")
+    if mode == "unrelated":
+        command = ["echo", "synth", str(driver)]
+    elif mode == "argument":
+        command = [sys.executable, "-c", "import os; print(os.environ['FLOW_TEST_VALUE'])", "synth", str(driver)]
+    else:
+        command = [sys.executable, str(driver), "--root", str(tmp_path), "opt", "synth"]
+    first, original, _, result = invoke(
+        tmp_path,
+        command,
+        "--env",
+        "YOSYS_OPT_RESUME=YES",
+        "--env",
+        "FLOW_TEST_VALUE=initial",
+        "--resume",
+    )
+    assert first.returncode == 0
+
+    changed, _, _, _ = invoke(
+        tmp_path,
+        command,
+        "--env",
+        "YOSYS_OPT_RESUME=YES",
+        "--env",
+        "FLOW_TEST_VALUE=changed",
+        "--resume",
+    )
+    assert changed.returncode == 2
+    assert "fingerprint mismatch" in changed.stderr
+    assert json.loads(result.read_text(encoding="utf-8"))["run_id"] == original["run_id"]
+
+
 def test_failed_attempt_resumes_with_new_identity_and_retained_history(tmp_path: Path) -> None:
     command = [sys.executable, "-c", "raise SystemExit(4)"]
     first, original, _, result = invoke(tmp_path, command)

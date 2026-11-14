@@ -62,6 +62,13 @@ tooling.
   recovery without extra payload. `tests/c/test_runtime.c` adds deterministic
   PPALite layout, absent/present HAL, RAW-route rejection, complete FIFO-level
   checks, and ARM-failure DMA cleanup with retained leases on cleanup failure.
+- `test_ppalite_p4.py` checks descriptor/stride-aware ST7789VI row display,
+  isolated P4 image composition, independent scalar capture/panel oracles,
+  stride-aware SD readback records, recovery and measurement records, and
+  corrupted-log rejection. The host C
+  suite covers invalid descriptors, odd-width row padding, byte order, capacity
+  and address overflow. These checks do not replace full-simulator acceptance
+  or continuous-camera/physical-rate qualification.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked
@@ -101,14 +108,15 @@ tooling.
   workflow gates, product matrices, and cache observations.
   `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
-  bounded descendant completion after a normal parent exit, zombie-member
-  exclusion, and process-group cleanup when descendants outlive the grace period.
+  explicit inner-Yosys resume delegation, bounded descendant completion after a
+  normal parent exit, zombie-member exclusion, and process-group cleanup when
+  descendants outlive the grace period.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
   complete frontend/optimizer/backend execution, bounded failure, retained
-  state, execution fingerprints, and checkpoint/output digest validation with
-  real Yosys fixtures.
+  state, cache identity invalidation, execution fingerprints, and
+  checkpoint/output digest validation with real Yosys fixtures.
   `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
   scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
   covers dry-run inventory, merged-branch cleanup, artifact preservation, and
