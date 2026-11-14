@@ -59,6 +59,17 @@ the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
 Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
+`job_metrics.py` adds bounded per-attempt job pagination, queue/execution/step
+timing, first-attempt and same-head duplicate execution, plus explicit cache-step
+observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
+optional cache/config digests without treating a cache as a cached PASS.
+`delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
+optionally matches local delivery JSON by merge commit for agent-watch/cleanup
+timing. Unknown timeline, cache size, or local evidence is never reported as
+zero. `ci_observations.py` reads head-bound shadow artifacts without file
+extraction and includes read-only delivery-policy evaluations. Neither enables
+reuse, a merge queue, or a metric gate. Offline `summarize` accepts separate
+jobs/delivery/cache, policy, and shadow JSON files.
 `delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
 coverage, successful main quality runs, and validated same-profile/same-tool
 metric samples. Merge queues are considered only for sustained integration
