@@ -102,7 +102,10 @@ tooling.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
-  no-skip shadow workflow. `test_delivery_policy.py` covers merge-group parity,
+  no-skip shadow workflow. Same-PR history tests cover deterministic prior-run
+  selection, current-run exclusion, dual head/evaluated revisions, PR ancestry,
+  run/attempt/artifact identity, missing source objects, ambiguous timestamps,
+  and incomplete workflow metadata. `test_delivery_policy.py` covers merge-group parity,
   ready/conflict thresholds, draft/fork exclusions, CI-success versus valid
   metric-sample distinctions, duplicate/mixed sample rejection, reviewed
   baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,

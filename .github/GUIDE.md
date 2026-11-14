@@ -31,6 +31,11 @@ always-run gate so a skipped job cannot silently satisfy a required check.
   is disabled by default and never skips the full matrix. Missing or mismatched
   evidence selects `RUN_FULL`; invalid evidence fails the quality gate. An
   optional manual `source_run` binds comparison to a real run and artifact.
+  Pull-request shadow evaluation also selects an earlier successful quality run
+  from the same PR, excluding the current run. Workflow head, evaluated merge
+  revision, run/attempt, PR, and fan-in artifact identities are all bound;
+  unavailable history or incomplete identity selects `RUN_FULL`. No required
+  job is skipped and no historical PASS is reused by this observation.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references. Each isolated matrix job collects the complete Pytest
   node-id manifest and executes its deterministic duration-weighted shard with

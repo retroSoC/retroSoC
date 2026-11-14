@@ -160,10 +160,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           SOURCE_RUN: ${{ inputs.source_run }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+          CURRENT_RUN: ${{ github.run_id }}
         run: |
           BASE="$(git merge-base origin/dev HEAD)"
           args=(--base "${BASE}" --head "${{ github.sha }}"
+                --workflow-head "${WORKFLOW_HEAD}" --workflow-run "${CURRENT_RUN}"
                 --event "${EVENT_NAME}" --output build/incremental-ci/shadow.json)
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--pr-number "${PR_NUMBER}" --auto-previous)
+          fi
           if [[ -n "${SOURCE_RUN}" ]]; then
             args+=(--source-run "${SOURCE_RUN}")
           fi
@@ -345,11 +352,21 @@ jobs:
           path: build/pytest/fan-in
 
       - name: Verify complete fixture coverage
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
         run: |
           args=(verify --output build/pytest/fan-in/summary.json)
           for path in build/pytest/fan-in/*/; do
             args+=(--shard-dir "${path}")
           done
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--workflow-head "${WORKFLOW_HEAD}"
+                  --workflow-run "${{ github.run_id }}"
+                  --run-attempt "${{ github.run_attempt }}"
+                  --pr-number "${PR_NUMBER}")
+          fi
           python3 scripts/pytest_shards.py "${args[@]}"
 
       - name: Upload fixture fan-in
