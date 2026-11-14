@@ -136,3 +136,9 @@ the conditions in @performance-characterization rather than adding individual IP
 #change-end("v05-dev-20261022-product-use")
 
 #change-end("v05-c906-20261022-sections-product-use")
+
+#change-start("v05-commercial-20261114-quick-reference","Specification and evidence quick reference")
+== Specification and Evidence Quick Reference <mini-specification-quick>
+#import "../../specifications/components.typ": quick-reference
+#quick-reference(data.specifications,ds-table)
+#change-end("v05-commercial-20261114-quick-reference")

@@ -1,5 +1,9 @@
 # Mini datasheet content review - v0.5 OpenC906 refresh, 2026-10-22
 
+Current 2026-11-14 implementation: reviewed dev 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87.
+See [the shared round review](commercial-reference-review.md) for the source delta, independent book scopes, new data/graphics,
+comparison baseline and remaining qualification. Earlier records below are historical.
+
 This English Rill Mini Gen2/Gen2+ refresh retains **v0.5 DRAFT**, 42 IP chapters,
 109 frozen entries and stable chapter/IP anchors. The reviewed dev source is
 `9ab05c6404c02b5f2c927539b5c681b46f778b9f`. The implementation-start source was

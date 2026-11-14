@@ -1,0 +1,1137 @@
+{
+  "schema_version": 1,
+  "product": "tiny",
+  "groups": [
+    {
+      "id": "absolute",
+      "title": "Absolute maximum rating structure"
+    },
+    {
+      "id": "operating",
+      "title": "Recommended operating condition examples"
+    },
+    {
+      "id": "dc",
+      "title": "DC input/output characteristics"
+    },
+    {
+      "id": "ac",
+      "title": "AC, reset and clock characteristics"
+    },
+    {
+      "id": "thermal",
+      "title": "Thermal characterization"
+    },
+    {
+      "id": "assembly",
+      "title": "Assembly and qualification"
+    },
+    {
+      "id": "mechanical",
+      "title": "QFN64 mechanical reference"
+    },
+    {
+      "id": "board",
+      "title": "Board component assumptions"
+    },
+    {
+      "id": "clocks",
+      "title": "Digital clock selections"
+    },
+    {
+      "id": "performance",
+      "title": "Analytic performance and missing measurements"
+    },
+    {
+      "id": "resources",
+      "title": "Application payload and descriptor budgets"
+    },
+    {
+      "id": "software",
+      "title": "Software footprint evidence"
+    },
+    {
+      "id": "models",
+      "title": "Constructed model definitions"
+    }
+  ],
+  "records": [
+    {
+      "id": "tiny.absolute.vcore",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Core rail stress voltage",
+      "group": "absolute",
+      "unit": "V",
+      "value": {
+        "min": -0.3,
+        "typ": null,
+        "max": 1.5
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Core rail relative to core return; constructed stress illustration only, no qualified PDK or duration limit.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.absolute.vio",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Digital I/O rail stress voltage",
+      "group": "absolute",
+      "unit": "V",
+      "value": {
+        "min": -0.3,
+        "typ": null,
+        "max": 3.6
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "I/O rail relative to its return; constructed stress illustration, not a permitted board limit.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.absolute.storage",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Storage temperature",
+      "group": "absolute",
+      "unit": "deg C",
+      "value": {
+        "min": -65,
+        "typ": null,
+        "max": 150
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Unpowered storage; constructed package/material example, not a temperature grade.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.operating.vcore",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Core operating supply example",
+      "group": "operating",
+      "unit": "V",
+      "value": {
+        "min": 1.0,
+        "typ": 1.2,
+        "max": 1.3
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative core rail at 25 C; valid PVT envelope, stability and sequencing remain unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.operating.vio",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Digital I/O supply example",
+      "group": "operating",
+      "unit": "V",
+      "value": {
+        "min": 3.0,
+        "typ": 3.3,
+        "max": 3.6
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative digital I/O rail at 25 C; actual pad/bank voltage limits remain unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.operating.ta",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Ambient operating example",
+      "group": "operating",
+      "unit": "deg C",
+      "value": {
+        "min": -40,
+        "typ": 25,
+        "max": 85
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed ambient range at nominal example supplies; junction margin and grade are unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.vih",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Input HIGH threshold example",
+      "group": "dc",
+      "unit": "V",
+      "value": {
+        "min": 2.31,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed 0.7 x 3.3 V threshold; input class and hysteresis require real characterization.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.vil",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Input LOW threshold example",
+      "group": "dc",
+      "unit": "V",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 0.99
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed 0.3 x 3.3 V threshold; input class and hysteresis require real characterization.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.leakage",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Input leakage example",
+      "group": "dc",
+      "unit": "uA",
+      "value": {
+        "min": -1,
+        "typ": null,
+        "max": 1
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed input-leakage illustration at 3.3 V I/O, 25 C; no pad/PDK measurement.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.reset",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "External reset low pulse example",
+      "group": "ac",
+      "unit": "us",
+      "value": {
+        "min": 10,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative RESET_N low pulse with valid rails and stable XIN assumed; release limits remain TBD.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.setup",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Interface input setup example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": 2,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Generic SDR input illustration at 3.3 V I/O, 25 C; not assigned to a qualified product interface.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.hold",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Interface input hold example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": 1,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Generic SDR input illustration at 3.3 V I/O, 25 C; not assigned to a qualified product interface.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.tr",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Output rise time example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": null,
+        "typ": 3,
+        "max": 8
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed output edge at 3.3 V I/O, 25 C and 10 pF; driver strength/parasitics unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.absolute.injection",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Pad / bank / total injection current",
+      "group": "absolute",
+      "unit": "mA",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.absolute.tj",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Absolute maximum junction temperature",
+      "group": "absolute",
+      "unit": "deg C",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.voh",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Guaranteed VOH at specified source current",
+      "group": "dc",
+      "unit": "V",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.vol",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Guaranteed VOL at specified sink current",
+      "group": "dc",
+      "unit": "V",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.dc.pull",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Qualified pad pull resistance",
+      "group": "dc",
+      "unit": "ohm",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.jitter",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "External clock period jitter",
+      "group": "ac",
+      "unit": "ps",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.jtag",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Qualified TCK limit",
+      "group": "ac",
+      "unit": "MHz",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.ac.pll",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PLL lock time / jitter",
+      "group": "ac",
+      "unit": "us",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.thermal.theta",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Package/board thermal resistance",
+      "group": "thermal",
+      "unit": "K/W",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.assembly.msl",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Moisture sensitivity / reflow classification",
+      "group": "assembly",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.software.static",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Revision/profile-matched ELF static footprint",
+      "group": "software",
+      "unit": "B",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.performance.boot",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Measured boot time at defined checkpoints",
+      "group": "performance",
+      "unit": "ms",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.performance.score",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Qualified CPU benchmark score",
+      "group": "performance",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.model.current",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Core-current model and scan",
+      "group": "models",
+      "unit": "mA",
+      "value": "model:current",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "current-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "current"
+    },
+    {
+      "id": "tiny.model.transfer",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Effective-transfer model and lengths",
+      "group": "models",
+      "unit": "s",
+      "value": "model:transfer",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "transfer-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "transfer"
+    },
+    {
+      "id": "tiny.model.gpio",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "GPIO output-resistance model",
+      "group": "models",
+      "unit": "V",
+      "value": "model:gpio",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "gpio-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "gpio"
+    },
+    {
+      "id": "tiny.board.values",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Minimum-system passive examples",
+      "group": "board",
+      "unit": "1",
+      "value": "model:board",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Example values only; regulator stability, supply sequencing, loading, reset and signal integrity require board-specific design.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "board"
+    },
+    {
+      "id": "tiny.package.body",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Body D = E",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 9.0,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.10"
+    },
+    {
+      "id": "tiny.package.pitch",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Terminal pitch e",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.5,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; BSC mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "BSC"
+    },
+    {
+      "id": "tiny.package.ep",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Exposed pad D2 = E2",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 7.15,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.10"
+    },
+    {
+      "id": "tiny.package.height",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Body height A",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.75,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.lead_length",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Terminal length L",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.4,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.10"
+    },
+    {
+      "id": "tiny.package.lead_width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Terminal width b",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.25,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.standoff",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Standoff A1 maximum",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.05,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; 0.00..0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "0.00..0.05"
+    },
+    {
+      "id": "tiny.package.chamfer",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Pin-1 EP chamfer C",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.35,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; drawing nominal mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "drawing nominal"
+    },
+    {
+      "id": "tiny.package.pad_width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PCB terminal copper width",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.25,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.pad_length",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PCB terminal copper length",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.7,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.pad_inner",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PCB inner copper span",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 8.1,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.pad_outer",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PCB outer copper span",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 9.5,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.package.pad_ep",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "PCB exposed-pad copper",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 7.15,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "tolerance": "+/-0.05"
+    },
+    {
+      "id": "tiny.assembly.paste",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Paste window example",
+      "group": "assembly",
+      "unit": "1",
+      "value": "model:paste",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "assembly-model"
+      ],
+      "conditions": "Reference Only; original redraw and constructed assembly layer. Supplier/PCB fabricator/assembler approval required.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "paste"
+    },
+    {
+      "id": "tiny.assembly.pcb",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Solder mask / thermal via example",
+      "group": "assembly",
+      "unit": "1",
+      "value": "model:pcb",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "assembly-model"
+      ],
+      "conditions": "Reference Only; original redraw and constructed assembly layer. Supplier/PCB fabricator/assembler approval required.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "pcb"
+    }
+  ],
+  "errata": [
+    {
+      "id": "TINY-DS-E01",
+      "title": "DMA maximum-burst discovery truncation",
+      "applies_to": "Tiny v0.2 / reviewed dev / 8-channel central DMA",
+      "trigger": "Reading the four-bit maximum-burst discovery field with a configured engine maximum of 16 beats.",
+      "impact": "The field reads zero; interpreting it as no supported burst loses the actual 16-beat engine limit.",
+      "workaround": "Preserve raw readback and the source-bound integration limit separately; use capability-aware, product-specific initialization.",
+      "evidence": "Current RTL/source review. No RTL repair or new silicon result is part of this publication.",
+      "sources": [
+        "rtl/ip/peripheral/dma_reg.sv",
+        "docs/ip/dma.md"
+      ]
+    },
+    {
+      "id": "TINY-DS-E02",
+      "title": "SPI DMA capability-bit discrepancy",
+      "applies_to": "Tiny V2.2 SPI0 path in the reviewed v0.2 source",
+      "trigger": "Relying only on CAPABILITY bit 7 to discover Tiny SPI DMA.",
+      "impact": "The bit reads zero although Tiny connects the DMA admission/readiness path.",
+      "workaround": "Use the reviewed Tiny integration contract and retain version/configuration checks; request a separate RTL/SDK compatibility decision before changing discovery.",
+      "evidence": "Current instance and register source review; historical SPI acceptance retains its original revision/profile.",
+      "sources": [
+        "rtl/ip/serial/spi_reg.sv",
+        "rtl/tiny/top/retrosoc_tiny.sv",
+        "docs/ip/spi-verification.md"
+      ]
+    },
+    {
+      "id": "TINY-DS-E03",
+      "title": "Functional PLL profiles are not a physical operating qualification",
+      "applies_to": "Tiny ICS55 main reference; R2-P7 policy",
+      "trigger": "Treating a functional R2-P7 PLL192/PLL240 selection or a calculated curve as a timing-qualified SYS operating point.",
+      "impact": "The RTL supports conditional drain/park/qualify/commit transitions; this does not establish final timing closure, board margin, analog lock or measured power.",
+      "workaround": "Boot in SAFE24 with the PLL off. Use R2-P7 capability, lock, drain and recovery checks for a requested transition; require matching timing/physical evidence before publishing an operating rating.",
+      "evidence": "Historical negative IHP130 STA and later phase decisions remain in docs/ip/tiny-soc-verification.md with their original identities; current publication adds no matching hardware report.",
+      "sources": [
+        "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+        "docs/ip/tiny-soc-verification.md"
+      ]
+    }
+  ]
+}

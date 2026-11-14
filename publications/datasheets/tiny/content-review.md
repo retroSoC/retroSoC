@@ -1,5 +1,9 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
+Current 2026-11-14 implementation: reviewed dev 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87.
+See [the shared round review](../commercial-reference-review.md) for the source delta, independent book scopes, new data/graphics,
+comparison baseline and remaining qualification. Earlier records below are historical.
+
 Reviewed source: `f5f58a36758968e984a43159a3e155c56cbe1f38` from `dev`.
 Main profile: `configs/ci/ics55-tiny.mk`; compatibility: `configs/ci/ihp130-tiny.mk`.
 The approved update reviews the R2-P3..P10 and SPI-P1..P4 increment from the

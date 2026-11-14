@@ -1,0 +1,750 @@
+{
+  "schema_version": 1,
+  "product": "mini",
+  "groups": [
+    {
+      "id": "absolute",
+      "title": "Absolute maximum rating structure"
+    },
+    {
+      "id": "operating",
+      "title": "Recommended operating condition examples"
+    },
+    {
+      "id": "dc",
+      "title": "DC input/output characteristics"
+    },
+    {
+      "id": "ac",
+      "title": "AC, reset and clock characteristics"
+    },
+    {
+      "id": "thermal",
+      "title": "Thermal characterization"
+    },
+    {
+      "id": "assembly",
+      "title": "Assembly and qualification"
+    },
+    {
+      "id": "mechanical",
+      "title": "QFN64 mechanical reference"
+    },
+    {
+      "id": "board",
+      "title": "Board component assumptions"
+    },
+    {
+      "id": "clocks",
+      "title": "Digital clock selections"
+    },
+    {
+      "id": "performance",
+      "title": "Analytic performance and missing measurements"
+    },
+    {
+      "id": "resources",
+      "title": "Application payload and descriptor budgets"
+    },
+    {
+      "id": "software",
+      "title": "Software footprint evidence"
+    },
+    {
+      "id": "models",
+      "title": "Constructed model definitions"
+    }
+  ],
+  "records": [
+    {
+      "id": "mini.absolute.vcore",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Core rail stress voltage",
+      "group": "absolute",
+      "unit": "V",
+      "value": {
+        "min": -0.3,
+        "typ": null,
+        "max": 1.5
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Core rail relative to core return; constructed stress illustration only, no qualified PDK or duration limit.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.absolute.vio",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Digital I/O rail stress voltage",
+      "group": "absolute",
+      "unit": "V",
+      "value": {
+        "min": -0.3,
+        "typ": null,
+        "max": 3.6
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "I/O rail relative to its return; constructed stress illustration, not a permitted board limit.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.absolute.storage",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Storage temperature",
+      "group": "absolute",
+      "unit": "deg C",
+      "value": {
+        "min": -65,
+        "typ": null,
+        "max": 150
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Unpowered storage; constructed package/material example, not a temperature grade.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.operating.vcore",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Core operating supply example",
+      "group": "operating",
+      "unit": "V",
+      "value": {
+        "min": 1.0,
+        "typ": 1.2,
+        "max": 1.3
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative core rail at 25 C; valid PVT envelope, stability and sequencing remain unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.operating.vio",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Digital I/O supply example",
+      "group": "operating",
+      "unit": "V",
+      "value": {
+        "min": 3.0,
+        "typ": 3.3,
+        "max": 3.6
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative digital I/O rail at 25 C; actual pad/bank voltage limits remain unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.operating.ta",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Ambient operating example",
+      "group": "operating",
+      "unit": "deg C",
+      "value": {
+        "min": -40,
+        "typ": 25,
+        "max": 85
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed ambient range at nominal example supplies; junction margin and grade are unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.vih",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Input HIGH threshold example",
+      "group": "dc",
+      "unit": "V",
+      "value": {
+        "min": 2.31,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed 0.7 x 3.3 V threshold; input class and hysteresis require real characterization.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.vil",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Input LOW threshold example",
+      "group": "dc",
+      "unit": "V",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 0.99
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed 0.3 x 3.3 V threshold; input class and hysteresis require real characterization.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.leakage",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Input leakage example",
+      "group": "dc",
+      "unit": "uA",
+      "value": {
+        "min": -1,
+        "typ": null,
+        "max": 1
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed input-leakage illustration at 3.3 V I/O, 25 C; no pad/PDK measurement.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.reset",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "External reset low pulse example",
+      "group": "ac",
+      "unit": "us",
+      "value": {
+        "min": 10,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Illustrative RESET_N low pulse with valid rails and stable XIN assumed; release limits remain TBD.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.setup",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Interface input setup example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": 2,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Generic SDR input illustration at 3.3 V I/O, 25 C; not assigned to a qualified product interface.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.hold",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Interface input hold example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": 1,
+        "typ": null,
+        "max": null
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Generic SDR input illustration at 3.3 V I/O, 25 C; not assigned to a qualified product interface.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.tr",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Output rise time example",
+      "group": "ac",
+      "unit": "ns",
+      "value": {
+        "min": null,
+        "typ": 3,
+        "max": 8
+      },
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Constructed output edge at 3.3 V I/O, 25 C and 10 pF; driver strength/parasitics unqualified.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.absolute.injection",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Pad / bank / total injection current",
+      "group": "absolute",
+      "unit": "mA",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.absolute.tj",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Absolute maximum junction temperature",
+      "group": "absolute",
+      "unit": "deg C",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.voh",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Guaranteed VOH at specified source current",
+      "group": "dc",
+      "unit": "V",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.vol",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Guaranteed VOL at specified sink current",
+      "group": "dc",
+      "unit": "V",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.dc.pull",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Qualified pad pull resistance",
+      "group": "dc",
+      "unit": "ohm",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.jitter",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "External clock period jitter",
+      "group": "ac",
+      "unit": "ps",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.jtag",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Qualified TCK limit",
+      "group": "ac",
+      "unit": "MHz",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.ac.pll",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "PLL lock time / jitter",
+      "group": "ac",
+      "unit": "us",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.thermal.theta",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Package/board thermal resistance",
+      "group": "thermal",
+      "unit": "K/W",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.assembly.msl",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Moisture sensitivity / reflow classification",
+      "group": "assembly",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.software.static",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Revision/profile-matched ELF static footprint",
+      "group": "software",
+      "unit": "B",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.performance.boot",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Measured boot time at defined checkpoints",
+      "group": "performance",
+      "unit": "ms",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.performance.score",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Qualified CPU benchmark score",
+      "group": "performance",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Product-specific qualified report unavailable; retain exact method, PVT, board, workload and source identity before release.",
+      "assumptions": [],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": []
+    },
+    {
+      "id": "mini.model.current",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Core-current model and scan",
+      "group": "models",
+      "unit": "mA",
+      "value": "model:current",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "current-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "current"
+    },
+    {
+      "id": "mini.model.transfer",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Effective-transfer model and lengths",
+      "group": "models",
+      "unit": "s",
+      "value": "model:transfer",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "transfer-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "transfer"
+    },
+    {
+      "id": "mini.model.gpio",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "GPIO output-resistance model",
+      "group": "models",
+      "unit": "V",
+      "value": "model:gpio",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "gpio-model"
+      ],
+      "conditions": "All coefficients and scan coordinates are constructed inputs. Model output inherits Reference Only.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "gpio"
+    },
+    {
+      "id": "mini.board.values",
+      "product": "mini",
+      "profiles": [
+        "configs/ci/ihp130.mk"
+      ],
+      "meaning": "Minimum-system passive examples",
+      "group": "board",
+      "unit": "1",
+      "value": "model:board",
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Example values only; regulator stability, supply sequencing, loading, reset and signal integrity require board-specific design.",
+      "assumptions": [
+        "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
+      ],
+      "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
+      "dependencies": [],
+      "model": "board"
+    }
+  ]
+}

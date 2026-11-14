@@ -111,7 +111,8 @@ establish compatibility.
   heading(level:3,item.title)
   ds-table("limitation-"+item.id,[#item.title - impact and integration response],
     ([Field],[Description]),
-    (([Impact],item.impact),([Trigger],item.trigger),([Integration response],item.workaround),([Applies to],item.applies_to)),
+    (([Impact],item.impact),([Trigger],item.trigger),([Integration response],item.workaround),([Applies to],item.applies_to),
+      ([Evidence],item.at("evidence",default:"Source-scoped limitation; see cited implementation and retained verification records. No new silicon erratum or passing qualification is implied."))),
     widths:(0.65fr,3.35fr))
   for (i,path) in item.sources.enumerate() {
     source(path,title:if i==0 {"Implementation / contract"} else {"Additional source"})

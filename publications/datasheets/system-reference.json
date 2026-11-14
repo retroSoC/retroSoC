@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+  "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -1241,6 +1241,20 @@
         "rtl/mini/top/axi4_target_guard.sv",
         "rtl/mini/ip_overrides/aq_biu_write_channel.v",
         "docs/hp-rv64-validation.md"
+      ]
+    },
+    {
+      "id": "sdio-live-clock-discovery",
+      "title": "SDIO static frequency reporting can differ from live PCLK",
+      "applies_to": "Mini v0.5 PRODUCT / IHP130, reviewed source 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+      "trigger": "Using CLOCK_ACTUAL when PCLK differs from the instance fixed InputClockHz=72 MHz.",
+      "impact": "The reported value follows the static parameter; the generated SD clock follows live PCLK. Half-period zero clamps in the clock generator but reports zero.",
+      "workaround": "Use h>=1 and calculate wire clock from the known current PCLK. Validate device mode/timing separately; do not treat the discovery register as a clock measurement.",
+      "evidence": "Source review of current Mini bindings and sdio_core/sdio_clock arithmetic. No RTL change or new hardware measurement.",
+      "sources": [
+        "rtl/mini/top/apb4_periph.sv",
+        "rtl/ip/storage/sdio_core.sv",
+        "rtl/ip/storage/sdio_clock.sv"
       ]
     }
   ],
@@ -7770,208 +7784,288 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
-    "checked_date": "2026-10-23",
-    "checked_at": "2026-10-23T05:32:03Z",
-    "boundary": "Exact-commit CI observation; workflow/job/step status is separate from exact-profile hardware reports. Unfinished work has no passing verdict.",
+    "revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+    "checked_date": "2026-11-14",
+    "checked_at": "2026-11-14T06:12:16Z",
+    "boundary": "Exact-commit push workflow observation. Completed workflow success is not a revision/profile-matched per-IP hardware or physical qualification report. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 39904024563,
-        "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024563",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Repository quality gates",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024450,
-        "name": "regression-gf180",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024450",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024521,
+        "run_id": 43548427043,
         "name": "regression-smoke",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024521",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427043",
         "status": "completed",
         "conclusion": "success",
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Workflow result only; no complete Mini HP, multimedia or physical qualification is inferred.",
+        "scope": "Repository regression-smoke workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
         "observations": []
       },
       {
-        "run_id": 39904024530,
-        "name": "regression-sky130",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024530",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024570,
+        "run_id": 43548427041,
         "name": "regression-ics55",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024570",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427041",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository regression-ics55 workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
         "observations": []
       },
       {
-        "run_id": 39904024523,
-        "name": "regression-ihp130",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024523",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+        "run_id": 43548426910,
+        "name": "quality",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426910",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository quality workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
         "observations": []
       },
       {
-        "run_id": 39904024572,
+        "run_id": 43548426916,
         "name": "development-environment",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": [
-          {
-            "name": "nix / IHP130 regression / Check out repository",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore locked IHP130 sources",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore SBT dependency cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore Verilator compiler cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Build Docker development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "nix / IHP130 regression / Install Nix",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Check Nix flake",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Run IHP130 regression in development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null
-          },
-          {
-            "name": "nix / IHP130 regression / Upload reports and structured results",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "pending",
-            "conclusion": null
-          },
-          {
-            "name": "docker / IHP130 regression / Check out repository",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore locked IHP130 sources",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore SBT dependency cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore Verilator compiler cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Build Docker development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Install Nix",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "docker / IHP130 regression / Check Nix flake",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "docker / IHP130 regression / Run IHP130 regression in development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null
-          },
-          {
-            "name": "docker / IHP130 regression / Upload reports and structured results",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "pending",
-            "conclusion": null
-          }
-        ]
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426916",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository development-environment workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+        "observations": []
+      },
+      {
+        "run_id": 43548427089,
+        "name": "regression-gf180",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427089",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository regression-gf180 workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+        "observations": []
+      },
+      {
+        "run_id": 43548426971,
+        "name": "regression-sky130",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426971",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository regression-sky130 workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+        "observations": []
+      },
+      {
+        "run_id": 43548426918,
+        "name": "regression-ihp130",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426918",
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Repository regression-ihp130 workflow on the reviewed merge commit",
+        "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+        "observations": []
       }
     ]
-  }
+  },
+  "historical_ci_snapshots": [
+    {
+      "revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+      "checked_date": "2026-10-23",
+      "checked_at": "2026-10-23T05:32:03Z",
+      "boundary": "Exact-commit CI observation; workflow/job/step status is separate from exact-profile hardware reports. Unfinished work has no passing verdict.",
+      "runs": [
+        {
+          "run_id": 39904024563,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024563",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Repository quality gates",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024450,
+          "name": "regression-gf180",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024450",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024521,
+          "name": "regression-smoke",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024521",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Workflow result only; no complete Mini HP, multimedia or physical qualification is inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024530,
+          "name": "regression-sky130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024530",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024570,
+          "name": "regression-ics55",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024570",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024523,
+          "name": "regression-ihp130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024523",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024572,
+          "name": "development-environment",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": [
+            {
+              "name": "nix / IHP130 regression / Check out repository",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore locked IHP130 sources",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore SBT dependency cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore Verilator compiler cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Build Docker development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "nix / IHP130 regression / Install Nix",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Check Nix flake",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Run IHP130 regression in development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "runtime-regression",
+              "status": "in_progress",
+              "conclusion": null
+            },
+            {
+              "name": "nix / IHP130 regression / Upload reports and structured results",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "pending",
+              "conclusion": null
+            },
+            {
+              "name": "docker / IHP130 regression / Check out repository",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore locked IHP130 sources",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore SBT dependency cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore Verilator compiler cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Build Docker development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Install Nix",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "docker / IHP130 regression / Check Nix flake",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "docker / IHP130 regression / Run IHP130 regression in development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "runtime-regression",
+              "status": "in_progress",
+              "conclusion": null
+            },
+            {
+              "name": "docker / IHP130 regression / Upload reports and structured results",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "pending",
+              "conclusion": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
