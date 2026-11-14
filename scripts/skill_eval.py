@@ -289,15 +289,18 @@ def input_snapshot_sha256(case: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(fields, sort_keys=True).encode("utf-8")).hexdigest()
 
 
-def evaluation_prompt(case: dict[str, Any]) -> str:
+def evaluation_prompt(case: dict[str, Any], command_budget: int = 80) -> str:
     return (
         case["prompt"]
         + "\n\nEvaluation constraints:\n"
         + "- This is a read-only Skill behavior evaluation. Do not modify files or run EDA/build simulations.\n"
         + "- Follow the repository Skill routing and evidence rules. Preflight/diagnosis may inspect files and dry-run definitions.\n"
-        + "- In the final structured response, list every repository Skill actually invoked.\n"
+        + f"- Use at most {command_budget} tool calls. Resolve the target and relevant files first; avoid broad or repeated exploration.\n"
+        + "- invoked_skills must list every Skill consulted through the Skill tool or a direct SKILL.md read, including a Skill that refuses the request.\n"
         + "- Use verdict for the stage verdict or review next action; use NONE when no enumerated verdict applies.\n"
         + "- Use route for a required next repository Skill, or NONE.\n"
+        + "- End with exactly one JSON object and no Markdown, YAML, or surrounding prose.\n"
+        + "- Required keys are invoked_skills, verdict, route, and summary; never substitute skills_invoked.\n"
         + "- Keep summary concise and retain explicit NOT_RUN labels for missing evidence.\n"
     )
 
@@ -309,6 +312,7 @@ def run_codex(
     schema: Path,
     model: str | None,
     timeout: int,
+    command_budget: int = 80,
 ) -> dict[str, Any]:
     output = output.resolve()
     workspace = output / f"{case['id']}-workspace"
@@ -335,7 +339,7 @@ def run_codex(
     ]
     if model:
         command.extend(("--model", model))
-    command.append(evaluation_prompt(case))
+    command.append(evaluation_prompt(case, command_budget))
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
     try:
@@ -413,6 +417,7 @@ def run_kimi(
     output: Path,
     model: str | None,
     timeout: int,
+    command_budget: int = 80,
 ) -> dict[str, Any]:
     output = output.resolve()
     workspace = output / f"{case['id']}-workspace"
@@ -432,7 +437,7 @@ def run_kimi(
     ]
     if model:
         command.extend(("--model", model))
-    command.extend(("--prompt", evaluation_prompt(case)))
+    command.extend(("--prompt", evaluation_prompt(case, command_budget)))
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
     try:
@@ -641,6 +646,7 @@ def main() -> int:
                         args.output,
                         args.model,
                         args.timeout,
+                        case.get("max_commands", document["defaults"]["max_commands"]),
                     )
                 else:
                     trace = run_codex(
@@ -650,6 +656,7 @@ def main() -> int:
                         args.root.resolve() / ".agents/skills/response.schema.json",
                         args.model,
                         args.timeout,
+                        case.get("max_commands", document["defaults"]["max_commands"]),
                     )
                 runner_versions.append(trace["runner_version"])
                 atomic_write(args.output / f"{case['id']}.trace.json", dump_json(trace))

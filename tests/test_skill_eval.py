@@ -305,3 +305,18 @@ def test_kimi_trace_binds_runner_profile(tmp_path: Path, monkeypatch) -> None:
     assert trace["runner_agent_sha256"]
     assert trace["response"]["route"] == "retrosoc-feature-review"
     assert trace["error"] is None
+
+
+def test_prompt_requires_exact_json_and_budget() -> None:
+    from scripts.skill_eval import evaluation_prompt, walk_kimi_events
+
+    _, cases = load_cases(ROOT)
+    prompt = evaluation_prompt(cases[0], 42)
+    assert "at most 42 tool calls" in prompt
+    assert "exactly one JSON object" in prompt
+    assert "invoked_skills, verdict, route, and summary" in prompt
+    assert "never substitute skills_invoked" in prompt
+    _, _, _, response = walk_kimi_events(
+        [{"role": "assistant", "content": "verdict: FAIL\nskills_invoked: []"}]
+    )
+    assert response == {}
