@@ -96,6 +96,10 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, and cache states.
+  `test_engineering_observations.py` covers job/step timing, first-attempt and
+  duplicate execution, bounded pagination, cache metadata normalization, native
+  delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
+  offline reconstruction, and unknown-data handling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
@@ -137,7 +141,10 @@ tooling.
   Provenance, contract migration, negative triggers, Kimi tool-call parsing,
   read-only runner boundaries, and canary configuration are tested
   deterministically; live behavior results require retained traces from
-  `make skill-eval-smoke` (optionally `RUNNER=kimi`).
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
+  covers trace identity, input tampering, historical prompts, unknown runners,
+  read-only violations, duplicate/empty evidence, and zero runner invocations.
+  Offline replay grades retained behavior only; it does not execute current code.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

@@ -122,6 +122,11 @@ source/test, timeout, cancelled, dependency-integrity, and unknown failures are
 not automatically retried.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
+It includes per-job/step timing, first-attempt and duplicate execution, cache
+observations, native auto-merge timelines, and read-only shadow/policy evidence.
+Artifact and job inventories must be complete and bound to the sampled run.
+Missing cache size, local cleanup, or timeline data is explicitly unknown, never
+a zero-cost claim. Observations never enable reuse, queues, or metric gates.
 `workflows/skill-evals.yml` runs one read-only smoke case per registered Skill,
 or all live cases selected by Skill, with source/contract/input provenance and
 deterministic grades. A runner needs a configured Codex or Kimi CLI and approved
@@ -130,6 +135,9 @@ read-only Agent without Bash, writes, or delegation. Weekly canaries require
 `RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
 remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
 CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
+`make skill-replay TRACES=<directory>` only grades explicit retained traces with
+provenance checks; it never starts a runner, enables a canary, or turns a
+historical grade into fresh behavior evidence.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts
