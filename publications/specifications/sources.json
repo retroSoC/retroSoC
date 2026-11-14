@@ -1,0 +1,92 @@
+[
+  {
+    "id": "adi-up64",
+    "kind": "external",
+    "title": "ADI UP64 QFN64 mechanical drawing",
+    "version": "05-08-1705 Rev C",
+    "locator": "page 1; outline and recommended solder pads",
+    "url": "https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-qfn/qfn_64_05-08-1705.pdf",
+    "sha256": "d65723ef2533d5a4e7e02a56dffca952280c8fbf3659f6bb88b5c2e0464d3238",
+    "use": "Organization and engineering expression only; no donor performance ratings imported."
+  },
+  {
+    "id": "stm32u031",
+    "kind": "external",
+    "title": "ST STM32U031x4/6/8 Datasheet",
+    "version": "DS14581 Rev 2, March 2024",
+    "locator": "sections 4-6: pin descriptions, electrical characteristics and package information",
+    "url": "https://www.st.com/resource/en/datasheet/stm32u031k8.pdf",
+    "sha256": "bc1d0cecfff8f1521c481334116e43353a67e55225c5eb5df1d24bc20d00c410",
+    "use": "Organization and engineering expression only; no donor performance ratings imported."
+  },
+  {
+    "id": "esp32-c3",
+    "kind": "external",
+    "title": "Espressif ESP32-C3 Datasheet",
+    "version": "v2.5",
+    "locator": "sections Pin Definitions, Electrical Characteristics, Package Information",
+    "url": "https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf",
+    "sha256": "fede706c39ce663c861136724ffe32dff3f1407fa7f2dac18bbd0d21f0634205",
+    "use": "Organization and engineering expression only; no donor performance ratings imported."
+  },
+  {
+    "id": "current-model",
+    "kind": "constructed",
+    "title": "Constructed core-current model",
+    "version": "2026-11-14 / model schema 1",
+    "locator": "publications/specifications/models.json; named model section",
+    "sha256": "0e62f1973d7a62b502b8fca8d3c53caa037b3d9034d560626aa2defc5b32d95f",
+    "use": "Illustration only; replace with reviewed product-specific evidence.",
+    "path": "publications/specifications/models.json"
+  },
+  {
+    "id": "transfer-model",
+    "kind": "constructed",
+    "title": "Constructed effective-transfer model",
+    "version": "2026-11-14 / model schema 1",
+    "locator": "publications/specifications/models.json; named model section",
+    "sha256": "0e62f1973d7a62b502b8fca8d3c53caa037b3d9034d560626aa2defc5b32d95f",
+    "use": "Illustration only; replace with reviewed product-specific evidence.",
+    "path": "publications/specifications/models.json"
+  },
+  {
+    "id": "gpio-model",
+    "kind": "constructed",
+    "title": "Constructed GPIO resistive model",
+    "version": "2026-11-14 / model schema 1",
+    "locator": "publications/specifications/models.json; named model section",
+    "sha256": "0e62f1973d7a62b502b8fca8d3c53caa037b3d9034d560626aa2defc5b32d95f",
+    "use": "Illustration only; replace with reviewed product-specific evidence.",
+    "path": "publications/specifications/models.json"
+  },
+  {
+    "id": "assembly-model",
+    "kind": "constructed",
+    "title": "Constructed paste/mask/via example",
+    "version": "2026-11-14 / model schema 1",
+    "locator": "publications/specifications/models.json; named model section",
+    "sha256": "0e62f1973d7a62b502b8fca8d3c53caa037b3d9034d560626aa2defc5b32d95f",
+    "use": "Illustration only; replace with reviewed product-specific evidence.",
+    "path": "publications/specifications/models.json"
+  },
+  {
+    "id": "adi-assembly",
+    "kind": "external",
+    "title": "ADI SMT Assembly and PCB Design Guidelines for QFN Packages",
+    "version": "Web edition retrieved 2026-11-14",
+    "locator": "Exposed-pad land pattern, stencil and thermal-via sections",
+    "url": "https://www.analog.com/en/resources/app-notes/smt-assembly-and-pcb-design-guidelines-for-maxims-standard-wirebonded-quad-flatpack.html",
+    "sha256": "cb734e3674fa108467d2f5c566b01e4e80647587903f7a1b5e7f8e367c309b83",
+    "use": "Assembly process organization; Tiny process qualification and constructed values remain independent."
+  },
+  {
+    "id": "board-model",
+    "kind": "constructed",
+    "title": "Constructed board passive model",
+    "version": "2026-11-14 / model schema 1",
+    "locator": "publications/specifications/models.json; board section",
+    "sha256": "0e62f1973d7a62b502b8fca8d3c53caa037b3d9034d560626aa2defc5b32d95f",
+    "use": "Illustration only; replace with reviewed product-specific evidence.",
+    "path": "publications/specifications/models.json"
+  }
+]

@@ -1286,3 +1286,17 @@ hardware evidence with a successful publication build.
 For an edit confined to this Markdown specification or its README link, verify
 the descriptions, relative links and commands and run `git diff --check`;
 rebuilding the PDF and running hardware validation are not required.
+
+## Shared commercial-reference data standard
+
+The [specification standard](../specifications/README.md) defines the current
+chapter order, grouped table directory, four-state schema, source fingerprints,
+model inheritance, repeated-header/image markers, vectors, plotting environment
+and replacement/visual/offline acceptance. It applies to both books. Independent
+Reference Only examples may complete the structure; unqualified product ratings
+remain TBD. No example is transferred into hardware evidence.
+
+The 2026-11-14 reviewed structure retains all 42 Mini IP anchors and adds a
+quick reference (110 major/IP entries). Packaging/electrical precede complete
+peripherals. Mini keeps its own REF24, EXT72, audio, LP/HP CDC, IHP130 PRODUCT/HP/
+MPW profiles and shared QPI/OPI GPIO21-31 restrictions. QFN64 remains Tiny-only.

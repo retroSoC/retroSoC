@@ -1,0 +1,9 @@
+# Publication-owned text has stable cross-platform content hashes.
+publications/*.py text eol=lf
+publications/**/*.c text eol=lf
+publications/**/*.typ text eol=lf
+publications/**/*.json text eol=lf
+publications/**/*.md text eol=lf
+requirements/publication.txt text eol=lf
+# Managed fonts/media retain their nested repository policy.
+publications/media/** -text

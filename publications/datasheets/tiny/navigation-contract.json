@@ -45,6 +45,11 @@
     },
     {
       "level": 2,
+      "title": "Specification and Evidence Quick Reference",
+      "anchor": "tiny-specification-quick"
+    },
+    {
+      "level": 2,
       "title": "Reading this datasheet",
       "anchor": null
     },
@@ -127,6 +132,66 @@
       "level": 2,
       "title": "Interface Standards and Supported Subsets",
       "anchor": "tiny-interface-subsets"
+    },
+    {
+      "level": 2,
+      "title": "Packaging",
+      "anchor": "tiny-pins"
+    },
+    {
+      "level": 3,
+      "title": "Pin Mapping",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "GPIO Alternate-Function Matrix",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Package Dimensions, Reflow and Reliability",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Minimum System and Board Design Reference",
+      "anchor": "tiny-board-reference"
+    },
+    {
+      "level": 2,
+      "title": "Electrical and Timing Specifications",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Digital clock points and ideal throughput",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Peripheral wire rates and application payloads",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Current, voltage and temperature examples",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Memory and GPIO model examples",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Model assumptions and replacement conditions",
+      "anchor": null
+    },
+    {
+      "level": 3,
+      "title": "Source and data traceability",
+      "anchor": null
     },
     {
       "level": 2,
@@ -292,31 +357,6 @@
       "level": 4,
       "title": "Random Number Generator (RNG)",
       "anchor": "rng"
-    },
-    {
-      "level": 2,
-      "title": "Packaging",
-      "anchor": "tiny-pins"
-    },
-    {
-      "level": 3,
-      "title": "Pin Mapping",
-      "anchor": null
-    },
-    {
-      "level": 3,
-      "title": "GPIO Alternate-Function Matrix",
-      "anchor": null
-    },
-    {
-      "level": 3,
-      "title": "Package Dimensions, Reflow and Reliability",
-      "anchor": null
-    },
-    {
-      "level": 2,
-      "title": "Electrical and Timing Specifications",
-      "anchor": null
     },
     {
       "level": 1,
@@ -663,5 +703,6 @@
       "title": "Document Status and Contact",
       "anchor": null
     }
-  ]
+  ],
+  "scope": "Reviewed 2026-11-14 commercial-reference structure: package/electrical precede complete peripherals, quick reference added; stable IP/register anchors retained."
 }

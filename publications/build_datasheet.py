@@ -40,6 +40,9 @@ from publications.page_reference import (  # noqa: E402
     validate_footer_pages, validate_footer_text, validate_page_roles,
 )
 from publications.structure_reference import validate_structure  # noqa: E402
+from publications.specification_reference import collect as collect_specifications, source_inputs as specification_inputs, export_audits, verify_audits  # noqa: E402
+from publications.specification_plots import render as render_specifications  # noqa: E402
+from publications.specification_vectors import render as render_vectors  # noqa: E402
 from publications.diagram_reference import collect_diagrams  # noqa: E402
 from publications.diagram_coverage import coverage as diagram_coverage, validate_usage as validate_diagram_usage  # noqa: E402
 from publications.package_reference import (  # noqa: E402
@@ -167,7 +170,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     system_reference["illustrations"] = collect_diagrams(ROOT, system_reference["illustrations"], regions, system_reference)
     system_reference["illustrations"]["coverage"] = diagram_coverage(
         read_json(ROOT / "publications/datasheets/structure-contract.json"), system_reference["illustrations"])
-    return {
+    data = {
         "document": config,
         "profiles": profiles,
         "reset_address": f"0x{reset:08X}",
@@ -204,6 +207,9 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         "system_reference": system_reference,
         "wave_renderer": "/" + load_lock()["archives"]["typst_wavy"]["destination"] + "/wavy.js",
     }
+
+    data["specifications"] = collect_specifications(ROOT, "mini", data)
+    return data
 
 
 def size_label(size: int) -> str:
@@ -319,12 +325,15 @@ def source_hashes(
             paths.update(binding["file"] for binding in correction["bindings"])
     paths.update(waveform_source_paths(read_json(ROOT / "publications/datasheets/waveforms.json")))
     paths.update(system_source_paths(read_json(ROOT / "publications/datasheets/system-reference.json")))
+    paths.update(specification_inputs("mini"))
     paths.update(
         p.relative_to(ROOT).as_posix()
         for p in (ROOT / "publications").rglob("*")
         if p.is_file()
         and p.suffix in {".typ", ".json", ".py", ".c"}
         and "media" not in p.relative_to(ROOT / "publications").parts
+        and "tiny" not in p.relative_to(ROOT / "publications").parts
+        and not p.name.startswith(("tiny_", "build_tiny", "check_tiny"))
     )
     for spec in read_json(ROOT / "publications/datasheets/register-profiles.json").values():
         paths.update(spec.get("defines", []) + spec["rtl"] + spec.get("support", []))
@@ -346,6 +355,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     if not out.is_relative_to((ROOT / "build").resolve()):
         raise ValueError("--output-dir must be below the repository build directory")
     out.mkdir(parents=True, exist_ok=True)
+    specification_plots = render_specifications(ROOT, out, data["specifications"], config["date"])
     write_json(out / "data.json", data)
     write_json(out / "waveform-audit.json", data["waveform_audit"])
     pdf = out / config["filename"]
@@ -369,6 +379,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "--creation-timestamp",
         str(epoch),
     ]
+    engineering_vectors = render_vectors(ROOT, out, data["specifications"], executable, command[4:])
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
     atomic_write(out / "typst.log", result.stdout + result.stderr)
     if result.returncode or "warning:" in result.stderr:
@@ -433,7 +444,12 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     validate_change_scope(change_markers, config)
     page_ranges(change_markers, max(item["page"] for item in change_markers))
     write_json(out / "change-markers.json", change_markers)
+    specification_audits = export_audits(out, data["specifications"], layout_items)
     manifest = {
+        "presentation": {"register_caption_context": "ip-qualified-v1"},
+        "engineering_vectors": engineering_vectors,
+        "specification_audits": specification_audits,
+        "specification_plots": specification_plots,
         "document": config,
         "publication_checkout": {"head": git("rev-parse", "HEAD"), "path": str(ROOT),
                                  "has_local_changes": bool(git("status", "--porcelain", "--untracked-files=no"))},
@@ -458,7 +474,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
 
 
 def check_document_sources(config: dict, data: dict) -> None:
-    sources = list((ROOT / "publications/datasheets").rglob("*.typ"))
+    sources = [p for p in (ROOT / "publications/datasheets").rglob("*.typ") if "tiny" not in p.relative_to(ROOT / "publications/datasheets").parts]
     combined = "\n".join(p.read_text(encoding="utf-8") for p in sources)
     validate_imports(combined, package_records(load_lock()))
     if re.search(r"#lorem\(|Lorem ipsum|balba|TO BE COMPLETED", combined):
@@ -557,6 +573,9 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     manifest = read_json(pdf.parent / "manifest.json")
     if manifest["inputs"] != source_hashes(config, data["catalog"], data["registers"]):
         raise ValueError("PDF inputs have changed; rebuild before checking this PDF")
+    verify_audits(pdf.parent, manifest["engineering_vectors"])
+    verify_audits(pdf.parent, manifest["specification_audits"])
+    verify_audits(pdf.parent, manifest["specification_plots"]["outputs"])
     if manifest["pdf_sha256"] != sha256(pdf):
         raise ValueError("PDF differs from its build manifest")
     for name in ("diagram-inventory", "diagram-coverage"):

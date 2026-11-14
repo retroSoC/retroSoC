@@ -334,7 +334,7 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
             raise ValueError("Tiny technical sources differ from reviewed snapshot:\n" + changed)
     for r in regions:
         r.update(base_hex=f"0x{r['base']:08X}", end_hex=f"0x{r['end']:08X}", size_label=f"{r['size'] // 1024} KiB")
-    return dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
+    data = dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
                 package=package_rows(ROOT), reset_address=f"0x{reset:08X}", regions=sorted(regions, key=lambda r: r["base"]),
                 interrupts=sorted(topology["interrupts"], key=lambda r: r["core_bit"]), gpio=topology["gpio_alt_functions"],
                 pads=[dataclasses.asdict(p) for p in pads], power_pads=read(ROOT / PINS)["power_pads"],
@@ -344,3 +344,7 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
                 wave_renderer="/" + lock["archives"]["typst_wavy"]["destination"] + "/wavy.js",
                 evidence=copy.deepcopy(evidence), examples=examples, apis=apis, tcd=tcd,
                 illustrations=illustrations, diagnostics=diagnostic_reference)
+
+    from publications.specification_reference import collect as collect_specifications
+    data["specifications"] = collect_specifications(ROOT, "tiny", data)
+    return data

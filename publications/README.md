@@ -1,11 +1,32 @@
 # Publications
 
+Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
+**v0.5 DRAFT / Gen2/Gen2+**, reviewed dev
+6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. The main references are Tiny ICS55
+(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
+The two books have independent profiles, manifests and output markers.
+
+The [shared specification standard](specifications/README.md) owns typed data,
+reference models, source fingerprints, plot/vector export and replacement rules.
+The isolated environment is requirements/publication.txt; install it with
+python -m pip install --require-hashes -r requirements/publication.txt before
+using the existing setup/build/check commands. Reference Only examples fill
+structure without becoming released electrical, package or board requirements.
+
+The retained comparison baselines are Tiny 425 pages / SHA-256
+a7816f014c2ba739669cd98df50accace07376d4620ad0eab81c514a7fd4a3d3,
+and Mini 796 pages / SHA-256
+8c20a57949427fa7058a4663bb95e4f864d442154f8093b5318e37a9f825f010.
+Both books now use report_changes.py and paired change-marker metadata.
+Older edition descriptions below retain their original dates and evidence scopes.
+
+
 This directory owns manually built technical publications. The Mini datasheet is
 an English product document with a separate MPW compatibility appendix. It does
 not define or change RTL, register ABIs, build profiles or hardware quality policy.
 The canonical RTL/configuration inputs remain authoritative.
 
-The **2026-10-22 Mini v0.5 DRAFT OpenC906 refresh** reviews dev source
+The historical **2026-10-22 Mini v0.5 DRAFT OpenC906 refresh** reviews dev source
 `9ab05c6404c02b5f2c927539b5c681b46f778b9f`: the locked RV64GC/Sv39 OpenC906,
 core-internal c900 CLINT/PLIC, V2 workload bundles, Linux `/init`, RT-Thread,
 and the selected SRAM/clock-gating paths. The Overview has 43 integrated labels;
@@ -25,8 +46,8 @@ twenty-three current IP chapters and its own source/structure/evidence checks. T
 v0.2 DRAFT uses ICS55 as its main reference, with explicit IHP130 compatibility;
 retired UART1/I2C1 interfaces remain in a migration appendix. Run
 `python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.
-Its output and `latest-tiny` record are separate; the existing Mini entrypoint,
-templates, configuration, review and delivered PDF are unchanged.
+Its output and `latest-tiny` record remain separate. Shared specification components
+now evolve with both books; each hardware collector retains independent coverage.
 
 ## Mini datasheet
 
@@ -354,10 +375,18 @@ uses `configs/ci/ihp130-hp.mk`; legacy selection uses `configs/cluster/mini-mpw.
 
 ## Manual workflow
 
-Use Python 3.10 or newer, Git and **Typst 0.15.1**. PDF checks additionally use
-`pypdf`, `pdfplumber` and `fonttools`, available in the Codex bundled document runtime. The
-build uses Python's standard library and the installed Typst CLI; Python 3.10
-also uses the `tomli` backport already pinned in `requirements/build.txt`.
+Use Python 3.10 on Ubuntu 22.04 x86_64 or Python 3.12 on Windows x86_64,
+Git and **Typst 0.15.1**. Install the isolated, hash-pinned
+[publication environment](../requirements/publication.txt) before building:
+
+    python -m venv .cache/publication-venv
+    python -m pip install --require-hashes -r requirements/publication.txt
+
+Activate that environment (or call its Python directly). The default build uses
+Matplotlib 3.10.7 and the locked numerical/font libraries for curves; PDF checks
+use the same environment's pypdf, pdfplumber and FontTools. Firmware/EDA/CI
+requirements remain separate. Python 3.10 also uses the tomli backport from the
+existing build requirements when required by a setup command.
 
 From the repository root:
 
