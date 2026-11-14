@@ -123,3 +123,17 @@ def test_registry_keeps_unregistered_orphan_directory(tmp_path: Path) -> None:
     assert record["status"] == "ORPHAN_DIRECTORY"
     assert record["cleanup_eligible"] is False
     assert (orphan / "evidence.json").is_file()
+
+
+def test_registry_can_reconcile_only_the_selected_branch(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    other = root / "build/agent-worktrees/other"
+    git(root, "branch", "feat/other", "dev")
+    git(root, "worktree", "add", str(other), "feat/other")
+    document = reconcile_worktrees(root, execute=True, only_branch="feat/example")
+    assert [action["branch"] for action in document["actions"]] == ["feat/example"]
+    assert not linked.exists()
+    assert other.exists()
+    assert git(root, "show-ref", "--verify", "--quiet", "refs/heads/feat/other").returncode == 0

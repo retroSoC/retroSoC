@@ -71,10 +71,14 @@ diagnosis are read-only. Fixes return to the implementation skill.
 3. A maintainer reviews P0/P1 findings, CI, and local full-flow evidence before
    merge.
 
-Feature stages retain their design and architecture approval gates. Once a PR's
-checks are all green, `scripts/pr_workflow.py` may merge it with a merge commit
-and clean the merged local and remote topic branches. It must not merge pending
-or failed checks, dirty worktrees, or non-canonical branches.
+Feature stages retain their design and architecture approval gates.
+`make agent-deliver PR=<number>` first probes the repository's auto-merge,
+merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
+auto-merge while checks may still be pending. Only GitHub merges after required
+checks pass, always with a merge commit. `WATCH=1` retains live monitoring and
+cleanup; otherwise run `RECONCILE=1` after the merge. The legacy
+`scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
+protection or deletes dirty, unmerged, or non-canonical work.
 
 ## Engineering workflows
 

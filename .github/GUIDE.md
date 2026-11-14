@@ -50,10 +50,12 @@ While only `@maksyuki` can review PRs, `review_policy.mode` is
 `sole_maintainer`: GitHub does not require a peer approval count, because an
 author cannot approve their own PR. `auto_merge` allows CI-green PRs to merge
 with merge commits and safe cleanup, while design and architecture approvals
-remain manual. The helper checks every required protected context before
-enabling GitHub's native auto-merge. Failed or pending checks, dirty worktrees,
-and non-canonical branches always block merging and cleanup. Peer CODEOWNERS
-approval is restored when another eligible reviewer is available.
+remain manual. `scripts/pr_delivery.py` probes repository and credential
+capabilities before enabling GitHub native auto-merge, even while checks are
+pending. Only GitHub merges after required checks pass. The legacy helper waits
+for green checks first. Both use merge commits and safe artifact-preserving
+cleanup; dirty, unmerged, and non-canonical branches are preserved. Peer
+CODEOWNERS approval is restored when another eligible reviewer is available.
 
 ## Regression and evidence
 
