@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.agent_control import read_json  # noqa: E402
-from scripts.flow_control import file_digest, utc_now, write_json  # noqa: E402
+from scripts.artifact_lifecycle import inventory, preserve  # noqa: E402
+from scripts.flow_control import utc_now, write_json  # noqa: E402
 
 
 def git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
@@ -51,7 +53,14 @@ def parse_worktrees(root: Path) -> tuple[Path, list[dict[str, Any]]]:
 
 def has_artifacts(worktree: Path) -> bool:
     build = worktree / "build"
-    return build.is_dir() and any(path.is_file() for path in build.rglob("*"))
+    if build.is_symlink():
+        return True
+    if not build.is_dir():
+        return False
+    for directory, dirnames, filenames in os.walk(build, followlinks=False):
+        if filenames or any((Path(directory) / name).is_symlink() for name in dirnames):
+            return True
+    return False
 
 
 def task_identity(worktree: Path, branch: str) -> str:
@@ -64,22 +73,6 @@ def task_identity(worktree: Path, branch: str) -> str:
         except ValueError:
             continue
     return branch.replace("/", "-")
-
-
-def evidence_summary(path: Path) -> dict[str, Any]:
-    files = [item for item in path.rglob("*") if item.is_file()]
-    evidence_files = []
-    for item in files:
-        if item.name.startswith("result") or item.name in {"manifest.json", "state.json", "summary.json"}:
-            record = {"path": item.relative_to(path).as_posix(), "bytes": item.stat().st_size}
-            if item.stat().st_size <= 1024 * 1024:
-                record["sha256"] = file_digest(item)
-            evidence_files.append(record)
-    return {
-        "file_count": len(files),
-        "bytes": sum(item.stat().st_size for item in files),
-        "evidence_files": evidence_files,
-    }
 
 
 def inventory_record(main_root: Path, entry: dict[str, Any]) -> dict[str, Any]:
@@ -102,14 +95,26 @@ def inventory_record(main_root: Path, entry: dict[str, Any]) -> dict[str, Any]:
         status = "ELIGIBLE"
     else:
         status = "UNMERGED"
-    return {
+    record = {
         **entry,
         "path": str(path),
         "status": status,
         "cleanup_eligible": status == "ELIGIBLE",
         "artifacts_present": has_artifacts(path),
         "artifact_identity": task_identity(path, branch) if branch else None,
+        "artifact_inventory": None,
+        "artifact_issue": None,
     }
+    if status == "ELIGIBLE" and record["artifacts_present"]:
+        try:
+            from scripts.artifact_lifecycle import load_policy
+
+            policy = load_policy(main_root / "quality/artifact-retention.json")
+            record["artifact_inventory"] = inventory(path / "build", policy)
+        except (OSError, ValueError, RuntimeError) as error:
+            record["cleanup_eligible"] = False
+            record["artifact_issue"] = str(error)
+    return record
 
 
 def preserve_artifacts(main_root: Path, record: dict[str, Any]) -> Path | None:
@@ -117,19 +122,17 @@ def preserve_artifacts(main_root: Path, record: dict[str, Any]) -> Path | None:
         return None
     identity = record["artifact_identity"] or "detached-artifacts"
     destination = main_root / "build/agent-artifacts" / identity
-    if destination.exists():
-        raise RuntimeError(f"artifact destination already exists: {destination}")
     source = Path(record["path"]) / "build"
-    summary = evidence_summary(source)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    source.replace(destination)
-    write_json(destination / "artifact-manifest.json", {
-        "schema_version": 1,
-        "source_revision": record.get("head"),
-        "branch": record.get("branch"),
-        "source_worktree": record["path"],
-        **summary,
-    })
+    preserve(
+        source,
+        destination,
+        main_root / "quality/artifact-retention.json",
+        {
+            "task_id": identity,
+            "branch": record.get("branch"),
+            "source_revision": record.get("head"),
+        },
+    )
     return destination
 
 
@@ -147,6 +150,8 @@ def reconcile_worktrees(root: Path, execute: bool = False, only_branch: str | No
             preserved = preserve_artifacts(main_root, record)
             if preserved:
                 action["preserved_artifacts"] = str(preserved)
+            if git(record["path"], "status", "--porcelain", "--untracked-files=all").stdout.strip():
+                raise RuntimeError("worktree became dirty during evidence preservation")
             removed = git(main_root, "worktree", "remove", record["path"])
             if removed.returncode:
                 raise RuntimeError(removed.stderr.strip())

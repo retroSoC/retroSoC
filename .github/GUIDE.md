@@ -59,7 +59,12 @@ remain manual. `scripts/pr_delivery.py` probes repository and credential
 capabilities before enabling GitHub native auto-merge, even while checks are
 pending. Only GitHub merges after required checks pass. The legacy helper waits
 for green checks first. Both use merge commits and safe artifact-preserving
-cleanup; dirty, unmerged, and non-canonical branches are preserved. Peer
+cleanup. `quality/artifact-retention.json` separates evidence from rebuildable
+cache/evaluation workspaces, checks capacity and conflicts, and never deletes
+expired evidence automatically. Dirty, unmerged, and non-canonical branches are
+preserved. `make agent-worktree-start` restores validated locked Git/archive
+inputs without sharing writable checkouts; its default is dry-run and offline.
+Peer
 CODEOWNERS approval is restored when another eligible reviewer is available.
 `quality/delivery-policy.json` is evaluation-only. A merge queue is considered
 only when at least three ready PRs compete for `dev`, at least two have actual

@@ -122,7 +122,13 @@ tooling.
   `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
   scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
   covers dry-run inventory, merged-branch cleanup, artifact preservation, and
-  dirty/detached/unmerged/non-canonical/orphan refusal. `test_agent_control.py` also covers
+  dirty/detached/unmerged/non-canonical/orphan refusal.
+  `test_worktree_bootstrap.py` executes real local Git/archive restoration,
+  offline and checksum failures, canonical-path conflicts, and independent
+  object storage. Artifact lifecycle tests cover classified retention,
+  rebuildable cache/workspace exclusion, deferred evidence, digest/capacity
+  accounting, target conflicts, and symlink escapes. No expiry automatically
+  deletes evidence. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and

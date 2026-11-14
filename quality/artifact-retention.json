@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "minimum_free_bytes": 1048576,
+  "rules": [
+    {
+      "name": "deferred-mini-yosys",
+      "class": "evidence",
+      "patterns": ["engineering/mini-yosys-deferred-*/**"],
+      "retain": true,
+      "retention_days": null,
+      "on_expiry": "retain_until_gap_resolved",
+      "rebuildable": false
+    },
+    {
+      "name": "task-and-flow-evidence",
+      "class": "evidence",
+      "patterns": [
+        "tasks/**",
+        "ci-summary/**",
+        "**/result*.json",
+        "**/*.log",
+        "**/manifest.json",
+        "**/state.json",
+        "**/summary.json",
+        "**/*-summary.json",
+        "**/*hash*.json",
+        "**/*.sha256",
+        "**/*.hash",
+        "**/*.trace.json",
+        "**/*.grade.json",
+        "**/*.response.json",
+        "**/*.jsonl",
+        "**/junit*.xml"
+      ],
+      "retain": true,
+      "retention_days": 90,
+      "on_expiry": "review",
+      "rebuildable": false
+    },
+    {
+      "name": "skill-evaluation-workspace",
+      "class": "evaluation_workspace",
+      "patterns": [
+        "agent-evals/**/workspace/**",
+        "agent-evals/**/workspaces/**",
+        "agent-evals/**/*-workspace/**",
+        "agent-evals/**/worktree/**",
+        "agent-evals/**/worktrees/**"
+      ],
+      "retain": false,
+      "retention_days": 14,
+      "on_expiry": "review",
+      "rebuildable": true
+    },
+    {
+      "name": "compiler-cache",
+      "class": "cache",
+      "patterns": ["**/ccache/**", "**/cache/**"],
+      "retain": false,
+      "retention_days": 14,
+      "on_expiry": "review",
+      "rebuildable": true
+    },
+    {
+      "name": "locked-vendor-copy",
+      "class": "vendor",
+      "patterns": ["**/vendor/**"],
+      "retain": false,
+      "retention_days": 30,
+      "on_expiry": "review",
+      "rebuildable": true
+    },
+    {
+      "name": "unclassified",
+      "class": "unclassified",
+      "patterns": ["**"],
+      "retain": true,
+      "retention_days": null,
+      "on_expiry": "retain",
+      "rebuildable": false
+    }
+  ]
+}

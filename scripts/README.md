@@ -39,7 +39,14 @@ shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 `setup_helpers.py` bounds each Git fetch attempt and its retry count. It recovers
 an unborn checkout only when the worktree is clean and the remote matches the
-locked URL and revision; dirty or mismatched repositories are preserved.
+locked URL and revision; dirty or mismatched repositories are preserved. An
+optional validated reference copies ordinary non-recursive Git inputs through
+the same bounded helper with independent object storage and the locked origin.
+`worktree_bootstrap.py` provides dry-run-by-default canonical worktree creation
+and current-worktree restoration. It selects locked Git sources and raw archive
+files by name, verifies revision/SHA-256 and scope, and disables network fallback
+unless explicitly allowed. It does not replace recursive-submodule, PDK,
+publication-package, archive-extraction, or other subsystem setup flows.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
@@ -131,10 +138,17 @@ using the same evidence, artifact, process, and gap records. `validation_gaps.py
 validates ownership, review dates, and resolution conditions.
 `worktree_registry.py` inventories registered and orphaned worktrees in dry-run
 mode by default. Only clean, registered, canonical, non-detached branches under
-`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates;
-artifacts are moved to the main worktree's `build/agent-artifacts/` before
-non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
-evidence-conflicting paths are preserved.
+`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates.
+`artifact_lifecycle.py` applies `quality/artifact-retention.json`, hashes retained
+files, summarizes capacity by class, and copies evidence through an atomic staging
+directory into the main worktree's `build/agent-artifacts/`. Rebuildable caches
+and evaluation workspaces are not retained wholesale; unknown files remain
+retained. Expiry requires review, never automatic deletion. Deferred Mini Yosys
+evidence remains until its gap is resolved. Dirty, unmerged, detached,
+non-canonical, orphaned, unexpected-symlink, capacity-limited, or
+evidence-conflicting paths are preserved. Only known rebuildable symlinks are
+skipped without following their targets; artifact probing never follows a
+symlinked root or directory.
 `agent_dag.py` validates the optional v1 coordination fields and graph schema,
 then emits deterministic plan-only DAG waves. Read-only work can be parallel
 only with host authorization; write tasks additionally require disjoint

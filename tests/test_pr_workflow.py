@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -24,7 +25,12 @@ def make_repo(root: Path) -> dict:
     git(root, "config", "user.name", "Workflow")
     (root / "README.md").write_text("initial\n", encoding="utf-8")
     (root / ".gitignore").write_text("build/\n", encoding="utf-8")
-    git(root, "add", "README.md", ".gitignore")
+    (root / "quality").mkdir()
+    shutil.copyfile(
+        Path(__file__).resolve().parents[1] / "quality/artifact-retention.json",
+        root / "quality/artifact-retention.json",
+    )
+    git(root, "add", "README.md", ".gitignore", "quality/artifact-retention.json")
     git(root, "commit", "-qm", "initial")
     git(root, "checkout", "-qb", "dev")
     git(root, "checkout", "-qb", "feat/example")
