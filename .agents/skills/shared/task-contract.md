@@ -40,6 +40,21 @@ recovery, delivery, reuse thresholds, and contract migrations. Additive guidance
 and eval changes do not require a new contract version; incompatible inputs or
 outputs require a reviewed migration record.
 
+## Task graph coordination
+
+Use [`../../dag.schema.json`](../../dag.schema.json) for an optional task graph.
+The task's `coordination` field declares dependencies, input/output artifacts,
+write-set, lease owner/TTL, idempotency key, timeout and runner budgets, bounded
+retry policy, attempt, resume reference, parallel eligibility, and the unique
+integrator. `make agent-dag GRAPH=<graph.json>` validates the graph and emits a
+plan only; it never starts agents. Read-only work may run in parallel only when
+the host authorizes it. Write tasks additionally need explicit parallel
+eligibility, disjoint write-sets, and distinct canonical worktrees/artifact
+roots. Overlapping writes, baselines, releases, and merges remain serial under
+the single integrator. `agent-lease` is dry-run by default; `EXECUTE=1` requires
+graph authorization. Lease identity, dependencies, attempt and expiry are
+checked before acquire, heartbeat, or release.
+
 ## Resolve inputs and targets
 
 Resolve inputs in this order:

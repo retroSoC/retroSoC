@@ -102,6 +102,12 @@ review dates. `make worktree-registry` is dry-run by default and inventories
 registered and orphaned paths. Cleanup requires a clean, merged, canonical branch
 below `build/agent-worktrees/` and moves retained evidence before any removal.
 Other worktrees are inventoried but never removed automatically.
+`make agent-dag GRAPH=<graph.json>` validates task dependencies, write-sets,
+leases, and parallel eligibility without launching agents. Only explicitly
+authorized, independent read-only tasks or disjoint write tasks can be planned
+in parallel; every integration remains serial under the graph's sole integrator.
+`make agent-lease GRAPH=<graph.json> TASK=<id>` is dry-run by default and requires
+`EXECUTE=1` plus graph authorization to mutate lease evidence.
 
 Maintenance tasks do not require feature slugs, frozen specifications, or phase
 IDs. Resolve targets from explicit inputs or unambiguous publication/profile

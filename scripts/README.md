@@ -122,6 +122,14 @@ mode by default. Only clean, registered, canonical, non-detached branches under
 artifacts are moved to the main worktree's `build/agent-artifacts/` before
 non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
 evidence-conflicting paths are preserved.
+`agent_dag.py` validates the optional v1 coordination fields and graph schema,
+then emits deterministic plan-only DAG waves. Read-only work can be parallel
+only with host authorization; write tasks additionally require disjoint
+write-sets and distinct canonical worktrees/artifact roots. A single integrator
+always serializes integration. `acquire`, `heartbeat`, and `release` default to
+dry-run and require explicit graph authorization for mutation. Dependency and
+PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
+are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_delivery.py` probes repository capabilities and

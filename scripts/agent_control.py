@@ -118,7 +118,7 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
         "execution",
         "status",
     }
-    optional = {"target_socs", "specification", "phase", "evidence", "resolves_gaps"}
+    optional = {"target_socs", "specification", "phase", "evidence", "resolves_gaps", "coordination"}
     task = check_keys(task, "task", required, optional, issues)
     if not task:
         return issues
@@ -258,6 +258,10 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
             issues.append(f"evidence[{index}].status is invalid")
     if task.get("status") == "done" and not evidence:
         issues.append("done tasks require evidence")
+    if "coordination" in task:
+        from scripts.agent_dag import validate_coordination
+
+        issues.extend(validate_coordination(task))
     return issues
 
 
