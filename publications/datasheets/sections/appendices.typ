@@ -89,6 +89,7 @@ number is used to imply completion.
 = Document Control
 #change-start("v05-dev-20261022-document-control","Current revision history and source provenance")
 == Revision History
+#change-start("v05-commercial-20261114-document-control","Current source identity and revision history",category:"cross-reference")
 #change-start("v05-refresh-revision", "Same-version dev revision history")
 #ds-table("revisions", [Document revision history],
   ([Date], [Version], [Change], [Author]),
@@ -101,12 +102,14 @@ number is used to imply completion.
    ([2026-09-22],[0.5 DRAFT],[Presentation revision: add the cover email contact and partial Functional mark; emphasize selected capability, programming, limitation and evidence phrases. Bind the reviewed current dev source and CI observation; hardware statements and interfaces are retained.],[Yuchi Miao / ECOS Team]),
    ([2026-09-23],[0.5 DRAFT],[Rill bilingual brand presentation in the retained header geometry; previous delivered 779-page baseline.],[Yuchi Miao / ECOS Team]),
    ([2026-10-22],[0.5 DRAFT],[Reviewed 95c243b70955 refresh, delivered as 798 pages: reconcile RV64/V2 workloads, Mini-selected register capabilities, Crypto V2 initialization, DMA discovery/session limits and shared-IP recovery.],[Yuchi Miao / ECOS Team]),
-   ([#doc.date],[0.5 DRAFT],[OpenC906 refresh: fixed RV64GC core, single AXI128-to-64 path, internal CLINT/PLIC, C906 initialization/cache maintenance and SRAM/ICG selection. Retain prior register corrections, 42 IP chapters, 109 entries and scoped evidence.],[Yuchi Miao / ECOS Team])),
+   ([2026-10-22],[0.5 DRAFT],[OpenC906 refresh: fixed RV64GC core, single AXI128-to-64 path, internal CLINT/PLIC, C906 initialization/cache maintenance and SRAM/ICG selection. Retain prior register corrections, 42 IP chapters, 109 entries and scoped evidence.],[Yuchi Miao / ECOS Team]),
+   ([#doc.date],[0.5 DRAFT],[Reviewed dev 6f3f3c83; shared typed specifications, board and characteristic references, source/status management, grouped navigation and implementation errata. No new hardware qualification.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify
 the electrical placeholders in this revision.
 #change-end("v05-refresh-revision")
+#change-end("v05-commercial-20261114-document-control")
 
 == Sources and Reproducibility <publication-provenance>
 #change-start("v05-refresh-provenance","Exact snapshot and same-version publication identity")

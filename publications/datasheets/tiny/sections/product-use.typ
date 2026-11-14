@@ -48,3 +48,9 @@ These operations have separate ownership and completion boundaries. Camera and a
 See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for shared resources.
 #source-note("app/apps/ci_smoke/tiny.c",title:"Current acceptance composition")
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
+
+#change-start("tiny-v02-commercial-20261114-quick-reference","Specification and evidence quick reference")
+== Specification and Evidence Quick Reference <tiny-specification-quick>
+#import "../../../specifications/components.typ": quick-reference
+#quick-reference(data.specifications,ds-table)
+#change-end("tiny-v02-commercial-20261114-quick-reference")

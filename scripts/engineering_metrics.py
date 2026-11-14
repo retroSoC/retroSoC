@@ -107,7 +107,14 @@ def normalize_pulls(document: Any) -> list[dict[str, Any]]:
     return pulls
 
 
-def summarize(runs: list[dict[str, Any]], pulls: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize(
+    runs: list[dict[str, Any]],
+    pulls: list[dict[str, Any]],
+    jobs: list[dict[str, Any]] | None = None,
+    delivery_records: list[dict[str, Any]] | None = None,
+    cache_observations: list[dict[str, Any]] | None = None,
+    observations: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     workflows = []
     for name in sorted({run["name"] for run in runs}):
         selected = [run for run in runs if run["name"] == name]
@@ -145,7 +152,7 @@ def summarize(runs: list[dict[str, Any]], pulls: list[dict[str, Any]]) -> dict[s
                 "merged_count": sum(pull["merged_at"] is not None for pull in selected),
             }
         )
-    return {
+    result = {
         "workflow_count": len(workflows),
         "run_count": len(runs),
         "successful_run_count": sum(run["conclusion"] == "success" for run in runs),
@@ -161,6 +168,23 @@ def summarize(runs: list[dict[str, Any]], pulls: list[dict[str, Any]]) -> dict[s
         ),
         "pull_request_categories": categories,
     }
+    from scripts.ci_observations import summarize_shadow
+    from scripts.delivery_metrics import summarize_delivery
+    from scripts.job_metrics import first_pass_summary, summarize_cache, summarize_jobs
+
+    result.update(
+        first_pass=first_pass_summary(runs),
+        jobs=summarize_jobs(jobs or []),
+        delivery=summarize_delivery(delivery_records or []),
+        cache=summarize_cache(cache_observations or []),
+        observations=observations
+        if observations is not None
+        else {
+            "delivery_policy": {"measurement_status": "NOT_MEASURED"},
+            "incremental_shadow": summarize_shadow(None),
+        },
+    )
+    return result
 
 
 def gh_json(arguments: list[str]) -> Any:
@@ -172,7 +196,23 @@ def gh_json(arguments: list[str]) -> Any:
     return json.loads(result.stdout)
 
 
-def collect(repository: str, limit: int) -> dict[str, Any]:
+def policy_observation(repository: str) -> dict[str, Any]:
+    from scripts.delivery_policy import collect_github, evaluate
+
+    document = collect_github(ROOT, repository)
+    return {
+        "measurement_status": "MEASURED",
+        "evaluation": evaluate(
+            ROOT,
+            document["pulls"],
+            document["runs"],
+            document["samples"],
+            "github",
+        ),
+    }
+
+
+def collect(repository: str, limit: int, delivery_dir: Path | None = None) -> dict[str, Any]:
     if not 1 <= limit <= 100:
         raise ValueError("sample limit must be between 1 and 100")
     run_document = gh_json(["api", f"repos/{repository}/actions/runs?per_page={limit}"])
@@ -192,19 +232,56 @@ def collect(repository: str, limit: int) -> dict[str, Any]:
     )
     runs = normalize_runs(run_document)
     pulls = normalize_pulls(pull_document)
+    from scripts.ci_observations import collect_shadow
+    from scripts.delivery_metrics import collect_delivery
+    from scripts.job_metrics import cache_step_observations, collect_jobs
+
+    job_result = collect_jobs(repository, runs)
+    delivery = collect_delivery(repository, pulls, delivery_dir)
+    shadow = collect_shadow(repository, runs)
+    issues = [*job_result["issues"], *delivery["issues"], *shadow["issues"]]
+    try:
+        policy = policy_observation(repository)
+    except (OSError, ValueError, RuntimeError) as error:
+        policy = {"measurement_status": "NOT_MEASURED", "evaluation": None}
+        issues.append(f"delivery policy observation unavailable: {error}")
+    cache_observations = cache_step_observations(job_result["jobs"])
+    observations = {"delivery_policy": policy, "incremental_shadow": shadow}
+    from scripts.flow_control import source_state
+
+    collector_state = source_state(ROOT)
     return {
         "schema_version": 1,
+        "source_revision": collector_state["source_revision"],
+        "source_dirty": collector_state["source_dirty"],
+        "tool_lock_sha256": collector_state["tool_lock_sha256"],
         "repository": repository,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "sample_limit": limit,
-        "summary": summarize(runs, pulls),
+        "summary": summarize(
+            runs,
+            pulls,
+            jobs=job_result["jobs"],
+            delivery_records=delivery["records"],
+            cache_observations=cache_observations,
+            observations=observations,
+        ),
         "runs": runs,
+        "jobs": job_result["jobs"],
+        "delivery_records": delivery["records"],
+        "cache_observations": cache_observations,
+        "observations": observations,
         "pull_requests": pulls,
+        "issues": issues,
+        "data_complete": not issues,
         "limitations": [
             "Workflow duration is measured from run start to update and includes queue-adjacent overhead.",
             "Pull-request creation time can omit earlier local/agent design and implementation time.",
             "Review counts come from GitHub review objects and do not measure all human discussion.",
             "Recent release and Dependabot samples must not be treated as representative agent-authored task success.",
+            "Cache step timing does not prove a cache hit or reveal cache size.",
+            "GitHub timelines do not contain local worktree cleanup time; local delivery evidence is optional and merge-commit-bound.",
+            "Policy and incremental shadow records are read-only observations and never authorize a merge, gate, or skipped test.",
             "Metrics are for engineering improvement, not individual performance evaluation.",
         ],
     }
@@ -216,10 +293,16 @@ def parse_args() -> argparse.Namespace:
     collect_parser = subparsers.add_parser("collect")
     collect_parser.add_argument("--repository", default="retroSoC/retroSoC")
     collect_parser.add_argument("--limit", type=int, default=30)
+    collect_parser.add_argument("--delivery-dir", type=Path)
     collect_parser.add_argument("--output", type=Path, required=True)
     summarize_parser = subparsers.add_parser("summarize")
     summarize_parser.add_argument("--runs", type=Path, required=True)
     summarize_parser.add_argument("--pull-requests", type=Path, required=True)
+    summarize_parser.add_argument("--jobs", type=Path)
+    summarize_parser.add_argument("--delivery", type=Path)
+    summarize_parser.add_argument("--cache-observations", type=Path)
+    summarize_parser.add_argument("--delivery-policy", type=Path)
+    summarize_parser.add_argument("--shadow-evidence", type=Path, action="append")
     summarize_parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -228,15 +311,64 @@ def main() -> int:
     args = parse_args()
     try:
         if args.command == "collect":
-            result = collect(args.repository, args.limit)
+            result = collect(args.repository, args.limit, args.delivery_dir)
         else:
+            from scripts.ci_observations import shadow_record, summarize_shadow
+
             runs = normalize_runs(read_json(args.runs))
             pulls = normalize_pulls(read_json(args.pull_requests))
+            jobs_document = read_json(args.jobs) if args.jobs else []
+            delivery_document = read_json(args.delivery) if args.delivery else []
+            cache_document = read_json(args.cache_observations) if args.cache_observations else []
+            if isinstance(jobs_document, dict) and "jobs" not in jobs_document:
+                raise ValueError("jobs evidence is missing its jobs list")
+            if isinstance(delivery_document, dict) and "records" not in delivery_document:
+                raise ValueError("delivery evidence is missing its records list")
+            if isinstance(cache_document, dict) and not ({"observations", "caches"} & set(cache_document)):
+                raise ValueError("cache evidence is missing observations or caches")
+            jobs = jobs_document.get("jobs", []) if isinstance(jobs_document, dict) else jobs_document
+            delivery = delivery_document.get("records", []) if isinstance(delivery_document, dict) else delivery_document
+            cache = cache_document.get("observations", cache_document.get("caches", [])) if isinstance(cache_document, dict) else cache_document
+            if not isinstance(jobs, list) or not isinstance(delivery, list) or not isinstance(cache, list):
+                raise ValueError("jobs, delivery, and cache evidence must be lists")
+            policy = {"measurement_status": "NOT_MEASURED", "evaluation": None}
+            if args.delivery_policy:
+                policy_document = read_json(args.delivery_policy)
+                if not isinstance(policy_document, dict) or policy_document.get("evaluation_only") is not True:
+                    raise ValueError("delivery policy evidence must be an evaluation-only object")
+                policy = {"measurement_status": "MEASURED", "evaluation": policy_document}
+            shadow = (
+                [shadow_record(read_json(path)) for path in args.shadow_evidence]
+                if args.shadow_evidence is not None
+                else None
+            )
+            observations = {
+                "delivery_policy": policy,
+                "incremental_shadow": summarize_shadow(shadow),
+            }
             result = {
                 "schema_version": 1,
-                "summary": summarize(runs, pulls),
+                "summary": summarize(
+                    runs,
+                    pulls,
+                    jobs=jobs,
+                    delivery_records=delivery,
+                    cache_observations=cache,
+                    observations=observations,
+                ),
                 "runs": runs,
+                "jobs": jobs,
+                "delivery_records": delivery,
+                "cache_observations": cache,
+                "observations": observations,
                 "pull_requests": pulls,
+                "data_complete": bool(
+                    args.jobs
+                    and args.delivery
+                    and args.cache_observations
+                    and args.delivery_policy
+                    and args.shadow_evidence is not None
+                ),
             }
         atomic_write(args.output, dump_json(result))
         print(f"engineering metrics: {args.output.resolve()}")

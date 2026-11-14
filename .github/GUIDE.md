@@ -122,6 +122,11 @@ source/test, timeout, cancelled, dependency-integrity, and unknown failures are
 not automatically retried.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
+It includes per-job/step timing, first-attempt and duplicate execution, cache
+observations, native auto-merge timelines, and read-only shadow/policy evidence.
+Artifact and job inventories must be complete and bound to the sampled run.
+Missing cache size, local cleanup, or timeline data is explicitly unknown, never
+a zero-cost claim. Observations never enable reuse, queues, or metric gates.
 `workflows/skill-evals.yml` runs one read-only smoke case per registered Skill,
 or all live cases selected by Skill, with source/contract/input provenance and
 deterministic grades. A runner needs a configured Codex or Kimi CLI and approved
