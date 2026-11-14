@@ -101,12 +101,27 @@ tooling.
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
   PR/release governance. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
+  `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
+  resource/step summaries, dry-run versus execute behavior, and cache states.
+  `test_pytest_shards.py` covers deterministic duration-based scheduling, real
+  collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
+  workflow gates, product matrices, and cache observations.
+  `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  real cancellation and deadlines, stale-run reconciliation, retained attempts,
+  explicit inner-Yosys resume delegation, bounded descendant completion after a
+  normal parent exit, zombie-member exclusion, and process-group cleanup when
+  descendants outlive the grace period.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
   complete frontend/optimizer/backend execution, bounded failure, retained
-  state, cache identity invalidation, and checkpoint/output digest validation
-  with real Yosys fixtures.
+  state, cache identity invalidation, execution fingerprints, and
+  checkpoint/output digest validation with real Yosys fixtures.
+  `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
+  scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
+  covers dry-run inventory, merged-branch cleanup, artifact preservation, and
+  dirty/detached/unmerged/non-canonical/orphan refusal. `test_agent_control.py` also covers
+  JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
   refusals. Run fast agent checks with `make check-fast`. Static

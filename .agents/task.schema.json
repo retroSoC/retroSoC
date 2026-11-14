@@ -91,6 +91,11 @@
     "status": {
       "enum": ["planned", "approved", "in_progress", "blocked", "review", "done"]
     },
+    "resolves_gaps": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+    },
     "evidence": {
       "type": "array",
       "items": {

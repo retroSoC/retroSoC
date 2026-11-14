@@ -118,7 +118,7 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
         "execution",
         "status",
     }
-    optional = {"target_socs", "specification", "phase", "evidence"}
+    optional = {"target_socs", "specification", "phase", "evidence", "resolves_gaps"}
     task = check_keys(task, "task", required, optional, issues)
     if not task:
         return issues
@@ -141,6 +141,9 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
         issues.append("target_socs contains an unsupported SoC")
     if len(set(targets)) != len(targets):
         issues.append("target_socs must not contain duplicates")
+    resolving = string_list(task.get("resolves_gaps", []), "resolves_gaps", issues)
+    if any(not TASK_ID_RE.fullmatch(item) for item in resolving):
+        issues.append("resolves_gaps must contain lowercase kebab-case IDs")
 
     specification = task.get("specification")
     if specification is not None:
@@ -666,6 +669,8 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
     if github["status"] not in {"PASS", "NOT_RUN"}:
         issues.append(f"GitHub preflight is {github['status']}")
     issues.extend(f"github: {issue}" for issue in github.get("issues", []))
+    gaps = gap_status(task, root)
+    issues.extend(gaps["issues"])
     return {
         "schema_version": 1,
         "task_id": task.get("task_id"),
@@ -677,7 +682,179 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
         "github": github,
+        "known_gaps": gaps["known_gaps"],
+        "resolving_gaps": gaps["resolving_gaps"],
     }
+
+
+def gap_status(task: dict[str, Any], root: Path) -> dict[str, Any]:
+    try:
+        from scripts.validation_gaps import load_gaps, relevant_gaps
+
+        all_gaps = load_gaps(root)
+        selected = relevant_gaps(task, all_gaps)
+        resolved = set(task.get("resolves_gaps", []))
+        known = {gap["id"] for gap in all_gaps}
+        unknown = sorted(resolved - known)
+        result: dict[str, Any] = {
+            "status": "BLOCKED" if unknown else "PASS",
+            "issues": [f"unknown validation gap IDs: {', '.join(unknown)}"] if unknown else [],
+            "known_gaps": [
+                {
+                    "id": gap["id"],
+                    "status": gap["status"],
+                    "scope": gap["scope"],
+                    "blocked_stages": gap["blocked_stages"],
+                    "review_by": gap["review_by"],
+                    "prohibited_claims": gap["prohibited_claims"],
+                }
+                for gap in selected
+            ],
+            "resolving_gaps": sorted(resolved & known),
+        }
+        text = " ".join([task["scope"]["summary"], *task["acceptance"]]).lower().replace("_", " ")
+        for gap in selected:
+            targets = set(task.get("target_socs", []))
+            pdks = set(task.get("validation", {}).get("pdks", []))
+            profiles = set(task.get("validation", {}).get("profiles", []))
+            if not (targets or pdks or profiles):
+                continue
+            if profiles and gap["scope"]["profile"] not in profiles:
+                continue
+            for stage in gap["blocked_stages"]:
+                normalized = stage.replace("_", " ")
+                if normalized in text or normalized.split()[0] in text:
+                    result["issues"].append(
+                        f"validation gap {gap['id']} blocks {stage}; declare resolves_gaps only for an explicit resolution task"
+                    )
+        if result["issues"]:
+            result["status"] = "BLOCKED"
+        return result
+    except (ImportError, KeyError, OSError, ValueError) as error:
+        return {"status": "BLOCKED", "issues": [str(error)], "known_gaps": [], "resolving_gaps": []}
+
+
+def artifact_evidence(
+    root: Path,
+    task: dict[str, Any],
+    exclude_paths: set[Path] | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    artifact_root = root / task["execution"]["artifact_root"]
+    excluded = {path.resolve() for path in (exclude_paths or set())}
+    current_revision = git_output(root, "rev-parse", "HEAD")
+    records = []
+    issues = []
+    for path in sorted(artifact_root.rglob("*.json")):
+        if path.resolve() in excluded:
+            continue
+        relative = path.relative_to(root).as_posix()
+        record: dict[str, Any] = {"path": relative, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        try:
+            data = read_json(path)
+            if isinstance(data, dict):
+                for key in (
+                    "status",
+                    "flow_status",
+                    "source_revision",
+                    "run_id",
+                    "task_id",
+                    "attempt",
+                    "started_at",
+                    "finished_at",
+                    "child_pid",
+                    "child_cleanup_pending",
+                    "log",
+                    "output_sha256",
+                    "error",
+                ):
+                    if key in data:
+                        record[key] = data[key]
+                if data.get("source_revision"):
+                    record["revision_match"] = data["source_revision"] == current_revision
+                    status = str(data.get("status", data.get("flow_status", ""))).lower()
+                    if not record["revision_match"] and status in {"pass", "passed"}:
+                        issues.append(f"current PASS artifact has a different source revision: {relative}")
+            else:
+                record["status"] = "UNKNOWN"
+        except (ValueError, OSError) as error:
+            issues.append(f"cannot read artifact {relative}: {error}")
+            record["status"] = "UNKNOWN"
+        records.append(record)
+    return records, issues
+
+
+def build_handoff(
+    task: dict[str, Any],
+    root: Path,
+    next_action: str,
+    exclude_paths: set[Path] | None = None,
+) -> dict[str, Any]:
+    if not next_action.strip():
+        raise ValueError("handoff requires a non-empty next action")
+    issues = validate_task(task, root)
+    artifacts, artifact_issues = artifact_evidence(root, task, exclude_paths)
+    issues.extend(artifact_issues)
+    gaps = gap_status(task, root)
+    issues.extend(gaps["issues"])
+    evidence = task.get("evidence", [])
+    counts = {status: sum(item["status"] == status for item in evidence) for status in ("PASS", "FAIL", "SKIPPED", "NOT_RUN")}
+    if counts["FAIL"]:
+        issues.append("handoff contains failed evidence")
+    status = "blocked" if issues else task["status"]
+    return {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "task_id": task["task_id"],
+        "base_revision": task["base_revision"],
+        "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "task_status": task["status"],
+        "status": status,
+        "issues": sorted(set(issues)),
+        "next_action": next_action,
+        "worktree": {
+            "path": task["execution"]["worktree"],
+            "clean": not git_output(root, "status", "--porcelain", "--untracked-files=all"),
+        },
+        "artifact_root": task["execution"]["artifact_root"],
+        "acceptance": task["acceptance"],
+        "evidence": evidence,
+        "evidence_counts": counts,
+        "artifacts": artifacts,
+        "processes": [item for item in artifacts if "child_pid" in item or "run_id" in item],
+        "known_gaps": gaps["known_gaps"],
+        "resolving_gaps": gaps["resolving_gaps"],
+        "prohibited_actions": [
+            "Do not rerun passing evidence merely because the session resumed",
+            "Do not claim SKIPPED or NOT_RUN evidence as PASS",
+            "Do not delete retained artifacts or worktrees outside the cleanup contract",
+            *task["scope"]["non_goals"],
+        ],
+    }
+
+
+def write_handoff_markdown(document: dict[str, Any], path: Path, root: Path) -> None:
+    try:
+        path.resolve().relative_to((root / "build").resolve())
+    except ValueError as error:
+        raise ValueError("handoff Markdown must remain below the build artifact root") from error
+    lines = [
+        f"# Agent handoff: {document['task_id']}",
+        "",
+        f"- Status: `{document['status']}`",
+        f"- Source: `{document['source_revision']}`",
+        f"- Next action: {document['next_action']}",
+        "",
+        "## Evidence",
+        "",
+        "| Kind | Status | URI |",
+        "| --- | --- | --- |",
+    ]
+    lines.extend(f"| {item['kind']} | {item['status']} | `{item['uri']}` |" for item in document["evidence"])
+    lines.extend(["", "## Artifacts", ""])
+    lines.extend(f"- `{item['path']}` (`{item['sha256']}`)" for item in document["artifacts"])
+    lines.extend(["", "## Prohibited actions", ""])
+    lines.extend(f"- {item}" for item in document["prohibited_actions"])
+    atomic_write(path, "\n".join(lines) + "\n")
 
 
 def parse_args() -> argparse.Namespace:
@@ -689,6 +866,12 @@ def parse_args() -> argparse.Namespace:
         task_parser = task_subparsers.add_parser(name)
         task_parser.add_argument("--task", type=Path, required=True)
         task_parser.add_argument("--root", type=Path, default=ROOT)
+    handoff = task_subparsers.add_parser("handoff")
+    handoff.add_argument("--task", type=Path, required=True)
+    handoff.add_argument("--root", type=Path, default=ROOT)
+    handoff.add_argument("--next", required=True)
+    handoff.add_argument("--output", type=Path)
+    handoff.add_argument("--markdown", type=Path)
 
     plan = subparsers.add_parser("plan")
     plan.add_argument("--root", type=Path, default=ROOT)
@@ -739,6 +922,17 @@ def main() -> int:
         if args.command == "task":
             task = read_json(args.task)
             issues = validate_task(task, args.root.resolve())
+            if args.task_command == "handoff":
+                document = build_handoff(
+                    task,
+                    args.root.resolve(),
+                    args.next,
+                    exclude_paths={path for path in (args.output, args.markdown) if path is not None},
+                )
+                if args.markdown:
+                    write_handoff_markdown(document, args.markdown, args.root.resolve())
+                emit_json(document, args.output)
+                return int(document["status"] == "blocked")
             if args.task_command == "render":
                 if issues:
                     for issue in issues:

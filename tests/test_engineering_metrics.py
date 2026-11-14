@@ -24,6 +24,7 @@ RUNS = {
             "event": "pull_request",
             "status": "completed",
             "conclusion": "failure",
+            "run_attempt": 2,
             "head_branch": "dev",
             "head_sha": "b" * 40,
             "created_at": "2026-11-02T00:00:00Z",
@@ -86,6 +87,8 @@ def test_metrics_summarize_duration_lead_time_and_reviews() -> None:
     assert quality["duration_seconds_median"] == 5400
     assert quality["duration_seconds_p95"] == 7200
     assert quality["failure_count"] == 1
+    assert quality["rerun_count"] == 1
+    assert quality["rerun_ci_minutes_total"] == 120
     assert result["merged_pull_request_count"] == 3
     assert result["merged_without_review_count"] == 2
     assert result["commits_per_pull_request_median"] == 2

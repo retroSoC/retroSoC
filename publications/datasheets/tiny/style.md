@@ -62,6 +62,8 @@ Peripheral categories follow Memory Interface/NVM/VM, GPIO, DMA, Timers, IO
 Interface, Multimedia and Encryption and Data Integrity. XPI/SDIO0/SRAM/UART0
 have level-five IP headings; GPIO/DMA use level three; other IPs use level four.
 All six standard IP detail headings are bookmarks and are excluded from contents.
+Parenthesized IP suffixes in Contents use the existing uppercase-only bold
+rule. The reviewed suffixes are PPALITE and CRYPTO.
 
 Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
@@ -80,6 +82,8 @@ from the three AXI initiators. Separate the XPI memory path and register access,
 and group APB4 branches by their actual destination clocks. Source validation
 checks domain ownership and draws the same orthogonal paths and arrowheads as
 the geometry checker. Review title and wire clearances in color and grayscale.
+Wire labels in this functional architecture have transparent backgrounds.
+Place their text clear of the wires so the domain colors remain visible.
 
 Keep the AXI width on the bus or bridge symbol. Use wire labels for function
 and ownership. Place grouped JTAG, SDIO0, XPI, I2S and DVP signals near their

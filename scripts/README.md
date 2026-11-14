@@ -54,41 +54,79 @@ a static source list.
 behavior evaluations with deterministic grades. `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
-and NOT_RUN. `formal_local_evidence.py` assembles existing local results without
+and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
+cancelled, dependency-integrity, and unknown failures, records job-step and
+resource summaries, and emits cache observations. `inspect` is dry-run by
+default. Only a first-attempt, same-head, recognized infrastructure failure is
+eligible for `inspect --execute`; all other failures preserve their verdict.
+`formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to
-local formal evidence. `yosys_progress.py` summarizes phase steps,
+local formal evidence.
+`flow_control.py` provides execution fingerprints, single-flight leases,
+process identity, cancellation, and attempt retention for long-running flows.
+`run_flow.py` records schema-v2 run/attempt, heartbeat, deadline, process-group,
+source/script/input/environment/tool-lock digests, and resource evidence without
+storing environment values in those digests. `--status` reconciles stale runs,
+`--cancel` signals only a matching run identity, and `--resume` reuses a passing
+result only when every fingerprint matches; a failed attempt may resume only
+with identical inputs and receives a new run ID. The explicit
+`YOSYS_OPT_RESUME=YES`/`yosys_opt_resume.py synth` combination delegates these
+reuse decisions to the inner source-bound driver instead; no other command is
+exempt from the outer full-fingerprint check. A zero-exit parent receives a
+bounded descendant grace period for normal compiler and cleanup processes;
+nonzero exits or descendants that outlast the grace period are terminated.
+Process-group liveness ignores zombie members so completed children cannot be
+misclassified as active work.
+Missing checkpoint digests or an active lease fails closed. Earlier results and
+logs remain under `result.json.attempts/`.
+`pytest_shards.py` collects the complete node-id manifest and uses reviewed JUnit
+duration history for deterministic longest-processing-time scheduling. Its `run`
+command executes exactly one non-empty shard, while `verify` reconciles every
+plan, JUnit report, result digest, duplicate, missing test, and unexpected skip.
+`quality/pytest-shards.json` selects four shards and declares only the existing
+optional-input skips. Cache HIT/MISS/NOT_RUN observations are aggregated without
+caching verdicts. Use `make fixtures-plan`, `make fixtures-shard SHARD=<index>`,
+or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hosted
+CI runs isolated matrix jobs and an always-enforced fan-in.
+`yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
 `yosys_opt_resume.py` provides an opt-in resumable plain-`opt` driver. It
 keeps the native initial `opt_expr`/`opt_merge -nomux` and iterative
 `opt_muxtree`/`opt_reduce`/`opt_merge`/`opt_dff`/`opt_clean`/`opt_expr`
 sequence, records per-iteration RTLIL/stat/result/resource evidence, and fails
-on timeout, malformed state, changed input, or the iteration limit. Invoke it
+on timeout, malformed state, changed input, or the iteration limit. Schema-v2
+state and the synthesis manifest additionally bind execution fingerprints,
+optimizer-environment and checkpoint/output SHA-256 values before the first
+interruptible stage. Legacy or corrupted state is never trusted. Invoke it
 through `YOSYS_OPT_RESUME=YES`; the default native synthesis path and
 `YOSYS_TIMEOUT` remain unchanged. Resume uses the retained input digest and
-state, never a dirty or unrelated worktree. Frontend/backend cache records bind
-the synthesis and support scripts, effective synthesis environment, filelist
-source contents, checkpoint and netlist identities. Changed identities rebuild
-the affected stage; corrupted checkpoint state fails instead of being reused.
-Without `SV_FLIST`, the frontend is always rebuilt. This is synthesis
-infrastructure, not timing, netlist, or release evidence by itself.
+state, never an unrelated worktree. Frontend/backend cache records bind the
+synthesis and support scripts, effective synthesis environment, filelist source
+contents, checkpoint and netlist identities. With complete `SV_FLIST` source
+identity, classified script, stage-environment or output changes rebuild the
+affected stage only while source and tool identities remain valid. Git
+source-revision/state, tool-lock and unclassified environment changes fail
+closed. Without `SV_FLIST`, the frontend is always rebuilt and retained backend
+output drift fails closed. This is synthesis infrastructure, not timing,
+netlist, or release evidence by itself.
 
-Mini/IHP130 Yosys backend completion is a dated **missing item**, explicitly
-deferred by the maintainer on 2026-11-12. The retained native plain-`opt`
-baseline completed in 7361.58 seconds, with 775 SAT `$equiv` cells proven
-between native and checkpointed optimization and none unproven. At `dfbca171`,
-both resume variants converged after 30 iterations. Neither backend completed
-ABC technology mapping or produced a final netlist; both results have exit code
-124. The 10800-second parent timeout also left `yosys-abc` descendants running,
-and they were terminated when the work was deferred. A compact evidence set
-under `build/engineering/mini-yosys-deferred-dfbca171/` preserves both states,
-results, backend-log excerpts, and the full-flow command/verdict excerpt. Until
-a later revision completes the flow, this Mini synthesis is `INCOMPLETE`, and
-its netlist simulation, OpenSTA, and synthesis-dependent warning/metric stages
-are `NOT_RUN`. Behavioral CI success and the optimization equivalence proof do
-not close this gap or grant physical/release signoff. Backend scalability and
-descendant-process cleanup require separate follow-up.
+Mini/IHP130 Yosys backend completion remains a maintainer-deferred missing item.
+The authoritative owned record is `quality/validation-gaps.json`, with scope,
+source revision, review date, prohibited claims, and resolution conditions.
+Retained evidence is under `build/engineering/mini-yosys-deferred-dfbca171/`.
+Neither optimization equivalence nor behavioral CI closes this gap.
+
+`agent_control.py task handoff` emits revision-bound JSON and optional Markdown
+using the same evidence, artifact, process, and gap records. `validation_gaps.py`
+validates ownership, review dates, and resolution conditions.
+`worktree_registry.py` inventories registered and orphaned worktrees in dry-run
+mode by default. Only clean, registered, canonical, non-detached branches under
+`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates;
+artifacts are moved to the main worktree's `build/agent-artifacts/` before
+non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
+evidence-conflicting paths are preserved.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_workflow.py` merges only after all checks pass

@@ -812,7 +812,7 @@
   {
     "id": "ppalite",
     "family": "ppalite",
-    "title": "Streaming Pixel Processor (PPALite)",
+    "title": "Streaming Pixel Processor (PPALITE)",
     "depth": 4,
     "regions": [
       "APB4_PPALITE"
@@ -868,7 +868,7 @@
   {
     "id": "crypto",
     "family": "crypto",
-    "title": "Cryptographic Accelerator (Crypto)",
+    "title": "Cryptographic Accelerator (CRYPTO)",
     "depth": 4,
     "regions": [
       "APB4_CRYPTO"

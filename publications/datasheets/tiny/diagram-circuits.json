@@ -5386,7 +5386,7 @@
       }
     ],
     "note": "Shown control and data paths belong to the current SRAM-backed AES/SHA2/RSA implementation. Tiny has 24 KiB of private PCLK-domain storage; initialization, scrub and accepted DMA work have separate completion boundaries.",
-    "title": "Cryptographic Accelerator (Crypto)"
+    "title": "Cryptographic Accelerator (CRYPTO)"
   },
   "crc": {
     "nodes": [

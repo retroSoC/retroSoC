@@ -443,6 +443,85 @@ def test_synthesis_cache_revalidates_identity(tmp_path: Path, monkeypatch: pytes
     assert stages == ["frontend.log"]
 
 
+def test_synthesis_opt_resume_rejects_unclassified_environment_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script = prepare_synthesis(tmp_path)
+    monkeypatch.setenv("NETLIST", str(tmp_path / "netlist.v"))
+    monkeypatch.setenv("REPORTS", str(tmp_path / "reports"))
+    monkeypatch.setenv("SV_FLIST", str(tmp_path / "sources.fl"))
+    run_synthesis_fixture(tmp_path, script)
+
+    monkeypatch.setenv("PPALITE_TEST_UNCLASSIFIED_ENV", "changed")
+    with pytest.raises(ValueError, match="synthesis optimizer environment mismatch"):
+        run_synthesis_fixture(tmp_path, script)
+
+
+def test_synthesis_rejects_environment_drift_before_optimizer_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script = prepare_synthesis(tmp_path)
+    monkeypatch.setenv("NETLIST", str(tmp_path / "netlist.v"))
+    monkeypatch.setenv("REPORTS", str(tmp_path / "reports"))
+    monkeypatch.setenv("SV_FLIST", str(tmp_path / "sources.fl"))
+
+    def interrupt_before_optimize(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("interrupted before optimizer state")
+
+    monkeypatch.setattr("scripts.yosys_opt_resume.optimize", interrupt_before_optimize)
+    with pytest.raises(RuntimeError, match="interrupted before optimizer state"):
+        run_synthesis_fixture(tmp_path, script)
+    assert not (tmp_path / "work/state.json").exists()
+    monkeypatch.setattr("scripts.yosys_opt_resume.optimize", optimize)
+
+    monkeypatch.setenv("PPALITE_TEST_UNCLASSIFIED_ENV", "changed")
+    with pytest.raises(ValueError, match="synthesis optimizer environment mismatch"):
+        run_synthesis_fixture(tmp_path, script)
+
+
+def test_synthesis_rebuilds_classified_environment_in_real_git_worktree(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script = prepare_synthesis(tmp_path)
+    (tmp_path / ".gitignore").write_text("work/\nnetlist.v\nreports*/\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", "--", ".gitignore", "common.tcl", "fixture.v", "init_tech.tcl", "sources.fl", "synth.tcl"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "fixture"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+    monkeypatch.setenv("NETLIST", str(tmp_path / "netlist.v"))
+    monkeypatch.setenv("REPORTS", str(tmp_path / "reports"))
+    monkeypatch.setenv("SV_FLIST", str(tmp_path / "sources.fl"))
+    run_synthesis_fixture(tmp_path, script)
+
+    stages: list[str] = []
+
+    def record_run(
+        root: Path,
+        command: list[str],
+        *,
+        log: Path,
+        result: Path,
+        timeout: int,
+        environment: dict[str, str] | None = None,
+    ) -> dict[str, object]:
+        stages.append(log.name)
+        return run_yosys(root, command, log=log, result=result, timeout=timeout, environment=environment)
+
+    monkeypatch.setattr("scripts.yosys_opt_resume.run_yosys", record_run)
+    changed_reports = tmp_path / "reports-changed"
+    changed_reports.mkdir()
+    monkeypatch.setenv("REPORTS", str(changed_reports))
+    run_synthesis_fixture(tmp_path, script)
+    assert stages == ["frontend.log", "backend.log"]
+
+    script.write_text(script.read_text(encoding="utf-8") + "# tracked drift\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="source_state_sha256"):
+        run_synthesis_fixture(tmp_path, script)
+
+
 def test_resume_rejects_changed_final_checkpoint(tmp_path: Path) -> None:
     preloop = prepare_input(tmp_path)
     work = tmp_path / "work"
@@ -471,3 +550,76 @@ def test_makefile_defaults_to_native_synthesis() -> None:
     assert "YOSYS_TIMEOUT ?= 10800" in makefile
     assert "YOSYS_COMMAND = $(if $(filter YES,$(YOSYS_OPT_RESUME)),$(YOSYS_RESUME_COMMAND),$(YOSYS_NATIVE_COMMAND))" in makefile
     assert "yosys -t --perffile $(YOSYS_BUILD)/yosys-perf.json -c $(YOSYS_DIR)/script/synth.tcl" in makefile
+
+
+def test_converged_state_still_rejects_corrupted_iteration(tmp_path: Path) -> None:
+    preloop = prepare_input(tmp_path)
+    work = tmp_path / "work"
+    output = tmp_path / "final.il"
+    optimize(tmp_path, preloop, output, work, max_iterations=8, iteration_timeout=60)
+    checkpoint = work / "iterations/01/next.il"
+    checkpoint.write_text(checkpoint.read_text(encoding="utf-8") + "\n# corrupted\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="checkpoint digest mismatch"):
+        optimize(tmp_path, preloop, output, work, max_iterations=8, iteration_timeout=60)
+
+
+def synthesis_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+    source = tmp_path / "fixture.v"
+    source.write_text(
+        "module test(input clk, input rst, output reg [1:0] q);\n"
+        "always @(posedge clk) begin\n"
+        "  if (rst) q <= 2'b00;\n"
+        "  else q <= 2'b00;\n"
+        "end\n"
+        "endmodule\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "common.tcl").write_text("set report_dir $::env(REPORTS)\n", encoding="utf-8")
+    (tmp_path / "init_tech.tcl").write_text('set tech_loaded "yes"\n', encoding="utf-8")
+    script = tmp_path / "synth.tcl"
+    script.write_text(
+        "set script_dir [file dirname [info script]]\n"
+        "source $script_dir/common.tcl\n"
+        "source $script_dir/init_tech.tcl\n"
+        f"yosys read_verilog {source}\n"
+        "yosys hierarchy -check -top test\n"
+        "yosys proc\n"
+        "yosys opt\n"
+        'if {$tech_loaded ne "yes"} {error "technology setup missing"}\n'
+        "yosys write_verilog -norename $::env(NETLIST)\n",
+        encoding="utf-8",
+    )
+    netlist = tmp_path / "netlist.v"
+    monkeypatch.setenv("NETLIST", str(netlist))
+    monkeypatch.setenv("REPORTS", str(tmp_path / "reports"))
+    return script, netlist
+
+
+def test_synthesis_reuses_valid_outputs_and_rejects_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script, netlist = synthesis_fixture(tmp_path, monkeypatch)
+    work = tmp_path / "work"
+    first = run_synthesis(tmp_path, script, work, max_iterations=8, iteration_timeout=60, frontend_timeout=60)
+    assert first["schema_version"] == 2
+    assert first["fingerprint"]["script_sha256"]
+    original_mtime = netlist.stat().st_mtime_ns
+
+    resumed = run_synthesis(tmp_path, script, work, max_iterations=8, iteration_timeout=60, frontend_timeout=60)
+    assert resumed["status"] == "passed"
+    assert netlist.stat().st_mtime_ns == original_mtime
+
+    netlist.write_text(netlist.read_text(encoding="utf-8") + "// drift\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="backend output digest"):
+        run_synthesis(tmp_path, script, work, max_iterations=8, iteration_timeout=60, frontend_timeout=60)
+
+    script.write_text(script.read_text(encoding="utf-8") + "# drift\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="synthesis fingerprint mismatch"):
+        run_synthesis(tmp_path, script, work, max_iterations=8, iteration_timeout=60, frontend_timeout=60)
+
+
+def test_optimize_rejects_an_active_work_directory_lease(tmp_path: Path) -> None:
+    from scripts.flow_control import Lease
+
+    work = tmp_path / "work"
+    with Lease(work / "optimize.lock", {"task_id": "test-owner"}):
+        with pytest.raises(RuntimeError, match="active lease"):
+            optimize(tmp_path, tmp_path / "input.il", tmp_path / "output.il", work, max_iterations=1, iteration_timeout=1)

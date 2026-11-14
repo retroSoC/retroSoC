@@ -347,6 +347,32 @@ def test_structured_checks_fail_for_failure_non_success_and_stale_head() -> None
         evaluate_checks("", [], [], [])
 
 
+@pytest.mark.parametrize(("required_status", "required_conclusion", "optional_conclusion", "expected"), [
+    ("COMPLETED", "success", "skipped", "PASS"),
+    ("IN_PROGRESS", None, "skipped", "PENDING"),
+    ("COMPLETED", "skipped", "skipped", "FAIL"),
+    ("COMPLETED", "success", "failure", "FAIL"),
+    ("COMPLETED", "success", "cancelled", "FAIL"),
+])
+def test_structured_checks_keep_required_gates_strict_with_optional_skips(
+    required_status: str, required_conclusion: str | None, optional_conclusion: str, expected: str,
+) -> None:
+    from scripts.pr_workflow import evaluate_checks
+
+    report = evaluate_checks(
+        "1" * 40,
+        ["quality-gate"],
+        [run_result(1, "quality-gate", required_status, required_conclusion),
+         run_result(2, "regression", "COMPLETED", optional_conclusion)],
+        [],
+    )
+    assert report["status"] == expected
+    optional = next(item for item in report["contexts"] if item["name"] == "regression")
+    if optional_conclusion == "skipped":
+        assert optional["status"] == "SKIPPED"
+        assert optional["required"] is False
+
+
 def test_checks_report_binds_api_queries_to_pr_head(monkeypatch: pytest.MonkeyPatch) -> None:
     from scripts.pr_workflow import checks_report
 
