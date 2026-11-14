@@ -676,7 +676,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -776,6 +776,7 @@ help:
 	  '  validation-gap-check       validate owned deferred validation gaps' \
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
 	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
+	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
 	  '  skill-eval-smoke           run three live read-only Codex Skill evaluations' \
@@ -1359,6 +1360,14 @@ agent-preflight:
 	  $(if $(PR),--pr $(PR)) $(if $(ONLINE),--online) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-preflight.json)
 
+agent-deliver:
+	@test -n '$(PR)' || { printf '%s\n' 'PR=<number> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/pr_delivery.py --root $(ROOT_PATH) \
+	  --pr $(PR) --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
+	  --interval $(if $(INTERVAL),$(INTERVAL),60) \
+	  $(if $(WATCH),--watch) $(if $(PREFLIGHT),--preflight-only) \
+	  $(if $(RECONCILE),--reconcile-only) $(if $(OUTPUT),--output $(OUTPUT))
+
 snapshot-check:
 	python3 $(ROOT_PATH)/scripts/agent_control.py snapshot --root $(ROOT_PATH) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/reviewed-source-snapshot.json)
@@ -1408,7 +1417,8 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	actionlint
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
-	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_flow_recovery.py \
+	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
+	  tests/test_flow_recovery.py \
 	  tests/test_ci_recovery.py tests/test_pytest_shards.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \

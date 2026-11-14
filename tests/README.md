@@ -123,8 +123,10 @@ tooling.
   dirty/detached/unmerged/non-canonical/orphan refusal. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
-  safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
-  refusals. Run fast agent checks with `make check-fast`. Static
+  safe merged-branch cleanup, including artifact preservation and
+  dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
+  preflight, auto-merge before pending checks, head binding, disabled auto-merge,
+  and deferred reconciliation. Run fast agent checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow; live behavior
   results require retained traces from `make skill-eval-smoke`.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and

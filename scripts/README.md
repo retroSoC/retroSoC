@@ -129,10 +129,15 @@ non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
 evidence-conflicting paths are preserved.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_workflow.py` merges only after all checks pass
-and cleans merged branches only when the worktree is clean and the PR head is
-canonical. Use the corresponding Make targets and host tests instead of
-duplicating these rules in workflow shell.
+release-candidate evidence. `pr_delivery.py` probes repository capabilities and
+push permission, then enables native merge-commit auto-merge before waiting for
+checks. It returns immediately by default, supports optional `--watch` polling,
+and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
+never mutates the PR. `pr_workflow.py` retains its after-green compatibility
+entrypoint. Both use clean, canonical worktree checks and registry-based artifact
+preservation before linked-worktree removal. A branch-scoped cleanup registry is
+written below `build/agent-worktrees/`. Use the corresponding Make targets and
+host tests instead of duplicating these rules in workflow shell.
 
 `spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
 entrypoints. It preserves attempt directories, source archives, command results

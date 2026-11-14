@@ -133,11 +133,13 @@ def preserve_artifacts(main_root: Path, record: dict[str, Any]) -> Path | None:
     return destination
 
 
-def reconcile_worktrees(root: Path, execute: bool = False) -> dict[str, Any]:
+def reconcile_worktrees(root: Path, execute: bool = False, only_branch: str | None = None) -> dict[str, Any]:
     main_root, entries = parse_worktrees(root)
     records = [inventory_record(main_root, entry) for entry in entries]
     actions = []
     for record in records:
+        if only_branch is not None and record.get("branch") != only_branch:
+            continue
         if not execute or not record["cleanup_eligible"]:
             continue
         action = {"path": record["path"], "branch": record["branch"], "status": "CLEANED"}
@@ -180,9 +182,10 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--output", type=Path)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--branch", help="restrict cleanup to one merged topic branch")
     args = parser.parse_args()
     try:
-        document = reconcile_worktrees(args.root.resolve(), execute=args.execute)
+        document = reconcile_worktrees(args.root.resolve(), execute=args.execute, only_branch=args.branch)
         output = args.output or args.root.resolve() / "build/agent-worktrees/registry.json"
         write_json(output, document)
         print(json.dumps(document, indent=2, sort_keys=True))
