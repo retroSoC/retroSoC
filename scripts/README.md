@@ -64,6 +64,12 @@ records Skill Git SHA, contract version, runner/model, input snapshot, and
 workspace tree. Static validation is never labeled behavior execution. Codex is
 the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
 Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+`skill_eval.py replay` grades explicit retained traces without starting a runner.
+It validates trace/input/Skill/workspace provenance and preserves current versus
+historical case identity. Invalid or failed grades fail the command; the report
+always records `behavior_execution=NOT_RUN` and zero runner invocations. Use
+`make skill-replay TRACES=<directory>`; static corpus checks alone are not a
+behavior replay, and replay does not qualify current code or hardware.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `job_metrics.py` adds bounded per-attempt job pagination, queue/execution/step
@@ -170,7 +176,9 @@ PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
 are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_delivery.py` probes repository capabilities and
+release-candidate evidence. Commit collection records actual parent counts so a
+lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
+plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
 and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`

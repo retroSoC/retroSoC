@@ -289,6 +289,138 @@ def input_snapshot_sha256(case: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(fields, sort_keys=True).encode("utf-8")).hexdigest()
 
 
+def validate_trace_identity(
+    root: Path, trace: dict[str, Any], registered_cases: list[dict[str, Any]]
+) -> dict[str, Any]:
+    if not isinstance(trace, dict) or trace.get("schema_version") != 1:
+        raise ValueError("Skill trace requires schema_version=1")
+    case = trace.get("case")
+    if not isinstance(case, dict) or not isinstance(case.get("id"), str):
+        raise ValueError("Skill trace case identity is missing")
+    matching = [candidate for candidate in registered_cases if candidate["id"] == case["id"]]
+    if len(matching) != 1:
+        raise ValueError(f"Skill trace case is not registered in this replay scope: {case['id']}")
+    if case.get("skill") != matching[0]["skill"]:
+        raise ValueError("Skill trace case and registered Skill differ")
+    for field in ("source_revision", "skill_source_revision", "workspace_revision", "workspace_tree"):
+        if not isinstance(trace.get(field), str) or re.fullmatch(r"[0-9a-f]{40}", trace[field]) is None:
+            raise ValueError(f"Skill trace {field} must be a full Git revision")
+    if trace["source_revision"] != trace["skill_source_revision"]:
+        raise ValueError("Skill trace source and Skill revisions differ")
+    for field in ("skill_entrypoint_sha256", "input_snapshot_sha256"):
+        if not isinstance(trace.get(field), str) or re.fullmatch(r"[0-9a-f]{64}", trace[field]) is None:
+            raise ValueError(f"Skill trace {field} must be a SHA-256 digest")
+    if trace["input_snapshot_sha256"] != input_snapshot_sha256(case):
+        raise ValueError("Skill trace input snapshot does not match its frozen case")
+    if trace.get("runner") not in {"codex", "kimi"}:
+        raise ValueError("Skill trace runner must be explicitly codex or kimi")
+    if not isinstance(trace.get("runner_version"), str) or not trace["runner_version"]:
+        raise ValueError("Skill trace runner version is missing")
+    if not isinstance(trace.get("model"), str) or not trace["model"]:
+        raise ValueError("Skill trace model identity is missing")
+    if trace["runner"] == "kimi" and re.fullmatch(
+        r"[0-9a-f]{64}", trace.get("runner_agent_sha256", "")
+    ) is None:
+        raise ValueError("Kimi trace must bind the restricted runner profile")
+    if type(trace.get("skill_contract_version")) is not int or trace["skill_contract_version"] != case.get("skill_contract_version"):
+        raise ValueError("Skill trace contract version differs from its case")
+    entrypoint = case.get("skill_entrypoint")
+    if not isinstance(entrypoint, str) or Path(entrypoint).is_absolute() or ".." in Path(entrypoint).parts:
+        raise ValueError("Skill trace entrypoint is unsafe")
+    if entrypoint != matching[0]["skill_entrypoint"]:
+        raise ValueError("Skill trace entrypoint differs from the registered case")
+    if not isinstance(trace.get("response"), dict) or not isinstance(trace.get("commands"), list):
+        raise ValueError("Skill trace response and commands must be structured objects")
+    if not isinstance(trace.get("file_changes"), list) or not isinstance(trace.get("repository_delta"), list):
+        raise ValueError("Skill trace read-only evidence must be lists")
+    if type(trace.get("exit_code")) is not int:
+        raise ValueError("Skill trace exit_code must be an integer")
+    duration = trace.get("duration_seconds")
+    if not isinstance(duration, (int, float)) or isinstance(duration, bool) or duration < 0:
+        raise ValueError("Skill trace duration must be non-negative")
+    prompt_text = trace.get("evaluation_prompt")
+    prompt_digest = trace.get("evaluation_prompt_sha256")
+    command_budget = trace.get("command_budget")
+    prompt_recorded = prompt_text is not None or prompt_digest is not None or command_budget is not None
+    if prompt_recorded:
+        if not isinstance(prompt_text, str) or re.fullmatch(r"[0-9a-f]{64}", prompt_digest or "") is None:
+            raise ValueError("Skill trace rendered prompt and digest must be recorded together")
+        if type(command_budget) is not int or command_budget <= 0:
+            raise ValueError("Skill trace command budget must be a positive integer")
+        if hashlib.sha256(prompt_text.encode("utf-8")).hexdigest() != prompt_digest:
+            raise ValueError("Skill trace rendered prompt digest does not match its content")
+    current_entrypoint = root / entrypoint
+    return {
+        "case_id": case["id"],
+        "skill": case["skill"],
+        "case_snapshot_status": "current" if case == matching[0] else "historical",
+        "skill_matches_current": current_entrypoint.is_file()
+        and hashlib.sha256(current_entrypoint.read_bytes()).hexdigest() == trace["skill_entrypoint_sha256"],
+        "skill_source_revision": trace["skill_source_revision"],
+        "skill_contract_version": trace["skill_contract_version"],
+        "skill_entrypoint_sha256": trace["skill_entrypoint_sha256"],
+        "runner": trace["runner"],
+        "runner_version": trace["runner_version"],
+        "model": trace["model"],
+        "input_snapshot_sha256": trace["input_snapshot_sha256"],
+        "workspace_revision": trace["workspace_revision"],
+        "workspace_tree": trace["workspace_tree"],
+        "command_count": len(trace["commands"]),
+        "rendered_prompt_status": "RECORDED" if prompt_recorded else "NOT_RECORDED",
+        "evaluation_prompt_sha256": prompt_digest,
+        "command_budget": command_budget,
+        "evaluation_prompt_matches_current": evaluation_prompt(case, command_budget) == prompt_text
+        if prompt_recorded
+        else None,
+        "provenance_complete": prompt_recorded,
+        "usage": trace.get("usage", []),
+    }
+
+
+def replay_traces(
+    root: Path, paths: list[Path], registered_cases: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    document, cases = load_cases(root)
+    if registered_cases is None:
+        registered_cases = cases
+    resolved = [path.absolute() for path in paths]
+    if len(set(resolved)) != len(resolved):
+        raise ValueError("replay trace paths must be unique")
+    records = []
+    for path in resolved:
+        record = {"trace": str(path)}
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("trace must be a regular file")
+            trace = read_json(path)
+            record["trace_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            identity = validate_trace_identity(root, trace, registered_cases)
+            grade = grade_trace(trace, document["defaults"])
+            record.update(identity=identity, grade=grade, status="REPLAYED")
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            record.update(status="INVALID", error=str(error))
+        records.append(record)
+    invalid = sum(record["status"] == "INVALID" for record in records)
+    failed = sum(record.get("grade", {}).get("status") == "failed" for record in records)
+    return {
+        "schema_version": 1,
+        "status": "NOT_RUN" if not records else "INVALID" if invalid else "REPLAYED",
+        "evidence_scope": "retained traces only; no new agent behavior was executed",
+        "behavior_execution": "NOT_RUN",
+        "runner_invocations": 0,
+        "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "source_dirty": bool(git_output(root, "status", "--porcelain", "--untracked-files=all")),
+        "trace_count": len(records),
+        "invalid_trace_count": invalid,
+        "partial_provenance_count": sum(
+            record.get("identity", {}).get("provenance_complete") is False for record in records
+        ),
+        "grade_passed_count": sum(record.get("grade", {}).get("status") == "passed" for record in records),
+        "grade_failed_count": failed,
+        "records": records,
+    }
+
+
 def evaluation_prompt(case: dict[str, Any], command_budget: int = 80) -> str:
     return (
         case["prompt"]
@@ -391,6 +523,10 @@ def run_codex(
         "skill_contract_version": case["skill_contract_version"],
         "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
         "input_snapshot_sha256": input_snapshot_sha256(case),
+        "evaluation_prompt": command[-1],
+        "evaluation_prompt_sha256": hashlib.sha256(command[-1].encode("utf-8")).hexdigest(),
+        "command_budget": command_budget,
+        "source_dirty": bool(git_output(root, "status", "--porcelain", "--untracked-files=all")),
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
         "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
@@ -480,6 +616,10 @@ def run_kimi(
         "skill_contract_version": case["skill_contract_version"],
         "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
         "input_snapshot_sha256": input_snapshot_sha256(case),
+        "evaluation_prompt": command[-1],
+        "evaluation_prompt_sha256": hashlib.sha256(command[-1].encode("utf-8")).hexdigest(),
+        "command_budget": command_budget,
+        "source_dirty": bool(git_output(root, "status", "--porcelain", "--untracked-files=all")),
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
         "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
@@ -569,7 +709,7 @@ def parse_args() -> argparse.Namespace:
     validate = subparsers.add_parser("validate")
     validate.add_argument("--root", type=Path, default=ROOT)
     validate.add_argument("--output", type=Path)
-    for name in ("list", "run"):
+    for name in ("list", "run", "replay"):
         command = subparsers.add_parser(name)
         command.add_argument("--root", type=Path, default=ROOT)
         command.add_argument("--skill", choices=sorted(BEHAVIOR_SKILLS))
@@ -579,6 +719,10 @@ def parse_args() -> argparse.Namespace:
             command.add_argument("--runner", choices=("codex", "kimi"), default="codex")
             command.add_argument("--model")
             command.add_argument("--timeout", type=int, default=600)
+            command.add_argument("--output", type=Path, required=True)
+        elif name == "replay":
+            command.add_argument("--trace", type=Path, action="append", default=[])
+            command.add_argument("--trace-root", type=Path)
             command.add_argument("--output", type=Path, required=True)
     grade = subparsers.add_parser("grade")
     grade.add_argument("--root", type=Path, default=ROOT)
@@ -628,6 +772,18 @@ def main() -> int:
             else:
                 sys.stdout.write(dump_json(result))
             return int(result["status"] != "passed")
+        if args.command == "replay":
+            paths = list(args.trace)
+            if args.trace_root:
+                if args.trace_root.is_symlink() or not args.trace_root.is_dir():
+                    raise ValueError("trace root must be a real directory")
+                paths.extend(sorted(args.trace_root.rglob("*.trace.json")))
+            result = replay_traces(args.root.resolve(), paths, selected)
+            atomic_write(args.output, dump_json(result))
+            print(dump_json({key: value for key, value in result.items() if key != "records"}), end="")
+            return int(
+                result["status"] in {"INVALID", "NOT_RUN"} or result["grade_failed_count"] > 0
+            )
         if args.command == "run":
             if args.timeout <= 0:
                 raise ValueError("runner timeout must be positive")
