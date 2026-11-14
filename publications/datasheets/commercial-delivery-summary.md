@@ -15,6 +15,11 @@
 增量为 Agent Skill／任务 DAG 控制、脚本及测试，没有 RTL、SDK、产品配置或出版内容增量。
 依照“冻结实施开始时基线”的要求，本轮没有将新 SHA 重新贴到旧构建上。
 
+PR 同步阶段又审阅了 dev 5a9cbf12c5a590ca28f36f71d78200df61da56b8：
+增量仍为 Agent/CI 管理与测试，无产品源变更。Mini 对其中的 Makefile
+变动增加了绑定完整修订与 blob 的独立审阅记录；后续变动仍会触发来源检查。
+产品来源 SHA 与两册正文身份保持原值。
+
 Tiny 主配置为 configs/ci/ics55-tiny.mk，兼容配置为 configs/ci/ihp130-tiny.mk。
 Mini 保留 configs/ci/ihp130.mk、ihp130-hp.mk 和 cluster/mini-mpw.mk。
 

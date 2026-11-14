@@ -6,6 +6,13 @@ Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
 The two books have independent profiles, manifests and output markers.
 
+Mini's `mini.json.build_control_review` separately records the reviewed
+non-product Makefile changes through dev `5a9cbf12`. It binds a full commit and
+Makefile blob identity without moving the frozen product SHA. Source checks
+reject later Makefile edits and all unreviewed RTL/SDK/profile changes; the
+manifest also hashes the reviewed build-control file. This is an explicit
+one-revision review, not an exclusion from future source checks.
+
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.
 The isolated environment is requirements/publication.txt; install it with

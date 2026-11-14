@@ -81,6 +81,21 @@ def load_generator(name: str, relative: str) -> Any:
     return module
 
 
+def reviewed_build_control(config: dict[str, Any]) -> bool:
+    """Accept only an explicitly reviewed, immutable non-product Makefile revision."""
+    review = config.get("build_control_review")
+    if review is None:
+        return False
+    revision, blob = review.get("revision", ""), review.get("makefile_blob", "")
+    if not all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (revision, blob)) or not review.get("reason"):
+        raise ValueError("build-control review requires complete revision/blob identities and a reason")
+    if git("merge-base", config["source_revision"], revision) != config["source_revision"]:
+        raise ValueError("build-control review does not descend from the reviewed product snapshot")
+    if git("rev-parse", f"{revision}:Makefile") != blob or git("diff", "--name-only", revision, "--", "Makefile"):
+        raise ValueError("Makefile differs from the explicit build-control review")
+    return True
+
+
 def validate_source(config: dict[str, Any]) -> None:
     revision = config["source_revision"]
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
@@ -89,6 +104,8 @@ def validate_source(config: dict[str, Any]) -> None:
     # inputs must be reviewed before advertising them in this datasheet.
     changed = git("diff", "--name-only", revision, "--", "rtl", "crt", "app", "configs", "docs",
                   "dependencies/dependencies.lock.json", "scripts/generate_openc906.py", "Makefile")
+    if "Makefile" in changed.splitlines() and reviewed_build_control(config):
+        changed = "\n".join(path for path in changed.splitlines() if path != "Makefile")
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
     for name, dependency in load_lock()["sources"].items():
@@ -316,6 +333,8 @@ def source_hashes(
         "dependencies/dependencies.lock.json",
         "LICENSE",
     }
+    if config.get("build_control_review"):
+        paths.add("Makefile")
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(MINI_BINDING_SOURCES)
