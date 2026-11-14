@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -775,6 +775,7 @@ help:
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
 	  '  skill-eval-smoke           run six live read-only Skill evaluations (RUNNER=codex|kimi)' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
+	  '  delivery-policy            evaluate merge queue and metric promotion without changes' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
 	  '  format-check               check self-owned C, Makefile, and RTL formatting' \
 	  '  sw-format                  apply clang-format to self-owned embedded C code' \
@@ -1411,6 +1412,13 @@ engineering-metrics:
 	  --limit $(if $(LIMIT),$(LIMIT),30) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
 
+delivery-policy:
+	python3 $(ROOT_PATH)/scripts/delivery_policy.py --root $(ROOT_PATH) \
+	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
+	  $(if $(OFFLINE),--offline) $(if $(PULLS),--pulls $(PULLS)) \
+	  $(if $(RUNS),--runs $(RUNS)) $(if $(SAMPLES),--samples $(SAMPLES)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/delivery-policy.json)
+
 fixtures-plan:
 	python3 $(ROOT_PATH)/scripts/pytest_shards.py plan --root $(ROOT_PATH) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/shards/plan.json)
@@ -1443,6 +1451,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
+	  tests/test_delivery_policy.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json

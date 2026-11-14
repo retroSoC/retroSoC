@@ -61,6 +61,12 @@ pending. Only GitHub merges after required checks pass. The legacy helper waits
 for green checks first. Both use merge commits and safe artifact-preserving
 cleanup; dirty, unmerged, and non-canonical branches are preserved. Peer
 CODEOWNERS approval is restored when another eligible reviewer is available.
+`quality/delivery-policy.json` is evaluation-only. A merge queue is considered
+only when at least three ready PRs compete for `dev`, at least two have actual
+integration conflicts, and every required workflow has equivalent merge_group
+coverage. Metric promotion requires ten validated same-profile/same-tool samples
+and a committed reviewed baseline; successful behavioral CI runs alone do not
+meet that contract. `make delivery-policy` applies neither a queue nor a gate.
 
 ## Regression and evidence
 
