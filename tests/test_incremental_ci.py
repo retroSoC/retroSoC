@@ -281,3 +281,30 @@ def test_managed_gitlink_inputs_use_their_locked_content(repo: tuple[Path, str],
     result = evaluate(root, base, "HEAD", previous(base), "pull_request", False, ["quality-gate"])
     assert result["decision"] == "RUN_FULL"
     assert "vendor" in result["changed_inputs"]
+
+
+def test_run_artifact_revision_mismatch_is_rejected(repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch) -> None:
+    root, base = repo
+    monkeypatch.setattr(
+        "scripts.incremental_ci.gh_json",
+        lambda arguments: {"id": 124, "name": "quality", "head_sha": base, "conclusion": "success", "run_attempt": 1},
+    )
+    monkeypatch.setattr("scripts.incremental_ci.required_check_contexts", lambda repository, branch, root: ["quality-gate"])
+    monkeypatch.setattr(
+        "scripts.incremental_ci.paginated_check_data",
+        lambda endpoint, key: [
+            {"id": 1, "name": "quality-gate", "status": "COMPLETED", "conclusion": "success"}
+        ] if key == "check_runs" else [],
+    )
+
+    def download(command, **kwargs):
+        destination = Path(command[command.index("--dir") + 1])
+        destination.mkdir(parents=True)
+        mismatched = previous(base)
+        mismatched["source_revision"] = "0" * 40
+        (destination / "summary.json").write_text(json.dumps(mismatched), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", download)
+    with pytest.raises(ValueError, match="source revision differs"):
+        evidence_from_run(root, "retroSoC/retroSoC", "dev", base, 124)

@@ -387,6 +387,8 @@ def evidence_from_run(root: Path, repository: str, base_branch: str, source_revi
     if not summary_path.is_file():
         raise EvidenceMissing(f"fixture summary is missing for run {run_id}")
     summary = read_json(summary_path)
+    if summary.get("source_revision") != source_revision:
+        raise ValueError("fixture summary source revision differs from the source run head")
     summary["contexts"] = verdict["contexts"]
     summary["required_contexts"] = required
     summary["workflow_run_id"] = run_id
