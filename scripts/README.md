@@ -50,9 +50,21 @@ require a clean initial worktree. Online
 GitHub permission and PR-head probes are opt-in; local preflight is offline.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
-`skill_eval.py` validates the Skill registry and executes isolated, read-only
-behavior evaluations with deterministic grades. `engineering_metrics.py`
+`skill_eval.py` validates all registered Skills and executes isolated, read-only
+behavior evaluations with deterministic grades. It retains v1 eval-config
+compatibility, requires migration documents for incompatible contracts, and
+records Skill Git SHA, contract version, runner/model, input snapshot, and
+workspace tree. Static validation is never labeled behavior execution. Codex is
+the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
+Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+`engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
+`delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
+coverage, successful main quality runs, and validated same-profile/same-tool
+metric samples. Merge queues are considered only for sustained integration
+conflicts with full merge_group gate coverage. Metric promotion still requires
+ten validated samples and a committed reviewed baseline. Evaluation is read-only
+and never enables a queue or gate by itself.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and
@@ -86,6 +98,13 @@ optional-input skips. Cache HIT/MISS/NOT_RUN observations are aggregated without
 caching verdicts. Use `make fixtures-plan`, `make fixtures-shard SHARD=<index>`,
 or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hosted
 CI runs isolated matrix jobs and an always-enforced fan-in.
+`incremental_ci.py` computes fixture input, tool-lock, configuration, and complete
+test-manifest fingerprints. It can compare a local evidence JSON or a real
+GitHub quality run/artifact against the current revision. Production policy is
+`shadow` with `enabled=false`: a matching result is only a reuse recommendation,
+never an automatic skip. Dirty worktrees, changed/deleted inputs, incomplete or
+tampered evidence, missing fields, and any manifest mismatch force `RUN_FULL`.
+Scheduled, manual, and release events always run full.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
@@ -116,6 +135,14 @@ mode by default. Only clean, registered, canonical, non-detached branches under
 artifacts are moved to the main worktree's `build/agent-artifacts/` before
 non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
 evidence-conflicting paths are preserved.
+`agent_dag.py` validates the optional v1 coordination fields and graph schema,
+then emits deterministic plan-only DAG waves. Read-only work can be parallel
+only with host authorization; write tasks additionally require disjoint
+write-sets and distinct canonical worktrees/artifact roots. A single integrator
+always serializes integration. `acquire`, `heartbeat`, and `release` default to
+dry-run and require explicit graph authorization for mutation. Dependency and
+PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
+are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
 release-candidate evidence. `pr_delivery.py` probes repository capabilities and

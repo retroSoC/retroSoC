@@ -25,6 +25,11 @@ CORE_SKILLS = {
     "retrosoc-feature-implementation",
     "retrosoc-feature-review",
 }
+BEHAVIOR_SKILLS = CORE_SKILLS | {
+    "retrosoc-datasheet",
+    "retrosoc-dependency-maintenance",
+    "retrosoc-physical-flow",
+}
 
 
 def load_registry(root: Path) -> dict[str, Any]:
@@ -46,6 +51,8 @@ def load_cases(root: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         enriched = dict(case)
         enriched["prompt"] = prompts[case["source_eval"]]["prompt"]
         enriched["expected_output"] = prompts[case["source_eval"]]["expected_output"]
+        enriched["skill_contract_version"] = entries[skill]["contract_version"]
+        enriched["skill_entrypoint"] = entries[skill]["entrypoint"]
         enriched["live"] = case.get("live", True)
         cases.append(enriched)
     return document, cases
@@ -68,10 +75,14 @@ def validate_evals(root: Path) -> list[str]:
     identifiers = [case["id"] for case in cases]
     if len(set(identifiers)) != len(identifiers):
         issues.append("behavior eval case identifiers must be unique")
-    for name, expected_count in document["core_skill_case_counts"].items():
+    expected_counts = document.get("skill_case_counts", document.get("core_skill_case_counts", {}))
+    for entry in registry["skills"]:
+        name = entry["name"]
         selected = [case for case in cases if case["skill"] == name]
-        if len(selected) != expected_count or not 10 <= expected_count <= 20:
-            issues.append(f"{name} must have 10-20 cases; found {len(selected)}")
+        minimum = 10 if name in CORE_SKILLS else 6
+        expected = expected_counts.get(name, len(selected))
+        if expected is None or len(selected) != expected or not minimum <= expected <= 20:
+            issues.append(f"{name} must have {minimum}-20 cases; found {len(selected)}")
         if sum(bool(case.get("smoke")) for case in selected) != 1:
             issues.append(f"{name} must select exactly one smoke case")
     if not any(case["should_trigger"] is False for case in cases):
@@ -80,18 +91,28 @@ def validate_evals(root: Path) -> list[str]:
         for key in ("id", "skill", "source_eval", "should_trigger"):
             if key not in case:
                 issues.append(f"{case.get('id', '<unknown>')} missing {key}")
-        if case["skill"] not in CORE_SKILLS:
+        if case["skill"] not in BEHAVIOR_SKILLS:
             issues.append(f"{case['id']} references an unsupported behavior-eval Skill")
         if not isinstance(case["should_trigger"], bool):
             issues.append(f"{case['id']} should_trigger must be boolean")
         if not case.get("live", True) and case.get("smoke"):
             issues.append(f"{case['id']} cannot be a skipped live smoke case")
+    names = [entry["name"] for entry in registry["skills"]]
+    if len(set(names)) != len(names):
+        issues.append("Skill registry names must be unique")
     for entry in registry["skills"]:
         for field in ("entrypoint", "eval_suite"):
             if not (root / entry[field]).is_file():
                 issues.append(f"registry path missing: {entry[field]}")
         if not entry.get("owner", "").startswith("@"):
             issues.append(f"Skill owner must be a GitHub handle: {entry['name']}")
+        version = entry.get("contract_version")
+        if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+            issues.append(f"Skill contract_version must be a positive integer: {entry['name']}")
+        if isinstance(version, int) and version > 1:
+            migration = Path(entry.get("contract_migration", ""))
+            if migration.is_absolute() or ".." in migration.parts or not (root / migration).is_file():
+                issues.append(f"Skill contract migration is missing or unsafe: {entry['name']}")
     return issues
 
 
@@ -189,15 +210,97 @@ def parse_jsonl(text: str) -> list[Any]:
     return events
 
 
-def evaluation_prompt(case: dict[str, Any]) -> str:
+def walk_kimi_events(events: list[Any]) -> tuple[list[dict[str, Any]], list[Any], list[Any], dict[str, Any]]:
+    commands: list[dict[str, Any]] = []
+    changes: list[Any] = []
+    usage: list[Any] = []
+    text_parts: list[str] = []
+    by_id: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        if isinstance(event.get("usage"), dict):
+            usage.append(event["usage"])
+        if event.get("role") == "assistant":
+            content = event.get("content", "")
+            if isinstance(content, str) and content.strip():
+                text_parts.append(content)
+            elif isinstance(content, list):
+                text_parts.extend(
+                    part["text"]
+                    for part in content
+                    if isinstance(part, dict) and isinstance(part.get("text"), str)
+                )
+            for call in event.get("tool_calls", []):
+                function = call.get("function", {})
+                name = function.get("name", call.get("name", ""))
+                arguments = function.get("arguments", call.get("input", {}))
+                if isinstance(arguments, str):
+                    try:
+                        arguments = json.loads(arguments)
+                    except json.JSONDecodeError:
+                        arguments = {"input": arguments}
+                identifier = str(call.get("id", len(commands)))
+                command = arguments.get("command") if isinstance(arguments, dict) else None
+                record = {
+                    "id": identifier,
+                    "tool": name,
+                    "command": command or json.dumps(arguments, sort_keys=True),
+                    "exit_code": None,
+                    "status": "called",
+                }
+                commands.append(record)
+                by_id[identifier] = record
+                if name in {"Write", "Edit", "MultiEdit", "NotebookEdit"}:
+                    changes.append(arguments)
+        elif event.get("role") == "tool":
+            identifier = str(event.get("tool_call_id", ""))
+            if identifier in by_id:
+                by_id[identifier]["status"] = "failed" if event.get("is_error") else "completed"
+                by_id[identifier]["exit_code"] = event.get("exit_code", int(event.get("is_error") is True))
+    response: dict[str, Any] = {}
+    for text in reversed(text_parts):
+        candidate = text.strip()
+        fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", candidate, re.DOTALL)
+        if fenced:
+            candidate = fenced.group(1)
+        try:
+            value = json.loads(candidate)
+        except json.JSONDecodeError:
+            start = candidate.find("{")
+            end = candidate.rfind("}")
+            if start < 0 or end <= start:
+                continue
+            try:
+                value = json.loads(candidate[start : end + 1])
+            except json.JSONDecodeError:
+                continue
+        if isinstance(value, dict):
+            response = value
+            break
+    return commands, changes, usage, response
+
+
+def input_snapshot_sha256(case: dict[str, Any]) -> str:
+    fields = {
+        key: case[key]
+        for key in ("id", "skill", "source_eval", "prompt", "expected_output")
+    }
+    return hashlib.sha256(json.dumps(fields, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def evaluation_prompt(case: dict[str, Any], command_budget: int = 80) -> str:
     return (
         case["prompt"]
         + "\n\nEvaluation constraints:\n"
         + "- This is a read-only Skill behavior evaluation. Do not modify files or run EDA/build simulations.\n"
         + "- Follow the repository Skill routing and evidence rules. Preflight/diagnosis may inspect files and dry-run definitions.\n"
-        + "- In the final structured response, list every repository Skill actually invoked.\n"
+        + f"- Use at most {command_budget} tool calls. Resolve the target and relevant files first; avoid broad or repeated exploration.\n"
+        + "- invoked_skills must list every Skill consulted through the Skill tool or a direct SKILL.md read, including a Skill that refuses the request.\n"
         + "- Use verdict for the stage verdict or review next action; use NONE when no enumerated verdict applies.\n"
         + "- Use route for a required next repository Skill, or NONE.\n"
+        + "- End with exactly one JSON object and no Markdown, YAML, or surrounding prose.\n"
+        + "- Required keys are invoked_skills, verdict, route, and summary; never substitute skills_invoked.\n"
         + "- Keep summary concise and retain explicit NOT_RUN labels for missing evidence.\n"
     )
 
@@ -209,6 +312,7 @@ def run_codex(
     schema: Path,
     model: str | None,
     timeout: int,
+    command_budget: int = 80,
 ) -> dict[str, Any]:
     output = output.resolve()
     workspace = output / f"{case['id']}-workspace"
@@ -235,7 +339,7 @@ def run_codex(
     ]
     if model:
         command.extend(("--model", model))
-    command.append(evaluation_prompt(case))
+    command.append(evaluation_prompt(case, command_budget))
     started = datetime.now(timezone.utc)
     start_clock = time.monotonic()
     try:
@@ -283,7 +387,101 @@ def run_codex(
         "runner_version": subprocess.check_output(["codex", "--version"], text=True).strip(),
         "model": model or "runner-default",
         "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_contract_version": case["skill_contract_version"],
+        "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
+        "input_snapshot_sha256": input_snapshot_sha256(case),
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
+        "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
+        "workspace": str(workspace),
+        "started_at": started.isoformat(),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
+        "duration_seconds": round(time.monotonic() - start_clock, 3),
+        "exit_code": returncode,
+        "error": error,
+        "response": response,
+        "commands": commands,
+        "file_changes": changes,
+        "usage": usage,
+        "repository_before": before,
+        "repository_after": after,
+        "repository_delta": sorted(set(after) - set(before)),
+        "raw_trace": str(raw_path),
+        "stderr": str(stderr_path),
+    }
+
+
+def run_kimi(
+    root: Path,
+    case: dict[str, Any],
+    output: Path,
+    model: str | None,
+    timeout: int,
+    command_budget: int = 80,
+) -> dict[str, Any]:
+    output = output.resolve()
+    workspace = output / f"{case['id']}-workspace"
+    prepare_workspace(root, workspace)
+    agent_file = workspace / ".agents/skill-eval-agent.md"
+    raw_path = output / f"{case['id']}.jsonl"
+    stderr_path = output / f"{case['id']}.stderr.log"
+    before = repo_snapshot(workspace)
+    command = [
+        "kimi",
+        "--agent-file",
+        str(agent_file),
+        "--output-format",
+        "stream-json",
+        "--skills-dir",
+        str(workspace / ".agents/skills"),
+    ]
+    if model:
+        command.extend(("--model", model))
+    command.extend(("--prompt", evaluation_prompt(case, command_budget)))
+    started = datetime.now(timezone.utc)
+    start_clock = time.monotonic()
+    try:
+        result = subprocess.run(
+            command,
+            cwd=workspace,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+        returncode = result.returncode
+        stdout = result.stdout
+        stderr = result.stderr
+        error = None if returncode == 0 else f"runner exited with status {returncode}"
+    except subprocess.TimeoutExpired as error_value:
+        returncode = 124
+        stdout = error_value.stdout or ""
+        stderr = error_value.stderr or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        error = f"runner timed out after {timeout} seconds"
+    atomic_write(raw_path, stdout)
+    atomic_write(stderr_path, stderr)
+    after = repo_snapshot(workspace)
+    commands, changes, usage, response = walk_kimi_events(parse_jsonl(stdout)) if stdout else ([], [], [], {})
+    if not response and returncode == 0:
+        error = "runner did not produce a structured response"
+    return {
+        "schema_version": 1,
+        "case": case,
+        "runner": "kimi",
+        "runner_version": subprocess.check_output(["kimi", "--version"], text=True).strip(),
+        "runner_agent_sha256": hashlib.sha256(agent_file.read_bytes()).hexdigest(),
+        "model": model or "runner-default",
+        "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_contract_version": case["skill_contract_version"],
+        "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
+        "input_snapshot_sha256": input_snapshot_sha256(case),
+        "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
+        "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
         "started_at": started.isoformat(),
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -374,11 +572,11 @@ def parse_args() -> argparse.Namespace:
     for name in ("list", "run"):
         command = subparsers.add_parser(name)
         command.add_argument("--root", type=Path, default=ROOT)
-        command.add_argument("--skill", choices=sorted(CORE_SKILLS))
+        command.add_argument("--skill", choices=sorted(BEHAVIOR_SKILLS))
         command.add_argument("--case", action="append")
         command.add_argument("--smoke", action="store_true")
         if name == "run":
-            command.add_argument("--runner", choices=("codex",), default="codex")
+            command.add_argument("--runner", choices=("codex", "kimi"), default="codex")
             command.add_argument("--model")
             command.add_argument("--timeout", type=int, default=600)
             command.add_argument("--output", type=Path, required=True)
@@ -399,6 +597,16 @@ def main() -> int:
                 "schema_version": 1,
                 "status": "failed" if issues else "passed",
                 "case_count": len(cases),
+                "smoke_case_count": sum(bool(case.get("smoke")) for case in cases),
+                "source_revision": git_output(args.root.resolve(), "rev-parse", "HEAD"),
+                "skill_contracts": {
+                    case["skill"]: case["skill_contract_version"]
+                    for case in cases
+                },
+                "input_snapshots": {
+                    case["id"]: input_snapshot_sha256(case)
+                    for case in cases
+                },
                 "issues": issues,
                 "behavior_execution": "not run by validate",
             }
@@ -425,19 +633,32 @@ def main() -> int:
                 raise ValueError("runner timeout must be positive")
             args.output.mkdir(parents=True, exist_ok=False)
             results = []
+            runner_versions = []
             for case in selected:
                 if not case["live"]:
                     results.append({"case_id": case["id"], "status": "skipped", "reason": "live execution disabled for this fixture"})
                     continue
                 print(f"[skill-eval] {case['id']}", flush=True)
-                trace = run_codex(
-                    args.root.resolve(),
-                    case,
-                    args.output,
-                    args.root.resolve() / ".agents/skills/response.schema.json",
-                    args.model,
-                    args.timeout,
-                )
+                if args.runner == "kimi":
+                    trace = run_kimi(
+                        args.root.resolve(),
+                        case,
+                        args.output,
+                        args.model,
+                        args.timeout,
+                        case.get("max_commands", document["defaults"]["max_commands"]),
+                    )
+                else:
+                    trace = run_codex(
+                        args.root.resolve(),
+                        case,
+                        args.output,
+                        args.root.resolve() / ".agents/skills/response.schema.json",
+                        args.model,
+                        args.timeout,
+                        case.get("max_commands", document["defaults"]["max_commands"]),
+                    )
+                runner_versions.append(trace["runner_version"])
                 atomic_write(args.output / f"{case['id']}.trace.json", dump_json(trace))
                 result = grade_trace(trace, document["defaults"])
                 atomic_write(args.output / f"{case['id']}.grade.json", dump_json(result))
@@ -446,8 +667,18 @@ def main() -> int:
             summary = {
                 "schema_version": 1,
                 "status": "passed" if executed and all(result["status"] == "passed" for result in executed) else ("skipped" if not executed else "failed"),
+                "source_revision": git_output(args.root.resolve(), "rev-parse", "HEAD"),
                 "runner": args.runner,
+                "runner_versions": sorted(set(runner_versions)),
                 "model": args.model or "runner-default",
+                "skill_contracts": {
+                    case["skill"]: case["skill_contract_version"]
+                    for case in selected
+                },
+                "input_snapshots": {
+                    case["id"]: input_snapshot_sha256(case)
+                    for case in selected
+                },
                 "case_count": len(results),
                 "executed_count": len(executed),
                 "passed_count": sum(result["status"] == "passed" for result in results),

@@ -19,13 +19,18 @@ classification errors fail closed to the full matrix. Push, scheduled, and manua
 full-flow events do not use PR path skipping. Each heavy workflow retains an
 always-run gate so a skipped job cannot silently satisfy a required check.
 
-`workflows/quality.yml` is split into `fast`, four `fixtures` shards,
-`fixtures-fan-in`, and `quality-gate`:
+`workflows/quality.yml` is split into `fast`, `incremental-shadow`, four
+`fixtures` shards, `fixtures-fan-in`, and `quality-gate`:
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
   It restores the locked publication inputs and checks the Tiny reviewed-source
   snapshot against the collector's actual inventory before long fixtures run.
+- `incremental-shadow` compares source/input, tool-lock, configuration, and
+  complete test-manifest fingerprints with optional prior quality evidence. It
+  is disabled by default and never skips the full matrix. Missing or mismatched
+  evidence selects `RUN_FULL`; invalid evidence fails the quality gate. An
+  optional manual `source_run` binds comparison to a real run and artifact.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references. Each isolated matrix job collects the complete Pytest
   node-id manifest and executes its deterministic duration-weighted shard with
@@ -56,6 +61,12 @@ pending. Only GitHub merges after required checks pass. The legacy helper waits
 for green checks first. Both use merge commits and safe artifact-preserving
 cleanup; dirty, unmerged, and non-canonical branches are preserved. Peer
 CODEOWNERS approval is restored when another eligible reviewer is available.
+`quality/delivery-policy.json` is evaluation-only. A merge queue is considered
+only when at least three ready PRs compete for `dev`, at least two have actual
+integration conflicts, and every required workflow has equivalent merge_group
+coverage. Metric promotion requires ten validated same-profile/same-tool samples
+and a committed reviewed baseline; successful behavioral CI runs alone do not
+meet that contract. `make delivery-policy` applies neither a queue nor a gate.
 
 ## Regression and evidence
 
@@ -106,9 +117,14 @@ source/test, timeout, cancelled, dependency-integrity, and unknown failures are
 not automatically retried.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
-`workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured
-Codex CLI and approved model access. It fails explicitly when that capability is
-absent and never converts static corpus validation into a behavior pass.
+`workflows/skill-evals.yml` runs one read-only smoke case per registered Skill,
+or all live cases selected by Skill, with source/contract/input provenance and
+deterministic grades. A runner needs a configured Codex or Kimi CLI and approved
+model access; absence is NOT_RUN, never a behavior pass. The Kimi runner uses a
+read-only Agent without Bash, writes, or delegation. Weekly canaries require
+`RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
+remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
+CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts

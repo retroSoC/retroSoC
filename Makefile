@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -759,6 +759,7 @@ help:
 	  '  fixtures-plan              collect all Pytest IDs and write deterministic shards' \
 	  '  fixtures-shard             execute SHARD=<index> into OUTPUT=<directory>' \
 	  '  fixtures-verify            verify SHARD_DIRS="<directories>" exactly once' \
+	  '  incremental-shadow         compare complete CI fingerprints without skipping jobs' \
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
@@ -767,10 +768,14 @@ help:
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
 	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
 	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
+	  '  agent-dag                  validate GRAPH=<graph.json> and emit plan-only DAG waves' \
+	  '  agent-lease                dry-run acquire; EXECUTE=1 requires graph authorization' \
+	  '  agent-lease-release        release LEASE_ID=<id>; EXECUTE=1 performs mutation' \
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
-	  '  skill-eval-smoke           run three live read-only Codex Skill evaluations' \
+	  '  skill-eval-smoke           run six live read-only Skill evaluations (RUNNER=codex|kimi)' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
+	  '  delivery-policy            evaluate merge queue and metric promotion without changes' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
 	  '  format-check               check self-owned C, Makefile, and RTL formatting' \
 	  '  sw-format                  apply clang-format to self-owned embedded C code' \
@@ -1358,6 +1363,26 @@ agent-deliver:
 	  $(if $(WATCH),--watch) $(if $(PREFLIGHT),--preflight-only) \
 	  $(if $(RECONCILE),--reconcile-only) $(if $(OUTPUT),--output $(OUTPUT))
 
+agent-dag:
+	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) plan --graph $(GRAPH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-dag.json)
+
+agent-lease:
+	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task-id> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) acquire \
+	  --graph $(GRAPH) --task $(TASK) $(if $(OWNER),--owner $(OWNER)) \
+	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
+
+agent-lease-release:
+	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task-id> is required'; exit 2; }
+	@test -n '$(LEASE_ID)' || { printf '%s\n' 'LEASE_ID=<id> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) release \
+	  --graph $(GRAPH) --task $(TASK) --lease-id $(LEASE_ID) \
+	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
+
 snapshot-check:
 	python3 $(ROOT_PATH)/scripts/agent_control.py snapshot --root $(ROOT_PATH) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/reviewed-source-snapshot.json)
@@ -1378,13 +1403,21 @@ skill-eval-static:
 
 skill-eval-smoke:
 	python3 $(ROOT_PATH)/scripts/skill_eval.py run --root $(ROOT_PATH) --smoke \
-	  $(if $(MODEL),--model $(MODEL)) --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
+	  $(if $(RUNNER),--runner $(RUNNER)) $(if $(MODEL),--model $(MODEL)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
 
 engineering-metrics:
 	python3 $(ROOT_PATH)/scripts/engineering_metrics.py collect \
 	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
 	  --limit $(if $(LIMIT),$(LIMIT),30) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
+
+delivery-policy:
+	python3 $(ROOT_PATH)/scripts/delivery_policy.py --root $(ROOT_PATH) \
+	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
+	  $(if $(OFFLINE),--offline) $(if $(PULLS),--pulls $(PULLS)) \
+	  $(if $(RUNS),--runs $(RUNS)) $(if $(SAMPLES),--samples $(SAMPLES)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/delivery-policy.json)
 
 fixtures-plan:
 	python3 $(ROOT_PATH)/scripts/pytest_shards.py plan --root $(ROOT_PATH) \
@@ -1401,6 +1434,14 @@ fixtures-verify:
 	  $(foreach directory,$(SHARD_DIRS),--shard-dir $(directory)) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/fan-in/summary.json)
 
+incremental-shadow:
+	python3 $(ROOT_PATH)/scripts/incremental_ci.py --root $(ROOT_PATH) \
+	  --base $(if $(BASE),$(BASE),origin/dev) --head $(if $(HEAD),$(HEAD),HEAD) \
+	  --event $(if $(EVENT),$(EVENT),pull_request) \
+	  $(if $(EVIDENCE),--evidence $(EVIDENCE)) $(if $(SOURCE_RUN),--source-run $(SOURCE_RUN)) \
+	  $(if $(EXECUTE),--execute) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/incremental-ci/shadow.json)
+
 check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
 	yamllint .github .yamllint.yml
@@ -1408,8 +1449,9 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
 	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
-	  tests/test_flow_recovery.py \
-	  tests/test_ci_recovery.py tests/test_pytest_shards.py \
+	  tests/test_flow_recovery.py tests/test_agent_dag.py \
+	  tests/test_ci_recovery.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
+	  tests/test_delivery_policy.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json

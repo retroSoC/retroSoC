@@ -14,6 +14,11 @@ documentation.
 - `pytest-shards.json` defines four deterministic fixture shards and the exact
   permitted optional-input skips. `pytest-durations.json` records source-bound
   JUnit timing history used only for scheduling, never for a PASS verdict.
+- `incremental-ci.json` is shadow-only and disabled. It defines the fixture
+  input closure, tool/configuration identities, and test-manifest requirements;
+  it never skips a required job by itself.
+- `delivery-policy.json` defines read-only merge-queue and metric-promotion
+  evaluation thresholds. It never enables a merge queue or metric gate by itself.
 - `validation-gaps.json` records owned deferred validation gaps, source scope,
   review dates, prohibited claims, and the evidence required for resolution.
 - `ownership.json` records primary and backup review ownership plus the current

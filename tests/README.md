@@ -99,10 +99,20 @@ tooling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
-  `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
+  sources, historical green evidence, tool/config/test-manifest identity,
+  tamper refusal, GitHub run/artifact binding, mandatory full events, and the
+  no-skip shadow workflow. `test_delivery_policy.py` covers merge-group parity,
+  ready/conflict thresholds, draft/fork exclusions, CI-success versus valid
+  metric-sample distinctions, duplicate/mixed sample rejection, reviewed
+  baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
   bounded descendant completion after a normal parent exit, zombie-member
   exclusion, and process-group cleanup when descendants outlive the grace period.
+  `test_agent_dag.py` covers deterministic DAG waves, authorized disjoint
+  parallelism, serial integration, malformed graph refusal, write-set/worktree
+  conflicts, dependency PASS evidence, dry-run leases, identity checks, and
+  expired-lease recovery without starting agents.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
@@ -119,8 +129,12 @@ tooling.
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
   and deferred reconciliation. Run fast agent checks with `make check-fast`. Static
-  corpus checks are not proof that an agent executed a workflow; live behavior
-  results require retained traces from `make skill-eval-smoke`.
+  corpus checks are not proof that an agent executed a workflow. The behavior
+  corpus contains 57 cases across six Skills, with one live smoke per Skill.
+  Provenance, contract migration, negative triggers, Kimi tool-call parsing,
+  read-only runner boundaries, and canary configuration are tested
+  deterministically; live behavior results require retained traces from
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`).
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
