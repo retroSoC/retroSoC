@@ -277,7 +277,32 @@ def run_shard(root: Path, index: int, output: Path) -> dict[str, Any]:
     return result
 
 
-def verify_shards(root: Path, directories: list[Path]) -> dict[str, Any]:
+def bind_workflow_identity(
+    document: dict[str, Any], root: Path, identity: dict[str, Any]
+) -> dict[str, Any]:
+    if not isinstance(document, dict) or not isinstance(identity, dict):
+        raise ValueError("workflow identity and evidence must be objects")
+    if set(identity) != {"workflow_head_sha", "workflow_run_id", "run_attempt", "pr_number"}:
+        raise ValueError("workflow identity fields are incomplete")
+    revisions = (identity["workflow_head_sha"], document.get("source_revision"))
+    if any(not isinstance(value, str) or REVISION.fullmatch(value) is None for value in revisions):
+        raise ValueError("workflow and evaluated revisions must be full Git revisions")
+    for field in ("workflow_run_id", "run_attempt", "pr_number"):
+        if not isinstance(identity[field], int) or isinstance(identity[field], bool) or identity[field] <= 0:
+            raise ValueError(f"{field} must be a positive integer")
+    if subprocess.run(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", identity["workflow_head_sha"], document["source_revision"]],
+        capture_output=True,
+        check=False,
+    ).returncode:
+        raise ValueError("workflow head is not an ancestor of the evaluated revision")
+    document.update(identity)
+    return document
+
+
+def verify_shards(
+    root: Path, directories: list[Path], workflow_identity: dict[str, Any] | None = None
+) -> dict[str, Any]:
     policy = load_policy(root)
     issues = []
     records = []
@@ -341,7 +366,7 @@ def verify_shards(root: Path, directories: list[Path]) -> dict[str, Any]:
     if seen_indices != set(range(policy["shards"])):
         issues.append(f"shard indices are incomplete: {sorted(seen_indices)}")
     cache_states = [cache.get("status") for item in cache_observations for cache in item["caches"]]
-    return {
+    result = {
         "schema_version": 1,
         "source_revision": first_plan.get("source_revision") if first_plan else None,
         "node_ids_sha256": first_plan.get("node_ids_sha256") if first_plan else None,
@@ -363,6 +388,9 @@ def verify_shards(root: Path, directories: list[Path]) -> dict[str, Any]:
         "shards": summaries,
         "issues": issues,
     }
+    if workflow_identity is not None:
+        bind_workflow_identity(result, root, workflow_identity)
+    return result
 
 
 def duration_history(root: Path, junit: Path, source_revision: str, run_id: str) -> dict[str, Any]:
@@ -407,6 +435,10 @@ def parse_args() -> argparse.Namespace:
             command.add_argument("--output", type=Path, required=True)
         elif name == "verify":
             command.add_argument("--shard-dir", type=Path, action="append", required=True)
+            command.add_argument("--workflow-head")
+            command.add_argument("--workflow-run", type=int)
+            command.add_argument("--run-attempt", type=int)
+            command.add_argument("--pr-number", type=int)
             command.add_argument("--output", type=Path, required=True)
         else:
             command.add_argument("--junit", type=Path, required=True)
@@ -425,7 +457,18 @@ def main() -> int:
         elif args.command == "run":
             result = run_shard(args.root.resolve(), args.shard, args.output)
         elif args.command == "verify":
-            result = verify_shards(args.root.resolve(), args.shard_dir)
+            values = (args.workflow_head, args.workflow_run, args.run_attempt, args.pr_number)
+            if any(value is not None for value in values) and any(value is None for value in values):
+                raise ValueError("workflow identity requires head, run, attempt, and PR together")
+            identity = None
+            if args.workflow_head is not None:
+                identity = {
+                    "workflow_head_sha": args.workflow_head,
+                    "workflow_run_id": args.workflow_run,
+                    "run_attempt": args.run_attempt,
+                    "pr_number": args.pr_number,
+                }
+            result = verify_shards(args.root.resolve(), args.shard_dir, identity)
             atomic_write(args.output, dump_json(result))
         else:
             result = duration_history(args.root.resolve(), args.junit, args.source_revision, args.workflow_run)

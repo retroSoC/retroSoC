@@ -100,11 +100,18 @@ or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hoste
 CI runs isolated matrix jobs and an always-enforced fan-in.
 `incremental_ci.py` computes fixture input, tool-lock, configuration, and complete
 test-manifest fingerprints. It can compare a local evidence JSON or a real
-GitHub quality run/artifact against the current revision. Production policy is
-`shadow` with `enabled=false`: a matching result is only a reuse recommendation,
-never an automatic skip. Dirty worktrees, changed/deleted inputs, incomplete or
-tampered evidence, missing fields, and any manifest mismatch force `RUN_FULL`.
-Scheduled, manual, and release events always run full.
+GitHub quality run/artifact against the current revision. `--auto-previous`
+selects only an earlier successful quality run from the same PR, excluding the
+current run. Actual workflow head and evaluated merge revision are separate
+identities; fan-in optionally binds both to the run, attempt, and PR. Historical
+merge revisions need not be ancestors of the current merge revision, but the
+actual PR heads must remain ancestral and all source fingerprints must be
+recomputed. Missing history or unavailable source objects select `RUN_FULL`.
+Production policy is `shadow` with `enabled=false`: a matching result is only a
+reuse recommendation, never an automatic skip. Dirty worktrees, changed/deleted
+inputs, incomplete or tampered evidence, missing fields, and any manifest
+mismatch force `RUN_FULL` or a hard integrity error as appropriate. Scheduled,
+manual, and release events always run full.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.

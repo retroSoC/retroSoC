@@ -8,9 +8,11 @@ from pathlib import Path
 import pytest
 
 from scripts.incremental_ci import (
+    EvidenceMissing,
     evaluate,
     evidence_from_run,
     load_policy,
+    select_previous_quality_run,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -308,3 +310,275 @@ def test_run_artifact_revision_mismatch_is_rejected(repo: tuple[Path, str], monk
     monkeypatch.setattr(subprocess, "run", download)
     with pytest.raises(ValueError, match="source revision differs"):
         evidence_from_run(root, "retroSoC/retroSoC", "dev", base, 124)
+
+
+def quality_run(identifier: int, head: str, created: str, pr: int = 7, conclusion: str = "success") -> dict:
+    return {
+        "id": identifier,
+        "name": "quality",
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": conclusion,
+        "run_attempt": 1,
+        "head_sha": head,
+        "created_at": created,
+        "pull_requests": [{"number": pr}],
+    }
+
+
+def test_selects_only_an_earlier_successful_run_from_the_same_pr(monkeypatch: pytest.MonkeyPatch) -> None:
+    head = "a" * 40
+    current = quality_run(200, head, "2026-11-01T03:00:00Z")
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", lambda arguments: current)
+    monkeypatch.setattr(
+        "scripts.incremental_ci.paginated_check_data",
+        lambda endpoint, key: [
+            quality_run(199, "b" * 40, "2026-11-01T02:00:00Z"),
+            quality_run(198, "c" * 40, "2026-11-01T01:00:00Z"),
+            current,
+            quality_run(197, "d" * 40, "2026-11-01T02:30:00Z", pr=8),
+            quality_run(196, "e" * 40, "2026-11-01T02:45:00Z", conclusion="failure"),
+            quality_run(201, "f" * 40, "2026-11-01T04:00:00Z"),
+        ],
+    )
+    result = select_previous_quality_run("retroSoC/retroSoC", 7, 200, head)
+    assert result["selected_run_id"] == 199
+    assert result["selected_head_sha"] == "b" * 40
+    assert result["current_head_sha"] == head
+    assert 196 not in result["candidate_run_ids"]
+    assert 197 not in result["candidate_run_ids"]
+    assert 201 not in result["candidate_run_ids"]
+
+
+def test_history_selection_rejects_ambiguity_and_current_head_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    current = quality_run(200, "a" * 40, "2026-11-01T03:00:00Z")
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", lambda arguments: current)
+    with pytest.raises(ValueError, match="differs"):
+        select_previous_quality_run("retroSoC/retroSoC", 7, 200, "b" * 40)
+    monkeypatch.setattr(
+        "scripts.incremental_ci.paginated_check_data",
+        lambda endpoint, key: [
+            quality_run(198, "b" * 40, "2026-11-01T02:00:00Z"),
+            quality_run(199, "c" * 40, "2026-11-01T02:00:00Z"),
+        ],
+    )
+    with pytest.raises(EvidenceMissing, match="ambiguous"):
+        select_previous_quality_run("retroSoC/retroSoC", 7, 200, "a" * 40)
+
+
+def test_workflow_identity_binds_pr_head_and_evaluated_merge_revision(repo: tuple[Path, str]) -> None:
+    root, base = repo
+    (root / "docs/guide.md").write_text("documentation only\n", encoding="utf-8")
+    git(root, "add", "docs/guide.md")
+    git(root, "commit", "-qm", "docs")
+    current_head = git(root, "rev-parse", "HEAD")
+    previous_merge = git(root, "commit-tree", f"{base}^{{tree}}", "-p", base, "-m", "previous merge")
+    assert previous_merge != base
+    evidence = previous(previous_merge)
+    evidence.update(
+        workflow_head_sha=base,
+        workflow_run_id=100,
+        run_attempt=1,
+        pr_number=7,
+    )
+    result = evaluate(
+        root,
+        base,
+        current_head,
+        evidence,
+        "pull_request",
+        False,
+        ["quality-gate"],
+        workflow_head=current_head,
+        workflow_run_id=101,
+        pr_number=7,
+    )
+    assert result["decision"] == "SHADOW_REUSE_CANDIDATE"
+    assert result["previous"]["source_revision"] == previous_merge
+    assert result["previous"]["workflow_head_sha"] == base
+
+    for field, value in (
+        ("pr_number", 8),
+        ("workflow_run_id", 101),
+        ("workflow_head_sha", "f" * 40),
+    ):
+        invalid = dict(evidence)
+        invalid[field] = value
+        with pytest.raises(ValueError):
+            evaluate(
+                root,
+                base,
+                current_head,
+                invalid,
+                "pull_request",
+                False,
+                ["quality-gate"],
+                workflow_head=current_head,
+                workflow_run_id=101,
+                pr_number=7,
+            )
+    missing = dict(evidence)
+    missing["source_revision"] = "f" * 40
+    with pytest.raises(EvidenceMissing, match="unavailable"):
+        evaluate(
+            root,
+            base,
+            current_head,
+            missing,
+            "pull_request",
+            False,
+            ["quality-gate"],
+            workflow_head=current_head,
+            workflow_run_id=101,
+            pr_number=7,
+        )
+
+
+def test_workflow_bound_run_artifact_has_matching_identity(repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch) -> None:
+    root, base = repo
+    run = quality_run(321, base, "2026-11-01T02:00:00Z")
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", lambda arguments: run)
+    monkeypatch.setattr("scripts.incremental_ci.required_check_contexts", lambda repository, branch, root: ["quality-gate"])
+    monkeypatch.setattr(
+        "scripts.incremental_ci.paginated_check_data",
+        lambda endpoint, key: [
+            {"id": 1, "name": "quality-gate", "status": "COMPLETED", "conclusion": "success"}
+        ] if key == "check_runs" else [],
+    )
+
+    real_run = subprocess.run
+
+    def download(command, **kwargs):
+        if command[0] != "gh":
+            return real_run(command, **kwargs)
+        destination = Path(command[command.index("--dir") + 1])
+        destination.mkdir(parents=True)
+        document = previous(base)
+        document.update(
+            workflow_head_sha=base,
+            workflow_run_id=321,
+            run_attempt=1,
+            pr_number=7,
+        )
+        (destination / "summary.json").write_text(json.dumps(document), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", download)
+    evidence = evidence_from_run(
+        root,
+        "retroSoC/retroSoC",
+        "dev",
+        base,
+        321,
+        require_workflow_identity=True,
+        pr_number=7,
+    )
+    assert evidence["workflow_head_sha"] == base
+    assert evidence["run_attempt"] == 1
+    result = evaluate(
+        root,
+        base,
+        base,
+        evidence,
+        "pull_request",
+        False,
+        workflow_head=base,
+        workflow_run_id=322,
+        pr_number=7,
+    )
+    assert result["decision"] == "SHADOW_REUSE_CANDIDATE"
+
+
+def test_fan_in_binds_optional_workflow_identity(repo: tuple[Path, str]) -> None:
+    from scripts.pytest_shards import bind_workflow_identity
+
+    root, base = repo
+    document = {"source_revision": base}
+    identity = {
+        "workflow_head_sha": base,
+        "workflow_run_id": 321,
+        "run_attempt": 1,
+        "pr_number": 7,
+    }
+    assert bind_workflow_identity(document, root, identity)["pr_number"] == 7
+    with pytest.raises(ValueError, match="incomplete"):
+        bind_workflow_identity(document, root, {"workflow_head_sha": base})
+    with pytest.raises(ValueError, match="ancestor"):
+        bind_workflow_identity(
+            {"source_revision": base},
+            root,
+            {**identity, "workflow_head_sha": "f" * 40},
+        )
+
+
+def test_history_workflow_binds_run_without_skipping_full_jobs() -> None:
+    import yaml
+
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    shadow = workflow["jobs"]["incremental-shadow"]
+    run = next(step for step in shadow["steps"] if step["name"] == "Evaluate shadow reuse without skipping full jobs")
+    assert "--auto-previous" in run["run"]
+    assert "--workflow-head" in run["run"]
+    assert "--workflow-run" in run["run"]
+    assert "--pr-number" in run["run"]
+    assert "--execute" not in run["run"]
+    fan_in = next(
+        step
+        for step in workflow["jobs"]["fixtures-fan-in"]["steps"]
+        if step["name"] == "Verify complete fixture coverage"
+    )
+    assert "--workflow-head" in fan_in["run"]
+    assert "--workflow-run" in fan_in["run"]
+    assert "--run-attempt" in fan_in["run"]
+    assert "--pr-number" in fan_in["run"]
+    gate = next(
+        step
+        for step in workflow["jobs"]["quality-gate"]["steps"]
+        if step["name"] == "Aggregate quality verdict"
+    )
+    assert "--allow-skip incremental-shadow" not in gate["run"]
+
+
+def test_history_selection_requires_current_pr_and_allows_no_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
+    current = quality_run(200, "a" * 40, "2026-11-01T03:00:00Z")
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", lambda arguments: current)
+    monkeypatch.setattr("scripts.incremental_ci.paginated_check_data", lambda endpoint, key: [])
+    result = select_previous_quality_run("retroSoC/retroSoC", 7, 200, "a" * 40)
+    assert result["selected_run_id"] is None
+    current["pull_requests"] = [{"number": 8}]
+    with pytest.raises(ValueError, match="does not belong"):
+        select_previous_quality_run("retroSoC/retroSoC", 7, 200, "a" * 40)
+
+
+def test_workflow_bound_artifact_requires_complete_identity(repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch) -> None:
+    root, base = repo
+    run = quality_run(321, base, "2026-11-01T02:00:00Z")
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", lambda arguments: run)
+    monkeypatch.setattr("scripts.incremental_ci.required_check_contexts", lambda repository, branch, root: ["quality-gate"])
+    monkeypatch.setattr(
+        "scripts.incremental_ci.paginated_check_data",
+        lambda endpoint, key: [
+            {"id": 1, "name": "quality-gate", "status": "COMPLETED", "conclusion": "success"}
+        ] if key == "check_runs" else [],
+    )
+
+    def download(command, **kwargs):
+        destination = Path(command[command.index("--dir") + 1])
+        destination.mkdir(parents=True)
+        (destination / "summary.json").write_text(json.dumps(previous(base)), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", download)
+    with pytest.raises(EvidenceMissing, match="workflow identity"):
+        evidence_from_run(
+            root,
+            "retroSoC/retroSoC",
+            "dev",
+            base,
+            321,
+            require_workflow_identity=True,
+            pr_number=7,
+        )
