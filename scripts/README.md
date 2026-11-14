@@ -156,7 +156,9 @@ PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
 are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_delivery.py` probes repository capabilities and
+release-candidate evidence. Commit collection records actual parent counts so a
+lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
+plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
 and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
