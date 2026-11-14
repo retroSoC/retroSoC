@@ -35,6 +35,22 @@ state block reuse. Failed attempts are retained; interrupted work is not PASS.
 Do not increase a timeout or resource scope without authorization and evidence.
 Record the next action with `make agent-handoff TASK=<task.json> NEXT=<action>`.
 
+## Start and restore a short-lived worktree
+
+Create a host-neutral task packet and use `make agent-worktree-start TASK=<task.json>
+BRANCH=ci/example SOURCES="mpw hazard3" ARCHIVES="serv" CREATE=1` for a dry-run.
+`EXECUTE=1` creates the canonical worktree and restores only the selected,
+non-recursive locked Git inputs and raw archive files. Existing targets can be
+restored from their own directory without `CREATE=1`. The default is offline;
+`ALLOW_NETWORK=1` explicitly enables the existing bounded fetch/download helpers.
+
+References must have the exact locked full revision or archive SHA-256, expected
+URL, clean state, and an in-repository path. Copies have independent Git object
+storage; no writable checkout, object alternates, or absolute symlink is shared.
+Recursive submodules, PDK setup, publication package directories, and archive
+extraction remain with their existing validated setup entrypoints. Review the
+resulting `bootstrap.json`; FAILED or PLANNED is not a ready worktree.
+
 ## Deliver a short-lived PR
 
 After scope approval and local validation, use `make agent-deliver PR=<number>`.
@@ -52,9 +68,13 @@ waivers. Failed checks and externally disabled auto-merge stop the live watcher.
 
 Use `make worktree-registry` for a dry-run inventory. Only clean, registered,
 non-detached, canonical branches below `build/agent-worktrees/` and contained in
-`origin/dev` are cleanup candidates. Move retained `build/` evidence to the main
-worktree before removal. Dirty, unmerged, detached, orphaned, non-canonical, or
-evidence-conflicting paths remain untouched.
+`origin/dev` are cleanup candidates. Apply `quality/artifact-retention.json` to
+classify evidence, rebuildable cache/evaluation workspaces, vendor copies, and
+unknown files. Check size, digest, capacity, symlinks, and destination conflicts;
+copy retained files through a staging directory and publish the manifest before
+removal. Unknown files remain retained. Expiry requires review and never triggers
+automatic evidence deletion. Dirty, unmerged, detached, orphaned, non-canonical,
+or evidence-conflicting paths remain untouched.
 
 Record deferred or blocked validation in `quality/validation-gaps.json` with an
 owner and review date. `NOT_RUN`, `SKIPPED`, `DEFERRED`, and `BLOCKED` never

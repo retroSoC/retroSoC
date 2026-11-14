@@ -89,6 +89,15 @@ checks and delivery without per-step confirmation. Ask only for a missing
 decision, permission, scope change, or recovery action that needs approval.
 Plan mode never authorizes mutations, regardless of the mode in the prompt.
 
+Start a canonical worktree with `make agent-worktree-start TASK=<task.json>
+BRANCH=ci/example SOURCES="mpw hazard3" ARCHIVES="serv" CREATE=1` (dry-run).
+Add `EXECUTE=1` to create/restore, or use the target directory without `CREATE=1`
+to restore its existing inputs. Network fallback requires explicit
+`ALLOW_NETWORK=1`; locked revisions and archive hashes never change. Recursive
+submodules, PDKs, publication package directories, and extraction retain their
+existing setup flows. Cleanup uses `quality/artifact-retention.json` to retain
+classified evidence without moving every rebuildable cache or workspace.
+
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
 reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
