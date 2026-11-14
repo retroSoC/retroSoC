@@ -344,6 +344,11 @@ def verify_shards(root: Path, directories: list[Path]) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "source_revision": first_plan.get("source_revision") if first_plan else None,
+        "node_ids_sha256": first_plan.get("node_ids_sha256") if first_plan else None,
+        "pytest_version": first_plan.get("pytest_version") if first_plan else None,
+        "tool_inputs_sha256": first_plan.get("tool_inputs_sha256") if first_plan else None,
+        "policy_sha256": first_plan.get("policy_sha256") if first_plan else None,
+        "durations_sha256": first_plan.get("durations_sha256") if first_plan else None,
         "status": "passed" if first_plan is not None and not issues else "failed",
         "shard_count": len(summaries),
         "test_count": len(records),

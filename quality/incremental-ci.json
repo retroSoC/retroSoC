@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "mode": "shadow",
+  "enabled": false,
+  "jobs": [
+    {
+      "id": "quality-fixtures",
+      "required_context": "quality-gate",
+      "inputs": [
+        "Makefile",
+        "pyproject.toml",
+        "setup.py",
+        "flake.nix",
+        "flake.lock",
+        "scripts/**",
+        "tests/**",
+        "requirements/**",
+        "dependencies/**",
+        "configs/**",
+        "quality/**",
+        ".agents/**",
+        "AGENTS.md",
+        ".github/**",
+        "docker/**",
+        "physical/**",
+        "fpga/**",
+        "rtl/**",
+        "app/**",
+        "crt/**",
+        "publications/**"
+      ],
+      "configuration_files": [
+        "quality/pytest-shards.json",
+        "quality/pytest-durations.json",
+        "pyproject.toml"
+      ],
+      "configuration": {
+        "suite": "complete-pytest",
+        "shards": 4,
+        "behavioral_only": false,
+        "runner": "ubuntu-22.04"
+      }
+    }
+  ]
+}

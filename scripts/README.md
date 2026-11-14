@@ -92,6 +92,13 @@ optional-input skips. Cache HIT/MISS/NOT_RUN observations are aggregated without
 caching verdicts. Use `make fixtures-plan`, `make fixtures-shard SHARD=<index>`,
 or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hosted
 CI runs isolated matrix jobs and an always-enforced fan-in.
+`incremental_ci.py` computes fixture input, tool-lock, configuration, and complete
+test-manifest fingerprints. It can compare a local evidence JSON or a real
+GitHub quality run/artifact against the current revision. Production policy is
+`shadow` with `enabled=false`: a matching result is only a reuse recommendation,
+never an automatic skip. Dirty worktrees, changed/deleted inputs, incomplete or
+tampered evidence, missing fields, and any manifest mismatch force `RUN_FULL`.
+Scheduled, manual, and release events always run full.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
