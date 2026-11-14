@@ -134,7 +134,10 @@ tooling.
   Provenance, contract migration, negative triggers, Kimi tool-call parsing,
   read-only runner boundaries, and canary configuration are tested
   deterministically; live behavior results require retained traces from
-  `make skill-eval-smoke` (optionally `RUNNER=kimi`).
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
+  covers trace identity, input tampering, historical prompts, unknown runners,
+  read-only violations, duplicate/empty evidence, and zero runner invocations.
+  Offline replay grades retained behavior only; it does not execute current code.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

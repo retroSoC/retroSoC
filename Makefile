@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -774,6 +774,7 @@ help:
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
 	  '  skill-eval-smoke           run six live read-only Skill evaluations (RUNNER=codex|kimi)' \
+	  '  skill-replay               grade retained traces without starting a runner' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
 	  '  delivery-policy            evaluate merge queue and metric promotion without changes' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
@@ -1406,6 +1407,13 @@ skill-eval-smoke:
 	  $(if $(RUNNER),--runner $(RUNNER)) $(if $(MODEL),--model $(MODEL)) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
 
+skill-replay:
+	@test -n '$(TRACES)' || { printf '%s\n' 'TRACES=<directory> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/skill_eval.py replay --root $(ROOT_PATH) \
+	  --trace-root $(TRACES) $(if $(SKILL),--skill $(SKILL)) \
+	  $(if $(CASE),--case $(CASE)) $(if $(SMOKE),--smoke) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/replay.json)
+
 engineering-metrics:
 	python3 $(ROOT_PATH)/scripts/engineering_metrics.py collect \
 	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
@@ -1447,7 +1455,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	yamllint .github .yamllint.yml
 	actionlint
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
-	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
+	  tests/test_skill_eval.py tests/test_skill_replay.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_pytest_shards.py tests/test_incremental_ci.py \

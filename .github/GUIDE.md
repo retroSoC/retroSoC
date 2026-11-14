@@ -125,6 +125,9 @@ read-only Agent without Bash, writes, or delegation. Weekly canaries require
 `RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
 remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
 CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
+`make skill-replay TRACES=<directory>` only grades explicit retained traces with
+provenance checks; it never starts a runner, enables a canary, or turns a
+historical grade into fresh behavior evidence.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts
