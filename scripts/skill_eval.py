@@ -25,6 +25,11 @@ CORE_SKILLS = {
     "retrosoc-feature-implementation",
     "retrosoc-feature-review",
 }
+BEHAVIOR_SKILLS = CORE_SKILLS | {
+    "retrosoc-datasheet",
+    "retrosoc-dependency-maintenance",
+    "retrosoc-physical-flow",
+}
 
 
 def load_registry(root: Path) -> dict[str, Any]:
@@ -46,6 +51,8 @@ def load_cases(root: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         enriched = dict(case)
         enriched["prompt"] = prompts[case["source_eval"]]["prompt"]
         enriched["expected_output"] = prompts[case["source_eval"]]["expected_output"]
+        enriched["skill_contract_version"] = entries[skill]["contract_version"]
+        enriched["skill_entrypoint"] = entries[skill]["entrypoint"]
         enriched["live"] = case.get("live", True)
         cases.append(enriched)
     return document, cases
@@ -68,10 +75,14 @@ def validate_evals(root: Path) -> list[str]:
     identifiers = [case["id"] for case in cases]
     if len(set(identifiers)) != len(identifiers):
         issues.append("behavior eval case identifiers must be unique")
-    for name, expected_count in document["core_skill_case_counts"].items():
+    expected_counts = document.get("skill_case_counts", document.get("core_skill_case_counts", {}))
+    for entry in registry["skills"]:
+        name = entry["name"]
         selected = [case for case in cases if case["skill"] == name]
-        if len(selected) != expected_count or not 10 <= expected_count <= 20:
-            issues.append(f"{name} must have 10-20 cases; found {len(selected)}")
+        minimum = 10 if name in CORE_SKILLS else 6
+        expected = expected_counts.get(name, len(selected))
+        if expected is None or len(selected) != expected or not minimum <= expected <= 20:
+            issues.append(f"{name} must have {minimum}-20 cases; found {len(selected)}")
         if sum(bool(case.get("smoke")) for case in selected) != 1:
             issues.append(f"{name} must select exactly one smoke case")
     if not any(case["should_trigger"] is False for case in cases):
@@ -80,18 +91,28 @@ def validate_evals(root: Path) -> list[str]:
         for key in ("id", "skill", "source_eval", "should_trigger"):
             if key not in case:
                 issues.append(f"{case.get('id', '<unknown>')} missing {key}")
-        if case["skill"] not in CORE_SKILLS:
+        if case["skill"] not in BEHAVIOR_SKILLS:
             issues.append(f"{case['id']} references an unsupported behavior-eval Skill")
         if not isinstance(case["should_trigger"], bool):
             issues.append(f"{case['id']} should_trigger must be boolean")
         if not case.get("live", True) and case.get("smoke"):
             issues.append(f"{case['id']} cannot be a skipped live smoke case")
+    names = [entry["name"] for entry in registry["skills"]]
+    if len(set(names)) != len(names):
+        issues.append("Skill registry names must be unique")
     for entry in registry["skills"]:
         for field in ("entrypoint", "eval_suite"):
             if not (root / entry[field]).is_file():
                 issues.append(f"registry path missing: {entry[field]}")
         if not entry.get("owner", "").startswith("@"):
             issues.append(f"Skill owner must be a GitHub handle: {entry['name']}")
+        version = entry.get("contract_version")
+        if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+            issues.append(f"Skill contract_version must be a positive integer: {entry['name']}")
+        if isinstance(version, int) and version > 1:
+            migration = Path(entry.get("contract_migration", ""))
+            if migration.is_absolute() or ".." in migration.parts or not (root / migration).is_file():
+                issues.append(f"Skill contract migration is missing or unsafe: {entry['name']}")
     return issues
 
 
@@ -189,6 +210,14 @@ def parse_jsonl(text: str) -> list[Any]:
     return events
 
 
+def input_snapshot_sha256(case: dict[str, Any]) -> str:
+    fields = {
+        key: case[key]
+        for key in ("id", "skill", "source_eval", "prompt", "expected_output")
+    }
+    return hashlib.sha256(json.dumps(fields, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def evaluation_prompt(case: dict[str, Any]) -> str:
     return (
         case["prompt"]
@@ -283,7 +312,12 @@ def run_codex(
         "runner_version": subprocess.check_output(["codex", "--version"], text=True).strip(),
         "model": model or "runner-default",
         "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_source_revision": git_output(root, "rev-parse", "HEAD"),
+        "skill_contract_version": case["skill_contract_version"],
+        "skill_entrypoint_sha256": hashlib.sha256((root / case["skill_entrypoint"]).read_bytes()).hexdigest(),
+        "input_snapshot_sha256": input_snapshot_sha256(case),
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
+        "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
         "started_at": started.isoformat(),
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -374,7 +408,7 @@ def parse_args() -> argparse.Namespace:
     for name in ("list", "run"):
         command = subparsers.add_parser(name)
         command.add_argument("--root", type=Path, default=ROOT)
-        command.add_argument("--skill", choices=sorted(CORE_SKILLS))
+        command.add_argument("--skill", choices=sorted(BEHAVIOR_SKILLS))
         command.add_argument("--case", action="append")
         command.add_argument("--smoke", action="store_true")
         if name == "run":
@@ -399,6 +433,16 @@ def main() -> int:
                 "schema_version": 1,
                 "status": "failed" if issues else "passed",
                 "case_count": len(cases),
+                "smoke_case_count": sum(bool(case.get("smoke")) for case in cases),
+                "source_revision": git_output(args.root.resolve(), "rev-parse", "HEAD"),
+                "skill_contracts": {
+                    case["skill"]: case["skill_contract_version"]
+                    for case in cases
+                },
+                "input_snapshots": {
+                    case["id"]: input_snapshot_sha256(case)
+                    for case in cases
+                },
                 "issues": issues,
                 "behavior_execution": "not run by validate",
             }
@@ -425,6 +469,7 @@ def main() -> int:
                 raise ValueError("runner timeout must be positive")
             args.output.mkdir(parents=True, exist_ok=False)
             results = []
+            runner_versions = []
             for case in selected:
                 if not case["live"]:
                     results.append({"case_id": case["id"], "status": "skipped", "reason": "live execution disabled for this fixture"})
@@ -438,6 +483,7 @@ def main() -> int:
                     args.model,
                     args.timeout,
                 )
+                runner_versions.append(trace["runner_version"])
                 atomic_write(args.output / f"{case['id']}.trace.json", dump_json(trace))
                 result = grade_trace(trace, document["defaults"])
                 atomic_write(args.output / f"{case['id']}.grade.json", dump_json(result))
@@ -446,8 +492,18 @@ def main() -> int:
             summary = {
                 "schema_version": 1,
                 "status": "passed" if executed and all(result["status"] == "passed" for result in executed) else ("skipped" if not executed else "failed"),
+                "source_revision": git_output(args.root.resolve(), "rev-parse", "HEAD"),
                 "runner": args.runner,
+                "runner_versions": sorted(set(runner_versions)),
                 "model": args.model or "runner-default",
+                "skill_contracts": {
+                    case["skill"]: case["skill_contract_version"]
+                    for case in selected
+                },
+                "input_snapshots": {
+                    case["id"]: input_snapshot_sha256(case)
+                    for case in selected
+                },
                 "case_count": len(results),
                 "executed_count": len(executed),
                 "passed_count": sum(result["status"] == "passed" for result in results),

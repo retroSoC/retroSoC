@@ -50,8 +50,12 @@ require a clean initial worktree. Online
 GitHub permission and PR-head probes are opt-in; local preflight is offline.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
-`skill_eval.py` validates the Skill registry and executes isolated, read-only
-behavior evaluations with deterministic grades. `engineering_metrics.py`
+`skill_eval.py` validates all registered Skills and executes isolated, read-only
+behavior evaluations with deterministic grades. It retains v1 eval-config
+compatibility, requires migration documents for incompatible contracts, and
+records Skill Git SHA, contract version, runner/model, input snapshot, and
+workspace tree. Static validation is never labeled behavior execution.
+`engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,

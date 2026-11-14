@@ -769,7 +769,7 @@ help:
 	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
-	  '  skill-eval-smoke           run three live read-only Codex Skill evaluations' \
+	  '  skill-eval-smoke           run six live read-only Codex Skill evaluations' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
 	  '  format-check               check self-owned C, Makefile, and RTL formatting' \
