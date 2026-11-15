@@ -459,6 +459,8 @@ Add paired publication-change markers around newly added or substantively change
 content and explicit new cross-references. Mark Contents and both figure/table
 directories separately as navigation updates. Markers are queried after layout;
 they must not participate in running-header selection.
+Retained text keeps the marker ID of the round that introduced or changed it;
+do not derive its ID from the current prefix during unrelated layout revisions.
 
 The build exports and hashes `change-markers.json`. Generate `changed-pages.json`
 with `publications/report_changes.py --baseline <previous.pdf> --pdf <final.pdf>`.
@@ -598,6 +600,8 @@ measurement in the rendered PDF.
 | Code blocks | 8 outside before/after, 8 inside | `code-space: 8pt`, `code-inset: 8pt` |
 | Notes and placeholders | 12 outside before/after, 10 inside | `note-space: 12pt`, `note-inset: 10pt` |
 | Standalone source / IP metadata groups | 4 before, 6 after | `metadata-before: 4pt`, `metadata-after: 6pt` |
+| Contents number column to title | Fixed 4 after the measured same-level number column | `toc-gap: 4pt`; independent of `heading-gap: 8pt` |
+| Figure/table directory prefix column to title | Fixed 4 after each directory's measured prefix column | `directory-gap: 4pt`; independent of Contents and body heading spacing |
 | Register bit layout | 6 before/after; one shared boundary between 16-bit halves; horizontal 3, vertical 5 cell inset | `bits-space: 6pt`, `bits-inset: (x: 3pt, y: 5pt)` |
 
 Fira Code blocks use the small-text leading and 9 pt raw text. Their actual
@@ -683,8 +687,13 @@ the printed contents. Register summaries link to their detailed descriptions;
 shared UART/SDIO descriptions use explicit instance-to-common-section links.
 
 Contents entries use approximately 16 pt baselines (`toc-leading: 9.09pt`),
-14 pt indentation per level, and an 8 pt number-to-title gap. The number column
+14 pt indentation per level, and a fixed 4 pt number-column-to-title gap
+(`toc-gap: 4pt`). The number column
 is measured from the longest outlined, numbered heading at the same level.
+Titles at the same level share one left edge. The fixed gap starts at the right
+edge of the number column; shorter numbers also leave the column's unused width
+before the title. Keep this Contents-only setting separate from `directory-gap`
+for the flat figure/table directories and the 8 pt `heading-gap` for body headings.
 Wrapped titles hang under the title text; page numbers remain right aligned
 with stretching dot leaders. Each entry is unbreakable. Level-one groups add
 12 pt before and 4 pt after to the ordinary entry spacing.
@@ -702,12 +711,16 @@ Unnumbered address tables, bit layouts and decorative components are excluded.
 Both directories use Inter 9.5 pt, the approximately 16 pt Contents baseline,
 and ink-colored clickable entries without underlines. Prefix entries with
 `Table N.` or `Figure N.` and measure one number-column width from the longest
-prefix in each directory. Use an 8 pt prefix-to-title gap, hanging wrapped titles,
+prefix in each directory. Use a fixed 4 pt prefix-column-to-title gap
+(`directory-gap: 4pt`), hanging wrapped titles,
 stretching dot leaders and right-aligned page numbers. Each whole entry links to
 the corresponding figure or table start and remains unbreakable. Do not apply
 Contents hierarchy indentation, chapter-group spacing or abbreviation emphasis
 to these flat directories. Complete coverage takes precedence over a fixed page
 budget; allow the directories to grow as numbered material is added.
+Titles within each directory share the same left edge, including continuation
+lines. The fixed gap starts at the prefix column's right edge; shorter `Table N.`
+or `Figure N.` prefixes also leave the column's unused width before the title.
 
 Outlined, numbered level-one and level-two headings in the body start on a new
 page, including software, implementation and appendix sections. The entire

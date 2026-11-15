@@ -36,7 +36,8 @@
   note-space: 12pt, note-inset: 10pt,
   metadata-before: 4pt, metadata-after: 6pt,
   bits-space: 6pt, bits-inset: (x:3pt,y:5pt),
-  toc-leading: 9.09pt, toc-indent: 14pt, toc-group-before: 12pt, toc-group-after: 4pt,
+  toc-leading: 9.09pt, toc-indent: 14pt, toc-gap: 4pt, directory-gap: 4pt,
+  toc-group-before: 12pt, toc-group-after: 4pt,
   header-gap: 4pt,
   cover-leading: 4.96pt, cover-spacing: 3.675pt, cover-list-spacing: 7.96pt,
   cover-heading-before: (12pt,12pt), cover-heading-after: 6pt,
@@ -169,7 +170,7 @@
     block(above:rhythm.toc-leading + if it.level==1 {rhythm.toc-group-before} else {0pt},
       below:rhythm.toc-leading + if it.level==1 {rhythm.toc-group-after} else {0pt},breakable:false)[
       #link(it.element.location(),it.indented(
-        if prefix==none {none} else {box(width:prefix-width,prefix)},inner,gap:rhythm.heading-gap))
+        if prefix==none {none} else {box(width:prefix-width,prefix)},inner,gap:rhythm.toc-gap))
     ]
   }
   outline(title:[Contents],depth:depth)
@@ -193,7 +194,7 @@
       if included(it.element) and (group==none or is-register(it.element)==group) {
         block(above:rhythm.toc-leading,below:rhythm.toc-leading,breakable:false)[
           #link(it.element.location(),it.indented(
-            box(width:prefix-width,prefix(it)),it.inner(),gap:rhythm.heading-gap))
+            box(width:prefix-width,prefix(it)),it.inner(),gap:rhythm.directory-gap))
         ]
       }
     }

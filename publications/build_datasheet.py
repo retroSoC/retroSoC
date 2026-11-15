@@ -82,7 +82,7 @@ def load_generator(name: str, relative: str) -> Any:
 
 
 def reviewed_build_control(config: dict[str, Any]) -> bool:
-    """Accept only an explicitly reviewed, immutable non-product Makefile revision."""
+    """Bind reviewed non-product build/contribution controls to immutable blobs."""
     review = config.get("build_control_review")
     if review is None:
         return False
@@ -93,6 +93,14 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
         raise ValueError("build-control review does not descend from the reviewed product snapshot")
     if git("rev-parse", f"{revision}:Makefile") != blob or git("diff", "--name-only", revision, "--", "Makefile"):
         raise ValueError("Makefile differs from the explicit build-control review")
+    documents = review.get("documentation_blobs", {})
+    if not isinstance(documents, dict) or set(documents) - {"docs/git-workflow.md"}:
+        raise ValueError("build-control review permits only the non-product Git workflow document")
+    for path, identity in documents.items():
+        if not isinstance(identity, str) or not re.fullmatch(r"[0-9a-f]{40}", identity):
+            raise ValueError("reviewed workflow document requires a complete blob identity")
+        if git("rev-parse", f"{revision}:{path}") != identity or git("diff", "--name-only", revision, "--", path):
+            raise ValueError("workflow document differs from the explicit build-control review")
     return True
 
 
@@ -104,8 +112,9 @@ def validate_source(config: dict[str, Any]) -> None:
     # inputs must be reviewed before advertising them in this datasheet.
     changed = git("diff", "--name-only", revision, "--", "rtl", "crt", "app", "configs", "docs",
                   "dependencies/dependencies.lock.json", "scripts/generate_openc906.py", "Makefile")
-    if "Makefile" in changed.splitlines() and reviewed_build_control(config):
-        changed = "\n".join(path for path in changed.splitlines() if path != "Makefile")
+    if {"Makefile", "docs/git-workflow.md"}.intersection(changed.splitlines()) and reviewed_build_control(config):
+        reviewed = {"Makefile", *config["build_control_review"].get("documentation_blobs", {})}
+        changed = "\n".join(path for path in changed.splitlines() if path not in reviewed)
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
     for name, dependency in load_lock()["sources"].items():
@@ -335,6 +344,8 @@ def source_hashes(
     }
     if config.get("build_control_review"):
         paths.add("Makefile")
+        if "docs/git-workflow.md" in config["build_control_review"].get("documentation_blobs", {}):
+            paths.add("docs/git-workflow.md")
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(MINI_BINDING_SOURCES)

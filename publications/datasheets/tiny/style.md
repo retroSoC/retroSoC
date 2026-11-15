@@ -65,6 +65,19 @@ All six standard IP detail headings are bookmarks and are excluded from contents
 Parenthesized IP suffixes in Contents use the existing uppercase-only bold
 rule. The reviewed suffixes are PPALITE and CRYPTO.
 
+Contents uses `toc-gap: 4pt` between the measured number column and title, with
+14 pt indentation per level. Measure the column from the longest numbered
+heading at the same level and keep all titles at that level left aligned;
+continuation lines hang under the title. Shorter numbers retain the unused
+column width in addition to the fixed gap. This Contents-only parameter is
+independent of the 8 pt `heading-gap` for body headings.
+
+List of tables and List of figures use `directory-gap: 4pt` after the measured
+prefix column. Measure its width from the longest complete `Table N.` or
+`Figure N.` prefix in the respective directory. Titles and continuation lines
+share one left edge; shorter prefixes retain the unused column width. Keep
+these flat lists independent of Contents hierarchy indentation and body spacing.
+
 Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source

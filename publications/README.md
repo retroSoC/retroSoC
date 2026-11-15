@@ -6,12 +6,14 @@ Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
 The two books have independent profiles, manifests and output markers.
 
-Mini's `mini.json.build_control_review` separately records the reviewed
-non-product Makefile changes through dev `5a9cbf12`. It binds a full commit and
-Makefile blob identity without moving the frozen product SHA. Source checks
-reject later Makefile edits and all unreviewed RTL/SDK/profile changes; the
-manifest also hashes the reviewed build-control file. This is an explicit
-one-revision review, not an exclusion from future source checks.
+Mini's `mini.json.build_control_review` separately records reviewed non-product
+Makefile and contribution-policy changes through dev `b6d538d8`. It binds a full
+commit and each file's blob identity without moving the frozen product SHA.
+The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`;
+product documents cannot be exempted. Source checks reject later control-file
+edits and all unreviewed RTL/SDK/profile changes. The manifest hashes both
+reviewed files. This is an explicit one-revision review, not an exclusion from
+future source checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.
