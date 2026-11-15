@@ -195,6 +195,30 @@ def shadow_document() -> dict:
     }
 
 
+def test_shadow_observations_support_split_pr_identity() -> None:
+    document = {
+        **shadow_document(),
+        "source_revision": "b" * 40,
+        "workflow_head_sha": "a" * 40,
+        "workflow_run_id": 1,
+    }
+    record = shadow_record(document, run_document())
+    assert record["source_revision"] == "b" * 40
+    assert record["workflow_head_sha"] == "a" * 40
+    assert record["workflow_run_id"] == 1
+    for field, value in (
+        ("workflow_head_sha", "b" * 40),
+        ("workflow_run_id", 2),
+        ("workflow_run_id", True),
+        ("event", "push"),
+    ):
+        with pytest.raises(ValueError, match="identity differs"):
+            shadow_record({**document, field: value}, run_document())
+    for field in ("source_revision", "workflow_head_sha"):
+        with pytest.raises(ValueError, match="full Git revisions"):
+            shadow_record({**document, field: "invalid"}, run_document())
+
+
 def test_collect_combines_jobs_delivery_and_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     def api(arguments):
         if arguments[0] == "pr":

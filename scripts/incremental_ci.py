@@ -493,7 +493,10 @@ def evidence_from_run(
         pr_number is None or not pull_request_matches(run, pr_number)
     ):
         raise ValueError("source run does not belong to the requested PR")
-    required = required_check_contexts(repository, base_branch, root)
+    try:
+        required = required_check_contexts(repository, base_branch, root)
+    except RuntimeError as error:
+        raise EvidenceMissing(f"required-check history is unavailable: {error}") from error
     check_runs = paginated_check_data(f"repos/{repository}/commits/{source_revision}/check-runs", "check_runs")
     statuses = paginated_check_data(f"repos/{repository}/commits/{source_revision}/status", "statuses")
     verdict = evaluate_checks(source_revision, required, check_runs, statuses)

@@ -80,7 +80,9 @@ optional cache/config digests without treating a cache as a cached PASS.
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
 timing. Unknown timeline, cache size, or local evidence is never reported as
 zero. `ci_observations.py` reads head-bound shadow artifacts without file
-extraction and includes read-only delivery-policy evaluations. Neither enables
+extraction and includes read-only delivery-policy evaluations. For PR merge
+revisions, it separately validates the actual workflow head, evaluated revision,
+run ID, and event while rejecting spoofed or incomplete identities. Neither enables
 reuse, a merge queue, or a metric gate. Offline `summarize` accepts separate
 jobs/delivery/cache, policy, and shadow JSON files.
 `delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
@@ -139,7 +141,8 @@ requires the evaluated revision to be either the actual PR head or a two-parent
 merge whose second parent is that head; an ordinary ancestor is not sufficient.
 Historical merge revisions need not be ancestors of the current merge revision, but the
 actual PR heads must remain ancestral and all source fingerprints must be
-recomputed. Missing history or unavailable source objects select `RUN_FULL`.
+recomputed. Missing history, unavailable source objects, or unreadable historical
+required-check metadata select `RUN_FULL`; malformed evidence remains a hard error.
 Production policy is `shadow` with `enabled=false`: a matching result is only a
 reuse recommendation, never an automatic skip. Dirty worktrees, changed/deleted
 inputs, incomplete or tampered evidence, missing fields, and any manifest
@@ -174,7 +177,9 @@ mode by default. Only clean, registered, canonical, non-detached branches under
 `build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates.
 `artifact_lifecycle.py` applies `quality/artifact-retention.json`, hashes retained
 files, summarizes capacity by class, and copies evidence through an atomic staging
-directory into the main worktree's `build/agent-artifacts/`. Rebuildable caches
+directory into the main worktree's `build/agent-artifacts/`. The policy is loaded
+from the executing tool's source root, not from an unrelated main checkout.
+Rebuildable caches
 and evaluation workspaces are not retained wholesale; unknown files remain
 retained. Expiry requires review, never automatic deletion. Deferred Mini Yosys
 evidence remains until its gap is resolved. Dirty, unmerged, detached,

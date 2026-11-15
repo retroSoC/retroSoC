@@ -79,6 +79,30 @@ def test_registry_preserves_artifacts_before_cleanup(tmp_path: Path) -> None:
     assert not linked.exists()
 
 
+def test_registry_uses_policy_from_executing_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    (linked / "build").mkdir()
+    (linked / "build/result.json").write_text('{"status":"passed"}\n', encoding="utf-8")
+    tools = tmp_path / "tools"
+    (tools / "quality").mkdir(parents=True)
+    policy = Path(__file__).resolve().parents[1] / "quality/artifact-retention.json"
+    shutil.copyfile(policy, tools / "quality/artifact-retention.json")
+    (root / "quality/artifact-retention.json").unlink()
+    monkeypatch.setattr("scripts.worktree_registry.ROOT", tools)
+
+    result = reconcile_worktrees(root, execute=True, only_branch="feat/example")
+    assert result["actions"][0]["status"] == "CLEANED"
+    preserved = root / "build/agent-artifacts/feat-example"
+    assert (preserved / "result.json").is_file()
+    assert (preserved / "artifact-manifest.json").is_file()
+    assert not linked.exists()
+    assert not (root / "quality/artifact-retention.json").exists()
+
+
 def test_registry_preserves_dirty_unmerged_and_detached_worktrees(tmp_path: Path) -> None:
     root = tmp_path / "repo"
     make_repo(root)
