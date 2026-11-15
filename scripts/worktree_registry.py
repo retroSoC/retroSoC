@@ -109,7 +109,7 @@ def inventory_record(main_root: Path, entry: dict[str, Any]) -> dict[str, Any]:
         try:
             from scripts.artifact_lifecycle import load_policy
 
-            policy = load_policy(main_root / "quality/artifact-retention.json")
+            policy = load_policy(ROOT / "quality/artifact-retention.json")
             record["artifact_inventory"] = inventory(path / "build", policy)
         except (OSError, ValueError, RuntimeError) as error:
             record["cleanup_eligible"] = False
@@ -126,7 +126,7 @@ def preserve_artifacts(main_root: Path, record: dict[str, Any]) -> Path | None:
     preserve(
         source,
         destination,
-        main_root / "quality/artifact-retention.json",
+        ROOT / "quality/artifact-retention.json",
         {
             "task_id": identity,
             "branch": record.get("branch"),
