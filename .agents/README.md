@@ -89,6 +89,15 @@ checks and delivery without per-step confirmation. Ask only for a missing
 decision, permission, scope change, or recovery action that needs approval.
 Plan mode never authorizes mutations, regardless of the mode in the prompt.
 
+Start a canonical worktree with `make agent-worktree-start TASK=<task.json>
+BRANCH=ci/example SOURCES="mpw hazard3" ARCHIVES="serv" CREATE=1` (dry-run).
+Add `EXECUTE=1` to create/restore, or use the target directory without `CREATE=1`
+to restore its existing inputs. Network fallback requires explicit
+`ALLOW_NETWORK=1`; locked revisions and archive hashes never change. Recursive
+submodules, PDKs, publication package directories, and extraction retain their
+existing setup flows. Cleanup uses `quality/artifact-retention.json` to retain
+classified evidence without moving every rebuildable cache or workspace.
+
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
 reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
@@ -159,6 +168,8 @@ and retains traces and deterministic grades. Codex remains the default runner;
 has no Bash, write, or delegation capability. Runner/model, Skill SHA,
 contract version, input snapshot, and workspace tree are recorded explicitly; a
 static result is never described as completed behavior, hardware, or publication
-work. Other hosts can emit the same trace schema for grading. The shared
+work. Other hosts can emit the same trace schema for grading. `make skill-replay
+TRACES=<directory>` rechecks retained traces without starting a runner or a
+canary; invalid or failed grades remain failures. The shared
 [engineering playbook](skills/shared/engineering-playbook.md) defines operational
 recovery, delivery, reuse, and contract-version boundaries.

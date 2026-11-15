@@ -31,6 +31,11 @@ always-run gate so a skipped job cannot silently satisfy a required check.
   is disabled by default and never skips the full matrix. Missing or mismatched
   evidence selects `RUN_FULL`; invalid evidence fails the quality gate. An
   optional manual `source_run` binds comparison to a real run and artifact.
+  Pull-request shadow evaluation also selects an earlier successful quality run
+  from the same PR, excluding the current run. Workflow head, evaluated merge
+  revision, run/attempt, PR, and fan-in artifact identities are all bound;
+  unavailable history or incomplete identity selects `RUN_FULL`. No required
+  job is skipped and no historical PASS is reused by this observation.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
   and APU/NPU references. Each isolated matrix job collects the complete Pytest
   node-id manifest and executes its deterministic duration-weighted shard with
@@ -47,7 +52,8 @@ dependencies, `python3 tests/publication_history.py prepare` fetches missing
 immutable dependency commits without changing active dependency HEADs or locks.
 
 `workflows/contribution.yml` validates PR base/head/title, new commit subjects,
-and CODEOWNERS consistency. `quality/ownership.json` records backup-owner gaps;
+and CODEOWNERS consistency. A lowercase `merge:` subject is accepted only for an
+actual multi-parent commit; plain text and forged non-merge records remain invalid. `quality/ownership.json` records backup-owner gaps;
 an empty backup is a warning for organizational follow-up, not permission for
 agent self-approval.
 
@@ -59,7 +65,12 @@ remain manual. `scripts/pr_delivery.py` probes repository and credential
 capabilities before enabling GitHub native auto-merge, even while checks are
 pending. Only GitHub merges after required checks pass. The legacy helper waits
 for green checks first. Both use merge commits and safe artifact-preserving
-cleanup; dirty, unmerged, and non-canonical branches are preserved. Peer
+cleanup. `quality/artifact-retention.json` separates evidence from rebuildable
+cache/evaluation workspaces, checks capacity and conflicts, and never deletes
+expired evidence automatically. Dirty, unmerged, and non-canonical branches are
+preserved. `make agent-worktree-start` restores validated locked Git/archive
+inputs without sharing writable checkouts; its default is dry-run and offline.
+Peer
 CODEOWNERS approval is restored when another eligible reviewer is available.
 `quality/delivery-policy.json` is evaluation-only. A merge queue is considered
 only when at least three ready PRs compete for `dev`, at least two have actual
@@ -133,6 +144,9 @@ read-only Agent without Bash, writes, or delegation. Weekly canaries require
 `RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
 remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
 CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
+`make skill-replay TRACES=<directory>` only grades explicit retained traces with
+provenance checks; it never starts a runner, enables a canary, or turns a
+historical grade into fresh behavior evidence.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts

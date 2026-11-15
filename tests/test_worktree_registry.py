@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from scripts.worktree_registry import reconcile_worktrees
 
@@ -17,7 +20,12 @@ def make_repo(root: Path) -> None:
     git(root, "config", "user.name", "Registry")
     (root / "README.md").write_text("initial\n", encoding="utf-8")
     (root / ".gitignore").write_text("build/\n", encoding="utf-8")
-    git(root, "add", "README.md", ".gitignore")
+    (root / "quality").mkdir()
+    shutil.copyfile(
+        Path(__file__).resolve().parents[1] / "quality/artifact-retention.json",
+        root / "quality/artifact-retention.json",
+    )
+    git(root, "add", "README.md", ".gitignore", "quality/artifact-retention.json")
     git(root, "commit", "-qm", "initial")
     git(root, "checkout", "-qb", "dev")
     git(root, "checkout", "-qb", "feat/example")
@@ -137,3 +145,117 @@ def test_registry_can_reconcile_only_the_selected_branch(tmp_path: Path) -> None
     assert not linked.exists()
     assert other.exists()
     assert git(root, "show-ref", "--verify", "--quiet", "refs/heads/feat/other").returncode == 0
+
+
+def test_registry_classifies_evidence_and_rebuildable_outputs(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    payloads = {
+        "result.json": b'{"status":"passed"}\n',
+        "run.log": b"SIM_TEST_PASS\n",
+        "agent-evals/smoke/case/worktrees/replica/blob.bin": b"workspace" * 100,
+        "ccache/object": b"cache" * 100,
+        "engineering/mini-yosys-deferred-test/state/input.il": b"deferred evidence",
+        "unknown.bin": b"retain unknown data",
+    }
+    for relative, payload in payloads.items():
+        path = linked / "build" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+
+    dry_run = reconcile_worktrees(root)
+    record = next(item for item in dry_run["worktrees"] if item["path"] == str(linked))
+    assert record["artifact_inventory"]["file_count"] == len(payloads)
+    assert record["artifact_inventory"]["retained_file_count"] == 4
+    completed = reconcile_worktrees(root, execute=True)
+    assert completed["actions"][0]["status"] == "CLEANED"
+    preserved = root / "build/agent-artifacts/feat-example"
+    manifest = json.loads((preserved / "artifact-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "PRESERVED"
+    assert manifest["retained_bytes"] == sum(len(payloads[name]) for name in (
+        "result.json", "run.log", "engineering/mini-yosys-deferred-test/state/input.il", "unknown.bin"
+    ))
+    assert (preserved / "result.json").is_file()
+    assert (preserved / "run.log").is_file()
+    assert (preserved / "engineering/mini-yosys-deferred-test/state/input.il").is_file()
+    assert (preserved / "unknown.bin").is_file()
+    assert not (preserved / "agent-evals/smoke/case/worktrees/replica/blob.bin").exists()
+    assert not (preserved / "ccache/object").exists()
+    categories = {item["class"]: item for item in manifest["categories"]}
+    assert categories["cache"]["rebuildable"] is True
+    assert categories["evaluation_workspace"]["retained_file_count"] == 0
+    deferred = next(item for item in manifest["retained_files"] if item["path"].endswith("input.il"))
+    assert deferred["on_expiry"] == "retain_until_gap_resolved"
+
+
+def test_registry_capacity_and_destination_conflict_preserve_worktree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from types import SimpleNamespace
+
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    (linked / "build").mkdir()
+    (linked / "build/result.json").write_text('{"status":"passed"}\n', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.artifact_lifecycle.shutil.disk_usage",
+        lambda path: SimpleNamespace(free=0),
+    )
+    result = reconcile_worktrees(root, execute=True)
+    assert result["actions"][0]["status"] == "PRESERVED"
+    assert "insufficient artifact capacity" in result["actions"][0]["warning"]
+    assert linked.exists()
+    assert not (root / "build/agent-artifacts/feat-example").exists()
+
+    monkeypatch.undo()
+    destination = root / "build/agent-artifacts/feat-example"
+    destination.mkdir(parents=True)
+    (destination / "keep.txt").write_text("keep\n", encoding="utf-8")
+    result = reconcile_worktrees(root, execute=True)
+    assert result["actions"][0]["status"] == "PRESERVED"
+    assert linked.exists()
+    assert (destination / "keep.txt").is_file()
+
+
+def test_registry_rejects_artifact_symlink_escape(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    outside = tmp_path / "outside.txt"
+    outside.write_text("not an artifact\n", encoding="utf-8")
+    (linked / "build").mkdir()
+    (linked / "build/result.json").symlink_to(outside)
+    result = reconcile_worktrees(root, execute=True)
+    record = next(item for item in result["worktrees"] if item["path"] == str(linked))
+    assert record["cleanup_eligible"] is False
+    assert "manual review" in record["artifact_issue"]
+    assert result["actions"] == []
+    assert linked.exists()
+    assert outside.read_text(encoding="utf-8") == "not an artifact\n"
+
+
+def test_registry_skips_only_rebuildable_workspace_symlinks(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    make_repo(root)
+    linked = root / "build/agent-worktrees/example"
+    workspace = linked / "build/agent-evals/smoke/case-01-workspace/rtl/managed"
+    workspace.mkdir(parents=True)
+    external = tmp_path / "external-managed"
+    external.mkdir()
+    (external / "keep.txt").write_text("keep\n", encoding="utf-8")
+    (workspace / "mpw").symlink_to(external, target_is_directory=True)
+
+    dry_run = reconcile_worktrees(root)
+    record = next(item for item in dry_run["worktrees"] if item["path"] == str(linked))
+    assert record["cleanup_eligible"] is True
+    assert record["artifact_inventory"]["retained_file_count"] == 0
+    assert record["artifact_inventory"]["skipped_symlinks"][0]["class"] == "evaluation_workspace"
+    completed = reconcile_worktrees(root, execute=True)
+    assert completed["actions"][0]["status"] == "CLEANED"
+    assert (external / "keep.txt").read_text(encoding="utf-8") == "keep\n"
+    manifest_path = root / "build/agent-artifacts/feat-example/artifact-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["retained_file_count"] == 0
+    assert manifest["skipped_symlinks"][0]["path"].endswith("rtl/managed/mpw")

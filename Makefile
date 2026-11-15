@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry validation-plan documentation-check skill-eval-static skill-eval-smoke engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -766,6 +766,7 @@ help:
 	  '  agent-handoff              generate revision-bound JSON/Markdown handoff evidence' \
 	  '  validation-gap-check       validate owned deferred validation gaps' \
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
+	  '  agent-worktree-start       dry-run or execute lock-bound canonical worktree startup' \
 	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
 	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
 	  '  agent-dag                  validate GRAPH=<graph.json> and emit plan-only DAG waves' \
@@ -774,6 +775,7 @@ help:
 	  '  snapshot-check             reject drift in Tiny reviewed technical sources' \
 	  '  skill-eval-static          validate Skill registry and behavior-eval fixtures' \
 	  '  skill-eval-smoke           run six live read-only Skill evaluations (RUNNER=codex|kimi)' \
+	  '  skill-replay               grade retained traces without starting a runner' \
 	  '  engineering-metrics        collect GitHub delivery and CI metrics' \
 	  '  delivery-policy            evaluate merge queue and metric promotion without changes' \
 	  '  format                     format self-owned C, Makefile, and RTL sources' \
@@ -1346,6 +1348,14 @@ worktree-registry:
 	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/agent-worktrees/registry.json) \
 	  $(if $(EXECUTE),--execute)
 
+agent-worktree-start:
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/worktree_bootstrap.py --root $(ROOT_PATH) --task $(TASK) \
+	  $(if $(BRANCH),--branch $(BRANCH)) $(foreach source,$(SOURCES),--source $(source)) \
+	  $(foreach archive,$(ARCHIVES),--archive $(archive)) \
+	  $(if $(CREATE),--create) $(if $(ALLOW_NETWORK),--allow-network) \
+	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
+
 agent-preflight:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
@@ -1406,6 +1416,13 @@ skill-eval-smoke:
 	  $(if $(RUNNER),--runner $(RUNNER)) $(if $(MODEL),--model $(MODEL)) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
 
+skill-replay:
+	@test -n '$(TRACES)' || { printf '%s\n' 'TRACES=<directory> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/skill_eval.py replay --root $(ROOT_PATH) \
+	  --trace-root $(TRACES) $(if $(SKILL),--skill $(SKILL)) \
+	  $(if $(CASE),--case $(CASE)) $(if $(SMOKE),--smoke) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/replay.json)
+
 engineering-metrics:
 	python3 $(ROOT_PATH)/scripts/engineering_metrics.py collect \
 	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
@@ -1448,11 +1465,12 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	yamllint .github .yamllint.yml
 	actionlint
 	python3 -m pytest -q tests/test_agent_skills.py tests/test_agent_control.py \
-	  tests/test_skill_eval.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
+	  tests/test_skill_eval.py tests/test_skill_replay.py tests/test_engineering_metrics.py tests/test_ci_summary.py \
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py \
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_pytest_shards.py tests/test_regress_parallel.py \
 	  tests/test_incremental_ci.py tests/test_delivery_policy.py tests/test_engineering_observations.py \
+	  tests/test_worktree_bootstrap.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json

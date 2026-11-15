@@ -34,7 +34,24 @@ def valid_subject(subject: str) -> bool:
     return bool(SUBJECT_RE.fullmatch(subject)) or subject.startswith(("Merge ", "Revert "))
 
 
-def validate_pull_request(base: str, head: str, title: str, subjects: list[str]) -> list[str]:
+def commit_records(root: Path, base: str, head: str) -> list[dict[str, Any]]:
+    records = []
+    output = git_output(root, "log", "--format=%H%x09%P%x09%s", f"{base}...{head}")
+    for line in output.splitlines():
+        revision, parents, subject = line.split("\t", 2)
+        if REVISION_RE.fullmatch(revision) is None:
+            raise ValueError("commit record has an invalid revision")
+        records.append(
+            {
+                "revision": revision,
+                "subject": subject,
+                "merge_commit": len(parents.split()) > 1,
+            }
+        )
+    return records
+
+
+def validate_pull_request(base: str, head: str, title: str, subjects: list[Any]) -> list[str]:
     issues = []
     if base not in {"dev", "main"}:
         issues.append("pull requests may target only dev or main")
@@ -49,8 +66,21 @@ def validate_pull_request(base: str, head: str, title: str, subjects: list[str])
         issues.append("pull request title must use type(scope): summary")
     if not subjects:
         issues.append("pull request has no commits in the selected range")
-    for subject in subjects:
-        if not valid_subject(subject):
+    for item in subjects:
+        if isinstance(item, str):
+            subject = item
+            merge_commit = False
+        elif isinstance(item, dict):
+            subject = item.get("subject")
+            merge_commit = item.get("merge_commit") is True and REVISION_RE.fullmatch(item.get("revision", "")) is not None
+        else:
+            issues.append("invalid commit record")
+            continue
+        if not isinstance(subject, str):
+            issues.append("invalid commit record")
+        elif not valid_subject(subject) and not (
+            merge_commit and re.fullmatch(r"merge: [^\s].*", subject)
+        ):
             issues.append(f"invalid commit subject: {subject}")
     return issues
 
@@ -475,7 +505,7 @@ def main() -> int:
             if subjects is None:
                 if not args.base:
                     raise ValueError("--base is required when --subject is not supplied")
-                subjects = git_output(args.root.resolve(), "log", "--format=%s", f"{args.base}...{args.head}").splitlines()
+                subjects = commit_records(args.root.resolve(), args.base, args.head)
             issues = validate_pull_request(args.base_ref, args.head_ref, args.title, subjects)
             document = {"schema_version": 1, "kind": "contribution", "status": "failed" if issues else "passed", "issues": issues}
         elif args.command == "ownership":

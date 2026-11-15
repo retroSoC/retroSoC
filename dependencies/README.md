@@ -24,7 +24,13 @@ Then run the affected setup, doctor, test, and regression flow described in
 [Engineering Workflow](../docs/engineering.md).
 
 `setup_helpers.fetch_git_repo` uses at most three attempts with a 300-second
-per-attempt timeout by default. A failed initialization without HEAD is
+per-attempt timeout by default. `make agent-worktree-start` can restore ordinary
+non-recursive Git sources and raw archive files from clean, matching in-repo
+references, with independent checkout/object storage and no shared writable
+checkout. Its default is dry-run and offline; explicit `ALLOW_NETWORK=1` retains
+the same locked identity and bounded helpers. Package directories, recursive
+submodules, PDKs, and extraction remain with their existing setup flows.
+A failed initialization without HEAD is
 recoverable only when the worktree has no local changes and `origin` exactly
 matches the locked URL and revision; dirty or mismatched inputs fail without
 fetching or checkout. The `locked-tools` action independently limits apt
