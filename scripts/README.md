@@ -169,7 +169,9 @@ mode by default. Only clean, registered, canonical, non-detached branches under
 `build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates.
 `artifact_lifecycle.py` applies `quality/artifact-retention.json`, hashes retained
 files, summarizes capacity by class, and copies evidence through an atomic staging
-directory into the main worktree's `build/agent-artifacts/`. Rebuildable caches
+directory into the main worktree's `build/agent-artifacts/`. The policy is loaded
+from the executing tool's source root, not from an unrelated main checkout.
+Rebuildable caches
 and evaluation workspaces are not retained wholesale; unknown files remain
 retained. Expiry requires review, never automatic deletion. Deferred Mini Yosys
 evidence remains until its gap is resolved. Dirty, unmerged, detached,
