@@ -133,9 +133,10 @@
   list(..entry.features.map(inline))
   circuit-figure(entry.id)
   subhead(entry.id,"Functional Description",entry.depth)
-  if entry.id=="i2s" {change-start(doc.change_prefix+"i2s-audio-rate","I2S preset names and actual AUDIO reference")}
+  // Retained prose keeps the edit identity of the round that introduced it.
+  if entry.id=="i2s" {change-start("tiny-v02-commercial-20261114-i2s-audio-rate","I2S preset names and actual AUDIO reference")}
   for paragraph in entry.paragraphs {par(inline(paragraph))}
-  if entry.id=="i2s" {change-end(doc.change_prefix+"i2s-audio-rate")}
+  if entry.id=="i2s" {change-end("tiny-v02-commercial-20261114-i2s-audio-rate")}
   for (id,record) in data.illustrations.flows.pairs().filter(((id,r))=>r.owner==entry.id) {
     flow(id,record.steps.map(inline),[#record.title. #record.note])
     for path in record.sources {source-note(path,title:"Lifecycle source: "+path.split("/").last())}
