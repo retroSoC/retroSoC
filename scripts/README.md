@@ -132,7 +132,8 @@ requires the evaluated revision to be either the actual PR head or a two-parent
 merge whose second parent is that head; an ordinary ancestor is not sufficient.
 Historical merge revisions need not be ancestors of the current merge revision, but the
 actual PR heads must remain ancestral and all source fingerprints must be
-recomputed. Missing history or unavailable source objects select `RUN_FULL`.
+recomputed. Missing history, unavailable source objects, or unreadable historical
+required-check metadata select `RUN_FULL`; malformed evidence remains a hard error.
 Production policy is `shadow` with `enabled=false`: a matching result is only a
 reuse recommendation, never an automatic skip. Dirty worktrees, changed/deleted
 inputs, incomplete or tampered evidence, missing fields, and any manifest

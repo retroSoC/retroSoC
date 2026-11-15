@@ -326,6 +326,68 @@ def quality_run(identifier: int, head: str, created: str, pr: int = 7, conclusio
     }
 
 
+def test_unavailable_history_runs_full_without_invalidating_ci(
+    repo: tuple[Path, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    from scripts.incremental_ci import main as incremental_main
+
+    root, base = repo
+    current = quality_run(200, base, "2026-11-01T03:00:00Z")
+    earlier = quality_run(199, "b" * 40, "2026-11-01T02:00:00Z")
+
+    def api(arguments):
+        if arguments[1].endswith("/200"):
+            return current
+        if arguments[1].endswith("/199"):
+            return earlier
+        raise AssertionError(arguments)
+
+    def unavailable(repository, branch, root):
+        raise RuntimeError("required checks API returned 403")
+
+    monkeypatch.setattr("scripts.incremental_ci.gh_json", api)
+    monkeypatch.setattr("scripts.incremental_ci.paginated_check_data", lambda endpoint, key: [earlier])
+    monkeypatch.setattr("scripts.incremental_ci.required_check_contexts", unavailable)
+    output = tmp_path / "shadow.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "incremental_ci.py",
+            "--root",
+            str(root),
+            "--base",
+            base,
+            "--head",
+            base,
+            "--auto-previous",
+            "--workflow-head",
+            base,
+            "--workflow-run",
+            "200",
+            "--pr-number",
+            "7",
+            "--output",
+            str(output),
+        ],
+    )
+    assert incremental_main() == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["decision"] == "RUN_FULL"
+    assert result["issues"] == []
+    assert "required-check history is unavailable" in result["reason"]
+    assert result["history_selection"]["selected_run_id"] == 199
+
+    monkeypatch.setattr(
+        "scripts.incremental_ci.required_check_contexts",
+        lambda repository, branch, root: (_ for _ in ()).throw(ValueError("malformed protection evidence")),
+    )
+    with pytest.raises(ValueError, match="malformed protection evidence"):
+        evidence_from_run(root, "retroSoC/retroSoC", "dev", "b" * 40, 199, True, 7)
+
+
 def test_selects_only_an_earlier_successful_run_from_the_same_pr(monkeypatch: pytest.MonkeyPatch) -> None:
     head = "a" * 40
     current = quality_run(200, head, "2026-11-01T03:00:00Z")
