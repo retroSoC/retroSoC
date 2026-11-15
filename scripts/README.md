@@ -80,7 +80,9 @@ optional cache/config digests without treating a cache as a cached PASS.
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
 timing. Unknown timeline, cache size, or local evidence is never reported as
 zero. `ci_observations.py` reads head-bound shadow artifacts without file
-extraction and includes read-only delivery-policy evaluations. Neither enables
+extraction and includes read-only delivery-policy evaluations. For PR merge
+revisions, it separately validates the actual workflow head, evaluated revision,
+run ID, and event while rejecting spoofed or incomplete identities. Neither enables
 reuse, a merge queue, or a metric gate. Offline `summarize` accepts separate
 jobs/delivery/cache, policy, and shadow JSON files.
 `delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow

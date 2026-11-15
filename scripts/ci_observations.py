@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 import subprocess
 import zipfile
 from typing import Any
@@ -13,6 +14,7 @@ from typing import Any
 from scripts.engineering_metrics import gh_json
 
 MAX_ARTIFACT_BYTES = 16 * 1024 * 1024
+REVISION = re.compile(r"^[0-9a-f]{40}$")
 
 
 def shadow_record(document: dict[str, Any], run: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -23,8 +25,25 @@ def shadow_record(document: dict[str, Any], run: dict[str, Any] | None = None) -
     if not isinstance(document.get("decision"), str) or not isinstance(document.get("issues"), list):
         raise ValueError("incremental shadow decision or issue list is missing")
     if run is not None:
-        if document.get("source_revision") != run.get("head_sha") or document.get("event") != run.get("event"):
+        source_revision = document.get("source_revision")
+        workflow_head = document.get("workflow_head_sha")
+        revisions = (source_revision,) if workflow_head is None else (source_revision, workflow_head)
+        if any(not isinstance(value, str) or REVISION.fullmatch(value) is None for value in revisions):
+            raise ValueError("incremental shadow evidence must contain full Git revisions")
+        if document.get("event") != run.get("event"):
             raise ValueError("incremental shadow identity differs from its workflow run")
+        if workflow_head is None:
+            if source_revision != run.get("head_sha"):
+                raise ValueError("incremental shadow identity differs from its workflow run")
+        else:
+            workflow_run_id = document.get("workflow_run_id")
+            if (
+                workflow_head != run.get("head_sha")
+                or not isinstance(workflow_run_id, int)
+                or isinstance(workflow_run_id, bool)
+                or workflow_run_id != run.get("id")
+            ):
+                raise ValueError("incremental shadow identity differs from its workflow run")
     current = document.get("current")
     if current is not None:
         if not isinstance(current, dict):
@@ -43,6 +62,7 @@ def shadow_record(document: dict[str, Any], run: dict[str, Any] | None = None) -
         "run_attempt": run.get("run_attempt", 1) if run else document.get("run_attempt"),
         "base_revision": document.get("base_revision"),
         "source_revision": document.get("source_revision"),
+        "workflow_head_sha": document.get("workflow_head_sha"),
         "event": document.get("event"),
         "job_id": document.get("job_id"),
         "decision": document["decision"],
