@@ -23,6 +23,9 @@ source revision, and [evidence contract](evidence.md).
    earlier run, actual workflow head, evaluated revision, artifact, and complete
    required contexts. Missing or unverifiable history means RUN_FULL; neither
    a shadow recommendation nor a cache observation may skip required work.
+   For an opted-in parallel MINI run, retain `parallel-iverilog.json` and both
+   isolated result trees; either group failure fails the regression. Never
+   substitute this for nightly or full-flow evidence.
 
 ## Cancel, recover, and hand off long tasks
 
