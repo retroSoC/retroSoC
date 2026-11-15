@@ -94,6 +94,36 @@ def ensure_git_commit(
     print(f"[dependency] historical object available: {destination.name}: {revision}")
 
 
+def canonical_git_url(value: str) -> str:
+    normalized = value.rstrip("/")
+    if normalized.startswith("git@github.com:"):
+        normalized = "https://github.com/" + normalized.removeprefix("git@github.com:")
+    if normalized.startswith("https://github.com/") and normalized.endswith(".git"):
+        normalized = normalized.removesuffix(".git")
+    return normalized
+
+
+def validate_locked_reference(reference: Path, url: str, revision: str) -> Path:
+    if reference.is_symlink():
+        raise RuntimeError(f"dependency reference must not be a symlink: {reference}")
+    reference = reference.resolve()
+    if not (reference / ".git").exists():
+        raise RuntimeError(f"dependency reference is not a Git worktree: {reference}")
+    if git_output(reference, "rev-parse", "--show-toplevel") != str(reference):
+        raise RuntimeError(f"dependency reference must be a top-level worktree: {reference}")
+    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        raise ValueError("locked dependency requires a full Git commit revision")
+    if git_output(reference, "rev-parse", "HEAD") != revision:
+        raise RuntimeError(f"dependency reference revision mismatch: {reference}")
+    if git_output(reference, "rev-parse", f"{revision}^{{commit}}") != revision:
+        raise RuntimeError(f"dependency reference object mismatch: {reference}")
+    if canonical_git_url(git_output(reference, "remote", "get-url", "origin")) != canonical_git_url(url):
+        raise RuntimeError(f"dependency reference remote mismatch: {reference}")
+    if git_output(reference, "status", "--porcelain", "--untracked-files=all"):
+        raise RuntimeError(f"dependency reference has local changes: {reference}")
+    return reference
+
+
 def ensure_git_repo(
     url: str,
     destination: Path,
@@ -105,14 +135,21 @@ def ensure_git_repo(
     allow_dirty: bool = False,
     fetch_timeout: float = 300,
     fetch_attempts: int = 3,
+    reference: Path | None = None,
 ) -> None:
+    """Fetch a locked revision, or copy a validated reference without shared state."""
     destination = destination.resolve()
+    if reference is not None:
+        if recursive or submodules:
+            raise ValueError("reference restore does not bypass recursive submodule setup")
+        reference = validate_locked_reference(reference, url, revision)
+    fetch_url = str(reference) if reference is not None else url
     created = False
     if not destination.exists():
         destination.parent.mkdir(parents=True, exist_ok=True)
         run(("git", "init", str(destination)))
         run(("git", "remote", "add", "origin", url), cwd=destination)
-        fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
+        fetch_git_repo(destination, revision, fetch_url, timeout=fetch_timeout, attempts=fetch_attempts)
         run(("git", "checkout", "--detach", "FETCH_HEAD"), cwd=destination)
         created = True
     elif not (destination / ".git").exists():
@@ -125,7 +162,7 @@ def ensure_git_repo(
             raise RuntimeError(f"unborn dependency has local changes: {destination}")
         if git_output(destination, "remote", "get-url", "origin") != url:
             raise RuntimeError(f"unborn dependency remote mismatch: {destination}")
-        fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
+        fetch_git_repo(destination, revision, fetch_url, timeout=fetch_timeout, attempts=fetch_attempts)
         run(("git", "checkout", "--detach", "FETCH_HEAD"), cwd=destination)
         current = git_output(destination, "rev-parse", "HEAD")
         created = True
@@ -140,7 +177,7 @@ def ensure_git_repo(
         try:
             git_output(destination, "cat-file", "-e", f"{revision}^{{commit}}")
         except subprocess.CalledProcessError:
-            fetch_git_repo(destination, revision, timeout=fetch_timeout, attempts=fetch_attempts)
+            fetch_git_repo(destination, revision, fetch_url, timeout=fetch_timeout, attempts=fetch_attempts)
         run(("git", "checkout", "--detach", revision), cwd=destination)
     elif dirty and not allow_dirty:
         raise RuntimeError(f"pinned dependency has local changes: {destination}")

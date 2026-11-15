@@ -85,7 +85,10 @@ ci: prepare locked simulation fixtures
 
 `contribution.yml` checks the PR base, head branch, title, and new commit
 subjects in the selected range. Git-generated merge and revert subjects retain
-their standard exception. Run `make validation-plan` before requesting review
+their standard exception. A lowercase `merge:` subject is accepted only when the
+actual Git commit has multiple parents; plain or forged non-merge records are
+rejected. This supports history-preserving synchronization without rewriting a
+published topic. Run `make validation-plan` before requesting review
 when the change can affect CI selection.
 
 Write a concise English summary of what changes. Use the body to explain why,

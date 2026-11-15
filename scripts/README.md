@@ -39,7 +39,14 @@ shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 `setup_helpers.py` bounds each Git fetch attempt and its retry count. It recovers
 an unborn checkout only when the worktree is clean and the remote matches the
-locked URL and revision; dirty or mismatched repositories are preserved.
+locked URL and revision; dirty or mismatched repositories are preserved. An
+optional validated reference copies ordinary non-recursive Git inputs through
+the same bounded helper with independent object storage and the locked origin.
+`worktree_bootstrap.py` provides dry-run-by-default canonical worktree creation
+and current-worktree restoration. It selects locked Git sources and raw archive
+files by name, verifies revision/SHA-256 and scope, and disables network fallback
+unless explicitly allowed. It does not replace recursive-submodule, PDK,
+publication-package, archive-extraction, or other subsystem setup flows.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
@@ -57,14 +64,40 @@ records Skill Git SHA, contract version, runner/model, input snapshot, and
 workspace tree. Static validation is never labeled behavior execution. Codex is
 the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
 Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+`skill_eval.py replay` grades explicit retained traces without starting a runner.
+It validates trace/input/Skill/workspace provenance and preserves current versus
+historical case identity. Invalid or failed grades fail the command; the report
+always records `behavior_execution=NOT_RUN` and zero runner invocations. Use
+`make skill-replay TRACES=<directory>`; static corpus checks alone are not a
+behavior replay, and replay does not qualify current code or hardware.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
+`job_metrics.py` adds bounded per-attempt job pagination, queue/execution/step
+timing, first-attempt and same-head duplicate execution, plus explicit cache-step
+observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
+optional cache/config digests without treating a cache as a cached PASS.
+`delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
+optionally matches local delivery JSON by merge commit for agent-watch/cleanup
+timing. Unknown timeline, cache size, or local evidence is never reported as
+zero. `ci_observations.py` reads head-bound shadow artifacts without file
+extraction and includes read-only delivery-policy evaluations. For PR merge
+revisions, it separately validates the actual workflow head, evaluated revision,
+run ID, and event while rejecting spoofed or incomplete identities. Neither enables
+reuse, a merge queue, or a metric gate. Offline `summarize` accepts separate
+jobs/delivery/cache, policy, and shadow JSON files.
 `delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
 coverage, successful main quality runs, and validated same-profile/same-tool
 metric samples. Merge queues are considered only for sustained integration
 conflicts with full merge_group gate coverage. Metric promotion still requires
 ten validated samples and a committed reviewed baseline. Evaluation is read-only
 and never enables a queue or gate by itself.
+`regress.py --parallel-iverilog` overlaps the existing Icarus assembly self-test
+with the remaining behavioral MINI commands, using a separate build root while
+retaining the valid timestamp and preserving both result trees. It is valid only for the ICS55 PR/MINI behavioral
+path; both groups complete and either failure fails the regression. The workflow
+opts in only for pull requests; nightly/full-flow and other PDKs are unchanged.
+`build/ci-summary/parallel-iverilog.json` records both command lists and build
+identities, while the normal CI summary collects all results recursively.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and
@@ -100,11 +133,21 @@ or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hoste
 CI runs isolated matrix jobs and an always-enforced fan-in.
 `incremental_ci.py` computes fixture input, tool-lock, configuration, and complete
 test-manifest fingerprints. It can compare a local evidence JSON or a real
-GitHub quality run/artifact against the current revision. Production policy is
-`shadow` with `enabled=false`: a matching result is only a reuse recommendation,
-never an automatic skip. Dirty worktrees, changed/deleted inputs, incomplete or
-tampered evidence, missing fields, and any manifest mismatch force `RUN_FULL`.
-Scheduled, manual, and release events always run full.
+GitHub quality run/artifact against the current revision. `--auto-previous`
+selects only an earlier successful quality run from the same PR, excluding the
+current run. Actual workflow head and evaluated merge revision are separate
+identities; fan-in optionally binds both to the run, attempt, and PR. Fan-in
+requires the evaluated revision to be either the actual PR head or a two-parent
+merge whose second parent is that head; an ordinary ancestor is not sufficient.
+Historical merge revisions need not be ancestors of the current merge revision, but the
+actual PR heads must remain ancestral and all source fingerprints must be
+recomputed. Missing history, unavailable source objects, or unreadable historical
+required-check metadata select `RUN_FULL`; malformed evidence remains a hard error.
+Production policy is `shadow` with `enabled=false`: a matching result is only a
+reuse recommendation, never an automatic skip. Dirty worktrees, changed/deleted
+inputs, incomplete or tampered evidence, missing fields, and any manifest
+mismatch force `RUN_FULL` or a hard integrity error as appropriate. Scheduled,
+manual, and release events always run full.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
@@ -131,10 +174,19 @@ using the same evidence, artifact, process, and gap records. `validation_gaps.py
 validates ownership, review dates, and resolution conditions.
 `worktree_registry.py` inventories registered and orphaned worktrees in dry-run
 mode by default. Only clean, registered, canonical, non-detached branches under
-`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates;
-artifacts are moved to the main worktree's `build/agent-artifacts/` before
-non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
-evidence-conflicting paths are preserved.
+`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates.
+`artifact_lifecycle.py` applies `quality/artifact-retention.json`, hashes retained
+files, summarizes capacity by class, and copies evidence through an atomic staging
+directory into the main worktree's `build/agent-artifacts/`. The policy is loaded
+from the executing tool's source root, not from an unrelated main checkout.
+Rebuildable caches
+and evaluation workspaces are not retained wholesale; unknown files remain
+retained. Expiry requires review, never automatic deletion. Deferred Mini Yosys
+evidence remains until its gap is resolved. Dirty, unmerged, detached,
+non-canonical, orphaned, unexpected-symlink, capacity-limited, or
+evidence-conflicting paths are preserved. Only known rebuildable symlinks are
+skipped without following their targets; artifact probing never follows a
+symlinked root or directory.
 `agent_dag.py` validates the optional v1 coordination fields and graph schema,
 then emits deterministic plan-only DAG waves. Read-only work can be parallel
 only with host authorization; write tasks additionally require disjoint
@@ -145,7 +197,9 @@ PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
 are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_delivery.py` probes repository capabilities and
+release-candidate evidence. Commit collection records actual parent counts so a
+lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
+plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
 and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`

@@ -92,17 +92,29 @@ tooling.
   behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
-  PR/release governance. `test_formal_local_evidence.py` checks local result
+  PR/release governance. Actual Git fixtures verify that lowercase `merge:`
+  subjects are accepted only for genuine multi-parent commits, without history
+  rewriting or accepting forged non-merge records. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, and cache states.
+  `test_engineering_observations.py` covers job/step timing, first-attempt and
+  duplicate execution, bounded pagination, cache metadata normalization, native
+  delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
+  offline reconstruction, and unknown-data handling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
+  `test_regress_parallel.py` checks exact MINI command preservation, real
+  two-group overlap, isolated build identities, failure propagation, recursive
+  result discovery, and the PR-only workflow guard.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
-  no-skip shadow workflow. `test_delivery_policy.py` covers merge-group parity,
+  no-skip shadow workflow. Same-PR history tests cover deterministic prior-run
+  selection, current-run exclusion, dual head/evaluated revisions, PR ancestry,
+  run/attempt/artifact identity, missing source objects, ambiguous timestamps,
+  and incomplete workflow metadata. `test_delivery_policy.py` covers merge-group parity,
   ready/conflict thresholds, draft/fork exclusions, CI-success versus valid
   metric-sample distinctions, duplicate/mixed sample rejection, reviewed
   baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
@@ -122,7 +134,13 @@ tooling.
   `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
   scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
   covers dry-run inventory, merged-branch cleanup, artifact preservation, and
-  dirty/detached/unmerged/non-canonical/orphan refusal. `test_agent_control.py` also covers
+  dirty/detached/unmerged/non-canonical/orphan refusal.
+  `test_worktree_bootstrap.py` executes real local Git/archive restoration,
+  offline and checksum failures, canonical-path conflicts, and independent
+  object storage. Artifact lifecycle tests cover classified retention,
+  rebuildable cache/workspace exclusion, deferred evidence, digest/capacity
+  accounting, target conflicts, and symlink escapes. No expiry automatically
+  deletes evidence. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and
@@ -134,7 +152,10 @@ tooling.
   Provenance, contract migration, negative triggers, Kimi tool-call parsing,
   read-only runner boundaries, and canary configuration are tested
   deterministically; live behavior results require retained traces from
-  `make skill-eval-smoke` (optionally `RUNNER=kimi`).
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
+  covers trace identity, input tampering, historical prompts, unknown runners,
+  read-only violations, duplicate/empty evidence, and zero runner invocations.
+  Offline replay grades retained behavior only; it does not execute current code.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

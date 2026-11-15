@@ -19,6 +19,11 @@ documentation.
   it never skips a required job by itself.
 - `delivery-policy.json` defines read-only merge-queue and metric-promotion
   evaluation thresholds. It never enables a merge queue or metric gate by itself.
+- `artifact-retention.json` classifies retained evidence, rebuildable evaluation
+  workspaces, caches, vendor copies, and unclassified files before worktree
+  cleanup. It records size, digest, source, capacity, and review-based retention;
+  expiry never automatically deletes evidence. Deferred Mini Yosys evidence is
+  retained until its owned validation gap is resolved.
 - `validation-gaps.json` records owned deferred validation gaps, source scope,
   review dates, prohibited claims, and the evidence required for resolution.
 - `ownership.json` records primary and backup review ownership plus the current
