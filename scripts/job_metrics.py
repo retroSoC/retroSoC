@@ -154,6 +154,7 @@ def summarize_cache(observations: list[dict[str, Any]]) -> dict[str, Any]:
     statuses = []
     durations = []
     byte_values = []
+    unique_sizes = {}
     for item in observations:
         supplied = item.get("hit_status", item.get("status", "NOT_MEASURED"))
         status = supplied if supplied in {"HIT", "MISS", "NOT_RUN"} else "NOT_MEASURED"
@@ -164,6 +165,13 @@ def summarize_cache(observations: list[dict[str, Any]]) -> dict[str, Any]:
         size = item.get("bytes")
         if isinstance(size, int) and not isinstance(size, bool) and size >= 0:
             byte_values.append(size)
+            cache_id = item.get("cache_id")
+            if cache_id is not None:
+                if isinstance(cache_id, bool) or not isinstance(cache_id, int):
+                    raise ValueError("cache identity must be an integer or null")
+                if cache_id in unique_sizes and unique_sizes[cache_id] != size:
+                    raise ValueError("cache size differs for a unique cache identity")
+                unique_sizes[cache_id] = size
     measured = [status for status in statuses if status in {"HIT", "MISS"}]
     complete = bool(observations) and all(
         status in {"HIT", "MISS", "NOT_RUN"} for status in statuses
@@ -177,6 +185,9 @@ def summarize_cache(observations: list[dict[str, Any]]) -> dict[str, Any]:
         "hit_rate": round(statuses.count("HIT") / len(measured), 6) if measured else None,
         "restore_seconds_median": median(durations),
         "cache_bytes_total": sum(byte_values) if byte_values else None,
+        "restored_bytes_total": sum(byte_values) if byte_values else None,
+        "unique_cache_entry_count": len(unique_sizes),
+        "unique_cache_bytes_total": sum(unique_sizes.values()) if unique_sizes else None,
         "cache_digest_recorded_count": sum(
             isinstance(item.get("sha256"), str) for item in observations
         ),

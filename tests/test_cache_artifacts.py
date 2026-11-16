@@ -179,3 +179,27 @@ def test_primary_miss_without_a_match_has_no_size_or_invented_lookup(monkeypatch
     assert records[0]["metadata_key"] is None
     assert records[0]["bytes"] is None
     assert records[0]["metadata_status"] == "NOT_MEASURED"
+
+
+def test_cache_summary_separates_restored_and_unique_cache_bytes() -> None:
+    from scripts.job_metrics import summarize_cache
+
+    observations = [
+        {"hit_status": "HIT", "cache_id": 1, "bytes": 100},
+        {"hit_status": "HIT", "cache_id": 1, "bytes": 100},
+        {"hit_status": "MISS", "cache_id": 2, "bytes": 50},
+        {"hit_status": "MISS", "cache_id": None, "bytes": None},
+    ]
+    result = summarize_cache(observations)
+    assert result["cache_bytes_total"] == 250
+    assert result["restored_bytes_total"] == 250
+    assert result["unique_cache_entry_count"] == 2
+    assert result["unique_cache_bytes_total"] == 150
+
+    with pytest.raises(ValueError, match="size differs"):
+        summarize_cache(
+            [
+                {"hit_status": "HIT", "cache_id": 1, "bytes": 100},
+                {"hit_status": "HIT", "cache_id": 1, "bytes": 101},
+            ]
+        )

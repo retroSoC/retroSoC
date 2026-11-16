@@ -92,7 +92,11 @@ records artifact identity and SHA-256, and accepts optional primary and matched
 cache keys. Exact hits may use the primary key; fallback restores use the actual
 matched key. Only a unique key-matched GitHub cache entry supplies actual size
 bytes; misses without a match, artifact sizes, missing keys, and ambiguous
-metadata never become inferred cache measurements.
+metadata never become inferred cache measurements. Summaries distinguish
+`restored_bytes_total` across observations from `unique_cache_entry_count` and
+`unique_cache_bytes_total` by cache ID. The legacy `cache_bytes_total` remains
+the per-observation restored sum, not unique cache storage. Conflicting sizes
+for one cache ID are rejected.
 Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
