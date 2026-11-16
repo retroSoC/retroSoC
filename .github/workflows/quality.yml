@@ -323,10 +323,10 @@ jobs:
           --cache-matched-key "sources=${{ steps.sources.outputs.cache-matched-key }}"
           --cache-matched-key "toolchains=${{ steps.toolchains.outputs.cache-matched-key }}"
           --cache-matched-key "references=${{ steps.references.outputs.cache-matched-key }}"
-          --cache-attempted pip
-          --cache-attempted sources
-          --cache-attempted toolchains
-          --cache-attempted references
+          --cache-attempted "pip=${{ steps.pip.outputs.cache-primary-key != '' }}"
+          --cache-attempted "sources=${{ steps.sources.outputs.cache-primary-key != '' }}"
+          --cache-attempted "toolchains=${{ steps.toolchains.outputs.cache-primary-key != '' }}"
+          --cache-attempted "references=${{ steps.references.outputs.cache-primary-key != '' }}"
 
       - name: Upload fixture reports
         if: always()

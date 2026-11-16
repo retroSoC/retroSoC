@@ -253,9 +253,9 @@ jobs:
           --cache-matched-key "sources=${{ steps.sources.outputs.cache-matched-key }}"
           --cache-matched-key "toolchains=${{ steps.toolchains.outputs.cache-matched-key }}"
           --cache-matched-key "ccache=${{ steps.ccache.outputs.cache-matched-key }}"
-          --cache-attempted sources
-          --cache-attempted toolchains
-          --cache-attempted ccache
+          --cache-attempted "sources=${{ steps.sources.outputs.cache-primary-key != '' }}"
+          --cache-attempted "toolchains=${{ steps.toolchains.outputs.cache-primary-key != '' }}"
+          --cache-attempted "ccache=${{ steps.ccache.outputs.cache-primary-key != '' }}"
 
       - name: Upload reports and structured results
         if: always()

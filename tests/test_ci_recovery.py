@@ -143,13 +143,15 @@ def test_cache_report_binds_optional_keys_without_inventing_values(tmp_path: Pat
 def test_cache_report_distinguishes_an_attempted_empty_hit_from_not_run(tmp_path: Path) -> None:
     report = cache_report(
         tmp_path / "cache.json",
-        ["sources=", "optional="],
+        ["sources=", "optional=", "skipped="],
         keys=["sources=primary-key"],
-        attempted=["sources"],
+        attempted=["sources", "skipped=false"],
     )
-    assert [entry["status"] for entry in report["caches"]] == ["MISS", "NOT_RUN"]
+    assert [entry["status"] for entry in report["caches"]] == ["MISS", "NOT_RUN", "NOT_RUN"]
     with pytest.raises(ValueError, match="must be unique"):
         cache_report(tmp_path / "cache.json", ["sources="], attempted=["sources", "sources"])
+    with pytest.raises(ValueError, match="invalid cache-attempted"):
+        cache_report(tmp_path / "cache.json", ["sources="], attempted=["sources=unknown"])
 
 
 def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
@@ -165,7 +167,8 @@ def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
         for name in names:
             assert f"steps.{name}.outputs.cache-primary-key" in workflow
             assert f"steps.{name}.outputs.cache-matched-key" in workflow
-            assert f"--cache-attempted {name}" in workflow
+            assert f'--cache-attempted "{name}=' in workflow
+            assert f"steps.{name}.outputs.cache-primary-key != ''" in workflow
             assert f"if: success() && steps.{name}.outputs.cache-hit != 'true'" in workflow
     quality = (root / ".github/workflows/quality.yml").read_text(encoding="utf-8")
     regression = (root / ".github/workflows/_regression.yml").read_text(encoding="utf-8")

@@ -236,9 +236,16 @@ def cache_report(
     config_values = cache_metadata(configs, "cache-config-digest")
     key_values = cache_metadata(keys, "cache-key")
     matched_key_values = cache_metadata(matched_keys, "cache-matched-key")
-    attempted_names = set(attempted or [])
-    if len(attempted_names) != len(attempted or []):
+    attempted_states = []
+    for item in attempted or []:
+        name, separator, state = item.partition("=")
+        if not name or (separator and state not in {"true", "false"}):
+            raise ValueError(f"invalid cache-attempted observation: {item}")
+        attempted_states.append((name, not separator or state == "true"))
+    attempted_names = {name for name, _ in attempted_states}
+    if len(attempted_names) != len(attempted_states):
         raise ValueError("cache-attempted names must be unique")
+    attempted_names = {name for name, enabled in attempted_states if enabled}
     for value in values:
         name, separator, state = value.partition("=")
         if not separator or not name:
