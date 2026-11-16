@@ -2,6 +2,7 @@
 #import "engineering-figures.typ": circuit-figure, binary-figures, storage-figures
 #import "diagrams.typ": flow
 #import "waveforms.typ": timing
+#import "/publications/specifications/scientific.typ" as scientific
 #let inline(value) = {
   // A deliberately limited inline grammar: explicit strong spans and raw code.
   // Code is opaque, including any literal asterisks it contains.
@@ -10,7 +11,8 @@
     if calc.rem(i,2)==1 { code(part) } else {
       for (j,piece) in part.split("**").enumerate() {
         if j>0 { bold = not bold }
-        if bold { strong(piece) } else { piece }
+        let rendered=scientific.render(piece,data.scientific)
+        if bold { strong(rendered) } else { rendered }
       }
     }
   }

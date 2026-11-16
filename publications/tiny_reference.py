@@ -347,4 +347,8 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
 
     from publications.specification_reference import collect as collect_specifications
     data["specifications"] = collect_specifications(ROOT, "tiny", data)
+    from publications.scientific_reference import prepare as prepare_scientific
+    data["source_paths"] = sorted(set(data["source_paths"]) | {
+        "publications/scientific_reference.py", "publications/specifications/scientific.typ"})
+    prepare_scientific(data)
     return data

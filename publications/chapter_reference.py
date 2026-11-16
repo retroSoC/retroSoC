@@ -169,8 +169,8 @@ def apply_prose_corrections(sections: list[dict], corrections: list[dict], root:
 
 
 def collect_chapters(registers: dict) -> dict:
-    content = json.loads((ROOT / "publications/datasheets/ip-content.json").read_text())
-    features = json.loads((ROOT / "publications/datasheets/features.json").read_text())
+    content = json.loads((ROOT / "publications/datasheets/ip-content.json").read_text(encoding="utf-8"))
+    features = json.loads((ROOT / "publications/datasheets/features.json").read_text(encoding="utf-8"))
     for ip, item in content.items():
         item["features"] = features[ip]
         family = item.get("register_family", ip)
