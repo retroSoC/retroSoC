@@ -153,6 +153,10 @@ tooling.
   covers trace identity, input tampering, historical prompts, unknown runners,
   read-only violations, duplicate/empty evidence, and zero runner invocations.
   Offline replay grades retained behavior only; it does not execute current code.
+- `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
+  `test_publication_history.py` cover lock-bound hosted fixture inventories,
+  checksum-preserving local archive restore, independent recursive-source copies,
+  historical-object recovery, doctor failures, and non-destructive refusals.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
