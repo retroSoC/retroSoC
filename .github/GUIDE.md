@@ -91,7 +91,12 @@ Only the measured ICS55 PR matrix sets `products: '["MINI", "TINY"]'`; its two
 isolated product jobs retain one existing required aggregate gate and separate
 compiler caches/artifacts. The default `ALL` leaves other suites, nightly, and
 full-flow command selection unchanged. Cache results are observations, not
-cached test verdicts.
+cached test verdicts. Observed fixture/regression caches use the same locked
+restore/save revision with unchanged paths and keys, saving only without an
+exact primary-key hit on an otherwise successful job. Reports retain primary and
+matched keys and distinguish an attempted empty `cache-hit` miss from NOT_RUN.
+Only a unique matched-key GitHub cache entry supplies size metadata; a cache HIT
+alone does not establish content correctness, size, restore cost, or time saved.
 
 PR regressions keep the Icarus assembly self-test but exclude the multi-hour
 Tiny P7 Icarus command by default. `nightly.yml` runs that same command in

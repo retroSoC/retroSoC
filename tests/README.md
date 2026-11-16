@@ -98,9 +98,11 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, cache states/keys,
-  and raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
-  structure, run/artifact/digest binding, cache keys, unique size metadata,
-  duplicate identities, unsafe paths, and unknown-value preservation.
+  attempted misses versus NOT_RUN, restore/save workflow contracts, and
+  raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
+  structure, run/artifact/digest binding, primary/fallback matched keys, unique
+  size metadata, restored versus unique cache bytes, duplicate identities,
+  conflicting cache IDs, unsafe paths, and unknown-value preservation.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
