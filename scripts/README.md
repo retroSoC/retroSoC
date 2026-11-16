@@ -42,11 +42,19 @@ an unborn checkout only when the worktree is clean and the remote matches the
 locked URL and revision; dirty or mismatched repositories are preserved. An
 optional validated reference copies ordinary non-recursive Git inputs through
 the same bounded helper with independent object storage and the locked origin.
-`worktree_bootstrap.py` provides dry-run-by-default canonical worktree creation
-and current-worktree restoration. It selects locked Git sources and raw archive
-files by name, verifies revision/SHA-256 and scope, and disables network fallback
-unless explicitly allowed. It does not replace recursive-submodule, PDK,
-publication-package, archive-extraction, or other subsystem setup flows.
+Historical objects can also be fetched from a clean same-URL local reference
+without switching the active checkout. `worktree_bootstrap.py` provides
+dry-run-by-default canonical worktree creation and current-worktree restoration.
+It selects locked Git sources and raw archive files by name, verifies
+revision/SHA-256 and scope, and disables network fallback unless explicitly
+allowed. Recursive inputs use independent atomic copies with submodule, symlink,
+and capacity checks before their existing setup flow runs.
+`fixture_control.py` provides `plan`, `restore`, and `doctor` for the complete
+hosted-Pytest fixture set. It restores lock-selected sources, PDKs, reference
+archives, publication packages, and test toolchains from a distinct local
+reference worktree, then invokes the existing setup commands with Git restricted
+to file transport. `make fixture-plan`, `fixture-restore`, and `fixture-doctor`
+expose the same boundary. A doctor BLOCKED result is never a skipped test.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.

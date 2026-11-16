@@ -286,3 +286,76 @@ def test_make_entrypoint_forwards_scoped_sources_and_archives() -> None:
     assert "--source mpw --source hazard3" in completed.stdout
     assert "--archive serv" in completed.stdout
     assert "--execute" not in completed.stdout
+
+
+def test_recursive_source_copy_is_independent_and_rejects_dirty_input(tmp_path: Path) -> None:
+    from scripts.worktree_bootstrap import restore_sources
+
+    root = tmp_path / "repo"
+    repository(root)
+    subupstream = root / ".cache/sub-upstream"
+    subprocess.run(["git", "init", "-q", str(subupstream)], check=True)
+    git(subupstream, "config", "user.email", "sub@example.invalid")
+    git(subupstream, "config", "user.name", "Sub")
+    (subupstream / "value.txt").write_text("locked submodule\n", encoding="utf-8")
+    git(subupstream, "add", "value.txt")
+    git(subupstream, "commit", "-qm", "submodule")
+    submodule_revision = git(subupstream, "rev-parse", "HEAD").stdout.strip()
+
+    upstream = root / ".cache/recursive-upstream"
+    subprocess.run(["git", "init", "-q", str(upstream)], check=True)
+    git(upstream, "config", "user.email", "recursive@example.invalid")
+    git(upstream, "config", "user.name", "Recursive")
+    git(upstream, "-c", "protocol.file.allow=always", "submodule", "add", str(subupstream), "modules/sub")
+    git(upstream, "commit", "-qm", "recursive source")
+    revision = git(upstream, "rev-parse", "HEAD").stdout.strip()
+    reference = root / "rtl/managed/recursive"
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "protocol.file.allow=always",
+            "clone",
+            "-q",
+            "--no-local",
+            "--recurse-submodules",
+            str(upstream),
+            str(reference),
+        ],
+        check=True,
+    )
+    git(reference, "checkout", "--detach", revision)
+    locked_url = "https://example.invalid/recursive.git"
+    git(reference, "remote", "set-url", "origin", locked_url)
+    lock_path = root / "dependencies/dependencies.lock.json"
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    lock["sources"]["recursive"] = {
+        "url": locked_url,
+        "revision": revision,
+        "destination": "rtl/managed/recursive",
+        "recursive": True,
+    }
+    lock_path.write_text(json.dumps(lock), encoding="utf-8")
+    git(root, "add", "dependencies/dependencies.lock.json")
+    git(root, "commit", "-qm", "add recursive source")
+    base = git(root, "rev-parse", "HEAD").stdout.strip()
+
+    target = root / "build/agent-worktrees/recursive-target"
+    target.mkdir(parents=True)
+    result = restore_sources(root, target, base, ["recursive"], False)
+    destination = target / "rtl/managed/recursive"
+    assert result[0]["status"] == "VERIFIED"
+    assert result[0]["restore_mode"] == "locked-recursive-copy"
+    assert result[0]["submodule_count"] == 1
+    assert (destination / "modules/sub/value.txt").read_text(encoding="utf-8") == "locked submodule\n"
+    assert git(destination, "rev-parse", "HEAD").stdout.strip() == revision
+    assert git(destination / "modules/sub", "rev-parse", "HEAD").stdout.strip() == submodule_revision
+    assert not (destination / ".git/objects/info/alternates").exists()
+
+    (reference / "modules/sub/value.txt").write_text("dirty submodule\n", encoding="utf-8")
+    other = root / "build/agent-worktrees/other-recursive-target"
+    other.mkdir(parents=True)
+    with pytest.raises(RuntimeError):
+        restore_sources(root, other, base, ["recursive"], False)
+    assert not (other / "rtl/managed/recursive").exists()
+    assert (reference / "modules/sub/value.txt").read_text(encoding="utf-8") == "dirty submodule\n"

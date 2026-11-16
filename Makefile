@@ -666,7 +666,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
+	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -767,6 +767,7 @@ help:
 	  '  validation-gap-check       validate owned deferred validation gaps' \
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
 	  '  agent-worktree-start       dry-run or execute lock-bound canonical worktree startup' \
+	  '  fixture-plan|fixture-restore|fixture-doctor  inspect or restore hosted test inputs' \
 	  '  agent-preflight            check task, worktree, snapshot, plan, and optional GitHub access' \
 	  '  agent-deliver              preflight and enable native auto-merge; optional watch/reconcile' \
 	  '  agent-coordinate           recover selected native deliveries with durable state' \
@@ -1357,6 +1358,22 @@ agent-worktree-start:
 	  $(if $(CREATE),--create) $(if $(ALLOW_NETWORK),--allow-network) \
 	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
 
+fixture-plan:
+	@test -n '$(REFERENCE_ROOT)' || { printf '%s\n' 'REFERENCE_ROOT=<validated local worktree> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/fixture_control.py plan --root $(ROOT_PATH) \
+	  --reference-root $(REFERENCE_ROOT) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-plan.json)
+
+fixture-restore:
+	@test -n '$(REFERENCE_ROOT)' || { printf '%s\n' 'REFERENCE_ROOT=<validated local worktree> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/fixture_control.py restore --root $(ROOT_PATH) \
+	  --reference-root $(REFERENCE_ROOT) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-restore.json)
+
+fixture-doctor:
+	python3 $(ROOT_PATH)/scripts/fixture_control.py doctor --root $(ROOT_PATH) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-doctor.json)
+
 agent-preflight:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
@@ -1478,7 +1495,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	  tests/test_contribution.py tests/test_pr_workflow.py tests/test_pr_delivery.py tests/test_delivery_controller.py \
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_cache_artifacts.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
-	  tests/test_delivery_policy.py tests/test_engineering_observations.py tests/test_worktree_bootstrap.py \
+	  tests/test_delivery_policy.py tests/test_engineering_observations.py tests/test_worktree_bootstrap.py tests/test_fixture_control.py \
 	  tests/test_validation_gaps.py tests/test_worktree_registry.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
