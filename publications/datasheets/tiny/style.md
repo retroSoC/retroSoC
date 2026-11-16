@@ -51,7 +51,7 @@ Use the current Mini closing-page visual language in Tiny's independent
 `closing.typ`: one final A4 page, bottom-aligned logo reservation and reviewed
 notice, with no running header/footer or printed page number. Its paired role
 markers are hashed in the manifest; they cannot exempt any ordinary page.
-Continuation notices alone may use 8.5 pt within their exported, hashed
+Only marked continuation notices may use 8.5 pt within their exported, hashed
 `layout-regions.json` rectangles. Do not lower the global 9 pt threshold.
 
 ## Same-version Mini alignment
@@ -153,3 +153,30 @@ Tiny now emits paired change markers and their manifest hash for the shared
 change-page report. PLL192/PLL240 are conditional functional R2-P7 profiles. SAFE24 boots with the
 PLL off; runtime switching requires backend capability, digital lock and the
 drain/park/commit protocol. No qualified physical operating rate is implied.
+
+## Scientific formula and quantity typography
+
+Use the shared [scientific display component](../../specifications/scientific.typ) for mathematical powers,
+quantity subscripts and mechanical dimension suffixes. Keep raw formulas,
+coefficients, units, statuses and numerical CSV values machine-readable and
+unchanged; the restricted publication grammar creates inert display tokens
+without evaluating source text. Use a multiplication sign and true exponent
+for arithmetic; distinguish voltage quantities such as V with OH/OL/IO
+subscripts from literal power-pin names such as VDDIO. Only mechanical contexts
+attach D2, E2 and A1 suffixes. Software, register, RTL, pin and protocol
+identifiers, inline code and code blocks retain their exact source spelling.
+
+Native Typst attachments and Matplotlib MathText use the locked Inter font.
+Script size is 70 percent of the surrounding size, with an absolute 6.3 pt
+minimum and a parent size of at least 9 pt. This exception applies only to
+source-attributed script glyphs inside tight measured rectangles; ordinary
+labels and body/table text retain their existing size limits. Never exempt an
+entire formula, chart, page or arbitrary small label. Export the script identity,
+text, role, font size and rectangle in the hashed layout audit. Independent
+SVG/PDF exports keep the same typography and reference-state labels.
+
+Retain scientific-notation.json, plot script metadata, the manifest and the
+normal PDF font checks. Verify raw-source preservation, mechanical/protocol
+context, exponent parsing, managed fonts and rejection of unrelated small text.
+Review changed pages in color and grayscale, including exponent baselines,
+line breaks, table rows and standalone figures, then repeat the offline build.
