@@ -198,12 +198,20 @@ lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
 plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
+and offers `--reconcile-only` for a later merged-PR cleanup. Initial, pending,
+waiting-for-native-merge, and final states are atomically checkpointed so an
+interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility
 entrypoint. Both use clean, canonical worktree checks and registry-based artifact
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
 written below `build/agent-worktrees/`. Use the corresponding Make targets and
 host tests instead of duplicating these rules in workflow shell.
+`delivery_controller.py` coordinates only explicitly selected existing delivery
+records. It atomically persists pending/failed/attention state, resumes native
+auto-merge monitoring, and reconciles merged cleanup without becoming a merge
+authority. It never re-enables externally disabled auto-merge, retries failed
+checks, or discovers unrelated PRs. Complete records are no-ops without network
+access. Use `make agent-coordinate PRS="<number>..."` with optional `WATCH=1`.
 
 `spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
 entrypoints. It preserves attempt directories, source archives, command results

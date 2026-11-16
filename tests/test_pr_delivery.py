@@ -89,6 +89,7 @@ def test_watch_enables_auto_merge_before_pending_checks(monkeypatch: pytest.Monk
     )
     calls = []
     sleeps = []
+    checkpoints = []
     monkeypatch.setattr("scripts.pr_delivery.delivery_preflight", lambda root, repository, number: preflight())
     monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: next(native))
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: next(states))
@@ -101,10 +102,23 @@ def test_watch_enables_auto_merge_before_pending_checks(monkeypatch: pytest.Monk
     monkeypatch.setattr("scripts.pr_delivery.checks_report", report)
     monkeypatch.setattr("scripts.pr_delivery.reconcile_delivery", lambda *args: {"status": "MERGED"})
     monkeypatch.setattr("scripts.pr_delivery.time.sleep", sleeps.append)
-    result = deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True)
+    result = deliver(
+        ROOT,
+        "retroSoC/retroSoC",
+        248,
+        60,
+        watch=True,
+        checkpoint=checkpoints.append,
+    )
     assert result["status"] == "MERGED"
     assert calls == [248]
     assert sleeps == [60, 60]
+    assert [item["status"] for item in checkpoints] == [
+        "AUTO_MERGE_ENABLED",
+        "PENDING",
+        "WAITING_FOR_NATIVE_MERGE",
+        "MERGED",
+    ]
 
 
 def test_failed_checks_and_disabled_native_auto_merge_stop_watch(monkeypatch: pytest.MonkeyPatch) -> None:
