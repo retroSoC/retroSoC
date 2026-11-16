@@ -23,9 +23,10 @@ HISTORICAL_SOURCES = ("cluster_common", "cluster_archinfo", "cluster_pwm",
                       "cluster_rtc", "cluster_wdg", "hazard3")
 
 
-def prepare(root: Path = ROOT) -> None:
+def prepare(root: Path = ROOT, reference_root: Path | None = None) -> None:
     """Restore each fixture's locked objects, never switch active dependencies."""
     root = root.resolve()
+    reference_root = reference_root.resolve() if reference_root is not None else None
     inputs = set()
     for revision in HISTORICAL_REVISIONS:
         lock = json.loads(git_output(root, "show", f"{revision}:dependencies/dependencies.lock.json"))
@@ -34,9 +35,14 @@ def prepare(root: Path = ROOT) -> None:
             destination = (root / source["destination"]).resolve()
             if destination == root or not destination.is_relative_to(root):
                 raise ValueError(f"historical dependency destination escapes checkout: {name}")
-            inputs.add((source["url"], destination, source["revision"]))
-    for url, destination, revision in sorted(inputs):
-        ensure_git_commit(url, destination, revision)
+            reference = None
+            if reference_root is not None:
+                reference = (reference_root / source["destination"]).resolve()
+                if not reference.is_relative_to(reference_root):
+                    raise ValueError(f"historical reference escapes its root: {name}")
+            inputs.add((source["url"], destination, source["revision"], reference))
+    for url, destination, revision, reference in sorted(inputs):
+        ensure_git_commit(url, destination, revision, reference=reference)
 
 
 def export(repository: Path, revision: str, destination: Path, paths: list[str] = ()) -> None:
@@ -67,5 +73,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare",))
-    parser.parse_args()
-    prepare()
+    parser.add_argument("--reference-root", type=Path)
+    args = parser.parse_args()
+    prepare(reference_root=args.reference_root)

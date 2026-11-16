@@ -69,10 +69,12 @@ def ensure_git_commit(
     *,
     fetch_timeout: float = 300,
     fetch_attempts: int = 3,
+    reference: Path | None = None,
 ) -> None:
     """Fetch a locked historical object without switching the active checkout."""
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("historical dependency requires a full Git commit revision")
+    fetch_url = str(validate_reference_repository(reference, url)) if reference is not None else url
     destination = destination.resolve()
     if not (destination / ".git").exists():
         raise RuntimeError(f"prepare the current dependency checkout first: {destination}")
@@ -83,7 +85,7 @@ def ensure_git_commit(
         fetch_git_repo(
             destination,
             revision,
-            url,
+            fetch_url,
             timeout=fetch_timeout,
             attempts=fetch_attempts,
             no_tags=True,
@@ -103,7 +105,7 @@ def canonical_git_url(value: str) -> str:
     return normalized
 
 
-def validate_locked_reference(reference: Path, url: str, revision: str) -> Path:
+def validate_reference_repository(reference: Path, url: str) -> Path:
     if reference.is_symlink():
         raise RuntimeError(f"dependency reference must not be a symlink: {reference}")
     reference = reference.resolve()
@@ -111,16 +113,21 @@ def validate_locked_reference(reference: Path, url: str, revision: str) -> Path:
         raise RuntimeError(f"dependency reference is not a Git worktree: {reference}")
     if git_output(reference, "rev-parse", "--show-toplevel") != str(reference):
         raise RuntimeError(f"dependency reference must be a top-level worktree: {reference}")
+    if canonical_git_url(git_output(reference, "remote", "get-url", "origin")) != canonical_git_url(url):
+        raise RuntimeError(f"dependency reference remote mismatch: {reference}")
+    if git_output(reference, "status", "--porcelain", "--untracked-files=all"):
+        raise RuntimeError(f"dependency reference has local changes: {reference}")
+    return reference
+
+
+def validate_locked_reference(reference: Path, url: str, revision: str) -> Path:
+    reference = validate_reference_repository(reference, url)
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("locked dependency requires a full Git commit revision")
     if git_output(reference, "rev-parse", "HEAD") != revision:
         raise RuntimeError(f"dependency reference revision mismatch: {reference}")
     if git_output(reference, "rev-parse", f"{revision}^{{commit}}") != revision:
         raise RuntimeError(f"dependency reference object mismatch: {reference}")
-    if canonical_git_url(git_output(reference, "remote", "get-url", "origin")) != canonical_git_url(url):
-        raise RuntimeError(f"dependency reference remote mismatch: {reference}")
-    if git_output(reference, "status", "--porcelain", "--untracked-files=all"):
-        raise RuntimeError(f"dependency reference has local changes: {reference}")
     return reference
 
 

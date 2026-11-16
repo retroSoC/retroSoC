@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -45,8 +46,6 @@ def locked_source(root: Path, revision: str, name: str) -> tuple[dict[str, Any],
         raise ValueError(f"locked source revision must be a full commit: {name}")
     if not safe_relative_path(source["destination"]):
         raise ValueError(f"locked source destination is unsafe: {name}")
-    if source.get("recursive") or source.get("submodules"):
-        raise ValueError(f"recursive source {name} requires its existing submodule-aware setup flow")
     return source, payload
 
 
@@ -69,6 +68,66 @@ def available_offline_checkout(destination: Path, revision: str) -> bool:
     if not (destination / ".git").exists():
         return False
     return git(destination, "cat-file", "-e", f"{revision}^{{commit}}").returncode == 0
+
+
+RECURSIVE_COPY_RESERVE_BYTES = 1024**3
+
+
+def recursive_submodules(root: Path) -> list[str]:
+    result = git(root, "submodule", "status", "--recursive")
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip())
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if any(not line.startswith(" ") for line in lines):
+        raise RuntimeError("recursive dependency submodules are not at their recorded revisions")
+    return lines
+
+
+def tree_file_bytes(root: Path) -> int:
+    total = 0
+    for directory, _dirnames, filenames in os.walk(root, followlinks=False):
+        for name in filenames:
+            total += (Path(directory) / name).lstat().st_size
+    return total
+
+
+def reject_external_symlinks(root: Path) -> None:
+    for directory, dirnames, filenames in os.walk(root, followlinks=False):
+        for name in [*dirnames, *filenames]:
+            path = Path(directory) / name
+            if not path.is_symlink():
+                continue
+            if os.path.isabs(os.readlink(path)) or not path.resolve().is_relative_to(root):
+                raise RuntimeError(f"recursive reference contains an external or absolute symlink: {path}")
+
+
+def copy_recursive_reference(reference: Path, destination: Path, url: str, revision: str) -> list[str]:
+    from scripts.setup_helpers import validate_locked_reference
+
+    reference = validate_locked_reference(reference, url, revision)
+    reject_external_symlinks(reference)
+    submodules = recursive_submodules(reference)
+    if destination.exists():
+        if destination.is_symlink():
+            raise RuntimeError("recursive dependency destination must not be a symlink")
+        validate_locked_reference(destination, url, revision)
+        if recursive_submodules(destination) != submodules:
+            raise RuntimeError("existing recursive dependency has different submodule revisions")
+        return submodules
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    required = tree_file_bytes(reference) + RECURSIVE_COPY_RESERVE_BYTES
+    if shutil.disk_usage(destination.parent).free < required:
+        raise RuntimeError("insufficient capacity for an independent recursive dependency copy")
+    with tempfile.TemporaryDirectory(prefix=".recursive-copy-", dir=destination.parent) as temporary:
+        copied = Path(temporary) / "content"
+        shutil.copytree(reference, copied, symlinks=True)
+        validate_locked_reference(copied, url, revision)
+        if recursive_submodules(copied) != submodules:
+            raise RuntimeError("recursive copy changed submodule revisions")
+        if destination.exists():
+            raise RuntimeError("recursive dependency destination appeared during restoration")
+        copied.replace(destination)
+    return submodules
 
 
 def restore_sources(
@@ -95,14 +154,23 @@ def restore_sources(
         local_checkout = available_offline_checkout(destination, source["revision"])
         if selected_reference is None and not allow_network and not local_checkout:
             raise RuntimeError(f"no validated local copy of {name}; network fallback is disabled")
-        ensure_git_repo(
-            source["url"],
-            destination,
-            source["revision"],
-            reference=selected_reference,
-            fetch_timeout=300,
-            fetch_attempts=3,
-        )
+        recursive = source.get("recursive", False) or bool(source.get("submodules"))
+        submodule_count = None
+        if recursive and selected_reference is not None:
+            submodule_count = len(
+                copy_recursive_reference(selected_reference, destination, source["url"], source["revision"])
+            )
+        else:
+            ensure_git_repo(
+                source["url"],
+                destination,
+                source["revision"],
+                recursive=source.get("recursive", False),
+                submodules=tuple(source.get("submodules", ())),
+                reference=selected_reference,
+                fetch_timeout=300,
+                fetch_attempts=3,
+            )
         records.append(
             {
                 "name": name,
@@ -110,8 +178,9 @@ def restore_sources(
                 "revision": source["revision"],
                 "destination": source["destination"],
                 "lock_sha256": hashlib.sha256(payload).hexdigest(),
-                "restore_mode": "locked-copy" if selected_reference else "local-checkout" if local_checkout else "network",
+                "restore_mode": "locked-recursive-copy" if recursive and selected_reference else "locked-copy" if selected_reference else "local-checkout" if local_checkout else "network",
                 "reference": str(selected_reference) if selected_reference else None,
+                "submodule_count": submodule_count,
                 "status": "VERIFIED",
             }
         )

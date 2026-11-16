@@ -97,7 +97,10 @@ tooling.
   rewriting or accepting forged non-merge records. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
-  resource/step summaries, dry-run versus execute behavior, and cache states.
+  resource/step summaries, dry-run versus execute behavior, cache states/keys,
+  and raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
+  structure, run/artifact/digest binding, cache keys, unique size metadata,
+  duplicate identities, unsafe paths, and unknown-value preservation.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
@@ -105,9 +108,6 @@ tooling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
-  `test_regress_parallel.py` checks exact MINI command preservation, real
-  two-group overlap, isolated build identities, failure propagation, recursive
-  result discovery, and the PR-only workflow guard.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
@@ -146,7 +146,11 @@ tooling.
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
-  and deferred reconciliation. Run fast agent checks with `make check-fast`. Static
+  and deferred reconciliation. `test_delivery_controller.py` covers durable
+  pending/resume/cleanup state, idempotent completed records, failed checks,
+  external auto-merge disabling, head-change preservation, and atomic watcher
+  checkpoints. Run fast agent
+  checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 57 cases across six Skills, with one live smoke per Skill.
   Provenance, contract migration, negative triggers, Kimi tool-call parsing,
@@ -154,8 +158,13 @@ tooling.
   deterministically; live behavior results require retained traces from
   `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
   covers trace identity, input tampering, historical prompts, unknown runners,
-  read-only violations, duplicate/empty evidence, and zero runner invocations.
+  read-only violations, duplicate/empty evidence, auditable latest-per-case
+  selection, timestamp ambiguity, and zero runner invocations.
   Offline replay grades retained behavior only; it does not execute current code.
+- `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
+  `test_publication_history.py` cover lock-bound hosted fixture inventories,
+  checksum-preserving local archive restore, independent recursive-source copies,
+  historical-object recovery, doctor failures, and non-destructive refusals.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

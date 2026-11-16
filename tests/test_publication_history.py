@@ -95,6 +95,36 @@ def test_prepare_uses_historical_lock_and_preserves_active_checkout(
     history.prepare(root)
 
 
+def test_prepare_can_restore_history_from_local_reference(
+    shallow_dependency, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    upstream, checkout, old, current = shallow_dependency
+    root = tmp_path / "project"
+    git(root, "init")
+    git(root, "config", "user.name", "Fixture")
+    git(root, "config", "user.email", "fixture@example.com")
+    spec = {"url": upstream.as_uri(), "destination": "rtl/managed/pwm", "revision": old}
+    historical = commit(
+        root,
+        "dependencies/dependencies.lock.json",
+        json.dumps({"sources": {"cluster_pwm": spec}}),
+    )
+    monkeypatch.setattr(history, "HISTORICAL_REVISIONS", (historical,))
+    monkeypatch.setattr(history, "HISTORICAL_SOURCES", ("cluster_pwm",))
+    reference_root = tmp_path / "reference"
+    reference = reference_root / "rtl/managed/pwm"
+    subprocess.run(
+        ["git", "clone", "-q", "--no-local", str(upstream), str(reference)],
+        check=True,
+    )
+    git(reference, "remote", "set-url", "origin", upstream.as_uri())
+    index_before = git(checkout, "write-tree")
+    history.prepare(root, reference_root=reference_root)
+    assert git(checkout, "cat-file", "-e", old + "^{commit}") == ""
+    assert git(checkout, "rev-parse", "HEAD") == current
+    assert git(checkout, "write-tree") == index_before
+
+
 def test_failed_historical_fetch_preserves_checkout(shallow_dependency, tmp_path: Path) -> None:
     _, checkout, old, current = shallow_dependency
     with pytest.raises(subprocess.CalledProcessError):
