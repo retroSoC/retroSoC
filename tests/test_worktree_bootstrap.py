@@ -359,3 +359,100 @@ def test_recursive_source_copy_is_independent_and_rejects_dirty_input(tmp_path: 
         restore_sources(root, other, base, ["recursive"], False)
     assert not (other / "rtl/managed/recursive").exists()
     assert (reference / "modules/sub/value.txt").read_text(encoding="utf-8") == "dirty submodule\n"
+
+
+def test_hosted_fixture_lifecycle_is_opt_in_and_checkpointed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repo"
+    repository(root)
+    packet = task_packet(root, git(root, "rev-parse", "HEAD").stdout.strip(), "fixture-task")
+    task = json.loads(packet.read_text(encoding="utf-8"))
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.fixture_control.restore",
+        lambda *args: pytest.fail("dry-run must not restore a fixture profile"),
+    )
+    plan = bootstrap_worktree(
+        root, packet, "feat/fixture-task", [], execute=False, create=True, allow_network=False
+    )
+    assert plan["fixture"]["status"] == "PLANNED"
+    assert not (root / "build/agent-worktrees/fixture-task").exists()
+
+    calls = []
+
+    def restore(target: Path, reference: Path, output: Path) -> dict:
+        calls.append((target, reference, output))
+        document = {
+            "status": "READY",
+            "source_revision": git(target, "rev-parse", "HEAD").stdout.strip(),
+            "doctor": {"status": "READY", "issues": [], "checks": []},
+        }
+        output.write_text(json.dumps(document), encoding="utf-8")
+        return document
+
+    monkeypatch.setattr("scripts.fixture_control.restore", restore)
+    completed = bootstrap_worktree(
+        root, packet, "feat/fixture-task", [], execute=True, create=True, allow_network=False
+    )
+    target = root / "build/agent-worktrees/fixture-task"
+    expected_output = target / "build/tasks/fixture-task/fixture-restore.json"
+    assert calls == [(target, root, expected_output)]
+    assert completed["sources"] == [] and completed["archives"] == []
+    assert completed["fixture"] == {
+        "profile": "hosted-pytest",
+        "status": "READY",
+        "network_policy": "offline/local-copy only",
+        "evidence": "build/tasks/fixture-task/fixture-restore.json",
+        "reference_root": str(root),
+        "doctor_status": "READY",
+        "source_revision": git(target, "rev-parse", "HEAD").stdout.strip(),
+    }
+    assert completed["status"] == "READY"
+    assert expected_output.is_file()
+
+    failing_packet = task_packet(root, git(root, "rev-parse", "HEAD").stdout.strip(), "fixture-failure")
+    failing_task = json.loads(failing_packet.read_text(encoding="utf-8"))
+    failing_task["execution"]["fixture_profile"] = "hosted-pytest"
+    failing_packet.write_text(json.dumps(failing_task), encoding="utf-8")
+
+    def fail_restore(target: Path, reference: Path, output: Path) -> dict:
+        raise RuntimeError("fixture doctor blocked")
+
+    monkeypatch.setattr("scripts.fixture_control.restore", fail_restore)
+    with pytest.raises(RuntimeError, match="fixture doctor blocked"):
+        bootstrap_worktree(
+            root, failing_packet, "feat/fixture-failure", [], execute=True, create=True, allow_network=False
+        )
+    failed = json.loads(
+        (root / "build/agent-worktrees/fixture-failure/build/tasks/fixture-failure/bootstrap.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert failed["status"] == "FAILED"
+    assert failed["fixture"]["status"] == "FAILED"
+    assert failed["fixture"].get("doctor_status") is None
+
+
+def test_ordinary_worktree_does_not_restore_hosted_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repo"
+    repository(root)
+    packet = task_packet(root, git(root, "rev-parse", "HEAD").stdout.strip(), "ordinary-task")
+    monkeypatch.setattr(
+        "scripts.fixture_control.restore",
+        lambda *args: pytest.fail("ordinary worktree startup must not restore hosted fixtures"),
+    )
+
+    result = bootstrap_worktree(
+        root, packet, "feat/ordinary-task", [], execute=True, create=True, allow_network=False
+    )
+
+    assert result["status"] == "READY"
+    assert result["fixture"] == {
+        "profile": None,
+        "status": "NOT_REQUESTED",
+        "network_policy": "offline/local-copy only",
+    }

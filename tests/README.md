@@ -170,6 +170,8 @@ tooling.
   `test_publication_history.py` cover lock-bound hosted fixture inventories,
   checksum-preserving local archive restore, independent recursive-source copies,
   historical-object recovery, doctor failures, and non-destructive refusals.
+  Task lifecycle tests keep full restoration opt-in, prove dry-run does not call
+  it, checkpoint restore failures, and require a READY doctor in preflight.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
