@@ -171,3 +171,14 @@ def test_equation_typography_preserves_nearby_english_hyphens():
     parts = science.tokens("SCK=PCLK/(2*DIV); end-to-end, held-CS and 32-bit payload.")
     assert parts == [{"kind": "text", "value": "SCK=PCLK/(2×DIV); end-to-end, held-CS and 32-bit payload."}]
     assert any(p["kind"] == "text" and "−I×R" in p["value"] for p in science.tokens("VOH=VIO-I*R"))
+
+
+def test_layout_round_does_not_relabel_retained_scientific_typography():
+    registry=notation("VOH")
+    identity=registry["entries"]["VOH"]["id"]
+    doc={"change_prefix":"ip-layout-","scientific_change_markers":False}
+    assert science.change_markers([dict(kind="scientific-use",id=identity,page=63)],doc,registry)==[]
+    with pytest.raises(ValueError,match="no display source"):
+        science.change_markers([dict(kind="scientific-use",id="unknown",page=64)],doc,registry)
+    with pytest.raises(ValueError,match="must be boolean"):
+        science.change_markers([],dict(doc,scientific_change_markers="false"),registry)

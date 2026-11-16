@@ -1,9 +1,10 @@
-#import "style.typ": data, ink, gold, pale-gold, gray, muted, rhythm, code, ds-table, source-note, change-start, change-end
+#import "style.typ": doc, data, ink, gold, pale-gold, gray, muted, rhythm, code, ds-table, source-note, change-start, change-end
 #import "@preview/bytefield:0.0.8" as bf
 #import "@preview/rivet:0.3.1" as rv
 #import "@preview/blockcell:0.1.0" as bc
 #import "@preview/circuiteria:0.2.1" as ce
 #import "@preview/cetz:0.3.4" as c3
+#import "../ip-block-diagrams.typ": ip-block-view
 
 #let diagrams = data.system_reference.illustrations
 #let diagram-position(kind, package, id) = context {
@@ -156,7 +157,7 @@
   #diagram-end("blockcell","uart-fifos")
 ]
 
-#let circuit-diagram(id) = block(width:100%,breakable:false)[
+#let legacy-circuit-diagram(id) = block(width:100%,breakable:false)[
   #diagram-use("circuiteria",id)
   #set text(font:"Inter",size:9pt,fill:ink)
   #let circuit=diagrams.circuits.at(id)
@@ -375,4 +376,33 @@
     source-note("rtl/ip/multimedia/apu_microcode_pkg.sv",title:"RTL encoding and predicate checks")
     change-end("apu-family-"+lower(family.name))
   }
+}
+
+
+#let ip-canvas(record,id)=block(width:100%,breakable:false)[
+ #diagram-use("cetz",id)
+ #ip-block-view(record)
+ #diagram-note[#record.note]
+ #diagram-end("cetz",id)
+]
+#let circuit-diagram(id)={
+ let r=diagrams.circuits.at(id)
+ if r.at("renderer",default:"")=="cetz" {ip-canvas(r,id)} else {legacy-circuit-diagram(id)}
+}
+#let ip-block-figures(id)={
+ let r=diagrams.circuits.at(id)
+ change-start(doc.change_prefix+"ip-block-"+id,r.block_title)
+ block(width:100%,breakable:false)[
+  #show figure.caption: set text(weight:"bold")
+  #figure(ip-canvas(r,id),kind:image,supplement:[Figure],caption:[#r.block_title.])
+  #label("circuit-"+id)
+ ]
+ for d in r.details {
+  block(width:100%,breakable:false)[
+   #show figure.caption: set text(weight:"bold")
+   #figure(ip-canvas(d,d.detail_id),kind:image,supplement:[Figure],caption:[#d.block_title.])
+   #label("circuit-"+d.detail_id)
+  ]
+ }
+ change-end(doc.change_prefix+"ip-block-"+id)
 }

@@ -71,8 +71,10 @@ RTL, relax checks, or change warning/metric baselines as a document workaround.
 `sections/` owns the full-book hierarchy. `navigation-contract.json` freezes all
 outlined entries; `structure-contract.json` keeps the major/IP compatibility
 contract. IP detail headings are unnumbered bookmarks, with the actual IP depth.
-`engineering-figures.typ` renders Tiny catalogs through locked Circuiteria,
-Bytefield and Blockcell. `diagrams.typ` owns the CeTZ overview, matrix and
+`engineering-figures.typ` adapts all 23 IP primary figures and their details to
+the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). Three system
+figures retain Circuiteria; Bytefield and Blockcell retain their scope.
+`diagrams.typ` owns the CeTZ overview, matrix and
 workflows. `soc-functional.typ` draws the functional overview from
 `soc-functional.json` and the geometry validated by the Tiny collector.
 The Tiny collector uses common validation functions without loading Mini data.
@@ -85,5 +87,6 @@ Use the [shared standard](../../specifications/README.md) and this book's
 [parameter catalog](specifications/parameters.json). Tiny QFN64 and examples stay
 separate from Mini. Current builds emit specification-data/status/usage/replacement
 audits, CSV/SVG/PDF curves, editable standalone engineering vectors and paired
-change markers. The common report_changes.py compares against the retained
-425-page delivery. Tests and successful publication builds do not qualify hardware.
+change markers. The common report_changes.py compares against the retained 439-page delivery
+for this IP round; the 425-page baseline belongs to the earlier commercial-reference
+round. Tests and successful publication builds do not qualify hardware.

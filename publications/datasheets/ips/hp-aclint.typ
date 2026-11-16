@@ -2,7 +2,7 @@
 #change-start("v05-c906-20261022-ips-hp-aclint","Internal C906 CLINT integration boundary")
 
 #import "../ip-reference.typ": inline, subhead
-#import "../diagram-packages.typ": circuit-diagram
+#import "../diagram-packages.typ": ip-block-figures
 
 #pagebreak(weak:true)
 
@@ -24,10 +24,7 @@ outside this publication's scope together with the CPU ISA/CSR manuals.
 
 #subhead("hp-aclint","Features and Block Diagram",5)
 #list(..chapter.at("features",default:()).map(inline))
-#block(breakable:false)[
-    #figure(circuit-diagram("hp-aclint"),kind:image,supplement:[Figure],caption:[#chapter.title integration boundary.])
-    #label("circuit-hp-aclint")
-  ]
+#ip-block-figures("hp-aclint")
 
 #subhead("hp-aclint","Functional Description",5)
 #for paragraph in chapter.notes { par(inline(paragraph)) }

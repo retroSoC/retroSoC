@@ -177,6 +177,10 @@ def change_markers(items: list[dict], document: dict, notation: dict) -> list[di
     uses = [r for r in items if isinstance(r, dict) and r.get("kind") == "scientific-use"]
     if any(r["id"] not in identities for r in uses):
         raise ValueError("scientific use has no display source")
+    if type(document.get("scientific_change_markers", True)) is not bool:
+        raise ValueError("scientific_change_markers must be boolean")
+    if document.get("scientific_change_markers", True) is False:
+        return []
     result = []
     for page in sorted({r["page"] for r in uses}):
         identity = document["change_prefix"] + "scientific-page-" + str(page)

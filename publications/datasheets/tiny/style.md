@@ -28,8 +28,10 @@ DMA/PWM repeated groups preserve exact base/stride/index formulas. A constant
 zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
-Use the locked Circuiteria connection renderer, Bytefield formats and Blockcell
-storage diagrams. CeTZ owns the six-panel overview, connectivity matrix and
+Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
+CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
+for three system diagrams, Bytefield formats and Blockcell storage diagrams.
+CeTZ also owns the six-panel overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
@@ -78,7 +80,8 @@ prefix column. Measure its width from the longest complete `Table N.` or
 share one left edge; shorter prefixes retain the unused column width. Keep
 these flat lists independent of Contents hierarchy indentation and body spacing.
 
-Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
+Only the three retained system Circuiteria figures use thin rounded blocks,
+1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,

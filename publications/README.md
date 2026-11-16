@@ -6,8 +6,17 @@ Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
 The two books have independent profiles, manifests and output markers.
 
+The IP drawing round starts at publication dev `4315f7d7`, preserving the
+439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
+Tiny's 23 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
+[IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
+The seven system Circuiteria figures and all other figure families retain
+their design. Both builders export editable data/Typst plus standalone SVG/PDF,
+source fingerprints, geometry/coverage audits and output hashes. Active markers
+are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
+
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through dev `b6d538d8`. It binds a full
+Makefile and contribution-policy changes through dev `14d76311`. It binds a full
 commit and each file's blob identity without moving the frozen product SHA.
 The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`;
 product documents cannot be exempted. Source checks reject later control-file
@@ -22,7 +31,7 @@ python -m pip install --require-hashes -r requirements/publication.txt before
 using the existing setup/build/check commands. Reference Only examples fill
 structure without becoming released electrical, package or board requirements.
 
-The retained comparison baselines are Tiny 425 pages / SHA-256
+The earlier commercial-reference round retained Tiny 425 pages / SHA-256
 a7816f014c2ba739669cd98df50accace07376d4620ad0eab81c514a7fd4a3d3,
 and Mini 796 pages / SHA-256
 8c20a57949427fa7058a4663bb95e4f864d442154f8093b5318e37a9f825f010.
@@ -60,7 +69,7 @@ now evolve with both books; each hardware collector retains independent coverage
 
 ## Mini datasheet
 
-The current round uses `v05-c906-20261022-` change markers and compares against
+The historical OpenC906 round used `v05-c906-20261022-` change markers and compares against
 the retained 798-page Rill PDF with SHA-256
 `49c3e20e7568e20baaa75f104e71b7e526f33aa7231bed03dbcde5893712da93`.
 Its date and full SHA are in `mini.json`; page-dependent review/validation records
@@ -139,9 +148,9 @@ See the [layout/content standard](datasheets/style.md) for exact geometry,
 emphasis scope and validation requirements. Rebuild all page-dependent records
 after typography changes and retain the previous PDF and actual test verdicts.
 
-The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
-circuiteria 0.2.1. All 42 IP chapters and four system hardware figures use
-source-bound circuits. Binary layouts cover descriptors, boot/microcode bundles,
+The retained specialized drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
+circuiteria 0.2.1. The 42 IP chapters use source-bound CeTZ circuits; four system
+hardware figures retain Circuiteria. Binary layouts cover descriptors, boot/microcode bundles,
 serial framing and media/crypto packing. APU's seven current instruction classes
 and 62 operations are grouped by format, operand constraints and tool target.
 Storage figures cover architectural FIFOs, line buffers, packet/table/control
@@ -154,8 +163,8 @@ CeTZ 0.5.2. It uses regular 9 pt text for ordinary labels, regular 8 pt text
 inside compact CDC/Gateway cells, and bold 9 pt bus/domain labels. Individually named PRODUCT IP/instance
 rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
 labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
-are separate from IP categories. All 46 Circuiteria figures retain their existing
-renderer. The 142 specialized figures include NPU's circuit, three binary layouts
+are separate from IP categories. Only the four system figures retain Circuiteria;
+IP primaries/details use the shared renderer. The prior 142 specialized figures include NPU's circuit, three binary layouts
 and two storage figures.
 
 `soc_diagram_reference.py` checks `datasheets/soc-architecture.json`

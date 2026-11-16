@@ -1,4 +1,5 @@
 """Representative diagram geometry, source bindings and multi-version package integrity."""
+
 from __future__ import annotations
 
 import copy
@@ -31,6 +32,9 @@ def source_tree(tmp_path):
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)
+    font = "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
+    (tmp_path / font).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ROOT / font, tmp_path / font)
     return tmp_path
 
 
@@ -41,12 +45,14 @@ def replace(root: Path, relative: str, old: str, new: str) -> None:
     path.write_text(source.replace(old, new), encoding="utf-8")
 
 
-@pytest.mark.parametrize(("before", "after"), [
-    (".DATA_WIDTH(129)", ".DATA_WIDTH(128)"),
-    ("s_cfg_packet_pclk[127:0]", "s_cfg_packet_pclk[128:1]"),
-    (".cfg_i               (s_cfg_pclk_q)",
-     ".cfg_i               (s_cfg_packet_pclk[127:0])"),
-])
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        (".DATA_WIDTH(129)", ".DATA_WIDTH(128)"),
+        ("s_cfg_packet_pclk[127:0]", "s_cfg_packet_pclk[128:1]"),
+        (".cfg_i               (s_cfg_pclk_q)", ".cfg_i               (s_cfg_packet_pclk[127:0])"),
+    ],
+)
 def test_dvp_configuration_diagram_rejects_packet_or_latch_drift(monkeypatch, before, after):
     circuit = read_json(ROOT / "publications/datasheets/diagram-circuits.json")["dvp"]
     dr.validate_circuit(ROOT, circuit)
@@ -74,7 +80,13 @@ def test_representative_inventory_uses_actual_widths_and_addresses(data):
     assert value["apu"]["examples"][1]["word"] == "0x0800000000000000"
     assert value["uart_fifo"] == {"tx": {"depth": 64, "bits": 8}, "rx": {"depth": 64, "bits": 12}}
     assert next(row for row in value["windows"] if row["symbol"] == "SRAM")["size"] == 32768
-    assert value["cache"] == {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128}
+    assert value["cache"] == {
+        "granule": 64,
+        "offset": 16,
+        "length": 64,
+        "end": 80,
+        "covered_bytes": 128,
+    }
     assert len(value["circuits"]) == 46
     assert {"uart0", "dma", "apu", "system-fabric", "system-clocks"} <= set(value["circuits"])
 
@@ -96,20 +108,34 @@ def test_field_coverage_rejects_invalid_diagrams(mutation):
 
 def test_protocol_field_order_is_checked_even_with_complete_coverage(data):
     spec = copy.deepcopy(SPEC)
-    spec["sdio_command"][0], spec["sdio_command"][-1] = spec["sdio_command"][-1], spec["sdio_command"][0]
+    spec["sdio_command"][0], spec["sdio_command"][-1] = (
+        spec["sdio_command"][-1],
+        spec["sdio_command"][0],
+    )
     with pytest.raises(ValueError, match="field order"):
         dr.collect_diagrams(ROOT, spec, data["regions"], data["system_reference"])
 
 
-@pytest.mark.parametrize("relative,old,new", [
-    ("rtl/ip/storage/sdio_command.sv", "cmd_index_i,", "other_index_i,"),
-    ("rtl/ip/serial/uart_reg.sv", ".DATA_WIDTH      (12)", ".DATA_WIDTH      (16)"),
-    ("rtl/ip/serial/uart_reg.sv", "TxFifoDepth    = 64", "TxFifoDepth    = 32"),
-    ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
-    ("scripts/apu_isa.py", "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1", "APUMC_MAX_INSTRUCTIONS = 4096"),
-    ("app/ports/linux/smoke/start.S", ".insn r 0x0b, 0x0, 0x01, x0, a0, x5", ".insn r 0x0b, 0x0, 0x02, x0, a0, x5"),
-    ("rtl/ip/security/apb4_crypto.sv", "logic [31:0] s_wdata;", "logic [63:0] s_wdata;"),
-])
+@pytest.mark.parametrize(
+    "relative,old,new",
+    [
+        ("rtl/ip/storage/sdio_command.sv", "cmd_index_i,", "other_index_i,"),
+        ("rtl/ip/serial/uart_reg.sv", ".DATA_WIDTH      (12)", ".DATA_WIDTH      (16)"),
+        ("rtl/ip/serial/uart_reg.sv", "TxFifoDepth    = 64", "TxFifoDepth    = 32"),
+        ("scripts/apu_isa.py", "(self.dst, 4, 48)", "(self.dst, 4, 47)"),
+        (
+            "scripts/apu_isa.py",
+            "APUMC_MAX_INSTRUCTIONS = APUMC_MAX_INSTRUCTIONS_V1",
+            "APUMC_MAX_INSTRUCTIONS = 4096",
+        ),
+        (
+            "app/ports/linux/smoke/start.S",
+            ".insn r 0x0b, 0x0, 0x01, x0, a0, x5",
+            ".insn r 0x0b, 0x0, 0x02, x0, a0, x5",
+        ),
+        ("rtl/ip/security/apb4_crypto.sv", "logic [31:0] s_wdata;", "logic [63:0] s_wdata;"),
+    ],
+)
 def test_source_drift_requires_diagram_review(source_tree, data, relative, old, new):
     replace(source_tree, relative, old, new)
     with pytest.raises(ValueError):
@@ -117,15 +143,21 @@ def test_source_drift_requires_diagram_review(source_tree, data, relative, old, 
 
 
 def test_rsa_limb_width_is_independent_of_dma_alignment(source_tree, data):
-    replace(source_tree, "crt/include/retrosoc/hal/crypto_regs.h",
-            "RS_CRYPTO_DMA_ALIGNMENT           4U", "RS_CRYPTO_DMA_ALIGNMENT           8U")
+    replace(
+        source_tree,
+        "crt/include/retrosoc/hal/crypto_regs.h",
+        "RS_CRYPTO_DMA_ALIGNMENT           4U",
+        "RS_CRYPTO_DMA_ALIGNMENT           8U",
+    )
     diagrams = dr.collect_diagrams(source_tree, SPEC, data["regions"], data["system_reference"])
-    assert [(row["depth"], row["bits"]) for row in diagrams["storage"]["rsa-vectors"]["stores"]] == [
-        (64, 32), (64, 32), (64, 32), (64, 32)
-    ]
+    assert [
+        (row["depth"], row["bits"]) for row in diagrams["storage"]["rsa-vectors"]["stores"]
+    ] == [(64, 32), (64, 32), (64, 32), (64, 32)]
 
 
-@pytest.mark.parametrize("mutation", ["node", "port", "endpoint", "direction", "width", "binding", "duplicate-edge"])
+@pytest.mark.parametrize(
+    "mutation", ["node", "port", "endpoint", "direction", "width", "binding", "duplicate-edge"]
+)
 def test_circuit_records_reject_invented_or_inconsistent_connections(mutation):
     circuit = copy.deepcopy(SPEC["circuits"]["uart0"])
     if mutation == "node":
@@ -175,15 +207,25 @@ def test_duplicate_package_identity_is_rejected():
 def cached_package(tmp_path):
     directory = tmp_path / "package"
     directory.mkdir()
-    (directory / "typst.toml").write_text('[package]\nname="example"\nversion="1.0.0"\nentrypoint="lib.typ"\n')
+    (directory / "typst.toml").write_text(
+        '[package]\nname="example"\nversion="1.0.0"\nentrypoint="lib.typ"\n'
+    )
     (directory / "lib.typ").write_text('#import "src/runtime.typ"\n// #import "missing.typ"\n')
     (directory / "src").mkdir()
     (directory / "src/runtime.typ").write_text('#import "/helper.typ"\n')
     (directory / "helper.typ").write_text('#import "@preview/cetz:0.3.4"\n')
     (directory / "manual.typ").write_text('#import "@preview/unneeded-manual-package:9.9.9"\n')
-    record = {"name": "example", "version": "1.0.0", "identity": "example:1.0.0", "destination": "package", "sha256": "0" * 64}
+    record = {
+        "name": "example",
+        "version": "1.0.0",
+        "identity": "example:1.0.0",
+        "destination": "package",
+        "sha256": "0" * 64,
+    }
     marker = directory / ".manifest.json"
-    marker.write_text(json.dumps({"archive": record["sha256"], "files": pr.directory_hashes(directory)}))
+    marker.write_text(
+        json.dumps({"archive": record["sha256"], "files": pr.directory_hashes(directory)})
+    )
     return tmp_path, directory, record
 
 
@@ -232,14 +274,35 @@ def test_tcd_diagram_matches_actual_c_offsets(tmp_path):
     (generated / "memory_map.h").write_text("/* No MMIO is executed. */\n")
     (generated / "user_extensions.h").write_text("/* No selectors are executed. */\n")
     fields = dr.dma_fields(ROOT)
-    program = '#include <stdio.h>\n#include <stddef.h>\n#include <retrosoc/hal/dma.h>\nint main(void) {\n'
+    program = (
+        "#include <stdio.h>\n#include <stddef.h>\n#include <retrosoc/hal/dma.h>\nint main(void) {\n"
+    )
     for row in fields:
         name = row["name"]
         program += f'printf("%zu %zu\\n", offsetof(rs_dma_tcd_t,{name}), sizeof(((rs_dma_tcd_t*)0)->{name}));\n'
-    program += 'return 0; }\n'
+    program += "return 0; }\n"
     source, exe = tmp_path / "offsets.c", tmp_path / "offsets"
     source.write_text(program)
-    subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "crt/include"),
-                    "-I", str(tmp_path), str(source), "-o", str(exe)], check=True, capture_output=True, text=True)
+    subprocess.run(
+        [
+            cc,
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "crt/include"),
+            "-I",
+            str(tmp_path),
+            str(source),
+            "-o",
+            str(exe),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
     values = subprocess.check_output([str(exe)], text=True).splitlines()
-    assert [tuple(map(int, line.split())) for line in values] == [(f["offset"], f["bits"] // 8) for f in fields]
+    assert [tuple(map(int, line.split())) for line in values] == [
+        (f["offset"], f["bits"] // 8) for f in fields
+    ]
