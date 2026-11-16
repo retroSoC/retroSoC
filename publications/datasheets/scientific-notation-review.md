@@ -110,3 +110,14 @@ python -m pytest -q tests/test_publication*.py tests/test_script_tools.py::test_
 及对应 `mini` 调用；它调用正式 build 入口、阻止网络访问、复建至独立目录并比较字节。
 正式构建和检查入口仍为 `publications/build_tiny_datasheet.py` 与
 `publications/build_datasheet.py`，Typst 固定为 0.15.1，Matplotlib 为 3.10.7。
+
+## PR 同步复核
+
+提交 PR 前已合入 `dev` 的 `14d76311da4c83809a00550e4643ff9950dc263d`。
+自前次出版交付以来的上游变化仅涉及 CI、依赖恢复、Agent 交付与测试辅助；
+RTL、SDK、硬件配置和锁定产品输入未改变。
+本次逐项审阅 Makefile 的 fixture / delivery 入口、帮助、PHONY 和 check-fast
+调整，以及串行 Mini 回归编排恢复。Mini 的非产品构建控制声明绑定该提交和
+Makefile blob `6e378cd6986c08c781474802eedb340149666ab4`；
+产品设计来源仍为本记录开头的完整 SHA。旧 PDF、测试和复建记录保留原始身份；
+PR 同步后的复建、检查及托管 CI 结果另行保存，不把历史失败改写为成功。
