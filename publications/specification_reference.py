@@ -42,7 +42,8 @@ def write(path: Path, value) -> None:
 def source_inputs(product: str) -> set[str]:
     return {SOURCE_FILE, MODEL_FILE, f"{BOOKS[product]}/parameters.json",
             "publications/specification_reference.py", "publications/specification_plots.py",
-            "publications/specification_vectors.py",
+            "publications/specification_vectors.py", "publications/scientific_reference.py",
+            "publications/specifications/scientific.typ", "tests/test_publication_scientific.py",
             "publications/review_datasheet.py", "tests/test_publication_specifications.py",
             "publications/specifications/components.typ", "publications/specifications/figures.typ",
             "requirements/publication.txt"}
@@ -398,6 +399,7 @@ def collect(root: Path, product: str, base: dict) -> dict:
                 + f"; core V scan {models['current']['voltages_v']}; temperature scan {models['current']['temperatures_c']} deg C.")
         elif r["id"].endswith(".model.transfer"):
             m = models["transfer"]
+            r["display_equation"] = f"Tref [s] = {m['setup_cycles']}/f_bus + L/({m['efficiency']}*Bideal)"
             r["display_value"] = (m["formula"] + f"; setup = {m['setup_cycles']} bus cycles; "
                 f"efficiency = {m['efficiency']}; payload lengths = {m['length_bytes']} B.")
         elif r["id"].endswith(".model.gpio"):

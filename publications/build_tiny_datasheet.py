@@ -149,6 +149,8 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
              'items:query(metadata).map(it=>it.value),regions:query(<table-continuation-region>).map(region=>{'
              'let pos=region.location().position();(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
              'width:region.width.length.pt(),height:region.height.length.pt())}))')
+    from publications import scientific_reference as scientific
+    query = scientific.layout_query(query)
     result = subprocess.run([executable, "eval", query, "--in", config["entrypoint"], *options], cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
     if result.returncode or "warning:" in result.stderr:
         raise ValueError("Tiny layout query failed:\n" + result.stderr)
@@ -160,7 +162,7 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     validate_rendered_registers(data, layout["items"])
     write(out / "document-structure.json", layout["headings"])
     write(out / "layout.json", layout["items"])
-    write(out / "layout-regions.json", layout["regions"])
+    write(out / "layout-regions.json", layout["regions"] + scientific.regions(layout, data))
     write(out / "page-roles.json", collect_page_roles(layout["items"]))
     write(out / "register-index.json", data["register_index"])
     write(out / "ip-pages.json", [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") in {"ip-start", "ip-end"}])
@@ -169,11 +171,12 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     write(out / "diagram-inventory.json", diagrams)
     write(out / "diagram-coverage.json", diagram_coverage(data["illustrations"], read(ROOT / BOOK / "navigation-contract.json")))
     markers = [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") in {"publication-change-start", "publication-change-end"}]
+    markers += scientific.change_markers(layout["items"], config, data["scientific"])
     validate_change_scope(markers, config)
     page_ranges(markers, max(r["page"] for r in markers))
     write(out / "change-markers.json", markers)
     specification_audits = export_audits(out, data["specifications"], layout["items"])
-    manifest = dict(engineering_vectors=engineering_vectors, specification_audits=specification_audits, specification_plots=specification_plots, change_markers_sha256=sha256(out / "change-markers.json"), document=config, inputs=hashes, assets=media, pdf_sha256=sha256(pdf),
+    manifest = dict(scientific_audits=scientific.export_audit(out, data, layout["items"]), engineering_vectors=engineering_vectors, specification_audits=specification_audits, specification_plots=specification_plots, change_markers_sha256=sha256(out / "change-markers.json"), document=config, inputs=hashes, assets=media, pdf_sha256=sha256(pdf),
                     publication_checkout=dict(head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), path=str(ROOT)),
                     typst=lock["publication_tools"]["typst"]["version"], media_revision=lock["sources"]["publication_media"]["revision"],
                     packages={p["identity"]: p["sha256"] for p in package_records(lock)},
@@ -221,6 +224,9 @@ def check_pdf(pdf: Path, data: dict) -> dict:
         if sha256(pdf.parent / filename) != manifest[key]:
             raise ValueError(f"Tiny layout record changed: {filename}")
     regions = read(pdf.parent / "layout-regions.json")
+    from publications import scientific_reference as scientific
+    scientific.verify_audit(pdf.parent, manifest, data)
+    scientific.validate_regions([r for r in regions if r.get("kind") == "scientific-script"], data["scientific"])
     layout = read(pdf.parent / "ip-pages.json")
     register_count = validate_rendered_registers(data, read(pdf.parent / "layout.json"))
     starts = [r["id"] for r in layout if r["kind"] == "ip-start"]
@@ -287,7 +293,7 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                 quarter_turn = (len(matrix) == 6 and abs(matrix[0]) < 1e-8 and abs(matrix[3]) < 1e-8
                                 and abs(matrix[1]) > 1e-8 and abs(matrix[2]) > 1e-8)
                 size = char["width"] if quarter_turn else char["size"]
-                if size < (8.45 if continuation else 8.95):
+                if size < (8.45 if continuation else 8.95) and not scientific.script_allowed(char, page.page_number, regions):
                     raise ValueError(f"Tiny undersized text on page {page.page_number}: {char['text']}")
                 if char["x0"] < -0.5 or char["x1"] > page.width + 0.5 or char["top"] < -0.5 or char["bottom"] > page.height + 0.5:
                     raise ValueError(f"Tiny text outside page {page.page_number}")

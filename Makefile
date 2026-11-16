@@ -1381,6 +1381,8 @@ agent-preflight:
 	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
 	  --base-branch $(if $(BASE_BRANCH),$(BASE_BRANCH),dev) \
 	  $(if $(PR),--pr $(PR)) $(if $(ONLINE),--online) \
+	  $(if $(filter 0,$(MERGE_CHECK)),--no-merge-check,--merge-check) \
+	  --merge-ref $(if $(MERGE_REF),$(MERGE_REF),origin/dev) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-preflight.json)
 
 agent-deliver:
@@ -1496,7 +1498,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_cache_artifacts.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
 	  tests/test_delivery_policy.py tests/test_engineering_observations.py tests/test_worktree_bootstrap.py tests/test_fixture_control.py \
-	  tests/test_validation_gaps.py tests/test_worktree_registry.py
+	  tests/test_validation_gaps.py tests/test_worktree_registry.py tests/test_merge_preflight.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
 	python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run
