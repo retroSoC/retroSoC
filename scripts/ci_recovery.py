@@ -78,6 +78,14 @@ def file_digest_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+ANSI_ESCAPE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
+
+
+def normalize_log_text(value: str) -> str:
+    value = ANSI_ESCAPE.sub("", value)
+    return "".join(character if character in "\n\r\t" or ord(character) >= 32 else "\ufffd" for character in value)
+
+
 def rerun_decision(job: dict[str, Any], classification: dict[str, Any], expected_head: str | None = None) -> dict[str, Any]:
     decision = {"status": "NOT_ELIGIBLE", "action": "none"}
     if job.get("status") != "completed":
@@ -100,7 +108,10 @@ def rerun_decision(job: dict[str, Any], classification: dict[str, Any], expected
 
 
 def gh_text(arguments: list[str]) -> str:
-    result = subprocess.run(["gh", *arguments], capture_output=True, text=True, check=False)
+    request = ["gh", *arguments]
+    if arguments and arguments[0] == "api" and any(str(argument).endswith("/logs") for argument in arguments[1:]):
+        request.insert(2, "--allow-escape-sequences")
+    result = subprocess.run(request, capture_output=True, text=True, check=False)
     if result.returncode:
         raise RuntimeError(f"gh {' '.join(arguments)} failed: {result.stderr.strip()}")
     return result.stdout
@@ -144,9 +155,12 @@ def inspect_job(
     expected_head: str | None,
 ) -> dict[str, Any]:
     job = gh_json(["api", f"repos/{repository}/actions/jobs/{job_id}"])
-    log_text = gh_text(["api", f"repos/{repository}/actions/jobs/{job_id}/logs"])
+    raw_log_text = gh_text(["api", f"repos/{repository}/actions/jobs/{job_id}/logs"])
+    log_text = normalize_log_text(raw_log_text)
     log_path = root / "build/engineering/ci-recovery" / f"job-{job_id}.log"
+    raw_log_path = log_path.with_suffix(".raw.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_log_path.write_text(raw_log_text, encoding="utf-8")
     log_path.write_text(log_text, encoding="utf-8")
     classification = classify_failure(job.get("conclusion"), log_text)
     decision = rerun_decision(job, classification, expected_head)
@@ -170,6 +184,9 @@ def inspect_job(
         "execution_mode": "execute" if execute else "dry-run",
         "log": str(log_path.resolve()),
         "log_sha256": file_digest(log_path),
+        "raw_log": str(raw_log_path.resolve()),
+        "raw_log_sha256": file_digest(raw_log_path),
+        "log_normalization": "ANSI escapes removed; other C0 controls replaced except LF/CR/TAB",
         "resources": resource_summary(log_text),
         "duration_seconds": seconds_between(job.get("started_at"), job.get("completed_at")),
         "steps": steps,
@@ -192,6 +209,8 @@ def cache_metadata(values: list[str] | None, label: str) -> dict[str, Any]:
             if number < 0:
                 raise ValueError(f"{label} must not be negative")
             result[name] = number
+        elif label == "cache-key":
+            result[name] = value or None
         else:
             if re.fullmatch(r"[0-9a-f]{64}", value) is None:
                 raise ValueError(f"{label} must contain a SHA-256 digest")
@@ -206,12 +225,14 @@ def cache_report(
     durations: list[str] | None = None,
     digests: list[str] | None = None,
     configs: list[str] | None = None,
+    keys: list[str] | None = None,
 ) -> dict[str, Any]:
     caches = []
     size_values = cache_metadata(sizes, "cache-size")
     duration_values = cache_metadata(durations, "cache-duration")
     digest_values = cache_metadata(digests, "cache-digest")
     config_values = cache_metadata(configs, "cache-config-digest")
+    key_values = cache_metadata(keys, "cache-key")
     for value in values:
         name, separator, state = value.partition("=")
         if not separator or not name:
@@ -223,6 +244,7 @@ def cache_report(
             {
                 "name": name,
                 "status": "HIT" if normalized == "true" else "MISS" if normalized == "false" else "NOT_RUN",
+                "key": key_values.get(name),
                 "bytes": size_values.get(name),
                 "restore_seconds": duration_values.get(name),
                 "sha256": digest_values.get(name),
@@ -235,6 +257,7 @@ def cache_report(
         ("cache-duration", duration_values),
         ("cache-digest", digest_values),
         ("cache-config-digest", config_values),
+        ("cache-key", key_values),
     ):
         if set(metadata) - names:
             raise ValueError(f"{label} references a cache without a status observation")
@@ -260,6 +283,7 @@ def parse_args() -> argparse.Namespace:
     cache.add_argument("--cache-duration", action="append", default=[])
     cache.add_argument("--cache-digest", action="append", default=[])
     cache.add_argument("--cache-config-digest", action="append", default=[])
+    cache.add_argument("--cache-key", action="append", default=[])
     return parser.parse_args()
 
 
@@ -283,6 +307,7 @@ def main() -> int:
                 durations=args.cache_duration,
                 digests=args.cache_digest,
                 configs=args.cache_config_digest,
+                keys=args.cache_key,
             )
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0

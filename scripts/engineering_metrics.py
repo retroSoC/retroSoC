@@ -239,14 +239,21 @@ def collect(repository: str, limit: int, delivery_dir: Path | None = None) -> di
     job_result = collect_jobs(repository, runs)
     delivery = collect_delivery(repository, pulls, delivery_dir)
     shadow = collect_shadow(repository, runs)
-    issues = [*job_result["issues"], *delivery["issues"], *shadow["issues"]]
+    from scripts.cache_artifacts import collect_cache_artifacts
+
+    artifact_cache = collect_cache_artifacts(repository, runs)
+    issues = [*job_result["issues"], *delivery["issues"], *shadow["issues"], *artifact_cache["issues"]]
     try:
         policy = policy_observation(repository)
     except (OSError, ValueError, RuntimeError) as error:
         policy = {"measurement_status": "NOT_MEASURED", "evaluation": None}
         issues.append(f"delivery policy observation unavailable: {error}")
     cache_observations = cache_step_observations(job_result["jobs"])
-    observations = {"delivery_policy": policy, "incremental_shadow": shadow}
+    observations = {
+        "delivery_policy": policy,
+        "incremental_shadow": shadow,
+        "cache_artifacts": {key: value for key, value in artifact_cache.items() if key != "observations"},
+    }
     from scripts.flow_control import source_state
 
     collector_state = source_state(ROOT)
@@ -270,6 +277,7 @@ def collect(repository: str, limit: int, delivery_dir: Path | None = None) -> di
         "jobs": job_result["jobs"],
         "delivery_records": delivery["records"],
         "cache_observations": cache_observations,
+        "cache_artifact_observations": artifact_cache["observations"],
         "observations": observations,
         "pull_requests": pulls,
         "issues": issues,

@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
 
-from scripts.ci_recovery import cache_report, classify_failure, inspect_job, rerun_decision
+from scripts.ci_recovery import (
+    cache_report,
+    classify_failure,
+    gh_text,
+    inspect_job,
+    normalize_log_text,
+    rerun_decision,
+)
 
 
 @pytest.mark.parametrize(
@@ -108,3 +116,57 @@ def test_cache_report_preserves_missing_and_invalid_states(tmp_path: Path) -> No
         cache_report(output, ["tools=unknown"])
     with pytest.raises(ValueError, match="invalid cache observation"):
         cache_report(output, ["tools"])
+
+
+def test_cache_report_binds_optional_keys_without_inventing_values(tmp_path: Path) -> None:
+    report = cache_report(
+        tmp_path / "cache.json",
+        ["sources=true", "tools=false", "ccache="],
+        keys=["sources=sources-key", "tools=", "ccache="],
+    )
+    assert report["caches"][0]["key"] == "sources-key"
+    assert report["caches"][1]["key"] is None
+    assert report["caches"][2]["key"] is None
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], keys=["other=key"])
+
+
+def test_log_normalization_removes_ansi_and_replaces_other_controls() -> None:
+    raw = "\x1b[36;1mFailed to connect\x1b[0m\x00\n"
+    normalized = normalize_log_text(raw)
+    assert normalized == "Failed to connect\ufffd\n"
+    assert classify_failure("failure", normalized)["category"] == "infrastructure_failure"
+
+
+def test_gh_log_download_allows_terminal_escape_sequences(monkeypatch: pytest.MonkeyPatch) -> None:
+    commands = []
+
+    def execute(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="log\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", execute)
+    assert gh_text(["api", "repos/retroSoC/retroSoC/actions/jobs/10/logs"]) == "log\n"
+    assert commands[0][2] == "--allow-escape-sequences"
+
+
+def test_inspect_preserves_raw_and_normalized_logs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    raw = "\x1b[31mFailed to connect\x1b[0m\x00\nMaximum resident set size (kbytes): 1024\n"
+    monkeypatch.setattr("scripts.ci_recovery.gh_json", lambda arguments: job())
+    monkeypatch.setattr("scripts.ci_recovery.gh_text", lambda arguments: raw)
+    report = inspect_job(
+        tmp_path,
+        "retroSoC/retroSoC",
+        10,
+        tmp_path / "inspection.json",
+        execute=False,
+        expected_head="a" * 40,
+    )
+    assert Path(report["raw_log"]).read_text(encoding="utf-8") == raw
+    normalized = Path(report["log"]).read_text(encoding="utf-8")
+    assert "\x1b" not in normalized and "\x00" not in normalized
+    assert "Failed to connect\ufffd" in normalized
+    assert len(report["raw_log_sha256"]) == 64
+    assert len(report["log_sha256"]) == 64
+    assert report["classification"]["category"] == "infrastructure_failure"
+    assert report["rerun_decision"]["status"] == "ELIGIBLE"

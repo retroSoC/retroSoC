@@ -76,6 +76,11 @@ collects workflow and PR metrics without source or credential content.
 timing, first-attempt and same-head duplicate execution, plus explicit cache-step
 observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
 optional cache/config digests without treating a cache as a cached PASS.
+`cache_artifacts.py` reads cache reports directly from run-bound artifact ZIPs,
+records artifact identity and SHA-256, and accepts optional cache keys. Only a
+unique key-matched GitHub cache entry supplies actual size bytes; artifact sizes,
+missing keys, and ambiguous metadata never become inferred cache measurements.
+Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
 timing. Unknown timeline, cache size, or local evidence is never reported as
@@ -94,9 +99,11 @@ and never enables a queue or gate by itself.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and
-resource summaries, and emits cache observations. `inspect` is dry-run by
-default. Only a first-attempt, same-head, recognized infrastructure failure is
-eligible for `inspect --execute`; all other failures preserve their verdict.
+resource summaries, and emits cache observations with optional cache keys.
+`inspect` is dry-run by default and preserves both raw and ANSI/control-normalized
+logs with separate SHA-256 evidence. Only a first-attempt, same-head, recognized
+infrastructure failure is eligible for `inspect --execute`; all other failures
+preserve their verdict.
 `formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to

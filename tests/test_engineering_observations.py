@@ -246,6 +246,10 @@ def test_collect_combines_jobs_delivery_and_cache(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr("scripts.delivery_metrics.gh_json", api)
     monkeypatch.setattr("scripts.ci_observations.gh_json", api)
     monkeypatch.setattr(
+        "scripts.cache_artifacts.gh_json",
+        lambda arguments: {"total_count": 0, "artifacts": []},
+    )
+    monkeypatch.setattr(
         "scripts.engineering_metrics.policy_observation",
         lambda repository: {"measurement_status": "MEASURED", "evaluation": {"evaluation_only": True}},
     )
@@ -262,6 +266,8 @@ def test_collect_combines_jobs_delivery_and_cache(monkeypatch: pytest.MonkeyPatc
     assert result["summary"]["jobs"]["job_count"] == 1
     assert result["summary"]["delivery"]["auto_merge_enabled_count"] == 1
     assert result["summary"]["cache"]["observation_count"] == 1
+    assert result["summary"]["observations"]["cache_artifacts"]["observation_count"] == 0
+    assert result["cache_artifact_observations"] == []
 
 
 def test_offline_summary_preserves_all_observation_classes(tmp_path: Path) -> None:
