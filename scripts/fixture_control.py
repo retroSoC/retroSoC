@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -155,6 +156,31 @@ def setup_commands(reference_root: Path | None) -> list[list[str]]:
     ]
 
 
+TOOL_EXECUTABLES = {
+    "verilator": "verilator",
+    "sv2v": "sv2v",
+    "iverilog": "iverilog",
+    "yosys": "yosys",
+    "riscv_gnu": "riscv32-unknown-elf-gcc",
+}
+
+
+def discover_tool_archive(spec: dict[str, Any]) -> Path | None:
+    name = spec["name"].removeprefix("toolchain:")
+    executable_name = TOOL_EXECUTABLES.get(name)
+    if executable_name is None:
+        return None
+    executable = shutil.which(executable_name)
+    if executable is None:
+        return None
+    installed = Path(executable).resolve()
+    for directory in dict.fromkeys((installed.parent, installed.parent.parent, installed.parent.parent.parent)):
+        candidate = directory / Path(spec["destination"]).name
+        if candidate.is_file() and not candidate.is_symlink():
+            return candidate
+    return None
+
+
 def restore_archive(root: Path, spec: dict[str, Any]) -> dict[str, Any]:
     destination = root / spec["destination"]
     reference_value = spec.get("reference")
@@ -168,11 +194,22 @@ def restore_archive(root: Path, spec: dict[str, Any]) -> dict[str, Any]:
             raise RuntimeError(f"existing archive differs from its lock: {spec['name']}")
         mode = "local-archive"
     else:
+        mode = "locked-copy"
+        if not reference.is_file() and spec.get("kind") == "toolchain":
+            discovered = discover_tool_archive(spec)
+            if discovered is not None:
+                reference = discovered
+                mode = "locked-copy-host-cache"
         if not reference.is_file() or sha256(reference) != spec["sha256"]:
             raise RuntimeError(f"local archive reference is missing or invalid: {spec['name']}")
         download_file(reference.as_uri(), destination, spec["sha256"], retries=1, timeout=30)
-        mode = "locked-copy"
-    return {**spec, "bytes": destination.stat().st_size, "restore_mode": mode, "status": "VERIFIED"}
+    return {
+        **spec,
+        "reference": str(reference),
+        "bytes": destination.stat().st_size,
+        "restore_mode": mode,
+        "status": "VERIFIED",
+    }
 
 
 def restore_pcm_corpus(root: Path, archive_sha256: str) -> None:

@@ -63,6 +63,29 @@ def test_archive_restore_is_local_checksum_bound_and_non_destructive(tmp_path: P
     assert destination.read_bytes() == b"preserve mismatch\n"
 
 
+def test_tool_archive_can_be_recovered_from_a_locked_host_installation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    installation = tmp_path / "host/iverilog"
+    executable = installation / "bin/iverilog"
+    executable.parent.mkdir(parents=True)
+    executable.write_text("tool\n", encoding="utf-8")
+    executable.chmod(0o755)
+    archive = installation / "iverilog.tar.gz"
+    archive.write_bytes(b"original locked archive\n")
+    monkeypatch.setenv("PATH", str(executable.parent))
+    spec = {
+        "name": "toolchain:iverilog",
+        "kind": "toolchain",
+        "destination": "iverilog.tar.gz",
+        "reference": str(tmp_path / "missing/iverilog.tar.gz"),
+        "sha256": sha256(archive),
+    }
+    result = restore_archive(tmp_path / "target", spec)
+    assert result["restore_mode"] == "locked-copy-host-cache"
+    assert (tmp_path / "target/iverilog.tar.gz").read_bytes() == b"original locked archive\n"
+
+
 def test_restore_rejects_a_shared_writable_reference_root(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="distinct target and reference"):
         restore(tmp_path, tmp_path, tmp_path / "result.json")
