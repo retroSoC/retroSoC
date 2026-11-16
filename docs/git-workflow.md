@@ -270,8 +270,11 @@ and push permission, then asks GitHub to enable native merge-commit auto-merge.
 This is not a merge by the agent: GitHub still waits for every required check.
 Pending or not-yet-scheduled checks do not postpone enabling auto-merge, while
 failed or cancelled checks prevent GitHub from merging. `--watch` (or `WATCH=1`)
-retains structured monitoring and immediate cleanup; without it, the command
-returns with cleanup pending. After GitHub reports `MERGED`, use
+first retains the enabled delivery, then uses `delivery_controller.py` for all
+polling, terminal-failure handling, and immediate cleanup. The same coordinator
+resumes its canonical checkpoint after interruption; no second watcher enables
+auto-merge, retries failed checks, or overrides an external disable. Without
+`--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
 `--reconcile-only` (or `RECONCILE=1`) to finish cleanup on the next
 synchronization. The legacy `python3 scripts/pr_workflow.py --pr <number> --root .`
 remains available for after-green monitoring. Neither path uses `--admin`,
