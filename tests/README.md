@@ -142,6 +142,10 @@ tooling.
   accounting, target conflicts, and symlink escapes. No expiry automatically
   deletes evidence. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
+  `test_merge_preflight.py` uses real temporary Git repositories and linked
+  worktrees to cover conflicting and clean merge dry-runs, dirty-source refusal,
+  target validation, source-HEAD preservation, no-commit behavior, and complete
+  temporary-worktree cleanup. It also checks the Make opt-out boundary.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
