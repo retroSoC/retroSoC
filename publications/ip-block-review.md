@@ -163,3 +163,12 @@ Mini 另有 2 页近似匹配；其余 176／355 页分别检查重排与图文�
 所审阅官方 PDF SHA-256：
 `83cb7e9c7f784a4c5dbbedec428adf58d2cbac8cd802d11e2cdc4d504cceaa86`。
 采用其工程绘图语言，所有硬件结构、接口和限制依据 retroSoC 自身设计重新组织。
+
+## PR 同步审阅
+
+开 PR 前合并远端 dev `b0ac5ee36d408b448de07b69788d87e5d16f3079`。
+该增量仅涉及 Agent／CI／缓存／交付及其测试，没有 RTL、SDK、硬件配置或依赖锁
+变化。复核 Makefile 的两处增量（合并预检参数和 check-fast 用例）及 Git 工作流的
+预检／监视说明后，仅更新 Mini `build_control_review` 的完整提交／文件指纹。
+产品来源仍为 `6f3f3c83`，旧交付 PDF、manifest 和全部失败／复验记录继续保留。
+PR 同步检查与复建记录独立存于 `build/datasheet-ip-block-pr-validation-20261117/`。
