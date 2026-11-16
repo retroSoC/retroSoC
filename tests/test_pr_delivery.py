@@ -114,6 +114,10 @@ def test_watch_enables_auto_merge_before_pending_checks(
         lambda *args, **kwargs: {"status": "MERGED", "cleanup": "COMPLETE", "warnings": []},
     )
     monkeypatch.setattr("scripts.delivery_controller.time.sleep", sleeps.append)
+    from types import SimpleNamespace
+
+    clock = iter([100.0, 123.0])
+    monkeypatch.setattr("scripts.pr_delivery.time", SimpleNamespace(monotonic=lambda: next(clock)))
     result = deliver(
         ROOT,
         "retroSoC/retroSoC",
@@ -126,6 +130,7 @@ def test_watch_enables_auto_merge_before_pending_checks(
     assert result["status"] == "MERGED"
     assert result["cleanup"] == "COMPLETE"
     assert result["coordinator_summary"] == str(tmp_path / "pr-248-controller.json")
+    assert result["watch_seconds"] == 23.0
     assert (tmp_path / "pr-248-controller.json").is_file()
     assert calls == [248]
     assert sleeps == [60, 60]

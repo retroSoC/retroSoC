@@ -7,6 +7,7 @@ import argparse
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -129,6 +130,7 @@ def deliver(
         raise ValueError("interval must be positive")
     if watch and delivery_dir is None:
         raise ValueError("watched delivery requires a checkpoint directory")
+    started = time.monotonic()
 
     def save(result: dict[str, Any]) -> None:
         if checkpoint is not None:
@@ -156,7 +158,7 @@ def deliver(
         delete_remote=delete_remote,
     )
     result = read_json(path)
-    result["watch_seconds"] = summary["watch_seconds"]
+    result["watch_seconds"] = round(time.monotonic() - started, 3)
     result["coordinator_summary"] = str(summary_path)
     atomic_write(path, dump_json(result))
     save(result)
