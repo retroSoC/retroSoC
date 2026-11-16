@@ -48,7 +48,13 @@ dry-run-by-default canonical worktree creation and current-worktree restoration.
 It selects locked Git sources and raw archive files by name, verifies
 revision/SHA-256 and scope, and disables network fallback unless explicitly
 allowed. Recursive inputs use independent atomic copies with submodule, symlink,
-and capacity checks before their existing setup flow runs.
+and capacity checks before their existing setup flow runs. By default it does
+not restore the complete hosted fixture set. An explicit task
+`execution.fixture_profile: hosted-pytest` runs `fixture_control.restore` from
+the distinct primary worktree after creation or ordinary input restoration.
+The bootstrap result checkpoints `PLANNED`, `RESTORING`, `READY`, or `FAILED`
+and links the complete restore/doctor evidence. This full profile remains
+offline-only; it never inherits network fallback from partial source options.
 `fixture_control.py` provides `plan`, `restore`, and `doctor` for the complete
 hosted-Pytest fixture set. It restores lock-selected sources, PDKs, reference
 archives, publication packages, and test toolchains from a distinct local
@@ -63,6 +69,10 @@ local tools, the dependency-lock digest, and the Tiny reviewed-source snapshot
 using the publication collector's actual source inventory. Workspace writes
 require a clean initial worktree. Online
 GitHub permission and PR-head probes are opt-in; local preflight is offline.
+A task with `execution.fixture_profile` also runs the matching doctor without
+restoring or downloading inputs; every doctor issue blocks preflight. Tasks
+without this field report `fixture.status=NOT_REQUESTED` and do not probe the
+large fixture inventory.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
 `skill_eval.py` validates all registered Skills and executes isolated, read-only

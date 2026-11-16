@@ -205,7 +205,7 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
         task.get("execution"),
         "execution",
         {"mode", "worktree", "artifact_root"},
-        {"approval"},
+        {"approval", "fixture_profile"},
         issues,
     )
     approval = None
@@ -219,6 +219,8 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
             issues.append("execution.artifact_root must be below build/")
         elif not safe_relative_path(artifact_root):
             issues.append("execution.artifact_root must be repository-relative")
+        if execution.get("fixture_profile") not in (None, "hosted-pytest"):
+            issues.append("execution.fixture_profile must be hosted-pytest")
         approval = execution.get("approval")
         if approval is not None:
             approval = check_keys(
@@ -280,6 +282,7 @@ def render_task_prompt(task: dict[str, Any]) -> str:
         f"Forbidden paths: {', '.join(task['scope']['forbidden_paths']) or 'N/A'}",
         f"Non-goals: {', '.join(task['scope']['non_goals']) or 'N/A'}",
         f"Execution: {task['execution']['mode']}",
+        f"Fixture profile: {task['execution'].get('fixture_profile', 'NOT_REQUESTED')}",
         f"Validation: {task['validation']['mode']} / {task['validation']['risk']}",
         f"Profiles: {', '.join(task['validation']['profiles']) or 'N/A'}",
         f"PDKs: {', '.join(task['validation']['pdks']) or 'N/A'}",
@@ -666,6 +669,14 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         issues.append(f"task root is not the Git worktree root: {root}")
     if task.get("execution", {}).get("mode") == "workspace-write" and not worktree["clean"]:
         issues.append("workspace-write preflight requires a clean worktree before execution")
+    profile_name = task.get("execution", {}).get("fixture_profile")
+    fixture = {"profile": profile_name, "status": "NOT_REQUESTED"}
+    if profile_name is not None:
+        from scripts.fixture_control import doctor, fixture_profile
+
+        verdict = doctor(root, fixture_profile(root, None))
+        fixture = {"profile": profile_name, "status": verdict["status"], "doctor": verdict}
+        issues.extend(f"fixture: {issue}" for issue in verdict["issues"])
     snapshot = tiny_snapshot_status(root)
     if snapshot["status"] != "PASS":
         issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
@@ -683,6 +694,7 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "dependency_lock_sha256": hashlib.sha256((root / "dependencies/dependencies.lock.json").read_bytes()).hexdigest(),
         "tools": tools,
         "worktree": worktree,
+        "fixture": fixture,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
         "github": github,
