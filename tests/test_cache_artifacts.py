@@ -134,3 +134,48 @@ def test_unrelated_artifacts_do_not_create_cache_observations(monkeypatch: pytes
     assert result["measurement_status"] == "NOT_MEASURED"
     assert result["observations"] == []
     assert result["issues"] == []
+
+
+def test_fallback_restore_measures_the_matched_key_not_the_primary_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    queries = []
+
+    def metadata(arguments):
+        queries.append(arguments[-1])
+        return {"caches": [{"id": 100, "key": "fallback-key", "size_in_bytes": 8192}]}
+
+    monkeypatch.setattr("scripts.cache_artifacts.gh_json", metadata)
+    records = cache_records(
+        "retroSoC/retroSoC",
+        run_document(),
+        artifact(),
+        payload([{"name": "ccache", "status": "MISS", "key": "primary-key", "matched_key": "fallback-key"}]),
+        "d" * 64,
+    )
+
+    assert queries == ["repos/retroSoC/retroSoC/actions/caches?key=fallback-key"]
+    assert records[0]["key"] == "primary-key"
+    assert records[0]["matched_key"] == "fallback-key"
+    assert records[0]["metadata_key"] == "fallback-key"
+    assert records[0]["cache_id"] == 100
+    assert records[0]["bytes"] == 8192
+    assert records[0]["metadata_status"] == "MEASURED"
+
+
+def test_primary_miss_without_a_match_has_no_size_or_invented_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "scripts.cache_artifacts.gh_json",
+        lambda arguments: pytest.fail("a miss without a restored key must not query primary-key size"),
+    )
+    records = cache_records(
+        "retroSoC/retroSoC",
+        run_document(),
+        artifact(),
+        payload([{"name": "ccache", "status": "MISS", "key": "primary-key"}]),
+        "d" * 64,
+    )
+
+    assert records[0]["key"] == "primary-key"
+    assert records[0]["matched_key"] is None
+    assert records[0]["metadata_key"] is None
+    assert records[0]["bytes"] is None
+    assert records[0]["metadata_status"] == "NOT_MEASURED"

@@ -122,13 +122,56 @@ def test_cache_report_binds_optional_keys_without_inventing_values(tmp_path: Pat
     report = cache_report(
         tmp_path / "cache.json",
         ["sources=true", "tools=false", "ccache="],
-        keys=["sources=sources-key", "tools=", "ccache="],
+        keys=["sources=sources-key", "tools=tools-key", "ccache="],
+        matched_keys=["sources=sources-key", "tools=fallback-key", "ccache="],
+        attempted=["tools"],
     )
     assert report["caches"][0]["key"] == "sources-key"
-    assert report["caches"][1]["key"] is None
+    assert report["caches"][0]["matched_key"] == "sources-key"
+    assert report["caches"][1]["key"] == "tools-key"
+    assert report["caches"][1]["matched_key"] == "fallback-key"
     assert report["caches"][2]["key"] is None
+    assert report["caches"][2]["matched_key"] is None
     with pytest.raises(ValueError, match="without a status observation"):
         cache_report(tmp_path / "cache.json", ["sources=true"], keys=["other=key"])
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], matched_keys=["other=key"])
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], attempted=["other"])
+
+
+def test_cache_report_distinguishes_an_attempted_empty_hit_from_not_run(tmp_path: Path) -> None:
+    report = cache_report(
+        tmp_path / "cache.json",
+        ["sources=", "optional="],
+        keys=["sources=primary-key"],
+        attempted=["sources"],
+    )
+    assert [entry["status"] for entry in report["caches"]] == ["MISS", "NOT_RUN"]
+    with pytest.raises(ValueError, match="must be unique"):
+        cache_report(tmp_path / "cache.json", ["sources="], attempted=["sources", "sources"])
+
+
+def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
+    root = Path(__file__).resolve().parents[1]
+    action = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    for relative, names in (
+        (".github/workflows/quality.yml", ("pip", "sources", "toolchains", "references")),
+        (".github/workflows/_regression.yml", ("sources", "toolchains", "ccache")),
+    ):
+        workflow = (root / relative).read_text(encoding="utf-8")
+        assert workflow.count(f"uses: actions/cache/restore@{action}") == len(names)
+        assert workflow.count(f"uses: actions/cache/save@{action}") == len(names)
+        for name in names:
+            assert f"steps.{name}.outputs.cache-primary-key" in workflow
+            assert f"steps.{name}.outputs.cache-matched-key" in workflow
+            assert f"--cache-attempted {name}" in workflow
+            assert f"if: success() && steps.{name}.outputs.cache-hit != 'true'" in workflow
+    quality = (root / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+    regression = (root / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+    assert quality.count("key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}") == 2
+    assert regression.count("path: .cache/retrosoc/ccache") == 2
+    assert regression.count("ccache-${{ matrix.product }}-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}-") == 2
 
 
 def test_log_normalization_removes_ansi_and_replaces_other_controls() -> None:

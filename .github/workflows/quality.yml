@@ -203,14 +203,14 @@ jobs:
 
       - name: Restore pip cache
         id: pip
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
 
       - name: Restore locked source dependencies
         id: sources
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             physical/pdk/IHP-Open-PDK
@@ -224,7 +224,7 @@ jobs:
 
       - name: Restore locked toolchains
         id: toolchains
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .cache/retrosoc/downloads
@@ -233,7 +233,7 @@ jobs:
 
       - name: Restore accelerator reference cache
         id: references
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .cache/retrosoc/sources/apu-libflac
@@ -319,6 +319,14 @@ jobs:
           --cache-key "sources=${{ steps.sources.outputs.cache-primary-key }}"
           --cache-key "toolchains=${{ steps.toolchains.outputs.cache-primary-key }}"
           --cache-key "references=${{ steps.references.outputs.cache-primary-key }}"
+          --cache-matched-key "pip=${{ steps.pip.outputs.cache-matched-key }}"
+          --cache-matched-key "sources=${{ steps.sources.outputs.cache-matched-key }}"
+          --cache-matched-key "toolchains=${{ steps.toolchains.outputs.cache-matched-key }}"
+          --cache-matched-key "references=${{ steps.references.outputs.cache-matched-key }}"
+          --cache-attempted pip
+          --cache-attempted sources
+          --cache-attempted toolchains
+          --cache-attempted references
 
       - name: Upload fixture reports
         if: always()
@@ -339,6 +347,51 @@ jobs:
             build/**/*.log
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Save pip cache
+        if: success() && steps.pip.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Save locked source dependencies
+        if: success() && steps.sources.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            physical/pdk/IHP-Open-PDK
+            physical/pdk/icsprout55-pdk
+            .cache/retrosoc/sources/ics55_ecos_pll
+            .cache/retrosoc/sources/openc906
+            rtl/managed/third_party
+            .cache/retrosoc/pdk
+            .cache/retrosoc/stamps
+          key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Save locked toolchains
+        if: success() && steps.toolchains.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/downloads
+            .cache/retrosoc/toolchains
+          key: tools-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Save accelerator reference cache
+        if: success() && steps.references.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/sources/apu-libflac
+            .cache/retrosoc/sources/apu-flac-corpus
+            .cache/retrosoc/sources/apu-mlperf-tiny
+            .cache/retrosoc/sources/apu-kws-mfcc
+            .cache/retrosoc/sources/apu-tensorflow
+            .cache/retrosoc/sources/apu-gemmlowp
+            .cache/retrosoc/sources/npu-vww-corpus
+            .cache/retrosoc/downloads/npu
+          key: accelerator-reference-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
   fixtures-fan-in:
     needs: [impact, fixtures]

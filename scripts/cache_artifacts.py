@@ -101,7 +101,11 @@ def cache_records(
                     raise ValueError("cache report contains invalid or duplicate cache identities")
                 names.add(name)
                 key = entry.get("key")
-                metadata = cache_metadata(repository, key)
+                matched_key = entry.get("matched_key")
+                measurement_key = (
+                    (matched_key or key) if status == "HIT" else matched_key if status == "MISS" else None
+                )
+                metadata = cache_metadata(repository, measurement_key)
                 records.append(
                     {
                         "run_id": run["id"],
@@ -115,6 +119,8 @@ def cache_records(
                         "report_path": info.filename,
                         "cache_name": name,
                         "key": key,
+                        "matched_key": matched_key,
+                        "metadata_key": measurement_key,
                         "hit_status": status,
                         "bytes": metadata["bytes"],
                         "cache_id": metadata["cache_id"],
