@@ -315,6 +315,10 @@ jobs:
           --cache "sources=${{ steps.sources.outputs.cache-hit }}"
           --cache "toolchains=${{ steps.toolchains.outputs.cache-hit }}"
           --cache "references=${{ steps.references.outputs.cache-hit }}"
+          --cache-key "pip=${{ steps.pip.outputs.cache-primary-key }}"
+          --cache-key "sources=${{ steps.sources.outputs.cache-primary-key }}"
+          --cache-key "toolchains=${{ steps.toolchains.outputs.cache-primary-key }}"
+          --cache-key "references=${{ steps.references.outputs.cache-primary-key }}"
 
       - name: Upload fixture reports
         if: always()
