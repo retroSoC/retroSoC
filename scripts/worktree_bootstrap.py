@@ -316,6 +316,7 @@ def bootstrap_worktree(
         branch = registered[0].get("branch")
         if git(target, "merge-base", "--is-ancestor", base, "HEAD").returncode:
             raise ValueError("task base is not an ancestor of the target head")
+    profile_name = task["execution"].get("fixture_profile")
     document = {
         "schema_version": 1,
         "task_id": task["task_id"],
@@ -333,6 +334,11 @@ def bootstrap_worktree(
         "requested_archives": archive_names or [],
         "sources": [],
         "archives": [],
+        "fixture": {
+            "profile": profile_name,
+            "status": "PLANNED" if profile_name is not None else "NOT_REQUESTED",
+            "network_policy": "offline/local-copy only",
+        },
         "packet_sha256": file_digest(task_path),
     }
 
@@ -362,11 +368,31 @@ def bootstrap_worktree(
             if packet_destination.resolve() != task_path:
                 packet_destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(task_path, packet_destination)
+            if profile_name is not None:
+                fixture_output = artifact_root / "fixture-restore.json"
+                document["fixture"].update(
+                    status="RESTORING",
+                    evidence=fixture_output.relative_to(target).as_posix(),
+                    reference_root=str(main_root),
+                )
+                write_result()
+                from scripts.fixture_control import restore
+
+                restoration = restore(target, main_root, fixture_output)
+                document["fixture"].update(
+                    status=restoration.get("status"),
+                    doctor_status=restoration.get("doctor", {}).get("status"),
+                    source_revision=restoration.get("source_revision"),
+                )
+                if restoration.get("status") != "READY" or restoration.get("doctor", {}).get("status") != "READY":
+                    raise RuntimeError("fixture restoration did not return a READY doctor")
             document["source_revision"] = git_output(target, "rev-parse", "HEAD")
             document["source_dirty"] = bool(git(target, "status", "--porcelain", "--untracked-files=all").stdout.strip())
             document["status"] = "READY"
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         document["status"] = "FAILED"
+        if document["fixture"]["status"] == "RESTORING":
+            document["fixture"]["status"] = "FAILED"
         document["error"] = str(error)
         write_result()
         raise

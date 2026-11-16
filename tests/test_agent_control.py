@@ -73,6 +73,53 @@ def test_task_contract_accepts_a_read_only_maintenance_task() -> None:
     assert validate_task(valid_task(), ROOT) == []
 
 
+def test_hosted_fixture_profile_is_explicit_and_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    assert validate_task(task, ROOT) == []
+    assert "Fixture profile: hosted-pytest" in render_task_prompt(task)
+    task["execution"]["fixture_profile"] = "all"
+    assert "execution.fixture_profile must be hosted-pytest" in validate_task(task, ROOT)
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    monkeypatch.setattr("scripts.fixture_control.fixture_profile", lambda root, reference: {"profile": "hosted-pytest"})
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "BLOCKED", "issues": ["missing locked source"], "checks": []},
+    )
+    blocked = create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["fixture"]["status"] == "BLOCKED"
+    assert blocked["issues"] == ["fixture: missing locked source"]
+
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "READY", "issues": [], "checks": []},
+    )
+    ready = create_preflight(args)
+    assert ready["status"] == "READY", ready["issues"]
+    assert ready["fixture"]["status"] == "READY"
+
+
 def test_feature_write_requires_bound_specification_and_approval() -> None:
     task = valid_task()
     task.update(
