@@ -56,7 +56,7 @@ def cache_metadata(repository: str, key: str | None) -> dict[str, Any]:
     document = gh_json(
         ["api", f"repos/{repository}/actions/caches?key={urllib.parse.quote(key, safe='')}"]
     )
-    entries = document.get("caches") if isinstance(document, dict) else None
+    entries = document.get("actions_caches") if isinstance(document, dict) else None
     if not isinstance(entries, list) or any(not isinstance(entry, dict) for entry in entries):
         raise RuntimeError("cache metadata response is incomplete")
     matching = [entry for entry in entries if entry.get("key") == key]

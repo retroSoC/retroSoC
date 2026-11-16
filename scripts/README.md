@@ -90,8 +90,9 @@ optional cache/config digests without treating a cache as a cached PASS.
 `cache_artifacts.py` reads cache reports directly from run-bound artifact ZIPs,
 records artifact identity and SHA-256, and accepts optional primary and matched
 cache keys. Exact hits may use the primary key; fallback restores use the actual
-matched key. Only a unique key-matched GitHub cache entry supplies actual size
-bytes; misses without a match, artifact sizes, missing keys, and ambiguous
+matched key. GitHub's `actions_caches` response array is used for inventory
+metadata, not the report-local `caches` array. Only a unique key-matched GitHub
+cache entry supplies actual size bytes; misses without a match, artifact sizes, missing keys, and ambiguous
 metadata never become inferred cache measurements. Summaries distinguish
 `restored_bytes_total` across observations from `unique_cache_entry_count` and
 `unique_cache_bytes_total` by cache ID. The legacy `cache_bytes_total` remains

@@ -74,7 +74,7 @@ def test_collect_reads_real_zip_structure_and_preserves_unknown_sizes(monkeypatc
 def test_unique_cache_key_supplies_actual_github_cache_size(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "scripts.cache_artifacts.gh_json",
-        lambda arguments: {"caches": [{"id": 99, "key": "sources-key", "size_in_bytes": 4096}]},
+        lambda arguments: {"actions_caches": [{"id": 99, "key": "sources-key", "size_in_bytes": 4096}]},
     )
     records = cache_records(
         "retroSoC/retroSoC",
@@ -91,7 +91,7 @@ def test_unique_cache_key_supplies_actual_github_cache_size(monkeypatch: pytest.
 def test_missing_or_ambiguous_cache_metadata_stays_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "scripts.cache_artifacts.gh_json",
-        lambda arguments: {"caches": [{"id": 1, "key": "key", "size_in_bytes": 10}, {"id": 2, "key": "key", "size_in_bytes": 20}]},
+        lambda arguments: {"actions_caches": [{"id": 1, "key": "key", "size_in_bytes": 10}, {"id": 2, "key": "key", "size_in_bytes": 20}]},
     )
     result = cache_metadata("retroSoC/retroSoC", "key")
     assert result["bytes"] is None
@@ -141,7 +141,7 @@ def test_fallback_restore_measures_the_matched_key_not_the_primary_key(monkeypat
 
     def metadata(arguments):
         queries.append(arguments[-1])
-        return {"caches": [{"id": 100, "key": "fallback-key", "size_in_bytes": 8192}]}
+        return {"actions_caches": [{"id": 100, "key": "fallback-key", "size_in_bytes": 8192}]}
 
     monkeypatch.setattr("scripts.cache_artifacts.gh_json", metadata)
     records = cache_records(
