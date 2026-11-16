@@ -231,7 +231,11 @@ lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
 plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. Initial, pending,
+and offers `--reconcile-only` for a later merged-PR cleanup. It checkpoints the
+initial enabled delivery, then delegates every watched poll and cleanup to
+`delivery_controller.py`; there is no second watcher state machine. The canonical
+`pr-<number>-delivery.json` and `pr-<number>-controller.json` are retained even
+when a custom `--output` receives the final result. Initial, pending,
 waiting-for-native-merge, and final states are atomically checkpointed so an
 interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility

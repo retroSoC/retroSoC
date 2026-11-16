@@ -75,8 +75,10 @@ Feature stages retain their design and architecture approval gates.
 `make agent-deliver PR=<number>` first probes the repository's auto-merge,
 merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
 auto-merge while checks may still be pending. Only GitHub merges after required
-checks pass, always with a merge commit. `WATCH=1` retains live monitoring and
-cleanup; otherwise run `RECONCILE=1` after the merge. The legacy
+checks pass, always with a merge commit. `WATCH=1` checkpoints the initial
+record, then uses the delivery coordinator for monitoring and cleanup; resume
+that record with `agent-coordinate` after interruption. Otherwise run
+`RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 

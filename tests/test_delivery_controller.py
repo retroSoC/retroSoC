@@ -164,3 +164,32 @@ def test_make_forwards_only_explicit_prs() -> None:
     assert completed.returncode == 0
     assert "--pr 1 --pr 2" in completed.stdout
     assert "--watch" in completed.stdout
+
+
+def test_coordinator_forwards_cleanup_opt_outs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    directory = tmp_path / "delivery"
+    write_record(directory, delivery_record())
+    monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull("MERGED"))
+    calls = []
+
+    def reconcile(root, repository, number, cleanup, delete_remote):
+        calls.append((cleanup, delete_remote))
+        return {
+            "status": "MERGED_WITH_WARNINGS",
+            "cleanup": "WARNING",
+            "warnings": ["cleanup was not requested"],
+        }
+
+    monkeypatch.setattr("scripts.delivery_controller.reconcile_delivery", reconcile)
+    result = coordinate_once(
+        ROOT,
+        "retroSoC/retroSoC",
+        [1],
+        directory,
+        cleanup=False,
+        delete_remote=False,
+    )
+
+    assert calls == [(False, False)]
+    assert result["status"] == "ATTENTION"
+    assert result["records"][0]["action"] == "CLEANUP_WARNING"
