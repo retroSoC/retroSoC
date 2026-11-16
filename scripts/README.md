@@ -73,6 +73,14 @@ A task with `execution.fixture_profile` also runs the matching doctor without
 restoring or downloading inputs; every doctor issue blocks preflight. Tasks
 without this field report `fixture.status=NOT_REQUESTED` and do not probe the
 large fixture inventory.
+`merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
+against the selected target revision. `make agent-preflight` enables this check
+by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
+The caller must fetch the target first. A clean source worktree is required.
+The temporary checkout uses the source HEAD, not the main checkout's branch,
+and is aborted and normally removed without committing. Results include exact
+conflicted paths, resolved target revision, cleanup, and no-commit evidence;
+cleanup or Git failures stop delivery rather than becoming a pass.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
 `skill_eval.py` validates all registered Skills and executes isolated, read-only

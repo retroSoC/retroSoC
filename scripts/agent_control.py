@@ -677,6 +677,17 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         verdict = doctor(root, fixture_profile(root, None))
         fixture = {"profile": profile_name, "status": verdict["status"], "doctor": verdict}
         issues.extend(f"fixture: {issue}" for issue in verdict["issues"])
+    merge_check = {"status": "NOT_RUN"}
+    merge_ref = getattr(args, "merge_ref", "origin/dev")
+    if getattr(args, "merge_check", False):
+        if worktree["clean"] and worktree["git_root"] == str(root):
+            from scripts.merge_preflight import merge_conflict_scan
+
+            merge_check = merge_conflict_scan(root, merge_ref)
+        else:
+            merge_check = {"status": "SKIPPED", "reason": "merge check requires a clean Git worktree"}
+        if merge_check["status"] == "CONFLICT":
+            issues.append(f"merge check conflicts with {merge_ref}: {', '.join(merge_check['unmerged_paths'])}")
     snapshot = tiny_snapshot_status(root)
     if snapshot["status"] != "PASS":
         issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
@@ -695,6 +706,7 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "tools": tools,
         "worktree": worktree,
         "fixture": fixture,
+        "merge_check": merge_check,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
         "github": github,
@@ -928,6 +940,8 @@ def parse_args() -> argparse.Namespace:
     preflight.add_argument("--base-branch", default="dev")
     preflight.add_argument("--pr", type=int)
     preflight.add_argument("--online", action="store_true")
+    preflight.add_argument("--merge-check", action=argparse.BooleanOptionalAction, default=False)
+    preflight.add_argument("--merge-ref", default="origin/dev")
     preflight.add_argument("--output", type=Path)
     return parser.parse_args()
 

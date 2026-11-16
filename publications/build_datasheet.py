@@ -43,6 +43,7 @@ from publications.structure_reference import validate_structure  # noqa: E402
 from publications.specification_reference import collect as collect_specifications, source_inputs as specification_inputs, export_audits, verify_audits  # noqa: E402
 from publications.specification_plots import render as render_specifications  # noqa: E402
 from publications.specification_vectors import render as render_vectors  # noqa: E402
+from publications import scientific_reference as scientific  # noqa: E402
 from publications.diagram_reference import collect_diagrams  # noqa: E402
 from publications.diagram_coverage import coverage as diagram_coverage, validate_usage as validate_diagram_usage  # noqa: E402
 from publications.package_reference import (  # noqa: E402
@@ -235,6 +236,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     }
 
     data["specifications"] = collect_specifications(ROOT, "mini", data)
+    scientific.prepare(data)
     return data
 
 
@@ -428,6 +430,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         config["entrypoint"],
         *command[4:],
     ]
+    query_command[2] = scientific.layout_query(query_command[2])
     queried = subprocess.run(
         query_command, cwd=ROOT, text=True, capture_output=True, encoding="utf-8"
     )
@@ -467,9 +470,11 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     write_json(out / "ip-pages.json", page_map)
     # Read final labeled rectangles without feeding positions back into layout.
     soc = data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"]
-    write_json(out / "layout-regions.json", layout_report["regions"] + collect_text_regions(soc, layout_items))
+    write_json(out / "layout-regions.json", layout_report["regions"] + collect_text_regions(soc, layout_items)
+               + scientific.regions(layout_report, data))
     change_markers = [item for item in layout_items if isinstance(item, dict)
                       and item.get("kind") in {"publication-change-start", "publication-change-end"}]
+    change_markers += scientific.change_markers(layout_items, config, data["scientific"])
     # Pair/validate here; the final report also checks actual PDF pages and printed footers.
     validate_change_scope(change_markers, config)
     page_ranges(change_markers, max(item["page"] for item in change_markers))
@@ -479,6 +484,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "presentation": {"register_caption_context": "ip-qualified-v1"},
         "engineering_vectors": engineering_vectors,
         "specification_audits": specification_audits,
+        "scientific_audits": scientific.export_audit(out, data, layout_items),
         "specification_plots": specification_plots,
         "document": config,
         "publication_checkout": {"head": git("rev-parse", "HEAD"), "path": str(ROOT),
@@ -576,6 +582,8 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
     size = char["width"] if quarter_turn else char["size"]
     if not char["text"].strip() or size >= 8.95:
         return
+    if scientific.script_allowed(char, number, regions):
+        return
     continuation = any(
         region["kind"] == "table-continuation"
         and region["page"] == number
@@ -620,6 +628,8 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     if not region_path.is_file() or manifest.get("layout_regions_sha256") != sha256(region_path):
         raise ValueError("PDF layout regions missing or changed; rebuild before checking")
     layout_regions = read_json(region_path)
+    scientific.verify_audit(pdf.parent, manifest, data)
+    scientific.validate_regions([r for r in layout_regions if r.get("kind") == "scientific-script"], data["scientific"])
     validate_page_map(
         read_json(pdf.parent / "ip-pages.json"),
         read_json(ROOT / "publications/datasheets/chapter-index.json"),
