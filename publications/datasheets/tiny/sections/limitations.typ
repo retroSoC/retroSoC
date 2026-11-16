@@ -3,6 +3,19 @@
 
 = Known Limitations and Revision Compatibility <tiny-known-limitations>
 == Implementation and Qualification Limitations
+#change-start("tiny-v02-commercial-20261114-errata","Source-bound implementation errata")
+#for item in data.specifications.errata {
+  block(width:100%,breakable:false)[
+    #minor-title([#item.id - #item.title])
+    #ds-table("erratum-"+item.id,[#item.id - applicability, impact and evidence],
+      ([Field],[Description]),(
+        ([Applies to],[#item.applies_to #linebreak()Source: #code(item.source_revision)]),
+        ([Trigger],item.trigger),([Impact],item.impact),([Workaround],item.workaround),([Evidence],item.evidence)),
+      widths:(0.7fr,3.3fr))
+    #for path in item.sources {source-note(path,title:"Erratum source: "+path.split("/").last())}
+  ]
+}
+#change-end("tiny-v02-commercial-20261114-errata")
 #ds-table("known-limitations",[Implementation and evidence boundaries],([Area],[Current limitation]),(
  ([DMA discovery],[The four-bit maximum-burst field truncates configured 16 to zero; actual engine maximum remains 16 beats.]),
  ([SPI discovery],[CAPABILITY bit 7 reads zero despite the connected Tiny V2.2 DMA path.]),

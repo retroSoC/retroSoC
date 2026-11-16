@@ -136,14 +136,14 @@ valid bytes, frame dimensions and completion before handing data to another peri
 
 #pagebreak(weak:true)
 #context metadata((kind:"ip-start",id:"ppalite",page:here().page()))
-==== Streaming Pixel Processor (PPALite) <ppalite>
+==== Streaming Pixel Processor (PPALITE) <ppalite>
 #reference(data.catalog.find(e=>e.id=="ppalite"))
 #context metadata((kind:"ip-end",id:"ppalite",page:here().page()))
 
 #pagebreak(weak:true)
 === Encryption and Data Integrity
 #context metadata((kind:"ip-start",id:"crypto",page:here().page()))
-==== Cryptographic Accelerator (Crypto) <crypto>
+==== Cryptographic Accelerator (CRYPTO) <crypto>
 #reference(data.catalog.find(e=>e.id=="crypto"))
 #context metadata((kind:"ip-end",id:"crypto",page:here().page()))
 

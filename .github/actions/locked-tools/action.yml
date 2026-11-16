@@ -22,8 +22,8 @@ runs:
             sleep $((attempts * 10))
           done
         }
-        retry_bounded timeout --foreground --kill-after=5s 180s sudo apt-get update -qq
-        retry_bounded timeout --foreground --kill-after=5s 600s sudo apt-get install -y --no-install-recommends \
+        retry_bounded timeout --foreground --kill-after=5s 180s sudo apt-get -o DPkg::Lock::Timeout=120 update -qq
+        retry_bounded timeout --foreground --kill-after=5s 600s sudo apt-get -o DPkg::Lock::Timeout=120 install -y --no-install-recommends \
           ccache g++ libfl2 libgoogle-perftools4 libunwind8 make mold numactl zlib1g
 
     - name: Install checksum-verified tools

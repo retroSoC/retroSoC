@@ -5,12 +5,20 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-c906-20261022-",
-  "date": "2026-10-22",
+  "change_prefix": "v05-navigation-gap4-20261115-",
+  "date": "2026-11-14",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+  "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+  "build_control_review": {
+    "revision": "b6d538d86d433aa32fd7ef7706a115be000afa7d",
+    "makefile_blob": "9cee101b2b303127a29c0bc6b75b3b2566a23ef6",
+    "documentation_blobs": {
+      "docs/git-workflow.md": "c991d57dbea7d14e7e8a54dd1f152120c91abb9c"
+    },
+    "reason": "Reviewed dev synchronization changes only Agent/CI targets, help, check-fast orchestration, and the Git merge-subject policy. Product build rules, RTL, SDK, and profiles remain at the frozen source revision. Each subsequent Makefile or workflow-document change requires a new explicit review."
+  },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
   "mpw_profile": "configs/cluster/mini-mpw.mk",

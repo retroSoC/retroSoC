@@ -85,7 +85,10 @@ ci: prepare locked simulation fixtures
 
 `contribution.yml` checks the PR base, head branch, title, and new commit
 subjects in the selected range. Git-generated merge and revert subjects retain
-their standard exception. Run `make validation-plan` before requesting review
+their standard exception. A lowercase `merge:` subject is accepted only when the
+actual Git commit has multiple parents; plain or forged non-merge records are
+rejected. This supports history-preserving synchronization without rewriting a
+published topic. Run `make validation-plan` before requesting review
 when the change can affect CI selection.
 
 Write a concise English summary of what changes. Use the body to explain why,
@@ -260,24 +263,32 @@ should not publish tags.
 
 ## CI-green auto merge and cleanup
 
-`quality/ownership.json` enables `auto_merge`: after every required check passes,
-`python3 scripts/pr_workflow.py --pr <number> --root .` enables GitHub's native
-auto-merge with a merge commit into `dev` without another manual confirmation.
-The helper checks all contexts required by branch protection, including gates
-that have not yet been scheduled. Pending, failed, empty, or cancelled checks
-prevent merging. The command never overrides branch protection or uses
-squash/rebase integration.
+`quality/ownership.json` enables `auto_merge`. For the preferred early-delivery
+path, run `make agent-deliver PR=<number>`. It first checks the canonical PR,
+required contexts, repository auto-merge/merge-commit/delete-branch capabilities,
+and push permission, then asks GitHub to enable native merge-commit auto-merge.
+This is not a merge by the agent: GitHub still waits for every required check.
+Pending or not-yet-scheduled checks do not postpone enabling auto-merge, while
+failed or cancelled checks prevent GitHub from merging. `--watch` (or `WATCH=1`)
+retains structured monitoring and immediate cleanup; without it, the command
+returns with cleanup pending. After GitHub reports `MERGED`, use
+`--reconcile-only` (or `RECONCILE=1`) to finish cleanup on the next
+synchronization. The legacy `python3 scripts/pr_workflow.py --pr <number> --root .`
+remains available for after-green monitoring. Neither path uses `--admin`,
+squash/rebase integration, or a protection bypass. Non-required jobs skipped by
+workflow selection retain a `SKIPPED` verdict while their required aggregate
+gates enforce the selected validation plan.
 
-After GitHub reports `MERGED`, the same command deletes the local and remote
-topic branches only when the worktree is clean and the PR head belongs to the
-canonical repository. It switches the main worktree to `dev` or removes a clean
-linked worktree, verifies that the local branch is contained in the PR merge
-commit, then deletes it without forcing. The deletion uses `origin/dev` as its
-merge reference even when the main worktree is on an unrelated branch. Dirty
-worktrees, unmerged local commits, non-canonical branches, and protected
-`dev`/`main` branches are left untouched. `deleteBranchOnMerge` remains enabled on GitHub as a second cleanup
-mechanism. Already-absent remote refs are treated as successful cleanup; other
-API errors fail.
+Cleanup deletes local and remote topic branches only when the target worktree
+is clean, the branch is contained in the PR merge commit, and the PR head belongs
+to the canonical repository. It switches a main worktree to `dev`, or reconciles
+a linked worktree below `build/agent-worktrees/` through the registry. Before a
+linked worktree is removed, its `build/` evidence moves to
+`build/agent-artifacts/` and a branch-scoped cleanup registry is retained. Dirty,
+unmerged, detached, non-canonical, or evidence-conflicting worktrees and
+protected `dev`/`main` branches are left untouched. `deleteBranchOnMerge`
+remains enabled on GitHub as a second remote-cleanup mechanism. Already-absent
+remote refs are treated as successful cleanup; other API errors fail.
 
 After every feature integration into `dev`, also run:
 
@@ -289,3 +300,12 @@ This removes local remote-tracking references whose corresponding remote
 branches no longer exist. It is required in addition to topic-branch cleanup
 and does not delete local branches, stash entries, uncommitted changes, or
 build artifacts.
+
+For an inventory of agent worktrees, run `make worktree-registry` from the main
+worktree. It is dry-run by default and identifies orphaned, detached, dirty, and
+unmerged and non-canonical paths without deleting them. `EXECUTE=1` is restricted
+to clean, registered, non-detached branches below `build/agent-worktrees/` and
+contained in `origin/dev`; retained `build/` evidence is first moved to
+`build/agent-artifacts/`. Remote branch deletion and
+PR verdicts remain with `pr_workflow.py`; no registry cleanup bypasses branch
+protection or removes unresolved evidence.

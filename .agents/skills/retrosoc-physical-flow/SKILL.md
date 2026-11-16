@@ -8,7 +8,8 @@ description: Preflight, run, resume, or summarize retroSoC physical implementati
 Operate the selected repository flow without silently changing the design,
 technology, or evidence boundary. Read [AGENTS.md](../../../AGENTS.md),
 [physical ownership](../../../physical/README.md), and the selected flow
-reference before choosing commands.
+reference before choosing commands. Use the [shared engineering playbook](../shared/engineering-playbook.md)
+for CI recovery, long-task cancellation/resume, delivery, and retained evidence.
 
 ## Resolve inputs and mode
 

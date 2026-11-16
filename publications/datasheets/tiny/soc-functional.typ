@@ -58,7 +58,8 @@
     if "label" in route {
       let label = route.label
       content(point(label.x, label.y),
-        box(fill: white, inset: (x: 1pt, y: 0pt), text(font: "Inter", size: 9pt, fill: ink, label.text)))
+        box(inset: (x: 1pt, y: 0pt), align(center, text(font: "Inter", size: 9pt, fill: ink,
+          label.text.split("\n").map(text).join(linebreak())))))
     }
   }
   for pins in spec.pin_labels {
@@ -78,7 +79,7 @@
   #v(3pt)
   #set text(font: "Inter", size: 9pt, fill: muted)
   #set par(leading: rhythm.small-leading, spacing: 0pt)
-  #align(center)[Solid arrows show bus or payload routes. Gray arrows show media streams. Dashed arrows show control and debug routes.
-    Numbers identify AXI owners. Each APB4 target has an independent branch. Signal groups label external interfaces.
-    AF and asterisks mark GPIO alternate functions.]
+  #align(center)[Solid arrows show bus or payload routes. Gray arrows show media streams. Dashed arrows show control and debug.
+    Numbers identify AXI owners. APB4 branches are independent. AF and asterisks mark GPIO alternate functions.
+    See @tiny-applications and @ppalite for PPALite RAW/PROCESS data routing.]
 ], [Tiny functional architecture, clock domains and initiator paths.])

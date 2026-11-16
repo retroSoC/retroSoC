@@ -7,7 +7,9 @@ description: Inspect, update, and validate retroSoC Typst datasheets using the r
 
 Maintain an evidence-backed publication with the existing builders and checks.
 Read [AGENTS.md](../../../AGENTS.md) and the
-[publication guide](../../../publications/README.md) before taking action.
+[publication guide](../../../publications/README.md) before taking action. Use
+the [shared engineering playbook](../shared/engineering-playbook.md) for CI
+recovery, long tasks, delivery, and evidence retention.
 
 ## Resolve the request
 

@@ -14,6 +14,14 @@
     "retrosoc-feature-implementation": 11,
     "retrosoc-feature-review": 10
   },
+  "skill_case_counts": {
+    "retrosoc-feature-design": 10,
+    "retrosoc-feature-implementation": 11,
+    "retrosoc-feature-review": 10,
+    "retrosoc-datasheet": 8,
+    "retrosoc-dependency-maintenance": 8,
+    "retrosoc-physical-flow": 10
+  },
   "cases": [
     {"id":"design-01","skill":"retrosoc-feature-design","source_eval":1,"should_trigger":true,"required_terms":["repository","recommendation"]},
     {"id":"design-02","skill":"retrosoc-feature-design","source_eval":2,"should_trigger":true,"live":false},
@@ -47,6 +55,35 @@
     {"id":"review-07","skill":"retrosoc-feature-review","source_eval":7,"should_trigger":true,"allowed_next_actions":["RUN_GATES"]},
     {"id":"review-08","skill":"retrosoc-feature-review","source_eval":8,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
     {"id":"review-09","skill":"retrosoc-feature-review","source_eval":9,"should_trigger":true,"allowed_next_actions":["MERGE","FIX_P0_P1","RUN_GATES","INVESTIGATE"]},
-    {"id":"review-10","skill":"retrosoc-feature-review","source_eval":10,"should_trigger":true,"allowed_next_actions":["RUN_GATES"]}
+    {"id":"review-10","skill":"retrosoc-feature-review","source_eval":10,"should_trigger":true,"allowed_next_actions":["RUN_GATES"]},
+
+    {"id":"datasheet-01","skill":"retrosoc-datasheet","source_eval":1,"should_trigger":true,"required_terms":["Tiny","NOT_RUN"],"smoke":true},
+    {"id":"datasheet-02","skill":"retrosoc-datasheet","source_eval":2,"should_trigger":true,"live":false},
+    {"id":"datasheet-03","skill":"retrosoc-datasheet","source_eval":3,"should_trigger":true,"live":false},
+    {"id":"datasheet-04","skill":"retrosoc-datasheet","source_eval":4,"should_trigger":true,"required_terms":["dirty","NOT_RUN"]},
+    {"id":"datasheet-05","skill":"retrosoc-datasheet","source_eval":5,"should_trigger":true,"required_terms":["STA","silicon","NOT_RUN"]},
+    {"id":"datasheet-06","skill":"retrosoc-datasheet","source_eval":6,"should_trigger":true,"required_terms":["Pro","NOT_RUN"]},
+    {"id":"datasheet-07","skill":"retrosoc-datasheet","source_eval":7,"should_trigger":false,"expected_route":"retrosoc-feature-implementation"},
+    {"id":"datasheet-08","skill":"retrosoc-datasheet","source_eval":8,"should_trigger":true,"live":false},
+
+    {"id":"dependency-01","skill":"retrosoc-dependency-maintenance","source_eval":1,"should_trigger":true,"required_terms":["lock","NOT_RUN"],"smoke":true},
+    {"id":"dependency-02","skill":"retrosoc-dependency-maintenance","source_eval":2,"should_trigger":true,"live":false},
+    {"id":"dependency-03","skill":"retrosoc-dependency-maintenance","source_eval":3,"should_trigger":true,"live":false},
+    {"id":"dependency-04","skill":"retrosoc-dependency-maintenance","source_eval":4,"should_trigger":true,"required_terms":["dirty","preserve","NOT_RUN"]},
+    {"id":"dependency-05","skill":"retrosoc-dependency-maintenance","source_eval":5,"should_trigger":true,"required_terms":["mismatch","NOT_RUN"]},
+    {"id":"dependency-06","skill":"retrosoc-dependency-maintenance","source_eval":6,"should_trigger":true,"required_terms":["stale","NOT_RUN"]},
+    {"id":"dependency-07","skill":"retrosoc-dependency-maintenance","source_eval":7,"should_trigger":false,"expected_route":"retrosoc-feature-design"},
+    {"id":"dependency-08","skill":"retrosoc-dependency-maintenance","source_eval":8,"should_trigger":true,"required_terms":["unsupported","NOT_RUN"]},
+
+    {"id":"physical-01","skill":"retrosoc-physical-flow","source_eval":1,"should_trigger":true,"required_terms":["Tiny","NOT_RUN"],"smoke":true},
+    {"id":"physical-02","skill":"retrosoc-physical-flow","source_eval":2,"should_trigger":true,"live":false},
+    {"id":"physical-03","skill":"retrosoc-physical-flow","source_eval":3,"should_trigger":true,"required_terms":["Tiny","core","NOT_RUN"]},
+    {"id":"physical-04","skill":"retrosoc-physical-flow","source_eval":4,"should_trigger":true,"required_terms":["constraints","NOT_RUN"]},
+    {"id":"physical-05","skill":"retrosoc-physical-flow","source_eval":5,"should_trigger":true,"live":false},
+    {"id":"physical-06","skill":"retrosoc-physical-flow","source_eval":6,"should_trigger":true,"live":false},
+    {"id":"physical-07","skill":"retrosoc-physical-flow","source_eval":7,"should_trigger":true,"required_terms":["stale","NOT_RUN"]},
+    {"id":"physical-08","skill":"retrosoc-physical-flow","source_eval":8,"should_trigger":true,"required_terms":["license","NOT_RUN"]},
+    {"id":"physical-09","skill":"retrosoc-physical-flow","source_eval":9,"should_trigger":true,"required_terms":["preserve","NOT_RUN"]},
+    {"id":"physical-10","skill":"retrosoc-physical-flow","source_eval":10,"should_trigger":false,"expected_route":"retrosoc-feature-design"}
   ]
 }

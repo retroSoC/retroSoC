@@ -221,3 +221,236 @@ def test_documentation_checker_exempts_only_generated_inputs(tmp_path: Path) -> 
     assert "missing.md" in issues[0]
     assert "build/artifact.json" not in issues[0]
     assert "managed/mpw" not in issues[0]
+
+
+def test_scope_issues_enforce_allowed_and_forbidden_paths() -> None:
+    from scripts.agent_control import scope_issues
+
+    task = valid_task()
+    assert scope_issues(task, ["docs/engineering.md"]) == []
+    issues = scope_issues(task, ["rtl/tiny/top/tiny_sram.sv", "scripts/regress.py"])
+    assert issues == [
+        "path is forbidden by task scope: rtl/tiny/top/tiny_sram.sv",
+        "path is outside the task scope: rtl/tiny/top/tiny_sram.sv",
+        "path is outside the task scope: scripts/regress.py",
+    ]
+
+
+def test_tiny_snapshot_uses_real_reviewed_inventory() -> None:
+    from scripts.agent_control import tiny_snapshot_status
+
+    result = tiny_snapshot_status(ROOT)
+    assert result["status"] == "PASS", result
+    assert result["technical_source_count"] > 250
+    assert result["changed_files"] == []
+
+
+def test_tiny_snapshot_reports_drift_and_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    monkeypatch.setattr(
+        "publications.tiny_reference.collect",
+        lambda config, check_snapshot: {
+            "source_paths": ["docs/engineering.md", "publications/tiny_reference.py", "dependencies/dependencies.lock.json"]
+        },
+    )
+    monkeypatch.setattr(control, "git_output", lambda root, *arguments: "docs/engineering.md")
+    drift = control.tiny_snapshot_status(ROOT)
+    assert drift["status"] == "FAIL"
+    assert drift["changed_files"] == ["docs/engineering.md"]
+
+    monkeypatch.setattr(control, "git_output", lambda root, *arguments: "")
+    assert control.tiny_snapshot_status(ROOT)["status"] == "PASS"
+
+
+def test_preflight_binds_task_plan_and_optional_github_probe(tmp_path: Path) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    result = create_preflight(args)
+    assert result["status"] == "READY", result["issues"]
+    assert result["task_id"] == task["task_id"]
+    assert result["validation_plan"]["base"] == task["base_revision"]
+    assert result["reviewed_source_snapshot"]["status"] == "PASS"
+    assert result["github"]["status"] == "NOT_RUN"
+    assert len(result["dependency_lock_sha256"]) == 64
+    assert result["tools"] == [{"name": "git", "status": "PASS"}, {"name": "python3", "status": "PASS"}]
+
+
+def test_github_preflight_is_explicit_about_pending_and_permissions(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.agent_control import github_preflight
+
+    args = SimpleNamespace(online=True, repository="retroSoC/retroSoC", base_branch="dev", pr=None)
+    monkeypatch.setattr("scripts.pr_workflow.required_check_contexts", lambda repository, base, root: ["quality-gate"])
+    assert github_preflight(ROOT, args)["status"] == "PASS"
+
+    args.pr = 239
+    monkeypatch.setattr(
+        "scripts.pr_workflow.checks_report",
+        lambda root, number, repository, required: {"status": "PENDING", "head_sha": "b" * 40},
+    )
+    pending = github_preflight(ROOT, args)
+    assert pending["status"] == "PENDING"
+    assert pending["head_sha"] == "b" * 40
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.required_check_contexts",
+        lambda repository, base, root: (_ for _ in ()).throw(RuntimeError("HTTP 403")),
+    )
+    blocked = github_preflight(ROOT, args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["issues"] == ["HTTP 403"]
+
+    monkeypatch.setattr(
+        "scripts.pr_workflow.required_check_contexts",
+        lambda repository, base, root: (_ for _ in ()).throw(OSError("gh is unavailable")),
+    )
+    assert github_preflight(ROOT, args)["issues"] == ["gh is unavailable"]
+
+
+def test_preflight_rejects_dirty_workspace_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    task["execution"]["mode"] = "workspace-write"
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    real_git_output = control.git_output
+
+    def dirty_status(root: Path, *arguments: str) -> str:
+        if arguments[0] == "status":
+            return " M scripts/example.py"
+        return real_git_output(root, *arguments)
+
+    monkeypatch.setattr(control, "git_output", dirty_status)
+    result = control.create_preflight(args)
+    assert result["status"] == "BLOCKED"
+    assert "workspace-write preflight requires a clean worktree before execution" in result["issues"]
+
+
+def test_local_tool_probe_requires_gh_only_for_online_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    monkeypatch.setattr(control.shutil, "which", lambda name: None if name == "gh" else f"/usr/bin/{name}")
+    assert control.local_tool_status(False) == [
+        {"name": "git", "status": "PASS"},
+        {"name": "python3", "status": "PASS"},
+    ]
+    assert control.local_tool_status(True)[-1] == {"name": "gh", "status": "BLOCKED"}
+
+
+def test_handoff_preserves_evidence_process_state_and_next_action(tmp_path: Path) -> None:
+    from scripts.agent_control import build_handoff, write_handoff_markdown
+
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.email", "handoff@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "Handoff"], check=True)
+    (tmp_path / "README.md").write_text("initial\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-qm", "initial"], check=True)
+    (tmp_path / "quality").mkdir()
+    (tmp_path / "quality/validation-gaps.json").write_text('{"schema_version": 1, "gaps": []}\n', encoding="utf-8")
+    revision = subprocess.check_output(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], text=True).strip()
+    task = valid_task()
+    task["base_revision"] = revision
+    task["status"] = "review"
+    task["evidence"] = [
+        {"kind": "unit", "uri": "build/tasks/docs-engineering-control/result.json", "status": "PASS"},
+        {"kind": "netlist", "uri": "build/tasks/docs-engineering-control/netlist.json", "status": "NOT_RUN"},
+    ]
+    result = tmp_path / task["execution"]["artifact_root"] / "result.json"
+    result.parent.mkdir(parents=True)
+    result.write_text(
+        json.dumps({"status": "passed", "source_revision": revision, "run_id": "run-1", "child_cleanup_pending": False}),
+        encoding="utf-8",
+    )
+    document = build_handoff(task, tmp_path, "Continue with the missing netlist evidence")
+    assert document["status"] == "review"
+    assert document["evidence_counts"] == {"PASS": 1, "FAIL": 0, "SKIPPED": 0, "NOT_RUN": 1}
+    assert document["next_action"] == "Continue with the missing netlist evidence"
+    assert document["artifacts"][0]["source_revision"] == revision
+    assert document["processes"][0]["child_cleanup_pending"] is False
+    assert document["known_gaps"] == []
+    markdown = tmp_path / "build/handoff.md"
+    write_handoff_markdown(document, markdown, tmp_path)
+    assert "NOT_RUN" in markdown.read_text(encoding="utf-8")
+
+    handoff_path = tmp_path / task["execution"]["artifact_root"] / "handoff.json"
+    handoff_path.write_text(json.dumps(document), encoding="utf-8")
+    repeated = build_handoff(task, tmp_path, "Repeat only the required handoff", exclude_paths={handoff_path})
+    assert repeated["status"] == "review"
+    assert all(item["path"] != handoff_path.relative_to(tmp_path).as_posix() for item in repeated["artifacts"])
+
+    result.write_text(json.dumps({"status": "passed", "source_revision": "0" * 40}), encoding="utf-8")
+    stale = build_handoff(task, tmp_path, "Reject stale passing evidence")
+    assert stale["status"] == "blocked"
+    assert any("different source revision" in issue for issue in stale["issues"])
+
+    task["evidence"].append({"kind": "failed", "uri": "build/failed.json", "status": "FAIL"})
+    blocked = build_handoff(task, tmp_path, "Diagnose the failed evidence")
+    assert blocked["status"] == "blocked"
+    assert "handoff contains failed evidence" in blocked["issues"]
+
+
+def test_gap_resolution_requires_an_explicit_task_declaration(tmp_path: Path) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["target_socs"] = ["MINI"]
+    task["validation"]["pdks"] = ["IHP130"]
+    task["acceptance"] = ["Complete synthesis and netlist evidence"]
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    blocked = create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert any("mini-yosys-backend" in issue for issue in blocked["issues"])
+
+    task["resolves_gaps"] = ["mini-yosys-backend"]
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    resolving = create_preflight(args)
+    assert resolving["status"] == "READY", resolving["issues"]
+    assert resolving["resolving_gaps"] == ["mini-yosys-backend"]

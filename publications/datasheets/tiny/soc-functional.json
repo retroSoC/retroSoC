@@ -856,8 +856,8 @@
       "arrow": true,
       "label": {
         "text": "I/D AHB-Lite",
-        "x": 75,
-        "y": 30.5
+        "x": 89,
+        "y": 29.5
       }
     },
     {
@@ -891,7 +891,7 @@
       "owner": "cpu_slow",
       "label": {
         "text": "CPU slow · owner 0",
-        "x": 75,
+        "x": 53,
         "y": 57.5
       }
     },
@@ -908,8 +908,8 @@
       "arrow": true,
       "label": {
         "text": "SRAM group ports",
-        "x": 121,
-        "y": 57.5
+        "x": 102.5,
+        "y": 61
       }
     },
     {
@@ -993,7 +993,7 @@
       "owner": "sdio",
       "label": {
         "text": "Owner 2",
-        "x": 154,
+        "x": 140,
         "y": 67.2
       }
     },
@@ -1449,8 +1449,8 @@
       "via": [],
       "arrow": true,
       "label": {
-        "text": "SCK / NSS[3:0] / IO[3:0]",
-        "x": 146,
+        "text": "SCK / NSS[3:0]\nIO[3:0]",
+        "x": 159,
         "y": 132.5
       }
     },
@@ -1471,7 +1471,7 @@
       "label": {
         "text": "TX/RX CDC FIFOs",
         "x": 107,
-        "y": 182
+        "y": 179.5
       }
     },
     {
@@ -1489,7 +1489,7 @@
       "label": {
         "text": "Payload FIFO",
         "x": 107,
-        "y": 195.4
+        "y": 192.8
       }
     },
     {
@@ -1507,7 +1507,7 @@
       "label": {
         "text": "Config CDC",
         "x": 107,
-        "y": 199.2
+        "y": 202.3
       }
     },
     {

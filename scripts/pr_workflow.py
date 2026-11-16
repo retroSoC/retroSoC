@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 import time
@@ -14,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.agent_control import read_json  # noqa: E402
 from scripts.engineering_metrics import gh_json  # noqa: E402
+from scripts.flow_control import write_json  # noqa: E402
+from scripts.worktree_registry import parse_worktrees, reconcile_worktrees  # noqa: E402
 
 
 def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -84,9 +87,19 @@ def cleanup_merged_branch(
     branch = pull["headRefName"]
     if branch in {"dev", "main"}:
         raise RuntimeError("refusing to delete a protected branch")
-    if not clean_worktree(root):
+    main_root = worktree_main_root(root).resolve()
+    current = current_branch(root)
+    target_root = root.resolve()
+    if current != branch:
+        matches = [
+            entry
+            for entry in parse_worktrees(root)[1]
+            if entry.get("branch") == branch and not entry.get("detached") and not entry.get("orphan")
+        ]
+        if len(matches) == 1:
+            target_root = Path(matches[0]["path"]).resolve()
+    if not clean_worktree(target_root):
         return ["worktree is dirty; keep the merged branch and worktree unchanged"]
-    main_root = worktree_main_root(root)
     merge_commit = pull.get("mergeCommit", {}).get("oid")
     if not merge_commit:
         raise RuntimeError("merged PR has no merge commit; refusing cleanup")
@@ -98,12 +111,22 @@ def cleanup_merged_branch(
             return [f"local branch has unmerged commits; keep {branch} and its worktree unchanged"]
         if contained.returncode:
             raise RuntimeError(contained.stderr)
-    current = current_branch(root)
-    if current == branch and root.resolve() == main_root.resolve():
+    if current == branch and target_root == main_root:
         run_ok(["git", "switch", "dev"], main_root)
         run_ok(["git", "merge", "--ff-only", "origin/dev"], main_root)
-    elif current == branch:
-        run_ok(["git", "-C", str(main_root), "worktree", "remove", str(root.resolve())], main_root)
+    elif target_root != main_root:
+        registry = reconcile_worktrees(target_root, execute=True, only_branch=branch)
+        if len(registry["actions"]) != 1 or registry["actions"][0]["status"] != "CLEANED":
+            detail = (
+                registry["actions"][0].get("warning", "non-canonical or ineligible worktree")
+                if registry["actions"]
+                else "worktree is outside the canonical registry"
+            )
+            return [f"worktree cleanup was not completed for {branch}: {detail}"]
+        write_json(
+            main_root / "build/agent-worktrees" / f"{branch.replace('/', '-')}-cleanup.json",
+            registry,
+        )
     if local_branch_exists(main_root, branch):
         result = git(
             main_root,
@@ -125,7 +148,7 @@ def cleanup_merged_branch(
 
 
 def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
-    return gh_json(
+    pull = gh_json(
         [
             "pr",
             "view",
@@ -136,6 +159,9 @@ def view_pr(repository: str, number: int, root: Path) -> dict[str, Any]:
             "state,isDraft,baseRefName,headRefName,headRepository,headRepositoryOwner,mergeCommit,isCrossRepository",
         ]
     )
+    details = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    pull["headRefOid"] = details.get("head", {}).get("sha", "")
+    return pull
 
 
 def merge_pr(repository: str, number: int, root: Path, pull: dict[str, Any]) -> None:
@@ -164,6 +190,102 @@ def native_auto_merge_enabled(repository: str, number: int, root: Path) -> bool:
     if str(request.get("merge_method", "")).upper() != "MERGE":
         raise RuntimeError("existing auto-merge request must use a merge commit")
     return True
+
+
+def paginated_check_data(endpoint: str, key: str) -> list[dict[str, Any]]:
+    separator = "&" if "?" in endpoint else "?"
+    items: list[dict[str, Any]] = []
+    for page in range(1, 101):
+        document = gh_json(["api", f"{endpoint}{separator}per_page=100&page={page}"])
+        values = document[key]
+        if not isinstance(values, list):
+            raise RuntimeError(f"GitHub response field {key} is not a list")
+        items.extend(values)
+        if len(values) < 100:
+            return items
+    raise RuntimeError(f"too many GitHub pages for {endpoint}")
+
+
+def context_verdict(status: str, conclusion: str | None, *, allow_skip: bool = False) -> str:
+    if status.upper() != "COMPLETED":
+        return "PENDING"
+    if allow_skip and (conclusion or "").lower() == "skipped":
+        return "SKIPPED"
+    return "PASS" if (conclusion or "").lower() == "success" else "FAIL"
+
+
+def evaluate_checks(
+    head_sha: str,
+    required: list[str],
+    check_runs: list[dict[str, Any]],
+    statuses: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not head_sha:
+        raise RuntimeError("cannot evaluate checks without a head SHA")
+    required_set = set(required)
+    contexts: dict[str, dict[str, Any]] = {}
+    for run in sorted(check_runs, key=lambda item: int(item.get("id", 0)), reverse=True):
+        name = run.get("name")
+        if not name or name in contexts:
+            continue
+        contexts[name] = {
+            "name": name,
+            "status": context_verdict(
+                str(run.get("status", "")), run.get("conclusion"), allow_skip=name not in required_set
+            ),
+            "conclusion": run.get("conclusion"),
+            "url": run.get("html_url"),
+        }
+    for item in sorted(statuses, key=lambda value: int(value.get("id", 0)), reverse=True):
+        name = item.get("context")
+        if not name or name in contexts:
+            continue
+        state = str(item.get("state", "")).upper()
+        verdict = "PASS" if state == "SUCCESS" else "PENDING" if state in {"PENDING", "EXPECTED"} else "FAIL"
+        contexts[name] = {
+            "name": name,
+            "status": verdict,
+            "conclusion": item.get("state"),
+            "url": item.get("target_url"),
+        }
+    missing = sorted(required_set - set(contexts))
+    verdicts = [item["status"] for item in contexts.values()]
+    if any(item == "FAIL" for item in verdicts):
+        overall = "FAIL"
+    elif missing or any(item == "PENDING" for item in verdicts) or not verdicts:
+        overall = "PENDING"
+    else:
+        overall = "PASS"
+    return {
+        "schema_version": 1,
+        "head_sha": head_sha,
+        "required_contexts": sorted(required_set),
+        "missing_required_contexts": missing,
+        "contexts": [dict(contexts[name], required=name in required_set) for name in sorted(contexts)],
+        "status": overall,
+    }
+
+
+def checks_report(
+    root: Path,
+    number: int,
+    repository: str,
+    required: list[str],
+    allow_empty: bool = False,
+) -> dict[str, Any]:
+    del root
+    pull = gh_json(["api", f"repos/{repository}/pulls/{number}"])
+    head_sha = pull.get("head", {}).get("sha", "")
+    if not head_sha:
+        raise RuntimeError(f"PR #{number} has no head SHA")
+    check_runs = paginated_check_data(f"repos/{repository}/commits/{head_sha}/check-runs", "check_runs")
+    statuses = paginated_check_data(f"repos/{repository}/commits/{head_sha}/status", "statuses")
+    if not check_runs and not statuses and not allow_empty:
+        raise RuntimeError(f"PR #{number} has no checks at {head_sha}; refusing to merge")
+    report = evaluate_checks(head_sha, required, check_runs, statuses)
+    if not check_runs and not statuses:
+        report["checks_pending"] = True
+    return report
 
 
 def checks_result(root: Path, number: int, repository: str) -> subprocess.CompletedProcess[str]:
@@ -226,16 +348,14 @@ def watch_and_merge(
             print(f"PR #{number} merged", flush=True)
             return
         required = required_check_contexts(repository, pull["baseRefName"], root)
-        result = checks_result(root, number, repository)
-        output = result.stdout + (result.stderr or "")
+        report = checks_report(root, number, repository, required)
+        output = json.dumps(report, sort_keys=True)
         if output != previous_output:
-            print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            print(output, flush=True)
             previous_output = output
-        if not result.stdout.strip():
-            raise RuntimeError("no checks were reported; refusing to merge")
-        if checks_failed(result):
-            raise RuntimeError(f"PR #{number} checks failed; no merge or cleanup attempted")
-        if checks_green(result, required):
+        if report["status"] == "FAIL":
+            raise RuntimeError(f"PR #{number} checks failed at {report['head_sha']}; no merge or cleanup attempted")
+        if report["status"] == "PASS":
             if not native_auto_merge_enabled(repository, number, root):
                 merge_pr(repository, number, root, pull)
                 print(f"PR #{number} native auto-merge enabled; waiting for GitHub", flush=True)

@@ -62,6 +62,21 @@ Peripheral categories follow Memory Interface/NVM/VM, GPIO, DMA, Timers, IO
 Interface, Multimedia and Encryption and Data Integrity. XPI/SDIO0/SRAM/UART0
 have level-five IP headings; GPIO/DMA use level three; other IPs use level four.
 All six standard IP detail headings are bookmarks and are excluded from contents.
+Parenthesized IP suffixes in Contents use the existing uppercase-only bold
+rule. The reviewed suffixes are PPALITE and CRYPTO.
+
+Contents uses `toc-gap: 4pt` between the measured number column and title, with
+14 pt indentation per level. Measure the column from the longest numbered
+heading at the same level and keep all titles at that level left aligned;
+continuation lines hang under the title. Shorter numbers retain the unused
+column width in addition to the fixed gap. This Contents-only parameter is
+independent of the 8 pt `heading-gap` for body headings.
+
+List of tables and List of figures use `directory-gap: 4pt` after the measured
+prefix column. Measure its width from the longest complete `Table N.` or
+`Figure N.` prefix in the respective directory. Titles and continuation lines
+share one left edge; shorter prefixes retain the unused column width. Keep
+these flat lists independent of Contents hierarchy indentation and body spacing.
 
 Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
@@ -80,6 +95,8 @@ from the three AXI initiators. Separate the XPI memory path and register access,
 and group APB4 branches by their actual destination clocks. Source validation
 checks domain ownership and draws the same orthogonal paths and arrowheads as
 the geometry checker. Review title and wire clearances in color and grayscale.
+Wire labels in this functional architecture have transparent backgrounds.
+Place their text clear of the wires so the domain colors remain visible.
 
 Keep the AXI width on the bus or bridge symbol. Use wire labels for function
 and ownership. Place grouped JTAG, SDIO0, XPI, I2S and DVP signals near their
@@ -103,3 +120,36 @@ Draw the DMA descriptor once in the DMA chapter with the FIFO and protocol
 example. Link the descriptor-lifetime appendix back to the figure. Keep each
 short fault-capture entry, reference and table together as a page block.
 Use explicit shared and not-applicable coverage in the diagram inventory.
+
+## 2026-11-14 commercial-reference supplement
+
+The [shared specification standard](../../specifications/README.md) is normative
+for states, provenance, reference blocks, curves and replacement. Keep Tiny
+v0.2 DRAFT / Gen1 / ICS55-main / IHP130-compatibility independent of Mini.
+The current reviewed source is the frozen 2026-11-14 dev commit.
+
+QFN64 is Tiny's confirmed package family with 64 frozen perimeter assignments;
+EP is separate and unnumbered. The preferred 9 x 9 mm / 0.5 mm pitch planning
+geometry remains Reference Only until supplier outline, die fit, bond map,
+metallurgy and assembly approval. No other current Tiny package is advertised.
+Use ADI UP64 05-08-1705 Rev C as one coherent outline/land-pattern reference.
+Top pin 1 is upper left; numbering is counterclockwise. Bottom mirrors x; PCB
+component view follows top. Test uniqueness, mirror, pitch, EP and pad spans.
+Never independently renumber a view or call EP pin 65.
+
+Copper, mask, paste and via layers are separate. Constructed values belong in
+the model catalog and inside standalone vector status labels. Paste coverage
+is total aperture area divided by reference EP area. MSL/reflow, thermal values,
+order codes and physical binding remain TBD. EP supplements perimeter grounds.
+
+Minimum-system drawings use external 24 MHz XIN. XOUT, BOOT_MODE, TEST_MODE and
+EP separately state target allocation, executable connection and physical binding.
+Do not imply a passive-crystal amplifier or production strap decoding. VDDIO
+A/B/C/D labels do not establish independent qualified voltage domains.
+
+Keep uppercase-only Contents suffix emphasis, with PPALITE and CRYPTO suffixes.
+Architecture wire labels remain transparent. Field captions include IP context.
+Tiny now emits paired change markers and their manifest hash for the shared
+change-page report. PLL192/PLL240 are conditional functional R2-P7 profiles. SAFE24 boots with the
+PLL off; runtime switching requires backend capability, digital lock and the
+drain/park/commit protocol. No qualified physical operating rate is implied.

@@ -29,7 +29,8 @@ def diagrams():
 def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
     contract = read_json(ROOT / "publications/datasheets/structure-contract.json")
     rows = diagrams["coverage"]
-    assert len(rows) == len(contract["entries"]) == 109
+    assert len(rows) == len(contract["entries"]) == 110
+    assert any(row["anchor"] == "mini-specification-quick" for row in rows)
     expected = inventory(diagrams)
     for row in rows:
         assert {key: row[key] for key in ("level", "title", "anchor")} == contract["entries"][row["index"]]

@@ -2,8 +2,8 @@
 
 This directory owns the English **retroSoC Tiny Gen1 / Rill (清溪)** datasheet,
 its independent v0.2 DRAFT identity and 23 current IP chapters. The same-version
-Mini alignment uses 12 main chapters, 86 frozen major/IP entries and a five-level
-132-entry navigation contract. The explicitly
+Mini alignment uses 12 main chapters, 87 frozen major/IP entries and a five-level
+140-entry navigation contract. The explicitly
 reviewed structure retains stable anchors, moves retired UART1/I2C1 interfaces
 to migration guidance and adds the RCU/SPI/shared-IP chapters. It is a publication
 adapter, not an RTL or SDK register generator.
@@ -78,3 +78,12 @@ workflows. `soc-functional.typ` draws the functional overview from
 The Tiny collector uses common validation functions without loading Mini data.
 Each build writes `diagram-coverage.json` and checks every actual drawing against
 its expected inventory. Layout/type/source exceptions are not broadened.
+
+## Shared specification maintenance
+
+Use the [shared standard](../../specifications/README.md) and this book's
+[parameter catalog](specifications/parameters.json). Tiny QFN64 and examples stay
+separate from Mini. Current builds emit specification-data/status/usage/replacement
+audits, CSV/SVG/PDF curves, editable standalone engineering vectors and paired
+change markers. The common report_changes.py compares against the retained
+425-page delivery. Tests and successful publication builds do not qualify hardware.

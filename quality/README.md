@@ -11,6 +11,21 @@ documentation.
 - `metrics/` defines observational metric policy and future gate promotion.
 - `change_impact.json` defines conservative changed-file CI selection; unknown
   paths and classification failures select the full matrix.
+- `pytest-shards.json` defines four deterministic fixture shards and the exact
+  permitted optional-input skips. `pytest-durations.json` records source-bound
+  JUnit timing history used only for scheduling, never for a PASS verdict.
+- `incremental-ci.json` is shadow-only and disabled. It defines the fixture
+  input closure, tool/configuration identities, and test-manifest requirements;
+  it never skips a required job by itself.
+- `delivery-policy.json` defines read-only merge-queue and metric-promotion
+  evaluation thresholds. It never enables a merge queue or metric gate by itself.
+- `artifact-retention.json` classifies retained evidence, rebuildable evaluation
+  workspaces, caches, vendor copies, and unclassified files before worktree
+  cleanup. It records size, digest, source, capacity, and review-based retention;
+  expiry never automatically deletes evidence. Deferred Mini Yosys evidence is
+  retained until its owned validation gap is resolved.
+- `validation-gaps.json` records owned deferred validation gaps, source scope,
+  review dates, prohibited claims, and the evidence required for resolution.
 - `ownership.json` records primary and backup review ownership plus the current
   `sole_maintainer` and `auto_merge` policies. Missing backups are reported
   explicitly rather than assigned to an agent. CI-green auto-merge uses merge

@@ -18,9 +18,12 @@ sys.path.insert(0, str(ROOT))
 from publications.tiny_reference import BOOK, MANAGED, collect, read, validate_configuration  # noqa: E402
 from publications.package_reference import directory_hashes, package_records, validate_package_closure  # noqa: E402
 from publications.structure_reference import validate_structure  # noqa: E402
+from publications.specification_reference import export_audits, verify_audits  # noqa: E402
+from publications.specification_plots import render as render_specifications  # noqa: E402
+from publications.specification_vectors import render as render_vectors  # noqa: E402
 from publications.tiny_publication_reference import validate_chapter_pages, validate_navigation  # noqa: E402
 from publications.tiny_diagram_reference import coverage as diagram_coverage, validate_rendered  # noqa: E402
-from publications.report_changes import repository_footer_pages  # noqa: E402
+from publications.report_changes import repository_footer_pages, page_ranges, validate_change_scope  # noqa: E402
 from publications.page_reference import collect_page_roles, read_page_roles, validate_footer_pages, validate_page_roles  # noqa: E402
 from scripts.dependency_lock import load_lock  # noqa: E402
 from scripts.install_toolchain import safe_extract  # noqa: E402
@@ -78,6 +81,7 @@ def prepare(lock: dict) -> None:
 
 def inputs(data: dict) -> dict[str, str]:
     paths = set(data["source_paths"])
+    paths.update(data["specifications"]["source_paths"])
     paths.update(p.relative_to(ROOT).as_posix() for p in (ROOT / BOOK).rglob("*") if p.suffix in {".typ", ".json"})
     paths.update(p.relative_to(ROOT).as_posix() for p in (ROOT / "publications/examples/tiny").glob("*.c"))
     paths.update({"publications/build_tiny_datasheet.py", "publications/check_tiny_examples.py", "tests/test_publication_tiny.py", "publications/tiny_reference.py", "publications/register_reference.py",
@@ -129,12 +133,14 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     out = out or ROOT / "build" / f"datasheet-tiny-{datetime.now(timezone.utc):%Y-%m-%d-%H-%M}-{signature}"
     out = validate_output(out, config)
     out.mkdir(parents=True, exist_ok=True)
+    specification_plots = render_specifications(ROOT, out, data["specifications"], config["date"])
     write(out / "data.json", data)
     pdf = out / config["filename"]
     epoch = int(datetime.fromisoformat(config["date"]).replace(tzinfo=timezone.utc).timestamp())
     options = ["--root", str(ROOT), "--font-path", "publications/media/fonts", "--ignore-system-fonts",
                "--package-path", str(CACHE / "packages"), "--package-cache-path", str(CACHE / "packages"),
                "--input", "data=/" + (out / "data.json").relative_to(ROOT).as_posix(), "--creation-timestamp", str(epoch)]
+    engineering_vectors = render_vectors(ROOT, out, data["specifications"], executable, options)
     result = subprocess.run([executable, "compile", config["entrypoint"], str(pdf), *options], cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
     atomic_write(out / "typst.log", result.stdout + result.stderr)
     if result.returncode or "warning:" in result.stderr:
@@ -162,12 +168,18 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     diagrams = [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") == "tiny-diagram"]
     write(out / "diagram-inventory.json", diagrams)
     write(out / "diagram-coverage.json", diagram_coverage(data["illustrations"], read(ROOT / BOOK / "navigation-contract.json")))
-    manifest = dict(document=config, inputs=hashes, assets=media, pdf_sha256=sha256(pdf),
+    markers = [r for r in layout["items"] if isinstance(r, dict) and r.get("kind") in {"publication-change-start", "publication-change-end"}]
+    validate_change_scope(markers, config)
+    page_ranges(markers, max(r["page"] for r in markers))
+    write(out / "change-markers.json", markers)
+    specification_audits = export_audits(out, data["specifications"], layout["items"])
+    manifest = dict(engineering_vectors=engineering_vectors, specification_audits=specification_audits, specification_plots=specification_plots, change_markers_sha256=sha256(out / "change-markers.json"), document=config, inputs=hashes, assets=media, pdf_sha256=sha256(pdf),
                     publication_checkout=dict(head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), path=str(ROOT)),
                     typst=lock["publication_tools"]["typst"]["version"], media_revision=lock["sources"]["publication_media"]["revision"],
                     packages={p["identity"]: p["sha256"] for p in package_records(lock)},
                     document_structure_sha256=sha256(out / "document-structure.json"), diagram_inventory_sha256=sha256(out / "diagram-inventory.json"))
     manifest["page_roles_sha256"] = sha256(out / "page-roles.json")
+    manifest["presentation"] = {"register_caption_context": "ip-qualified-v1"}
     manifest["layout_regions_sha256"] = sha256(out / "layout-regions.json")
     manifest["records"] = {name: sha256(out / name) for name in
                            ("data.json", "layout.json", "ip-pages.json", "waveform-audit.json", "register-index.json", "diagram-coverage.json")}
@@ -181,6 +193,12 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     from pypdf import PdfReader
     import pdfplumber
     manifest = read(pdf.parent / "manifest.json")
+    verify_audits(pdf.parent, manifest["engineering_vectors"])
+    verify_audits(pdf.parent, manifest["specification_audits"])
+    verify_audits(pdf.parent, manifest["specification_plots"]["outputs"])
+    if sha256(pdf.parent / "change-markers.json") != manifest["change_markers_sha256"]:
+        raise ValueError("Tiny change marker integrity failure")
+    validate_change_scope(read(pdf.parent / "change-markers.json"), manifest["document"])
     if sha256(pdf) != manifest["pdf_sha256"]:
         raise ValueError("Tiny PDF digest does not match manifest")
     for path, digest in manifest["inputs"].items():

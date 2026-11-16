@@ -55,7 +55,9 @@ not evidence of approval.
 
 Read the [shared task contract](../shared/task-contract.md) and the
 [shared evidence contract](../shared/evidence.md) for target resolution,
-constraint precedence, structured approvals, and validation evidence.
+constraint precedence, structured approvals, and validation evidence. Use the
+[shared engineering playbook](../shared/engineering-playbook.md) for operational
+recovery, native PR delivery, and artifact-preserving cleanup.
 
 Resolve `Target SoCs` from the current request, approved hand-off, frozen
 specification, or an explicitly selected committed profile. Do not default to

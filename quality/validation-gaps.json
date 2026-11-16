@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "gaps": [
+    {
+      "id": "mini-yosys-backend",
+      "status": "deferred",
+      "scope": {
+        "soc": "MINI",
+        "pdk": "IHP130",
+        "profile": "configs/ci/ihp130.mk"
+      },
+      "source_revision": "dfbca1714251ade45f953b2fc1cf6d7143b94cb7",
+      "owner": "@maksyuki",
+      "approved_by": "@maksyuki",
+      "approved_at": "2026-11-12T03:54:35Z",
+      "review_by": "2026-11-20",
+      "reason": "The bounded plain-opt iterations converged, but the independent synthesis backend did not complete ABC technology mapping or produce a final netlist. Further diagnosis is deferred by the maintainer.",
+      "blocked_stages": [
+        "synthesis",
+        "netlist_simulation",
+        "opensta",
+        "synthesis_metrics"
+      ],
+      "prohibited_claims": [
+        "Behavioral CI or optimization equivalence is not final netlist, timing, physical, or release signoff",
+        "Deferred synthesis is not PASS",
+        "Retained logs and checkpoints do not establish a completed full flow"
+      ],
+      "evidence": [
+        {
+          "kind": "deferred_gap_record",
+          "uri": "build/engineering/mini-yosys-deferred-dfbca171/missing-item.json",
+          "status": "FAIL"
+        },
+        {
+          "kind": "optimization_equivalence",
+          "uri": "build/engineering/mini-yosys-deferred-dfbca171/equivalence-sat-result.json",
+          "status": "PASS"
+        }
+      ],
+      "resolution": [
+        "Diagnose backend/ABC scalability and descendant-process cleanup with retained evidence",
+        "Complete MINI/IHP130 synthesis and write a final netlist",
+        "Run revision-matched netlist simulation, OpenSTA, and synthesis-dependent reports without changing the required evidence contract"
+      ]
+    }
+  ]
+}

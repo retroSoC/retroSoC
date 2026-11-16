@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "shards": 4,
+  "durations_path": "quality/pytest-durations.json",
+  "expected_skips": {
+    "tests/test_apu_p7_concurrent.py::test_apu_p7_concurrent_smoke": "APU-P5 bundle was not built",
+    "tests/test_apu_p8_quiesce_load.py::test_apu_p8_quiesced_loader_admission": "APU-P5 bundle was not built",
+    "tests/test_publication_retrieval.py::test_page_report_rejects_a_pdf_from_another_build": "could not import 'pypdf'"
+  }
+}

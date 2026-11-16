@@ -19,22 +19,41 @@ classification errors fail closed to the full matrix. Push, scheduled, and manua
 full-flow events do not use PR path skipping. Each heavy workflow retains an
 always-run gate so a skipped job cannot silently satisfy a required check.
 
-`workflows/quality.yml` is split into `fast`, `fixtures`, and `quality-gate`:
+`workflows/quality.yml` is split into `fast`, `incremental-shadow`, four
+`fixtures` shards, `fixtures-fan-in`, and `quality-gate`:
 
 - `fast` runs dependency, formatting, C policy, host, agent, YAML/Actions, and
   regression-definition checks without restoring PDKs or accelerator corpora.
+  It restores the locked publication inputs and checks the Tiny reviewed-source
+  snapshot against the collector's actual inventory before long fixtures run.
+- `incremental-shadow` compares source/input, tool-lock, configuration, and
+  complete test-manifest fingerprints with optional prior quality evidence. It
+  is disabled by default and never skips the full matrix. Missing or mismatched
+  evidence selects `RUN_FULL`; invalid evidence fails the quality gate. An
+  optional manual `source_run` binds comparison to a real run and artifact.
+  Pull-request shadow evaluation also selects an earlier successful quality run
+  from the same PR, excluding the current run. Workflow head, evaluated merge
+  revision, run/attempt, PR, and fan-in artifact identities are all bound;
+  unavailable history or incomplete identity selects `RUN_FULL`. No required
+  job is skipped and no historical PASS is reused by this observation.
 - `fixtures` restores the locked IHP130 and Tiny ICS55 PDKs, third-party models,
-  and APU/NPU references, then runs the complete Pytest suite with JUnit and
-  duration reports. It is skipped only for classifications that do not need it.
-- `quality-gate` accepts an intentional fixtures skip but never hides an impact,
-  fast, fixtures, or cancellation failure.
+  and APU/NPU references. Each isolated matrix job collects the complete Pytest
+  node-id manifest and executes its deterministic duration-weighted shard with
+  JUnit, process/resource, and cache evidence. The matrix is skipped only for
+  classifications that do not need it.
+- `fixtures-fan-in` downloads every shard and requires the complete collection
+  exactly once, with no failure or unregistered skip. Its source, tool inputs,
+  duration history, policy, and manifest digests must agree across all shards.
+- `quality-gate` accepts an intentional fixtures/fan-in skip but never hides an
+  impact, fast, shard, fan-in, or cancellation failure.
 
 The quality checkout retains repository history. After preparing current RTL
 dependencies, `python3 tests/publication_history.py prepare` fetches missing
 immutable dependency commits without changing active dependency HEADs or locks.
 
 `workflows/contribution.yml` validates PR base/head/title, new commit subjects,
-and CODEOWNERS consistency. `quality/ownership.json` records backup-owner gaps;
+and CODEOWNERS consistency. A lowercase `merge:` subject is accepted only for an
+actual multi-parent commit; plain text and forged non-merge records remain invalid. `quality/ownership.json` records backup-owner gaps;
 an empty backup is a warning for organizational follow-up, not permission for
 agent self-approval.
 
@@ -42,10 +61,23 @@ While only `@maksyuki` can review PRs, `review_policy.mode` is
 `sole_maintainer`: GitHub does not require a peer approval count, because an
 author cannot approve their own PR. `auto_merge` allows CI-green PRs to merge
 with merge commits and safe cleanup, while design and architecture approvals
-remain manual. The helper checks every required protected context before
-enabling GitHub's native auto-merge. Failed or pending checks, dirty worktrees,
-and non-canonical branches always block merging and cleanup. Peer CODEOWNERS
-approval is restored when another eligible reviewer is available.
+remain manual. `scripts/pr_delivery.py` probes repository and credential
+capabilities before enabling GitHub native auto-merge, even while checks are
+pending. Only GitHub merges after required checks pass. The legacy helper waits
+for green checks first. Both use merge commits and safe artifact-preserving
+cleanup. `quality/artifact-retention.json` separates evidence from rebuildable
+cache/evaluation workspaces, checks capacity and conflicts, and never deletes
+expired evidence automatically. Dirty, unmerged, and non-canonical branches are
+preserved. `make agent-worktree-start` restores validated locked Git/archive
+inputs without sharing writable checkouts; its default is dry-run and offline.
+Peer
+CODEOWNERS approval is restored when another eligible reviewer is available.
+`quality/delivery-policy.json` is evaluation-only. A merge queue is considered
+only when at least three ready PRs compete for `dev`, at least two have actual
+integration conflicts, and every required workflow has equivalent merge_group
+coverage. Metric promotion requires ten validated same-profile/same-tool samples
+and a committed reviewed baseline; successful behavioral CI runs alone do not
+meet that contract. `make delivery-policy` applies neither a queue nor a gate.
 
 ## Regression and evidence
 
@@ -55,6 +87,11 @@ approval is restored when another eligible reviewer is available.
 SoC Yosys synthesis, OpenSTA, and netlist simulation are filtered while the JPEG
 synthesis-memory issue remains. `scripts/ci_summary.py` marks those stages
 `NOT_RUN` and filters out artifacts older than the current run start.
+Only the measured ICS55 PR matrix sets `products: '["MINI", "TINY"]'`; its two
+isolated product jobs retain one existing required aggregate gate and separate
+compiler caches/artifacts. The default `ALL` leaves other suites, nightly, and
+full-flow command selection unchanged. Cache results are observations, not
+cached test verdicts.
 
 PR regressions keep the Icarus assembly self-test but exclude the multi-hour
 Tiny P7 Icarus command by default. `nightly.yml` runs that same command in
@@ -82,12 +119,31 @@ still runs only `formal-doctor`; SV2V conversion alone is not a proof pass.
 dependency, build-entry, scheduled, and full-matrix changes instead of repeating
 both environments for every unrelated PR. The `locked-tools` action bounds apt
 updates to 180 seconds and installs to 600 seconds per attempt, with at most
-three attempts, so network failures cannot stall a job indefinitely.
+three attempts and a bounded 120-second dpkg lock wait, so network failures and
+concurrent package-manager activity cannot stall a job indefinitely. Reusable
+regressions record runner memory, disk, `/usr/bin/time -v` resource usage, and
+cache HIT/MISS/NOT_RUN states. `ci_recovery.py` classifies failures and allows
+at most one explicit same-head rerun only for recognized infrastructure errors;
+source/test, timeout, cancelled, dependency-integrity, and unknown failures are
+not automatically retried.
 `workflows/engineering-metrics.yml` collects weekly delivery and CI metadata
 artifacts for engineering improvement, not individual performance evaluation.
-`workflows/skill-evals.yml` is a manual entrypoint for a runner with a configured
-Codex CLI and approved model access. It fails explicitly when that capability is
-absent and never converts static corpus validation into a behavior pass.
+It includes per-job/step timing, first-attempt and duplicate execution, cache
+observations, native auto-merge timelines, and read-only shadow/policy evidence.
+Artifact and job inventories must be complete and bound to the sampled run.
+Missing cache size, local cleanup, or timeline data is explicitly unknown, never
+a zero-cost claim. Observations never enable reuse, queues, or metric gates.
+`workflows/skill-evals.yml` runs one read-only smoke case per registered Skill,
+or all live cases selected by Skill, with source/contract/input provenance and
+deterministic grades. A runner needs a configured Codex or Kimi CLI and approved
+model access; absence is NOT_RUN, never a behavior pass. The Kimi runner uses a
+read-only Agent without Bash, writes, or delegation. Weekly canaries require
+`RETROSOC_SKILL_EVALS_ENABLED=true` and `RETROSOC_EVAL_RUNNER`; otherwise they
+remain disabled. `RETROSOC_EVAL_AGENT` or the manual `agent` input selects the
+CLI, defaulting to Codex. Scope and per-Skill selection bound runner time.
+`make skill-replay TRACES=<directory>` only grades explicit retained traces with
+provenance checks; it never starts a runner, enables a canary, or turns a
+historical grade into fresh behavior evidence.
 
 After a new required-check context exists on the integration branch, a repository
 administrator should enable it in branch protection. Do not configure contexts

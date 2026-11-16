@@ -86,19 +86,85 @@ tooling.
   archive, and regression-helper behavior.
 - `test_agent_skills.py` checks feature and engineering-workflow skill metadata,
   local references, eval corpora, default invocation contracts, and documented
-  entrypoints. `test_agent_control.py` covers task contracts and conservative
-  change selection; `test_skill_eval.py` covers isolated behavior-trace grading;
+  entrypoints. `test_agent_control.py` covers task contracts, conservative
+  change selection, scope enforcement, preflight, and real/mocked Tiny
+  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
-  PR/release governance. `test_formal_local_evidence.py` checks local result
+  PR/release governance. Actual Git fixtures verify that lowercase `merge:`
+  subjects are accepted only for genuine multi-parent commits, without history
+  rewriting or accepting forged non-merge records. `test_formal_local_evidence.py` checks local result
   collection and rejection of dirty or mismatched evidence.
+  `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
+  resource/step summaries, dry-run versus execute behavior, cache states/keys,
+  and raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
+  structure, run/artifact/digest binding, cache keys, unique size metadata,
+  duplicate identities, unsafe paths, and unknown-value preservation.
+  `test_engineering_observations.py` covers job/step timing, first-attempt and
+  duplicate execution, bounded pagination, cache metadata normalization, native
+  delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
+  offline reconstruction, and unknown-data handling.
+  `test_pytest_shards.py` covers deterministic duration-based scheduling, real
+  collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
+  workflow gates, product matrices, and cache observations.
+  `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
+  sources, historical green evidence, tool/config/test-manifest identity,
+  tamper refusal, GitHub run/artifact binding, mandatory full events, and the
+  no-skip shadow workflow. Same-PR history tests cover deterministic prior-run
+  selection, current-run exclusion, dual head/evaluated revisions, PR ancestry,
+  run/attempt/artifact identity, missing source objects, ambiguous timestamps,
+  and incomplete workflow metadata. `test_delivery_policy.py` covers merge-group parity,
+  ready/conflict thresholds, draft/fork exclusions, CI-success versus valid
+  metric-sample distinctions, duplicate/mixed sample rejection, reviewed
+  baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
+  real cancellation and deadlines, stale-run reconciliation, retained attempts,
+  bounded descendant completion after a normal parent exit, zombie-member
+  exclusion, and process-group cleanup when descendants outlive the grace period.
+  `test_agent_dag.py` covers deterministic DAG waves, authorized disjoint
+  parallelism, serial integration, malformed graph refusal, write-set/worktree
+  conflicts, dependency PASS evidence, dry-run leases, identity checks, and
+  expired-lease recovery without starting agents.
   `test_yosys_progress.py` checks phase-step, pass, rerun-marker, and
   source-boundary analysis without inferring nonconvergence.
+  `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
+  complete frontend/optimizer/backend execution, bounded failure, retained
+  state, execution fingerprints, and checkpoint/output digest validation with
+  real Yosys fixtures.
+  `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
+  scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
+  covers dry-run inventory, merged-branch cleanup, artifact preservation, and
+  dirty/detached/unmerged/non-canonical/orphan refusal.
+  `test_worktree_bootstrap.py` executes real local Git/archive restoration,
+  offline and checksum failures, canonical-path conflicts, and independent
+  object storage. Artifact lifecycle tests cover classified retention,
+  rebuildable cache/workspace exclusion, deferred evidence, digest/capacity
+  accounting, target conflicts, and symlink escapes. No expiry automatically
+  deletes evidence. `test_agent_control.py` also covers
+  JSON/Markdown handoff and explicit gap-resolution declarations.
   `test_pr_workflow.py` covers CI-green auto-merge and
-  safe merged-branch cleanup, including dirty-worktree and non-canonical-branch
-  refusals. Run fast agent checks with `make check-fast`. Static
-  corpus checks are not proof that an agent executed a workflow; live behavior
-  results require retained traces from `make skill-eval-smoke`.
+  safe merged-branch cleanup, including artifact preservation and
+  dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
+  preflight, auto-merge before pending checks, head binding, disabled auto-merge,
+  and deferred reconciliation. `test_delivery_controller.py` covers durable
+  pending/resume/cleanup state, idempotent completed records, failed checks,
+  external auto-merge disabling, head-change preservation, and atomic watcher
+  checkpoints. Run fast agent
+  checks with `make check-fast`. Static
+  corpus checks are not proof that an agent executed a workflow. The behavior
+  corpus contains 57 cases across six Skills, with one live smoke per Skill.
+  Provenance, contract migration, negative triggers, Kimi tool-call parsing,
+  read-only runner boundaries, and canary configuration are tested
+  deterministically; live behavior results require retained traces from
+  `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
+  covers trace identity, input tampering, historical prompts, unknown runners,
+  read-only violations, duplicate/empty evidence, auditable latest-per-case
+  selection, timestamp ambiguity, and zero runner invocations.
+  Offline replay grades retained behavior only; it does not execute current code.
+- `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
+  `test_publication_history.py` cover lock-bound hosted fixture inventories,
+  checksum-preserving local archive restore, independent recursive-source copies,
+  historical-object recovery, doctor failures, and non-destructive refusals.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

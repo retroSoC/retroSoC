@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      source_run:
+        description: Optional previous quality run ID used only for shadow comparison
+        required: false
+        type: string
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -68,11 +75,16 @@ jobs:
             rtl/managed/clusterip/rng
             rtl/managed/clusterip/rtc
             rtl/managed/clusterip/wdg
+            rtl/managed/hazard3
+            rtl/managed/mpw
             rtl/managed/third_party
           key: quality-fast-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Set up host-test sources
-        run: python3 rtl/managed/clusterip/setup.py
+        run: |
+          python3 setup.py
+          python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
 
       - name: Validate dependency lock
         run: python3 scripts/dependency_lock.py --lock dependencies/dependencies.lock.json
@@ -95,11 +107,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  fixtures:
+  incremental-shadow:
     needs: impact
-    if: needs.impact.outputs.quality_fixtures == 'true'
+    if: always() && needs.impact.result == 'success'
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -116,6 +128,91 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/wdg
+            rtl/managed/hazard3
+            rtl/managed/mpw
+            rtl/managed/third_party
+            .cache/retrosoc/sources/openc906
+          key: quality-shadow-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Install pinned quality tools
+        run: >-
+          python3 -m pip install
+          --requirement requirements/build.txt
+          --requirement requirements/ci.txt
+
+      - name: Set up locked source dependencies
+        run: |
+          python3 setup.py
+          python3 scripts/setup_openc906.py
+          python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
+
+      - name: Evaluate shadow reuse without skipping full jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+          CURRENT_RUN: ${{ github.run_id }}
+        run: |
+          BASE="$(git merge-base origin/dev HEAD)"
+          args=(--base "${BASE}" --head "${{ github.sha }}"
+                --workflow-head "${WORKFLOW_HEAD}" --workflow-run "${CURRENT_RUN}"
+                --event "${EVENT_NAME}" --output build/incremental-ci/shadow.json)
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--pr-number "${PR_NUMBER}" --auto-previous)
+          fi
+          if [[ -n "${SOURCE_RUN}" ]]; then
+            args+=(--source-run "${SOURCE_RUN}")
+          fi
+          python3 scripts/incremental_ci.py "${args[@]}"
+          python3 -m json.tool build/incremental-ci/shadow.json
+
+      - name: Upload incremental shadow evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-incremental-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/incremental-ci/shadow.json
+          if-no-files-found: error
+          retention-days: 30
+
+  fixtures:
+    needs: impact
+    if: needs.impact.outputs.quality_fixtures == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Restore pip cache
+        id: pip
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Restore locked source dependencies
+        id: sources
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
             physical/pdk/IHP-Open-PDK
             physical/pdk/icsprout55-pdk
             .cache/retrosoc/sources/ics55_ecos_pll
@@ -126,6 +223,7 @@ jobs:
           key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Restore locked toolchains
+        id: toolchains
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
@@ -134,6 +232,7 @@ jobs:
           key: tools-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
 
       - name: Restore accelerator reference cache
+        id: references
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
@@ -191,26 +290,102 @@ jobs:
         run: make setup-apu-reference setup-apu-kws-reference setup-npu-reference
 
       - name: Test scripts and RTL fixtures
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
-          mkdir -p build/pytest
-          python3 -m pytest -q \
-            --junitxml=build/pytest/junit.xml \
-            --durations=25 --durations-min=0.1
+          mkdir -p "build/pytest/shard-${SHARD}"
+          /usr/bin/time -v python3 scripts/run_flow.py \
+            --tool "pytest-shard-${SHARD}" \
+            --task-id "quality-fixtures-${SHARD}" \
+            --timeout-seconds 5400 \
+            --success-marker PYTEST_SHARD_PASS \
+            --log "build/pytest/shard-${SHARD}/pytest.log" \
+            --result "build/pytest/shard-${SHARD}/result-pytest-shard.json" \
+            -- python3 scripts/pytest_shards.py run \
+            --shard "${SHARD}" --output "build/pytest/shard-${SHARD}"
+
+      - name: Record cache observations
+        if: always()
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: >-
+          python3 scripts/ci_recovery.py cache-report
+          --output "build/pytest/shard-${SHARD}/cache.json"
+          --cache "pip=${{ steps.pip.outputs.cache-hit }}"
+          --cache "sources=${{ steps.sources.outputs.cache-hit }}"
+          --cache "toolchains=${{ steps.toolchains.outputs.cache-hit }}"
+          --cache "references=${{ steps.references.outputs.cache-hit }}"
+          --cache-key "pip=${{ steps.pip.outputs.cache-primary-key }}"
+          --cache-key "sources=${{ steps.sources.outputs.cache-primary-key }}"
+          --cache-key "toolchains=${{ steps.toolchains.outputs.cache-primary-key }}"
+          --cache-key "references=${{ steps.references.outputs.cache-primary-key }}"
 
       - name: Upload fixture reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          name: quality-fixtures-${{ github.run_id }}-${{ github.run_attempt }}
+          name: quality-fixture-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/pytest/shard-${{ matrix.shard }}/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload fixture diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-fixture-logs-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            build/pytest/junit.xml
             build/**/meta/*.json
             build/**/*.log
           if-no-files-found: warn
           retention-days: 30
 
+  fixtures-fan-in:
+    needs: [impact, fixtures]
+    if: always() && needs.impact.result == 'success' && needs.impact.outputs.quality_fixtures == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: Download every fixture shard
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: quality-fixture-shard-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/pytest/fan-in
+
+      - name: Verify complete fixture coverage
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+        run: |
+          args=(verify --output build/pytest/fan-in/summary.json)
+          for path in build/pytest/fan-in/*/; do
+            args+=(--shard-dir "${path}")
+          done
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--workflow-head "${WORKFLOW_HEAD}"
+                  --workflow-run "${{ github.run_id }}"
+                  --run-attempt "${{ github.run_attempt }}"
+                  --pr-number "${PR_NUMBER}")
+          fi
+          python3 scripts/pytest_shards.py "${args[@]}"
+
+      - name: Upload fixture fan-in
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-fixture-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/pytest/fan-in/summary.json
+          if-no-files-found: error
+          retention-days: 30
+
   quality-gate:
-    needs: [impact, fast, fixtures]
+    needs: [impact, fast, incremental-shadow, fixtures, fixtures-fan-in]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -223,12 +398,14 @@ jobs:
           args=(gate
             --job impact=${{ needs.impact.result }}
             --job fast=${{ needs.fast.result }}
+            --job incremental-shadow=${{ needs.incremental-shadow.result }}
             --job fixtures=${{ needs.fixtures.result }}
+            --job fixtures-fan-in=${{ needs.fixtures-fan-in.result }}
             --label quality
             --output build/ci-summary/quality.json
             --step-summary "${GITHUB_STEP_SUMMARY}")
           if [[ "${{ needs.impact.outputs.quality_fixtures }}" == "false" ]]; then
-            args+=(--allow-skip fixtures)
+            args+=(--allow-skip fixtures --allow-skip fixtures-fan-in)
           fi
           python3 scripts/ci_summary.py "${args[@]}"
 

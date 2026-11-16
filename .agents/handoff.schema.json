@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://retrosoc.invalid/schemas/agent-handoff-v1.json",
+  "title": "retroSoC agent handoff",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "task_id",
+    "base_revision",
+    "source_revision",
+    "status",
+    "next_action",
+    "evidence",
+    "artifacts",
+    "prohibited_actions"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "base_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "status": {"enum": ["planned", "approved", "in_progress", "blocked", "review", "done"]},
+    "next_action": {"type": "string", "minLength": 1},
+    "evidence": {"type": "array"},
+    "artifacts": {"type": "array"},
+    "prohibited_actions": {"type": "array", "items": {"type": "string"}}
+  }
+}
