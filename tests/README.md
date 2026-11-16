@@ -98,9 +98,11 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, cache states/keys,
-  and raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
-  structure, run/artifact/digest binding, cache keys, unique size metadata,
-  duplicate identities, unsafe paths, and unknown-value preservation.
+  attempted misses versus NOT_RUN, restore/save workflow contracts, and
+  raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
+  structure, run/artifact/digest binding, primary/fallback matched keys, unique
+  size metadata, restored versus unique cache bytes, duplicate identities,
+  conflicting cache IDs, unsafe paths, and unknown-value preservation.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
@@ -142,14 +144,19 @@ tooling.
   accounting, target conflicts, and symlink escapes. No expiry automatically
   deletes evidence. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
+  `test_merge_preflight.py` uses real temporary Git repositories and linked
+  worktrees to cover conflicting and clean merge dry-runs, dirty-source refusal,
+  target validation, source-HEAD preservation, no-commit behavior, and complete
+  temporary-worktree cleanup. It also checks the Make opt-out boundary.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
-  and deferred reconciliation. `test_delivery_controller.py` covers durable
+  coordinator-only watch handoff, canonical checkpoints with custom outputs, and
+  deferred reconciliation. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
-  external auto-merge disabling, head-change preservation, and atomic watcher
-  checkpoints. Run fast agent
+  external auto-merge disabling, cleanup opt-outs, head-change preservation, and
+  atomic watcher checkpoints. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 57 cases across six Skills, with one live smoke per Skill.
@@ -165,6 +172,8 @@ tooling.
   `test_publication_history.py` cover lock-bound hosted fixture inventories,
   checksum-preserving local archive restore, independent recursive-source copies,
   historical-object recovery, doctor failures, and non-destructive refusals.
+  Task lifecycle tests keep full restoration opt-in, prove dry-run does not call
+  it, checkpoint restore failures, and require a READY doctor in preflight.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming

@@ -75,8 +75,10 @@ Feature stages retain their design and architecture approval gates.
 `make agent-deliver PR=<number>` first probes the repository's auto-merge,
 merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
 auto-merge while checks may still be pending. Only GitHub merges after required
-checks pass, always with a merge commit. `WATCH=1` retains live monitoring and
-cleanup; otherwise run `RECONCILE=1` after the merge. The legacy
+checks pass, always with a merge commit. `WATCH=1` checkpoints the initial
+record, then uses the delivery coordinator for monitoring and cleanup; resume
+that record with `agent-coordinate` after interruption. Otherwise run
+`RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 
@@ -95,8 +97,14 @@ Add `EXECUTE=1` to create/restore, or use the target directory without `CREATE=1
 to restore its existing inputs. Network fallback requires explicit
 `ALLOW_NETWORK=1`; locked revisions and archive hashes never change. Recursive
 submodules, PDKs, publication package directories, and extraction retain their
-existing setup flows. Cleanup uses `quality/artifact-retention.json` to retain
-classified evidence without moving every rebuildable cache or workspace.
+existing setup flows. Ordinary tasks do not implicitly restore the full hosted
+fixture set. Declare `execution.fixture_profile: hosted-pytest` only for a task
+that needs it; `EXECUTE=1` then performs the existing lock-bound offline restore
+from the primary worktree and retains restore/doctor evidence. Dry-run does not
+restore it. `agent-preflight` requires a READY doctor for this declared profile
+and does not repair missing inputs implicitly. Cleanup uses
+`quality/artifact-retention.json` to retain classified evidence without moving
+every rebuildable cache or workspace.
 
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny

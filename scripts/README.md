@@ -48,7 +48,13 @@ dry-run-by-default canonical worktree creation and current-worktree restoration.
 It selects locked Git sources and raw archive files by name, verifies
 revision/SHA-256 and scope, and disables network fallback unless explicitly
 allowed. Recursive inputs use independent atomic copies with submodule, symlink,
-and capacity checks before their existing setup flow runs.
+and capacity checks before their existing setup flow runs. By default it does
+not restore the complete hosted fixture set. An explicit task
+`execution.fixture_profile: hosted-pytest` runs `fixture_control.restore` from
+the distinct primary worktree after creation or ordinary input restoration.
+The bootstrap result checkpoints `PLANNED`, `RESTORING`, `READY`, or `FAILED`
+and links the complete restore/doctor evidence. This full profile remains
+offline-only; it never inherits network fallback from partial source options.
 `fixture_control.py` provides `plan`, `restore`, and `doctor` for the complete
 hosted-Pytest fixture set. It restores lock-selected sources, PDKs, reference
 archives, publication packages, and test toolchains from a distinct local
@@ -63,6 +69,18 @@ local tools, the dependency-lock digest, and the Tiny reviewed-source snapshot
 using the publication collector's actual source inventory. Workspace writes
 require a clean initial worktree. Online
 GitHub permission and PR-head probes are opt-in; local preflight is offline.
+A task with `execution.fixture_profile` also runs the matching doctor without
+restoring or downloading inputs; every doctor issue blocks preflight. Tasks
+without this field report `fixture.status=NOT_REQUESTED` and do not probe the
+large fixture inventory.
+`merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
+against the selected target revision. `make agent-preflight` enables this check
+by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
+The caller must fetch the target first. A clean source worktree is required.
+The temporary checkout uses the source HEAD, not the main checkout's branch,
+and is aborted and normally removed without committing. Results include exact
+conflicted paths, resolved target revision, cleanup, and no-commit evidence;
+cleanup or Git failures stop delivery rather than becoming a pass.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
 `skill_eval.py` validates all registered Skills and executes isolated, read-only
@@ -88,9 +106,16 @@ timing, first-attempt and same-head duplicate execution, plus explicit cache-ste
 observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
 optional cache/config digests without treating a cache as a cached PASS.
 `cache_artifacts.py` reads cache reports directly from run-bound artifact ZIPs,
-records artifact identity and SHA-256, and accepts optional cache keys. Only a
-unique key-matched GitHub cache entry supplies actual size bytes; artifact sizes,
-missing keys, and ambiguous metadata never become inferred cache measurements.
+records artifact identity and SHA-256, and accepts optional primary and matched
+cache keys. Exact hits may use the primary key; fallback restores use the actual
+matched key. GitHub's `actions_caches` response array is used for inventory
+metadata, not the report-local `caches` array. Only a unique key-matched GitHub
+cache entry supplies actual size bytes; misses without a match, artifact sizes, missing keys, and ambiguous
+metadata never become inferred cache measurements. Summaries distinguish
+`restored_bytes_total` across observations from `unique_cache_entry_count` and
+`unique_cache_bytes_total` by cache ID. The legacy `cache_bytes_total` remains
+the per-observation restored sum, not unique cache storage. Conflicting sizes
+for one cache ID are rejected.
 Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
@@ -213,7 +238,11 @@ lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
 plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. Initial, pending,
+and offers `--reconcile-only` for a later merged-PR cleanup. It checkpoints the
+initial enabled delivery, then delegates every watched poll and cleanup to
+`delivery_controller.py`; there is no second watcher state machine. The canonical
+`pr-<number>-delivery.json` and `pr-<number>-controller.json` are retained even
+when a custom `--output` receives the final result. Initial, pending,
 waiting-for-native-merge, and final states are atomically checkpointed so an
 interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility

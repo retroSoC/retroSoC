@@ -76,6 +76,7 @@
         "mode": {"enum": ["read-only", "workspace-write"]},
         "worktree": {"type": "string", "minLength": 1},
         "artifact_root": {"type": "string", "pattern": "^build/"},
+        "fixture_profile": {"enum": ["hosted-pytest"]},
         "approval": {
           "type": "object",
           "additionalProperties": false,

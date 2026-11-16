@@ -73,6 +73,53 @@ def test_task_contract_accepts_a_read_only_maintenance_task() -> None:
     assert validate_task(valid_task(), ROOT) == []
 
 
+def test_hosted_fixture_profile_is_explicit_and_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    assert validate_task(task, ROOT) == []
+    assert "Fixture profile: hosted-pytest" in render_task_prompt(task)
+    task["execution"]["fixture_profile"] = "all"
+    assert "execution.fixture_profile must be hosted-pytest" in validate_task(task, ROOT)
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    monkeypatch.setattr("scripts.fixture_control.fixture_profile", lambda root, reference: {"profile": "hosted-pytest"})
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "BLOCKED", "issues": ["missing locked source"], "checks": []},
+    )
+    blocked = create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["fixture"]["status"] == "BLOCKED"
+    assert blocked["issues"] == ["fixture: missing locked source"]
+
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "READY", "issues": [], "checks": []},
+    )
+    ready = create_preflight(args)
+    assert ready["status"] == "READY", ready["issues"]
+    assert ready["fixture"]["status"] == "READY"
+
+
 def test_feature_write_requires_bound_specification_and_approval() -> None:
     task = valid_task()
     task.update(
@@ -356,6 +403,53 @@ def test_preflight_rejects_dirty_workspace_write(tmp_path: Path, monkeypatch: py
     result = control.create_preflight(args)
     assert result["status"] == "BLOCKED"
     assert "workspace-write preflight requires a clean worktree before execution" in result["issues"]
+
+
+def test_preflight_merge_conflicts_block_delivery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+        merge_check=True,
+        merge_ref="origin/dev",
+    )
+    monkeypatch.setattr(
+        "scripts.merge_preflight.merge_conflict_scan",
+        lambda root, reference: {
+            "status": "CONFLICT",
+            "merge_ref": reference,
+            "merge_revision": "b" * 40,
+            "unmerged_paths": ["scripts/example.py"],
+            "worktree_removed": True,
+            "merge_commit_created": False,
+        },
+    )
+    real_git_output = control.git_output
+    monkeypatch.setattr(
+        control,
+        "git_output",
+        lambda root, *arguments: "" if arguments[0] == "status" else real_git_output(root, *arguments),
+    )
+
+    result = control.create_preflight(args)
+
+    assert result["status"] == "BLOCKED"
+    assert result["merge_check"]["unmerged_paths"] == ["scripts/example.py"]
+    assert result["issues"] == ["merge check conflicts with origin/dev: scripts/example.py"]
 
 
 def test_local_tool_probe_requires_gh_only_for_online_checks(monkeypatch: pytest.MonkeyPatch) -> None:
