@@ -143,7 +143,10 @@ tooling.
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
-  and deferred reconciliation. Run fast agent checks with `make check-fast`. Static
+  and deferred reconciliation. `test_delivery_controller.py` covers durable
+  pending/resume/cleanup state, idempotent completed records, failed checks,
+  external auto-merge disabling, and head-change preservation. Run fast agent
+  checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 57 cases across six Skills, with one live smoke per Skill.
   Provenance, contract migration, negative triggers, Kimi tool-call parsing,
