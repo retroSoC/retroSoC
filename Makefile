@@ -1420,7 +1420,7 @@ skill-replay:
 	@test -n '$(TRACES)' || { printf '%s\n' 'TRACES=<directory> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/skill_eval.py replay --root $(ROOT_PATH) \
 	  --trace-root $(TRACES) $(if $(SKILL),--skill $(SKILL)) \
-	  $(if $(CASE),--case $(CASE)) $(if $(SMOKE),--smoke) \
+	  $(if $(CASE),--case $(CASE)) $(if $(SMOKE),--smoke) $(if $(LATEST),--latest-per-case) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/replay.json)
 
 engineering-metrics:

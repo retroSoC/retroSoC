@@ -377,6 +377,59 @@ def validate_trace_identity(
     }
 
 
+def select_latest_traces(paths: list[Path]) -> tuple[list[Path], list[dict[str, Any]]]:
+    resolved = [path.absolute() for path in paths]
+    if len(set(resolved)) != len(resolved):
+        raise ValueError("replay trace paths must be unique")
+    candidates: dict[str, list[dict[str, Any]]] = {}
+    for path in resolved:
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("trace must be a regular file")
+        trace = read_json(path)
+        case = trace.get("case")
+        if not isinstance(case, dict) or not isinstance(case.get("id"), str) or not case["id"]:
+            raise ValueError("trace case identity is required for latest-per-case selection")
+        value = trace.get("finished_at")
+        if not isinstance(value, str):
+            raise ValueError("trace finished_at is required for latest-per-case selection")
+        try:
+            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise ValueError("trace finished_at must be an ISO-8601 timestamp") from error
+        if timestamp.tzinfo is None:
+            raise ValueError("trace finished_at must include a timezone")
+        candidates.setdefault(case["id"], []).append(
+            {
+                "trace": str(path),
+                "finished_at": value,
+                "timestamp": timestamp,
+                "trace_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    selected = []
+    selection = []
+    for case_id in sorted(candidates):
+        records = sorted(candidates[case_id], key=lambda item: item["timestamp"], reverse=True)
+        if len(records) > 1 and records[0]["timestamp"] == records[1]["timestamp"]:
+            raise ValueError(f"latest trace selection is ambiguous for {case_id}")
+        chosen = records[0]
+        selected.append(Path(chosen["trace"]))
+        selection.append(
+            {
+                "case_id": case_id,
+                "candidate_count": len(records),
+                "selected_trace": chosen["trace"],
+                "selected_finished_at": chosen["finished_at"],
+                "selected_trace_sha256": chosen["trace_sha256"],
+                "candidates": [
+                    {key: value for key, value in record.items() if key != "timestamp"}
+                    for record in records
+                ],
+            }
+        )
+    return selected, selection
+
+
 def replay_traces(
     root: Path, paths: list[Path], registered_cases: list[dict[str, Any]] | None = None
 ) -> dict[str, Any]:
@@ -387,6 +440,7 @@ def replay_traces(
     if len(set(resolved)) != len(resolved):
         raise ValueError("replay trace paths must be unique")
     records = []
+    seen_case_ids = set()
     for path in resolved:
         record = {"trace": str(path)}
         try:
@@ -395,6 +449,9 @@ def replay_traces(
             trace = read_json(path)
             record["trace_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
             identity = validate_trace_identity(root, trace, registered_cases)
+            if identity["case_id"] in seen_case_ids:
+                raise ValueError(f"duplicate replay case: {identity['case_id']}")
+            seen_case_ids.add(identity["case_id"])
             grade = grade_trace(trace, document["defaults"])
             record.update(identity=identity, grade=grade, status="REPLAYED")
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -723,6 +780,7 @@ def parse_args() -> argparse.Namespace:
         elif name == "replay":
             command.add_argument("--trace", type=Path, action="append", default=[])
             command.add_argument("--trace-root", type=Path)
+            command.add_argument("--latest-per-case", action="store_true")
             command.add_argument("--output", type=Path, required=True)
     grade = subparsers.add_parser("grade")
     grade.add_argument("--root", type=Path, default=ROOT)
@@ -778,7 +836,12 @@ def main() -> int:
                 if args.trace_root.is_symlink() or not args.trace_root.is_dir():
                     raise ValueError("trace root must be a real directory")
                 paths.extend(sorted(args.trace_root.rglob("*.trace.json")))
+            selection = None
+            if args.latest_per_case:
+                paths, selection = select_latest_traces(paths)
             result = replay_traces(args.root.resolve(), paths, selected)
+            if selection is not None:
+                result["history_selection"] = {"mode": "latest-per-case", "cases": selection}
             atomic_write(args.output, dump_json(result))
             print(dump_json({key: value for key, value in result.items() if key != "records"}), end="")
             return int(

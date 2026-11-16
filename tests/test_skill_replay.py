@@ -191,3 +191,53 @@ def test_replay_rejects_an_entrypoint_outside_the_registered_case(tmp_path: Path
     assert result["status"] == "INVALID"
     assert result["invalid_trace_count"] == 1
     assert "registered case" in result["records"][0]["error"]
+
+
+def test_latest_trace_selection_is_auditable_and_rejects_duplicates(tmp_path: Path) -> None:
+    from scripts.skill_eval import select_latest_traces
+
+    older = valid_trace()
+    older["finished_at"] = "2026-11-01T00:00:00Z"
+    newer = valid_trace()
+    newer["finished_at"] = "2026-11-01T01:00:00Z"
+    old_path = write_trace(tmp_path, older, "old.trace.json")
+    new_path = write_trace(tmp_path, newer, "new.trace.json")
+
+    duplicated = replay_traces(ROOT, [old_path, new_path])
+    assert duplicated["status"] == "INVALID"
+    assert duplicated["invalid_trace_count"] == 1
+    assert "duplicate replay case" in duplicated["records"][1]["error"]
+
+    selected, selection = select_latest_traces([old_path, new_path])
+    assert selected == [new_path]
+    assert selection[0]["candidate_count"] == 2
+    assert selection[0]["selected_trace_sha256"] == hashlib.sha256(new_path.read_bytes()).hexdigest()
+    result = replay_traces(ROOT, selected)
+    assert result["grade_passed_count"] == 1
+    assert result["runner_invocations"] == 0
+
+    tie = valid_trace()
+    tie["finished_at"] = newer["finished_at"]
+    tie_path = write_trace(tmp_path, tie, "tie.trace.json")
+    with pytest.raises(ValueError, match="ambiguous"):
+        select_latest_traces([new_path, tie_path])
+
+
+def test_make_can_request_latest_trace_per_case() -> None:
+    completed = subprocess.run(
+        [
+            "make",
+            "--no-print-directory",
+            "-n",
+            "-C",
+            str(ROOT),
+            "skill-replay",
+            "TRACES=/tmp/traces",
+            "LATEST=1",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0
+    assert "--latest-per-case" in completed.stdout
