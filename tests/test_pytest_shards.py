@@ -223,7 +223,7 @@ def test_ci_preserves_coverage_and_required_gates() -> None:
     assert fan_in["if"].startswith("always()")
     assert "fixtures-fan-in" in quality["jobs"]["quality-gate"]["needs"]
     download = next(step for step in fan_in["steps"] if step["name"] == "Download every fixture shard")
-    assert download["uses"].startswith("actions/download-artifact@37930b1c")
+    assert download["uses"].startswith("actions/download-artifact@9000827c")
     assert "quality-fixture-shard-*" in download["with"]["pattern"]
 
     reusable = yaml.load((ROOT / ".github/workflows/_regression.yml").read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
