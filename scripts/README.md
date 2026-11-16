@@ -75,15 +75,23 @@ Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `skill_eval.py replay` grades explicit retained traces without starting a runner.
 It validates trace/input/Skill/workspace provenance and preserves current versus
 historical case identity. Invalid or failed grades fail the command; the report
-always records `behavior_execution=NOT_RUN` and zero runner invocations. Use
-`make skill-replay TRACES=<directory>`; static corpus checks alone are not a
-behavior replay, and replay does not qualify current code or hardware.
+always records `behavior_execution=NOT_RUN` and zero runner invocations. Duplicate
+case IDs are rejected. `--latest-per-case` selects one timezone-bound latest trace
+per case, rejects timestamp ties, and records every candidate path, timestamp, and
+SHA-256. The equivalent Make option is `LATEST=1`. Use `make skill-replay
+TRACES=<directory>`; static corpus checks alone are not a behavior replay, and
+replay does not qualify current code or hardware.
 `engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
 `job_metrics.py` adds bounded per-attempt job pagination, queue/execution/step
 timing, first-attempt and same-head duplicate execution, plus explicit cache-step
 observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
 optional cache/config digests without treating a cache as a cached PASS.
+`cache_artifacts.py` reads cache reports directly from run-bound artifact ZIPs,
+records artifact identity and SHA-256, and accepts optional cache keys. Only a
+unique key-matched GitHub cache entry supplies actual size bytes; artifact sizes,
+missing keys, and ambiguous metadata never become inferred cache measurements.
+Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
 timing. Unknown timeline, cache size, or local evidence is never reported as
@@ -102,9 +110,11 @@ and never enables a queue or gate by itself.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and
-resource summaries, and emits cache observations. `inspect` is dry-run by
-default. Only a first-attempt, same-head, recognized infrastructure failure is
-eligible for `inspect --execute`; all other failures preserve their verdict.
+resource summaries, and emits cache observations with optional cache keys.
+`inspect` is dry-run by default and preserves both raw and ANSI/control-normalized
+logs with separate SHA-256 evidence. Only a first-attempt, same-head, recognized
+infrastructure failure is eligible for `inspect --execute`; all other failures
+preserve their verdict.
 `formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to
@@ -203,12 +213,20 @@ lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
 plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
+and offers `--reconcile-only` for a later merged-PR cleanup. Initial, pending,
+waiting-for-native-merge, and final states are atomically checkpointed so an
+interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility
 entrypoint. Both use clean, canonical worktree checks and registry-based artifact
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
 written below `build/agent-worktrees/`. Use the corresponding Make targets and
 host tests instead of duplicating these rules in workflow shell.
+`delivery_controller.py` coordinates only explicitly selected existing delivery
+records. It atomically persists pending/failed/attention state, resumes native
+auto-merge monitoring, and reconciles merged cleanup without becoming a merge
+authority. It never re-enables externally disabled auto-merge, retries failed
+checks, or discovers unrelated PRs. Complete records are no-ops without network
+access. Use `make agent-coordinate PRS="<number>..."` with optional `WATCH=1`.
 
 `spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
 entrypoints. It preserves attempt directories, source archives, command results
