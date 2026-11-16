@@ -124,11 +124,18 @@ def deliver(
     watch: bool,
     cleanup: bool = True,
     delete_remote: bool = True,
+    checkpoint: Any = None,
 ) -> dict[str, Any]:
     if interval <= 0:
         raise ValueError("interval must be positive")
     started = time.monotonic()
+
+    def save(result: dict[str, Any]) -> None:
+        if checkpoint is not None:
+            checkpoint(result)
+
     document = enable_delivery(root, repository, number, delivery_preflight(root, repository, number))
+    save(document)
     if document["status"] == "BLOCKED" or not watch:
         return document
     previous_output = ""
@@ -142,6 +149,7 @@ def deliver(
                 auto_merge=True,
                 watch_seconds=round(time.monotonic() - started, 3),
             )
+            save(result)
             return result
         if pull.get("state") != "OPEN":
             raise RuntimeError(f"PR #{number} is {pull.get('state')}; native auto-merge cannot complete")
@@ -158,7 +166,18 @@ def deliver(
         if output != previous_output:
             print(output, flush=True)
             previous_output = output
-        if report["status"] == "FAIL":
+        status = report["status"]
+        save(
+            {
+                **document,
+                "status": "FAILED" if status == "FAIL" else "PENDING" if status == "PENDING" else "WAITING_FOR_NATIVE_MERGE",
+                "checked_at": utc_now(),
+                "last_check_status": status,
+                "last_check_head_sha": report.get("head_sha"),
+                "watch_seconds": round(time.monotonic() - started, 3),
+            }
+        )
+        if status == "FAIL":
             raise RuntimeError(f"PR #{number} checks failed at {report['head_sha']}; GitHub will not auto-merge")
         time.sleep(interval)
 
@@ -206,6 +225,7 @@ def main() -> int:
                     args.watch,
                     cleanup=not args.no_cleanup,
                     delete_remote=not args.no_remote_delete,
+                    checkpoint=lambda result: atomic_write(output, dump_json(result)),
                 )
         atomic_write(output, dump_json(result))
         print(dump_json(result), end="")

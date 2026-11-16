@@ -145,7 +145,8 @@ tooling.
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
   and deferred reconciliation. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
-  external auto-merge disabling, and head-change preservation. Run fast agent
+  external auto-merge disabling, head-change preservation, and atomic watcher
+  checkpoints. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 57 cases across six Skills, with one live smoke per Skill.

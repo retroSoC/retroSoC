@@ -195,7 +195,9 @@ lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
 plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
+and offers `--reconcile-only` for a later merged-PR cleanup. Initial, pending,
+waiting-for-native-merge, and final states are atomically checkpointed so an
+interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility
 entrypoint. Both use clean, canonical worktree checks and registry-based artifact
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
