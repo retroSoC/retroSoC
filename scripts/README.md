@@ -107,6 +107,15 @@ metric samples. Merge queues are considered only for sustained integration
 conflicts with full merge_group gate coverage. Metric promotion still requires
 ten validated samples and a committed reviewed baseline. Evaluation is read-only
 and never enables a queue or gate by itself.
+`regress.py --plan-output <path>` writes the exact selected primary and
+observation Make argv, profile arguments, source revision, and lock digest before
+execution. `performance_evidence.py` binds retained artifact ZIPs to job,
+manifest, selected-plan, command, tool, and optional explicit runner-isolation
+identities offline. It supplies legacy profile/lock fields only from the matching
+manifest, rejects ambiguous evidence and duplicate run/role samples, and requires
+five matching baseline/candidate pairs before `READY_FOR_REVIEW`. It never runs
+a simulator, contacts GitHub, infers isolation from a hosted runner name, or
+starts an A/B experiment.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and

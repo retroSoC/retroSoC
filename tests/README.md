@@ -108,6 +108,10 @@ tooling.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
+  `test_performance_evidence.py` checks exact selected Make command plans,
+  offline artifact/job/result binding, manifest-backed legacy identities,
+  malformed evidence rejection, explicit runner isolation, and the five-pair
+  review threshold without starting a simulator or an A/B experiment.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the

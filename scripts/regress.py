@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.check_c_warnings import self_owned_warnings  # noqa: E402
+from scripts.setup_helpers import atomic_write, git_output, sha256  # noqa: E402
 
 
 CI_SMOKE_APP_VALUE = "APP=ci_smoke"
@@ -316,6 +320,74 @@ def run_observation(command: list[str], root: Path, environment: dict[str, str])
         )
 
 
+def semantic_digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def command_record(profile: str, values: tuple[str, ...]) -> dict[str, Any]:
+    command = ["make", f"CONFIG={profile}", *values]
+    return {
+        "profile": profile,
+        "arguments": list(values),
+        "command": command,
+        "command_sha256": semantic_digest(command),
+    }
+
+
+SELECTION_KEYS = (
+    "suite",
+    "pdk",
+    "soc",
+    "behavioral_only",
+    "netsim_boot_only",
+    "tiny_p7_iverilog",
+    "tiny_p7_iverilog_timeout_seconds",
+    "commands",
+    "observations",
+)
+
+
+def selection_digest(document: dict[str, Any]) -> str:
+    return semantic_digest({key: document[key] for key in SELECTION_KEYS})
+
+
+def write_command_identity(
+    output: Path,
+    root: Path,
+    args: argparse.Namespace,
+    commands: tuple,
+    profiles: tuple,
+    p7_selection: str,
+) -> dict[str, Any]:
+    primary = [command_record(profile, values) for profile, values in commands]
+    observations = [
+        command_record(profile, values)
+        for profile in profiles
+        for values in (RTL_LINT_OBSERVATION_VALUES, *OBSERVATION_TARGETS)
+    ]
+    document = {
+        "schema_version": 1,
+        "kind": "regression-command-identity",
+        "execution": "dry-run" if args.dry_run else "execute",
+        "source_revision": git_output(root, "rev-parse", "HEAD"),
+        "dependency_lock_sha256": sha256(root / "dependencies/dependencies.lock.json"),
+        "suite": args.suite,
+        "pdk": args.pdk,
+        "soc": args.soc or "ALL",
+        "behavioral_only": args.behavioral_only,
+        "netsim_boot_only": args.netsim_boot_only,
+        "tiny_p7_iverilog": p7_selection,
+        "tiny_p7_iverilog_timeout_seconds": args.tiny_p7_iverilog_timeout_seconds,
+        "commands": primary,
+        "observations": observations,
+    }
+    document["command_set_sha256"] = selection_digest(document)
+    if not output.is_absolute():
+        output = root / output
+    atomic_write(output, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    return document
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a supported retroSoC regression suite")
     parser.add_argument("--root", type=Path, required=True)
@@ -325,6 +397,7 @@ def main() -> int:
     parser.add_argument("--pdk", choices=tuple(PDK_PR_PROFILES), help="run one PDK matrix")
     parser.add_argument("--soc", choices=("MINI", "TINY"), help="run one product only")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--plan-output", type=Path)
     parser.add_argument(
         "--netsim-boot-only",
         action="store_true",
@@ -380,6 +453,8 @@ def main() -> int:
         commands = with_netsim_boot_only(commands)
     if args.behavioral_only:
         commands = behavioral_only(commands)
+    if args.plan_output is not None:
+        write_command_identity(args.plan_output, args.root, args, commands, profiles, p7_selection)
     environment = regression_environment()
     for profile, values in commands:
         command = ["make", f"CONFIG={profile}", *values]
