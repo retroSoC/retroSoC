@@ -1,5 +1,6 @@
 // Original vector redraws from a single geometry; source dimensions remain reference data.
 #import "@preview/cetz:0.5.2" as cetz
+#import "scientific.typ" as scientific
 #let ink=rgb("#292C31")
 #let gold=rgb("#A38442")
 #let gray=rgb("#F1F2F3")
@@ -33,7 +34,7 @@
       label-at(26,37,[Regulator #linebreak()voltage / order TBD])
       wire((45,37),(154,37),(154,58))
       label-at(96,29,[Approved rail group; repeat at each supply])
-      for (x,value) in ((63,[#b.bulk_cap_uf uF]),(95,[#b.domain_cap_uf uF]),(127,[#b.local_cap_nf nF])) {
+      for (x,value) in ((63,[#b.bulk_cap_uf #scientific.render("uF",spec.scientific,unit:true)]),(95,[#b.domain_cap_uf #scientific.render("uF",spec.scientific,unit:true)]),(127,[#b.local_cap_nf nF])) {
         cap(x,37,value)
         ground(x,58)
       }
@@ -57,8 +58,8 @@
       rect((42,-58),(48,-68),fill:white,stroke:0.6pt+ink)
       wire((45,52),(45,58))
       wire((45,68),(45,76))
-      label-at(64,63,[#b.reset_pull_kohm kohm])
-      label-at(45,48,[VIO])
+      label-at(64,63,[#b.reset_pull_kohm #scientific.render("kohm",spec.scientific,unit:true)])
+      label-at(45,48,scientific.render("VIO",spec.scientific))
       cap(83,76,[#b.reset_cap_nf nF])
       ground(83,97)
       label-at(36,91,[Supervisor / button #linebreak()open-drain example])
@@ -75,7 +76,7 @@
         wire((50,y),(118,y))
         label-at(83,y - 3,name)
       }
-      label-at(86,152,[JTAG: TCK/TMS/TDI/TDO + GND + VIO reference; pin order TBD.])
+      label-at(86,152,[JTAG: TCK/TMS/TDI/TDO + GND + #scientific.render("VIO",spec.scientific) reference; pin order TBD.])
     }
   })
 }
@@ -134,7 +135,7 @@
     content((86,-5),[REFERENCE ONLY - side view / seating plane])
     rect((24,-18),(141,-29),fill:gray,stroke:0.7pt+ink)
     line((18,-31),(150,-31),stroke:(paint:ink,thickness:0.5pt,dash:"dashed"))
-    content((83,-41),[A = #d.height ± 0.05 mm; A1 = 0.00…#d.standoff mm])
+    content((83,-41),[A = #d.height ± 0.05 mm; #scientific.render("A1",spec.scientific,mechanical:true) = 0.00…#d.standoff mm])
     content((83,-49),[Terminal L = #d.lead_length ± 0.10; b = #d.lead_width ± 0.05 mm])
   })
 }
