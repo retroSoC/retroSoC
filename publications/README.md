@@ -2,7 +2,7 @@
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 **v0.5 DRAFT / Gen2/Gen2+**, reviewed dev
-6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. The main references are Tiny ICS55
+903ef1eda3b956864157e6e64319fddde9cd5747. The main references are Tiny ICS55
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
 The two books have independent profiles, manifests and output markers.
 
