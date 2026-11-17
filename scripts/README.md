@@ -139,7 +139,11 @@ for one cache ID are rejected.
 Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
-timing. Unknown timeline, cache size, or local evidence is never reported as
+timing. Its additive `friction` and `local_friction` observations count records
+with explicit recovery, known cleanup warnings, and last/final-check and evidence
+statuses. Missing warning inventories remain unknown, not zero; these local
+observations never infer CI retries, human actions, or hardware performance.
+Unknown timeline, cache size, or local evidence is never reported as
 zero. `ci_observations.py` reads head-bound shadow artifacts without file
 extraction and includes read-only delivery-policy evaluations. For PR merge
 revisions, it separately validates the actual workflow head, evaluated revision,

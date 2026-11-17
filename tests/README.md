@@ -116,7 +116,9 @@ tooling.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
-  offline reconstruction, and unknown-data handling.
+  merge-matched recovery/cleanup/final-check friction observations, offline
+  reconstruction, and unknown-data handling. Missing warning inventories remain
+  unknown rather than becoming zero.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
