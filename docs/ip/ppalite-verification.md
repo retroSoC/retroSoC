@@ -12,9 +12,10 @@ PPALITE-P4 functional implementation is `a46543a2ed87e3a153285581e9dfec46bbf6ee3
 the clean reviewed-source and compiled-image revision is
 `f209ca91a59a25a48075dc8bbd0690e8b3e960cc`. Later flow-tool fixes and the
 Mini behavioral/diagnostic run bind to `9b99113ecaf668ef61f1d241add604e2019fa93c`.
-The datasheet inventory continues to name the functional implementation, not a
-later integration or documentation revision. These identities are not
-interchangeable.
+The P4 functional evidence remains bound to `a46543a2`, while the current
+publication source snapshot is separately bound to
+`8294b64b48a620940f7f38b8fdc9e713e0feae92` for the TINY-056 rule and its
+hashed publication inputs. These identities are not interchangeable.
 
 Both committed Tiny profiles complete the full source-bound P4 Verilator and
 Icarus images. Every run reports `PPALITE_P4_RESULT code=0 frames=7 recovered=1`
