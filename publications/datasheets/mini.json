@@ -12,12 +12,12 @@
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
   "build_control_review": {
-    "revision": "c9bd251db174c8934a1554ec9954969fad64c5ae",
+    "revision": "e0a69d75e9f4054bb6e3850662f8802dba4b17cb",
     "makefile_blob": "a6a714f6df6c497a98721f8ea8447f15cc11c246",
     "documentation_blobs": {
-      "docs/git-workflow.md": "3c1fd8cffad4bf863aab9cfe4f27dd783ddc9261"
+      "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
     },
-    "reason": "The Mini technical source snapshot is 2f1f90, now contained in dev; non-product control review continues through c9bd251d. Reviewed controls add isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching, cache restore identity, and staged-index scope validation. Makefile changes since the prior review only add preflight merge arguments, a check-fast test, and the agent-scope-check target; the Git workflow documents those control paths. Product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The Mini technical source snapshot is 2f1f90, now contained in dev; non-product control review continues through e0a69d75. In addition to the previously reviewed agent controls, the Git workflow now documents verified delivery cleanup and artifact evidence manifests. The Makefile is unchanged from the prior review. Product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
