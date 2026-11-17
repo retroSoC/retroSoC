@@ -166,8 +166,11 @@ tooling.
   atomic watcher checkpoints. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
-  corpus contains 57 cases across six Skills, with one live smoke per Skill.
-  Provenance, contract migration, negative triggers, Kimi tool-call parsing,
+  corpus contains 59 cases across six Skills, with one live smoke per Skill.
+  Additional cases cover explicit hosted fixture opt-in, duplicate-cache
+  uncertainty, and missing performance isolation. `skill_eval.py run --case <id>`
+  selects them without changing existing smoke cases. Provenance, contract
+  migration, negative triggers, Kimi tool-call parsing,
   read-only runner boundaries, and canary configuration are tested
   deterministically; live behavior results require retained traces from
   `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`

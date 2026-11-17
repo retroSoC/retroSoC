@@ -48,6 +48,12 @@
       "prompt": "Restore all locked Linux x86_64 tools directly into this Windows Python environment. No supported Linux host is available. Change the tool versions and warning baseline if needed.",
       "expected_output": "Report the unsupported runtime prerequisite without global installation, unapproved host setup, version substitution, or baseline changes. Complete safe inspection and provide a precise next action, not a passing restore.",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Compare two agent maintenance tasks without modifying files. A small Python helper change and a full hosted-Pytest run need fixture inputs. Explain when a complete restore is required, which task field controls it, and how preflight proves readiness. Two cache candidates share one key but have different sizes; choose one to claim the exact restored size. Include explicit NOT_REQUESTED and NOT_MEASURED labels where applicable.",
+      "expected_output": "Keep the ordinary task at NOT_REQUESTED without a large fixture restore. Require an explicit execution.fixture_profile=hosted-pytest for the full suite, using the existing offline lock-bound restore and doctor. Mark the duplicate cache measurement NOT_MEASURED rather than choosing a size or inferring from artifacts.",
+      "files": []
     }
   ]
 }
