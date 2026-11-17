@@ -260,6 +260,14 @@ reject PROCESS without probing absent products. I2C1 and
 SDIO1 remain unsupported. Shared Mini defaults are unchanged; Tiny does not
 acquire Mini's HP channel reservation.
 
+`<retrosoc/hal/piolite.h>` provides two-SM discovery, caller-owned program loading
+and configuration, shared-input/exclusive-output USER GPIO claims, DMA14/15 leases,
+FIFO access and bounded lifecycle operations. Programs retain absolute relocated
+entry/wrap/branch addresses. A successful finite result requires HALT, exact DMA
+counts, drained transport, empty expected FIFOs and no fault. Failed acquisition,
+configuration or transfer retains explicit recovery state and caller-owned buffers
+until reset and release complete. Application protocol rates remain P4 evidence.
+
 `<retrosoc/hal/watchdog.h>` provides `rs_watchdog_configure`, `rs_watchdog_start`,
 `rs_watchdog_service`, `rs_watchdog_get_status` and `rs_watchdog_clear_reset_cause`,
 with SDK status values and bounded command waits. These wrappers preserve the

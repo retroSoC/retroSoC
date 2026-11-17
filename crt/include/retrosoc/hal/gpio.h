@@ -84,6 +84,8 @@ rs_status_t rs_gpio_interrupt_test(uint32_t mask);
 rs_status_t rs_gpio_filter_configure(uint32_t enable_mask, const rs_gpio_filter_timing_t *timing);
 rs_status_t rs_gpio_user_access_set(uint32_t mask);
 rs_status_t rs_gpio_user_ip_select(uint32_t mask, bool enable);
+rs_status_t rs_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout);
+rs_status_t rs_gpio_user_release(uint32_t mask, rs_timeout_t timeout);
 rs_status_t rs_gpio_user_ip_lock(uint32_t mask);
 rs_status_t rs_gpio_configuration_lock(uint32_t mask);
 void rs_gpio_shell_test(int argc, char **argv);

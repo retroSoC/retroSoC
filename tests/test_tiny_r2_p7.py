@@ -230,9 +230,8 @@ def check_p7_target_capability(top: str, firmware: str) -> None:
     if len(targets) != 1 or len(expected) != 1:
         raise ValueError("missing or ambiguous target capability definition")
     # Freeze the implemented set independently of both handwritten sources.
-    # The HAL's 0x3ffff architecture mask also admits unimplemented targets.
-    if int(targets[0].replace("_", ""), 16) != 0x37FFF or int(expected[0], 16) != 0x37FFF:
-        raise ValueError("target capability differs from the PPALite-inclusive contract")
+    if int(targets[0].replace("_", ""), 16) != 0x3FFFF or int(expected[0], 16) != 0x3FFFF:
+        raise ValueError("target capability differs from the PIO/PPALite-inclusive contract")
     main = re.findall(r"\bint\s+main\s*\(void\)\s*\{(.*)", firmware, re.DOTALL)
     guard = (
         r"\bif\s*\(\s*rs_tiny_rcu_get_snapshot\(&snapshot\)\s*!=\s*RS_OK\s*\|\|\s*"
@@ -250,15 +249,15 @@ def test_tiny_p7_target_capability_parity() -> None:
 
 
 @pytest.mark.parametrize(("source", "old", "new"), [
-    ("firmware", "UINT32_C(0x00037FFF)", "UINT32_C(0x00003FFF)"),
-    ("top", "18'h37fff", "18'h03fff"),
-    *[("firmware", "UINT32_C(0x00037FFF)", f"UINT32_C({value})")
-      for value in ("0x00007FFF", "0x0000FFFF", "0x00027FFF", "0x0003FFFF")],
+    ("firmware", "UINT32_C(0x0003FFFF)", "UINT32_C(0x00003FFF)"),
+    ("top", "18'h3ffff", "18'h03fff"),
+    *[("firmware", "UINT32_C(0x0003FFFF)", f"UINT32_C({value})")
+      for value in ("0x00007FFF", "0x0000FFFF", "0x00027FFF", "0x0001FFFF")],
     ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY", "false"),
     ("firmware", "snapshot.target_capability != RS_P7_EXPECTED_TARGET_CAPABILITY",
      "(snapshot.target_capability & RS_P7_EXPECTED_TARGET_CAPABILITY) != RS_P7_EXPECTED_TARGET_CAPABILITY"),
     ("firmware", "#define RS_P7_EXPECTED_TARGET_CAPABILITY", "#define RS_P7_UNUSED_CAPABILITY"),
-    ("top", ".TargetMask (18'h37fff)", ".UnusedMask (18'h37fff)"),
+    ("top", ".TargetMask (18'h3ffff)", ".UnusedMask (18'h3ffff)"),
 ])
 def test_tiny_p7_target_capability_rejects_drift(source: str, old: str, new: str) -> None:
     sources = {"top": (ROOT / "rtl/tiny/top/retrosoc_tiny.sv").read_text(),

@@ -143,6 +143,7 @@
     "app/apps/ci_smoke/tiny.c",
     "app/apps/ci_smoke/tiny.mk",
     "app/apps/ci_smoke/tiny_ppalite_p3.c",
+    "app/apps/ci_smoke/tiny_piolite_p3.c",
     "configs/ci/ihp130-tiny-xin48.mk",
     "configs/ci/ihp130-tiny-xin96.mk",
     "crt/arch/riscv/startup.S",
@@ -178,6 +179,7 @@
     "rtl/ip/ppalite/ppalite_packer.sv",
     "rtl/ip/ppalite/ppalite_reg.sv",
     "rtl/ip/ppalite/ppalite_stream_guard.sv",
+    "rtl/tiny/dv/tiny_piolite_observers.svh",
     "rtl/tiny/top/ppalite_dma_guard.sv",
     "rtl/tiny/top/ppalite_route_ctrl.sv",
     "rtl/tiny/top/tiny_axi4_target.sv",
@@ -195,6 +197,7 @@
     "scripts/piolite_asm.py",
     "scripts/piolite_isa.py",
     "scripts/piolite_model.py",
+    "scripts/piolite_p3.py",
     "tests/test_tiny.py"
   ],
   "bindings": [
@@ -207,7 +210,7 @@
     {
       "file": "rtl/ip/peripheral/dma_reg.sv",
       "text": [
-        "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'd3 : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
+        "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'($countones(supported_requests_i[15:0] & 16'hF806)) : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
       ]
     },
     {
@@ -235,7 +238,7 @@
     {
       "file": "rtl/tiny/top/retrosoc_tiny.sv",
       "text": [
-        ".TargetMask(18'h37fff)",
+        ".TargetMask(18'h3ffff)",
         ".EnableWfiGate(1'b1)",
         ".PreserveDebug(1'b1)",
         ".PllProfiles(TinyPllPresent)",

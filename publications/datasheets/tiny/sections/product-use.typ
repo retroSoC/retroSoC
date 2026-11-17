@@ -18,12 +18,12 @@ offset does not establish an optional feature. Identify the product before using
   ([Firmware],code("APP=bringup; HAVE_CSR=YES"),code("LINK_TYPE=ld2_all_sram"))),widths:(0.75fr,1.7fr,1.7fr))
 
 === Implemented scope and planned capabilities
-The 23 IP chapters cover every currently decoded region and allocated interrupt cause. RCU is a SYSCTRL subregion;
+The 24 IP chapters cover every currently decoded region and allocated interrupt cause. RCU is a SYSCTRL subregion;
 GPIO administration and user windows are views of the same pad bank. UART0/I2C0 are the active serial instances.
 @tiny-migration records the removed UART1/I2C1 interfaces without advertising them as current hardware.
 
 PPALite P3 is integrated with APB4, IRQ27, RCU17 and the existing request-11/DMA2 path.
-PIO-lite has standalone P2 RTL and host tools, but Tiny integration remains absent.
+PIO-lite P3 source integration adds guarded USER GPIO, DMA14/15, IRQ24, RCU15 and the freestanding HAL. Its final isolated P3 acceptance and P4 application campaign are distinct evidence gates.
 The document does not imply USB, wireless, CAN, ADC, an application hart, Linux, secure boot or a production entropy source.
 Optional PSRAM and the camera/display workflows require explicit device initialization and resource ownership.
 #source-note("docs/ip/tiny-soc.md",title:"Frozen Tiny target and separately phased extensions")

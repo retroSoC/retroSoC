@@ -46,5 +46,6 @@ validation. The request high bit in TCD control[25] is required for SPI16/17.
 
 #heading(level:4,numbering:none,outlined:false,bookmarked:true)[Clock, external memory and product scope]
 The old single-clock/no-external-RAM descriptions do not apply to this snapshot. Use RCU rate/lifecycle operations and
-explicit XPI PSRAM sessions; a clock/reset transition invalidates device timing/session assumptions. PIO-lite remains
-unintegrated. PPALite P3 is present; its processed application and final physical qualification are separate open gates.
+explicit XPI PSRAM sessions; a clock/reset transition invalidates device timing/session assumptions. PIO-lite P3 source
+integration is present; final P3 acceptance, P4 protocol applications and the final physical campaign retain separate gates.
+PPALite P3 is present; its processed application and final physical qualification are separate open gates.

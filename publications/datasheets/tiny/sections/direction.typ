@@ -10,7 +10,7 @@
 #source-note("docs/soc-family-positioning.md",title:"Family positioning and scope")
 
 == Roadmap
-PIO-lite has standalone P2 RTL and host ISA/model/assembler tools; Tiny routing, DMA and HAL integration remain pending.
+PIO-lite P3 adds Tiny GPIO/DMA/RCU and freestanding HAL source integration. Final isolated P3 acceptance must bind the completed evidence; P4 protocol applications and joint P5 qualification remain open.
 PPALite P3 source/DMA/RCU/SDK integration is present. Its P4 camera/memory/display application campaign and joint P5 physical/timing campaign remain open.
 Reserved addresses/selectors, host tools and shared SDK names do not instantiate hardware.
 Release dates, derivative features, package/process choices and commercial availability are not commitments in this draft.

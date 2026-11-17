@@ -785,6 +785,18 @@
       "apb_target": "dvp"
     },
     {
+      "id": "piolite",
+      "label": "PIO-lite",
+      "domain": "peripheral",
+      "x": 96,
+      "y": 136,
+      "w": 24,
+      "h": 6,
+      "role": "block",
+      "ip": "piolite",
+      "apb_target": "piolite"
+    },
+    {
       "id": "audio",
       "label": "I2S serial engine",
       "domain": "audio",
@@ -1527,6 +1539,27 @@
         [
           121,
           161.5
+        ]
+      ],
+      "arrow": true
+    },
+    {
+      "id": "pclk-piolite",
+      "from": "pclk-rail",
+      "to": "piolite",
+      "kind": "control",
+      "source_side": "east",
+      "target_side": "west",
+      "source_position": 0.10416666666666667,
+      "target_position": 0.5,
+      "via": [
+        [
+          121,
+          137.5
+        ],
+        [
+          121,
+          139
         ]
       ],
       "arrow": true

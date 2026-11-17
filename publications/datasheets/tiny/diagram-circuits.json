@@ -10354,6 +10354,150 @@
     ],
     "note": "Composition is sequential. Arrows after frame storage show software-owned transfer stages through the fabric, not direct point-to-point wires. Stop/drain capture before display or saving; camera and audio routes conflict. No concurrent pipeline or throughput is claimed. PPALite reduction precedes storage in PROCESS. Its P3 wiring does not qualify the P4 processed display/save application chain."
   },
+  "piolite": {
+    "title": "PIO-lite execution, USER GPIO and DMA",
+    "note": "Two SMs share one instruction store. USER data/OE is continuously qualified by ownership and readiness. DMA14/15 retain complete job and recovery ownership; no additional AXI master is present.",
+    "nodes": [
+      {
+        "id": "core",
+        "title": "Two PCLK SMs\n32 x 16 shared IMEM / FIFOs",
+        "x": 0,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "gpio", "direction": "out", "width": null, "side": "south", "bundle": true},
+          {"id": "tx", "direction": "in", "width": 32, "side": "east"},
+          {"id": "rx", "direction": "out", "width": 32, "side": "east"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/piolite_core.sv",
+          "rtl/ip/piolite/piolite_sm.sv",
+          "rtl/ip/piolite/piolite_imem.sv"
+        ]
+      },
+      {
+        "id": "gpio",
+        "title": "USER GPIO guard\nclaims / filters / readiness",
+        "x": 0,
+        "y": 9,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "gpio", "direction": "in", "width": null, "side": "north", "bundle": true}
+        ],
+        "sources": [
+          "rtl/ip/piolite/piolite_gpio_guard.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      },
+      {
+        "id": "dma",
+        "title": "Central DMA\nTX14 / RX15 / drain",
+        "x": 6.3,
+        "y": 4,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "tx", "direction": "out", "width": 32, "side": "west"},
+          {"id": "rx", "direction": "in", "width": 32, "side": "west"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/piolite_dma_adapter.sv",
+          "rtl/ip/peripheral/apb4_dma.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "core.gpio",
+        "to": "gpio.gpio",
+        "label": "USER data / OE",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/tiny/top/retrosoc_tiny.sv", "text": ".gpio_value_o (u_user_gpio_if.do_o)"},
+          {"file": "rtl/tiny/top/retrosoc_tiny.sv", "text": ".gpio_oe_o (u_user_gpio_if.oe_o)"}
+        ],
+        "zigzag-dir": "vertical"
+      },
+      {
+        "from": "dma.tx",
+        "to": "core.tx",
+        "label": "TX words / 32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/tiny/top/retrosoc_tiny.sv", "text": ".dma_tx_data_i (u_piolite_tx_axis_if.tdata)"}
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "core.rx",
+        "to": "dma.rx",
+        "label": "RX words / 32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/tiny/top/retrosoc_tiny.sv", "text": ".dma_rx_data_o (u_piolite_rx_axis_if.tdata)"}
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "PIOLITE",
+      "rows": [
+        [
+          "core",
+          "dma"
+        ],
+        [
+          "gpio"
+        ]
+      ],
+      "external": [],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/piolite/apb4_piolite.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        }
+      ],
+      "review": "Functional source grouping for the two-SM core, USER GPIO guard and central-DMA endpoints. Lifecycle and pin ownership remain bound to the integrated evidence.",
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "core",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "apb4_if.slave"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
+  },
   "ppalite": {
     "title": "PPALite exclusive routing and pixel pipeline",
     "note": "Logical PCLK data path after the existing DVP CDC. RAW bypass and PROCESS are exclusive. The route controller owns source barriers; DMA admission guards the existing channel 2. Stream arrows show data direction; READY returns upstream. No extra master or line/frame RAM is implied.",

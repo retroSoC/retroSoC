@@ -187,11 +187,11 @@
     "features": [
       "**Eight channels**; direct transfers and **64-byte aligned TCDs**.",
       "32-bit memory transfers, up to 16 beats and 32-word per-channel FIFOs; narrower endpoint limits still apply.",
-      "DMA V2.2, request mask 0x000339FF, stream kinds and SPI origin/admission qualification."
+      "DMA V2.2, request mask 0x0003F9FF, stream kinds, PIO-lite grants and SPI origin/admission qualification."
     ],
     "paragraphs": [
       "Default software leases are UART0=0, I2C0=1, camera=2, serialized bulk=3, Crypto=4/5 and I2S=6/7. Borrow camera DMA2 for memory work only when its owner is inactive.",
-      "Enabled requests are software 0, I2S 1/2, XPI 3/4, UART0 5/6, I2C0 7/8, DVP 11, Crypto 12/13 and SPI 16/17. I2C1 9/10 and PIO-lite 14/15 remain absent. SDIO has a separate AXI master rather than a central-DMA request.",
+      "Enabled requests are software 0, I2S 1/2, XPI 3/4, UART0 5/6, I2C0 7/8, DVP 11, Crypto 12/13, PIO-lite 14/15 and SPI 16/17. I2C1 9/10 remain absent. SDIO has a separate AXI master rather than a central-DMA request.",
       "**One read and one write** may be outstanding for DMA across independently serviced targets. CPU local SRAM and SDIO can progress at other targets; same-target traffic contends. Burst and wire rates are not sustained application throughput.",
       "TCDs retain the 64-byte layout. Request bits 3:0 use control[15:12]; request bit 4 uses control[25] (RS_DMA_TCD_REQUEST_HIGH). Retain the high bit for SPI16/17 and validate DMA identity, request, kind and endpoint before submission.",
       "SPI pacing admits only the bound channel, matching source/destination port, direction, request and reserved transport credit. Pending descriptor fetch, admission and final response all contribute to ownership. Abort or software timeout does not release channel, descriptor or payload storage until **terminal drain is confirmed**.",
@@ -517,6 +517,56 @@
     "evidence": "Source reviewed at the publication SHA. Dated phase evidence retains its own source/profile/stage; no new hardware qualification is implied."
   },
   {
+    "id": "piolite",
+    "family": "piolite",
+    "title": "Programmable I/O (PIO-lite)",
+    "depth": 4,
+    "regions": [
+      "APB4_PIOLITE"
+    ],
+    "irqs": [
+      "piolite"
+    ],
+    "summary": "Two PCLK state machines with shared instruction storage, guarded USER GPIO and central-DMA streams.",
+    "features": [
+      "Two independent SMs, **32 shared 16-bit instructions** and per-SM 8-word TX/RX FIFOs.",
+      "APB4 0x1001C000, IRQ24 and RCU target 15; existing GPIO0..31 USER ownership.",
+      "DMA V2.2 requests 14/15; distinct leased channels, full-chain ownership and bounded endpoint recovery."
+    ],
+    "paragraphs": [
+      "The two SMs fetch independently from one shared instruction store. Integer PCLK enables, explicit wrap and finite HALT define execution; stored code does not authorize a pin or DMA channel by itself.",
+      "GPIO claims require a quiesced native route, safe output enable, disabled filters/interrupts and a verified USER_STATUS handoff. Inputs can be shared; output authorization is exclusive. Reset or ownership loss closes the affected session instead of silently restarting it.",
+      "TX uses MM_TO_STREAM request 14 and RX uses STREAM_TO_MM request 15. Only aligned 32-bit words with positive four-byte-multiple lengths are admitted. Channel reservation covers the complete descriptor chain and accepted responses, not just an active stream beat.",
+      "A valid finite result requires HALT, exact DMA and memory-response completion, expected FIFO/shift tails and no fault. HALT, DMA idle or an interrupt alone is insufficient. Timeout retains the session, channel and buffer obligations until coordinated abort, drain and SM reset complete.",
+      "The source includes the P3 integration and freestanding HAL. P4 application waveforms/rates and the final combined-product timing/physical campaign remain separate evidence requirements."
+    ],
+    "steps": [
+      "Validate APB/ISA discovery, load and read back a relocated program while every SM and binding is quiescent.",
+      "Quiesce native pin owners, configure and claim USER GPIO, then bind distinct leased DMA channels with checked lengths.",
+      "Start, pause/resume or disable the selected SM and use bounded FIFO/DMA waits with fault/status inspection.",
+      "On failure preserve ownership until accepted work drains; reset the affected endpoint before explicit GPIO and channel release."
+    ],
+    "nodes": [
+      "APB4 / discovery + lifecycle",
+      "Shared 32 x 16 IMEM",
+      "Two SMs + 8-word TX/RX FIFOs",
+      "USER GPIO ownership guard",
+      "DMA14/15 + endpoint recovery"
+    ],
+    "sources": [
+      "rtl/tiny/top/retrosoc_tiny.sv",
+      "rtl/ip/piolite/apb4_piolite.sv",
+      "rtl/ip/piolite/piolite_core.sv",
+      "rtl/ip/piolite/piolite_reg.sv",
+      "rtl/ip/piolite/piolite_dma_adapter.sv",
+      "crt/include/retrosoc/hal/piolite.h",
+      "crt/src/hal/piolite.c",
+      "docs/ip/piolite.md",
+      "docs/ip/piolite-verification.md"
+    ],
+    "evidence": "Source reviewed at the publication SHA. P3 acceptance evidence must be bound to its final source/profile; no P4 protocol-rate or P5 physical qualification is implied."
+  },
+  {
     "id": "ws2812",
     "family": "ws2812",
     "title": "WS2812 LED Output",
@@ -656,7 +706,7 @@
       "ICS55 boots SAFE24 with the PLL parked off. Functional requests select SYS/MEM/PCLK of **192/96/48 MHz or 240/120/60 MHz**. These digital profiles and simulator observations **do not establish a silicon frequency rating**. IHP130 has no PLL; its explicit XIN variants normalize the control reference to 24 MHz.",
       "Clock commands close new admissions, **drain accepted work**, park on REF24, qualify the new source and **publish rate snapshots before reopening**. A failed drain preserves live work. Lock timeout returns SAFE24; stopped PLL recovery uses system/CDC reset, while lost XIN requires restored input and external reset.",
       "Local reset holds five actual leaf edges and waits for synchronized release and bus readiness. SPI and DVP lifecycle, absent AUDIO, held bus responses and active DMA leases retain their endpoint-specific obligations. Current non-CPU commands conservatively drain all central-DMA work.",
-      "TARGET_CAP is 0x00037FFF: targets 0..14, SPI0 at 16 and PPALite at 17 are implemented; PIO-lite at 15 is absent. Active PPALite capture rejects clock apply and changed CLKOUT writes. Local gate/reset also requires RAW route, processor/transport idle and source quiet.",
+      "TARGET_CAP is 0x0003FFFF: targets 0..17 are implemented, including PIO-lite at 15, SPI0 at 16 and PPALite at 17. PIO-lite gate/reset additionally requires lifecycle idle and released USER GPIO ownership. Active PPALite capture rejects clock apply and changed CLKOUT writes. Local gate/reset also requires RAW route, processor/transport idle and source quiet.",
       "Warm system reset returns SAFE24 and resets functional RTC/WDG state while preserving main SRAM contents and recorded cause/fault/debug state. CPU WFI gates only its leaf; unrelated DMA can continue. Clock domains are not independent power islands or an always-powered battery domain."
     ],
     "steps": [

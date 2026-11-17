@@ -94,6 +94,7 @@ TINY_SPI_P3_ACCEPTANCE     ?= NO
 TINY_SPI_P4_ACCEPTANCE     ?= NO
 TINY_PPALITE_P3_ACCEPTANCE ?= NO
 TINY_PPALITE_P4_ACCEPTANCE ?= NO
+TINY_PIOLITE_P3_ACCEPTANCE ?= NO
 COREMARK_MODE              ?= quick
 NPU_P5_ACCEPTANCE          ?= NO
 # Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
@@ -171,6 +172,9 @@ CONFIG_KEY_VARS += TINY_PPALITE_P3_ACCEPTANCE
 endif
 ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_PPALITE_P4_ACCEPTANCE
+endif
+ifeq ($(TINY_PIOLITE_P3_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_PIOLITE_P3_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -340,6 +344,7 @@ $(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_PPALITE_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_PPALITE_P4_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_PIOLITE_P3_ACCEPTANCE,$(VALID_BOOL))
 ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO)
 $(error TINY_PPALITE_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
@@ -348,6 +353,11 @@ endif
 ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE)/$(TINY_PPALITE_P3_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO/NO)
 $(error TINY_PPALITE_P4_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+ifeq ($(TINY_PIOLITE_P3_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE)/$(TINY_PPALITE_P3_ACCEPTANCE)/$(TINY_PPALITE_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO/NO/NO)
+$(error TINY_PIOLITE_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
 endif
 endif
 ifeq ($(TINY_P10_ACCEPTANCE),YES)
@@ -609,6 +619,15 @@ spi-p2-lint spi-p2-rtl spi-p2-report: manifest
 spi-p3-lint spi-p3-rtl spi-p3-report: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/spi_p3.py $(patsubst spi-p3-%,%,$@) \
 	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
+.PHONY: piolite-p3-lint piolite-p3-rtl piolite-p3-report piolite-p3-check
+piolite-p3-lint piolite-p3-rtl piolite-p3-report: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/piolite_p3.py $(patsubst piolite-p3-%,%,$@) \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK)
+
+piolite-p3-check: manifest
+	$(PYTHON) $(ROOT_PATH)/scripts/piolite_p3.py check \
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --log $(PERF_LOG)
 
 .PHONY: spi-p4-lint spi-p4-rtl spi-p4-report
 spi-p4-lint spi-p4-rtl spi-p4-report: manifest

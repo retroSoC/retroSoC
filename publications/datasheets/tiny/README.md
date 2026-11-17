@@ -1,7 +1,7 @@
 # Tiny Gen1 publication
 
 This directory owns the English **retroSoC Tiny Gen1 / Rill (清溪)** datasheet,
-its independent v0.2 DRAFT identity and 23 current IP chapters. The same-version
+its independent v0.2 DRAFT identity and 24 current IP chapters. The same-version
 Mini alignment uses 12 main chapters, 87 frozen major/IP entries and a five-level
 140-entry navigation contract. The explicitly
 reviewed structure retains stable anchors, moves retired UART1/I2C1 interfaces
@@ -71,7 +71,7 @@ RTL, relax checks, or change warning/metric baselines as a document workaround.
 `sections/` owns the full-book hierarchy. `navigation-contract.json` freezes all
 outlined entries; `structure-contract.json` keeps the major/IP compatibility
 contract. IP detail headings are unnumbered bookmarks, with the actual IP depth.
-`engineering-figures.typ` adapts all 23 IP primary figures and their details to
+`engineering-figures.typ` adapts all 24 IP primary figures and their details to
 the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). Three system
 figures retain Circuiteria; Bytefield and Blockcell retain their scope.
 `diagrams.typ` owns the CeTZ overview, matrix and

@@ -18,6 +18,7 @@
 #include <retrosoc/hal/dma.h>
 #include <retrosoc/hal/dvp.h>
 #include <retrosoc/hal/ppalite.h>
+#include <retrosoc/hal/piolite.h>
 #include <retrosoc/hal/fabric_monitor.h>
 #include <retrosoc/hal/ga2d.h>
 #include <retrosoc/hal/i2c.h>
@@ -1749,8 +1750,7 @@ static int test_dma_discovery(void) {
     }
     RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V21;
     RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) =
-        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) |
-        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX);
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) | (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX);
     if ((rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_OK) ||
         (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_RX) != RS_OK) ||
         (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_ENOTSUP)) {
@@ -1762,10 +1762,8 @@ static int test_dma_discovery(void) {
     }
     RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V22;
     RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) =
-        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) |
-        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX) |
-        (UINT32_C(1) << RS_DMA_REQUEST_SPI_TX) |
-        (UINT32_C(1) << RS_DMA_REQUEST_SPI_RX);
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) | (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX) |
+        (UINT32_C(1) << RS_DMA_REQUEST_SPI_TX) | (UINT32_C(1) << RS_DMA_REQUEST_SPI_RX);
     if ((rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_OK) ||
         (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_RX) != RS_OK) ||
         (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_OK) ||
@@ -4031,6 +4029,615 @@ static int test_ppalite_hal(void) {
     return 0;
 }
 
+volatile uint32_t rs_piolite_test_mmio[1024];
+volatile uint32_t rs_gpio_test_mmio[64];
+static bool gpio_handoff_stall;
+static bool gpio_handoff_sticky;
+static bool gpio_acquire_stall;
+
+void rs_gpio_test_select(uint32_t value) {
+    rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] = value;
+    if (gpio_acquire_stall) {
+        rs_gpio_test_mmio[UINT32_C(0x44) / 4U] = value & ~UINT32_C(2);
+    } else if (gpio_handoff_sticky) {
+        rs_gpio_test_mmio[UINT32_C(0x44) / 4U] = 1U;
+    } else if (!gpio_handoff_stall) {
+        rs_gpio_test_mmio[UINT32_C(0x44) / 4U] = value;
+    }
+}
+
+#define TEST_PIOLITE_REG(offset) rs_piolite_test_mmio[(offset) / 4U]
+#define TEST_PIOLITE_SM_REG(sm, offset)                                                            \
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_SM0_BASE + ((sm)*RS_PIOLITE_ABI_APB4_SM_STRIDE) + (offset))
+
+static uint32_t piolite_irq_enabled = 1U;
+static rs_piolite_session_t *piolite_reentry_session;
+static rs_status_t piolite_reentry_result;
+
+rs_status_t rs_tiny_piolite_start(rs_piolite_session_t *session);
+
+uint32_t rs_piolite_test_irq_save(void) {
+    const uint32_t saved = piolite_irq_enabled;
+    piolite_irq_enabled = 0U;
+    return saved;
+}
+
+void rs_piolite_test_irq_restore(uint32_t saved) {
+    if (piolite_reentry_session != NULL) {
+        rs_piolite_session_t *session = piolite_reentry_session;
+        piolite_reentry_session = NULL;
+        piolite_reentry_result = rs_tiny_piolite_start(session);
+    }
+    piolite_irq_enabled = saved;
+}
+
+void rs_piolite_test_lifecycle(uint32_t command, uint32_t sm) {
+    uint32_t state = RS_PIOLITE_ABI_STATE_DISABLED;
+    if (command == RS_PIOLITE_ABI_APB4_START) {
+        state = RS_PIOLITE_ABI_STATE_RUNNING;
+    } else if (command == RS_PIOLITE_ABI_APB4_PAUSE) {
+        state = RS_PIOLITE_ABI_STATE_PAUSED;
+    } else if (command == RS_PIOLITE_ABI_APB4_RESUME) {
+        state = RS_PIOLITE_ABI_STATE_RUNNING;
+    } else if (command == RS_PIOLITE_ABI_APB4_ABORT) {
+        state = RS_PIOLITE_ABI_STATE_CLOSING;
+    } else {
+        state = RS_PIOLITE_ABI_STATE_DISABLED;
+    }
+    TEST_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_STATUS) = state;
+    if (command == RS_PIOLITE_ABI_APB4_START) {
+        TEST_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_EVENTS) = 0U;
+    }
+    if (command == RS_PIOLITE_ABI_APB4_SM_RESET) {
+        TEST_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_EVENTS) = 0U;
+        TEST_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_FAULT) = 0U;
+        TEST_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_FIFO_LEVELS) = 0U;
+        if ((TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TX_BIND) & 1U) == sm) {
+            TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TX_BIND) = 0U;
+        }
+        if ((TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_RX_BIND) & 1U) == sm) {
+            TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_RX_BIND) = 0U;
+        }
+    }
+}
+
+rs_status_t rs_tiny_piolite_discover(rs_piolite_info_t *info);
+rs_status_t rs_tiny_piolite_configure(rs_piolite_session_t *session,
+                                      const rs_piolite_config_t *config);
+rs_status_t rs_tiny_piolite_program_load(rs_piolite_program_t *program,
+                                         const rs_piolite_image_t *image, uint32_t base);
+rs_status_t rs_tiny_piolite_program_unload(rs_piolite_program_t *program);
+rs_status_t rs_tiny_piolite_claim(rs_piolite_session_t *session, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_release(rs_piolite_session_t *session, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_dma_bind(rs_piolite_session_t *session,
+                                     rs_piolite_dma_direction_t direction, rs_dma_session_t *lease,
+                                     uintptr_t buffer, uint32_t capacity_bytes,
+                                     uint32_t word_count);
+rs_status_t rs_tiny_piolite_dma_unbind(rs_piolite_session_t *session,
+                                       rs_piolite_dma_direction_t direction);
+rs_status_t rs_tiny_piolite_fifo_write(rs_piolite_session_t *session, const uint32_t *words,
+                                       uint32_t word_count, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_fifo_read(rs_piolite_session_t *session, uint32_t *words,
+                                      uint32_t word_count, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_start(rs_piolite_session_t *session);
+rs_status_t rs_tiny_piolite_pause(rs_piolite_session_t *session);
+rs_status_t rs_tiny_piolite_resume(rs_piolite_session_t *session);
+rs_status_t rs_tiny_piolite_disable(rs_piolite_session_t *session);
+rs_status_t rs_tiny_piolite_wait_done(rs_piolite_session_t *session, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_abort_reset(rs_piolite_session_t *session, rs_timeout_t timeout);
+rs_status_t rs_tiny_piolite_get_status(const rs_piolite_session_t *session,
+                                       rs_piolite_status_t *status);
+rs_status_t rs_tiny_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout);
+rs_status_t rs_tiny_gpio_user_release(uint32_t mask, rs_timeout_t timeout);
+
+static bool piolite_config_fault;
+static bool piolite_bind_fault;
+
+void rs_piolite_test_config_readback(void) {
+    if (piolite_config_fault) {
+        TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_DIV) = 0U;
+    }
+}
+
+void rs_piolite_test_bind_write(uint32_t command) {
+    if (piolite_bind_fault) {
+        TEST_PIOLITE_REG(command) = 0U;
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    }
+}
+
+static uint32_t piolite_output_failures;
+
+void rs_piolite_test_output_cleanup(void) {
+    if (piolite_output_failures != 0U) {
+        --piolite_output_failures;
+        TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_OUTPUT_MASK) = 1U;
+    }
+}
+
+static bool piolite_recovery_stall;
+
+bool rs_piolite_test_recovery_stall(void) {
+    return piolite_recovery_stall;
+}
+
+static int test_piolite_gpio_handoff(void) {
+    for (uint32_t index = 0U; index < 64U; ++index) {
+        rs_gpio_test_mmio[index] = 0U;
+    }
+    if ((rs_tiny_gpio_user_acquire(0U, 1U) != RS_EINVAL) ||
+        (rs_tiny_gpio_user_acquire(1U, 1U) != RS_ENOTSUP)) {
+        return 1;
+    }
+    rs_gpio_test_mmio[UINT32_C(0xFC) / 4U] = RS_GPIO_CAP_USER_HANDOFF;
+    rs_gpio_test_mmio[UINT32_C(0x34) / 4U] = 1U;
+    if (rs_tiny_gpio_user_acquire(1U, 1U) != RS_EBUSY) {
+        return 2;
+    }
+    rs_gpio_test_mmio[UINT32_C(0x34) / 4U] = 0U;
+    rs_gpio_test_mmio[UINT32_C(0x78) / 4U] = 1U;
+    if (rs_tiny_gpio_user_acquire(1U, 1U) != RS_EIO) {
+        return 3;
+    }
+    rs_gpio_test_mmio[UINT32_C(0x78) / 4U] = 0U;
+    rs_gpio_test_mmio[UINT32_C(0x14) / 4U] = 1U;
+    rs_gpio_test_mmio[UINT32_C(0x5C) / 4U] = 1U;
+    rs_gpio_test_mmio[UINT32_C(0x6C) / 4U] = 1U;
+    gpio_handoff_stall = true;
+    if ((rs_tiny_gpio_user_acquire(1U, 1U) != RS_ETIMEOUT) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 0U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x5C) / 4U] != 0U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x6C) / 4U] != 0U)) {
+        return 4;
+    }
+    gpio_handoff_stall = false;
+    if ((rs_tiny_gpio_user_acquire(1U, 2U) != RS_OK) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 1U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x5C) / 4U] != 0U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x6C) / 4U] != 0U)) {
+        return 5;
+    }
+    rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] = 0U;
+    rs_gpio_test_mmio[UINT32_C(0x44) / 4U] = 1U;
+    gpio_handoff_stall = true;
+    if (rs_tiny_gpio_user_release(1U, 1U) != RS_ETIMEOUT) {
+        return 6;
+    }
+    gpio_handoff_stall = false;
+    if ((rs_tiny_gpio_user_release(1U, 2U) != RS_OK) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 0U)) {
+        return 7;
+    }
+    return 0;
+}
+
+static int test_piolite_hal(void) {
+    uint16_t storage[2] = {0U};
+    uint16_t spare[2] = {0U};
+    const uint16_t words[2] = {UINT16_C(0x9001), UINT16_C(0x0020)};
+    const uint8_t sites[1] = {0U};
+    const uint8_t duplicate_sites[2] = {0U, 0U};
+    rs_piolite_image_t image = {.isa_version = RS_PIOLITE_ABI_APB4_ISA_VALUE,
+                                .words = words,
+                                .word_count = 2U,
+                                .relocation_sites = sites,
+                                .relocation_count = 1U,
+                                .wrap_top = 0U};
+    rs_piolite_program_t program = {.storage = storage, .capacity = 2U};
+    rs_piolite_program_t invalid_program = {.storage = spare, .capacity = 2U};
+    rs_piolite_config_t config = {.sm = 0U,
+                                  .program = &program,
+                                  .divider = 1U,
+                                  .entry = 1U,
+                                  .wrap_bottom = 1U,
+                                  .wrap_top = 1U,
+                                  .claim_mask = 1U,
+                                  .tx_bits = 32U,
+                                  .rx_bits = 32U,
+                                  .rx_high = 1U};
+    rs_piolite_session_t session = {0};
+    rs_piolite_info_t info;
+    rs_piolite_status_t status;
+    rs_dma_session_t lease = {.channel = 3U};
+    uint32_t data = UINT32_C(0x12345678);
+
+    config.program = &program;
+    if ((rs_piolite_discover(&info) != RS_ENOTSUP) || (info.ip_id != 0U) ||
+        (rs_piolite_program_load(&program, &image, 5U) != RS_ENOTSUP)) {
+        return 1;
+    }
+    for (uint32_t index = 0U; index < 1024U; ++index) {
+        rs_piolite_test_mmio[index] = 0U;
+    }
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_IP_ID) = RS_PIOLITE_ABI_APB4_ID_VALUE;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_IP_VERSION) = RS_PIOLITE_ABI_APB4_VERSION_VALUE;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_ISA_VERSION) = RS_PIOLITE_ABI_APB4_ISA_VALUE;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_CAPABILITY) = RS_PIOLITE_ABI_APB4_CAPABILITY_VALUE;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_ROUTABLE_MASK) = RS_PIOLITE_ABI_APB4_ROUTES_VALUE;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_CLOCK_HZ) = UINT32_C(24000000);
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_IMEM_VALID) = UINT32_C(0x60);
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_OWNED_MASK) = 1U;
+    if ((rs_tiny_piolite_discover(&info) != RS_OK) || (info.clock_hz != UINT32_C(24000000)) ||
+        (rs_tiny_piolite_program_load(&program, &image, 5U) != RS_OK) ||
+        (storage[0] != UINT16_C(0x9006)) || (storage[1] != UINT16_C(0x0020)) ||
+        (TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_IMEM_BASE + 20U) != UINT32_C(0x9006)) ||
+        (rs_tiny_piolite_program_load(&program, &image, 0U) != RS_EINVAL)) {
+        return 2;
+    }
+    image.relocation_sites = duplicate_sites;
+    image.relocation_count = 2U;
+    if ((rs_tiny_piolite_program_load(&invalid_program, &image, 0U) != RS_EFORMAT) ||
+        invalid_program.loaded) {
+        return 3;
+    }
+    image.relocation_sites = sites;
+    image.relocation_count = 1U;
+    if ((rs_tiny_piolite_configure(&session, &config) != RS_OK) ||
+        (TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_PROGRAM) != UINT32_C(0x60205)) ||
+        (TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_WRAP) != UINT32_C(0x606)) ||
+        (rs_tiny_piolite_program_unload(&program) != RS_EBUSY) ||
+        (rs_tiny_piolite_claim(&session, 2U) != RS_OK)) {
+        return 4;
+    }
+    if ((rs_tiny_piolite_fifo_write(&session, &data, 1U, 1U) != RS_OK) ||
+        (TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_TXDATA) != data) ||
+        (rs_tiny_piolite_fifo_read(&session, &data, 1U, 1U) != RS_ETIMEOUT)) {
+        return 5;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_FIFO_LEVELS) = UINT32_C(0x100);
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_RXDATA) = UINT32_C(0xA5);
+    if ((rs_tiny_piolite_fifo_read(&session, &data, 1U, 1U) != RS_OK) || (data != UINT32_C(0xA5))) {
+        return 6;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_FIFO_LEVELS) = 0U;
+    if (rs_tiny_piolite_start(&session) != RS_OK) {
+        return 6;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_RUNNING;
+    if ((rs_tiny_piolite_pause(&session) != RS_OK) ||
+        (TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_PAUSE) != 1U)) {
+        return 7;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_PAUSED;
+    if ((rs_tiny_piolite_resume(&session) != RS_OK) ||
+        (rs_tiny_piolite_wait_done(&session, 2U) != RS_ETIMEOUT) || !session.started ||
+        (rs_tiny_piolite_disable(&session) != RS_OK) ||
+        (TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_DISABLE) != 1U)) {
+        return 8;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_DISABLED;
+    if ((rs_tiny_piolite_start(&session) != RS_OK)) {
+        return 9;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_EVENTS) = 1U;
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_HALTED;
+    if ((rs_tiny_piolite_wait_done(&session, 1U) != RS_OK) || session.started ||
+        (rs_tiny_piolite_get_status(&session, &status) != RS_OK) || !status.complete) {
+        return 9;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_DISABLED;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TX_BIND) = 0U;
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V22;
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = UINT32_C(0x0000C000);
+    if ((rs_tiny_piolite_dma_bind(&session, RS_PIOLITE_DMA_TX, &lease, UINT32_C(0x20000000), 3U,
+                                  1U) != RS_EINVAL) ||
+        (rs_tiny_piolite_dma_bind(&session, RS_PIOLITE_DMA_TX, &lease, UINT32_C(0x20000000), 4U,
+                                  (UINT32_MAX / 4U) + 1U) != RS_EINVAL) ||
+        (rs_tiny_piolite_dma_bind(&session, RS_PIOLITE_DMA_TX, &lease, UINT32_C(0x20000000), 4U,
+                                  1U) != RS_OK) ||
+        (rs_tiny_piolite_disable(&session) != RS_EBUSY)) {
+        return 10;
+    }
+    if (rs_tiny_piolite_start(&session) != RS_OK) {
+        return 11;
+    }
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_EVENTS) = 1U;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_DONE;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_BYTES_DONE) = 4U;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_REMAINING) = 0U;
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_HALTED;
+    if ((rs_tiny_piolite_wait_done(&session, 1U) != RS_OK) ||
+        (rs_tiny_piolite_disable(&session) != RS_OK) ||
+        (rs_tiny_piolite_dma_unbind(&session, RS_PIOLITE_DMA_TX) != RS_OK) ||
+        session.dma[RS_PIOLITE_DMA_TX].acquired) {
+        return 11;
+    }
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_RX_BIND) = 0U;
+    lease.channel = 2U;
+    if ((rs_tiny_piolite_dma_bind(&session, RS_PIOLITE_DMA_RX, &lease, UINT32_C(0x20000000), 4U,
+                                  1U) != RS_OK)) {
+        return 12;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = UINT32_C(0x2A);
+    if ((rs_tiny_piolite_abort_reset(&session, 1U) != RS_ETIMEOUT) || !session.closing ||
+        !session.dma[RS_PIOLITE_DMA_RX].acquired) {
+        return 13;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = 0U;
+    if ((rs_tiny_piolite_abort_reset(&session, 2U) != RS_OK) || session.closing ||
+        session.dma[RS_PIOLITE_DMA_RX].acquired ||
+        (rs_tiny_piolite_release(&session, 1U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program) != RS_OK) || program.loaded) {
+        return 14;
+    }
+    return 0;
+}
+
+static rs_piolite_config_t test_piolite_config_for(const rs_piolite_program_t *program) {
+    const rs_piolite_config_t config = {.sm = 0U,
+                                        .program = program,
+                                        .divider = 1U,
+                                        .entry = 1U,
+                                        .wrap_bottom = 1U,
+                                        .wrap_top = 1U,
+                                        .claim_mask = 1U,
+                                        .tx_bits = 32U,
+                                        .rx_bits = 32U,
+                                        .rx_high = 1U};
+    return config;
+}
+
+static int test_piolite_recovery(void) {
+    const uint16_t words[2] = {UINT16_C(0x9001), UINT16_C(0x0020)};
+    const uint8_t sites[1] = {0U};
+    uint16_t storage_a[2] = {0U};
+    uint16_t storage_b[2] = {0U};
+    const rs_piolite_image_t image = {.isa_version = RS_PIOLITE_ABI_APB4_ISA_VALUE,
+                                      .words = words,
+                                      .word_count = 2U,
+                                      .relocation_sites = sites,
+                                      .relocation_count = 1U,
+                                      .entry = 1U,
+                                      .wrap_bottom = 1U,
+                                      .wrap_top = 1U};
+    rs_piolite_program_t program_a = {.storage = storage_a, .capacity = 2U};
+    rs_piolite_program_t program_b = {.storage = storage_b, .capacity = 2U};
+    rs_piolite_config_t config_a = test_piolite_config_for(&program_a);
+    rs_piolite_config_t config_b = test_piolite_config_for(&program_b);
+    rs_piolite_session_t first = {0};
+    rs_piolite_session_t second = {.sm = 1U};
+    rs_dma_session_t tx = {.channel = 3U};
+    rs_dma_session_t rx = {.channel = 2U};
+
+    if (rs_tiny_piolite_abort_reset(NULL, 1U) != RS_EINVAL) {
+        return 32;
+    }
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK)) {
+        return 1;
+    }
+    config_a.output_mask = 1U;
+    if ((rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK)) {
+        return 2;
+    }
+    config_b.sm = 1U;
+    config_b.program = &program_a;
+    config_b.output_mask = 1U;
+    if (rs_tiny_piolite_configure(&second, &config_b) != RS_EBUSY) {
+        return 3;
+    }
+    config_b.output_mask = 0U;
+    if ((rs_tiny_piolite_configure(&second, &config_b) != RS_OK) ||
+        (rs_tiny_piolite_claim(&second, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 1U)) {
+        return 4;
+    }
+    if ((rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&second, 2U) != RS_OK) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 1U) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 0U) ||
+        (TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_OUTPUT_MASK) != 0U) ||
+        (TEST_PIOLITE_SM_REG(1U, RS_PIOLITE_ABI_APB4_SM_OUTPUT_MASK) != 0U) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 5;
+    }
+
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_IMEM_VALID) |= UINT32_C(0x300);
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK) ||
+        (rs_tiny_piolite_program_load(&program_b, &image, 8U) != RS_OK)) {
+        return 6;
+    }
+    first = (rs_piolite_session_t){0};
+    config_a = test_piolite_config_for(&program_a);
+    config_b = test_piolite_config_for(&program_b);
+    piolite_config_fault = true;
+    if (rs_tiny_piolite_configure(&first, &config_a) != RS_EIO) {
+        return 71;
+    }
+    if (!first.closing) {
+        return 72;
+    }
+    if (rs_tiny_piolite_configure(&first, &config_b) != RS_EBUSY) {
+        return 73;
+    }
+    piolite_config_fault = false;
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 8;
+    }
+    if ((rs_tiny_piolite_configure(&first, &config_b) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_b) != RS_OK)) {
+        return 9;
+    }
+
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK)) {
+        return 10;
+    }
+    config_a = test_piolite_config_for(&program_a);
+    if ((rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK)) {
+        return 11;
+    }
+    piolite_reentry_session = &first;
+    piolite_reentry_result = RS_OK;
+    if (rs_tiny_piolite_start(&first) != RS_OK) {
+        return 121;
+    }
+    if (piolite_reentry_result != RS_EBUSY) {
+        return 122;
+    }
+    if (piolite_irq_enabled != 1U) {
+        return 123;
+    }
+    if ((rs_tiny_piolite_disable(&first) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 124;
+    }
+
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK) ||
+        (rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK)) {
+        return 13;
+    }
+    piolite_bind_fault = true;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = 0U;
+    if ((rs_tiny_piolite_dma_bind(&first, RS_PIOLITE_DMA_TX, &tx, UINT32_C(0x20000000), 4U, 1U) !=
+         RS_EIO) ||
+        !first.closing || !first.dma[RS_PIOLITE_DMA_TX].acquired) {
+        return 141;
+    }
+    if (rs_tiny_piolite_release(&first, 1U) != RS_EBUSY) {
+        return 142;
+    }
+    if (rs_tiny_piolite_start(&first) != RS_EIO) {
+        return 143;
+    }
+    piolite_bind_fault = false;
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = 0U;
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 15;
+    }
+
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK) ||
+        (rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_dma_bind(&first, RS_PIOLITE_DMA_TX, &tx, UINT32_C(0x20000000), 4U, 1U) !=
+         RS_OK) ||
+        (rs_tiny_piolite_dma_bind(&first, RS_PIOLITE_DMA_RX, &rx, UINT32_C(0x20000000), 4U, 1U) !=
+         RS_OK) ||
+        (rs_tiny_piolite_start(&first) != RS_OK)) {
+        return 16;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_BUSY;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = UINT32_C(0x3F);
+    if ((rs_tiny_piolite_abort_reset(&first, 1U) != RS_ETIMEOUT) ||
+        !first.dma[RS_PIOLITE_DMA_TX].acquired || !first.dma[RS_PIOLITE_DMA_RX].acquired) {
+        return 17;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = UINT32_C(0x2A);
+    if ((rs_tiny_piolite_abort_reset(&first, 1U) != RS_ETIMEOUT) ||
+        !first.dma[RS_PIOLITE_DMA_TX].acquired || !first.dma[RS_PIOLITE_DMA_RX].acquired) {
+        return 18;
+    }
+    RS_DMA_CH_REG(2U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = 0U;
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) ||
+        first.dma[RS_PIOLITE_DMA_TX].acquired || first.dma[RS_PIOLITE_DMA_RX].acquired ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 19;
+    }
+
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK) ||
+        (rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_dma_bind(&first, RS_PIOLITE_DMA_TX, &tx, UINT32_C(0x20000000), 4U, 1U) !=
+         RS_OK) ||
+        (rs_tiny_piolite_start(&first) != RS_OK)) {
+        return 20;
+    }
+    RS_DMA_CH_REG(3U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_ABORTED;
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_EVENTS) = 1U;
+    TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_HALTED;
+    if ((rs_tiny_piolite_wait_done(&first, 1U) != RS_EIO) ||
+        (rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 21;
+    }
+
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK) ||
+        (rs_tiny_piolite_configure(&first, &config_a) != RS_OK)) {
+        return 22;
+    }
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_OWNED_MASK) = 0U;
+    gpio_handoff_sticky = true;
+    if ((rs_tiny_piolite_claim(&first, 1U) != RS_EIO) || !first.closing ||
+        (first.recovery_mask != 1U)) {
+        return 23;
+    }
+    gpio_handoff_sticky = false;
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) || first.claimed ||
+        (first.recovery_mask != 0U)) {
+        return 24;
+    }
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_OWNED_MASK) = 1U;
+    if ((rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 25;
+    }
+    if ((rs_tiny_piolite_program_load(&program_a, &image, 5U) != RS_OK)) {
+        return 26;
+    }
+    config_a = test_piolite_config_for(&program_a);
+    config_a.claim_mask = 3U;
+    config_a.output_mask = 2U;
+    config_b = test_piolite_config_for(&program_a);
+    config_b.sm = 1U;
+    second = (rs_piolite_session_t){.sm = 1U};
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_OWNED_MASK) = 3U;
+    if ((rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_configure(&second, &config_b) != RS_OK) ||
+        (rs_tiny_piolite_claim(&second, 2U) != RS_OK)) {
+        return 27;
+    }
+    piolite_output_failures = 1U;
+    gpio_acquire_stall = true;
+    if ((rs_tiny_piolite_release(&first, 2U) != RS_EIO) || !first.output_cleanup_pending) {
+        return 281;
+    }
+    if (first.recovery_mask != 2U) {
+        return 282;
+    }
+    piolite_recovery_stall = true;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = UINT32_C(0x2A);
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_ETIMEOUT) || !first.output_cleanup_pending) {
+        return 29;
+    }
+    piolite_recovery_stall = false;
+    TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) = 0U;
+    gpio_acquire_stall = false;
+    if ((rs_tiny_piolite_abort_reset(&first, 2U) != RS_OK) || first.output_cleanup_pending ||
+        first.configured || first.claimed || (first.recovery_mask != 0U) ||
+        (rs_tiny_piolite_claim(&first, 1U) != RS_EINVAL) ||
+        (rs_tiny_piolite_release(&second, 2U) != RS_OK) ||
+        (TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_OUTPUT_MASK) != 0U)) {
+        return 30;
+    }
+    if ((rs_tiny_piolite_configure(&first, &config_a) != RS_OK) ||
+        (rs_tiny_piolite_claim(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_release(&first, 2U) != RS_OK) ||
+        (rs_tiny_piolite_program_unload(&program_a) != RS_OK)) {
+        return 31;
+    }
+    return 0;
+}
+
 static int test_p9_frame_layout(void) {
     uint32_t words = 0U;
     if (rs_p9_frame_words(640U, 480U, &words) != RS_OK || words != 153600U ||
@@ -4111,6 +4718,9 @@ int main(void) {
         test_st7789vi_patterns(),
         test_dvp_hal(),
         test_ppalite_hal(),
+        test_piolite_gpio_handoff(),
+        test_piolite_hal(),
+        test_piolite_recovery(),
         test_p9_frame_layout(),
         test_p10_frame_statistics(),
         test_opipsram_helpers(),

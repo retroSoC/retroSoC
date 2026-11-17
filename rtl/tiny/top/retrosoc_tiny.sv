@@ -919,7 +919,7 @@ axi4_error_slave #(
       .PllPresent (TinyPllPresent),
       .PllProfiles(TinyPllPresent),
       .XinHzValue (`SOC_EXT_CLK_HZ),
-      .TargetMask (18'h37fff)
+      .TargetMask (18'h3ffff)
   ) u_sysctrl (
       .clk_i           (s_exec_clk),
       .rst_n_i         (s_sysctrl_rst_n),

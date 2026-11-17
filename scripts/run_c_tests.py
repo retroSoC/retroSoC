@@ -39,6 +39,7 @@ TEST_SOURCES = (
     "crt/src/hal/dvp.c",
     "crt/src/hal/ppalite_math.c",
     "crt/src/hal/ppalite.c",
+    "crt/src/hal/piolite.c",
     "crt/src/hal/crypto_lifecycle.c",
     "crt/src/hal/jpeg_math.c",
     "crt/src/hal/apu.c",
@@ -194,6 +195,41 @@ def main() -> int:
             "-c", str(root / "crt/src/hal/ppalite.c"), "-o", str(tiny_ppalite_object),
         ], check=True)
         command.append(str(tiny_ppalite_object))
+        piolite_functions = (
+            "discover", "configure", "program_load", "program_unload", "claim", "release",
+            "dma_bind", "dma_unbind", "fifo_write", "fifo_read", "start", "pause", "resume",
+            "disable", "wait_done", "abort_reset", "get_status",
+        )
+        tiny_piolite_object = temporary_root / "tiny_piolite.o"
+        subprocess.run([
+            compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-DRS_SOC_TINY",
+            "-DRS_PIOLITE_TEST_MMIO", "-DRS_DMA_TEST_MMIO", "-DRS_SOC_HAS_PIOLITE=1",
+            "-DRS_SOC_APB4_PIOLITE_BASE=0x1001C000",
+            *[f"-Drs_piolite_{name}=rs_tiny_piolite_{name}" for name in piolite_functions],
+            "-Drs_gpio_user_acquire=rs_tiny_gpio_user_acquire",
+            "-Drs_gpio_user_release=rs_tiny_gpio_user_release",
+            "-I", str(memory_map_root / "include"),
+            "-I", str(user_extensions_root / "include"), "-I", str(root / "crt/include"),
+            "-c", str(root / "crt/src/hal/piolite.c"), "-o", str(tiny_piolite_object),
+        ], check=True)
+        command.append(str(tiny_piolite_object))
+        gpio_functions = (
+            "filter_timing_from_us", "get_capabilities", "configure", "read", "write", "toggle",
+            "port_read", "port_set", "port_clear", "port_toggle", "interrupt_state",
+            "interrupt_enable", "interrupt_clear", "interrupt_test", "filter_configure",
+            "user_access_set", "user_ip_select", "user_acquire", "user_release", "user_ip_lock",
+            "configuration_lock", "shell_test",
+        )
+        tiny_gpio_object = temporary_root / "tiny_gpio.o"
+        subprocess.run([
+            compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-ffunction-sections",
+            "-fdata-sections", "-DRS_GPIO_TEST_MMIO",
+            *[f"-Drs_gpio_{name}=rs_tiny_gpio_{name}" for name in gpio_functions],
+            "-I", str(memory_map_root / "include"),
+            "-I", str(user_extensions_root / "include"), "-I", str(root / "crt/include"),
+            "-c", str(root / "crt/src/hal/gpio.c"), "-o", str(tiny_gpio_object),
+        ], check=True)
+        command.append(str(tiny_gpio_object))
         subprocess.run(command, check=True)
         subprocess.run([str(executable)], check=True)
     return 0

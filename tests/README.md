@@ -28,6 +28,11 @@ tooling.
   `piolite-p2-{lint,rtl,formal,synth,netsim,sta,report}` retains
   source/tool/artifact-bound standalone evidence, not Tiny integration or a
   qualified product operating point.
+- `test_piolite_p3.py` checks Tiny GPIO/RCU/DMA14/15 integration, direct/TCD
+  admission, closing/cancel/drain races and Mini default-off behavior on Verilator
+  and Icarus. Host C tests cover absolute program relocation, static resource
+  ownership, GPIO handoff, shared-input reference release, IRQ-safe mutation
+  serialization, DMA error completion and retryable two-direction recovery.
 - `test_ppalite_model.py` checks independent scalar pixel/layout oracles and
   `test_ppalite_register_parity.py` checks the 40-entry handwritten APB1.0
   SVH/C mirror with RAW/PROCESS integration capability absent.

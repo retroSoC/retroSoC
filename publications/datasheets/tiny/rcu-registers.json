@@ -226,7 +226,7 @@
         "TARGETS",
         0,
         17,
-        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+        "Target bits selected by TARGET_CAP. Bit 15 is PIO-lite, bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
       ]
     ]
   },
@@ -241,7 +241,7 @@
         "TARGETS",
         0,
         17,
-        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+        "Target bits selected by TARGET_CAP. Bit 15 is PIO-lite, bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
       ]
     ]
   },
@@ -256,7 +256,7 @@
         "TARGETS",
         0,
         17,
-        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+        "Target bits selected by TARGET_CAP. Bit 15 is PIO-lite, bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
       ]
     ]
   },
@@ -271,7 +271,7 @@
         "TARGETS",
         0,
         17,
-        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+        "Target bits selected by TARGET_CAP. Bit 15 is PIO-lite, bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
       ]
     ]
   },
@@ -471,14 +471,14 @@
     "name": "TARGET_CAP",
     "offset": 344,
     "access": "RO",
-    "reset": "0x37FFF",
-    "description": "Implemented target bitmap: bits 0..14, SPI0 bit 16 and PPALite bit 17. PIO-lite bit 15 is absent.",
+    "reset": "0x3FFFF",
+    "description": "Implemented target bitmap: bits 0..17, including PIO-lite bit 15, SPI0 bit 16 and PPALite bit 17.",
     "fields": [
       [
         "TARGETS",
         0,
         17,
-        "Target bits selected by TARGET_CAP. Bit 15 (PIO-lite) is absent; bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
+        "Target bits selected by TARGET_CAP. Bit 15 is PIO-lite, bit 16 is SPI0 and bit 17 is PPALite. Unimplemented bits must be zero."
       ]
     ]
   },

@@ -103,12 +103,36 @@ def ppalite_registers(fact: dict, root: Path) -> dict:
                 registers=rows, document="docs/ip/ppalite.md", sources=sorted(sources))
 
 
+def piolite_registers(root: Path) -> dict:
+    """Bind the generic field extraction to the frozen PIO-lite access contract."""
+    from publications.tiny_reference import BOOK, field_rows, read
+
+    profile = read(root / BOOK / "register-profiles.json")["piolite"]
+    annotations = read(root / BOOK / "register-annotations.json")["piolite"]
+    descriptions = read(root / BOOK / "piolite-registers.json")
+    result = registers.extract_profile("piolite", profile, annotations)
+    for register in result["registers"]:
+        if register["key"] == "imem.WORD":
+            continue
+        document = descriptions[register["key"]]
+        register["access"] = document["access"]
+        register["description"] = document["description"]
+        if "fields" in document:
+            register["fields"] = field_rows([tuple(field) for field in document["fields"]])
+            register["review"] = None
+    result["sources"] = sorted(set(result["sources"]) | {
+        "publications/datasheets/tiny/piolite-registers.json",
+        "crt/include/retrosoc/hal/piolite.h", "crt/src/hal/piolite.c",
+    })
+    return result
+
+
 def apply_integration(reference: dict, fact: dict, root: Path) -> None:
     """Qualify live inputs and protect instance parameters from library defaults."""
     from publications.tiny_reference import require_snippets
 
     require_snippets(root, "rtl/ip/peripheral/gpio_pad_caps_pkg.sv", ["localparam bit HasInputCmos", "localparam bit HasPullUp"])
-    for family, key in [("spi", "main.CLOCK_HZ"), ("uart", "main.CLOCK_HZ"),
+    for family, key in [("piolite", "main.CLOCK_HZ"), ("spi", "main.CLOCK_HZ"), ("uart", "main.CLOCK_HZ"),
                         ("i2c", "main.CLOCK_HZ"), ("ws2812", "main.CLOCK_HZ")]:
         for register in reference[family]["registers"]:
             if register["key"] != key:
@@ -131,7 +155,7 @@ def validate_catalog(catalog: list, reference: dict, regions: list, topology: di
     irq = [irq for row in catalog for irq in row["irqs"]]
     if len(irq) != len(set(irq)) or set(irq) != {r["name"] for r in topology["interrupts"]}:
         raise ValueError("Tiny interrupt catalog coverage changed")
-    if any(r["id"] in {"uart1", "i2c1", "piolite"} for r in catalog):
+    if any(r["id"] in {"uart1", "i2c1"} for r in catalog):
         raise ValueError("Tiny catalog advertises an absent peripheral")
     addresses, rows = set(), []
     windows = {r["symbol"]: r for r in regions}

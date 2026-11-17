@@ -9,7 +9,7 @@ PRODUCT/HP/MPW. The two books have independent profiles, manifests and output ma
 
 The IP drawing round starts at publication dev `4315f7d7`, preserving the
 439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
-Tiny's 23 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
+Tiny's 24 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
 [IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
 The seven system Circuiteria figures and all other figure families retain
 their design. Both builders export editable data/Typst plus standalone SVG/PDF,
@@ -61,7 +61,7 @@ configuration and report scope.
 
 The independent [Tiny Gen1 publication](datasheets/tiny/README.md) uses the same
 visual language with Tiny-only configuration, register/IRQ/pad extraction,
-twenty-three current IP chapters and its own source/structure/evidence checks. The
+twenty-four current IP chapters and its own source/structure/evidence checks. The
 v0.2 DRAFT uses ICS55 as its main reference, with explicit IHP130 compatibility;
 retired UART1/I2C1 interfaces remain in a migration appendix. Run
 `python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.

@@ -1321,26 +1321,26 @@
       "description": "Tiny enables DMA V2.2 (0x00020002), SPI admission/origin qualifiers and five-bit request selectors."
     },
     "main.SUPPORTED_REQUESTS": {
-      "description": "Integrated request bitmap 0x000339FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 and PIO-lite selectors are absent.",
+      "description": "Integrated request bitmap 0x0003F9FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto, PIO-lite and SPI. I2C1 selectors are absent.",
       "fields": [
         {
           "name": "REQUEST_BITMAP",
           "lsb": 0,
           "msb": 31,
-          "description": "Integrated request bitmap 0x000339FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 and PIO-lite selectors are absent.",
+          "description": "Integrated request bitmap 0x0003F9FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto, PIO-lite and SPI. I2C1 selectors are absent.",
           "reset": "Register reset applies",
           "expression": "SupportedRequests"
         }
       ]
     },
     "main.REQUEST_STATUS": {
-      "description": "Live request readiness masked by 0x000339FF. Readiness does not replace admission credit, buffer ownership or completion.",
+      "description": "Live request readiness masked by 0x0003F9FF. Readiness does not replace admission credit, buffer ownership or completion.",
       "fields": [
         {
           "name": "REQUEST_BITMAP",
           "lsb": 0,
           "msb": 31,
-          "description": "Live request readiness masked by 0x000339FF. Readiness does not replace admission credit, buffer ownership or completion.",
+          "description": "Live request readiness masked by 0x0003F9FF. Readiness does not replace admission credit, buffer ownership or completion.",
           "reset": "Register reset applies",
           "expression": "request_status_i"
         }
@@ -8005,6 +8005,22 @@
           "text": "`APB4_SPI__DMA_STATUS"
         }
       ]
+    }
+  },
+  "piolite": {
+    "main.CLOCK_HZ": {
+      "access": "RO",
+      "reset": "Dynamic (SAFE24: 24000000)",
+      "description": "Actual PCLK rate used by both SMs; read again after an RCU profile change."
+    },
+    "sm.DIV": {
+      "reset": "1"
+    },
+    "sm.SHIFT_LIMITS": {
+      "reset": "0x00002020"
+    },
+    "sm.WATERMARKS": {
+      "reset": "0x00000100"
     }
   }
 }

@@ -11,9 +11,9 @@
 #include <retrosoc/hal/timer.h>
 #include <pwm_regs.h>
 
-/* Current Tiny includes DVP (target 14), SPI (16) and PPALite (17);
+/* Current Tiny includes DVP (target 14), PIO-lite (15), SPI (16) and PPALite (17);
  * the other expansion targets stay absent. */
-#define RS_P7_EXPECTED_TARGET_CAPABILITY UINT32_C(0x00037FFF)
+#define RS_P7_EXPECTED_TARGET_CAPABILITY UINT32_C(0x0003FFFF)
 
 /* Short P7 firmware: execute in real main SRAM and use real SYSCTRL/APB
  * crossings. The full peripheral firmware remains a separate regression. */

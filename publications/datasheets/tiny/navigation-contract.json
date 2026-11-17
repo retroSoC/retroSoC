@@ -290,6 +290,11 @@
     },
     {
       "level": 4,
+      "title": "Programmable I/O (PIO-lite)",
+      "anchor": "piolite"
+    },
+    {
+      "level": 4,
       "title": "WS2812 LED Output",
       "anchor": "ws2812"
     },
@@ -607,6 +612,11 @@
       "level": 3,
       "title": "APB4_SRAM",
       "anchor": "index-APB4_SRAM"
+    },
+    {
+      "level": 3,
+      "title": "APB4_PIOLITE",
+      "anchor": "index-APB4_PIOLITE"
     },
     {
       "level": 3,

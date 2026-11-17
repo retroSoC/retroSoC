@@ -1330,5 +1330,84 @@
       "rtl/ip/serial/spi_dma_pacing.sv",
       "rtl/ip/serial/spi_gpio_guard.sv"
     ]
+  },
+  "piolite": {
+    "document": "docs/ip/piolite.md",
+    "defines": [
+      "rtl/ip/piolite/piolite_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/piolite/piolite_reg.sv",
+      "rtl/ip/piolite/piolite_pkg.sv"
+    ],
+    "parameters": {},
+    "groups": [
+      {
+        "id": "main",
+        "title": "PIO-lite global and transport registers",
+        "pattern": "APB4_PIOLITE__(IP_ID|IP_VERSION|ISA_VERSION|CAPABILITY|ROUTABLE_MASK|CLOCK_HZ|FLAGS|FLAG_SET|FLAG_CLEAR|IRQ_STATUS|IRQ_ENABLE|TX_BIND|RX_BIND|TRANSPORT_STATUS|IMEM_VALID|OWNED_MASK|START|PAUSE|RESUME|DISABLE|ABORT|SM_RESET|BLOCK_RESET)",
+        "strip": "^APB4_PIOLITE__",
+        "base": 0,
+        "stride": 0,
+        "count": 1
+      },
+      {
+        "id": "imem",
+        "title": "Shared instruction store",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 256,
+        "stride": 4,
+        "count": 32
+      },
+      {
+        "id": "sm",
+        "title": "State-machine registers",
+        "pattern": "APB4_PIOLITE__SM_(?!0_BASE|1_BASE|STRIDE|RESET).+",
+        "strip": "^APB4_PIOLITE__SM_",
+        "base": 512,
+        "stride": 128,
+        "count": 2
+      }
+    ],
+    "extra": [
+      {
+        "group": "imem",
+        "name": "WORD",
+        "offset": 0,
+        "access": "RW",
+        "reset": "Invalid until written",
+        "description": "One 16-bit ISA instruction. Both SMs must be DISABLED, both DMA bindings disabled and transport quiescent before writing.",
+        "fields": [
+          {
+            "name": "INSTRUCTION",
+            "lsb": 0,
+            "msb": 15,
+            "description": "ISA1.0 instruction word with relocated absolute branch target.",
+            "reset": "Invalid",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "Reserved",
+            "lsb": 16,
+            "msb": 31,
+            "description": "Reserved; write zero.",
+            "reset": "0",
+            "expression": "reserved"
+          }
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/piolite/apb4_piolite.sv",
+      "rtl/ip/piolite/piolite_core.sv",
+      "rtl/ip/piolite/piolite_sm.sv",
+      "rtl/ip/piolite/piolite_fifo.sv",
+      "rtl/ip/piolite/piolite_imem.sv",
+      "rtl/ip/piolite/piolite_gpio_guard.sv",
+      "rtl/ip/piolite/piolite_dma_adapter.sv",
+      "rtl/ip/piolite/piolite_if.sv"
+    ],
+    "memory_map": "rtl/tiny/address_map/memory_map.json"
   }
 }

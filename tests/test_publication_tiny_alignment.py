@@ -24,11 +24,12 @@ def test_reviewed_peripheral_hierarchy_and_inventory(data):
     index = data["chapter_index"]
     assert [r["id"] for r in index] == [
         "xpi", "sdio", "sram", "gpio", "dma", "timer", "rtc", "wdg", "pwm", "uart0",
-        "i2c", "spi", "ws2812", "archinfo", "sysctrl", "rcu", "clint", "i2s", "dvp", "ppalite", "crypto", "crc", "rng"]
+        "i2c", "spi", "piolite", "ws2812", "archinfo", "sysctrl", "rcu", "clint", "i2s", "dvp",
+        "ppalite", "crypto", "crc", "rng"]
     assert {r["id"] for r in index if r["depth"] == 5} == {"xpi", "sdio", "sram", "uart0"}
     assert {r["id"] for r in index if r["depth"] == 3} == {"gpio", "dma"}
-    assert len(data["register_index"]) == 1210
-    assert sum(len(r["registers"]) for r in data["registers"].values()) == 626
+    assert len(data["register_index"]) == 1329
+    assert sum(len(r["registers"]) for r in data["registers"].values()) == 682
     assert "#contents(depth:5)" in (BOOK / "datasheet.typ").read_text(encoding="utf-8")
 
 
@@ -45,7 +46,7 @@ def test_navigation_rejects_unreviewed_structure(mutation):
     elif mutation == "flatten":
         next(r for r in rows if r["label"] == "<xpi>")["level"] = 3
     else:
-        rows.append(dict(level=3, title="Unsupported extra IP", label="<piolite>", outlined=True))
+        rows.append(dict(level=3, title="Unsupported extra IP", label="<unreviewed>", outlined=True))
     with pytest.raises(ValueError, match="navigation differs"):
         validate_navigation(contract, rows)
 

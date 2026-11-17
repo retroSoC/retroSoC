@@ -31,7 +31,7 @@ def test_tiny_spi_routes_and_lifecycle() -> None:
     assert routes[30]["alt1"]["inputs"] == ["s_spi_miso"]
     assert routes[31]["alt1"]["do"] == "s_spi_cs_n"
     top = (TINY / "top/retrosoc_tiny.sv").read_text()
-    assert ".TargetMask (18'h37fff)" in top
+    assert ".TargetMask (18'h3ffff)" in top
     assert ".EnableSpi(1'b1)" in re.sub(r"\s+", "", top)
     assert ".EnableOriginQualifier" in top
     assert "s_periph_idle[16] = s_spi_lifecycle_idle" in top

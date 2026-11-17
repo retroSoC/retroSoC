@@ -20,6 +20,7 @@
     "title": "Timing and pins",
     "ids": [
       "gpio",
+      "piolite",
       "timer",
       "pwm",
       "rtc",
