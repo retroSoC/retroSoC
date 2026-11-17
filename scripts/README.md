@@ -81,6 +81,13 @@ The temporary checkout uses the source HEAD, not the main checkout's branch,
 and is aborted and normally removed without committing. Results include exact
 conflicted paths, resolved target revision, cleanup, and no-commit evidence;
 cleanup or Git failures stop delivery rather than becoming a pass.
+`agent-scope-check TASK=<task.json>` validates only the staged index against
+the task scope without requiring a clean worktree. Its default diff is against
+`HEAD`; an explicit `BASE=<ref>` first computes the merge-base so upstream
+changes are not misattributed to the staged task. The JSON evidence records the
+actual diff base, staged files, unmerged paths, and scope issues. It is read-only,
+performs no merge or fixture restoration, and does not replace full preflight or
+CI. Unstaged and untracked files are not included.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
 `skill_eval.py` validates all registered Skills and executes isolated, read-only
