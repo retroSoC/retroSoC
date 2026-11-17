@@ -219,7 +219,7 @@ def functional_routes(
     return paths
 
 
-def collect(root: Path, catalog: list[dict], regions: list[dict]) -> dict:
+def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: bool = True) -> dict:
     def read(name: str):
         return json.loads((root / BOOK / name).read_text(encoding="utf-8"))
 
@@ -329,7 +329,12 @@ def collect(root: Path, catalog: list[dict], regions: list[dict]) -> dict:
             raise ValueError(f"Tiny illustration contains missing/non-Tiny source: {path}")
     from publications.ip_block_reference import prepare as prepare_ip_blocks, SOURCES as IP_SOURCES
 
-    prepare_ip_blocks(root, "tiny", circuits)
+    if layout:
+        prepare_ip_blocks(root, "tiny", circuits)
+    else:
+        from publications.ip_block_reference import validate_sources
+
+        validate_sources(root, "tiny", circuits)
     paths.update(IP_SOURCES)
     from publications.ip_block_reference import trace_paths
 
@@ -384,6 +389,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict]) -> dict:
         dict(id="wave-" + key, package="wavedrom", owner="tiny-bus") for key in ["axi4", "apb4"]
     ]
     return dict(
+        layout_prepared=layout,
         circuits=circuits,
         layouts=layouts,
         storage=stores,

@@ -574,7 +574,7 @@ def tiny_snapshot_status(root: Path) -> dict[str, Any]:
         source_revision = config["source_revision"]
         if not REVISION_RE.fullmatch(source_revision):
             raise ValueError("Tiny source_revision must be a complete reviewed SHA")
-        collected = tiny.collect(config, check_snapshot=False)
+        collected = tiny.collect(config, check_snapshot=False, layout=False)
         technical = sorted(
             path
             for path in collected["source_paths"]

@@ -102,6 +102,13 @@ Geometry rejects bounds, node overlap, diagonal/zero-length paths, unrelated-box
 intersections and text collisions. Recompute audit content from fresh inputs as
 well as checking hashes. Negative tests live in `tests/test_publication_ip_blocks.py`.
 
+Technical snapshot and incremental-CI inventory consumers explicitly use
+`tiny_reference.collect(..., check_snapshot=False, layout=False)`: they retain
+the same complete source paths and functional binding checks without loading
+fonts or generating routes. These records are not publication layout evidence.
+Normal publication build/check keeps layout enabled and requires the locked
+font, every view and all geometry checks; a missing font still fails closed.
+
 Preserve baseline PDFs/manifests. Run source checks, example syntax, Ruff,
 publication/full Pytest, lock/document checks and `git diff --check`. Check final
 PDF fonts, bounds, size, links, directories, continuations and inventories.

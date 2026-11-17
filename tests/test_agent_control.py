@@ -297,7 +297,7 @@ def test_tiny_snapshot_reports_drift_and_recovery(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(
         "publications.tiny_reference.collect",
-        lambda config, check_snapshot: {
+        lambda config, check_snapshot, layout: {
             "source_paths": ["docs/engineering.md", "publications/tiny_reference.py", "dependencies/dependencies.lock.json"]
         },
     )

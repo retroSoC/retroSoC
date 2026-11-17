@@ -336,3 +336,26 @@ def test_ip_notes_do_not_retain_the_legacy_dashed_control_convention(books):
     for data in books.values():
         for view in blocks.records(data).values():
             assert "dashed links are control" not in view["note"].lower()
+
+
+def test_technical_inventory_defers_fonts_without_losing_sources(books, monkeypatch):
+    def unavailable_font(path):
+        raise FileNotFoundError("publication font not installed")
+
+    monkeypatch.setattr(blocks, "font_advances", unavailable_font)
+    config = tiny_reference.read(ROOT / tiny_reference.BOOK / "tiny.json")
+    data = tiny_reference.collect(config, check_snapshot=False, layout=False)
+    assert data["source_paths"] == books["tiny"]["source_paths"]
+    assert data["illustrations"]["layout_prepared"] is False
+    with pytest.raises(FileNotFoundError, match="publication font not installed"):
+        tiny_reference.collect(config)
+    with pytest.raises(ValueError, match="complete IP layout"):
+        tiny_reference.collect(config, layout=False)
+
+
+def test_font_independent_validation_still_checks_selected_widths(books):
+    c = deepcopy(books["tiny"]["illustrations"]["circuits"]["xpi"])
+    interface = next(i for i in c["block_diagram"]["interfaces"] if i["protocol"] == "AXI4")
+    interface["width"] = 64
+    with pytest.raises(ValueError, match="selected interface instance"):
+        blocks.validate_sources(ROOT, "tiny", {"xpi": c})

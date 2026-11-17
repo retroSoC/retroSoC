@@ -172,3 +172,12 @@ Mini 另有 2 页近似匹配；其余 176／355 页分别检查重排与图文�
 预检／监视说明后，仅更新 Mini `build_control_review` 的完整提交／文件指纹。
 产品来源仍为 `6f3f3c83`，旧交付 PDF、manifest 和全部失败／复验记录继续保留。
 PR 同步检查与复建记录独立存于 `build/datasheet-ip-block-pr-validation-20261117/`。
+
+PR 首次 CI 的 fast／incremental-shadow 暴露来源清单提前读取出版字体的问题。
+将 Tiny 的技术清单收集显式设为 `layout=False`，两个 CI 来源清单调用点同步适配；
+所有功能绑定、端口／位宽与来源路径仍核验，普通出版 build/check 仍强制完整
+字体、布局、几何和覆盖检查。新增负例验证缺字体时技术清单可用、普通出版失败，
+以及错误选中位宽仍被拒绝；修复定向测试 94 项通过。
+本地 `make check-fast` 已通过来源、格式、RTL 风格／就绪、C 策略／host、文档、
+Skill 静态、Ruff 和 YAML 检查，随后因未安装 actionlint 停止；该失败记录保留，
+完整快速门禁由托管 CI 执行，不将缺项记为通过。

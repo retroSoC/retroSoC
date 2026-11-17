@@ -827,20 +827,14 @@ def validate_view(root: Path, circuit: dict) -> None:
                     raise ValueError("IP functional unit lost its RTL binding")
 
 
-def prepare(root: Path, product: str, circuits: dict) -> None:
-    advances = font_advances(
-        root / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
-    )
+def validate_sources(root: Path, product: str, circuits: dict) -> None:
+    """Validate functional facts without requiring publication fonts or routing."""
     for identifier, circuit in circuits.items():
         if identifier in SYSTEM_IDS:
             continue
         if circuit.get("block_diagram", {}).get("product") != product:
             raise ValueError("IP block view crosses product boundaries")
         validate_view(root, circuit)
-        circuit["scene"] = cached_scene(
-            json.dumps(circuit, sort_keys=True), json.dumps(advances, sort_keys=True)
-        )
-        details = []
         for spec in circuit["block_diagram"].get("details", []):
             owner = next((n for n in circuit["nodes"] if n["id"] == spec["owner"]), None)
             if owner is None:
@@ -848,6 +842,23 @@ def prepare(root: Path, product: str, circuits: dict) -> None:
             members = {u["id"]: u for u in owner.get("units", [])}
             if not set(spec["members"]) <= members.keys():
                 raise ValueError("IP detail refers to unknown functional members")
+
+
+def prepare(root: Path, product: str, circuits: dict) -> None:
+    validate_sources(root, product, circuits)
+    advances = font_advances(
+        root / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
+    )
+    for identifier, circuit in circuits.items():
+        if identifier in SYSTEM_IDS:
+            continue
+        circuit["scene"] = cached_scene(
+            json.dumps(circuit, sort_keys=True), json.dumps(advances, sort_keys=True)
+        )
+        details = []
+        for spec in circuit["block_diagram"].get("details", []):
+            owner = next(n for n in circuit["nodes"] if n["id"] == spec["owner"])
+            members = {u["id"]: u for u in owner.get("units", [])}
             resolved = {**spec, "units": [members[k] for k in spec["members"]]}
             details.append(make_detail(root, product, identifier, circuit, resolved, advances))
         circuit["details"] = details
