@@ -27,7 +27,7 @@ def test_current_and_compatibility_profile_have_distinct_discovery(data):
     registers = tiny.collect_registers(compatibility)
     rcu = next(r for r in registers["rcu"]["registers"] if r["name"] == "CAPABILITY")
     assert tiny.registers.number(rcu["reset"]) == 0x1A03
-    assert len(data["catalog"]) == 23
+    assert len(data["catalog"]) == 24
     assert not any(p.startswith("rtl/mini/") for p in data["source_paths"])
 
 
@@ -85,7 +85,7 @@ def test_ppalite_uses_camera_transport_without_another_master(data):
     assert pp["COMMAND"]["access"] == "WO"
     assert next(r for r in data["interrupts"] if r["name"] == "ppalite")["core_bit"] == 27
     cap = next(r for r in data["registers"]["rcu"]["registers"] if r["name"] == "TARGET_CAP")
-    assert tiny.registers.number(cap["reset"]) == 0x37FFF
+    assert tiny.registers.number(cap["reset"]) == 0x3FFFF
 
 
 @pytest.mark.parametrize("path", ["configs/ci/ihp130.mk", "configs/ci/ics55.mk", "configs/cluster/mini-mpw.mk"])
@@ -125,7 +125,7 @@ def test_discovery_discrepancies_remain_visible(data):
     def reg(family, name):
         return next(r for r in data["registers"][family]["registers"] if r["name"] == name)
     assert tiny.registers.number(reg("dma", "IP_VERSION")["reset"]) == 0x20002
-    assert tiny.registers.number(reg("dma", "SUPPORTED_REQUESTS")["reset"]) == 0x339FF
+    assert tiny.registers.number(reg("dma", "SUPPORTED_REQUESTS")["reset"]) == 0x3F9FF
     assert "truncat" in reg("dma", "CAPABILITY")["description"]
     assert tiny.registers.number(reg("spi", "CAPABILITY")["reset"]) == 0x3F7F
     assert "discrepancy" in reg("spi", "CAPABILITY")["description"]

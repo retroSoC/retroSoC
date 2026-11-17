@@ -29,7 +29,7 @@ zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
 Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
-CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
+CeTZ 0.5.2 for all 24 IP primary diagrams and their details. Retain Circuiteria
 for three system diagrams, Bytefield formats and Blockcell storage diagrams.
 CeTZ also owns the six-panel overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
@@ -89,7 +89,7 @@ cache, pad or external-memory restrictions into Tiny captions.
 
 The Overview keeps the product description, six IP groups and reference
 configuration on one page. Use three columns and two rows with Mini's outline
-icons, gold headers and gray IP cells. All 23 labels appear once. Reuse the
+icons, gold headers and gray IP cells. All 24 labels appear once. Reuse the
 collected profile and SRAM values in the summary and detailed configuration table.
 
 Place the functional architecture in Section 2.1.1. Its seven labeled clock
