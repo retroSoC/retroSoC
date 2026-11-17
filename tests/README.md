@@ -152,6 +152,9 @@ tooling.
   worktrees to cover conflicting and clean merge dry-runs, dirty-source refusal,
   target validation, source-HEAD preservation, no-commit behavior, and complete
   temporary-worktree cleanup. It also checks the Make opt-out boundary.
+  `test_agent_control.py` also covers staged-index scope checks with real Git
+  repositories: default HEAD diffs, explicit merge-base selection, unstaged-file
+  exclusion, forbidden and out-of-scope paths, unmerged inputs, and invalid bases.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
