@@ -6,7 +6,16 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
-## PPALITE-P4 evidence and acceptance boundary (2026-11-17)
+## PPALITE-P4 human acceptance (2026-11-17)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `40a6bd740f29321f02b48db3b2586d744f6e30a6` on `dev`,
+the merge commit of PR #241. All 29 checks for the final head
+`729c782d75a4e1de4181135d06a3cfc400c99311` completed successfully. The final
+full host Pytest passed 3041 tests with one optional `pypdf` skip, and the fast
+control suite passed 300 tests. Final independent evidence and integration
+reviews returned MERGE with no P0-P3 findings.
 
 PPALITE-P4 functional implementation is `a46543a2ed87e3a153285581e9dfec46bbf6ee35`;
 the clean reviewed-source and compiled-image revision is
