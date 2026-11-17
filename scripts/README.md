@@ -257,8 +257,15 @@ interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility
 entrypoint. Both use clean, canonical worktree checks and registry-based artifact
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
-written below `build/agent-worktrees/`. Use the corresponding Make targets and
-host tests instead of duplicating these rules in workflow shell.
+written below `build/agent-worktrees/`. Reconciliation also exposes
+`cleanup_registry`, `evidence_manifest`, and `evidence_status` when available.
+The evidence reader validates the cleanup action, artifact branch/HEAD, retained
+destination, every retained path, and its SHA-256 before returning `READY`.
+Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or
+tampered evidence fails instead of being trusted. Cleanup opt-outs and warnings
+do not claim evidence, and completed-record offline no-ops remain unchanged.
+Use the corresponding Make targets and host tests instead of duplicating these
+rules in workflow shell.
 `delivery_controller.py` coordinates only explicitly selected existing delivery
 records. It atomically persists pending/failed/attention state, resumes native
 auto-merge monitoring, and reconciles merged cleanup without becoming a merge

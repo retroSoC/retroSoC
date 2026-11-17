@@ -156,8 +156,9 @@ tooling.
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
-  coordinator-only watch handoff, canonical checkpoints with custom outputs, and
-  deferred reconciliation. `test_delivery_controller.py` covers durable
+  coordinator-only watch handoff, canonical checkpoints with custom outputs,
+  verified cleanup/artifact links, retained-file digest validation, missing or
+  tampered evidence rejection, and deferred reconciliation. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
   external auto-merge disabling, cleanup opt-outs, head-change preservation, and
   atomic watcher checkpoints. Run fast agent
