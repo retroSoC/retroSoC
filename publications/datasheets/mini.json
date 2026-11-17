@@ -12,12 +12,12 @@
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "aa5dab0def8057e38bb64778f0c9d9a6b3c731cb",
   "build_control_review": {
-    "revision": "aa5dab0def8057e38bb64778f0c9d9a6b3c731cb",
-    "makefile_blob": "060acf6661a6a13f64a59d9866a995fd7ebc78bc",
+    "revision": "506018b24330f09a05c1f87831ec29e31f7a1cd7",
+    "makefile_blob": "9907bd045510dd5e217c523a57a4a89dd36bc4cb",
     "documentation_blobs": {
-      "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
+      "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical snapshot is aa5dab0d and includes Tiny P4 acceptance history plus reviewed PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review uses the same revision and retains prior agent controls, verified delivery cleanup and artifact evidence manifests. The P3 acceptance selector, config-key registration and isolated-image guard are reviewed. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot is aa5dab0d and includes Tiny P4 acceptance history plus reviewed PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review advances through 506018b2 for audited new-HEAD delivery recovery and final merged-head check evidence. Prior source, control, CI and artifact evidence is retained, including the P3 acceptance selector and isolated-image guard. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

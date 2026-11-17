@@ -1427,7 +1427,9 @@ agent-deliver:
 	  --pr $(PR) --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
 	  --interval $(if $(INTERVAL),$(INTERVAL),60) \
 	  $(if $(WATCH),--watch) $(if $(PREFLIGHT),--preflight-only) \
-	  $(if $(RECONCILE),--reconcile-only) $(if $(OUTPUT),--output $(OUTPUT))
+	  $(if $(RECONCILE),--reconcile-only) $(if $(RESUME),--resume) \
+	  $(if $(RESUME_REASON),--resume-reason "$(RESUME_REASON)") \
+	  $(if $(OUTPUT),--output $(OUTPUT))
 
 agent-coordinate:
 	@test -n '$(PRS)' || { printf '%s\n' 'PRS=<number>... is required'; exit 2; }

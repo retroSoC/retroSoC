@@ -100,7 +100,10 @@ tooling.
   local references, eval corpora, default invocation contracts, and documented
   entrypoints. `test_agent_control.py` covers task contracts, conservative
   change selection, scope enforcement, preflight, and real/mocked Tiny
-  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  reviewed-source snapshot drift. Mini preflight coverage checks real
+  source/control and CI metadata, rejects stale bindings, applies only to
+  selected full-Pytest work, and never restores fixtures; `test_skill_eval.py`
+  covers isolated
   behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
@@ -174,9 +177,13 @@ tooling.
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
   coordinator-only watch handoff, canonical checkpoints with custom outputs,
   verified cleanup/artifact links, retained-file digest validation, missing or
-  tampered evidence rejection, and deferred reconciliation. `test_delivery_controller.py` covers durable
+  tampered evidence rejection, and deferred reconciliation. Delivery recovery
+  tests require an audited reason, changed HEAD, and intact native auto-merge;
+  final-check tests cover exact merged-HEAD identity, pending/failure outcomes,
+  and separation from cleanup status. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
-  external auto-merge disabling, cleanup opt-outs, head-change preservation, and
+  external auto-merge disabling, cleanup opt-outs, head-change preservation,
+  recovery-metadata propagation, explicit Make resume arguments, and
   atomic watcher checkpoints. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
@@ -190,7 +197,9 @@ tooling.
   `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
   covers trace identity, input tampering, historical prompts, unknown runners,
   read-only violations, duplicate/empty evidence, auditable latest-per-case
-  selection, timestamp ambiguity, and zero runner invocations.
+  selection, timestamp ambiguity, and zero runner invocations. Workspace tests
+  cover unique cache paths, symlink escape refusal, and replay after deleting
+  the disposable workspace; legacy workspace provenance remains supported.
   Offline replay grades retained behavior only; it does not execute current code.
 - `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
   `test_publication_history.py` cover lock-bound hosted fixture inventories,

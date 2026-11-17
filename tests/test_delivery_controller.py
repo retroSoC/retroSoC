@@ -193,3 +193,48 @@ def test_coordinator_forwards_cleanup_opt_outs(tmp_path: Path, monkeypatch: pyte
     assert calls == [(False, False)]
     assert result["status"] == "ATTENTION"
     assert result["records"][0]["action"] == "CLEANUP_WARNING"
+
+
+def test_recovery_metadata_survives_coordination(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    directory = tmp_path / "delivery"
+    record = delivery_record()
+    recovery = {
+        "from_status": "FAILED",
+        "to_status": "READY",
+        "previous_head_sha": "c" * 40,
+        "reason": "Merged dev after correcting the reviewed control evidence",
+    }
+    record["recovery"] = recovery
+    path = write_record(directory, record)
+    monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull("MERGED"))
+    monkeypatch.setattr(
+        "scripts.delivery_controller.reconcile_delivery",
+        lambda *args, **kwargs: {"status": "MERGED", "cleanup": "COMPLETE", "warnings": []},
+    )
+    result = coordinate_once(ROOT, "retroSoC/retroSoC", [1], directory)
+    assert result["status"] == "COMPLETE"
+    assert json.loads(path.read_text(encoding="utf-8"))["recovery"] == recovery
+
+
+def test_make_forwards_explicit_resume_reason() -> None:
+    completed = subprocess.run(
+        [
+            "make",
+            "--no-print-directory",
+            "-n",
+            "-C",
+            str(ROOT),
+            "agent-deliver",
+            "PR=1",
+            "RESUME=1",
+            "RESUME_REASON=base synchronized after correction",
+            "WATCH=1",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0
+    assert "--resume" in completed.stdout
+    assert "--resume-reason" in completed.stdout
+    assert "base synchronized after correction" in completed.stdout

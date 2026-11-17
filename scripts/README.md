@@ -73,6 +73,13 @@ A task with `execution.fixture_profile` also runs the matching doctor without
 restoring or downloading inputs; every doctor issue blocks preflight. Tasks
 without this field report `fixture.status=NOT_REQUESTED` and do not probe the
 large fixture inventory.
+When changed-file selection enables `quality_fixtures`, preflight also reports
+`mini_source_snapshot`: it checks the reviewed Mini technical-source diff,
+explicit Makefile/Git-workflow blob review, and system-reference/CI revision
+identity. A FAIL or BLOCKED result prevents delivery; no source or CI evidence is
+rewritten. This scoped check does not probe managed inputs or restore fixtures,
+and is not a full publication, PDF, hardware, or release verdict. Tasks without
+full-Pytest selection report `NOT_REQUESTED`.
 `merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
 against the selected target revision. `make agent-preflight` enables this check
 by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
@@ -94,9 +101,13 @@ a static source list.
 behavior evaluations with deterministic grades. It retains v1 eval-config
 compatibility, requires migration documents for incompatible contracts, and
 records Skill Git SHA, contract version, runner/model, input snapshot, and
-workspace tree. Static validation is never labeled behavior execution. Codex is
-the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
-Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+workspace tree. Each run creates a unique rebuildable workspace below
+`.cache/retrosoc/skill-evals/`, separate from the retained trace directory, and
+records `workspace_disposition=REBUILDABLE_CACHE`; older traces are labeled
+`LEGACY_OUTPUT` during replay. The cache is disposable and does not weaken
+artifact symlink checks. Static validation is never labeled behavior execution.
+Codex is the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md`
+with only Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `skill_eval.py run --case <id>` executes an explicit live case without changing
 the existing smoke selection. `skill_eval.py replay` grades explicit retained
 traces without starting a runner. It validates trace/input/Skill/workspace
@@ -279,6 +290,14 @@ entrypoint. Both use clean, canonical worktree checks and registry-based artifac
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
 written below `build/agent-worktrees/`. Reconciliation also exposes
 `cleanup_registry`, `evidence_manifest`, and `evidence_status` when available.
+An explicit `--resume` with `--resume-reason` accepts only an existing FAILED or
+ATTENTION record at a changed HEAD after a fresh READY preflight. Native
+auto-merge must remain enabled; same-head retries, identity changes, missing
+reasons, and external disables are rejected without merging. The recovery object
+retains the previous failure identity and reason through coordination. Final
+reconciliation stores `final_checks` separately from `last_check_status`, bound
+to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
+failed final report is explicit and never becomes a PASS by inference.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
 destination, every retained path, and its SHA-256 before returning `READY`.
 Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or

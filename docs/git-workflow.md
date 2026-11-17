@@ -293,8 +293,13 @@ failed or cancelled checks prevent GitHub from merging. `--watch` (or `WATCH=1`)
 first retains the enabled delivery, then uses `delivery_controller.py` for all
 polling, terminal-failure handling, and immediate cleanup. The same coordinator
 resumes its canonical checkpoint after interruption; no second watcher enables
-auto-merge, retries failed checks, or overrides an external disable. Without
-`--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
+auto-merge, retries failed checks, or overrides an external disable. After an
+actual fix or dev synchronization creates a new head, an existing FAILED or
+ATTENTION record can be resumed with `RESUME=1 RESUME_REASON="<diagnosis>"`.
+Resume requires a fresh preflight and native auto-merge still enabled; it rejects
+same-head retries, branch/base changes, and missing reasons while preserving the
+previous failure identity in `recovery`. It never re-enables an external disable.
+Without `--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
 `--reconcile-only` (or `RECONCILE=1`) to finish cleanup on the next
 synchronization. The legacy `python3 scripts/pr_workflow.py --pr <number> --root .`
 remains available for after-green monitoring. Neither path uses `--admin`,
