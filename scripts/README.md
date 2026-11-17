@@ -73,6 +73,13 @@ A task with `execution.fixture_profile` also runs the matching doctor without
 restoring or downloading inputs; every doctor issue blocks preflight. Tasks
 without this field report `fixture.status=NOT_REQUESTED` and do not probe the
 large fixture inventory.
+When changed-file selection enables `quality_fixtures`, preflight also reports
+`mini_source_snapshot`: it checks the reviewed Mini technical-source diff,
+explicit Makefile/Git-workflow blob review, and system-reference/CI revision
+identity. A FAIL or BLOCKED result prevents delivery; no source or CI evidence is
+rewritten. This scoped check does not probe managed inputs or restore fixtures,
+and is not a full publication, PDF, hardware, or release verdict. Tasks without
+full-Pytest selection report `NOT_REQUESTED`.
 `merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
 against the selected target revision. `make agent-preflight` enables this check
 by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.

@@ -135,7 +135,7 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     return True
 
 
-def validate_source(config: dict[str, Any]) -> None:
+def validate_source_snapshot(config: dict[str, Any]) -> None:
     revision = config["source_revision"]
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("source_revision must be a full reviewed Git commit")
@@ -162,6 +162,10 @@ def validate_source(config: dict[str, Any]) -> None:
         changed = "\n".join(path for path in changed.splitlines() if path not in reviewed)
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
+
+
+def validate_source(config: dict[str, Any]) -> None:
+    validate_source_snapshot(config)
     for name, dependency in load_lock()["sources"].items():
         if name.startswith("cluster_") or name in {"hazard3", "mpw", "openc906"}:
             checkout = ROOT / dependency["destination"]
