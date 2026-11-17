@@ -411,3 +411,8 @@ def test_dma_route_tables_cannot_omit_implemented_completion_sources(mutation):
         next(row for row in spec["dma_routes"] if row["id"] == "crypto_in")["irq"] = None
     with pytest.raises(ValueError, match="interrupt coverage|interrupt omitted"):
         collect_programming(ROOT, spec, ids, reference["source_revision"])
+
+
+def test_mini_dma_stream_direction_count_matches_wiring(registers):
+    capability = next(x for x in registers["dma"]["registers"] if x["key"] == "main.CAPABILITY")
+    assert (number(capability["reset"]) >> 28) & 7 == 5

@@ -179,10 +179,10 @@ def validate_programming(spec: dict, ids: set[str], root: Path, revision: str) -
     routes = spec["dma_routes"]
     # Future extension request IDs are part of the shared ABI while their
     # product wiring is intentionally absent from the current publication.
-    # Publish only the executable legacy 0..15 route inventory; later phases
-    # add their own source-bound route rows when the endpoint is wired.
-    published_sdk = {name for name, number in sdk.items() if number < 16}
-    published_rtl = {name for name, number in rtl.items() if number < 16}
+    # Publish only the executable legacy 0..13 route inventory; Tiny PIO14/15
+    # remain disabled in Mini and need their own source-bound product rows.
+    published_sdk = {name for name, number in sdk.items() if number < 14}
+    published_rtl = {name for name, number in rtl.items() if number < 14}
     if {r["sdk"] for r in routes} != published_sdk or {r["rtl"] for r in routes} != published_rtl:
         raise ValueError("DMA route coverage mismatch")
     if len(routes) != len(published_sdk) or len({r["sdk"] for r in routes}) != len(routes):

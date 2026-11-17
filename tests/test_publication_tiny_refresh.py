@@ -224,3 +224,26 @@ def test_current_layout_prose_matches_reviewed_source():
     assert revision in style
     assert revision in overview
     assert "current reviewed source is the frozen 2026-11-14 dev commit" not in style
+
+
+def test_overview_labels_cover_current_inventory(data):
+    diagrams = (ROOT / tiny.BOOK / "diagrams.typ").read_text(encoding="utf-8")
+    labels = diagrams.split("let labels=(", 1)[1].split(")\n let icons", 1)[0]
+    for group in data["overview"]:
+        for identifier in group["ids"]:
+            assert f'"{identifier}":' in labels
+
+
+def test_every_catalog_ip_has_one_emitted_chapter(data):
+    peripherals = (ROOT / tiny.BOOK / "sections/peripherals.typ").read_text(encoding="utf-8")
+    for entry in data["catalog"]:
+        identifier = entry["id"]
+        assert peripherals.count(f'#reference(data.catalog.find(e=>e.id=="{identifier}"))') == 1
+        assert peripherals.count(f'kind:"ip-start",id:"{identifier}"') == 1
+        assert peripherals.count(f'kind:"ip-end",id:"{identifier}"') == 1
+        assert f"<{identifier}>" in peripherals
+
+
+def test_tiny_dma_stream_direction_count_matches_wiring(data):
+    capability = next(x for x in data["registers"]["dma"]["registers"] if x["key"] == "main.CAPABILITY")
+    assert (tiny.registers.number(capability["reset"]) >> 28) & 7 == 7

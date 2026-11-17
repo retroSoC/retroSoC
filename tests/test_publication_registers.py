@@ -191,3 +191,9 @@ def test_ip_page_validation_rejects_a_shared_start_page():
     ]
     with pytest.raises(ValueError, match="new page"):
         validate_page_map(items, [{"id": "a"}, {"id": "b"}])
+
+
+@pytest.mark.parametrize("mask,expected", [(0x0000, 0), (0x3FFF, 5), (0x3F9FF, 7)])
+def test_dma_stream_direction_constant_evaluation(mask, expected):
+    expression = "3'($countones(supported_requests_i[15:0] & 16'hF806))"
+    assert number(expression, {"supported_requests_i": mask}) == expected

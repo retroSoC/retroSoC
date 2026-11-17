@@ -165,6 +165,7 @@
     "docs/ip/tiny-soc-r2-psram.md",
     "docs/ip/tiny-soc-r2-shared-integration.md",
     "docs/ip/tiny-soc-r2-system-performance.md",
+    "publications/examples/tiny/piolite.c",
     "publications/tiny_v02_reference.py",
     "rtl/ip/core/mgmt_debug_reset.sv",
     "rtl/ip/core/mgmt_debug_wrapper.sv",

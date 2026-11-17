@@ -183,7 +183,8 @@ def collect_registers(fact: dict, root: Path = ROOT) -> dict:
     if set(profiles) != FAMILIES or any(s.get("memory_map") != MAP for s in profiles.values()):
         raise ValueError("Tiny register families must be independent of Mini")
     profiles["sram"]["parameters"].update(CapacityKiB=fact["sram"]["CapacityKiB"], BankCount=32, DataBytes=4)
-    profiles["dma"]["parameters"].update(fact["dma"], ChannelIndexWidth=3)
+    profiles["dma"]["parameters"].update(fact["dma"], ChannelIndexWidth=3,
+                                         supported_requests_i=fact["dma"]["SupportedRequests"])
     profiles["dma"]["groups"][1]["count"] = fact["dma"]["NumChannels"]
     profiles["archinfo"]["parameters"].update(fact["archinfo"])
     pulls = int(fact["profile"]["PDK"] == "ICS55")

@@ -83,6 +83,12 @@ External RAM uses the existing @xpi controller and explicit NSS1 PSRAM initializ
 #context metadata((kind:"ip-end",id:"spi",page:here().page()))
 
 #pagebreak(weak:true)
+#context metadata((kind:"ip-start",id:"piolite",page:here().page()))
+==== Programmable I/O (PIO-lite) <piolite>
+#reference(data.catalog.find(e=>e.id=="piolite"))
+#context metadata((kind:"ip-end",id:"piolite",page:here().page()))
+
+#pagebreak(weak:true)
 #context metadata((kind:"ip-start",id:"ws2812",page:here().page()))
 ==== WS2812 LED Output <ws2812>
 #reference(data.catalog.find(e=>e.id=="ws2812"))

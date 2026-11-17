@@ -146,6 +146,9 @@ def apply_integration(reference: dict, fact: dict, root: Path) -> None:
     for key, value in [("IP_VERSION", fact["dma"]["IpVersion"]), ("SUPPORTED_REQUESTS", fact["dma"]["SupportedRequests"])]:
         if registers.number(dma[key]["reset"]) != value:
             raise ValueError("Tiny DMA discovery does not match selected integration")
+    expected_directions = (fact["dma"]["SupportedRequests"] & 0xF806).bit_count() if fact["dma"]["EnableStreams"] else 0
+    if (registers.number(dma["CAPABILITY"]["reset"]) >> 28) & 7 != expected_directions:
+        raise ValueError("Tiny DMA stream-direction discovery does not match selected integration")
     if reference["dma"]["groups"][1]["count"] != 8:
         raise ValueError("Tiny DMA channel coverage changed")
 

@@ -34,7 +34,7 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
         if not enclosed or depth != 0:
             break
         expression = expression[1:-1].strip()
-    sized_cast = re.fullmatch(r"(\d+)'\(([^()]*)\)", expression)
+    sized_cast = re.fullmatch(r"(\d+)'\((.+)\)", expression, re.S)
     if sized_cast:
         return number(sized_cast[2], constants) & ((1 << int(sized_cast[1])) - 1)
     expression = LITERAL.sub(
@@ -46,7 +46,7 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
     expression = re.sub(r"\b(\d+)[uUlL]+\b", r"\1", expression)
     if expression in {"'0", "'1"}:
         return 0 if expression == "'0" else 0xFFFFFFFF
-    expression = expression.replace("$clog2", "clog2")
+    expression = expression.replace("$clog2", "clog2").replace("$countones", "countones")
     expression = expression.replace("&&", " and ").replace("||", " or ")
     expression = re.sub(r"!(?!=)", " not ", expression).strip()
     expression = re.sub(r"(?:\w+|\d+)'\(([^()]+)\)", r"(\1)", expression)
@@ -100,13 +100,25 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
         if isinstance(node, ast.BoolOp) and isinstance(node.op, (ast.And, ast.Or)):
             values = [bool(visit(value)) for value in node.values]
             return int(all(values) if isinstance(node.op, ast.And) else any(values))
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "clog2"
-            and len(node.args) == 1
-        ):
-            return (visit(node.args[0]) - 1).bit_length()
+        if isinstance(node, ast.Subscript):
+            value = visit(node.value)
+            if isinstance(node.slice, ast.Slice):
+                if node.slice.lower is None or node.slice.upper is None:
+                    raise ValueError(f"unresolved constant expression: {expression}")
+                high = visit(node.slice.lower)
+                low = visit(node.slice.upper)
+                if low < 0 or high < low or node.slice.step is not None:
+                    raise ValueError(f"unresolved constant expression: {expression}")
+                return (value >> low) & ((1 << (high - low + 1)) - 1)
+            index = visit(node.slice)
+            if index < 0:
+                raise ValueError(f"unresolved constant expression: {expression}")
+            return (value >> index) & 1
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1:
+            if node.func.id == "countones":
+                return visit(node.args[0]).bit_count()
+            if node.func.id == "clog2":
+                return (visit(node.args[0]) - 1).bit_length()
         raise ValueError(f"unresolved constant expression: {expression}")
 
     try:
