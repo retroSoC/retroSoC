@@ -14,7 +14,7 @@ the clean reviewed-source and compiled-image revision is
 Mini behavioral/diagnostic run bind to `9b99113ecaf668ef61f1d241add604e2019fa93c`.
 The P4 functional evidence remains bound to `a46543a2`, while the current
 publication source snapshot is separately bound to
-`8294b64b48a620940f7f38b8fdc9e713e0feae92` for the TINY-056 rule and its
+`7a03c551e39e794442e9f2ad49635fbac4f76c21` for the TINY-056 rule and its
 hashed publication inputs. These identities are not interchangeable.
 
 Both committed Tiny profiles complete the full source-bound P4 Verilator and
