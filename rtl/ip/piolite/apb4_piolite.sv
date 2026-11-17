@@ -32,6 +32,7 @@ module apb4_piolite (
     output logic                dma_tx_admit_o,
     output logic                dma_rx_admit_o,
     output logic                irq_o,
+    output logic                lifecycle_idle_o,
 `ifdef PIOLITE_FORMAL_TOP
     output logic         [43:0] formal_sm0_o,
 `endif
@@ -70,6 +71,8 @@ module apb4_piolite (
     dma_tx_admit_o = u_ctrl.tx_bind[31] && !s_tx_closing && !s_guard_fault[u_ctrl.tx_bind[0]];
     dma_rx_admit_o = u_ctrl.rx_bind[31] && !s_rx_closing && !s_guard_fault[u_ctrl.rx_bind[0]];
   end
+  assign lifecycle_idle_o = !(|s_session_live) && !s_tx_held && !s_rx_held &&
+      !s_tx_closing && !s_rx_closing;
 
   piolite_gpio_guard u_gpio_guard (
       .cfg_i           (u_ctrl.cfg),

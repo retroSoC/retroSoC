@@ -153,6 +153,16 @@ module retrosoc_tiny (
   logic [2:0] s_spi_channel;
   logic [31:0] s_gpio_user_select, s_gpio_user_handoff, s_gpio_alt_enable;
   logic [31:0] s_gpio_alt_select, s_gpio_output_enable, s_gpio_open_drain;
+  logic s_piolite_irq, s_piolite_lifecycle_idle;
+  /* verilator lint_off UNUSEDSIGNAL */
+  logic        s_piolite_dma_tx_ready;
+  logic        s_piolite_dma_rx_valid;
+  logic [31:0] s_piolite_dma_rx_data;
+  logic [3:0] s_piolite_dma_rx_keep, s_piolite_dma_rx_strb;
+  logic s_piolite_dma_rx_last, s_piolite_dma_rx_id, s_piolite_dma_rx_dest;
+  logic       s_piolite_dma_rx_user;
+  logic [1:0] s_piolite_dma_admit;
+  /* verilator lint_on UNUSEDSIGNAL */
   logic [1:0] s_spi_credit_valid, s_spi_credit_retire, s_spi_dma_start_pending;
   logic [1:0] s_spi_admit_ready;
   logic [3:0] s_spi_dma_status;
@@ -458,11 +468,8 @@ apb4_if u_dvp_source_apb4_if (
       .dat_i  (s_gate_request[0]),
       .dat_o  (s_wfi_gate_sys)
   );
-  assign s_reset_held[0]   = 1'b0;
-  assign s_reset_ready[0]  = 1'b0;
-  assign s_actual_gate[15] = 1'b0;
-  assign s_reset_held[15]  = 1'b0;
-  assign s_reset_ready[15] = 1'b0;
+  assign s_reset_held[0]  = 1'b0;
+  assign s_reset_ready[0] = 1'b0;
   cdc_sync #(
       .STAGE     (2),
       .DATA_WIDTH(18)
@@ -549,7 +556,7 @@ apb4_if u_dvp_source_apb4_if (
   assign s_periph_idle[0] = s_cpu_bus_idle;
   assign s_periph_idle[1] = !s_spi_session_owned && !(|s_gpio_user_select) && !s_ppalite_active;
   assign s_periph_idle[11] = !s_rng_en && !s_rng_valid;
-  assign s_periph_idle[15] = 1'b1;
+  assign s_periph_idle[15] = s_piolite_lifecycle_idle && !(|s_gpio_user_select);
   assign s_periph_idle[16] = s_spi_lifecycle_idle;
   assign s_periph_idle[17] = !s_ppa_route && s_ppa_processor_idle && s_ppa_transport_idle &&
       s_dvp_idle && !s_ppalite_active;
@@ -1057,8 +1064,43 @@ axi4_error_slave #(
       .inner(u_gpio_if),
       .outer(gpio)
   );
-  assign u_user_gpio_if.do_o     = '0;
-  assign u_user_gpio_if.oe_o     = '0;
+  apb4_piolite u_piolite (
+      .clk_i           (s_piolite_clk),
+      .rst_n_i         (s_piolite_rst_n),
+      .clock_hz_i      (s_pclk_report_q),
+      .user_select_i   (s_gpio_user_select),
+      .user_status_i   (s_gpio_user_select & ~s_gpio_user_handoff),
+      .filter_enable_i (u_user_gpio_if.filter_enable_i),
+      .gpio_ready_i    (s_gpio_rst_n && !s_actual_gate[1]),
+      .gpio_input_i    (u_user_gpio_if.di_i),
+      .gpio_value_o    (u_user_gpio_if.do_o),
+      .gpio_oe_o       (u_user_gpio_if.oe_o),
+      .dma_tx_job_i    (1'b0),
+      .dma_rx_job_i    (1'b0),
+      .dma_tx_valid_i  (1'b0),
+      .dma_tx_ready_o  (s_piolite_dma_tx_ready),
+      .dma_tx_data_i   (32'd0),
+      .dma_tx_keep_i   (4'd0),
+      .dma_tx_strb_i   (4'd0),
+      .dma_tx_id_i     (1'b0),
+      .dma_tx_dest_i   (1'b0),
+      .dma_tx_user_i   (1'b0),
+      .dma_tx_last_i   (1'b0),
+      .dma_rx_valid_o  (s_piolite_dma_rx_valid),
+      .dma_rx_ready_i  (1'b0),
+      .dma_rx_data_o   (s_piolite_dma_rx_data),
+      .dma_rx_keep_o   (s_piolite_dma_rx_keep),
+      .dma_rx_strb_o   (s_piolite_dma_rx_strb),
+      .dma_rx_last_o   (s_piolite_dma_rx_last),
+      .dma_rx_id_o     (s_piolite_dma_rx_id),
+      .dma_rx_dest_o   (s_piolite_dma_rx_dest),
+      .dma_rx_user_o   (s_piolite_dma_rx_user),
+      .dma_tx_admit_o  (s_piolite_dma_admit[0]),
+      .dma_rx_admit_o  (s_piolite_dma_admit[1]),
+      .irq_o           (s_piolite_irq),
+      .lifecycle_idle_o(s_piolite_lifecycle_idle),
+      .apb4            (u_piolite_apb4_if)
+  );
   assign uart0_tx_o              = u_uart0_if.tx_o;
   // Legacy ASIC observation pads are retained, not a Gen1 package binding.
   assign uart1_tx_o              = 1'b1;

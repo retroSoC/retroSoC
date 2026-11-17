@@ -135,6 +135,7 @@ module gpio_core #(
 
   assign data_in_o = s_input_filtered_q;
   assign user_gpio.di_i = s_input_filtered_q;
+  assign user_gpio.filter_enable_i = filter_enable_i;
   assign intr_event_o = (s_input_rise & intr_rise_enable_i) |
                         (s_input_fall & intr_fall_enable_i) |
                         (s_input_filtered_q & intr_high_enable_i) |

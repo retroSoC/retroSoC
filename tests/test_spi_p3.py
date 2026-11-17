@@ -14,9 +14,9 @@ def test_tiny_spi_topology_and_capability() -> None:
     memory = json.loads((TINY / "address_map/memory_map.json").read_text())
     regions = {row["symbol"]: row for row in memory["regions"]}
     assert regions["APB4_SPI"]["base"] == "0x1001D000"
-    assert topology["fabric"]["target_count"] == 30
-    assert topology["fabric"]["decode_error_target"] == 28
-    assert topology["fabric"]["protocol_error_target"] == 29
+    assert topology["fabric"]["target_count"] == 31
+    assert topology["fabric"]["decode_error_target"] == 29
+    assert topology["fabric"]["protocol_error_target"] == 30
     assert {row["core_bit"] for row in topology["interrupts"] if row["name"] == "spi"} == {25}
     assert any(row["name"] == "spi" and row["regions"] == ["APB4_SPI"]
                for row in topology["apb_targets"])

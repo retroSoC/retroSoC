@@ -118,8 +118,10 @@ def test_independent_resets_fields_and_isa_enums():
     assert c_enums == {"RS_PIOLITE_" + name: value for name, value in expected.items()}
 
 
-def test_p2_has_no_product_or_hal_integration():
-    assert not (ROOT / "crt/include/retrosoc/hal/piolite.h").exists()
+def test_p3_has_tiny_product_sources_without_changing_profiles():
     for profile in ("ics55-tiny.mk", "ihp130-tiny.mk"):
         assert "PIOLITE" not in (ROOT / "configs/ci" / profile).read_text().upper()
-    assert all("/piolite/" not in path.read_text() for path in (ROOT / "rtl/tiny/filelist").glob("*.fl"))
+    filelists = {path.name: path.read_text() for path in (ROOT / "rtl/tiny/filelist").glob("*.fl")}
+    assert "+incdir+/ip/piolite" in filelists["inc.fl"]
+    assert "/ip/piolite/apb4_piolite.sv" in filelists["ip.fl"]
+    assert (ROOT / "crt/include/retrosoc/hal/piolite_regs.h").is_file()

@@ -163,7 +163,8 @@
       "sdio",
       "dvp",
       "spi",
-      "ppalite"
+      "ppalite",
+      "piolite"
     ],
     "cpu_prerequisite": "all global leaf resets and actual APB/DMA/XPI/RCU barriers; boot readiness latches until the next system reset",
     "hart": "u_soc.u_cpu.u_mgmt_debug_wrapper.u_mgmt_debug_reset.u_core_rst_sync",
@@ -484,7 +485,8 @@
         "i2s",
         "dvp",
         "spi",
-        "ppalite"
+        "ppalite",
+        "piolite"
       ]
     },
     "same_clock_isolation": [

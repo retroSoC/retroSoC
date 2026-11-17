@@ -16,7 +16,8 @@ interface user_gpio_if #(
   logic [DataWidth-1:0] do_o;
   logic [DataWidth-1:0] oe_o;
   logic [DataWidth-1:0] di_i;
+  logic [DataWidth-1:0] filter_enable_i;
 
-  modport user_ip(output do_o, output oe_o, input di_i);
-  modport padctrl(input do_o, input oe_o, output di_i);
+  modport user_ip(output do_o, output oe_o, input di_i, input filter_enable_i);
+  modport padctrl(input do_o, input oe_o, output di_i, output filter_enable_i);
 endinterface

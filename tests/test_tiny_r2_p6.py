@@ -401,14 +401,16 @@ def test_p6_map_irq_request_and_pin_contract():
                        "CRYPTO": 0x1000C000, "I2S": 0x10007000, "SDIO0": 0x1000F000}.items():
         assert regions["APB4_" + name] == base
     assert regions["APB4_DVP"] == 0x1000E000
-    assert not {"APB4_UART1", "APB4_I2C1", "APB4_SPI0", "APB4_PIOLITE"} & regions.keys()
+    assert regions["APB4_PIOLITE"] == 0x1001C000
+    assert not {"APB4_UART1", "APB4_I2C1", "APB4_SPI0"} & regions.keys()
     irqs = {i["name"]: i["core_bit"] for i in topology["interrupts"]}
     assert {k: irqs[k] for k in ("rng", "ws2812", "crypto", "i2s", "sdio")} == {
         "rng": 16, "ws2812": 17, "crypto": 23, "i2s": 8, "sdio": 10}
     assert irqs["dvp"] == 15
     assert irqs["spi"] == 25
+    assert irqs["piolite"] == 24
     assert irqs["ppalite"] == 27
-    assert {19, 24, 26}.isdisjoint(irqs.values())
+    assert {19, 26}.isdisjoint(irqs.values())
     assert irqs["rcu"] == 31
     pins = topology["gpio_alt_functions"]
     assert pins[9]["alt0"]["inputs"] == ["u_uart0_if.rx_i"]

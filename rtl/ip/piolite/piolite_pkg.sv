@@ -140,6 +140,7 @@ package piolite_pkg;
     return (value == 32'hffff_ffff) ? value : (value + 32'd1);
   endfunction
 
+  /* verilator lint_off UNUSEDSIGNAL */
   function automatic logic config_scalar_legal(input sm_config_t cfg);
     logic        legal;
     pin_window_t in_window;
@@ -185,4 +186,5 @@ package piolite_pkg;
       legal = 1'b0;
     return legal;
   endfunction
+  /* verilator lint_on UNUSEDSIGNAL */
 endpackage

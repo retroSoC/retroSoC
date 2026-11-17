@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-/* PIO-lite APB/ISA 1.0. Constants do not imply a mapped product instance. */
+/* PIO-lite APB/ISA 1.0. Tiny maps this ABI at 0x1001C000. */
 #define RS_PIOLITE_ABI_APB4_IP_ID                  UINT32_C(0x000)
 #define RS_PIOLITE_ABI_APB4_IP_VERSION             UINT32_C(0x004)
 #define RS_PIOLITE_ABI_APB4_ISA_VERSION            UINT32_C(0x008)
