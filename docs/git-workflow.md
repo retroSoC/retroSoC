@@ -307,7 +307,13 @@ is clean, the branch is contained in the PR merge commit, and the PR head belong
 to the canonical repository. It switches a main worktree to `dev`, or reconciles
 a linked worktree below `build/agent-worktrees/` through the registry. Before a
 linked worktree is removed, its `build/` evidence moves to
-`build/agent-artifacts/` and a branch-scoped cleanup registry is retained. Dirty,
+`build/agent-artifacts/` and a branch-scoped cleanup registry is retained. Final
+delivery JSON links those records with `cleanup_registry`, `evidence_manifest`,
+and `evidence_status`. Before `READY`, the reader verifies the cleanup action,
+artifact branch/HEAD, retained destination, every retained file, and its SHA-256.
+Missing or artifact-free records are explicitly `NOT_AVAILABLE`; invalid or
+tampered evidence fails instead of being trusted. Completed-record offline no-ops
+remain unchanged. Dirty,
 unmerged, detached, non-canonical, or evidence-conflicting worktrees and
 protected `dev`/`main` branches are left untouched. `deleteBranchOnMerge`
 remains enabled on GitHub as a second remote-cleanup mechanism. Already-absent

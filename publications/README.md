@@ -17,7 +17,8 @@ source fingerprints, geometry/coverage audits and output hashes. Active markers
 are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `80d6ae0b`. It binds a full
+Makefile and contribution-policy changes through `80d6ae0b` and the subsequent
+integration review. It binds a full
 commit and each file's blob identity independently of the technical source
 snapshot. The optional `documentation_blobs` mapping accepts only
 `docs/git-workflow.md`; product documents cannot be exempted. Source checks
