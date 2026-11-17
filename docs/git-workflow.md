@@ -108,10 +108,18 @@ in the commit:
 git status --short --branch
 git diff
 git add -- path/to/changed-file
+make agent-scope-check TASK=build/tasks/<task>/task.json
 git diff --cached
 git diff --cached --check
 git commit -m "fix(scope): describe the change"
 ```
+
+For an agent task, `agent-scope-check` validates only the staged files against
+`HEAD` and the task's allowed/forbidden paths. It accepts other dirty or
+untracked files without including them. Set `BASE=origin/dev` to validate the
+staged task delta, including earlier topic commits, against that ref's merge-base
+instead. The check performs no
+merge or fixture restoration and does not replace full preflight or CI.
 
 The path and message above are placeholders. Add each intended new or modified
 file explicitly, and follow the repository's applicable validation requirements.

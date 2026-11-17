@@ -1,10 +1,11 @@
 # Publications
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**, reviewed dev
-903ef1eda3b956864157e6e64319fddde9cd5747. The main references are Tiny ICS55
-(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
-The two books have independent profiles, manifests and output markers.
+**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed dev source is
+903ef1eda3b956864157e6e64319fddde9cd5747; Mini's technical source snapshot is
+2f1f90f30622f9610d4bde163bd773d7d60502d7, now contained in dev. The main
+references are Tiny ICS55 (with explicit IHP130 compatibility) and Mini IHP130
+PRODUCT/HP/MPW. The two books have independent profiles, manifests and output markers.
 
 The IP drawing round starts at publication dev `4315f7d7`, preserving the
 439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
@@ -16,13 +17,13 @@ source fingerprints, geometry/coverage audits and output hashes. Active markers
 are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through dev `b0ac5ee3`. It binds a full
-commit and each file's blob identity without moving the frozen product SHA.
-The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`;
-product documents cannot be exempted. Source checks reject later control-file
-edits and all unreviewed RTL/SDK/profile changes. The manifest hashes both
-reviewed files. This is an explicit one-revision review, not an exclusion from
-future source checks.
+Makefile and contribution-policy changes through `c9bd251d`. It binds a full
+commit and each file's blob identity independently of the technical source
+snapshot. The optional `documentation_blobs` mapping accepts only
+`docs/git-workflow.md`; product documents cannot be exempted. Source checks
+reject later control-file edits and all unreviewed RTL/SDK/profile changes. The
+manifest hashes both reviewed files. This is an explicit one-revision review,
+not an exclusion from future source checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.
