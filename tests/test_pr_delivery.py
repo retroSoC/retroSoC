@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
-from scripts.pr_delivery import deliver, delivery_preflight, enable_delivery
+from scripts.flow_control import file_digest
+from scripts.pr_delivery import deliver, delivery_evidence, delivery_preflight, enable_delivery, reconcile_delivery
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -209,3 +211,110 @@ def test_main_preserves_canonical_checkpoint_with_custom_output(
     assert calls[0]["coordinator_output"] == tmp_path / "pr-248-controller.json"
     assert (tmp_path / "pr-248-delivery.json").is_file()
     assert output.is_file()
+
+
+def write_evidence(root: Path, preserved: bool = True) -> Path:
+    branch = "ci/example"
+    artifact_dir = root / "build/agent-artifacts/example"
+    retained = []
+    if preserved:
+        result = artifact_dir / "tasks/example/result.json"
+        result.parent.mkdir(parents=True, exist_ok=True)
+        result.write_text('{"status":"passed"}\n', encoding="utf-8")
+        retained.append({"path": "tasks/example/result.json", "sha256": file_digest(result)})
+        manifest = {
+            "schema_version": 1,
+            "status": "PRESERVED",
+            "artifact_identity": {"task_id": "example", "branch": branch, "source_revision": "a" * 40},
+            "destination": str(artifact_dir),
+            "retained_files": retained,
+        }
+        (artifact_dir / "artifact-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    action = {
+        "path": str(root / "build/agent-worktrees/example"),
+        "branch": branch,
+        "status": "CLEANED",
+    }
+    if preserved:
+        action["preserved_artifacts"] = str(artifact_dir)
+    registry = root / "build/agent-worktrees/ci-example-cleanup.json"
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    registry.write_text(json.dumps({"schema_version": 1, "actions": [action]}), encoding="utf-8")
+    return registry
+
+
+def mock_merged_environment(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
+    monkeypatch.setattr("scripts.pr_delivery.auto_merge_policy", lambda root: None)
+    monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: pull("MERGED"))
+    monkeypatch.setattr("scripts.pr_delivery.cleanup_merged_branch", lambda *args, **kwargs: [])
+    monkeypatch.setattr("scripts.pr_delivery.worktree_main_root", lambda root: root)
+
+
+def test_reconcile_links_verified_cleanup_and_artifact_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_evidence(tmp_path)
+    mock_merged_environment(monkeypatch, tmp_path)
+
+    result = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=True, delete_remote=True)
+
+    assert result["status"] == "MERGED"
+    assert result["evidence_status"] == "READY"
+    assert result["cleanup_registry"] == "build/agent-worktrees/ci-example-cleanup.json"
+    assert result["evidence_manifest"] == "build/agent-artifacts/example/artifact-manifest.json"
+    assert result["merge_commit"] == "b" * 40
+
+
+def test_reconcile_distinguishes_missing_registry_and_empty_artifact_inventory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mock_merged_environment(monkeypatch, tmp_path)
+    missing = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=True, delete_remote=True)
+    assert missing["evidence_status"] == "NOT_AVAILABLE"
+    assert missing["evidence_manifest"] is None
+    assert missing["cleanup_registry"] is None
+
+    write_evidence(tmp_path, preserved=False)
+    empty = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=True, delete_remote=True)
+    assert empty["evidence_status"] == "NOT_AVAILABLE"
+    assert empty["evidence_manifest"] is None
+    assert empty["cleanup_registry"] == "build/agent-worktrees/ci-example-cleanup.json"
+
+
+def test_delivery_evidence_rejects_identity_mismatch_and_tampered_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_evidence(tmp_path)
+    monkeypatch.setattr("scripts.pr_delivery.worktree_main_root", lambda root: root)
+    manifest_path = tmp_path / "build/agent-artifacts/example/artifact-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["artifact_identity"]["source_revision"] = "c" * 40
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="identity"):
+        delivery_evidence(tmp_path, pull("MERGED"))
+
+    manifest["artifact_identity"]["source_revision"] = "a" * 40
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    retained = tmp_path / "build/agent-artifacts/example/tasks/example/result.json"
+    retained.write_text("tampered\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="digest mismatch"):
+        delivery_evidence(tmp_path, pull("MERGED"))
+
+
+def test_cleanup_opt_out_and_warnings_do_not_claim_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_evidence(tmp_path)
+    monkeypatch.setattr("scripts.pr_delivery.auto_merge_policy", lambda root: None)
+    monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: pull("MERGED"))
+    monkeypatch.setattr("scripts.pr_delivery.delivery_evidence", lambda *args: pytest.fail("must not claim evidence"))
+
+    skipped = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=False, delete_remote=True)
+    assert skipped["evidence_status"] == "NOT_REQUESTED"
+    assert skipped["evidence_manifest"] is None
+
+    monkeypatch.setattr("scripts.pr_delivery.cleanup_merged_branch", lambda *args, **kwargs: ["dirty worktree"])
+    warning = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=True, delete_remote=True)
+    assert warning["status"] == "MERGED_WITH_WARNINGS"
+    assert warning["evidence_status"] == "NOT_AVAILABLE"
+    assert warning["evidence_manifest"] is None

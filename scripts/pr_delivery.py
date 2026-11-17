@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.agent_control import dump_json, read_json  # noqa: E402
 from scripts.engineering_metrics import gh_json  # noqa: E402
-from scripts.flow_control import utc_now  # noqa: E402
+from scripts.flow_control import file_digest, utc_now  # noqa: E402
 from scripts.pr_workflow import (  # noqa: E402
     auto_merge_policy,
     cleanup_merged_branch,
@@ -90,6 +90,71 @@ def enable_delivery(root: Path, repository: str, number: int, preflight: dict[st
     }
 
 
+def delivery_evidence(root: Path, pull: dict[str, Any]) -> dict[str, Any]:
+    branch = pull.get("headRefName")
+    head = pull.get("headRefOid")
+    if not isinstance(branch, str) or not branch or not isinstance(head, str) or REVISION.fullmatch(head) is None:
+        raise ValueError("delivery evidence requires a valid branch and HEAD revision")
+    main_root = worktree_main_root(root).resolve()
+    registry_relative = f"build/agent-worktrees/{branch.replace('/', '-')}-cleanup.json"
+    registry_path = main_root / registry_relative
+    result = {"evidence_manifest": None, "cleanup_registry": None, "evidence_status": "NOT_AVAILABLE"}
+    if registry_path.is_symlink():
+        raise ValueError("cleanup registry must not be a symlink")
+    if not registry_path.is_file():
+        return result
+    registry = read_json(registry_path)
+    actions = registry.get("actions")
+    if registry.get("schema_version") != 1 or not isinstance(actions, list) or any(
+        not isinstance(action, dict) for action in actions
+    ):
+        raise ValueError("cleanup registry has an invalid schema")
+    matching = [action for action in actions if action.get("branch") == branch]
+    if len(matching) != 1 or matching[0].get("status") != "CLEANED":
+        raise ValueError("cleanup registry does not contain one cleaned action for the delivery branch")
+    result["cleanup_registry"] = registry_relative
+    preserved = matching[0].get("preserved_artifacts")
+    if preserved is None:
+        return result
+    if not isinstance(preserved, str) or not preserved:
+        raise ValueError("preserved artifact destination is invalid")
+    manifest_path = Path(preserved) / "artifact-manifest.json"
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ValueError("artifact manifest is missing or is not a regular file")
+    artifact_root = main_root / "build/agent-artifacts"
+    if artifact_root.is_symlink() or not manifest_path.resolve().is_relative_to(artifact_root.resolve()):
+        raise ValueError("artifact manifest is outside the retained artifact root")
+    manifest = read_json(manifest_path)
+    identity = manifest.get("artifact_identity")
+    if (
+        manifest.get("schema_version") != 1
+        or manifest.get("status") != "PRESERVED"
+        or not isinstance(identity, dict)
+        or identity.get("branch") != branch
+        or identity.get("source_revision") != head
+    ):
+        raise ValueError("artifact identity does not match the delivery branch or HEAD")
+    destination = manifest.get("destination")
+    if not isinstance(destination, str) or Path(destination).resolve() != manifest_path.parent.resolve():
+        raise ValueError("artifact manifest destination does not match its location")
+    retained = manifest.get("retained_files")
+    if not isinstance(retained, list):
+        raise ValueError("artifact manifest has no retained-file inventory")
+    for item in retained:
+        if not isinstance(item, dict):
+            raise ValueError("artifact retained-file entry is invalid")
+        relative = item.get("path")
+        if not isinstance(relative, str) or not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+            raise ValueError("artifact retained-file path is unsafe")
+        target = manifest_path.parent / relative
+        if target.is_symlink() or not target.is_file() or not target.resolve().is_relative_to(manifest_path.parent.resolve()):
+            raise ValueError(f"retained evidence file is missing or unsafe: {relative}")
+        if file_digest(target) != item.get("sha256"):
+            raise ValueError(f"retained evidence digest mismatch: {relative}")
+    result.update(evidence_manifest=manifest_path.relative_to(main_root).as_posix(), evidence_status="READY")
+    return result
+
+
 def reconcile_delivery(
     root: Path,
     repository: str,
@@ -100,7 +165,14 @@ def reconcile_delivery(
     auto_merge_policy(root)
     pull = view_pr(repository, number, root)
     warnings = cleanup_merged_branch(root, pull, delete_remote=delete_remote) if cleanup else ["cleanup was not requested"]
+    if not cleanup:
+        evidence = {"evidence_manifest": None, "cleanup_registry": None, "evidence_status": "NOT_REQUESTED"}
+    elif warnings:
+        evidence = {"evidence_manifest": None, "cleanup_registry": None, "evidence_status": "NOT_AVAILABLE"}
+    else:
+        evidence = delivery_evidence(root, pull)
     return {
+        **evidence,
         "schema_version": 1,
         "repository": repository,
         "pr": number,
