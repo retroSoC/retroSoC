@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -60,7 +61,13 @@ def write_trace(directory: Path, trace: dict, name: str = "case.trace.json") -> 
 def test_replay_binds_provenance_without_running_a_runner(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    path = write_trace(tmp_path, valid_trace())
+    trace = valid_trace()
+    scratch = tmp_path / "disposable"
+    scratch.mkdir()
+    trace["workspace"] = str(scratch)
+    trace["workspace_disposition"] = "REBUILDABLE_CACHE"
+    path = write_trace(tmp_path, trace)
+    shutil.rmtree(scratch)
     monkeypatch.setattr(
         "scripts.skill_eval.run_codex",
         lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("runner called")),
@@ -78,7 +85,13 @@ def test_replay_binds_provenance_without_running_a_runner(
     assert identity["case_snapshot_status"] == "current"
     assert identity["skill_matches_current"] is True
     assert identity["workspace_tree"] == "c" * 40
+    assert identity["workspace_disposition"] == "REBUILDABLE_CACHE"
     assert result["records"][0]["trace_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_replay_marks_legacy_workspace_provenance(tmp_path: Path) -> None:
+    result = replay_traces(ROOT, [write_trace(tmp_path, valid_trace())])
+    assert result["records"][0]["identity"]["workspace_disposition"] == "LEGACY_OUTPUT"
 
 
 def test_replay_rejects_input_tampering_and_unknown_runner(tmp_path: Path) -> None:

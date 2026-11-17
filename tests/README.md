@@ -192,7 +192,9 @@ tooling.
   `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
   covers trace identity, input tampering, historical prompts, unknown runners,
   read-only violations, duplicate/empty evidence, auditable latest-per-case
-  selection, timestamp ambiguity, and zero runner invocations.
+  selection, timestamp ambiguity, and zero runner invocations. Workspace tests
+  cover unique cache paths, symlink escape refusal, and replay after deleting
+  the disposable workspace; legacy workspace provenance remains supported.
   Offline replay grades retained behavior only; it does not execute current code.
 - `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
   `test_publication_history.py` cover lock-bound hosted fixture inventories,

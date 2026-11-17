@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -114,6 +115,17 @@ def validate_evals(root: Path) -> list[str]:
             if migration.is_absolute() or ".." in migration.parts or not (root / migration).is_file():
                 issues.append(f"Skill contract migration is missing or unsafe: {entry['name']}")
     return issues
+
+
+def create_workspace(root: Path, case_id: str) -> Path:
+    if re.fullmatch(r"[a-z0-9][a-z0-9-]*", case_id) is None:
+        raise ValueError("Skill workspace case identifier is unsafe")
+    root = root.resolve()
+    cache = root / ".cache/retrosoc/skill-evals"
+    if cache.is_symlink() or not cache.resolve().is_relative_to(root):
+        raise ValueError("Skill workspace cache must stay inside the source worktree")
+    cache.mkdir(parents=True, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix=f"{case_id}-", dir=cache))
 
 
 def prepare_workspace(root: Path, workspace: Path) -> None:
@@ -365,6 +377,7 @@ def validate_trace_identity(
         "input_snapshot_sha256": trace["input_snapshot_sha256"],
         "workspace_revision": trace["workspace_revision"],
         "workspace_tree": trace["workspace_tree"],
+        "workspace_disposition": trace.get("workspace_disposition", "LEGACY_OUTPUT"),
         "command_count": len(trace["commands"]),
         "rendered_prompt_status": "RECORDED" if prompt_recorded else "NOT_RECORDED",
         "evaluation_prompt_sha256": prompt_digest,
@@ -504,7 +517,7 @@ def run_codex(
     command_budget: int = 80,
 ) -> dict[str, Any]:
     output = output.resolve()
-    workspace = output / f"{case['id']}-workspace"
+    workspace = create_workspace(root, case["id"])
     prepare_workspace(root, workspace)
     raw_path = output / f"{case['id']}.jsonl"
     response_path = output / f"{case['id']}.response.json"
@@ -587,6 +600,7 @@ def run_codex(
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
         "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
+        "workspace_disposition": "REBUILDABLE_CACHE",
         "started_at": started.isoformat(),
         "finished_at": datetime.now(timezone.utc).isoformat(),
         "duration_seconds": round(time.monotonic() - start_clock, 3),
@@ -613,7 +627,7 @@ def run_kimi(
     command_budget: int = 80,
 ) -> dict[str, Any]:
     output = output.resolve()
-    workspace = output / f"{case['id']}-workspace"
+    workspace = create_workspace(root, case["id"])
     prepare_workspace(root, workspace)
     agent_file = workspace / ".agents/skill-eval-agent.md"
     raw_path = output / f"{case['id']}.jsonl"
@@ -680,6 +694,7 @@ def run_kimi(
         "workspace_revision": git_output(workspace, "rev-parse", "HEAD"),
         "workspace_tree": git_output(workspace, "rev-parse", "HEAD^{tree}"),
         "workspace": str(workspace),
+        "workspace_disposition": "REBUILDABLE_CACHE",
         "started_at": started.isoformat(),
         "finished_at": datetime.now(timezone.utc).isoformat(),
         "duration_seconds": round(time.monotonic() - start_clock, 3),
