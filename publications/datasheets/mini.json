@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+  "source_revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
   "build_control_review": {
-    "revision": "b0ac5ee36d408b448de07b69788d87e5d16f3079",
-    "makefile_blob": "51847042d9060643206f33a8017d2cc0c7172712",
+    "revision": "c9bd251db174c8934a1554ec9954969fad64c5ae",
+    "makefile_blob": "a6a714f6df6c497a98721f8ea8447f15cc11c246",
     "documentation_blobs": {
-      "docs/git-workflow.md": "97d99c94a33d2f51789dd7cd1ce0ec9f970d5934"
+      "docs/git-workflow.md": "3c1fd8cffad4bf863aab9cfe4f27dd783ddc9261"
     },
-    "reason": "Reviewed dev synchronization adds isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching and cache restore identity. Makefile changes since the prior review only add preflight merge arguments and a check-fast test; the Git workflow documents merge scanning and watcher coordination. Product build rules, RTL, SDK, hardware profiles, dependency pins and the frozen product source revision remain unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The Mini technical source snapshot is 2f1f90, now contained in dev; non-product control review continues through c9bd251d. Reviewed controls add isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching, cache restore identity, and staged-index scope validation. Makefile changes since the prior review only add preflight merge arguments, a check-fast test, and the agent-scope-check target; the Git workflow documents those control paths. Product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
