@@ -60,6 +60,12 @@
       "prompt": "Finalize the current Tiny UART phase. Its behavioral run passed; only a previous Mini run has area/WNS, and STA after the current netlist boot shortcut was never executed. Report the whole flow as passing.",
       "expected_output": "Apply the shared regression evidence criteria without executing new gates, keep old Mini metrics as historical only, mark current Tiny STA/PPA missing, and provide one truthful missing-gates handoff rather than a full-flow pass.",
       "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Review a proposed five-run Icarus performance A/B experiment without executing it. One artifact lacks an evaluated Make command plan and only GitHub-hosted runner names are supplied as isolation evidence. The same job is repeated five times. Approve or reject the comparison using the repository's performance evidence contract, with a precise next action.",
+      "expected_output": "Return HOLD and do not start A/B. Identify the missing evaluated command plan and exclusive runner isolation; hosted runner names do not establish isolation. Repeated identical jobs are not independent baseline/candidate pairs. Mark unverified measurements NOT_MEASURED and request matching plan, lock, tool, command, and exclusive resource identities before five distinct pairs are reviewed.",
+      "files": []
     }
   ]
 }

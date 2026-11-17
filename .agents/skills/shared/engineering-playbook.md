@@ -84,6 +84,29 @@ owner and review date. `NOT_RUN`, `SKIPPED`, `DEFERRED`, and `BLOCKED` never
 become PASS by handoff, behavior CI, optimization equivalence, or a later
 summary. Mini Yosys synthesis/netlist/STA evidence remains separate.
 
+## Validate agent engineering controls
+
+Ordinary maintenance tasks must not implicitly restore the complete hosted
+fixture set. Require an explicit `execution.fixture_profile=hosted-pytest` for
+that restore, retain its lock-bound doctor evidence, and keep other tasks at
+`NOT_REQUESTED`. Use `agent-scope-check` for staged scope validation and the
+isolated merge preflight for target conflicts; neither is permission to modify a
+source branch or create an integration commit.
+
+A cache HIT is not content correctness. Primary and matched keys are distinct,
+and an attempted empty `cache-hit` is a miss only when restore actually ran.
+Multiple matching cache IDs or sizes stay `NOT_MEASURED`; never select one by
+branch, timestamp, or artifact size. Delivery evidence is `READY` only after the
+cleanup action, artifact branch/HEAD, destination, retained paths, and digests
+are validated. Missing artifacts remain `NOT_AVAILABLE`.
+
+Performance A/B remains on hold until the evaluated Make plan, tool lock, tool
+versions, command identity, and an explicit exclusive runner resource are bound.
+Hosted runner names do not establish isolation. Repeated jobs cannot be reused
+to invent a five-pair baseline/candidate set. Require five distinct samples per
+role with a common pairing key before review, and keep unknown values
+`NOT_MEASURED` rather than starting an experiment.
+
 ## Reuse and version Skills
 
 Promote a shared playbook into a registered Skill only after at least three task

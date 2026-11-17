@@ -42,7 +42,7 @@ def trace_for(case: dict) -> dict:
 def test_registry_and_behavior_corpus_are_complete() -> None:
     assert validate_evals(ROOT) == []
     document, cases = load_cases(ROOT)
-    assert len(cases) == 57
+    assert len(cases) == 59
     assert document["defaults"]["read_only"] is True
     assert all(case["prompt"] and case["expected_output"] for case in cases)
     assert all(case["skill_contract_version"] == 1 for case in cases)
@@ -320,3 +320,12 @@ def test_prompt_requires_exact_json_and_budget() -> None:
         [{"role": "assistant", "content": "verdict: FAIL\nskills_invoked: []"}]
     )
     assert response == {}
+
+
+def test_engineering_cases_can_be_selected_without_changing_smoke() -> None:
+    _, cases = load_cases(ROOT)
+    args = SimpleNamespace(skill=None, smoke=False, case=["dependency-09", "review-11"])
+    selected = selected_cases(cases, args)
+    assert {case["id"] for case in selected} == {"dependency-09", "review-11"}
+    assert all(case["live"] for case in selected)
+    assert all(not case.get("smoke") for case in selected)
