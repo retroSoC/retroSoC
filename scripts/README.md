@@ -286,6 +286,14 @@ entrypoint. Both use clean, canonical worktree checks and registry-based artifac
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
 written below `build/agent-worktrees/`. Reconciliation also exposes
 `cleanup_registry`, `evidence_manifest`, and `evidence_status` when available.
+An explicit `--resume` with `--resume-reason` accepts only an existing FAILED or
+ATTENTION record at a changed HEAD after a fresh READY preflight. Native
+auto-merge must remain enabled; same-head retries, identity changes, missing
+reasons, and external disables are rejected without merging. The recovery object
+retains the previous failure identity and reason through coordination. Final
+reconciliation stores `final_checks` separately from `last_check_status`, bound
+to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
+failed final report is explicit and never becomes a PASS by inference.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
 destination, every retained path, and its SHA-256 before returning `READY`.
 Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or

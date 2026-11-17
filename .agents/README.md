@@ -77,8 +77,12 @@ merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
 auto-merge while checks may still be pending. Only GitHub merges after required
 checks pass, always with a merge commit. `WATCH=1` checkpoints the initial
 record, then uses the delivery coordinator for monitoring and cleanup; resume
-that record with `agent-coordinate` after interruption. Otherwise run
-`RECONCILE=1` after the merge. The legacy
+that record with `agent-coordinate` after interruption. After a diagnosed failure
+or attention state, use `agent-deliver RESUME=1 RESUME_REASON="<diagnosis>"` only
+when a fix or dev synchronization has changed the PR HEAD. A fresh preflight and
+still-enabled native auto-merge are required; same-head retries and external
+disables are refused. Final `final_checks` evidence is separate from historical
+polling state. Otherwise run `RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 
