@@ -12,12 +12,12 @@
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
   "build_control_review": {
-    "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
-    "makefile_blob": "8a90c2121a7fe129268a474e092e35b9c7ae6492",
+    "revision": "506018b24330f09a05c1f87831ec29e31f7a1cd7",
+    "makefile_blob": "9907bd045510dd5e217c523a57a4a89dd36bc4cb",
     "documentation_blobs": {
-      "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
+      "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical snapshot is d9f27811 and includes the accepted Tiny P4 and TINY-056 inputs without changing Mini behavior; non-product control review uses the same revision. Prior agent controls, verified delivery cleanup and artifact evidence manifests are retained, together with the 10-line TINY_PPALITE_P4_ACCEPTANCE selector, config-key registration and isolated-image guard. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot remains d9f27811; non-product control review advances through 506018b2 for audited new-HEAD delivery recovery and final merged-head check evidence. The Makefile only forwards the explicit resume and reason arguments, and the Git workflow documents those boundaries. Prior source, control and CI evidence is retained. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

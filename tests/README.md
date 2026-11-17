@@ -172,9 +172,13 @@ tooling.
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
   coordinator-only watch handoff, canonical checkpoints with custom outputs,
   verified cleanup/artifact links, retained-file digest validation, missing or
-  tampered evidence rejection, and deferred reconciliation. `test_delivery_controller.py` covers durable
+  tampered evidence rejection, and deferred reconciliation. Delivery recovery
+  tests require an audited reason, changed HEAD, and intact native auto-merge;
+  final-check tests cover exact merged-HEAD identity, pending/failure outcomes,
+  and separation from cleanup status. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
-  external auto-merge disabling, cleanup opt-outs, head-change preservation, and
+  external auto-merge disabling, cleanup opt-outs, head-change preservation,
+  recovery-metadata propagation, explicit Make resume arguments, and
   atomic watcher checkpoints. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
