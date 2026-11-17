@@ -101,9 +101,13 @@ a static source list.
 behavior evaluations with deterministic grades. It retains v1 eval-config
 compatibility, requires migration documents for incompatible contracts, and
 records Skill Git SHA, contract version, runner/model, input snapshot, and
-workspace tree. Static validation is never labeled behavior execution. Codex is
-the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
-Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+workspace tree. Each run creates a unique rebuildable workspace below
+`.cache/retrosoc/skill-evals/`, separate from the retained trace directory, and
+records `workspace_disposition=REBUILDABLE_CACHE`; older traces are labeled
+`LEGACY_OUTPUT` during replay. The cache is disposable and does not weaken
+artifact symlink checks. Static validation is never labeled behavior execution.
+Codex is the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md`
+with only Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
 `skill_eval.py run --case <id>` executes an explicit live case without changing
 the existing smoke selection. `skill_eval.py replay` grades explicit retained
 traces without starting a runner. It validates trace/input/Skill/workspace

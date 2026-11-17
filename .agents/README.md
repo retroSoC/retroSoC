@@ -184,7 +184,10 @@ has no Bash, write, or delegation capability. Additional explicit cases can use
 `python3 scripts/skill_eval.py run --case <id>` without changing smoke selection.
 Runner/model, Skill SHA, contract version, input snapshot, and workspace tree are recorded explicitly; a
 static result is never described as completed behavior, hardware, or publication
-work. Other hosts can emit the same trace schema for grading. `make skill-replay
+work. Each run uses a unique rebuildable workspace below
+`.cache/retrosoc/skill-evals/`, separate from retained traces, and records
+`workspace_disposition=REBUILDABLE_CACHE`. Replay does not require that disposable
+workspace to remain. Other hosts can emit the same trace schema for grading. `make skill-replay
 TRACES=<directory>` rechecks retained traces without starting a runner or a
 canary; invalid or failed grades remain failures. The shared
 [engineering playbook](skills/shared/engineering-playbook.md) defines operational
