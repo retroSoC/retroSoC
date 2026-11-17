@@ -1,12 +1,11 @@
 # Publications
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed source snapshot is
-e87bba0daba0e3b6ebcc6e97c407e42fdcbd92cf for the PIOLITE-P3 source integration;
-Mini's technical source snapshot is d9f2781147d7a7c47e5d8c19396fcc2a3de95133
-for the P4 acceptance record. The main references are Tiny ICS55 (with explicit
-IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW. The two books have
-independent profiles, manifests and output markers.
+**v0.5 DRAFT / Gen2/Gen2+**. Tiny and Mini reviewed source snapshots are
+aa5dab0def8057e38bb64778f0c9d9a6b3c731cb for the PIOLITE-P3 source integration
+and default-off Mini compatibility review. The main references are Tiny ICS55
+(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW. The two
+books have independent profiles, manifests and output markers.
 
 The IP drawing round starts at publication dev `4315f7d7`, preserving the
 439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.

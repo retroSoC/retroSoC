@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
+  "source_revision": "aa5dab0def8057e38bb64778f0c9d9a6b3c731cb",
   "build_control_review": {
-    "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
-    "makefile_blob": "8a90c2121a7fe129268a474e092e35b9c7ae6492",
+    "revision": "aa5dab0def8057e38bb64778f0c9d9a6b3c731cb",
+    "makefile_blob": "060acf6661a6a13f64a59d9866a995fd7ebc78bc",
     "documentation_blobs": {
       "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
     },
-    "reason": "The reviewed technical snapshot is d9f27811 and includes the accepted Tiny P4 and TINY-056 inputs without changing Mini behavior; non-product control review uses the same revision. Prior agent controls, verified delivery cleanup and artifact evidence manifests are retained, together with the 10-line TINY_PPALITE_P4_ACCEPTANCE selector, config-key registration and isolated-image guard. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot is aa5dab0d and includes Tiny P4 acceptance history plus reviewed PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review uses the same revision and retains prior agent controls, verified delivery cleanup and artifact evidence manifests. The P3 acceptance selector, config-key registration and isolated-image guard are reviewed. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

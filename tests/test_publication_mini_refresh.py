@@ -387,6 +387,18 @@ def test_current_ci_cannot_claim_completion_from_running_state():
 
     reference = json.loads((ROOT / "publications/datasheets/system-reference.json").read_text(encoding="utf-8"))
     snapshot = copy.deepcopy(reference["ci_snapshot"])
+    if not snapshot["runs"]:
+        assert "not been evaluated" in snapshot["boundary"]
+        snapshot["runs"].append({
+            "run_id": 1,
+            "name": "quality",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/1",
+            "status": "in_progress",
+            "conclusion": None,
+            "scope": "synthetic unfinished run",
+            "note": "an unfinished run must not claim success",
+            "observations": [],
+        })
     snapshot["runs"][0].update(status="in_progress", conclusion="success")
     with pytest.raises(ValueError, match="unfinished"):
         validate_ci_snapshot(snapshot, reference["source_revision"])
