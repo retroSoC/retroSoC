@@ -118,6 +118,15 @@ performance-only scope; unrelated SoCs and PDK rollouts remain excluded.
   at reset, qualified lock or qualified timing. Missing macro views must not
   silently synthesize a bypass. The default PLL-present design boots on REF24
   and enables fast operation only through the accepted lifecycle protocol.
+- TINY-056: for every Tiny feature phase, affected Mini shared-IP compatibility
+  is limited to behavioral Verilator and Icarus regressions. Do not run Mini
+  Yosys synthesis as part of Tiny development, acceptance or delivery. Mini
+  netlist simulation, OpenSTA, and warning or metric reports that require a
+  Mini synthesized netlist are `NOT_RUN` under this boundary and are not Tiny
+  acceptance evidence. This does not change Mini's standalone product
+  qualification, Tiny's own synthesis/netlist requirements, behavioral
+  simulator verdicts, forbidden-marker checks or warning baselines. Historical
+  Mini synthesis attempts are diagnostic only, not passing or required evidence.
 
 The execution order is ICS55 platform enablement, remaining Tiny foundation
 through R2-P10, SPI-P1..P4, PIOLITE-P1..P4, PPALITE-P1..P4, then one final
