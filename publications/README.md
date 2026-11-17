@@ -2,8 +2,8 @@
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 **v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed source snapshot is
-72fc5205aca6c55bd0783b8527937e30bad1f789; Mini's technical source snapshot is
-80d6ae0bbd6e0932cb1cb3979c7258c5a151eade, both reviewed for PR #241. The main
+d9f2781147d7a7c47e5d8c19396fcc2a3de95133; Mini's technical source snapshot is
+d9f2781147d7a7c47e5d8c19396fcc2a3de95133, both reviewed for the P4 acceptance record. The main
 references are Tiny ICS55 (with explicit IHP130 compatibility) and Mini IHP130
 PRODUCT/HP/MPW. The two books have independent profiles, manifests and output markers.
 
@@ -17,7 +17,7 @@ source fingerprints, geometry/coverage audits and output hashes. Active markers
 are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `6546ca6c`. It binds a full
+Makefile and contribution-policy changes through `d9f27811`. It binds a full
 commit and each file's blob identity independently of the technical source
 snapshot. The optional `documentation_blobs` mapping accepts only
 `docs/git-workflow.md`; product documents cannot be exempted. Source checks

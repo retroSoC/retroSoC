@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "80d6ae0bbd6e0932cb1cb3979c7258c5a151eade",
+  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -8218,32 +8218,68 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "80d6ae0bbd6e0932cb1cb3979c7258c5a151eade",
+    "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
     "checked_date": "2026-11-17",
-    "checked_at": "2026-11-17T11:34:51Z",
-    "boundary": "Exact pull-request-head quality workflow observation. The completed failure is retained as a publication source/control diagnostic, not a hardware, physical or release qualification result. Previous observations retain their original identity in historical_ci_snapshots.",
+    "checked_at": "2026-11-17T14:47:44Z",
+    "boundary": "Exact PR #283 head quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 44071333826,
+        "run_id": 44102838315,
         "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44071333826",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44102838315",
         "status": "completed",
-        "conclusion": "failure",
-        "scope": "Repository quality workflow on exact PR head 80d6ae0b; fixtures(1) identified stale Mini publication source/control identities before their correction",
-        "note": "Failure evidence only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred. A corrected head requires a fresh workflow result.",
-        "observations": [
-          {
-            "name": "fixtures (1)",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/44071333826/job/133998092362",
-            "status": "completed",
-            "conclusion": "failure",
-            "scope": "runtime-regression"
-          }
-        ]
+        "conclusion": "success",
+        "scope": "Repository quality workflow on exact PR #283 head d9f27811: fast checks, four fixture shards, fixture fan-in and the aggregate quality gate completed successfully",
+        "note": "Exact-head source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred.",
+        "observations": []
       }
     ]
   },
   "historical_ci_snapshots": [
+    {
+      "revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
+      "checked_date": "2026-11-17",
+      "checked_at": "2026-11-17T14:47:44Z",
+      "boundary": "Superseded PR #283 head quality workflow completed as cancelled after a newer head was pushed. This is not a passing result or a hardware, physical or release qualification.",
+      "runs": [
+        {
+          "run_id": 44101938186,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/44101938186",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "scope": "Repository quality workflow on superseded PR #283 head 1c32b6ee; cancelled after d9f27811 was pushed",
+          "note": "Cancellation is not a passing result or a hardware, physical or release qualification.",
+          "observations": []
+        }
+      ]
+    },
+    {
+      "revision": "80d6ae0bbd6e0932cb1cb3979c7258c5a151eade",
+      "checked_date": "2026-11-17",
+      "checked_at": "2026-11-17T11:34:51Z",
+      "boundary": "Exact pull-request-head quality workflow observation. The completed failure is retained as a publication source/control diagnostic, not a hardware, physical or release qualification result.",
+      "runs": [
+        {
+          "run_id": 44071333826,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/44071333826",
+          "status": "completed",
+          "conclusion": "failure",
+          "scope": "Repository quality workflow on exact PR head 80d6ae0b; fixtures(1) identified stale Mini publication source/control identities before their correction",
+          "note": "Failure evidence only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred. A corrected head requires a fresh workflow result.",
+          "observations": [
+            {
+              "name": "fixtures (1)",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/44071333826/job/133998092362",
+              "status": "completed",
+              "conclusion": "failure",
+              "scope": "runtime-regression"
+            }
+          ]
+        }
+      ]
+    },
     {
       "revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
       "checked_date": "2026-11-17",
