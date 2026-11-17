@@ -108,8 +108,11 @@ every rebuildable cache or workspace.
 
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
-reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
-probe and `PR=<number>` adds a head-bound check report. A blocked preflight is
+reviewed-source snapshot. When full hosted Pytest is selected, it also validates
+the Mini source/control and CI evidence metadata without restoring fixtures or
+probing managed inputs; stale evidence blocks delivery rather than being updated
+implicitly. `ONLINE=1` adds a least-privilege GitHub permission probe and
+`PR=<number>` adds a head-bound check report. A blocked preflight is
 not approval to continue. Use `make agent-handoff TASK=<task.json> NEXT=<action>`
 to generate the [handoff schema](handoff.schema.json)-bound JSON and optional
 Markdown evidence. The task packet may declare `resolves_gaps` for an explicit

@@ -310,6 +310,107 @@ def test_tiny_snapshot_reports_drift_and_recovery(monkeypatch: pytest.MonkeyPatc
     assert control.tiny_snapshot_status(ROOT)["status"] == "PASS"
 
 
+def test_mini_snapshot_uses_real_reviewed_control_and_ci_metadata() -> None:
+    from scripts.agent_control import mini_snapshot_status
+
+    result = mini_snapshot_status(ROOT, required=True)
+    assert result["status"] == "PASS", result
+    assert len(result["source_revision"]) == 40
+    assert result["ci_checked_at"]
+    assert result["ci_run_count"] >= 1
+    assert result["fixture_restore"] == "NOT_RUN"
+    assert result["managed_inputs"] == "NOT_REQUESTED"
+    assert mini_snapshot_status(ROOT, required=False)["status"] == "NOT_REQUESTED"
+
+
+def test_mini_snapshot_rejects_stale_control_without_repair(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.agent_control import mini_snapshot_status
+
+    monkeypatch.setattr(
+        "publications.build_datasheet.validate_source_snapshot",
+        lambda config: (_ for _ in ()).throw(ValueError("Makefile differs from the explicit build-control review")),
+    )
+    result = mini_snapshot_status(ROOT, required=True)
+    assert result["status"] == "FAIL"
+    assert result["issues"] == ["Makefile differs from the explicit build-control review"]
+    assert result["fixture_restore"] == "NOT_RUN"
+
+
+def test_mini_snapshot_rejects_mismatched_ci_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.agent_control import mini_snapshot_status
+
+    monkeypatch.setattr("publications.build_datasheet.validate_source_snapshot", lambda config: None)
+    monkeypatch.setattr(
+        "publications.dev_reference.validate_ci_snapshot",
+        lambda snapshot, revision: (_ for _ in ()).throw(ValueError("CI snapshot must identify the reviewed revision")),
+    )
+    result = mini_snapshot_status(ROOT, required=True)
+    assert result["status"] == "FAIL"
+    assert result["issues"] == ["CI snapshot must identify the reviewed revision"]
+
+
+def test_mini_snapshot_reports_unavailable_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.agent_control import mini_snapshot_status
+
+    monkeypatch.setattr(
+        "publications.build_datasheet.read_json",
+        lambda path: (_ for _ in ()).throw(OSError("Mini metadata unavailable")),
+    )
+    result = mini_snapshot_status(ROOT, required=True)
+    assert result["status"] == "BLOCKED"
+    assert result["issues"] == ["Mini metadata unavailable"]
+
+
+def test_preflight_applies_mini_check_only_to_selected_fixtures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import scripts.agent_control as control
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    selected = {"value": True}
+    required_values = []
+    monkeypatch.setattr(
+        control,
+        "create_plan",
+        lambda arguments: {"changed_files": [], "flags": {"quality_fixtures": selected["value"]}},
+    )
+
+    def mini_result(root: Path, required: bool) -> dict:
+        required_values.append(required)
+        return {
+            "status": "FAIL" if required else "NOT_REQUESTED",
+            "issues": ["stale Mini control"] if required else [],
+        }
+
+    monkeypatch.setattr(control, "mini_snapshot_status", mini_result)
+    blocked = control.create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["mini_source_snapshot"]["status"] == "FAIL"
+    assert "mini: stale Mini control" in blocked["issues"]
+
+    selected["value"] = False
+    ready = control.create_preflight(args)
+    assert ready["status"] == "READY", ready["issues"]
+    assert ready["mini_source_snapshot"]["status"] == "NOT_REQUESTED"
+    assert required_values == [True, False]
+
+
 def test_preflight_binds_task_plan_and_optional_github_probe(tmp_path: Path) -> None:
     from scripts.agent_control import create_preflight
 

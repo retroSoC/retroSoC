@@ -95,7 +95,10 @@ tooling.
   local references, eval corpora, default invocation contracts, and documented
   entrypoints. `test_agent_control.py` covers task contracts, conservative
   change selection, scope enforcement, preflight, and real/mocked Tiny
-  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  reviewed-source snapshot drift. Mini preflight coverage checks real
+  source/control and CI metadata, rejects stale bindings, applies only to
+  selected full-Pytest work, and never restores fixtures; `test_skill_eval.py`
+  covers isolated
   behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and

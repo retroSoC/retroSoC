@@ -642,6 +642,50 @@ def tiny_snapshot_status(root: Path) -> dict[str, Any]:
     return result
 
 
+def mini_snapshot_status(root: Path, required: bool) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "inventory": "publications/datasheets/mini.json",
+        "system_reference": "publications/datasheets/system-reference.json",
+        "selection": "quality_fixtures",
+        "status": "BLOCKED",
+        "issues": [],
+        "fixture_restore": "NOT_RUN",
+        "managed_inputs": "NOT_REQUESTED",
+        "evidence_boundary": "Source/control and CI metadata only; no full publication, hardware, or release validation",
+    }
+    if not required:
+        result["status"] = "NOT_REQUESTED"
+        return result
+    try:
+        from publications import build_datasheet as mini
+        from publications.dev_reference import validate_ci_snapshot
+
+        config = mini.read_json(root / "publications/datasheets/mini.json")
+        mini.validate_source_snapshot(config)
+        reference = read_json(root / "publications/datasheets/system-reference.json")
+        if reference.get("source_revision") != config["source_revision"]:
+            raise ValueError("Mini system-reference snapshot differs from document snapshot")
+        ci_snapshot = reference.get("ci_snapshot")
+        if not isinstance(ci_snapshot, dict):
+            raise ValueError("Mini CI snapshot is required")
+        validate_ci_snapshot(ci_snapshot, reference["source_revision"])
+        review = config.get("build_control_review")
+        result.update(
+            status="PASS",
+            source_revision=config["source_revision"],
+            control_revision=review.get("revision") if isinstance(review, dict) else None,
+            ci_checked_at=ci_snapshot["checked_at"],
+            ci_run_count=len(ci_snapshot["runs"]),
+        )
+    except (TypeError, ValueError) as error:
+        result["status"] = "FAIL"
+        result["issues"].append(str(error))
+    except (ImportError, KeyError, OSError, subprocess.CalledProcessError) as error:
+        result["issues"].append(str(error))
+    return result
+
+
 def github_preflight(root: Path, args: argparse.Namespace) -> dict[str, Any]:
     if not args.online:
         return {"status": "NOT_RUN", "repository": args.repository, "base": args.base_branch}
@@ -736,6 +780,10 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
     snapshot = tiny_snapshot_status(root)
     if snapshot["status"] != "PASS":
         issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
+    mini_snapshot = mini_snapshot_status(root, plan["flags"]["quality_fixtures"])
+    if mini_snapshot["status"] not in {"PASS", "NOT_REQUESTED"}:
+        issues.append(f"Mini reviewed-source/control snapshot is {mini_snapshot['status']}")
+    issues.extend(f"mini: {issue}" for issue in mini_snapshot["issues"])
     github = github_preflight(root, args)
     if github["status"] not in {"PASS", "NOT_RUN"}:
         issues.append(f"GitHub preflight is {github['status']}")
@@ -754,6 +802,7 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "merge_check": merge_check,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
+        "mini_source_snapshot": mini_snapshot,
         "github": github,
         "known_gaps": gaps["known_gaps"],
         "resolving_gaps": gaps["resolving_gaps"],
