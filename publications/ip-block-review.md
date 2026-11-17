@@ -181,3 +181,9 @@ PR 首次 CI 的 fast／incremental-shadow 暴露来源清单提前读取出版�
 本地 `make check-fast` 已通过来源、格式、RTL 风格／就绪、C 策略／host、文档、
 Skill 静态、Ruff 和 YAML 检查，随后因未安装 actionlint 停止；该失败记录保留，
 完整快速门禁由托管 CI 执行，不将缺项记为通过。
+
+后续完整 Pytest 分片暴露冷 CI 环境未恢复出版媒体的问题（缺少锁定的 Inter
+字体）；保留其失败记录。既有 `tests/publication_history.py prepare` 入口现先按
+当前依赖锁恢复媒体，再准备历史 Git 对象，不安装 Typst／包、不更新版本。
+冷启动、本地独立引用、脏媒体拒绝和路径越界测试覆盖该前置条件；普通出版
+字号／几何检查保持完整执行。
