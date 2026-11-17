@@ -215,3 +215,12 @@ def test_package_target_is_separate_from_current_pad_inventory(data):
     prose = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / tiny.BOOK).rglob("*.typ"))
     assert "not an implemented bond map" in prose
     assert "current ASIC compatibility wrapper" in prose
+
+
+def test_current_layout_prose_matches_reviewed_source():
+    revision = tiny.read(ROOT / tiny.BOOK / "tiny.json")["source_revision"]
+    style = (ROOT / tiny.BOOK / "style.md").read_text(encoding="utf-8")
+    overview = (ROOT / "publications/README.md").read_text(encoding="utf-8")
+    assert revision in style
+    assert revision in overview
+    assert "current reviewed source is the frozen 2026-11-14 dev commit" not in style
