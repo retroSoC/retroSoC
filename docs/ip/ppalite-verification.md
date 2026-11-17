@@ -6,6 +6,65 @@ repair, route/DMA integration, firmware, performance or physical result below
 is passed by documentation approval. Preserve historical Tiny/R2/PIO/SPI
 evidence under its original scope.
 
+## PPALITE-P4 evidence and acceptance boundary (2026-11-17)
+
+PPALITE-P4 functional implementation is `a46543a2ed87e3a153285581e9dfec46bbf6ee35`;
+the clean reviewed-source and compiled-image revision is
+`f209ca91a59a25a48075dc8bbd0690e8b3e960cc`. Later flow-tool fixes and the
+Mini behavioral/diagnostic run bind to `9b99113ecaf668ef61f1d241add604e2019fa93c`.
+The P4 functional evidence remains bound to `a46543a2`, while the current
+publication source snapshot is recorded separately in
+[`tiny.json`](../../publications/datasheets/tiny/tiny.json) for the TINY-056
+rule and its hashed publication inputs. These identities are not interchangeable.
+
+Both committed Tiny profiles complete the full source-bound P4 Verilator and
+Icarus images. Every run reports `PPALITE_P4_RESULT code=0 frames=7 recovered=1`
+and one `SIM_TEST_PASS Tiny cycles=171050021`, with exit 0 and no forbidden
+marker. The image covers capture/layout/canary checks, recovery, SD readback,
+stride-aware preview and RAW transport. The 192000000-cycle limit and terminal
+TEST_STATUS verdict are unchanged; UART is diagnostic only. Both Icarus
+checkers report `status=passed`, `problems=[]`, `missing_markers=[]` and
+`rejected_matches=[]`; their firmware SHA-256 is
+`c23ec3a246985b2fb08e3cf462e9a58ad792ac2332492e6a6f6b62c61f0a80b2`.
+Evidence roots below `build/agent-worktrees/tiny-ppalite-p4-acceptance/build/`
+are `ics55-tiny-2026-11-12-13-09-984999ff2355/` and
+`ihp130-tiny-2026-11-12-13-09-e07d20c332cb/` for Verilator, and
+`ics55-tiny-2026-11-12-11-49-984999ff2355/` and
+`ihp130-tiny-2026-11-12-11-49-e07d20c332cb/` for Icarus. Generated collector
+records retain `phase_accepted=false`.
+
+The same acceptance worktree retains Tiny PR/nightly behavioral regressions,
+synthesis, boot-netlist simulation and observational OpenSTA evidence. The
+synthesis/netlist roots are `ics55-tiny-2026-11-12-11-49-8d025610711f/` and
+`ihp130-tiny-2026-11-12-11-49-6879efac2bd8/`. Their metrics report 504287
+cells/area 2819466.384705 for ICS55 and 533502 cells/area 15585342.939643 for
+IHP130. Setup timing remains negative (worst reported WNS -157.57 ps and
+-317.29 ps respectively); this is not timing closure or a qualified operating
+frequency. Standalone nightly `check-warnings` also retains failed new-signature
+observations under the repository's non-blocking regression policy; the final
+PR-root warning checks pass. No warning baseline was edited and metrics remain
+in observe mode.
+
+Mini remains a shared-IP behavioral consumer. Its Verilator compatibility run
+passes at 12443276 cycles and the native Icarus assembly self-test passes with
+its configured verdict. Under [TINY-056](tiny-soc.md#ics55-default-platform-and-final-timing-gate-2026-10-07),
+Mini Yosys is not part of Tiny development, acceptance or delivery. The retained
+`9b99113e` diagnostic was stopped by the maintainer during ABC and records
+`status=interrupted`, `exit_code=130`, not a timeout or PASS. Mini netlist
+simulation, OpenSTA and synthesis-dependent reports are `NOT_RUN` under this
+boundary and are not claimed as Tiny evidence. Mini's standalone product
+qualification is unchanged.
+
+At `9b99113e`, full host Pytest passed 2774 tests with one optional `pypdf`
+skip; Ruff, embedded-C checks, regression definitions and `make check-fast`
+passed. The standard PDF `check --pdf` was not run because optional PDF Python
+packages were unavailable; visual review was sampled, not exhaustive. Prior
+independent source/integration reviews found no P0-P3 issue. Final integration
+validation and independent evidence review are recorded separately before
+merge. No board/sensor, continuous-video/FPS, CDC/RDC-signoff or silicon claim
+is made. Complete-product physical and mandatory timing qualification remains
+the joint P5 campaign.
+
 ## PPALITE-P3 human acceptance (2026-11-02)
 
 The maintainer's standing development goal explicitly authorizes automatic

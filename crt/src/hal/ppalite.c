@@ -196,6 +196,26 @@ rs_status_t rs_ppalite_get_status(rs_ppalite_status_t *status) {
 #endif
 }
 
+rs_status_t rs_ppalite_get_measurements(rs_ppalite_measurements_t *measurements) {
+    if (measurements == NULL) {
+        return RS_EINVAL;
+    }
+#ifdef RS_PPALITE_PRESENT
+    measurements->input_words = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_INPUT_WORDS);
+    measurements->input_pixels = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_INPUT_PIXELS);
+    measurements->input_lines = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_INPUT_LINES);
+    measurements->output_words = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_OUTPUT_WORDS);
+    measurements->output_lines = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_OUTPUT_LINES);
+    measurements->input_stall_cycles = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_INPUT_STALL_CYCLES);
+    measurements->output_stall_cycles = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_OUTPUT_STALL_CYCLES);
+    measurements->fifo_levels = RS_PPALITE_REG(RS_PPALITE_ABI_APB4_FIFO_LEVELS);
+    return RS_OK;
+#else
+    *measurements = (rs_ppalite_measurements_t){0};
+    return RS_ENOTSUP;
+#endif
+}
+
 #ifdef RS_PPALITE_PRESENT
 static rs_status_t rs_ppalite_wait_state(uint32_t expected, rs_timeout_t timeout) {
     while (timeout-- != 0U) {

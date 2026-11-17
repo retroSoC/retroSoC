@@ -99,7 +99,7 @@ always @(posedge s_gpio[12] or negedge s_p6_audio_enabled) begin
     s_p6_wire_boundary = 0;
     s_p6_wire_lrck     = 0;
     s_p6_wire_shift    = 0;
-  end else begin
+  end else if (s_p6_audio_enabled) begin
     if (s_gpio[14] !== 1'b0 && s_gpio[14] !== 1'b1) $fatal(1, "SIM_TEST_FAIL P6 unknown I2S DOUT");
     s_p6_wire_shift = {s_p6_wire_shift[22:0], s_gpio[14]};
     s_p6_wire_edges++;

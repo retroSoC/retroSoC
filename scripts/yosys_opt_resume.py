@@ -18,10 +18,12 @@ sys.path.insert(0, str(ROOT))
 from scripts.agent_control import dump_json, read_json  # noqa: E402
 from scripts.flow_control import (  # noqa: E402
     Lease,
+    digest_json,
     execution_fingerprint,
     fingerprint_mismatches,
     write_json,
 )
+from scripts.rtl.filelist import parse_filelists  # noqa: E402
 from scripts.setup_helpers import atomic_write  # noqa: E402
 
 OPT_COMMAND = "yosys opt\n"
@@ -73,6 +75,140 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+SYNTH_ENVIRONMENT = (
+    "VLOG_FILES",
+    "SV_FLIST",
+    "PDK",
+    "SOC",
+    "TOP_DESIGN",
+    "HIER_DEPTH",
+    "YOSYS_TARGET_PERIOD_PS",
+    "SYNTH_RECIPE",
+    "PROJ_NAME",
+    "BUILD",
+    "WORK",
+    "REPORTS",
+    "NETLIST",
+    "CONFIG",
+    "YOSYS_KEEP_HIER_INST",
+    "YOSYS_FLATTEN_HIER",
+    "YOSYS_REPORT_INSTS",
+    "HAVE_SRAM_MACRO",
+    "SRAM_SIZE_KIB",
+    "HAVE_PLL",
+    "CONFIG_DIGEST",
+)
+
+
+def optimizer_environment() -> dict[str, str]:
+    return {name: value for name, value in os.environ.items() if name not in SYNTH_ENVIRONMENT}
+
+
+def file_identity(path: Path) -> dict[str, str]:
+    resolved = path.resolve()
+    return {"path": str(resolved), "sha256": sha256(resolved)}
+
+
+def source_identity(filelist: Path) -> dict[str, Any]:
+    parsed = parse_filelists([filelist])
+    dependencies = {filelist.resolve(), *(path.resolve() for path in parsed.files), *(path.resolve() for path in parsed.library_files)}
+    for directory in parsed.incdirs:
+        dependencies.update(
+            path.resolve()
+            for path in directory.rglob("*")
+            if path.is_file() and path.suffix.lower() in {".h", ".vh", ".svh"}
+        )
+    return {
+        "defines": parsed.defines,
+        "options": parsed.options,
+        "include_directories": [str(path) for path in parsed.incdirs],
+        "files": [file_identity(path) for path in sorted(dependencies)],
+    }
+
+
+def synthesis_identity(script: Path, text: str) -> dict[str, Any]:
+    script = script.resolve()
+    support = [script.parent / name for name in ("common.tcl", "init_tech.tcl")]
+    support.extend(sorted(script.parent.glob("abc_*.script")))
+    filelist = os.environ.get("SV_FLIST")
+    return {
+        "script": file_identity(script),
+        "frontend_sha256": hashlib.sha256(frontend_script(text).encode("utf-8")).hexdigest(),
+        "backend_sha256": hashlib.sha256(backend_script(text).encode("utf-8")).hexdigest(),
+        "support": [file_identity(path) for path in support if path.is_file()],
+        "environment": {name: os.environ.get(name) for name in SYNTH_ENVIRONMENT},
+        "sources": source_identity(Path(filelist)) if filelist else None,
+    }
+
+
+def stage_cache_valid(cache_path: Path, result_path: Path, identity: dict[str, Any], output: Path | None) -> bool:
+    if not cache_path.is_file() or not result_path.is_file() or (output is not None and not output.is_file()):
+        return False
+    result = read_json(result_path)
+    if result.get("status") != "passed" or result.get("exit_code") != 0:
+        return False
+    expected = {
+        "schema_version": 1,
+        "identity": identity,
+        "result_sha256": sha256(result_path),
+        "output_sha256": sha256(output) if output is not None else None,
+    }
+    return read_json(cache_path) == expected
+
+
+def record_stage_cache(cache_path: Path, result_path: Path, identity: dict[str, Any], output: Path | None) -> None:
+    record = {
+        "schema_version": 1,
+        "identity": identity,
+        "result_sha256": sha256(result_path),
+        "output_sha256": sha256(output) if output is not None else None,
+    }
+    atomic_write(cache_path, dump_json(record))
+
+
+def identity_fields(value: Any) -> tuple[str, str] | None:
+    if not isinstance(value, dict):
+        return None
+    path = value.get("path")
+    digest = value.get("sha256")
+    if not isinstance(path, str) or not isinstance(digest, str):
+        return None
+    return path, digest
+
+
+def iteration_identity(iteration: int, input_identity: dict[str, str], report: Path, script_path: Path, changed: bool) -> dict[str, Any]:
+    did_path = report / "did-something.txt"
+    return {
+        "schema_version": 1,
+        "iteration": iteration,
+        "input": input_identity,
+        "script": file_identity(script_path),
+        "output": file_identity(report / "next.il"),
+        "did": {**file_identity(did_path), "changed": changed},
+        "result": file_identity(report / "result.json"),
+    }
+
+
+def cached_iteration(
+    iteration: int,
+    input_identity: dict[str, str],
+    report: Path,
+    script_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    identity_path = report / "identity.json"
+    result_path = report / "result.json"
+    if not all(path.is_file() for path in (identity_path, report / "next.il", report / "did-something.txt", result_path)):
+        return None
+    changed = parse_changed(report / "did-something.txt")
+    candidate = iteration_identity(iteration, input_identity, report, script_path, changed)
+    if read_json(identity_path) != candidate:
+        raise ValueError(f"opt resume iteration identity mismatch for iteration {iteration}")
+    result = read_json(result_path)
+    if result.get("status") != "passed" or result.get("exit_code") != 0:
+        return None
+    return candidate, result
 
 
 def run_yosys(
@@ -173,6 +309,7 @@ def _optimize_unlocked(
     *,
     max_iterations: int,
     iteration_timeout: int,
+    fingerprint_environment: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     if max_iterations <= 0 or iteration_timeout <= 0:
         raise ValueError("iteration count and timeout must be positive")
@@ -190,7 +327,7 @@ def _optimize_unlocked(
     fingerprint = execution_fingerprint(
         root,
         ["yosys", "opt"],
-        os.environ.copy(),
+        os.environ.copy() if fingerprint_environment is None else fingerprint_environment,
         script=work_dir / "iteration.tcl",
         inputs=[input_path],
         configuration={"max_iterations": max_iterations, "iteration_timeout": iteration_timeout},
@@ -242,18 +379,47 @@ def _optimize_unlocked(
         raise ValueError("opt resume iteration history is not contiguous")
     for entry in state["iterations"]:
         validate_iteration(work_dir, entry)
-    if next_iteration > 1:
-        if not current.is_file():
-            raise ValueError("resumable current checkpoint is missing")
-        latest_digest = state["iterations"][-1]["next_sha256"]
-        if sha256(current) != latest_digest or state.get("current_sha256") != latest_digest:
-            raise ValueError("current checkpoint digest does not match the retained state")
     if state.get("status") == "converged":
         if not output_path.is_file():
             raise ValueError("converged state has no final checkpoint")
-        if sha256(output_path) != state.get("output_sha256"):
-            raise ValueError("converged output digest does not match the retained state")
+        if state.get("output_sha256") != sha256(output_path):
+            raise ValueError("opt resume output digest does not match the retained state")
+        if not current.is_file() or state.get("current_sha256") != sha256(current):
+            raise ValueError("opt resume current digest does not match the retained state")
         return summary_from_state(state, "converged", output_path)
+
+    resume_input_identity = None
+    if next_iteration > 1:
+        if not current.is_file():
+            raise ValueError("resumable current checkpoint is missing")
+        if state.get("current_sha256") != sha256(current):
+            report = work_dir / "iterations" / f"{next_iteration:02d}"
+            identity_path = report / "identity.json"
+            retained = read_json(identity_path) if identity_path.is_file() else None
+            retained_input = identity_fields(retained.get("input") if isinstance(retained, dict) else None)
+            retained_output = identity_fields(retained.get("output") if isinstance(retained, dict) else None)
+            previous = [
+                entry
+                for entry in state["iterations"]
+                if isinstance(entry, dict) and entry.get("iteration") == next_iteration - 1
+            ]
+            previous_identity = previous[0].get("identity") if len(previous) == 1 else None
+            previous_output = identity_fields(previous_identity.get("output") if isinstance(previous_identity, dict) else None)
+            if (
+                retained_input != (str(current), state["current_sha256"])
+                or retained_output is None
+                or retained_output[1] != sha256(current)
+                or previous_output is None
+                or previous_output[1] != state["current_sha256"]
+            ):
+                raise ValueError("opt resume current digest does not match the retained state")
+            resume_input_identity = {"path": retained_input[0], "sha256": retained_input[1]}
+            if cached_iteration(next_iteration, resume_input_identity, report, work_dir / "iteration.tcl") is None:
+                raise ValueError("opt resume current digest does not match the retained state")
+        else:
+            latest_digest = state["iterations"][-1]["next_sha256"]
+            if sha256(current) != latest_digest:
+                raise ValueError("current checkpoint digest does not match the retained state")
 
     for iteration in range(next_iteration, max_iterations + 1):
         report = work_dir / "iterations" / f"{iteration:02d}"
@@ -261,28 +427,35 @@ def _optimize_unlocked(
         next_checkpoint = report / "next.il"
         did_path = report / "did-something.txt"
         result_path = report / "result.json"
+        identity_path = report / "identity.json"
+        iteration_input = current if iteration > 1 else input_path
+        input_identity = resume_input_identity if iteration == next_iteration and resume_input_identity is not None else file_identity(iteration_input)
         result: dict[str, Any]
-        if next_checkpoint.is_file() and did_path.is_file() and result_path.is_file():
-            candidate = {
-                "iteration": iteration,
-                "did_something": parse_changed(did_path),
-                "next_sha256": sha256(next_checkpoint),
-                "did_sha256": sha256(did_path),
-                "stat_sha256": sha256(report / "stat.rpt"),
-            }
-            result = validate_iteration(work_dir, candidate)
-        else:
+        use_cached = False
+        cached = cached_iteration(iteration, input_identity, report, work_dir / "iteration.tcl")
+        if cached is not None:
+            candidate, result = cached
+            if any(
+                entry.get("iteration") == iteration and entry.get("identity") != candidate
+                for entry in state["iterations"]
+            ):
+                raise ValueError(f"opt resume iteration identity mismatch for iteration {iteration}")
+            use_cached = True
+        if not use_cached:
             result = run_yosys(
                 root,
                 ["yosys", "-t", "--perffile", str(report / "perf.json"), "-c", str(work_dir / "iteration.tcl")],
                 log=report / "yosys.log",
-                result=result_path,
+                result=report / "result.json",
                 timeout=iteration_timeout,
-                environment={"OPT_INPUT": str(current if iteration > 1 else input_path), "OPT_OUTPUT": str(next_checkpoint), "OPT_REPORT": str(report)},
+                environment={"OPT_INPUT": str(iteration_input), "OPT_OUTPUT": str(next_checkpoint), "OPT_REPORT": str(report)},
             )
         if not next_checkpoint.is_file():
             raise RuntimeError(f"iteration produced no checkpoint: {iteration}")
         changed = parse_changed(did_path)
+        identity = iteration_identity(iteration, input_identity, report, work_dir / "iteration.tcl", changed)
+        if not use_cached:
+            atomic_write(identity_path, dump_json(identity))
         item = {
             "iteration": iteration,
             "did_something": changed,
@@ -291,6 +464,7 @@ def _optimize_unlocked(
             "log": str(report / "yosys.log"),
             "result": str(result_path),
             "stat": str(report / "stat.rpt"),
+            "identity": identity,
             "next_sha256": sha256(next_checkpoint),
             "did_sha256": sha256(did_path),
             "stat_sha256": sha256(report / "stat.rpt"),
@@ -303,7 +477,7 @@ def _optimize_unlocked(
         os.replace(checkpoint_tmp, current)
         state["current_sha256"] = item["next_sha256"]
         state["next_iteration"] = iteration + 1
-        write_json(state_path, state)
+        atomic_write(state_path, dump_json(state))
         print(f"opt resume: iteration={iteration} did_something={str(changed).lower()}", flush=True)
         if not changed:
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -312,7 +486,7 @@ def _optimize_unlocked(
             os.replace(output_tmp, output_path)
             state["output_sha256"] = sha256(output_path)
             state["status"] = "converged"
-            write_json(state_path, state)
+            atomic_write(state_path, dump_json(state))
             summary = summary_from_state(state, "converged", output_path)
             atomic_write(summary_path, dump_json(summary))
             return summary
@@ -332,6 +506,7 @@ def optimize(
     *,
     max_iterations: int,
     iteration_timeout: int,
+    fingerprint_environment: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     work_dir = work_dir.resolve()
     with Lease(work_dir / "optimize.lock", {"task_id": "yosys-opt", "input": str(input_path.resolve())}):
@@ -342,6 +517,7 @@ def optimize(
             work_dir,
             max_iterations=max_iterations,
             iteration_timeout=iteration_timeout,
+            fingerprint_environment=fingerprint_environment,
         )
 
 
@@ -359,6 +535,8 @@ def _run_synthesis_unlocked(
     work_dir = work_dir.resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
     summary_path = work_dir / "synthesis-summary.json"
+    optimizer_env = optimizer_environment()
+    optimizer_environment_digest = digest_json(optimizer_env)
     fingerprint = execution_fingerprint(
         root,
         ["yosys_opt_resume", "synth"],
@@ -375,26 +553,42 @@ def _run_synthesis_unlocked(
         manifest = read_json(summary_path)
         if manifest.get("schema_version") != 2:
             raise ValueError("legacy synthesis manifest has no execution fingerprint")
+        if manifest.get("optimizer_environment_sha256") != optimizer_environment_digest:
+            raise ValueError("synthesis optimizer environment mismatch")
         mismatches = fingerprint_mismatches(manifest["fingerprint"], fingerprint)
+        rebuildable = {"script_sha256", "input_sha256", "environment_sha256"}
         if mismatches:
-            raise ValueError(f"synthesis fingerprint mismatch: {', '.join(mismatches)}")
-        manifest["status"] = "running"
+            if not os.environ.get("SV_FLIST") or any(key not in rebuildable for key in mismatches):
+                raise ValueError(f"synthesis fingerprint mismatch: {', '.join(mismatches)}")
+            manifest = {
+                "schema_version": 2,
+                "status": "running",
+                "fingerprint": fingerprint,
+                "optimizer_environment_sha256": optimizer_environment_digest,
+                "stages": {},
+            }
+        else:
+            manifest["status"] = "running"
     else:
-        manifest = {"schema_version": 2, "status": "running", "fingerprint": fingerprint, "stages": {}}
+        manifest = {
+            "schema_version": 2,
+            "status": "running",
+            "fingerprint": fingerprint,
+            "optimizer_environment_sha256": optimizer_environment_digest,
+            "stages": {},
+        }
     manifest.setdefault("stages", {})
     write_json(summary_path, manifest)
 
     preloop = work_dir / "preloop.il"
     final = work_dir / "final.il"
     frontend_result = work_dir / "result-frontend.json"
-    frontend_stage = manifest["stages"].get("frontend", {})
-    frontend_passed = False
-    if frontend_result.is_file() and preloop.is_file() and frontend_stage:
-        previous = read_json(frontend_result)
-        if previous.get("status") == "passed" and previous.get("exit_code") == 0:
-            if frontend_stage.get("preloop_sha256") != sha256(preloop):
-                raise ValueError("frontend checkpoint digest does not match the synthesis manifest")
-            frontend_passed = True
+    frontend_cache = work_dir / "cache-frontend.json"
+    configuration = synthesis_identity(script, text)
+    frontend_identity = {"stage": "frontend", "configuration": configuration, "output": str(preloop)}
+    frontend_passed = configuration["sources"] is not None and stage_cache_valid(
+        frontend_cache, frontend_result, frontend_identity, preloop
+    )
     if not frontend_passed:
         atomic_write(work_dir / "frontend.tcl", frontend_script(text))
         run_yosys(
@@ -405,26 +599,45 @@ def _run_synthesis_unlocked(
             timeout=frontend_timeout,
             environment={"OPT_PRELOOP": str(preloop), "YOSYS_SCRIPT_DIR": str(script.resolve().parent)},
         )
+        record_stage_cache(frontend_cache, frontend_result, frontend_identity, preloop)
         manifest["stages"]["frontend"] = {
             "result": str(frontend_result),
             "preloop_sha256": sha256(preloop),
         }
         write_json(summary_path, manifest)
 
-    summary = optimize(root, preloop, final, work_dir, max_iterations=max_iterations, iteration_timeout=iteration_timeout)
+    summary = optimize(
+        root,
+        preloop,
+        final,
+        work_dir,
+        max_iterations=max_iterations,
+        iteration_timeout=iteration_timeout,
+        fingerprint_environment=optimizer_env,
+    )
     manifest["stages"]["opt"] = {"status": summary["status"], "final_sha256": sha256(final)}
     write_json(summary_path, manifest)
 
     backend_result = work_dir / "result-backend.json"
-    backend_stage = manifest["stages"].get("backend", {})
-    netlist = Path(os.environ["NETLIST"]) if "NETLIST" in os.environ else None
+    backend_cache = work_dir / "cache-backend.json"
+    netlist = Path(os.environ["NETLIST"]).resolve() if "NETLIST" in os.environ else None
+    backend_identity = {
+        "stage": "backend",
+        "configuration": configuration,
+        "input_sha256": sha256(final),
+        "output": str(netlist) if netlist is not None else None,
+    }
     backend_passed = False
-    if backend_result.is_file() and backend_stage and (netlist is None or netlist.is_file()):
-        previous = read_json(backend_result)
-        if previous.get("status") == "passed" and previous.get("exit_code") == 0:
-            if netlist is not None and backend_stage.get("netlist_sha256") != sha256(netlist):
-                raise ValueError("backend output digest does not match the synthesis manifest")
-            backend_passed = True
+    if configuration["sources"] is not None:
+        backend_passed = stage_cache_valid(backend_cache, backend_result, backend_identity, netlist)
+    else:
+        backend_stage = manifest["stages"].get("backend", {})
+        if backend_result.is_file() and backend_stage and (netlist is None or netlist.is_file()):
+            previous = read_json(backend_result)
+            if previous.get("status") == "passed" and previous.get("exit_code") == 0:
+                if netlist is not None and backend_stage.get("netlist_sha256") != sha256(netlist):
+                    raise ValueError("backend output digest does not match the synthesis manifest")
+                backend_passed = True
     if not backend_passed:
         atomic_write(work_dir / "backend.tcl", backend_script(text))
         run_yosys(
@@ -435,6 +648,7 @@ def _run_synthesis_unlocked(
             timeout=frontend_timeout,
             environment={"OPT_FINAL": str(final), "YOSYS_SCRIPT_DIR": str(script.resolve().parent)},
         )
+        record_stage_cache(backend_cache, backend_result, backend_identity, netlist)
         manifest["stages"]["backend"] = {
             "result": str(backend_result),
             "netlist_sha256": sha256(netlist) if netlist and netlist.is_file() else None,

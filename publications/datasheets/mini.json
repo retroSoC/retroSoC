@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
+  "source_revision": "80d6ae0bbd6e0932cb1cb3979c7258c5a151eade",
   "build_control_review": {
-    "revision": "e0a69d75e9f4054bb6e3850662f8802dba4b17cb",
-    "makefile_blob": "a6a714f6df6c497a98721f8ea8447f15cc11c246",
+    "revision": "6546ca6cdce35634f164658950b1ad321cd6715c",
+    "makefile_blob": "8a90c2121a7fe129268a474e092e35b9c7ae6492",
     "documentation_blobs": {
       "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
     },
-    "reason": "The Mini technical source snapshot is 2f1f90, now contained in dev; non-product control review continues through e0a69d75. In addition to the previously reviewed agent controls, the Git workflow now documents verified delivery cleanup and artifact evidence manifests. The Makefile is unchanged from the prior review. Product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot is 80d6ae0b and includes Tiny P4 and TINY-056 inputs without changing Mini behavior; non-product control review continues through integrated revision 6546ca6c. Prior agent controls, verified delivery cleanup and artifact evidence manifests are retained, together with the 10-line TINY_PPALITE_P4_ACCEPTANCE selector, config-key registration and isolated-image guard. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
