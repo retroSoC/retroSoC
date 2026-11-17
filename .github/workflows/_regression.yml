@@ -207,7 +207,8 @@ jobs:
           set -euo pipefail
           args=(--root . --suite "${SUITE}" --pdk "${PDK}"
                 --tiny-p7-iverilog "${TINY_P7_IVERILOG}"
-                --tiny-p7-iverilog-timeout-seconds "${TINY_P7_TIMEOUT}")
+                --tiny-p7-iverilog-timeout-seconds "${TINY_P7_TIMEOUT}"
+                --plan-output "build/ci-summary/regression-plan-${SUITE}-${PDK}${{ inputs.artifact_suffix }}${PRODUCT_SUFFIX}.json")
           if [[ "${PRODUCT}" != "ALL" ]]; then
             args+=(--soc "${PRODUCT}")
           fi
