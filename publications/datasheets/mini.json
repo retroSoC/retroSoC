@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "c17a3937b2a52ade0efefbc07e97ff5a1078ed33",
+  "source_revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
   "build_control_review": {
-    "revision": "c17a3937b2a52ade0efefbc07e97ff5a1078ed33",
+    "revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
     "makefile_blob": "8a90c2121a7fe129268a474e092e35b9c7ae6492",
     "documentation_blobs": {
       "docs/git-workflow.md": "4a1a9b739b16dcdf3eb8914374bdbaf3ade8c826"
     },
-    "reason": "The reviewed technical snapshot is c17a3937 and includes the accepted Tiny P4 and TINY-056 inputs without changing Mini behavior; non-product control review uses the same revision. Prior agent controls, verified delivery cleanup and artifact evidence manifests are retained, together with the 10-line TINY_PPALITE_P4_ACCEPTANCE selector, config-key registration and isolated-image guard. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot is 1c32b6ee and includes the accepted Tiny P4 and TINY-056 inputs without changing Mini behavior; non-product control review uses the same revision. Prior agent controls, verified delivery cleanup and artifact evidence manifests are retained, together with the 10-line TINY_PPALITE_P4_ACCEPTANCE selector, config-key registration and isolated-image guard. Mini product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

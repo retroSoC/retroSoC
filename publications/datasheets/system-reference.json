@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "c17a3937b2a52ade0efefbc07e97ff5a1078ed33",
+  "source_revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -8218,11 +8218,22 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "c17a3937b2a52ade0efefbc07e97ff5a1078ed33",
+    "revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
     "checked_date": "2026-11-17",
-    "checked_at": "2026-11-17T13:59:42Z",
-    "boundary": "No workflow result has been recorded for the P4 acceptance-record snapshot. Integration checks are pending; this is not a hardware, physical or release qualification result. Previous observations retain their original identity in historical_ci_snapshots.",
-    "runs": []
+    "checked_at": "2026-11-17T14:20:03Z",
+    "boundary": "Exact PR #283 head quality workflow is in progress. Pending status is not a passing result or a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
+    "runs": [
+      {
+        "run_id": 44101938186,
+        "name": "quality",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44101938186",
+        "status": "in_progress",
+        "conclusion": null,
+        "scope": "Repository quality workflow on exact PR #283 head 1c32b6ee; currently running and not yet a passing result",
+        "note": "Pending evidence only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred.",
+        "observations": []
+      }
+    ]
   },
   "historical_ci_snapshots": [
     {
