@@ -25,6 +25,9 @@ def pull(state: str = "OPEN") -> dict:
 def preflight() -> dict:
     return {
         "schema_version": 1,
+        "repository": "retroSoC/retroSoC",
+        "pr": 248,
+        "branch": "ci/example",
         "status": "READY",
         "head_sha": "a" * 40,
         "required_contexts": ["quality-gate"],
@@ -66,7 +69,9 @@ def test_enable_returns_without_polling_and_rejects_blocked_preflight(monkeypatc
     monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: False)
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: pull())
     monkeypatch.setattr("scripts.pr_delivery.merge_pr", lambda repository, number, root, current: calls.append(number))
-    monkeypatch.setattr("scripts.pr_delivery.checks_report", lambda *args, **kwargs: pytest.fail("must not poll"))
+    monkeypatch.setattr(
+        "scripts.delivery_controller.coordinate", lambda *args, **kwargs: pytest.fail("must not poll")
+    )
     result = deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=False)
     assert result["status"] == "AUTO_MERGE_ENABLED"
     assert result["cleanup"] == "PENDING"
@@ -77,7 +82,9 @@ def test_enable_returns_without_polling_and_rejects_blocked_preflight(monkeypatc
     assert calls == [248]
 
 
-def test_watch_enables_auto_merge_before_pending_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_watch_enables_auto_merge_before_pending_checks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     open_pull = pull()
     states = iter([open_pull, open_pull, open_pull, pull("MERGED")])
     native = iter([False, True, True])
@@ -89,40 +96,81 @@ def test_watch_enables_auto_merge_before_pending_checks(monkeypatch: pytest.Monk
     )
     calls = []
     sleeps = []
+    checkpoints = []
     monkeypatch.setattr("scripts.pr_delivery.delivery_preflight", lambda root, repository, number: preflight())
     monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: next(native))
+    monkeypatch.setattr("scripts.delivery_controller.native_auto_merge_enabled", lambda *args: next(native))
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: next(states))
+    monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: next(states))
     monkeypatch.setattr("scripts.pr_delivery.merge_pr", lambda repository, number, root, current: calls.append(number))
 
     def report(*args, **kwargs):
         assert kwargs["allow_empty"] is True
         return next(reports)
 
-    monkeypatch.setattr("scripts.pr_delivery.checks_report", report)
-    monkeypatch.setattr("scripts.pr_delivery.reconcile_delivery", lambda *args: {"status": "MERGED"})
-    monkeypatch.setattr("scripts.pr_delivery.time.sleep", sleeps.append)
-    result = deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True)
+    monkeypatch.setattr("scripts.delivery_controller.checks_report", report)
+    monkeypatch.setattr(
+        "scripts.delivery_controller.reconcile_delivery",
+        lambda *args, **kwargs: {"status": "MERGED", "cleanup": "COMPLETE", "warnings": []},
+    )
+    monkeypatch.setattr("scripts.delivery_controller.time.sleep", sleeps.append)
+    from types import SimpleNamespace
+
+    clock = iter([100.0, 123.0])
+    monkeypatch.setattr("scripts.pr_delivery.time", SimpleNamespace(monotonic=lambda: next(clock)))
+    result = deliver(
+        ROOT,
+        "retroSoC/retroSoC",
+        248,
+        60,
+        watch=True,
+        checkpoint=checkpoints.append,
+        delivery_dir=tmp_path,
+    )
     assert result["status"] == "MERGED"
+    assert result["cleanup"] == "COMPLETE"
+    assert result["coordinator_summary"] == str(tmp_path / "pr-248-controller.json")
+    assert result["watch_seconds"] == 23.0
+    assert (tmp_path / "pr-248-controller.json").is_file()
     assert calls == [248]
     assert sleeps == [60, 60]
+    assert [item["status"] for item in checkpoints] == ["AUTO_MERGE_ENABLED", "MERGED"]
 
 
-def test_failed_checks_and_disabled_native_auto_merge_stop_watch(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_failed_checks_and_disabled_native_auto_merge_stop_watch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr("scripts.pr_delivery.delivery_preflight", lambda root, repository, number: preflight())
     native = iter([False, True])
     monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: next(native))
+    monkeypatch.setattr("scripts.delivery_controller.native_auto_merge_enabled", lambda *args: next(native))
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: pull())
+    monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull())
     monkeypatch.setattr("scripts.pr_delivery.merge_pr", lambda repository, number, root, current: None)
     monkeypatch.setattr(
-        "scripts.pr_delivery.checks_report",
+        "scripts.delivery_controller.checks_report",
         lambda *args, **kwargs: {"status": "FAIL", "head_sha": "a" * 40},
     )
     with pytest.raises(RuntimeError, match="checks failed"):
-        deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True)
+        deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True, delivery_dir=tmp_path)
+    assert '"status": "FAILED"' in (tmp_path / "pr-248-delivery.json").read_text(encoding="utf-8")
 
-    monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: False)
-    monkeypatch.setattr("scripts.pr_delivery.checks_report", lambda *args, **kwargs: pytest.fail("must not poll"))
+    monkeypatch.setattr("scripts.pr_delivery.native_auto_merge_enabled", lambda repository, number, root: True)
+    monkeypatch.setattr("scripts.delivery_controller.native_auto_merge_enabled", lambda *args: False)
+    monkeypatch.setattr(
+        "scripts.delivery_controller.checks_report",
+        lambda *args, **kwargs: pytest.fail("must not poll when native auto-merge is disabled"),
+    )
     with pytest.raises(RuntimeError, match="auto-merge was disabled"):
+        deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True, delivery_dir=tmp_path)
+
+
+def test_watch_requires_a_checkpoint_directory_before_enabling(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "scripts.pr_delivery.delivery_preflight",
+        lambda *args: pytest.fail("invalid watcher configuration must not enable auto-merge"),
+    )
+    with pytest.raises(ValueError, match="checkpoint directory"):
         deliver(ROOT, "retroSoC/retroSoC", 248, 60, watch=True)
 
 
@@ -133,3 +181,31 @@ def test_head_change_between_preflight_and_enable_is_rejected(monkeypatch: pytes
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: changed)
     with pytest.raises(RuntimeError, match="head changed"):
         enable_delivery(ROOT, "retroSoC/retroSoC", 248, preflight())
+
+
+def test_main_preserves_canonical_checkpoint_with_custom_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import pr_delivery
+
+    output = tmp_path / "custom-result.json"
+    calls = []
+    monkeypatch.setattr(
+        pr_delivery.sys,
+        "argv",
+        ["pr_delivery.py", "--root", str(ROOT), "--pr", "248", "--watch", "--output", str(output)],
+    )
+
+    def start(*args, **kwargs):
+        calls.append(kwargs)
+        document = {"schema_version": 1, "pr": 248, "status": "AUTO_MERGE_ENABLED"}
+        kwargs["checkpoint"](document)
+        return document
+
+    monkeypatch.setattr(pr_delivery, "deliver", start)
+
+    assert pr_delivery.main() == 0
+    assert calls[0]["delivery_dir"] == tmp_path
+    assert calls[0]["coordinator_output"] == tmp_path / "pr-248-controller.json"
+    assert (tmp_path / "pr-248-delivery.json").is_file()
+    assert output.is_file()

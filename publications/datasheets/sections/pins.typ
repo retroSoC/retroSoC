@@ -33,6 +33,8 @@ this mapping. The matching physical release evidence is tracked in @release-veri
 
 #pagebreak()
 === GPIO Alternate-Function Matrix <gpio-mux>
+#import "../../specifications/components.typ": pin-table
+#pin-table(data.specifications,ds-table)
 Each GPIO has software-controlled and alternate-function ownership. ALT0/ALT1 names below
 are normalized signal labels from the canonical topology. Shared names denote the same
 peripheral route; switching function also changes its input and output-enable connections.

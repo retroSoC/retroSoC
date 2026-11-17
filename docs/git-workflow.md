@@ -85,7 +85,10 @@ ci: prepare locked simulation fixtures
 
 `contribution.yml` checks the PR base, head branch, title, and new commit
 subjects in the selected range. Git-generated merge and revert subjects retain
-their standard exception. Run `make validation-plan` before requesting review
+their standard exception. A lowercase `merge:` subject is accepted only when the
+actual Git commit has multiple parents; plain or forged non-merge records are
+rejected. This supports history-preserving synchronization without rewriting a
+published topic. Run `make validation-plan` before requesting review
 when the change can affect CI selection.
 
 Write a concise English summary of what changes. Use the body to explain why,
@@ -105,10 +108,18 @@ in the commit:
 git status --short --branch
 git diff
 git add -- path/to/changed-file
+make agent-scope-check TASK=build/tasks/<task>/task.json
 git diff --cached
 git diff --cached --check
 git commit -m "fix(scope): describe the change"
 ```
+
+For an agent task, `agent-scope-check` validates only the staged files against
+`HEAD` and the task's allowed/forbidden paths. It accepts other dirty or
+untracked files without including them. Set `BASE=origin/dev` to validate the
+staged task delta, including earlier topic commits, against that ref's merge-base
+instead. The check performs no
+merge or fixture restoration and does not replace full preflight or CI.
 
 The path and message above are placeholders. Add each intended new or modified
 file explicitly, and follow the repository's applicable validation requirements.
@@ -260,6 +271,18 @@ should not publish tags.
 
 ## CI-green auto merge and cleanup
 
+Before opening a PR, run `make agent-preflight TASK=<task.json>` from the clean
+topic worktree after fetching `origin/dev`. Its default isolated merge dry-run
+uses `git merge --no-commit --no-ff` in a temporary checkout of the topic HEAD,
+then aborts and removes that checkout without creating an integration commit.
+It reports `CONFLICT` and the affected paths before the first CI run, rather
+than waiting for GitHub to mark an otherwise green PR as dirty. Resolve those
+conflicts in the topic worktree using the synchronization procedure above and
+rerun the affected checks. `MERGE_REF=<commit-or-ref>` selects another local
+target; `MERGE_CHECK=0` explicitly skips this local check and does not relax
+GitHub's mergeability requirements. A dirty source, unavailable target, or
+incomplete temporary-worktree cleanup blocks delivery.
+
 `quality/ownership.json` enables `auto_merge`. For the preferred early-delivery
 path, run `make agent-deliver PR=<number>`. It first checks the canonical PR,
 required contexts, repository auto-merge/merge-commit/delete-branch capabilities,
@@ -267,8 +290,11 @@ and push permission, then asks GitHub to enable native merge-commit auto-merge.
 This is not a merge by the agent: GitHub still waits for every required check.
 Pending or not-yet-scheduled checks do not postpone enabling auto-merge, while
 failed or cancelled checks prevent GitHub from merging. `--watch` (or `WATCH=1`)
-retains structured monitoring and immediate cleanup; without it, the command
-returns with cleanup pending. After GitHub reports `MERGED`, use
+first retains the enabled delivery, then uses `delivery_controller.py` for all
+polling, terminal-failure handling, and immediate cleanup. The same coordinator
+resumes its canonical checkpoint after interruption; no second watcher enables
+auto-merge, retries failed checks, or overrides an external disable. Without
+`--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
 `--reconcile-only` (or `RECONCILE=1`) to finish cleanup on the next
 synchronization. The legacy `python3 scripts/pr_workflow.py --pr <number> --root .`
 remains available for after-green monitoring. Neither path uses `--admin`,

@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 from scripts.check_contribution import (  # noqa: E402
+    commit_records,
     validate_ownership,
     validate_pull_request,
     validate_release,
@@ -333,3 +334,43 @@ def test_release_validation_rejects_tampered_local_summary(tmp_path: Path) -> No
     issues, _ = verify_release(root, revision)
     assert "local formal summary is not a passing result" in issues
     assert "required release stage has no successful evidence: formal" in issues
+
+
+def test_real_merge_commit_can_use_merge_subject_without_rewriting_history(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "merge@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Merge"], check=True)
+    (root / "base.txt").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "base.txt"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "ci: base"], check=True)
+    subprocess.run(["git", "-C", str(root), "checkout", "-qb", "dev"], check=True)
+    (root / "dev.txt").write_text("dev\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "dev.txt"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "ci: dev update"], check=True)
+    subprocess.run(["git", "-C", str(root), "checkout", "-qb", "feat/example", "HEAD~1"], check=True)
+    (root / "topic.txt").write_text("topic\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "topic.txt"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "ci: topic update"], check=True)
+    subprocess.run(
+        ["git", "-C", str(root), "merge", "--no-ff", "dev", "-m", "merge: integrate dev"],
+        check=True,
+        capture_output=True,
+    )
+    records = commit_records(root, "dev", "HEAD")
+    assert any(record["merge_commit"] and record["subject"] == "merge: integrate dev" for record in records)
+    assert validate_pull_request("dev", "feat/example", "ci: preserve history", records) == []
+    assert validate_pull_request("dev", "feat/example", "ci: preserve history", ["merge: integrate dev"]) == [
+        "invalid commit subject: merge: integrate dev"
+    ]
+    forged = [
+        {
+            "revision": next(record["revision"] for record in records if not record["merge_commit"]),
+            "subject": "merge: pretend to integrate",
+            "merge_commit": False,
+        }
+    ]
+    assert validate_pull_request("dev", "feat/example", "ci: preserve history", forged) == [
+        "invalid commit subject: merge: pretend to integrate"
+    ]

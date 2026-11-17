@@ -73,6 +73,53 @@ def test_task_contract_accepts_a_read_only_maintenance_task() -> None:
     assert validate_task(valid_task(), ROOT) == []
 
 
+def test_hosted_fixture_profile_is_explicit_and_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts.agent_control import create_preflight
+
+    task = valid_task()
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    assert validate_task(task, ROOT) == []
+    assert "Fixture profile: hosted-pytest" in render_task_prompt(task)
+    task["execution"]["fixture_profile"] = "all"
+    assert "execution.fixture_profile must be hosted-pytest" in validate_task(task, ROOT)
+    task["execution"]["fixture_profile"] = "hosted-pytest"
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+    )
+    monkeypatch.setattr("scripts.fixture_control.fixture_profile", lambda root, reference: {"profile": "hosted-pytest"})
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "BLOCKED", "issues": ["missing locked source"], "checks": []},
+    )
+    blocked = create_preflight(args)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["fixture"]["status"] == "BLOCKED"
+    assert blocked["issues"] == ["fixture: missing locked source"]
+
+    monkeypatch.setattr(
+        "scripts.fixture_control.doctor",
+        lambda root, profile: {"status": "READY", "issues": [], "checks": []},
+    )
+    ready = create_preflight(args)
+    assert ready["status"] == "READY", ready["issues"]
+    assert ready["fixture"]["status"] == "READY"
+
+
 def test_feature_write_requires_bound_specification_and_approval() -> None:
     task = valid_task()
     task.update(
@@ -250,7 +297,7 @@ def test_tiny_snapshot_reports_drift_and_recovery(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(
         "publications.tiny_reference.collect",
-        lambda config, check_snapshot: {
+        lambda config, check_snapshot, layout: {
             "source_paths": ["docs/engineering.md", "publications/tiny_reference.py", "dependencies/dependencies.lock.json"]
         },
     )
@@ -358,6 +405,53 @@ def test_preflight_rejects_dirty_workspace_write(tmp_path: Path, monkeypatch: py
     assert "workspace-write preflight requires a clean worktree before execution" in result["issues"]
 
 
+def test_preflight_merge_conflicts_block_delivery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    task = valid_task()
+    task["base_revision"] = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    task["scope"]["allowed_paths"] = []
+    packet = tmp_path / "task.json"
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    args = SimpleNamespace(
+        root=ROOT,
+        task=packet,
+        base=None,
+        head="HEAD",
+        mode="auto",
+        event="local",
+        online=False,
+        repository="retroSoC/retroSoC",
+        base_branch="dev",
+        pr=None,
+        merge_check=True,
+        merge_ref="origin/dev",
+    )
+    monkeypatch.setattr(
+        "scripts.merge_preflight.merge_conflict_scan",
+        lambda root, reference: {
+            "status": "CONFLICT",
+            "merge_ref": reference,
+            "merge_revision": "b" * 40,
+            "unmerged_paths": ["scripts/example.py"],
+            "worktree_removed": True,
+            "merge_commit_created": False,
+        },
+    )
+    real_git_output = control.git_output
+    monkeypatch.setattr(
+        control,
+        "git_output",
+        lambda root, *arguments: "" if arguments[0] == "status" else real_git_output(root, *arguments),
+    )
+
+    result = control.create_preflight(args)
+
+    assert result["status"] == "BLOCKED"
+    assert result["merge_check"]["unmerged_paths"] == ["scripts/example.py"]
+    assert result["issues"] == ["merge check conflicts with origin/dev: scripts/example.py"]
+
+
 def test_local_tool_probe_requires_gh_only_for_online_checks(monkeypatch: pytest.MonkeyPatch) -> None:
     import scripts.agent_control as control
 
@@ -454,3 +548,162 @@ def test_gap_resolution_requires_an_explicit_task_declaration(tmp_path: Path) ->
     resolving = create_preflight(args)
     assert resolving["status"] == "READY", resolving["issues"]
     assert resolving["resolving_gaps"] == ["mini-yosys-backend"]
+
+
+def scope_git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["git", "-C", str(root), *arguments], check=True, capture_output=True, text=True)
+
+
+def scope_repository(root: Path) -> str:
+    subprocess.run(["git", "init", "-q", "-b", "dev", str(root)], check=True)
+    scope_git(root, "config", "user.email", "scope@example.invalid")
+    scope_git(root, "config", "user.name", "Scope Check")
+    (root / ".gitignore").write_text("build/\n", encoding="utf-8")
+    (root / "docs").mkdir()
+    (root / "docs/engineering.md").write_text("initial\n", encoding="utf-8")
+    (root / "scripts").mkdir()
+    (root / "scripts/tool.py").write_text("initial = True\n", encoding="utf-8")
+    (root / "rtl/tiny/top").mkdir(parents=True)
+    (root / "rtl/tiny/top/tiny_sram.sv").write_text("initial\n", encoding="utf-8")
+    scope_git(root, "add", ".gitignore", "docs/engineering.md", "scripts/tool.py", "rtl/tiny/top/tiny_sram.sv")
+    scope_git(root, "commit", "-qm", "initial")
+    return scope_git(root, "rev-parse", "HEAD").stdout.strip()
+
+
+def scope_packet(root: Path, revision: str, allowed: list[str]) -> Path:
+    task = valid_task()
+    task["task_id"] = "staged-scope-test"
+    task["base_revision"] = revision
+    task["scope"]["allowed_paths"] = allowed
+    packet = root / "build/tasks/staged-scope-test/task.json"
+    packet.parent.mkdir(parents=True, exist_ok=True)
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    return packet
+
+
+def test_staged_scope_check_uses_index_only_and_rejects_out_of_scope(tmp_path: Path) -> None:
+    from scripts.agent_control import staged_scope_check
+
+    root = tmp_path / "repo"
+    revision = scope_repository(root)
+    packet = scope_packet(root, revision, ["docs/engineering.md"])
+    (root / "docs/engineering.md").write_text("staged\n", encoding="utf-8")
+    (root / "scripts/tool.py").write_text("staged = True\n", encoding="utf-8")
+    scope_git(root, "add", "docs/engineering.md")
+
+    ready = staged_scope_check(root, packet)
+    assert ready["status"] == "READY"
+    assert ready["staged_files"] == ["docs/engineering.md"]
+    assert ready["diff_base"] == "HEAD"
+    assert ready["read_only"] is True
+    assert ready["merge_check"] == "NOT_RUN"
+    assert ready["fixture_restore"] == "NOT_RUN"
+
+    scope_git(root, "add", "scripts/tool.py")
+    blocked = staged_scope_check(root, packet)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["staged_files"] == ["docs/engineering.md", "scripts/tool.py"]
+    assert blocked["issues"] == ["path is outside the task scope: scripts/tool.py"]
+
+
+def test_staged_scope_check_uses_merge_base_for_explicit_base(tmp_path: Path) -> None:
+    from scripts.agent_control import staged_scope_check
+
+    root = tmp_path / "repo"
+    revision = scope_repository(root)
+    scope_git(root, "switch", "-qc", "ci/staged")
+    (root / "docs/engineering.md").write_text("topic\n", encoding="utf-8")
+    scope_git(root, "add", "docs/engineering.md")
+    scope_git(root, "commit", "-qm", "topic")
+    scope_git(root, "switch", "-q", "dev")
+    (root / "rtl/upstream.sv").write_text("upstream\n", encoding="utf-8")
+    scope_git(root, "add", "rtl/upstream.sv")
+    scope_git(root, "commit", "-qm", "upstream")
+    scope_git(root, "update-ref", "refs/remotes/origin/dev", "refs/heads/dev")
+    scope_git(root, "switch", "-q", "ci/staged")
+    (root / "scripts/tool.py").write_text("staged = True\n", encoding="utf-8")
+    scope_git(root, "add", "scripts/tool.py")
+    packet = scope_packet(root, revision, ["docs/**", "scripts/**"])
+
+    result = staged_scope_check(root, packet, base="origin/dev")
+
+    assert result["status"] == "READY"
+    assert result["base"] == "origin/dev"
+    assert result["diff_base"] == revision
+    assert result["staged_files"] == ["docs/engineering.md", "scripts/tool.py"]
+    assert "rtl/upstream.sv" not in result["staged_files"]
+
+
+def test_staged_scope_check_rejects_forbidden_unmerged_and_invalid_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.agent_control as control
+
+    root = tmp_path / "repo"
+    revision = scope_repository(root)
+    packet = scope_packet(root, revision, [])
+    (root / "rtl/tiny/top/tiny_sram.sv").write_text("changed\n", encoding="utf-8")
+    scope_git(root, "add", "rtl/tiny/top/tiny_sram.sv")
+    forbidden = control.staged_scope_check(root, packet)
+    assert forbidden["status"] == "BLOCKED"
+    assert forbidden["issues"] == ["path is forbidden by task scope: rtl/tiny/top/tiny_sram.sv"]
+
+    task = json.loads(packet.read_text(encoding="utf-8"))
+    task["scope"]["allowed_paths"] = ["rtl/**"]
+    task["scope"]["forbidden_paths"] = []
+    packet.write_text(json.dumps(task), encoding="utf-8")
+    real_git_output = control.git_output
+
+    def unmerged(root: Path, *arguments: str) -> str:
+        if arguments[:3] == ("diff", "--name-only", "--diff-filter=U"):
+            return "rtl/conflict.sv\n"
+        return real_git_output(root, *arguments)
+
+    monkeypatch.setattr(control, "git_output", unmerged)
+    conflict = control.staged_scope_check(root, packet)
+    assert conflict["status"] == "BLOCKED"
+    assert conflict["unmerged_paths"] == ["rtl/conflict.sv"]
+    assert conflict["issues"] == ["staged scope check has unmerged paths: rtl/conflict.sv"]
+
+    with pytest.raises(ValueError, match="must not be empty or an option"):
+        control.staged_scope_check(root, packet, base="--help")
+    outside = control.staged_scope_check(root / "docs", packet)
+    assert outside["status"] == "BLOCKED"
+    assert outside["staged_files"] == []
+    assert outside["diff_base"] is None
+
+
+def test_staged_scope_check_is_empty_for_unstaged_files_and_never_calls_heavy_operations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts.agent_control import staged_scope_check
+
+    root = tmp_path / "repo"
+    revision = scope_repository(root)
+    packet = scope_packet(root, revision, ["docs/engineering.md"])
+    (root / "scripts/untracked.py").write_text("untracked = True\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.merge_preflight.merge_conflict_scan",
+        lambda *args: pytest.fail("staged scope check must not run a merge dry-run"),
+    )
+    monkeypatch.setattr(
+        "scripts.fixture_control.restore",
+        lambda *args: pytest.fail("staged scope check must not restore fixtures"),
+    )
+
+    result = staged_scope_check(root, packet)
+
+    assert result["status"] == "READY"
+    assert result["staged_files"] == []
+
+
+def test_make_agent_scope_check_is_explicit_and_read_only() -> None:
+    completed = subprocess.run(
+        ["make", "-s", "-n", "agent-scope-check", "TASK=build/tasks/example/task.json", "BASE=origin/dev"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert "agent_control.py scope-check" in completed.stdout
+    assert "--base origin/dev" in completed.stdout
+    assert "--merge-check" not in completed.stdout
+    assert "fixture_control.py restore" not in completed.stdout

@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      source_run:
+        description: Optional previous quality run ID used only for shadow comparison
+        required: false
+        type: string
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -100,6 +107,85 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  incremental-shadow:
+    needs: impact
+    if: always() && needs.impact.result == 'success'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Restore pip cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Restore locked source dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            rtl/managed/clusterip/archinfo
+            rtl/managed/clusterip/common
+            rtl/managed/clusterip/crc
+            rtl/managed/clusterip/ps2
+            rtl/managed/clusterip/pwm
+            rtl/managed/clusterip/rng
+            rtl/managed/clusterip/rtc
+            rtl/managed/clusterip/wdg
+            rtl/managed/hazard3
+            rtl/managed/mpw
+            rtl/managed/third_party
+            .cache/retrosoc/sources/openc906
+          key: quality-shadow-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Install pinned quality tools
+        run: >-
+          python3 -m pip install
+          --requirement requirements/build.txt
+          --requirement requirements/ci.txt
+
+      - name: Set up locked source dependencies
+        run: |
+          python3 setup.py
+          python3 scripts/setup_openc906.py
+          python3 rtl/managed/clusterip/setup.py
+          python3 rtl/ip/setup.py
+
+      - name: Evaluate shadow reuse without skipping full jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+          CURRENT_RUN: ${{ github.run_id }}
+        run: |
+          BASE="$(git merge-base origin/dev HEAD)"
+          args=(--base "${BASE}" --head "${{ github.sha }}"
+                --workflow-head "${WORKFLOW_HEAD}" --workflow-run "${CURRENT_RUN}"
+                --event "${EVENT_NAME}" --output build/incremental-ci/shadow.json)
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--pr-number "${PR_NUMBER}" --auto-previous)
+          fi
+          if [[ -n "${SOURCE_RUN}" ]]; then
+            args+=(--source-run "${SOURCE_RUN}")
+          fi
+          python3 scripts/incremental_ci.py "${args[@]}"
+          python3 -m json.tool build/incremental-ci/shadow.json
+
+      - name: Upload incremental shadow evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: quality-incremental-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/incremental-ci/shadow.json
+          if-no-files-found: error
+          retention-days: 30
+
   fixtures:
     needs: impact
     if: needs.impact.outputs.quality_fixtures == 'true'
@@ -117,14 +203,14 @@ jobs:
 
       - name: Restore pip cache
         id: pip
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
 
       - name: Restore locked source dependencies
         id: sources
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             physical/pdk/IHP-Open-PDK
@@ -138,7 +224,7 @@ jobs:
 
       - name: Restore locked toolchains
         id: toolchains
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .cache/retrosoc/downloads
@@ -147,7 +233,7 @@ jobs:
 
       - name: Restore accelerator reference cache
         id: references
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .cache/retrosoc/sources/apu-libflac
@@ -229,6 +315,18 @@ jobs:
           --cache "sources=${{ steps.sources.outputs.cache-hit }}"
           --cache "toolchains=${{ steps.toolchains.outputs.cache-hit }}"
           --cache "references=${{ steps.references.outputs.cache-hit }}"
+          --cache-key "pip=${{ steps.pip.outputs.cache-primary-key }}"
+          --cache-key "sources=${{ steps.sources.outputs.cache-primary-key }}"
+          --cache-key "toolchains=${{ steps.toolchains.outputs.cache-primary-key }}"
+          --cache-key "references=${{ steps.references.outputs.cache-primary-key }}"
+          --cache-matched-key "pip=${{ steps.pip.outputs.cache-matched-key }}"
+          --cache-matched-key "sources=${{ steps.sources.outputs.cache-matched-key }}"
+          --cache-matched-key "toolchains=${{ steps.toolchains.outputs.cache-matched-key }}"
+          --cache-matched-key "references=${{ steps.references.outputs.cache-matched-key }}"
+          --cache-attempted "pip=${{ steps.pip.outputs.cache-primary-key != '' }}"
+          --cache-attempted "sources=${{ steps.sources.outputs.cache-primary-key != '' }}"
+          --cache-attempted "toolchains=${{ steps.toolchains.outputs.cache-primary-key != '' }}"
+          --cache-attempted "references=${{ steps.references.outputs.cache-primary-key != '' }}"
 
       - name: Upload fixture reports
         if: always()
@@ -250,6 +348,51 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Save pip cache
+        if: success() && steps.pip.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
+
+      - name: Save locked source dependencies
+        if: success() && steps.sources.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            physical/pdk/IHP-Open-PDK
+            physical/pdk/icsprout55-pdk
+            .cache/retrosoc/sources/ics55_ecos_pll
+            .cache/retrosoc/sources/openc906
+            rtl/managed/third_party
+            .cache/retrosoc/pdk
+            .cache/retrosoc/stamps
+          key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Save locked toolchains
+        if: success() && steps.toolchains.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/downloads
+            .cache/retrosoc/toolchains
+          key: tools-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
+      - name: Save accelerator reference cache
+        if: success() && steps.references.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: |
+            .cache/retrosoc/sources/apu-libflac
+            .cache/retrosoc/sources/apu-flac-corpus
+            .cache/retrosoc/sources/apu-mlperf-tiny
+            .cache/retrosoc/sources/apu-kws-mfcc
+            .cache/retrosoc/sources/apu-tensorflow
+            .cache/retrosoc/sources/apu-gemmlowp
+            .cache/retrosoc/sources/npu-vww-corpus
+            .cache/retrosoc/downloads/npu
+          key: accelerator-reference-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}
+
   fixtures-fan-in:
     needs: [impact, fixtures]
     if: always() && needs.impact.result == 'success' && needs.impact.outputs.quality_fixtures == 'true'
@@ -258,19 +401,31 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 2
 
       - name: Download every fixture shard
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: quality-fixture-shard-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: build/pytest/fan-in
 
       - name: Verify complete fixture coverage
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
         run: |
           args=(verify --output build/pytest/fan-in/summary.json)
           for path in build/pytest/fan-in/*/; do
             args+=(--shard-dir "${path}")
           done
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            args+=(--workflow-head "${WORKFLOW_HEAD}"
+                  --workflow-run "${{ github.run_id }}"
+                  --run-attempt "${{ github.run_attempt }}"
+                  --pr-number "${PR_NUMBER}")
+          fi
           python3 scripts/pytest_shards.py "${args[@]}"
 
       - name: Upload fixture fan-in
@@ -283,7 +438,7 @@ jobs:
           retention-days: 30
 
   quality-gate:
-    needs: [impact, fast, fixtures, fixtures-fan-in]
+    needs: [impact, fast, incremental-shadow, fixtures, fixtures-fan-in]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -296,6 +451,7 @@ jobs:
           args=(gate
             --job impact=${{ needs.impact.result }}
             --job fast=${{ needs.fast.result }}
+            --job incremental-shadow=${{ needs.incremental-shadow.result }}
             --job fixtures=${{ needs.fixtures.result }}
             --job fixtures-fan-in=${{ needs.fixtures-fan-in.result }}
             --label quality

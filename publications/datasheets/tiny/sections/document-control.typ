@@ -2,13 +2,15 @@
 #import "../diagrams.typ": flow
 
 = Document Control
+#change-start("tiny-v02-commercial-20261114-document-control","Current source identity and revision history",category:"cross-reference")
 == Revision History
 #ds-table("revision",[Document revision history],([Date],[Version],[Change]),(
  ([2026-09-25],[v0.1 DRAFT],[Initial IHP130/four-channel publication; original PDF retained.]),
  ([2026-10-29],[v0.2 DRAFT],[ICS55 main reference; 22 IP chapters; current R2/SPI integration and evidence.]),
  ([2026-10-29],[v0.2 DRAFT],[Same-version Mini hierarchy and engineering-figure alignment.]),
  ([2026-11-10],[v0.2 DRAFT],[Source refresh with PPALite P3, DVP/DMA/RCU contracts and 23 integrated IP chapters.]),
- (doc.date,[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-11],[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.]),
+ (doc.date,[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,
@@ -21,6 +23,7 @@ The prototype brand is Rill; this identity does not establish an orderable or qu
 
 
 == License
+#change-end("tiny-v02-commercial-20261114-document-control")
 The project retains Mulan PSL v2 and the respective component/font licenses. Read the repository LICENSE
 and locked third-party notices for the full terms; the publication does not change their scope.
 #source-note("LICENSE",title:"Project license")

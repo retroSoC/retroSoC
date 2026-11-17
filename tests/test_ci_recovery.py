@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
 
-from scripts.ci_recovery import cache_report, classify_failure, inspect_job, rerun_decision
+from scripts.ci_recovery import (
+    cache_report,
+    classify_failure,
+    gh_text,
+    inspect_job,
+    normalize_log_text,
+    rerun_decision,
+)
 
 
 @pytest.mark.parametrize(
@@ -108,3 +116,103 @@ def test_cache_report_preserves_missing_and_invalid_states(tmp_path: Path) -> No
         cache_report(output, ["tools=unknown"])
     with pytest.raises(ValueError, match="invalid cache observation"):
         cache_report(output, ["tools"])
+
+
+def test_cache_report_binds_optional_keys_without_inventing_values(tmp_path: Path) -> None:
+    report = cache_report(
+        tmp_path / "cache.json",
+        ["sources=true", "tools=false", "ccache="],
+        keys=["sources=sources-key", "tools=tools-key", "ccache="],
+        matched_keys=["sources=sources-key", "tools=fallback-key", "ccache="],
+        attempted=["tools"],
+    )
+    assert report["caches"][0]["key"] == "sources-key"
+    assert report["caches"][0]["matched_key"] == "sources-key"
+    assert report["caches"][1]["key"] == "tools-key"
+    assert report["caches"][1]["matched_key"] == "fallback-key"
+    assert report["caches"][2]["key"] is None
+    assert report["caches"][2]["matched_key"] is None
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], keys=["other=key"])
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], matched_keys=["other=key"])
+    with pytest.raises(ValueError, match="without a status observation"):
+        cache_report(tmp_path / "cache.json", ["sources=true"], attempted=["other"])
+
+
+def test_cache_report_distinguishes_an_attempted_empty_hit_from_not_run(tmp_path: Path) -> None:
+    report = cache_report(
+        tmp_path / "cache.json",
+        ["sources=", "optional=", "skipped="],
+        keys=["sources=primary-key"],
+        attempted=["sources", "skipped=false"],
+    )
+    assert [entry["status"] for entry in report["caches"]] == ["MISS", "NOT_RUN", "NOT_RUN"]
+    with pytest.raises(ValueError, match="must be unique"):
+        cache_report(tmp_path / "cache.json", ["sources="], attempted=["sources", "sources"])
+    with pytest.raises(ValueError, match="invalid cache-attempted"):
+        cache_report(tmp_path / "cache.json", ["sources="], attempted=["sources=unknown"])
+
+
+def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
+    root = Path(__file__).resolve().parents[1]
+    action = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    for relative, names in (
+        (".github/workflows/quality.yml", ("pip", "sources", "toolchains", "references")),
+        (".github/workflows/_regression.yml", ("sources", "toolchains", "ccache")),
+    ):
+        workflow = (root / relative).read_text(encoding="utf-8")
+        assert workflow.count(f"uses: actions/cache/restore@{action}") == len(names)
+        assert workflow.count(f"uses: actions/cache/save@{action}") == len(names)
+        for name in names:
+            assert f"steps.{name}.outputs.cache-primary-key" in workflow
+            assert f"steps.{name}.outputs.cache-matched-key" in workflow
+            assert f'--cache-attempted "{name}=' in workflow
+            assert f"steps.{name}.outputs.cache-primary-key != ''" in workflow
+            assert f"if: success() && steps.{name}.outputs.cache-hit != 'true'" in workflow
+    quality = (root / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+    regression = (root / ".github/workflows/_regression.yml").read_text(encoding="utf-8")
+    assert quality.count("key: quality-sources-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}") == 2
+    assert regression.count("path: .cache/retrosoc/ccache") == 2
+    assert regression.count("ccache-${{ matrix.product }}-${{ runner.os }}-${{ hashFiles('dependencies/dependencies.lock.json') }}-") == 2
+
+
+def test_log_normalization_removes_ansi_and_replaces_other_controls() -> None:
+    raw = "\x1b[36;1mFailed to connect\x1b[0m\x00\n"
+    normalized = normalize_log_text(raw)
+    assert normalized == "Failed to connect\ufffd\n"
+    assert classify_failure("failure", normalized)["category"] == "infrastructure_failure"
+
+
+def test_gh_log_download_allows_terminal_escape_sequences(monkeypatch: pytest.MonkeyPatch) -> None:
+    commands = []
+
+    def execute(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="log\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", execute)
+    assert gh_text(["api", "repos/retroSoC/retroSoC/actions/jobs/10/logs"]) == "log\n"
+    assert commands[0][2] == "--allow-escape-sequences"
+
+
+def test_inspect_preserves_raw_and_normalized_logs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    raw = "\x1b[31mFailed to connect\x1b[0m\x00\nMaximum resident set size (kbytes): 1024\n"
+    monkeypatch.setattr("scripts.ci_recovery.gh_json", lambda arguments: job())
+    monkeypatch.setattr("scripts.ci_recovery.gh_text", lambda arguments: raw)
+    report = inspect_job(
+        tmp_path,
+        "retroSoC/retroSoC",
+        10,
+        tmp_path / "inspection.json",
+        execute=False,
+        expected_head="a" * 40,
+    )
+    assert Path(report["raw_log"]).read_text(encoding="utf-8") == raw
+    normalized = Path(report["log"]).read_text(encoding="utf-8")
+    assert "\x1b" not in normalized and "\x00" not in normalized
+    assert "Failed to connect\ufffd" in normalized
+    assert len(report["raw_log_sha256"]) == 64
+    assert len(report["log_sha256"]) == 64
+    assert report["classification"]["category"] == "infrastructure_failure"
+    assert report["rerun_decision"]["status"] == "ELIGIBLE"

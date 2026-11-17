@@ -21,7 +21,14 @@ def data():
 
 def test_refrozen_structure_covers_ga2d_without_duplicate_register_ownership(data):
     contract = read_json(ROOT / "publications/datasheets/structure-contract.json")
-    assert len(contract["entries"]) == 109
+    assert len(contract["entries"]) == 110
+    # The reviewed commercial-reference update adds one front quick reference
+    # and moves package/electrical information before complete registers.
+    entries = contract["entries"]
+    assert sum(r["anchor"] == "mini-specification-quick" for r in entries) == 1
+    titles = [r["title"] for r in entries]
+    assert titles.index("Packaging") < titles.index("Peripherals")
+    assert titles.index("Electrical and Timing Specifications") < titles.index("Peripherals")
     assert len(contract["ip_ids"]) == 42
     assert contract["ip_ids"].index("ga2d") == contract["ip_ids"].index("jpeg") + 1
     assert contract["ip_ids"].index("apu") == contract["ip_ids"].index("ga2d") + 1
@@ -54,7 +61,7 @@ def test_current_apu_image_fits_v2_without_enabling_kws_or_mp3(data):
 def test_new_drawings_keep_geometry_and_manifest_sources(data):
     diagrams = data["system_reference"]["illustrations"]
     records = inventory(diagrams)
-    assert {"circuiteria:ga2d", "bytefield:ga2d-pixels", "blockcell:ga2d-fifos", "blockcell:ga2d-pitched-buffer"} <= records.keys()
+    assert {"cetz:ga2d", "bytefield:ga2d-pixels", "blockcell:ga2d-fifos", "blockcell:ga2d-pitched-buffer"} <= records.keys()
     fifo = diagrams["storage"]["ga2d-fifos"]["stores"]
     assert [(row["depth"], row["bits"]) for row in fifo] == [(32, 64), (32, 64), (32, 64), (32, 8)]
     rgb888 = diagrams["layouts"]["ga2d-pixels"]["rows"][1]

@@ -1,11 +1,51 @@
 # Publications
 
+Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
+**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed dev source is
+903ef1eda3b956864157e6e64319fddde9cd5747; Mini's technical source snapshot is
+2f1f90f30622f9610d4bde163bd773d7d60502d7, now contained in dev. The main
+references are Tiny ICS55 (with explicit IHP130 compatibility) and Mini IHP130
+PRODUCT/HP/MPW. The two books have independent profiles, manifests and output markers.
+
+The IP drawing round starts at publication dev `4315f7d7`, preserving the
+439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
+Tiny's 23 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
+[IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
+The seven system Circuiteria figures and all other figure families retain
+their design. Both builders export editable data/Typst plus standalone SVG/PDF,
+source fingerprints, geometry/coverage audits and output hashes. Active markers
+are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
+
+Mini's `mini.json.build_control_review` separately records reviewed non-product
+Makefile and contribution-policy changes through `c9bd251d`. It binds a full
+commit and each file's blob identity independently of the technical source
+snapshot. The optional `documentation_blobs` mapping accepts only
+`docs/git-workflow.md`; product documents cannot be exempted. Source checks
+reject later control-file edits and all unreviewed RTL/SDK/profile changes. The
+manifest hashes both reviewed files. This is an explicit one-revision review,
+not an exclusion from future source checks.
+
+The [shared specification standard](specifications/README.md) owns typed data,
+reference models, source fingerprints, plot/vector export and replacement rules.
+The isolated environment is requirements/publication.txt; install it with
+python -m pip install --require-hashes -r requirements/publication.txt before
+using the existing setup/build/check commands. Reference Only examples fill
+structure without becoming released electrical, package or board requirements.
+
+The earlier commercial-reference round retained Tiny 425 pages / SHA-256
+a7816f014c2ba739669cd98df50accace07376d4620ad0eab81c514a7fd4a3d3,
+and Mini 796 pages / SHA-256
+8c20a57949427fa7058a4663bb95e4f864d442154f8093b5318e37a9f825f010.
+Both books now use report_changes.py and paired change-marker metadata.
+Older edition descriptions below retain their original dates and evidence scopes.
+
+
 This directory owns manually built technical publications. The Mini datasheet is
 an English product document with a separate MPW compatibility appendix. It does
 not define or change RTL, register ABIs, build profiles or hardware quality policy.
 The canonical RTL/configuration inputs remain authoritative.
 
-The **2026-10-22 Mini v0.5 DRAFT OpenC906 refresh** reviews dev source
+The historical **2026-10-22 Mini v0.5 DRAFT OpenC906 refresh** reviews dev source
 `9ab05c6404c02b5f2c927539b5c681b46f778b9f`: the locked RV64GC/Sv39 OpenC906,
 core-internal c900 CLINT/PLIC, V2 workload bundles, Linux `/init`, RT-Thread,
 and the selected SRAM/clock-gating paths. The Overview has 43 integrated labels;
@@ -25,12 +65,12 @@ twenty-three current IP chapters and its own source/structure/evidence checks. T
 v0.2 DRAFT uses ICS55 as its main reference, with explicit IHP130 compatibility;
 retired UART1/I2C1 interfaces remain in a migration appendix. Run
 `python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.
-Its output and `latest-tiny` record are separate; the existing Mini entrypoint,
-templates, configuration, review and delivered PDF are unchanged.
+Its output and `latest-tiny` record remain separate. Shared specification components
+now evolve with both books; each hardware collector retains independent coverage.
 
 ## Mini datasheet
 
-The current round uses `v05-c906-20261022-` change markers and compares against
+The historical OpenC906 round used `v05-c906-20261022-` change markers and compares against
 the retained 798-page Rill PDF with SHA-256
 `49c3e20e7568e20baaa75f104e71b7e526f33aa7231bed03dbcde5893712da93`.
 Its date and full SHA are in `mini.json`; page-dependent review/validation records
@@ -109,9 +149,9 @@ See the [layout/content standard](datasheets/style.md) for exact geometry,
 emphasis scope and validation requirements. Rebuild all page-dependent records
 after typography changes and retain the previous PDF and actual test verdicts.
 
-The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
-circuiteria 0.2.1. All 42 IP chapters and four system hardware figures use
-source-bound circuits. Binary layouts cover descriptors, boot/microcode bundles,
+The retained specialized drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
+circuiteria 0.2.1. The 42 IP chapters use source-bound CeTZ circuits; four system
+hardware figures retain Circuiteria. Binary layouts cover descriptors, boot/microcode bundles,
 serial framing and media/crypto packing. APU's seven current instruction classes
 and 62 operations are grouped by format, operand constraints and tool target.
 Storage figures cover architectural FIFOs, line buffers, packet/table/control
@@ -124,8 +164,8 @@ CeTZ 0.5.2. It uses regular 9 pt text for ordinary labels, regular 8 pt text
 inside compact CDC/Gateway cells, and bold 9 pt bus/domain labels. Individually named PRODUCT IP/instance
 rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
 labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
-are separate from IP categories. All 46 Circuiteria figures retain their existing
-renderer. The 142 specialized figures include NPU's circuit, three binary layouts
+are separate from IP categories. Only the four system figures retain Circuiteria;
+IP primaries/details use the shared renderer. The prior 142 specialized figures include NPU's circuit, three binary layouts
 and two storage figures.
 
 `soc_diagram_reference.py` checks `datasheets/soc-architecture.json`
@@ -354,10 +394,18 @@ uses `configs/ci/ihp130-hp.mk`; legacy selection uses `configs/cluster/mini-mpw.
 
 ## Manual workflow
 
-Use Python 3.10 or newer, Git and **Typst 0.15.1**. PDF checks additionally use
-`pypdf`, `pdfplumber` and `fonttools`, available in the Codex bundled document runtime. The
-build uses Python's standard library and the installed Typst CLI; Python 3.10
-also uses the `tomli` backport already pinned in `requirements/build.txt`.
+Use Python 3.10 on Ubuntu 22.04 x86_64 or Python 3.12 on Windows x86_64,
+Git and **Typst 0.15.1**. Install the isolated, hash-pinned
+[publication environment](../requirements/publication.txt) before building:
+
+    python -m venv .cache/publication-venv
+    python -m pip install --require-hashes -r requirements/publication.txt
+
+Activate that environment (or call its Python directly). The default build uses
+Matplotlib 3.10.7 and the locked numerical/font libraries for curves; PDF checks
+use the same environment's pypdf, pdfplumber and FontTools. Firmware/EDA/CI
+requirements remain separate. Python 3.10 also uses the tomli backport from the
+existing build requirements when required by a setup command.
 
 From the repository root:
 

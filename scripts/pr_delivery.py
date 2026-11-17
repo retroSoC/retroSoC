@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import subprocess
 import sys
@@ -14,12 +13,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.agent_control import dump_json  # noqa: E402
+from scripts.agent_control import dump_json, read_json  # noqa: E402
 from scripts.engineering_metrics import gh_json  # noqa: E402
 from scripts.flow_control import utc_now  # noqa: E402
 from scripts.pr_workflow import (  # noqa: E402
     auto_merge_policy,
-    checks_report,
     cleanup_merged_branch,
     merge_pr,
     native_auto_merge_enabled,
@@ -124,43 +122,58 @@ def deliver(
     watch: bool,
     cleanup: bool = True,
     delete_remote: bool = True,
+    checkpoint: Any = None,
+    delivery_dir: Path | None = None,
+    coordinator_output: Path | None = None,
 ) -> dict[str, Any]:
     if interval <= 0:
         raise ValueError("interval must be positive")
+    if watch and delivery_dir is None:
+        raise ValueError("watched delivery requires a checkpoint directory")
     started = time.monotonic()
+
+    def save(result: dict[str, Any]) -> None:
+        if checkpoint is not None:
+            checkpoint(result)
+
     document = enable_delivery(root, repository, number, delivery_preflight(root, repository, number))
+    save(document)
     if document["status"] == "BLOCKED" or not watch:
         return document
-    previous_output = ""
-    while True:
-        pull = view_pr(repository, number, root)
-        if pull.get("state") == "MERGED":
-            result = reconcile_delivery(root, repository, number, cleanup, delete_remote)
-            result.update(
-                head_sha=pull.get("headRefOid") or document["head_sha"],
-                required_contexts=document["required_contexts"],
-                auto_merge=True,
-                watch_seconds=round(time.monotonic() - started, 3),
-            )
-            return result
-        if pull.get("state") != "OPEN":
-            raise RuntimeError(f"PR #{number} is {pull.get('state')}; native auto-merge cannot complete")
-        if not native_auto_merge_enabled(repository, number, root):
-            raise RuntimeError(f"PR #{number} native auto-merge was disabled; reconcile manually after review")
-        report = checks_report(
-            root,
-            number,
-            repository,
-            document["required_contexts"],
-            allow_empty=True,
+
+    from scripts.delivery_controller import coordinate, record_path
+
+    path = record_path(delivery_dir, number)
+    atomic_write(path, dump_json(document))
+    summary_path = coordinator_output or delivery_dir / f"pr-{number}-controller.json"
+    summary = coordinate(
+        root,
+        repository,
+        [number],
+        delivery_dir,
+        interval,
+        True,
+        summary_path,
+        cleanup=cleanup,
+        delete_remote=delete_remote,
+    )
+    result = read_json(path)
+    result["watch_seconds"] = round(time.monotonic() - started, 3)
+    result["coordinator_summary"] = str(summary_path)
+    atomic_write(path, dump_json(result))
+    save(result)
+    if summary["status"] == "FAILED":
+        raise RuntimeError(
+            f"PR #{number} checks failed at {result.get('last_check_head_sha') or result['head_sha']}; "
+            "GitHub will not auto-merge"
         )
-        output = json.dumps(report, sort_keys=True)
-        if output != previous_output:
-            print(output, flush=True)
-            previous_output = output
-        if report["status"] == "FAIL":
-            raise RuntimeError(f"PR #{number} checks failed at {report['head_sha']}; GitHub will not auto-merge")
-        time.sleep(interval)
+    if summary["status"] == "ATTENTION" and result.get("status") != "MERGED_WITH_WARNINGS":
+        if result.get("status") == "ATTENTION" and any(
+            "auto-merge is disabled" in str(warning) for warning in result.get("warnings", [])
+        ):
+            raise RuntimeError(f"PR #{number} native auto-merge was disabled; reconcile manually after review")
+        raise RuntimeError(f"PR #{number} delivery requires attention: {result.get('status')}")
+    return result
 
 
 def parse_args() -> argparse.Namespace:
@@ -169,7 +182,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repository", default="retroSoC/retroSoC")
     parser.add_argument("--pr", type=int, required=True)
     parser.add_argument("--interval", type=int, default=60)
-    parser.add_argument("--watch", action="store_true", help="retain bounded polling for immediate reconciliation")
+    parser.add_argument("--watch", action="store_true", help="coordinate polling from durable checkpoints")
     parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--reconcile-only", action="store_true")
     parser.add_argument("--no-cleanup", action="store_true")
@@ -198,6 +211,9 @@ def main() -> int:
             if args.preflight_only:
                 result = delivery_preflight(root, args.repository, args.pr)
             else:
+                from scripts.delivery_controller import record_path
+
+                delivery_output = record_path(output.parent, args.pr)
                 result = deliver(
                     root,
                     args.repository,
@@ -206,6 +222,9 @@ def main() -> int:
                     args.watch,
                     cleanup=not args.no_cleanup,
                     delete_remote=not args.no_remote_delete,
+                    checkpoint=lambda result: atomic_write(delivery_output, dump_json(result)),
+                    delivery_dir=delivery_output.parent,
+                    coordinator_output=output.parent / f"pr-{args.pr}-controller.json",
                 )
         atomic_write(output, dump_json(result))
         print(dump_json(result), end="")

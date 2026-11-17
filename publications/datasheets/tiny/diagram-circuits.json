@@ -401,7 +401,85 @@
       }
     ],
     "note": "Memory-mapped and indirect requests share the LUT/serial engine. Tiny uses AXI32: NOR programming remains indirect, while initialized NSS1 PSRAM admits the qualified memory-write path. Apertures and fitted capacity are distinct. XPI OUT groups SCK, NSS[3:0], IO output[3:0] and output enables[3:0]; IN is IO input[3:0].",
-    "title": "XPI Universal Controller"
+    "title": "XPI Universal Controller",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "XPI",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "mm",
+          "indirect"
+        ],
+        [
+          "owner",
+          "core"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/storage/apb4_xpi.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/storage/apb4_xpi.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/storage/apb4_xpi.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/storage/apb4_xpi.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "declaration": "apb4_if.slave"
+        },
+        {
+          "protocol": "AXI4",
+          "width": 32,
+          "side": "left",
+          "node": "mm",
+          "file": "rtl/ip/storage/apb4_xpi.sv",
+          "declaration": "axi4_if.slave",
+          "port": "mem_axi4",
+          "width_binding": {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "instance": "u_xpi_mem_axi4_if",
+            "connections": [
+              {
+                "file": "rtl/tiny/top/retrosoc_tiny.sv",
+                "text": ".mem_axi4(u_xpi_mem_axi4_if)"
+              }
+            ]
+          }
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "sdio": {
     "nodes": [
@@ -512,7 +590,173 @@
           "name": "u_sdio_core",
           "module": "sdio_core",
           "declaration_file": "rtl/ip/storage/sdio_core.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_sdio_clock",
+            "title": "clock",
+            "module": "sdio_clock",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "enable_i": "s_clock_en",
+              "half_period_i": "half_period_i",
+              "sck_o": "s_clock_sck",
+              "launch_tick_o": "s_launch_tick",
+              "sample_tick_o": "s_sample_tick",
+              "running_o": "s_clock_running"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "CounterWidth": "16"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/storage/sdio_core.sv",
+                "text": "u_sdio_clock ("
+              }
+            ]
+          },
+          {
+            "id": "u_sdio_command",
+            "title": "command",
+            "module": "sdio_command",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "launch_tick_i": "s_launch_tick",
+              "sample_tick_i": "s_sample_tick",
+              "start_i": "cmd_start_i",
+              "abort_i": "s_abort_request",
+              "cmd_index_i": "cmd_index_i",
+              "cmd_arg_i": "cmd_arg_i",
+              "resp_type_i": "cmd_resp_type_i",
+              "crc_check_i": "cmd_crc_check_i",
+              "index_check_i": "cmd_index_check_i",
+              "timeout_cycles_i": "s_cmd_timeout_cfg",
+              "busy_timeout_cycles_i": "timeout_busy_i",
+              "cmd_oe_o": "s_cmd_oe",
+              "cmd_do_o": "s_cmd_do",
+              "busy_o": "s_cmd_busy",
+              "done_o": "s_cmd_done",
+              "error_o": "s_cmd_err",
+              "timeout_o": "s_cmd_timeout",
+              "crc_error_o": "s_cmd_crc_err",
+              "index_error_o": "s_cmd_index_err",
+              "busy_timeout_o": "s_cmd_busy_timeout",
+              "response_o": "s_cmd_response",
+              "last_cmd_index_o": "s_last_cmd"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "TimeoutWidth": "32"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/storage/sdio_core.sv",
+                "text": "u_sdio_command ("
+              }
+            ]
+          },
+          {
+            "id": "u_sdio_data",
+            "title": "data",
+            "module": "sdio_data",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "launch_tick_i": "s_launch_tick",
+              "sample_tick_i": "s_sample_tick",
+              "start_i": "data_start_i",
+              "abort_i": "s_abort_request",
+              "bus_width_i": "bus_width_i",
+              "block_size_i": "block_size_i",
+              "block_count_i": "block_count_i",
+              "timeout_cycles_i": "timeout_data_i",
+              "busy_timeout_cycles_i": "timeout_busy_i",
+              "dat_oe_o": "s_data_oe",
+              "dat_do_o": "s_data_do",
+              "tx_valid_i": "s_data_tx_valid",
+              "tx_ready_o": "s_data_tx_ready",
+              "tx_wait_o": "s_data_tx_wait",
+              "tx_data_i": "s_data_tx_data",
+              "tx_strb_i": "s_data_tx_strb",
+              "tx_last_i": "s_data_tx_last",
+              "rx_valid_o": "s_data_rx_valid",
+              "rx_ready_i": "s_data_rx_ready",
+              "rx_data_o": "s_data_rx_data",
+              "rx_strb_o": "s_data_rx_strb",
+              "rx_last_o": "s_data_rx_last",
+              "busy_o": "s_data_busy",
+              "done_o": "s_data_done",
+              "error_o": "s_data_err",
+              "timeout_o": "s_data_timeout",
+              "crc_error_o": "s_data_crc_err",
+              "busy_timeout_o": "s_data_busy_timeout"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "TimeoutWidth": "32"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/storage/sdio_core.sv",
+                "text": "u_sdio_data ("
+              }
+            ]
+          },
+          {
+            "id": "u_sdio_dma",
+            "title": "dma",
+            "module": "sdio_dma",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "start_i": "s_dma_start",
+              "abort_i": "s_abort_request",
+              "direction_i": "s_dma_direction",
+              "desc_base_i": "desc_base_i",
+              "desc_count_i": "desc_count_i",
+              "total_bytes_i": "s_total_bytes",
+              "data_in_valid_i": "s_dma_data_in_valid",
+              "data_in_ready_o": "s_dma_data_in_ready",
+              "data_in_i": "s_dma_data_in",
+              "data_in_strb_i": "s_dma_data_in_strb",
+              "data_in_last_i": "s_dma_data_in_last",
+              "data_out_valid_o": "s_dma_data_out_valid",
+              "data_out_ready_i": "s_dma_data_out_ready",
+              "data_out_o": "s_dma_data_out",
+              "data_out_strb_o": "s_dma_data_out_strb",
+              "data_out_last_o": "s_dma_data_out_last",
+              "busy_o": "s_dma_busy",
+              "done_o": "s_dma_done",
+              "error_o": "s_dma_err",
+              "error_code_o": "s_dma_err_code",
+              "current_desc_o": "s_dma_current_desc",
+              "bytes_done_o": "s_dma_bytes_done",
+              "error_addr_o": "s_dma_err_addr",
+              "descriptor_irq_o": "s_dma_descriptor_irq",
+              "abort_done_o": "s_dma_abort_done",
+              "dma_axi4": "dma_axi4"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "AddrWidth": "AddrWidth",
+              "DataWidth": "DataWidth",
+              "DescCount": "DescCount"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/storage/sdio_core.sv",
+                "text": "u_sdio_dma ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "memory",
@@ -729,7 +973,75 @@
       }
     ],
     "note": "Only native host0 is integrated. Descriptor/status traffic and payload share its private SYS-domain AXI32 master; central DMA channel completion is not SDIO completion. SD OUT groups SCK, CMD output/enable and DAT output/enable[3:0]; IN groups CMD input and DAT input[3:0].",
-    "title": "Native SD/SDIO Host (SDIO0)"
+    "title": "Native SD/SDIO Host (SDIO0)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "SDIO0",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "memory",
+          "core"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/storage/apb4_sdio.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/storage/apb4_sdio.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/storage/apb4_sdio.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {
+        "memory": "Private AXI32\nDMA engine"
+      },
+      "interfaces": [
+        {
+          "protocol": "AXI4",
+          "width": 32,
+          "side": "left",
+          "node": "memory",
+          "file": "rtl/ip/storage/apb4_sdio.sv",
+          "declaration": "axi4_if.master",
+          "port": "dma_axi4"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "core",
+          "title": "Native SD command / data",
+          "file": "rtl/ip/storage/sdio_core.sv",
+          "owner": "core",
+          "members": [
+            "u_sdio_clock",
+            "u_sdio_command",
+            "u_sdio_data",
+            "u_sdio_dma"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "gpio": {
     "nodes": [
@@ -1070,7 +1382,49 @@
       }
     ],
     "note": "The management/user register views share 32 GPIOs. Tiny ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls.",
-    "title": "General-Purpose Input/Output (GPIO)"
+    "title": "General-Purpose Input/Output (GPIO)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "GPIO",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "pads",
+        "user"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/peripheral/apb4_gpio.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/peripheral/apb4_gpio.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/peripheral/apb4_gpio.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "dma": {
     "nodes": [
@@ -1188,6 +1542,84 @@
             "side": "south",
             "direction": "in",
             "width": 32
+          }
+        ],
+        "units": [
+          {
+            "id": "u_data_fifo",
+            "title": "data fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i"
+            },
+            "parameters": {
+              "DATA_WIDTH": 32
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "32",
+              "BUFFER_DEPTH": "FifoDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": "u_data_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_dma_axi4_master",
+            "title": "axi4 master",
+            "module": "dma_axi4_master",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "read_start_valid_i": "s_axi_read_start_valid",
+              "read_start_ready_o": "s_axi_read_start_ready",
+              "read_addr_i": "s_axi_read_start_addr",
+              "read_beats_i": "s_axi_read_start_beats",
+              "read_fixed_i": "s_axi_read_start_fixed",
+              "read_busy_o": "s_axi_read_busy",
+              "read_beat_valid_o": "s_axi_read_beat_valid",
+              "read_beat_ready_i": "s_axi_read_beat_ready",
+              "read_data_o": "s_axi_read_data",
+              "read_resp_o": "s_axi_read_resp",
+              "read_last_o": "s_axi_read_last",
+              "read_expected_last_o": "s_axi_read_expected_last",
+              "read_id_error_o": "s_axi_read_id_error",
+              "read_done_o": "s_axi_read_done",
+              "write_start_valid_i": "s_axi_write_start_valid",
+              "write_start_ready_o": "s_axi_write_start_ready",
+              "write_addr_i": "s_axi_write_start_addr",
+              "write_beats_i": "s_axi_write_start_beats",
+              "write_fixed_i": "s_axi_write_start_fixed",
+              "write_busy_o": "s_axi_write_busy",
+              "write_data_valid_i": "s_axi_write_data_valid",
+              "write_data_ready_o": "s_axi_write_data_ready",
+              "write_data_i": "s_axi_write_data",
+              "write_strb_i": "s_axi_write_strb",
+              "write_done_o": "s_axi_write_done",
+              "write_resp_o": "s_axi_write_resp",
+              "write_id_error_o": "s_axi_write_id_error",
+              "origin_enable_i": "EnableOriginQualifier",
+              "read_origin_channel_i": "s_axi_read_origin_channel",
+              "write_origin_channel_i": "s_axi_write_origin_channel",
+              "axi4": "axi4"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "AddrWidth": "AddrWidth",
+              "DataWidth": "DataWidth",
+              "MaxBurstBeats": "MaxBurstBeats"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/peripheral/dma_core.sv",
+                "text": "u_dma_axi4_master ("
+              }
+            ]
           }
         ]
       },
@@ -1431,7 +1863,70 @@
       }
     ],
     "note": "Tiny selects 8 channels and 32 payload words per channel. I2S/DVP/Crypto stream paths and SPI requests 16/17 retain their distinct admission and completion rules. The diagram shows selected paths, not an extra master per channel.",
-    "title": "Direct Memory Access (DMA)"
+    "title": "Direct Memory Access (DMA)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "DMA",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core",
+          "master"
+        ]
+      ],
+      "external": [
+        "streams",
+        "memory"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/peripheral/apb4_dma.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/peripheral/apb4_dma.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/peripheral/apb4_dma.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/peripheral/apb4_dma.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {
+        "streams": "Stream endpoints\nI2S TX / RX\nDVP RX\nCrypto IN / OUT"
+      },
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "core",
+          "title": "Channel scheduling",
+          "file": "rtl/ip/peripheral/dma_core.sv",
+          "owner": "core",
+          "members": [
+            "u_data_fifo",
+            "u_dma_axi4_master"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "timer": {
     "nodes": [
@@ -1688,7 +2183,54 @@
       }
     ],
     "note": "TIM0 and TIM1 instantiate this common PCLK-domain timer. Each has its own base and IRQ. Debug halt can freeze counting without proving peripheral transaction completion.",
-    "title": "General-Purpose Timers (TIM0, TIM1)"
+    "title": "General-Purpose Timers (TIM0, TIM1)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "TIMER0",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "debug"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/peripheral/apb4_timer.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/peripheral/apb4_timer.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/peripheral/apb4_timer.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/peripheral/apb4_timer.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "rtc": {
     "nodes": [
@@ -1817,7 +2359,35 @@
           "name": "u_rtc_core",
           "module": "rtc_core",
           "declaration_file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_rtc_tickgen",
+            "title": "tickgen",
+            "module": "rtc_tickgen",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "enable_i": "s_enable_q",
+              "second_cycles_i": "s_second_cycles_q",
+              "calibration_ppm_i": "s_calibration_ppm_q",
+              "reconfigure_i": "s_tick_reconfigure",
+              "load_i": "s_tick_load",
+              "subsecond_tick_o": "s_subsecond_tick",
+              "second_tick_o": "s_second_tick",
+              "subsecond_o": "s_subsecond"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
+                "text": "u_rtc_tickgen ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "response",
@@ -2092,7 +2662,39 @@
       }
     ],
     "note": "The shared implementation uses command/response clock crossings. Tiny supplies normalized AON REF24 to the functional RTC input. This is not evidence of battery retention or operation without XIN.",
-    "title": "Real-Time Clock (RTC)"
+    "title": "Real-Time Clock (RTC)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "RTC",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "request",
+          "response"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "event"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/rtc/rtl/apb4_rtc.sv"
+      ],
+      "ports": [],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "wdg": {
     "nodes": [
@@ -2496,7 +3098,39 @@
       }
     ],
     "note": "Command/response crossings separate APB access and watchdog operation. Tiny uses AON REF24 for functional timekeeping and retains the documented whole-system reset and reset-cause boundaries.",
-    "title": "Watchdog (WDG)"
+    "title": "Watchdog (WDG)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "WDG",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "request",
+          "response"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "event"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/wdg/rtl/apb4_wdg.sv"
+      ],
+      "ports": [],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "pwm": {
     "nodes": [
@@ -2567,7 +3201,93 @@
           "name": "u_pwm_reg",
           "module": "pwm_reg",
           "declaration_file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_pwm_core",
+            "title": "core",
+            "module": "pwm_core",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "module_enable_i": "s_ctrl_q[0]",
+              "debug_freeze_i": "s_ctrl_q[1]",
+              "debug_halted_i": "debug_halted_i",
+              "update_i": "s_command_q[0]",
+              "software_sync_i": "s_command_q[1]",
+              "stop_all_i": "s_command_q[3]",
+              "fault_test_i": "s_command_q[2]",
+              "fault_clear_i": "s_command_q[4]",
+              "fault_enable_i": "s_fault_ctrl_q[0]",
+              "fault_active_high_i": "s_fault_ctrl_q[1]",
+              "fault_one_shot_i": "s_fault_ctrl_q[2]",
+              "fault_filter_i": "s_fault_ctrl_q[7:4]",
+              "fault_safe_i": "s_fault_safe_q",
+              "timer_ctrl_i": "s_timer_ctrl_q",
+              "timer_divider_i": "s_timer_divider_q",
+              "timer_period_i": "s_timer_period_q",
+              "timer_phase_i": "s_timer_phase_q",
+              "channel_ctrl_i": "s_channel_ctrl_q",
+              "channel_phase_i": "s_channel_phase_q",
+              "channel_duty_i": "s_channel_duty_q",
+              "channel_action_i": "s_channel_action_q",
+              "channel_force_i": "s_channel_force_q",
+              "channel_fade_ctrl_i": "s_fade_command_q",
+              "channel_fade_segments_i": "s_channel_fade_segments_q",
+              "channel_fade_target_i": "s_channel_fade_target_q",
+              "channel_fade_step_i": "s_channel_fade_step_q",
+              "channel_fade_interval_i": "s_channel_fade_interval_q",
+              "gamma_write_target_i": "s_gamma_write_target_q",
+              "gamma_write_step_i": "s_gamma_write_step_q",
+              "gamma_write_interval_i": "s_gamma_write_interval_q",
+              "gamma_index_i": "s_gamma_index_q",
+              "gamma_target_i": "s_gamma_target_write_q",
+              "gamma_step_i": "s_gamma_step_write_q",
+              "gamma_interval_i": "s_gamma_interval_write_q",
+              "gamma_target_o": "s_gamma_target_read",
+              "gamma_step_o": "s_gamma_step_read",
+              "gamma_interval_o": "s_gamma_interval_read",
+              "operator_ctrl_i": "s_operator_ctrl_q",
+              "operator_deadtime_i": "s_operator_deadtime_q",
+              "operator_carrier_i": "s_operator_carrier_q",
+              "capture_enable_i": "s_capture_enable_q",
+              "capture_clear_i": "s_command_q[5]",
+              "capture_divider_i": "s_capture_divider_q",
+              "capture_channel_ctrl_i": "s_capture_channel_ctrl_q",
+              "capture_pop_i": "s_capture_pop",
+              "fault_i": "fault_i",
+              "sync_i": "sync_i",
+              "capture_i": "capture_i",
+              "pwm_o": "pwm_o",
+              "oe_o": "oe_o",
+              "event_o": "s_event",
+              "status_o": "s_status",
+              "fault_status_o": "s_fault_status",
+              "output_status_o": "s_output_status",
+              "timer_counter_o": "s_timer_counter",
+              "timer_active_divider_o": "s_timer_active_divider",
+              "timer_active_period_o": "s_timer_active_period",
+              "timer_status_o": "s_timer_status",
+              "channel_active_phase_o": "s_channel_active_phase",
+              "channel_active_duty_o": "s_channel_active_duty",
+              "channel_status_o": "s_channel_status",
+              "operator_status_o": "s_operator_status",
+              "capture_counter_o": "s_capture_counter",
+              "capture_data_o": "s_capture_data",
+              "capture_status_o": "s_capture_status",
+              "capture_channel_status_o": "s_capture_channel_status"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/managed/clusterip/pwm/rtl/pwm_reg.sv",
+                "text": "u_pwm_core ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "pads",
@@ -2686,7 +3406,32 @@
       }
     ],
     "note": "Tiny uses the actual committed PCLK report and four waveform outputs. The shared fault/sync/capture interface does not establish a board pin assignment beyond the Tiny GPIO map.",
-    "title": "Pulse Width Modulation (PWM)"
+    "title": "Pulse Width Modulation (PWM)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "PWM",
+      "rows": [
+        [
+          "reg"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/pwm/rtl/apb4_pwm.sv"
+      ],
+      "ports": [],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "uart0": {
     "nodes": [
@@ -2750,7 +3495,72 @@
             0,
             25
           ]
-        }
+        },
+        "units": [
+          {
+            "id": "u_tx_fifo",
+            "title": "tx fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "s_tx_flush",
+              "push_i": "s_tx_push",
+              "full_o": "s_tx_full",
+              "pop_i": "tx_data_pop_i",
+              "empty_o": "s_tx_empty",
+              "dat_o": "s_tx_pop_data",
+              "cnt_o": "s_tx_count"
+            },
+            "parameters": {
+              "DATA_WIDTH": 8
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "8",
+              "BUFFER_DEPTH": "TxFifoDepth",
+              "LOG_BUFFER_DEPTH": "TxFifoLogDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/uart_reg.sv",
+                "text": "u_tx_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_rx_fifo",
+            "title": "rx fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "s_rx_flush",
+              "push_i": "s_rx_push",
+              "full_o": "s_rx_full",
+              "dat_i": "rx_data_i",
+              "pop_i": "s_rx_pop",
+              "empty_o": "s_rx_empty",
+              "dat_o": "s_rx_pop_data",
+              "cnt_o": "s_rx_count"
+            },
+            "parameters": {
+              "DATA_WIDTH": 12
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "12",
+              "BUFFER_DEPTH": "RxFifoDepth",
+              "LOG_BUFFER_DEPTH": "RxFifoLogDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/uart_reg.sv",
+                "text": "u_rx_fifo ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "core",
@@ -2792,6 +3602,30 @@
             "side": "south",
             "direction": "in",
             "width": 1
+          }
+        ],
+        "units": [
+          {
+            "id": "u_uart_baudgen",
+            "title": "baudgen",
+            "module": "uart_baudgen",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "baud_int_i": "baud_int_i",
+              "baud_frac_i": "baud_frac_i",
+              "sample_tick_o": "s_sample_tick",
+              "bit_tick_o": "bit_tick_o"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/uart_core.sv",
+                "text": "u_uart_baudgen ("
+              }
+            ]
           }
         ]
       },
@@ -3029,7 +3863,62 @@
       }
     ],
     "note": "Tiny routes TX/RX on GPIO8/9 ALT0, ties CTS_n low and provides no external RTS route. Shared flow-control registers do not create external flow-control pads. TX and RX FIFO widths differ because receive entries retain error metadata.",
-    "title": "Management UART (UART0)"
+    "title": "Management UART (UART0)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "UART0",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core",
+          "flow"
+        ]
+      ],
+      "external": [
+        "modem",
+        "pads"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/serial/apb4_uart.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_uart.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_uart.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "reg",
+          "title": "Register bank",
+          "file": "rtl/ip/serial/uart_reg.sv",
+          "owner": "reg",
+          "members": [
+            "u_tx_fifo",
+            "u_rx_fifo"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "i2c": {
     "nodes": [
@@ -3088,7 +3977,70 @@
           "name": "u_i2c_reg",
           "module": "i2c_reg",
           "declaration_file": "rtl/ip/serial/i2c_reg.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_cmd_fifo",
+            "title": "cmd fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "push_i": "s_cmd_push",
+              "full_o": "s_cmd_full",
+              "pop_i": "cmd_pop_i",
+              "empty_o": "s_cmd_empty",
+              "dat_o": "s_cmd_pop_data",
+              "cnt_o": "s_cmd_count"
+            },
+            "parameters": {
+              "DATA_WIDTH": 12
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "12",
+              "BUFFER_DEPTH": "CmdFifoDepth",
+              "LOG_BUFFER_DEPTH": "CmdFifoLogDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/i2c_reg.sv",
+                "text": "u_cmd_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_rx_fifo",
+            "title": "rx fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "s_rx_flush_cmd",
+              "full_o": "s_rx_full",
+              "dat_i": "rx_data_i",
+              "pop_i": "s_rx_pop",
+              "empty_o": "s_rx_empty",
+              "dat_o": "s_rx_pop_data",
+              "cnt_o": "s_rx_count"
+            },
+            "parameters": {
+              "DATA_WIDTH": 8
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "8",
+              "BUFFER_DEPTH": "RxFifoDepth",
+              "LOG_BUFFER_DEPTH": "RxFifoLogDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/i2c_reg.sv",
+                "text": "u_rx_fifo ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "core",
@@ -3395,7 +4347,61 @@
       }
     ],
     "note": "One I2C0 controller is integrated on GPIO10/11. Command and receive words have different widths. Configure timing for the committed PCLK and external pull-up/capacitance conditions.",
-    "title": "Inter-Integrated Circuit (I2C0)"
+    "title": "Inter-Integrated Circuit (I2C0)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "I2C0",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core",
+          "filter"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/serial/apb4_i2c.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_i2c.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_i2c.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "reg",
+          "title": "Register bank",
+          "file": "rtl/ip/serial/i2c_reg.sv",
+          "owner": "reg",
+          "members": [
+            "u_cmd_fifo",
+            "u_rx_fifo"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "ws2812": {
     "nodes": [
@@ -3454,7 +4460,40 @@
           "name": "u_ws2812_reg",
           "module": "ws2812_reg",
           "declaration_file": "rtl/ip/serial/ws2812_reg.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_tx_fifo",
+            "title": "tx fifo",
+            "module": "fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "push_i": "s_tx_push",
+              "full_o": "s_tx_full",
+              "dat_i": "s_tx_push_data",
+              "pop_i": "data_pop_i",
+              "empty_o": "s_tx_empty",
+              "dat_o": "s_tx_pop_data",
+              "cnt_o": "s_tx_count"
+            },
+            "parameters": {
+              "DATA_WIDTH": 24
+            },
+            "parameters_raw": {
+              "DATA_WIDTH": "24",
+              "BUFFER_DEPTH": "TxFifoDepth",
+              "LOG_BUFFER_DEPTH": "TxFifoLogDepth"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/ws2812_reg.sv",
+                "text": "u_tx_fifo ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "core",
@@ -3652,7 +4691,48 @@
       }
     ],
     "note": "The pixel FIFO feeds the PCLK-domain serializer. GPIO26 ownership continues through the reset-low interval; FIFO empty and DMA completion are not wire completion.",
-    "title": "WS2812 LED Output"
+    "title": "WS2812 LED Output",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "WS2812",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/serial/apb4_ws2812.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_ws2812.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_ws2812.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "archinfo": {
     "nodes": [
@@ -3805,7 +4885,32 @@
       }
     ],
     "note": "The Tiny adapter supplies the TINY SoC identity and selected profile metadata. Device-ID valid/read-enable are tied zero, so device-ID payload reads return APB error.",
-    "title": "Architecture Information (ARCHINFO)"
+    "title": "Architecture Information (ARCHINFO)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "ARCHINFO",
+      "rows": [
+        [
+          "reg"
+        ]
+      ],
+      "external": [
+        "id"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/archinfo/rtl/apb4_archinfo.sv"
+      ],
+      "ports": [],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "clint": {
     "nodes": [
@@ -4150,7 +5255,49 @@
       }
     ],
     "note": "One hart uses software/timer core positions 0/1. The time counter advances from the 1 MHz AON-derived tick; it is not a peripheral PCLK divider.",
-    "title": "Local Interrupt Controller (CLINT)"
+    "title": "Local Interrupt Controller (CLINT)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "CLINT",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "tick",
+        "irq"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/ip/peripheral/apb4_clint.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/peripheral/apb4_clint.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/peripheral/apb4_clint.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "i2s": {
     "nodes": [
@@ -4295,7 +5442,83 @@
             10,
             10
           ]
-        }
+        },
+        "units": [
+          {
+            "id": "u_i2s_clkgen",
+            "title": "clkgen",
+            "module": "i2s_clkgen",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "enable_i": "enable_i",
+              "clk_prog_i": "clk_prog_i",
+              "format_i": "format_i",
+              "sclk_div_i": "sclk_div_i",
+              "lrck_div_i": "lrck_div_i",
+              "sclk_pos_o": "s_sclk_pos",
+              "sclk_fall_o": "s_sclk_fall",
+              "sclk_o": "s_sclk",
+              "lrck_o": "s_lrck"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/i2s_core.sv",
+                "text": "u_i2s_clkgen ("
+              }
+            ]
+          },
+          {
+            "id": "u_i2s_recv",
+            "title": "recv",
+            "module": "i2s_recv",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "sclk_pos_i": "s_sclk_pos",
+              "lrck_i": "s_lrck",
+              "bitmode_i": "s_bitmode",
+              "data_o": "s_recv_data",
+              "done_o": "s_recv_done"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/i2s_core.sv",
+                "text": "u_i2s_recv ("
+              }
+            ]
+          },
+          {
+            "id": "u_i2s_send",
+            "title": "send",
+            "module": "i2s_send",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "sclk_pos_i": "s_sclk_pos",
+              "sclk_fall_i": "s_sclk_fall",
+              "lrck_i": "s_lrck",
+              "bitmode_i": "s_bitmode",
+              "data_i": "s_send_data",
+              "done_o": "s_send_done"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/i2s_core.sv",
+                "text": "u_i2s_send ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "pads",
@@ -4525,7 +5748,90 @@
       }
     ],
     "note": "Control/FIFO transport uses PCLK; serialization uses AUDIO. Tiny has no APU/KWS routing. Master-only audio modes and external clock/device qualification remain separate. I2S OUT groups MCLK, BCLK, LRCK and DAC data; ADC is the returning serial data line.",
-    "title": "Inter-IC Sound (I2S)"
+    "title": "Inter-IC Sound (I2S)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "I2S",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "tx",
+          "rx"
+        ],
+        [
+          "core"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/serial/apb4_i2s.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_i2s.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_i2s.sv"
+        },
+        {
+          "name": "clk_aud_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_i2s.sv"
+        },
+        {
+          "name": "rst_aud_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_i2s.sv"
+        },
+        {
+          "name": "lifecycle_reset_ready_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_i2s.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/serial/apb4_i2s.sv",
+          "declaration": "apb4_if.slave"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "core",
+          "title": "Audio-clock engine",
+          "file": "rtl/ip/serial/i2s_core.sv",
+          "owner": "core",
+          "members": [
+            "u_i2s_clkgen",
+            "u_i2s_recv",
+            "u_i2s_send"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "dvp": {
     "nodes": [
@@ -4582,7 +5888,7 @@
       },
       {
         "id": "cfg",
-        "title": "Configuration CDC\n129-bit epoch packet",
+        "title": "Config CDC\n129-bit epoch packet",
         "x": 12.6,
         "y": 10.5,
         "w": 4.0,
@@ -5027,7 +6333,75 @@
       }
     ],
     "note": "The configuration crossing carries 128 payload bits plus an epoch. The pixel/event FIFO stores 42 bits including payload metadata, while the DMA stream carries 32-bit words. No continuous-frame-rate claim is implied.",
-    "title": "Digital Video Port (DVP)"
+    "title": "Digital Video Port (DVP)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "DVP",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "cfg_packet",
+          "cfg",
+          "cfg_split"
+        ],
+        [
+          "applied",
+          "core",
+          "fifo"
+        ]
+      ],
+      "external": [
+        "pads",
+        "sink"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/multimedia/axi4s_dvp.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv"
+        },
+        {
+          "name": "lifecycle_reset_ready_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+          "declaration": "apb4_if.slave"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "crypto": {
     "nodes": [
@@ -5098,7 +6472,120 @@
           "name": "u_aes",
           "module": "crypto_aes_sram_engine",
           "declaration_file": "rtl/ip/security/crypto_aes_sram_engine.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_core",
+            "title": "aes sram core",
+            "module": "crypto_aes_sram_core",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "key_dirty_i": "key_dirty_i",
+              "key_size_i": "key_size_i",
+              "start_i": "s_core_start",
+              "key_valid_o": "key_valid_o",
+              "busy_o": "s_core_busy",
+              "done_o": "s_core_done",
+              "constant_req_o": "constant_req_o",
+              "constant_resp_i": "constant_resp_i",
+              "work_req_o": "s_core_req",
+              "work_resp_i": "work_resp_i"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+                "text": "u_core ("
+              }
+            ]
+          },
+          {
+            "id": "u_input_fifo",
+            "title": "clearable fifo",
+            "module": "crypto_clearable_fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "start_i",
+              "push_i": "s_input_push",
+              "pop_i": "s_input_pop",
+              "data_o": "s_input_data",
+              "empty_o": "s_input_empty",
+              "full_o": "s_input_full",
+              "clear_busy_o": "s_fifo_busy[0]",
+              "clear_error_o": "s_fifo_err[0]"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "Depth": "8"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+                "text": "u_input_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_output_fifo",
+            "title": "clearable fifo",
+            "module": "crypto_clearable_fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "start_i",
+              "push_i": "s_output_push",
+              "data_i": "s_output_payload",
+              "pop_i": "s_output_pop",
+              "data_o": "s_output_data",
+              "empty_o": "s_output_empty",
+              "full_o": "s_output_full",
+              "clear_busy_o": "s_fifo_busy[1]",
+              "clear_error_o": "s_fifo_err[1]"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "Depth": "8"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+                "text": "u_output_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_scrub",
+            "title": "scrubber",
+            "module": "crypto_scrubber",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "busy_o": "s_scrub_busy",
+              "done_o": "s_scrub_done",
+              "error_o": "s_scrub_err",
+              "error_row_o": "scrub_error_row_o",
+              "req_o": "s_scrub_req",
+              "resp_i": "s_scrub_resp"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "NumBanks": "1"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+                "text": "u_scrub ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "sha",
@@ -5130,7 +6617,64 @@
           "name": "u_sha",
           "module": "crypto_sha2_sram_engine",
           "declaration_file": "rtl/ip/security/crypto_sha2_sram_engine.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_input_fifo",
+            "title": "clearable fifo",
+            "module": "crypto_clearable_fifo",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "start_i",
+              "push_i": "s_fifo_push",
+              "pop_i": "s_fifo_pop",
+              "data_o": "s_fifo_data",
+              "empty_o": "s_fifo_empty",
+              "full_o": "s_fifo_full",
+              "clear_busy_o": "fifo_busy_o",
+              "clear_error_o": "fifo_error_o"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "Depth": "16"
+            },
+            "shape": "fifo",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_sha2_sram_engine.sv",
+                "text": "u_input_fifo ("
+              }
+            ]
+          },
+          {
+            "id": "u_scrub",
+            "title": "scrubber",
+            "module": "crypto_scrubber",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "cancel_i": "zeroize_i",
+              "busy_o": "s_scrub_busy",
+              "done_o": "s_scrub_done",
+              "error_o": "s_scrub_err",
+              "error_row_o": "scrub_error_row_o",
+              "req_o": "s_scrub_req",
+              "resp_i": "s_scrub_resp"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "NumBanks": "1"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_sha2_sram_engine.sv",
+                "text": "u_scrub ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "rsa",
@@ -5162,7 +6706,59 @@
           "name": "u_rsa",
           "module": "crypto_rsa_sram_core",
           "declaration_file": "rtl/ip/security/crypto_rsa_sram_core.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_montgomery",
+            "title": "montgomery sram",
+            "module": "crypto_montgomery_sram",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "busy_o": "s_mont_busy",
+              "done_o": "s_mont_done",
+              "req_o": "s_mont_req",
+              "resp_i": "work_resp_i"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_rsa_sram_core.sv",
+                "text": "u_montgomery ("
+              }
+            ]
+          },
+          {
+            "id": "u_scrub",
+            "title": "scrubber",
+            "module": "crypto_scrubber",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "cancel_i": "zeroize_i",
+              "busy_o": "s_scrub_busy",
+              "done_o": "s_scrub_done",
+              "error_o": "s_scrub_err",
+              "error_bank_o": "s_scrub_bank",
+              "error_row_o": "scrub_error_row_o",
+              "req_o": "s_scrub_req",
+              "resp_i": "s_scrub_resp"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "NumBanks": "2"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/security/crypto_rsa_sram_core.sv",
+                "text": "u_scrub ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "stream",
@@ -5386,7 +6982,124 @@
       }
     ],
     "note": "Shown control and data paths belong to the current SRAM-backed AES/SHA2/RSA implementation. Tiny has 24 KiB of private PCLK-domain storage; initialization, scrub and accepted DMA work have separate completion boundaries.",
-    "title": "Cryptographic Accelerator (CRYPTO)"
+    "title": "Cryptographic Accelerator (CRYPTO)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "CRYPTO",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "stream",
+          "aes"
+        ],
+        [
+          "sha_words",
+          "sha"
+        ],
+        [
+          "rsa_words",
+          "rsa"
+        ]
+      ],
+      "external": [],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/security/apb4_crypto.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/security/apb4_crypto.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/security/apb4_crypto.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/security/apb4_crypto.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "declaration": "apb4_if.slave"
+        },
+        {
+          "protocol": "DMA IN",
+          "width": 32,
+          "side": "left",
+          "node": "stream",
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "declaration": "axi4_stream_if.sink",
+          "port": "crypto_in_axis",
+          "direction": "input"
+        },
+        {
+          "protocol": "DMA OUT",
+          "width": 32,
+          "side": "left",
+          "node": "stream",
+          "file": "rtl/ip/security/apb4_crypto.sv",
+          "declaration": "axi4_stream_if.source",
+          "port": "crypto_out_axis",
+          "direction": "output"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "aes",
+          "title": "AES SRAM engine",
+          "file": "rtl/ip/security/crypto_aes_sram_engine.sv",
+          "owner": "aes",
+          "members": [
+            "u_core",
+            "u_input_fifo",
+            "u_output_fifo",
+            "u_scrub"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        },
+        {
+          "id": "sha",
+          "title": "SHA SRAM engine",
+          "file": "rtl/ip/security/crypto_sha2_sram_engine.sv",
+          "owner": "sha",
+          "members": [
+            "u_input_fifo",
+            "u_scrub"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        },
+        {
+          "id": "rsa",
+          "title": "RSA SRAM core",
+          "file": "rtl/ip/security/crypto_rsa_sram_core.sv",
+          "owner": "rsa",
+          "members": [
+            "u_montgomery",
+            "u_scrub"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "crc": {
     "nodes": [
@@ -5451,7 +7164,49 @@
           "name": "u_crc_reg",
           "module": "crc_reg",
           "declaration_file": "rtl/managed/clusterip/crc/rtl/crc_reg.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_crc_core",
+            "title": "core",
+            "module": "crc_core",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "start_i": "s_start_command",
+              "finish_i": "s_finish_command",
+              "abort_i": "s_abort_command",
+              "data_request_i": "s_data_request",
+              "data_accept_i": "s_data_accept",
+              "data_i": "pwdata_i",
+              "data_strb_i": "pstrb_i",
+              "width_i": "s_config_q[1:0]",
+              "reflect_in_i": "s_config_q[2]",
+              "reflect_out_i": "s_config_q[3]",
+              "byte_swap_i": "s_config_q[4]",
+              "polynomial_i": "s_polynomial_q",
+              "init_i": "s_init_q",
+              "xor_out_i": "s_xor_out_q",
+              "active_o": "s_active",
+              "result_valid_o": "s_result_valid",
+              "raw_state_o": "s_raw_state",
+              "result_o": "s_result",
+              "byte_count_o": "s_byte_count",
+              "count_overflow_event_o": "s_count_overflow_event",
+              "data_busy_o": "s_data_busy",
+              "data_ready_o": "s_data_ready"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/managed/clusterip/crc/rtl/crc_reg.sv",
+                "text": "u_crc_core ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "words",
@@ -5537,7 +7292,32 @@
       }
     ],
     "note": "APB payload words update the programmed CRC state. This is not a dedicated central-DMA stream endpoint and CRC is not authentication.",
-    "title": "Cyclic Redundancy Check (CRC)"
+    "title": "Cyclic Redundancy Check (CRC)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "CRC",
+      "rows": [
+        [
+          "reg"
+        ]
+      ],
+      "external": [
+        "words"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/crc/rtl/apb4_crc.sv"
+      ],
+      "ports": [],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "rng": {
     "nodes": [
@@ -5608,7 +7388,53 @@
           "name": "u_rng_reg",
           "module": "rng_reg",
           "declaration_file": "rtl/managed/clusterip/rng/rtl/rng_reg.sv"
-        }
+        },
+        "units": [
+          {
+            "id": "u_rng_core",
+            "title": "core",
+            "module": "rng_core",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "enable_i": "s_enable_q",
+              "flush_i": "s_flush_command",
+              "recover_i": "s_recover_command",
+              "fatal_i": "s_fatal",
+              "data_pop_i": "s_data_pop",
+              "data_o": "s_data",
+              "fifo_level_o": "s_fifo_level",
+              "fifo_empty_o": "s_fifo_empty",
+              "fifo_full_o": "s_fifo_full",
+              "startup_done_o": "s_startup_done",
+              "active_o": "s_active",
+              "source_qualified_o": "s_source_qualified",
+              "accepted_count_o": "s_accepted_count",
+              "discard_count_o": "s_discard_count",
+              "health_fail_count_o": "s_health_fail_count",
+              "source_fault_event_o": "s_source_fault_event",
+              "duplicate_event_o": "s_duplicate_event",
+              "qualification_change_event_o": "s_qualification_change_event",
+              "entropy_enable_o": "entropy_enable_o",
+              "entropy_ready_o": "entropy_ready_o",
+              "entropy_valid_i": "entropy_valid_i",
+              "entropy_data_i": "entropy_data_i",
+              "entropy_qualified_i": "entropy_qualified_i",
+              "entropy_fault_i": "entropy_fault_i"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "FIFO_DEPTH": "FIFO_DEPTH"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/managed/clusterip/rng/rtl/rng_reg.sv",
+                "text": "u_rng_core ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "entropy",
@@ -5735,7 +7561,39 @@
       }
     ],
     "note": "The entropy-source handshake feeds health, conditioning and FIFO logic. Actual entropy quality and cryptographic suitability remain unqualified.",
-    "title": "Random Number Generator (RNG)"
+    "title": "Random Number Generator (RNG)",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "RNG",
+      "rows": [
+        [
+          "reg"
+        ]
+      ],
+      "external": [
+        "entropy"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/managed/clusterip/rng/rtl/apb4_rng.sv"
+      ],
+      "ports": [
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/managed/clusterip/rng/rtl/apb4_rng.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "sram": {
     "title": "Tiny SRAM local and external paths",
@@ -5994,7 +7852,59 @@
         ]
       }
     ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied.",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "SRAM",
+      "rows": [
+        [
+          "group"
+        ],
+        [
+          "external",
+          "banks"
+        ]
+      ],
+      "external": [
+        "local"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/tiny/top/tiny_sram.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sram.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sram.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "AXI4",
+          "width": 32,
+          "side": "left",
+          "node": "external",
+          "file": "rtl/tiny/top/tiny_sram.sv",
+          "declaration": "axi4_if.slave",
+          "port": "external_ports"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "sysctrl": {
     "title": "Tiny SYSCTRL diagnostics and RCU subregion",
@@ -6211,7 +8121,137 @@
         ]
       }
     ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied.",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "SYSCTRL",
+      "rows": [
+        [
+          "reg"
+        ]
+      ],
+      "external": [
+        "fault",
+        "test",
+        "rcu"
+      ],
+      "buses": [
+        "apb"
+      ],
+      "wrapper": [
+        "rtl/tiny/top/tiny_sysctrl.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clk_ref_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "rst_ref_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clock_done_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clock_current_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "warm_reset_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "watchdog_reset_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "hart_reset_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "system_reset_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "rcu_irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clock_timeout_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "reset_done_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "periph_reset_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clkout_idle_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clock_apply_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        },
+        {
+          "name": "clock_profile_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_sysctrl.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {},
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny"
+    }
   },
   "rcu": {
     "title": "Tiny RCU register, backend and leaf lifecycle",
@@ -6278,6 +8318,241 @@
         ],
         "sources": [
           "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "units": [
+          {
+            "id": "u_ref_rst",
+            "title": "REF reset\nsynchronizer",
+            "module": "rst_sync",
+            "ports": {
+              "clk_i": "ref_clk_o",
+              "rst_n_i": "rst_n_i",
+              "rst_n_o": "ref_rst_n_o"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "STAGE": "5"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_ref_rst ("
+              }
+            ]
+          },
+          {
+            "id": "u_pll",
+            "title": "PLL backend\nICS55 main only",
+            "module": "tc_pll",
+            "ports": {
+              "fref_i": "ref_clk_o",
+              "rst_n_i": "ref_rst_n_o",
+              "pll_capable_o": "s_pll_capable",
+              "pll_lock_o": "s_pll_lock",
+              "pll_clk_o": "s_pll_clk"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "UseIcs55EcosPll": "1'b1",
+              "Ics55Parked": "1'b0"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_pll ("
+              }
+            ],
+            "condition": "HAVE_PLL; Tiny ICS55 main profile"
+          },
+          {
+            "id": "u_sys_mux",
+            "title": "mux",
+            "module": "safe_clock_mux",
+            "ports": {
+              "clk0_i": "ref_clk_o",
+              "clk1_i": "s_fast_clk",
+              "rst_n_i": "s_mux_rst_n",
+              "clk_o": "sys_clk_o"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "mux",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_sys_mux ("
+              }
+            ]
+          },
+          {
+            "id": "u_div2",
+            "title": "clock divider",
+            "module": "clock_divider",
+            "ports": {
+              "clk_i": "sys_clk_o",
+              "rst_n_i": "sys_rst_n_o",
+              "clk_o": "s_div2_clk"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "DIV_WIDTH": "1",
+              "RESET_DIV": "1'b1"
+            },
+            "shape": "divider",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_div2 ("
+              }
+            ]
+          },
+          {
+            "id": "u_div4",
+            "title": "clock divider",
+            "module": "clock_divider",
+            "ports": {
+              "clk_i": "sys_clk_o",
+              "rst_n_i": "sys_rst_n_o",
+              "clk_o": "s_div4_clk"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "DIV_WIDTH": "2",
+              "RESET_DIV": "2'd2"
+            },
+            "shape": "divider",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_div4 ("
+              }
+            ]
+          },
+          {
+            "id": "u_mem_mux",
+            "title": "mux",
+            "module": "safe_clock_mux",
+            "ports": {
+              "clk0_i": "sys_clk_o",
+              "clk1_i": "s_div2_clk",
+              "rst_n_i": "s_mux_rst_n",
+              "clk_o": "mem_clk_o"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "mux",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_mem_mux ("
+              }
+            ]
+          },
+          {
+            "id": "u_pclk_div2_mux",
+            "title": "mux",
+            "module": "safe_clock_mux",
+            "ports": {
+              "clk0_i": "sys_clk_o",
+              "clk1_i": "s_div2_clk",
+              "rst_n_i": "s_mux_rst_n",
+              "clk_o": "s_pclk_mid"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "mux",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_pclk_div2_mux ("
+              }
+            ]
+          },
+          {
+            "id": "u_pclk_mux",
+            "title": "mux",
+            "module": "safe_clock_mux",
+            "ports": {
+              "clk0_i": "s_pclk_mid",
+              "clk1_i": "s_div4_clk",
+              "rst_n_i": "s_mux_rst_n",
+              "clk_o": "pclk_o"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "mux",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_pclk_mux ("
+              }
+            ]
+          },
+          {
+            "id": "u_sys_rst",
+            "title": "SYS reset\nsynchronizer",
+            "module": "rst_sync",
+            "ports": {
+              "clk_i": "sys_clk_o",
+              "rst_n_i": "system_reset_n_o",
+              "rst_n_o": "sys_rst_n_o"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "STAGE": "5"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_sys_rst ("
+              }
+            ]
+          },
+          {
+            "id": "u_mem_rst",
+            "title": "MEM reset\nsynchronizer",
+            "module": "rst_sync",
+            "ports": {
+              "clk_i": "mem_clk_o",
+              "rst_n_i": "system_reset_n_o",
+              "rst_n_o": "mem_rst_n_o"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "STAGE": "5"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_mem_rst ("
+              }
+            ]
+          },
+          {
+            "id": "u_pclk_rst",
+            "title": "PCLK reset\nsynchronizer",
+            "module": "rst_sync",
+            "ports": {
+              "clk_i": "pclk_o",
+              "rst_n_i": "system_reset_n_o",
+              "rst_n_o": "pclk_rst_n_o"
+            },
+            "parameters": {},
+            "parameters_raw": {
+              "STAGE": "5"
+            },
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                "text": "u_pclk_rst ("
+              }
+            ]
+          }
         ]
       },
       {
@@ -6486,7 +8761,415 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied.",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "RCU",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "backend",
+          "leaf"
+        ],
+        [
+          "status"
+        ]
+      ],
+      "external": [
+        "domains",
+        "users"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+      ],
+      "ports": [
+        {
+          "name": "ref_clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "warm_reset_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "ref_clk_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "ref_rst_n_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "system_reset_n_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "sys_clk_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "mem_clk_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "pclk_o",
+          "direction": "output",
+          "role": "clock",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "sys_rst_n_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "mem_rst_n_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        },
+        {
+          "name": "pclk_rst_n_o",
+          "direction": "output",
+          "role": "reset",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {
+        "domains": "SYS / MEM\nPCLK\nclocks + resets",
+        "users": "CPU / IP\nidle status"
+      },
+      "interfaces": [],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "clock-tree",
+          "title": "Clock selection and division",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "owner": "backend",
+          "members": [
+            "u_pll",
+            "u_sys_mux",
+            "u_div2",
+            "u_div4",
+            "u_mem_mux",
+            "u_pclk_div2_mux",
+            "u_pclk_mux"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified.",
+          "contexts": [
+            {
+              "id": "ref",
+              "title": "REF24"
+            },
+            {
+              "id": "outputs",
+              "title": "SYS / MEM\nPCLK outputs"
+            }
+          ],
+          "external": [
+            "ref",
+            "outputs"
+          ],
+          "rows": [
+            [
+              "u_pll",
+              "u_sys_mux"
+            ],
+            [
+              "u_div2",
+              "u_div4"
+            ],
+            [
+              "u_mem_mux",
+              "u_pclk_div2_mux"
+            ],
+            [
+              "u_pclk_mux"
+            ]
+          ],
+          "connections": [
+            {
+              "source": "ref",
+              "target": "u_pll",
+              "kind": "control",
+              "label": "REF24",
+              "net": "ref_clk_o",
+              "target_port": "fref_i"
+            },
+            {
+              "source": "ref",
+              "target": "u_sys_mux",
+              "kind": "control",
+              "label": "SAFE24",
+              "net": "ref_clk_o",
+              "target_port": "clk0_i"
+            },
+            {
+              "source": "u_sys_mux",
+              "target": "u_div2",
+              "kind": "control",
+              "label": "SYS",
+              "net": "sys_clk_o",
+              "source_port": "clk_o",
+              "target_port": "clk_i"
+            },
+            {
+              "source": "u_sys_mux",
+              "target": "u_div4",
+              "kind": "control",
+              "label": "SYS",
+              "net": "sys_clk_o",
+              "source_port": "clk_o",
+              "target_port": "clk_i"
+            },
+            {
+              "source": "u_sys_mux",
+              "target": "u_mem_mux",
+              "kind": "control",
+              "label": "SYS",
+              "net": "sys_clk_o",
+              "source_port": "clk_o",
+              "target_port": "clk0_i"
+            },
+            {
+              "source": "u_div2",
+              "target": "u_mem_mux",
+              "kind": "control",
+              "label": "SYS / 2",
+              "net": "s_div2_clk",
+              "source_port": "clk_o",
+              "target_port": "clk1_i"
+            },
+            {
+              "source": "u_sys_mux",
+              "target": "u_pclk_div2_mux",
+              "kind": "control",
+              "label": "SYS",
+              "net": "sys_clk_o",
+              "source_port": "clk_o",
+              "target_port": "clk0_i"
+            },
+            {
+              "source": "u_div2",
+              "target": "u_pclk_div2_mux",
+              "kind": "control",
+              "label": "SYS / 2",
+              "net": "s_div2_clk",
+              "source_port": "clk_o",
+              "target_port": "clk1_i"
+            },
+            {
+              "source": "u_pclk_div2_mux",
+              "target": "u_pclk_mux",
+              "kind": "control",
+              "label": "PCLK preselect",
+              "net": "s_pclk_mid",
+              "source_port": "clk_o",
+              "target_port": "clk0_i"
+            },
+            {
+              "source": "u_div4",
+              "target": "u_pclk_mux",
+              "kind": "control",
+              "label": "SYS / 4",
+              "net": "s_div4_clk",
+              "source_port": "clk_o",
+              "target_port": "clk1_i"
+            },
+            {
+              "source": "u_mem_mux",
+              "target": "outputs",
+              "kind": "control",
+              "label": "MEM",
+              "net": "mem_clk_o",
+              "source_port": "clk_o"
+            },
+            {
+              "source": "u_pclk_mux",
+              "target": "outputs",
+              "kind": "control",
+              "label": "PCLK",
+              "net": "pclk_o",
+              "source_port": "clk_o"
+            },
+            {
+              "source": "u_pll",
+              "target": "u_sys_mux",
+              "kind": "control",
+              "label": "ICS55 PLL path",
+              "net": "s_fast_clk",
+              "target_port": "clk1_i",
+              "bindings": [
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": "assign s_fast_clk  = HavePll ? s_pll_clk : ref_clk_i;"
+                },
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": ".pll_clk_o    (s_pll_clk)"
+                }
+              ]
+            }
+          ],
+          "note": "REF24 is 24 MHz in the reviewed profile. The PLL branch exists only with HAVE_PLL (Tiny ICS55 main); IHP130 compatibility has no PLL. SAFE24 boots with the PLL parked off. These digital clock paths do not qualify an operating rate."
+        },
+        {
+          "id": "reset-control",
+          "title": "Reset and clock control",
+          "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "owner": "backend",
+          "members": [
+            "u_ref_rst",
+            "u_sys_rst",
+            "u_mem_rst",
+            "u_pclk_rst"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified.",
+          "contexts": [
+            {
+              "id": "requests",
+              "title": "Per-domain clocks\nreset request logic"
+            },
+            {
+              "id": "outputs",
+              "title": "Domain reset\noutputs"
+            }
+          ],
+          "external": [
+            "requests",
+            "outputs"
+          ],
+          "rows": [
+            [
+              "u_ref_rst",
+              "u_sys_rst"
+            ],
+            [
+              "u_mem_rst",
+              "u_pclk_rst"
+            ]
+          ],
+          "connections": [
+            {
+              "source": "requests",
+              "target": "u_ref_rst",
+              "kind": "control",
+              "label": "REF clock / reset",
+              "net": "ref_clk_o",
+              "target_port": "clk_i",
+              "bindings": [
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": ".rst_n_i(rst_n_i)"
+                }
+              ]
+            },
+            {
+              "source": "u_ref_rst",
+              "target": "outputs",
+              "kind": "control",
+              "label": "REF reset",
+              "net": "ref_rst_n_o",
+              "source_port": "rst_n_o"
+            },
+            {
+              "source": "requests",
+              "target": "u_sys_rst",
+              "kind": "control",
+              "label": "SYS clock / reset",
+              "net": "sys_clk_o",
+              "target_port": "clk_i",
+              "bindings": [
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": ".rst_n_i(system_reset_n_o)"
+                }
+              ]
+            },
+            {
+              "source": "u_sys_rst",
+              "target": "outputs",
+              "kind": "control",
+              "label": "SYS reset",
+              "net": "sys_rst_n_o",
+              "source_port": "rst_n_o"
+            },
+            {
+              "source": "requests",
+              "target": "u_mem_rst",
+              "kind": "control",
+              "label": "MEM clock / reset",
+              "net": "mem_clk_o",
+              "target_port": "clk_i",
+              "bindings": [
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": ".rst_n_i(system_reset_n_o)"
+                }
+              ]
+            },
+            {
+              "source": "u_mem_rst",
+              "target": "outputs",
+              "kind": "control",
+              "label": "MEM reset",
+              "net": "mem_rst_n_o",
+              "source_port": "rst_n_o"
+            },
+            {
+              "source": "requests",
+              "target": "u_pclk_rst",
+              "kind": "control",
+              "label": "PCLK clock / reset",
+              "net": "pclk_o",
+              "target_port": "clk_i",
+              "bindings": [
+                {
+                  "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+                  "text": ".rst_n_i(system_reset_n_o)"
+                }
+              ]
+            },
+            {
+              "source": "u_pclk_rst",
+              "target": "outputs",
+              "kind": "control",
+              "label": "PCLK reset",
+              "net": "pclk_rst_n_o",
+              "source_port": "rst_n_o"
+            }
+          ],
+          "note": "Each selected synchronizer has STAGE=5. REF reset uses rst_n_i; SYS, MEM and PCLK use system_reset_n_o = rst_n_i && s_ctrl_q.reset_n. Deassertion is synchronized to the corresponding domain clock. No additional reset circuit is inferred."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "spi": {
     "title": "SPI0 session, transport and pad guard",
@@ -6612,7 +9295,66 @@
             10,
             10
           ]
-        }
+        },
+        "units": [
+          {
+            "id": "u_phase_ctrl",
+            "title": "phase ctrl",
+            "module": "spi_phase_ctrl",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "start_i": "s_start",
+              "active_o": "s_phase_active",
+              "done_o": "s_phase_done",
+              "sck_o": "sck_o",
+              "mosi_o": "mosi_o",
+              "rx_data_o": "s_rx_frame"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/spi_master_core.sv",
+                "text": "u_phase_ctrl ("
+              }
+            ]
+          },
+          {
+            "id": "u_word_packer",
+            "title": "word packer",
+            "module": "spi_word_packer",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "clear_i": "s_clear",
+              "frame_start_i": "s_start",
+              "last_frame_i": "s_last",
+              "rx_frame_i": "s_rx_frame",
+              "tx_frame_o": "s_tx_frame",
+              "tx_words_o": "s_tx_words",
+              "rx_words_o": "s_rx_words",
+              "rx_removed_o": "s_rx_removed",
+              "tx_ready_o": "s_tx_ready",
+              "rx_ready_o": "s_rx_ready",
+              "tx_frame_ready_o": "s_tx_frame_ready",
+              "rx_frame_ready_o": "s_rx_frame_ready",
+              "empty_o": "s_empty",
+              "tx_level_o": "s_tx_level",
+              "rx_level_o": "s_rx_level"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/serial/spi_master_core.sv",
+                "text": "u_word_packer ("
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "packer",
@@ -6797,7 +9539,80 @@
         ]
       }
     ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied. SPI OUT groups SCK, MOSI and chip selects; MISO is the returning serial data line."
+    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied. SPI OUT groups SCK, MOSI and chip selects; MISO is the returning serial data line.",
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "SPI0",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "pacing",
+          "guard"
+        ],
+        [
+          "packer",
+          "core"
+        ]
+      ],
+      "external": [
+        "pads"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/serial/apb4_spi.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/serial/apb4_spi.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/serial/apb4_spi.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/serial/apb4_spi.sv"
+        }
+      ],
+      "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+      "titles": {
+        "pads": "SPI pads\nSCK / MOSI\nMISO / CS"
+      },
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/serial/apb4_spi.sv",
+          "declaration": "apb4_if.slave"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "core",
+          "title": "Session and wire engine",
+          "file": "rtl/ip/serial/spi_master_core.sv",
+          "owner": "core",
+          "members": [
+            "u_phase_ctrl",
+            "u_word_packer"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny"
+    }
   },
   "system-fabric": {
     "title": "Tiny system fabric and CPU local paths",
@@ -7644,6 +10459,103 @@
         "sources": [
           "rtl/ip/ppalite/ppalite_core.sv",
           "rtl/ip/ppalite/ppalite_stream_guard.sv"
+        ],
+        "units": [
+          {
+            "id": "u_stream_guard",
+            "title": "stream guard",
+            "module": "ppalite_stream_guard",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "clear_i": "s_clear",
+              "flush_i": "s_flush",
+              "valid_i": "in_valid_i",
+              "ready_o": "in_ready_o",
+              "data_i": "in_data_i",
+              "keep_i": "in_keep_i",
+              "strb_i": "in_strb_i",
+              "id_i": "in_id_i",
+              "dest_i": "in_dest_i",
+              "user_i": "in_user_i",
+              "last_i": "in_last_i",
+              "slot_valid_o": "s_slot_valid",
+              "slot_pop_i": "s_slot_pop",
+              "slot_data_o": "s_slot_data",
+              "slot_halfword_o": "s_slot_halfword",
+              "framing_event_o": "s_framing_event",
+              "framing_position_o": "s_framing_position",
+              "excess_o": "s_excess_err",
+              "excess_position_o": "s_excess_position",
+              "err_o": "s_guard_err",
+              "err_position_o": "s_guard_position"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/ppalite/ppalite_core.sv",
+                "text": "u_stream_guard ("
+              }
+            ]
+          },
+          {
+            "id": "u_decimator",
+            "title": "decimator",
+            "module": "ppalite_decimator",
+            "ports": {
+              "x_i": "s_x_q",
+              "y_i": "s_y_q",
+              "pixel_i": "s_pixel",
+              "sel_o": "s_sel",
+              "line_sel_o": "s_line_sel",
+              "sample_o": "s_sample"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/ppalite/ppalite_core.sv",
+                "text": "u_decimator ("
+              }
+            ]
+          },
+          {
+            "id": "u_packer",
+            "title": "packer",
+            "module": "ppalite_packer",
+            "ports": {
+              "clk_i": "clk_i",
+              "rst_n_i": "rst_n_i",
+              "flush_i": "s_flush",
+              "valid_i": "s_consume",
+              "ready_o": "s_packer_ready",
+              "sel_i": "s_sel",
+              "line_sel_i": "s_line_sel",
+              "sample_i": "s_sample",
+              "valid_o": "out_valid_o",
+              "ready_i": "out_ready_i",
+              "data_o": "out_data_o",
+              "keep_o": "out_keep_o",
+              "strb_o": "out_strb_o",
+              "last_o": "out_last_o",
+              "id_o": "out_id_o",
+              "dest_o": "out_dest_o",
+              "user_o": "out_user_o",
+              "idle_o": "s_packer_idle"
+            },
+            "parameters": {},
+            "parameters_raw": {},
+            "shape": "block",
+            "bindings": [
+              {
+                "file": "rtl/ip/ppalite/ppalite_core.sv",
+                "text": "u_packer ("
+              }
+            ]
+          }
         ]
       },
       {
@@ -7832,6 +10744,87 @@
           }
         ]
       }
-    ]
+    ],
+    "block_diagram": {
+      "style": "ip-block-v1",
+      "title": "PPALITE",
+      "rows": [
+        [
+          "reg"
+        ],
+        [
+          "guard",
+          "decimate"
+        ],
+        [
+          "pack"
+        ]
+      ],
+      "external": [
+        "dvp",
+        "route",
+        "dma"
+      ],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/ppalite/apb4_ppalite.sv"
+      ],
+      "ports": [
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/ppalite/apb4_ppalite.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/ppalite/apb4_ppalite.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/ppalite/apb4_ppalite.sv"
+        }
+      ],
+      "review": "The gray boundary is apb4_ppalite; route ownership and exact DMA2 admission guard belong to Tiny SoC integration and remain outside it. DVP is a distinct source IP. ExternalRoute is selected by Tiny integration; no duplicate processor/FIFO is inferred.",
+      "titles": {
+        "route": "Tiny integration\nRAW / PROCESS\nroute barrier",
+        "dma": "Tiny integration\nDMA2 guard\nrequest 11"
+      },
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/ppalite/apb4_ppalite.sv",
+          "declaration": "apb4_if.slave",
+          "port": "apb4"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [
+        {
+          "id": "guard",
+          "title": "Framing / input slots",
+          "file": "rtl/ip/ppalite/ppalite_core.sv",
+          "owner": "guard",
+          "members": [
+            "u_stream_guard",
+            "u_decimator",
+            "u_packer"
+          ],
+          "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+        }
+      ],
+      "product": "tiny",
+      "integration": [
+        "route",
+        "dma"
+      ]
+    }
   }
 }

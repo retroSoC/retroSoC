@@ -136,6 +136,14 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
                                "title": "Left footer replaced by the clickable repository URL",
                                "start_page": 1, "end_page": len(reader.pages), "url": REPOSITORY_URL})
     old_manifest = json.loads((baseline.parent / "manifest.json").read_text(encoding="utf-8"))
+    presentation = manifest.get("presentation", {})
+    if presentation.get("register_caption_context") != old_manifest.get("presentation", {}).get("register_caption_context") and presentation.get("register_caption_context") == "ip-qualified-v1":
+        global_changes.append({"id": "register-caption-context", "category": "global-presentation",
+                               "title": "Register field-table captions add IP context; field contents and anchors retained",
+                               "start_page": 1, "end_page": len(reader.pages)})
+    identity_changes = {key: {"before": old_manifest.get("document", {}).get(key), "after": manifest.get("document", {}).get(key)}
+                        for key in ("source_revision", "date", "version", "status")
+                        if old_manifest.get("document", {}).get(key) != manifest.get("document", {}).get(key)}
     old_date = old_manifest.get("document", {}).get("date")
     new_date = manifest.get("document", {}).get("date")
     if old_date and new_date and old_date != new_date:
@@ -153,6 +161,7 @@ def report_changes(pdf: Path, baseline: Path) -> dict:
         "final": {"path": str(pdf.resolve()), "sha256": final_hash, "pages": len(reader.pages)},
         "marker_sha256": digest(marker_file), "ranges": ranges,
         "global_presentation_changes": global_changes,
+        "identity_changes": identity_changes,
         "printed_pages_equal_viewer_pages": all(page == value for page, value in labels.items() if value is not None),
         "unnumbered_viewer_pages": sorted(unnumbered),
         "scope": "Tracked added/rewritten content and explicit cross-references; navigation and global presentation changes are separate. Declared closing pages use viewer indexes with null printed page numbers. Subsequent pagination/numbering-only changes are not substantive edits.",

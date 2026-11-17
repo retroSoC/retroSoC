@@ -459,6 +459,8 @@ Add paired publication-change markers around newly added or substantively change
 content and explicit new cross-references. Mark Contents and both figure/table
 directories separately as navigation updates. Markers are queried after layout;
 they must not participate in running-header selection.
+Retained text keeps the marker ID of the round that introduced or changed it;
+do not derive its ID from the current prefix during unrelated layout revisions.
 
 The build exports and hashes `change-markers.json`. Generate `changed-pages.json`
 with `publications/report_changes.py --baseline <previous.pdf> --pdf <final.pdf>`.
@@ -598,6 +600,8 @@ measurement in the rendered PDF.
 | Code blocks | 8 outside before/after, 8 inside | `code-space: 8pt`, `code-inset: 8pt` |
 | Notes and placeholders | 12 outside before/after, 10 inside | `note-space: 12pt`, `note-inset: 10pt` |
 | Standalone source / IP metadata groups | 4 before, 6 after | `metadata-before: 4pt`, `metadata-after: 6pt` |
+| Contents number column to title | Fixed 4 after the measured same-level number column | `toc-gap: 4pt`; independent of `heading-gap: 8pt` |
+| Figure/table directory prefix column to title | Fixed 4 after each directory's measured prefix column | `directory-gap: 4pt`; independent of Contents and body heading spacing |
 | Register bit layout | 6 before/after; one shared boundary between 16-bit halves; horizontal 3, vertical 5 cell inset | `bits-space: 6pt`, `bits-inset: (x: 3pt, y: 5pt)` |
 
 Fira Code blocks use the small-text leading and 9 pt raw text. Their actual
@@ -683,8 +687,13 @@ the printed contents. Register summaries link to their detailed descriptions;
 shared UART/SDIO descriptions use explicit instance-to-common-section links.
 
 Contents entries use approximately 16 pt baselines (`toc-leading: 9.09pt`),
-14 pt indentation per level, and an 8 pt number-to-title gap. The number column
+14 pt indentation per level, and a fixed 4 pt number-column-to-title gap
+(`toc-gap: 4pt`). The number column
 is measured from the longest outlined, numbered heading at the same level.
+Titles at the same level share one left edge. The fixed gap starts at the right
+edge of the number column; shorter numbers also leave the column's unused width
+before the title. Keep this Contents-only setting separate from `directory-gap`
+for the flat figure/table directories and the 8 pt `heading-gap` for body headings.
 Wrapped titles hang under the title text; page numbers remain right aligned
 with stretching dot leaders. Each entry is unbreakable. Level-one groups add
 12 pt before and 4 pt after to the ordinary entry spacing.
@@ -702,12 +711,16 @@ Unnumbered address tables, bit layouts and decorative components are excluded.
 Both directories use Inter 9.5 pt, the approximately 16 pt Contents baseline,
 and ink-colored clickable entries without underlines. Prefix entries with
 `Table N.` or `Figure N.` and measure one number-column width from the longest
-prefix in each directory. Use an 8 pt prefix-to-title gap, hanging wrapped titles,
+prefix in each directory. Use a fixed 4 pt prefix-column-to-title gap
+(`directory-gap: 4pt`), hanging wrapped titles,
 stretching dot leaders and right-aligned page numbers. Each whole entry links to
 the corresponding figure or table start and remains unbreakable. Do not apply
 Contents hierarchy indentation, chapter-group spacing or abbreviation emphasis
 to these flat directories. Complete coverage takes precedence over a fixed page
 budget; allow the directories to grow as numbered material is added.
+Titles within each directory share the same left edge, including continuation
+lines. The fixed gap starts at the prefix column's right edge; shorter `Table N.`
+or `Figure N.` prefixes also leave the column's unused width before the title.
 
 Outlined, numbered level-one and level-two headings in the body start on a new
 page, including software, implementation and appendix sections. The entire
@@ -915,8 +928,10 @@ The six Multimedia entries use two rows of three cells within the same
 panel. Keep the repository footer blue and clickable without an underline.
 
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 42 IP diagrams plus PRODUCT fabric,
-clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
+chapters. The [shared IP drawing standard](../ip-block-diagrams.md) governs all
+42 Mini IP primary diagrams and their details, rendered by locked CeTZ 0.5.2.
+Circuiteria 0.2.1 retains PRODUCT fabric, clock/reset, media composition and
+MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
 instruction families. Blockcell 0.1.0 covers architectural FIFOs, line buffers,
@@ -939,11 +954,13 @@ physical device capacities; diagrams with compressed gaps are not to scale.
 Rivet instruction words use upper/lower 32-bit rows so adjacent two-digit bit
 indexes remain readable. Coordinate and text settings are calibrated together
 against the rendered PDF; do not solve collisions by making type smaller.
-Circuiteria boxes use the shared thin-border appearance; its unmodified wire
+The four retained system Circuiteria figures use thin-border boxes; the unmodified wire
 renderer uses 1 pt control/signal lines and 1.5 pt data buses. Dashed control and
-solid data paths are a local convention. Labels remain horizontal on white
+solid data paths are a local system-figure convention. Labels remain horizontal on white
 backing, with endpoints attached to declared ports. Other diagram line widths
-are unaffected.
+are unaffected. IP primary/detail figures instead use solid control lines,
+outlined data arrows, transparent labels, square white blocks and neutral gray
+ownership boundaries under the shared standard. Ordinary IP text stays 9 pt.
 
 `system-reference.json.illustrations` references the reviewed circuit, binary
 layout and storage catalogs. The publication adapters verify named instance
@@ -1286,3 +1303,44 @@ hardware evidence with a successful publication build.
 For an edit confined to this Markdown specification or its README link, verify
 the descriptions, relative links and commands and run `git diff --check`;
 rebuilding the PDF and running hardware validation are not required.
+
+## Shared commercial-reference data standard
+
+The [specification standard](../specifications/README.md) defines the current
+chapter order, grouped table directory, four-state schema, source fingerprints,
+model inheritance, repeated-header/image markers, vectors, plotting environment
+and replacement/visual/offline acceptance. It applies to both books. Independent
+Reference Only examples may complete the structure; unqualified product ratings
+remain TBD. No example is transferred into hardware evidence.
+
+The 2026-11-14 reviewed structure retains all 42 Mini IP anchors and adds a
+quick reference (110 major/IP entries). Packaging/electrical precede complete
+peripherals. Mini keeps its own REF24, EXT72, audio, LP/HP CDC, IHP130 PRODUCT/HP/
+MPW profiles and shared QPI/OPI GPIO21-31 restrictions. QFN64 remains Tiny-only.
+
+## Scientific formula and quantity typography
+
+Use the shared [scientific display component](../specifications/scientific.typ) for mathematical powers,
+quantity subscripts and mechanical dimension suffixes. Keep raw formulas,
+coefficients, units, statuses and numerical CSV values machine-readable and
+unchanged; the restricted publication grammar creates inert display tokens
+without evaluating source text. Use a multiplication sign and true exponent
+for arithmetic; distinguish voltage quantities such as V with OH/OL/IO
+subscripts from literal power-pin names such as VDDIO. Only mechanical contexts
+attach D2, E2 and A1 suffixes. Software, register, RTL, pin and protocol
+identifiers, inline code and code blocks retain their exact source spelling.
+
+Native Typst attachments and Matplotlib MathText use the locked Inter font.
+Script size is 70 percent of the surrounding size, with an absolute 6.3 pt
+minimum and a parent size of at least 9 pt. This exception applies only to
+source-attributed script glyphs inside tight measured rectangles; ordinary
+labels and body/table text retain their existing size limits. Never exempt an
+entire formula, chart, page or arbitrary small label. Export the script identity,
+text, role, font size and rectangle in the hashed layout audit. Independent
+SVG/PDF exports keep the same typography and reference-state labels.
+
+Retain scientific-notation.json, plot script metadata, the manifest and the
+normal PDF font checks. Verify raw-source preservation, mechanical/protocol
+context, exponent parsing, managed fonts and rejection of unrelated small text.
+Review changed pages in color and grayscale, including exponent baselines,
+line breaks, table rows and standalone figures, then repeat the offline build.

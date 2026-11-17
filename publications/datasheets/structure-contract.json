@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "state": "frozen",
-  "scope": "Outlined level 1/2 headings and all IP entries; prose, deeper subsections and pagination remain editable.",
+  "scope": "Reviewed 2026-11-14 commercial-reference structure: package/electrical precede complete peripherals, quick reference added; stable IP/register anchors retained.",
   "document_version": "0.5 DRAFT",
   "ip_ids": [
     "xpi",
@@ -75,6 +75,11 @@
     },
     {
       "level": 2,
+      "title": "Specification and Evidence Quick Reference",
+      "anchor": "mini-specification-quick"
+    },
+    {
+      "level": 2,
       "title": "Reading this datasheet",
       "anchor": null
     },
@@ -142,6 +147,16 @@
       "level": 2,
       "title": "Interface Standards and Supported Subsets",
       "anchor": "interface-subsets"
+    },
+    {
+      "level": 2,
+      "title": "Packaging",
+      "anchor": null
+    },
+    {
+      "level": 2,
+      "title": "Electrical and Timing Specifications",
+      "anchor": "electrical-specifications"
     },
     {
       "level": 2,
@@ -347,16 +362,6 @@
       "level": 4,
       "title": "High-Bandwidth Extension (EXT-H)",
       "anchor": "ext-h"
-    },
-    {
-      "level": 2,
-      "title": "Packaging",
-      "anchor": null
-    },
-    {
-      "level": 2,
-      "title": "Electrical and Timing Specifications",
-      "anchor": "electrical-specifications"
     },
     {
       "level": 1,

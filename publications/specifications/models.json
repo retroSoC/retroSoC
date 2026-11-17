@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "current": {
+    "formula": "Iref[mA] = 0.2 * 2**((T-25)/25) + k * f_MHz * V/1.2",
+    "k": {
+      "Run": 0.05,
+      "WFI": 0.01,
+      "WFI + idle gates": 0.005
+    },
+    "voltages_v": [
+      1.0,
+      1.1,
+      1.2,
+      1.3
+    ],
+    "temperatures_c": [
+      -40,
+      25,
+      85,
+      125
+    ],
+    "domain": "core-only; constructed activity, not transistor simulation"
+  },
+  "transfer": {
+    "formula": "Tref[s] = setup_cycles/f_bus + L/(efficiency*Bideal)",
+    "setup_cycles": 16,
+    "efficiency": 0.6,
+    "length_bytes": [
+      256,
+      1024,
+      4096,
+      16384,
+      65536
+    ]
+  },
+  "gpio": {
+    "formula": "VOH=VIO-I*R; VOL=I*R",
+    "vio_v": 3.3,
+    "resistance_ohm": 40,
+    "current_ma": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12
+    ]
+  },
+  "paste": {
+    "stencil_mm": 0.1,
+    "count_x": 4,
+    "count_y": 4,
+    "aperture_mm": 1.4,
+    "gap_mm": 0.3
+  },
+  "pcb": {
+    "mask_expansion_mm": 0.05,
+    "via_grid": 5,
+    "via_pitch_mm": 1.0,
+    "via_drill_mm": 0.2,
+    "via_land_mm": 0.45,
+    "via_treatment": "Filled/capped or solder-loss controlled; fabricator confirmation required"
+  },
+  "board": {
+    "local_cap_nf": 100,
+    "domain_cap_uf": 1.0,
+    "bulk_cap_uf": 4.7,
+    "reset_pull_kohm": 10,
+    "reset_cap_nf": 100,
+    "jtag_series_ohm": 33,
+    "nor_cs_pull_kohm": 10
+  }
+}

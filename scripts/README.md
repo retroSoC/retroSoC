@@ -39,7 +39,28 @@ shell behavior, preserve structured JSON results, and keep setup/download
 behavior controlled by `dependencies/dependencies.lock.json`.
 `setup_helpers.py` bounds each Git fetch attempt and its retry count. It recovers
 an unborn checkout only when the worktree is clean and the remote matches the
-locked URL and revision; dirty or mismatched repositories are preserved.
+locked URL and revision; dirty or mismatched repositories are preserved. An
+optional validated reference copies ordinary non-recursive Git inputs through
+the same bounded helper with independent object storage and the locked origin.
+Historical objects can also be fetched from a clean same-URL local reference
+without switching the active checkout. `worktree_bootstrap.py` provides
+dry-run-by-default canonical worktree creation and current-worktree restoration.
+It selects locked Git sources and raw archive files by name, verifies
+revision/SHA-256 and scope, and disables network fallback unless explicitly
+allowed. Recursive inputs use independent atomic copies with submodule, symlink,
+and capacity checks before their existing setup flow runs. By default it does
+not restore the complete hosted fixture set. An explicit task
+`execution.fixture_profile: hosted-pytest` runs `fixture_control.restore` from
+the distinct primary worktree after creation or ordinary input restoration.
+The bootstrap result checkpoints `PLANNED`, `RESTORING`, `READY`, or `FAILED`
+and links the complete restore/doctor evidence. This full profile remains
+offline-only; it never inherits network fallback from partial source options.
+`fixture_control.py` provides `plan`, `restore`, and `doctor` for the complete
+hosted-Pytest fixture set. It restores lock-selected sources, PDKs, reference
+archives, publication packages, and test toolchains from a distinct local
+reference worktree, then invokes the existing setup commands with Git restricted
+to file transport. `make fixture-plan`, `fixture-restore`, and `fixture-doctor`
+expose the same boundary. A doctor BLOCKED result is never a skipped test.
 
 `agent_control.py` validates host-neutral task packets, produces revision-bound
 agent context and changed-file validation plans, and checks repository Markdown.
@@ -48,17 +69,95 @@ local tools, the dependency-lock digest, and the Tiny reviewed-source snapshot
 using the publication collector's actual source inventory. Workspace writes
 require a clean initial worktree. Online
 GitHub permission and PR-head probes are opt-in; local preflight is offline.
+A task with `execution.fixture_profile` also runs the matching doctor without
+restoring or downloading inputs; every doctor issue blocks preflight. Tasks
+without this field report `fixture.status=NOT_REQUESTED` and do not probe the
+large fixture inventory.
+`merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
+against the selected target revision. `make agent-preflight` enables this check
+by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
+The caller must fetch the target first. A clean source worktree is required.
+The temporary checkout uses the source HEAD, not the main checkout's branch,
+and is aborted and normally removed without committing. Results include exact
+conflicted paths, resolved target revision, cleanup, and no-commit evidence;
+cleanup or Git failures stop delivery rather than becoming a pass.
+`agent-scope-check TASK=<task.json>` validates only the staged index against
+the task scope without requiring a clean worktree. Its default diff is against
+`HEAD`; an explicit `BASE=<ref>` first computes the merge-base so upstream
+changes are not misattributed to the staged task. The JSON evidence records the
+actual diff base, staged files, unmerged paths, and scope issues. It is read-only,
+performs no merge or fixture restoration, and does not replace full preflight or
+CI. Unstaged and untracked files are not included.
 `snapshot-check` runs the same drift check in the fast gate without duplicating
 a static source list.
-`skill_eval.py` validates the Skill registry and executes isolated, read-only
-behavior evaluations with deterministic grades. `engineering_metrics.py`
+`skill_eval.py` validates all registered Skills and executes isolated, read-only
+behavior evaluations with deterministic grades. It retains v1 eval-config
+compatibility, requires migration documents for incompatible contracts, and
+records Skill Git SHA, contract version, runner/model, input snapshot, and
+workspace tree. Static validation is never labeled behavior execution. Codex is
+the default runner; `--runner kimi` uses `.agents/skill-eval-agent.md` with only
+Read/Grep/Glob/Skill and no delegation, and records that profile's digest too.
+`skill_eval.py run --case <id>` executes an explicit live case without changing
+the existing smoke selection. `skill_eval.py replay` grades explicit retained
+traces without starting a runner. It validates trace/input/Skill/workspace
+provenance and preserves current versus
+historical case identity. Invalid or failed grades fail the command; the report
+always records `behavior_execution=NOT_RUN` and zero runner invocations. Duplicate
+case IDs are rejected. `--latest-per-case` selects one timezone-bound latest trace
+per case, rejects timestamp ties, and records every candidate path, timestamp, and
+SHA-256. The equivalent Make option is `LATEST=1`. Use `make skill-replay
+TRACES=<directory>`; static corpus checks alone are not a behavior replay, and
+replay does not qualify current code or hardware.
+`engineering_metrics.py`
 collects workflow and PR metrics without source or credential content.
+`job_metrics.py` adds bounded per-attempt job pagination, queue/execution/step
+timing, first-attempt and same-head duplicate execution, plus explicit cache-step
+observations. It reconciles cache-report HIT/MISS/NOT_RUN, duration, size, and
+optional cache/config digests without treating a cache as a cached PASS.
+`cache_artifacts.py` reads cache reports directly from run-bound artifact ZIPs,
+records artifact identity and SHA-256, and accepts optional primary and matched
+cache keys. Exact hits may use the primary key; fallback restores use the actual
+matched key. GitHub's `actions_caches` response array is used for inventory
+metadata, not the report-local `caches` array. Only a unique key-matched GitHub
+cache entry supplies actual size bytes; misses without a match, artifact sizes, missing keys, and ambiguous
+metadata never become inferred cache measurements. Summaries distinguish
+`restored_bytes_total` across observations from `unique_cache_entry_count` and
+`unique_cache_bytes_total` by cache ID. The legacy `cache_bytes_total` remains
+the per-observation restored sum, not unique cache storage. Conflicting sizes
+for one cache ID are rejected.
+Online engineering collection includes this additive observation class.
+`delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
+optionally matches local delivery JSON by merge commit for agent-watch/cleanup
+timing. Unknown timeline, cache size, or local evidence is never reported as
+zero. `ci_observations.py` reads head-bound shadow artifacts without file
+extraction and includes read-only delivery-policy evaluations. For PR merge
+revisions, it separately validates the actual workflow head, evaluated revision,
+run ID, and event while rejecting spoofed or incomplete identities. Neither enables
+reuse, a merge queue, or a metric gate. Offline `summarize` accepts separate
+jobs/delivery/cache, policy, and shadow JSON files.
+`delivery_policy.py` evaluates ready/conflicting PRs, merge_group workflow
+coverage, successful main quality runs, and validated same-profile/same-tool
+metric samples. Merge queues are considered only for sustained integration
+conflicts with full merge_group gate coverage. Metric promotion still requires
+ten validated samples and a committed reviewed baseline. Evaluation is read-only
+and never enables a queue or gate by itself.
+`regress.py --plan-output <path>` writes the exact selected primary and
+observation Make argv, profile arguments, source revision, and lock digest before
+execution. `performance_evidence.py` binds retained artifact ZIPs to job,
+manifest, selected-plan, command, tool, and optional explicit runner-isolation
+identities offline. It supplies legacy profile/lock fields only from the matching
+manifest, rejects ambiguous evidence and duplicate run/role samples, and requires
+five matching baseline/candidate pairs before `READY_FOR_REVIEW`. It never runs
+a simulator, contacts GitHub, infers isolation from a hosted runner name, or
+starts an A/B experiment.
 `ci_summary.py` rejects stale evidence and distinguishes PASS, FAIL, SKIPPED,
 and NOT_RUN. `ci_recovery.py` classifies source/test, infrastructure, timeout,
 cancelled, dependency-integrity, and unknown failures, records job-step and
-resource summaries, and emits cache observations. `inspect` is dry-run by
-default. Only a first-attempt, same-head, recognized infrastructure failure is
-eligible for `inspect --execute`; all other failures preserve their verdict.
+resource summaries, and emits cache observations with optional cache keys.
+`inspect` is dry-run by default and preserves both raw and ANSI/control-normalized
+logs with separate SHA-256 evidence. Only a first-attempt, same-head, recognized
+infrastructure failure is eligible for `inspect --execute`; all other failures
+preserve their verdict.
 `formal_local_evidence.py` assembles existing local results without
 re-running proofs and requires a clean revision-matched manifest. Optional
 `local_checks` in a release candidate apply the same source and proof checks to
@@ -89,6 +188,23 @@ optional-input skips. Cache HIT/MISS/NOT_RUN observations are aggregated without
 caching verdicts. Use `make fixtures-plan`, `make fixtures-shard SHARD=<index>`,
 or `make fixtures-verify SHARD_DIRS="<directories>"` for local inspection; hosted
 CI runs isolated matrix jobs and an always-enforced fan-in.
+`incremental_ci.py` computes fixture input, tool-lock, configuration, and complete
+test-manifest fingerprints. It can compare a local evidence JSON or a real
+GitHub quality run/artifact against the current revision. `--auto-previous`
+selects only an earlier successful quality run from the same PR, excluding the
+current run. Actual workflow head and evaluated merge revision are separate
+identities; fan-in optionally binds both to the run, attempt, and PR. Fan-in
+requires the evaluated revision to be either the actual PR head or a two-parent
+merge whose second parent is that head; an ordinary ancestor is not sufficient.
+Historical merge revisions need not be ancestors of the current merge revision, but the
+actual PR heads must remain ancestral and all source fingerprints must be
+recomputed. Missing history, unavailable source objects, or unreadable historical
+required-check metadata select `RUN_FULL`; malformed evidence remains a hard error.
+Production policy is `shadow` with `enabled=false`: a matching result is only a
+reuse recommendation, never an automatic skip. Dirty worktrees, changed/deleted
+inputs, incomplete or tampered evidence, missing fields, and any manifest
+mismatch force `RUN_FULL` or a hard integrity error as appropriate. Scheduled,
+manual, and release events always run full.
 `yosys_progress.py` summarizes phase steps,
 executing-pass counts, rerun markers, elapsed time, and result/source boundaries
 without another synthesis run or an unsupported convergence diagnosis.
@@ -123,21 +239,52 @@ using the same evidence, artifact, process, and gap records. `validation_gaps.py
 validates ownership, review dates, and resolution conditions.
 `worktree_registry.py` inventories registered and orphaned worktrees in dry-run
 mode by default. Only clean, registered, canonical, non-detached branches under
-`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates;
-artifacts are moved to the main worktree's `build/agent-artifacts/` before
-non-forced cleanup. Dirty, unmerged, detached, non-canonical, orphaned, or
-evidence-conflicting paths are preserved.
+`build/agent-worktrees/` and contained in `origin/dev` are cleanup candidates.
+`artifact_lifecycle.py` applies `quality/artifact-retention.json`, hashes retained
+files, summarizes capacity by class, and copies evidence through an atomic staging
+directory into the main worktree's `build/agent-artifacts/`. The policy is loaded
+from the executing tool's source root, not from an unrelated main checkout.
+Rebuildable caches
+and evaluation workspaces are not retained wholesale; unknown files remain
+retained. Expiry requires review, never automatic deletion. Deferred Mini Yosys
+evidence remains until its gap is resolved. Dirty, unmerged, detached,
+non-canonical, orphaned, unexpected-symlink, capacity-limited, or
+evidence-conflicting paths are preserved. Only known rebuildable symlinks are
+skipped without following their targets; artifact probing never follows a
+symlinked root or directory.
+`agent_dag.py` validates the optional v1 coordination fields and graph schema,
+then emits deterministic plan-only DAG waves. Read-only work can be parallel
+only with host authorization; write tasks additionally require disjoint
+write-sets and distinct canonical worktrees/artifact roots. A single integrator
+always serializes integration. `acquire`, `heartbeat`, and `release` default to
+dry-run and require explicit graph authorization for mutation. Dependency and
+PASS evidence, idempotency keys, lease identity, attempts, budgets, and expiry
+are enforced without starting agents.
 
 `check_contribution.py` validates PR metadata, CODEOWNERS, and
-release-candidate evidence. `pr_delivery.py` probes repository capabilities and
+release-candidate evidence. Commit collection records actual parent counts so a
+lowercase `merge:` subject is accepted only for a genuine multi-parent commit;
+plain strings and forged non-merge records do not receive that exception. `pr_delivery.py` probes repository capabilities and
 push permission, then enables native merge-commit auto-merge before waiting for
 checks. It returns immediately by default, supports optional `--watch` polling,
-and offers `--reconcile-only` for a later merged-PR cleanup. `--preflight-only`
+and offers `--reconcile-only` for a later merged-PR cleanup. It checkpoints the
+initial enabled delivery, then delegates every watched poll and cleanup to
+`delivery_controller.py`; there is no second watcher state machine. The canonical
+`pr-<number>-delivery.json` and `pr-<number>-controller.json` are retained even
+when a custom `--output` receives the final result. Initial, pending,
+waiting-for-native-merge, and final states are atomically checkpointed so an
+interrupted watcher leaves recoverable evidence. `--preflight-only`
 never mutates the PR. `pr_workflow.py` retains its after-green compatibility
 entrypoint. Both use clean, canonical worktree checks and registry-based artifact
 preservation before linked-worktree removal. A branch-scoped cleanup registry is
 written below `build/agent-worktrees/`. Use the corresponding Make targets and
 host tests instead of duplicating these rules in workflow shell.
+`delivery_controller.py` coordinates only explicitly selected existing delivery
+records. It atomically persists pending/failed/attention state, resumes native
+auto-merge monitoring, and reconciles merged cleanup without becoming a merge
+authority. It never re-enables externally disabled auto-merge, retries failed
+checks, or discovers unrelated PRs. Complete records are no-ops without network
+access. Use `make agent-coordinate PRS="<number>..."` with optional `WATCH=1`.
 
 `spi_p1.py` runs the standalone SPI core through explicit `spi-p1-*` Make
 entrypoints. It preserves attempt directories, source archives, command results

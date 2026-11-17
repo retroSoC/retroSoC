@@ -77,6 +77,90 @@ def test_source_drift_does_not_silently_relabel_old_prose(monkeypatch):
         ds.validate_source(ds.read_json(ds.CONFIG))
 
 
+@pytest.fixture
+def build_review(tmp_path, monkeypatch):
+    import subprocess
+
+    def git(*args):
+        return subprocess.check_output([
+            "git", "-C", str(tmp_path), "-c", "user.name=Publication Test",
+            "-c", "user.email=publication@example.invalid", "-c", "commit.gpgsign=false", *args,
+        ], text=True).strip()
+
+    git("init", "--quiet")
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("firmware:\n\t@true\n")
+    workflow = tmp_path / "docs/git-workflow.md"
+    workflow.parent.mkdir()
+    workflow.write_text("Use merge commits.\n")
+    git("add", "Makefile", "docs/git-workflow.md")
+    git("commit", "--quiet", "-m", "test: product baseline")
+    baseline = git("rev-parse", "HEAD")
+    makefile.write_text("firmware:\n\t@true\nagent-help:\n\t@true\n")
+    workflow.write_text("Use merge commits; validate actual merge parents.\n")
+    git("add", "Makefile", "docs/git-workflow.md")
+    git("commit", "--quiet", "-m", "test: reviewed agent target")
+    config = {"source_revision": baseline, "build_control_review": {
+        "revision": git("rev-parse", "HEAD"), "makefile_blob": git("rev-parse", "HEAD:Makefile"),
+        "documentation_blobs": {"docs/git-workflow.md": git("rev-parse", "HEAD:docs/git-workflow.md")},
+        "reason": "Reviewed Agent target and contribution policy; firmware rule unchanged.",
+    }}
+    monkeypatch.setattr(ds, "git", git)
+    return config, makefile, git
+
+
+def test_explicit_build_control_review_preserves_the_product_revision(build_review):
+    config, _, _ = build_review
+    assert ds.reviewed_build_control(config)
+    assert config["source_revision"] != config["build_control_review"]["revision"]
+    assert ds.reviewed_build_control({"source_revision": config["source_revision"]}) is False
+
+
+@pytest.mark.parametrize("mutation", [
+    "dirty", "later-commit", "blob", "reason", "baseline", "document-dirty",
+    "document-blob", "product-document", "document-type",
+])
+def test_build_control_review_cannot_cover_unreviewed_changes(build_review, mutation):
+    config, makefile, git = build_review
+    if mutation in {"dirty", "later-commit", "baseline"}:
+        makefile.write_text("firmware:\n\t@false\n")
+        if mutation != "dirty":
+            git("add", "Makefile")
+            git("commit", "--quiet", "-m", "test: unreviewed product rule")
+        if mutation == "baseline":
+            config["source_revision"] = git("rev-parse", "HEAD")
+    elif mutation == "blob":
+        config["build_control_review"]["makefile_blob"] = "0" * 40
+    elif mutation == "document-dirty":
+        (makefile.parent / "docs/git-workflow.md").write_text("Unreviewed contribution policy.\n")
+    elif mutation == "document-blob":
+        config["build_control_review"]["documentation_blobs"]["docs/git-workflow.md"] = "0" * 40
+    elif mutation == "product-document":
+        config["build_control_review"]["documentation_blobs"] = {"docs/ip/tiny-soc.md": "0" * 40}
+    elif mutation == "document-type":
+        config["build_control_review"]["documentation_blobs"] = ["docs/git-workflow.md"]
+    else:
+        config["build_control_review"]["reason"] = ""
+    with pytest.raises(ValueError):
+        ds.reviewed_build_control(config)
+
+
+def test_build_control_review_never_waives_rtl_drift(monkeypatch):
+    monkeypatch.setattr(ds, "git", lambda *args, **kwargs: "Makefile\nrtl/mini/top/retrosoc.sv")
+    monkeypatch.setattr(ds, "reviewed_build_control", lambda config: True)
+    with pytest.raises(ValueError, match="rtl/mini/top/retrosoc.sv"):
+        ds.validate_source(ds.read_json(ds.CONFIG))
+
+
+def test_makefile_review_does_not_waive_an_unreviewed_workflow_document(monkeypatch):
+    config = copy.deepcopy(ds.read_json(ds.CONFIG))
+    config["build_control_review"].pop("documentation_blobs", None)
+    monkeypatch.setattr(ds, "git", lambda *args, **kwargs: "Makefile\ndocs/git-workflow.md")
+    monkeypatch.setattr(ds, "reviewed_build_control", lambda config: True)
+    with pytest.raises(ValueError, match="docs/git-workflow.md"):
+        ds.validate_source(config)
+
+
 def test_missing_media_fails_without_attempting_network(tmp_path, monkeypatch):
     monkeypatch.setattr(ds, "ROOT", tmp_path)
     with pytest.raises(ValueError, match="media repository missing; run setup"):

@@ -1,6 +1,6 @@
 #import "style.typ": *
 #import "waveforms.typ": timing
-#import "diagram-packages.typ": circuit-diagram, binary-figures, storage-figures
+#import "diagram-packages.typ": circuit-diagram, ip-block-figures, binary-figures, storage-figures
 
 #let inline(value) = {
   // A deliberately limited inline grammar: explicit strong spans and raw code.
@@ -89,7 +89,7 @@
     {
       // Register-name links keep their blue color and destination, without decoration.
       show underline: omit-link-underline
-      ds-table(family+"-summary-"+group.id,group.title,
+      ds-table(family+"-summary-"+group.id,[#upper(family) / #group.title - register overview],
         ([Offset],[Register],[Access],[Reset],[Description]),
         registers.map(r=>(code("0x"+str(r.offset,base:16)),link(label("reg-"+family+"-"+r.key),code(r.name)),summary-access(r.access),inline(r.reset),inline(r.description))),
         widths:(0.55fr,1.6fr,0.6fr,1.1fr,2.6fr))
@@ -113,7 +113,7 @@
     par(inline(register.description))
     block(breakable:false,above:rhythm.bits-space,below:rhythm.bits-space,bit-layout(register))
     let fields=register.fields.sorted(key:f=>-f.msb)
-    ds-table("fields-"+family+"-"+register.key,[#register.name field descriptions],
+    ds-table("fields-"+family+"-"+register.key,[#upper(family) / #register.name field descriptions],
       ([\#],[Bits],[Field],[Reset],[Description]),
       fields.enumerate().map(((n,f))=>("F"+str(n+1),str(f.msb)+if f.msb!=f.lsb {":"+str(f.lsb)} else {""},code(f.name),inline(f.reset),inline(f.description))),
       widths:(0.25fr,0.5fr,1.1fr,0.75fr,2.3fr))
@@ -131,13 +131,10 @@
   let revised=id in ("sysctrl","resource","monitor","apu","i2s")
   if revised {change-start("dev-ip-"+id,chapter.title+" current implementation and register reference")}
   subhead(id,"Features and Block Diagram",depth)
+  if id=="jpeg" {change-start("v05-scientific-20261116-jpeg-symbol","JPEG dimension multiplication sign / UTF-8 decoding")}
   list(..chapter.at("features",default:()).map(inline))
-  block(breakable:false)[
-      #change-start(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id},chapter.title+" internal circuit diagram")
-      #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#chapter.title functional organization.])
-      #label("circuit-"+id)
-      #change-end(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id})
-    ]
+  if id=="jpeg" {change-end("v05-scientific-20261116-jpeg-symbol")}
+  ip-block-figures(id)
 
   subhead(id,"Functional Description",depth)
   if legacy!=none {

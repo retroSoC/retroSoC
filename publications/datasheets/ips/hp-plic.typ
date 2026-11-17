@@ -2,7 +2,7 @@
 #change-start("v05-c906-20261022-ips-hp-plic","Internal C906 PLIC integration boundary")
 
 #import "../ip-reference.typ": inline, subhead
-#import "../diagram-packages.typ": circuit-diagram
+#import "../diagram-packages.typ": ip-block-figures
 
 #pagebreak(weak:true)
 
@@ -21,10 +21,7 @@ outside this publication's scope together with the CPU ISA/CSR manuals.
 
 #subhead("hp-plic","Features and Block Diagram",5)
 #list(..chapter.at("features",default:()).map(inline))
-#block(breakable:false)[
-    #figure(circuit-diagram("hp-plic"),kind:image,supplement:[Figure],caption:[#chapter.title integration boundary.])
-    #label("circuit-hp-plic")
-  ]
+#ip-block-figures("hp-plic")
 
 #subhead("hp-plic","Functional Description",5)
 #for paragraph in chapter.notes { par(inline(paragraph)) }

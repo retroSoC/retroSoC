@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://retrosoc.invalid/schemas/agent-task-dag-v1.json",
+  "title": "retroSoC agent task graph contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "graph_id", "integrator", "multi_agent_authorized", "tasks"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "graph_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "description": {"type": "string"},
+    "integrator": {"type": "string", "minLength": 1},
+    "multi_agent_authorized": {"type": "boolean"},
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {"$ref": "task.schema.json"}
+    }
+  }
+}

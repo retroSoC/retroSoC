@@ -1,4 +1,5 @@
 """Source-bound data for representative field, instruction, memory and circuit diagrams."""
+
 from __future__ import annotations
 
 import copy
@@ -19,6 +20,9 @@ from publications.soc_diagram_reference import collect_soc_diagram
 
 def dependencies(spec: dict) -> set[str]:
     paths = set(spec.get("sources", []))
+    from publications.ip_block_reference import trace_paths
+
+    paths.update(trace_paths(spec.get("circuits", {})))
     if spec.get("soc_architecture_catalog"):
         paths.add(spec["soc_architecture_catalog"])
     for binding in spec.get("bindings", []):
@@ -34,7 +38,9 @@ def dependencies(spec: dict) -> set[str]:
 def validate_bindings(root: Path, bindings: list[dict]) -> None:
     for binding in bindings:
         source = (root / binding["file"]).read_text(encoding="utf-8")
-        if re.sub(r"\s+", "", without_comments(binding["text"])) not in re.sub(r"\s+", "", without_comments(source)):
+        if re.sub(r"\s+", "", without_comments(binding["text"])) not in re.sub(
+            r"\s+", "", without_comments(source)
+        ):
             raise ValueError(f"diagram source binding changed: {binding['file']}")
 
 
@@ -64,10 +70,23 @@ def dma_fields(root: Path) -> list[dict]:
     fields, offset = [], 0
     for signed, width, name in members:
         bits = int(width)
-        role = "reserved" if name.startswith("reserved") else "writeback" if name in {
-            "crc_result", "status", "bytes_done", "error_status"} else "configuration"
-        fields.append({"name": name, "lsb": offset * 8, "bits": bits, "offset": offset,
-                       "role": role, "signed": signed == "int"})
+        role = (
+            "reserved"
+            if name.startswith("reserved")
+            else "writeback"
+            if name in {"crc_result", "status", "bytes_done", "error_status"}
+            else "configuration"
+        )
+        fields.append(
+            {
+                "name": name,
+                "lsb": offset * 8,
+                "bits": bits,
+                "offset": offset,
+                "role": role,
+                "signed": signed == "int",
+            }
+        )
         offset += bits // 8
     validate_fields(fields, 512)
     return fields
@@ -77,15 +96,25 @@ def apu_formats(root: Path) -> dict:
     path = root / "scripts/apu_isa.py"
     source = path.read_text(encoding="utf-8")
     declarations = re.findall(r"\(self\.(\w+),\s*(\d+),\s*(\d+)\)", source)
-    aliases = {"instruction_class": "class", "opcode": "opcode", "predicate": "predicate",
-               "dst": "dst", "src0": "src0", "src1": "src1", "aux": "aux", "immediate": "immediate"}
+    aliases = {
+        "instruction_class": "class",
+        "opcode": "opcode",
+        "predicate": "predicate",
+        "dst": "dst",
+        "src0": "src0",
+        "src1": "src1",
+        "aux": "aux",
+        "immediate": "immediate",
+    }
     if len(declarations) != 8 or {row[0] for row in declarations} != aliases.keys():
         raise ValueError("APU encoder field inventory changed")
     rtl = (root / "rtl/ip/multimedia/apu_microcode_pkg.sv").read_text(encoding="utf-8")
     fields = []
     for name, width, shift in declarations:
         bits, lsb = int(width), int(shift)
-        slices = set(re.findall(r"s_" + aliases[name] + r"\s*=\s*instruction_i\[(\d+):(\d+)\]", rtl))
+        slices = set(
+            re.findall(r"s_" + aliases[name] + r"\s*=\s*instruction_i\[(\d+):(\d+)\]", rtl)
+        )
         if slices != {(str(lsb + bits - 1), str(lsb))}:
             raise ValueError("APU encoder/RTL diagram slice mismatch")
         fields.append({"name": name, "label": aliases[name].upper(), "bits": bits, "lsb": lsb})
@@ -97,11 +126,13 @@ def apu_formats(root: Path) -> dict:
     sys.modules[spec.name] = isa
     spec.loader.exec_module(isa)
     defines = (root / "rtl/ip/multimedia/apu_define.svh").read_text(encoding="utf-8")
-    for suffix, value in (("CLASS_CONTROL", int(isa.InstructionClass.CONTROL)),
-                          ("CLASS_SCALAR", int(isa.InstructionClass.SCALAR)),
-                          ("CONTROL_WAIT", int(isa.ControlOpcode.WAIT)),
-                          ("SCALAR_MOVI", int(isa.ScalarOpcode.MOVI)),
-                          ("PRED_ALWAYS", 0)):
+    for suffix, value in (
+        ("CLASS_CONTROL", int(isa.InstructionClass.CONTROL)),
+        ("CLASS_SCALAR", int(isa.InstructionClass.SCALAR)),
+        ("CONTROL_WAIT", int(isa.ControlOpcode.WAIT)),
+        ("SCALAR_MOVI", int(isa.ScalarOpcode.MOVI)),
+        ("PRED_ALWAYS", 0),
+    ):
         found = re.findall(r"^`define\s+APB4_APU__MC_" + suffix + r"\s+(\S+)", defines, re.M)
         if len(found) != 1 or number(found[0]) != value:
             raise ValueError("APU example opcode/predicate differs from RTL")
@@ -110,23 +141,51 @@ def apu_formats(root: Path) -> dict:
     if legacy != [str(isa.APUMC_MAX_INSTRUCTIONS)]:
         raise ValueError("APU legacy image capacity differs from the encoder")
     for version in ("V1", "V2"):
-        maximum = re.findall(r"^`define\s+APB4_APU__APUMC_MAX_INSTRUCTIONS_" + version + r"\s+(\d+)", defines, re.M)
+        maximum = re.findall(
+            r"^`define\s+APB4_APU__APUMC_MAX_INSTRUCTIONS_" + version + r"\s+(\d+)", defines, re.M
+        )
         if maximum != [str(getattr(isa, "APUMC_MAX_INSTRUCTIONS_" + version))]:
             raise ValueError("APU control-store capacity differs from the encoder")
         limits[version.lower()] = int(maximum[0])
     instructions = (
-        ("SCALAR.MOVI: r1 = 0x12345678", isa.Instruction(int(isa.InstructionClass.SCALAR), int(isa.ScalarOpcode.MOVI), dst=1, immediate=0x12345678)),
-        ("CONTROL.WAIT: DMA source", isa.Instruction(int(isa.InstructionClass.CONTROL), int(isa.ControlOpcode.WAIT), aux=isa.WAIT_SOURCES.index("dma"))),
+        (
+            "SCALAR.MOVI: r1 = 0x12345678",
+            isa.Instruction(
+                int(isa.InstructionClass.SCALAR),
+                int(isa.ScalarOpcode.MOVI),
+                dst=1,
+                immediate=0x12345678,
+            ),
+        ),
+        (
+            "CONTROL.WAIT: DMA source",
+            isa.Instruction(
+                int(isa.InstructionClass.CONTROL),
+                int(isa.ControlOpcode.WAIT),
+                aux=isa.WAIT_SOURCES.index("dma"),
+            ),
+        ),
     )
     examples = []
     for title, instruction in instructions:
         word = instruction.encode()
         if isa.Instruction.decode(word) != instruction:
             raise ValueError("APU instruction diagram failed round-trip encoding")
-        examples.append({"title": title, "word": f"0x{word:016X}",
-                         "values": {name: getattr(instruction, name) for name in aliases}})
-    return {"bits": 64, "fields": fields, "examples": examples, "max_instructions": limits["v2"], "image_limits": limits,
-            "families": instruction_families(isa, defines)}
+        examples.append(
+            {
+                "title": title,
+                "word": f"0x{word:016X}",
+                "values": {name: getattr(instruction, name) for name in aliases},
+            }
+        )
+    return {
+        "bits": 64,
+        "fields": fields,
+        "examples": examples,
+        "max_instructions": limits["v2"],
+        "image_limits": limits,
+        "families": instruction_families(isa, defines),
+    }
 
 
 def uart_fifo(root: Path) -> dict:
@@ -134,7 +193,9 @@ def uart_fifo(root: Path) -> dict:
     result = {}
     for direction in ("Tx", "Rx"):
         depth = re.findall(r"parameter\s+int\s+" + direction + r"FifoDepth\s*=\s*(\d+)", source)
-        fifo = re.findall(r"fifo\s*#\s*\((.*?)\)\s+u_" + direction.lower() + r"_fifo\s*\(", source, re.S)
+        fifo = re.findall(
+            r"fifo\s*#\s*\((.*?)\)\s+u_" + direction.lower() + r"_fifo\s*\(", source, re.S
+        )
         if len(depth) != 1 or len(fifo) != 1:
             raise ValueError("UART FIFO instance missing or ambiguous")
         # Select the final declaration before the named instance, not a preceding FIFO.
@@ -154,14 +215,19 @@ def validate_circuit(root: Path, circuit: dict) -> None:
         if not node.get("sources") or not node.get("title"):
             raise ValueError("circuit node lacks source/title")
         instance = node.get("instance_source", {})
-        if any(instance[key] not in node["sources"] for key in ("file", "declaration_file") if key in instance):
+        if any(
+            instance[key] not in node["sources"]
+            for key in ("file", "declaration_file")
+            if key in instance
+        ):
             raise ValueError("circuit instance declaration is outside its source inventory")
         for port in node["ports"]:
             key = node["id"] + "." + port["id"]
             if key in ports or port["side"] not in {"north", "south", "east", "west"}:
                 raise ValueError("duplicate or invalid circuit port")
             width_valid = (type(port["width"]) is int and port["width"] > 0) or (
-                port["width"] is None and port.get("bundle") is True)
+                port["width"] is None and port.get("bundle") is True
+            )
             if port["direction"] not in {"in", "out"} or not width_valid:
                 raise ValueError("invalid circuit port direction/width")
             ports[key] = port
@@ -175,7 +241,11 @@ def validate_circuit(root: Path, circuit: dict) -> None:
         if ports[src]["width"] != ports[dst]["width"] or edge["kind"] not in {"control", "data"}:
             raise ValueError("circuit connection width/kind mismatch")
         displayed_width = re.search(r"/\s*(\d+)$", edge.get("label", ""))
-        if displayed_width and ports[src]["width"] is not None and int(displayed_width[1]) != ports[src]["width"]:
+        if (
+            displayed_width
+            and ports[src]["width"] is not None
+            and int(displayed_width[1]) != ports[src]["width"]
+        ):
             raise ValueError("circuit label width differs from the bound port width")
         if not edge.get("bindings") or not edge.get("label"):
             raise ValueError("circuit connection lacks source binding")
@@ -187,37 +257,68 @@ def validate_circuit(root: Path, circuit: dict) -> None:
 def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) -> dict:
     for relative in dependencies(spec):
         path = root / relative
-        if Path(relative).is_absolute() or ".." in Path(relative).parts or not path.resolve().is_relative_to(root.resolve()) or not path.is_file():
+        if (
+            Path(relative).is_absolute()
+            or ".." in Path(relative).parts
+            or not path.resolve().is_relative_to(root.resolve())
+            or not path.is_file()
+        ):
             raise ValueError("missing or invalid diagram source")
     validate_bindings(root, spec["bindings"])
     additional = json.loads((root / spec["circuit_catalog"]).read_text(encoding="utf-8"))
     if set(additional) & set(spec["circuits"]):
         raise ValueError("duplicate circuit illustration identifier")
     circuits = {**spec["circuits"], **additional}
-    index = json.loads((root / "publications/datasheets/chapter-index.json").read_text(encoding="utf-8"))
-    expected = {row["id"] for row in index} | {"system-fabric", "system-clocks", "system-media", "system-mpw"}
+    index = json.loads(
+        (root / "publications/datasheets/chapter-index.json").read_text(encoding="utf-8")
+    )
+    expected = {row["id"] for row in index} | {
+        "system-fabric",
+        "system-clocks",
+        "system-media",
+        "system-mpw",
+    }
     if set(circuits) != expected:
         raise ValueError("full-document circuit coverage changed")
+    from publications.ip_block_reference import prepare as prepare_ip_blocks
+
+    prepare_ip_blocks(root, "mini", circuits)
     for circuit in circuits.values():
         validate_circuit(root, circuit)
     validate_fields(spec["sdio_command"], 48)
     command_fields = [(f["name"], f["lsb"], f["bits"]) for f in spec["sdio_command"]]
-    if command_fields != [("start", 47, 1), ("direction", 46, 1), ("command", 40, 6),
-                          ("argument", 8, 32), ("crc7", 1, 7), ("end", 0, 1)]:
+    if command_fields != [
+        ("start", 47, 1),
+        ("direction", 46, 1),
+        ("command", 40, 6),
+        ("argument", 8, 32),
+        ("crc7", 1, 7),
+        ("end", 0, 1),
+    ]:
         raise ValueError("SDIO field order differs from the bound transmitter assembly")
     dts = (root / "app/ports/linux/linux/retrosoc_hp.dts").read_text(encoding="utf-8")
     if "riscv,cbom-block-size" in dts:
         raise ValueError("review cache-maintenance diagram after platform granule change")
     smoke = (root / "app/ports/linux/smoke/start.S").read_text(encoding="utf-8")
-    if (".insn r 0x0b, 0x0, 0x01, x0, a0, x5" not in smoke
-            or ".insn r 0x0b, 0x0, 0x01, x0, a0, x6" not in smoke
-            or "csrs    0x7c0, t0" not in smoke):
-        raise ValueError("review cache-maintenance diagram after platform maintenance-operation change")
-    windows = [{k: r[k] for k in ("symbol", "base", "size", "base_hex", "end_hex", "size_label")}
-               for r in regions if r["size"] > 4096 and r["route"] in {"axi4", "ram"} and r["kind"] == "active"]
+    if (
+        ".insn r 0x0b, 0x0, 0x01, x0, a0, x5" not in smoke
+        or ".insn r 0x0b, 0x0, 0x01, x0, a0, x6" not in smoke
+        or "csrs    0x7c0, t0" not in smoke
+    ):
+        raise ValueError(
+            "review cache-maintenance diagram after platform maintenance-operation change"
+        )
+    windows = [
+        {k: r[k] for k in ("symbol", "base", "size", "base_hex", "end_hex", "size_label")}
+        for r in regions
+        if r["size"] > 4096 and r["route"] in {"axi4", "ram"} and r["kind"] == "active"
+    ]
     if not windows or any(r["base"] + r["size"] > 1 << 32 for r in windows):
         raise ValueError("memory diagram has an invalid address window")
-    if any(int(r["base_hex"], 16) != r["base"] or int(r["end_hex"], 16) != r["base"] + r["size"] - 1 for r in windows):
+    if any(
+        int(r["base_hex"], 16) != r["base"] or int(r["end_hex"], 16) != r["base"] + r["size"] - 1
+        for r in windows
+    ):
         raise ValueError("memory diagram range labels disagree with numeric bounds")
     layouts = collect_layouts(root, spec["layout_catalog"], system)
     for layout in layouts.values():
@@ -232,9 +333,18 @@ def collect_diagrams(root: Path, spec: dict, regions: list[dict], system: dict) 
     storage = collect_storage(root, spec["storage_catalog"], regions, system, layouts)
     for record in storage.values():
         validate_bindings(root, record.get("bindings", []))
-    return {"sources": sorted(dependencies(spec)), "dma_tcd": dma_fields(root),
-            "sdio_command": copy.deepcopy(spec["sdio_command"]), "apu": apu_formats(root),
-            "uart_fifo": uart_fifo(root), "windows": sorted(windows, key=lambda r: r["base"]),
-            "cache": {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128},
-            "circuits": circuits, "layouts": layouts, "storage": storage,
-            "soc_architecture": collect_soc_diagram(root, spec["soc_architecture_catalog"], regions) if spec.get("soc_architecture_catalog") else {}}
+    return {
+        "sources": sorted(dependencies(spec)),
+        "dma_tcd": dma_fields(root),
+        "sdio_command": copy.deepcopy(spec["sdio_command"]),
+        "apu": apu_formats(root),
+        "uart_fifo": uart_fifo(root),
+        "windows": sorted(windows, key=lambda r: r["base"]),
+        "cache": {"granule": 64, "offset": 16, "length": 64, "end": 80, "covered_bytes": 128},
+        "circuits": circuits,
+        "layouts": layouts,
+        "storage": storage,
+        "soc_architecture": collect_soc_diagram(root, spec["soc_architecture_catalog"], regions)
+        if spec.get("soc_architecture_catalog")
+        else {},
+    }

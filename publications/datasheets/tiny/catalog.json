@@ -742,7 +742,8 @@
       "Tiny integrates the I2S master on GPIO12-17 ALT0. AUDIO is an external/reference clock domain and may be absent at boot; the ordinary CPU release does not wait for it.",
       "Control uses PCLK while serial timing uses AUDIO. The retained acceptance uses 18.432 MHz audio reference; the profile AUD_CLK_HZ setting and actual supplied AUDIO source must be identified separately.",
       "GPIO12-17 overlap the DVP camera profile. **Stop and drain both streams**, release their pads and confirm reset barriers before changing personality. **Missing AUDIO edges** cannot produce a successful engine reset completion.",
-      "The integrated serial path is master-only. Generic SDK declarations or a second clock domain do not establish slave mode, continuous underrun-free audio or board codec qualification."
+      "The integrated serial path is master-only. Generic SDK declarations or a second clock domain do not establish slave mode, continuous underrun-free audio or board codec qualification.",
+      "The 48/96 ksample/s preset names correspond to an 18.432 MHz AUDIO source. Under the main profile's 24 MHz timing assumption, those same divisors produce different sample rates; use the analytic rate table and identify the supplied AUDIO input. A preset label is not a measured or guaranteed codec rate."
     ],
     "steps": [
       "Provide AUDIO and select the **complete ALT0 group**; validate buffer format.",

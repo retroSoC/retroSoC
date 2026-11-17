@@ -103,3 +103,27 @@ isolation and retention current are not established by the current digital clock
 #source-note("docs/pll-clock-control.md",title:"Digital clock choices and physical qualification")
 
 #change-end("v05-emphasis-electrical-reference")
+
+#import "../../specifications/components.typ": parameters, characteristics, reference-notice
+#import "../../specifications/figures.typ": visual, connection, board-circuit
+#change-start("v05-commercial-20261114-characteristics","Typed electrical, board and characteristic reference")
+=== Board Connection Reference <mini-board-reference>
+#reference-notice[Logical connection examples use Mini's own reference profile. They assign no package pins or QFN64
+package and do not replace an approved Mini schematic. Mini retains independent LP/HP/REF/audio clock domains.]
+#visual(data.specifications,"board-minimum",connection(data.specifications,"minimum"),[Mini minimum logical system and external clocks.])
+#visual(data.specifications,"board-supply",board-circuit(data.specifications,"decoupling"),[Mini supply, return and bypass reference.])
+#visual(data.specifications,"board-reset",board-circuit(data.specifications,"clock-reset-boot"),[Mini clock/reset, boot and debug reference.])
+#visual(data.specifications,"board-layout",connection(data.specifications,"layout"),[Mini external-interface and routing reference.])
+QPI and OPI share GPIO21-31 with one physical protocol owner. Instantiating controllers does not create another pad group.
+Use Mini's GPIO routes and LP/HP buffer ownership rules. REF24, EXT72 and AUDIO are separate inputs.
+
+=== Typed Parameter Examples and Status
+#reference-notice[Product electrical values above remain TBD. The independent sample tables below illustrate the eventual
+specification structure. Numerical examples are constructed, unverified and unsuitable as manufacturing or selection limits.]
+#parameters(data.specifications,"absolute",ds-table)
+#parameters(data.specifications,"operating",ds-table)
+#parameters(data.specifications,"dc",ds-table)
+#parameters(data.specifications,"ac",ds-table)
+#parameters(data.specifications,"thermal",ds-table)
+#characteristics(data.specifications,ds-table)
+#change-end("v05-commercial-20261114-characteristics")

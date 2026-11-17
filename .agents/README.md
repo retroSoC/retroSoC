@@ -75,8 +75,10 @@ Feature stages retain their design and architecture approval gates.
 `make agent-deliver PR=<number>` first probes the repository's auto-merge,
 merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
 auto-merge while checks may still be pending. Only GitHub merges after required
-checks pass, always with a merge commit. `WATCH=1` retains live monitoring and
-cleanup; otherwise run `RECONCILE=1` after the merge. The legacy
+checks pass, always with a merge commit. `WATCH=1` checkpoints the initial
+record, then uses the delivery coordinator for monitoring and cleanup; resume
+that record with `agent-coordinate` after interruption. Otherwise run
+`RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 
@@ -88,6 +90,21 @@ update, restore, upgrade, run, or resume request proceeds through its in-scope
 checks and delivery without per-step confirmation. Ask only for a missing
 decision, permission, scope change, or recovery action that needs approval.
 Plan mode never authorizes mutations, regardless of the mode in the prompt.
+
+Start a canonical worktree with `make agent-worktree-start TASK=<task.json>
+BRANCH=ci/example SOURCES="mpw hazard3" ARCHIVES="serv" CREATE=1` (dry-run).
+Add `EXECUTE=1` to create/restore, or use the target directory without `CREATE=1`
+to restore its existing inputs. Network fallback requires explicit
+`ALLOW_NETWORK=1`; locked revisions and archive hashes never change. Recursive
+submodules, PDKs, publication package directories, and extraction retain their
+existing setup flows. Ordinary tasks do not implicitly restore the full hosted
+fixture set. Declare `execution.fixture_profile: hosted-pytest` only for a task
+that needs it; `EXECUTE=1` then performs the existing lock-bound offline restore
+from the primary worktree and retains restore/doctor evidence. Dry-run does not
+restore it. `agent-preflight` requires a READY doctor for this declared profile
+and does not repair missing inputs implicitly. Cleanup uses
+`quality/artifact-retention.json` to retain classified evidence without moving
+every rebuildable cache or workspace.
 
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
@@ -102,6 +119,12 @@ review dates. `make worktree-registry` is dry-run by default and inventories
 registered and orphaned paths. Cleanup requires a clean, merged, canonical branch
 below `build/agent-worktrees/` and moves retained evidence before any removal.
 Other worktrees are inventoried but never removed automatically.
+`make agent-dag GRAPH=<graph.json>` validates task dependencies, write-sets,
+leases, and parallel eligibility without launching agents. Only explicitly
+authorized, independent read-only tasks or disjoint write tasks can be planned
+in parallel; every integration remains serial under the graph's sole integrator.
+`make agent-lease GRAPH=<graph.json> TASK=<id>` is dry-run by default and requires
+`EXECUTE=1` plus graph authorization to mutate lease evidence.
 
 Maintenance tasks do not require feature slugs, frozen specifications, or phase
 IDs. Resolve targets from explicit inputs or unambiguous publication/profile
@@ -121,8 +144,9 @@ passes. Native commands remain the default unless a flow opts into resume.
 Keep regression and behavior-preserving RTL migration inside the existing
 implementation/review responsibilities through their linked references.
 Ordinary prose edits, small script fixes, and Git tasks do not require a new
-skill or an IP design freeze. No workflow here introduces a scheduled trigger
-or an automatic commit, push, or publication step.
+skill or an IP design freeze. Scheduled triggers are limited to explicitly
+opted-in, read-only Skill canaries; no workflow automatically commits, pushes,
+or publishes task content.
 
 ## Product-specific validation
 
@@ -146,7 +170,15 @@ applicable documentation, JSON, Pytest, and whitespace checks listed in the root
 agent contract. Hardware gates remain proportionate to the feature work.
 
 Static corpus validation does not prove agent behavior. `make skill-eval-smoke`
-executes three read-only Codex scenarios in isolated Git workspaces and retains
-traces and deterministic grades. The runner and model are recorded explicitly;
-a static result is never described as a completed behavior, hardware, or
-publication run. Other hosts can emit the same trace schema for grading.
+executes one read-only scenario per registered Skill in isolated Git workspaces
+and retains traces and deterministic grades. Codex remains the default runner;
+`RUNNER=kimi` selects the [tool-restricted Kimi Agent](skill-eval-agent.md), which
+has no Bash, write, or delegation capability. Additional explicit cases can use
+`python3 scripts/skill_eval.py run --case <id>` without changing smoke selection.
+Runner/model, Skill SHA, contract version, input snapshot, and workspace tree are recorded explicitly; a
+static result is never described as completed behavior, hardware, or publication
+work. Other hosts can emit the same trace schema for grading. `make skill-replay
+TRACES=<directory>` rechecks retained traces without starting a runner or a
+canary; invalid or failed grades remain failures. The shared
+[engineering playbook](skills/shared/engineering-playbook.md) defines operational
+recovery, delivery, reuse, and contract-version boundaries.

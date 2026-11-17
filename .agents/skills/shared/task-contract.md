@@ -21,8 +21,11 @@ Use [`../../task.schema.json`](../../task.schema.json) for a durable handoff.
 A task packet carries its schema and task IDs, base revision, targets, exact
 phase and specification when applicable, scope and non-goals, allowed and
 forbidden paths, acceptance criteria, profiles/PDKs, execution permissions,
-approval, worktree, artifacts, status, and evidence. Keep schema definitions in
-Git and run-specific packets below `build/`. Use the optional `resolves_gaps`
+approval, worktree, artifacts, status, and evidence. The optional
+`execution.fixture_profile: hosted-pytest` declares that worktree execution must
+run the complete lock-bound offline fixture restore and that preflight requires
+a READY doctor. Omitting it does not restore large hosted inputs. Keep schema
+definitions in Git and run-specific packets below `build/`. Use the optional `resolves_gaps`
 list only when this task intentionally resolves a named entry in
 `quality/validation-gaps.json`; otherwise do not use it to bypass validation.
 Generate the durable [handoff](../../handoff.schema.json) with the current task
@@ -34,7 +37,26 @@ an explicit human approval reference and the approved plan digest. Approval for
 one target, phase, specification revision, or product does not authorize another.
 
 The [Skill registry](../registry.json) records ownership, entrypoints, contract
-versions, and eval corpora. The Git revision is the actual Skill version.
+versions, and eval corpora. The Git revision is the actual Skill version. Follow
+the [shared engineering playbook](engineering-playbook.md) for operational
+recovery, delivery, reuse thresholds, and contract migrations. Additive guidance
+and eval changes do not require a new contract version; incompatible inputs or
+outputs require a reviewed migration record.
+
+## Task graph coordination
+
+Use [`../../dag.schema.json`](../../dag.schema.json) for an optional task graph.
+The task's `coordination` field declares dependencies, input/output artifacts,
+write-set, lease owner/TTL, idempotency key, timeout and runner budgets, bounded
+retry policy, attempt, resume reference, parallel eligibility, and the unique
+integrator. `make agent-dag GRAPH=<graph.json>` validates the graph and emits a
+plan only; it never starts agents. Read-only work may run in parallel only when
+the host authorizes it. Write tasks additionally need explicit parallel
+eligibility, disjoint write-sets, and distinct canonical worktrees/artifact
+roots. Overlapping writes, baselines, releases, and merges remain serial under
+the single integrator. `agent-lease` is dry-run by default; `EXECUTE=1` requires
+graph authorization. Lease identity, dependencies, attempt and expiry are
+checked before acquire, heartbeat, or release.
 
 ## Resolve inputs and targets
 

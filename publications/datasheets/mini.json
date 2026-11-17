@@ -5,15 +5,24 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-c906-20261022-",
-  "date": "2026-10-22",
+  "change_prefix": "v05-ip-block-20261116-",
+  "date": "2026-11-14",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+  "source_revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
+  "build_control_review": {
+    "revision": "c9bd251db174c8934a1554ec9954969fad64c5ae",
+    "makefile_blob": "a6a714f6df6c497a98721f8ea8447f15cc11c246",
+    "documentation_blobs": {
+      "docs/git-workflow.md": "3c1fd8cffad4bf863aab9cfe4f27dd783ddc9261"
+    },
+    "reason": "The Mini technical source snapshot is 2f1f90, now contained in dev; non-product control review continues through c9bd251d. Reviewed controls add isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching, cache restore identity, and staged-index scope validation. Makefile changes since the prior review only add preflight merge arguments, a check-fast test, and the agent-scope-check target; the Git workflow documents those control paths. Product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Later control-file edits require a fresh explicit review."
+  },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
   "mpw_profile": "configs/cluster/mini-mpw.mk",
   "entrypoint": "publications/datasheets/retroSoC-mini-datasheet.typ",
-  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf"
+  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf",
+  "scientific_change_markers": false
 }

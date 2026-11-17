@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+  "source_revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -1241,6 +1241,20 @@
         "rtl/mini/top/axi4_target_guard.sv",
         "rtl/mini/ip_overrides/aq_biu_write_channel.v",
         "docs/hp-rv64-validation.md"
+      ]
+    },
+    {
+      "id": "sdio-live-clock-discovery",
+      "title": "SDIO static frequency reporting can differ from live PCLK",
+      "applies_to": "Mini v0.5 PRODUCT / IHP130, reviewed source 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+      "trigger": "Using CLOCK_ACTUAL when PCLK differs from the instance fixed InputClockHz=72 MHz.",
+      "impact": "The reported value follows the static parameter; the generated SD clock follows live PCLK. Half-period zero clamps in the clock generator but reports zero.",
+      "workaround": "Use h>=1 and calculate wire clock from the known current PCLK. Validate device mode/timing separately; do not treat the discovery register as a clock measurement.",
+      "evidence": "Source review of current Mini bindings and sdio_core/sdio_clock arithmetic. No RTL change or new hardware measurement.",
+      "sources": [
+        "rtl/mini/top/apb4_periph.sv",
+        "rtl/ip/storage/sdio_core.sv",
+        "rtl/ip/storage/sdio_clock.sv"
       ]
     }
   ],
@@ -6721,7 +6735,72 @@
                 0,
                 25
               ]
-            }
+            },
+            "units": [
+              {
+                "id": "u_tx_fifo",
+                "title": "tx fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "flush_i": "s_tx_flush",
+                  "push_i": "s_tx_push",
+                  "full_o": "s_tx_full",
+                  "pop_i": "tx_data_pop_i",
+                  "empty_o": "s_tx_empty",
+                  "dat_o": "s_tx_pop_data",
+                  "cnt_o": "s_tx_count"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 8
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "8",
+                  "BUFFER_DEPTH": "TxFifoDepth",
+                  "LOG_BUFFER_DEPTH": "TxFifoLogDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_reg.sv",
+                    "text": "u_tx_fifo ("
+                  }
+                ]
+              },
+              {
+                "id": "u_rx_fifo",
+                "title": "rx fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "flush_i": "s_rx_flush",
+                  "push_i": "s_rx_push",
+                  "full_o": "s_rx_full",
+                  "dat_i": "rx_data_i",
+                  "pop_i": "s_rx_pop",
+                  "empty_o": "s_rx_empty",
+                  "dat_o": "s_rx_pop_data",
+                  "cnt_o": "s_rx_count"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 12
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "12",
+                  "BUFFER_DEPTH": "RxFifoDepth",
+                  "LOG_BUFFER_DEPTH": "RxFifoLogDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_reg.sv",
+                    "text": "u_rx_fifo ("
+                  }
+                ]
+              }
+            ]
           },
           {
             "id": "core",
@@ -6763,6 +6842,30 @@
                 "side": "south",
                 "direction": "in",
                 "width": 1
+              }
+            ],
+            "units": [
+              {
+                "id": "u_uart_baudgen",
+                "title": "baudgen",
+                "module": "uart_baudgen",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "baud_int_i": "baud_int_i",
+                  "baud_frac_i": "baud_frac_i",
+                  "sample_tick_o": "s_sample_tick",
+                  "bit_tick_o": "bit_tick_o"
+                },
+                "parameters": {},
+                "parameters_raw": {},
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_core.sv",
+                    "text": "u_uart_baudgen ("
+                  }
+                ]
               }
             ]
           },
@@ -6993,7 +7096,62 @@
             ]
           }
         ],
-        "note": "Selected functional paths. Data labels show payload width; dashed links are control. Clock/reset, full handshake and IRQ wiring are omitted for clarity."
+        "note": "Selected functional paths. Outlined arrows carry data; thin solid arrows carry control/status. Boundary clock/reset signals are shown; internal clock/reset distribution, complete handshakes and IRQ details are grouped.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "UART0",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "core",
+              "flow"
+            ]
+          ],
+          "external": [
+            "modem",
+            "pads"
+          ],
+          "buses": [
+            "apb"
+          ],
+          "wrapper": [
+            "rtl/ip/serial/apb4_uart.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/serial/apb4_uart.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/serial/apb4_uart.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+          "titles": {},
+          "interfaces": [],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": [
+            {
+              "id": "reg",
+              "title": "Register bank",
+              "file": "rtl/ip/serial/uart_reg.sv",
+              "owner": "reg",
+              "members": [
+                "u_tx_fifo",
+                "u_rx_fifo"
+              ],
+              "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+            }
+          ]
+        }
       },
       "dma": {
         "nodes": [
@@ -7051,7 +7209,8 @@
                 "direction": "in",
                 "width": 8
               }
-            ]
+            ],
+            "units": []
           },
           {
             "id": "core",
@@ -7111,6 +7270,84 @@
                 "side": "south",
                 "direction": "in",
                 "width": 32
+              }
+            ],
+            "units": [
+              {
+                "id": "u_data_fifo",
+                "title": "data fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 32
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "32",
+                  "BUFFER_DEPTH": "FifoDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/peripheral/dma_core.sv",
+                    "text": "u_data_fifo ("
+                  }
+                ]
+              },
+              {
+                "id": "u_dma_axi4_master",
+                "title": "axi4 master",
+                "module": "dma_axi4_master",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "read_start_valid_i": "s_axi_read_start_valid",
+                  "read_start_ready_o": "s_axi_read_start_ready",
+                  "read_addr_i": "s_axi_read_start_addr",
+                  "read_beats_i": "s_axi_read_start_beats",
+                  "read_fixed_i": "s_axi_read_start_fixed",
+                  "read_busy_o": "s_axi_read_busy",
+                  "read_beat_valid_o": "s_axi_read_beat_valid",
+                  "read_beat_ready_i": "s_axi_read_beat_ready",
+                  "read_data_o": "s_axi_read_data",
+                  "read_resp_o": "s_axi_read_resp",
+                  "read_last_o": "s_axi_read_last",
+                  "read_expected_last_o": "s_axi_read_expected_last",
+                  "read_id_error_o": "s_axi_read_id_error",
+                  "read_done_o": "s_axi_read_done",
+                  "write_start_valid_i": "s_axi_write_start_valid",
+                  "write_start_ready_o": "s_axi_write_start_ready",
+                  "write_addr_i": "s_axi_write_start_addr",
+                  "write_beats_i": "s_axi_write_start_beats",
+                  "write_fixed_i": "s_axi_write_start_fixed",
+                  "write_busy_o": "s_axi_write_busy",
+                  "write_data_valid_i": "s_axi_write_data_valid",
+                  "write_data_ready_o": "s_axi_write_data_ready",
+                  "write_data_i": "s_axi_write_data",
+                  "write_strb_i": "s_axi_write_strb",
+                  "write_done_o": "s_axi_write_done",
+                  "write_resp_o": "s_axi_write_resp",
+                  "write_id_error_o": "s_axi_write_id_error",
+                  "origin_enable_i": "EnableOriginQualifier",
+                  "read_origin_channel_i": "s_axi_read_origin_channel",
+                  "write_origin_channel_i": "s_axi_write_origin_channel",
+                  "axi4": "axi4"
+                },
+                "parameters": {},
+                "parameters_raw": {
+                  "AddrWidth": "AddrWidth",
+                  "DataWidth": "DataWidth",
+                  "MaxBurstBeats": "MaxBurstBeats"
+                },
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/peripheral/dma_core.sv",
+                    "text": "u_dma_axi4_master ("
+                  }
+                ]
               }
             ]
           },
@@ -7352,7 +7589,68 @@
             ]
           }
         ],
-        "note": "Functional grouping of the integrated eight-channel DMA. Stream ports aggregate the listed input/output endpoints; handshakes and the request map remain defined by the protocol chapter."
+        "note": "Functional grouping of the integrated eight-channel DMA. Stream ports aggregate the listed input/output endpoints; handshakes and the request map remain defined by the protocol chapter.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "DMA",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "core",
+              "master"
+            ]
+          ],
+          "external": [
+            "streams",
+            "memory"
+          ],
+          "buses": [
+            "apb"
+          ],
+          "wrapper": [
+            "rtl/ip/peripheral/apb4_dma.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            },
+            {
+              "name": "irq_o",
+              "direction": "output",
+              "role": "irq",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+          "titles": {},
+          "interfaces": [],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": [
+            {
+              "id": "core",
+              "title": "Channel scheduling",
+              "file": "rtl/ip/peripheral/dma_core.sv",
+              "owner": "core",
+              "members": [
+                "u_data_fifo",
+                "u_dma_axi4_master"
+              ],
+              "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+            }
+          ]
+        }
       },
       "apu": {
         "nodes": [
@@ -7409,6 +7707,34 @@
                 "side": "east",
                 "direction": "out",
                 "width": 64
+              }
+            ],
+            "units": [
+              {
+                "id": "u_proof_memo",
+                "title": "proof memo",
+                "module": "apu_proof_memo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "addr_i": "s_path_memo_addr_q",
+                  "key_i": "s_path_memo_key",
+                  "ready_o": "s_path_memo_ready",
+                  "done_o": "s_path_memo_done",
+                  "read_valid_o": "s_path_memo_read_valid",
+                  "read_key_o": "s_path_memo_read_key"
+                },
+                "parameters": {},
+                "parameters_raw": {
+                  "Depth": "PathMemoDepth"
+                },
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/multimedia/apu_microcode_loader.sv",
+                    "text": "u_proof_memo ("
+                  }
+                ]
               }
             ]
           },
@@ -7540,7 +7866,8 @@
                 "direction": "out",
                 "width": 64
               }
-            ]
+            ],
+            "units": []
           },
           {
             "id": "stream",
@@ -7761,7 +8088,128 @@
             ]
           }
         ],
-        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; detailed launch/status/return handshakes are not all shown. WAV/FLAC use the checked-in P5 image. KWS RX is connected internally but gated by EnableP7, which is false in default PRODUCT. MP3 and KWS are not publicly advertised; corpus and physical qualification remain separate."
+        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; detailed launch/status/return handshakes are not all shown. WAV/FLAC use the checked-in P5 image. KWS RX is connected internally but gated by EnableP7, which is false in default PRODUCT. MP3 and KWS are not publicly advertised; corpus and physical qualification remain separate.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "APU",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "loader",
+              "store"
+            ],
+            [
+              "dma",
+              "transport"
+            ],
+            [
+              "seq",
+              "primitive",
+              "stream"
+            ]
+          ],
+          "external": [],
+          "buses": [],
+          "wrapper": [
+            "rtl/ip/multimedia/apb4_apu.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "resource_reset_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "irq_o",
+              "direction": "output",
+              "role": "irq",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary. APU private AXI4 master is 32-bit (retrosoc.u_apu_axi4_if); HP fabric width is not the APU endpoint width.",
+          "titles": {
+            "seq": "Bounded\nsequencer",
+            "primitive": "Primitive\ncluster",
+            "stream": "I2S stream\nrouter"
+          },
+          "interfaces": [
+            {
+              "protocol": "APB4",
+              "width": 32,
+              "side": "left",
+              "node": "reg",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "apb4_if.slave"
+            },
+            {
+              "protocol": "AXI4",
+              "width": 32,
+              "side": "left",
+              "node": "dma",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_if.master",
+              "port": "axi4"
+            },
+            {
+              "protocol": "DMA TX",
+              "width": 32,
+              "side": "right",
+              "node": "transport",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.sink",
+              "port": "dma_tx_axis",
+              "direction": "input"
+            },
+            {
+              "protocol": "DMA RX",
+              "width": 32,
+              "side": "right",
+              "node": "transport",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.source",
+              "port": "dma_rx_axis",
+              "direction": "output"
+            },
+            {
+              "protocol": "I2S TX",
+              "width": 32,
+              "side": "right",
+              "node": "stream",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.source",
+              "port": "i2s_tx_axis",
+              "direction": "output"
+            },
+            {
+              "protocol": "I2S RX",
+              "width": 32,
+              "side": "right",
+              "node": "stream",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.sink",
+              "port": "i2s_rx_axis",
+              "direction": "input"
+            }
+          ],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": []
+        }
       }
     },
     "circuit_catalog": "publications/datasheets/diagram-circuits.json",
@@ -7770,208 +8218,306 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
-    "checked_date": "2026-10-23",
-    "checked_at": "2026-10-23T05:32:03Z",
-    "boundary": "Exact-commit CI observation; workflow/job/step status is separate from exact-profile hardware reports. Unfinished work has no passing verdict.",
+    "revision": "2f1f90f30622f9610d4bde163bd773d7d60502d7",
+    "checked_date": "2026-11-17",
+    "checked_at": "2026-11-17T07:20:04Z",
+    "boundary": "Exact pull-request-head workflow observation on the technical source snapshot now contained in dev. This is not a merge-commit observation or a revision/profile-matched per-IP hardware, physical, or release qualification report. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 39904024563,
+        "run_id": 43863464117,
         "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024563",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Repository quality gates",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024450,
-        "name": "regression-gf180",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024450",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024521,
-        "name": "regression-smoke",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024521",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/43863464117",
         "status": "completed",
         "conclusion": "success",
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Workflow result only; no complete Mini HP, multimedia or physical qualification is inferred.",
+        "scope": "Repository quality workflow on the exact pull-request head: fast checks, four fixture shards, fixture fan-in, and the aggregate quality gate completed successfully",
+        "note": "Exact-head source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical, or release qualification inferred.",
         "observations": []
-      },
-      {
-        "run_id": 39904024530,
-        "name": "regression-sky130",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024530",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024570,
-        "name": "regression-ics55",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024570",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024523,
-        "name": "regression-ihp130",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024523",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": []
-      },
-      {
-        "run_id": 39904024572,
-        "name": "development-environment",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572",
-        "status": "in_progress",
-        "conclusion": null,
-        "scope": "Workflow-specific committed profiles and stages",
-        "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
-        "observations": [
-          {
-            "name": "nix / IHP130 regression / Check out repository",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore locked IHP130 sources",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore SBT dependency cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Restore Verilator compiler cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Build Docker development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "nix / IHP130 regression / Install Nix",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Check Nix flake",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "nix / IHP130 regression / Run IHP130 regression in development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null
-          },
-          {
-            "name": "nix / IHP130 regression / Upload reports and structured results",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
-            "scope": "environment-check",
-            "status": "pending",
-            "conclusion": null
-          },
-          {
-            "name": "docker / IHP130 regression / Check out repository",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore locked IHP130 sources",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore SBT dependency cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Restore Verilator compiler cache",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Build Docker development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "success"
-          },
-          {
-            "name": "docker / IHP130 regression / Install Nix",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "installation",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "docker / IHP130 regression / Check Nix flake",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "completed",
-            "conclusion": "skipped"
-          },
-          {
-            "name": "docker / IHP130 regression / Run IHP130 regression in development environment",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "runtime-regression",
-            "status": "in_progress",
-            "conclusion": null
-          },
-          {
-            "name": "docker / IHP130 regression / Upload reports and structured results",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
-            "scope": "environment-check",
-            "status": "pending",
-            "conclusion": null
-          }
-        ]
       }
     ]
-  }
+  },
+  "historical_ci_snapshots": [
+    {
+      "revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+      "checked_date": "2026-11-14",
+      "checked_at": "2026-11-14T06:12:16Z",
+      "boundary": "Exact-commit push workflow observation. Completed workflow success is not a revision/profile-matched per-IP hardware or physical qualification report. Previous observations retain their original identity in historical_ci_snapshots.",
+      "runs": [
+        {
+          "run_id": 43548427043,
+          "name": "regression-smoke",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427043",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository regression-smoke workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548427041,
+          "name": "regression-ics55",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427041",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository regression-ics55 workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548426910,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426910",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository quality workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548426916,
+          "name": "development-environment",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426916",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository development-environment workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548427089,
+          "name": "regression-gf180",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548427089",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository regression-gf180 workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548426971,
+          "name": "regression-sky130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426971",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository regression-sky130 workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 43548426918,
+          "name": "regression-ihp130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/43548426918",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository regression-ihp130 workflow on the reviewed merge commit",
+          "note": "Workflow result only; no production electrical, Mini HP end-to-end or physical qualification inferred.",
+          "observations": []
+        }
+      ]
+    },
+    {
+      "revision": "9ab05c6404c02b5f2c927539b5c681b46f778b9f",
+      "checked_date": "2026-10-23",
+      "checked_at": "2026-10-23T05:32:03Z",
+      "boundary": "Exact-commit CI observation; workflow/job/step status is separate from exact-profile hardware reports. Unfinished work has no passing verdict.",
+      "runs": [
+        {
+          "run_id": 39904024563,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024563",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Repository quality gates",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024450,
+          "name": "regression-gf180",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024450",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024521,
+          "name": "regression-smoke",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024521",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Workflow result only; no complete Mini HP, multimedia or physical qualification is inferred.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024530,
+          "name": "regression-sky130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024530",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024570,
+          "name": "regression-ics55",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024570",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024523,
+          "name": "regression-ihp130",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024523",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": []
+        },
+        {
+          "run_id": 39904024572,
+          "name": "development-environment",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572",
+          "status": "in_progress",
+          "conclusion": null,
+          "scope": "Workflow-specific committed profiles and stages",
+          "note": "Unfinished work has no passing verdict; preserve the exact run and stage when results arrive.",
+          "observations": [
+            {
+              "name": "nix / IHP130 regression / Check out repository",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore locked IHP130 sources",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore SBT dependency cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Restore Verilator compiler cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Build Docker development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "nix / IHP130 regression / Install Nix",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Check Nix flake",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "nix / IHP130 regression / Run IHP130 regression in development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "runtime-regression",
+              "status": "in_progress",
+              "conclusion": null
+            },
+            {
+              "name": "nix / IHP130 regression / Upload reports and structured results",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251924084",
+              "scope": "environment-check",
+              "status": "pending",
+              "conclusion": null
+            },
+            {
+              "name": "docker / IHP130 regression / Check out repository",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore locked IHP130 sources",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore SBT dependency cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Restore Verilator compiler cache",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Build Docker development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "docker / IHP130 regression / Install Nix",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "installation",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "docker / IHP130 regression / Check Nix flake",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "docker / IHP130 regression / Run IHP130 regression in development environment",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "runtime-regression",
+              "status": "in_progress",
+              "conclusion": null
+            },
+            {
+              "name": "docker / IHP130 regression / Upload reports and structured results",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/39904024572/job/120251923722",
+              "scope": "environment-check",
+              "status": "pending",
+              "conclusion": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

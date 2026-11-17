@@ -28,8 +28,10 @@ DMA/PWM repeated groups preserve exact base/stride/index formulas. A constant
 zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
-Use the locked Circuiteria connection renderer, Bytefield formats and Blockcell
-storage diagrams. CeTZ owns the six-panel overview, connectivity matrix and
+Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
+CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
+for three system diagrams, Bytefield formats and Blockcell storage diagrams.
+CeTZ also owns the six-panel overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
@@ -51,7 +53,7 @@ Use the current Mini closing-page visual language in Tiny's independent
 `closing.typ`: one final A4 page, bottom-aligned logo reservation and reviewed
 notice, with no running header/footer or printed page number. Its paired role
 markers are hashed in the manifest; they cannot exempt any ordinary page.
-Continuation notices alone may use 8.5 pt within their exported, hashed
+Only marked continuation notices may use 8.5 pt within their exported, hashed
 `layout-regions.json` rectangles. Do not lower the global 9 pt threshold.
 
 ## Same-version Mini alignment
@@ -65,7 +67,21 @@ All six standard IP detail headings are bookmarks and are excluded from contents
 Parenthesized IP suffixes in Contents use the existing uppercase-only bold
 rule. The reviewed suffixes are PPALITE and CRYPTO.
 
-Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
+Contents uses `toc-gap: 4pt` between the measured number column and title, with
+14 pt indentation per level. Measure the column from the longest numbered
+heading at the same level and keep all titles at that level left aligned;
+continuation lines hang under the title. Shorter numbers retain the unused
+column width in addition to the fixed gap. This Contents-only parameter is
+independent of the 8 pt `heading-gap` for body headings.
+
+List of tables and List of figures use `directory-gap: 4pt` after the measured
+prefix column. Measure its width from the longest complete `Table N.` or
+`Figure N.` prefix in the respective directory. Titles and continuation lines
+share one left edge; shorter prefixes retain the unused column width. Keep
+these flat lists independent of Contents hierarchy indentation and body spacing.
+
+Only the three retained system Circuiteria figures use thin rounded blocks,
+1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
@@ -107,3 +123,63 @@ Draw the DMA descriptor once in the DMA chapter with the FIFO and protocol
 example. Link the descriptor-lifetime appendix back to the figure. Keep each
 short fault-capture entry, reference and table together as a page block.
 Use explicit shared and not-applicable coverage in the diagram inventory.
+
+## 2026-11-14 commercial-reference supplement
+
+The [shared specification standard](../../specifications/README.md) is normative
+for states, provenance, reference blocks, curves and replacement. Keep Tiny
+v0.2 DRAFT / Gen1 / ICS55-main / IHP130-compatibility independent of Mini.
+The current reviewed source is the frozen 2026-11-14 dev commit.
+
+QFN64 is Tiny's confirmed package family with 64 frozen perimeter assignments;
+EP is separate and unnumbered. The preferred 9 x 9 mm / 0.5 mm pitch planning
+geometry remains Reference Only until supplier outline, die fit, bond map,
+metallurgy and assembly approval. No other current Tiny package is advertised.
+Use ADI UP64 05-08-1705 Rev C as one coherent outline/land-pattern reference.
+Top pin 1 is upper left; numbering is counterclockwise. Bottom mirrors x; PCB
+component view follows top. Test uniqueness, mirror, pitch, EP and pad spans.
+Never independently renumber a view or call EP pin 65.
+
+Copper, mask, paste and via layers are separate. Constructed values belong in
+the model catalog and inside standalone vector status labels. Paste coverage
+is total aperture area divided by reference EP area. MSL/reflow, thermal values,
+order codes and physical binding remain TBD. EP supplements perimeter grounds.
+
+Minimum-system drawings use external 24 MHz XIN. XOUT, BOOT_MODE, TEST_MODE and
+EP separately state target allocation, executable connection and physical binding.
+Do not imply a passive-crystal amplifier or production strap decoding. VDDIO
+A/B/C/D labels do not establish independent qualified voltage domains.
+
+Keep uppercase-only Contents suffix emphasis, with PPALITE and CRYPTO suffixes.
+Architecture wire labels remain transparent. Field captions include IP context.
+Tiny now emits paired change markers and their manifest hash for the shared
+change-page report. PLL192/PLL240 are conditional functional R2-P7 profiles. SAFE24 boots with the
+PLL off; runtime switching requires backend capability, digital lock and the
+drain/park/commit protocol. No qualified physical operating rate is implied.
+
+## Scientific formula and quantity typography
+
+Use the shared [scientific display component](../../specifications/scientific.typ) for mathematical powers,
+quantity subscripts and mechanical dimension suffixes. Keep raw formulas,
+coefficients, units, statuses and numerical CSV values machine-readable and
+unchanged; the restricted publication grammar creates inert display tokens
+without evaluating source text. Use a multiplication sign and true exponent
+for arithmetic; distinguish voltage quantities such as V with OH/OL/IO
+subscripts from literal power-pin names such as VDDIO. Only mechanical contexts
+attach D2, E2 and A1 suffixes. Software, register, RTL, pin and protocol
+identifiers, inline code and code blocks retain their exact source spelling.
+
+Native Typst attachments and Matplotlib MathText use the locked Inter font.
+Script size is 70 percent of the surrounding size, with an absolute 6.3 pt
+minimum and a parent size of at least 9 pt. This exception applies only to
+source-attributed script glyphs inside tight measured rectangles; ordinary
+labels and body/table text retain their existing size limits. Never exempt an
+entire formula, chart, page or arbitrary small label. Export the script identity,
+text, role, font size and rectangle in the hashed layout audit. Independent
+SVG/PDF exports keep the same typography and reference-state labels.
+
+Retain scientific-notation.json, plot script metadata, the manifest and the
+normal PDF font checks. Verify raw-source preservation, mechanical/protocol
+context, exponent parsing, managed fonts and rejection of unrelated small text.
+Review changed pages in color and grayscale, including exponent baselines,
+line breaks, table rows and standalone figures, then repeat the offline build.
