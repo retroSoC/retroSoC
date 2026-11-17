@@ -7,6 +7,12 @@ models and Typst components. Product catalogs live in
 Canonical RTL, profiles, topology, pad maps and SDK remain authoritative.
 The data layer neither generates registers nor changes product decisions.
 
+IP primary/detail figures follow the [shared IP drawing standard](../ip-block-diagrams.md).
+Their owned/external boundaries, real instances, conditions, ports and widths
+remain in each existing circuit catalog. Source, geometry, coverage and vector
+hash audits evolve with both books. Those figures do not promote a reference
+coefficient, architectural path or connected interface to qualified hardware.
+
 ## Reading order and navigation
 
 Retain one volume and all existing level-one chapter/IP/register anchors.

@@ -5,23 +5,24 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-scientific-20261116-",
+  "change_prefix": "v05-ip-block-20261116-",
   "date": "2026-11-14",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
   "build_control_review": {
-    "revision": "14d76311da4c83809a00550e4643ff9950dc263d",
-    "makefile_blob": "6e378cd6986c08c781474802eedb340149666ab4",
+    "revision": "b0ac5ee36d408b448de07b69788d87e5d16f3079",
+    "makefile_blob": "51847042d9060643206f33a8017d2cc0c7172712",
     "documentation_blobs": {
-      "docs/git-workflow.md": "c991d57dbea7d14e7e8a54dd1f152120c91abb9c"
+      "docs/git-workflow.md": "97d99c94a33d2f51789dd7cd1ce0ec9f970d5934"
     },
-    "reason": "Reviewed dev synchronization adds offline fixture restore and durable delivery coordination targets, auditable Skill replay selection, CI cache/log evidence, and serial MINI regression orchestration. Makefile changes are limited to Agent/CI phony targets, help, and check-fast selection; product build rules, RTL, SDK, profiles, dependency versions, and the frozen product source revision remain unchanged. Workflow-document identity is retained. Each later Makefile or workflow-document change requires an explicit review."
+    "reason": "Reviewed dev synchronization adds isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching and cache restore identity. Makefile changes since the prior review only add preflight merge arguments and a check-fast test; the Git workflow documents merge scanning and watcher coordination. Product build rules, RTL, SDK, hardware profiles, dependency pins and the frozen product source revision remain unchanged. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
   "mpw_profile": "configs/cluster/mini-mpw.mk",
   "entrypoint": "publications/datasheets/retroSoC-mini-datasheet.typ",
-  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf"
+  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf",
+  "scientific_change_markers": false
 }

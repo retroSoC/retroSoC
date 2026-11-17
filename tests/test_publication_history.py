@@ -153,3 +153,53 @@ def test_quality_prepares_history_before_offline_pytest() -> None:
     tests = next(step for step in steps if step["name"] == "Test scripts and RTL fixtures")
     assert steps.index(dependencies) < steps.index(preparation) < steps.index(tests)
     assert "if" not in preparation and not preparation.get("continue-on-error", False)
+
+
+def test_prepare_entrypoint_restores_locked_fonts_on_a_cold_checkout(tmp_path, monkeypatch):
+    upstream = tmp_path / "media-upstream"
+    init(upstream)
+    font_path = "fonts/inter/Inter-VariableFont_opsz,wght.ttf"
+    revision = commit(upstream, font_path, "fixture font bytes\n")
+    root = tmp_path / "project"
+    (root / "dependencies").mkdir(parents=True)
+    lock = root / "dependencies/dependencies.lock.json"
+    lock.write_text(json.dumps({"sources": {"publication_media": {
+        "url": upstream.as_uri(), "destination": "publications/media", "revision": revision,
+    }}}))
+    before = lock.read_bytes()
+    monkeypatch.setattr(history, "HISTORICAL_REVISIONS", ())
+    history.main(["prepare"], root=root)
+    media = root / "publications/media"
+    assert (media / font_path).read_text() == "fixture font bytes\n"
+    assert git(media, "rev-parse", "HEAD") == revision
+    assert lock.read_bytes() == before
+    history.main(["prepare"], root=root)
+    (media / font_path).write_text("retained user changes\n")
+    with pytest.raises(RuntimeError, match="local changes"):
+        history.main(["prepare"], root=root)
+    assert (media / font_path).read_text() == "retained user changes\n"
+    assert lock.read_bytes() == before
+
+
+def test_media_restore_uses_a_private_locked_local_reference(tmp_path, monkeypatch):
+    reference_root = tmp_path / "reference"
+    reference = reference_root / "publications/media"
+    init(reference)
+    revision = commit(reference, "font.ttf", "font\n")
+    url = "https://example.invalid/locked-media.git"
+    git(reference, "remote", "add", "origin", url)
+    root = tmp_path / "project"
+    (root / "dependencies").mkdir(parents=True)
+    lock = root / "dependencies/dependencies.lock.json"
+    spec = {"url": url, "destination": "publications/media", "revision": revision}
+    lock.write_text(json.dumps({"sources": {"publication_media": spec}}))
+    monkeypatch.setattr(history, "HISTORICAL_REVISIONS", ())
+    history.main(["prepare", "--reference-root", str(reference_root)], root=root)
+    media = root / "publications/media"
+    assert git(media, "rev-parse", "HEAD") == revision
+    assert not (media / ".git/objects/info/alternates").exists()
+    assert (media / "font.ttf").read_bytes() == (reference / "font.ttf").read_bytes()
+    spec["destination"] = "../outside"
+    lock.write_text(json.dumps({"sources": {"publication_media": spec}}))
+    with pytest.raises(ValueError, match="escapes checkout"):
+        history.main(["prepare"], root=root)

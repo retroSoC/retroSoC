@@ -6735,7 +6735,72 @@
                 0,
                 25
               ]
-            }
+            },
+            "units": [
+              {
+                "id": "u_tx_fifo",
+                "title": "tx fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "flush_i": "s_tx_flush",
+                  "push_i": "s_tx_push",
+                  "full_o": "s_tx_full",
+                  "pop_i": "tx_data_pop_i",
+                  "empty_o": "s_tx_empty",
+                  "dat_o": "s_tx_pop_data",
+                  "cnt_o": "s_tx_count"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 8
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "8",
+                  "BUFFER_DEPTH": "TxFifoDepth",
+                  "LOG_BUFFER_DEPTH": "TxFifoLogDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_reg.sv",
+                    "text": "u_tx_fifo ("
+                  }
+                ]
+              },
+              {
+                "id": "u_rx_fifo",
+                "title": "rx fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "flush_i": "s_rx_flush",
+                  "push_i": "s_rx_push",
+                  "full_o": "s_rx_full",
+                  "dat_i": "rx_data_i",
+                  "pop_i": "s_rx_pop",
+                  "empty_o": "s_rx_empty",
+                  "dat_o": "s_rx_pop_data",
+                  "cnt_o": "s_rx_count"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 12
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "12",
+                  "BUFFER_DEPTH": "RxFifoDepth",
+                  "LOG_BUFFER_DEPTH": "RxFifoLogDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_reg.sv",
+                    "text": "u_rx_fifo ("
+                  }
+                ]
+              }
+            ]
           },
           {
             "id": "core",
@@ -6777,6 +6842,30 @@
                 "side": "south",
                 "direction": "in",
                 "width": 1
+              }
+            ],
+            "units": [
+              {
+                "id": "u_uart_baudgen",
+                "title": "baudgen",
+                "module": "uart_baudgen",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "baud_int_i": "baud_int_i",
+                  "baud_frac_i": "baud_frac_i",
+                  "sample_tick_o": "s_sample_tick",
+                  "bit_tick_o": "bit_tick_o"
+                },
+                "parameters": {},
+                "parameters_raw": {},
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/serial/uart_core.sv",
+                    "text": "u_uart_baudgen ("
+                  }
+                ]
               }
             ]
           },
@@ -7007,7 +7096,62 @@
             ]
           }
         ],
-        "note": "Selected functional paths. Data labels show payload width; dashed links are control. Clock/reset, full handshake and IRQ wiring are omitted for clarity."
+        "note": "Selected functional paths. Outlined arrows carry data; thin solid arrows carry control/status. Boundary clock/reset signals are shown; internal clock/reset distribution, complete handshakes and IRQ details are grouped.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "UART0",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "core",
+              "flow"
+            ]
+          ],
+          "external": [
+            "modem",
+            "pads"
+          ],
+          "buses": [
+            "apb"
+          ],
+          "wrapper": [
+            "rtl/ip/serial/apb4_uart.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/serial/apb4_uart.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/serial/apb4_uart.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+          "titles": {},
+          "interfaces": [],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": [
+            {
+              "id": "reg",
+              "title": "Register bank",
+              "file": "rtl/ip/serial/uart_reg.sv",
+              "owner": "reg",
+              "members": [
+                "u_tx_fifo",
+                "u_rx_fifo"
+              ],
+              "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+            }
+          ]
+        }
       },
       "dma": {
         "nodes": [
@@ -7065,7 +7209,8 @@
                 "direction": "in",
                 "width": 8
               }
-            ]
+            ],
+            "units": []
           },
           {
             "id": "core",
@@ -7125,6 +7270,84 @@
                 "side": "south",
                 "direction": "in",
                 "width": 32
+              }
+            ],
+            "units": [
+              {
+                "id": "u_data_fifo",
+                "title": "data fifo",
+                "module": "fifo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i"
+                },
+                "parameters": {
+                  "DATA_WIDTH": 32
+                },
+                "parameters_raw": {
+                  "DATA_WIDTH": "32",
+                  "BUFFER_DEPTH": "FifoDepth"
+                },
+                "shape": "fifo",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/peripheral/dma_core.sv",
+                    "text": "u_data_fifo ("
+                  }
+                ]
+              },
+              {
+                "id": "u_dma_axi4_master",
+                "title": "axi4 master",
+                "module": "dma_axi4_master",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "read_start_valid_i": "s_axi_read_start_valid",
+                  "read_start_ready_o": "s_axi_read_start_ready",
+                  "read_addr_i": "s_axi_read_start_addr",
+                  "read_beats_i": "s_axi_read_start_beats",
+                  "read_fixed_i": "s_axi_read_start_fixed",
+                  "read_busy_o": "s_axi_read_busy",
+                  "read_beat_valid_o": "s_axi_read_beat_valid",
+                  "read_beat_ready_i": "s_axi_read_beat_ready",
+                  "read_data_o": "s_axi_read_data",
+                  "read_resp_o": "s_axi_read_resp",
+                  "read_last_o": "s_axi_read_last",
+                  "read_expected_last_o": "s_axi_read_expected_last",
+                  "read_id_error_o": "s_axi_read_id_error",
+                  "read_done_o": "s_axi_read_done",
+                  "write_start_valid_i": "s_axi_write_start_valid",
+                  "write_start_ready_o": "s_axi_write_start_ready",
+                  "write_addr_i": "s_axi_write_start_addr",
+                  "write_beats_i": "s_axi_write_start_beats",
+                  "write_fixed_i": "s_axi_write_start_fixed",
+                  "write_busy_o": "s_axi_write_busy",
+                  "write_data_valid_i": "s_axi_write_data_valid",
+                  "write_data_ready_o": "s_axi_write_data_ready",
+                  "write_data_i": "s_axi_write_data",
+                  "write_strb_i": "s_axi_write_strb",
+                  "write_done_o": "s_axi_write_done",
+                  "write_resp_o": "s_axi_write_resp",
+                  "write_id_error_o": "s_axi_write_id_error",
+                  "origin_enable_i": "EnableOriginQualifier",
+                  "read_origin_channel_i": "s_axi_read_origin_channel",
+                  "write_origin_channel_i": "s_axi_write_origin_channel",
+                  "axi4": "axi4"
+                },
+                "parameters": {},
+                "parameters_raw": {
+                  "AddrWidth": "AddrWidth",
+                  "DataWidth": "DataWidth",
+                  "MaxBurstBeats": "MaxBurstBeats"
+                },
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/peripheral/dma_core.sv",
+                    "text": "u_dma_axi4_master ("
+                  }
+                ]
               }
             ]
           },
@@ -7366,7 +7589,68 @@
             ]
           }
         ],
-        "note": "Functional grouping of the integrated eight-channel DMA. Stream ports aggregate the listed input/output endpoints; handshakes and the request map remain defined by the protocol chapter."
+        "note": "Functional grouping of the integrated eight-channel DMA. Stream ports aggregate the listed input/output endpoints; handshakes and the request map remain defined by the protocol chapter.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "DMA",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "core",
+              "master"
+            ]
+          ],
+          "external": [
+            "streams",
+            "memory"
+          ],
+          "buses": [
+            "apb"
+          ],
+          "wrapper": [
+            "rtl/ip/peripheral/apb4_dma.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            },
+            {
+              "name": "irq_o",
+              "direction": "output",
+              "role": "irq",
+              "file": "rtl/ip/peripheral/apb4_dma.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
+          "titles": {},
+          "interfaces": [],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": [
+            {
+              "id": "core",
+              "title": "Channel scheduling",
+              "file": "rtl/ip/peripheral/dma_core.sv",
+              "owner": "core",
+              "members": [
+                "u_data_fifo",
+                "u_dma_axi4_master"
+              ],
+              "review": "Named functional instances selected from the owning RTL scope; generated repetition and profile-conditional capability remain qualified."
+            }
+          ]
+        }
       },
       "apu": {
         "nodes": [
@@ -7423,6 +7707,34 @@
                 "side": "east",
                 "direction": "out",
                 "width": 64
+              }
+            ],
+            "units": [
+              {
+                "id": "u_proof_memo",
+                "title": "proof memo",
+                "module": "apu_proof_memo",
+                "ports": {
+                  "clk_i": "clk_i",
+                  "rst_n_i": "rst_n_i",
+                  "addr_i": "s_path_memo_addr_q",
+                  "key_i": "s_path_memo_key",
+                  "ready_o": "s_path_memo_ready",
+                  "done_o": "s_path_memo_done",
+                  "read_valid_o": "s_path_memo_read_valid",
+                  "read_key_o": "s_path_memo_read_key"
+                },
+                "parameters": {},
+                "parameters_raw": {
+                  "Depth": "PathMemoDepth"
+                },
+                "shape": "block",
+                "bindings": [
+                  {
+                    "file": "rtl/ip/multimedia/apu_microcode_loader.sv",
+                    "text": "u_proof_memo ("
+                  }
+                ]
               }
             ]
           },
@@ -7554,7 +7866,8 @@
                 "direction": "out",
                 "width": 64
               }
-            ]
+            ],
+            "units": []
           },
           {
             "id": "stream",
@@ -7775,7 +8088,128 @@
             ]
           }
         ],
-        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; detailed launch/status/return handshakes are not all shown. WAV/FLAC use the checked-in P5 image. KWS RX is connected internally but gated by EnableP7, which is false in default PRODUCT. MP3 and KWS are not publicly advertised; corpus and physical qualification remain separate."
+        "note": "Selected loader, execution and TX paths. Request arbitration/ring control is grouped; detailed launch/status/return handshakes are not all shown. WAV/FLAC use the checked-in P5 image. KWS RX is connected internally but gated by EnableP7, which is false in default PRODUCT. MP3 and KWS are not publicly advertised; corpus and physical qualification remain separate.",
+        "block_diagram": {
+          "style": "ip-block-v1",
+          "title": "APU",
+          "rows": [
+            [
+              "reg"
+            ],
+            [
+              "loader",
+              "store"
+            ],
+            [
+              "dma",
+              "transport"
+            ],
+            [
+              "seq",
+              "primitive",
+              "stream"
+            ]
+          ],
+          "external": [],
+          "buses": [],
+          "wrapper": [
+            "rtl/ip/multimedia/apb4_apu.sv"
+          ],
+          "ports": [
+            {
+              "name": "clk_i",
+              "direction": "input",
+              "role": "clock",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "rst_n_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "resource_reset_i",
+              "direction": "input",
+              "role": "reset",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            },
+            {
+              "name": "irq_o",
+              "direction": "output",
+              "role": "irq",
+              "file": "rtl/ip/multimedia/apb4_apu.sv"
+            }
+          ],
+          "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary. APU private AXI4 master is 32-bit (retrosoc.u_apu_axi4_if); HP fabric width is not the APU endpoint width.",
+          "titles": {
+            "seq": "Bounded\nsequencer",
+            "primitive": "Primitive\ncluster",
+            "stream": "I2S stream\nrouter"
+          },
+          "interfaces": [
+            {
+              "protocol": "APB4",
+              "width": 32,
+              "side": "left",
+              "node": "reg",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "apb4_if.slave"
+            },
+            {
+              "protocol": "AXI4",
+              "width": 32,
+              "side": "left",
+              "node": "dma",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_if.master",
+              "port": "axi4"
+            },
+            {
+              "protocol": "DMA TX",
+              "width": 32,
+              "side": "right",
+              "node": "transport",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.sink",
+              "port": "dma_tx_axis",
+              "direction": "input"
+            },
+            {
+              "protocol": "DMA RX",
+              "width": 32,
+              "side": "right",
+              "node": "transport",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.source",
+              "port": "dma_rx_axis",
+              "direction": "output"
+            },
+            {
+              "protocol": "I2S TX",
+              "width": 32,
+              "side": "right",
+              "node": "stream",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.source",
+              "port": "i2s_tx_axis",
+              "direction": "output"
+            },
+            {
+              "protocol": "I2S RX",
+              "width": 32,
+              "side": "right",
+              "node": "stream",
+              "file": "rtl/ip/multimedia/apb4_apu.sv",
+              "declaration": "axi4_stream_if.sink",
+              "port": "i2s_rx_axis",
+              "direction": "input"
+            }
+          ],
+          "product": "mini",
+          "port_layout": "grouped",
+          "details": []
+        }
       }
     },
     "circuit_catalog": "publications/datasheets/diagram-circuits.json",

@@ -1,6 +1,6 @@
 #import "style.typ": *
 #import "waveforms.typ": timing
-#import "diagram-packages.typ": circuit-diagram, binary-figures, storage-figures
+#import "diagram-packages.typ": circuit-diagram, ip-block-figures, binary-figures, storage-figures
 
 #let inline(value) = {
   // A deliberately limited inline grammar: explicit strong spans and raw code.
@@ -134,12 +134,7 @@
   if id=="jpeg" {change-start("v05-scientific-20261116-jpeg-symbol","JPEG dimension multiplication sign / UTF-8 decoding")}
   list(..chapter.at("features",default:()).map(inline))
   if id=="jpeg" {change-end("v05-scientific-20261116-jpeg-symbol")}
-  block(breakable:false)[
-      #change-start(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id},chapter.title+" internal circuit diagram")
-      #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#chapter.title functional organization.])
-      #label("circuit-"+id)
-      #change-end(if id=="jpeg" {"dev-jpeg-circuit"} else {"circuit-"+id})
-    ]
+  ip-block-figures(id)
 
   subhead(id,"Functional Description",depth)
   if legacy!=none {

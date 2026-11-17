@@ -276,6 +276,9 @@ product-default disable policy and source-qualified credit pacing fixture.
 Historical Tiny publication fixtures also need the main repository history
 and dependency commit objects named by their archived locks. After ordinary
 dependency setup, run `python3 tests/publication_history.py prepare` before
-Pytest on a fresh checkout. This only fetches missing immutable Git objects;
-it does not switch current managed checkouts or alter either lock. Historical
-fixture export remains offline and fails if required inputs are unavailable.
+Pytest on a fresh checkout. This also restores the current lock's publication
+media for font-based IP layout checks, without installing Typst or its packages.
+It refuses modified or mismatched media; historical dependency preparation only
+fetches missing immutable objects and never switches their active checkouts.
+Neither lock is changed. Historical fixture export remains offline and fails
+if required inputs are unavailable.

@@ -248,7 +248,9 @@ def validate_maps(root: Path, fact: dict) -> tuple:
     return reset, regions, topology
 
 
-def collect(config: dict, *, check_snapshot: bool = True) -> dict:
+def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -> dict:
+    if check_snapshot and not layout:
+        raise ValueError("Publication checks require complete IP layout; source inventory uses check_snapshot=False")
     validate_configuration(config)
     fact = facts(profile_path=config["profile"])
     compatibility = [facts(profile_path=path) for path in config["compatibility_profiles"]]
@@ -310,14 +312,14 @@ def collect(config: dict, *, check_snapshot: bool = True) -> dict:
     tcd_text = re.search(r"typedef struct\s*\{([^}]+)\}\s*rs_dma_tcd_t;", header_text)
     members = re.findall(r"(uint32_t|int32_t|uint16_t)\s+(\w+)\s*;", tcd_text[1])
     types = {"uint32_t": ctypes.c_uint32, "int32_t": ctypes.c_int32, "uint16_t": ctypes.c_uint16}
-    layout = type("TinyTcd", (ctypes.Structure,), {"_fields_": [(name, types[kind]) for kind, name in members]})
-    if ctypes.sizeof(layout) != 64 or len(members) != 17:
+    tcd_layout = type("TinyTcd", (ctypes.Structure,), {"_fields_": [(name, types[kind]) for kind, name in members]})
+    if ctypes.sizeof(tcd_layout) != 64 or len(members) != 17:
         raise ValueError("Tiny TCD layout changed")
-    tcd = [dict(name=name, offset=getattr(layout, name).offset, bytes=ctypes.sizeof(types[kind]),
+    tcd = [dict(name=name, offset=getattr(tcd_layout, name).offset, bytes=ctypes.sizeof(types[kind]),
                 role="reserved" if "reserved" in name else "HAL result" if name in {"crc_result", "status", "bytes_done", "error_status"} else "configuration") for kind, name in members]
     from publications.tiny_diagram_reference import collect as collect_illustrations
     from publications.tiny_publication_reference import diagnostics
-    illustrations = collect_illustrations(ROOT, catalog, regions)
+    illustrations = collect_illustrations(ROOT, catalog, regions, layout=layout)
     diagnostic_reference = diagnostics(ROOT, refs)
     paths.update(illustrations["source_paths"])
     paths.update({"publications/tiny_diagram_reference.py", "publications/tiny_publication_reference.py",

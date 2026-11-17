@@ -45,7 +45,7 @@
 #let timing(key, caption, instance:none) = {
   let entry = data.waveforms.at(key)
   block(width:100%,above:rhythm.figure-space,below:rhythm.figure-space,breakable:false)[
-    #context metadata((kind:"tiny-diagram",id:"wave-"+if instance==none {key} else {instance},page:here().page()))
+    #context metadata((kind:"tiny-diagram",package:"wavedrom",id:"wave-"+if instance==none {key} else {instance},page:here().page()))
     #show figure: set block(above:0pt,below:0pt)
     #figure(image(bytes(wave-svg(key))), caption: caption)
     #block(width:100%,above:rhythm.metadata-before,below:0pt)[

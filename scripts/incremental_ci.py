@@ -63,7 +63,7 @@ def reviewed_source_paths(root: Path) -> list[str]:
     from publications import tiny_reference as tiny
 
     config = tiny.read(root / tiny.BOOK / "tiny.json")
-    collected = tiny.collect(config, check_snapshot=False)
+    collected = tiny.collect(config, check_snapshot=False, layout=False)
     return sorted(
         path
         for path in collected["source_paths"]

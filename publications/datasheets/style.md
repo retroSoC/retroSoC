@@ -928,8 +928,10 @@ The six Multimedia entries use two rows of three cells within the same
 panel. Keep the repository footer blue and clickable without an underline.
 
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 42 IP diagrams plus PRODUCT fabric,
-clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
+chapters. The [shared IP drawing standard](../ip-block-diagrams.md) governs all
+42 Mini IP primary diagrams and their details, rendered by locked CeTZ 0.5.2.
+Circuiteria 0.2.1 retains PRODUCT fabric, clock/reset, media composition and
+MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
 instruction families. Blockcell 0.1.0 covers architectural FIFOs, line buffers,
@@ -952,11 +954,13 @@ physical device capacities; diagrams with compressed gaps are not to scale.
 Rivet instruction words use upper/lower 32-bit rows so adjacent two-digit bit
 indexes remain readable. Coordinate and text settings are calibrated together
 against the rendered PDF; do not solve collisions by making type smaller.
-Circuiteria boxes use the shared thin-border appearance; its unmodified wire
+The four retained system Circuiteria figures use thin-border boxes; the unmodified wire
 renderer uses 1 pt control/signal lines and 1.5 pt data buses. Dashed control and
-solid data paths are a local convention. Labels remain horizontal on white
+solid data paths are a local system-figure convention. Labels remain horizontal on white
 backing, with endpoints attached to declared ports. Other diagram line widths
-are unaffected.
+are unaffected. IP primary/detail figures instead use solid control lines,
+outlined data arrows, transparent labels, square white blocks and neutral gray
+ownership boundaries under the shared standard. Ordinary IP text stays 9 pt.
 
 `system-reference.json.illustrations` references the reviewed circuit, binary
 layout and storage catalogs. The publication adapters verify named instance
