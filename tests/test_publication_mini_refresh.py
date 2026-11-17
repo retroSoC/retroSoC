@@ -428,3 +428,18 @@ def test_dma_route_tables_cannot_omit_implemented_completion_sources(mutation):
 def test_mini_dma_stream_direction_count_matches_wiring(registers):
     capability = next(x for x in registers["dma"]["registers"] if x["key"] == "main.CAPABILITY")
     assert (number(capability["reset"]) >> 28) & 7 == 5
+
+
+def test_build_control_review_matches_readme_and_source_blobs():
+    import subprocess
+
+    config = json.loads((ROOT / "publications/datasheets/mini.json").read_text(encoding="utf-8"))
+    review = config["build_control_review"]
+    readme = (ROOT / "publications/README.md").read_text(encoding="utf-8")
+    paragraph = readme.split("Mini's `mini.json.build_control_review`", 1)[1].split("\n\n", 1)[0]
+    assert review["revision"] in paragraph
+    for path, expected in [("Makefile", review["makefile_blob"]),
+                           ("docs/git-workflow.md", review["documentation_blobs"]["docs/git-workflow.md"])]:
+        actual = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", f"{review['revision']}:{path}"],
+                                         text=True).strip()
+        assert actual == expected

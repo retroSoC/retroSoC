@@ -129,7 +129,7 @@ Use explicit shared and not-applicable coverage in the diagram inventory.
 The [shared specification standard](../../specifications/README.md) is normative
 for states, provenance, reference blocks, curves and replacement. Keep Tiny
 v0.2 DRAFT / Gen1 / ICS55-main / IHP130-compatibility independent of Mini.
-The current reviewed source is `aa5dab0def8057e38bb64778f0c9d9a6b3c731cb`;
+The current reviewed source is `58986f512add4d01d13cb5ea3bff633b8d546f39`;
 the 2026-11-14 commercial-reference supplement retains its historical layout context.
 
 QFN64 is Tiny's confirmed package family with 64 frozen perimeter assignments;

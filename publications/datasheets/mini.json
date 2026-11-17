@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "aa5dab0def8057e38bb64778f0c9d9a6b3c731cb",
+  "source_revision": "58986f512add4d01d13cb5ea3bff633b8d546f39",
   "build_control_review": {
-    "revision": "506018b24330f09a05c1f87831ec29e31f7a1cd7",
-    "makefile_blob": "9907bd045510dd5e217c523a57a4a89dd36bc4cb",
+    "revision": "58986f512add4d01d13cb5ea3bff633b8d546f39",
+    "makefile_blob": "19b493043fff1e7ead56634ea981662825e46ce3",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical snapshot is aa5dab0d and includes Tiny P4 acceptance history plus reviewed PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review advances through 506018b2 for audited new-HEAD delivery recovery and final merged-head check evidence. Prior source, control, CI and artifact evidence is retained, including the P3 acceptance selector and isolated-image guard. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical snapshot is 58986f51 and includes the synchronized delivery-recovery controls and PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review uses the same revision and retains prior source, control, CI and artifact evidence, including the P3 acceptance selector, resume arguments and isolated-image guard. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

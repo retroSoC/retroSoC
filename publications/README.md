@@ -2,10 +2,10 @@
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 **v0.5 DRAFT / Gen2/Gen2+**. Tiny and Mini reviewed source snapshots are
-aa5dab0def8057e38bb64778f0c9d9a6b3c731cb for the PIOLITE-P3 source integration
-and default-off Mini compatibility review. The main references are Tiny ICS55
-(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW. The two
-books have independent profiles, manifests and output markers.
+58986f512add4d01d13cb5ea3bff633b8d546f39 for the synchronized PIOLITE-P3 source
+integration and default-off Mini compatibility review. The main references are
+Tiny ICS55 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
+The two books have independent profiles, manifests and output markers.
 
 The IP drawing round starts at publication dev `4315f7d7`, preserving the
 439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
@@ -17,13 +17,13 @@ source fingerprints, geometry/coverage audits and output hashes. Active markers
 are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `506018b2`. It binds a full
-commit and each file's blob identity independently of the technical source
-snapshot. The optional `documentation_blobs` mapping accepts only
-`docs/git-workflow.md`; product documents cannot be exempted. Source checks
-reject later control-file edits and all unreviewed RTL/SDK/profile changes. The
-manifest hashes both reviewed files. This is an explicit one-revision review,
-not an exclusion from future source checks.
+Makefile and contribution-policy changes through
+`58986f512add4d01d13cb5ea3bff633b8d546f39`. It binds a full commit and each
+file's blob identity independently of the technical source snapshot. The optional
+`documentation_blobs` mapping accepts only `docs/git-workflow.md`; product
+documents cannot be exempted. Source checks reject later control-file edits and
+all unreviewed RTL/SDK/profile changes. The manifest hashes both reviewed files.
+This is an explicit one-revision review, not an exclusion from future checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.
