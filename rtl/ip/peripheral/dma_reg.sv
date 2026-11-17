@@ -16,8 +16,7 @@ module dma_reg #(
     parameter int          ChannelIndexWidth = (NumChannels > 1) ? $clog2(NumChannels) : 1,
     parameter int          DataWidth         = 32,
     parameter int          MaxBurstBeats     = 16,
-    parameter logic [31:0] IpVersion         = 32'h0002_0000,
-    parameter logic [31:0] SupportedRequests = 32'h0000_3fff
+    parameter logic [31:0] IpVersion         = 32'h0002_0000
 ) (
     // verilog_format: off -- APB4/configuration and status vector groups follow the register ABI.
     input  logic                           clk_i,
@@ -357,7 +356,7 @@ module dma_reg #(
       `APB4_DMA__CAPABILITY:
       s_read_data = {
         1'b0,
-        (EnableStreams ? 3'd3 : 3'd0),
+        (EnableStreams ? 3'($countones(supported_requests_i[15:0] & 16'hF806)) : 3'd0),
         4'(MaxBurstBeats),
         8'(DataWidth),
         8'(NumChannels),

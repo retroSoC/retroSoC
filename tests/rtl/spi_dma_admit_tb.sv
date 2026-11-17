@@ -66,22 +66,33 @@ module spi_dma_admit_tb;
   logic [3:0] dma_status_i;
   logic       dma_error_i;
   logic [1:0] spi_credit_valid_o, spi_credit_retire_o;
-  logic [ 1:0] spi_start_pending_o;
-  logic [ 3:0] spi_status_o;
-  logic        spi_error_o;
-  logic [ 1:0] dma_admit_ready_o;
-  logic [ 1:0] spi_origin;
-  logic [ 2:0] spi_channel;
-  logic [ 1:0] dma_admit_ready;
+  logic [1:0] spi_start_pending_o;
+  logic [3:0] spi_status_o;
+  logic       spi_error_o;
+  logic [1:0] dma_admit_ready_o;
+  logic [1:0] spi_origin;
+  logic [2:0] spi_channel;
+  logic [1:0] dma_admit_ready;
+  logic [3:0] pio_tx_grant = '0;
+  logic [3:0] pio_rx_grant = '0;
+  logic       pio_tx_admit = 1'b0;
+  logic       pio_rx_admit = 1'b0;
+  logic pio_tx_job, pio_rx_job;
+  logic          pio_tx_ready = 1'b0;
+  logic          pio_rx_valid = 1'b0;
+  logic   [31:0] pio_rx_data = '0;
+  integer        pio_tx_count = 0;
+  integer        pio_rx_count = 0;
+  logic   [31:0] pio_tx_words         [0:31];
 
-  logic [31:0] user_select_i = '0;
-  logic [31:0] handoff_i = '0;
-  logic [31:0] alt_enable_i = '0;
-  logic [31:0] alt_select_i = '0;
-  logic [31:0] output_enable_i = '0;
-  logic [31:0] open_drain_i = '0;
-  logic        gpio_ready_i = 1'b0;
-  logic        miso_i = 1'b1;
+  logic   [31:0] user_select_i = '0;
+  logic   [31:0] handoff_i = '0;
+  logic   [31:0] alt_enable_i = '0;
+  logic   [31:0] alt_select_i = '0;
+  logic   [31:0] output_enable_i = '0;
+  logic   [31:0] open_drain_i = '0;
+  logic          gpio_ready_i = 1'b0;
+  logic          miso_i = 1'b1;
   logic sck_o, mosi_o, cs_n_o, output_enable_o, irq_o;
   logic session_owned_o, lifecycle_idle_o;
   logic   [ 1:0] credit_commit_o;
@@ -93,7 +104,7 @@ module spi_dma_admit_tb;
   logic   [31:0] cpu_pwdata = '0;
   logic   [ 3:0] cpu_pstrb = '0;
 
-  logic   [31:0] memory                   [0:1031];
+  logic   [31:0] memory                   [0:4095];
   logic   [31:0] source_words             [   0:7];
   logic   [15:0] rx_frames                [   0:6];
   logic   [15:0] tx_frames                [  0:15];
@@ -282,6 +293,7 @@ module spi_dma_admit_tb;
       .origin_o (spi_origin),
       .channel_o(spi_channel)
   );
+`ifndef PIOLITE_P3
   tiny_axi42apb4 u_mem_bridge (
       .clk_i    (clk_i),
       .rst_n_i  (rst_n_i),
@@ -290,6 +302,83 @@ module spi_dma_admit_tb;
       .origin_o (),
       .channel_o()
   );
+`else
+  logic        mem_read_active_q = 1'b0;
+  logic [31:0] mem_read_addr_q = '0;
+  logic [ 7:0] mem_read_len_q = '0;
+  logic [ 7:0] mem_read_index_q = '0;
+  logic [15:0] mem_read_wait_q = '0;
+  logic        mem_read_id_q = 1'b0;
+  logic        mem_write_active_q = 1'b0;
+  logic [31:0] mem_write_addr_q = '0;
+  logic [ 7:0] mem_write_len_q = '0;
+  logic [ 7:0] mem_write_index_q = '0;
+  logic        mem_write_response_q = 1'b0;
+  logic        mem_write_id_q = 1'b0;
+
+  assign mem_axi.arready = !mem_read_active_q;
+  assign mem_axi.rid     = mem_read_id_q;
+  assign mem_axi.rdata   = memory[mem_read_addr_q[13:2]+mem_read_index_q];
+  assign mem_axi.rresp   = 2'b00;
+  assign mem_axi.rlast   = mem_read_index_q == mem_read_len_q;
+  assign mem_axi.ruser   = '0;
+  assign mem_axi.rvalid  = mem_read_active_q && (mem_read_wait_q == 0);
+  assign mem_axi.awready = !mem_write_active_q && !mem_write_response_q;
+  assign mem_axi.wready  = mem_write_active_q;
+  assign mem_axi.bid     = mem_write_id_q;
+  assign mem_axi.bresp   = 2'b00;
+  assign mem_axi.buser   = '0;
+  assign mem_axi.bvalid  = mem_write_response_q;
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      mem_read_active_q    <= 1'b0;
+      mem_read_addr_q      <= '0;
+      mem_read_len_q       <= '0;
+      mem_read_index_q     <= '0;
+      mem_read_wait_q      <= '0;
+      mem_read_id_q        <= 1'b0;
+      mem_write_active_q   <= 1'b0;
+      mem_write_addr_q     <= '0;
+      mem_write_len_q      <= '0;
+      mem_write_index_q    <= '0;
+      mem_write_response_q <= 1'b0;
+      mem_write_id_q       <= 1'b0;
+    end else begin
+      if (mem_axi.arvalid && mem_axi.arready) begin
+        mem_read_active_q <= 1'b1;
+        mem_read_addr_q   <= mem_axi.araddr;
+        mem_read_len_q    <= mem_axi.arlen;
+        mem_read_index_q  <= '0;
+        mem_read_wait_q   <= response_delay[15:0];
+        mem_read_id_q     <= mem_axi.arid;
+      end
+      if (mem_read_active_q && (mem_read_wait_q != 0)) mem_read_wait_q <= mem_read_wait_q - 16'd1;
+      if (mem_axi.rvalid && mem_axi.rready) begin
+        if (mem_axi.rlast) mem_read_active_q <= 1'b0;
+        else mem_read_index_q <= mem_read_index_q + 8'd1;
+      end
+      if (mem_axi.awvalid && mem_axi.awready) begin
+        mem_write_active_q <= 1'b1;
+        mem_write_addr_q   <= mem_axi.awaddr;
+        mem_write_len_q    <= mem_axi.awlen;
+        mem_write_index_q  <= '0;
+        mem_write_id_q     <= mem_axi.awid;
+      end
+      if (mem_axi.wvalid && mem_axi.wready) begin
+        memory[mem_write_addr_q[13:2]+mem_write_index_q] <= mem_axi.wdata;
+        if (mem_axi.wlast) begin
+          if (mem_write_index_q != mem_write_len_q) $fatal(1, "PIO memory WLAST mismatch");
+          mem_write_active_q   <= 1'b0;
+          mem_write_response_q <= 1'b1;
+        end else begin
+          mem_write_index_q <= mem_write_index_q + 8'd1;
+        end
+      end
+      if (mem_axi.bvalid && mem_axi.bready) mem_write_response_q <= 1'b0;
+    end
+  end
+`endif
 
   assign origin_i            = cpu_psel ? 2'd0 : spi_origin;
   assign request_i           = spi_bridge_apb.pwrite ? 5'd16 : 5'd17;
@@ -333,38 +422,77 @@ module spi_dma_admit_tb;
       .apb4               (spi_dut_apb)
   );
 
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) piolite_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) piolite_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  assign piolite_tx_axis.tready = pio_tx_ready;
+  assign piolite_rx_axis.tvalid = pio_rx_valid;
+  assign piolite_rx_axis.tdata  = pio_rx_data;
+  assign piolite_rx_axis.tkeep  = 4'hf;
+  assign piolite_rx_axis.tstrb  = 4'hf;
+  assign piolite_rx_axis.tlast  = 1'b0;
+  assign piolite_rx_axis.tid    = 1'b0;
+  assign piolite_rx_axis.tdest  = 1'b0;
+  assign piolite_rx_axis.tuser  = 1'b0;
+
   apb4_dma #(
       .NumChannels          (4),
       .MaxBurstBeats        (16),
       .FifoDepth            (16),
-      .RequestMask          (32'h0003_39ff),
-      .SupportedRequests    (32'h0003_39ff),
+      .RequestMask          (32'h0003_f9ff),
+      .SupportedRequests    (32'h0003_f9ff),
       .IpVersion            (32'h0002_0002),
       .EnableStreams        (1'b1),
       .EnableSpi            (1'b1),
+      .EnablePiolite        (1'b1),
       .EnableOriginQualifier(1'b1),
       .SpiTxAddress         (SpiTxAddress),
       .SpiRxAddress         (SpiRxAddress)
   ) u_dma (
-      .lifecycle_idle_o   (),
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .dma_xfer_done_o    (),
-      .irq_o              (),
-      .hw_trg             (req),
-      .apb4               (dma_apb),
-      .axi4               (axi4),
-      .i2s_tx_axis        (i2s_tx_axis),
-      .i2s_rx_axis        (i2s_rx_axis),
-      .dvp_rx_axis        (dvp_rx_axis),
-      .crypto_in_axis     (crypto_in_axis),
-      .crypto_out_axis    (crypto_out_axis),
-      .spi_admit_ready_i  (dma_admit_ready),
-      .spi_credit_valid_o (spi_credit_valid_o),
-      .spi_credit_retire_o(spi_credit_retire_o),
-      .spi_start_pending_o(spi_start_pending_o),
-      .spi_status_o       (spi_status_o),
-      .spi_error_o        (spi_error_o)
+      .lifecycle_idle_o     (),
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .ppalite_route_i      (1'b0),
+      .dma_xfer_done_o      (),
+      .irq_o                (),
+      .hw_trg               (req),
+      .apb4                 (dma_apb),
+      .axi4                 (axi4),
+      .i2s_tx_axis          (i2s_tx_axis),
+      .i2s_rx_axis          (i2s_rx_axis),
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_grant_i   (pio_tx_grant),
+      .piolite_rx_grant_i   (pio_rx_grant),
+      .piolite_tx_admit_i   (pio_tx_admit),
+      .piolite_rx_admit_i   (pio_rx_admit),
+      .piolite_tx_job_o     (pio_tx_job),
+      .piolite_rx_job_o     (pio_rx_job),
+      .piolite_channel_job_o(),
+      .spi_admit_ready_i    (dma_admit_ready),
+      .spi_credit_valid_o   (spi_credit_valid_o),
+      .spi_credit_retire_o  (spi_credit_retire_o),
+      .spi_start_pending_o  (spi_start_pending_o),
+      .spi_status_o         (spi_status_o),
+      .spi_error_o          (spi_error_o),
+      .tcd_idle_o           (),
+      .dvp_start_pending_o  (),
+      .dvp_busy_o           (),
+      .dvp_done_o           (),
+      .dvp_bytes_done_o     (),
+      .dvp_error_status_o   ()
   );
 
   always @(posedge clk_i) begin
@@ -605,7 +733,27 @@ module spi_dma_admit_tb;
       value   = 0;
       while (((value & 4) == 0) && (timeout < 10000)) begin
         dma_read(channel_address(channel, 7'h20), value);
-        if ((value & 24) != 0) $fatal(1, "DMA channel error/abort status=%h", value);
+        if ((value & 24) != 0) begin
+          dma_read(channel_address(channel, 7'h28), value);
+          $display("DMA_ERROR_DEBUG channel=%0d error_status=%h req=%0d kind=%0d start_valid=%b",
+                   channel, value, u_dma.u_dma_core.s_req_q[channel],
+                   u_dma.u_dma_core.s_kind_q[channel], u_dma.u_dma_core.s_start_valid[channel]);
+          $display(
+              "DMA_ERROR_PROTOCOL resp=%b id_error=%b last=%b expected_last=%b err_addr=%h read_seen=%0d read_beats=%0d",
+              u_dma.u_dma_core.s_axi_read_resp, u_dma.u_dma_core.s_axi_read_id_error,
+              u_dma.u_dma_core.s_axi_read_last, u_dma.u_dma_core.s_axi_read_expected_last,
+              u_dma.u_dma_core.s_err_addr_q[channel], u_dma.u_dma_core.s_read_seen_q,
+              u_dma.u_dma_core.s_read_beats_q);
+          $display(
+              "DMA_TCD_DEBUG mode=%b loaded=%b parse=%b w0=%h w1=%h w2=%h w3=%h w7=%h grant_tx=%b grant_rx=%b admit=%b/%b",
+              u_dma.u_dma_core.s_tcd_mode_q[channel], u_dma.u_dma_core.s_tcd_loaded_q[channel],
+              u_dma.u_dma_core.s_tcd_parse_q, u_dma.u_dma_core.s_tcd_word0_q[channel],
+              u_dma.u_dma_core.s_tcd_word1_q[channel], u_dma.u_dma_core.s_tcd_word2_q[channel],
+              u_dma.u_dma_core.s_tcd_word3_q[channel], u_dma.u_dma_core.s_tcd_word7_q[channel],
+              u_dma.u_dma_core.piolite_tx_grant_i, u_dma.u_dma_core.piolite_rx_grant_i,
+              u_dma.u_dma_core.piolite_tx_admit_i, u_dma.u_dma_core.piolite_rx_admit_i);
+          $fatal(1, "DMA channel error/abort");
+        end
         timeout = timeout + 1;
       end
       if ((value & 4) == 0) begin
@@ -624,10 +772,28 @@ module spi_dma_admit_tb;
     end
   endtask
 
+  always @(posedge clk_i) begin
+    if (!rst_n_i) begin
+      pio_tx_count <= 0;
+      pio_rx_count <= 0;
+      pio_rx_data  <= '0;
+    end else begin
+      if (piolite_tx_axis.tvalid && piolite_tx_axis.tready) begin
+        pio_tx_words[pio_tx_count] <= piolite_tx_axis.tdata;
+        pio_tx_count               <= pio_tx_count + 1;
+      end
+      if (piolite_rx_axis.tvalid && piolite_rx_axis.tready) begin
+        pio_rx_count <= pio_rx_count + 1;
+        pio_rx_data  <= pio_rx_data + 32'd1;
+      end
+    end
+  end
+
+`ifndef PIOLITE_P3
   initial begin
     logic [31:0] value;
     logic [31:0] old_count;
-    for (integer index = 0; index < 1032; index++) memory[index] = '0;
+    for (integer index = 0; index < 4096; index++) memory[index] = '0;
     source_words[0] = 32'h0203_0001;
     source_words[1] = 32'h0607_0405;
     source_words[2] = 32'h0a0b_0809;
@@ -794,6 +960,233 @@ module spi_dma_admit_tb;
         "SIM_TEST_PASS SPI_DMA_ADMIT_PASS tx_full=1 rx_empty=1 delayed_B=1 delayed_R=1 abort_inflight=1");
     $finish;
   end
+`else
+  initial begin
+    logic   [31:0] value;
+    integer        timeout;
+    for (integer index = 0; index < 4096; index++) memory[index] = '0;
+    for (integer index = 0; index < 16; index++) memory[index] = index + 1;
+    for (integer index = 16; index < 24; index++) memory[index] = index + 32'h31;
+    for (integer index = 32; index < 40; index++) memory[index] = index + 32'h61;
+    response_delay = 128;
+    repeat (5) @(negedge clk_i);
+    rst_n_i = 1'b1;
+    repeat (2) @(negedge clk_i);
+
+    dma_write(channel_address(3, 7'h04), 32'h0000_0061);
+    dma_write(channel_address(3, 7'h08), 32'h3000_0000);
+    dma_write(channel_address(3, 7'h0c), 32'h3000_2000);
+    dma_write(channel_address(3, 7'h10), 32'd16);
+    dma_write(channel_address(3, 7'h14), 32'd14);
+    dma_write(channel_address(3, 7'h18), 32'd1);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    repeat (4) @(negedge clk_i);
+    dma_read(channel_address(3, 7'h20), value);
+    if (!value[4] || pio_tx_count != 0 || pio_tx_job)
+      $fatal(1, "Unbound PIO TX START was accepted status=%h", value);
+    dma_write(channel_address(3, 7'h00), 32'd16);
+
+    pio_tx_grant[3] = 1'b1;
+    pio_tx_admit    = 1'b1;
+    dma_write(channel_address(3, 7'h04), 32'h0000_0042);
+    dma_write(channel_address(3, 7'h10), 32'd16);
+    dma_write(channel_address(3, 7'h14), 32'd14);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    repeat (4) @(negedge clk_i);
+    dma_read(channel_address(3, 7'h20), value);
+    if (!value[4] || pio_tx_count != 0)
+      $fatal(1, "PIO TX wrong direction was accepted status=%h", value);
+    dma_write(channel_address(3, 7'h00), 32'd16);
+
+    pio_rx_grant[2] = 1'b1;
+    pio_rx_admit    = 1'b1;
+    pio_tx_ready    = 1'b1;
+    pio_rx_valid    = 1'b1;
+    pio_rx_data     = 32'd1;
+    dma_write(channel_address(3, 7'h04), 32'h0000_0061);
+    dma_write(channel_address(3, 7'h08), 32'h3000_0000);
+    dma_write(channel_address(3, 7'h10), 32'd16);
+    dma_write(channel_address(3, 7'h14), 32'd14);
+    dma_write(channel_address(3, 7'h18), 32'd1);
+    dma_write(channel_address(2, 7'h04), 32'h0000_00a2);
+    dma_write(channel_address(2, 7'h08), 32'h3000_2000);
+    dma_write(channel_address(2, 7'h0c), 32'h3000_1000);
+    dma_write(channel_address(2, 7'h10), 32'd16);
+    dma_write(channel_address(2, 7'h14), 32'd15);
+    dma_write(channel_address(2, 7'h18), 32'd1);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    dma_write(channel_address(2, 7'h00), 32'd1);
+    repeat (2) @(negedge clk_i);
+    if (!pio_tx_job || !pio_rx_job) $fatal(1, "PIO direct jobs were not reserved");
+    wait_dma_done(3);
+    wait_dma_done(2);
+    if (pio_tx_job || pio_rx_job) $fatal(1, "PIO direct jobs did not release after drain");
+    if (pio_tx_count != 4 || pio_rx_count != 4)
+      $fatal(1, "PIO direct counts tx=%0d rx=%0d", pio_tx_count, pio_rx_count);
+    for (integer index = 0; index < 4; index++) begin
+      if (pio_tx_words[index] != index + 1)
+        $fatal(1, "PIO TX word mismatch index=%0d value=%h", index, pio_tx_words[index]);
+      if (memory[1024+index] != index + 1)
+        $fatal(1, "PIO RX word mismatch index=%0d value=%h", index, memory[1024+index]);
+    end
+    pio_rx_valid = 1'b0;
+
+    memory[128]  = 32'h3000_0240;
+    memory[129]  = 32'h3000_0040;
+    memory[130]  = 32'h3000_1100;
+    memory[131]  = 32'd8;
+    memory[132]  = 0;
+    memory[133]  = 0;
+    memory[134]  = 0;
+    memory[135]  = 32'h0010_0007;
+    memory[136]  = 0;
+    memory[137]  = 0;
+    for (integer index = 138; index < 144; index++) memory[index] = 0;
+    memory[144] = 0;
+    memory[145] = 32'h3000_0080;
+    memory[146] = 0;
+    memory[147] = 32'd8;
+    memory[148] = 0;
+    memory[149] = 0;
+    memory[150] = 0;
+    memory[151] = 32'h0010_e103;
+    memory[152] = 0;
+    memory[153] = 0;
+    for (integer index = 154; index < 160; index++) memory[index] = 0;
+    dma_write(channel_address(3, 7'h48), 32'h3000_0200);
+    dma_write(channel_address(3, 7'h4c), 32'd2);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    repeat (2) @(negedge clk_i);
+    if (!pio_tx_job) $fatal(1, "Mixed TCD chain was not reserved");
+    wait_dma_done(3);
+    if (pio_tx_job) $fatal(1, "Mixed TCD chain did not release");
+    if (memory[1088] != 32'h0000_0041 || memory[1089] != 32'h0000_0042)
+      $fatal(1, "Mixed TCD non-PIO payload mismatch %h %h", memory[1088], memory[1089]);
+    if (pio_tx_count != 6 || pio_tx_words[4] != 32'h0000_0081 || pio_tx_words[5] != 32'h0000_0082)
+      $fatal(
+          1,
+          "Mixed TCD PIO payload mismatch count=%0d w4=%h w5=%h",
+          pio_tx_count,
+          pio_tx_words[4],
+          pio_tx_words[5]
+      );
+
+    pio_tx_admit = 1'b0;
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    repeat (4) @(negedge clk_i);
+    dma_read(channel_address(3, 7'h20), value);
+    if (!value[4] || pio_tx_count != 6)
+      $fatal(1, "Closing TCD chain activated status=%h count=%0d", value, pio_tx_count);
+    dma_write(channel_address(3, 7'h00), 32'd16);
+    pio_tx_admit = 1'b1;
+
+    memory[1088] = 0;
+    memory[1089] = 0;
+    dma_write(channel_address(3, 7'h48), 32'h3000_0200);
+    dma_write(channel_address(3, 7'h4c), 32'd2);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    timeout = 0;
+    while (!u_dma.u_dma_core.s_tcd_read_owner_valid_q && timeout < 100) begin
+      @(negedge clk_i);
+      timeout = timeout + 1;
+    end
+    if (!u_dma.u_dma_core.s_tcd_read_owner_valid_q)
+      $fatal(1, "TCD fetch was not accepted before abort");
+    dma_write(channel_address(3, 7'h00), 32'd8);
+    wait_dma_idle(3);
+    dma_read(channel_address(3, 7'h20), value);
+    if (!value[3] || pio_tx_job || pio_tx_count != 6 || memory[1088] != 0 || memory[1089] != 0)
+      $fatal(
+          1,
+          "TCD abort activated stale work status=%h job=%b count=%0d",
+          value,
+          pio_tx_job,
+          pio_tx_count
+      );
+    memory[128] = 0;
+    memory[129] = 32'h3000_0080;
+    memory[130] = 0;
+    memory[131] = 32'd8;
+    memory[132] = 0;
+    memory[133] = 0;
+    memory[134] = 0;
+    memory[135] = 32'h0010_f203;
+    memory[136] = 0;
+    memory[137] = 0;
+    for (integer index = 138; index < 144; index++) memory[index] = 0;
+    pio_rx_valid = 1'b1;
+    dma_write(channel_address(2, 7'h48), 32'h3000_0200);
+    dma_write(channel_address(2, 7'h4c), 32'd1);
+    dma_write(channel_address(2, 7'h00), 32'd1);
+    timeout = 0;
+    value   = 0;
+    while (!value[4] && (timeout < 1000)) begin
+      dma_read(channel_address(2, 7'h20), value);
+      timeout = timeout + 1;
+    end
+    if (!value[4] || pio_rx_count != 4 || memory[1024] != 1)
+      $fatal(1, "Invalid RX TCD memory leg was accepted status=%h", value);
+    dma_write(channel_address(2, 7'h00), 32'd16);
+    pio_rx_valid = 1'b0;
+
+    memory[128]  = 32'h3000_0240;
+    memory[129]  = 32'h3000_0040;
+    memory[130]  = 32'h3000_1100;
+    memory[131]  = 32'd8;
+    memory[132]  = 0;
+    memory[133]  = 0;
+    memory[134]  = 0;
+    memory[135]  = 32'h0010_0007;
+    memory[136]  = 0;
+    memory[137]  = 0;
+    for (integer index = 138; index < 144; index++) memory[index] = 0;
+    dma_write(channel_address(3, 7'h48), 32'h3000_0200);
+    dma_write(channel_address(3, 7'h4c), 32'd2);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    timeout = 0;
+    while ((u_dma.u_dma_core.s_tcd_ptr_q[3] != 32'h3000_0240) && (timeout < 1000)) begin
+      @(negedge clk_i);
+      timeout = timeout + 1;
+    end
+    if (u_dma.u_dma_core.s_tcd_ptr_q[3] != 32'h3000_0240)
+      $fatal(1, "Mixed TCD did not reach second descriptor");
+    dma_write(channel_address(3, 7'h00), 32'd2);
+    timeout = 0;
+    value   = 0;
+    while (!value[1] && (timeout < 1000)) begin
+      dma_read(channel_address(3, 7'h20), value);
+      timeout = timeout + 1;
+    end
+    if (!value[1]) $fatal(1, "Mixed TCD did not suspend");
+    repeat (16) @(negedge clk_i);
+    if (u_dma.u_dma_core.s_tcd_fetch_valid || (pio_tx_count != 6))
+      $fatal(1, "Suspended TCD fetched or activated work");
+    dma_write(channel_address(3, 7'h00), 32'd4);
+    wait_dma_done(3);
+    if (pio_tx_count != 8)
+      $fatal(1, "Mixed TCD did not resume to exact completion count=%0d", pio_tx_count);
+
+    dma_write(channel_address(3, 7'h48), 32'h3000_0200);
+    dma_write(channel_address(3, 7'h4c), 32'd2);
+    dma_write(channel_address(3, 7'h00), 32'd1);
+    timeout = 0;
+    while (!u_dma.u_dma_core.s_tcd_parse_q && (timeout < 1000)) begin
+      @(negedge clk_i);
+      timeout = timeout + 1;
+    end
+    if (!u_dma.u_dma_core.s_tcd_parse_q) $fatal(1, "TCD parse boundary was not reached");
+    force u_dma.s_abort[3] = 1'b1;
+    @(negedge clk_i);
+    release u_dma.s_abort[3];
+    wait_dma_idle(3);
+    dma_read(channel_address(3, 7'h20), value);
+    if (!value[3] || pio_tx_job || pio_tx_count != 8 || u_dma.u_dma_core.s_tcd_loaded_q[3])
+      $fatal(1, "Parse-cycle abort activated a descriptor status=%h", value);
+    $display(
+        "SIM_TEST_PASS PIOLITE_DMA_ADMIT_PASS direct_duplex=1 mixed_tcd=1 close_reject=1 abort_fetch=1");
+    $finish;
+  end
+`endif
 
   initial begin
     #5000000;

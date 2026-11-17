@@ -154,23 +154,61 @@ tiny_peripheral_control u_rcu (
       .lifecycle_idle_o       (dvp_idle),
       .lifecycle_reset_ready_o(dvp_ready)
   );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) piolite_tx_axis (
+      .aclk   (clk),
+      .aresetn(rst_n)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) piolite_rx_axis (
+      .aclk   (clk),
+      .aresetn(rst_n)
+  );
+  assign piolite_tx_axis.tready = 1'b0;
+  assign piolite_rx_axis.tvalid = 1'b0;
+  assign piolite_rx_axis.tdata  = '0;
+  assign piolite_rx_axis.tkeep  = '0;
+  assign piolite_rx_axis.tstrb  = '0;
+  assign piolite_rx_axis.tlast  = 1'b0;
+  assign piolite_rx_axis.tid    = '0;
+  assign piolite_rx_axis.tdest  = '0;
+  assign piolite_rx_axis.tuser  = '0;
+
   apb4_dma #(
       `include "tiny_p9_dma_parameters.svh"
   ) u_dma (
-      .clk_i            (clk),
-      .rst_n_i          (rst_n),
-      .apb4             (dma_apb),
-      .axi4             (bus),
-      .hw_trg           (requests),
-      .i2s_tx_axis      (i2s_tx),
-      .i2s_rx_axis      (i2s_rx),
-      .dvp_rx_axis      (dma_axis),
-      .crypto_in_axis   (crypto_tx),
-      .crypto_out_axis  (crypto_rx),
-      .spi_admit_ready_i(2'b11),
-      .lifecycle_idle_o (dma_idle),
-      .irq_o            (dma_irq),
-      .dma_xfer_done_o  (dma_done)
+      .clk_i                (clk),
+      .rst_n_i              (rst_n),
+      .ppalite_route_i      (1'b0),
+      .apb4                 (dma_apb),
+      .axi4                 (bus),
+      .hw_trg               (requests),
+      .i2s_tx_axis          (i2s_tx),
+      .i2s_rx_axis          (i2s_rx),
+      .dvp_rx_axis          (dma_axis),
+      .crypto_in_axis       (crypto_tx),
+      .crypto_out_axis      (crypto_rx),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_grant_i   ('0),
+      .piolite_rx_grant_i   ('0),
+      .piolite_tx_admit_i   (1'b0),
+      .piolite_rx_admit_i   (1'b0),
+      .piolite_tx_job_o     (),
+      .piolite_rx_job_o     (),
+      .piolite_channel_job_o(),
+      .spi_admit_ready_i    (2'b11),
+      .tcd_idle_o           (),
+      .dvp_start_pending_o  (),
+      .dvp_busy_o           (),
+      .dvp_done_o           (),
+      .dvp_bytes_done_o     (),
+      .dvp_error_status_o   (),
+      .lifecycle_idle_o     (dma_idle),
+      .irq_o                (dma_irq),
+      .dma_xfer_done_o      (dma_done)
   );
 
 `ifdef TINY_P9_XPI

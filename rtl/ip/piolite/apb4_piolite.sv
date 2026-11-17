@@ -11,6 +11,7 @@ module apb4_piolite (
     output logic         [31:0] gpio_oe_o,
     input  logic                dma_tx_job_i,
     input  logic                dma_rx_job_i,
+    input  logic         [ 7:0] dma_channel_job_i,
     input  logic                dma_tx_valid_i,
     output logic                dma_tx_ready_o,
     input  logic         [31:0] dma_tx_data_i,
@@ -31,6 +32,8 @@ module apb4_piolite (
     output logic                dma_rx_user_o,
     output logic                dma_tx_admit_o,
     output logic                dma_rx_admit_o,
+    output logic         [ 7:0] dma_tx_channel_grant_o,
+    output logic         [ 7:0] dma_rx_channel_grant_o,
     output logic                irq_o,
     output logic                lifecycle_idle_o,
 `ifdef PIOLITE_FORMAL_TOP
@@ -70,6 +73,12 @@ module apb4_piolite (
     end
     dma_tx_admit_o = u_ctrl.tx_bind[31] && !s_tx_closing && !s_guard_fault[u_ctrl.tx_bind[0]];
     dma_rx_admit_o = u_ctrl.rx_bind[31] && !s_rx_closing && !s_guard_fault[u_ctrl.rx_bind[0]];
+    dma_tx_channel_grant_o = 8'd0;
+    dma_rx_channel_grant_o = 8'd0;
+    if (u_ctrl.tx_bind[31] && (u_ctrl.tx_bind[11:8] < 4'd8))
+      dma_tx_channel_grant_o[u_ctrl.tx_bind[10:8]] = 1'b1;
+    if (u_ctrl.rx_bind[31] && (u_ctrl.rx_bind[11:8] < 4'd8))
+      dma_rx_channel_grant_o[u_ctrl.rx_bind[10:8]] = 1'b1;
   end
   assign lifecycle_idle_o = !(|s_session_live) && !s_tx_held && !s_rx_held &&
       !s_tx_closing && !s_rx_closing;
@@ -163,6 +172,8 @@ module apb4_piolite (
       .user_select_i(user_select_i),
       .tx_job_i     (dma_tx_job_i),
       .rx_job_i     (dma_rx_job_i),
+      .channel_job_i(dma_channel_job_i),
+      .rx_prefetch_i(s_dma_rx_pop),
       .tx_held_i    (s_tx_held),
       .rx_held_i    (s_rx_held),
       .tx_closing_i (s_tx_closing),

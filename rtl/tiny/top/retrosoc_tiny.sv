@@ -154,15 +154,8 @@ module retrosoc_tiny (
   logic [31:0] s_gpio_user_select, s_gpio_user_handoff, s_gpio_alt_enable;
   logic [31:0] s_gpio_alt_select, s_gpio_output_enable, s_gpio_open_drain;
   logic s_piolite_irq, s_piolite_lifecycle_idle;
-  /* verilator lint_off UNUSEDSIGNAL */
-  logic        s_piolite_dma_tx_ready;
-  logic        s_piolite_dma_rx_valid;
-  logic [31:0] s_piolite_dma_rx_data;
-  logic [3:0] s_piolite_dma_rx_keep, s_piolite_dma_rx_strb;
-  logic s_piolite_dma_rx_last, s_piolite_dma_rx_id, s_piolite_dma_rx_dest;
-  logic       s_piolite_dma_rx_user;
-  logic [1:0] s_piolite_dma_admit;
-  /* verilator lint_on UNUSEDSIGNAL */
+  logic [1:0] s_piolite_dma_admit, s_piolite_dma_job;
+  logic [7:0] s_piolite_dma_tx_grant, s_piolite_dma_rx_grant, s_piolite_dma_channel_job;
   logic [1:0] s_spi_credit_valid, s_spi_credit_retire, s_spi_dma_start_pending;
   logic [1:0] s_spi_admit_ready;
   logic [3:0] s_spi_dma_status;
@@ -304,6 +297,18 @@ apb4_if u_dvp_source_apb4_if (
   axi4_stream_if #(
       .DATA_WIDTH(32)
   ) u_crypto_rx_axis_if (
+      .aclk   (s_dma_clk),
+      .aresetn(s_dma_rst_n)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_piolite_tx_axis_if (
+      .aclk   (s_dma_clk),
+      .aresetn(s_dma_rst_n)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32)
+  ) u_piolite_rx_axis_if (
       .aclk   (s_dma_clk),
       .aresetn(s_dma_rst_n)
   );
@@ -1065,41 +1070,44 @@ axi4_error_slave #(
       .outer(gpio)
   );
   apb4_piolite u_piolite (
-      .clk_i           (s_piolite_clk),
-      .rst_n_i         (s_piolite_rst_n),
-      .clock_hz_i      (s_pclk_report_q),
-      .user_select_i   (s_gpio_user_select),
-      .user_status_i   (s_gpio_user_select & ~s_gpio_user_handoff),
-      .filter_enable_i (u_user_gpio_if.filter_enable_i),
-      .gpio_ready_i    (s_gpio_rst_n && !s_actual_gate[1]),
-      .gpio_input_i    (u_user_gpio_if.di_i),
-      .gpio_value_o    (u_user_gpio_if.do_o),
-      .gpio_oe_o       (u_user_gpio_if.oe_o),
-      .dma_tx_job_i    (1'b0),
-      .dma_rx_job_i    (1'b0),
-      .dma_tx_valid_i  (1'b0),
-      .dma_tx_ready_o  (s_piolite_dma_tx_ready),
-      .dma_tx_data_i   (32'd0),
-      .dma_tx_keep_i   (4'd0),
-      .dma_tx_strb_i   (4'd0),
-      .dma_tx_id_i     (1'b0),
-      .dma_tx_dest_i   (1'b0),
-      .dma_tx_user_i   (1'b0),
-      .dma_tx_last_i   (1'b0),
-      .dma_rx_valid_o  (s_piolite_dma_rx_valid),
-      .dma_rx_ready_i  (1'b0),
-      .dma_rx_data_o   (s_piolite_dma_rx_data),
-      .dma_rx_keep_o   (s_piolite_dma_rx_keep),
-      .dma_rx_strb_o   (s_piolite_dma_rx_strb),
-      .dma_rx_last_o   (s_piolite_dma_rx_last),
-      .dma_rx_id_o     (s_piolite_dma_rx_id),
-      .dma_rx_dest_o   (s_piolite_dma_rx_dest),
-      .dma_rx_user_o   (s_piolite_dma_rx_user),
-      .dma_tx_admit_o  (s_piolite_dma_admit[0]),
-      .dma_rx_admit_o  (s_piolite_dma_admit[1]),
-      .irq_o           (s_piolite_irq),
-      .lifecycle_idle_o(s_piolite_lifecycle_idle),
-      .apb4            (u_piolite_apb4_if)
+      .clk_i                 (s_piolite_clk),
+      .rst_n_i               (s_piolite_rst_n),
+      .clock_hz_i            (s_pclk_report_q),
+      .user_select_i         (s_gpio_user_select),
+      .user_status_i         (s_gpio_user_select & ~s_gpio_user_handoff),
+      .filter_enable_i       (u_user_gpio_if.filter_enable_i),
+      .gpio_ready_i          (s_gpio_rst_n && !s_actual_gate[1]),
+      .gpio_input_i          (u_user_gpio_if.di_i),
+      .gpio_value_o          (u_user_gpio_if.do_o),
+      .gpio_oe_o             (u_user_gpio_if.oe_o),
+      .dma_tx_job_i          (s_piolite_dma_job[0]),
+      .dma_rx_job_i          (s_piolite_dma_job[1]),
+      .dma_channel_job_i     (s_piolite_dma_channel_job),
+      .dma_tx_valid_i        (u_piolite_tx_axis_if.tvalid),
+      .dma_tx_ready_o        (u_piolite_tx_axis_if.tready),
+      .dma_tx_data_i         (u_piolite_tx_axis_if.tdata),
+      .dma_tx_keep_i         (u_piolite_tx_axis_if.tkeep),
+      .dma_tx_strb_i         (u_piolite_tx_axis_if.tstrb),
+      .dma_tx_id_i           (u_piolite_tx_axis_if.tid),
+      .dma_tx_dest_i         (u_piolite_tx_axis_if.tdest),
+      .dma_tx_user_i         (u_piolite_tx_axis_if.tuser),
+      .dma_tx_last_i         (u_piolite_tx_axis_if.tlast),
+      .dma_rx_valid_o        (u_piolite_rx_axis_if.tvalid),
+      .dma_rx_ready_i        (u_piolite_rx_axis_if.tready),
+      .dma_rx_data_o         (u_piolite_rx_axis_if.tdata),
+      .dma_rx_keep_o         (u_piolite_rx_axis_if.tkeep),
+      .dma_rx_strb_o         (u_piolite_rx_axis_if.tstrb),
+      .dma_rx_last_o         (u_piolite_rx_axis_if.tlast),
+      .dma_rx_id_o           (u_piolite_rx_axis_if.tid),
+      .dma_rx_dest_o         (u_piolite_rx_axis_if.tdest),
+      .dma_rx_user_o         (u_piolite_rx_axis_if.tuser),
+      .dma_tx_admit_o        (s_piolite_dma_admit[0]),
+      .dma_rx_admit_o        (s_piolite_dma_admit[1]),
+      .dma_tx_channel_grant_o(s_piolite_dma_tx_grant),
+      .dma_rx_channel_grant_o(s_piolite_dma_rx_grant),
+      .irq_o                 (s_piolite_irq),
+      .lifecycle_idle_o      (s_piolite_lifecycle_idle),
+      .apb4                  (u_piolite_apb4_if)
   );
   assign uart0_tx_o              = u_uart0_if.tx_o;
   // Legacy ASIC observation pads are retained, not a Gen1 package binding.
@@ -1376,42 +1384,52 @@ cdc_sync #(
       .NumChannels          (8),
       .MaxBurstBeats        (16),
       .FifoDepth            (32),
-      .RequestMask          (32'h0003_39ff),
-      .SupportedRequests    (32'h0003_39ff),
+      .RequestMask          (32'h0003_f9ff),
+      .SupportedRequests    (32'h0003_f9ff),
       .IpVersion            (32'h0002_0002),
       .EnableStreams        (1'b1),
       .EnableSpi            (1'b1),
+      .EnablePiolite        (1'b1),
       .EnableOriginQualifier(1'b1),
       .EnablePpaliteGuard   (1'b1),
       .SpiTxAddress         (32'h1001_d054),
       .SpiRxAddress         (32'h1001_d058)
   ) u_dma (
-      .lifecycle_idle_o   (s_dma_lifecycle_idle),
-      .clk_i              (s_dma_clk),
-      .rst_n_i            (s_dma_rst_n),
-      .ppalite_route_i    (s_ppa_route),
-      .dma_xfer_done_o    (s_dma_done),
-      .irq_o              (s_dma_irq),
-      .hw_trg             (u_dma_req_if),
-      .apb4               (u_dma_guarded_apb4_if),
-      .axi4               (u_dma_pclk_axi4_if),
-      .i2s_tx_axis        (u_i2s_tx_axis_if),
-      .i2s_rx_axis        (u_i2s_rx_axis_if),
-      .dvp_rx_axis        (u_ppalite_rx_axis_if),
-      .crypto_in_axis     (u_crypto_tx_axis_if),
-      .crypto_out_axis    (u_crypto_rx_axis_if),
-      .spi_admit_ready_i  (s_spi_admit_ready),
-      .spi_credit_valid_o (s_spi_credit_valid),
-      .spi_credit_retire_o(s_spi_credit_retire),
-      .spi_start_pending_o(s_spi_dma_start_pending),
-      .spi_status_o       (s_spi_dma_status),
-      .spi_error_o        (s_spi_dma_error),
-      .tcd_idle_o         (s_dma_tcd_idle),
-      .dvp_start_pending_o(s_dvp_dma_start_pending),
-      .dvp_busy_o         (s_dvp_dma_busy),
-      .dvp_done_o         (s_dvp_dma_done),
-      .dvp_bytes_done_o   (s_dvp_dma_bytes_done),
-      .dvp_error_status_o (s_dvp_dma_err_stat)
+      .lifecycle_idle_o     (s_dma_lifecycle_idle),
+      .clk_i                (s_dma_clk),
+      .rst_n_i              (s_dma_rst_n),
+      .ppalite_route_i      (s_ppa_route),
+      .dma_xfer_done_o      (s_dma_done),
+      .irq_o                (s_dma_irq),
+      .hw_trg               (u_dma_req_if),
+      .apb4                 (u_dma_guarded_apb4_if),
+      .axi4                 (u_dma_pclk_axi4_if),
+      .i2s_tx_axis          (u_i2s_tx_axis_if),
+      .i2s_rx_axis          (u_i2s_rx_axis_if),
+      .dvp_rx_axis          (u_ppalite_rx_axis_if),
+      .crypto_in_axis       (u_crypto_tx_axis_if),
+      .crypto_out_axis      (u_crypto_rx_axis_if),
+      .piolite_tx_axis      (u_piolite_tx_axis_if),
+      .piolite_rx_axis      (u_piolite_rx_axis_if),
+      .piolite_tx_grant_i   (s_piolite_dma_tx_grant),
+      .piolite_rx_grant_i   (s_piolite_dma_rx_grant),
+      .piolite_tx_admit_i   (s_piolite_dma_admit[0]),
+      .piolite_rx_admit_i   (s_piolite_dma_admit[1]),
+      .piolite_tx_job_o     (s_piolite_dma_job[0]),
+      .piolite_rx_job_o     (s_piolite_dma_job[1]),
+      .piolite_channel_job_o(s_piolite_dma_channel_job),
+      .spi_admit_ready_i    (s_spi_admit_ready),
+      .spi_credit_valid_o   (s_spi_credit_valid),
+      .spi_credit_retire_o  (s_spi_credit_retire),
+      .spi_start_pending_o  (s_spi_dma_start_pending),
+      .spi_status_o         (s_spi_dma_status),
+      .spi_error_o          (s_spi_dma_error),
+      .tcd_idle_o           (s_dma_tcd_idle),
+      .dvp_start_pending_o  (s_dvp_dma_start_pending),
+      .dvp_busy_o           (s_dvp_dma_busy),
+      .dvp_done_o           (s_dvp_dma_done),
+      .dvp_bytes_done_o     (s_dvp_dma_bytes_done),
+      .dvp_error_status_o   (s_dvp_dma_err_stat)
   );
   assign u_dma_req_if.i2s_tx_proc     = !s_i2s_tx_stall;
   assign u_dma_req_if.i2s_rx_proc     = !s_i2s_rx_stall;

@@ -7,6 +7,8 @@ module piolite_reg (
     input  logic                [31:0] user_select_i,
     input  logic                       tx_job_i,
     input  logic                       rx_job_i,
+    input  logic                [ 7:0] channel_job_i,
+    input  logic                       rx_prefetch_i,
     input  logic                       tx_held_i,
     input  logic                       rx_held_i,
     input  logic                       tx_closing_i,
@@ -153,7 +155,7 @@ module piolite_reg (
       end
     end
     if (s_tx_bind_q[31] || s_rx_bind_q[31] || tx_job_i || rx_job_i || tx_held_i ||
-        rx_held_i || tx_closing_i || rx_closing_i || (user_select_i != 32'd0))
+        rx_held_i || rx_prefetch_i || tx_closing_i || rx_closing_i || (user_select_i != 32'd0))
       s_block_reset_ok = 1'b0;
     if ((apb4.pwdata[1:0] != 2'd0) && ((s_cfg_q[0].output_mask & s_cfg_q[1].output_mask) != 32'd0))
       s_start_ok = 1'b0;
@@ -388,7 +390,8 @@ module piolite_reg (
               s_access_err = 1'b1;
             if (apb4.pwdata[index] &&
                 ((s_tx_bind_q[31] && (s_tx_bind_q[0] == index[0]) && tx_job_i) ||
-                 (s_rx_bind_q[31] && (s_rx_bind_q[0] == index[0]) && rx_job_i)))
+                 (s_rx_bind_q[31] && (s_rx_bind_q[0] == index[0]) &&
+                  (rx_job_i || rx_prefetch_i))))
               s_access_err = 1'b1;
           end
         end
@@ -516,9 +519,12 @@ module piolite_reg (
             if ((apb4.pwdata & 32'h7fff_f8fc) != 32'd0 || (apb4.pwdata[1:0] > 2'd1))
               s_access_err = 1'b1;
             if (ctrl.runtime[apb4.pwdata[0]].state != piolite_pkg::Disabled) s_bind_ok = 1'b0;
+            if (rx_prefetch_i) s_bind_ok = 1'b0;
+            if (apb4.pwdata[31] && channel_job_i[apb4.pwdata[10:8]]) s_bind_ok = 1'b0;
             if (s_offset == `APB4_PIOLITE__TX_BIND) begin
               if ((ctrl.runtime[s_tx_bind_q[0]].state != piolite_pkg::Disabled) ||
-                  tx_job_i || tx_held_i || tx_closing_i)
+                  tx_job_i || tx_held_i || tx_closing_i ||
+                  (s_tx_bind_q[31] && channel_job_i[s_tx_bind_q[10:8]]))
                 s_bind_ok = 1'b0;
               s_tx_bind_d = apb4.pwdata;
               if (apb4.pwdata[31] && !ctrl.start_guard_ok[apb4.pwdata[0]]) s_bind_ok = 1'b0;
@@ -526,7 +532,8 @@ module piolite_reg (
                 s_bind_ok = 1'b0;
             end else begin
               if ((ctrl.runtime[s_rx_bind_q[0]].state != piolite_pkg::Disabled) ||
-                  rx_job_i || rx_held_i || rx_closing_i)
+                  rx_job_i || rx_held_i || rx_closing_i ||
+                  (s_rx_bind_q[31] && channel_job_i[s_rx_bind_q[10:8]]))
                 s_bind_ok = 1'b0;
               s_rx_bind_d = apb4.pwdata;
               if (apb4.pwdata[31] && !ctrl.start_guard_ok[apb4.pwdata[0]]) s_bind_ok = 1'b0;

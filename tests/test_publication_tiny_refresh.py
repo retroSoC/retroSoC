@@ -46,7 +46,7 @@ def fact_tree(tmp_path):
     (".NumChannels          (8)", ".NumChannels          (4)"),
     (".EnableStreams        (1'b1)", ".EnableStreams        (1'b0)"),
     (".EnableOriginQualifier(1'b1)", ".EnableOriginQualifier(1'b0)"),
-    (".SupportedRequests    (32'h0003_39ff)", ".SupportedRequests    (32'h0000_3fff)"),
+    (".SupportedRequests    (32'h0003_f9ff)", ".SupportedRequests    (32'h0000_3fff)"),
 ])
 def test_dma_integration_drift_cannot_reuse_publication(fact_tree, before, after):
     path = fact_tree / tiny.TOP
@@ -78,7 +78,7 @@ def test_ppalite_integration_cannot_fall_back_to_standalone_capability(fact_tree
 def test_ppalite_uses_camera_transport_without_another_master(data):
     assert data["facts"]["ppalite"] == {"ExternalRoute": 1, "CapabilityValue": 0x3FF}
     assert data["facts"]["dma"]["EnablePpaliteGuard"] == 1
-    assert data["facts"]["dma"]["RequestMask"] == 0x339FF
+    assert data["facts"]["dma"]["RequestMask"] == 0x3F9FF
     assert data["facts"]["dma"]["NumChannels"] == 8
     pp = {r["name"]: r for r in data["registers"]["ppalite"]["registers"]}
     assert len(pp) == 40 and tiny.registers.number(pp["DMA_BINDING"]["reset"]) == 0x10B02

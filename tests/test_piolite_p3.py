@@ -3,9 +3,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
+import sys
+
+import pytest
 
 from scripts.check_clock_reset_domains import validate as validate_clocks
 from scripts.generate_tiny import generate_bindings, read_topology
+from test_tiny_r2_p7 import COMMON, run_rtl
 
 ROOT = Path(__file__).resolve().parents[1]
 TINY = ROOT / "rtl/tiny"
@@ -40,6 +45,9 @@ def test_tiny_piolite_topology_and_capability(tmp_path: Path) -> None:
     assert "RS_SOC_EXT_IRQ_PIOLITE UINT32_C(22)" in irq
     features = (tmp_path / "include/retrosoc/generated/soc_features.h").read_text()
     assert "RS_SOC_HAS_PIOLITE 1U" in features
+    assert "RS_SOC_PIOLITE_DMA_TX 14U" in features
+    assert "RS_SOC_PIOLITE_DMA_RX 15U" in features
+    assert "RS_SOC_DMA_REQUEST_MASK 0x3f9ffU" in features
 
 
 def test_piolite_clock_reset_inventory() -> None:
@@ -53,9 +61,9 @@ def test_piolite_clock_reset_inventory() -> None:
 def test_piolite_product_wiring_and_filelists() -> None:
     top = (TINY / "top/retrosoc_tiny.sv").read_text()
     assert "apb4_piolite u_piolite" in top
-    assert ".filter_enable_i (u_user_gpio_if.filter_enable_i)" in top
-    assert ".gpio_value_o    (u_user_gpio_if.do_o)" in top
-    assert ".gpio_oe_o       (u_user_gpio_if.oe_o)" in top
+    assert ".filter_enable_i       (u_user_gpio_if.filter_enable_i)" in top
+    assert ".gpio_value_o          (u_user_gpio_if.do_o)" in top
+    assert ".gpio_oe_o             (u_user_gpio_if.oe_o)" in top
     assert "s_periph_idle[15] = s_piolite_lifecycle_idle && !(|s_gpio_user_select)" in top
     assert "assign u_user_gpio_if.do_o" not in top
     assert "assign u_user_gpio_if.oe_o" not in top
@@ -72,3 +80,52 @@ def test_piolite_product_wiring_and_filelists() -> None:
     positions = [sources.index(f"/ip/piolite/{name}.sv") for name in expected]
     assert positions == sorted(positions)
     assert "+incdir+/ip/piolite" in (TINY / "filelist/inc.fl").read_text().splitlines()
+
+
+@pytest.mark.parametrize("simulator", ["verilator", "iverilog"])
+def test_piolite_dma_admission_and_recovery(tmp_path: Path, simulator: str) -> None:
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/rtl/generate_memory_map.py"),
+            "--map", str(ROOT / "rtl/mini/address_map/memory_map.json"),
+            "--output-dir", str(tmp_path / "map"), "--have-sram-if", "NO",
+        ],
+        check=True, capture_output=True, text=True,
+    )
+    log = run_rtl(
+        tmp_path,
+        simulator,
+        "spi_dma_admit_tb",
+        [
+            COMMON / "utils/fifo.sv",
+            COMMON / "stream/round_robin_arbiter.sv",
+            COMMON / "interface/axi4_stream_if.sv",
+            ROOT / "rtl/tiny/top/tiny_axi42apb4.sv",
+            ROOT / "rtl/ip/peripheral/dma_req_if.sv",
+            ROOT / "rtl/ip/peripheral/dma_axi4_master.sv",
+            ROOT / "rtl/ip/peripheral/dma_reg.sv",
+            ROOT / "rtl/ip/peripheral/dma_core.sv",
+            ROOT / "rtl/ip/peripheral/apb4_dma.sv",
+            ROOT / "rtl/ip/serial/spi_ctrl_if.sv",
+            ROOT / "rtl/ip/serial/spi_reg.sv",
+            ROOT / "rtl/ip/serial/spi_phase_ctrl.sv",
+            ROOT / "rtl/ip/serial/spi_word_packer.sv",
+            ROOT / "rtl/ip/serial/spi_gpio_guard.sv",
+            ROOT / "rtl/ip/serial/spi_dma_pacing.sv",
+            ROOT / "rtl/ip/serial/spi_master_core.sv",
+            ROOT / "rtl/ip/serial/apb4_spi.sv",
+        ],
+        defines=[
+            "-DPIOLITE_P3",
+            f"-I{ROOT / 'rtl/ip/peripheral'}",
+            f"-I{ROOT / 'rtl/ip/serial'}",
+            f"-I{tmp_path / 'map/rtl'}",
+        ],
+        packages=[
+            ROOT / "rtl/ip/peripheral/dma_pkg.sv",
+            ROOT / "rtl/ip/serial/spi_pkg.sv",
+        ],
+    )
+    assert "SIM_TEST_PASS PIOLITE_DMA_ADMIT_PASS" in log
+    assert "SIM_TEST_FAIL" not in log and "SIM_TEST_TIMEOUT" not in log

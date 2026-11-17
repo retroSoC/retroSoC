@@ -11,6 +11,7 @@ logic   [  31:0] gpio_value_o;
 logic   [  31:0] gpio_oe_o;
 logic            dma_tx_job_i = 1'b0;
 logic            dma_rx_job_i = 1'b0;
+logic   [   7:0] channel_job_i = '0;
 logic            dma_tx_ready_o;
 logic            dma_rx_valid_o;
 logic   [  31:0] dma_rx_data_o;
@@ -22,6 +23,8 @@ logic            dma_rx_dest_o;
 logic            dma_rx_user_o;
 logic            dma_tx_admit_o;
 logic            dma_rx_admit_o;
+logic   [   7:0] dma_tx_channel_grant_o;
+logic   [   7:0] dma_rx_channel_grant_o;
 logic            irq_o;
 logic            lifecycle_idle_o;
 logic            dma_tx_valid;
@@ -54,53 +57,56 @@ apb4_if u_apb (
 `define PIOLITE_DUT apb4_piolite
 `endif
 `PIOLITE_DUT u_dut (
-    .clk_i           (clk_i),
-    .rst_n_i         (rst_n_i),
-    .clock_hz_i      (clock_hz_i),
-    .user_select_i   (user_select_i),
-    .user_status_i   (user_status_i),
-    .filter_enable_i (filter_enable_i),
-    .gpio_ready_i    (gpio_ready_i),
-    .gpio_input_i    (gpio_input_i),
-    .gpio_value_o    (gpio_value_o),
-    .gpio_oe_o       (gpio_oe_o),
-    .dma_tx_job_i    (dma_tx_job_i),
-    .dma_rx_job_i    (dma_rx_job_i),
-    .dma_tx_valid_i  (dma_tx_valid),
-    .dma_tx_ready_o  (dma_tx_ready_o),
-    .dma_tx_data_i   (dma_tx_data),
-    .dma_tx_keep_i   (dma_tx_keep),
-    .dma_tx_strb_i   (dma_tx_strb),
-    .dma_tx_id_i     (dma_tx_id),
-    .dma_tx_dest_i   (dma_tx_dest),
-    .dma_tx_user_i   (dma_tx_user),
-    .dma_tx_last_i   (dma_tx_last),
-    .dma_rx_valid_o  (dma_rx_valid_o),
-    .dma_rx_ready_i  (dma_rx_ready),
-    .dma_rx_data_o   (dma_rx_data_o),
-    .dma_rx_keep_o   (dma_rx_keep_o),
-    .dma_rx_strb_o   (dma_rx_strb_o),
-    .dma_rx_last_o   (dma_rx_last_o),
-    .dma_rx_id_o     (dma_rx_id_o),
-    .dma_rx_dest_o   (dma_rx_dest_o),
-    .dma_rx_user_o   (dma_rx_user_o),
-    .dma_tx_admit_o  (dma_tx_admit_o),
-    .dma_rx_admit_o  (dma_rx_admit_o),
-    .irq_o           (irq_o),
-    .lifecycle_idle_o(lifecycle_idle_o),
+    .clk_i                 (clk_i),
+    .rst_n_i               (rst_n_i),
+    .clock_hz_i            (clock_hz_i),
+    .user_select_i         (user_select_i),
+    .user_status_i         (user_status_i),
+    .filter_enable_i       (filter_enable_i),
+    .gpio_ready_i          (gpio_ready_i),
+    .gpio_input_i          (gpio_input_i),
+    .gpio_value_o          (gpio_value_o),
+    .gpio_oe_o             (gpio_oe_o),
+    .dma_tx_job_i          (dma_tx_job_i),
+    .dma_rx_job_i          (dma_rx_job_i),
+    .dma_channel_job_i     (channel_job_i),
+    .dma_tx_valid_i        (dma_tx_valid),
+    .dma_tx_ready_o        (dma_tx_ready_o),
+    .dma_tx_data_i         (dma_tx_data),
+    .dma_tx_keep_i         (dma_tx_keep),
+    .dma_tx_strb_i         (dma_tx_strb),
+    .dma_tx_id_i           (dma_tx_id),
+    .dma_tx_dest_i         (dma_tx_dest),
+    .dma_tx_user_i         (dma_tx_user),
+    .dma_tx_last_i         (dma_tx_last),
+    .dma_rx_valid_o        (dma_rx_valid_o),
+    .dma_rx_ready_i        (dma_rx_ready),
+    .dma_rx_data_o         (dma_rx_data_o),
+    .dma_rx_keep_o         (dma_rx_keep_o),
+    .dma_rx_strb_o         (dma_rx_strb_o),
+    .dma_rx_last_o         (dma_rx_last_o),
+    .dma_rx_id_o           (dma_rx_id_o),
+    .dma_rx_dest_o         (dma_rx_dest_o),
+    .dma_rx_user_o         (dma_rx_user_o),
+    .dma_tx_admit_o        (dma_tx_admit_o),
+    .dma_rx_admit_o        (dma_rx_admit_o),
+    .dma_tx_channel_grant_o(dma_tx_channel_grant_o),
+    .dma_rx_channel_grant_o(dma_rx_channel_grant_o),
+    .irq_o                 (irq_o),
+    .lifecycle_idle_o      (lifecycle_idle_o),
 `ifdef PIOLITE_SCALAR_APB
-    .paddr_i         (u_apb.paddr),
-    .pprot_i         (u_apb.pprot),
-    .psel_i          (u_apb.psel),
-    .penable_i       (u_apb.penable),
-    .pwrite_i        (u_apb.pwrite),
-    .pwdata_i        (u_apb.pwdata),
-    .pstrb_i         (u_apb.pstrb),
-    .pready_o        (u_apb.pready),
-    .prdata_o        (u_apb.prdata),
-    .pslverr_o       (u_apb.pslverr)
+    .paddr_i               (u_apb.paddr),
+    .pprot_i               (u_apb.pprot),
+    .psel_i                (u_apb.psel),
+    .penable_i             (u_apb.penable),
+    .pwrite_i              (u_apb.pwrite),
+    .pwdata_i              (u_apb.pwdata),
+    .pstrb_i               (u_apb.pstrb),
+    .pready_o              (u_apb.pready),
+    .prdata_o              (u_apb.prdata),
+    .pslverr_o             (u_apb.pslverr)
 `else
-    .apb4            (u_apb)
+    .apb4                  (u_apb)
 `endif
 );
 
@@ -892,6 +898,37 @@ task automatic lifecycle_rx_valid;
   check_reg(12'h030, 32'd0);
 endtask
 
+task automatic lifecycle_binding_races;
+  reset_dut();
+  channel_job_i = 8'h08;
+  wr(12'h02c, 32'h8000_0300, 1'b1);
+  check_reg(12'h02c, 32'd0);
+  channel_job_i = 8'd0;
+  wr(12'h02c, 32'h8000_0300, 1'b0);
+  check_reg(12'h02c, 32'h8000_0300);
+  channel_job_i = 8'h08;
+  wr(12'h02c, 32'd0, 1'b1);
+  check_reg(12'h02c, 32'h8000_0300);
+  channel_job_i = 8'd0;
+  wr(12'h02c, 32'd0, 1'b0);
+  check_reg(12'h02c, 32'd0);
+  force u_dut.s_dma_rx_pop = 1'b1;
+  wr(12'h030, 32'h8000_0200, 1'b1);
+  release u_dut.s_dma_rx_pop;
+  check_reg(12'h030, 32'd0);
+  reset_dut();
+  wr(12'h030, 32'h8000_0200, 1'b0);
+  check_reg(12'h030, 32'h8000_0200);
+  force u_dut.s_dma_rx_pop = 1'b1;
+  wr(12'h054, 32'd1, 1'b1);
+  release u_dut.s_dma_rx_pop;
+  check_reg(12'h030, 32'h8000_0200);
+  wr(12'h054, 32'd1, 1'b0);
+  check_reg(12'h030, 32'd0);
+  channel_job_i = 8'd0;
+  $display("PIOLITE_P3_COVER proposed-channel-and-rx-prefetch-races");
+endtask
+
 task automatic lifecycle_paused_dma_snapshot;
   reset_dut();
   wr(12'h100, 32'h00008040, 1'b0);
@@ -971,6 +1008,7 @@ initial begin
       lifecycle_invalid_stream();
       $display("PIOLITE_P2_LIFECYCLE case=rx_valid");
       lifecycle_rx_valid();
+      lifecycle_binding_races();
       lifecycle_paused_dma_snapshot();
       $display("PIOLITE_P2_LIFECYCLE case=tx_discard");
       lifecycle_tx_discard();

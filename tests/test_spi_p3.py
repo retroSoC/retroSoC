@@ -20,7 +20,7 @@ def test_tiny_spi_topology_and_capability() -> None:
     assert {row["core_bit"] for row in topology["interrupts"] if row["name"] == "spi"} == {25}
     assert any(row["name"] == "spi" and row["regions"] == ["APB4_SPI"]
                for row in topology["apb_targets"])
-    assert topology["dma_request_mask"] == "0x339ff"
+    assert topology["dma_request_mask"] == "0x3f9ff"
 
 
 def test_tiny_spi_routes_and_lifecycle() -> None:

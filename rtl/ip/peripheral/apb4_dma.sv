@@ -19,6 +19,7 @@ module apb4_dma #(
     parameter logic [31:0] IpVersion             = 32'h0002_0000,
     parameter bit          EnableStreams         = 1'b1,
     parameter bit          EnableSpi             = 1'b0,
+    parameter bit          EnablePiolite         = 1'b0,
     parameter bit          EnableOriginQualifier = 1'b0,
     parameter bit          EnablePpaliteGuard    = 1'b0,
     parameter logic [31:0] SpiTxAddress          = 32'd0,
@@ -39,6 +40,15 @@ module apb4_dma #(
     axi4_stream_if.sink   dvp_rx_axis,
     axi4_stream_if.source crypto_in_axis,
     axi4_stream_if.sink   crypto_out_axis,
+    axi4_stream_if.source piolite_tx_axis,
+    axi4_stream_if.sink   piolite_rx_axis,
+    input  logic [NumChannels-1:0] piolite_tx_grant_i,
+    input  logic [NumChannels-1:0] piolite_rx_grant_i,
+    input  logic          piolite_tx_admit_i,
+    input  logic          piolite_rx_admit_i,
+    output logic          piolite_tx_job_o,
+    output logic          piolite_rx_job_o,
+    output logic [NumChannels-1:0] piolite_channel_job_o,
     input  logic [1:0]    spi_admit_ready_i,
     output logic [1:0]    spi_credit_valid_o,
     output logic [1:0]    spi_credit_retire_o,
@@ -94,16 +104,15 @@ module apb4_dma #(
   logic [                   31:0] s_supported_req;
   assign s_supported_req = SupportedRequests &
                             (EnableSpi ? 32'h0003_ffff : 32'h0000_3fff) &
-                            (EnableStreams ? 32'h0003_ffff :
-                                             (EnableSpi ? 32'h0003_07f9 : 32'h0000_07f9));
+                            (EnablePiolite ? 32'hffff_ffff : 32'hffff_3fff) &
+                            (EnableStreams ? 32'hffff_ffff : 32'hffff_07f9);
 
   dma_reg #(
-      .NumChannels      (NumChannels),
-      .DataWidth        (DataWidth),
-      .MaxBurstBeats    (MaxBurstBeats),
-      .EnableStreams    (EnableStreams),
-      .IpVersion        (IpVersion),
-      .SupportedRequests(SupportedRequests)
+      .NumChannels  (NumChannels),
+      .DataWidth    (DataWidth),
+      .MaxBurstBeats(MaxBurstBeats),
+      .EnableStreams(EnableStreams),
+      .IpVersion    (IpVersion)
   ) u_dma_reg (
       .clk_i                (clk_i),
       .rst_n_i              (rst_n_i),
@@ -153,6 +162,7 @@ module apb4_dma #(
   dma_core #(
       .RequestMask          (RequestMask),
       .EnableSpi            (EnableSpi),
+      .EnablePiolite        (EnablePiolite),
       .EnableOriginQualifier(EnableOriginQualifier),
       .EnablePpaliteGuard   (EnablePpaliteGuard),
       .SpiTxAddress         (SpiTxAddress),
@@ -213,6 +223,15 @@ module apb4_dma #(
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
       .crypto_out_axis      (crypto_out_axis),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_grant_i   (piolite_tx_grant_i),
+      .piolite_rx_grant_i   (piolite_rx_grant_i),
+      .piolite_tx_admit_i   (piolite_tx_admit_i),
+      .piolite_rx_admit_i   (piolite_rx_admit_i),
+      .piolite_tx_job_o     (piolite_tx_job_o),
+      .piolite_rx_job_o     (piolite_rx_job_o),
+      .piolite_channel_job_o(piolite_channel_job_o),
       .spi_admit_ready_i    (spi_admit_ready_i),
       .spi_credit_valid_o   (spi_credit_valid_o),
       .spi_credit_retire_o  (spi_credit_retire_o),

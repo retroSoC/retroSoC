@@ -774,7 +774,7 @@
       }
     }
   ],
-  "dma_request_mask": "0x339ff",
+  "dma_request_mask": "0x3f9ff",
   "private_crypto": {
     "banks": 6,
     "bank_bytes": 4096,

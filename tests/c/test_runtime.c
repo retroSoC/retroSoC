@@ -1733,6 +1733,57 @@ static int test_dvp_hal(void) {
     return 0;
 }
 
+static int test_dma_discovery(void) {
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = UINT32_C(0x00020000);
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = UINT32_MAX;
+    if ((rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_ENOTSUP) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_ENOTSUP)) {
+        return 1;
+    }
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = 0U;
+    if (rs_dma_supports_request(RS_DMA_REQUEST_SOFTWARE) != RS_OK) {
+        return 2;
+    }
+    if (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_ENOTSUP) {
+        return 3;
+    }
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V21;
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) =
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) |
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX);
+    if ((rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_OK) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_RX) != RS_OK) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_ENOTSUP)) {
+        return 4;
+    }
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = 0U;
+    if (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_ENOTSUP) {
+        return 5;
+    }
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = RS_DMA_IP_VERSION_V22;
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) =
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_TX) |
+        (UINT32_C(1) << RS_DMA_REQUEST_PIOLITE_RX) |
+        (UINT32_C(1) << RS_DMA_REQUEST_SPI_TX) |
+        (UINT32_C(1) << RS_DMA_REQUEST_SPI_RX);
+    if ((rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_OK) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_RX) != RS_OK) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_OK) ||
+        (rs_dma_supports_request(RS_DMA_REQUEST_SPI_RX) != RS_OK)) {
+        return 6;
+    }
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = 0U;
+    if (rs_dma_supports_request(RS_DMA_REQUEST_SPI_TX) != RS_ENOTSUP) {
+        return 7;
+    }
+    RS_DMA_REG(RS_DMA_REG_IP_VERSION) = UINT32_C(0x00030002);
+    RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS) = UINT32_MAX;
+    if (rs_dma_supports_request(RS_DMA_REQUEST_PIOLITE_TX) != RS_ENOTSUP) {
+        return 8;
+    }
+    return 0;
+}
+
 static int test_dma_config_validation(void) {
     static rs_dma_tcd_t tcd __attribute__((aligned(64)));
     rs_dma_config_t config = {
@@ -4051,6 +4102,7 @@ int main(void) {
         test_usb2_helpers(),
         test_spisd_helpers(),
         test_gpio_helpers(),
+        test_dma_discovery(),
         test_dma_config_validation(),
         test_tiny_dma_config_validation(),
         test_spi_divider_from_hz(),

@@ -55,7 +55,7 @@ def test_p9_topology_and_camera_routes() -> None:
     assert routes[22]["alt1"]["inputs"] == ["u_dvp_if.vsync_i"]
     assert routes[23]["alt1"]["do"] == "s_clkout"
     assert read_topology(TINY / "integration/soc_topology.json",
-                         TINY / "address_map/memory_map.json")["dma_request_mask"] == "0x339ff"
+                         TINY / "address_map/memory_map.json")["dma_request_mask"] == "0x3f9ff"
 
 
 def test_p9_generated_and_hal_bindings() -> None:

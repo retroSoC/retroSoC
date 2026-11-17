@@ -86,9 +86,9 @@ def facts(root: Path = ROOT, profile_path: str = "configs/ci/ics55-tiny.mk") -> 
     require_snippets(root, TOP, ["tiny_sram u_sram", "gen_sram_attachment", "axi4_connector u_connector",
                                ".ID_WIDTH(1)", ".DATA_WIDTH(32)"])
     require_snippets(root, SRAM, ["group < 4", "tiny_sram_group u_group"])
-    if dma != {"NumChannels": 8, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x339FF,
-               "SupportedRequests": 0x339FF, "IpVersion": 0x20002, "EnableStreams": 1, "EnableSpi": 1,
-               "EnableOriginQualifier": 1, "EnablePpaliteGuard": 1,
+    if dma != {"NumChannels": 8, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x3F9FF,
+               "SupportedRequests": 0x3F9FF, "IpVersion": 0x20002, "EnableStreams": 1, "EnableSpi": 1,
+               "EnablePiolite": 1, "EnableOriginQualifier": 1, "EnablePpaliteGuard": 1,
                "SpiTxAddress": 0x1001D054, "SpiRxAddress": 0x1001D058}:
         raise ValueError("Tiny DMA parameters changed")
     if topology["dma_channels"] != dma["NumChannels"] or int(topology["dma_request_mask"], 0) != dma["RequestMask"]:

@@ -116,20 +116,30 @@ module dma_reg_tb;
     end
   end
 
-  apb4_dma u_apb4_dma (
-      .clk_i            (clk_i),
-      .rst_n_i          (rst_n_i),
-      .dma_xfer_done_o  (xpi_done_o),
-      .irq_o            (irq_o),
-      .hw_trg           (req),
-      .apb4             (apb4),
-      .axi4             (axi4),
-      .i2s_tx_axis      (i2s_tx_axis),
-      .i2s_rx_axis      (i2s_rx_axis),
-      .dvp_rx_axis      (dvp_rx_axis),
-      .crypto_in_axis   (crypto_in_axis),
-      .crypto_out_axis  (crypto_out_axis),
-      .spi_admit_ready_i(2'b00)
+  `include "piolite_dma_tieoff.svh"
+apb4_dma u_apb4_dma (
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .dma_xfer_done_o      (xpi_done_o),
+      .irq_o                (irq_o),
+      .hw_trg               (req),
+      .apb4                 (apb4),
+      .axi4                 (axi4),
+      .i2s_tx_axis          (i2s_tx_axis),
+      .i2s_rx_axis          (i2s_rx_axis),
+      .dvp_rx_axis          (dvp_rx_axis),
+      .crypto_in_axis       (crypto_in_axis),
+      .crypto_out_axis      (crypto_out_axis),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_grant_i   ('0),
+      .piolite_rx_grant_i   ('0),
+      .piolite_tx_admit_i   (1'b0),
+      .piolite_rx_admit_i   (1'b0),
+      .piolite_tx_job_o     (),
+      .piolite_rx_job_o     (),
+      .piolite_channel_job_o(),
+      .spi_admit_ready_i    (2'b00)
   );
 
   task automatic apb_write(input logic [31:0] address, input logic [31:0] data,

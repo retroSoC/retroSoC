@@ -26,8 +26,8 @@ def read_topology(path: Path, memory_map: Path) -> dict:
     document = json.loads(path.read_text())
     regions = {r["symbol"] for r in json.loads(memory_map.read_text())["regions"]}
     if (document.get("schema_version") != 1 or document.get("dma_channels") != 8
-            or document.get("dma_request_mask") != "0x339ff"):
-        raise ValueError("Tiny SPI-P3 requires eight DMA channels and request mask 0x339ff")
+            or document.get("dma_request_mask") != "0x3f9ff"):
+        raise ValueError("Tiny PIOLITE-P3 requires eight DMA channels and request mask 0x3f9ff")
     if document.get("cpu") != {"module": "hazard3_cpu_2port", "local_ports": 2,
                                "data_outstanding": 1}:
         raise ValueError("Tiny P4 requires independent I/D and one ordered data operation")
@@ -152,7 +152,8 @@ def generate_bindings(document: dict, output: Path, pdk: str = "IHP130",
                  "#define RS_SOC_DVP_DMA_BURST_BEATS 4U\n#define RS_SOC_RNG_QUALIFIED 0U\n"
                  "#define RS_SOC_HAS_SPI 1U\n#define RS_SOC_SPI_DMA_TX 16U\n"
                  "#define RS_SOC_SPI_DMA_RX 17U\n#define RS_SOC_HAS_PPALITE 1U\n"
-                 "#define RS_SOC_HAS_PIOLITE 1U\n"
+                 "#define RS_SOC_HAS_PIOLITE 1U\n#define RS_SOC_PIOLITE_DMA_TX 14U\n"
+                 "#define RS_SOC_PIOLITE_DMA_RX 15U\n"
                  f"#define RS_SOC_TECHNOLOGY_ID 0x{platform['technology']:08X}U\n"
                  f"#define RS_SOC_PLL_PRESENT {platform['pll_present']}U\n"
                  f"#define RS_SOC_GPIO_HAS_PULLS {platform['gpio_pulls']}U\n#endif\n")

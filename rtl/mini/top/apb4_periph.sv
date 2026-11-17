@@ -172,6 +172,33 @@ axi4_stream_if #(
       .aclk   (clk_i),
       .aresetn(rst_n_i)
   );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_piolite_tx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if #(
+      .DATA_WIDTH(32),
+      .ID_WIDTH  (1),
+      .DEST_WIDTH(1),
+      .USER_WIDTH(1)
+  ) u_piolite_rx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  assign u_piolite_tx_axis_if.tready = 1'b0;
+  assign u_piolite_rx_axis_if.tvalid = 1'b0;
+  assign u_piolite_rx_axis_if.tdata  = '0;
+  assign u_piolite_rx_axis_if.tkeep  = '0;
+  assign u_piolite_rx_axis_if.tstrb  = '0;
+  assign u_piolite_rx_axis_if.tlast  = 1'b0;
+  assign u_piolite_rx_axis_if.tid    = '0;
+  assign u_piolite_rx_axis_if.tdest  = '0;
+  assign u_piolite_rx_axis_if.tuser  = '0;
 
   clint_if u_clint_if ();
   dma_req_if u_dma_req_if ();
@@ -461,26 +488,35 @@ axi4_stream_if #(
       .NumChannels(8),
       .FifoDepth  (32)
   ) u_apb4_dma (
-      .clk_i              (clk_i),
-      .rst_n_i            (rst_n_i),
-      .ppalite_route_i    (1'b0),
-      .dma_xfer_done_o    (s_dma_xfer_done),
-      .irq_o              (s_dma_irq),
-      .hw_trg             (u_dma_req_if),
-      .apb4               (u_dma_apb4_if),
-      .axi4               (dma_axi4),
-      .i2s_tx_axis        (u_dma_i2s_tx_axis_if),
-      .i2s_rx_axis        (u_dma_i2s_rx_axis_if),
-      .dvp_rx_axis        (u_dvp_rx_axis_if),
-      .crypto_in_axis     (u_crypto_in_axis_if),
-      .crypto_out_axis    (u_crypto_out_axis_if),
-      .spi_admit_ready_i  (2'b00),
-      .tcd_idle_o         (),
-      .dvp_start_pending_o(),
-      .dvp_busy_o         (),
-      .dvp_done_o         (),
-      .dvp_bytes_done_o   (),
-      .dvp_error_status_o ()
+      .clk_i                (clk_i),
+      .rst_n_i              (rst_n_i),
+      .ppalite_route_i      (1'b0),
+      .dma_xfer_done_o      (s_dma_xfer_done),
+      .irq_o                (s_dma_irq),
+      .hw_trg               (u_dma_req_if),
+      .apb4                 (u_dma_apb4_if),
+      .axi4                 (dma_axi4),
+      .i2s_tx_axis          (u_dma_i2s_tx_axis_if),
+      .i2s_rx_axis          (u_dma_i2s_rx_axis_if),
+      .dvp_rx_axis          (u_dvp_rx_axis_if),
+      .crypto_in_axis       (u_crypto_in_axis_if),
+      .crypto_out_axis      (u_crypto_out_axis_if),
+      .piolite_tx_axis      (u_piolite_tx_axis_if),
+      .piolite_rx_axis      (u_piolite_rx_axis_if),
+      .piolite_tx_grant_i   (8'd0),
+      .piolite_rx_grant_i   (8'd0),
+      .piolite_tx_admit_i   (1'b0),
+      .piolite_rx_admit_i   (1'b0),
+      .piolite_tx_job_o     (),
+      .piolite_rx_job_o     (),
+      .piolite_channel_job_o(),
+      .spi_admit_ready_i    (2'b00),
+      .tcd_idle_o           (),
+      .dvp_start_pending_o  (),
+      .dvp_busy_o           (),
+      .dvp_done_o           (),
+      .dvp_bytes_done_o     (),
+      .dvp_error_status_o   ()
   );
 
   apb4_crypto u_apb4_crypto (

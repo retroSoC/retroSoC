@@ -546,7 +546,7 @@ int main(void) {
 def test_p6_reset_and_macro_policy_remains_explicit():
     text = (TINY / "top/retrosoc_tiny.sv").read_text()
     assert ".clk_aud_i" in text and "s_audio_rst_n" in text
-    assert ".EnableStreams" in text and "32'h0003_39ff" in text
+    assert ".EnableStreams" in text and "32'h0003_f9ff" in text
     assert "apb4_crypto u_crypto" in text
     tree = (TINY / "top/tiny_reset_tree.sv").read_text()
     assert "s_audio" not in tree and "crypto" not in tree

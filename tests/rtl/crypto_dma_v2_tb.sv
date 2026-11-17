@@ -188,7 +188,8 @@ module crypto_dma_v2_tb;
   assign dvp_rx_axis.tvalid  = 1'b0;
 
 
-  dma_core #(
+  `include "piolite_dma_tieoff.svh"
+dma_core #(
       .NumChannels  (NumChannels),
       .MaxBurstBeats(16),
       .FifoDepth    (16)
@@ -237,6 +238,15 @@ module crypto_dma_v2_tb;
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
       .crypto_out_axis      (crypto_out_axis),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_grant_i   ('0),
+      .piolite_rx_grant_i   ('0),
+      .piolite_tx_admit_i   (1'b0),
+      .piolite_rx_admit_i   (1'b0),
+      .piolite_tx_job_o     (),
+      .piolite_rx_job_o     (),
+      .piolite_channel_job_o(),
       .spi_admit_ready_i    (2'b00)
   );
 
