@@ -5,19 +5,19 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-ip-block-20261116-",
-  "date": "2026-11-14",
+  "change_prefix": "v05-ip-detail-20261117-",
+  "date": "2026-11-17",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
   "build_control_review": {
-    "revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
-    "makefile_blob": "83c94a5e0da9302a2c2fec40ecd78229508aea71",
+    "revision": "179cd93e4f97e2a67cfe9100fdcb990d74f7da44",
+    "makefile_blob": "d7ab056b5c3d2394cb0a249e94fa9b9f6fbf64b8",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical and control snapshot is 59042399 and includes complete Tiny recovery, GPIO/DMA lifecycle and acceptance integration. Mini PIO support and grants remain disabled; the P3 image and Tiny observer/checker changes do not alter Mini product behavior or imply Mini synthesis, netlist or timing evidence. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed source/control snapshot combines the behavior-preserving Agent control-rule relocation with the Tiny PIO-lite P3 integration and recovery fixes. Mini PIO support and grants remain disabled; Mini product defaults are unchanged, and Tiny P3 evidence does not imply Mini synthesis, netlist or timing evidence. Representative control dry-runs and Mini behavioral compatibility results are recorded separately. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

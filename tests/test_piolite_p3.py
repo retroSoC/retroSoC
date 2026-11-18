@@ -38,6 +38,7 @@ def test_tiny_piolite_topology_and_capability(tmp_path: Path) -> None:
     interfaces = (tmp_path / "rtl/tiny_apb_interfaces.svh").read_text()
     assert "tiny_peripheral_leaf u_piolite_lifecycle" in interfaces
     assert ".gate_i(s_gate_request[15])" in interfaces
+    assert ".gated_o(s_actual_gate[15])" in interfaces
     assert ".reset_i(s_local_reset[15])" in interfaces
     assert ".rst_n_i(s_leaf_rst_n[24])" in interfaces
     irq = (tmp_path / "include/retrosoc/generated/irq_metadata.h").read_text()

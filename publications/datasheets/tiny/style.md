@@ -1,5 +1,20 @@
 # Tiny datasheet layout supplement
 
+## Functional IP figure revision
+
+Apply the shared [v2 IP figure standard](../../ip-block-diagrams.md) to all 23
+Tiny primary figures and their details. Display the selected Tiny instances and
+local functional logic, including lifecycle/clock/reset limits. Thin solid
+payload/control arrows use explicit source-bound endpoints and channels;
+segments are at least 4 mm, with at most four turns. Mark actual fanout with a
+dot and unrelated crossings with a horizontal bridge. Check full arrow, bridge,
+line and text footprints. Keep 9 pt text and the 172 x 200 mm frame limit. Other
+figure families retain their conventions and selected-product facts.
+Check the named functional port assignment inside each IP, not only its outer
+module, and keep every label at least 1 mm clear of the IP border. The source
+and geometry audits enforce both rules; Tiny SYSCTRL separates APB decode,
+first-fault capture, TEST_STATUS and the AON RCU bridge without adding RTL.
+
 Tiny follows the reviewed [Mini visual language](../style.md), but owns an
 independent [style implementation](style.typ). This addition does not edit,
 import or reflow Mini's template. Changes to Tiny must preserve the publication

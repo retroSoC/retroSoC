@@ -80,6 +80,20 @@ identity. A FAIL or BLOCKED result prevents delivery; no source or CI evidence i
 rewritten. This scoped check does not probe managed inputs or restore fixtures,
 and is not a full publication, PDF, hardware, or release verdict. Tasks without
 full-Pytest selection report `NOT_REQUESTED`.
+`quality/engineering-control-impact.json` adds an exact-path shadow candidate for
+control-plane work. `engineering_control_shadow` reports ELIGIBLE, NOT_NEEDED,
+or FULL_REQUIRED plus candidate flags, but never changes the authoritative plan,
+commands, or GitHub outputs. Missing/invalid policy and every unlisted path retain
+full validation. `scripts/mk/agent.mk` owns the Agent/engineering Make targets
+included by the root Makefile; existing target names and argument forwarding are
+unchanged. Shadow candidates do not skip jobs by themselves.
+`publication_control.py plan` resolves the exact revision and Mini
+Makefile/Git-workflow blobs, then validates a candidate through the existing
+source and CI metadata contracts. `make agent-control-review REVISION=<commit>
+REASON="<rationale>" OUTPUT=<path>` emits the same candidate only under `build/`.
+It never modifies publication sources, always returns `applied=false` and
+`approval_status=REVIEW_REQUIRED`, and retains the existing CI run IDs and check
+time. Candidate failures return BLOCKED rather than PASS. There is no apply mode.
 `merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
 against the selected target revision. `make agent-preflight` enables this check
 by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
@@ -139,7 +153,11 @@ for one cache ID are rejected.
 Online engineering collection includes this additive observation class.
 `delivery_metrics.py` uses GitHub timelines for native auto-merge timing and
 optionally matches local delivery JSON by merge commit for agent-watch/cleanup
-timing. Unknown timeline, cache size, or local evidence is never reported as
+timing. Its additive `friction` and `local_friction` observations count records
+with explicit recovery, known cleanup warnings, and last/final-check and evidence
+statuses. Missing warning inventories remain unknown, not zero; these local
+observations never infer CI retries, human actions, or hardware performance.
+Unknown timeline, cache size, or local evidence is never reported as
 zero. `ci_observations.py` reads head-bound shadow artifacts without file
 extraction and includes read-only delivery-policy evaluations. For PR merge
 revisions, it separately validates the actual workflow head, evaluated revision,
@@ -294,10 +312,18 @@ An explicit `--resume` with `--resume-reason` accepts only an existing FAILED or
 ATTENTION record at a changed HEAD after a fresh READY preflight. Native
 auto-merge must remain enabled; same-head retries, identity changes, missing
 reasons, and external disables are rejected without merging. The recovery object
-retains the previous failure identity and reason through coordination. Final
+retains the previous failure identity and reason through coordination. A bounded
+`recovery_history` preserves up to 20 transitions, including a legacy single
+recovery when no history exists, and records the cumulative dropped count. This
+is bounded retention, not a claim of unlimited history. Final
 reconciliation stores `final_checks` separately from `last_check_status`, bound
 to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
 failed final report is explicit and never becomes a PASS by inference.
+Each reconciliation writes `build/engineering/pr-<number>-friction.json` and links
+it as `friction_observation`. This is a merge-matched local observation with
+actual recovery/final-check/evidence states, not a metric gate. It collects no
+GitHub timeline and executes no hardware, and completed-record offline no-ops
+remain unchanged.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
 destination, every retained path, and its SHA-256 before returning `READY`.
 Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or

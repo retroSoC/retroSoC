@@ -18,10 +18,14 @@ import re
 import struct
 import subprocess
 
-STYLE = "ip-block-v1"
+STYLE = "ip-block-v2"
 PT_MM = 25.4 / 72
 SYSTEM_IDS = {"system-fabric", "system-clocks", "system-media", "system-mpw"}
-SOURCES = {"publications/ip_block_reference.py", "publications/ip-block-diagrams.typ"}
+SOURCES = {
+    "publications/ip_block_reference.py",
+    "publications/ip_block_layout.py",
+    "publications/ip-block-diagrams.typ",
+}
 
 
 def font_advances(path: Path) -> dict[str, float]:
@@ -104,6 +108,12 @@ def wrap(text: str, width: float, advances: dict, *, bold: bool = False) -> list
                                     lines.append(chunk)
                                     chunk = ""
                                 chunk += char
+                    # Keep short direction/reset suffixes together: ending a
+                    # pin label with a lone "o" obscures the signal identity.
+                    if "_" in word and len(chunk.strip("_")) <= 1 and lines:
+                        match = re.fullmatch(r"(.+_)([^_]+_)", lines[-1])
+                        if match and text_width(match[2] + chunk, advances) <= width:
+                            lines[-1], chunk = match[1], match[2] + chunk
                     line = chunk
         lines.append(line)
     return lines
@@ -658,18 +668,11 @@ def _make_scene(circuit: dict, advances: dict, strategy: str) -> dict:
 
 
 def make_scene(circuit: dict, advances: dict) -> dict:
-    failures = []
-    for strategy in ("index", "span", "reverse", "short"):
-        try:
-            scene = _make_scene(circuit, advances, strategy)
-            issues = geometry_issues(scene, advances)
-            if issues:
-                raise ValueError("IP layout collisions: " + str(issues))
-            scene["routing_strategy"] = strategy
-            return scene
-        except ValueError as error:
-            failures.append(strategy + ": " + str(error))
-    raise ValueError("No collision-free IP layout: " + "; ".join(failures))
+    from publications.ip_block_layout import make_scene as explicit_scene
+
+    if not circuit["block_diagram"].get("functional"):
+        raise ValueError("IP has no reviewed functional expansion and explicit layout")
+    return explicit_scene(circuit, advances)
 
 
 def validate_view(root: Path, circuit: dict) -> None:
@@ -809,7 +812,9 @@ def validate_view(root: Path, circuit: dict) -> None:
         if len({u["id"] for u in units}) != len(units):
             raise ValueError("IP duplicates a functional source instance")
         for unit in units:
-            candidates = source_members(root, unit["bindings"][0]["file"], (unit["module"],))
+            candidates = source_members(
+                root, unit["bindings"][0]["file"], (unit["module"],), scope=unit.get("scope_module")
+            )
             actual = next(
                 (u for u in candidates if u["id"] == unit["id"] and u["module"] == unit["module"]),
                 None,
@@ -835,6 +840,9 @@ def validate_sources(root: Path, product: str, circuits: dict) -> None:
         if circuit.get("block_diagram", {}).get("product") != product:
             raise ValueError("IP block view crosses product boundaries")
         validate_view(root, circuit)
+        from publications.ip_block_layout import validate_functional
+
+        validate_functional(root, circuit, circuit["block_diagram"]["functional"])
         for spec in circuit["block_diagram"].get("details", []):
             owner = next((n for n in circuit["nodes"] if n["id"] == spec["owner"]), None)
             if owner is None:
@@ -842,6 +850,12 @@ def validate_sources(root: Path, product: str, circuits: dict) -> None:
             members = {u["id"]: u for u in owner.get("units", [])}
             if not set(spec["members"]) <= members.keys():
                 raise ValueError("IP detail refers to unknown functional members")
+            resolved = {**spec, "units": [members[k] for k in spec["members"]]}
+            detail = make_detail(
+                root, product, identifier, circuit, resolved, {}, build_scene=False
+            )
+            detail["block_diagram"]["ports"] = detail_ports(root, spec)
+            validate_functional(root, detail, spec["functional"])
 
 
 def prepare(root: Path, product: str, circuits: dict) -> None:
@@ -895,12 +909,16 @@ def boundary_ports(path: Path) -> list[dict]:
             if not name:
                 continue
             name = name[1]
-            if re.search(r"(?:rst|reset)", name, re.I):
+            if re.search(r"(?:rst|reset)", name, re.I) and not re.search(
+                r"(?:done|ready|held|status|count|cause)", name, re.I
+            ):
                 role = "reset"
             elif re.search(r"(?:irq|interrupt|wake)", name, re.I) and direction == "output":
                 role = "irq"
             elif re.search(r"(?:clk|clock)", name, re.I) and not re.search(
-                r"(?:hz|div|enable|ctrl|control|valid|select|rate|fault)", name, re.I
+                r"(?:hz|div|enable|ctrl|control|valid|select|rate|fault|idle|done|current|timeout|apply|profile|paused|parked|busy)",
+                name,
+                re.I,
             ):
                 role = "clock"
             else:
@@ -918,28 +936,48 @@ def cached_scene(record: str, metrics: str) -> dict:
     return deepcopy(_scene_cache(record, metrics))
 
 
-def source_members(root: Path, relative: str, prefixes: tuple[str, ...]) -> list[dict]:
+def source_members(
+    root: Path, relative: str, prefixes: tuple[str, ...], *, scope: str | None = None
+) -> list[dict]:
     """Read selected real source instances, retaining their named ports and guard."""
     from publications.circuit_reference import closing_parenthesis
     from publications.waveform_reference import uncomment
 
     source = uncomment((root / relative).read_text(encoding="utf-8"))
+    declarations = re.findall(r"\bmodule\s+(\w+)\b", source)
+    selected = scope or (
+        Path(relative).stem
+        if Path(relative).stem in declarations
+        else declarations[0]
+        if len(declarations) == 1
+        else None
+    )
+    if selected is None:
+        raise ValueError("IP instance source requires an explicit owning module")
+    scopes = re.findall(r"\bmodule\s+" + re.escape(selected) + r"\b.*?\bendmodule\b", source, re.S)
+    if len(scopes) != 1:
+        raise ValueError("IP instance source module is missing or ambiguous")
+    source = scopes[0]
     pattern = re.compile(
         r"(?m)^\s*([A-Za-z_]\w*)\s*(?:#\s*\((?:[^()]|\([^()]*\))*\)\s*)?(u_[A-Za-z_]\w*)\s*\("
     )
     result = []
     for match in pattern.finditer(source):
         module, name = match.groups()
-        if not module.startswith(prefixes) or re.search(
-            r"(?:^|_)(?:formal|sva|assert)(?:_|$)", module
+        if (
+            module == "xchecker"
+            or not module.startswith(prefixes)
+            or re.search(r"(?:^|_)(?:formal|sva|assert)(?:_|$)", module)
         ):
             continue
         stop = closing_parenthesis(source, match.end() - 1)
         body = source[match.end() : stop]
         ports = {}
+        ports_raw = {}
         for port in re.finditer(r"\.(\w+)\s*\(", body):
             end = closing_parenthesis(body, port.end() - 1)
             expression = re.sub(r"\s+", "", body[port.end() : end])
+            ports_raw[port[1]] = expression
             if re.fullmatch(r"[A-Za-z_]\w*(?:\[\d+(?::\d+)?\])?", expression):
                 ports[port[1]] = expression
         title = module
@@ -975,8 +1013,10 @@ def source_members(root: Path, relative: str, prefixes: tuple[str, ...]) -> list
                 title=title,
                 module=module,
                 ports=ports,
+                ports_raw=ports_raw,
                 parameters=params,
                 parameters_raw=raw_params,
+                scope_module=selected,
                 shape=shape,
                 bindings=[dict(file=relative, text=name + " (")],
             )
@@ -1003,7 +1043,7 @@ def unit_connections(units: list[dict]) -> list[dict]:
                             r"(?:data|dat_|pixel|word|sample|result|accum|products|bytes)", port
                         )
                         and not re.search(
-                            r"(?:valid|ready|last|error|code|req|addr|bytes|select|enable|mode|status|busy|done)",
+                            r"(?:valid|ready|last|error|code|req|addr|bytes|select|enable|mode|status|busy|done|tick|clock|clk|rst|reset)",
                             port,
                         )
                     )
@@ -1018,7 +1058,14 @@ def unit_connections(units: list[dict]) -> list[dict]:
 
 
 def make_detail(
-    root: Path, product: str, identifier: str, parent: dict, spec: dict, advances: dict
+    root: Path,
+    product: str,
+    identifier: str,
+    parent: dict,
+    spec: dict,
+    advances: dict,
+    *,
+    build_scene: bool = True,
 ) -> dict:
     units = spec["units"]
     ids = {u["id"] for u in units}
@@ -1045,10 +1092,12 @@ def make_detail(
             )
         )
     if spec.get("connections") is not None:
-        return manual_detail(root, product, identifier, parent, spec, nodes, advances)
+        return manual_detail(
+            root, product, identifier, parent, spec, nodes, advances, build_scene=build_scene
+        )
     parent_node = dict(
         id="parent",
-        title="Parent connections\ncontrol / local staging",
+        title=spec["title"] + "\nlocal sequencing / staging",
         ports=[],
         sources=[spec["file"]],
     )
@@ -1068,8 +1117,6 @@ def make_detail(
         # All member names remain in the trace table; short functional labels are
         # logical bundles, never invented numerical bit widths.
         label = label.removesuffix("_q").replace("_", " ")
-        if len(label) > 20:
-            label = "Payload" if link["kind"] == "data" else "Control / status"
         edges.append(
             dict(
                 from_=a["id"] + "." + key,
@@ -1126,11 +1173,7 @@ def make_detail(
                     "from": a["id"] + "." + key,
                     "to": b["id"] + "." + key,
                     "kind": kind,
-                    "label": "Input payload"
-                    if direction == "input" and kind == "data"
-                    else "Output payload"
-                    if kind == "data"
-                    else "Control / status",
+                    "label": signals[0][1].removeprefix("s_").removesuffix("_q").replace("_", " "),
                     "bindings": [dict(file=spec["file"], text="." + port) for port, _ in signals],
                     "member_signals": [dict(port=port, net=net) for port, net in signals],
                 }
@@ -1153,6 +1196,7 @@ def make_detail(
         parent_id=identifier,
         block_diagram=dict(
             style=STYLE,
+            product=product,
             title=parent["block_diagram"]["title"] + " / " + spec["title"],
             rows=rows,
             external=[],
@@ -1165,14 +1209,21 @@ def make_detail(
         ),
     )
     assert ids | ({"parent"} if has_parent else set()) == {key for row in rows for key in row}
-    detail["scene"] = cached_scene(
-        json.dumps(detail, sort_keys=True), json.dumps(advances, sort_keys=True)
-    )
+    if build_scene:
+        finish_detail(root, detail, spec, advances)
     return detail
 
 
 def manual_detail(
-    root: Path, product: str, identifier: str, parent: dict, spec: dict, nodes: list, advances: dict
+    root: Path,
+    product: str,
+    identifier: str,
+    parent: dict,
+    spec: dict,
+    nodes: list,
+    advances: dict,
+    *,
+    build_scene: bool = True,
 ) -> dict:
     for context in spec.get("contexts", []):
         nodes.append(
@@ -1248,10 +1299,31 @@ def manual_detail(
     from publications.circuit_reference import validate_instance_connections
 
     validate_instance_connections(root, detail)
+    if build_scene:
+        finish_detail(root, detail, spec, advances)
+    return detail
+
+
+def finish_detail(root: Path, detail: dict, spec: dict, advances: dict) -> None:
+    from publications.ip_block_layout import validate_functional
+
+    detail["block_diagram"]["functional"] = spec["functional"]
+    detail["block_diagram"]["ports"] = detail_ports(root, spec)
+    validate_functional(root, detail, spec["functional"])
     detail["scene"] = cached_scene(
         json.dumps(detail, sort_keys=True), json.dumps(advances, sort_keys=True)
     )
-    return detail
+
+
+def detail_ports(root: Path, spec: dict) -> list[dict]:
+    """A detail shows its selected local scope; the primary retains full coverage."""
+    ports = [dict(p, file=spec["file"]) for p in boundary_ports(root / spec["file"])]
+    selected = spec.get("boundary_selection")
+    if selected is not None:
+        if not spec.get("boundary_review") or not set(selected) <= {p["name"] for p in ports}:
+            raise ValueError("IP detail boundary selection is unknown or lacks a scope review")
+        ports = [p for p in ports if p["name"] in selected]
+    return ports
 
 
 def records(data: dict) -> dict[str, dict]:
@@ -1275,6 +1347,8 @@ def trace_paths(circuits: dict) -> set[str]:
             for key, item in value.items():
                 if key == "file":
                     paths.add(item)
+                elif key == "dependency":
+                    paths.add("dependencies/dependencies.lock.json")
                 elif key == "wrapper":
                     paths.update(item)
                 else:
@@ -1404,6 +1478,7 @@ def source_audit(root: Path, data: dict) -> dict:
                 }
                 for e in record["edges"]
             ],
+            functional=record["block_diagram"].get("functional"),
         )
     return result
 
@@ -1556,6 +1631,10 @@ def wire_collisions(wires: list[dict]) -> list[str]:
 
 
 def geometry_issues(scene: dict, advances: dict) -> list[str]:
+    if scene.get("style") == STYLE:
+        from publications.ip_block_layout import geometry_issues as explicit_issues
+
+        return explicit_issues(scene, advances)
     from publications.soc_diagram_geometry import segment_distance
 
     issues = wire_collisions(scene["wires"])

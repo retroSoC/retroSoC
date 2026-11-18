@@ -37,6 +37,32 @@ def load_local_records(directory: Path | None) -> dict[int, dict[str, Any]]:
     return records
 
 
+def friction_observation(local: dict[str, Any] | None) -> dict[str, Any] | None:
+    if local is None:
+        return None
+    warnings = local.get("warnings")
+    recovery = local.get("recovery")
+    history = local.get("recovery_history")
+    recovery_transitions = (
+        len(history)
+        if isinstance(history, list) and history
+        else 1 if isinstance(recovery, dict) and recovery else 0
+    )
+    final_checks = local.get("final_checks")
+    return {
+        "last_check_status": local.get("last_check_status") or "NOT_RECORDED",
+        "final_check_status": final_checks.get("status") or "NOT_RECORDED" if isinstance(final_checks, dict) else "NOT_RECORDED",
+        "evidence_status": local.get("evidence_status") or "NOT_RECORDED",
+        "cleanup_warning_count": len(warnings) if isinstance(warnings, list) else None,
+        "recovery_recorded": recovery_transitions > 0,
+        "recovery_from_status": recovery.get("from_status") if isinstance(recovery, dict) else None,
+        "recovery_transition_count": recovery_transitions,
+        "recovery_history_dropped_count": local.get("recovery_history_dropped_count")
+        if type(local.get("recovery_history_dropped_count")) is int
+        else None,
+    }
+
+
 def delivery_record(
     pull: dict[str, Any],
     events: list[dict[str, Any]],
@@ -63,6 +89,7 @@ def delivery_record(
         "auto_merge_head": auto.get("commit_id"),
         "auto_merge_method": local.get("merge_method") if local else None,
         "local_evidence": local is not None,
+        "friction": friction_observation(local),
         "agent_watch_seconds": local.get("watch_seconds") if local else None,
         "cleanup_status": local.get("cleanup") if local else "NOT_MEASURED",
         "cleanup_completed_at": local.get("reconciled_at") if cleanup_complete else None,
@@ -76,6 +103,34 @@ def delivery_record(
 
 def median(values: list[float]) -> float | None:
     return round(statistics.median(values), 3) if values else None
+
+
+def observation_counts(observations: list[dict[str, Any]], field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for observation in observations:
+        value = observation[field]
+        counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def summarize_friction(records: list[dict[str, Any]]) -> dict[str, Any]:
+    observations = [record["friction"] for record in records if isinstance(record.get("friction"), dict)]
+    return {
+        "record_count": len(observations),
+        "records_with_recovery": sum(item["recovery_recorded"] for item in observations),
+        "recovery_transition_count": sum(item["recovery_transition_count"] for item in observations),
+        "cleanup_warning_record_count": sum(
+            isinstance(item["cleanup_warning_count"], int) and item["cleanup_warning_count"] > 0
+            for item in observations
+        ),
+        "cleanup_warning_unknown_record_count": sum(
+            item["cleanup_warning_count"] is None for item in observations
+        ),
+        "last_check_status_counts": observation_counts(observations, "last_check_status"),
+        "final_check_status_counts": observation_counts(observations, "final_check_status"),
+        "evidence_status_counts": observation_counts(observations, "evidence_status"),
+        "scope": "Matched local delivery records only; no CI retry, human-action, or hardware-performance inference",
+    }
 
 
 def summarize_delivery(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -94,6 +149,7 @@ def summarize_delivery(records: list[dict[str, Any]]) -> dict[str, Any]:
         "agent_watch_seconds_median": median(watch),
         "known_cleanup_count": len(cleanup),
         "cleanup_lag_seconds_median": median(cleanup),
+        "local_friction": summarize_friction(records),
         "status": "INCOMPLETE" if unknown else "MEASURED",
     }
 

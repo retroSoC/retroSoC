@@ -1,4 +1,5 @@
 """Lookup addresses and diagnostic scopes must remain faithful to their sources."""
+
 from __future__ import annotations
 
 import copy
@@ -13,7 +14,9 @@ from publications.report_changes import page_ranges, verified_pdf
 from publications.system_reference import source_paths
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = json.loads((ROOT / "publications/datasheets/system-reference.json").read_text(encoding="utf-8"))
+RAW = json.loads(
+    (ROOT / "publications/datasheets/system-reference.json").read_text(encoding="utf-8")
+)
 SPEC = RAW["retrieval"]
 CONFIG = json.loads((ROOT / "publications/datasheets/mini.json").read_text(encoding="utf-8"))
 
@@ -26,8 +29,13 @@ def data():
 
 
 def index(data, *, instances=None, registers=None, regions=None):
-    return rr.register_index(registers or data["registers"], regions or data["regions"],
-                             data["catalog"], instances or SPEC["instances"], data["mpw"])
+    return rr.register_index(
+        registers or data["registers"],
+        regions or data["regions"],
+        data["catalog"],
+        instances or SPEC["instances"],
+        data["mpw"],
+    )
 
 
 def bank(result, region):
@@ -41,7 +49,14 @@ def test_complete_index_preserves_shared_links_and_excludes_data_apertures(data)
         a, b = bank(result, left), bank(result, right)
         assert a["base"] != b["base"]
         assert [r["link"] for r in a["rows"]] == [r["link"] for r in b["rows"]]
-    assert not {b["region"] for b in result["instances"]} & {"FLASH", "XPI", "SRAM", "SDRAM", "PSRAM", "OPIPSRAM"}
+    assert not {b["region"] for b in result["instances"]} & {
+        "FLASH",
+        "XPI",
+        "SRAM",
+        "SDRAM",
+        "PSRAM",
+        "OPIPSRAM",
+    }
 
 
 def test_array_addresses_include_group_base_exactly_once(data):
@@ -80,12 +95,19 @@ def test_ext_l_index_qualifies_shared_ext_h_values(data):
     assert any(row["id"] == "ext-l-rejected-base-write" for row in RAW["limitations"])
 
 
-@pytest.mark.parametrize("mutation,match", [
-    ("omit_uart1", "omits an active"), ("omit_mpw", "coverage|MPW"),
-    ("duplicate", "duplicate instance"), ("wrong_family", "unknown register family"),
-    ("data_aperture", "active register window"), ("wrong_selection", "MPW selection"),
-    ("wrong_owner", "does not belong"), ("no_override_binding", "require source bindings"),
-])
+@pytest.mark.parametrize(
+    "mutation,match",
+    [
+        ("omit_uart1", "omits an active"),
+        ("omit_mpw", "coverage|MPW"),
+        ("duplicate", "duplicate instance"),
+        ("wrong_family", "unknown register family"),
+        ("data_aperture", "active register window"),
+        ("wrong_selection", "MPW selection"),
+        ("wrong_owner", "does not belong"),
+        ("no_override_binding", "require source bindings"),
+    ],
+)
 def test_incomplete_or_wrong_instance_mappings_fail(data, mutation, match):
     rows = copy.deepcopy(SPEC["instances"])
     if mutation == "omit_uart1":
@@ -149,8 +171,14 @@ def test_code_drift_and_wrong_numeric_interpretation_fail(mutation):
 
 def test_enum_extraction_ignores_comments_and_rejects_duplicates(tmp_path):
     (tmp_path / "codes.sv").write_text("// FOO = 4'd9\nFOO = 4'd1;", encoding="utf-8")
-    spec = dict(id="x", source="codes.sv", pattern=r"(?P<name>FOO) = (?P<value>4'd\d)",
-                expected={"FOO": 1}, meanings={"FOO": "One"}, kind="enum")
+    spec = dict(
+        id="x",
+        source="codes.sv",
+        pattern=r"(?P<name>FOO) = (?P<value>4'd\d)",
+        expected={"FOO": 1},
+        meanings={"FOO": "One"},
+        kind="enum",
+    )
     assert rr.code_group(tmp_path, spec)["rows"][0]["value"] == 1
     (tmp_path / "codes.sv").write_text("FOO = 4'd1; FOO = 4'd1;", encoding="utf-8")
     with pytest.raises(ValueError, match="duplicate"):
@@ -169,7 +197,10 @@ def test_unknown_status_register_and_boot_scope_drift_fail(data):
 
 
 def test_changed_source_binding_is_rejected():
-    row = {"id": "fake", "bindings": [{"file": "rtl/mini/top/extension_slot.sv", "text": "Fabricated constant"}]}
+    row = {
+        "id": "fake",
+        "bindings": [{"file": "rtl/mini/top/extension_slot.sv", "text": "Fabricated constant"}],
+    }
     with pytest.raises(ValueError, match="binding changed"):
         rr.validate_bindings(ROOT, row)
 
@@ -201,7 +232,10 @@ def test_diagnostic_field_qualifications_require_evidence_and_valid_layout(data,
 
 def test_derived_retrieval_preserves_all_manifest_dependencies(data):
     assert rr.dependencies(SPEC) == rr.dependencies(data["system_reference"]["retrieval"])
-    assert source_paths(RAW) == source_paths(data["system_reference"])
+    raw = copy.deepcopy(RAW)
+    catalog = ROOT / raw["illustrations"]["circuit_catalog"]
+    raw["illustrations"]["circuits"].update(json.loads(catalog.read_text(encoding="utf-8")))
+    assert source_paths(raw) == source_paths(data["system_reference"])
 
 
 def test_release_evidence_does_not_promote_test_availability():
@@ -214,19 +248,28 @@ def test_release_evidence_does_not_promote_test_availability():
         rr.release_evidence(ROOT, spec, RAW["source_revision"], RAW["support"])
 
 
-@pytest.mark.parametrize("field,value", [("revision", "b" * 40), ("profile", "wrong.mk"), ("stage", "silicon"), ("result", "fail")])
+@pytest.mark.parametrize(
+    "field,value",
+    [("revision", "b" * 40), ("profile", "wrong.mk"), ("stage", "silicon"), ("result", "fail")],
+)
 def test_release_report_context_must_match(tmp_path, field, value):
-    report = dict(path="report.json", revision="a" * 40, profile="ref.mk", stage="simulation", result="pass")
+    report = dict(
+        path="report.json", revision="a" * 40, profile="ref.mk", stage="simulation", result="pass"
+    )
     report[field] = value
     with pytest.raises(ValueError, match="does not match"):
         rr.validate_report(tmp_path, report, "a" * 40, ["ref.mk"], "simulation")
 
 
 def test_release_report_file_must_substantiate_pass(tmp_path):
-    report = dict(path="report.json", revision="a" * 40, profile="ref.mk", stage="simulation", result="pass")
+    report = dict(
+        path="report.json", revision="a" * 40, profile="ref.mk", stage="simulation", result="pass"
+    )
     with pytest.raises(ValueError, match="missing"):
         rr.validate_report(tmp_path, report, "a" * 40, ["ref.mk"], "simulation")
-    (tmp_path / report["path"]).write_text(json.dumps({**report, "result": "fail"}), encoding="utf-8")
+    (tmp_path / report["path"]).write_text(
+        json.dumps({**report, "result": "fail"}), encoding="utf-8"
+    )
     with pytest.raises(ValueError, match="contradicts"):
         rr.validate_report(tmp_path, report, "a" * 40, ["ref.mk"], "simulation")
     (tmp_path / report["path"]).write_text(json.dumps(report), encoding="utf-8")
@@ -234,16 +277,35 @@ def test_release_report_file_must_substantiate_pass(tmp_path):
 
 
 def markers():
-    return [{"kind": "publication-change-start", "id": "a", "title": "Appendix", "category": "added", "page": 3},
-            {"kind": "publication-change-end", "id": "a", "page": 5}]
+    return [
+        {
+            "kind": "publication-change-start",
+            "id": "a",
+            "title": "Appendix",
+            "category": "added",
+            "page": 3,
+        },
+        {"kind": "publication-change-end", "id": "a", "page": 5},
+    ]
 
 
 def test_change_ranges_keep_navigation_and_substantive_categories():
     values = markers()
-    values += [{"kind": "publication-change-start", "id": "toc", "title": "Contents", "category": "navigation", "page": 1},
-               {"kind": "publication-change-end", "id": "toc", "page": 2}]
+    values += [
+        {
+            "kind": "publication-change-start",
+            "id": "toc",
+            "title": "Contents",
+            "category": "navigation",
+            "page": 1,
+        },
+        {"kind": "publication-change-end", "id": "toc", "page": 2},
+    ]
     result = page_ranges(values, 5)
-    assert [(r["category"], r["start_page"], r["end_page"]) for r in result] == [("navigation", 1, 2), ("added", 3, 5)]
+    assert [(r["category"], r["start_page"], r["end_page"]) for r in result] == [
+        ("navigation", 1, 2),
+        ("added", 3, 5),
+    ]
 
 
 @pytest.mark.parametrize("mutation", ["unpaired", "duplicate", "reversed", "out_of_bounds"])

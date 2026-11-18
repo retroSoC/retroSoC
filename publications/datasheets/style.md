@@ -1,5 +1,22 @@
 # Mini Datasheet Layout Standard
 
+## Functional IP figure revision
+
+The shared [v2 IP figure standard](../ip-block-diagrams.md) governs the 42 Mini
+primary figures and their details. Main figures expose real functional stages;
+local logic and actual instances remain distinct in the source trace. Use thin
+solid arrows for both payload and control, explicit port/channel geometry,
+4 mm minimum segments, at most four turns, and source-proven junctions. A
+non-connection crossing uses a horizontal bridge, with full glyph/line/arrow
+footprint checks. Preserve the 9 pt floor and 172 x 200 mm frame limit. Existing
+system Circuiteria, SoC, timing, register, storage and package/PCB figures keep
+their own conventions. Added detail figures preserve semantic anchors and do
+not replace the functional content of the primary.
+Check named functional port assignment within each owning IP and the 1 mm text
+clearance from its border. Preserve separate RX/TX and register/core IRQ paths;
+assertion-only helpers are excluded from hardware figures. These checks remain
+part of normal source and geometry acceptance.
+
 This document records the implemented layout and maintenance rules of the English
 **retroSoC Mini Gen2/Gen2+** datasheet. The current publication identity belongs in
 [mini.json](mini.json); release-specific decisions and comparisons belong in the

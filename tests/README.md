@@ -100,7 +100,11 @@ tooling.
   local references, eval corpora, default invocation contracts, and documented
   entrypoints. `test_agent_control.py` covers task contracts, conservative
   change selection, scope enforcement, preflight, and real/mocked Tiny
-  reviewed-source snapshot drift. Mini preflight coverage checks real
+  reviewed-source snapshot drift. Control-plane shadow tests prove candidate-only
+  behavior, exact-path/full escalation, policy fail-closed handling, and preserved
+  quality checks. `test_publications.py` also covers read-only control-review
+  candidate generation, source/CI preservation, invalid revisions, validation
+  failures, and the isolated Make entrypoint. Mini preflight coverage checks real
   source/control and CI metadata, rejects stale bindings, applies only to
   selected full-Pytest work, and never restores fixtures; `test_skill_eval.py`
   covers isolated
@@ -121,7 +125,9 @@ tooling.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
-  offline reconstruction, and unknown-data handling.
+  merge-matched recovery/cleanup/final-check friction observations, offline
+  reconstruction, and unknown-data handling. Missing warning inventories remain
+  unknown rather than becoming zero.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
@@ -183,8 +189,10 @@ tooling.
   and separation from cleanup status. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
   external auto-merge disabling, cleanup opt-outs, head-change preservation,
-  recovery-metadata propagation, explicit Make resume arguments, and
-  atomic watcher checkpoints. Run fast agent
+  recovery-metadata propagation, bounded recovery history, actual transition
+  counts, explicit Make resume arguments, and atomic watcher checkpoints.
+  Reconciliation tests also cover merge-matched local friction emission with no
+  timeline collection, hardware execution, or metric-gate side effects. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 59 cases across six Skills, with one live smoke per Skill.

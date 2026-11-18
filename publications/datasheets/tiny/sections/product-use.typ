@@ -38,7 +38,7 @@ the hardware also supports compressed instructions. No application hart, Linux o
 
 === Camera, display, audio and storage
 #circuit-figure("system-media")
-Camera snapshots select RAW DVP or PPALite PROCESS before central DMA, optionally landing in explicitly initialized NSS1 PSRAM. PPALite application/consumer qualification remains P4; its P3 integration is separately recorded.
+Camera snapshots select RAW DVP or PPALite PROCESS before central DMA, optionally landing in explicitly initialized NSS1 PSRAM. The dated PPALite P4 acceptance covers the tested capture, storage, preview and recovery sequence. Board, sensor and sustained-video qualification require separate evidence.
 Display consumes completed frame data through SPI; SD saving uses the native host's private DMA and SRAM bounce storage.
 These operations have separate ownership and completion boundaries. Camera and audio share pins and require exclusive routing.
 #flow("application-composition",([Acquire routes and initialize external devices],
@@ -47,6 +47,7 @@ These operations have separate ownership and completion boundaries. Camera and a
  [Tiny application composition. This ordering does not claim concurrent pipelines or measured throughput.])
 See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for shared resources.
 #source-note("app/apps/ci_smoke/tiny.c",title:"Current acceptance composition")
+#source-note("docs/ip/ppalite-verification.md",title:"Scoped PPALite P4 application evidence")
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
 
 #change-start("tiny-v02-commercial-20261114-quick-reference","Specification and evidence quick reference")

@@ -56,7 +56,7 @@ def test_every_drawn_unit_line_and_label_passes_geometric_checks(books):
         for identifier, view in blocks.records(data).items():
             assert not blocks.geometry_issues(view["scene"], metrics), identifier
             for wire in view["scene"]["wires"]:
-                assert wire.get("label_mode") in {None, "endpoint", "interface", "source", "legend"}
+                assert wire.get("label_mode") == "direct"
                 assert wire["label"]
 
 
@@ -169,9 +169,21 @@ def test_geometry_rejects_unreadable_or_inconsistent_drawings(books, change):
 
 def test_reference_hardware_is_not_transferred_to_retro_diagrams(books):
     mini = books["mini"]["system_reference"]["illustrations"]["circuits"]
+    # The source inventory includes both generate branches. Only the selected
+    # functional projection is drawn in the IHP130 / HAVE_PLL=NO book.
+    rcu = mini["rcu"]
+    drawn = {
+        name
+        for node in rcu["block_diagram"]["functional"]["nodes"]
+        for name in [*node.get("instance_refs", []), node.get("instance_ref")]
+        if name is not None
+    }
     assert not any(
-        u["module"] == "tc_pll" for n in mini["rcu"]["nodes"] for u in n.get("units", [])
+        u["module"] == "tc_pll" and u["id"] in drawn
+        for n in rcu["nodes"]
+        for u in n.get("units", [])
     )
+    assert "no PLL" in json.dumps(rcu["block_diagram"]["functional"])
     assert not any(
         word in json.dumps(mini["ga2d"]["block_diagram"]).lower()
         for word in ["rasterizer", "texture map", "fragment shader"]
@@ -204,6 +216,9 @@ def test_font_metrics_and_wrapping_preserve_literal_spelling():
     lines = blocks.wrap("resource_reset_n_i", 18, metrics)
     assert "".join(lines) == "resource_reset_n_i"
     assert max(blocks.text_width(line, metrics) for line in lines) <= 18
+    pins = blocks.wrap("mem_rst_n_o", 19, metrics)
+    assert "".join(pins) == "mem_rst_n_o"
+    assert all(line != "o" for line in pins)
 
 
 def test_verification_only_modules_are_never_drawn_as_hardware(books):
@@ -212,7 +227,7 @@ def test_verification_only_modules_are_never_drawn_as_hardware(books):
             for node in view["nodes"]:
                 assert "formal_props" not in node["title"]
                 assert all(
-                    not any(word in u["module"] for word in ("formal", "sva", "assert"))
+                    not any(word in u["module"] for word in ("formal", "sva", "assert", "xchecker"))
                     for u in node.get("units", [])
                 )
             if "parent_id" in view:
@@ -220,6 +235,97 @@ def test_verification_only_modules_are_never_drawn_as_hardware(books):
                     edge[key].split(".")[0] for edge in view["edges"] for key in ("from", "to")
                 }
                 assert {n["id"] for n in view["nodes"]} <= connected
+
+
+def test_applied_dvp_configuration_is_a_latch_not_a_verification_checker(books):
+    for data in books.values():
+        circuits = data.get(
+            "illustrations", data.get("system_reference", {}).get("illustrations", {})
+        )["circuits"]
+        graph = circuits["dvp"]["block_diagram"]["functional"]
+        node = next(n for n in graph["nodes"] if n["id"] == "applied-config-latch")
+        assert node["ref"] == "applied"
+        assert "128" in node["title"]
+        assert not blocks.source_members(
+            ROOT, "rtl/managed/clusterip/common/rtl/utils/register.sv", ("xchecker",), scope="dffer"
+        )
+
+
+def test_payload_cannot_move_to_an_unrelated_function_in_the_same_ip(books):
+    c = deepcopy(books["tiny"]["illustrations"]["circuits"]["gpio"])
+    graph = c["block_diagram"]["functional"]
+    edge = next(e for e in graph["edges"] if e.get("parent_edge") == 1)
+    assert edge["to"] == "core-pads"
+    edge["to"] = "core-rx"
+    with pytest.raises(ValueError, match="functional port"):
+        blocks.validate_sources(ROOT, "tiny", {"gpio": c})
+
+
+@pytest.mark.parametrize(
+    "product,family,signal",
+    [
+        ("tiny", "gpio", "gpio.irq_o"),
+        ("mini", "gpio", "gpio.irq_o"),
+        ("tiny", "i2s", "i2s.irq_o"),
+        ("mini", "i2s", "i2s.irq_o"),
+        ("mini", "uart1", "uart.irq_o"),
+    ],
+)
+def test_interface_irq_pass_throughs_remain_explicit(books, product, family, signal):
+    data = books[product]
+    circuits = data.get("illustrations", data.get("system_reference", {}).get("illustrations", {}))[
+        "circuits"
+    ]
+    graph = circuits[family]["block_diagram"]["functional"]
+    edge = next(e for e in graph["edges"] if e["kind"] == "irq" and e["label"] == signal)
+    assert edge["source"]["module"] == "apb4_" + ("uart" if family == "uart1" else family)
+    assert any("s_irq" in binding for binding in edge["source"]["bindings"])
+    terminal = next(n for n in graph["nodes"] if n["id"] == edge["to"])
+    assert any(signal in binding for binding in terminal["logic_source"]["bindings"])
+
+
+@pytest.mark.parametrize(
+    "family,signal",
+    [
+        ("i2s", "clk_aud_i"),
+        ("i2s", "rst_aud_n_i"),
+        ("jpeg", "resource_reset_i"),
+        ("ga2d", "resource_reset_i"),
+    ],
+)
+def test_audio_and_resource_domains_cannot_drive_the_apb_register_bank(books, family, signal):
+    c = deepcopy(books["mini"]["system_reference"]["illustrations"]["circuits"][family])
+    graph = c["block_diagram"]["functional"]
+    edge = next(e for e in graph["edges"] if e.get("boundary") and e["label"] == signal)
+    assert edge["to"] != "reg-registers"
+    edge["to"] = "reg-registers"
+    with pytest.raises(ValueError, match="clock/reset targets"):
+        blocks.validate_sources(ROOT, "mini", {family: c})
+
+
+def test_resource_stop_expression_retains_its_reset_dependency(books):
+    unit = next(
+        u
+        for u in blocks.source_members(ROOT, "rtl/ip/multimedia/apb4_ga2d.sv", ("ga2d_core",))
+        if u["id"] == "u_ga2d_core"
+    )
+    assert (
+        unit["ports_raw"]["resource_stop_i"]
+        == "resource_quiesce_i||resource_reset_i||source_stop_i"
+    )
+    c = books["mini"]["system_reference"]["illustrations"]["circuits"]["ga2d"]
+    blocks.validate_sources(ROOT, "mini", {"ga2d": c})
+
+
+@pytest.mark.parametrize("signal", ["clk_i", "rst_n_i"])
+def test_combinational_size_helper_cannot_receive_dma_clock_or_reset(books, signal):
+    c = deepcopy(books["mini"]["system_reference"]["illustrations"]["circuits"]["ga2d"])
+    graph = c["block_diagram"]["details"][0]["functional"]
+    edge = next(e for e in graph["edges"] if e.get("boundary") and e["label"] == signal)
+    assert edge["to"] == "planner-controller"
+    edge["to"] = "u_addr_gen-stage"
+    with pytest.raises(ValueError, match="clock/reset targets"):
+        blocks.validate_sources(ROOT, "mini", {"ga2d": c})
 
 
 @pytest.mark.parametrize("mutation", ["direction", "omit"])
@@ -243,7 +349,9 @@ def test_clock_boundary_omission_and_overlapping_bus_labels_are_rejected(books):
         ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
     )
     scene = deepcopy(books["tiny"]["illustrations"]["circuits"]["spi"]["scene"])
-    scene["interfaces"][0]["y"] = scene["ports"][0]["y"]
+    bus = next(n for n in scene["nodes"] if n["role"] == "bus")
+    terminal = next(n for n in scene["nodes"] if n["role"] == "terminal")
+    bus["x"], bus["y"] = terminal["x"], terminal["y"]
     assert blocks.geometry_issues(scene, metrics)
 
 
@@ -298,7 +406,18 @@ def test_complex_views_use_reviewed_functional_groups(books):
     assert {"u_hp_div2", "u_hp_div4", "u_pclk_divider", "u_mem_clk_div2", "u_lp_clk_div4"} <= units
     specs = rcu["block_diagram"]["details"]
     members = [key for d in specs for key in d["members"]]
-    assert len(members) == len(set(members)) and set(members) == units
+    assert len(members) == len(set(members)) and set(members) <= units
+    # Detail scopes remain disjoint; main-view expansion also exposes buffers,
+    # timebase and CDC logic that are not separate adjacent detail figures.
+    main = rcu["block_diagram"]["functional"]
+    drawn = {
+        name
+        for node in main["nodes"]
+        for name in [*node.get("instance_refs", []), node.get("instance_ref")]
+        if name is not None
+    }
+    assert set(members) <= drawn
+    assert {"u_clint_timebase", "u_ref24_clk_buf", "u_pclk_cfg_cdc"} <= drawn
     assert len(mini["sdram"]["details"]) == len(mini["usb2"]["details"]) == 1
     assert not any("-part-" in key for data in books.values() for key in blocks.records(data))
 
@@ -335,7 +454,8 @@ def test_mini_sram_uses_the_live_hp_target_not_the_retired_lp_interface(books):
 def test_ip_notes_do_not_retain_the_legacy_dashed_control_convention(books):
     for data in books.values():
         for view in blocks.records(data).values():
-            assert "dashed links are control" not in view["note"].lower()
+            for legacy in ("dashed links are control", "outlined arrows carry", "wide arrows carry"):
+                assert legacy not in view["note"].lower()
 
 
 def test_technical_inventory_defers_fonts_without_losing_sources(books, monkeypatch):
