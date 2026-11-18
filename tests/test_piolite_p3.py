@@ -157,27 +157,32 @@ def test_piolite_observer_is_source_bound() -> None:
     assert "assign s_gpio = piolite_drive_value" in observer
     assert "force u_dut.u_soc.s_gpio_rst_n" in observer
     assert "PIOLITE_P3_OBSERVATION" in observer
+    assert '$value$plusargs("tiny_piolite_observer_log=%s"' in observer
+    assert '$display("PIOLITE_P3_' not in observer
+    assert "".join(observer.split()).count("$fdisplay(piolite_observer_fd,") == 7
 
 
 GOOD_LOG = """PIOLITE_P3_CHECK id=1 pass=1 clock=24000000 mask=0003ffff
 PIOLITE_P3_CHECK id=2 pass=1 pins=32
 PIOLITE_P3_CHECK id=3 pass=1 shared=1
-PIOLITE_P3_OUTPUT pin=4 value=1 oe=1
 PIOLITE_P3_CHECK id=4 pass=1 output=1
 PIOLITE_P3_CHECK id=5 pass=1 tx_bytes=4 rx_bytes=4
 PIOLITE_P3_CHECK id=6 pass=1 tcds=2 tx_bytes=4
 PIOLITE_P3_CHECK id=7 pass=1 rcu=1
-PIOLITE_P3_RESET seen=1
 PIOLITE_P3_CHECK id=8 pass=1 reset=1
-PIOLITE_P3_OBSERVATION mask=ffffffff reset_seen=1 output_oe=00000000
 PIOLITE_P3_RESULT code=0
 SIM_TEST_PASS Tiny cycles=12345
+"""
+OBSERVER_LOG = """PIOLITE_P3_PROGRESS cycles=100000 live=00 idle=1 held=00 closing=00 dma_jobs=00 rcu_idle=3fffe
+PIOLITE_P3_OUTPUT pin=4 value=1 oe=1
+PIOLITE_P3_RESET seen=1
+PIOLITE_P3_OBSERVATION mask=ffffffff reset_seen=1 output_oe=00000000
 """
 
 
 def test_piolite_checker_accepts_only_complete_records() -> None:
     from scripts.piolite_p3 import check_log
-    assert check_log(GOOD_LOG) == []
+    assert check_log(GOOD_LOG, OBSERVER_LOG) == []
 
 
 @pytest.mark.parametrize("old,new", [
@@ -192,7 +197,21 @@ def test_piolite_checker_accepts_only_complete_records() -> None:
 ])
 def test_piolite_checker_rejects_incomplete_or_invalid_records(old: str, new: str) -> None:
     from scripts.piolite_p3 import check_log
-    assert check_log(GOOD_LOG.replace(old, new)) != []
+    assert check_log(GOOD_LOG.replace(old, new), OBSERVER_LOG.replace(old, new)) != []
+
+
+def test_piolite_checker_rejects_interleaved_and_cross_stream_records() -> None:
+    from scripts.piolite_p3 import check_log
+    corrupted = GOOD_LOG.replace(
+        "PIOLITE_P3_CHECK id=1 pass=1 clock=24000000 mask=0003ffff",
+        "PIOLITE_P3_CHECK id=1 pass=1 clock=PIOLITE_P3_PROGRESS cycles=3000000 live=00\n"
+        "24000000 mask=0003ffff",
+    )
+    assert check_log(corrupted, OBSERVER_LOG) != []
+    assert check_log(GOOD_LOG + OBSERVER_LOG, "") != []
+    assert check_log(GOOD_LOG, OBSERVER_LOG + "PIOLITE_P3_CHECK id=8 pass=1 reset=1\n") != []
+    assert check_log(GOOD_LOG, OBSERVER_LOG + "%Error observer transport\n") != []
+    assert check_log(GOOD_LOG, OBSERVER_LOG + "SIM_TEST_PASS Tiny cycles=12345\n") != []
 
 
 def test_piolite_observer_uses_dedicated_reset_and_real_output() -> None:
@@ -213,16 +232,17 @@ def test_piolite_observer_uses_dedicated_reset_and_real_output() -> None:
     assert "piolite_reset_countdown = 0" in release
 
 
-def evidence_identity(tmp_path: Path) -> tuple[dict, dict, dict, Path]:
+def evidence_identity(tmp_path: Path) -> tuple[dict, dict, dict, Path, Path]:
     from scripts.flow_control import digest_json
     from scripts.piolite_p3 import file_sha256
 
     variant = tmp_path / "build/ihp130-tiny-test"
     log = variant / "sim/verilator/sim.log"
+    observer_log = variant / "sim/verilator/piolite-observer.log"
     command = [
         "timeout", "--foreground", "43200s", str(variant / "sim/verilator/emu"),
         f"+firmware={variant / 'sw/retrosoc_fw.hex'}", "+max_cycles=20000000",
-        "+tiny_piolite_p3",
+        f"+tiny_piolite_observer_log={observer_log}", "+tiny_piolite_p3", "+tiny_piolite_progress",
     ]
     lock = file_sha256(ROOT / "dependencies/dependencies.lock.json")
     manifest = {
@@ -250,36 +270,42 @@ def evidence_identity(tmp_path: Path) -> tuple[dict, dict, dict, Path]:
         "source_state_sha256": "b" * 64,
         "tool_lock_sha256": lock,
     }
-    return manifest, verdict, state, log
+    return manifest, verdict, state, log, observer_log
 
 
 def test_piolite_evidence_identity_is_complete_and_fail_closed(tmp_path: Path,
                                                                 monkeypatch: pytest.MonkeyPatch) -> None:
     from scripts.piolite_p3 import identity_problems
 
-    manifest, verdict, state, log = evidence_identity(tmp_path)
+    manifest, verdict, state, log, observer_log = evidence_identity(tmp_path)
     variant = tmp_path / "build/ihp130-tiny-test"
     monkeypatch.setattr("scripts.piolite_p3.source_state", lambda root: state)
-    assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log) == []
+    assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log, observer_log) == []
     for field in ("source_revision", "source_state_sha256", "tool_lock_sha256"):
         broken = dict(verdict)
         broken[field] = "0" * (40 if field == "source_revision" else 64)
-        assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log)
+        assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log, observer_log)
     broken = dict(verdict)
     broken["command"] = [item.replace("20000000", "1000000") for item in verdict["command"]]
-    assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log)
+    assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log, observer_log)
     broken = dict(verdict)
     broken["log"] = str(tmp_path / "other.log")
-    assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log)
+    assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log, observer_log)
+    assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log, log)
+    assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log,
+                             tmp_path / "outside.log")
+    broken = dict(verdict)
+    broken["command"] = verdict["command"][:-1]
+    assert identity_problems(manifest, broken, variant, "IHP130", "verilator", log, observer_log)
     broken_manifest = dict(manifest)
     broken_manifest["profile"] = "ihp130"
-    assert identity_problems(broken_manifest, verdict, variant, "IHP130", "verilator", log)
+    assert identity_problems(broken_manifest, verdict, variant, "IHP130", "verilator", log, observer_log)
 
 
 def test_piolite_evidence_record_binds_program_and_execution(tmp_path: Path) -> None:
     from scripts.piolite_p3 import base_record, file_sha256
 
-    manifest, _, _, _ = evidence_identity(tmp_path)
+    manifest, _, _, _, _ = evidence_identity(tmp_path)
     variant = tmp_path / "build/ihp130-tiny-test"
     (variant / "sw").mkdir(parents=True)
     for name in ("retrosoc_fw.hex", "retrosoc_fw.bin", "retrosoc_fw.txt"):
@@ -320,11 +346,13 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
                 (variant / "sw" / name).write_text(name)
             (variant / "sim/verilator/emu").write_text("test executable")
             log = variant / "sim/verilator/sim.log"
+            observer_log = variant / "sim/verilator/piolite-observer.log"
             log.write_text(GOOD_LOG)
+            observer_log.write_text(OBSERVER_LOG)
             command = [
                 "timeout", "--foreground", "43200s", str(variant / "sim/verilator/emu"),
                 f"+firmware={variant / 'sw/retrosoc_fw.hex'}", "+max_cycles=20000000",
-                "+tiny_piolite_p3",
+                f"+tiny_piolite_observer_log={observer_log}", "+tiny_piolite_p3", "+tiny_piolite_progress",
             ]
             manifest = {
                 "repository": {"commit": "0" * 40 if stale else revision,
@@ -357,7 +385,8 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
             result = subprocess.run(
                 [sys.executable, str(ROOT / "scripts/piolite_p3.py"), "check",
                  "--variant-root", str(variant), "--pdk", "IHP130", "--simulator", "verilator",
-                 "--log", str(log)], cwd=ROOT, text=True, capture_output=True, check=False)
+                 "--log", str(log), "--observer-log", str(observer_log)],
+                cwd=ROOT, text=True, capture_output=True, check=False)
             record = json.loads((variant / "meta/piolite-p3/check/record.json").read_text())
             if stale:
                 assert result.returncode != 0
@@ -369,9 +398,26 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
                 assert record["problems"] == []
                 assert record["source_revision"] == revision
                 assert record["command"] == command
+                assert record["observer_log"] == str(observer_log.relative_to(ROOT))
+                assert record["observer_log_sha256"] == file_sha256(observer_log)
                 assert record["observed_gaps"]
 
 
 def test_piolite_input_only_configuration_disables_set_window() -> None:
     source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
     assert ".set_width = (output_mask != 0U) ? 1U : 0U" in source
+
+
+@pytest.mark.parametrize("profile,simulator", [("ihp130", "VERILATOR"), ("ics55", "IVERILOG")])
+def test_piolite_check_binds_sim_and_observer_logs(profile: str, simulator: str) -> None:
+    result = subprocess.run(
+        ["make", "-n", f"CONFIG=configs/ci/{profile}-tiny.mk", "APP=ci_smoke",
+         "TINY_PIOLITE_P3_ACCEPTANCE=YES", f"SIMU={simulator}",
+         "TINY_PIOLITE_OBSERVER_LOG=$(SIM_BUILD_ROOT)/custom-observer.log", "piolite-p3-check"],
+        cwd=ROOT, text=True, capture_output=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    command = " ".join(result.stdout.split())
+    log = command.split("--log ", 1)[1].split(" ", 1)[0]
+    observer_log = command.split("--observer-log ", 1)[1].split(" ", 1)[0]
+    assert log.endswith(f"/sim/{simulator.lower()}/sim.log")
+    assert observer_log == log.rsplit("/", 1)[0] + "/custom-observer.log"

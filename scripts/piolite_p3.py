@@ -39,43 +39,50 @@ def number(row: dict[str, str], name: str) -> int:
     return int(row[name], 0)
 
 
-def _check_log(log: str) -> list[str]:
-    problems = [f"forbidden marker: {marker}" for marker in FORBIDDEN if marker in log]
+EXPECTED_CHECKS = [
+    {"id": "1", "pass": "1", "clock": "24000000", "mask": "0003ffff"},
+    {"id": "2", "pass": "1", "pins": "32"},
+    {"id": "3", "pass": "1", "shared": "1"},
+    {"id": "4", "pass": "1", "output": "1"},
+    {"id": "5", "pass": "1", "tx_bytes": "4", "rx_bytes": "4"},
+    {"id": "6", "pass": "1", "tcds": "2", "tx_bytes": "4"},
+    {"id": "7", "pass": "1", "rcu": "1"},
+    {"id": "8", "pass": "1", "reset": "1"},
+]
+
+
+def _check_log(log: str, observer_log: str) -> list[str]:
+    problems = [f"forbidden marker: {marker}" for marker in FORBIDDEN
+                if marker in log or marker in observer_log]
     terminal = re.findall(r"^SIM_TEST_PASS Tiny.*$", log, re.MULTILINE)
     if (len(terminal) != 1 or
             re.fullmatch(r"SIM_TEST_PASS Tiny cycles=[1-9][0-9]*", terminal[0]) is None):
         problems.append("missing, malformed, or duplicate Tiny terminal verdict")
-    checks = records(log, "PIOLITE_P3_CHECK")
-    if [number(row, "id") for row in checks] != list(range(1, 9)):
-        problems.append("P3 case sequence is incomplete, duplicated, or reordered")
-    for row in checks:
-        if number(row, "pass") != 1:
-            problems.append(f"P3 case {number(row, 'id')} failed")
-    observations = records(log, "PIOLITE_P3_OBSERVATION")
-    if len(observations) != 1:
-        problems.append("missing or duplicate GPIO observation")
-    else:
-        if int(observations[0]["mask"], 16) != 0xFFFFFFFF:
-            problems.append("GPIO input coverage is incomplete")
-        if number(observations[0], "reset_seen") != 1:
-            problems.append("GPIO reset was not observed")
-        if int(observations[0]["output_oe"], 16) != 0:
-            problems.append("GPIO output was not released")
-    resets = records(log, "PIOLITE_P3_RESET")
-    if len(resets) != 1 or number(resets[0], "seen") != 1:
-        problems.append("GPIO reset marker is missing or duplicated")
-    outputs = records(log, "PIOLITE_P3_OUTPUT")
-    if len(outputs) != 1 or number(outputs[0], "value") != 1 or number(outputs[0], "oe") != 1:
-        problems.append("GPIO output/ownership observation mismatch")
-    result = records(log, "PIOLITE_P3_RESULT")
-    if len(result) != 1 or number(result[0], "code") != 0:
-        problems.append("P3 result is missing, duplicated, or failed")
+    if re.search(r"^SIM_TEST_(?:PASS|FAIL|TIMEOUT)", observer_log, re.MULTILINE):
+        problems.append("terminal verdict appears in the observer log")
+    if records(log, "PIOLITE_P3_CHECK") != EXPECTED_CHECKS:
+        problems.append("P3 case records are incomplete, malformed, duplicated, or reordered")
+    if records(log, "PIOLITE_P3_RESULT") != [{"code": "0"}]:
+        problems.append("P3 result is missing, malformed, duplicated, or failed")
+    expected_observation = [{"mask": "ffffffff", "reset_seen": "1", "output_oe": "00000000"}]
+    if records(observer_log, "PIOLITE_P3_OBSERVATION") != expected_observation:
+        problems.append("GPIO observation is missing, malformed, duplicated, or incomplete")
+    if records(observer_log, "PIOLITE_P3_RESET") != [{"seen": "1"}]:
+        problems.append("GPIO reset marker is missing, malformed, or duplicated")
+    if records(observer_log, "PIOLITE_P3_OUTPUT") != [{"pin": "4", "value": "1", "oe": "1"}]:
+        problems.append("GPIO output/ownership observation is missing, malformed, or duplicated")
+    for prefix in ("PIOLITE_P3_OBSERVATION", "PIOLITE_P3_RESET", "PIOLITE_P3_OUTPUT"):
+        if records(log, prefix):
+            problems.append(f"observer record appears in the firmware log: {prefix}")
+    for prefix in ("PIOLITE_P3_CHECK", "PIOLITE_P3_RESULT"):
+        if records(observer_log, prefix):
+            problems.append(f"firmware record appears in the observer log: {prefix}")
     return problems
 
 
-def check_log(log: str) -> list[str]:
+def check_log(log: str, observer_log: str) -> list[str]:
     try:
-        return _check_log(log)
+        return _check_log(log, observer_log)
     except (KeyError, ValueError) as error:
         return [f"malformed P3 record: {error}"]
 
@@ -152,7 +159,7 @@ def base_record(manifest: dict, variant: Path, stage: str, pdk: str, command: li
 
 
 def identity_problems(manifest: dict, verdict: dict, variant: Path, pdk: str, simulator: str,
-                      log_path: Path) -> list[str]:
+                      log_path: Path, observer_log: Path) -> list[str]:
     problems = []
     current = source_state(ROOT)
     repository = manifest.get("repository", {})
@@ -183,6 +190,12 @@ def identity_problems(manifest: dict, verdict: dict, variant: Path, pdk: str, si
         problems.append("simulator identity or exit status is invalid")
     if Path(verdict.get("log", "")).resolve() != log_path:
         problems.append("simulation log path differs from its structured verdict")
+    try:
+        observer_log.relative_to(variant)
+    except ValueError:
+        problems.append("observer log is outside the selected build variant")
+    if observer_log == log_path:
+        problems.append("observer log must be distinct from the firmware log")
     command = verdict.get("command")
     if not isinstance(command, list) or not all(isinstance(item, str) for item in command):
         problems.append("simulation command is missing or malformed")
@@ -194,6 +207,9 @@ def identity_problems(manifest: dict, verdict: dict, variant: Path, pdk: str, si
         problems.append("simulation command does not name the selected build executable")
     if f"+firmware={variant / 'sw/retrosoc_fw.hex'}" not in command or "+tiny_piolite_p3" not in command:
         problems.append("simulation command does not select the isolated P3 image and observer")
+    observer_args = [item for item in command if item.startswith("+tiny_piolite_observer_log=")]
+    if observer_args != [f"+tiny_piolite_observer_log={observer_log}"]:
+        problems.append("simulation command does not bind the selected observer log exactly once")
     try:
         cycles = next(int(item.split("=", 1)[1]) for item in command if item.startswith("+max_cycles="))
     except (StopIteration, ValueError):
@@ -210,6 +226,7 @@ def main() -> int:
     parser.add_argument("--pdk", choices=("ICS55", "IHP130"), required=True)
     parser.add_argument("--simulator", type=str.lower, choices=("verilator", "iverilog"))
     parser.add_argument("--log", type=Path)
+    parser.add_argument("--observer-log", type=Path)
     args = parser.parse_args()
     variant = args.variant_root.resolve()
     variant.relative_to(ROOT / "build")
@@ -239,29 +256,37 @@ def main() -> int:
                       structured_verdict={"kind": "pytest", "exit_code": result.returncode},
                       log=artifact_name(log_path), log_sha256=file_sha256(log_path))
     else:
-        if args.simulator is None or args.log is None:
-            raise ValueError("a real simulator and log are required")
+        if args.simulator is None or args.log is None or args.observer_log is None:
+            raise ValueError("a real simulator and separate firmware/observer logs are required")
         if configuration.get("SIMU", "").lower() != args.simulator:
             raise ValueError("not an isolated PIOLITE-P3 build for the selected simulator")
         log_path = args.log.resolve()
         log_path.relative_to(variant)
+        observer_log = args.observer_log.resolve()
         verdict_path = log_path.parent / "result-sim.json"
         check_path = log_path.parent / "result-sim-check.json"
         verdict = json.loads(verdict_path.read_text())
         check_verdict = json.loads(check_path.read_text())
-        problems.extend(identity_problems(manifest, verdict, variant, args.pdk, args.simulator, log_path))
+        problems.extend(identity_problems(manifest, verdict, variant, args.pdk, args.simulator, log_path,
+                                          observer_log))
         if verdict.get("status") != "passed" or check_verdict.get("status") != "passed":
             problems.append("structured simulation verdict did not pass")
-        problems.extend(check_log(log_path.read_text(errors="replace")))
+        log_text = log_path.read_text(errors="replace")
+        observer_text = observer_log.read_text(errors="replace")
+        problems.extend(check_log(log_text, observer_text))
+        command = verdict.get("command", [])
+        if (isinstance(command, list) and "+tiny_piolite_progress" in command and
+                "PIOLITE_P3_PROGRESS cycles=" not in observer_text):
+            problems.append("requested PIOLITE progress observations are missing")
         gaps = [*problems,
                 "Only this source/profile/simulator is covered; other gates and physical qualification remain separate"]
-        command = verdict.get("command", [])
         record = base_record(manifest, variant, args.stage, args.pdk, command, gaps)
         record.update(status="passed" if not problems else "failed", problems=problems, simulator=args.simulator,
                       source_state_sha256=verdict.get("source_state_sha256"),
                       simulator_sha256=file_sha256(variant / "sim" / args.simulator /
                                                    ("emu" if args.simulator == "verilator" else "simv")),
                       log=artifact_name(log_path), log_sha256=file_sha256(log_path),
+                      observer_log=artifact_name(observer_log), observer_log_sha256=file_sha256(observer_log),
                       structured_verdict={"run": artifact_name(verdict_path), "check": artifact_name(check_path)},
                       run_result_sha256=file_sha256(verdict_path), check_result_sha256=file_sha256(check_path))
     atomic_write(output / "record.json", json.dumps(record, indent=2, sort_keys=True) + "\n")

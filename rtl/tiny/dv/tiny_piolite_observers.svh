@@ -8,6 +8,21 @@ logic          piolite_reported = 0;
 logic          piolite_output_seen = 0;
 integer        piolite_reset_countdown = 0;
 integer        piolite_progress_cycles = 0;
+integer        piolite_observer_fd = 0;
+string         piolite_observer_path;
+
+initial begin
+  if ($test$plusargs("tiny_piolite_p3") || $test$plusargs("tiny_piolite_progress")) begin
+    if (!$value$plusargs("tiny_piolite_observer_log=%s", piolite_observer_path))
+      $fatal(1, "SIM_TEST_FAIL missing +tiny_piolite_observer_log=<path>");
+    piolite_observer_fd = $fopen(piolite_observer_path, "w");
+    if (piolite_observer_fd == 0) $fatal(1, "SIM_TEST_FAIL cannot open PIOLITE observer log");
+  end
+end
+
+final begin
+  if (piolite_observer_fd != 0) $fclose(piolite_observer_fd);
+end
 
 assign s_gpio = piolite_drive_value;
 
@@ -51,24 +66,26 @@ always @(posedge s_clk) begin
       if (piolite_reset_countdown == 5) begin
         release u_dut.u_soc.s_gpio_rst_n;
         piolite_reset_countdown = 0;
-        $display("PIOLITE_P3_RESET seen=1");
+        $fdisplay(piolite_observer_fd, "PIOLITE_P3_RESET seen=1");
       end
     end
     if (u_dut.u_soc.u_user_gpio_if.oe_o[4] && s_gpio[4] && !piolite_output_seen) begin
       piolite_output_seen = 1'b1;
-      $display("PIOLITE_P3_OUTPUT pin=4 value=%b oe=%b", s_gpio[4],
-               u_dut.u_soc.u_user_gpio_if.oe_o[4]);
+      $fdisplay(piolite_observer_fd, "PIOLITE_P3_OUTPUT pin=4 value=%b oe=%b", s_gpio[4],
+                u_dut.u_soc.u_user_gpio_if.oe_o[4]);
     end
     if (u_dut.s_test_done && !piolite_reported) begin
       piolite_reported = 1'b1;
-      $display("PIOLITE_P3_OBSERVATION mask=%08x reset_seen=%b output_oe=%08x", piolite_seen_mask,
-               piolite_reset_seen, u_dut.u_soc.u_user_gpio_if.oe_o);
+      $fdisplay(piolite_observer_fd,
+                "PIOLITE_P3_OBSERVATION mask=%08x reset_seen=%b output_oe=%08x", piolite_seen_mask,
+                piolite_reset_seen, u_dut.u_soc.u_user_gpio_if.oe_o);
     end
   end
   if ($test$plusargs("tiny_piolite_progress")) begin
     piolite_progress_cycles = piolite_progress_cycles + 1;
     if ((piolite_progress_cycles % 100000) == 0) begin
-      $display(
+      $fdisplay(
+          piolite_observer_fd,
           "PIOLITE_P3_PROGRESS cycles=%0d live=%b idle=%b held=%b%b closing=%b%b dma_jobs=%b rcu_idle=%05x",
           piolite_progress_cycles, u_dut.u_soc.u_piolite.s_session_live,
           u_dut.u_soc.s_piolite_lifecycle_idle, u_dut.u_soc.u_piolite.s_tx_held,
@@ -76,19 +93,21 @@ always @(posedge s_clk) begin
           u_dut.u_soc.u_piolite.s_rx_closing, u_dut.u_soc.s_piolite_dma_job,
           u_dut.u_soc.s_periph_idle_ref);
       if ($test$plusargs("tiny_piolite_trap")) begin
-        $display("PIOLITE_P3_TRAP cycles=%0d cause_irq=%b cause=%x epc=%x", piolite_progress_cycles,
-                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_irq,
-                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_code,
-                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mepc);
-        $display(
+        $fdisplay(piolite_observer_fd, "PIOLITE_P3_TRAP cycles=%0d cause_irq=%b cause=%x epc=%x",
+                  piolite_progress_cycles,
+                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_irq,
+                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_code,
+                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mepc);
+        $fdisplay(
+            piolite_observer_fd,
             "PIOLITE_P3_GUARD cycles=%0d start_ok=%b guard=%b handoff=%x filter=%x ready=%b imem=%x region=%x rx=%x",
             piolite_progress_cycles, u_dut.u_soc.u_piolite.u_reg.s_start_ok,
             u_dut.u_soc.u_piolite.u_ctrl.start_guard_ok, u_dut.u_soc.s_gpio_user_handoff,
             u_dut.u_soc.u_user_gpio_if.filter_enable_i, u_dut.u_soc.u_piolite.gpio_ready_i,
             u_dut.u_soc.u_piolite.u_ctrl.imem_valid, u_dut.u_soc.u_piolite.u_reg.s_region,
             u_dut.u_soc.u_piolite.u_ctrl.rx_level[0]);
-        $display("PIOLITE_P3_CFG cycles=%0d cfg=%x", piolite_progress_cycles,
-                 u_dut.u_soc.u_piolite.u_reg.s_cfg_q[0]);
+        $fdisplay(piolite_observer_fd, "PIOLITE_P3_CFG cycles=%0d cfg=%x", piolite_progress_cycles,
+                  u_dut.u_soc.u_piolite.u_reg.s_cfg_q[0]);
       end
     end
   end

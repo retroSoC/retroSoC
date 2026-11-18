@@ -627,7 +627,8 @@ piolite-p3-lint piolite-p3-rtl piolite-p3-report: manifest
 
 piolite-p3-check: manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/piolite_p3.py check \
-	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --log $(PERF_LOG)
+	  --variant-root $(VARIANT_ROOT) --pdk $(PDK) --simulator $(SIMU) --log $(SIM_BUILD_ROOT)/sim.log \
+	  --observer-log $(TINY_PIOLITE_OBSERVER_LOG)
 
 .PHONY: spi-p4-lint spi-p4-rtl spi-p4-report
 spi-p4-lint spi-p4-rtl spi-p4-report: manifest

@@ -7,6 +7,7 @@
 #include <retrosoc/hal/piolite.h>
 #include <retrosoc/hal/rcu.h>
 #include <retrosoc/hal/sysctrl.h>
+#include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
 
 #define RS_PIO_REG(offset) RS_SOC_REG32(RS_SOC_APB4_PIOLITE_BASE, (offset))
@@ -459,6 +460,26 @@ static rs_status_t rs_pio_gpio_reset(void) {
     return result;
 }
 
+static void rs_pio_finish(uint8_t code) {
+    rs_uart_status_t status;
+    uint32_t timeout = RS_PIO_TIMEOUT;
+    bool drained = false;
+
+    while (timeout != 0U) {
+        --timeout;
+        if (rs_uart_get_status(&status) != RS_OK) {
+            break;
+        }
+        if ((status.tx_level == 0U) && ((status.flags & UINT32_C(4)) == 0U)) {
+            drained = true;
+            break;
+        }
+    }
+    rs_sysctrl_write_test_status((code == 0U) && drained, drained ? code : UINT8_C(250));
+    for (;;) {
+    }
+}
+
 int main(void) {
     uint8_t code = 0U;
 
@@ -506,7 +527,5 @@ int main(void) {
         }
     }
     printf("PIOLITE_P3_RESULT code=%u\n", code);
-    rs_sysctrl_write_test_status(code == 0U, code);
-    for (;;) {
-    }
+    rs_pio_finish(code);
 }
