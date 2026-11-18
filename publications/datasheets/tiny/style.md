@@ -2,7 +2,7 @@
 
 ## Functional IP figure revision
 
-Apply the shared [v2 IP figure standard](../../ip-block-diagrams.md) to all 23
+Apply the shared [v2 IP figure standard](../../ip-block-diagrams.md) to all 24
 Tiny primary figures and their details. Display the selected Tiny instances and
 local functional logic, including lifecycle/clock/reset limits. Thin solid
 payload/control arrows use explicit source-bound endpoints and channels;

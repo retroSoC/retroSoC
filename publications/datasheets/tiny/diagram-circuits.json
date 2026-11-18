@@ -4350,7 +4350,7 @@
       },
       {
         "id": "user",
-        "title": "Restricted user interface\nTiny outputs tied zero",
+        "title": "Restricted user interface\nPIO-lite USER data / OE",
         "x": 6.3,
         "y": 0.0,
         "w": 4.0,
@@ -4545,7 +4545,7 @@
         ]
       }
     ],
-    "note": "The management/user register views share 32 GPIOs. Tiny ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls. Register s_irq passes through gpio_core to gpio.irq_o; this IRQ is a SoC interface member, not an extra GPIO pad.",
+    "note": "The management/user register views share 32 GPIOs. PIO-lite drives USER data and OE through the ownership/readiness guard; shared wrapper ports retain the selected integration rather than creating a second user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls. Register s_irq passes through gpio_core to gpio.irq_o; this IRQ is a SoC interface member, not an extra GPIO pad.",
     "title": "General-Purpose Input/Output (GPIO)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -4606,7 +4606,7 @@
             "id": "user-interface",
             "owner": "user",
             "ref": "user",
-            "title": "Restricted user interface\nTiny outputs tied zero\nIN / 32"
+            "title": "Restricted user interface\nPIO-lite USER data / OE\nIN / 32"
           },
           {
             "id": "reg-registers",

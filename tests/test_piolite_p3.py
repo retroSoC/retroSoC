@@ -51,6 +51,14 @@ def test_tiny_piolite_topology_and_capability(tmp_path: Path) -> None:
     assert "RS_SOC_DMA_REQUEST_MASK 0x3f9ffU" in features
 
 
+def test_piolite_publication_retains_guarded_user_drive() -> None:
+    catalog = (ROOT / "publications/datasheets/tiny/diagram-circuits.json").read_text()
+    assert "Tiny outputs tied zero" not in catalog
+    assert "Tiny ties the user-interface drive outputs zero" not in catalog
+    assert "PIO-lite USER data / OE" in catalog
+    assert "PIO-lite drives USER data and OE through the ownership/readiness guard" in catalog
+
+
 def test_piolite_clock_reset_inventory() -> None:
     inventory = json.loads((TINY / "integration/clock_reset_domains.json").read_text())
     assert inventory["reset_distribution"]["leaf_names"][-1] == "piolite"

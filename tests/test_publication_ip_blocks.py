@@ -48,6 +48,12 @@ def test_complete_product_inventory_keeps_66_primary_views_and_seven_legacy_syst
     assert len(inventory(books["mini"]["system_reference"]["illustrations"])) > 142
 
 
+def test_tiny_style_matches_collected_primary_count(books):
+    primary = {key: r for key, r in blocks.records(books["tiny"]).items() if "parent_id" not in r}
+    style = (ROOT / "publications/datasheets/tiny/style.md").read_text(encoding="utf-8")
+    assert f"all {len(primary)}\nTiny primary figures" in style
+
+
 def test_every_drawn_unit_line_and_label_passes_geometric_checks(books):
     metrics = blocks.font_advances(
         ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
