@@ -370,3 +370,8 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
                 assert record["source_revision"] == revision
                 assert record["command"] == command
                 assert record["observed_gaps"]
+
+
+def test_piolite_input_only_configuration_disables_set_window() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    assert ".set_width = (output_mask != 0U) ? 1U : 0U" in source

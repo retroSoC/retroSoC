@@ -75,6 +75,21 @@ always @(posedge s_clk) begin
           u_dut.u_soc.u_piolite.s_rx_held, u_dut.u_soc.u_piolite.s_tx_closing,
           u_dut.u_soc.u_piolite.s_rx_closing, u_dut.u_soc.s_piolite_dma_job,
           u_dut.u_soc.s_periph_idle_ref);
+      if ($test$plusargs("tiny_piolite_trap")) begin
+        $display("PIOLITE_P3_TRAP cycles=%0d cause_irq=%b cause=%x epc=%x", piolite_progress_cycles,
+                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_irq,
+                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_code,
+                 u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mepc);
+        $display(
+            "PIOLITE_P3_GUARD cycles=%0d start_ok=%b guard=%b handoff=%x filter=%x ready=%b imem=%x region=%x rx=%x",
+            piolite_progress_cycles, u_dut.u_soc.u_piolite.u_reg.s_start_ok,
+            u_dut.u_soc.u_piolite.u_ctrl.start_guard_ok, u_dut.u_soc.s_gpio_user_handoff,
+            u_dut.u_soc.u_user_gpio_if.filter_enable_i, u_dut.u_soc.u_piolite.gpio_ready_i,
+            u_dut.u_soc.u_piolite.u_ctrl.imem_valid, u_dut.u_soc.u_piolite.u_reg.s_region,
+            u_dut.u_soc.u_piolite.u_ctrl.rx_level[0]);
+        $display("PIOLITE_P3_CFG cycles=%0d cfg=%x", piolite_progress_cycles,
+                 u_dut.u_soc.u_piolite.u_reg.s_cfg_q[0]);
+      end
     end
   end
 end

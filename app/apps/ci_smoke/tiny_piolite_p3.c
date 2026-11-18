@@ -37,7 +37,7 @@ static rs_piolite_config_t rs_pio_config(const rs_piolite_program_t *program, ui
                                         .in_base = in_base,
                                         .in_width = 1U,
                                         .set_base = in_base,
-                                        .set_width = 1U,
+                                        .set_width = (output_mask != 0U) ? 1U : 0U,
                                         .claim_mask = claim_mask,
                                         .output_mask = output_mask,
                                         .initial_oe = output_mask,
