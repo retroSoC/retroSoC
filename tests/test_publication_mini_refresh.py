@@ -443,3 +443,17 @@ def test_build_control_review_matches_readme_and_source_blobs():
         actual = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", f"{review['revision']}:{path}"],
                                          text=True).strip()
         assert actual == expected
+
+
+def test_current_page_map_and_content_match_reviewed_delivery():
+    config = json.loads((ROOT / "publications/datasheets/mini.json").read_text(encoding="utf-8"))
+    chapter = (ROOT / "publications/datasheets/chapter-review.md").read_text(encoding="utf-8")
+    content = (ROOT / "publications/datasheets/content-review.md").read_text(encoding="utf-8")
+    assert config["source_revision"] in chapter and config["source_revision"] in content
+    assert "| dma | 247 | 265 |" in chapter
+    structure = json.loads((ROOT / "publications/datasheets/structure-contract.json").read_text(encoding="utf-8"))
+    assert f"{len(structure['entries'])} frozen entries" in chapter
+    assert "42 IP chapters" in chapter
+    assert "830 pages" in chapter
+    assert "`EnablePiolite=0`" in content
+    assert "five actual legacy stream directions" in content

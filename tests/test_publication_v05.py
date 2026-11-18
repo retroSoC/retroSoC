@@ -77,6 +77,17 @@ def test_stale_live_accelerator_prose_is_not_accepted(data, kind):
 
 def test_ci_nonterminal_status_never_becomes_pass_or_failure(data):
     snapshot = copy.deepcopy(data["system_reference"]["ci_snapshot"])
+    if not snapshot["runs"]:
+        snapshot["runs"].append({
+            "run_id": 1,
+            "name": "quality",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/1",
+            "status": "completed",
+            "conclusion": "success",
+            "scope": "synthetic completed run",
+            "note": "valid baseline for negative snapshot mutations",
+            "observations": [],
+        })
     run = snapshot["runs"][0]
     run.update(status="in_progress", conclusion=None)
     validate_ci_snapshot(snapshot, snapshot["revision"])

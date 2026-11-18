@@ -86,6 +86,17 @@ def test_ci_failures_do_not_become_per_ip_reported_pass(data):
 def test_ci_snapshot_rejects_mismatched_or_unscoped_results(data, mutation):
     reference = data["system_reference"]
     snapshot = copy.deepcopy(reference["ci_snapshot"])
+    if not snapshot["runs"]:
+        snapshot["runs"].append({
+            "run_id": 1,
+            "name": "quality",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/1",
+            "status": "completed",
+            "conclusion": "success",
+            "scope": "synthetic completed run",
+            "note": "valid baseline for negative snapshot mutations",
+            "observations": [],
+        })
     if mutation == "revision":
         snapshot["revision"] = "0" * 40
     elif mutation == "url":

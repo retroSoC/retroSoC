@@ -1,36 +1,37 @@
 # Tiny Gen1 v0.2 DRAFT chapter review
 
-## 2026-11-14 current delivery page map
+## 2026-11-18 current delivery page map
 
-Source: 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. PDF SHA-256: 64900eec64e271be01c3c2061a93ee868e52305edb5ed02d009f408510eb5c33.
-
-All entries remain source-reviewed publication content; this page map adds no matching hardware or physical pass record. Earlier review tables below retain their historical identity.
+Source: 58986f512add4d01d13cb5ea3bff633b8d546f39. PDF SHA-256: f9011d708bb44e711bb032b082acf7d5fd959d59762dce5eb7405ad4e80c3f39.
 
 | IP anchor | Start | End |
 | --- | ---: | ---: |
-| xpi | 65 | 84 |
-| sdio | 85 | 106 |
-| sram | 107 | 113 |
-| gpio | 114 | 130 |
-| dma | 131 | 146 |
-| timer | 147 | 153 |
-| rtc | 154 | 167 |
-| wdg | 168 | 177 |
-| pwm | 178 | 202 |
-| uart0 | 203 | 214 |
-| i2c | 215 | 227 |
-| spi | 228 | 246 |
-| ws2812 | 247 | 254 |
-| archinfo | 255 | 263 |
-| sysctrl | 264 | 272 |
-| rcu | 273 | 285 |
-| clint | 286 | 289 |
-| i2s | 290 | 298 |
-| dvp | 299 | 309 |
-| ppalite | 310 | 329 |
-| crypto | 330 | 355 |
-| crc | 356 | 362 |
-| rng | 363 | 371 |
+| xpi | 66 | 85 |
+| sdio | 86 | 108 |
+| sram | 109 | 115 |
+| gpio | 116 | 132 |
+| dma | 133 | 148 |
+| timer | 149 | 155 |
+| rtc | 156 | 169 |
+| wdg | 170 | 179 |
+| pwm | 180 | 204 |
+| uart0 | 205 | 217 |
+| i2c | 218 | 231 |
+| spi | 232 | 251 |
+| piolite | 252 | 274 |
+| ws2812 | 275 | 283 |
+| archinfo | 284 | 292 |
+| sysctrl | 293 | 301 |
+| rcu | 302 | 316 |
+| clint | 317 | 320 |
+| i2s | 321 | 331 |
+| dvp | 332 | 343 |
+| ppalite | 344 | 364 |
+| crypto | 365 | 394 |
+| crc | 395 | 401 |
+| rng | 402 | 410 |
+
+The current PDF has 480 pages, including the independent closing page 480. The synchronized source contains 24 IP chapters, 88 frozen major/IP entries, 142 outlined navigation entries, 682 register definitions and 1329 expanded instance addresses. `changed-pages.json` records 24 content/navigation ranges against the retained 425-page baseline, and the offline repeat build is byte-identical. PIOLITE-P3 acceptance and current CI remain pending; this page map is publication evidence only. Earlier review tables below retain their historical identity.
 
 
 Reviewed source f5f58a36758968e984a43159a3e155c56cbe1f38. Main profile configs/ci/ics55-tiny.mk. Compatibility configs/ci/ihp130-tiny.mk.

@@ -78,7 +78,7 @@ def test_sdk_request_number_drift_is_rejected(spec, monkeypatch):
     def drift(text, prefix, rtl=False):
         result = original(text, prefix, rtl)
         if prefix == "RS_DMA_REQUEST_":
-            result["RS_DMA_REQUEST_DVP_RX"] = 14
+            result["RS_DMA_REQUEST_DVP_RX"] = 13
         return result
 
     monkeypatch.setattr(pr, "constants", drift)

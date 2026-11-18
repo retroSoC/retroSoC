@@ -1,55 +1,55 @@
 # Mini datasheet chapter review - v0.5 OpenC906 refresh
 
-## 2026-11-14 current delivery page map
+## 2026-11-18 current delivery page map
 
-Source: 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. PDF SHA-256: 7a16aa8e605a435725a537369a145e89f8c56c2e66c40f3bc39085ee10c68356.
-
-All entries remain source-reviewed publication content; this page map adds no matching hardware or physical pass record. Earlier review tables below retain their historical identity.
+Source: 58986f512add4d01d13cb5ea3bff633b8d546f39. PDF SHA-256: ff11ee6b0ad8d72411550305744ec4fd1afdd22e980b9991ea58119011bdc228.
 
 | IP anchor | Start | End |
 | --- | ---: | ---: |
-| xpi | 105 | 124 |
-| spisd | 125 | 144 |
-| sdio0 | 145 | 166 |
-| sram | 167 | 173 |
-| psram | 174 | 192 |
-| opipsram | 193 | 210 |
-| sdram | 211 | 222 |
-| gpio | 223 | 239 |
-| dma | 240 | 257 |
-| timer | 258 | 264 |
-| rtc | 265 | 278 |
-| wdg | 279 | 288 |
-| pwm | 289 | 314 |
-| uart0 | 315 | 327 |
-| uart1 | 328 | 329 |
-| i2c | 330 | 343 |
-| ws2812 | 344 | 352 |
-| ps2 | 353 | 362 |
-| sdio1 | 363 | 366 |
-| usb2 | 367 | 399 |
-| archinfo | 400 | 409 |
-| sysctrl | 410 | 430 |
-| rcu | 431 | 432 |
-| clint | 433 | 437 |
-| hp-aclint | 438 | 438 |
-| hp-plic | 439 | 439 |
-| hp-mailbox | 440 | 447 |
-| resource | 448 | 454 |
-| monitor | 455 | 466 |
-| i2s | 469 | 477 |
-| dvp | 478 | 490 |
-| jpeg | 491 | 514 |
-| ga2d | 515 | 534 |
-| apu | 535 | 584 |
-| npu | 585 | 609 |
-| crypto | 610 | 636 |
-| crc | 637 | 643 |
-| rng | 644 | 652 |
-| ext-l | 653 | 654 |
-| ext-h | 655 | 663 |
-| mpw-timer | 700 | 702 |
-| mpw-gpio | 703 | 705 |
+| xpi | 106 | 126 |
+| spisd | 127 | 147 |
+| sdio0 | 148 | 170 |
+| sram | 171 | 177 |
+| psram | 178 | 196 |
+| opipsram | 197 | 216 |
+| sdram | 217 | 229 |
+| gpio | 230 | 246 |
+| dma | 247 | 265 |
+| timer | 266 | 272 |
+| rtc | 273 | 286 |
+| wdg | 287 | 296 |
+| pwm | 297 | 322 |
+| uart0 | 323 | 336 |
+| uart1 | 337 | 339 |
+| i2c | 340 | 354 |
+| ws2812 | 355 | 363 |
+| ps2 | 364 | 374 |
+| sdio1 | 375 | 380 |
+| usb2 | 381 | 414 |
+| archinfo | 415 | 424 |
+| sysctrl | 425 | 446 |
+| rcu | 447 | 452 |
+| clint | 453 | 457 |
+| hp-aclint | 458 | 458 |
+| hp-plic | 459 | 460 |
+| hp-mailbox | 461 | 468 |
+| resource | 469 | 475 |
+| monitor | 476 | 487 |
+| i2s | 490 | 499 |
+| dvp | 500 | 512 |
+| jpeg | 513 | 539 |
+| ga2d | 540 | 562 |
+| apu | 563 | 613 |
+| npu | 614 | 640 |
+| crypto | 641 | 671 |
+| crc | 672 | 679 |
+| rng | 680 | 688 |
+| ext-l | 689 | 690 |
+| ext-h | 691 | 700 |
+| mpw-timer | 737 | 739 |
+| mpw-gpio | 740 | 743 |
+
+The current PDF has 830 pages, including the independent closing page 830, and retains all 110 frozen entries across 42 IP chapters. Mini remains default-off for PIO-lite, with actual legacy stream-direction discovery and no Mini synthesis, netlist or timing claim. The offline repeat build is byte-identical; current CI remains unevaluated. A previous delivered Mini PDF was not available in the retained build roots, so no old/new page comparison is claimed. Earlier review tables below retain their historical identity.
 
 
 Reviewed source: `9ab05c6404c02b5f2c927539b5c681b46f778b9f`. Version/date: **v0.5 DRAFT / 2026-10-22**.

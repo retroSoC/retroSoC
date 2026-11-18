@@ -1,8 +1,16 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
-Current 2026-11-14 implementation: reviewed dev 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87.
-See [the shared round review](../commercial-reference-review.md) for the source delta, independent book scopes, new data/graphics,
-comparison baseline and remaining qualification. Earlier records below are historical.
+Current 2026-11-18 implementation: reviewed source 58986f512add4d01d13cb5ea3bff633b8d546f39.
+See [the shared round review](../commercial-reference-review.md) for the earlier source delta, independent book scopes, data/graphics,
+comparison baseline and remaining qualification.
+
+## PIOLITE-P3 source and publication scope
+
+The synchronized source integrates PIO-lite at APB `0x1001C000`, IRQ24 and RCU15, with USER GPIO and DMA14/15; the RCU target mask is `0x3FFFF`, Tiny's request mask is `0x3F9FF`, and seven stream directions are reported. Mini remains default-off with `EnablePiolite=0`, five legacy stream directions and no requests14/15. The current structure contains 24 IP chapters, 88 frozen major/IP entries and 142 outlined navigation entries, with 682 register definitions and 1329 expanded instance addresses across 28 address regions and 22 allocated interrupt causes.
+
+The 480-page PDF has a byte-identical offline repeat build and 24 recorded content/navigation ranges against the retained 425-page baseline. These are publication checks, not PIOLITE-P3 acceptance, hardware qualification or current CI results. Earlier records below are historical.
+
+## Historical review records
 
 Reviewed source: `f5f58a36758968e984a43159a3e155c56cbe1f38` from `dev`.
 Main profile: `configs/ci/ics55-tiny.mk`; compatibility: `configs/ci/ihp130-tiny.mk`.

@@ -1,8 +1,12 @@
 # Mini datasheet content review - v0.5 OpenC906 refresh, 2026-10-22
 
-Current 2026-11-14 implementation: reviewed dev 6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87.
-See [the shared round review](commercial-reference-review.md) for the source delta, independent book scopes, new data/graphics,
-comparison baseline and remaining qualification. Earlier records below are historical.
+Current 2026-11-18 implementation: reviewed source 58986f512add4d01d13cb5ea3bff633b8d546f39.
+See [the shared round review](commercial-reference-review.md) for the earlier source delta, independent book scopes, data/graphics,
+comparison baseline and remaining qualification.
+
+The synchronized Mini publication remains default-off for PIO-lite: `EnablePiolite=0`, requests14/15 stay unpublished, and the five actual legacy stream directions are reported without changing the request mask or enabling another product feature. The current 830-page PDF is byte-identical across an offline repeat build; current CI remains unevaluated, and no Mini synthesis, netlist, timing or hardware qualification is implied. Earlier records below are historical.
+
+## Historical review records
 
 This English Rill Mini Gen2/Gen2+ refresh retains **v0.5 DRAFT**, 42 IP chapters,
 109 frozen entries and stable chapter/IP anchors. The reviewed dev source is

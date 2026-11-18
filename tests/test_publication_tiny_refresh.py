@@ -247,3 +247,18 @@ def test_every_catalog_ip_has_one_emitted_chapter(data):
 def test_tiny_dma_stream_direction_count_matches_wiring(data):
     capability = next(x for x in data["registers"]["dma"]["registers"] if x["key"] == "main.CAPABILITY")
     assert (tiny.registers.number(capability["reset"]) >> 28) & 7 == 7
+
+
+def test_current_page_map_matches_reviewed_delivery(data):
+    revision = tiny.read(ROOT / tiny.BOOK / "tiny.json")["source_revision"]
+    chapter = (ROOT / tiny.BOOK / "chapter-review.md").read_text(encoding="utf-8")
+    content = (ROOT / tiny.BOOK / "content-review.md").read_text(encoding="utf-8")
+    structure = tiny.read(ROOT / tiny.BOOK / "structure-contract.json")
+    navigation = tiny.read(ROOT / tiny.BOOK / "navigation-contract.json")
+    register_count = sum(len(family["registers"]) for family in data["registers"].values())
+    assert revision in chapter and revision in content
+    assert "| piolite | 252 | 274 |" in chapter
+    assert f"{len(structure['entries'])} frozen major/IP entries" in chapter
+    assert f"{len(navigation['entries'])} outlined navigation entries" in chapter
+    assert f"{register_count} register definitions and {len(data['register_index'])} expanded instance addresses" in chapter
+    assert f"{len(data['regions'])} address regions and {len(data['interrupts'])} allocated interrupt causes" in content
