@@ -1,27 +1,37 @@
 # Publications
 
-Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**, reviewed dev
-903ef1eda3b956864157e6e64319fddde9cd5747. The main references are Tiny ICS55
+Current edition: **2026-11-17**, Tiny **v0.2 DRAFT / Gen1** and Mini
+**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed product source is
+903ef1eda3b956864157e6e64319fddde9cd5747; Mini's is
+6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. The main references are Tiny ICS55
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
 The two books have independent profiles, manifests and output markers.
 
-The IP drawing round starts at publication dev `4315f7d7`, preserving the
-439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
-Tiny's 23 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
+The functional IP drawing round starts at publication dev `80486b9f`, preserving
+the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
+Tiny's 23 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
+shared CeTZ 0.5.2, the `ip-block-v2` style and the
 [IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
 The seven system Circuiteria figures and all other figure families retain
 their design. Both builders export editable data/Typst plus standalone SVG/PDF,
 source fingerprints, geometry/coverage audits and output hashes. Active markers
-are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
+are `tiny-v02-ip-detail-20261117-` and `v05-ip-detail-20261117-`.
+The preceding v1 round started at `4315f7d7` and retained the 439/792-page
+scientific-notation editions. Its [review](ip-block-review.md) is historical.
+The v2 [implementation review](ip-block-detail-review.md) records the current
+scope and acceptance evidence. Historical chapter-review page numbers remain
+historical; the build's structure and change-page reports give current pages.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through dev `b0ac5ee3`. It binds a full
+Makefile and contribution-policy changes through dev `80486b9f`. It binds a full
 commit and each file's blob identity without moving the frozen product SHA.
-The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`;
+The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`
+and `docs/engineering.md`, each with its reviewed immutable blob and reason;
 product documents cannot be exempted. Source checks reject later control-file
 edits and all unreviewed RTL/SDK/profile changes. The manifest hashes both
-reviewed files. This is an explicit one-revision review, not an exclusion from
+reviewed files. The engineering delta documents command plans/offline evidence
+and explicitly leaves metric policy and gates unchanged. This is an explicit
+one-revision review, not an exclusion from
 future source checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,

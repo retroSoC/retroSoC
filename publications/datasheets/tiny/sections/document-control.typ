@@ -10,7 +10,8 @@
  ([2026-10-29],[v0.2 DRAFT],[Same-version Mini hierarchy and engineering-figure alignment.]),
  ([2026-11-10],[v0.2 DRAFT],[Source refresh with PPALite P3, DVP/DMA/RCU contracts and 23 integrated IP chapters.]),
  ([2026-11-11],[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.]),
- (doc.date,[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-14],[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.]),
+ (doc.date,[v0.2 DRAFT],[Functional IP diagram v2: 23 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Retain the reviewed 903ef1ed product source, stable anchors and hardware qualification limits.])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,

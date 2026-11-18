@@ -123,8 +123,13 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     ):
         raise ValueError("Makefile differs from the explicit build-control review")
     documents = review.get("documentation_blobs", {})
-    if not isinstance(documents, dict) or set(documents) - {"docs/git-workflow.md"}:
-        raise ValueError("build-control review permits only the non-product Git workflow document")
+    if not isinstance(documents, dict) or set(documents) - {
+        "docs/git-workflow.md",
+        "docs/engineering.md",
+    }:
+        raise ValueError(
+            "build-control review permits only the fixed non-product control documents"
+        )
     for path, identity in documents.items():
         if not isinstance(identity, str) or not re.fullmatch(r"[0-9a-f]{40}", identity):
             raise ValueError("reviewed workflow document requires a complete blob identity")
@@ -155,7 +160,7 @@ def validate_source(config: dict[str, Any]) -> None:
         "scripts/generate_openc906.py",
         "Makefile",
     )
-    if {"Makefile", "docs/git-workflow.md"}.intersection(
+    if {"Makefile", "docs/git-workflow.md", "docs/engineering.md"}.intersection(
         changed.splitlines()
     ) and reviewed_build_control(config):
         reviewed = {"Makefile", *config["build_control_review"].get("documentation_blobs", {})}
@@ -401,8 +406,7 @@ def source_hashes(
     }
     if config.get("build_control_review"):
         paths.add("Makefile")
-        if "docs/git-workflow.md" in config["build_control_review"].get("documentation_blobs", {}):
-            paths.add("docs/git-workflow.md")
+        paths.update(config["build_control_review"].get("documentation_blobs", {}))
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(MINI_BINDING_SOURCES)

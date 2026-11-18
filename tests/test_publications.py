@@ -1,4 +1,5 @@
 """Datasheet extraction rejects stale, ambiguous and incomplete engineering inputs."""
+
 from __future__ import annotations
 
 import copy
@@ -14,14 +15,16 @@ from publications import build_datasheet as ds  # noqa: E402
 
 
 def sample_catalog():
-    return [{"id": "timer", "regions": ["TIM0"], "irqs": ["timer0"],
-             "sources": ["docs/ip/timer.md"]}]
+    return [
+        {"id": "timer", "regions": ["TIM0"], "irqs": ["timer0"], "sources": ["docs/ip/timer.md"]}
+    ]
 
 
 def test_catalog_rejects_missing_active_or_reserved_window():
     with pytest.raises(ValueError, match="undocumented regions"):
-        ds.validate_catalog(sample_catalog(), [{"symbol": "TIM0"}, {"symbol": "RESERVED"}],
-                            [{"name": "timer0"}])
+        ds.validate_catalog(
+            sample_catalog(), [{"symbol": "TIM0"}, {"symbol": "RESERVED"}], [{"name": "timer0"}]
+        )
 
 
 def test_catalog_rejects_duplicate_region_between_different_ips():
@@ -35,8 +38,9 @@ def test_catalog_rejects_duplicate_region_between_different_ips():
 
 def test_catalog_rejects_lost_interrupt():
     with pytest.raises(ValueError, match="undocumented IRQs"):
-        ds.validate_catalog(sample_catalog(), [{"symbol": "TIM0"}],
-                            [{"name": "timer0"}, {"name": "timer1"}])
+        ds.validate_catalog(
+            sample_catalog(), [{"symbol": "TIM0"}], [{"name": "timer0"}, {"name": "timer1"}]
+        )
 
 
 def test_catalog_rejects_unknown_interrupt():
@@ -82,10 +86,21 @@ def build_review(tmp_path, monkeypatch):
     import subprocess
 
     def git(*args):
-        return subprocess.check_output([
-            "git", "-C", str(tmp_path), "-c", "user.name=Publication Test",
-            "-c", "user.email=publication@example.invalid", "-c", "commit.gpgsign=false", *args,
-        ], text=True).strip()
+        return subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(tmp_path),
+                "-c",
+                "user.name=Publication Test",
+                "-c",
+                "user.email=publication@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                *args,
+            ],
+            text=True,
+        ).strip()
 
     git("init", "--quiet")
     makefile = tmp_path / "Makefile"
@@ -93,18 +108,28 @@ def build_review(tmp_path, monkeypatch):
     workflow = tmp_path / "docs/git-workflow.md"
     workflow.parent.mkdir()
     workflow.write_text("Use merge commits.\n")
-    git("add", "Makefile", "docs/git-workflow.md")
+    engineering = tmp_path / "docs/engineering.md"
+    engineering.write_text("Metrics are observations.\n")
+    git("add", "Makefile", "docs/git-workflow.md", "docs/engineering.md")
     git("commit", "--quiet", "-m", "test: product baseline")
     baseline = git("rev-parse", "HEAD")
     makefile.write_text("firmware:\n\t@true\nagent-help:\n\t@true\n")
     workflow.write_text("Use merge commits; validate actual merge parents.\n")
-    git("add", "Makefile", "docs/git-workflow.md")
+    engineering.write_text("Metrics are observations; retain exact command plans.\n")
+    git("add", "Makefile", "docs/git-workflow.md", "docs/engineering.md")
     git("commit", "--quiet", "-m", "test: reviewed agent target")
-    config = {"source_revision": baseline, "build_control_review": {
-        "revision": git("rev-parse", "HEAD"), "makefile_blob": git("rev-parse", "HEAD:Makefile"),
-        "documentation_blobs": {"docs/git-workflow.md": git("rev-parse", "HEAD:docs/git-workflow.md")},
-        "reason": "Reviewed Agent target and contribution policy; firmware rule unchanged.",
-    }}
+    config = {
+        "source_revision": baseline,
+        "build_control_review": {
+            "revision": git("rev-parse", "HEAD"),
+            "makefile_blob": git("rev-parse", "HEAD:Makefile"),
+            "documentation_blobs": {
+                "docs/git-workflow.md": git("rev-parse", "HEAD:docs/git-workflow.md"),
+                "docs/engineering.md": git("rev-parse", "HEAD:docs/engineering.md"),
+            },
+            "reason": "Reviewed Agent target and contribution policy; firmware rule unchanged.",
+        },
+    }
     monkeypatch.setattr(ds, "git", git)
     return config, makefile, git
 
@@ -116,10 +141,22 @@ def test_explicit_build_control_review_preserves_the_product_revision(build_revi
     assert ds.reviewed_build_control({"source_revision": config["source_revision"]}) is False
 
 
-@pytest.mark.parametrize("mutation", [
-    "dirty", "later-commit", "blob", "reason", "baseline", "document-dirty",
-    "document-blob", "product-document", "document-type",
-])
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "dirty",
+        "later-commit",
+        "blob",
+        "reason",
+        "baseline",
+        "document-dirty",
+        "document-blob",
+        "product-document",
+        "document-type",
+        "engineering-dirty",
+        "engineering-blob",
+    ],
+)
 def test_build_control_review_cannot_cover_unreviewed_changes(build_review, mutation):
     config, makefile, git = build_review
     if mutation in {"dirty", "later-commit", "baseline"}:
@@ -135,6 +172,10 @@ def test_build_control_review_cannot_cover_unreviewed_changes(build_review, muta
         (makefile.parent / "docs/git-workflow.md").write_text("Unreviewed contribution policy.\n")
     elif mutation == "document-blob":
         config["build_control_review"]["documentation_blobs"]["docs/git-workflow.md"] = "0" * 40
+    elif mutation == "engineering-dirty":
+        (makefile.parent / "docs/engineering.md").write_text("Unreviewed gate change.\n")
+    elif mutation == "engineering-blob":
+        config["build_control_review"]["documentation_blobs"]["docs/engineering.md"] = "0" * 40
     elif mutation == "product-document":
         config["build_control_review"]["documentation_blobs"] = {"docs/ip/tiny-soc.md": "0" * 40}
     elif mutation == "document-type":

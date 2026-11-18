@@ -5,19 +5,20 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-ip-block-20261116-",
-  "date": "2026-11-14",
+  "change_prefix": "v05-ip-detail-20261117-",
+  "date": "2026-11-17",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
   "build_control_review": {
-    "revision": "b0ac5ee36d408b448de07b69788d87e5d16f3079",
-    "makefile_blob": "51847042d9060643206f33a8017d2cc0c7172712",
+    "revision": "80486b9fe3664c85b17c0ac093f8a9eddc34ba15",
+    "makefile_blob": "731ffee3868198de59a8baeb8bd975bb5ff3505f",
     "documentation_blobs": {
-      "docs/git-workflow.md": "97d99c94a33d2f51789dd7cd1ce0ec9f970d5934"
+      "docs/git-workflow.md": "97d99c94a33d2f51789dd7cd1ce0ec9f970d5934",
+      "docs/engineering.md": "89632d8dca3e881ce9e7ec284a963cd0f127f0e2"
     },
-    "reason": "Reviewed dev synchronization adds isolated non-committing merge preflight, on-demand fixture restoration, unified delivery watching and cache restore identity. Makefile changes since the prior review only add preflight merge arguments and a check-fast test; the Git workflow documents merge scanning and watcher coordination. Product build rules, RTL, SDK, hardware profiles, dependency pins and the frozen product source revision remain unchanged. Later control-file edits require a fresh explicit review."
+    "reason": "Reviewed dev through 80486b9f: the latest Makefile change only adds test_performance_evidence.py to check-fast. The docs/engineering.md delta adds only regression command-plan and offline performance-evidence collection rules; it explicitly preserves metric observe policy and gates and supplies no product measurements. Product Make commands, RTL, SDK, hardware profiles and dependency pins are unchanged. The earlier merge-preflight, fixture and cache control review remains applicable. docs/git-workflow.md is unchanged. Mini retains its own frozen product source revision; later control-file or document edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

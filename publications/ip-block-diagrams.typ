@@ -1,89 +1,65 @@
-// Monochrome source-bound functional IP views. Geometry is in final millimetres.
+// RCC-style functional IP views. All geometry is explicit final millimetres.
 #import "@preview/cetz:0.5.2" as cetz
 #let ip-block-view(circuit)={
   let s=circuit.scene
+  assert(s.style=="ip-block-v2",message:"Unreviewed IP drawing style")
   set text(font:"Inter",size:9pt,weight:"regular",fill:black)
   set par(leading:1.5pt,spacing:0pt)
   let ip-text(lines,alignment:center)=grid(columns:1,rows:lines.map(_=>3.7mm),align:alignment+horizon,..lines)
   cetz.canvas(length:1mm,{
     import cetz.draw: *
     let p(v)=(v.at(0),-v.at(1))
-    let signal(points,both:false)={
-      line(..points,stroke:0.65pt+black)
-      let ends=if both {(points,points.rev())} else {(points,)}
-      for route in ends {
-        let tip=route.last()
-        let before=route.at(route.len() - 2)
-        let dx=tip.at(0)-before.at(0)
-        let dy=tip.at(1)-before.at(1)
-        let d=calc.sqrt(dx*dx+dy*dy)
-        let u=dx/d;let v=dy/d
-        line((tip.at(0)-u*1.8-v*0.75,tip.at(1)-v*1.8+u*0.75),tip,
-          (tip.at(0)-u*1.8+v*0.75,tip.at(1)-v*1.8-u*0.75),close:true,fill:black,stroke:none)
-      }
-    }
-    let box(n)={
-      if n.at("condition",default:none)!=none {
-        rect((n.x - 1,-n.y+1),(n.x+n.w+1,-n.y - n.h - 1),stroke:(paint:black,thickness:0.6pt,dash:"dashed"),fill:none)
-      }
-      if n.role=="bus" {
-        line((n.x,-n.y),(n.x,-n.y - n.h),stroke:(paint:black,thickness:3pt,cap:"round"))
-        if n.at("side",default:"left")=="left" {content((n.x - 3,-n.y - n.h/2),anchor:"east",ip-text(n.lines,alignment:right))}
-        else {content((n.x+3,-n.y - n.h/2),anchor:"west",ip-text(n.lines,alignment:left))}
-      } else {
-        if n.shape=="mux" {
-          line((n.x,-n.y),(n.x+n.w,-n.y - 3),(n.x+n.w,-n.y - n.h+3),(n.x,-n.y - n.h),close:true,fill:white,stroke:0.6pt+black)
-        } else {
-          rect((n.x,-n.y),(n.x+n.w,-n.y - n.h),fill:white,stroke:0.6pt+black,radius:0pt)
-          if n.shape=="fifo" {
-            line((n.x+1,-n.y - n.h+1),(n.x+n.w - 1,-n.y - n.h+1),stroke:0.6pt+black)
-          }
-        }
-        content((n.x+n.w/2,-n.y - n.h/2),ip-text(n.lines))
-      }
-    }
-    rect((0,0),(s.width,-s.height),fill:white,stroke:0.6pt+black,radius:0pt)
+    rect((0.12,-0.12),(s.width - 0.12,-s.height + 0.12),fill:white,stroke:0.6pt+black,radius:0pt)
     let b=s.boundary
     rect(p(b.slice(0,2)),(b.at(0)+b.at(2),-b.at(1)-b.at(3)),fill:rgb("#F2F2F2"),stroke:0.9pt+black,radius:0pt)
-    content((b.at(0)+b.at(2)/2,-b.at(1)+3),text(weight:"bold")[#circuit.block_diagram.at("boundary_title",default:circuit.block_diagram.title)])
-    let side-count=(left:0,right:0)
-    for port in s.ports {
-      let side=if port.direction=="input" {"left"} else {"right"}
-      let y=port.y
-      side-count.insert(side,side-count.at(side)+1)
-      if side=="left" {
-        content((25,-y),anchor:"east",ip-text(port.lines,alignment:right))
-        signal(((26,-y),(29,-y)))
-      } else {
-        content((147,-y),anchor:"west",ip-text(port.lines,alignment:left))
-        signal(((141,-y),(145,-y)))
-      }
+    content((s.heading.x, -s.heading.y),anchor:"north-west",text(weight:"bold")[#s.heading.text])
+    for group in s.groups {
+      rect((group.x, -group.y), (group.x + group.w, -group.y - group.h),fill:none,stroke:(paint:black,thickness:0.6pt,dash:"dashed"))
+      content((group.x + 2, -group.y - 2),anchor:"north-west",group.title)
     }
-    for interface in s.interfaces {
-      let x=interface.x
-      let y=interface.y
-      line((x,-y+interface.span/2),(x,-y - interface.span/2),stroke:(paint:black,thickness:3pt,cap:"round"))
-      let n=s.nodes.find(n=>n.id==interface.node)
-      if interface.side=="left" {
-        content((x - 3,-y),anchor:"east",ip-text(interface.lines,alignment:right))
-        if interface.at("direction",default:"")=="output" {signal(((n.x,-y),(x,-y)))}
-        else {signal(((x,-y),(n.x,-y)),both:interface.at("direction",default:"")!="input")}
-      } else {
-        content((x+3,-y),anchor:"west",ip-text(interface.lines,alignment:left))
-        if interface.at("direction",default:"")=="input" {signal(((x,-y),(n.x+n.w,-y)))}
-        else {signal(((n.x+n.w,-y),(x,-y)),both:interface.at("direction",default:"")!="output")}
-      }
+    // Emit shared trunks once; only horizontal unrelated nets carry bridges.
+    for segment in s.segments {
+      let a=segment.points.first();let z=segment.points.last()
+      if a.at(1)==z.at(1) {
+        let cuts=s.crossings.filter(c=>{
+          let w=s.wires.at(c.horizontal)
+          w.source_key == segment.net and c.point.at(1) == a.at(1) and a.at(0) < c.point.at(0) and c.point.at(0) < z.at(0)
+        }).sorted(key:c=>c.point.at(0))
+        let start=a
+        for c in cuts {
+          let x=c.point.at(0);let y=c.point.at(1);let r=c.radius
+          line(p(start),p((x - r, y)),stroke:0.65pt+black)
+          bezier(p((x - r, y)),p((x + r, y)),p((x - r, y - r*4/3)),p((x + r, y - r*4/3)),stroke:0.65pt+black,fill:none)
+          start=(x + r, y)
+        }
+        line(p(start),p(z),stroke:0.65pt+black)
+      } else {line(p(a),p(z),stroke:0.65pt+black)}
     }
-    for w in s.wires {
-      if w.kind=="data" {
-        line(..w.polygon.map(p),close:true,fill:white,stroke:0.6pt+black)
-      } else {
-        signal(w.points.map(p))
-      }
+    for wire in s.wires {
+      for arrow in wire.arrows {line(..arrow.map(p),close:true,fill:black,stroke:none)}
     }
-    for point in s.at("junctions",default:()) {circle(p(point),radius:0.55,fill:black,stroke:none)}
-    for n in s.nodes {box(n)}
-    for l in s.labels {content((l.x+l.w/2,-l.y - l.h/2),l.text)}
-    for l in s.legend {content((l.x,-l.y),anchor:"north-west",ip-text(l.lines,alignment:left))}
+    for point in s.junctions {circle(p(point),radius:0.55,fill:black,stroke:none)}
+    for n in s.nodes {
+      if n.role=="pin-list" {
+        for pin in n.pin_labels {content((n.x + 2, -pin.y),anchor:"west",ip-text(pin.lines,alignment:left))}
+      } else if n.role=="bus" {
+        let x=if n.at("side",default:"left")=="left" {n.x + n.w} else {n.x}
+        line((x, -n.y),(x, -n.y - n.h),stroke:(paint:black,thickness:3pt,cap:"round"))
+      } else if n.role!="terminal" {
+        if n.at("condition",default:none)!=none {
+          rect((n.x - 1, -n.y + 1),(n.x + n.w + 1, -n.y - n.h - 1),stroke:(paint:black,thickness:0.6pt,dash:"dashed"),fill:none)
+        }
+        // A function may group several MUXes; its rectangular contour is also
+        // the authored port contour. Sloping glyphs must not leave floating pins.
+        rect((n.x, -n.y),(n.x + n.w, -n.y - n.h),fill:white,
+          stroke:if n.at("ownership",default:"")=="soc-integration" {(paint:black,thickness:0.6pt,dash:"dashed")} else {0.6pt+black},radius:0pt)
+        if n.shape=="fifo" {line((n.x + 1, -n.y - n.h + 1),(n.x + n.w - 1, -n.y - n.h + 1),stroke:0.6pt+black)}
+      }
+      if n.at("signal_label",default:none)!=none {
+        let l=n.signal_label
+        content((l.x,-l.y),anchor:"north-west",ip-text(l.lines,alignment:left))
+      } else if n.role!="pin-list" {content((n.x + n.w/2, -n.y - n.h/2),ip-text(n.lines))}
+    }
+    for l in s.labels {content((l.x,-l.y),anchor:"north-west",ip-text(l.lines,alignment:left))}
   })
 }
