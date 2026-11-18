@@ -515,3 +515,73 @@ def test_resume_cli_rejects_missing_reason_and_incompatible_modes(monkeypatch: p
     assert cli.main() == 2
     monkeypatch.setattr(cli.sys, "argv", ["pr_delivery.py", "--pr", "248", "--resume-reason", "diagnosed"])
     assert cli.main() == 2
+
+
+def test_reconcile_preserves_recovery_context_before_friction_emission(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_evidence(tmp_path)
+    mock_merged_environment(monkeypatch, tmp_path)
+    recovery = {"from_status": "ATTENTION", "previous_head_sha": "c" * 40}
+    local = {
+        "schema_version": 1,
+        "repository": "retroSoC/retroSoC",
+        "pr": 248,
+        "branch": "ci/example",
+        "head_sha": "a" * 40,
+        "recovery": recovery,
+        "recovery_history": [recovery],
+        "recovery_history_dropped_count": 0,
+    }
+
+    result = reconcile_delivery(
+        tmp_path,
+        "retroSoC/retroSoC",
+        248,
+        cleanup=True,
+        delete_remote=True,
+        local_record=local,
+    )
+
+    assert result["recovery"] == recovery
+    assert result["recovery_history"] == [recovery]
+    document = json.loads((tmp_path / result["friction_observation"]).read_text(encoding="utf-8"))
+    assert document["friction"]["recovery_recorded"] is True
+    assert document["friction"]["recovery_from_status"] == "ATTENTION"
+    assert document["friction"]["recovery_transition_count"] == 1
+    assert document["local_friction"]["records_with_recovery"] == 1
+    assert document["local_friction"]["recovery_transition_count"] == 1
+    with pytest.raises(ValueError, match="recovery context HEAD"):
+        reconcile_delivery(
+            tmp_path,
+            "retroSoC/retroSoC",
+            248,
+            cleanup=True,
+            delete_remote=True,
+            local_record={**local, "head_sha": "c" * 40},
+        )
+
+
+def test_reconcile_only_loads_recovery_record_from_custom_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import pr_delivery as cli
+
+    record = {"schema_version": 1, "pr": 248, "recovery": {"from_status": "ATTENTION"}}
+    (tmp_path / "pr-248-delivery.json").write_text(json.dumps(record), encoding="utf-8")
+    output = tmp_path / "custom-result.json"
+    seen = []
+
+    def reconcile(*args, **kwargs):
+        seen.append(kwargs["local_record"])
+        return {"schema_version": 1, "pr": 248, "status": "MERGED"}
+
+    monkeypatch.setattr(cli, "reconcile_delivery", reconcile)
+    monkeypatch.setattr(
+        cli.sys,
+        "argv",
+        ["pr_delivery.py", "--pr", "248", "--reconcile-only", "--output", str(output)],
+    )
+    assert cli.main() == 0
+    assert seen == [record]
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == "MERGED"
