@@ -95,7 +95,9 @@ tooling.
   local references, eval corpora, default invocation contracts, and documented
   entrypoints. `test_agent_control.py` covers task contracts, conservative
   change selection, scope enforcement, preflight, and real/mocked Tiny
-  reviewed-source snapshot drift. Mini preflight coverage checks real
+  reviewed-source snapshot drift. Control-plane shadow tests prove candidate-only
+  behavior, exact-path/full escalation, policy fail-closed handling, and preserved
+  quality checks. Mini preflight coverage checks real
   source/control and CI metadata, rejects stale bindings, applies only to
   selected full-Pytest work, and never restores fixtures; `test_skill_eval.py`
   covers isolated

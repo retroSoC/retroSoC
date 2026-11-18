@@ -329,6 +329,93 @@ def load_impact(root: Path) -> dict[str, Any]:
     return policy
 
 
+ENGINEERING_CONTROL_POLICY = "quality/engineering-control-impact.json"
+ENGINEERING_CONTROL_DISABLED = {
+    "regression_smoke",
+    "regression_ihp130",
+    "regression_gf180",
+    "regression_ics55",
+    "regression_sky130",
+    "development_environment",
+}
+
+
+def load_engineering_control_policy(root: Path) -> dict[str, Any]:
+    policy = read_json(root / ENGINEERING_CONTROL_POLICY)
+    if policy.get("schema_version") != 1 or policy.get("mode") != "shadow":
+        raise ValueError("engineering-control impact policy must be schema v1 shadow mode")
+    allowed = policy.get("allowed_paths")
+    if (
+        not isinstance(allowed, list)
+        or not allowed
+        or any(
+            not isinstance(path, str)
+            or not safe_relative_path(path)
+            or any(character in path for character in "*?[")
+            for path in allowed
+        )
+        or len(set(allowed)) != len(allowed)
+    ):
+        raise ValueError("engineering-control impact requires unique exact safe paths")
+    if {"Makefile", ENGINEERING_CONTROL_POLICY}.intersection(allowed):
+        raise ValueError("engineering-control impact cannot allowlist root or policy controls")
+    if set(policy.get("preserved_flags", [])) != {"quality_fast", "quality_fixtures", "skill_eval"}:
+        raise ValueError("engineering-control impact must preserve quality and Skill checks")
+    if set(policy.get("disabled_flags", [])) != ENGINEERING_CONTROL_DISABLED:
+        raise ValueError("engineering-control impact can only reduce product behavioral jobs")
+    return policy
+
+
+def engineering_control_shadow(root: Path, files: list[str], flags: dict[str, bool]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "mode": "shadow",
+        "policy": ENGINEERING_CONTROL_POLICY,
+        "policy_sha256": None,
+        "status": "FULL_REQUIRED",
+        "authoritative": False,
+        "changes_applied": False,
+        "candidate_flags": dict(flags),
+        "would_skip": [],
+        "would_run": [],
+        "unlisted_paths": [],
+        "issues": [],
+    }
+    try:
+        policy = load_engineering_control_policy(root)
+        result["policy_sha256"] = hashlib.sha256((root / ENGINEERING_CONTROL_POLICY).read_bytes()).hexdigest()
+        allowed = set(policy["allowed_paths"])
+        unlisted = sorted(path for path in files if path not in allowed)
+        if unlisted:
+            result.update(
+                unlisted_paths=unlisted,
+                reason="unlisted paths require full validation",
+            )
+            return result
+        if not files:
+            result.update(status="NOT_NEEDED", reason="no changed files")
+            return result
+        candidate = dict(flags)
+        candidate.update(quality_fast=True, quality_fixtures=True)
+        for name in policy["disabled_flags"]:
+            candidate[name] = False
+        would_skip = sorted(name for name in policy["disabled_flags"] if flags.get(name) is True)
+        if not would_skip:
+            result.update(status="NOT_NEEDED", reason="no full-matrix job would be reduced")
+            return result
+        result.update(
+            status="ELIGIBLE",
+            candidate_flags=candidate,
+            would_skip=would_skip,
+            would_run=sorted(name for name, value in candidate.items() if value),
+            reason="all paths are allowlisted; authoritative flags remain unchanged",
+        )
+    except (KeyError, OSError, TypeError, ValueError) as error:
+        result["issues"].append(str(error))
+        result["reason"] = "shadow policy unavailable or invalid; full validation remains authoritative"
+    return result
+
+
 def classify_files(policy: dict[str, Any], files: list[str]) -> tuple[str, list[dict[str, str]]]:
     classification = "documentation"
     matches: list[dict[str, str]] = []
@@ -406,7 +493,7 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
             "python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only "
             "(in Docker and Nix)"
         ]
-    return {
+    plan = {
         "schema_version": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source_revision": git_output(root, "rev-parse", args.head),
@@ -425,6 +512,8 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
             "synthesis_netlist_sta": "NOT_RUN in behavioral jobs; use explicit full-flow evidence"
         },
     }
+    plan["engineering_control_shadow"] = engineering_control_shadow(root, files, flags)
+    return plan
 
 
 def write_github_outputs(plan: dict[str, Any], path: Path) -> None:
@@ -448,7 +537,16 @@ def write_step_summary(plan: dict[str, Any], path: Path) -> None:
     ]
     for name, value in plan["flags"].items():
         lines.append(f"| `{name}` | {'RUN' if value else 'SKIP'} |")
-    lines.extend(["", "Synthesis, netlist and STA remain NOT_RUN in behavioral-only jobs.", ""])
+    shadow = plan["engineering_control_shadow"]
+    lines.extend(
+        [
+            "",
+            f"Engineering-control shadow: `{shadow['status']}`; no authoritative flags changed.",
+            f"Shadow-only candidates (not skipped above): {', '.join(shadow['would_skip']) or 'none'}.",
+            "Synthesis, netlist and STA remain NOT_RUN in behavioral-only jobs.",
+            "",
+        ]
+    )
     with path.open("a", encoding="utf-8") as output:
         output.write("\n".join(lines))
 
