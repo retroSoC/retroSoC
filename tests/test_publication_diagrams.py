@@ -28,7 +28,37 @@ def data():
 @pytest.fixture
 def source_tree(tmp_path):
     circuits = {**SPEC["circuits"], **read_json(ROOT / SPEC["circuit_catalog"])}
-    for relative in dr.dependencies({**SPEC, "circuits": circuits}):
+    paths = dr.dependencies({**SPEC, "circuits": circuits})
+    # Managed local-logic evidence requires a clean checkout at the locked SHA,
+    # not a loose copy of one vendor file. Restore only existing local sources.
+    for source in load_lock()["sources"].values():
+        destination = source["destination"]
+        if not any(path.startswith(destination + "/") for path in paths):
+            continue
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--quiet",
+                "--shared",
+                str(ROOT / destination),
+                str(tmp_path / destination),
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(tmp_path / destination),
+                "checkout",
+                "--quiet",
+                "--detach",
+                source["revision"],
+            ],
+            check=True,
+        )
+    for relative in paths:
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / relative, target)

@@ -1,20 +1,25 @@
 # Publications
 
-Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed source snapshot is
-d9f2781147d7a7c47e5d8c19396fcc2a3de95133; Mini's technical source snapshot is
-d9f2781147d7a7c47e5d8c19396fcc2a3de95133, both reviewed for the P4 acceptance record. The main
-references are Tiny ICS55 (with explicit IHP130 compatibility) and Mini IHP130
-PRODUCT/HP/MPW. The two books have independent profiles, manifests and output markers.
+Current edition: **2026-11-17**, Tiny **v0.2 DRAFT / Gen1** and Mini
+**v0.5 DRAFT / Gen2/Gen2+**. Both books use the technical source reviewed at
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
+IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
+book keeps its own product configuration, manifest and output marker.
 
-The IP drawing round starts at publication dev `4315f7d7`, preserving the
-439-page Tiny and 792-page Mini scientific-notation PDFs/manifests as baselines.
-Tiny's 23 and Mini's 42 main IP diagrams now use shared CeTZ 0.5.2 and the
+The functional IP drawing round starts at publication dev `80486b9f`, preserving
+the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
+Tiny's 23 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
+shared CeTZ 0.5.2, the `ip-block-v2` style and the
 [IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
 The seven system Circuiteria figures and all other figure families retain
 their design. Both builders export editable data/Typst plus standalone SVG/PDF,
 source fingerprints, geometry/coverage audits and output hashes. Active markers
-are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
+are `tiny-v02-ip-detail-20261117-` and `v05-ip-detail-20261117-`.
+The preceding v1 round started at `4315f7d7` and retained the 439/792-page
+scientific-notation editions. Its [review](ip-block-review.md) is historical.
+The v2 [implementation review](ip-block-detail-review.md) records the frozen
+drawing acceptance and subsequent integration with dev. Use each build's
+structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
 Makefile and contribution-policy changes through `506018b2`. It binds a full
