@@ -274,15 +274,39 @@ def emit_friction_observation(root: Path, result: dict[str, Any]) -> str:
     return output.relative_to(main_root).as_posix()
 
 
+def recovery_context(
+    pull: dict[str, Any], record: dict[str, Any] | None, repository: str, number: int
+) -> dict[str, Any]:
+    if record is None:
+        return {}
+    if (
+        record.get("schema_version") != 1
+        or record.get("repository") != repository
+        or record.get("pr") != number
+    ):
+        raise ValueError("delivery recovery context identity mismatch")
+    if record.get("head_sha") != pull.get("headRefOid"):
+        raise ValueError("delivery recovery context HEAD differs from the merged PR")
+    if record.get("branch") != pull.get("headRefName"):
+        raise ValueError("delivery recovery context branch differs from the merged PR")
+    return {
+        field: record[field]
+        for field in ("recovery", "recovery_history", "recovery_history_dropped_count")
+        if field in record
+    }
+
+
 def reconcile_delivery(
     root: Path,
     repository: str,
     number: int,
     cleanup: bool,
     delete_remote: bool,
+    local_record: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     auto_merge_policy(root)
     pull = view_pr(repository, number, root)
+    context = recovery_context(pull, local_record, repository, number)
     final_checks = merged_check_evidence(root, repository, number, pull.get("headRefOid", ""))
     cleanup_warnings = cleanup_merged_branch(root, pull, delete_remote=delete_remote) if cleanup else ["cleanup was not requested"]
     if not cleanup:
@@ -295,6 +319,7 @@ def reconcile_delivery(
     if final_checks["status"] != "PASS":
         warnings.append(f"merged-head final checks are {final_checks['status']}")
     result = {
+        **context,
         **evidence,
         "schema_version": 1,
         "repository": repository,
@@ -434,12 +459,19 @@ def main() -> int:
         root = args.root.resolve()
         output = args.output or worktree_main_root(root) / "build/engineering" / f"pr-{args.pr}-delivery.json"
         if args.reconcile_only:
+            from scripts.delivery_controller import record_path
+
+            local_path = record_path(output.parent, args.pr)
+            if local_path.is_symlink() or (local_path.exists() and not local_path.is_file()):
+                raise ValueError("reconcile-only delivery record must be a regular file")
+            local_record = read_json(local_path) if local_path.is_file() else None
             result = reconcile_delivery(
                 root,
                 args.repository,
                 args.pr,
                 cleanup=not args.no_cleanup,
                 delete_remote=not args.no_remote_delete,
+                local_record=local_record,
             )
         else:
             if args.preflight_only:

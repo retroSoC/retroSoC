@@ -59,7 +59,7 @@ def test_coordinator_resumes_pending_native_delivery_and_cleanup(
     monkeypatch.setattr("scripts.delivery_controller.native_auto_merge_enabled", lambda *args: True)
     monkeypatch.setattr("scripts.delivery_controller.checks_report", lambda *args, **kwargs: next(reports))
 
-    def reconcile(root, repository, number, cleanup, delete_remote):
+    def reconcile(root, repository, number, cleanup, delete_remote, local_record=None):
         reconciliations.append(number)
         return {
             "status": "MERGED",
@@ -172,7 +172,7 @@ def test_coordinator_forwards_cleanup_opt_outs(tmp_path: Path, monkeypatch: pyte
     monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull("MERGED"))
     calls = []
 
-    def reconcile(root, repository, number, cleanup, delete_remote):
+    def reconcile(root, repository, number, cleanup, delete_remote, local_record=None):
         calls.append((cleanup, delete_remote))
         return {
             "status": "MERGED_WITH_WARNINGS",
@@ -208,15 +208,19 @@ def test_recovery_metadata_survives_coordination(tmp_path: Path, monkeypatch: py
     record["recovery_history"] = [recovery]
     path = write_record(directory, record)
     monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull("MERGED"))
-    monkeypatch.setattr(
-        "scripts.delivery_controller.reconcile_delivery",
-        lambda *args, **kwargs: {"status": "MERGED", "cleanup": "COMPLETE", "warnings": []},
-    )
+    seen = []
+
+    def reconcile(*args, **kwargs):
+        seen.append(kwargs["local_record"])
+        return {"status": "MERGED", "cleanup": "COMPLETE", "warnings": []}
+
+    monkeypatch.setattr("scripts.delivery_controller.reconcile_delivery", reconcile)
     result = coordinate_once(ROOT, "retroSoC/retroSoC", [1], directory)
     assert result["status"] == "COMPLETE"
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert saved["recovery"] == recovery
     assert saved["recovery_history"] == [recovery]
+    assert seen[0]["recovery_history"] == [recovery]
 
 
 def test_make_forwards_explicit_resume_reason() -> None:
