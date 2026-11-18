@@ -161,6 +161,81 @@ def test_makefile_review_does_not_waive_an_unreviewed_workflow_document(monkeypa
         ds.validate_source(config)
 
 
+def test_control_review_candidate_is_read_only_and_retains_ci_evidence():
+    from scripts.publication_control import build_plan
+
+    config_path = ROOT / "publications/datasheets/mini.json"
+    reference_path = ROOT / "publications/datasheets/system-reference.json"
+    original_config = config_path.read_bytes()
+    original_reference = reference_path.read_bytes()
+    result = build_plan(ROOT, "HEAD", "Reviewed candidate generation without product changes")
+
+    assert result["status"] == "READY"
+    assert result["candidate_validation"] == "PASS"
+    assert result["approval_status"] == "REVIEW_REQUIRED"
+    assert result["applied"] is False
+    assert result["source_files_modified"] is False
+    assert len(result["candidate_review"]["revision"]) == 40
+    assert len(result["candidate_review"]["makefile_blob"]) == 40
+    assert result["candidate_review"]["documentation_blobs"]["docs/git-workflow.md"]
+    assert result["ci_evidence"]["status"] == "RETAINED_UNCHANGED"
+    assert result["ci_evidence"]["run_ids"]
+    assert config_path.read_bytes() == original_config
+    assert reference_path.read_bytes() == original_reference
+
+
+def test_control_review_rejects_bad_reason_and_unknown_revision():
+    from scripts.publication_control import build_plan
+
+    with pytest.raises(ValueError, match="one non-empty line"):
+        build_plan(ROOT, "HEAD", " ")
+    result = build_plan(ROOT, "0" * 40, "Nonexistent control revision")
+    assert result["status"] == "BLOCKED"
+    assert result["applied"] is False
+    assert result["issues"]
+
+
+def test_control_review_preserves_candidate_validation_failure(monkeypatch):
+    from scripts.publication_control import build_plan
+
+    monkeypatch.setattr(
+        "publications.build_datasheet.validate_source_snapshot",
+        lambda config: (_ for _ in ()).throw(ValueError("candidate mismatch")),
+    )
+    result = build_plan(ROOT, "HEAD", "Candidate mismatch must remain visible")
+    assert result["status"] == "BLOCKED"
+    assert result["candidate_validation"] == "NOT_AVAILABLE"
+    assert result["applied"] is False
+    assert result["issues"] == ["candidate mismatch"]
+
+
+def test_control_review_make_target_is_read_only():
+    import subprocess
+
+    root_makefile = ROOT / "Makefile"
+    original = root_makefile.read_bytes()
+    completed = subprocess.run(
+        [
+            "make",
+            "--no-print-directory",
+            "-n",
+            "agent-control-review",
+            "REVISION=HEAD",
+            "REASON=review only",
+            "OUTPUT=build/review.json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "scripts/publication_control.py plan" in completed.stdout
+    assert "--revision" in completed.stdout
+    assert "--reason" in completed.stdout
+    assert root_makefile.read_bytes() == original
+
+
 def test_missing_media_fails_without_attempting_network(tmp_path, monkeypatch):
     monkeypatch.setattr(ds, "ROOT", tmp_path)
     with pytest.raises(ValueError, match="media repository missing; run setup"):
