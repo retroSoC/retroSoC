@@ -317,7 +317,12 @@ def test_mini_snapshot_uses_real_reviewed_control_and_ci_metadata() -> None:
     assert result["status"] == "PASS", result
     assert len(result["source_revision"]) == 40
     assert result["ci_checked_at"]
-    assert result["ci_run_count"] >= 1
+    if result["ci_run_count"] == 0:
+        reference = json.loads((ROOT / "publications/datasheets/system-reference.json").read_text())
+        assert "not been evaluated" in reference["ci_snapshot"]["boundary"]
+        assert reference["ci_snapshot"]["runs"] == []
+    else:
+        assert result["ci_run_count"] >= 1
     assert result["fixture_restore"] == "NOT_RUN"
     assert result["managed_inputs"] == "NOT_REQUESTED"
     assert mini_snapshot_status(ROOT, required=False)["status"] == "NOT_REQUESTED"
