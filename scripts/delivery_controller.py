@@ -54,7 +54,14 @@ def reconcile_record(
     if pull.get("headRefName") != record.get("branch"):
         raise ValueError(f"delivery branch differs for PR {number}")
     if pull.get("state") == "MERGED":
-        reconciled = reconcile_delivery(root, repository, number, cleanup=cleanup, delete_remote=delete_remote)
+        reconciled = reconcile_delivery(
+            root,
+            repository,
+            number,
+            cleanup=cleanup,
+            delete_remote=delete_remote,
+            local_record=record,
+        )
         result = {
             **record,
             **reconciled,

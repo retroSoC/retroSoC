@@ -321,7 +321,10 @@ to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
 failed final report is explicit and never becomes a PASS by inference.
 Each reconciliation writes `build/engineering/pr-<number>-friction.json` and links
 it as `friction_observation`. This is a merge-matched local observation with
-actual recovery/final-check/evidence states, not a metric gate. It collects no
+actual recovery/final-check/evidence states, not a metric gate. The coordinator
+passes the existing recovery context before emission, and reconcile-only loads
+the record beside its selected output. PR/repository/branch/HEAD mismatches fail
+before cleanup or metric generation. It collects no
 GitHub timeline and executes no hardware, and completed-record offline no-ops
 remain unchanged.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
