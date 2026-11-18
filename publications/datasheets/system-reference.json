@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
+  "source_revision": "53b3ce25ed234182799dbf3100fd9b3f19c9c2e5",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -14845,9 +14845,9 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
+    "revision": "53b3ce25ed234182799dbf3100fd9b3f19c9c2e5",
     "checked_date": "2026-11-18",
-    "checked_at": "2026-11-18T12:17:34Z",
+    "checked_at": "2026-11-18T13:56:58Z",
     "boundary": "The PIOLITE-P3 source and Mini default-off compatibility review is recorded. CI for this revision has not been evaluated; no workflow result or hardware, physical or release qualification is asserted.",
     "runs": []
   },

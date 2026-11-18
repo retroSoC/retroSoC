@@ -20,7 +20,7 @@ families; the owned SYSCTRL and ARCHINFO overrides are checked separately.
 The 2026-11-17 IP detail round keeps v0.2 DRAFT and Gen1. It starts from
 publication dev `80486b9f`, with the 455-page delivered PDF as comparison
 baseline. The integrated edition uses the reviewed technical snapshot
-`d9f2781147d7a7c47e5d8c19396fcc2a3de95133` carried by dev. Edit
+`53b3ce25ed234182799dbf3100fd9b3f19c9c2e5` carried by dev. Edit
 function/source bindings and final millimetre
 coordinates in `diagram-circuits.json`; do not edit generated SVG/PDF or use the
 legacy circuit coordinates as v2 layout. Follow the shared

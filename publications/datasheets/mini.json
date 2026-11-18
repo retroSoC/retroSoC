@@ -10,9 +10,9 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
+  "source_revision": "53b3ce25ed234182799dbf3100fd9b3f19c9c2e5",
   "build_control_review": {
-    "revision": "179cd93e4f97e2a67cfe9100fdcb990d74f7da44",
+    "revision": "53b3ce25ed234182799dbf3100fd9b3f19c9c2e5",
     "makefile_blob": "d7ab056b5c3d2394cb0a249e94fa9b9f6fbf64b8",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"

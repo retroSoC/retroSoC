@@ -1,6 +1,6 @@
 # Mini datasheet content review - v0.5 OpenC906 refresh, 2026-10-22
 
-Current 2026-11-18 implementation: reviewed source 59042399717779b7ca5cef185d1ceb5ae961b97c.
+Current 2026-11-18 implementation: reviewed source 53b3ce25ed234182799dbf3100fd9b3f19c9c2e5.
 See [the shared round review](commercial-reference-review.md) for the earlier source delta, independent book scopes, data/graphics,
 comparison baseline and remaining qualification.
 

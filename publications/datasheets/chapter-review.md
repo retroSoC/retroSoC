@@ -2,7 +2,7 @@
 
 ## 2026-11-18 current delivery page map
 
-Source: 59042399717779b7ca5cef185d1ceb5ae961b97c. PDF SHA-256: 9901d7d1eaefaffe27fa632c97fae09addbef5f46c079b19bc4485a5130fc177.
+Source: 53b3ce25ed234182799dbf3100fd9b3f19c9c2e5. PDF SHA-256: 9901d7d1eaefaffe27fa632c97fae09addbef5f46c079b19bc4485a5130fc177.
 
 | IP anchor | Start | End |
 | --- | ---: | ---: |
