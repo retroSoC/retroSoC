@@ -668,11 +668,50 @@ def _make_scene(circuit: dict, advances: dict, strategy: str) -> dict:
 
 
 def make_scene(circuit: dict, advances: dict) -> dict:
+    from publications.ip_block_layout import drawing_graph, overview_edges
     from publications.ip_block_layout import make_scene as explicit_scene
 
-    if not circuit["block_diagram"].get("functional"):
+    view = circuit["block_diagram"]
+    if not view.get("functional"):
         raise ValueError("IP has no reviewed functional expansion and explicit layout")
-    return explicit_scene(circuit, advances)
+    graph = view["functional"]
+    if view.get("route_details"):
+        graph = drawing_graph(graph, overview_edges(view))
+    return explicit_scene(circuit, advances, graph)
+
+
+def scoped_route_detail(identifier: str, parent: dict, spec: dict, advances: dict) -> dict:
+    """Render a subset of already verified local paths from the same product graph."""
+    from publications.ip_block_layout import drawing_graph
+
+    view = parent["block_diagram"]
+    title = f"{view['title']} / {spec['title']}"
+    graph = drawing_graph(view["functional"], set(spec["edges"]))
+    if "layout" in spec:
+        graph["layout"] = spec["layout"]
+    owners = {node["owner"] for node in graph["nodes"]}
+    detail = {
+        "block_diagram": {
+            **view,
+            "title": title,
+            "functional": graph,
+            "ports": [],
+            "interfaces": [],
+            "details": [],
+            "route_details": [],
+            "scope": "local-routes",
+        },
+        "nodes": [node for node in parent["nodes"] if node["id"] in owners],
+        "edges": [],
+        "note": spec["note"],
+        "product": view["product"],
+        "renderer": "cetz",
+        "parent_id": identifier,
+        "detail_id": identifier + "-detail-" + spec["id"],
+        "block_title": title + " block diagram",
+    }
+    detail["scene"] = make_scene(detail, advances)
+    return detail
 
 
 def validate_view(root: Path, circuit: dict) -> None:
@@ -840,9 +879,10 @@ def validate_sources(root: Path, product: str, circuits: dict) -> None:
         if circuit.get("block_diagram", {}).get("product") != product:
             raise ValueError("IP block view crosses product boundaries")
         validate_view(root, circuit)
-        from publications.ip_block_layout import validate_functional
+        from publications.ip_block_layout import overview_edges, validate_functional
 
         validate_functional(root, circuit, circuit["block_diagram"]["functional"])
+        overview_edges(circuit["block_diagram"])
         for spec in circuit["block_diagram"].get("details", []):
             owner = next((n for n in circuit["nodes"] if n["id"] == spec["owner"]), None)
             if owner is None:
@@ -859,6 +899,8 @@ def validate_sources(root: Path, product: str, circuits: dict) -> None:
 
 
 def prepare(root: Path, product: str, circuits: dict) -> None:
+    from publications.ip_block_layout import review_issues
+
     validate_sources(root, product, circuits)
     advances = font_advances(
         root / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf"
@@ -875,12 +917,18 @@ def prepare(root: Path, product: str, circuits: dict) -> None:
             members = {u["id"]: u for u in owner.get("units", [])}
             resolved = {**spec, "units": [members[k] for k in spec["members"]]}
             details.append(make_detail(root, product, identifier, circuit, resolved, advances))
+        scoped = [
+            scoped_route_detail(identifier, circuit, spec, advances)
+            for spec in circuit["block_diagram"].get("route_details", [])
+        ]
+        details.extend(scoped)
+        circuit["route_detail_links"] = [detail["detail_id"] for detail in scoped]
         circuit["details"] = details
         circuit["renderer"] = "cetz"
         circuit["product"] = product
         circuit["block_title"] = circuit["block_diagram"]["title"] + " block diagram"
         for key, record in [(identifier, circuit), *((d["detail_id"], d) for d in details)]:
-            issues = geometry_issues(record["scene"], advances)
+            issues = geometry_issues(record["scene"], advances) + review_issues(record["scene"])
             if issues:
                 raise ValueError(f"IP geometry rejected {product}/{key}: {issues}")
 
@@ -1479,6 +1527,8 @@ def source_audit(root: Path, data: dict) -> dict:
                 for e in record["edges"]
             ],
             functional=record["block_diagram"].get("functional"),
+            printed_edge_ids=[wire["id"] for wire in record["scene"]["wires"]],
+            route_details=record["block_diagram"].get("route_details", []),
         )
     return result
 

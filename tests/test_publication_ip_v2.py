@@ -41,6 +41,54 @@ def test_dma_is_functionally_expanded_and_explicitly_routed(dma):
     }
 
 
+def test_readability_rejects_crossing_budget_placeholder_and_split_label(dma):
+    _, _, original = dma
+    scene = deepcopy(original)
+    scene["crossings"] = [None] * (layout.MAX_CROSSINGS + 1)
+    scene["wires"][0]["label"] = " status "
+    scene["labels"] = [{"edge": 0, "text": "Sample count", "lines": ["Sam", "ple", "count"]}]
+    assert layout.review_issues(scene) == [
+        "crossing-limit:13>12",
+        "generic-label:" + scene["wires"][0]["id"],
+        "split-signal-label:" + scene["wires"][0]["id"],
+    ]
+
+
+def test_scoped_routes_keep_all_verified_connections_across_views(dma):
+    _, metrics, _ = dma
+    circuit = json.loads(
+        (ROOT / "publications/datasheets/tiny/diagram-circuits.json").read_text(encoding="utf-8")
+    )["sram"]
+    view = circuit["block_diagram"]
+    layout.validate_functional(ROOT, circuit, view["functional"])
+    overview = blocks.make_scene(circuit, metrics)
+    all_printed = {wire["id"] for wire in overview["wires"]}
+    full = {edge["id"] for edge in view["functional"]["edges"]}
+    assert view["route_details"]
+    for spec in view["route_details"]:
+        detail = blocks.scoped_route_detail("sram", circuit, spec, metrics)
+        all_local = {wire["id"] for wire in detail["scene"]["wires"]}
+        assert set(spec["edges"]) == all_local
+        assert not all_local.intersection(all_printed)
+        all_printed.update(all_local)
+        assert not layout.review_issues(detail["scene"])
+    assert all_printed == full
+    assert not layout.review_issues(overview)
+
+
+def test_scoped_routes_reject_boundary_relocation_and_duplicate_edges(dma):
+    circuit, _, _ = dma
+    view = deepcopy(circuit["block_diagram"])
+    edge = next(edge for edge in view["functional"]["edges"] if edge.get("boundary"))
+    detail = {"id": "scope-test", "title": "Scoped path", "note": "Local paths", "edges": [edge["id"]]}
+    view["route_details"] = [detail]
+    with pytest.raises(ValueError, match="declared boundary route"):
+        layout.overview_edges(view)
+    detail["edges"] *= 2
+    with pytest.raises(ValueError, match="exactly one scoped detail"):
+        layout.overview_edges(view)
+
+
 def test_local_relationships_are_bound_to_their_module(dma):
     circuit, _, _ = dma
     damaged = deepcopy(circuit)
