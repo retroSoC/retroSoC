@@ -199,6 +199,26 @@ def resume_recovery(previous: dict[str, Any], preflight: dict[str, Any], reason:
     }
 
 
+def extend_recovery_history(
+    previous: dict[str, Any], recovery: dict[str, Any], limit: int = 20
+) -> tuple[list[dict[str, Any]], int]:
+    history = previous.get("recovery_history", [])
+    if not isinstance(history, list) or any(not isinstance(item, dict) for item in history):
+        raise ValueError("delivery recovery history must contain objects")
+    history = list(history)
+    legacy = previous.get("recovery")
+    if not history and isinstance(legacy, dict):
+        history.append(legacy)
+    history.append(recovery)
+    previous_dropped = previous.get("recovery_history_dropped_count", 0)
+    if type(previous_dropped) is not int or previous_dropped < 0:
+        raise ValueError("delivery recovery dropped count must be a non-negative integer")
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("delivery recovery history limit must be positive")
+    dropped = max(0, len(history) - limit)
+    return history[dropped:], previous_dropped + dropped
+
+
 def merged_check_evidence(root: Path, repository: str, number: int, expected_head: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "schema_version": 1,
@@ -224,6 +244,36 @@ def merged_check_evidence(root: Path, repository: str, number: int, expected_hea
     return result
 
 
+def emit_friction_observation(root: Path, result: dict[str, Any]) -> str:
+    merge_commit = result.get("merge_commit", "")
+    head_sha = result.get("head_sha", "")
+    if REVISION.fullmatch(str(merge_commit)) is None or REVISION.fullmatch(str(head_sha)) is None:
+        raise ValueError("friction observation requires complete merge and HEAD revisions")
+    from scripts.delivery_metrics import delivery_record, summarize_delivery
+
+    record = delivery_record({"number": result["pr"], "merge_commit": merge_commit}, [], result)
+    if record["friction"] is None:
+        raise ValueError("friction observation does not match the actual PR merge commit")
+    document = {
+        "schema_version": 1,
+        "status": "OBSERVED",
+        "pr": result["pr"],
+        "merge_commit": merge_commit,
+        "source_revision": head_sha,
+        "observed_at": utc_now(),
+        "timeline_status": "NOT_REQUESTED",
+        "hardware_execution": "NOT_RUN",
+        "friction": record["friction"],
+        "local_friction": summarize_delivery([record])["local_friction"],
+    }
+    main_root = worktree_main_root(root).resolve()
+    output = main_root / "build/engineering" / f"pr-{result['pr']}-friction.json"
+    if output.is_symlink():
+        raise ValueError("friction observation output must not be a symlink")
+    atomic_write(output, dump_json(document))
+    return output.relative_to(main_root).as_posix()
+
+
 def reconcile_delivery(
     root: Path,
     repository: str,
@@ -244,7 +294,7 @@ def reconcile_delivery(
     warnings = list(cleanup_warnings)
     if final_checks["status"] != "PASS":
         warnings.append(f"merged-head final checks are {final_checks['status']}")
-    return {
+    result = {
         **evidence,
         "schema_version": 1,
         "repository": repository,
@@ -258,6 +308,8 @@ def reconcile_delivery(
         "warnings": warnings,
         "reconciled_at": utc_now(),
     }
+    result["friction_observation"] = emit_friction_observation(root, result)
+    return result
 
 
 def deliver(
@@ -288,13 +340,16 @@ def deliver(
 
     preflight = delivery_preflight(root, repository, number)
     recovery = None
+    history_result = None
     if resume:
         from scripts.delivery_controller import record_path
 
         previous_path = record_path(delivery_dir, number)
         if previous_path.is_symlink() or not previous_path.is_file():
             raise ValueError("delivery resume requires a regular existing delivery record")
-        recovery = resume_recovery(read_json(previous_path), preflight, resume_reason)
+        previous = read_json(previous_path)
+        recovery = resume_recovery(previous, preflight, resume_reason)
+        history_result = extend_recovery_history(previous, recovery)
     document = enable_delivery(
         root,
         repository,
@@ -304,6 +359,7 @@ def deliver(
     )
     if recovery is not None:
         document["recovery"] = recovery
+        document["recovery_history"], document["recovery_history_dropped_count"] = history_result
     save(document)
     if document["status"] == "BLOCKED" or not watch:
         return document

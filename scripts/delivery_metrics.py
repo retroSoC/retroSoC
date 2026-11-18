@@ -42,14 +42,24 @@ def friction_observation(local: dict[str, Any] | None) -> dict[str, Any] | None:
         return None
     warnings = local.get("warnings")
     recovery = local.get("recovery")
+    history = local.get("recovery_history")
+    recovery_transitions = (
+        len(history)
+        if isinstance(history, list) and history
+        else 1 if isinstance(recovery, dict) and recovery else 0
+    )
     final_checks = local.get("final_checks")
     return {
         "last_check_status": local.get("last_check_status") or "NOT_RECORDED",
         "final_check_status": final_checks.get("status") or "NOT_RECORDED" if isinstance(final_checks, dict) else "NOT_RECORDED",
         "evidence_status": local.get("evidence_status") or "NOT_RECORDED",
         "cleanup_warning_count": len(warnings) if isinstance(warnings, list) else None,
-        "recovery_recorded": isinstance(recovery, dict) and bool(recovery),
+        "recovery_recorded": recovery_transitions > 0,
         "recovery_from_status": recovery.get("from_status") if isinstance(recovery, dict) else None,
+        "recovery_transition_count": recovery_transitions,
+        "recovery_history_dropped_count": local.get("recovery_history_dropped_count")
+        if type(local.get("recovery_history_dropped_count")) is int
+        else None,
     }
 
 
@@ -108,6 +118,7 @@ def summarize_friction(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "record_count": len(observations),
         "records_with_recovery": sum(item["recovery_recorded"] for item in observations),
+        "recovery_transition_count": sum(item["recovery_transition_count"] for item in observations),
         "cleanup_warning_record_count": sum(
             isinstance(item["cleanup_warning_count"], int) and item["cleanup_warning_count"] > 0
             for item in observations

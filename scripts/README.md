@@ -312,10 +312,18 @@ An explicit `--resume` with `--resume-reason` accepts only an existing FAILED or
 ATTENTION record at a changed HEAD after a fresh READY preflight. Native
 auto-merge must remain enabled; same-head retries, identity changes, missing
 reasons, and external disables are rejected without merging. The recovery object
-retains the previous failure identity and reason through coordination. Final
+retains the previous failure identity and reason through coordination. A bounded
+`recovery_history` preserves up to 20 transitions, including a legacy single
+recovery when no history exists, and records the cumulative dropped count. This
+is bounded retention, not a claim of unlimited history. Final
 reconciliation stores `final_checks` separately from `last_check_status`, bound
 to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
 failed final report is explicit and never becomes a PASS by inference.
+Each reconciliation writes `build/engineering/pr-<number>-friction.json` and links
+it as `friction_observation`. This is a merge-matched local observation with
+actual recovery/final-check/evidence states, not a metric gate. It collects no
+GitHub timeline and executes no hardware, and completed-record offline no-ops
+remain unchanged.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
 destination, every retained path, and its SHA-256 before returning `READY`.
 Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or

@@ -138,6 +138,8 @@ def test_delivery_friction_preserves_recovery_and_unknown_states() -> None:
         "warnings": ["retained evidence warning"],
         "last_check_status": "PENDING",
         "recovery": {"from_status": "FAILED", "reason": "Corrected source evidence"},
+        "recovery_history": [{"from_status": "ATTENTION"}, {"from_status": "FAILED"}],
+        "recovery_history_dropped_count": 0,
         "final_checks": {"status": "PASS"},
         "evidence_status": "READY",
     }
@@ -147,6 +149,8 @@ def test_delivery_friction_preserves_recovery_and_unknown_states() -> None:
     assert record["friction"]["recovery_from_status"] == "FAILED"
     assert record["friction"]["last_check_status"] == "PENDING"
     assert record["friction"]["final_check_status"] == "PASS"
+    assert record["friction"]["recovery_transition_count"] == 2
+    assert record["friction"]["recovery_history_dropped_count"] == 0
 
     legacy = delivery_record(
         pull,
@@ -156,10 +160,21 @@ def test_delivery_friction_preserves_recovery_and_unknown_states() -> None:
     assert legacy["friction"]["cleanup_warning_count"] is None
     assert legacy["friction"]["final_check_status"] == "NOT_RECORDED"
     assert legacy["friction"]["evidence_status"] == "NOT_RECORDED"
+    fallback = delivery_record(
+        pull,
+        [],
+        {
+            "merge_commit": pull["merge_commit"],
+            "status": "MERGED",
+            "recovery": local["recovery"],
+        },
+    )
+    assert fallback["friction"]["recovery_transition_count"] == 1
 
     friction = summarize_delivery([record, legacy])["local_friction"]
     assert friction["record_count"] == 2
     assert friction["records_with_recovery"] == 1
+    assert friction["recovery_transition_count"] == 2
     assert friction["cleanup_warning_record_count"] == 1
     assert friction["cleanup_warning_unknown_record_count"] == 1
     assert friction["last_check_status_counts"] == {"NOT_RECORDED": 1, "PENDING": 1}
