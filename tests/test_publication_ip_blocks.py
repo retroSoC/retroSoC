@@ -49,9 +49,15 @@ def test_complete_product_inventory_keeps_66_primary_views_and_seven_legacy_syst
 
 
 def test_tiny_style_matches_collected_primary_count(books):
-    primary = {key: r for key, r in blocks.records(books["tiny"]).items() if "parent_id" not in r}
+    views = blocks.records(books["tiny"])
+    primary = {key: r for key, r in views.items() if "parent_id" not in r}
+    detail_count = len(views) - len(primary)
     style = (ROOT / "publications/datasheets/tiny/style.md").read_text(encoding="utf-8")
+    revision = (ROOT / "publications/datasheets/tiny/sections/document-control.typ").read_text(
+        encoding="utf-8"
+    )
     assert f"all {len(primary)}\nTiny primary figures" in style
+    assert f"{len(primary)} main and {detail_count} detail views" in revision
 
 
 def test_every_drawn_unit_line_and_label_passes_geometric_checks(books):
