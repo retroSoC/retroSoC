@@ -6,6 +6,7 @@
 #include <retrosoc/hal/gpio.h>
 #include <retrosoc/hal/piolite.h>
 #include <retrosoc/hal/rcu.h>
+#include <retrosoc/hal/rcu_regs.h>
 #include <retrosoc/hal/sysctrl.h>
 #include <retrosoc/hal/uart.h>
 #include <retrosoc/lib/printf.h>
@@ -21,10 +22,10 @@ static rs_piolite_session_t rs_pio_shared;
 static rs_dma_session_t rs_pio_tx;
 static rs_dma_session_t rs_pio_rx;
 static uint16_t rs_pio_words[8];
-static _Alignas(64) uint32_t rs_pio_tx_buffer[4];
-static _Alignas(64) uint32_t rs_pio_rx_buffer[4];
+static _Alignas(64) uint32_t rs_pio_tx_buffer[16];
+static _Alignas(64) uint32_t rs_pio_rx_buffer[16];
 static _Alignas(64) rs_dma_tcd_t rs_pio_tcds[2];
-static _Alignas(64) uint32_t rs_pio_tcd_source[2];
+static _Alignas(64) uint32_t rs_pio_tcd_source[16];
 
 static rs_piolite_config_t rs_pio_config(const rs_piolite_program_t *program, uint32_t sm,
                                          uint32_t in_base, uint32_t claim_mask,
@@ -307,6 +308,8 @@ static rs_status_t rs_pio_direct_dma(void) {
     return result;
 }
 
+static rs_status_t rs_pio_recovery_matrix(void);
+
 static rs_status_t rs_pio_mixed_tcd(void) {
     static const uint16_t code[3] = {UINT16_C(0x7040), UINT16_C(0x5080), UINT16_C(0x0020)};
     rs_piolite_config_t config;
@@ -365,7 +368,357 @@ static rs_status_t rs_pio_mixed_tcd(void) {
         result = rs_pio_finish_session();
     }
     if (result == RS_OK) {
+        result = rs_pio_recovery_matrix();
+    }
+    if (result == RS_OK) {
         printf("PIOLITE_P3_CHECK id=6 pass=1 tcds=2 tx_bytes=4\n");
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_wait_transport(uint32_t mask) {
+    uint32_t timeout = RS_PIO_TIMEOUT;
+
+    while (timeout != 0U) {
+        if ((RS_PIO_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) & mask) == mask) {
+            return RS_OK;
+        }
+        --timeout;
+    }
+    return RS_ETIMEOUT;
+}
+
+static rs_status_t rs_pio_recover_after_abort(void) {
+    rs_status_t result = RS_OK;
+
+    if ((RS_PIO_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) != 0U) ||
+        (RS_PIO_REG(RS_PIOLITE_ABI_APB4_TX_BIND) != 0U) ||
+        (RS_PIO_REG(RS_PIOLITE_ABI_APB4_RX_BIND) != 0U) || rs_pio_session.claimed ||
+        rs_pio_session.closing) {
+        result = RS_EIO;
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_claim(&rs_pio_session, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_pio_finish_session();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_recover(void) {
+    rs_status_t result = rs_piolite_abort_reset(&rs_pio_session, RS_PIO_TIMEOUT);
+
+    if (result == RS_OK) {
+        result = rs_pio_recover_after_abort();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_direct_abort(rs_piolite_dma_direction_t direction) {
+    static const uint16_t loop[1] = {UINT16_C(0x9000)};
+    rs_piolite_config_t config;
+    rs_status_t result = rs_pio_load(loop, 1U, 0U, 0U, 0U);
+
+    if (result != RS_OK) {
+        return result;
+    }
+    config = rs_pio_config(&rs_pio_program, 0U, 0U, 1U, 0U);
+    result = rs_pio_setup(&config);
+    if (result == RS_OK) {
+        const bool tx = direction == RS_PIOLITE_DMA_TX;
+        result = rs_piolite_dma_bind(
+            &rs_pio_session, direction, tx ? &rs_pio_tx : &rs_pio_rx,
+            tx ? (uintptr_t)&rs_pio_tx_buffer[0] : (uintptr_t)&rs_pio_rx_buffer[0], 64U, 16U);
+        if ((result == RS_OK) &&
+            (rs_pio_wait_transport(tx ? UINT32_C(0x5) : UINT32_C(0x2)) != RS_OK)) {
+            result = RS_EIO;
+        }
+    }
+    if (result == RS_OK) {
+        result = rs_pio_recover();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_residual_rx(void) {
+    static const uint16_t code[5] = {UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x4060),
+                                     UINT16_C(0x70C0), UINT16_C(0x0020)};
+    rs_piolite_config_t config;
+    rs_piolite_status_t pio_status;
+    rs_dma_status_t status;
+    rs_status_t result = rs_pio_load(code, 5U, 0U, 0U, 4U);
+    uint32_t timeout = RS_PIO_TIMEOUT;
+
+    if (result != RS_OK) {
+        return result;
+    }
+    config = rs_pio_config(&rs_pio_program, 0U, 0U, 1U, 0U);
+    result = rs_pio_setup(&config);
+    if (result == RS_OK) {
+        result = rs_piolite_dma_bind(&rs_pio_session, RS_PIOLITE_DMA_RX, &rs_pio_rx,
+                                     (uintptr_t)&rs_pio_rx_buffer[0], 4U, 1U);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_start(&rs_pio_session);
+    }
+    if ((result == RS_OK) && (rs_pio_wait_transport(UINT32_C(0x8)) != RS_OK)) {
+        result = RS_EIO;
+    }
+    while ((result == RS_OK) && (timeout != 0U)) {
+        result = rs_dma_get_status(2U, &status);
+        if (result != RS_OK) {
+            break;
+        }
+        if (status.done && !status.busy && !status.suspended && !status.aborted && !status.error &&
+            (status.bytes_done == 4U) && (status.remaining == 0U)) {
+            if ((RS_PIO_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS) & UINT32_C(0x8)) == 0U) {
+                result = RS_EIO;
+            }
+            break;
+        }
+        --timeout;
+    }
+    if ((result == RS_OK) && (timeout == 0U)) {
+        result = RS_ETIMEOUT;
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_get_status(&rs_pio_session, &pio_status);
+        if ((result == RS_OK) && (pio_status.complete || ((pio_status.status & UINT32_C(7)) !=
+                                                          RS_PIOLITE_ABI_STATE_HALTED))) {
+            result = RS_EIO;
+        }
+    }
+    if (result == RS_OK) {
+        result = rs_pio_recover();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_unrelated_progress(void) {
+    static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)};
+    rs_piolite_config_t config;
+    rs_piolite_config_t shared_config;
+    rs_dma_status_t status;
+    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 2U);
+    uint32_t sample = 0U;
+
+    if (result != RS_OK) {
+        return result;
+    }
+    config = rs_pio_config(&rs_pio_program, 0U, 0U, 1U, 0U);
+    result = rs_pio_setup(&config);
+    if (result == RS_OK) {
+        result = rs_piolite_dma_bind(&rs_pio_session, RS_PIOLITE_DMA_RX, &rs_pio_rx,
+                                     (uintptr_t)&rs_pio_rx_buffer[0], 64U, 16U);
+    }
+    if (result == RS_OK) {
+        shared_config = rs_pio_config(&rs_pio_program, 1U, 1U, 2U, 0U);
+        result = rs_piolite_configure(&rs_pio_shared, &shared_config);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_claim(&rs_pio_shared, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_start(&rs_pio_session);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_start(&rs_pio_shared);
+    }
+    rs_pio_tcds[0] =
+        (rs_dma_tcd_t){.source = (uint32_t)(uintptr_t)&rs_pio_tcd_source[0],
+                       .destination = (uint32_t)(uintptr_t)&rs_pio_tx_buffer[0],
+                       .byte_count = 64U,
+                       .y_count = 1U,
+                       .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                                  ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT)};
+    const rs_dma_config_t other = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .source = (uintptr_t)&rs_pio_tcd_source[0],
+        .destination = (uintptr_t)&rs_pio_tx_buffer[0],
+        .byte_count = 64U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .burst_beats = 1U,
+    };
+    if (result == RS_OK) {
+        result = rs_dma_configure(1U, &other);
+    }
+    if (result == RS_OK) {
+        RS_DMA_CH_REG(1U, RS_DMA_CH_REG_TCD_HEAD) = (uint32_t)(uintptr_t)&rs_pio_tcds[0];
+        RS_DMA_CH_REG(1U, RS_DMA_CH_REG_TCD_COUNT) = 1U;
+        result = rs_dma_start(1U);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_abort_reset(&rs_pio_session, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_fifo_read(&rs_pio_shared, &sample, 1U, RS_PIO_TIMEOUT);
+        if ((result == RS_OK) && ((sample & 1U) != 1U)) {
+            result = RS_EIO;
+        }
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_wait_done(&rs_pio_shared, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_dma_wait(1U, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_dma_get_status(1U, &status);
+        if ((result == RS_OK) &&
+            ((status.bytes_done != 64U) || (rs_pio_tx_buffer[0] != rs_pio_tcd_source[0]))) {
+            result = RS_EIO;
+        }
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_disable(&rs_pio_shared);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_release(&rs_pio_shared, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_pio_recover_after_abort();
+    }
+    if (rs_dma_reset(1U) != RS_OK) {
+        result = RS_EIO;
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_mixed_abort(void) {
+    static const uint16_t loop[1] = {UINT16_C(0x9000)};
+    rs_piolite_config_t config;
+    rs_status_t result = rs_pio_load(loop, 1U, 0U, 0U, 0U);
+
+    if (result != RS_OK) {
+        return result;
+    }
+    config = rs_pio_config(&rs_pio_program, 0U, 0U, 1U, 0U);
+    result = rs_pio_setup(&config);
+    if (result == RS_OK) {
+        RS_PIO_REG(RS_PIOLITE_ABI_APB4_TX_BIND) = RS_PIO_TX_BINDING;
+        if (RS_PIO_REG(RS_PIOLITE_ABI_APB4_TX_BIND) != RS_PIO_TX_BINDING) {
+            result = RS_EIO;
+        }
+    }
+    rs_pio_tcds[0] =
+        (rs_dma_tcd_t){.next_ptr = (uint32_t)(uintptr_t)&rs_pio_tcds[1],
+                       .source = (uint32_t)(uintptr_t)&rs_pio_tcd_source[0],
+                       .destination = (uint32_t)(uintptr_t)&rs_pio_rx_buffer[0],
+                       .byte_count = 64U,
+                       .y_count = 1U,
+                       .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC | RS_DMA_TCD_DST_INC |
+                                  ((uint32_t)RS_DMA_KIND_MM_TO_MM << RS_DMA_TCD_KIND_SHIFT)};
+    rs_pio_tcds[1] = (rs_dma_tcd_t){
+        .source = (uint32_t)(uintptr_t)&rs_pio_tx_buffer[0],
+        .destination = RS_SOC_APB4_PIOLITE_BASE + 0x240U,
+        .byte_count = 64U,
+        .y_count = 1U,
+        .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
+                   ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
+                   ((uint32_t)RS_DMA_REQUEST_PIOLITE_TX << RS_DMA_TCD_REQUEST_SHIFT)};
+    const rs_dma_config_t first = {
+        .kind = RS_DMA_KIND_MM_TO_MM,
+        .source = (uintptr_t)&rs_pio_tcd_source[0],
+        .destination = (uintptr_t)&rs_pio_rx_buffer[0],
+        .byte_count = 64U,
+        .width = RS_DMA_WIDTH_32,
+        .source_increment = true,
+        .destination_increment = true,
+        .burst_beats = 1U,
+    };
+    if (result == RS_OK) {
+        result = rs_dma_configure(3U, &first);
+    }
+    if (result == RS_OK) {
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_HEAD) = (uint32_t)(uintptr_t)&rs_pio_tcds[0];
+        RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) = 2U;
+        result = rs_dma_start(3U);
+    }
+    if ((result == RS_OK) && (rs_pio_wait_transport(UINT32_C(0x5)) != RS_OK)) {
+        result = RS_EIO;
+    }
+    if (result == RS_OK) {
+        RS_PIO_REG(RS_PIOLITE_ABI_APB4_ABORT) = UINT32_C(1);
+        if ((RS_PIO_REG(RS_PIOLITE_ABI_APB4_SM_STATUS) & UINT32_C(7)) !=
+            RS_PIOLITE_ABI_STATE_CLOSING) {
+            result = RS_EIO;
+        }
+    }
+    if (result == RS_OK) {
+        result = rs_dma_abort_wait(3U, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_dma_reset(3U);
+    }
+    if (result == RS_OK) {
+        result = rs_pio_recover();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_recovery_matrix(void) {
+    rs_status_t result;
+
+    for (uint32_t index = 0U; index < 16U; ++index) {
+        rs_pio_tx_buffer[index] = UINT32_C(0x10203040) + index;
+        rs_pio_rx_buffer[index] = 0U;
+        rs_pio_tcd_source[index] = UINT32_C(0x2468ACE0) + index;
+    }
+    result = rs_pio_direct_abort(RS_PIOLITE_DMA_TX);
+    if (result == RS_OK) {
+        result = rs_pio_direct_abort(RS_PIOLITE_DMA_RX);
+    }
+    if (result == RS_OK) {
+        result = rs_pio_residual_rx();
+    }
+    if (result == RS_OK) {
+        result = rs_pio_unrelated_progress();
+    }
+    if (result == RS_OK) {
+        result = rs_pio_mixed_abort();
+    }
+    return result;
+}
+
+static rs_status_t rs_pio_rcu_recover(rs_status_t rejection, rs_status_t expected,
+                                      uint32_t expected_fault, uint32_t gate_mask,
+                                      uint32_t profile_mask) {
+    rs_tiny_rcu_snapshot_t snapshot;
+    rs_status_t result;
+    uint32_t timeout = RS_PIO_TIMEOUT;
+
+    if (rejection != expected) {
+        return RS_EIO;
+    }
+    while ((timeout != 0U) && ((RS_SOC_REG32(RS_SOC_APB4_SYSCTRL_BASE, RS_TINY_RCU_STATUS_OFFSET) &
+                                RS_TINY_RCU_STATUS_BUSY) != 0U)) {
+        --timeout;
+    }
+    if (timeout == 0U) {
+        return RS_ETIMEOUT;
+    }
+    result = rs_tiny_rcu_get_snapshot(&snapshot);
+    if (result != RS_OK) {
+        return result;
+    }
+    if ((snapshot.fault != expected_fault) ||
+        ((expected == RS_ENOTSUP) && ((snapshot.capability & profile_mask) != 0U)) ||
+        ((snapshot.gate_status & gate_mask) != 0U) ||
+        (((UINT32_C(1) << (uint32_t)snapshot.current_profile) & profile_mask) != 0U)) {
+        return RS_EIO;
+    }
+    if (expected_fault != 0U) {
+        result = rs_tiny_rcu_clear_fault(expected_fault);
+        if (result != RS_OK) {
+            return result;
+        }
+    }
+    result = rs_tiny_rcu_get_snapshot(&snapshot);
+    if ((result == RS_OK) && (snapshot.fault != 0U)) {
+        result = RS_EIO;
     }
     return result;
 }
@@ -383,21 +736,38 @@ static rs_status_t rs_pio_rcu(void) {
     if (result == RS_OK) {
         result = rs_piolite_start(&rs_pio_session);
     }
-    if ((result == RS_OK) && (rs_tiny_rcu_apply_gate(UINT32_C(0x8000), RS_PIO_TIMEOUT) == RS_OK)) {
-        result = RS_EIO;
+    if (result == RS_OK) {
+        result = rs_pio_rcu_recover(rs_tiny_rcu_apply_gate(UINT32_C(0x8000), RS_PIO_TIMEOUT),
+                                    RS_ETIMEOUT, UINT32_C(2), UINT32_C(0x8000), 0U);
     }
     if ((result == RS_OK) &&
-        (rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_PLL192, RS_PIO_TIMEOUT) == RS_OK)) {
+        ((rs_pio_rcu_recover(RS_EBUSY, RS_ETIMEOUT, UINT32_C(2), 0U, 0U) != RS_EIO) ||
+         (rs_pio_rcu_recover(RS_ETIMEOUT, RS_ETIMEOUT, UINT32_C(2), 0U, 0U) != RS_EIO))) {
         result = RS_EIO;
     }
     if (result == RS_OK) {
+        result = rs_tiny_rcu_get_snapshot(&snapshot);
+    }
+    if (result == RS_OK) {
+        result = rs_pio_rcu_recover(
+            rs_tiny_rcu_request_profile(RS_TINY_RCU_PROFILE_PLL192, RS_PIO_TIMEOUT),
+            ((snapshot.capability & UINT32_C(4)) != 0U) ? RS_ETIMEOUT : RS_ENOTSUP,
+            ((snapshot.capability & UINT32_C(4)) != 0U) ? UINT32_C(2) : 0U, 0U, UINT32_C(4));
+    }
+    if (result == RS_OK) {
         result = rs_piolite_abort_reset(&rs_pio_session, RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_piolite_claim(&rs_pio_session, RS_PIO_TIMEOUT);
     }
     if (result == RS_OK) {
         result = rs_pio_finish_session();
     }
     if (result == RS_OK) {
         result = rs_tiny_rcu_apply_gate(UINT32_C(0x8000), RS_PIO_TIMEOUT);
+    }
+    if (result == RS_OK) {
+        result = rs_tiny_rcu_apply_gate(0U, RS_PIO_TIMEOUT);
     }
     if (result == RS_OK) {
         result = rs_tiny_rcu_apply_reset(UINT32_C(0x8000), RS_PIO_TIMEOUT);
@@ -481,14 +851,29 @@ static void rs_pio_finish(uint8_t code) {
 }
 
 int main(void) {
+    const rs_uart_config_t console = {.source_clock_hz = UINT32_C(24000000),
+                                      .baud_rate = UINT32_C(921600),
+                                      .data_bits = 8U,
+                                      .stop_bits = 1U,
+                                      .parity = RS_UART_PARITY_NONE,
+                                      .tx_watermark = 16U,
+                                      .rx_watermark = 32U,
+                                      .rx_timeout_bits = 32U,
+                                      .tx_enable = true,
+                                      .rx_enable = false};
     uint8_t code = 0U;
 
+    if (rs_uart_configure(&console, RS_PIO_TIMEOUT) != RS_OK) {
+        rs_sysctrl_write_test_status(false, 1U);
+        for (;;) {
+        }
+    }
     rs_pio_program = (rs_piolite_program_t){0};
     rs_pio_session = (rs_piolite_session_t){0};
     rs_pio_shared = (rs_piolite_session_t){.sm = 1U};
     rs_pio_tx = (rs_dma_session_t){.channel = 3U};
     rs_pio_rx = (rs_dma_session_t){.channel = 2U};
-    if (rs_pio_discover() != RS_OK) {
+    if ((code == 0U) && (rs_pio_discover() != RS_OK)) {
         code = 1U;
     }
     if ((code == 0U) && (rs_pio_gpio_sweep() != RS_OK)) {

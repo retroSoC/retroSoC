@@ -153,13 +153,38 @@ def test_piolite_acceptance_image_is_explicit_and_isolated() -> None:
 def test_piolite_observer_is_source_bound() -> None:
     observer = (TINY / "dv/tiny_piolite_observers.svh").read_text()
     testbench = (TINY / "dv/retrosoc_tiny_tb.sv").read_text()
+    devices = (TINY / "dv/tiny_p6_devices.svh").read_text()
     assert "tiny_piolite_observers.svh" in testbench
-    assert "assign s_gpio = piolite_drive_value" in observer
+    assert 'wire  s_piolite_p3_active = $test$plusargs("tiny_piolite_p3")' in devices
+    assert "assign s_gpio_1 = (s_piolite_p3_active ||" in devices
+    assert "assign s_gpio_2 = (s_piolite_p3_active ||" in devices
+    assert "assign s_gpio_9 = s_piolite_p3_active ? 1'bz" in devices
+    assert "assign s_gpio_17 = (s_piolite_p3_active ||" in devices
+    assert "force s_gpio" not in observer
+    assert "assign (strong1, strong0) s_gpio_0" in observer
+    assert "assign (strong1, strong0) s_gpio_31" in observer
+    assert "imem_write_data == 16'h1001" in observer
+    assert "piolite_output_release = 1'b1" in observer
+    assert "piolite_output_seen && !u_dut.u_soc.s_gpio_user_select[4]" in observer
+    assert "piolite_output_release = 1'b0" in observer
     assert "force u_dut.u_soc.s_gpio_rst_n" in observer
     assert "PIOLITE_P3_OBSERVATION" in observer
     assert '$value$plusargs("tiny_piolite_observer_log=%s"' in observer
     assert '$display("PIOLITE_P3_' not in observer
-    assert "".join(observer.split()).count("$fdisplay(piolite_observer_fd,") == 10
+    assert "PIOLITE_P3_RCU_APB" in observer
+    assert "PIOLITE_P3_RCU_STATE" in observer
+    assert "u_peripheral_control.s_affected" in observer
+    assert "u_peripheral_control.s_ctrl_q.state" not in observer
+    assert "PIOLITE_P3_RECOVERY_APB" in observer
+    assert "PIOLITE_P3_RECOVERY_GPIO" in observer
+    assert "PIOLITE_P3_RECOVERY_RCU" in observer
+    assert "PIOLITE_P3_DMA_STATE" in observer
+    assert "piolite_reset_start_pending" in observer
+    assert "prdata[2:0] == 3'd1" in observer
+    assert "PIOLITE_P3_RESET_START" in observer
+    assert "if (piolite_reset_seen) $fflush(piolite_observer_fd);" in observer
+    assert "PIOLITE_P3_RECOVERY_PC" not in observer
+    assert "".join(observer.split()).count("$fdisplay(piolite_observer_fd,") == 20
 
 
 GOOD_LOG = """PIOLITE_P3_CHECK id=1 pass=1 clock=24000000 mask=0003ffff
@@ -403,6 +428,45 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
                 assert record["observed_gaps"]
 
 
+def test_piolite_console_initializes_before_records() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    main = source.split("int main(void)", 1)[1]
+    assert main.index("rs_uart_configure") < main.index("rs_pio_program =")
+    console = main.split("const rs_uart_config_t console", 1)[1].split("};", 1)[0]
+    assert ".tx_enable = true" in console
+    assert ".rx_enable = false" in console
+    failure = main.split("if (rs_uart_configure", 1)[1].split("}", 1)[0]
+    assert "rs_sysctrl_write_test_status(false, 1U)" in failure
+    assert "rs_uart_get_status" not in failure
+    assert "printf" not in failure
+    assert "if ((code == 0U) && (rs_pio_discover() != RS_OK))" in main
+
+
+def test_piolite_expected_rcu_rejections_are_recovered() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    helper = source.split("static rs_status_t rs_pio_rcu_recover", 1)[1].split(
+        "static rs_status_t rs_pio_rcu(void)", 1)[0]
+    assert "uint32_t timeout = RS_PIO_TIMEOUT" in helper
+    assert "rejection != expected" in helper
+    assert "snapshot.fault != expected_fault" in helper
+    assert "expected == RS_ENOTSUP" in helper
+    assert "snapshot.gate_status & gate_mask" in helper
+    assert "snapshot.current_profile" in helper
+    assert "rs_tiny_rcu_clear_fault(expected_fault)" in helper
+    assert helper.count("rs_tiny_rcu_get_snapshot(&snapshot)") == 2
+    scenario = source.split("static rs_status_t rs_pio_rcu(void)", 1)[1].split(
+        "static rs_status_t rs_pio_gpio_reset(void)", 1)[0]
+    assert scenario.count("result = rs_pio_rcu_recover(") == 2
+    assert "rs_pio_rcu_recover(RS_EBUSY, RS_ETIMEOUT" in scenario
+    assert "rs_pio_rcu_recover(RS_ETIMEOUT, RS_ETIMEOUT" in scenario
+    assert "? RS_ETIMEOUT : RS_ENOTSUP" in scenario
+    assert scenario.index("rs_pio_rcu_recover") < scenario.index("rs_piolite_abort_reset")
+    gate = scenario.index("rs_tiny_rcu_apply_gate", scenario.index("rs_piolite_abort_reset"))
+    ungate = scenario.index("rs_tiny_rcu_apply_gate(0U", gate)
+    reset = scenario.index("rs_tiny_rcu_apply_reset", ungate)
+    assert gate < ungate < reset
+
+
 def test_piolite_input_only_configuration_disables_set_window() -> None:
     source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
     assert ".set_width = (output_mask != 0U) ? 1U : 0U" in source
@@ -410,11 +474,55 @@ def test_piolite_input_only_configuration_disables_set_window() -> None:
 
 def test_piolite_input_programs_push_received_samples() -> None:
     source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
-    assert source.count("UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)") == 2
+    for name, following in (("rs_pio_gpio_sweep", "rs_pio_shared_input"),
+                            ("rs_pio_shared_input", "rs_pio_output"),
+                            ("rs_pio_unrelated_progress", "rs_pio_mixed_abort")):
+        body = source.split(f"static rs_status_t {name}", 1)[1].split(
+            f"static rs_status_t {following}", 1)[0]
+        assert body.count("UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)") == 1
     direct = source.split("static rs_status_t rs_pio_direct_dma", 1)[1].split(
         "static rs_status_t rs_pio_mixed_tcd", 1)[0]
     assert "UINT16_C(0x7040), UINT16_C(0x5080), UINT16_C(0x4060)" in direct
     assert "UINT16_C(0x4060),\n                                     UINT16_C(0x70C0), UINT16_C(0x0020)" in direct
+
+
+def test_piolite_integrated_recovery_matrix_covers_required_cases() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    matrix = source.split("static rs_status_t rs_pio_recovery_matrix", 1)[1].split(
+        "static rs_status_t rs_pio_rcu_recover", 1)[0]
+    for call in ("rs_pio_direct_abort(RS_PIOLITE_DMA_TX)", "rs_pio_direct_abort(RS_PIOLITE_DMA_RX)",
+                 "rs_pio_residual_rx()", "rs_pio_unrelated_progress()", "rs_pio_mixed_abort()"):
+        assert call in matrix
+    direct = source.split("static rs_status_t rs_pio_direct_abort", 1)[1].split(
+        "static rs_status_t rs_pio_residual_rx", 1)[0]
+    assert "rs_pio_wait_transport(tx ? UINT32_C(0x5) : UINT32_C(0x2))" in direct
+    residual = source.split("static rs_status_t rs_pio_residual_rx", 1)[1].split(
+        "static rs_status_t rs_pio_unrelated_progress", 1)[0]
+    assert "rs_pio_wait_transport(UINT32_C(0x8))" in residual
+    assert "status.bytes_done == 4U" in residual
+    assert "pio_status.complete" in residual
+    assert "RS_PIOLITE_ABI_STATE_HALTED" in residual
+    unrelated = source.split("static rs_status_t rs_pio_unrelated_progress", 1)[1].split(
+        "static rs_status_t rs_pio_mixed_abort", 1)[0]
+    assert "rs_piolite_fifo_read(&rs_pio_shared" in unrelated
+    assert unrelated.index("rs_piolite_abort_reset(&rs_pio_session") < unrelated.index(
+        "rs_piolite_wait_done(&rs_pio_shared")
+    assert unrelated.index("rs_piolite_abort_reset(&rs_pio_session") < unrelated.index(
+        "rs_dma_wait(1U, RS_PIO_TIMEOUT)")
+    assert "rs_piolite_wait_done(&rs_pio_shared" in unrelated
+    assert "rs_dma_wait(1U, RS_PIO_TIMEOUT)" in unrelated
+    assert unrelated.index("rs_piolite_release(&rs_pio_shared") < unrelated.index(
+        "rs_pio_recover_after_abort()")
+    mixed = source.split("static rs_status_t rs_pio_mixed_abort", 1)[1].split(
+        "static rs_status_t rs_pio_recovery_matrix", 1)[0]
+    assert "RS_DMA_CH_REG(3U, RS_DMA_CH_REG_TCD_COUNT) = 2U" in mixed
+    assert "rs_pio_wait_transport(UINT32_C(0x5))" in mixed
+    close = mixed.index("RS_PIO_REG(RS_PIOLITE_ABI_APB4_ABORT) = UINT32_C(1)")
+    abort = mixed.index("rs_dma_abort_wait(3U, RS_PIO_TIMEOUT)")
+    recover = mixed.index("rs_pio_recover()", abort)
+    assert "RS_PIOLITE_ABI_STATE_CLOSING" in mixed[close:abort]
+    assert close < abort < recover
+    assert "rs_dma_submit_tcd_chain" not in mixed
 
 
 def test_piolite_program_wrap_covers_every_loaded_word() -> None:
@@ -440,14 +548,16 @@ def test_piolite_gpio_sweep_reloads_program_per_pin() -> None:
 
 
 @pytest.mark.parametrize("profile,simulator", [("ihp130", "VERILATOR"), ("ics55", "IVERILOG")])
-def test_piolite_check_binds_sim_and_observer_logs(profile: str, simulator: str) -> None:
+@pytest.mark.parametrize("target", ["piolite-p3-check", "piolite-p3-report"])
+def test_piolite_check_binds_sim_and_observer_logs(profile: str, simulator: str, target: str) -> None:
     result = subprocess.run(
         ["make", "-n", f"CONFIG=configs/ci/{profile}-tiny.mk", "APP=ci_smoke",
          "TINY_PIOLITE_P3_ACCEPTANCE=YES", f"SIMU={simulator}",
-         "TINY_PIOLITE_OBSERVER_LOG=$(SIM_BUILD_ROOT)/custom-observer.log", "piolite-p3-check"],
+         "TINY_PIOLITE_OBSERVER_LOG=$(SIM_BUILD_ROOT)/custom-observer.log", target],
         cwd=ROOT, text=True, capture_output=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
     command = " ".join(result.stdout.split())
+    assert f"scripts/piolite_p3.py {target.rsplit('-', 1)[1]}" in command
     log = command.split("--log ", 1)[1].split(" ", 1)[0]
     observer_log = command.split("--observer-log ", 1)[1].split(" ", 1)[0]
     assert log.endswith(f"/sim/{simulator.lower()}/sim.log")

@@ -43,7 +43,8 @@ def prepare_wiring(directory: Path) -> None:
         one(r"(^interface dvp_if\b.*?^endinterface)", dvp) + "\n")
     (directory / "pad_audio_startup.svh").write_text(
         one(r"(^logic\s+s_p6_audio_reference\s*=.*?^end\b)", p6) + "\n")
-    audio = [one(r"(^\s*logic s_p9_camera_population\s*=[^;]+;)", board)]
+    audio = [one(r"(^wire\s+s_piolite_p3_active\s*=[^;]+;)", p6),
+             one(r"(^\s*logic s_p9_camera_population\s*=[^;]+;)", board)]
     audio += [one(rf"(^assign s_gpio_{pin}\s*=[^;]+;)", p6) for pin in (17, 15)]
     audio.append(one(r"(^always #[^\n]+s_p6_audio_reference[^;]+;)", p6))
     (directory / "pad_audio_drivers.svh").write_text("\n".join(audio) + "\n")

@@ -46,6 +46,8 @@ extern volatile uint32_t rs_gpio_test_mmio[64];
 #define RS_GPIO_REG(offset) RS_SOC_REG32(RS_SOC_APB4_GPIO_ADMIN_BASE, (offset))
 #endif
 
+static void rs_gpio_oe_clear(uint32_t mask);
+
 static void rs_gpio_update_bits(uint32_t offset, uint32_t mask, bool set) {
     uint32_t value = RS_GPIO_REG(offset);
 
@@ -140,7 +142,7 @@ rs_status_t rs_gpio_configure(uint32_t pin, const rs_gpio_config_t *config) {
     if (config->mode == RS_GPIO_MODE_OUTPUT) {
         RS_GPIO_REG(RS_GPIO_OE_SET_OFFSET) = mask;
     } else {
-        RS_GPIO_REG(RS_GPIO_OE_CLEAR_OFFSET) = mask;
+        rs_gpio_oe_clear(mask);
     }
     return RS_OK;
 }
@@ -245,6 +247,15 @@ static void rs_gpio_user_select_write(uint32_t value) {
 #endif
 }
 
+static void rs_gpio_oe_clear(uint32_t mask) {
+#ifdef RS_GPIO_TEST_MMIO
+    extern void rs_gpio_test_oe_clear(uint32_t value);
+    rs_gpio_test_oe_clear(mask);
+#else
+    RS_GPIO_REG(RS_GPIO_OE_CLEAR_OFFSET) = mask;
+#endif
+}
+
 rs_status_t rs_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout) {
     rs_gpio_capabilities_t capabilities;
     rs_timeout_t rollback_timeout = timeout;
@@ -266,7 +277,7 @@ rs_status_t rs_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout) {
          mask) != 0U) {
         return RS_EIO;
     }
-    RS_GPIO_REG(RS_GPIO_OE_CLEAR_OFFSET) = mask;
+    rs_gpio_oe_clear(mask);
     RS_GPIO_REG(RS_GPIO_INTR_STATE_OFFSET) = mask;
     RS_GPIO_REG(RS_GPIO_INTR_ENABLE_OFFSET) = RS_GPIO_REG(RS_GPIO_INTR_ENABLE_OFFSET) & ~mask;
     RS_GPIO_REG(RS_GPIO_FILTER_ENABLE_OFFSET) = RS_GPIO_REG(RS_GPIO_FILTER_ENABLE_OFFSET) & ~mask;
@@ -279,7 +290,7 @@ rs_status_t rs_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout) {
     }
     if (result != RS_OK) {
         rs_gpio_user_select_write(RS_GPIO_REG(RS_GPIO_USER_SELECT_OFFSET) & ~mask);
-        RS_GPIO_REG(RS_GPIO_OE_CLEAR_OFFSET) = mask;
+        rs_gpio_oe_clear(mask);
         while (rollback_timeout-- != 0U) {
             if (((RS_GPIO_REG(RS_GPIO_USER_SELECT_OFFSET) & mask) == 0U) &&
                 ((RS_GPIO_REG(RS_GPIO_USER_STATUS_OFFSET) & mask) == 0U)) {
@@ -299,7 +310,11 @@ rs_status_t rs_gpio_user_release(uint32_t mask, rs_timeout_t timeout) {
         ((RS_GPIO_REG(RS_GPIO_USER_SELECT_OFFSET) & mask) != mask)) {
         return RS_EIO;
     }
-    RS_GPIO_REG(RS_GPIO_OE_CLEAR_OFFSET) = mask;
+    rs_gpio_oe_clear(mask);
+    if (((RS_GPIO_REG(RS_GPIO_OUTPUT_ENABLE_OFFSET) & mask) != 0U) ||
+        ((RS_GPIO_REG(RS_GPIO_ALT_ENABLE_OFFSET) & mask) != 0U)) {
+        return RS_EBUSY;
+    }
     rs_gpio_user_select_write(RS_GPIO_REG(RS_GPIO_USER_SELECT_OFFSET) & ~mask);
     while (timeout-- != 0U) {
         if (((RS_GPIO_REG(RS_GPIO_USER_SELECT_OFFSET) & mask) == 0U) &&

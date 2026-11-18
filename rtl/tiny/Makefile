@@ -49,30 +49,30 @@ check-soc-topology:
 check-clock-reset-domains:
 	$(PYTHON) $(ROOT_PATH)/scripts/check_clock_reset_domains.py --map $(RTL_PATH)/integration/clock_reset_domains.json --root $(ROOT_PATH)
 
-RTL_FILELISTS    := $(addprefix $(GENERATED_FL_DIR)/,def.fl inc.fl commonip.fl clusterip.fl ip.fl tech.fl core_hazard3.fl top.fl)
-RTL_FLIST        := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
-PDK_FILELIST     := $(GENERATED_FL_DIR)/pdk_selected.fl
-TINY_TB_FLIST    := -f $(GENERATED_FL_DIR)/tb.fl
-TOP_DESIGN       := retrosoc_tiny_asic
-RTL_NAME         := retrosoc_tiny_asic
-OPENSTA_NETLIST  := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.v
-OPENSTA_CONFIG   := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.config
-NETLIST_PATH     := $(OPENSTA_NETLIST)
-TINY_CONVERTED   := $(SIM_BUILD_ROOT)/converted_soc.v
-TINY_DEPFILE     := $(SIM_BUILD_ROOT)/sources.d
-TINY_TB_DEPFILE  := $(SIM_BUILD_ROOT)/testbench.d
-TINY_LINT_LOG    := $(VARIANT_ROOT)/lint/verilator/lint.log
-SOC_SIM_TIME     ?= 1800
-TINY_SIM_TIMEOUT ?= 20000000
-TINY_SIM_ARGS    ?=
+RTL_FILELISTS             := $(addprefix $(GENERATED_FL_DIR)/,def.fl inc.fl commonip.fl clusterip.fl ip.fl tech.fl core_hazard3.fl top.fl)
+RTL_FLIST                 := $(foreach filelist,$(RTL_FILELISTS),-f $(filelist))
+PDK_FILELIST              := $(GENERATED_FL_DIR)/pdk_selected.fl
+TINY_TB_FLIST             := -f $(GENERATED_FL_DIR)/tb.fl
+TOP_DESIGN                := retrosoc_tiny_asic
+RTL_NAME                  := retrosoc_tiny_asic
+OPENSTA_NETLIST           := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.v
+OPENSTA_CONFIG            := $(SYN_BUILD_ROOT)/out/$(RTL_NAME)_yosys.config
+NETLIST_PATH              := $(OPENSTA_NETLIST)
+TINY_CONVERTED            := $(SIM_BUILD_ROOT)/converted_soc.v
+TINY_DEPFILE              := $(SIM_BUILD_ROOT)/sources.d
+TINY_TB_DEPFILE           := $(SIM_BUILD_ROOT)/testbench.d
+TINY_LINT_LOG             := $(VARIANT_ROOT)/lint/verilator/lint.log
+SOC_SIM_TIME              ?= 1800
+TINY_SIM_TIMEOUT          ?= 20000000
+TINY_SIM_ARGS             ?=
 TINY_PIOLITE_OBSERVER_LOG ?= $(SIM_BUILD_ROOT)/piolite-observer.log
 TINY_PIOLITE_OBSERVER_ARG := $(if $(filter +tiny_piolite_progress +tiny_piolite_trace,$(TINY_SIM_ARGS)),+tiny_piolite_observer_log=$(TINY_PIOLITE_OBSERVER_LOG))
 ifeq ($(TINY_PIOLITE_P3_ACCEPTANCE),YES)
 TINY_PIOLITE_OBSERVER_ARG := +tiny_piolite_observer_log=$(TINY_PIOLITE_OBSERVER_LOG)
 endif
-VERILATOR        ?= verilator
-IVERILOG         ?= iverilog
-VVP              ?= vvp
+VERILATOR ?= verilator
+IVERILOG  ?= iverilog
+VVP       ?= vvp
 
 include $(ROOT_PATH)/rtl/mk/software.mk
 -include $(TINY_DEPFILE) $(TINY_TB_DEPFILE)
@@ -122,7 +122,7 @@ sim: comp firmware | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool $(SIM_TOOL_NAME)-sim \
 		--log $(SIM_BUILD_ROOT)/sim.log --result $(SIM_BUILD_ROOT)/result-sim.json -- \
 		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT) \
-			$(TINY_PIOLITE_OBSERVER_ARG) $(TINY_SIM_ARGS)
+		$(TINY_PIOLITE_OBSERVER_ARG) $(TINY_SIM_ARGS)
 	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(SIM_BUILD_ROOT)/sim.log \
 		--result $(SIM_BUILD_ROOT)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'
 
