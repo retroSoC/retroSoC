@@ -319,6 +319,11 @@ is bounded retention, not a claim of unlimited history. Final
 reconciliation stores `final_checks` separately from `last_check_status`, bound
 to the merged PR HEAD and required contexts. A missing, pending, mismatched, or
 failed final report is explicit and never becomes a PASS by inference.
+Each reconciliation writes `build/engineering/pr-<number>-friction.json` and links
+it as `friction_observation`. This is a merge-matched local observation with
+actual recovery/final-check/evidence states, not a metric gate. It collects no
+GitHub timeline and executes no hardware, and completed-record offline no-ops
+remain unchanged.
 The evidence reader validates the cleanup action, artifact branch/HEAD, retained
 destination, every retained path, and its SHA-256 before returning `READY`.
 Missing registries or artifact-free cleanups return `NOT_AVAILABLE`; invalid or

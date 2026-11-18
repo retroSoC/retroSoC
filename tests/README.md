@@ -185,7 +185,9 @@ tooling.
   pending/resume/cleanup state, idempotent completed records, failed checks,
   external auto-merge disabling, cleanup opt-outs, head-change preservation,
   recovery-metadata propagation, bounded recovery history, actual transition
-  counts, explicit Make resume arguments, and atomic watcher checkpoints. Run fast agent
+  counts, explicit Make resume arguments, and atomic watcher checkpoints.
+  Reconciliation tests also cover merge-matched local friction emission with no
+  timeline collection, hardware execution, or metric-gate side effects. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
   corpus contains 59 cases across six Skills, with one live smoke per Skill.

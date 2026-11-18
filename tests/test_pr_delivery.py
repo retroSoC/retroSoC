@@ -273,6 +273,30 @@ def test_reconcile_links_verified_cleanup_and_artifact_evidence(
     assert result["merge_commit"] == "b" * 40
 
 
+def test_reconcile_emits_merge_matched_friction_observation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_evidence(tmp_path)
+    mock_merged_environment(monkeypatch, tmp_path)
+
+    result = reconcile_delivery(tmp_path, "retroSoC/retroSoC", 248, cleanup=True, delete_remote=True)
+
+    assert result["friction_observation"] == "build/engineering/pr-248-friction.json"
+    output = tmp_path / result["friction_observation"]
+    document = json.loads(output.read_text(encoding="utf-8"))
+    assert document["status"] == "OBSERVED"
+    assert document["pr"] == 248
+    assert document["merge_commit"] == "b" * 40
+    assert document["source_revision"] == "a" * 40
+    assert document["timeline_status"] == "NOT_REQUESTED"
+    assert document["hardware_execution"] == "NOT_RUN"
+    assert document["friction"]["final_check_status"] == "PASS"
+    assert document["friction"]["recovery_transition_count"] == 0
+    assert document["local_friction"]["record_count"] == 1
+    assert document["local_friction"]["final_check_status_counts"] == {"PASS": 1}
+    assert document["local_friction"]["evidence_status_counts"] == {"READY": 1}
+
+
 def test_reconcile_distinguishes_missing_registry_and_empty_artifact_inventory(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -315,6 +339,7 @@ def test_cleanup_opt_out_and_warnings_do_not_claim_evidence(
     write_evidence(tmp_path)
     monkeypatch.setattr("scripts.pr_delivery.auto_merge_policy", lambda root: None)
     monkeypatch.setattr("scripts.pr_delivery.view_pr", lambda repository, number, root: pull("MERGED"))
+    monkeypatch.setattr("scripts.pr_delivery.worktree_main_root", lambda root: root)
     monkeypatch.setattr("scripts.pr_delivery.delivery_evidence", lambda *args: pytest.fail("must not claim evidence"))
     monkeypatch.setattr(
         "scripts.pr_delivery.merged_check_evidence",

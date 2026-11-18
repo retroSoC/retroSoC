@@ -84,7 +84,9 @@ still-enabled native auto-merge are required; same-head retries and external
 disables are refused. The latest `recovery` remains compatible, while bounded
 `recovery_history` retains up to 20 transitions and an explicit dropped count.
 Final `final_checks` evidence is separate from historical
-polling state. Otherwise run `RECONCILE=1` after the merge. The legacy
+polling state. Each actual reconciliation also emits a merge-matched local
+`friction_observation` under `build/engineering/`, without collecting timelines,
+executing hardware, or creating a metric gate. Otherwise run `RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 
