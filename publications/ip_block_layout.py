@@ -18,6 +18,98 @@ MIN_SEGMENT = 4.0
 MAX_BENDS = 4
 PARALLEL_PITCH = 3.0
 BRIDGE_RADIUS = 1.0
+MAX_CROSSINGS = 12
+GENERIC_LABELS = frozenset(
+    {"address", "command", "data", "enable", "handshake", "registers", "state", "status", "timing"}
+)
+
+
+def drawing_graph(graph: dict, edge_ids: set[str]) -> dict:
+    """Select an authored view without changing its source-bound graph."""
+    edges = [edge for edge in graph["edges"] if edge["id"] in edge_ids]
+    node_ids = {edge[end] for edge in edges for end in ("from", "to")}
+    selected = [node for node in graph["nodes"] if node["id"] in node_ids]
+    geometry = graph["layout"]
+    return {
+        **graph,
+        "edges": edges,
+        "nodes": selected,
+        "layout": {
+            **geometry,
+            "nodes": {node["id"]: geometry["nodes"][node["id"]] for node in selected},
+            "routes": {edge["id"]: geometry["routes"][edge["id"]] for edge in edges},
+        },
+    }
+
+
+def overview_edges(view: dict) -> set[str]:
+    """Verify that scoped details cannot replace any declared boundary path."""
+    graph = view["functional"]
+    edges = {edge["id"]: edge for edge in graph["edges"]}
+    occupied = {item["id"] for item in view.get("details", [])}
+    moved: set[str] = set()
+    for detail in view.get("route_details", []):
+        ident = detail.get("id", "")
+        if (
+            not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", ident)
+            or ident in occupied
+            or not detail.get("title")
+            or not detail.get("note")
+        ):
+            raise ValueError("IP scoped detail has an invalid ID, title or scope note")
+        occupied.add(ident)
+        selection = detail.get("edges", [])
+        if not selection or len(selection) != len(set(selection)) or moved.intersection(selection):
+            raise ValueError("IP local route must appear in exactly one scoped detail")
+        for key in selection:
+            if key not in edges:
+                raise ValueError("IP scoped detail names an unknown functional route")
+            edge = edges[key]
+            if (
+                not edge.get("source")
+                or edge["kind"] == "irq"
+                or {"parent_edge", "boundary", "interface"}.intersection(edge)
+            ):
+                raise ValueError("IP scoped detail cannot replace a declared boundary route")
+        if "layout" in detail:
+            geometry = detail["layout"]
+            selected_nodes = {edges[key][end] for key in selection for end in ("from", "to")}
+            if set(geometry.get("nodes", {})) != selected_nodes or set(
+                geometry.get("routes", {})
+            ) != set(selection):
+                raise ValueError("IP scoped detail layout differs from the verified route selection")
+        moved.update(selection)
+    overview = set(edges) - moved
+    if moved:
+        linked = {edges[key][end] for key in overview for end in ("from", "to")}
+        for node in graph["nodes"]:
+            if node["id"] not in linked and (
+                node.get("boundary_members")
+                or node.get("interface_refs")
+                or node.get("context")
+                or node.get("ref") in view.get("external", []) + view.get("buses", [])
+            ):
+                raise ValueError("IP scoped detail removes a boundary endpoint from the overview")
+    return overview
+
+
+def review_issues(scene: dict) -> list[str]:
+    """Apply readability rules to each printed view, including local details."""
+    issues = []
+    crossings = len(scene["crossings"])
+    if crossings > MAX_CROSSINGS:
+        issues.append(f"crossing-limit:{crossings}>{MAX_CROSSINGS}")
+    issues.extend(
+        f"generic-label:{wire['id']}"
+        for wire in scene["wires"]
+        if wire["label"].strip().casefold() in GENERIC_LABELS
+    )
+    issues.extend(
+        f"split-signal-label:{scene['wires'][label['edge']]['id']}"
+        for label in scene["labels"]
+        if " ".join(" ".join(label["lines"]).split()) != " ".join(label["text"].split())
+    )
+    return issues
 
 
 def normalized(value: str) -> str:

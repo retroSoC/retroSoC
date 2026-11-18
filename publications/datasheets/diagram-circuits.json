@@ -589,7 +589,7 @@
           {
             "id": "core-filter_sample_counter",
             "owner": "core",
-            "title": "rs counter",
+            "title": "Sampling counter\nSample count",
             "scope": "rtl-instance",
             "instance_ref": "u_filter_sample_counter",
             "shape": "block"
@@ -643,7 +643,7 @@
             "id": "core-logic-0",
             "to": "core-rx",
             "kind": "data",
-            "label": "data",
+            "label": "Sample count",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -656,13 +656,14 @@
               ],
               "module": "gpio_core"
             },
-            "from": "core-filter_sample_counter"
+            "from": "core-filter_sample_counter",
+            "label_in_node": true
           },
           {
             "id": "core-logic-1",
             "to": "core-rx",
             "kind": "data",
-            "label": "data",
+            "label": "Synced inputs",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -681,7 +682,7 @@
           {
             "id": "core-port-5",
             "to": "core-filtered_edge_det",
-            "label": "command",
+            "label": "Filtered pins",
             "kind": "control",
             "width": null,
             "source": {
@@ -917,11 +918,6 @@
                 "side": "east",
                 "offset": 9.0
               },
-              "label": [
-                106.4,
-                67.8,
-                6.7984374999999995
-              ],
               "from": {
                 "side": "west",
                 "offset": 9.0
@@ -943,9 +939,9 @@
                 "offset": 9.0
               },
               "label": [
-                65.4,
-                67.8,
-                6.7984374999999995
+                63.2469,
+                64.0,
+                11.506286621093748
               ],
               "from": {
                 "side": "east",
@@ -2640,7 +2636,7 @@
             "id": "reg-logic-0",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "tx empty",
             "width": null,
             "net": "internal:reg-logic-0",
             "source": {
@@ -2658,7 +2654,7 @@
           {
             "id": "reg-port-2",
             "to": "reg-tx_fifo",
-            "label": "command",
+            "label": "tx push",
             "kind": "control",
             "width": null,
             "source": {
@@ -2678,7 +2674,7 @@
             "id": "core-logic-0",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Words left",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -2702,7 +2698,7 @@
             "id": "core-logic-1",
             "to": "core-address",
             "kind": "control",
-            "label": "address",
+            "label": "FSM phase",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -2754,13 +2750,12 @@
           {
             "id": "bound-3",
             "to": "pads-interface",
-            "label": "DATA",
+            "label": "LED data",
             "kind": "data",
             "width": 1,
             "parent_edge": 3,
             "net": "parent:core.p3",
-            "from": "core-sequencer",
-            "label_in_node": true
+            "from": "core-sequencer"
           },
           {
             "id": "signal-0",
@@ -2959,9 +2954,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                26.2,
                 54.15,
-                7.637145996093749
+                16.2
               ],
               "from": {
                 "side": "north",
@@ -3111,7 +3106,12 @@
               "from": {
                 "side": "east",
                 "offset": 12
-              }
+              },
+              "label": [
+                81.15,
+                78.7,
+                13.7
+              ]
             },
             "signal-0": {
               "points": [
@@ -4323,7 +4323,7 @@
             "id": "reg-logic-0",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "cmd empty",
             "width": null,
             "net": "internal:reg-logic-0",
             "source": {
@@ -4342,7 +4342,7 @@
             "id": "reg-logic-1",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "rx full",
             "width": null,
             "net": "internal:reg-logic-1",
             "source": {
@@ -4360,7 +4360,7 @@
           {
             "id": "reg-port-3",
             "to": "reg-cmd_fifo",
-            "label": "command",
+            "label": "cmd push",
             "kind": "control",
             "width": null,
             "source": {
@@ -4379,7 +4379,7 @@
           {
             "id": "reg-port-4",
             "to": "reg-rx_fifo",
-            "label": "command",
+            "label": "RX flush",
             "kind": "control",
             "width": null,
             "source": {
@@ -4399,7 +4399,7 @@
             "id": "core-logic-0",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Phase count",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -4418,7 +4418,7 @@
             "id": "core-logic-1",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "I2C phase",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -4439,7 +4439,7 @@
             "id": "filter-logic-0",
             "to": "filter-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Synced lines",
             "width": null,
             "net": "internal:filter-logic-0",
             "source": {
@@ -4674,9 +4674,9 @@
                 "offset": 4
               },
               "label": [
-                62.15,
-                24.8,
-                13.449194335937499
+                60.4,
+                24.7,
+                17.2
               ],
               "from": {
                 "side": "north",
@@ -4826,9 +4826,9 @@
                 "offset": 24
               },
               "label": [
-                111.65,
-                80.8,
-                7.637145996093749
+                109.7,
+                87.6,
+                11.6
               ],
               "from": {
                 "side": "south",
@@ -4859,9 +4859,9 @@
                 "offset": 8
               },
               "label": [
-                105.15,
-                96.8,
-                9.4308349609375
+                102.15,
+                96.7,
+                15.7
               ],
               "from": {
                 "side": "south",
@@ -4884,9 +4884,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
-                82.15,
-                9.4308349609375
+                45.6,
+                80.3,
+                11.8
               ],
               "from": {
                 "side": "south",
@@ -5041,32 +5041,24 @@
                 ],
                 [
                   92,
-                  90
+                  105
                 ],
                 [
-                  148,
-                  90
+                  158,
+                  105
                 ],
                 [
-                  148,
-                  68
-                ],
-                [
-                  154,
-                  68
-                ],
-                [
-                  154,
-                  72
+                  158,
+                  98
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 4
-              },
               "from": {
                 "side": "south",
                 "offset": 16
+              },
+              "to": {
+                "side": "south",
+                "offset": 8
               }
             },
             "signal-0": {
@@ -9382,32 +9374,36 @@
             "bound-2": {
               "points": [
                 [
-                  26,
-                  124
+                  30,
+                  154
+                ],
+                [
+                  30,
+                  158
                 ],
                 [
                   6,
-                  124
+                  158
                 ],
                 [
                   6,
                   56
                 ],
                 [
-                  34,
+                  30,
                   56
                 ],
                 [
-                  34,
+                  30,
                   52
                 ]
               ],
+              "from": {
+                "side": "south",
+                "offset": 4
+              },
               "to": {
                 "side": "south",
-                "offset": 8
-              },
-              "from": {
-                "side": "west",
                 "offset": 4
               }
             },
@@ -9486,53 +9482,53 @@
             "clock-config": {
               "points": [
                 [
-                  58,
+                  50,
                   52
                 ],
                 [
-                  58,
+                  50,
                   70
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 32
-              },
               "from": {
                 "side": "south",
-                "offset": 32
+                "offset": 24
+              },
+              "to": {
+                "side": "north",
+                "offset": 24
               }
             },
             "host-config": {
               "points": [
                 [
+                  42,
+                  52
+                ],
+                [
+                  42,
+                  62
+                ],
+                [
+                  22,
+                  62
+                ],
+                [
+                  22,
+                  124
+                ],
+                [
                   26,
-                  46
-                ],
-                [
-                  22,
-                  46
-                ],
-                [
-                  22,
-                  96
-                ],
-                [
-                  30,
-                  96
-                ],
-                [
-                  30,
-                  120
+                  124
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 4
-              },
               "from": {
-                "side": "west",
+                "side": "south",
                 "offset": 16
+              },
+              "to": {
+                "side": "west",
+                "offset": 4
               }
             },
             "dma-start": {
@@ -9586,29 +9582,29 @@
             "command-status": {
               "points": [
                 [
-                  80,
-                  96
+                  76,
+                  90
                 ],
                 [
-                  80,
-                  100
+                  69,
+                  90
                 ],
                 [
-                  58,
-                  100
+                  69,
+                  128
                 ],
                 [
-                  58,
-                  120
+                  62,
+                  128
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 32
-              },
               "from": {
-                "side": "south",
-                "offset": 4
+                "side": "west",
+                "offset": 20
+              },
+              "to": {
+                "side": "east",
+                "offset": 8
               }
             },
             "data-status": {
@@ -9650,29 +9646,29 @@
                   128
                 ],
                 [
-                  2,
+                  18,
                   128
                 ],
                 [
-                  2,
-                  66
+                  18,
+                  59
                 ],
                 [
-                  30,
-                  66
+                  38,
+                  59
                 ],
                 [
-                  30,
+                  38,
                   52
                 ]
               ],
-              "to": {
-                "side": "south",
-                "offset": 4
-              },
               "from": {
                 "side": "west",
                 "offset": 8
+              },
+              "to": {
+                "side": "south",
+                "offset": 12
               }
             },
             "clock-command": {
@@ -9726,33 +9722,29 @@
             "clock-pins": {
               "points": [
                 [
-                  62,
-                  86
+                  54,
+                  92
                 ],
                 [
-                  70,
-                  86
+                  54,
+                  110
                 ],
                 [
-                  70,
-                  112
+                  128,
+                  110
                 ],
                 [
-                  120,
-                  112
-                ],
-                [
-                  120,
+                  128,
                   120
                 ]
               ],
+              "from": {
+                "side": "south",
+                "offset": 28
+              },
               "to": {
                 "side": "north",
-                "offset": 4
-              },
-              "from": {
-                "side": "east",
-                "offset": 16
+                "offset": 12
               }
             },
             "command-pins": {
@@ -9786,57 +9778,49 @@
             "pins-command": {
               "points": [
                 [
-                  124,
-                  120
+                  116,
+                  124
                 ],
                 [
-                  124,
-                  116
+                  111,
+                  124
                 ],
                 [
-                  96,
-                  116
+                  111,
+                  86
                 ],
                 [
-                  96,
-                  96
+                  104,
+                  86
                 ]
               ],
-              "to": {
-                "side": "south",
-                "offset": 20
-              },
               "from": {
-                "side": "north",
-                "offset": 8
+                "side": "west",
+                "offset": 4
+              },
+              "to": {
+                "side": "east",
+                "offset": 16
               }
             },
             "data-pins": {
               "points": [
                 [
-                  116,
-                  94
+                  136,
+                  102
                 ],
                 [
-                  112,
-                  94
-                ],
-                [
-                  112,
-                  124
-                ],
-                [
-                  116,
-                  124
+                  136,
+                  120
                 ]
               ],
-              "to": {
-                "side": "west",
-                "offset": 4
-              },
               "from": {
-                "side": "west",
-                "offset": 24
+                "side": "south",
+                "offset": 20
+              },
+              "to": {
+                "side": "north",
+                "offset": 20
               }
             },
             "pins-data": {
@@ -9899,16 +9883,24 @@
                 ],
                 [
                   100,
+                  102
+                ],
+                [
+                  88,
+                  102
+                ],
+                [
+                  88,
                   120
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 24
-              },
               "from": {
                 "side": "west",
                 "offset": 28
+              },
+              "to": {
+                "side": "north",
+                "offset": 12
               }
             },
             "interrupt-output": {
@@ -9979,7 +9971,67 @@
           ],
           "border_clearance_version": 3
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "internal-feedback",
+          "title": "Data Completion and Error Feedback",
+          "note": "The serial data engine reports block completion and errors to host event handling. The main figure shows the separate command status and DMA paths.",
+          "edges": [
+            "data-status"
+          ],
+          "layout": {
+            "height": 52,
+            "boundary": [
+              13,
+              6,
+              146,
+              43
+            ],
+            "heading": [
+              17,
+              9
+            ],
+            "nodes": {
+              "core-data": [
+                21,
+                19,
+                46,
+                26
+              ],
+              "core-host": [
+                106,
+                19,
+                50,
+                26
+              ]
+            },
+            "routes": {
+              "data-status": {
+                "points": [
+                  [
+                    67,
+                    32.0
+                  ],
+                  [
+                    106,
+                    32.0
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 13.0
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 13.0
+                }
+              }
+            },
+            "groups": []
+          }
+        }
+      ]
     }
   },
   "sdio1": {
@@ -11746,32 +11798,36 @@
             "bound-2": {
               "points": [
                 [
-                  26,
-                  124
+                  30,
+                  154
+                ],
+                [
+                  30,
+                  158
                 ],
                 [
                   6,
-                  124
+                  158
                 ],
                 [
                   6,
                   56
                 ],
                 [
-                  34,
+                  30,
                   56
                 ],
                 [
-                  34,
+                  30,
                   52
                 ]
               ],
+              "from": {
+                "side": "south",
+                "offset": 4
+              },
               "to": {
                 "side": "south",
-                "offset": 8
-              },
-              "from": {
-                "side": "west",
                 "offset": 4
               }
             },
@@ -11850,53 +11906,53 @@
             "clock-config": {
               "points": [
                 [
-                  58,
+                  50,
                   52
                 ],
                 [
-                  58,
+                  50,
                   70
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 32
-              },
               "from": {
                 "side": "south",
-                "offset": 32
+                "offset": 24
+              },
+              "to": {
+                "side": "north",
+                "offset": 24
               }
             },
             "host-config": {
               "points": [
                 [
+                  42,
+                  52
+                ],
+                [
+                  42,
+                  62
+                ],
+                [
+                  22,
+                  62
+                ],
+                [
+                  22,
+                  124
+                ],
+                [
                   26,
-                  46
-                ],
-                [
-                  22,
-                  46
-                ],
-                [
-                  22,
-                  96
-                ],
-                [
-                  30,
-                  96
-                ],
-                [
-                  30,
-                  120
+                  124
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 4
-              },
               "from": {
-                "side": "west",
+                "side": "south",
                 "offset": 16
+              },
+              "to": {
+                "side": "west",
+                "offset": 4
               }
             },
             "dma-start": {
@@ -11950,29 +12006,29 @@
             "command-status": {
               "points": [
                 [
-                  80,
-                  96
+                  76,
+                  90
                 ],
                 [
-                  80,
-                  100
+                  69,
+                  90
                 ],
                 [
-                  58,
-                  100
+                  69,
+                  128
                 ],
                 [
-                  58,
-                  120
+                  62,
+                  128
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 32
-              },
               "from": {
-                "side": "south",
-                "offset": 4
+                "side": "west",
+                "offset": 20
+              },
+              "to": {
+                "side": "east",
+                "offset": 8
               }
             },
             "data-status": {
@@ -12014,29 +12070,29 @@
                   128
                 ],
                 [
-                  2,
+                  18,
                   128
                 ],
                 [
-                  2,
-                  66
+                  18,
+                  59
                 ],
                 [
-                  30,
-                  66
+                  38,
+                  59
                 ],
                 [
-                  30,
+                  38,
                   52
                 ]
               ],
-              "to": {
-                "side": "south",
-                "offset": 4
-              },
               "from": {
                 "side": "west",
                 "offset": 8
+              },
+              "to": {
+                "side": "south",
+                "offset": 12
               }
             },
             "clock-command": {
@@ -12090,33 +12146,29 @@
             "clock-pins": {
               "points": [
                 [
-                  62,
-                  86
+                  54,
+                  92
                 ],
                 [
-                  70,
-                  86
+                  54,
+                  110
                 ],
                 [
-                  70,
-                  112
+                  128,
+                  110
                 ],
                 [
-                  120,
-                  112
-                ],
-                [
-                  120,
+                  128,
                   120
                 ]
               ],
+              "from": {
+                "side": "south",
+                "offset": 28
+              },
               "to": {
                 "side": "north",
-                "offset": 4
-              },
-              "from": {
-                "side": "east",
-                "offset": 16
+                "offset": 12
               }
             },
             "command-pins": {
@@ -12150,57 +12202,49 @@
             "pins-command": {
               "points": [
                 [
-                  124,
-                  120
+                  116,
+                  124
                 ],
                 [
-                  124,
-                  116
+                  111,
+                  124
                 ],
                 [
-                  96,
-                  116
+                  111,
+                  86
                 ],
                 [
-                  96,
-                  96
+                  104,
+                  86
                 ]
               ],
-              "to": {
-                "side": "south",
-                "offset": 20
-              },
               "from": {
-                "side": "north",
-                "offset": 8
+                "side": "west",
+                "offset": 4
+              },
+              "to": {
+                "side": "east",
+                "offset": 16
               }
             },
             "data-pins": {
               "points": [
                 [
-                  116,
-                  94
+                  136,
+                  102
                 ],
                 [
-                  112,
-                  94
-                ],
-                [
-                  112,
-                  124
-                ],
-                [
-                  116,
-                  124
+                  136,
+                  120
                 ]
               ],
-              "to": {
-                "side": "west",
-                "offset": 4
-              },
               "from": {
-                "side": "west",
-                "offset": 24
+                "side": "south",
+                "offset": 20
+              },
+              "to": {
+                "side": "north",
+                "offset": 20
               }
             },
             "pins-data": {
@@ -12263,16 +12307,24 @@
                 ],
                 [
                   100,
+                  102
+                ],
+                [
+                  88,
+                  102
+                ],
+                [
+                  88,
                   120
                 ]
               ],
-              "to": {
-                "side": "north",
-                "offset": 24
-              },
               "from": {
                 "side": "west",
                 "offset": 28
+              },
+              "to": {
+                "side": "north",
+                "offset": 12
               }
             },
             "interrupt-output": {
@@ -12343,7 +12395,67 @@
           ],
           "border_clearance_version": 3
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "internal-feedback",
+          "title": "Data Completion and Error Feedback",
+          "note": "The serial data engine reports block completion and errors to host event handling. The main figure shows the separate command status and DMA paths.",
+          "edges": [
+            "data-status"
+          ],
+          "layout": {
+            "height": 52,
+            "boundary": [
+              13,
+              6,
+              146,
+              43
+            ],
+            "heading": [
+              17,
+              9
+            ],
+            "nodes": {
+              "core-data": [
+                21,
+                19,
+                46,
+                26
+              ],
+              "core-host": [
+                106,
+                19,
+                50,
+                26
+              ]
+            },
+            "routes": {
+              "data-status": {
+                "points": [
+                  [
+                    67,
+                    32.0
+                  ],
+                  [
+                    106,
+                    32.0
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 13.0
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 13.0
+                }
+              }
+            },
+            "groups": []
+          }
+        }
+      ]
     }
   },
   "psram": {
@@ -12858,7 +12970,7 @@
           {
             "id": "reg-registers",
             "owner": "reg",
-            "title": "QPI\nAPB registers / control",
+            "title": "QPI\nAPB registers / control\nQPI enable",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/ip/memory/psram_reg.sv",
@@ -13103,7 +13215,7 @@
             "id": "axi-logic-0",
             "to": "axi-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Burst addr",
             "width": null,
             "net": "internal:axi-logic-0",
             "source": {
@@ -13122,7 +13234,7 @@
             "id": "axi-logic-1",
             "to": "axi-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "byte count",
             "width": null,
             "net": "internal:axi-logic-1",
             "source": {
@@ -13141,7 +13253,7 @@
             "id": "axi-logic-2",
             "to": "axi-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "AXI signals",
             "width": null,
             "net": "internal:axi-logic-2",
             "source": {
@@ -13161,7 +13273,7 @@
           {
             "id": "axi-port-4",
             "to": "axi-addr_gen",
-            "label": "command",
+            "label": "Burst length",
             "kind": "control",
             "width": null,
             "source": {
@@ -13181,7 +13293,7 @@
             "id": "phy-logic-0",
             "to": "phy-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "CS low",
             "width": null,
             "net": "internal:phy-logic-0",
             "source": {
@@ -13202,7 +13314,7 @@
             "id": "phy-logic-1",
             "to": "phy-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "PHY phase",
             "width": null,
             "net": "internal:phy-logic-1",
             "source": {
@@ -13221,7 +13333,7 @@
           {
             "id": "bound-0",
             "to": "core-sequencer",
-            "label": "ENABLE",
+            "label": "QPI enable",
             "kind": "control",
             "width": 1,
             "parent_edge": 0,
@@ -13461,9 +13573,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                26.2,
                 54.15,
-                7.637145996093749
+                16.2
               ],
               "from": {
                 "side": "south",
@@ -13486,9 +13598,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                25.7,
                 82.15,
-                7.637145996093749
+                16.7
               ],
               "from": {
                 "side": "north",
@@ -13525,7 +13637,7 @@
               "label": [
                 67.5,
                 86.15,
-                9.4308349609375
+                10.695483398437498
               ],
               "from": {
                 "side": "south",
@@ -13581,9 +13693,9 @@
                 "offset": 15.0
               },
               "label": [
-                132.5,
+                132.6,
                 54.15,
-                7.637145996093749
+                11.2
               ],
               "from": {
                 "side": "north",
@@ -13618,9 +13730,9 @@
                 "offset": 8
               },
               "label": [
-                109.15,
-                24.8,
-                9.4308349609375
+                105.4,
+                24.7,
+                17.2
               ],
               "from": {
                 "side": "north",
@@ -15106,7 +15218,7 @@
           {
             "id": "reg-registers",
             "owner": "reg",
-            "title": "OPI\nAPB registers / control",
+            "title": "OPI\nAPB registers / control\nOPI enable",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/ip/memory/opipsram_reg.sv",
@@ -15619,7 +15731,7 @@
             "id": "phy-logic-1",
             "to": "phy-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "rx overflow",
             "width": null,
             "net": "internal:phy-logic-1",
             "source": {
@@ -15642,7 +15754,7 @@
           {
             "id": "phy-port-4",
             "to": "phy-trx",
-            "label": "command",
+            "label": "Byte ready",
             "kind": "control",
             "width": null,
             "source": {
@@ -15661,7 +15773,7 @@
           {
             "id": "bound-0",
             "to": "core-sequencer",
-            "label": "ENABLE",
+            "label": "OPI enable",
             "kind": "control",
             "width": 1,
             "parent_edge": 0,
@@ -15856,10 +15968,10 @@
               8
             ],
             "boundary-rst_n_i": [
-              70,
-              2,
-              36,
-              8
+              153,
+              84,
+              17,
+              4
             ],
             "boundary-clk_phy_i": [
               114,
@@ -15965,9 +16077,9 @@
                 "offset": 12
               },
               "label": [
-                67.5,
-                97.65,
-                7.637145996093749
+                67.6,
+                93.15,
+                17.7
               ],
               "from": {
                 "side": "east",
@@ -15990,9 +16102,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                45.6,
                 94.15,
-                15.132812499999998
+                16.7
               ],
               "from": {
                 "side": "south",
@@ -16286,29 +16398,21 @@
             "signal-1": {
               "points": [
                 [
-                  106,
-                  6
+                  153,
+                  86
                 ],
                 [
-                  112,
-                  6
-                ],
-                [
-                  112,
-                  78
-                ],
-                [
-                  116,
-                  78
+                  146,
+                  86
                 ]
               ],
-              "to": {
-                "side": "west",
-                "offset": 4
-              },
               "from": {
+                "side": "west",
+                "offset": 2
+              },
+              "to": {
                 "side": "east",
-                "offset": 4
+                "offset": 12
               }
             },
             "signal-2": {
@@ -17764,7 +17868,7 @@
           {
             "id": "core-address",
             "owner": "core",
-            "title": "SDRAM\nOpen-bank / row state",
+            "title": "Open bank / row state\nRefresh req",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/ip/memory/sdram_core.sv",
@@ -17841,7 +17945,7 @@
           {
             "id": "axi-rd_addr_gen",
             "owner": "axi",
-            "title": "Read address / data queues\nREAD / 32",
+            "title": "Read queues\nAR/R strobes\nREAD / 32",
             "scope": "local-logic",
             "shape": "block",
             "instance_refs": [
@@ -17892,7 +17996,7 @@
             "id": "axi-logic-0",
             "to": "axi-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Write queues",
             "width": null,
             "net": "internal:axi-logic-0",
             "source": {
@@ -17920,7 +18024,7 @@
             "id": "axi-logic-2",
             "to": "axi-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Read queues",
             "width": null,
             "net": "internal:axi-logic-2",
             "source": {
@@ -17944,7 +18048,7 @@
           {
             "id": "axi-port-6",
             "to": "axi-rd_addr_gen",
-            "label": "command",
+            "label": "AR/R strobes",
             "kind": "control",
             "width": null,
             "source": {
@@ -17964,12 +18068,13 @@
             "relationship_members": [
               "axi-port-6",
               "axi-port-9"
-            ]
+            ],
+            "label_in_node": true
           },
           {
             "id": "axi-port-7",
             "to": "axi-wr_addr_gen",
-            "label": "command",
+            "label": "Write strobes",
             "kind": "control",
             "width": null,
             "source": {
@@ -18017,7 +18122,7 @@
             "id": "core-logic-1",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Refresh req",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -18030,13 +18135,14 @@
               ],
               "module": "sdram_core"
             },
-            "from": "core-address"
+            "from": "core-address",
+            "label_in_node": true
           },
           {
             "id": "core-logic-2",
             "to": "core-address",
             "kind": "control",
-            "label": "address",
+            "label": "Refresh stall",
             "width": null,
             "net": "internal:core-logic-2",
             "source": {
@@ -18256,9 +18362,9 @@
                 "offset": 4
               },
               "label": [
-                121.15,
-                8.8,
-                7.637145996093749
+                114.9,
+                8.7,
+                20.2
               ],
               "from": {
                 "side": "north",
@@ -18317,11 +18423,6 @@
                 "side": "north",
                 "offset": 15.0
               },
-              "label": [
-                132.5,
-                54.15,
-                15.132812499999998
-              ],
               "from": {
                 "side": "south",
                 "offset": 15.0
@@ -18330,39 +18431,39 @@
             "axi-port-7": {
               "points": [
                 [
-                  146,
-                  42
-                ],
-                [
-                  154,
-                  42
-                ],
-                [
-                  154,
-                  26
-                ],
-                [
-                  96,
-                  26
-                ],
-                [
-                  96,
+                  128,
                   34
+                ],
+                [
+                  128,
+                  20
+                ],
+                [
+                  108,
+                  20
+                ],
+                [
+                  108,
+                  38
+                ],
+                [
+                  104,
+                  38
                 ]
               ],
-              "to": {
+              "from": {
                 "side": "north",
-                "offset": 20
+                "offset": 12
+              },
+              "to": {
+                "side": "east",
+                "offset": 4
               },
               "label": [
-                117.4,
-                16.3,
-                15.132812499999998
-              ],
-              "from": {
-                "side": "east",
-                "offset": 8
-              }
+                129.5,
+                25.15,
+                15.2
+              ]
             },
             "core-logic-0": {
               "points": [
@@ -18416,11 +18517,6 @@
                 "side": "south",
                 "offset": 18.0
               },
-              "label": [
-                45.5,
-                54.15,
-                7.637145996093749
-              ],
               "from": {
                 "side": "north",
                 "offset": 18.0
@@ -18699,7 +18795,72 @@
           ],
           "border_clearance_version": 3
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "internal-feedback",
+          "title": "AXI Read Queue Status",
+          "note": "The read address and data queues report full and empty state to the AXI sequencer. Refresh and external commands appear in the main SDRAM figure.",
+          "edges": [
+            "axi-logic-2"
+          ],
+          "layout": {
+            "height": 44,
+            "boundary": [
+              13,
+              6,
+              146,
+              35
+            ],
+            "heading": [
+              17,
+              9
+            ],
+            "nodes": {
+              "axi-rd_addr_gen": [
+                21,
+                19,
+                46,
+                18
+              ],
+              "axi-sequencer": [
+                106,
+                19,
+                50,
+                18
+              ]
+            },
+            "routes": {
+              "axi-logic-2": {
+                "points": [
+                  [
+                    67,
+                    28.0
+                  ],
+                  [
+                    106,
+                    28.0
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 9.0
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 9.0
+                },
+                "label": [
+                  69,
+                  22.7,
+                  36
+                ]
+              }
+            },
+            "groups": []
+          }
+        }
+      ]
     }
   },
   "rtc": {
@@ -19274,7 +19435,7 @@
           {
             "id": "core-timing",
             "owner": "core",
-            "title": "RTC\nRTC count / tick state",
+            "title": "RTC count / tick\nSecond period",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
@@ -19293,7 +19454,7 @@
           {
             "id": "core-rtc_tickgen",
             "owner": "core",
-            "title": "rtc tickgen",
+            "title": "RTC tick generator\nSecond period",
             "scope": "rtl-instance",
             "instance_ref": "u_rtc_tickgen",
             "shape": "block"
@@ -19323,7 +19484,7 @@
             "id": "core-logic-0",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Second period",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -19336,13 +19497,14 @@
               ],
               "module": "rtc_core"
             },
-            "from": "core-timing"
+            "from": "core-timing",
+            "label_in_node": true
           },
           {
             "id": "core-logic-1",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Subsec count",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -19362,7 +19524,7 @@
             "id": "core-logic-2",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Second tick",
             "width": null,
             "net": "internal:core-logic-2",
             "source": {
@@ -19380,7 +19542,7 @@
           {
             "id": "core-port-4",
             "to": "core-rtc_tickgen",
-            "label": "command",
+            "label": "Run enable",
             "kind": "control",
             "width": null,
             "source": {
@@ -19399,7 +19561,7 @@
           {
             "id": "core-port-5",
             "to": "core-rtc_tickgen",
-            "label": "command",
+            "label": "Second period",
             "kind": "control",
             "width": null,
             "source": {
@@ -19413,7 +19575,8 @@
               "module": "rtc_core"
             },
             "net": "internal:core-port-5",
-            "from": "core-timing"
+            "from": "core-timing",
+            "label_in_node": true
           },
           {
             "id": "bound-0",
@@ -19597,11 +19760,6 @@
                 "side": "east",
                 "offset": 4
               },
-              "label": [
-                110.15,
-                16.3,
-                7.637145996093749
-              ],
               "from": {
                 "side": "north",
                 "offset": 4
@@ -19635,9 +19793,9 @@
                 "offset": 20
               },
               "label": [
-                98.15,
-                83.5,
-                7.637145996093749
+                84.3333,
+                83.6,
+                21.2
               ],
               "from": {
                 "side": "west",
@@ -19672,9 +19830,9 @@
                 "offset": 12
               },
               "label": [
-                113.15,
-                83.5,
-                9.4308349609375
+                108.9,
+                83.6,
+                18.2
               ],
               "from": {
                 "side": "south",
@@ -19713,9 +19871,9 @@
                 "offset": 4
               },
               "label": [
-                48.4,
-                83.5,
-                15.132812499999998
+                47.4,
+                83.6,
+                17.2
               ],
               "from": {
                 "side": "south",
@@ -19737,11 +19895,6 @@
                 "side": "north",
                 "offset": 15.0
               },
-              "label": [
-                132.5,
-                54.15,
-                15.132812499999998
-              ],
               "from": {
                 "side": "south",
                 "offset": 15.0
@@ -20570,7 +20723,7 @@
             "id": "core-logic-0",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "watchdog count",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -20756,9 +20909,9 @@
                 "offset": 4
               },
               "label": [
-                108.15,
-                58.8,
-                7.637145996093749
+                121.6,
+                56.15,
+                24.7
               ],
               "from": {
                 "side": "south",
@@ -22007,7 +22160,7 @@
           {
             "id": "reg-port-1",
             "to": "reg-tx_fifo",
-            "label": "command",
+            "label": "tx flush",
             "kind": "control",
             "width": null,
             "source": {
@@ -22026,7 +22179,7 @@
           {
             "id": "reg-port-2",
             "to": "reg-registers",
-            "label": "command",
+            "label": "tx full",
             "kind": "control",
             "width": null,
             "source": {
@@ -22045,7 +22198,7 @@
           {
             "id": "reg-port-3",
             "to": "reg-rx_fifo",
-            "label": "command",
+            "label": "rx flush",
             "kind": "control",
             "width": null,
             "source": {
@@ -22064,7 +22217,7 @@
           {
             "id": "reg-port-4",
             "to": "reg-registers",
-            "label": "command",
+            "label": "rx full",
             "kind": "control",
             "width": null,
             "source": {
@@ -22083,7 +22236,7 @@
           {
             "id": "core-net-0",
             "to": "core-apb4_uart_tx",
-            "label": "data",
+            "label": "UART tick",
             "kind": "data",
             "width": null,
             "source": {
@@ -22102,7 +22255,7 @@
           {
             "id": "core-net-1",
             "to": "core-apb4_uart_rx",
-            "label": "data",
+            "label": "sample tick",
             "kind": "data",
             "width": null,
             "source": {
@@ -22121,7 +22274,7 @@
           {
             "id": "core-qualified-3",
             "to": "core-uart_baudgen",
-            "label": "enable",
+            "label": "TX busy",
             "kind": "control",
             "width": null,
             "source": {
@@ -22140,7 +22293,7 @@
           {
             "id": "core-port-4",
             "to": "core-tx",
-            "label": "command",
+            "label": "Serial TX",
             "kind": "control",
             "width": null,
             "source": {
@@ -22487,9 +22640,9 @@
                 "offset": 16
               },
               "label": [
-                43.5,
+                25.2,
                 54.15,
-                6.7984374999999995
+                15.2
               ],
               "from": {
                 "side": "north",
@@ -22512,9 +22665,9 @@
                 "offset": 16
               },
               "label": [
-                43.5,
+                43.6,
                 82.15,
-                6.7984374999999995
+                17.7
               ],
               "from": {
                 "side": "south",
@@ -22553,9 +22706,9 @@
                 "offset": 4
               },
               "label": [
-                23.5,
-                16.65,
-                10.323803710937499
+                7.7,
+                47.15,
+                12.7
               ],
               "from": {
                 "side": "west",
@@ -22771,28 +22924,28 @@
                 ],
                 [
                   78,
-                  18
+                  17
                 ],
                 [
-                  66,
-                  18
+                  68,
+                  17
                 ],
                 [
-                  66,
-                  64
+                  68,
+                  71.0
                 ],
                 [
                   76,
-                  64
+                  71.0
                 ]
               ],
-              "to": {
-                "side": "west",
-                "offset": 4
-              },
               "from": {
                 "side": "south",
                 "offset": 8
+              },
+              "to": {
+                "side": "west",
+                "offset": 11.0
               }
             },
             "uart1-irq-path": {
@@ -23324,7 +23477,7 @@
             "id": "reg-logic-0",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "PWM flags",
             "width": null,
             "net": "internal:reg-logic-0",
             "source": {
@@ -26078,7 +26231,7 @@
             "id": "reg-logic-0",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "Raw CRC",
             "width": null,
             "net": "internal:reg-logic-0",
             "source": {
@@ -26329,9 +26482,9 @@
                 "offset": 15.0
               },
               "label": [
-                132.5,
+                132.6,
                 42.15,
-                13.449194335937499
+                14.2
               ],
               "from": {
                 "side": "north",
@@ -26994,7 +27147,7 @@
             "id": "reg-logic-0",
             "to": "reg-registers",
             "kind": "control",
-            "label": "registers",
+            "label": "fifo empty",
             "width": null,
             "net": "internal:reg-logic-0",
             "source": {
@@ -27012,7 +27165,7 @@
           {
             "id": "reg-port-2",
             "to": "reg-rng-admission",
-            "label": "enable",
+            "label": "Run enable",
             "kind": "control",
             "width": null,
             "source": {
@@ -27026,8 +27179,7 @@
               ]
             },
             "net": "internal:reg-port-2",
-            "from": "reg-registers",
-            "label_in_node": true
+            "from": "reg-registers"
           },
           {
             "id": "bound-0",
@@ -27249,9 +27401,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                45.6,
                 58.15,
-                13.449194335937499
+                15.7
               ],
               "from": {
                 "side": "north",
@@ -27276,7 +27428,12 @@
               "from": {
                 "side": "east",
                 "offset": 11.0
-              }
+              },
+              "label": [
+                63.7,
+                36.0,
+                10.6
+              ]
             },
             "bound-0": {
               "points": [
@@ -30253,7 +30410,7 @@
             "id": "aes-logic-0",
             "to": "aes-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "FIFO levels",
             "width": null,
             "net": "internal:aes-logic-0",
             "source": {
@@ -30278,7 +30435,7 @@
             "id": "aes-logic-2",
             "to": "aes-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "AES request",
             "width": null,
             "net": "internal:aes-logic-2",
             "source": {
@@ -30296,7 +30453,7 @@
           {
             "id": "aes-port-5",
             "to": "aes-core",
-            "label": "command",
+            "label": "Engine config",
             "kind": "control",
             "width": null,
             "source": {
@@ -30315,7 +30472,7 @@
           {
             "id": "aes-port-6",
             "to": "aes-input_fifo",
-            "label": "command",
+            "label": "Engine start",
             "kind": "control",
             "width": null,
             "source": {
@@ -30339,7 +30496,7 @@
             "id": "sha-logic-0",
             "to": "sha-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "fifo full",
             "width": null,
             "net": "internal:sha-logic-0",
             "source": {
@@ -30357,7 +30514,7 @@
           {
             "id": "sha-port-3",
             "to": "sha-input_fifo",
-            "label": "command",
+            "label": "Engine start",
             "kind": "control",
             "width": null,
             "source": {
@@ -30377,7 +30534,7 @@
             "id": "rsa-logic-0",
             "to": "rsa-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Mont. req",
             "width": null,
             "net": "internal:rsa-logic-0",
             "source": {
@@ -30395,7 +30552,7 @@
           {
             "id": "rsa-port-3",
             "to": "rsa-montgomery",
-            "label": "command",
+            "label": "Engine config",
             "kind": "control",
             "width": null,
             "source": {
@@ -30705,7 +30862,7 @@
               "label": [
                 7.5,
                 112.15,
-                7.637145996093749
+                8.900244140624999
               ],
               "from": {
                 "side": "north",
@@ -30728,9 +30885,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                45.6,
                 94.15,
-                7.637145996093749
+                18.7
               ],
               "from": {
                 "side": "north",
@@ -30765,9 +30922,9 @@
                 "offset": 4
               },
               "label": [
-                1.3000000000000007,
-                87.15,
-                15.132812499999998
+                3.8,
+                80.8,
+                12.6
               ],
               "from": {
                 "side": "west",
@@ -30823,9 +30980,9 @@
                 "offset": 14.0
               },
               "label": [
-                91.5,
+                91.6,
                 98.15,
-                7.637145996093749
+                11.2
               ],
               "from": {
                 "side": "north",
@@ -30856,9 +31013,9 @@
                 "offset": 4
               },
               "label": [
-                113.5,
-                100.65,
-                15.132812499999998
+                113.6,
+                95.2,
+                11.1
               ],
               "from": {
                 "side": "east",
@@ -30891,7 +31048,7 @@
               "label": [
                 155.5,
                 95.15,
-                7.637145996093749
+                8.801025390624998
               ],
               "from": {
                 "side": "east",
@@ -30914,9 +31071,9 @@
                 "offset": 15.0
               },
               "label": [
-                132.5,
-                98.15,
-                15.132812499999998
+                132.6,
+                96.3,
+                12.6
               ],
               "from": {
                 "side": "south",
@@ -32616,7 +32773,7 @@
           {
             "id": "tx-port-2",
             "to": "tx-sequencer",
-            "label": "command",
+            "label": "CDC isolate",
             "kind": "control",
             "width": null,
             "source": {
@@ -32673,7 +32830,7 @@
           {
             "id": "rx-port-2",
             "to": "rx-sequencer",
-            "label": "command",
+            "label": "CDC isolate",
             "kind": "control",
             "width": null,
             "source": {
@@ -32712,7 +32869,7 @@
           {
             "id": "core-net-0",
             "to": "core-mclk_clk_buf",
-            "label": "handshake",
+            "label": "Serial clock",
             "kind": "control",
             "width": null,
             "source": {
@@ -32753,7 +32910,7 @@
           {
             "id": "core-net-2",
             "to": "core-i2s_send",
-            "label": "handshake",
+            "label": "Audio edges",
             "kind": "control",
             "width": null,
             "source": {
@@ -32776,7 +32933,7 @@
           {
             "id": "core-net-3",
             "to": "core-recv_done_edge_det_sync_re",
-            "label": "handshake",
+            "label": "RX done",
             "kind": "control",
             "width": null,
             "source": {
@@ -32795,7 +32952,7 @@
           {
             "id": "core-net-4",
             "to": "core-send_done_edge_det_sync_re",
-            "label": "handshake",
+            "label": "TX done",
             "kind": "control",
             "width": null,
             "source": {
@@ -32804,7 +32961,7 @@
                 "done_o"
               ],
               "bindings": [
-                ".done_o    (s_recv_done)"
+                ".done_o     (s_send_done)"
               ],
               "module": "i2s_core"
             },
@@ -33219,9 +33376,9 @@
                 "offset": 24
               },
               "label": [
-                117.4,
-                38.8,
-                15.132812499999998
+                115.9,
+                38.7,
+                18.2
               ],
               "from": {
                 "side": "east",
@@ -33318,9 +33475,9 @@
                 "offset": 12
               },
               "label": [
-                89.5,
+                89.6,
                 94.15,
-                15.132812499999998
+                18.2
               ],
               "from": {
                 "side": "south",
@@ -33371,9 +33528,9 @@
                 "offset": 16
               },
               "label": [
-                43.5,
+                43.6,
                 120.15,
-                16.65985107421875
+                17.7
               ],
               "from": {
                 "side": "north",
@@ -33416,9 +33573,9 @@
                 "offset": 12
               },
               "label": [
-                89.5,
+                67.2,
                 146.15,
-                16.65985107421875
+                19.2
               ],
               "from": {
                 "side": "south",
@@ -34428,7 +34585,7 @@
             "id": "core-logic-0",
             "to": "core-data",
             "kind": "data",
-            "label": "data",
+            "label": "pll busy",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -34448,7 +34605,7 @@
             "id": "core-logic-1",
             "to": "core-data",
             "kind": "data",
-            "label": "data",
+            "label": "RTC wake",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -34467,7 +34624,7 @@
           {
             "id": "core-port-3",
             "to": "core-rtc_wake_sync",
-            "label": "command",
+            "label": "SYS control",
             "kind": "control",
             "width": null,
             "source": {
@@ -34660,9 +34817,9 @@
                 "offset": 9.0
               },
               "label": [
-                65.4,
-                37.8,
-                6.7984374999999995
+                64.95,
+                34.0,
+                8.1
               ],
               "from": {
                 "side": "west",
@@ -34685,9 +34842,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                26.7,
                 56.15,
-                6.7984374999999995
+                15.7
               ],
               "from": {
                 "side": "north",
@@ -34714,9 +34871,9 @@
                 "offset": 4
               },
               "label": [
-                63.4,
-                62.8,
-                15.132812499999998
+                67.9667,
+                69.6,
+                18.2
               ],
               "from": {
                 "side": "south",
@@ -39368,12 +39525,13 @@
           {
             "id": "core-lp-source",
             "owner": "core",
-            "title": "LP clock source muxes\nREF / HP /2 /4",
+            "title": "LP clock muxes\nREF / HP /2 /4\nAux: LP /4",
             "scope": "local-logic",
             "instance_refs": [
               "u_lp_perf_div2_mux",
               "u_lp_perf_div4_mux",
-              "u_lp_root_mux"
+              "u_lp_root_mux",
+              "u_lp_clk_div4"
             ],
             "shape": "mux"
           },
@@ -39445,13 +39603,10 @@
           {
             "id": "core-timebase",
             "owner": "core",
-            "title": "1 MHz timebase\nLP clock /4",
-            "scope": "local-logic",
-            "instance_refs": [
-              "u_clint_timebase",
-              "u_lp_clk_div4"
-            ],
-            "shape": "block"
+            "title": "1 MHz CLINT timebase\nREF24 divider\nLP edge detection",
+            "scope": "rtl-instance",
+            "shape": "block",
+            "instance_ref": "u_clint_timebase"
           },
           {
             "id": "pin-aon_clk_o",
@@ -39962,9 +40117,29 @@
             "label_in_node": true
           },
           {
+            "id": "ref-timebase",
+            "to": "core-timebase",
+            "label": "REF24 divider",
+            "kind": "clock",
+            "width": null,
+            "source": {
+              "file": "rtl/mini/top/soc_clock_reset_subsystem.sv",
+              "signals": [
+                "s_ref24_clk_buf"
+              ],
+              "bindings": [
+                ".ref_clk_i  (s_ref24_clk_buf)"
+              ],
+              "module": "soc_clock_reset_subsystem"
+            },
+            "net": "internal:ref-timebase",
+            "from": "core-sources",
+            "label_in_node": true
+          },
+          {
             "id": "lp-timebase",
             "to": "core-timebase",
-            "label": "LP clock",
+            "label": "LP edge detection",
             "kind": "clock",
             "width": null,
             "source": {
@@ -39973,7 +40148,7 @@
                 "s_lp_root_clk"
               ],
               "bindings": [
-                "assign lp_clk_o      = s_lp_root_clk;"
+                ".sys_clk_i  (s_lp_root_clk)"
               ],
               "module": "soc_clock_reset_subsystem"
             },
@@ -40469,20 +40644,20 @@
               "points": [
                 [
                   58,
-                  38
+                  30
                 ],
                 [
                   76,
-                  38
+                  30
                 ]
               ],
               "from": {
                 "side": "east",
-                "offset": 12
+                "offset": 4
               },
               "to": {
                 "side": "west",
-                "offset": 12
+                "offset": 4
               }
             },
             "hp-gate": {
@@ -40528,36 +40703,36 @@
             "divide-lp": {
               "points": [
                 [
-                  96,
-                  86
+                  104,
+                  82
                 ],
                 [
-                  96,
-                  104
+                  120,
+                  82
                 ],
                 [
-                  116,
-                  104
+                  120,
+                  90
                 ]
               ],
               "from": {
-                "side": "south",
-                "offset": 20
+                "side": "east",
+                "offset": 16
               },
               "to": {
-                "side": "west",
-                "offset": 14
+                "side": "north",
+                "offset": 4
               }
             },
             "roots-lp": {
               "points": [
                 [
                   30,
-                  34
+                  46
                 ],
                 [
                   26,
-                  34
+                  46
                 ],
                 [
                   26,
@@ -40570,7 +40745,7 @@
               ],
               "from": {
                 "side": "west",
-                "offset": 8
+                "offset": 20
               },
               "to": {
                 "side": "west",
@@ -40640,16 +40815,20 @@
                   146
                 ],
                 [
-                  108,
+                  106,
                   146
                 ],
                 [
-                  108,
-                  112
+                  106,
+                  120
                 ],
                 [
-                  116,
-                  112
+                  120,
+                  120
+                ],
+                [
+                  120,
+                  116
                 ]
               ],
               "from": {
@@ -40657,8 +40836,8 @@
                 "offset": 24
               },
               "to": {
-                "side": "west",
-                "offset": 22
+                "side": "south",
+                "offset": 4
               }
             },
             "cfg-pclk": {
@@ -40860,16 +41039,12 @@
             "hp-monitor": {
               "points": [
                 [
-                  100,
-                  50
-                ],
-                [
-                  100,
-                  62
+                  104,
+                  38
                 ],
                 [
                   112,
-                  62
+                  38
                 ],
                 [
                   112,
@@ -40881,8 +41056,8 @@
                 ]
               ],
               "from": {
-                "side": "south",
-                "offset": 24
+                "side": "east",
+                "offset": 12
               },
               "to": {
                 "side": "east",
@@ -41173,6 +41348,14 @@
               "points": [
                 [
                   104,
+                  170
+                ],
+                [
+                  146,
+                  170
+                ],
+                [
+                  146,
                   178
                 ],
                 [
@@ -41182,7 +41365,7 @@
               ],
               "from": {
                 "side": "east",
-                "offset": 28
+                "offset": 20
               },
               "to": {
                 "side": "west",
@@ -41288,6 +41471,34 @@
                 "side": "west",
                 "offset": 26
               }
+            },
+            "ref-timebase": {
+              "points": [
+                [
+                  76,
+                  21
+                ],
+                [
+                  95,
+                  21
+                ],
+                [
+                  95,
+                  106
+                ],
+                [
+                  101,
+                  106
+                ]
+              ],
+              "from": {
+                "side": "east",
+                "offset": 4
+              },
+              "to": {
+                "side": "west",
+                "offset": 21
+              }
             }
           },
           "groups": [],
@@ -41297,7 +41508,191 @@
           ],
           "border_clearance_version": 3
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "internal-feedback",
+          "title": "Reset, Monitor and Timebase Inputs",
+          "note": "REF24 supplies the 1 MHz divider. The toggle crosses to the LP clock domain, where edge detection drives timebase_tick_o for CLINT. The reset and monitor paths shown here have separate inputs.",
+          "edges": [
+            "roots-reset",
+            "roots-monitor",
+            "ref-timebase",
+            "lp-timebase",
+            "hp-monitor"
+          ],
+          "layout": {
+            "height": 122,
+            "boundary": [
+              18,
+              6,
+              137,
+              112
+            ],
+            "heading": [
+              22,
+              9
+            ],
+            "groups": [],
+            "nodes": {
+              "core-sources": [
+                25,
+                17,
+                51,
+                26
+              ],
+              "core-hp-source": [
+                25,
+                51,
+                51,
+                26
+              ],
+              "core-lp-source": [
+                25,
+                85,
+                51,
+                26
+              ],
+              "core-resets": [
+                101,
+                17,
+                47,
+                26
+              ],
+              "core-monitors": [
+                101,
+                51,
+                47,
+                26
+              ],
+              "core-timebase": [
+                101,
+                85,
+                47,
+                26
+              ]
+            },
+            "routes": {
+              "roots-reset": {
+                "points": [
+                  [
+                    76,
+                    26
+                  ],
+                  [
+                    101,
+                    26
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 9
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 9
+                }
+              },
+              "roots-monitor": {
+                "points": [
+                  [
+                    76,
+                    37
+                  ],
+                  [
+                    88,
+                    37
+                  ],
+                  [
+                    88,
+                    58
+                  ],
+                  [
+                    101,
+                    58
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 20
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 7
+                }
+              },
+              "hp-monitor": {
+                "points": [
+                  [
+                    76,
+                    67
+                  ],
+                  [
+                    101,
+                    67
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 16
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 16
+                }
+              },
+              "lp-timebase": {
+                "points": [
+                  [
+                    76,
+                    98
+                  ],
+                  [
+                    101,
+                    98
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 13
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 13
+                }
+              },
+              "ref-timebase": {
+                "points": [
+                  [
+                    76,
+                    21
+                  ],
+                  [
+                    95,
+                    21
+                  ],
+                  [
+                    95,
+                    106
+                  ],
+                  [
+                    101,
+                    106
+                  ]
+                ],
+                "from": {
+                  "side": "east",
+                  "offset": 4
+                },
+                "to": {
+                  "side": "west",
+                  "offset": 21
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "system-clocks": {
@@ -45465,7 +45860,7 @@
             "id": "core-logic-0",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Request event",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -45679,9 +46074,9 @@
                 "offset": 4
               },
               "label": [
-                68.15,
-                75.5,
-                9.4308349609375
+                61.9,
+                75.6,
+                22.2
               ],
               "from": {
                 "side": "east",
@@ -46198,7 +46593,7 @@
             "id": "core-logic-0",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Request event",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -46349,9 +46744,9 @@
                 "offset": 4
               },
               "label": [
-                64.15,
-                50.8,
-                9.4308349609375
+                81.6,
+                53.15,
+                22.2
               ],
               "from": {
                 "side": "south",
@@ -46989,7 +47384,7 @@
           {
             "id": "ram-port-1",
             "to": "ram-ar_addr_gen",
-            "label": "command",
+            "label": "AXI req",
             "kind": "control",
             "width": null,
             "source": {
@@ -47008,7 +47403,7 @@
           {
             "id": "ram-port-2",
             "to": "ram-read_addr_gen",
-            "label": "command",
+            "label": "Burst len",
             "kind": "control",
             "width": null,
             "source": {
@@ -47027,7 +47422,7 @@
           {
             "id": "ram-port-3",
             "to": "ram-write_addr_gen",
-            "label": "command",
+            "label": "Burst len",
             "kind": "control",
             "width": null,
             "source": {
@@ -47046,7 +47441,7 @@
           {
             "id": "ram-port-4",
             "to": "ram-reg",
-            "label": "command",
+            "label": "Read count",
             "kind": "control",
             "width": null,
             "source": {
@@ -47324,9 +47719,9 @@
                 "offset": 4
               },
               "label": [
-                102.4,
-                24.8,
-                15.132812499999998
+                101.15,
+                24.7,
+                17.7
               ],
               "from": {
                 "side": "north",
@@ -48267,7 +48662,7 @@
             "id": "mm-logic-0",
             "to": "mm-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Burst address",
             "width": null,
             "net": "internal:mm-logic-0",
             "source": {
@@ -48289,7 +48684,7 @@
             "id": "mm-logic-1",
             "to": "mm-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "XIP FSM",
             "width": null,
             "net": "internal:mm-logic-1",
             "source": {
@@ -48308,7 +48703,7 @@
           {
             "id": "mm-port-3",
             "to": "mm-addr_gen",
-            "label": "command",
+            "label": "Burst len",
             "kind": "control",
             "width": null,
             "source": {
@@ -48328,7 +48723,7 @@
             "id": "indirect-logic-0",
             "to": "indirect-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Indirect phase",
             "width": null,
             "net": "internal:indirect-logic-0",
             "source": {
@@ -48348,7 +48743,7 @@
             "id": "core-logic-0",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Opcode lanes",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -48371,7 +48766,7 @@
             "id": "core-logic-1",
             "to": "core-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Shift edge",
             "width": null,
             "net": "internal:core-logic-1",
             "source": {
@@ -48395,7 +48790,7 @@
             "id": "core-logic-2",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Active lanes",
             "width": null,
             "net": "internal:core-logic-2",
             "source": {
@@ -48660,26 +49055,30 @@
                 ],
                 [
                   108,
-                  72
+                  56
                 ],
                 [
-                  116,
-                  72
+                  120,
+                  56
+                ],
+                [
+                  120,
+                  60
                 ]
-              ],
-              "to": {
-                "side": "west",
-                "offset": 12
-              },
-              "label": [
-                110.15,
-                109.5,
-                7.637145996093749
               ],
               "from": {
                 "side": "south",
                 "offset": 4
-              }
+              },
+              "to": {
+                "side": "north",
+                "offset": 4
+              },
+              "label": [
+                110.4667,
+                109.6,
+                21.2
+              ]
             },
             "mm-logic-1": {
               "points": [
@@ -48697,9 +49096,9 @@
                 "offset": 15.0
               },
               "label": [
-                132.5,
+                132.6,
                 54.15,
-                9.4308349609375
+                13.2
               ],
               "from": {
                 "side": "north",
@@ -48755,9 +49154,9 @@
                 "offset": 14.0
               },
               "label": [
-                69.15,
-                24.8,
-                9.4308349609375
+                70.3833,
+                24.7,
+                21.7
               ],
               "from": {
                 "side": "north",
@@ -48788,9 +49187,9 @@
                 "offset": 12
               },
               "label": [
-                7.5,
-                109.15,
-                7.637145996093749
+                7.6,
+                107.3,
+                12.6
               ],
               "from": {
                 "side": "west",
@@ -48825,9 +49224,9 @@
                 "offset": 28
               },
               "label": [
-                56.15,
-                109.5,
-                7.637145996093749
+                52.15,
+                109.6,
+                15.7
               ],
               "from": {
                 "side": "west",
@@ -48866,9 +49265,9 @@
                 "offset": 4
               },
               "label": [
-                25.5,
+                25.6,
                 110.15,
-                9.4308349609375
+                18.7
               ],
               "from": {
                 "side": "south",
@@ -50058,7 +50457,7 @@
             "id": "core-logic-0",
             "to": "core-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "In frame",
             "width": null,
             "net": "internal:core-logic-0",
             "source": {
@@ -50081,7 +50480,7 @@
             "id": "fifo-logic-0",
             "to": "fifo-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "CDC ready",
             "width": null,
             "net": "internal:fifo-logic-0",
             "source": {
@@ -50100,7 +50499,7 @@
             "id": "fifo-logic-1",
             "to": "fifo-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "CDC isolate",
             "width": null,
             "net": "internal:fifo-logic-1",
             "source": {
@@ -50393,9 +50792,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                45.6,
                 110.15,
-                9.4308349609375
+                12.7
               ],
               "from": {
                 "side": "south",
@@ -50418,9 +50817,9 @@
                 "offset": 15.0
               },
               "label": [
-                132.5,
+                112.7,
                 82.15,
-                7.637145996093749
+                16.7
               ],
               "from": {
                 "side": "south",
@@ -50459,9 +50858,9 @@
                 "offset": 4
               },
               "label": [
-                92.15,
-                24.8,
-                7.637145996093749
+                86.9,
+                24.7,
+                18.2
               ],
               "from": {
                 "side": "north",
@@ -53683,7 +54082,7 @@
           {
             "id": "decode-mcu_reconstructor",
             "owner": "decode",
-            "title": "jpeg mcu reconstructor",
+            "title": "MCU reconstruct\nBlock ready",
             "scope": "rtl-instance",
             "instance_ref": "u_mcu_reconstructor",
             "shape": "block"
@@ -54439,7 +54838,7 @@
             "id": "encode-logic-0",
             "to": "encode-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Encode ready",
             "width": null,
             "net": "internal:encode-logic-0",
             "source": {
@@ -54470,7 +54869,7 @@
             "id": "encode-logic-3",
             "to": "encode-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "MCU ready",
             "width": null,
             "net": "internal:encode-logic-3",
             "source": {
@@ -54490,7 +54889,7 @@
           {
             "id": "encode-net-0",
             "to": "encode-block_encoder",
-            "label": "handshake",
+            "label": "Codec block",
             "kind": "control",
             "width": null,
             "source": {
@@ -54509,7 +54908,7 @@
           {
             "id": "encode-port-12",
             "to": "encode-mcu_builder",
-            "label": "command",
+            "label": "Active width",
             "kind": "control",
             "width": null,
             "source": {
@@ -54528,7 +54927,7 @@
           {
             "id": "encode-port-13",
             "to": "encode-block_encoder",
-            "label": "command",
+            "label": "Encode control",
             "kind": "control",
             "width": null,
             "source": {
@@ -54557,7 +54956,7 @@
             "id": "coeff-logic-1",
             "to": "coeff-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "quant valid",
             "width": null,
             "net": "internal:coeff-logic-1",
             "source": {
@@ -54577,7 +54976,7 @@
           {
             "id": "coeff-port-4",
             "to": "coeff-quantizer",
-            "label": "command",
+            "label": "Decode mode",
             "kind": "control",
             "width": null,
             "source": {
@@ -54597,7 +54996,7 @@
             "id": "decode-logic-1",
             "to": "decode-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Decode flags",
             "width": null,
             "net": "internal:decode-logic-1",
             "source": {
@@ -54625,7 +55024,7 @@
             "id": "decode-logic-2",
             "to": "decode-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "cache valid",
             "width": null,
             "net": "internal:decode-logic-2",
             "source": {
@@ -54644,7 +55043,7 @@
             "id": "decode-logic-3",
             "to": "decode-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Block ready",
             "width": null,
             "net": "internal:decode-logic-3",
             "source": {
@@ -54657,12 +55056,13 @@
               ],
               "module": "jpeg_decode_core"
             },
-            "from": "decode-mcu_reconstructor"
+            "from": "decode-mcu_reconstructor",
+            "label_in_node": true
           },
           {
             "id": "decode-net-1",
             "to": "decode-bit_reader",
-            "label": "handshake",
+            "label": "Decode bytes",
             "kind": "control",
             "width": null,
             "source": {
@@ -54695,7 +55095,7 @@
           {
             "id": "decode-net-2",
             "to": "decode-table_store",
-            "label": "handshake",
+            "label": "Table load",
             "kind": "control",
             "width": null,
             "source": {
@@ -54728,7 +55128,7 @@
           {
             "id": "decode-net-3",
             "to": "decode-table_store",
-            "label": "data",
+            "label": "table data",
             "kind": "data",
             "width": null,
             "source": {
@@ -54747,7 +55147,7 @@
           {
             "id": "decode-net-4",
             "to": "decode-mcu_reconstructor",
-            "label": "handshake",
+            "label": "Image geometry",
             "kind": "control",
             "width": null,
             "source": {
@@ -54772,7 +55172,7 @@
           {
             "id": "decode-net-14",
             "to": "decode-mcu_reconstructor",
-            "label": "handshake",
+            "label": "Block valid",
             "kind": "control",
             "width": null,
             "source": {
@@ -55073,9 +55473,9 @@
                 "offset": 4
               },
               "label": [
-                98.8,
-                68.65,
-                7.637145996093749
+                121.6,
+                69.15,
+                21.2
               ],
               "from": {
                 "side": "north",
@@ -55106,9 +55506,9 @@
                 "offset": 4
               },
               "label": [
-                64.65,
-                54.8,
-                7.637145996093749
+                46.7,
+                67.15,
+                17.7
               ],
               "from": {
                 "side": "west",
@@ -55184,9 +55584,9 @@
                 "offset": 12
               },
               "label": [
-                73.4,
-                97.5,
-                15.132812499999998
+                71.4,
+                97.6,
+                19.2
               ],
               "from": {
                 "side": "south",
@@ -55221,9 +55621,9 @@
                 "offset": 12
               },
               "label": [
-                117.4,
-                97.5,
-                15.132812499999998
+                113.4,
+                97.6,
+                23.2
               ],
               "from": {
                 "side": "south",
@@ -55256,7 +55656,7 @@
               "label": [
                 155.5,
                 84.15,
-                7.637145996093749
+                8.71885986328125
               ],
               "from": {
                 "side": "east",
@@ -55275,34 +55675,30 @@
                 ],
                 [
                   112,
-                  8
+                  38
                 ],
                 [
-                  108,
-                  8
+                  120,
+                  38
                 ],
                 [
-                  108,
-                  52
-                ],
-                [
-                  116,
-                  52
+                  120,
+                  48
                 ]
-              ],
-              "to": {
-                "side": "west",
-                "offset": 4
-              },
-              "label": [
-                113.5,
-                30.65,
-                15.132812499999998
               ],
               "from": {
                 "side": "west",
                 "offset": 4
-              }
+              },
+              "to": {
+                "side": "north",
+                "offset": 4
+              },
+              "label": [
+                121.6,
+                41.15,
+                21.7
+              ]
             },
             "decode-logic-1": {
               "points": [
@@ -55328,9 +55724,9 @@
                 "offset": 24
               },
               "label": [
-                106.15,
-                150.8,
-                7.637145996093749
+                121.6,
+                153.15,
+                20.2
               ],
               "from": {
                 "side": "south",
@@ -55361,9 +55757,9 @@
                 "offset": 4
               },
               "label": [
-                65.15,
-                150.8,
-                7.637145996093749
+                38.7,
+                153.15,
+                17.7
               ],
               "from": {
                 "side": "south",
@@ -55397,11 +55793,6 @@
                 "side": "east",
                 "offset": 4
               },
-              "label": [
-                101.5,
-                124.15,
-                7.637145996093749
-              ],
               "from": {
                 "side": "south",
                 "offset": 24
@@ -55509,9 +55900,9 @@
                 "offset": 12
               },
               "label": [
-                9.3,
+                1.2,
                 151.15,
-                6.7984374999999995
+                15.2
               ],
               "from": {
                 "side": "south",
@@ -55542,9 +55933,9 @@
                 "offset": 9.0
               },
               "label": [
-                73.5,
+                73.6,
                 123.65,
-                16.65985107421875
+                24.7
               ],
               "from": {
                 "side": "west",
@@ -57650,7 +58041,7 @@
           {
             "id": "link-ulpi_link",
             "owner": "link",
-            "title": "usb2 ulpi link\nlink start valid\nenable",
+            "title": "usb2 ulpi link\nlink start valid\nLink enable",
             "scope": "rtl-instance",
             "instance_ref": "u_ulpi_link",
             "shape": "block",
@@ -58251,7 +58642,7 @@
           {
             "id": "link-port-12",
             "to": "link-ulpi_link",
-            "label": "enable",
+            "label": "Link enable",
             "kind": "control",
             "width": null,
             "source": {
@@ -59438,7 +59829,7 @@
             "id": "slot-logic-1",
             "to": "slot-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Accepted APB",
             "width": null,
             "net": "internal:slot-logic-1",
             "source": {
@@ -59636,9 +60027,9 @@
                 "offset": 4
               },
               "label": [
-                105.15,
-                41.3,
-                9.4308349609375
+                121.6,
+                42.15,
+                22.2
               ],
               "from": {
                 "side": "north",
@@ -60316,7 +60707,7 @@
             "id": "slot-logic-1",
             "to": "slot-timing",
             "kind": "control",
-            "label": "timing",
+            "label": "Accepted APB",
             "width": null,
             "net": "internal:slot-logic-1",
             "source": {
@@ -60336,7 +60727,7 @@
             "id": "dma-logic-0",
             "to": "dma-address",
             "kind": "control",
-            "label": "address",
+            "label": "DMA phase",
             "width": null,
             "net": "internal:dma-logic-0",
             "source": {
@@ -60358,7 +60749,7 @@
             "id": "dma-logic-1",
             "to": "dma-sequencer",
             "kind": "control",
-            "label": "state",
+            "label": "Bytes left",
             "width": null,
             "net": "internal:dma-logic-1",
             "source": {
@@ -60600,9 +60991,9 @@
                 "offset": 4
               },
               "label": [
-                109.15,
-                71.5,
-                9.4308349609375
+                110.3,
+                71.6,
+                22.2
               ],
               "from": {
                 "side": "east",
@@ -60625,9 +61016,9 @@
                 "offset": 18.0
               },
               "label": [
-                45.5,
+                45.6,
                 68.15,
-                12.319030761718748
+                17.7
               ],
               "from": {
                 "side": "north",
@@ -60658,9 +61049,9 @@
                 "offset": 4
               },
               "label": [
-                12.8,
+                10.8,
                 71.65,
-                7.637145996093749
+                8.627392578124999
               ],
               "from": {
                 "side": "west",
@@ -64260,7 +64651,7 @@
           {
             "id": "reg-registers",
             "owner": "reg",
-            "title": "GA2D\nAPB registers / control\nStatus",
+            "title": "GA2D\nAPB registers / control\nJob status",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/ip/multimedia/ga2d_reg.sv",
@@ -64686,7 +65077,7 @@
           {
             "id": "bound-1",
             "to": "reg-registers",
-            "label": "Status",
+            "label": "Job status",
             "kind": "control",
             "width": 1,
             "parent_edge": 1,
@@ -65058,33 +65449,21 @@
             "bound-1": {
               "points": [
                 [
-                  78,
-                  116
+                  46,
+                  122
                 ],
                 [
-                  92,
-                  116
-                ],
-                [
-                  92,
-                  152
-                ],
-                [
-                  74,
-                  152
-                ],
-                [
-                  74,
-                  148
+                  46,
+                  130
                 ]
               ],
-              "to": {
-                "side": "south",
-                "offset": 48
-              },
               "from": {
-                "side": "east",
-                "offset": 12
+                "side": "south",
+                "offset": 20
+              },
+              "to": {
+                "side": "north",
+                "offset": 20
               }
             },
             "bound-2": {
@@ -65118,29 +65497,21 @@
             "bound-3": {
               "points": [
                 [
-                  146,
-                  90
+                  124,
+                  96
                 ],
                 [
-                  154,
-                  90
-                ],
-                [
-                  154,
-                  108
-                ],
-                [
-                  146,
-                  108
+                  124,
+                  104
                 ]
               ],
-              "to": {
-                "side": "east",
-                "offset": 4
-              },
               "from": {
-                "side": "east",
-                "offset": 16
+                "side": "south",
+                "offset": 28
+              },
+              "to": {
+                "side": "north",
+                "offset": 28
               }
             },
             "bound-4": {
@@ -65423,7 +65794,136 @@
           ],
           "border_clearance_version": 3
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "internal-feedback",
+          "title": "DMA FIFO Control",
+          "note": "The line/burst planner clears the foreground, background and output queues. The output FIFO reports empty to the planner.",
+          "edges": [
+            "dma-logic-2",
+            "dma-port-5",
+            "dma-port-7"
+          ],
+          "layout": {
+            "height": 75,
+            "boundary": [
+              23.5,
+              6,
+              125,
+              67
+            ],
+            "nodes": {
+              "dma-output_fifo": [
+                26,
+                46,
+                52,
+                18
+              ],
+              "dma-sequencer": [
+                96,
+                46,
+                50,
+                22
+              ],
+              "dma-foreground_fifo": [
+                26,
+                20,
+                52,
+                18
+              ]
+            },
+            "routes": {
+              "dma-logic-2": {
+                "points": [
+                  [
+                    74,
+                    64
+                  ],
+                  [
+                    74,
+                    68
+                  ],
+                  [
+                    92,
+                    68
+                  ],
+                  [
+                    92,
+                    62
+                  ],
+                  [
+                    96,
+                    62
+                  ]
+                ],
+                "to": {
+                  "side": "west",
+                  "offset": 16
+                },
+                "from": {
+                  "side": "south",
+                  "offset": 48
+                }
+              },
+              "dma-port-5": {
+                "points": [
+                  [
+                    100,
+                    46
+                  ],
+                  [
+                    100,
+                    42
+                  ],
+                  [
+                    74,
+                    42
+                  ],
+                  [
+                    74,
+                    38
+                  ]
+                ],
+                "to": {
+                  "side": "south",
+                  "offset": 48
+                },
+                "from": {
+                  "side": "north",
+                  "offset": 4
+                }
+              },
+              "dma-port-7": {
+                "points": [
+                  [
+                    96,
+                    57.0
+                  ],
+                  [
+                    78,
+                    57.0
+                  ]
+                ],
+                "to": {
+                  "side": "east",
+                  "offset": 11.0
+                },
+                "from": {
+                  "side": "west",
+                  "offset": 11.0
+                }
+              }
+            },
+            "groups": [],
+            "heading": [
+              26.5,
+              8
+            ],
+            "border_clearance_version": 3
+          }
+        }
+      ]
     }
   },
   "npu": {
@@ -67982,29 +68482,21 @@
             "bound-0": {
               "points": [
                 [
-                  62,
-                  54
+                  46,
+                  60
                 ],
                 [
-                  72,
-                  54
-                ],
-                [
-                  72,
-                  110
-                ],
-                [
-                  62,
-                  110
+                  46,
+                  94
                 ]
               ],
-              "to": {
-                "side": "east",
-                "offset": 16
-              },
               "from": {
-                "side": "east",
-                "offset": 24
+                "side": "south",
+                "offset": 20
+              },
+              "to": {
+                "side": "north",
+                "offset": 20
               }
             },
             "bound-1": {
@@ -68058,11 +68550,19 @@
             "bound-3": {
               "points": [
                 [
-                  120,
-                  52
+                  128,
+                  30
                 ],
                 [
-                  120,
+                  128,
+                  22
+                ],
+                [
+                  70,
+                  22
+                ],
+                [
+                  70,
                   98
                 ],
                 [
@@ -68070,12 +68570,12 @@
                   98
                 ]
               ],
+              "from": {
+                "side": "north",
+                "offset": 12
+              },
               "to": {
                 "side": "east",
-                "offset": 4
-              },
-              "from": {
-                "side": "south",
                 "offset": 4
               }
             },
@@ -68142,19 +68642,15 @@
             "bound-7": {
               "points": [
                 [
-                  50,
-                  142
+                  62,
+                  158
                 ],
                 [
-                  50,
-                  138
+                  69,
+                  158
                 ],
                 [
-                  70,
-                  138
-                ],
-                [
-                  70,
+                  69,
                   164
                 ],
                 [
@@ -68166,13 +68662,13 @@
                   160
                 ]
               ],
+              "from": {
+                "side": "east",
+                "offset": 16
+              },
               "to": {
                 "side": "south",
                 "offset": 4
-              },
-              "from": {
-                "side": "north",
-                "offset": 24
               }
             },
             "bound-8": {

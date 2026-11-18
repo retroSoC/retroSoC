@@ -1,20 +1,29 @@
 # Publications
 
-Current edition: **2026-11-17**, Tiny **v0.2 DRAFT / Gen1** and Mini
+Current edition: **2026-11-18**, Tiny **v0.2 DRAFT / Gen1** and Mini
 **v0.5 DRAFT / Gen2/Gen2+**. Both books use the technical source reviewed at
 `d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
-The functional IP drawing round starts at publication dev `80486b9f`, preserving
+The RM0486 comparison starts at dev `3d75177e` and retains the PR #289
+455-page Tiny and 828-page Mini artifacts as the baseline. The round reviews
+all 65 primary and 36 existing detail figures, preserves every declared
+interface, and adds nine source-bound local route details. The
+[drawing standard](ip-block-diagrams.md) defines the 12-crossing limit and
+requires signal-specific labels in each primary and detail. Use
+`python -m publications.review_ip_blocks` with the two baseline and current
+build directories to reproduce the [per-figure comparison](ip-block-rm0486-review.md).
+
+The preceding functional IP drawing round starts at publication dev `80486b9f`, preserving
 the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
 Tiny's 23 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
 shared CeTZ 0.5.2, the `ip-block-v2` style and the
 [IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
 The seven system Circuiteria figures and all other figure families retain
 their design. Both builders export editable data/Typst plus standalone SVG/PDF,
-source fingerprints, geometry/coverage audits and output hashes. Active markers
-are `tiny-v02-ip-detail-20261117-` and `v05-ip-detail-20261117-`.
+source fingerprints, geometry/coverage audits and output hashes. Current markers
+are `tiny-v02-ip-review-20261118-` and `v05-ip-review-20261118-`.
 The preceding v1 round started at `4315f7d7` and retained the 439/792-page
 scientific-notation editions. Its [review](ip-block-review.md) is historical.
 The v2 [implementation review](ip-block-detail-review.md) records the frozen

@@ -11,7 +11,8 @@
  ([2026-11-10],[v0.2 DRAFT],[Source refresh with PPALite P3, DVP/DMA/RCU contracts and 23 integrated IP chapters.]),
  ([2026-11-11],[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.]),
  ([2026-11-14],[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.]),
- (doc.date,[v0.2 DRAFT],[Functional IP diagram v2: 23 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Integrate the reviewed d9f27811 snapshot and retain the scope of the dated PPALite P4 acceptance.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-17],[v0.2 DRAFT],[Functional IP diagram v2: 23 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Integrate the reviewed d9f27811 snapshot and retain the scope of the dated PPALite P4 acceptance.]),
+ (doc.date,[v0.2 DRAFT],[RM0486 comparison across all IP views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence. ])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,

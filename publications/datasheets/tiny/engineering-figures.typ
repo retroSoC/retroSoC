@@ -161,7 +161,9 @@
 #let ip-canvas(record,id)=block(width:100%,breakable:false)[
  #diagram-use("cetz",id)
  #ip-block-view(record)
- #diagram-note[#record.at("clock_note",default:"") #record.note]
+ #diagram-note[#record.at("clock_note",default:"") #record.note #if record.at("route_detail_links",default:()).len()>0 [
+   Related paths: #record.route_detail_links.map(key=>ref(label("circuit-"+key))).join([, ]).
+ ]]
  #diagram-end("cetz",id)
 ]
 #let circuit-diagram(id)={
