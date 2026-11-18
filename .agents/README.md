@@ -120,7 +120,11 @@ candidate plan for exact control-plane paths; it never changes authoritative CI
 selection. Agent and engineering Make targets live in `scripts/mk/agent.mk`,
 included by the root Makefile without changing their public interfaces. Root
 Makefile, product, unlisted, or invalid-policy changes still require full
-validation. `ONLINE=1` adds a least-privilege GitHub permission probe and
+validation. For Mini non-product control reviews, `make agent-control-review
+REVISION=<commit> REASON="<rationale>" OUTPUT=<path>` computes exact blobs and
+validates a candidate without modifying publication sources or CI evidence.
+The result always has `applied=false` and `approval_status=REVIEW_REQUIRED`;
+there is no apply mode. `ONLINE=1` adds a least-privilege GitHub permission probe and
 `PR=<number>` adds a head-bound check report. A blocked preflight is
 not approval to continue. Use `make agent-handoff TASK=<task.json> NEXT=<action>`
 to generate the [handoff schema](handoff.schema.json)-bound JSON and optional

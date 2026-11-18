@@ -87,6 +87,13 @@ commands, or GitHub outputs. Missing/invalid policy and every unlisted path reta
 full validation. `scripts/mk/agent.mk` owns the Agent/engineering Make targets
 included by the root Makefile; existing target names and argument forwarding are
 unchanged. Shadow candidates do not skip jobs by themselves.
+`publication_control.py plan` resolves the exact revision and Mini
+Makefile/Git-workflow blobs, then validates a candidate through the existing
+source and CI metadata contracts. `make agent-control-review REVISION=<commit>
+REASON="<rationale>" OUTPUT=<path>` emits the same candidate only under `build/`.
+It never modifies publication sources, always returns `applied=false` and
+`approval_status=REVIEW_REQUIRED`, and retains the existing CI run IDs and check
+time. Candidate failures return BLOCKED rather than PASS. There is no apply mode.
 `merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
 against the selected target revision. `make agent-preflight` enables this check
 by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.

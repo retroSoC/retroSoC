@@ -1,4 +1,4 @@
-.PHONY: agent-context agent-task-check agent-handoff agent-scope-check agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy
+.PHONY: agent-context agent-task-check agent-handoff agent-scope-check agent-preflight agent-control-review agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy
 
 agent-context:
 	python3 $(ROOT_PATH)/scripts/agent_control.py context --root $(ROOT_PATH) \
@@ -64,6 +64,13 @@ agent-preflight:
 	  $(if $(filter 0,$(MERGE_CHECK)),--no-merge-check,--merge-check) \
 	  --merge-ref $(if $(MERGE_REF),$(MERGE_REF),origin/dev) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-preflight.json)
+
+agent-control-review:
+	@test -n '$(REVISION)' || { printf '%s\n' 'REVISION=<commit> is required'; exit 2; }
+	@test -n '$(REASON)' || { printf '%s\n' 'REASON=<review rationale> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/publication_control.py plan --root $(ROOT_PATH) \
+	  --revision "$(REVISION)" --reason "$(REASON)" \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/control-review.json)
 
 agent-deliver:
 	@test -n '$(PR)' || { printf '%s\n' 'PR=<number> is required'; exit 2; }
