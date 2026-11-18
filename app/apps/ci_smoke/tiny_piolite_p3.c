@@ -124,7 +124,7 @@ static rs_status_t rs_pio_discover(void) {
 }
 
 static rs_status_t rs_pio_gpio_sweep(void) {
-    static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x7040), UINT16_C(0x0020)};
+    static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)};
     for (uint32_t pin = 0U; pin < 32U; ++pin) {
         rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 2U);
         if (result != RS_OK) {
@@ -159,7 +159,7 @@ static rs_status_t rs_pio_gpio_sweep(void) {
 }
 
 static rs_status_t rs_pio_shared_input(void) {
-    static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x7040), UINT16_C(0x0020)};
+    static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)};
     rs_piolite_config_t first;
     rs_piolite_config_t second;
     uint32_t sample = 0U;
@@ -250,7 +250,7 @@ static rs_status_t rs_pio_output(void) {
 
 static rs_status_t rs_pio_direct_dma(void) {
     static const uint16_t code[5] = {UINT16_C(0x7040), UINT16_C(0x5080), UINT16_C(0x4060),
-                                     UINT16_C(0x7040), UINT16_C(0x0020)};
+                                     UINT16_C(0x70C0), UINT16_C(0x0020)};
     rs_piolite_config_t config;
     rs_status_t result;
     rs_pio_tx.channel = 3U;

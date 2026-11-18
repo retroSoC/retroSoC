@@ -408,6 +408,15 @@ def test_piolite_input_only_configuration_disables_set_window() -> None:
     assert ".set_width = (output_mask != 0U) ? 1U : 0U" in source
 
 
+def test_piolite_input_programs_push_received_samples() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    assert source.count("UINT16_C(0x4001), UINT16_C(0x70C0), UINT16_C(0x0020)") == 2
+    direct = source.split("static rs_status_t rs_pio_direct_dma", 1)[1].split(
+        "static rs_status_t rs_pio_mixed_tcd", 1)[0]
+    assert "UINT16_C(0x7040), UINT16_C(0x5080), UINT16_C(0x4060)" in direct
+    assert "UINT16_C(0x4060),\n                                     UINT16_C(0x70C0), UINT16_C(0x0020)" in direct
+
+
 def test_piolite_program_wrap_covers_every_loaded_word() -> None:
     source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
     config = source.split("static rs_piolite_config_t rs_pio_config", 1)[1].split(
