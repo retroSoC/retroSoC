@@ -2,9 +2,9 @@
 
 Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
 **v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed source snapshot is
-215a29ad749b246c795e88695dace3bb8d891cd1 for the PIOLITE-P3 source integration;
+59042399717779b7ca5cef185d1ceb5ae961b97c for the PIOLITE-P3 source integration;
 Mini's synchronized default-off compatibility snapshot is
-215a29ad749b246c795e88695dace3bb8d891cd1. The main references are Tiny ICS55
+59042399717779b7ca5cef185d1ceb5ae961b97c. The main references are Tiny ICS55
 (with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW. The two
 books have independent profiles, manifests and output markers.
 
@@ -19,7 +19,7 @@ are `tiny-v02-ip-block-20261116-` and `v05-ip-block-20261116-`.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
 Makefile and contribution-policy changes through
-`58986f512add4d01d13cb5ea3bff633b8d546f39`. It binds a full commit and each
+`59042399717779b7ca5cef185d1ceb5ae961b97c`. It binds a full commit and each
 file's blob identity independently of the technical source snapshot. The optional
 `documentation_blobs` mapping accepts only `docs/git-workflow.md`; product
 documents cannot be exempted. Source checks reject later control-file edits and

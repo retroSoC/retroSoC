@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "215a29ad749b246c795e88695dace3bb8d891cd1",
+  "source_revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
   "build_control_review": {
-    "revision": "58986f512add4d01d13cb5ea3bff633b8d546f39",
-    "makefile_blob": "19b493043fff1e7ead56634ea981662825e46ce3",
+    "revision": "59042399717779b7ca5cef185d1ceb5ae961b97c",
+    "makefile_blob": "83c94a5e0da9302a2c2fec40ecd78229508aea71",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical snapshot is 215a29ad and includes the synchronized delivery-recovery controls and PIOLITE-P3 source integration; Mini PIO support and grants remain disabled, and no Mini synthesis, netlist or timing result is implied. Non-product control review uses the same revision and retains prior source, control, CI and artifact evidence, including the P3 acceptance selector, resume arguments and isolated-image guard. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical and control snapshot is 59042399 and includes complete Tiny recovery, GPIO/DMA lifecycle and acceptance integration. Mini PIO support and grants remain disabled; the P3 image and Tiny observer/checker changes do not alter Mini product behavior or imply Mini synthesis, netlist or timing evidence. Mini product RTL, SDK, hardware profiles and dependency pins retain their existing behavior; actual legacy stream directions are reported from the selected supported mask. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

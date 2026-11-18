@@ -1,6 +1,6 @@
 # Tiny Gen1 v0.2 DRAFT content review
 
-Current 2026-11-18 implementation: reviewed source 215a29ad749b246c795e88695dace3bb8d891cd1.
+Current 2026-11-18 implementation: reviewed source 59042399717779b7ca5cef185d1ceb5ae961b97c.
 See [the shared round review](../commercial-reference-review.md) for the earlier source delta, independent book scopes, data/graphics,
 comparison baseline and remaining qualification.
 
