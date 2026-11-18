@@ -34,7 +34,7 @@ static rs_piolite_config_t rs_pio_config(const rs_piolite_program_t *program, ui
                                         .divider = 1U,
                                         .entry = 0U,
                                         .wrap_bottom = 0U,
-                                        .wrap_top = 0U,
+                                        .wrap_top = program->word_count - 1U,
                                         .in_base = in_base,
                                         .in_width = 1U,
                                         .set_base = in_base,
@@ -125,11 +125,11 @@ static rs_status_t rs_pio_discover(void) {
 
 static rs_status_t rs_pio_gpio_sweep(void) {
     static const uint16_t code[3] = {UINT16_C(0x4001), UINT16_C(0x7040), UINT16_C(0x0020)};
-    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 1U);
-    if (result != RS_OK) {
-        return result;
-    }
     for (uint32_t pin = 0U; pin < 32U; ++pin) {
+        rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 2U);
+        if (result != RS_OK) {
+            return result;
+        }
         rs_piolite_config_t config =
             rs_pio_config(&rs_pio_program, 0U, pin, UINT32_C(1) << pin, 0U);
         uint32_t sample = UINT32_MAX;
@@ -163,7 +163,7 @@ static rs_status_t rs_pio_shared_input(void) {
     rs_piolite_config_t first;
     rs_piolite_config_t second;
     uint32_t sample = 0U;
-    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 1U);
+    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 2U);
     if (result != RS_OK) {
         return result;
     }
@@ -227,7 +227,7 @@ static rs_status_t rs_pio_shared_input(void) {
 static rs_status_t rs_pio_output(void) {
     static const uint16_t code[3] = {UINT16_C(0x1001), UINT16_C(0x2001), UINT16_C(0x0020)};
     rs_piolite_config_t config;
-    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 1U);
+    rs_status_t result = rs_pio_load(code, 3U, 0U, 0U, 2U);
     if (result != RS_OK) {
         return result;
     }
@@ -263,7 +263,7 @@ static rs_status_t rs_pio_direct_dma(void) {
     rs_pio_rx_buffer[1] = UINT32_C(0x89ABCDEF);
     rs_pio_rx_buffer[2] = UINT32_C(0x13579BDF);
     rs_pio_rx_buffer[3] = UINT32_C(0x13579BDF);
-    result = rs_pio_load(code, 5U, 0U, 0U, 3U);
+    result = rs_pio_load(code, 5U, 0U, 0U, 4U);
     if (result != RS_OK) {
         return result;
     }
@@ -329,7 +329,7 @@ static rs_status_t rs_pio_mixed_tcd(void) {
         .control = RS_DMA_TCD_VALID | RS_DMA_TCD_SRC_INC |
                    ((uint32_t)RS_DMA_KIND_MM_TO_STREAM << RS_DMA_TCD_KIND_SHIFT) |
                    ((uint32_t)RS_DMA_REQUEST_PIOLITE_TX << RS_DMA_TCD_REQUEST_SHIFT)};
-    result = rs_pio_load(code, 3U, 0U, 0U, 1U);
+    result = rs_pio_load(code, 3U, 0U, 0U, 2U);
     if (result != RS_OK) {
         return result;
     }

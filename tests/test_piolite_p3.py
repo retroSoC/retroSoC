@@ -159,7 +159,7 @@ def test_piolite_observer_is_source_bound() -> None:
     assert "PIOLITE_P3_OBSERVATION" in observer
     assert '$value$plusargs("tiny_piolite_observer_log=%s"' in observer
     assert '$display("PIOLITE_P3_' not in observer
-    assert "".join(observer.split()).count("$fdisplay(piolite_observer_fd,") == 7
+    assert "".join(observer.split()).count("$fdisplay(piolite_observer_fd,") == 10
 
 
 GOOD_LOG = """PIOLITE_P3_CHECK id=1 pass=1 clock=24000000 mask=0003ffff
@@ -408,6 +408,28 @@ def test_piolite_input_only_configuration_disables_set_window() -> None:
     assert ".set_width = (output_mask != 0U) ? 1U : 0U" in source
 
 
+def test_piolite_program_wrap_covers_every_loaded_word() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    config = source.split("static rs_piolite_config_t rs_pio_config", 1)[1].split(
+        "static rs_status_t rs_pio_load", 1)[0]
+    assert ".entry = 0U" in config
+    assert ".wrap_bottom = 0U" in config
+    assert ".wrap_top = program->word_count - 1U" in config
+    for line in source.splitlines():
+        if "rs_pio_load(code," in line or "rs_pio_load(loop," in line:
+            arguments = line.split("rs_pio_load(", 1)[1].split(")", 1)[0].split(",")
+            assert int(arguments[-1].strip()[:-1]) == int(arguments[1].strip()[:-1]) - 1
+
+
+def test_piolite_gpio_sweep_reloads_program_per_pin() -> None:
+    source = (ROOT / "app/apps/ci_smoke/tiny_piolite_p3.c").read_text()
+    sweep = source.split("static rs_status_t rs_pio_gpio_sweep", 1)[1].split(
+        "static rs_status_t rs_pio_shared_input", 1)[0]
+    loop = sweep.split("for (uint32_t pin", 1)[1]
+    assert loop.index("rs_pio_load(code, 3U, 0U, 0U, 2U)") < loop.index("rs_pio_config(")
+    assert "rs_pio_finish_session()" in loop
+
+
 @pytest.mark.parametrize("profile,simulator", [("ihp130", "VERILATOR"), ("ics55", "IVERILOG")])
 def test_piolite_check_binds_sim_and_observer_logs(profile: str, simulator: str) -> None:
     result = subprocess.run(
@@ -421,3 +443,14 @@ def test_piolite_check_binds_sim_and_observer_logs(profile: str, simulator: str)
     observer_log = command.split("--observer-log ", 1)[1].split(" ", 1)[0]
     assert log.endswith(f"/sim/{simulator.lower()}/sim.log")
     assert observer_log == log.rsplit("/", 1)[0] + "/custom-observer.log"
+
+
+def test_piolite_trace_only_gets_an_observer_log() -> None:
+    result = subprocess.run(
+        ["make", "-n", "CONFIG=configs/ci/ihp130-tiny.mk", "APP=ci_smoke", "SIMU=VERILATOR",
+         "TINY_SIM_ARGS=+tiny_piolite_trace", "sim"],
+        cwd=ROOT, text=True, capture_output=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    command = " ".join(result.stdout.split())
+    assert "+tiny_piolite_observer_log=" in command
+    assert "/piolite-observer.log +tiny_piolite_trace" in command

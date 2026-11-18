@@ -12,7 +12,13 @@ integer        piolite_observer_fd = 0;
 string         piolite_observer_path;
 
 initial begin
-  if ($test$plusargs("tiny_piolite_p3") || $test$plusargs("tiny_piolite_progress")) begin
+  if ($test$plusargs(
+          "tiny_piolite_p3"
+      ) || $test$plusargs(
+          "tiny_piolite_progress"
+      ) || $test$plusargs(
+          "tiny_piolite_trace"
+      )) begin
     if (!$value$plusargs("tiny_piolite_observer_log=%s", piolite_observer_path))
       $fatal(1, "SIM_TEST_FAIL missing +tiny_piolite_observer_log=<path>");
     piolite_observer_fd = $fopen(piolite_observer_path, "w");
@@ -81,34 +87,72 @@ always @(posedge s_clk) begin
                 piolite_reset_seen, u_dut.u_soc.u_user_gpio_if.oe_o);
     end
   end
-  if ($test$plusargs("tiny_piolite_progress")) begin
+  if ($test$plusargs("tiny_piolite_progress") || $test$plusargs("tiny_piolite_trace")) begin
     piolite_progress_cycles = piolite_progress_cycles + 1;
     if ((piolite_progress_cycles % 100000) == 0) begin
-      $fdisplay(
-          piolite_observer_fd,
-          "PIOLITE_P3_PROGRESS cycles=%0d live=%b idle=%b held=%b%b closing=%b%b dma_jobs=%b rcu_idle=%05x",
-          piolite_progress_cycles, u_dut.u_soc.u_piolite.s_session_live,
-          u_dut.u_soc.s_piolite_lifecycle_idle, u_dut.u_soc.u_piolite.s_tx_held,
-          u_dut.u_soc.u_piolite.s_rx_held, u_dut.u_soc.u_piolite.s_tx_closing,
-          u_dut.u_soc.u_piolite.s_rx_closing, u_dut.u_soc.s_piolite_dma_job,
-          u_dut.u_soc.s_periph_idle_ref);
-      if ($test$plusargs("tiny_piolite_trap")) begin
-        $fdisplay(piolite_observer_fd, "PIOLITE_P3_TRAP cycles=%0d cause_irq=%b cause=%x epc=%x",
-                  piolite_progress_cycles,
-                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_irq,
-                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_code,
-                  u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mepc);
+      if ($test$plusargs("tiny_piolite_progress")) begin
         $fdisplay(
             piolite_observer_fd,
-            "PIOLITE_P3_GUARD cycles=%0d start_ok=%b guard=%b handoff=%x filter=%x ready=%b imem=%x region=%x rx=%x",
-            piolite_progress_cycles, u_dut.u_soc.u_piolite.u_reg.s_start_ok,
-            u_dut.u_soc.u_piolite.u_ctrl.start_guard_ok, u_dut.u_soc.s_gpio_user_handoff,
-            u_dut.u_soc.u_user_gpio_if.filter_enable_i, u_dut.u_soc.u_piolite.gpio_ready_i,
-            u_dut.u_soc.u_piolite.u_ctrl.imem_valid, u_dut.u_soc.u_piolite.u_reg.s_region,
-            u_dut.u_soc.u_piolite.u_ctrl.rx_level[0]);
-        $fdisplay(piolite_observer_fd, "PIOLITE_P3_CFG cycles=%0d cfg=%x", piolite_progress_cycles,
-                  u_dut.u_soc.u_piolite.u_reg.s_cfg_q[0]);
+            "PIOLITE_P3_PROGRESS cycles=%0d live=%b idle=%b held=%b%b closing=%b%b dma_jobs=%b rcu_idle=%05x",
+            piolite_progress_cycles, u_dut.u_soc.u_piolite.s_session_live,
+            u_dut.u_soc.s_piolite_lifecycle_idle, u_dut.u_soc.u_piolite.s_tx_held,
+            u_dut.u_soc.u_piolite.s_rx_held, u_dut.u_soc.u_piolite.s_tx_closing,
+            u_dut.u_soc.u_piolite.s_rx_closing, u_dut.u_soc.s_piolite_dma_job,
+            u_dut.u_soc.s_periph_idle_ref);
+        if ($test$plusargs("tiny_piolite_trap")) begin
+          $fdisplay(piolite_observer_fd, "PIOLITE_P3_TRAP cycles=%0d cause_irq=%b cause=%x epc=%x",
+                    piolite_progress_cycles,
+                    u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_irq,
+                    u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mcause_code,
+                    u_dut.u_soc.u_cpu.u_hazard3_cpu_2port.core.csr_u.mepc);
+          $fdisplay(
+              piolite_observer_fd,
+              "PIOLITE_P3_GUARD cycles=%0d start_ok=%b guard=%b handoff=%x filter=%x ready=%b imem=%x region=%x rx=%x select=%x status=%x",
+              piolite_progress_cycles, u_dut.u_soc.u_piolite.u_reg.s_start_ok,
+              u_dut.u_soc.u_piolite.u_ctrl.start_guard_ok, u_dut.u_soc.s_gpio_user_handoff,
+              u_dut.u_soc.u_user_gpio_if.filter_enable_i, u_dut.u_soc.u_piolite.gpio_ready_i,
+              u_dut.u_soc.u_piolite.u_ctrl.imem_valid, u_dut.u_soc.u_piolite.u_reg.s_region,
+              u_dut.u_soc.u_piolite.u_ctrl.rx_level[0], u_dut.u_soc.s_gpio_user_select,
+              u_dut.u_soc.s_gpio_user_select & ~u_dut.u_soc.s_gpio_user_handoff);
+          $fdisplay(piolite_observer_fd, "PIOLITE_P3_CFG cycles=%0d cfg=%x",
+                    piolite_progress_cycles, u_dut.u_soc.u_piolite.u_reg.s_cfg_q[0]);
+        end
       end
+      $fflush(piolite_observer_fd);
+    end
+  end
+  if ($test$plusargs("tiny_piolite_trace")) begin
+    if (u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.s_commit) begin
+      $fdisplay(
+          piolite_observer_fd,
+          "PIOLITE_P3_EXEC cycles=%0d need_push=%b push=%b accept=%b data=%x count=%0d result=%0d fault=%b rx=%x",
+          piolite_progress_cycles, u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.s_need_rx_push,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.rx_push_o,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_rx_fifo.push_accept_o,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.rx_data_o,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.s_count,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.s_result_count,
+          u_dut.u_soc.u_piolite.u_core.gen_sm[0].u_sm.s_fault,
+          u_dut.u_soc.u_piolite.u_ctrl.rx_level[0]);
+    end
+    if (u_dut.u_soc.u_gpio_apb4_if.psel && u_dut.u_soc.u_gpio_apb4_if.penable &&
+        u_dut.u_soc.u_gpio_apb4_if.pready) begin
+      $fdisplay(
+          piolite_observer_fd,
+          "PIOLITE_P3_GPIO_APB cycles=%0d addr=%x write=%b wdata=%x rdata=%x error=%b select=%x status=%x",
+          piolite_progress_cycles, u_dut.u_soc.u_gpio_apb4_if.paddr,
+          u_dut.u_soc.u_gpio_apb4_if.pwrite, u_dut.u_soc.u_gpio_apb4_if.pwdata,
+          u_dut.u_soc.u_gpio_apb4_if.prdata, u_dut.u_soc.u_gpio_apb4_if.pslverr,
+          u_dut.u_soc.s_gpio_user_select,
+          u_dut.u_soc.s_gpio_user_select & ~u_dut.u_soc.s_gpio_user_handoff);
+    end
+    if (u_dut.u_soc.u_piolite_apb4_if.psel && u_dut.u_soc.u_piolite_apb4_if.penable &&
+        u_dut.u_soc.u_piolite_apb4_if.pready) begin
+      $fdisplay(piolite_observer_fd,
+                "PIOLITE_P3_APB cycles=%0d addr=%x write=%b wdata=%x rdata=%x error=%b",
+                piolite_progress_cycles, u_dut.u_soc.u_piolite_apb4_if.paddr,
+                u_dut.u_soc.u_piolite_apb4_if.pwrite, u_dut.u_soc.u_piolite_apb4_if.pwdata,
+                u_dut.u_soc.u_piolite_apb4_if.prdata, u_dut.u_soc.u_piolite_apb4_if.pslverr);
     end
   end
 end
