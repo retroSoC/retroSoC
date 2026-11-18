@@ -199,6 +199,26 @@ def resume_recovery(previous: dict[str, Any], preflight: dict[str, Any], reason:
     }
 
 
+def extend_recovery_history(
+    previous: dict[str, Any], recovery: dict[str, Any], limit: int = 20
+) -> tuple[list[dict[str, Any]], int]:
+    history = previous.get("recovery_history", [])
+    if not isinstance(history, list) or any(not isinstance(item, dict) for item in history):
+        raise ValueError("delivery recovery history must contain objects")
+    history = list(history)
+    legacy = previous.get("recovery")
+    if not history and isinstance(legacy, dict):
+        history.append(legacy)
+    history.append(recovery)
+    previous_dropped = previous.get("recovery_history_dropped_count", 0)
+    if type(previous_dropped) is not int or previous_dropped < 0:
+        raise ValueError("delivery recovery dropped count must be a non-negative integer")
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("delivery recovery history limit must be positive")
+    dropped = max(0, len(history) - limit)
+    return history[dropped:], previous_dropped + dropped
+
+
 def merged_check_evidence(root: Path, repository: str, number: int, expected_head: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "schema_version": 1,
@@ -288,13 +308,16 @@ def deliver(
 
     preflight = delivery_preflight(root, repository, number)
     recovery = None
+    history_result = None
     if resume:
         from scripts.delivery_controller import record_path
 
         previous_path = record_path(delivery_dir, number)
         if previous_path.is_symlink() or not previous_path.is_file():
             raise ValueError("delivery resume requires a regular existing delivery record")
-        recovery = resume_recovery(read_json(previous_path), preflight, resume_reason)
+        previous = read_json(previous_path)
+        recovery = resume_recovery(previous, preflight, resume_reason)
+        history_result = extend_recovery_history(previous, recovery)
     document = enable_delivery(
         root,
         repository,
@@ -304,6 +327,7 @@ def deliver(
     )
     if recovery is not None:
         document["recovery"] = recovery
+        document["recovery_history"], document["recovery_history_dropped_count"] = history_result
     save(document)
     if document["status"] == "BLOCKED" or not watch:
         return document

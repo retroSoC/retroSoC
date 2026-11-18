@@ -205,6 +205,7 @@ def test_recovery_metadata_survives_coordination(tmp_path: Path, monkeypatch: py
         "reason": "Merged dev after correcting the reviewed control evidence",
     }
     record["recovery"] = recovery
+    record["recovery_history"] = [recovery]
     path = write_record(directory, record)
     monkeypatch.setattr("scripts.delivery_controller.view_pr", lambda *args: pull("MERGED"))
     monkeypatch.setattr(
@@ -213,7 +214,9 @@ def test_recovery_metadata_survives_coordination(tmp_path: Path, monkeypatch: py
     )
     result = coordinate_once(ROOT, "retroSoC/retroSoC", [1], directory)
     assert result["status"] == "COMPLETE"
-    assert json.loads(path.read_text(encoding="utf-8"))["recovery"] == recovery
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["recovery"] == recovery
+    assert saved["recovery_history"] == [recovery]
 
 
 def test_make_forwards_explicit_resume_reason() -> None:

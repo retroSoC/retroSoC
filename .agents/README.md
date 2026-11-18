@@ -81,7 +81,9 @@ that record with `agent-coordinate` after interruption. After a diagnosed failur
 or attention state, use `agent-deliver RESUME=1 RESUME_REASON="<diagnosis>"` only
 when a fix or dev synchronization has changed the PR HEAD. A fresh preflight and
 still-enabled native auto-merge are required; same-head retries and external
-disables are refused. Final `final_checks` evidence is separate from historical
+disables are refused. The latest `recovery` remains compatible, while bounded
+`recovery_history` retains up to 20 transitions and an explicit dropped count.
+Final `final_checks` evidence is separate from historical
 polling state. Otherwise run `RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.

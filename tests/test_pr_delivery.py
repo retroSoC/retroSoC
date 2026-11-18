@@ -407,6 +407,28 @@ def test_resume_delivery_retains_previous_failure(tmp_path: Path, monkeypatch: p
     assert result["recovery"]["from_status"] == "FAILED"
     assert result["recovery"]["previous_head_sha"] == "a" * 40
     assert result["recovery"]["previous_last_check_status"] == "FAIL"
+    assert result["recovery_history"] == [result["recovery"]]
+    assert result["recovery_history_dropped_count"] == 0
+
+
+def test_recovery_history_preserves_legacy_and_caps_retention() -> None:
+    from scripts.pr_delivery import extend_recovery_history
+
+    legacy = {"from_status": "ATTENTION", "previous_head_sha": "c" * 40}
+    current = {"from_status": "FAILED", "previous_head_sha": "a" * 40}
+    history, dropped = extend_recovery_history({"recovery": legacy}, current)
+    assert history == [legacy, current]
+    assert dropped == 0
+
+    existing = [{"sequence": index} for index in range(20)]
+    history, dropped = extend_recovery_history(
+        {"recovery_history": existing, "recovery_history_dropped_count": 3},
+        current,
+    )
+    assert len(history) == 20
+    assert history[0]["sequence"] == 1
+    assert history[-1] == current
+    assert dropped == 4
 
 
 def test_merged_check_evidence_binds_exact_head_and_preserves_pending(monkeypatch: pytest.MonkeyPatch) -> None:
