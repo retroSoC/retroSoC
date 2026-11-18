@@ -1,11 +1,10 @@
 # Publications
 
 Current edition: **2026-11-17**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed product source is
-903ef1eda3b956864157e6e64319fddde9cd5747; Mini's is
-6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. The main references are Tiny ICS55
-(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
-The two books have independent profiles, manifests and output markers.
+**v0.5 DRAFT / Gen2/Gen2+**. Both books use the technical source reviewed at
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
+IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
+book keeps its own product configuration, manifest and output marker.
 
 The functional IP drawing round starts at publication dev `80486b9f`, preserving
 the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
@@ -18,21 +17,18 @@ source fingerprints, geometry/coverage audits and output hashes. Active markers
 are `tiny-v02-ip-detail-20261117-` and `v05-ip-detail-20261117-`.
 The preceding v1 round started at `4315f7d7` and retained the 439/792-page
 scientific-notation editions. Its [review](ip-block-review.md) is historical.
-The v2 [implementation review](ip-block-detail-review.md) records the current
-scope and acceptance evidence. Historical chapter-review page numbers remain
-historical; the build's structure and change-page reports give current pages.
+The v2 [implementation review](ip-block-detail-review.md) records the frozen
+drawing acceptance and subsequent integration with dev. Use each build's
+structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through dev `80486b9f`. It binds a full
-commit and each file's blob identity without moving the frozen product SHA.
-The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`
-and `docs/engineering.md`, each with its reviewed immutable blob and reason;
-product documents cannot be exempted. Source checks reject later control-file
-edits and all unreviewed RTL/SDK/profile changes. The manifest hashes both
-reviewed files. The engineering delta documents command plans/offline evidence
-and explicitly leaves metric policy and gates unchanged. This is an explicit
-one-revision review, not an exclusion from
-future source checks.
+Makefile and contribution-policy changes through `506018b2`. It binds a full
+commit and each file's blob identity independently of the technical source
+snapshot. The optional `documentation_blobs` mapping accepts only
+`docs/git-workflow.md`; product documents cannot be exempted. Source checks
+reject later control-file edits and all unreviewed RTL/SDK/profile changes. The
+manifest hashes both reviewed files. This is an explicit one-revision review,
+not an exclusion from future source checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.

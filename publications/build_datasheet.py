@@ -123,13 +123,8 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     ):
         raise ValueError("Makefile differs from the explicit build-control review")
     documents = review.get("documentation_blobs", {})
-    if not isinstance(documents, dict) or set(documents) - {
-        "docs/git-workflow.md",
-        "docs/engineering.md",
-    }:
-        raise ValueError(
-            "build-control review permits only the fixed non-product control documents"
-        )
+    if not isinstance(documents, dict) or set(documents) - {"docs/git-workflow.md"}:
+        raise ValueError("build-control review permits only the non-product Git workflow document")
     for path, identity in documents.items():
         if not isinstance(identity, str) or not re.fullmatch(r"[0-9a-f]{40}", identity):
             raise ValueError("reviewed workflow document requires a complete blob identity")
@@ -140,7 +135,7 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     return True
 
 
-def validate_source(config: dict[str, Any]) -> None:
+def validate_source_snapshot(config: dict[str, Any]) -> None:
     revision = config["source_revision"]
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("source_revision must be a full reviewed Git commit")
@@ -160,13 +155,17 @@ def validate_source(config: dict[str, Any]) -> None:
         "scripts/generate_openc906.py",
         "Makefile",
     )
-    if {"Makefile", "docs/git-workflow.md", "docs/engineering.md"}.intersection(
+    if {"Makefile", "docs/git-workflow.md"}.intersection(
         changed.splitlines()
     ) and reviewed_build_control(config):
         reviewed = {"Makefile", *config["build_control_review"].get("documentation_blobs", {})}
         changed = "\n".join(path for path in changed.splitlines() if path not in reviewed)
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
+
+
+def validate_source(config: dict[str, Any]) -> None:
+    validate_source_snapshot(config)
     for name, dependency in load_lock()["sources"].items():
         if name.startswith("cluster_") or name in {"hazard3", "mpw", "openc906"}:
             checkout = ROOT / dependency["destination"]
@@ -406,7 +405,8 @@ def source_hashes(
     }
     if config.get("build_control_review"):
         paths.add("Makefile")
-        paths.update(config["build_control_review"].get("documentation_blobs", {}))
+        if "docs/git-workflow.md" in config["build_control_review"].get("documentation_blobs", {}):
+            paths.add("docs/git-workflow.md")
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(MINI_BINDING_SOURCES)

@@ -17,15 +17,16 @@ families; the owned SYSCTRL and ARCHINFO overrides are checked separately.
 
 ## Build and check
 
-The 2026-11-17 IP detail round retains product source
-`903ef1eda3b956864157e6e64319fddde9cd5747`, v0.2 DRAFT and Gen1.
-It starts from publication dev `80486b9f`, with the 455-page delivered PDF as
-comparison baseline. Edit function/source bindings and final millimetre
+The 2026-11-17 IP detail round keeps v0.2 DRAFT and Gen1. It starts from
+publication dev `80486b9f`, with the 455-page delivered PDF as comparison
+baseline. The integrated edition uses the reviewed technical snapshot
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133` carried by dev. Edit
+function/source bindings and final millimetre
 coordinates in `diagram-circuits.json`; do not edit generated SVG/PDF or use the
 legacy circuit coordinates as v2 layout. Follow the shared
 [IP drawing standard](../../ip-block-diagrams.md) and
-[current review](../../ip-block-detail-review.md). Mini retains its independent
-`6f3f3c83` product source and artifacts.
+[current review](../../ip-block-detail-review.md). Mini has separate product
+configuration and artifacts.
 
 From the repository root, with the pinned publication Python dependencies and
 Typst version available:

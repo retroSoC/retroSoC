@@ -127,6 +127,44 @@ def test_delivery_uses_timeline_and_matching_local_cleanup_evidence(tmp_path: Pa
     wrong = delivery_record(pull, events, {**local, "merge_commit": "c" * 40})
     assert wrong["local_evidence"] is False
     assert wrong["cleanup_completed_at"] is None
+    assert wrong["friction"] is None
+
+
+def test_delivery_friction_preserves_recovery_and_unknown_states() -> None:
+    pull = pull_document()
+    local = {
+        "merge_commit": pull["merge_commit"],
+        "status": "MERGED",
+        "warnings": ["retained evidence warning"],
+        "last_check_status": "PENDING",
+        "recovery": {"from_status": "FAILED", "reason": "Corrected source evidence"},
+        "final_checks": {"status": "PASS"},
+        "evidence_status": "READY",
+    }
+    record = delivery_record(pull, [], local)
+    assert record["friction"]["cleanup_warning_count"] == 1
+    assert record["friction"]["recovery_recorded"] is True
+    assert record["friction"]["recovery_from_status"] == "FAILED"
+    assert record["friction"]["last_check_status"] == "PENDING"
+    assert record["friction"]["final_check_status"] == "PASS"
+
+    legacy = delivery_record(
+        pull,
+        [],
+        {"merge_commit": pull["merge_commit"], "status": "MERGED"},
+    )
+    assert legacy["friction"]["cleanup_warning_count"] is None
+    assert legacy["friction"]["final_check_status"] == "NOT_RECORDED"
+    assert legacy["friction"]["evidence_status"] == "NOT_RECORDED"
+
+    friction = summarize_delivery([record, legacy])["local_friction"]
+    assert friction["record_count"] == 2
+    assert friction["records_with_recovery"] == 1
+    assert friction["cleanup_warning_record_count"] == 1
+    assert friction["cleanup_warning_unknown_record_count"] == 1
+    assert friction["last_check_status_counts"] == {"NOT_RECORDED": 1, "PENDING": 1}
+    assert friction["final_check_status_counts"] == {"NOT_RECORDED": 1, "PASS": 1}
+    assert friction["evidence_status_counts"] == {"NOT_RECORDED": 1, "READY": 1}
 
 
 def test_delivery_unknown_timeline_is_not_a_zero_result(monkeypatch: pytest.MonkeyPatch) -> None:

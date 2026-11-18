@@ -560,6 +560,51 @@ def scope_issues(task: dict[str, Any], files: list[str]) -> list[str]:
     return sorted(set(issues))
 
 
+def staged_scope_check(root: Path, task_path: Path, base: str | None = None) -> dict[str, Any]:
+    root = root.resolve()
+    task = read_json(task_path)
+    issues = validate_task(task, root)
+    result = {
+        "schema_version": 1,
+        "task_id": task.get("task_id"),
+        "status": "BLOCKED",
+        "issues": issues,
+        "mode": "staged-index",
+        "base": base or "HEAD",
+        "diff_base": None,
+        "staged_files": [],
+        "unmerged_paths": [],
+        "read_only": True,
+        "merge_check": "NOT_RUN",
+        "fixture_restore": "NOT_RUN",
+    }
+    if git_output(root, "rev-parse", "--show-toplevel") != str(root):
+        result["issues"] = sorted(set([*issues, f"task root is not the Git worktree root: {root}"]))
+        return result
+    git_output(root, "rev-parse", "--verify", "HEAD^{commit}")
+    if base is not None:
+        if not base or base.startswith("-"):
+            raise ValueError("scope-check base must not be empty or an option")
+        revision = git_output(root, "rev-parse", "--verify", f"{base}^{{commit}}")
+        diff_base = git_output(root, "merge-base", revision, "HEAD")
+    else:
+        diff_base = "HEAD"
+    staged = git_output(root, "diff", "--cached", "--name-only", "--diff-filter=ACMRD", diff_base)
+    unmerged = git_output(root, "diff", "--name-only", "--diff-filter=U")
+    files = sorted({normalize_file(line) for line in staged.splitlines() if line})
+    unmerged_paths = sorted({normalize_file(line) for line in unmerged.splitlines() if line})
+    issues.extend(scope_issues(task, files))
+    issues.extend(f"staged scope check has unmerged paths: {path}" for path in unmerged_paths)
+    result.update(
+        status="BLOCKED" if issues else "READY",
+        issues=sorted(set(issues)),
+        diff_base=diff_base,
+        staged_files=files,
+        unmerged_paths=unmerged_paths,
+    )
+    return result
+
+
 def tiny_snapshot_status(root: Path) -> dict[str, Any]:
     result: dict[str, Any] = {
         "schema_version": 1,
@@ -593,6 +638,50 @@ def tiny_snapshot_status(root: Path) -> dict[str, Any]:
             ),
         )
     except (ImportError, KeyError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        result["issues"].append(str(error))
+    return result
+
+
+def mini_snapshot_status(root: Path, required: bool) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "inventory": "publications/datasheets/mini.json",
+        "system_reference": "publications/datasheets/system-reference.json",
+        "selection": "quality_fixtures",
+        "status": "BLOCKED",
+        "issues": [],
+        "fixture_restore": "NOT_RUN",
+        "managed_inputs": "NOT_REQUESTED",
+        "evidence_boundary": "Source/control and CI metadata only; no full publication, hardware, or release validation",
+    }
+    if not required:
+        result["status"] = "NOT_REQUESTED"
+        return result
+    try:
+        from publications import build_datasheet as mini
+        from publications.dev_reference import validate_ci_snapshot
+
+        config = mini.read_json(root / "publications/datasheets/mini.json")
+        mini.validate_source_snapshot(config)
+        reference = read_json(root / "publications/datasheets/system-reference.json")
+        if reference.get("source_revision") != config["source_revision"]:
+            raise ValueError("Mini system-reference snapshot differs from document snapshot")
+        ci_snapshot = reference.get("ci_snapshot")
+        if not isinstance(ci_snapshot, dict):
+            raise ValueError("Mini CI snapshot is required")
+        validate_ci_snapshot(ci_snapshot, reference["source_revision"])
+        review = config.get("build_control_review")
+        result.update(
+            status="PASS",
+            source_revision=config["source_revision"],
+            control_revision=review.get("revision") if isinstance(review, dict) else None,
+            ci_checked_at=ci_snapshot["checked_at"],
+            ci_run_count=len(ci_snapshot["runs"]),
+        )
+    except (TypeError, ValueError) as error:
+        result["status"] = "FAIL"
+        result["issues"].append(str(error))
+    except (ImportError, KeyError, OSError, subprocess.CalledProcessError) as error:
         result["issues"].append(str(error))
     return result
 
@@ -691,6 +780,10 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
     snapshot = tiny_snapshot_status(root)
     if snapshot["status"] != "PASS":
         issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
+    mini_snapshot = mini_snapshot_status(root, plan["flags"]["quality_fixtures"])
+    if mini_snapshot["status"] not in {"PASS", "NOT_REQUESTED"}:
+        issues.append(f"Mini reviewed-source/control snapshot is {mini_snapshot['status']}")
+    issues.extend(f"mini: {issue}" for issue in mini_snapshot["issues"])
     github = github_preflight(root, args)
     if github["status"] not in {"PASS", "NOT_RUN"}:
         issues.append(f"GitHub preflight is {github['status']}")
@@ -709,6 +802,7 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "merge_check": merge_check,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
+        "mini_source_snapshot": mini_snapshot,
         "github": github,
         "known_gaps": gaps["known_gaps"],
         "resolving_gaps": gaps["resolving_gaps"],
@@ -929,6 +1023,12 @@ def parse_args() -> argparse.Namespace:
     snapshot.add_argument("--root", type=Path, default=ROOT)
     snapshot.add_argument("--output", type=Path)
 
+    scope_check = subparsers.add_parser("scope-check")
+    scope_check.add_argument("--root", type=Path, default=ROOT)
+    scope_check.add_argument("--task", type=Path, required=True)
+    scope_check.add_argument("--base")
+    scope_check.add_argument("--output", type=Path)
+
     preflight = subparsers.add_parser("preflight")
     preflight.add_argument("--root", type=Path, default=ROOT)
     preflight.add_argument("--task", type=Path, required=True)
@@ -1001,6 +1101,12 @@ def main() -> int:
             for issue in result["issues"]:
                 print(f"snapshot: {issue}", file=sys.stderr)
             return int(result["status"] != "PASS")
+        if args.command == "scope-check":
+            result = staged_scope_check(args.root, args.task, args.base)
+            emit_json(result, args.output)
+            for issue in result["issues"]:
+                print(f"scope-check: {issue}", file=sys.stderr)
+            return int(result["status"] != "READY")
         if args.command == "preflight":
             result = create_preflight(args)
             emit_json(result, args.output)

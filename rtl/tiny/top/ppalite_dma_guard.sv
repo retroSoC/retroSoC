@@ -159,8 +159,7 @@ module ppalite_dma_guard #(
           s_access_forbidden = 1'b1;
         end
         if (host_apb4.pwdata[`APB4_DMA__CH_CTRL_RESET] &&
-            !((s_closing || (s_token_q && !s_capture_owned)) &&
-              !dma_busy_i && dma_rst_n_i && dma_ready_i)) begin
+            !((s_closing || !s_capture_owned) && !dma_busy_i && dma_rst_n_i && dma_ready_i)) begin
           s_access_forbidden = 1'b1;
         end
         if ((host_apb4.pwdata[31:5] != 27'd0) || (host_apb4.pwdata[2:1] != 2'd0)) begin

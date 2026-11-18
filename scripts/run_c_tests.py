@@ -179,8 +179,9 @@ def main() -> int:
         ], check=True)
         command.append(str(tiny_dvp_object))
         tiny_ppalite_object = temporary_root / "tiny_ppalite.o"
-        ppalite_functions = ("probe", "configure", "select_route", "get_status", "capture_begin",
-                             "capture_start", "capture_wait", "abort", "recover", "release")
+        ppalite_functions = ("probe", "configure", "select_route", "get_status", "get_measurements",
+                             "capture_begin", "capture_start", "capture_wait", "abort", "recover",
+                             "release")
         subprocess.run([
             compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-DRS_SOC_TINY",
             "-DRS_PPALITE_TEST_MMIO", "-DRS_DMA_TEST_MMIO", "-DRS_SOC_HAS_PPALITE=1",

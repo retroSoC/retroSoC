@@ -11,8 +11,9 @@
 
 == Roadmap
 PIO-lite has standalone P2 RTL and host ISA/model/assembler tools; Tiny routing, DMA and HAL integration remain pending.
-PPALite P3 source/DMA/RCU/SDK integration is present. Its P4 camera/memory/display application campaign and joint P5 physical/timing campaign remain open.
+PPALite integrates the camera source, DMA, RCU and SDK. The dated P4 acceptance covers the scoped capture, SD readback, preview and recovery cases on both Tiny reference profiles. The joint P5 physical and timing campaign remains open.
 Reserved addresses/selectors, host tools and shared SDK names do not instantiate hardware.
 Release dates, derivative features, package/process choices and commercial availability are not commitments in this draft.
 #source-note("docs/ip/piolite-verification.md",title:"PIO-lite host evidence and open phases")
+#source-note("docs/ip/ppalite-verification.md",title:"Dated PPALite application evidence and qualification boundary")
 #source-note("docs/ip/tiny-soc.md",title:"Phased Tiny extensions and final campaign")

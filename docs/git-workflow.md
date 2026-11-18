@@ -108,10 +108,18 @@ in the commit:
 git status --short --branch
 git diff
 git add -- path/to/changed-file
+make agent-scope-check TASK=build/tasks/<task>/task.json
 git diff --cached
 git diff --cached --check
 git commit -m "fix(scope): describe the change"
 ```
+
+For an agent task, `agent-scope-check` validates only the staged files against
+`HEAD` and the task's allowed/forbidden paths. It accepts other dirty or
+untracked files without including them. Set `BASE=origin/dev` to validate the
+staged task delta, including earlier topic commits, against that ref's merge-base
+instead. The check performs no
+merge or fixture restoration and does not replace full preflight or CI.
 
 The path and message above are placeholders. Add each intended new or modified
 file explicitly, and follow the repository's applicable validation requirements.
@@ -285,8 +293,13 @@ failed or cancelled checks prevent GitHub from merging. `--watch` (or `WATCH=1`)
 first retains the enabled delivery, then uses `delivery_controller.py` for all
 polling, terminal-failure handling, and immediate cleanup. The same coordinator
 resumes its canonical checkpoint after interruption; no second watcher enables
-auto-merge, retries failed checks, or overrides an external disable. Without
-`--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
+auto-merge, retries failed checks, or overrides an external disable. After an
+actual fix or dev synchronization creates a new head, an existing FAILED or
+ATTENTION record can be resumed with `RESUME=1 RESUME_REASON="<diagnosis>"`.
+Resume requires a fresh preflight and native auto-merge still enabled; it rejects
+same-head retries, branch/base changes, and missing reasons while preserving the
+previous failure identity in `recovery`. It never re-enables an external disable.
+Without `--watch`, the command returns with cleanup pending. After GitHub reports `MERGED`, use
 `--reconcile-only` (or `RECONCILE=1`) to finish cleanup on the next
 synchronization. The legacy `python3 scripts/pr_workflow.py --pr <number> --root .`
 remains available for after-green monitoring. Neither path uses `--admin`,
@@ -299,7 +312,13 @@ is clean, the branch is contained in the PR merge commit, and the PR head belong
 to the canonical repository. It switches a main worktree to `dev`, or reconciles
 a linked worktree below `build/agent-worktrees/` through the registry. Before a
 linked worktree is removed, its `build/` evidence moves to
-`build/agent-artifacts/` and a branch-scoped cleanup registry is retained. Dirty,
+`build/agent-artifacts/` and a branch-scoped cleanup registry is retained. Final
+delivery JSON links those records with `cleanup_registry`, `evidence_manifest`,
+and `evidence_status`. Before `READY`, the reader verifies the cleanup action,
+artifact branch/HEAD, retained destination, every retained file, and its SHA-256.
+Missing or artifact-free records are explicitly `NOT_AVAILABLE`; invalid or
+tampered evidence fails instead of being trusted. Completed-record offline no-ops
+remain unchanged. Dirty,
 unmerged, detached, non-canonical, or evidence-conflicting worktrees and
 protected `dev`/`main` branches are left untouched. `deleteBranchOnMerge`
 remains enabled on GitHub as a second remote-cleanup mechanism. Already-absent

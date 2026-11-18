@@ -93,6 +93,7 @@ TINY_P10_ACCEPTANCE        ?= NO
 TINY_SPI_P3_ACCEPTANCE     ?= NO
 TINY_SPI_P4_ACCEPTANCE     ?= NO
 TINY_PPALITE_P3_ACCEPTANCE ?= NO
+TINY_PPALITE_P4_ACCEPTANCE ?= NO
 COREMARK_MODE              ?= quick
 NPU_P5_ACCEPTANCE          ?= NO
 # Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
@@ -167,6 +168,9 @@ CONFIG_KEY_VARS += TINY_SPI_P4_ACCEPTANCE
 endif
 ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_PPALITE_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_PPALITE_P4_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -335,9 +339,15 @@ $(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_PPALITE_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_PPALITE_P4_ACCEPTANCE,$(VALID_BOOL))
 ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO)
 $(error TINY_PPALITE_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE)/$(TINY_PPALITE_P3_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO/NO)
+$(error TINY_PPALITE_P4_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
 endif
 endif
 ifeq ($(TINY_P10_ACCEPTANCE),YES)
@@ -666,7 +676,7 @@ crypto-p2-report: manifest
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
 	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
+	agent-context agent-task-check agent-handoff agent-scope-check agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -763,6 +773,7 @@ help:
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
+	  '  agent-scope-check          check staged task paths without merge or fixture restoration' \
 	  '  agent-handoff              generate revision-bound JSON/Markdown handoff evidence' \
 	  '  validation-gap-check       validate owned deferred validation gaps' \
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
@@ -1374,6 +1385,12 @@ fixture-doctor:
 	python3 $(ROOT_PATH)/scripts/fixture_control.py doctor --root $(ROOT_PATH) \
 	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-doctor.json)
 
+agent-scope-check:
+	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
+	python3 $(ROOT_PATH)/scripts/agent_control.py scope-check --root $(ROOT_PATH) --task $(TASK) \
+	  $(if $(BASE),--base $(BASE)) \
+	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-scope-check.json)
+
 agent-preflight:
 	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
 	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
@@ -1391,7 +1408,9 @@ agent-deliver:
 	  --pr $(PR) --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
 	  --interval $(if $(INTERVAL),$(INTERVAL),60) \
 	  $(if $(WATCH),--watch) $(if $(PREFLIGHT),--preflight-only) \
-	  $(if $(RECONCILE),--reconcile-only) $(if $(OUTPUT),--output $(OUTPUT))
+	  $(if $(RECONCILE),--reconcile-only) $(if $(RESUME),--resume) \
+	  $(if $(RESUME_REASON),--resume-reason "$(RESUME_REASON)") \
+	  $(if $(OUTPUT),--output $(OUTPUT))
 
 agent-coordinate:
 	@test -n '$(PRS)' || { printf '%s\n' 'PRS=<number>... is required'; exit 2; }

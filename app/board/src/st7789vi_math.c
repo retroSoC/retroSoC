@@ -84,3 +84,43 @@ rs_status_t rs_st7789vi_buffer_layout(const rs_st7789vi_window_t *window, uintpt
     }
     return RS_OK;
 }
+
+rs_status_t rs_st7789vi_frame_layout(const rs_st7789vi_window_t *window,
+                                     const rs_ppalite_frame_t *frame,
+                                     rs_st7789vi_frame_layout_t *layout) {
+    uint32_t width;
+    uint32_t height;
+    uint32_t valid_bytes;
+    uint64_t transport_bytes;
+
+    if ((window == NULL) || (frame == NULL) || (layout == NULL) || !frame->valid ||
+        (frame->error_status != 0U) || (frame->base == (uintptr_t)0U) ||
+        ((frame->base & (sizeof(uint32_t) - 1U)) != (uintptr_t)0U) ||
+        (frame->base > (uintptr_t)UINT32_MAX) || (window->x1 < window->x0) ||
+        (window->y1 < window->y0) || (window->x1 >= RS_ST7789VI_WIDTH) ||
+        (window->y1 >= RS_ST7789VI_HEIGHT)) {
+        return RS_EINVAL;
+    }
+    width = (uint32_t)window->x1 - (uint32_t)window->x0 + 1U;
+    height = (uint32_t)window->y1 - (uint32_t)window->y0 + 1U;
+    valid_bytes = width * height * 2U;
+    if (((frame->result_config & UINT32_C(0x10)) != 0U) ||
+        (frame->output_byte_swap != ((frame->result_config & UINT32_C(0x40)) != 0U))) {
+        return RS_ENOTSUP;
+    }
+    transport_bytes = (uint64_t)frame->stride_bytes * height;
+    if (((uint32_t)frame->width != width) || ((uint32_t)frame->height != height) ||
+        (frame->row_bytes != (width * 2U)) || (frame->stride_bytes < frame->row_bytes) ||
+        ((frame->stride_bytes & (sizeof(uint32_t) - 1U)) != 0U) ||
+        (frame->valid_bytes != valid_bytes) || (transport_bytes > UINT32_MAX) ||
+        (frame->transport_bytes != transport_bytes) ||
+        (frame->capacity_bytes < frame->transport_bytes) || (frame->transport_bytes == 0U) ||
+        (frame->base > (uintptr_t)UINT32_MAX - (uintptr_t)(transport_bytes - 1U))) {
+        return RS_EINVAL;
+    }
+    layout->frames_per_row = frame->output_byte_swap ? frame->row_bytes : width;
+    layout->payload_bytes_per_row = frame->row_bytes;
+    layout->transport_bytes_per_row = frame->stride_bytes;
+    layout->frame16 = !frame->output_byte_swap;
+    return RS_OK;
+}

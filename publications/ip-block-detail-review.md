@@ -1,6 +1,6 @@
 # Tiny／Mini IP 框图功能展开与出版验收
 
-本轮完成 65 幅 IP 主图和 36 幅附图的功能展开与布线更新。Tiny Gen1 仍为 v0.2 DRAFT，共 455 页。Mini Gen2/Gen2+ 仍为 v0.5 DRAFT，共 828 页。出版日期按本轮开始日期固定为 2026-11-17，验收于 2026-11-18 完成。
+本轮完成 65 幅 IP 主图和 36 幅附图的功能展开与布线更新。下述页码、测试和哈希对应 2026-11-18 验收的冻结稿，Tiny Gen1 v0.2 DRAFT 共 455 页，Mini Gen2/Gen2+ v0.5 DRAFT 共 828 页。两册冻结稿的出版日期为 2026-11-17。
 
 ## 基线与适用配置
 
@@ -54,3 +54,9 @@
 - Mini 交付目录为 `build/datasheet-mini-ip-detail-rcc-accepted-20261117/`，主文件名为 `retrosoc-mini-gen2-gen2plus-datasheet.pdf`。代表图为 DMA 第 246 页、PS/2 第 363 页、GA2D 第 541 页和 NPU 第 614 页。
 - 各目录含 `ip-blocks/` 的独立 SVG、PDF 和 Typst 数据、`ip-block-functional-coverage.csv`、`ip-block-connection-review.csv`、`ip-block-sources.json`、`ip-block-geometry.json`、`check-report.json`、`changed-pages.json`、`visual-review.json` 和 `offline-rebuild.json`。总索引 `build/datasheet-ip-detail-validation-20261117/publication-delivery-index.json` 记录验收文件的 SHA-256。
 - 原 455／830 页对照 PDF 及 manifest 保存在 `build/datasheet-tiny-ip-detail-baseline-20261117/` 和 `build/datasheet-mini-ip-detail-baseline-20261117/`。
+
+## PR 与 dev 同步
+
+主题分支随后合入 `dev` 的 `c377c7a99991e80b151a819fef64a16fae48f526`，保留其中既已审阅的两册技术来源 `d9f2781147d7a7c47e5d8c19396fcc2a3de95133`。Mini 延用 `506018b24330f09a05c1f87831ec29e31f7a1cd7` 的独立控制审阅，该次审阅绑定的 Makefile 和 Git 流程文档与同步点内容一致。Mini 的 CI 观察和历史结果随 `dev` 保留原有身份。
+
+Tiny 的应用和路线图章节同步引用既有 PPALite P4 验收，覆盖明确列出的仿真场景。联合 P5 物理及时序验证仍属于单独的产品工作。以上冻结稿的 PDF 和验证记录继续绑定各自原 SHA。 [PPALite P4 验收记录](../docs/ip/ppalite-verification.md#ppalite-p4-human-acceptance-2026-11-17)。
