@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "mode": "shadow",
+  "allowed_paths": [
+    ".agents/README.md",
+    ".agents/skills/shared/engineering-playbook.md",
+    "scripts/README.md",
+    "tests/README.md",
+    "scripts/agent_control.py",
+    "scripts/pr_delivery.py",
+    "scripts/delivery_controller.py",
+    "scripts/delivery_metrics.py",
+    "scripts/skill_eval.py",
+    "scripts/mk/agent.mk",
+    "tests/test_agent_control.py",
+    "tests/test_pr_delivery.py",
+    "tests/test_delivery_controller.py",
+    "tests/test_skill_eval.py",
+    "tests/test_skill_replay.py",
+    "tests/test_engineering_observations.py"
+  ],
+  "preserved_flags": ["quality_fast", "quality_fixtures", "skill_eval"],
+  "disabled_flags": [
+    "regression_smoke",
+    "regression_ihp130",
+    "regression_gf180",
+    "regression_ics55",
+    "regression_sky130",
+    "development_environment"
+  ]
+}

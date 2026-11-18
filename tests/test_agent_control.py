@@ -199,6 +199,94 @@ def test_documentation_plan_skips_heavy_jobs() -> None:
     assert "quality_fixtures" not in plan["commands"]
 
 
+def test_engineering_control_shadow_is_candidate_only_and_escalates() -> None:
+    plan = create_plan(
+        plan_args(["scripts/pr_delivery.py", "scripts/README.md", "tests/test_pr_delivery.py"])
+    )
+    shadow = plan["engineering_control_shadow"]
+    assert shadow["status"] == "ELIGIBLE"
+    assert shadow["authoritative"] is False
+    assert shadow["changes_applied"] is False
+    assert shadow["candidate_flags"]["quality_fixtures"] is True
+    assert set(shadow["would_skip"]) == {
+        "regression_smoke",
+        "regression_ihp130",
+        "regression_gf180",
+        "regression_ics55",
+        "regression_sky130",
+        "development_environment",
+    }
+    assert plan["flags"]["regression_smoke"] is True
+    assert "regression_smoke" in plan["commands"]
+
+    for path in (
+        "Makefile",
+        "rtl/mini/top/retrosoc.sv",
+        "publications/build_datasheet.py",
+        "quality/engineering-control-impact.json",
+    ):
+        candidate = create_plan(plan_args([path]))
+        shadow = candidate["engineering_control_shadow"]
+        assert shadow["status"] == "FULL_REQUIRED"
+        assert shadow["candidate_flags"] == candidate["flags"]
+        assert shadow["would_skip"] == []
+        assert shadow["changes_applied"] is False
+
+    fragment = create_plan(plan_args(["scripts/mk/agent.mk"]))
+    assert fragment["selected_policy"] == "full"
+    assert fragment["engineering_control_shadow"]["status"] == "ELIGIBLE"
+    assert fragment["flags"]["regression_smoke"] is True
+
+
+def test_engineering_control_shadow_preserves_already_minimal_plans() -> None:
+    plan = create_plan(plan_args([".agents/README.md"]))
+    shadow = plan["engineering_control_shadow"]
+    assert plan["selected_policy"] == "agents"
+    assert shadow["status"] == "NOT_NEEDED"
+    assert shadow["candidate_flags"] == plan["flags"]
+    assert shadow["would_skip"] == []
+
+
+def test_engineering_control_shadow_policy_failure_is_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.agent_control as control
+
+    flags = dict(load_impact(ROOT)["job_policy"]["full"], quality_fast=True)
+    monkeypatch.setattr(
+        control,
+        "load_engineering_control_policy",
+        lambda root: (_ for _ in ()).throw(OSError("policy unavailable")),
+    )
+    shadow = control.engineering_control_shadow(ROOT, ["scripts/pr_delivery.py"], flags)
+    assert shadow["status"] == "FULL_REQUIRED"
+    assert shadow["candidate_flags"] == flags
+    assert shadow["would_skip"] == []
+    assert shadow["issues"] == ["policy unavailable"]
+    assert shadow["changes_applied"] is False
+
+
+def test_engineering_control_policy_rejects_wildcards_and_quality_reduction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.agent_control as control
+
+    policy = {
+        "schema_version": 1,
+        "mode": "shadow",
+        "allowed_paths": ["scripts/**"],
+        "preserved_flags": ["quality_fast", "quality_fixtures", "skill_eval"],
+        "disabled_flags": sorted(control.ENGINEERING_CONTROL_DISABLED),
+    }
+    monkeypatch.setattr(control, "read_json", lambda path: policy)
+    with pytest.raises(ValueError, match="unique exact safe paths"):
+        control.load_engineering_control_policy(ROOT)
+    policy["allowed_paths"] = ["scripts/pr_delivery.py"]
+    policy["preserved_flags"] = ["quality_fast"]
+    with pytest.raises(ValueError, match="must preserve quality"):
+        control.load_engineering_control_policy(ROOT)
+
+
 def test_embedded_c_plan_keeps_ihp130_smoke_and_full_pytest() -> None:
     plan = create_plan(plan_args(["crt/src/hal/gpio.c"]))
     assert plan["flags"]["quality_fixtures"] is True

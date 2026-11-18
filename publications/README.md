@@ -22,7 +22,7 @@ drawing acceptance and subsequent integration with dev. Use each build's
 structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `506018b2`. It binds a full
+Makefile and contribution-policy changes through `f472ccae`. It binds a full
 commit and each file's blob identity independently of the technical source
 snapshot. The optional `documentation_blobs` mapping accepts only
 `docs/git-workflow.md`; product documents cannot be exempted. Source checks

@@ -115,7 +115,12 @@ scope, base revision, worktree state, changed-file validation plan, and Tiny
 reviewed-source snapshot. When full hosted Pytest is selected, it also validates
 the Mini source/control and CI evidence metadata without restoring fixtures or
 probing managed inputs; stale evidence blocks delivery rather than being updated
-implicitly. `ONLINE=1` adds a least-privilege GitHub permission probe and
+implicitly. `quality/engineering-control-impact.json` records only a shadow
+candidate plan for exact control-plane paths; it never changes authoritative CI
+selection. Agent and engineering Make targets live in `scripts/mk/agent.mk`,
+included by the root Makefile without changing their public interfaces. Root
+Makefile, product, unlisted, or invalid-policy changes still require full
+validation. `ONLINE=1` adds a least-privilege GitHub permission probe and
 `PR=<number>` adds a head-bound check report. A blocked preflight is
 not approval to continue. Use `make agent-handoff TASK=<task.json> NEXT=<action>`
 to generate the [handoff schema](handoff.schema.json)-bound JSON and optional

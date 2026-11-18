@@ -11,6 +11,10 @@ documentation.
 - `metrics/` defines observational metric policy and future gate promotion.
 - `change_impact.json` defines conservative changed-file CI selection; unknown
   paths and classification failures select the full matrix.
+- `engineering-control-impact.json` defines an exact-path, shadow-only candidate
+  plan for control-plane work. It never changes authoritative flags or commands;
+  unlisted paths, policy failures, root Makefile changes, and product changes
+  retain full validation. Quality, fixture, and Skill checks cannot be disabled.
 - `pytest-shards.json` defines four deterministic fixture shards and the exact
   permitted optional-input skips. `pytest-durations.json` records source-bound
   JUnit timing history used only for scheduling, never for a PASS verdict.

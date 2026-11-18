@@ -80,6 +80,13 @@ identity. A FAIL or BLOCKED result prevents delivery; no source or CI evidence i
 rewritten. This scoped check does not probe managed inputs or restore fixtures,
 and is not a full publication, PDF, hardware, or release verdict. Tasks without
 full-Pytest selection report `NOT_REQUESTED`.
+`quality/engineering-control-impact.json` adds an exact-path shadow candidate for
+control-plane work. `engineering_control_shadow` reports ELIGIBLE, NOT_NEEDED,
+or FULL_REQUIRED plus candidate flags, but never changes the authoritative plan,
+commands, or GitHub outputs. Missing/invalid policy and every unlisted path retain
+full validation. `scripts/mk/agent.mk` owns the Agent/engineering Make targets
+included by the root Makefile; existing target names and argument forwarding are
+unchanged. Shadow candidates do not skip jobs by themselves.
 `merge_preflight.py` performs an isolated `git merge --no-commit --no-ff`
 against the selected target revision. `make agent-preflight` enables this check
 by default with `MERGE_REF=origin/dev`; `MERGE_CHECK=0` explicitly disables it.
