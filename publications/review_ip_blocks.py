@@ -7,8 +7,6 @@ import json
 from pathlib import Path
 import re
 
-from pypdf import PdfReader
-
 from publications.specification_reference import digest, read, write
 
 RM0486 = (
@@ -26,6 +24,7 @@ FAMILIES = (
     ("sdram", ((160, 1178),), "结构类比", "分开请求队列、刷新、命令与外部接口"),
     ("sram", ((1, 160),), "仅借鉴表达", "明确发起方与存储边界，并单列分组及响应路径"),
     ("gpio", ((66, 784),), "功能相近", "分开输入采样、输出使能、复用与引脚"),
+    ("piolite", ((66, 784), (93, 941)), "结构类比", "分开可编程执行、USER 引脚归属与 DMA 流；不推断 RM0486 具有等价状态机"),
     ("timer", ((590, 2627),), "功能相近", "从时基、计数到比较和事件"),
     ("pwm", ((501, 2485),), "功能相近", "区分时基、通道和输出控制"),
     ("rtc", ((781, 3004),), "功能相近", "分开秒周期、日历／闹钟及状态"),
@@ -60,6 +59,8 @@ LOOKUP = {key: (refs, relation, principle)
 
 
 def figure_numbers(directory: Path, manifest: dict, sources: dict, pages: dict) -> dict:
+    from pypdf import PdfReader
+
     pdf = directory / manifest["document"]["filename"]
     if digest(pdf) != manifest["pdf_sha256"]:
         raise ValueError(f"IP review PDF differs from manifest: {pdf}")

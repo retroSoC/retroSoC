@@ -1,6 +1,6 @@
 # Source-bound functional IP block diagrams (v2)
 
-This standard governs Tiny's 23 and Mini's 42 primary IP figures and their
+This standard governs Tiny's 24 and Mini's 42 primary IP figures and their
 adjacent details. The renderer is [ip-block-diagrams.typ](ip-block-diagrams.typ),
 with geometry, traceability and export in
 [ip_block_reference.py](ip_block_reference.py) and

@@ -52,12 +52,28 @@ def test_tiny_style_matches_collected_primary_count(books):
     views = blocks.records(books["tiny"])
     primary = {key: r for key, r in views.items() if "parent_id" not in r}
     detail_count = len(views) - len(primary)
+    mini_primary = sum("parent_id" not in r for r in blocks.records(books["mini"]).values())
     style = (ROOT / "publications/datasheets/tiny/style.md").read_text(encoding="utf-8")
+    standard = (ROOT / "publications/ip-block-diagrams.md").read_text(encoding="utf-8")
     revision = (ROOT / "publications/datasheets/tiny/sections/document-control.typ").read_text(
         encoding="utf-8"
     )
     assert f"all {len(primary)}\nTiny primary figures" in style
+    assert f"Tiny's {len(primary)} and Mini's {mini_primary} primary IP figures" in standard
     assert f"{len(primary)} main and {detail_count} detail views" in revision
+
+
+def test_rm0486_review_covers_collected_parents(books):
+    from publications import review_ip_blocks as rm0486_review
+
+    for product, data in books.items():
+        views = blocks.records(data)
+        parents = {r.get("parent_id", key) for key, r in views.items()}
+        assert parents <= set(rm0486_review.LOOKUP), product
+    refs, relation, principle = rm0486_review.LOOKUP["piolite"]
+    assert refs == ((66, 784), (93, 941))
+    assert relation == "结构类比"
+    assert "不推断 RM0486 具有等价状态机" in principle
 
 
 def test_every_drawn_unit_line_and_label_passes_geometric_checks(books):
