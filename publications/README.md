@@ -1,13 +1,16 @@
 # Publications
 
-Current edition: **2026-11-18**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**. Tiny's reviewed source snapshot is
-53b3ce25ed234182799dbf3100fd9b3f19c9c2e5 for the PIOLITE-P3 source integration;
-Mini's synchronized default-off compatibility snapshot is
-53b3ce25ed234182799dbf3100fd9b3f19c9c2e5. Tiny describes ICS55 and the explicit
-
+Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
+**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Both books use the technical source reviewed at
+`53b3ce25ed234182799dbf3100fd9b3f19c9c2e5`: Tiny for the PIOLITE-P3 source
+integration and Mini for synchronized default-off compatibility. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
+
+The Tiny QFN64 drawing update starts at dev `c6fdcd1f` and compares against the
+455-page Tiny build from the RM0486 comparison. The mechanical plate, copper
+footprint, pin views and assembly views share the current ADI UP64 reference
+records. Tiny uses the `tiny-v02-qfn64-layout-20261119-` change namespace.
 
 The RM0486 comparison starts at dev `3d75177e` and retains the PR #289
 455-page Tiny and 828-page Mini artifacts as the baseline. The round reviews

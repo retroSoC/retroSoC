@@ -2,7 +2,7 @@
 #import "../diagrams.typ": flow
 
 = Document Control
-#change-start("tiny-v02-commercial-20261114-document-control","Current source identity and revision history",category:"cross-reference")
+#change-start(doc.change_prefix + "document-control", "Publication revision history", category: "cross-reference")
 == Revision History
 #ds-table("revision",[Document revision history],([Date],[Version],[Change]),(
  ([2026-09-25],[v0.1 DRAFT],[Initial IHP130/four-channel publication; original PDF retained.]),
@@ -12,7 +12,8 @@
  ([2026-11-11],[v0.2 DRAFT],[Latest reviewed dev source. Uppercase IP suffixes in Contents. Transparent architecture labels and PPALite data-route references.]),
  ([2026-11-14],[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.]),
  ([2026-11-18],[v0.2 DRAFT],[Functional IP diagram v2: 24 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Integrate the reviewed 53b3ce25 snapshot and retain the scope of the dated PPALite P4 acceptance.]),
- (doc.date,[v0.2 DRAFT],[RM0486 comparison across all IP views. Current inventory: 24 main and 15 detail views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence. ])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-18],[v0.2 DRAFT],[RM0486 comparison across all IP views. Current inventory: 24 main and 15 detail views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence.]),
+ (doc.date,[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,
@@ -25,7 +26,7 @@ The prototype brand is Rill; this identity does not establish an orderable or qu
 
 
 == License
-#change-end("tiny-v02-commercial-20261114-document-control")
+#change-end(doc.change_prefix + "document-control")
 The project retains Mulan PSL v2 and the respective component/font licenses. Read the repository LICENSE
 and locked third-party notices for the full terms; the publication does not change their scope.
 #source-note("LICENSE",title:"Project license")

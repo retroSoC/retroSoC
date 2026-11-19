@@ -154,6 +154,21 @@
       "anchor": null
     },
     {
+      "level": 4,
+      "title": "Package Outline and Mechanical Dimensions",
+      "anchor": "tiny-package-outline"
+    },
+    {
+      "level": 4,
+      "title": "Recommended PCB Footprint",
+      "anchor": "tiny-pcb-footprint"
+    },
+    {
+      "level": 4,
+      "title": "Assembly Layers and Reliability",
+      "anchor": "tiny-assembly-reliability"
+    },
+    {
       "level": 3,
       "title": "Minimum System and Board Design Reference",
       "anchor": "tiny-board-reference"
