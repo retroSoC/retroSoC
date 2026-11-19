@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
+  "source_revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
   "build_control_review": {
-    "revision": "f472ccae72747adf8ba26883a7e252c419abada0",
+    "revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
     "makefile_blob": "3252853543989a8105c5c15f9e976e78b96c295d",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical snapshot remains d9f27811; non-product control review advances through f472ccae for a behavior-preserving move of Agent and engineering targets into scripts/mk/agent.mk and a non-authoritative CI shadow plan. The root Makefile only includes the relocated control rules; product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Representative dry-run commands are retained as equivalence evidence. Later control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical and control snapshot advances to 28a2123c for expression-free instance port connections and the prohibition of trailing instance-port comments. The previously reviewed Makefile and Git workflow blobs are unchanged; RTL behavior, product interfaces, hardware profiles and dependency pins are unchanged. Later technical or control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

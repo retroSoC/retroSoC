@@ -1,8 +1,9 @@
 # Publications
 
 Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
-**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Both books use the technical source reviewed at
-`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
+**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Tiny uses technical source
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`; Mini uses
+`28a2123cda135d6d1fb623a61473b15bf4cffdae`. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
@@ -36,7 +37,7 @@ drawing acceptance and subsequent integration with dev. Use each build's
 structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `f472ccae`. It binds a full
+Makefile and contribution-policy changes through `28a2123c`. It binds a full
 commit and each file's blob identity independently of the technical source
 snapshot. The optional `documentation_blobs` mapping accepts only
 `docs/git-workflow.md`; product documents cannot be exempted. Source checks
