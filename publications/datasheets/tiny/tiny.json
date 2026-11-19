@@ -11,7 +11,7 @@
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "4db113e17efb3932dc3778b736011f87fc271495",
   "profile": "configs/ci/ics55-tiny.mk",
-  "change_prefix": "tiny-v02-qfn64-layout-20261119-",
+  "change_prefix": "tiny-v02-qfn64-assembly-20261119-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",
   "filename": "retrosoc-tiny-gen1-datasheet.pdf",
   "compatibility_profiles": [

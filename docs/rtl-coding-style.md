@@ -253,6 +253,33 @@ instance MUST use named parameter and port connections. Unused inputs MUST be
 tied to an explicit value; unused outputs MAY use an empty named connection
 only with a comment explaining it. Every synthesizable signal has one driver.
 
+Instance port connections MUST be expression-free. Connect only a declared
+signal, an explicit constant tie-off, or a permitted empty output; do not inline
+logical, comparison, arithmetic, or concatenation expressions. Declare a
+descriptive local signal for the expression and assign it with the
+interface/structural assignments before the instances. Port-connection lines
+MUST NOT have trailing comments. Place any necessary explanation, including the
+rationale for an unused output, on a separate comment line before the connection
+or before the instance.
+
+```systemverilog
+// Incorrect: an expression and a trailing comment obscure the port connections.
+dfferc u_opi_reg_read_cmd_dfferc (
+    .en_i (s_write_accept && (s_offset == `APB4_OPIPSRAM__OPI_REG_READ_CMD)),
+    .dat_i(s_opi_reg_read_cmd_d)  // next read-command value
+);
+
+// Correct: declarations and structural assignments precede the instances.
+logic s_opi_reg_read_cmd_en;
+assign s_opi_reg_read_cmd_en =
+    s_write_accept && (s_offset == `APB4_OPIPSRAM__OPI_REG_READ_CMD);
+
+dfferc u_opi_reg_read_cmd_dfferc (
+    .en_i (s_opi_reg_read_cmd_en),
+    .dat_i(s_opi_reg_read_cmd_d)
+);
+```
+
 Use `logic` for ordinary synthesizable signals. Reserve `wire` for resolved
 multi-driver nets, pads, tri-state buses, or technology models, and document the
 net semantics. Do not use on-chip tri-state logic to implement a mux.

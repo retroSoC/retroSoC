@@ -14945,7 +14945,7 @@
       "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
       "checked_date": "2026-11-17",
       "checked_at": "2026-11-17T14:47:44Z",
-      "boundary": "Historical PR #283 head quality workflow completed successfully. This is a source/control result only, not a result for the current reviewed source or a hardware, physical or release qualification.",
+      "boundary": "Exact PR #283 head quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification.",
       "runs": [
         {
           "run_id": 44102838315,
@@ -14953,8 +14953,8 @@
           "url": "https://github.com/retroSoC/retroSoC/actions/runs/44102838315",
           "status": "completed",
           "conclusion": "success",
-          "scope": "Historical repository quality workflow on PR #283 head d9f27811: fast checks, four fixture shards, fixture fan-in and the aggregate quality gate completed successfully",
-          "note": "Historical exact-head source/control workflow result only; no current-source or hardware qualification inferred.",
+          "scope": "Repository quality workflow on exact PR #283 head d9f27811: fast checks, four fixture shards, fixture fan-in and the aggregate quality gate completed successfully",
+          "note": "Exact-head source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred.",
           "observations": []
         }
       ]

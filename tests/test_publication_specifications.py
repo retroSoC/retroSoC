@@ -239,3 +239,39 @@ def test_models_are_centrally_fingerprinted_and_references_stay_separate(spec):
     assert "publications/datasheets/tiny/specifications/parameters.json" in s.source_inputs("tiny")
     params = json.loads((ROOT / s.BOOKS["mini"] / "parameters.json").read_text(encoding="utf-8"))
     assert not any(r["group"] == "mechanical" for r in params["records"])
+
+
+def test_tiny_tape_and_reel_match_one_ti_orderable_device(spec):
+    records = {r["id"].removeprefix("tiny."): r for r in spec["records"]}
+    expected = {
+        "carrier-tape.pocket-width": (9.30, "mm"), "carrier-tape.pocket-length": (9.30, "mm"),
+        "carrier-tape.pocket-depth": (1.10, "mm"), "carrier-tape.pocket-pitch": (12.00, "mm"),
+        "carrier-tape.width": (16.00, "mm"), "carrier-tape.orientation": ("Q2", "1"),
+        "reel.diameter": (330, "mm"), "reel.width": (16.4, "mm"), "reel.quantity": (2000, "devices/reel"),
+    }
+    for key, pair in expected.items():
+        record = records[key]
+        assert (record["value"], record["unit"]) == pair
+        assert record["status"] == "reference" and record["sources"] == ["ti-tusb8041-tape-reel"]
+        assert "TUSB8041IRGCR" in record["conditions"]
+    for key in ("carrier-tape.supplier-drawing", "reel.supplier-drawing", "reel.hub", "reel.pack-quantity"):
+        assert records[key]["status"] == "tbd" and records[key]["value"] is None
+    assert f"{s.BOOKS['tiny']}/sources.json" in s.source_inputs("tiny")
+
+
+def test_tiny_reflow_classification_values_are_separate_from_product_limits(spec):
+    records = {r["id"].removeprefix("tiny."): r for r in spec["records"]}
+    values = {
+        "start-temperature": 25, "liquidus-temperature": 217, "peak-temperature": 260, "peak-band": 5,
+    }
+    bounds = {
+        "soak-temperature": (150, 200), "soak-time": (60, 120), "liquidus-time": (60, 150),
+        "peak-time": (None, 30), "ramp-up": (None, 3), "ramp-down": (None, 6), "time-to-peak": (None, 8),
+    }
+    for key, expected in (values | {k: dict(min=lo, typ=None, max=hi) for k, (lo, hi) in bounds.items()}).items():
+        record = records["reflow." + key]
+        assert record["value"] == expected
+        assert record["status"] == "reference" and record["sources"] == ["adi-smp-reflow"]
+    assert "< 1.6 mm" in records["reflow.peak-temperature"]["conditions"]
+    for key in ("reflow.product-limits", "reflow.board-profile", "assembly.msl"):
+        assert records[key]["status"] == "tbd" and records[key]["value"] is None

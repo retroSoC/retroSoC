@@ -180,6 +180,33 @@ the model catalog and inside standalone vector status labels. Paste coverage
 is total aperture area divided by reference EP area. MSL/reflow, thermal values,
 order codes and physical binding remain TBD. EP supplements perimeter grounds.
 
+### Tape, reel and reflow references
+
+After Assembly Layers and Reliability, give Carrier Tape Dimensions, Reel
+Dimensions, and Reflow Soldering Profile one page each. Put the English heading
+and source link above one numbered plate and one numbered parameter table. Use
+the QFN64 drawing palette, 172 mm maximum plate width, and 9 pt minimum base
+label size. Apply scoped scientific subscripts to tape, reel and temperature
+symbols. Place REFERENCE ONLY in each plate and its caption and identify the
+status of each table row.
+
+Show the component side of the tape with the sprocket row above the pockets and
+the user feed arrow pointing right. Draw the selected Pin 1 quadrant from the
+source record. Anchor tape width to the edges, pitch to adjacent pocket centers,
+pocket dimensions to the cavity edges, and depth from the web surface to the
+pocket floor. Anchor reel diameter to the outer rim and width to the outer
+flange faces. Label unpublished geometry as schematic and keep Tiny's supplier
+dimensions, orientation, tolerances, hub, bore and pack quantity TBD.
+
+Use a schematic, unticked time axis for the reflow curve. Derive its temperature
+levels from the table and align the interval arrows with the soak, liquidus and
+near-peak crossings. Identify the peak's package thickness class and the source's
+classification and preconditioning scope. Tiny's package limits, MSL and board
+profile require product evidence. Maintain nominal values and bounds in the
+Tiny parameter catalog and source page, date and fingerprint in the Tiny source
+catalog. Export the same plates as standalone SVG and PDF and verify the English
+labels, dimensions and grayscale differentiation at 144 dpi.
+
 Minimum-system drawings use external 24 MHz XIN. XOUT, BOOT_MODE, TEST_MODE and
 EP separately state target allocation, executable connection and physical binding.
 Do not imply a passive-crystal amplifier or production strap decoding. VDDIO

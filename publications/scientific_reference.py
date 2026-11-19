@@ -28,7 +28,13 @@ ALIASES = {
     "VCORE": ("V", "CORE"), "Vcore": ("V", "core"),
     "Rout": ("R", "out"), "R_out": ("R", "out"),
 }
-MECHANICAL = {"D2": ("D", "2"), "E2": ("E", "2"), "A1": ("A", "1"), "A3": ("A", "3")}
+# Package outline, tape/reel, and reflow notation are scoped to packaging views.
+MECHANICAL = {
+    "D2": ("D", "2"), "E2": ("E", "2"), "A1": ("A", "1"), "A3": ("A", "3"),
+    "A0": ("A", "0"), "B0": ("B", "0"), "K0": ("K", "0"), "P1": ("P", "1"), "W1": ("W", "1"),
+    "T_Smin": ("T", "S,min"), "T_Smax": ("T", "S,max"), "T_L": ("T", "L"), "T_P": ("T", "P"),
+    "t_S": ("t", "S"), "t_L": ("t", "L"), "t_P": ("t", "P"),
+}
 _ALIAS = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(ALIASES, key=len, reverse=True))) + r")\b")
 _MECHANICAL = re.compile(r"\b(?:" + "|".join(MECHANICAL) + r")\b")
 _POWER = re.compile(r"(?<![\w.])(?P<base>\d+(?:\.\d+)?|x|X|e|mm|cm|m)\s*(?:\*\*|\^)\s*")
@@ -125,7 +131,8 @@ def prepare(data: dict) -> None:
             candidates.update(part.split("**"))
     candidates.update("mechanical:" + r["meaning"] for r in data["specifications"].get("records", [])
                       if r["group"] == "mechanical")
-    candidates.update("mechanical:" + name for name in MECHANICAL)
+    if data["specifications"].get("product") == "tiny":
+        candidates.update("mechanical:" + name for name in MECHANICAL)
     for raw in sorted(candidates):
         display = tokens(raw.removeprefix("mechanical:"), mechanical=raw.startswith("mechanical:"))
         if not display:
