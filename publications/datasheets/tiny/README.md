@@ -2,8 +2,8 @@
 
 This directory owns the English **retroSoC Tiny Gen1 / Rill (清溪)** datasheet,
 its independent v0.2 DRAFT identity and 24 current IP chapters. The same-version
-Mini alignment uses 12 main chapters, 87 frozen major/IP entries and a five-level
-140-entry navigation contract. The explicitly
+Mini alignment uses 12 main chapters, 88 frozen major/IP entries and a five-level
+145-entry navigation contract. The explicitly
 reviewed structure retains stable anchors, moves retired UART1/I2C1 interfaces
 to migration guidance and adds the RCU/SPI/shared-IP chapters. It is a publication
 adapter, not an RTL or SDK register generator.
@@ -26,7 +26,7 @@ main view and validate each printed view using the
 The 2026-11-17 IP detail round keeps v0.2 DRAFT and Gen1. It starts from
 publication dev `80486b9f`, with the 455-page delivered PDF as comparison
 baseline. The integrated edition uses the reviewed technical snapshot
-`53b3ce25ed234182799dbf3100fd9b3f19c9c2e5` carried by dev. Edit
+`4db113e17efb3932dc3778b736011f87fc271495` used by the integrated PIOLITE-P3 topic. Edit
 function/source bindings and final millimetre
 coordinates in `diagram-circuits.json`; do not edit generated SVG/PDF or use the
 legacy circuit coordinates as v2 layout. Follow the shared

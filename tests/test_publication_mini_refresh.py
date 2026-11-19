@@ -450,10 +450,11 @@ def test_current_page_map_and_content_match_reviewed_delivery():
     chapter = (ROOT / "publications/datasheets/chapter-review.md").read_text(encoding="utf-8")
     content = (ROOT / "publications/datasheets/content-review.md").read_text(encoding="utf-8")
     assert config["source_revision"] in chapter and config["source_revision"] in content
-    assert "| dma | 247 | 265 |" in chapter
+    assert "PDF SHA-256: 996b7f66c728ce48e2547c443092a44d75f37e47b48f8265ee646ab5cac00448" in chapter
+    assert "| dma | 246 | 264 |" in chapter
     structure = json.loads((ROOT / "publications/datasheets/structure-contract.json").read_text(encoding="utf-8"))
     assert f"{len(structure['entries'])} frozen entries" in chapter
     assert "42 IP chapters" in chapter
-    assert "830 pages" in chapter
+    assert "832 pages" in chapter
     assert "`EnablePiolite=0`" in content
     assert "five actual legacy stream directions" in content

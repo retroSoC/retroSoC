@@ -1,55 +1,55 @@
 # Mini datasheet chapter review - v0.5 OpenC906 refresh
 
-## 2026-11-18 current delivery page map
+## 2026-11-19 current delivery page map
 
-Source: 53b3ce25ed234182799dbf3100fd9b3f19c9c2e5. PDF SHA-256: 9901d7d1eaefaffe27fa632c97fae09addbef5f46c079b19bc4485a5130fc177.
+Source: 4db113e17efb3932dc3778b736011f87fc271495. PDF SHA-256: 996b7f66c728ce48e2547c443092a44d75f37e47b48f8265ee646ab5cac00448.
 
 | IP anchor | Start | End |
 | --- | ---: | ---: |
 | xpi | 106 | 126 |
-| spisd | 127 | 147 |
-| sdio0 | 148 | 170 |
+| spisd | 127 | 146 |
+| sdio0 | 147 | 170 |
 | sram | 171 | 177 |
 | psram | 178 | 196 |
-| opipsram | 197 | 216 |
-| sdram | 217 | 229 |
-| gpio | 230 | 246 |
-| dma | 247 | 265 |
-| timer | 266 | 272 |
-| rtc | 273 | 286 |
-| wdg | 287 | 296 |
-| pwm | 297 | 322 |
-| uart0 | 323 | 336 |
-| uart1 | 337 | 339 |
-| i2c | 340 | 354 |
-| ws2812 | 355 | 363 |
-| ps2 | 364 | 374 |
-| sdio1 | 375 | 380 |
-| usb2 | 381 | 414 |
-| archinfo | 415 | 424 |
-| sysctrl | 425 | 446 |
-| rcu | 447 | 452 |
-| clint | 453 | 457 |
-| hp-aclint | 458 | 458 |
-| hp-plic | 459 | 460 |
-| hp-mailbox | 461 | 468 |
-| resource | 469 | 475 |
-| monitor | 476 | 487 |
-| i2s | 490 | 499 |
-| dvp | 500 | 512 |
-| jpeg | 513 | 539 |
-| ga2d | 540 | 562 |
-| apu | 563 | 613 |
-| npu | 614 | 640 |
-| crypto | 641 | 671 |
-| crc | 672 | 679 |
-| rng | 680 | 688 |
-| ext-l | 689 | 690 |
-| ext-h | 691 | 700 |
-| mpw-timer | 737 | 739 |
-| mpw-gpio | 740 | 743 |
+| opipsram | 197 | 215 |
+| sdram | 216 | 228 |
+| gpio | 229 | 245 |
+| dma | 246 | 264 |
+| timer | 265 | 271 |
+| rtc | 272 | 285 |
+| wdg | 286 | 295 |
+| pwm | 296 | 321 |
+| uart0 | 322 | 335 |
+| uart1 | 336 | 338 |
+| i2c | 339 | 353 |
+| ws2812 | 354 | 362 |
+| ps2 | 363 | 373 |
+| sdio1 | 374 | 380 |
+| usb2 | 381 | 415 |
+| archinfo | 416 | 425 |
+| sysctrl | 426 | 447 |
+| rcu | 448 | 453 |
+| clint | 454 | 458 |
+| hp-aclint | 459 | 460 |
+| hp-plic | 461 | 462 |
+| hp-mailbox | 463 | 470 |
+| resource | 471 | 477 |
+| monitor | 478 | 489 |
+| i2s | 492 | 502 |
+| dvp | 503 | 515 |
+| jpeg | 516 | 541 |
+| ga2d | 542 | 564 |
+| apu | 565 | 616 |
+| npu | 617 | 643 |
+| crypto | 644 | 673 |
+| crc | 674 | 680 |
+| rng | 681 | 689 |
+| ext-l | 690 | 691 |
+| ext-h | 692 | 701 |
+| mpw-timer | 738 | 740 |
+| mpw-gpio | 741 | 744 |
 
-The current PDF has 830 pages, including the independent closing page 830, and retains all 110 frozen entries across 42 IP chapters. Mini remains default-off for PIO-lite, with actual legacy stream-direction discovery and no Mini synthesis, netlist or timing claim. The offline repeat build is byte-identical; current CI remains unevaluated. A previous delivered Mini PDF was not available in the retained build roots, so no old/new page comparison is claimed. Earlier review tables below retain their historical identity.
+The current PDF has 832 pages, including the independent closing page 832, and retains all 110 frozen entries across 42 IP chapters. Mini remains default-off for PIO-lite, with actual legacy stream-direction discovery and no Mini synthesis, netlist or timing claim. The offline repeat build is byte-identical; current CI remains unevaluated. `changed-pages.json` records 42 content/navigation ranges against the retained 832-page RM0486 build. Earlier review tables below retain their historical identity.
 
 
 Reviewed source: `9ab05c6404c02b5f2c927539b5c681b46f778b9f`. Version/date: **v0.5 DRAFT / 2026-10-22**.

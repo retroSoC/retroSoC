@@ -1,37 +1,37 @@
 # Tiny Gen1 v0.2 DRAFT chapter review
 
-## 2026-11-18 current delivery page map
+## 2026-11-19 current delivery page map
 
-Source: 53b3ce25ed234182799dbf3100fd9b3f19c9c2e5. PDF SHA-256: 53b523937140e702848ff9a199fca04d8c8f4516b7d1e84dbb43f44a119c7462.
+Source: 4db113e17efb3932dc3778b736011f87fc271495. PDF SHA-256: a1510982e8e144c843ea8032763882aa31a9da86db87b6c256f2ad4792057a10.
 
 | IP anchor | Start | End |
 | --- | ---: | ---: |
-| xpi | 66 | 85 |
-| sdio | 86 | 108 |
-| sram | 109 | 115 |
-| gpio | 116 | 132 |
-| dma | 133 | 148 |
+| xpi | 63 | 82 |
+| sdio | 83 | 106 |
+| sram | 107 | 114 |
+| gpio | 115 | 131 |
+| dma | 132 | 148 |
 | timer | 149 | 155 |
 | rtc | 156 | 169 |
 | wdg | 170 | 179 |
 | pwm | 180 | 204 |
-| uart0 | 205 | 217 |
-| i2c | 218 | 231 |
-| spi | 232 | 251 |
-| piolite | 252 | 274 |
+| uart0 | 205 | 216 |
+| i2c | 217 | 230 |
+| spi | 231 | 250 |
+| piolite | 251 | 274 |
 | ws2812 | 275 | 283 |
 | archinfo | 284 | 292 |
-| sysctrl | 293 | 301 |
-| rcu | 302 | 316 |
-| clint | 317 | 320 |
-| i2s | 321 | 331 |
-| dvp | 332 | 343 |
+| sysctrl | 293 | 302 |
+| rcu | 303 | 318 |
+| clint | 319 | 322 |
+| i2s | 323 | 332 |
+| dvp | 333 | 343 |
 | ppalite | 344 | 364 |
-| crypto | 365 | 394 |
-| crc | 395 | 401 |
-| rng | 402 | 410 |
+| crypto | 365 | 393 |
+| crc | 394 | 400 |
+| rng | 401 | 409 |
 
-The current PDF has 480 pages, including the independent closing page 480. The synchronized source contains 24 IP chapters, 88 frozen major/IP entries, 142 outlined navigation entries, 682 register definitions and 1329 expanded instance addresses. `changed-pages.json` records 24 content/navigation ranges against the retained 425-page baseline, and the offline repeat build is byte-identical. PIOLITE-P3 acceptance and current CI remain pending; this page map is publication evidence only. Earlier review tables below retain their historical identity.
+The current PDF has 479 pages, including the independent closing page 479. The synchronized source contains 24 IP chapters, 88 frozen major/IP entries, 145 outlined navigation entries, 682 register definitions and 1329 expanded instance addresses. `changed-pages.json` records three content/navigation ranges against the retained 482-page PIOLITE-P3/RM0486 build, and the offline repeat build is byte-identical. PIOLITE-P3 acceptance and current CI remain pending; this page map is publication evidence only. Earlier review tables below retain their historical identity.
 
 
 Reviewed source f5f58a36758968e984a43159a3e155c56cbe1f38. Main profile configs/ci/ics55-tiny.mk. Compatibility configs/ci/ihp130-tiny.mk.

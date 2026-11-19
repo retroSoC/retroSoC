@@ -257,7 +257,9 @@ def test_current_page_map_matches_reviewed_delivery(data):
     navigation = tiny.read(ROOT / tiny.BOOK / "navigation-contract.json")
     register_count = sum(len(family["registers"]) for family in data["registers"].values())
     assert revision in chapter and revision in content
-    assert "| piolite | 252 | 274 |" in chapter
+    assert "PDF SHA-256: a1510982e8e144c843ea8032763882aa31a9da86db87b6c256f2ad4792057a10" in chapter
+    assert "479 pages" in chapter
+    assert "| piolite | 251 | 274 |" in chapter
     assert f"{len(structure['entries'])} frozen major/IP entries" in chapter
     assert f"{len(navigation['entries'])} outlined navigation entries" in chapter
     assert f"{register_count} register definitions and {len(data['register_index'])} expanded instance addresses" in chapter

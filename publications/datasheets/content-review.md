@@ -1,10 +1,10 @@
 # Mini datasheet content review - v0.5 OpenC906 refresh, 2026-10-22
 
-Current 2026-11-18 implementation: reviewed source 53b3ce25ed234182799dbf3100fd9b3f19c9c2e5.
+Current 2026-11-19 implementation: reviewed source 4db113e17efb3932dc3778b736011f87fc271495.
 See [the shared round review](commercial-reference-review.md) for the earlier source delta, independent book scopes, data/graphics,
 comparison baseline and remaining qualification.
 
-The synchronized Mini publication remains default-off for PIO-lite: `EnablePiolite=0`, requests14/15 stay unpublished, and the five actual legacy stream directions are reported without changing the request mask or enabling another product feature. The current 830-page PDF is byte-identical across an offline repeat build; current CI remains unevaluated, and no Mini synthesis, netlist, timing or hardware qualification is implied. Earlier records below are historical.
+The synchronized Mini publication remains default-off for PIO-lite: `EnablePiolite=0`, requests14/15 stay unpublished, and the five actual legacy stream directions are reported without changing the request mask or enabling another product feature. The current 832-page PDF is byte-identical across an offline repeat build; current CI remains unevaluated, and no Mini synthesis, netlist, timing or hardware qualification is implied. Earlier records below are historical.
 
 ## Historical review records
 
