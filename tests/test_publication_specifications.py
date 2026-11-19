@@ -160,6 +160,46 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
     assert spec["paste_coverage_percent"] == pytest.approx(16 * 1.4 ** 2 / 7.15 ** 2 * 100)
 
 
+def test_qfn_reference_dimensions_and_contact_edges(spec):
+    qfn = spec["qfn"]
+    pins = qfn["pins"]
+    assert [sum(p["side"] == side for p in pins) for side in range(4)] == [16] * 4
+    assert pins[0]["top"] == [-4.5, 3.75]
+    assert pins[0]["bottom"] == [4.5, 3.75]
+    for pin in pins:
+        x, y, width, height = pin["top_terminal"]
+        assert abs(x) + width / 2 <= 4.5 + 1e-9
+        assert abs(y) + height / 2 <= 4.5 + 1e-9
+        assert pin["bottom_terminal"] == [-x, y, width, height]
+    west = pins[0]["land"]
+    east = pins[32]["land"]
+    assert east[0] + east[2] / 2 - (west[0] - west[2] / 2) == pytest.approx(9.50)
+    assert east[0] - east[2] / 2 - (west[0] + west[2] / 2) == pytest.approx(8.10)
+    assert qfn["land_row_span"] == "7.50"
+
+    measures = qfn["measurements"]
+    assert measures["standoff"]["nom"] is None
+    assert (measures["standoff"]["min"], measures["standoff"]["max"]) == ("0.00", "0.05")
+    assert measures["lead_height"]["nom"] == "0.200 REF"
+    assert measures["ep"]["label"] == "7.15 ± 0.10"
+    assert measures["pad_ep"]["label"] == "7.15 ± 0.05"
+    assert qfn["assembly"]["mask_web_mm"] == pytest.approx(0.15)
+    assert qfn["assembly"]["mask_ep_gap_mm"] == pytest.approx(0.375)
+    assert qfn["assembly"]["via_span_mm"] == pytest.approx(4.45)
+
+
+@pytest.mark.parametrize(("group", "field", "value", "error"), [
+    ("pcb", "mask_expansion_mm", 0.13, "solder mask openings overlap"),
+    ("paste", "aperture_mm", 1.7, "paste windows do not fit"),
+    ("pcb", "via_grid", 8, "thermal vias do not fit"),
+])
+def test_qfn_assembly_overlays_must_fit(spec, group, field, value, error):
+    models = deepcopy(spec["models"])
+    models[group][field] = value
+    with pytest.raises(ValueError, match=error):
+        s.qfn_assembly(spec["qfn"]["dimensions"], models)
+
+
 @pytest.mark.parametrize("change", ["duplicate-pin", "ep-collision", "pad-overlap", "span"])
 def test_invalid_geometry_cannot_generate_views(spec, change):
     dims = deepcopy(spec["qfn"]["dimensions"])

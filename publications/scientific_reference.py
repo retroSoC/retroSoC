@@ -28,9 +28,9 @@ ALIASES = {
     "VCORE": ("V", "CORE"), "Vcore": ("V", "core"),
     "Rout": ("R", "out"), "R_out": ("R", "out"),
 }
-MECHANICAL = {"D2": ("D", "2"), "E2": ("E", "2"), "A1": ("A", "1")}
+MECHANICAL = {"D2": ("D", "2"), "E2": ("E", "2"), "A1": ("A", "1"), "A3": ("A", "3")}
 _ALIAS = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(ALIASES, key=len, reverse=True))) + r")\b")
-_MECHANICAL = re.compile(r"\b(?:D2|E2|A1)\b")
+_MECHANICAL = re.compile(r"\b(?:" + "|".join(MECHANICAL) + r")\b")
 _POWER = re.compile(r"(?<![\w.])(?P<base>\d+(?:\.\d+)?|x|X|e|mm|cm|m)\s*(?:\*\*|\^)\s*")
 _EQUATION = re.compile(r"\b(?:Iref|I_ref|Tref|T_ref|VOH|VOL|V_OH|V_OL|SCK)\s*(?:\[[^]]+\])?\s*=")
 _SCRIPT = re.compile(r"[A-Za-z0-9θµΩ() +−*/.,-]{1,80}\Z")

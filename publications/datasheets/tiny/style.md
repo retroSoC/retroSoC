@@ -155,6 +155,25 @@ Top pin 1 is upper left; numbering is counterclockwise. Bottom mirrors x; PCB
 component view follows top. Test uniqueness, mirror, pitch, EP and pad spans.
 Never independently renumber a view or call EP pin 65.
 
+### QFN64 drawing layout
+
+Reuse publication gold (`#A38442`) for view headings, dimension strokes, extension
+lines and Pin 1. Use light gray for the drawing field, medium gray for copper,
+and dark text for values. Solid outlines, dashed projections, centerlines and
+labels retain their meaning in grayscale. Keep panel width within 172 mm and
+ordinary labels at 9 pt or larger. Apply the scientific renderer to dimension
+subscripts.
+
+Stack both complete pin maps on one page. Place the top and bottom mechanical
+views above the numbered dimensions table and the side view. Derive the table
+and drawing values from the same ADI-backed records. Show the standoff range
+with a blank nominal cell, and distinguish the finished package EP from PCB EP
+copper using their respective tolerances. Give the component-side copper pattern
+its own page and anchor dimension lines to edges or contact centers as applicable.
+Pair solder-mask and paste views above the thermal-via view and assembly notes.
+Put REFERENCE ONLY inside each standalone view and its document caption.
+Export the individual views and the mechanical plate with the shared geometry.
+
 Copper, mask, paste and via layers are separate. Constructed values belong in
 the model catalog and inside standalone vector status labels. Paste coverage
 is total aperture area divided by reference EP area. MSL/reflow, thermal values,
