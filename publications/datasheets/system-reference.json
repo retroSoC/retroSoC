@@ -7878,7 +7878,7 @@
                 "id": "reg-logic-0",
                 "to": "reg-registers",
                 "kind": "control",
-                "label": "registers",
+                "label": "tx empty",
                 "width": null,
                 "net": "internal:reg-logic-0",
                 "source": {
@@ -7897,7 +7897,7 @@
                 "id": "reg-logic-1",
                 "to": "reg-registers",
                 "kind": "control",
-                "label": "registers",
+                "label": "rx count",
                 "width": null,
                 "net": "internal:reg-logic-1",
                 "source": {
@@ -7915,7 +7915,7 @@
               {
                 "id": "reg-port-3",
                 "to": "reg-tx_fifo",
-                "label": "command",
+                "label": "tx flush",
                 "kind": "control",
                 "width": null,
                 "source": {
@@ -7934,7 +7934,7 @@
               {
                 "id": "reg-port-4",
                 "to": "reg-rx_fifo",
-                "label": "command",
+                "label": "rx flush",
                 "kind": "control",
                 "width": null,
                 "source": {
@@ -7954,7 +7954,7 @@
                 "id": "core-logic-0",
                 "to": "core-tx",
                 "kind": "data",
-                "label": "data",
+                "label": "Serial TX",
                 "width": null,
                 "net": "internal:core-logic-0",
                 "source": {
@@ -7972,7 +7972,7 @@
               {
                 "id": "core-net-0",
                 "to": "core-apb4_uart_tx",
-                "label": "handshake",
+                "label": "sample tick",
                 "kind": "control",
                 "width": null,
                 "source": {
@@ -7991,7 +7991,7 @@
               {
                 "id": "core-net-1",
                 "to": "core-apb4_uart_rx",
-                "label": "handshake",
+                "label": "sample tick",
                 "kind": "control",
                 "width": null,
                 "source": {
@@ -8010,7 +8010,7 @@
               {
                 "id": "core-qualified-4",
                 "to": "core-uart_baudgen",
-                "label": "enable",
+                "label": "TX busy",
                 "kind": "control",
                 "width": null,
                 "source": {
@@ -8030,7 +8030,7 @@
                 "id": "flow-logic-0",
                 "to": "flow-tx",
                 "kind": "data",
-                "label": "data",
+                "label": "CTS",
                 "width": null,
                 "net": "internal:flow-logic-0",
                 "source": {
@@ -8455,9 +8455,9 @@
                     "offset": 32
                   },
                   "label": [
-                    59.4,
-                    113.5,
-                    6.7984374999999995
+                    55.9,
+                    113.6,
+                    14.2
                   ],
                   "from": {
                     "side": "west",
@@ -8558,9 +8558,9 @@
                     "offset": 28
                   },
                   "label": [
-                    49.4,
-                    54.8,
-                    10.323803710937499
+                    58.4167,
+                    54.7,
+                    12.7
                   ],
                   "from": {
                     "side": "north",
@@ -11112,29 +11112,33 @@
                 "bound-3": {
                   "points": [
                     [
-                      62,
-                      146
+                      58,
+                      142
                     ],
                     [
-                      66,
-                      146
+                      58,
+                      137
                     ],
                     [
-                      66,
+                      150,
+                      137
+                    ],
+                    [
+                      150,
                       20
                     ],
                     [
-                      76,
+                      146,
                       20
                     ]
                   ],
-                  "to": {
-                    "side": "west",
-                    "offset": 12
-                  },
                   "from": {
+                    "side": "north",
+                    "offset": 32
+                  },
+                  "to": {
                     "side": "east",
-                    "offset": 4
+                    "offset": 12
                   }
                 },
                 "fifo-stream": {
@@ -14198,19 +14202,23 @@
                 "primitive-net-0": {
                   "points": [
                     [
-                      126,
+                      118,
+                      152
+                    ],
+                    [
+                      114,
+                      152
+                    ],
+                    [
+                      114,
                       158
                     ],
                     [
-                      126,
-                      166
+                      110,
+                      158
                     ],
                     [
-                      108,
-                      166
-                    ],
-                    [
-                      108,
+                      110,
                       128
                     ],
                     [
@@ -14218,13 +14226,13 @@
                       128
                     ]
                   ],
+                  "from": {
+                    "side": "west",
+                    "offset": 12
+                  },
                   "to": {
                     "side": "west",
                     "offset": 16
-                  },
-                  "from": {
-                    "side": "south",
-                    "offset": 8
                   }
                 },
                 "primitive-port-8": {
@@ -14835,7 +14843,88 @@
               ],
               "border_clearance_version": 3
             }
-          }
+          },
+          "route_details": [
+            {
+              "id": "internal-feedback",
+              "title": "Primitive Input and Flush",
+              "note": "The primitive dispatcher consumes pending input words and drives the FIFO flush path. See the main APU figure for microcode execution, DMA and I2S routing.",
+              "edges": [
+                "primitive-logic-1",
+                "primitive-port-8"
+              ],
+              "layout": {
+                "height": 54,
+                "boundary": [
+                  14,
+                  6,
+                  144,
+                  44
+                ],
+                "heading": [
+                  18,
+                  9
+                ],
+                "groups": [],
+                "nodes": {
+                  "primitive-input_fifo": [
+                    22,
+                    19,
+                    47,
+                    23
+                  ],
+                  "primitive-sequencer": [
+                    104,
+                    19,
+                    46,
+                    23
+                  ]
+                },
+                "routes": {
+                  "primitive-logic-1": {
+                    "points": [
+                      [
+                        69,
+                        27
+                      ],
+                      [
+                        104,
+                        27
+                      ]
+                    ],
+                    "from": {
+                      "side": "east",
+                      "offset": 8
+                    },
+                    "to": {
+                      "side": "west",
+                      "offset": 8
+                    }
+                  },
+                  "primitive-port-8": {
+                    "points": [
+                      [
+                        104,
+                        35
+                      ],
+                      [
+                        69,
+                        35
+                      ]
+                    ],
+                    "from": {
+                      "side": "west",
+                      "offset": 16
+                    },
+                    "to": {
+                      "side": "east",
+                      "offset": 16
+                    }
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     },

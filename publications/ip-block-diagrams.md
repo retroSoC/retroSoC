@@ -10,14 +10,18 @@ instance parameters and product integration remain authoritative.
 
 ## Reference and scope
 
-The visual references are ST **RM0486 Rev 4, May 2026**, RCC Figure 34, page
-412, and GPU2D Figure 449, page 2154, in the
+The primary reference is ST **RM0486 Rev 4, May 2026**, in the
 [official manual](https://www.st.com/resource/en/reference_manual/rm0486-stm32n647657xx-armbased-32bit-mcus-stmicroelectronics.pdf).
 The reviewed PDF has 4669 pages and SHA-256
 `83cb7e9c7f784a4c5dbbedec428adf58d2cbac8cd802d11e2cdc4d504cceaa86`.
-Borrow the engineering drawing language, not ST hardware or drawing identifiers.
-GA2D must not acquire a texture/rasterizer pipeline; RCU must not acquire absent
-oscillators, PLLs or power domains.
+Select the closest functional chapter first. Key references include RCC Figure
+34 (412), GPDMA Figure 93 (941), DMA2D Figure 132 (1033), GPIO Figure 66
+(784), USART Figure 840 (3282), and SPI/I2S Figure 881 (3428). Record whether
+each match is functional, structural or an illustration example, including the
+particular feature borrowed. DMA2D is the GA2D reference for separate layer
+inputs and output conversion. GPU2D Figure 449 (2154) contributes only
+organization. Bind each graph to retroSoC source, including buffers, clocks,
+resets, selected widths and protocol paths.
 
 The seven system Circuiteria figures, SoC overview, timing diagrams, register
 bit layouts, binary/storage figures and package/PCB figures retain their own
@@ -94,6 +98,7 @@ split by list position. Every view is a normal Figure with a directory entry.
 | Turns | Prefer zero or two; maximum four per connection |
 | Parallel channels | At least 3 mm centre pitch; labeled corridors reserve at least 6 mm |
 | Non-connection crossing | Straight segments only, at least 4 mm from bends/ports/arrow tips; horizontal wire carries a 1 mm bridge |
+| Crossing budget | At most 12 non-connection crossings in each printed view |
 | True connection | Filled node only for source-proven fanout; canonical shared shafts are drawn once |
 | Text | Horizontal, transparent Inter Regular, at least 9 pt |
 | Figure caption | Above frame, centered, 9 pt Bold, `<IP> block diagram`; normal book Figure number and punctuation |
@@ -117,8 +122,8 @@ drawing review.
 | Multiline text | Explicit 3.7 mm line grid; minimum node inset 2 mm horizontal, 1.5 mm vertical |
 | Clearance | At least 1 mm to unrelated lines; preserve arrow shafts |
 
-MUX is trapezoidal; divider/gate are named rectangular functional symbols; FIFO
-has an internal buffer rule. FIFO dimensions come from selected source
+MUX, divider and gate are named rectangular symbols. FIFO has an internal
+buffer rule. FIFO dimensions come from selected source
 parameters. Control signals are not dashed merely because they are control.
 No colored/white text backplates, gradients or rounded IP blocks. Existing
 scientific subscript/superscript rules remain; no new size exception is allowed.
@@ -157,8 +162,15 @@ when no separate RTL instance exists. Recheck these paths after any expansion.
 
 If a route fails, revise its placement, ports or channels. If the frame cannot
 fit at 9 pt, retain the important functional path in the primary and add an
-adjacent semantically named detail. Do not omit connections to simplify a
-drawing. Each frame/note is
+adjacent semantically named detail. Use `block_diagram.route_details` for
+local routes already bound in the primary functional graph. Each entry names
+its scope and lists the exact edge IDs. Each moved edge appears in one detail.
+The overview retains every declared bus, external signal, clock, reset and
+IRQ connection. Isolated internal functions may appear in a scoped detail
+when the overview still describes the primary data, control and result
+paths. Check this during figure review and link the related views in the
+main figure note. The print audit lists the actual edge IDs in each frame.
+Each frame/note is
 nonbreaking and may occupy one page. Never split frames or shrink text. Preserve
 chapter/register anchors and navigation contracts despite page growth.
 

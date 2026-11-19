@@ -242,7 +242,13 @@ def test_verification_only_modules_are_never_drawn_as_hardware(books):
                     not any(word in u["module"] for word in ("formal", "sva", "assert", "xchecker"))
                     for u in node.get("units", [])
                 )
-            if "parent_id" in view:
+            if view["block_diagram"].get("scope") == "local-routes":
+                projection = view["block_diagram"]["functional"]
+                linked = {wire[end] for wire in view["scene"]["wires"]
+                          for end in ("from_node", "to_node")}
+                assert linked == {node["id"] for node in projection["nodes"]}
+                assert all(edge.get("source") for edge in projection["edges"])
+            elif "parent_id" in view:
                 connected = {
                     edge[key].split(".")[0] for edge in view["edges"] for key in ("from", "to")
                 }
@@ -413,6 +419,7 @@ def test_complex_views_use_reviewed_functional_groups(books):
         "rcu-detail-clock-monitoring",
         "rcu-detail-clock-control",
         "rcu-detail-reset-control",
+        "rcu-detail-internal-feedback",
     }
     units = {u["id"] for n in rcu["nodes"] for u in n.get("units", [])}
     assert {"u_hp_div2", "u_hp_div4", "u_pclk_divider", "u_mem_clk_div2", "u_lp_clk_div4"} <= units
@@ -430,7 +437,8 @@ def test_complex_views_use_reviewed_functional_groups(books):
     }
     assert set(members) <= drawn
     assert {"u_clint_timebase", "u_ref24_clk_buf", "u_pclk_cfg_cdc"} <= drawn
-    assert len(mini["sdram"]["details"]) == len(mini["usb2"]["details"]) == 1
+    assert len(mini["sdram"]["details"]) == 2
+    assert len(mini["usb2"]["details"]) == 1
     assert not any("-part-" in key for data in books.values() for key in blocks.records(data))
 
 

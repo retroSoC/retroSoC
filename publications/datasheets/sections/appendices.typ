@@ -104,7 +104,8 @@ number is used to imply completion.
    ([2026-10-22],[0.5 DRAFT],[Reviewed 95c243b70955 refresh, delivered as 798 pages: reconcile RV64/V2 workloads, Mini-selected register capabilities, Crypto V2 initialization, DMA discovery/session limits and shared-IP recovery.],[Yuchi Miao / ECOS Team]),
    ([2026-10-22],[0.5 DRAFT],[OpenC906 refresh: fixed RV64GC core, single AXI128-to-64 path, internal CLINT/PLIC, C906 initialization/cache maintenance and SRAM/ICG selection. Retain prior register corrections, 42 IP chapters, 109 entries and scoped evidence.],[Yuchi Miao / ECOS Team]),
    ([2026-11-14],[0.5 DRAFT],[Reviewed dev 6f3f3c83; shared typed specifications, board and characteristic references, source/status management, grouped navigation and implementation errata. No new hardware qualification.],[Yuchi Miao / ECOS Team]),
-   ([#doc.date],[0.5 DRAFT],[Functional IP diagram v2: 42 main and 24 detail views, explicit source/parameter/geometry records and solid fine-line routing. Integrate the reviewed d9f27811 snapshot and the separate build-control review through 506018b2. Retain the existing qualification scope.],[Yuchi Miao / ECOS Team])),
+   ([2026-11-17],[0.5 DRAFT],[Functional IP diagram v2: 42 main and 24 detail views, explicit source/parameter/geometry records and solid fine-line routing. Integrate the reviewed d9f27811 snapshot and the separate build-control review through 506018b2. Retain the existing qualification scope.],[Yuchi Miao / ECOS Team]),
+   ([#doc.date],[0.5 DRAFT],[RM0486 comparison across all IP views. Refine signal labels and local route details, and limit crossings in each printed figure. Retain the reviewed hardware source and evidence.],[Yuchi Miao / ECOS Team])),
   widths:(0.8fr,0.65fr,1.8fr,1fr),
 )
 The retained historical release entry does not establish silicon availability or qualify

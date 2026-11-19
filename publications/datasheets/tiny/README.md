@@ -17,6 +17,12 @@ families; the owned SYSCTRL and ARCHINFO overrides are checked separately.
 
 ## Build and check
 
+The 2026-11-18 RM0486 review compares all Tiny IP views against the PR #289
+baseline. Source-qualified local routes in adjacent details use the same
+functional graph as their overview. Keep all declared product interfaces in the
+main view and validate each printed view using the
+[shared standard](../../ip-block-diagrams.md).
+
 The 2026-11-17 IP detail round keeps v0.2 DRAFT and Gen1. It starts from
 publication dev `80486b9f`, with the 455-page delivered PDF as comparison
 baseline. The integrated edition uses the reviewed technical snapshot
