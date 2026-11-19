@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
+  "source_revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -14934,24 +14934,42 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
-    "checked_date": "2026-11-17",
-    "checked_at": "2026-11-17T14:47:44Z",
-    "boundary": "Exact PR #283 head quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
+    "revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
+    "checked_date": "2026-11-19",
+    "checked_at": "2026-11-19T08:16:58Z",
+    "boundary": "Exact PR #297 head quality workflow completed with failure because the RTL coding-style source snapshot had not yet been rebound. This diagnostic is not a passing result or a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 44102838315,
+        "run_id": 44483225170,
         "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44102838315",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44483225170",
         "status": "completed",
-        "conclusion": "success",
-        "scope": "Repository quality workflow on exact PR #283 head d9f27811: fast checks, four fixture shards, fixture fan-in and the aggregate quality gate completed successfully",
-        "note": "Exact-head source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred.",
+        "conclusion": "failure",
+        "scope": "Repository quality workflow on exact PR #297 head 28a2123c; fast identified the stale Mini technical-source snapshot, impact and incremental-shadow succeeded, and quality-gate failed",
+        "note": "Failure evidence only; the corrected snapshot requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred.",
         "observations": []
       }
     ]
   },
   "historical_ci_snapshots": [
+    {
+      "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
+      "checked_date": "2026-11-17",
+      "checked_at": "2026-11-17T14:47:44Z",
+      "boundary": "Exact PR #283 head quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification.",
+      "runs": [
+        {
+          "run_id": 44102838315,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/44102838315",
+          "status": "completed",
+          "conclusion": "success",
+          "scope": "Repository quality workflow on exact PR #283 head d9f27811: fast checks, four fixture shards, fixture fan-in and the aggregate quality gate completed successfully",
+          "note": "Exact-head source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred.",
+          "observations": []
+        }
+      ]
+    },
     {
       "revision": "1c32b6ee75af208178bcff8becf52c07d874a9ac",
       "checked_date": "2026-11-17",
