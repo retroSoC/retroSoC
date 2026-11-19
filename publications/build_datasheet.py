@@ -27,26 +27,49 @@ from scripts.setup_helpers import atomic_write, download_file, ensure_git_repo, 
 from scripts.check_clock_reset_domains import validate as validate_clocks  # noqa: E402
 from publications.register_reference import collect_registers  # noqa: E402
 from publications.mini_integration_reference import (  # noqa: E402
-    SOURCES as MINI_BINDING_SOURCES, collect_mini_bindings, profile_values,
+    SOURCES as MINI_BINDING_SOURCES,
+    collect_mini_bindings,
+    profile_values,
 )
 from publications.chapter_reference import collect_chapters  # noqa: E402
 from publications.c906_reference import source_paths as c906_source_paths  # noqa: E402
 from publications.waveform_reference import collect_waveforms, source_paths as waveform_source_paths  # noqa: E402
-from publications.system_reference import collect_system_reference, source_paths as system_source_paths  # noqa: E402
+from publications.system_reference import (  # noqa: E402
+    collect_system_reference,
+    source_paths as system_source_paths,
+)  # noqa: E402
 from publications.retrieval_reference import collect_retrieval  # noqa: E402
 from publications.report_changes import page_ranges, repository_footer_pages, validate_change_scope  # noqa: E402
 from publications.page_reference import (  # noqa: E402
-    CLOSING_TITLE, PAGE_ROLES_FILE, collect_page_roles, read_page_roles,
-    validate_footer_pages, validate_footer_text, validate_page_roles,
+    CLOSING_TITLE,
+    PAGE_ROLES_FILE,
+    collect_page_roles,
+    read_page_roles,
+    validate_footer_pages,
+    validate_footer_text,
+    validate_page_roles,
 )
 from publications.structure_reference import validate_structure  # noqa: E402
-from publications.specification_reference import collect as collect_specifications, source_inputs as specification_inputs, export_audits, verify_audits  # noqa: E402
+from publications.specification_reference import (  # noqa: E402
+    collect as collect_specifications,
+    source_inputs as specification_inputs,
+    export_audits,
+    verify_audits,
+)  # noqa: E402
 from publications.specification_plots import render as render_specifications  # noqa: E402
 from publications.specification_vectors import render as render_vectors  # noqa: E402
+from publications import ip_block_reference as ip_blocks  # noqa: E402
+from publications import scientific_reference as scientific  # noqa: E402
 from publications.diagram_reference import collect_diagrams  # noqa: E402
-from publications.diagram_coverage import coverage as diagram_coverage, validate_usage as validate_diagram_usage  # noqa: E402
+from publications.diagram_coverage import (  # noqa: E402
+    coverage as diagram_coverage,
+    validate_usage as validate_diagram_usage,
+)  # noqa: E402
 from publications.package_reference import (  # noqa: E402
-    directory_hashes, package_records, validate_imports, validate_package_closure,
+    directory_hashes,
+    package_records,
+    validate_imports,
+    validate_package_closure,
 )
 from publications.soc_diagram_geometry import COMPACT_NODES  # noqa: E402
 from publications.soc_diagram_pdf import collect_text_regions, contains, check_diagram_pdf  # noqa: E402
@@ -87,11 +110,17 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     if review is None:
         return False
     revision, blob = review.get("revision", ""), review.get("makefile_blob", "")
-    if not all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (revision, blob)) or not review.get("reason"):
-        raise ValueError("build-control review requires complete revision/blob identities and a reason")
+    if not all(
+        re.fullmatch(r"[0-9a-f]{40}", value) for value in (revision, blob)
+    ) or not review.get("reason"):
+        raise ValueError(
+            "build-control review requires complete revision/blob identities and a reason"
+        )
     if git("merge-base", config["source_revision"], revision) != config["source_revision"]:
         raise ValueError("build-control review does not descend from the reviewed product snapshot")
-    if git("rev-parse", f"{revision}:Makefile") != blob or git("diff", "--name-only", revision, "--", "Makefile"):
+    if git("rev-parse", f"{revision}:Makefile") != blob or git(
+        "diff", "--name-only", revision, "--", "Makefile"
+    ):
         raise ValueError("Makefile differs from the explicit build-control review")
     documents = review.get("documentation_blobs", {})
     if not isinstance(documents, dict) or set(documents) - {"docs/git-workflow.md"}:
@@ -99,24 +128,44 @@ def reviewed_build_control(config: dict[str, Any]) -> bool:
     for path, identity in documents.items():
         if not isinstance(identity, str) or not re.fullmatch(r"[0-9a-f]{40}", identity):
             raise ValueError("reviewed workflow document requires a complete blob identity")
-        if git("rev-parse", f"{revision}:{path}") != identity or git("diff", "--name-only", revision, "--", path):
+        if git("rev-parse", f"{revision}:{path}") != identity or git(
+            "diff", "--name-only", revision, "--", path
+        ):
             raise ValueError("workflow document differs from the explicit build-control review")
     return True
 
 
-def validate_source(config: dict[str, Any]) -> None:
+def validate_source_snapshot(config: dict[str, Any]) -> None:
     revision = config["source_revision"]
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("source_revision must be a full reviewed Git commit")
     # Documentation commits may follow the hardware snapshot, but changed technical
     # inputs must be reviewed before advertising them in this datasheet.
-    changed = git("diff", "--name-only", revision, "--", "rtl", "crt", "app", "configs", "docs",
-                  "dependencies/dependencies.lock.json", "scripts/generate_openc906.py", "Makefile")
-    if {"Makefile", "docs/git-workflow.md"}.intersection(changed.splitlines()) and reviewed_build_control(config):
+    changed = git(
+        "diff",
+        "--name-only",
+        revision,
+        "--",
+        "rtl",
+        "crt",
+        "app",
+        "configs",
+        "docs",
+        "dependencies/dependencies.lock.json",
+        "scripts/generate_openc906.py",
+        "Makefile",
+    )
+    if {"Makefile", "docs/git-workflow.md"}.intersection(
+        changed.splitlines()
+    ) and reviewed_build_control(config):
         reviewed = {"Makefile", *config["build_control_review"].get("documentation_blobs", {})}
         changed = "\n".join(path for path in changed.splitlines() if path not in reviewed)
     if changed:
         raise ValueError("technical sources differ from the reviewed snapshot:\n" + changed)
+
+
+def validate_source(config: dict[str, Any]) -> None:
+    validate_source_snapshot(config)
     for name, dependency in load_lock()["sources"].items():
         if name.startswith("cluster_") or name in {"hazard3", "mpw", "openc906"}:
             checkout = ROOT / dependency["destination"]
@@ -189,13 +238,22 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         if region["symbol"] == "SRAM" and product["HAVE_SRAM_IF"] != "YES":
             region["availability"] = "Disabled in selected profile"
     system_reference["retrieval"] = collect_retrieval(
-        ROOT, system_reference["retrieval"], register_data, regions, catalog,
+        ROOT,
+        system_reference["retrieval"],
+        register_data,
+        regions,
+        catalog,
         read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
-        config["source_revision"], system_reference["support"],
+        config["source_revision"],
+        system_reference["support"],
     )
-    system_reference["illustrations"] = collect_diagrams(ROOT, system_reference["illustrations"], regions, system_reference)
+    system_reference["illustrations"] = collect_diagrams(
+        ROOT, system_reference["illustrations"], regions, system_reference
+    )
     system_reference["illustrations"]["coverage"] = diagram_coverage(
-        read_json(ROOT / "publications/datasheets/structure-contract.json"), system_reference["illustrations"])
+        read_json(ROOT / "publications/datasheets/structure-contract.json"),
+        system_reference["illustrations"],
+    )
     data = {
         "document": config,
         "profiles": profiles,
@@ -222,7 +280,9 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
         "extensions": read_json(ROOT / "rtl/mini/integration/user_extensions.json"),
         "mpw": read_json(ROOT / "rtl/mini/integration/user_extensions_legacy.json"),
         "managed_sources": [
-            d for n, d in load_lock()["sources"].items() if n.startswith("cluster_") or n in {"mpw", "openc906"}
+            d
+            for n, d in load_lock()["sources"].items()
+            if n.startswith("cluster_") or n in {"mpw", "openc906"}
         ],
         "registers": register_data,
         "mini_bindings": mini_bindings,
@@ -235,6 +295,7 @@ def collect_data(config: dict[str, Any], *, check_snapshot: bool = True) -> dict
     }
 
     data["specifications"] = collect_specifications(ROOT, "mini", data)
+    scientific.prepare(data)
     return data
 
 
@@ -349,12 +410,24 @@ def source_hashes(
     for entry in catalog:
         paths.update(entry["sources"])
     paths.update(MINI_BINDING_SOURCES)
+    paths.update(
+        ip_blocks.trace_paths(
+            {
+                **read_json(ROOT / "publications/datasheets/diagram-circuits.json"),
+                **read_json(ROOT / "publications/datasheets/system-reference.json")[
+                    "illustrations"
+                ]["circuits"],
+            }
+        )
+    )
     paths.update(c906_source_paths(ROOT))
     for item in read_json(ROOT / "publications/datasheets/ip-content.json").values():
         for correction in item.get("prose_corrections", []):
             paths.update(binding["file"] for binding in correction["bindings"])
     paths.update(waveform_source_paths(read_json(ROOT / "publications/datasheets/waveforms.json")))
-    paths.update(system_source_paths(read_json(ROOT / "publications/datasheets/system-reference.json")))
+    paths.update(
+        system_source_paths(read_json(ROOT / "publications/datasheets/system-reference.json"))
+    )
     paths.update(specification_inputs("mini"))
     paths.update(
         p.relative_to(ROOT).as_posix()
@@ -410,6 +483,7 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         str(epoch),
     ]
     engineering_vectors = render_vectors(ROOT, out, data["specifications"], executable, command[4:])
+    ip_vectors = ip_blocks.export_vectors(ROOT, out, data, executable, command[4:])
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
     atomic_write(out / "typst.log", result.stdout + result.stderr)
     if result.returncode or "warning:" in result.stderr:
@@ -417,30 +491,40 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     query_command = [
         executable,
         "eval",
-        '(items:query(metadata).map(it=>it.value), '
-        'headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,'
+        "(items:query(metadata).map(it=>it.value), "
+        "headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,"
         'label:repr(h.at("label",default:none)),page:h.location().page())), '
-        'regions:query(<table-continuation-region>).map(region=>{'
-        'let pos=region.location().position(); '
+        "regions:query(<table-continuation-region>).map(region=>{"
+        "let pos=region.location().position(); "
         '(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
-        'width:region.width.length.pt(),height:region.height.length.pt())}))',
+        "width:region.width.length.pt(),height:region.height.length.pt())}))",
         "--in",
         config["entrypoint"],
         *command[4:],
     ]
+    query_command[2] = scientific.layout_query(query_command[2])
     queried = subprocess.run(
         query_command, cwd=ROOT, text=True, capture_output=True, encoding="utf-8"
     )
     if queried.returncode or "warning:" in queried.stderr:
         raise ValueError("Typst page-map query failed:\n" + queried.stderr)
     layout_report = json.loads(queried.stdout)
-    validate_structure(read_json(ROOT / "publications/datasheets/structure-contract.json"),
-                       layout_report["headings"], read_json(ROOT / "publications/datasheets/chapter-index.json"))
+    validate_structure(
+        read_json(ROOT / "publications/datasheets/structure-contract.json"),
+        layout_report["headings"],
+        read_json(ROOT / "publications/datasheets/chapter-index.json"),
+    )
     write_json(out / "document-structure.json", layout_report["headings"])
     layout_items = layout_report["items"]
     write_json(out / PAGE_ROLES_FILE, collect_page_roles(layout_items))
-    diagram_records = [item for item in layout_items if isinstance(item, dict) and item.get("kind") == "publication-diagram"]
-    diagram_inventory = validate_diagram_usage(data["system_reference"]["illustrations"], diagram_records)
+    diagram_records = [
+        item
+        for item in layout_items
+        if isinstance(item, dict) and item.get("kind") == "publication-diagram"
+    ]
+    diagram_inventory = validate_diagram_usage(
+        data["system_reference"]["illustrations"], diagram_records
+    )
     diagram_starts = {(item["package"], item["id"]): item for item in diagram_records}
     diagram_ends = {}
     for item in layout_items:
@@ -467,9 +551,19 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
     write_json(out / "ip-pages.json", page_map)
     # Read final labeled rectangles without feeding positions back into layout.
     soc = data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"]
-    write_json(out / "layout-regions.json", layout_report["regions"] + collect_text_regions(soc, layout_items))
-    change_markers = [item for item in layout_items if isinstance(item, dict)
-                      and item.get("kind") in {"publication-change-start", "publication-change-end"}]
+    write_json(
+        out / "layout-regions.json",
+        layout_report["regions"]
+        + collect_text_regions(soc, layout_items)
+        + scientific.regions(layout_report, data),
+    )
+    change_markers = [
+        item
+        for item in layout_items
+        if isinstance(item, dict)
+        and item.get("kind") in {"publication-change-start", "publication-change-end"}
+    ]
+    change_markers += scientific.change_markers(layout_items, config, data["scientific"])
     # Pair/validate here; the final report also checks actual PDF pages and printed footers.
     validate_change_scope(change_markers, config)
     page_ranges(change_markers, max(item["page"] for item in change_markers))
@@ -479,10 +573,16 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
         "presentation": {"register_caption_context": "ip-qualified-v1"},
         "engineering_vectors": engineering_vectors,
         "specification_audits": specification_audits,
+        "scientific_audits": scientific.export_audit(out, data, layout_items),
+        "ip_block_vectors": ip_vectors,
+        "ip_block_audits": ip_blocks.export_audits(ROOT, out, data, layout_items),
         "specification_plots": specification_plots,
         "document": config,
-        "publication_checkout": {"head": git("rev-parse", "HEAD"), "path": str(ROOT),
-                                 "has_local_changes": bool(git("status", "--porcelain", "--untracked-files=no"))},
+        "publication_checkout": {
+            "head": git("rev-parse", "HEAD"),
+            "path": str(ROOT),
+            "has_local_changes": bool(git("status", "--porcelain", "--untracked-files=no")),
+        },
         "diagram_inventory_sha256": sha256(out / "diagram-inventory.json"),
         "diagram_coverage_sha256": sha256(out / "diagram-coverage.json"),
         "inputs": inputs,
@@ -504,7 +604,11 @@ def build(config: dict, lock: dict, executable: str, out: Path | None) -> Path:
 
 
 def check_document_sources(config: dict, data: dict) -> None:
-    sources = [p for p in (ROOT / "publications/datasheets").rglob("*.typ") if "tiny" not in p.relative_to(ROOT / "publications/datasheets").parts]
+    sources = [
+        p
+        for p in (ROOT / "publications/datasheets").rglob("*.typ")
+        if "tiny" not in p.relative_to(ROOT / "publications/datasheets").parts
+    ]
     combined = "\n".join(p.read_text(encoding="utf-8") for p in sources)
     validate_imports(combined, package_records(load_lock()))
     if re.search(r"#lorem\(|Lorem ipsum|balba|TO BE COMPLETED", combined):
@@ -571,10 +675,17 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
     # PDFMiner's `size` becomes glyph advance for a quarter-turn label. Its
     # rendered font-height axis is then the bounding-box width, not page height.
     matrix = char.get("matrix", ())
-    quarter_turn = (len(matrix) == 6 and abs(matrix[0]) < 1e-8 and abs(matrix[3]) < 1e-8
-                    and abs(matrix[1]) > 1e-8 and abs(matrix[2]) > 1e-8)
+    quarter_turn = (
+        len(matrix) == 6
+        and abs(matrix[0]) < 1e-8
+        and abs(matrix[3]) < 1e-8
+        and abs(matrix[1]) > 1e-8
+        and abs(matrix[2]) > 1e-8
+    )
     size = char["width"] if quarter_turn else char["size"]
     if not char["text"].strip() or size >= 8.95:
+        return
+    if scientific.script_allowed(char, number, regions):
         return
     continuation = any(
         region["kind"] == "table-continuation"
@@ -585,8 +696,12 @@ def validate_character_size(char: dict, number: int, regions: list[dict]) -> Non
         and char["bottom"] <= region["y"] + region["height"] + 0.5
         for region in regions
     )
-    compact = any(region["kind"] == "soc-compact" and region.get("id") in COMPACT_NODES
-                  and contains(region, char, number) for region in regions)
+    compact = any(
+        region["kind"] == "soc-compact"
+        and region.get("id") in COMPACT_NODES
+        and contains(region, char, number)
+        for region in regions
+    )
     minimum = 8.0 if compact else 8.5 if continuation else 9.0
     if size < minimum - 0.05:
         raise ValueError(f"text smaller than {minimum:g} pt on page {number}")
@@ -604,6 +719,9 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     if manifest["inputs"] != source_hashes(config, data["catalog"], data["registers"]):
         raise ValueError("PDF inputs have changed; rebuild before checking this PDF")
     verify_audits(pdf.parent, manifest["engineering_vectors"])
+    verify_audits(pdf.parent, manifest["ip_block_vectors"])
+    verify_audits(pdf.parent, manifest["ip_block_audits"])
+    ip_blocks.verify_audit(ROOT, pdf.parent, data)
     verify_audits(pdf.parent, manifest["specification_audits"])
     verify_audits(pdf.parent, manifest["specification_plots"]["outputs"])
     if manifest["pdf_sha256"] != sha256(pdf):
@@ -611,15 +729,24 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     for name in ("diagram-inventory", "diagram-coverage"):
         path = pdf.parent / (name + ".json")
         if not path.is_file() or manifest.get(name.replace("-", "_") + "_sha256") != sha256(path):
-            raise ValueError("PDF diagram coverage records missing or changed; rebuild before checking")
+            raise ValueError(
+                "PDF diagram coverage records missing or changed; rebuild before checking"
+            )
     actual_diagrams = read_json(pdf.parent / "diagram-inventory.json")
     validate_diagram_usage(data["system_reference"]["illustrations"], actual_diagrams)
-    if read_json(pdf.parent / "diagram-coverage.json") != data["system_reference"]["illustrations"]["coverage"]:
+    if (
+        read_json(pdf.parent / "diagram-coverage.json")
+        != data["system_reference"]["illustrations"]["coverage"]
+    ):
         raise ValueError("PDF diagram chapter coverage differs from its current data")
     region_path = pdf.parent / "layout-regions.json"
     if not region_path.is_file() or manifest.get("layout_regions_sha256") != sha256(region_path):
         raise ValueError("PDF layout regions missing or changed; rebuild before checking")
     layout_regions = read_json(region_path)
+    scientific.verify_audit(pdf.parent, manifest, data)
+    scientific.validate_regions(
+        [r for r in layout_regions if r.get("kind") == "scientific-script"], data["scientific"]
+    )
     validate_page_map(
         read_json(pdf.parent / "ip-pages.json"),
         read_json(ROOT / "publications/datasheets/chapter-index.json"),
@@ -633,13 +760,21 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
     validate_change_scope(read_json(marker_path), manifest["document"])
     page_ranges(read_json(marker_path), len(reader.pages))
     structure_path = pdf.parent / "document-structure.json"
-    if not structure_path.is_file() or manifest.get("document_structure_sha256") != sha256(structure_path):
+    if not structure_path.is_file() or manifest.get("document_structure_sha256") != sha256(
+        structure_path
+    ):
         raise ValueError("PDF structure record missing or changed; rebuild before checking")
-    validate_structure(read_json(ROOT / "publications/datasheets/structure-contract.json"),
-                       read_json(structure_path), read_json(ROOT / "publications/datasheets/chapter-index.json"))
+    validate_structure(
+        read_json(ROOT / "publications/datasheets/structure-contract.json"),
+        read_json(structure_path),
+        read_json(ROOT / "publications/datasheets/chapter-index.json"),
+    )
     if reader.metadata.title != config["title"] or not reader.metadata.author:
         raise ValueError("PDF title or author metadata missing or inconsistent")
-    if not all(value in (reader.metadata.keywords or "") for value in (config["document_id"], "v" + config["version"], config["status"])):
+    if not all(
+        value in (reader.metadata.keywords or "")
+        for value in (config["document_id"], "v" + config["version"], config["status"])
+    ):
         raise ValueError("PDF identity/version/status keywords missing")
     validate_footer_pages(repository_footer_pages(reader), len(reader.pages), page_roles)
     if not reader.outline:
@@ -680,16 +815,27 @@ def check_pdf(pdf: Path, config: dict, data: dict) -> dict:
         raise ValueError("PDF navigation links missing")
     with pdfplumber.open(pdf) as document:
         all_text = ""
-        soc_bounds = next(item for item in actual_diagrams if item["package"] == "cetz" and item["id"] == "soc-functional")
+        soc_bounds = next(
+            item
+            for item in actual_diagrams
+            if item["package"] == "cetz" and item["id"] == "soc-functional"
+        )
         soc_report = None
         for number, page in enumerate(document.pages, 1):
             if number == soc_bounds["page"]:
                 soc_report = check_diagram_pdf(
-                    page, reader.pages[number - 1], data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"],
-                    layout_regions, soc_bounds, ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf")
+                    page,
+                    reader.pages[number - 1],
+                    data["system_reference"]["illustrations"]["soc_architecture"]["soc-functional"],
+                    layout_regions,
+                    soc_bounds,
+                    ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf",
+                )
             footer_text = "".join(c["text"] for c in page.chars if c["top"] > page.height - 50)
             validate_footer_text(footer_text, number, closing_pages)
-            if number in closing_pages and any(c["text"].strip() for c in page.chars if c["top"] < 50):
+            if number in closing_pages and any(
+                c["text"].strip() for c in page.chars if c["top"] < 50
+            ):
                 raise ValueError("closing page must not have a visible header")
             for char in page.chars:
                 if (

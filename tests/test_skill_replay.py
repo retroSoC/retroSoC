@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -60,7 +61,13 @@ def write_trace(directory: Path, trace: dict, name: str = "case.trace.json") -> 
 def test_replay_binds_provenance_without_running_a_runner(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    path = write_trace(tmp_path, valid_trace())
+    trace = valid_trace()
+    scratch = tmp_path / "disposable"
+    scratch.mkdir()
+    trace["workspace"] = str(scratch)
+    trace["workspace_disposition"] = "REBUILDABLE_CACHE"
+    path = write_trace(tmp_path, trace)
+    shutil.rmtree(scratch)
     monkeypatch.setattr(
         "scripts.skill_eval.run_codex",
         lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("runner called")),
@@ -78,7 +85,13 @@ def test_replay_binds_provenance_without_running_a_runner(
     assert identity["case_snapshot_status"] == "current"
     assert identity["skill_matches_current"] is True
     assert identity["workspace_tree"] == "c" * 40
+    assert identity["workspace_disposition"] == "REBUILDABLE_CACHE"
     assert result["records"][0]["trace_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_replay_marks_legacy_workspace_provenance(tmp_path: Path) -> None:
+    result = replay_traces(ROOT, [write_trace(tmp_path, valid_trace())])
+    assert result["records"][0]["identity"]["workspace_disposition"] == "LEGACY_OUTPUT"
 
 
 def test_replay_rejects_input_tampering_and_unknown_runner(tmp_path: Path) -> None:
@@ -241,3 +254,48 @@ def test_make_can_request_latest_trace_per_case() -> None:
     )
     assert completed.returncode == 0
     assert "--latest-per-case" in completed.stdout
+
+
+def test_new_engineering_cases_replay_without_runner(tmp_path: Path) -> None:
+    _, cases = load_cases(ROOT)
+    paths = []
+    for case_id in ("dependency-09", "review-11"):
+        case = next(item for item in cases if item["id"] == case_id)
+        trace = valid_trace()
+        prompt = evaluation_prompt(case, 80)
+        entrypoint = ROOT / case["skill_entrypoint"]
+        trace["case"] = case
+        trace["skill_entrypoint_sha256"] = hashlib.sha256(entrypoint.read_bytes()).hexdigest()
+        trace["input_snapshot_sha256"] = input_snapshot_sha256(case)
+        trace["evaluation_prompt"] = prompt
+        trace["evaluation_prompt_sha256"] = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        trace["response"] = {
+            "invoked_skills": [case["skill"]],
+            "verdict": "INVESTIGATE" if case_id == "review-11" else "NONE",
+            "route": "NONE",
+            "summary": (
+                "Use explicit hosted-pytest; ordinary work is NOT_REQUESTED and duplicate cache size is NOT_MEASURED."
+                if case_id == "dependency-09"
+                else "HOLD: command plan and runner isolation are missing; repeated jobs are not pairs; NOT_MEASURED."
+            ),
+        }
+        trace["commands"] = [
+            {
+                "command": (
+                    "make agent-preflight TASK=build/tasks/example/task.json"
+                    if case_id == "dependency-09"
+                    else "python3 scripts/performance_evidence.py --help"
+                ),
+                "exit_code": 0,
+                "status": "completed",
+            }
+        ]
+        paths.append(write_trace(tmp_path, trace, f"{case_id}.trace.json"))
+
+    result = replay_traces(ROOT, paths)
+
+    assert result["status"] == "REPLAYED"
+    assert result["grade_passed_count"] == 2
+    assert result["runner_invocations"] == 0
+    assert result["behavior_execution"] == "NOT_RUN"
+    assert all(record["identity"]["case_snapshot_status"] == "current" for record in result["records"])

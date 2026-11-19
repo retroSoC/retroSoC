@@ -17,6 +17,23 @@ families; the owned SYSCTRL and ARCHINFO overrides are checked separately.
 
 ## Build and check
 
+The 2026-11-18 RM0486 review compares all Tiny IP views against the PR #289
+baseline. Source-qualified local routes in adjacent details use the same
+functional graph as their overview. Keep all declared product interfaces in the
+main view and validate each printed view using the
+[shared standard](../../ip-block-diagrams.md).
+
+The 2026-11-17 IP detail round keeps v0.2 DRAFT and Gen1. It starts from
+publication dev `80486b9f`, with the 455-page delivered PDF as comparison
+baseline. The integrated edition uses the reviewed technical snapshot
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133` carried by dev. Edit
+function/source bindings and final millimetre
+coordinates in `diagram-circuits.json`; do not edit generated SVG/PDF or use the
+legacy circuit coordinates as v2 layout. Follow the shared
+[IP drawing standard](../../ip-block-diagrams.md) and
+[current review](../../ip-block-detail-review.md). Mini has separate product
+configuration and artifacts.
+
 From the repository root, with the pinned publication Python dependencies and
 Typst version available:
 
@@ -71,8 +88,10 @@ RTL, relax checks, or change warning/metric baselines as a document workaround.
 `sections/` owns the full-book hierarchy. `navigation-contract.json` freezes all
 outlined entries; `structure-contract.json` keeps the major/IP compatibility
 contract. IP detail headings are unnumbered bookmarks, with the actual IP depth.
-`engineering-figures.typ` renders Tiny catalogs through locked Circuiteria,
-Bytefield and Blockcell. `diagrams.typ` owns the CeTZ overview, matrix and
+`engineering-figures.typ` adapts all 23 IP primary figures and their details to
+the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). Three system
+figures retain Circuiteria; Bytefield and Blockcell retain their scope.
+`diagrams.typ` owns the CeTZ overview, matrix and
 workflows. `soc-functional.typ` draws the functional overview from
 `soc-functional.json` and the geometry validated by the Tiny collector.
 The Tiny collector uses common validation functions without loading Mini data.
@@ -85,5 +104,6 @@ Use the [shared standard](../../specifications/README.md) and this book's
 [parameter catalog](specifications/parameters.json). Tiny QFN64 and examples stay
 separate from Mini. Current builds emit specification-data/status/usage/replacement
 audits, CSV/SVG/PDF curves, editable standalone engineering vectors and paired
-change markers. The common report_changes.py compares against the retained
-425-page delivery. Tests and successful publication builds do not qualify hardware.
+change markers. The common report_changes.py compares against the retained 439-page delivery
+for this IP round; the 425-page baseline belongs to the earlier commercial-reference
+round. Tests and successful publication builds do not qualify hardware.

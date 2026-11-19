@@ -75,8 +75,18 @@ Feature stages retain their design and architecture approval gates.
 `make agent-deliver PR=<number>` first probes the repository's auto-merge,
 merge-commit, branch-cleanup, and push capabilities, then enables GitHub native
 auto-merge while checks may still be pending. Only GitHub merges after required
-checks pass, always with a merge commit. `WATCH=1` retains live monitoring and
-cleanup; otherwise run `RECONCILE=1` after the merge. The legacy
+checks pass, always with a merge commit. `WATCH=1` checkpoints the initial
+record, then uses the delivery coordinator for monitoring and cleanup; resume
+that record with `agent-coordinate` after interruption. After a diagnosed failure
+or attention state, use `agent-deliver RESUME=1 RESUME_REASON="<diagnosis>"` only
+when a fix or dev synchronization has changed the PR HEAD. A fresh preflight and
+still-enabled native auto-merge are required; same-head retries and external
+disables are refused. The latest `recovery` remains compatible, while bounded
+`recovery_history` retains up to 20 transitions and an explicit dropped count.
+Final `final_checks` evidence is separate from historical
+polling state. Each actual reconciliation also emits a merge-matched local
+`friction_observation` under `build/engineering/`, without collecting timelines,
+executing hardware, or creating a metric gate. Otherwise run `RECONCILE=1` after the merge. The legacy
 `scripts/pr_workflow.py` remains an after-green entrypoint. Neither path bypasses
 protection or deletes dirty, unmerged, or non-canonical work.
 
@@ -95,13 +105,31 @@ Add `EXECUTE=1` to create/restore, or use the target directory without `CREATE=1
 to restore its existing inputs. Network fallback requires explicit
 `ALLOW_NETWORK=1`; locked revisions and archive hashes never change. Recursive
 submodules, PDKs, publication package directories, and extraction retain their
-existing setup flows. Cleanup uses `quality/artifact-retention.json` to retain
-classified evidence without moving every rebuildable cache or workspace.
+existing setup flows. Ordinary tasks do not implicitly restore the full hosted
+fixture set. Declare `execution.fixture_profile: hosted-pytest` only for a task
+that needs it; `EXECUTE=1` then performs the existing lock-bound offline restore
+from the primary worktree and retains restore/doctor evidence. Dry-run does not
+restore it. `agent-preflight` requires a READY doctor for this declared profile
+and does not repair missing inputs implicitly. Cleanup uses
+`quality/artifact-retention.json` to retain classified evidence without moving
+every rebuildable cache or workspace.
 
 Before execution, run `make agent-preflight TASK=<task.json>`. It binds the task
 scope, base revision, worktree state, changed-file validation plan, and Tiny
-reviewed-source snapshot. `ONLINE=1` adds a least-privilege GitHub permission
-probe and `PR=<number>` adds a head-bound check report. A blocked preflight is
+reviewed-source snapshot. When full hosted Pytest is selected, it also validates
+the Mini source/control and CI evidence metadata without restoring fixtures or
+probing managed inputs; stale evidence blocks delivery rather than being updated
+implicitly. `quality/engineering-control-impact.json` records only a shadow
+candidate plan for exact control-plane paths; it never changes authoritative CI
+selection. Agent and engineering Make targets live in `scripts/mk/agent.mk`,
+included by the root Makefile without changing their public interfaces. Root
+Makefile, product, unlisted, or invalid-policy changes still require full
+validation. For Mini non-product control reviews, `make agent-control-review
+REVISION=<commit> REASON="<rationale>" OUTPUT=<path>` computes exact blobs and
+validates a candidate without modifying publication sources or CI evidence.
+The result always has `applied=false` and `approval_status=REVIEW_REQUIRED`;
+there is no apply mode. `ONLINE=1` adds a least-privilege GitHub permission probe and
+`PR=<number>` adds a head-bound check report. A blocked preflight is
 not approval to continue. Use `make agent-handoff TASK=<task.json> NEXT=<action>`
 to generate the [handoff schema](handoff.schema.json)-bound JSON and optional
 Markdown evidence. The task packet may declare `resolves_gaps` for an explicit
@@ -165,10 +193,14 @@ Static corpus validation does not prove agent behavior. `make skill-eval-smoke`
 executes one read-only scenario per registered Skill in isolated Git workspaces
 and retains traces and deterministic grades. Codex remains the default runner;
 `RUNNER=kimi` selects the [tool-restricted Kimi Agent](skill-eval-agent.md), which
-has no Bash, write, or delegation capability. Runner/model, Skill SHA,
-contract version, input snapshot, and workspace tree are recorded explicitly; a
+has no Bash, write, or delegation capability. Additional explicit cases can use
+`python3 scripts/skill_eval.py run --case <id>` without changing smoke selection.
+Runner/model, Skill SHA, contract version, input snapshot, and workspace tree are recorded explicitly; a
 static result is never described as completed behavior, hardware, or publication
-work. Other hosts can emit the same trace schema for grading. `make skill-replay
+work. Each run uses a unique rebuildable workspace below
+`.cache/retrosoc/skill-evals/`, separate from retained traces, and records
+`workspace_disposition=REBUILDABLE_CACHE`. Replay does not require that disposable
+workspace to remain. Other hosts can emit the same trace schema for grading. `make skill-replay
 TRACES=<directory>` rechecks retained traces without starting a runner or a
 canary; invalid or failed grades remain failures. The shared
 [engineering playbook](skills/shared/engineering-playbook.md) defines operational

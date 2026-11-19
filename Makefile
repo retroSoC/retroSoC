@@ -93,6 +93,7 @@ TINY_P10_ACCEPTANCE        ?= NO
 TINY_SPI_P3_ACCEPTANCE     ?= NO
 TINY_SPI_P4_ACCEPTANCE     ?= NO
 TINY_PPALITE_P3_ACCEPTANCE ?= NO
+TINY_PPALITE_P4_ACCEPTANCE ?= NO
 COREMARK_MODE              ?= quick
 NPU_P5_ACCEPTANCE          ?= NO
 # Select the HP (OpenC906) JTAG target before the LP releases it; debug aid
@@ -167,6 +168,9 @@ CONFIG_KEY_VARS += TINY_SPI_P4_ACCEPTANCE
 endif
 ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
 CONFIG_KEY_VARS += TINY_PPALITE_P3_ACCEPTANCE
+endif
+ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
+CONFIG_KEY_VARS += TINY_PPALITE_P4_ACCEPTANCE
 endif
 VARIANT_ID := $(strip $(shell $(VCS_SHELL_PYTHON) $(ROOT_PATH)/scripts/config_key.py \
     --lock $(LOCK_FILE) --profile $(PROFILE_NAME) --timestamp $(BUILD_TIMESTAMP) \
@@ -335,9 +339,15 @@ $(call validate_value,TINY_P10_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P3_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_SPI_P4_ACCEPTANCE,$(VALID_BOOL))
 $(call validate_value,TINY_PPALITE_P3_ACCEPTANCE,$(VALID_BOOL))
+$(call validate_value,TINY_PPALITE_P4_ACCEPTANCE,$(VALID_BOOL))
 ifeq ($(TINY_PPALITE_P3_ACCEPTANCE),YES)
 ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO)
 $(error TINY_PPALITE_P3_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
+endif
+endif
+ifeq ($(TINY_PPALITE_P4_ACCEPTANCE),YES)
+ifneq ($(SOC)/$(APP)/$(HAVE_CSR)/$(TINY_P7_ACCEPTANCE)/$(TINY_P8_ACCEPTANCE)/$(TINY_P9_ACCEPTANCE)/$(TINY_P10_ACCEPTANCE)/$(TINY_SPI_P3_ACCEPTANCE)/$(TINY_SPI_P4_ACCEPTANCE)/$(TINY_PPALITE_P3_ACCEPTANCE),TINY/ci_smoke/YES/NO/NO/NO/NO/NO/NO/NO)
+$(error TINY_PPALITE_P4_ACCEPTANCE requires Tiny ci_smoke with CSR and no other acceptance image)
 endif
 endif
 ifeq ($(TINY_P10_ACCEPTANCE),YES)
@@ -665,8 +675,7 @@ crypto-p2-report: manifest
 	pin-map check-pin-map soc-topology check-soc-topology user-extensions check-user-extensions \
 	check-clock-reset-domains tech-cell-test rtl-lint check-rtl-lint \
 	formal formal-bus formal-rib-adapter formal-rib2apb formal-gpio formal-ws2812 formal-uart formal-i2c formal-timer formal-dvp formal-i2s formal-onchip-ram formal-opipsram formal-dma formal-apu formal-apu-kws formal-apu-p9 formal-gateway-a formal-sdio formal-clean formal-doctor \
-	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate \
-	agent-context agent-task-check agent-handoff agent-preflight agent-deliver agent-coordinate agent-dag agent-lease agent-lease-release snapshot-check validation-gap-check worktree-registry agent-worktree-start fixture-plan fixture-restore fixture-doctor validation-plan documentation-check skill-eval-static skill-eval-smoke skill-replay engineering-metrics fixtures-plan fixtures-shard fixtures-verify incremental-shadow delivery-policy check-fast
+	rtl-style-check-all rtl-readiness-check rtl-readiness-check-all openc906-prepare std-vexii-generate check-fast
 .NOTPARALLEL: setup
 
 help:
@@ -763,6 +772,7 @@ help:
 	  '  validation-plan            write the changed-file validation matrix as JSON' \
 	  '  agent-context              write revision-bound profiles and CI capabilities' \
 	  '  agent-task-check           validate TASK=<task.json> against the agent contract' \
+	  '  agent-scope-check          check staged task paths without merge or fixture restoration' \
 	  '  agent-handoff              generate revision-bound JSON/Markdown handoff evidence' \
 	  '  validation-gap-check       validate owned deferred validation gaps' \
 	  '  worktree-registry          inventory worktrees; execute only eligible cleanup' \
@@ -1326,165 +1336,7 @@ check-metrics: metrics
 	  --policy $(ROOT_PATH)/quality/metrics/policy.json \
 	  --baseline $(ROOT_PATH)/quality/metrics/baseline.json
 
-agent-context:
-	python3 $(ROOT_PATH)/scripts/agent_control.py context --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-context.json)
-
-agent-task-check:
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_control.py task validate --root $(ROOT_PATH) --task $(TASK)
-
-agent-handoff:
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
-	@test -n '$(NEXT)' || { printf '%s\n' 'NEXT=<next action> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_control.py task handoff --root $(ROOT_PATH) --task $(TASK) \
-	  --next "$(NEXT)" --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-handoff.json) \
-	  $(if $(MARKDOWN),--markdown $(MARKDOWN))
-
-validation-gap-check:
-	python3 $(ROOT_PATH)/scripts/validation_gaps.py --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/validation-gaps.json)
-
-worktree-registry:
-	python3 $(ROOT_PATH)/scripts/worktree_registry.py --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/agent-worktrees/registry.json) \
-	  $(if $(EXECUTE),--execute)
-
-agent-worktree-start:
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/worktree_bootstrap.py --root $(ROOT_PATH) --task $(TASK) \
-	  $(if $(BRANCH),--branch $(BRANCH)) $(foreach source,$(SOURCES),--source $(source)) \
-	  $(foreach archive,$(ARCHIVES),--archive $(archive)) \
-	  $(if $(CREATE),--create) $(if $(ALLOW_NETWORK),--allow-network) \
-	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
-
-fixture-plan:
-	@test -n '$(REFERENCE_ROOT)' || { printf '%s\n' 'REFERENCE_ROOT=<validated local worktree> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/fixture_control.py plan --root $(ROOT_PATH) \
-	  --reference-root $(REFERENCE_ROOT) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-plan.json)
-
-fixture-restore:
-	@test -n '$(REFERENCE_ROOT)' || { printf '%s\n' 'REFERENCE_ROOT=<validated local worktree> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/fixture_control.py restore --root $(ROOT_PATH) \
-	  --reference-root $(REFERENCE_ROOT) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-restore.json)
-
-fixture-doctor:
-	python3 $(ROOT_PATH)/scripts/fixture_control.py doctor --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/fixture-doctor.json)
-
-agent-preflight:
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task.json> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_control.py preflight --root $(ROOT_PATH) --task $(TASK) \
-	  $(if $(BASE),--base $(BASE)) --head $(if $(HEAD),$(HEAD),HEAD) \
-	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
-	  --base-branch $(if $(BASE_BRANCH),$(BASE_BRANCH),dev) \
-	  $(if $(PR),--pr $(PR)) $(if $(ONLINE),--online) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-preflight.json)
-
-agent-deliver:
-	@test -n '$(PR)' || { printf '%s\n' 'PR=<number> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/pr_delivery.py --root $(ROOT_PATH) \
-	  --pr $(PR) --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
-	  --interval $(if $(INTERVAL),$(INTERVAL),60) \
-	  $(if $(WATCH),--watch) $(if $(PREFLIGHT),--preflight-only) \
-	  $(if $(RECONCILE),--reconcile-only) $(if $(OUTPUT),--output $(OUTPUT))
-
-agent-coordinate:
-	@test -n '$(PRS)' || { printf '%s\n' 'PRS=<number>... is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/delivery_controller.py --root $(ROOT_PATH) \
-	  $(foreach pr,$(PRS),--pr $(pr)) --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
-	  --interval $(if $(INTERVAL),$(INTERVAL),60) \
-	  $(if $(DELIVERY_DIR),--delivery-dir $(DELIVERY_DIR)) $(if $(WATCH),--watch) \
-	  $(if $(OUTPUT),--output $(OUTPUT))
-
-agent-dag:
-	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) plan --graph $(GRAPH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/agent-dag.json)
-
-agent-lease:
-	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task-id> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) acquire \
-	  --graph $(GRAPH) --task $(TASK) $(if $(OWNER),--owner $(OWNER)) \
-	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
-
-agent-lease-release:
-	@test -n '$(GRAPH)' || { printf '%s\n' 'GRAPH=<graph.json> is required'; exit 2; }
-	@test -n '$(TASK)' || { printf '%s\n' 'TASK=<task-id> is required'; exit 2; }
-	@test -n '$(LEASE_ID)' || { printf '%s\n' 'LEASE_ID=<id> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/agent_dag.py --root $(ROOT_PATH) release \
-	  --graph $(GRAPH) --task $(TASK) --lease-id $(LEASE_ID) \
-	  $(if $(EXECUTE),--execute) $(if $(OUTPUT),--output $(OUTPUT))
-
-snapshot-check:
-	python3 $(ROOT_PATH)/scripts/agent_control.py snapshot --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/reviewed-source-snapshot.json)
-
-validation-plan:
-	python3 $(ROOT_PATH)/scripts/agent_control.py plan --root $(ROOT_PATH) \
-	  --event $(if $(EVENT),$(EVENT),local) --mode $(if $(MODE),$(MODE),auto) \
-	  $(if $(BASE),--base $(BASE)) $(if $(FILES),--files $(FILES)) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/validation-plan.json)
-
-documentation-check:
-	python3 $(ROOT_PATH)/scripts/agent_control.py docs --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/documentation-check.json)
-
-skill-eval-static:
-	python3 $(ROOT_PATH)/scripts/skill_eval.py validate --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/skill-eval-static.json)
-
-skill-eval-smoke:
-	python3 $(ROOT_PATH)/scripts/skill_eval.py run --root $(ROOT_PATH) --smoke \
-	  $(if $(RUNNER),--runner $(RUNNER)) $(if $(MODEL),--model $(MODEL)) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/smoke)
-
-skill-replay:
-	@test -n '$(TRACES)' || { printf '%s\n' 'TRACES=<directory> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/skill_eval.py replay --root $(ROOT_PATH) \
-	  --trace-root $(TRACES) $(if $(SKILL),--skill $(SKILL)) \
-	  $(if $(CASE),--case $(CASE)) $(if $(SMOKE),--smoke) $(if $(LATEST),--latest-per-case) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/agent-evals/replay.json)
-
-engineering-metrics:
-	python3 $(ROOT_PATH)/scripts/engineering_metrics.py collect \
-	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
-	  --limit $(if $(LIMIT),$(LIMIT),30) \
-	  $(if $(DELIVERY_DIR),--delivery-dir $(DELIVERY_DIR)) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/engineering-metrics.json)
-
-delivery-policy:
-	python3 $(ROOT_PATH)/scripts/delivery_policy.py --root $(ROOT_PATH) \
-	  --repository $(if $(REPOSITORY),$(REPOSITORY),retroSoC/retroSoC) \
-	  $(if $(OFFLINE),--offline) $(if $(PULLS),--pulls $(PULLS)) \
-	  $(if $(RUNS),--runs $(RUNS)) $(if $(SAMPLES),--samples $(SAMPLES)) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(VARIANT_ROOT)/meta/delivery-policy.json)
-
-fixtures-plan:
-	python3 $(ROOT_PATH)/scripts/pytest_shards.py plan --root $(ROOT_PATH) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/shards/plan.json)
-
-fixtures-shard:
-	@test -n '$(SHARD)' || { printf '%s\n' 'SHARD=<index> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/pytest_shards.py run --root $(ROOT_PATH) \
-	  --shard $(SHARD) --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/shard-$(SHARD))
-
-fixtures-verify:
-	@test -n '$(SHARD_DIRS)' || { printf '%s\n' 'SHARD_DIRS=<directories> is required'; exit 2; }
-	python3 $(ROOT_PATH)/scripts/pytest_shards.py verify --root $(ROOT_PATH) \
-	  $(foreach directory,$(SHARD_DIRS),--shard-dir $(directory)) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/pytest/fan-in/summary.json)
-
-incremental-shadow:
-	python3 $(ROOT_PATH)/scripts/incremental_ci.py --root $(ROOT_PATH) \
-	  --base $(if $(BASE),$(BASE),origin/dev) --head $(if $(HEAD),$(HEAD),HEAD) \
-	  --event $(if $(EVENT),$(EVENT),pull_request) \
-	  $(if $(EVIDENCE),--evidence $(EVIDENCE)) $(if $(SOURCE_RUN),--source-run $(SOURCE_RUN)) \
-	  $(if $(EXECUTE),--execute) \
-	  --output $(if $(OUTPUT),$(OUTPUT),$(ROOT_PATH)/build/incremental-ci/shadow.json)
+include $(ROOT_PATH)/scripts/mk/agent.mk
 
 check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all rtl-readiness-check-all sw-policy-check sw-host-test documentation-check skill-eval-static
 	ruff check .
@@ -1496,7 +1348,7 @@ check-fast: validation-gap-check snapshot-check format-check rtl-style-check-all
 	  tests/test_flow_recovery.py tests/test_agent_dag.py \
 	  tests/test_ci_recovery.py tests/test_cache_artifacts.py tests/test_pytest_shards.py tests/test_incremental_ci.py \
 	  tests/test_delivery_policy.py tests/test_engineering_observations.py tests/test_worktree_bootstrap.py tests/test_fixture_control.py \
-	  tests/test_validation_gaps.py tests/test_worktree_registry.py
+	  tests/test_validation_gaps.py tests/test_worktree_registry.py tests/test_merge_preflight.py tests/test_performance_evidence.py
 	python3 scripts/check_contribution.py ownership --root $(ROOT_PATH) \
 	  --output $(VARIANT_ROOT)/meta/ownership.json
 	python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only --dry-run

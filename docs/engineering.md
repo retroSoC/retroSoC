@@ -386,6 +386,20 @@ build root. `engineering-metrics.yml` repeats this collection weekly. Metrics
 are segmented by workflow and PR category, and are not individual performance
 targets or proof of agent-authored task success.
 
+`scripts/regress.py --plan-output <path>` writes the exact selected primary and
+observation Make commands before execution, including profile arguments, suite
+filters, source revision, and tool-lock identity. Its `execution` field records
+whether this was a dry-run plan or the commands about to execute; it is not a
+run verdict. Regression CI retains these plans under `build/ci-summary/`.
+`performance_evidence.py` reads retained artifact ZIPs and job metadata offline,
+checks result/manifest/plan revisions and command digests, and supplies missing
+legacy profile/lock fields only from the matching manifest. It does not execute
+simulators or contact GitHub. Hosted runner names do not prove isolation: A/B
+review requires an explicit exclusive lease, machine and resource identity, no
+observed contention, and at least five baseline and five candidate samples with
+the same pairing key. `READY_FOR_REVIEW` never starts an experiment; incomplete
+identity remains `HOLD`. This does not change metric `observe` policy or gates.
+
 ## CI And Releases
 
 `quality.yml` splits `fast`, `fixtures`, and `quality-gate`. Fast checks run

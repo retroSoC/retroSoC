@@ -299,11 +299,11 @@ rs_status_t rs_st7789vi_fill_window(const rs_st7789vi_window_t *window, uint32_t
 
 static rs_status_t rs_st7789vi_start_segment(const rs_st7789vi_window_t *window, uint32_t frames,
                                              rs_spi_dma_job_t *job, bool hold_cs, bool commands,
-                                             rs_timeout_t timeout) {
+                                             bool frame16, rs_timeout_t timeout) {
     rs_spi_segment_t segment = {
         .frames = frames,
         .direction = RS_SPI_DIRECTION_TX_ONLY,
-        .frame16 = true,
+        .frame16 = frame16,
         .hold_cs = hold_cs,
         .dummy = UINT16_C(0xFFFF),
     };
@@ -317,8 +317,8 @@ static rs_status_t rs_st7789vi_start_segment(const rs_st7789vi_window_t *window,
 
     if ((job == NULL) || (job->session == NULL) ||
         (rs_st7789vi_window_cells(window, &window_pixels, &window_bytes, &window_words) != RS_OK) ||
-        (frames == 0U) || (frames > window_pixels) ||
-        (rs_spi_transport_layout(frames, true, &payload_bytes, &transport_words,
+        (frames == 0U) || (frame16 ? (frames > window_pixels) : (frames > window_bytes)) ||
+        (rs_spi_transport_layout(frames, frame16, &payload_bytes, &transport_words,
                                  &transport_bytes) != RS_OK) ||
         (job->buffer == (uintptr_t)0U) ||
         ((job->buffer & (sizeof(uint32_t) - 1U)) != (uintptr_t)0U) ||
@@ -357,7 +357,7 @@ rs_status_t rs_st7789vi_start_buffer(const rs_st7789vi_window_t *window, rs_spi_
                                                     &pixels, &words) != RS_OK)) {
         return RS_EINVAL;
     }
-    return rs_st7789vi_start_segment(window, pixels, job, false, true, timeout);
+    return rs_st7789vi_start_segment(window, pixels, job, false, true, true, timeout);
 }
 
 static rs_status_t rs_st7789vi_wait_buffer(rs_spi_dma_job_t *job,
@@ -501,7 +501,8 @@ rs_status_t rs_st7789vi_display_buffer(const rs_st7789vi_window_t *window,
             job.buffer = (uintptr_t)(source + produced);
             job.capacity_bytes = capacity_bytes - (produced * sizeof(uint32_t));
         }
-        status = rs_st7789vi_start_segment(window, frames, &job, held, produced == 0U, timeout);
+        status =
+            rs_st7789vi_start_segment(window, frames, &job, held, produced == 0U, true, timeout);
         if (status != RS_OK) {
             return status;
         }
@@ -510,6 +511,44 @@ rs_status_t rs_st7789vi_display_buffer(const rs_st7789vi_window_t *window,
             return status;
         }
         produced += chunk;
+    }
+    return rs_spi_dma_bind(RS_SPI_DMA_UNBOUND, RS_SPI_DMA_UNBOUND);
+}
+
+rs_status_t rs_st7789vi_display_frame(const rs_st7789vi_window_t *window,
+                                      const rs_ppalite_frame_t *frame, rs_dma_session_t *session,
+                                      rs_st7789vi_dma_measurement_t *measurement,
+                                      rs_timeout_t timeout) {
+    rs_st7789vi_frame_layout_t layout;
+    rs_status_t status = rs_st7789vi_frame_layout(window, frame, &layout);
+
+    if (status != RS_OK) {
+        return status;
+    }
+    if (session == NULL) {
+        return RS_EINVAL;
+    }
+    if (measurement != NULL) {
+        *measurement = (rs_st7789vi_dma_measurement_t){.tx_fifo_min = 8U};
+    }
+    for (uint32_t row = 0U; row < (uint32_t)frame->height; ++row) {
+        const uint64_t offset = (uint64_t)row * layout.transport_bytes_per_row;
+        rs_spi_dma_job_t job = {
+            .session = session,
+            .direction = RS_SPI_DIRECTION_TX_ONLY,
+            .buffer = frame->base + (uintptr_t)offset,
+            .capacity_bytes = frame->capacity_bytes - (uint32_t)offset,
+        };
+        status = rs_st7789vi_start_segment(window, layout.frames_per_row, &job,
+                                           (row + 1U) < (uint32_t)frame->height, row == 0U,
+                                           layout.frame16, timeout);
+        if (status != RS_OK) {
+            return status;
+        }
+        status = rs_st7789vi_wait_buffer(&job, measurement, timeout);
+        if (status != RS_OK) {
+            return status;
+        }
     }
     return rs_spi_dma_bind(RS_SPI_DMA_UNBOUND, RS_SPI_DMA_UNBOUND);
 }

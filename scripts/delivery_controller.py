@@ -36,6 +36,8 @@ def reconcile_record(
     repository: str,
     number: int,
     delivery_dir: Path,
+    cleanup: bool = True,
+    delete_remote: bool = True,
 ) -> tuple[dict[str, Any], str]:
     path = record_path(delivery_dir, number)
     record = read_json(path)
@@ -52,7 +54,14 @@ def reconcile_record(
     if pull.get("headRefName") != record.get("branch"):
         raise ValueError(f"delivery branch differs for PR {number}")
     if pull.get("state") == "MERGED":
-        reconciled = reconcile_delivery(root, repository, number, cleanup=True, delete_remote=True)
+        reconciled = reconcile_delivery(
+            root,
+            repository,
+            number,
+            cleanup=cleanup,
+            delete_remote=delete_remote,
+            local_record=record,
+        )
         result = {
             **record,
             **reconciled,
@@ -108,12 +117,16 @@ def coordinate_once(
     repository: str,
     numbers: list[int],
     delivery_dir: Path,
+    cleanup: bool = True,
+    delete_remote: bool = True,
 ) -> dict[str, Any]:
     records = []
     for number in numbers:
         path = record_path(delivery_dir, number)
         try:
-            record, action = reconcile_record(root, repository, number, delivery_dir)
+            record, action = reconcile_record(
+                root, repository, number, delivery_dir, cleanup=cleanup, delete_remote=delete_remote
+            )
             issue = None
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
             record = read_json(path)
@@ -152,6 +165,8 @@ def coordinate(
     interval: int,
     watch: bool,
     output: Path,
+    cleanup: bool = True,
+    delete_remote: bool = True,
 ) -> dict[str, Any]:
     if interval <= 0:
         raise ValueError("coordination interval must be positive")
@@ -159,7 +174,9 @@ def coordinate(
         raise ValueError("coordinated PR numbers must be unique positive integers")
     started = time.monotonic()
     while True:
-        result = coordinate_once(root, repository, numbers, delivery_dir)
+        result = coordinate_once(
+            root, repository, numbers, delivery_dir, cleanup=cleanup, delete_remote=delete_remote
+        )
         result["watch_seconds"] = round(time.monotonic() - started, 3)
         atomic_write(output, dump_json(result))
         if not watch or result["status"] != "PENDING":

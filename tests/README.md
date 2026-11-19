@@ -62,6 +62,13 @@ tooling.
   recovery without extra payload. `tests/c/test_runtime.c` adds deterministic
   PPALite layout, absent/present HAL, RAW-route rejection, complete FIFO-level
   checks, and ARM-failure DMA cleanup with retained leases on cleanup failure.
+- `test_ppalite_p4.py` checks descriptor/stride-aware ST7789VI row display,
+  isolated P4 image composition, independent scalar capture/panel oracles,
+  stride-aware SD readback records, recovery and measurement records, and
+  corrupted-log rejection. The host C
+  suite covers invalid descriptors, odd-width row padding, byte order, capacity
+  and address overflow. These checks do not replace full-simulator acceptance
+  or continuous-camera/physical-rate qualification.
 - `test_npu_framework_reference.py` checks model-specific Softmax scaling,
   all 65536 VWW two-class input combinations, seeded KWS vectors, unchanged
   hardware artifacts and complete sample-model outputs against the locked
@@ -88,7 +95,14 @@ tooling.
   local references, eval corpora, default invocation contracts, and documented
   entrypoints. `test_agent_control.py` covers task contracts, conservative
   change selection, scope enforcement, preflight, and real/mocked Tiny
-  reviewed-source snapshot drift; `test_skill_eval.py` covers isolated
+  reviewed-source snapshot drift. Control-plane shadow tests prove candidate-only
+  behavior, exact-path/full escalation, policy fail-closed handling, and preserved
+  quality checks. `test_publications.py` also covers read-only control-review
+  candidate generation, source/CI preservation, invalid revisions, validation
+  failures, and the isolated Make entrypoint. Mini preflight coverage checks real
+  source/control and CI metadata, rejects stale bindings, applies only to
+  selected full-Pytest work, and never restores fixtures; `test_skill_eval.py`
+  covers isolated
   behavior-trace grading;
   `test_engineering_metrics.py`, `test_ci_summary.py`, and
   `test_contribution.py` cover delivery metrics, stale-evidence rejection, and
@@ -98,16 +112,24 @@ tooling.
   collection and rejection of dirty or mismatched evidence.
   `test_ci_recovery.py` checks failure classification, bounded same-head reruns,
   resource/step summaries, dry-run versus execute behavior, cache states/keys,
-  and raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
-  structure, run/artifact/digest binding, cache keys, unique size metadata,
-  duplicate identities, unsafe paths, and unknown-value preservation.
+  attempted misses versus NOT_RUN, restore/save workflow contracts, and
+  raw/normalized log evidence. `test_cache_artifacts.py` covers real ZIP
+  structure, run/artifact/digest binding, primary/fallback matched keys, unique
+  size metadata, restored versus unique cache bytes, duplicate identities,
+  conflicting cache IDs, unsafe paths, and unknown-value preservation.
   `test_engineering_observations.py` covers job/step timing, first-attempt and
   duplicate execution, bounded pagination, cache metadata normalization, native
   delivery timelines, local cleanup evidence, read-only shadow/policy linkage,
-  offline reconstruction, and unknown-data handling.
+  merge-matched recovery/cleanup/final-check friction observations, offline
+  reconstruction, and unknown-data handling. Missing warning inventories remain
+  unknown rather than becoming zero.
   `test_pytest_shards.py` covers deterministic duration-based scheduling, real
   collection/JUnit identity matching, exact fan-in coverage, unexpected skips,
   workflow gates, product matrices, and cache observations.
+  `test_performance_evidence.py` checks exact selected Make command plans,
+  offline artifact/job/result binding, manifest-backed legacy identities,
+  malformed evidence rejection, explicit runner isolation, and the five-pair
+  review threshold without starting a simulator or an A/B experiment.
   `test_incremental_ci.py` checks exact input-closure hashing, deleted/dirty
   sources, historical green evidence, tool/config/test-manifest identity,
   tamper refusal, GitHub run/artifact binding, mandatory full events, and the
@@ -119,8 +141,9 @@ tooling.
   metric-sample distinctions, duplicate/mixed sample rejection, reviewed
   baselines, and read-only offline evaluation. `test_flow_recovery.py` checks execution fingerprints, single-flight leases,
   real cancellation and deadlines, stale-run reconciliation, retained attempts,
-  bounded descendant completion after a normal parent exit, zombie-member
-  exclusion, and process-group cleanup when descendants outlive the grace period.
+  explicit inner-Yosys resume delegation, bounded descendant completion after a
+  normal parent exit, zombie-member exclusion, and process-group cleanup when
+  descendants outlive the grace period.
   `test_agent_dag.py` covers deterministic DAG waves, authorized disjoint
   parallelism, serial integration, malformed graph refusal, write-set/worktree
   conflicts, dependency PASS evidence, dry-run leases, identity checks, and
@@ -129,8 +152,8 @@ tooling.
   source-boundary analysis without inferring nonconvergence.
   `test_yosys_opt_resume.py` checks plain-opt convergence against native RTLIL,
   complete frontend/optimizer/backend execution, bounded failure, retained
-  state, execution fingerprints, and checkpoint/output digest validation with
-  real Yosys fixtures.
+  state, cache identity invalidation, execution fingerprints, and
+  checkpoint/output digest validation with real Yosys fixtures.
   `test_validation_gaps.py` checks owned/deferred gap validation, review dates,
   scope filtering, and unsafe evidence rejection. `test_worktree_registry.py`
   covers dry-run inventory, merged-branch cleanup, artifact preservation, and
@@ -142,29 +165,53 @@ tooling.
   accounting, target conflicts, and symlink escapes. No expiry automatically
   deletes evidence. `test_agent_control.py` also covers
   JSON/Markdown handoff and explicit gap-resolution declarations.
+  `test_merge_preflight.py` uses real temporary Git repositories and linked
+  worktrees to cover conflicting and clean merge dry-runs, dirty-source refusal,
+  target validation, source-HEAD preservation, no-commit behavior, and complete
+  temporary-worktree cleanup. It also checks the Make opt-out boundary.
+  `test_agent_control.py` also covers staged-index scope checks with real Git
+  repositories: default HEAD diffs, explicit merge-base selection, unstaged-file
+  exclusion, forbidden and out-of-scope paths, unmerged inputs, and invalid bases.
   `test_pr_workflow.py` covers CI-green auto-merge and
   safe merged-branch cleanup, including artifact preservation and
   dirty/non-canonical refusals. `test_pr_delivery.py` covers capability
   preflight, auto-merge before pending checks, head binding, disabled auto-merge,
-  and deferred reconciliation. `test_delivery_controller.py` covers durable
+  coordinator-only watch handoff, canonical checkpoints with custom outputs,
+  verified cleanup/artifact links, retained-file digest validation, missing or
+  tampered evidence rejection, and deferred reconciliation. Delivery recovery
+  tests require an audited reason, changed HEAD, and intact native auto-merge;
+  final-check tests cover exact merged-HEAD identity, pending/failure outcomes,
+  and separation from cleanup status. `test_delivery_controller.py` covers durable
   pending/resume/cleanup state, idempotent completed records, failed checks,
-  external auto-merge disabling, head-change preservation, and atomic watcher
-  checkpoints. Run fast agent
+  external auto-merge disabling, cleanup opt-outs, head-change preservation,
+  recovery-metadata propagation, bounded recovery history, actual transition
+  counts, explicit Make resume arguments, and atomic watcher checkpoints.
+  Reconciliation tests also cover merge-matched local friction emission with no
+  timeline collection, hardware execution, or metric-gate side effects. Recovery
+  context is forwarded before emission, loaded for custom reconcile-only output,
+  and rejected on stale PR/repository/branch/HEAD identities. Run fast agent
   checks with `make check-fast`. Static
   corpus checks are not proof that an agent executed a workflow. The behavior
-  corpus contains 57 cases across six Skills, with one live smoke per Skill.
-  Provenance, contract migration, negative triggers, Kimi tool-call parsing,
+  corpus contains 59 cases across six Skills, with one live smoke per Skill.
+  Additional cases cover explicit hosted fixture opt-in, duplicate-cache
+  uncertainty, and missing performance isolation. `skill_eval.py run --case <id>`
+  selects them without changing existing smoke cases. Provenance, contract
+  migration, negative triggers, Kimi tool-call parsing,
   read-only runner boundaries, and canary configuration are tested
   deterministically; live behavior results require retained traces from
   `make skill-eval-smoke` (optionally `RUNNER=kimi`). `test_skill_replay.py`
   covers trace identity, input tampering, historical prompts, unknown runners,
   read-only violations, duplicate/empty evidence, auditable latest-per-case
-  selection, timestamp ambiguity, and zero runner invocations.
+  selection, timestamp ambiguity, and zero runner invocations. Workspace tests
+  cover unique cache paths, symlink escape refusal, and replay after deleting
+  the disposable workspace; legacy workspace provenance remains supported.
   Offline replay grades retained behavior only; it does not execute current code.
 - `test_fixture_control.py`, `test_worktree_bootstrap.py`, and
   `test_publication_history.py` cover lock-bound hosted fixture inventories,
   checksum-preserving local archive restore, independent recursive-source copies,
   historical-object recovery, doctor failures, and non-destructive refusals.
+  Task lifecycle tests keep full restoration opt-in, prove dry-run does not call
+  it, checkpoint restore failures, and require a READY doctor in preflight.
 - `test_rtl_readiness.py` covers the machine-readable RTL maturity and
   synthesis-intent checks.
 - `test_rtl_style.py` covers ownership, named connections, and staged naming
@@ -267,6 +314,9 @@ product-default disable policy and source-qualified credit pacing fixture.
 Historical Tiny publication fixtures also need the main repository history
 and dependency commit objects named by their archived locks. After ordinary
 dependency setup, run `python3 tests/publication_history.py prepare` before
-Pytest on a fresh checkout. This only fetches missing immutable Git objects;
-it does not switch current managed checkouts or alter either lock. Historical
-fixture export remains offline and fails if required inputs are unavailable.
+Pytest on a fresh checkout. This also restores the current lock's publication
+media for font-based IP layout checks, without installing Typst or its packages.
+It refuses modified or mismatched media; historical dependency preparation only
+fetches missing immutable objects and never switches their active checkouts.
+Neither lock is changed. Historical fixture export remains offline and fails
+if required inputs are unavailable.

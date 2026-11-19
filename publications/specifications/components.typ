@@ -1,4 +1,6 @@
 // Shared publication-only components. Hardware/style context is passed by each book.
+#import "scientific.typ" as scientific
+#let notation(value,spec)=scientific.render(value,spec.scientific)
 #let palette=(ink:rgb("#292C31"),gold:rgb("#A38442"),gray:rgb("#F1F2F3"))
 #let state-label(s)=("confirmed":"Confirmed design","calculated":"Calculated","reference":"REFERENCE ONLY","tbd":"TBD").at(s)
 #let number(v)=if v==none {[TBD]} else if type(v)==float {str(calc.round(v,digits:4))} else {str(v)}
@@ -28,23 +30,15 @@
     if selected.len()==0 {continue}
     let title=spec.groups.find(g=>g.id==group)
     let title=if title==none {group} else {title.title}
-    if group=="mechanical" {
-      render("spec-mechanical-reference",[QFN64 reference dimensions - REFERENCE ONLY],
-        ([Dimension - REFERENCE ONLY],[Nominal / bound],[Tolerance / qualifier]),
-        selected.map(r=>(use-record(r,r.meaning),[#number(r.value) mm],r.at("tolerance",default:"See source drawing"))),
-        widths:(1.7fr,0.8fr,1.5fr),
-        notes:[REFERENCE ONLY. ADI UP64 05-08-1705 Rev C p1; all dimensions in millimeters. BSC is a basic dimension. Tiny outline, bonding, pad metallurgy and supplier approval remain pending.])
-      continue
-    }
     let rows=selected.map(r=>{
       let scaled=r.unit=="Hz" and type(r.value) in (int,float)
       let unit=if scaled {"MHz"} else {r.unit}
       let range=if type(r.value)==dictionary {r.value} else {(min:none,typ:if scaled {r.value/1000000} else {r.value},max:none)}
       let value=if type(r.value)==str and r.value.len()>70 {
         [See model / assumption record below]
-      } else {number(range.typ)}
-      (use-record(r,[#r.meaning #linebreak()#text(9pt,fill:rgb("#62666C"))[#r.conditions]]),
-       number(range.min),value,number(range.max),unit)
+      } else {notation(number(range.typ),spec)}
+      (use-record(r,[#notation(r.meaning,spec) #linebreak()#text(9pt,fill:rgb("#62666C"))[#notation(r.conditions,spec)]]),
+       number(range.min),value,number(range.max),scientific.render(unit,spec.scientific,unit:true))
     })
     render("spec-"+group+"-"+status,[#title - #state-label(status)],
       ([Parameter / conditions - #state-label(status)],[Min],[Typ / value],[Max],[Unit]),rows,
@@ -81,7 +75,7 @@
       let r=spec.records.find(r=>r.id==pid)
       use-record(r,[])
     }
-    #figure(image(d.paths.svg,width:172mm),caption:[#d.title - #state-label(d.status).])
+    #figure(scientific.plot-image(d),caption:[#d.title - #state-label(d.status).])
   ]
 }
 #let characteristics(spec, render)={
@@ -123,16 +117,16 @@
   render("transfer-model-values",[Effective transfer model - REFERENCE ONLY],
     ([Payload],[Model time],[Effective payload rate]),
     spec.datasets.find(d=>d.id=="transfer").points.map(p=>(
-      [#number(p.x) B],[#number(p.seconds*1000000) us],[#number(p.y) MB/s])),
-    widths:(1fr,1fr,2fr),notes:[Tref=16/fbus+L/(0.6 Bideal). Setup and efficiency are constructed model coefficients.])
+      [#number(p.x) B],[#number(p.seconds*1000000) #scientific.render("us",spec.scientific,unit:true)],[#number(p.y) MB/s])),
+    widths:(1fr,1fr,2fr),notes:[#notation(spec.records.find(r=>r.id.ends-with(".model.transfer")).display_equation,spec). Setup and efficiency are constructed model coefficients.])
   curve(spec,"gpio-load")
   parameters(spec,"performance",render)
   heading(level:3,[Model assumptions and replacement conditions])
   for r in spec.records.filter(r=>r.group in ("models","board","assembly")) {
     block(width:100%,above:12pt,below:12pt,breakable:false)[
       #text(9pt,weight:"semibold")[#r.meaning - #state-label(r.status)] #linebreak()
-      #use-record(r,text(9pt,if r.value==none {"TBD"} else {r.at("display_value",default:str(r.value))}))
-      #linebreak()#text(9pt)[#r.conditions #r.replacement]
+      #use-record(r,text(9pt,notation(if r.value==none {"TBD"} else {r.at("display_value",default:str(r.value))},spec)))
+      #linebreak()#text(9pt)[#notation(r.conditions,spec) #r.replacement]
     ]
   }
   heading(level:3,[Source and data traceability])

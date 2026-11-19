@@ -1,5 +1,22 @@
 # Mini Datasheet Layout Standard
 
+## Functional IP figure revision
+
+The shared [v2 IP figure standard](../ip-block-diagrams.md) governs the 42 Mini
+primary figures and their details. Main figures expose real functional stages;
+local logic and actual instances remain distinct in the source trace. Use thin
+solid arrows for both payload and control, explicit port/channel geometry,
+4 mm minimum segments, at most four turns, and source-proven junctions. A
+non-connection crossing uses a horizontal bridge, with full glyph/line/arrow
+footprint checks. Preserve the 9 pt floor and 172 x 200 mm frame limit. Existing
+system Circuiteria, SoC, timing, register, storage and package/PCB figures keep
+their own conventions. Added detail figures preserve semantic anchors and do
+not replace the functional content of the primary.
+Check named functional port assignment within each owning IP and the 1 mm text
+clearance from its border. Preserve separate RX/TX and register/core IRQ paths;
+assertion-only helpers are excluded from hardware figures. These checks remain
+part of normal source and geometry acceptance.
+
 This document records the implemented layout and maintenance rules of the English
 **retroSoC Mini Gen2/Gen2+** datasheet. The current publication identity belongs in
 [mini.json](mini.json); release-specific decisions and comparisons belong in the
@@ -928,8 +945,10 @@ The six Multimedia entries use two rows of three cells within the same
 panel. Keep the repository footer blue and clickable without an underline.
 
 Use namespaced imports through `diagram-packages.typ` throughout applicable
-chapters. Circuiteria 0.2.1 covers all 42 IP diagrams plus PRODUCT fabric,
-clock/reset, media composition and MPW organization. Bytefield 0.0.8 covers
+chapters. The [shared IP drawing standard](../ip-block-diagrams.md) governs all
+42 Mini IP primary diagrams and their details, rendered by locked CeTZ 0.5.2.
+Circuiteria 0.2.1 retains PRODUCT fabric, clock/reset, media composition and
+MPW organization. Bytefield 0.0.8 covers
 source-defined descriptors, bundle headers/entries, serial framing and media/
 crypto packing. Rivet 0.3.1 covers APU's common encoding and all seven defined
 instruction families. Blockcell 0.1.0 covers architectural FIFOs, line buffers,
@@ -952,11 +971,13 @@ physical device capacities; diagrams with compressed gaps are not to scale.
 Rivet instruction words use upper/lower 32-bit rows so adjacent two-digit bit
 indexes remain readable. Coordinate and text settings are calibrated together
 against the rendered PDF; do not solve collisions by making type smaller.
-Circuiteria boxes use the shared thin-border appearance; its unmodified wire
+The four retained system Circuiteria figures use thin-border boxes; the unmodified wire
 renderer uses 1 pt control/signal lines and 1.5 pt data buses. Dashed control and
-solid data paths are a local convention. Labels remain horizontal on white
+solid data paths are a local system-figure convention. Labels remain horizontal on white
 backing, with endpoints attached to declared ports. Other diagram line widths
-are unaffected.
+are unaffected. IP primary/detail figures instead use solid control lines,
+outlined data arrows, transparent labels, square white blocks and neutral gray
+ownership boundaries under the shared standard. Ordinary IP text stays 9 pt.
 
 `system-reference.json.illustrations` references the reviewed circuit, binary
 layout and storage catalogs. The publication adapters verify named instance
@@ -1313,3 +1334,30 @@ The 2026-11-14 reviewed structure retains all 42 Mini IP anchors and adds a
 quick reference (110 major/IP entries). Packaging/electrical precede complete
 peripherals. Mini keeps its own REF24, EXT72, audio, LP/HP CDC, IHP130 PRODUCT/HP/
 MPW profiles and shared QPI/OPI GPIO21-31 restrictions. QFN64 remains Tiny-only.
+
+## Scientific formula and quantity typography
+
+Use the shared [scientific display component](../specifications/scientific.typ) for mathematical powers,
+quantity subscripts and mechanical dimension suffixes. Keep raw formulas,
+coefficients, units, statuses and numerical CSV values machine-readable and
+unchanged; the restricted publication grammar creates inert display tokens
+without evaluating source text. Use a multiplication sign and true exponent
+for arithmetic; distinguish voltage quantities such as V with OH/OL/IO
+subscripts from literal power-pin names such as VDDIO. Only mechanical contexts
+attach D2, E2 and A1 suffixes. Software, register, RTL, pin and protocol
+identifiers, inline code and code blocks retain their exact source spelling.
+
+Native Typst attachments and Matplotlib MathText use the locked Inter font.
+Script size is 70 percent of the surrounding size, with an absolute 6.3 pt
+minimum and a parent size of at least 9 pt. This exception applies only to
+source-attributed script glyphs inside tight measured rectangles; ordinary
+labels and body/table text retain their existing size limits. Never exempt an
+entire formula, chart, page or arbitrary small label. Export the script identity,
+text, role, font size and rectangle in the hashed layout audit. Independent
+SVG/PDF exports keep the same typography and reference-state labels.
+
+Retain scientific-notation.json, plot script metadata, the manifest and the
+normal PDF font checks. Verify raw-source preservation, mechanical/protocol
+context, exponent parsing, managed fonts and rejection of unrelated small text.
+Review changed pages in color and grayscale, including exponent baselines,
+line breaks, table rows and standalone figures, then repeat the offline build.

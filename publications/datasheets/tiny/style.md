@@ -1,5 +1,20 @@
 # Tiny datasheet layout supplement
 
+## Functional IP figure revision
+
+Apply the shared [v2 IP figure standard](../../ip-block-diagrams.md) to all 23
+Tiny primary figures and their details. Display the selected Tiny instances and
+local functional logic, including lifecycle/clock/reset limits. Thin solid
+payload/control arrows use explicit source-bound endpoints and channels;
+segments are at least 4 mm, with at most four turns. Mark actual fanout with a
+dot and unrelated crossings with a horizontal bridge. Check full arrow, bridge,
+line and text footprints. Keep 9 pt text and the 172 x 200 mm frame limit. Other
+figure families retain their conventions and selected-product facts.
+Check the named functional port assignment inside each IP, not only its outer
+module, and keep every label at least 1 mm clear of the IP border. The source
+and geometry audits enforce both rules; Tiny SYSCTRL separates APB decode,
+first-fault capture, TEST_STATUS and the AON RCU bridge without adding RTL.
+
 Tiny follows the reviewed [Mini visual language](../style.md), but owns an
 independent [style implementation](style.typ). This addition does not edit,
 import or reflow Mini's template. Changes to Tiny must preserve the publication
@@ -28,8 +43,10 @@ DMA/PWM repeated groups preserve exact base/stride/index formulas. A constant
 zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
-Use the locked Circuiteria connection renderer, Bytefield formats and Blockcell
-storage diagrams. CeTZ owns the six-panel overview, connectivity matrix and
+Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
+CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
+for three system diagrams, Bytefield formats and Blockcell storage diagrams.
+CeTZ also owns the six-panel overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
@@ -51,7 +68,7 @@ Use the current Mini closing-page visual language in Tiny's independent
 `closing.typ`: one final A4 page, bottom-aligned logo reservation and reviewed
 notice, with no running header/footer or printed page number. Its paired role
 markers are hashed in the manifest; they cannot exempt any ordinary page.
-Continuation notices alone may use 8.5 pt within their exported, hashed
+Only marked continuation notices may use 8.5 pt within their exported, hashed
 `layout-regions.json` rectangles. Do not lower the global 9 pt threshold.
 
 ## Same-version Mini alignment
@@ -78,7 +95,8 @@ prefix column. Measure its width from the longest complete `Table N.` or
 share one left edge; shorter prefixes retain the unused column width. Keep
 these flat lists independent of Contents hierarchy indentation and body spacing.
 
-Circuiteria uses thin rounded blocks, 1 pt signal/control wires and 1.5 pt data buses;
+Only the three retained system Circuiteria figures use thin rounded blocks,
+1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
@@ -137,6 +155,25 @@ Top pin 1 is upper left; numbering is counterclockwise. Bottom mirrors x; PCB
 component view follows top. Test uniqueness, mirror, pitch, EP and pad spans.
 Never independently renumber a view or call EP pin 65.
 
+### QFN64 drawing layout
+
+Reuse publication gold (`#A38442`) for view headings, dimension strokes, extension
+lines and Pin 1. Use light gray for the drawing field, medium gray for copper,
+and dark text for values. Solid outlines, dashed projections, centerlines and
+labels retain their meaning in grayscale. Keep panel width within 172 mm and
+ordinary labels at 9 pt or larger. Apply the scientific renderer to dimension
+subscripts.
+
+Stack both complete pin maps on one page. Place the top and bottom mechanical
+views above the numbered dimensions table and the side view. Derive the table
+and drawing values from the same ADI-backed records. Show the standoff range
+with a blank nominal cell, and distinguish the finished package EP from PCB EP
+copper using their respective tolerances. Give the component-side copper pattern
+its own page and anchor dimension lines to edges or contact centers as applicable.
+Pair solder-mask and paste views above the thermal-via view and assembly notes.
+Put REFERENCE ONLY inside each standalone view and its document caption.
+Export the individual views and the mechanical plate with the shared geometry.
+
 Copper, mask, paste and via layers are separate. Constructed values belong in
 the model catalog and inside standalone vector status labels. Paste coverage
 is total aperture area divided by reference EP area. MSL/reflow, thermal values,
@@ -153,3 +190,30 @@ Tiny now emits paired change markers and their manifest hash for the shared
 change-page report. PLL192/PLL240 are conditional functional R2-P7 profiles. SAFE24 boots with the
 PLL off; runtime switching requires backend capability, digital lock and the
 drain/park/commit protocol. No qualified physical operating rate is implied.
+
+## Scientific formula and quantity typography
+
+Use the shared [scientific display component](../../specifications/scientific.typ) for mathematical powers,
+quantity subscripts and mechanical dimension suffixes. Keep raw formulas,
+coefficients, units, statuses and numerical CSV values machine-readable and
+unchanged; the restricted publication grammar creates inert display tokens
+without evaluating source text. Use a multiplication sign and true exponent
+for arithmetic; distinguish voltage quantities such as V with OH/OL/IO
+subscripts from literal power-pin names such as VDDIO. Only mechanical contexts
+attach D2, E2 and A1 suffixes. Software, register, RTL, pin and protocol
+identifiers, inline code and code blocks retain their exact source spelling.
+
+Native Typst attachments and Matplotlib MathText use the locked Inter font.
+Script size is 70 percent of the surrounding size, with an absolute 6.3 pt
+minimum and a parent size of at least 9 pt. This exception applies only to
+source-attributed script glyphs inside tight measured rectangles; ordinary
+labels and body/table text retain their existing size limits. Never exempt an
+entire formula, chart, page or arbitrary small label. Export the script identity,
+text, role, font size and rectangle in the hashed layout audit. Independent
+SVG/PDF exports keep the same typography and reference-state labels.
+
+Retain scientific-notation.json, plot script metadata, the manifest and the
+normal PDF font checks. Verify raw-source preservation, mechanical/protocol
+context, exponent parsing, managed fonts and rejection of unrelated small text.
+Review changed pages in color and grayscale, including exponent baselines,
+line breaks, table rows and standalone figures, then repeat the offline build.

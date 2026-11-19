@@ -1,19 +1,48 @@
 # Publications
 
-Current edition: **2026-11-14**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**, reviewed dev
-6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87. The main references are Tiny ICS55
-(with explicit IHP130 compatibility) and Mini IHP130 PRODUCT/HP/MPW.
-The two books have independent profiles, manifests and output markers.
+Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
+**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Both books use the technical source reviewed at
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
+IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
+book keeps its own product configuration, manifest and output marker.
+
+The Tiny QFN64 drawing update starts at dev `c6fdcd1f` and compares against the
+455-page Tiny build from the RM0486 comparison. The mechanical plate, copper
+footprint, pin views and assembly views share the current ADI UP64 reference
+records. Tiny uses the `tiny-v02-qfn64-layout-20261119-` change namespace.
+
+The RM0486 comparison starts at dev `3d75177e` and retains the PR #289
+455-page Tiny and 828-page Mini artifacts as the baseline. The round reviews
+all 65 primary and 36 existing detail figures, preserves every declared
+interface, and adds nine source-bound local route details. The
+[drawing standard](ip-block-diagrams.md) defines the 12-crossing limit and
+requires signal-specific labels in each primary and detail. Use
+`python -m publications.review_ip_blocks` with the two baseline and current
+build directories to reproduce the [per-figure comparison](ip-block-rm0486-review.md).
+
+The preceding functional IP drawing round starts at publication dev `80486b9f`, preserving
+the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
+Tiny's 23 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
+shared CeTZ 0.5.2, the `ip-block-v2` style and the
+[IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
+The seven system Circuiteria figures and all other figure families retain
+their design. Both builders export editable data/Typst plus standalone SVG/PDF,
+source fingerprints, geometry/coverage audits and output hashes. Current markers
+are `tiny-v02-ip-review-20261118-` and `v05-ip-review-20261118-`.
+The preceding v1 round started at `4315f7d7` and retained the 439/792-page
+scientific-notation editions. Its [review](ip-block-review.md) is historical.
+The v2 [implementation review](ip-block-detail-review.md) records the frozen
+drawing acceptance and subsequent integration with dev. Use each build's
+structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through dev `b6d538d8`. It binds a full
-commit and each file's blob identity without moving the frozen product SHA.
-The optional `documentation_blobs` mapping accepts only `docs/git-workflow.md`;
-product documents cannot be exempted. Source checks reject later control-file
-edits and all unreviewed RTL/SDK/profile changes. The manifest hashes both
-reviewed files. This is an explicit one-revision review, not an exclusion from
-future source checks.
+Makefile and contribution-policy changes through `f472ccae`. It binds a full
+commit and each file's blob identity independently of the technical source
+snapshot. The optional `documentation_blobs` mapping accepts only
+`docs/git-workflow.md`; product documents cannot be exempted. Source checks
+reject later control-file edits and all unreviewed RTL/SDK/profile changes. The
+manifest hashes both reviewed files. This is an explicit one-revision review,
+not an exclusion from future source checks.
 
 The [shared specification standard](specifications/README.md) owns typed data,
 reference models, source fingerprints, plot/vector export and replacement rules.
@@ -22,7 +51,7 @@ python -m pip install --require-hashes -r requirements/publication.txt before
 using the existing setup/build/check commands. Reference Only examples fill
 structure without becoming released electrical, package or board requirements.
 
-The retained comparison baselines are Tiny 425 pages / SHA-256
+The earlier commercial-reference round retained Tiny 425 pages / SHA-256
 a7816f014c2ba739669cd98df50accace07376d4620ad0eab81c514a7fd4a3d3,
 and Mini 796 pages / SHA-256
 8c20a57949427fa7058a4663bb95e4f864d442154f8093b5318e37a9f825f010.
@@ -60,7 +89,7 @@ now evolve with both books; each hardware collector retains independent coverage
 
 ## Mini datasheet
 
-The current round uses `v05-c906-20261022-` change markers and compares against
+The historical OpenC906 round used `v05-c906-20261022-` change markers and compares against
 the retained 798-page Rill PDF with SHA-256
 `49c3e20e7568e20baaa75f104e71b7e526f33aa7231bed03dbcde5893712da93`.
 Its date and full SHA are in `mini.json`; page-dependent review/validation records
@@ -139,9 +168,9 @@ See the [layout/content standard](datasheets/style.md) for exact geometry,
 emphasis scope and validation requirements. Rebuild all page-dependent records
 after typography changes and retain the previous PDF and actual test verdicts.
 
-The full drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
-circuiteria 0.2.1. All 42 IP chapters and four system hardware figures use
-source-bound circuits. Binary layouts cover descriptors, boot/microcode bundles,
+The retained specialized drawing layer uses bytefield 0.0.8, rivet 0.3.1, blockcell 0.1.0 and
+circuiteria 0.2.1. The 42 IP chapters use source-bound CeTZ circuits; four system
+hardware figures retain Circuiteria. Binary layouts cover descriptors, boot/microcode bundles,
 serial framing and media/crypto packing. APU's seven current instruction classes
 and 62 operations are grouped by format, operand constraints and tool target.
 Storage figures cover architectural FIFOs, line buffers, packet/table/control
@@ -154,8 +183,8 @@ CeTZ 0.5.2. It uses regular 9 pt text for ordinary labels, regular 8 pt text
 inside compact CDC/Gateway cells, and bold 9 pt bus/domain labels. Individually named PRODUCT IP/instance
 rows, external signal groups and explicit Gateway A/B fan-in. AXI32/AXI64
 labels appear only in bus-spine and bridge symbols. Clock-domain backgrounds
-are separate from IP categories. All 46 Circuiteria figures retain their existing
-renderer. The 142 specialized figures include NPU's circuit, three binary layouts
+are separate from IP categories. Only the four system figures retain Circuiteria;
+IP primaries/details use the shared renderer. The prior 142 specialized figures include NPU's circuit, three binary layouts
 and two storage figures.
 
 `soc_diagram_reference.py` checks `datasheets/soc-architecture.json`

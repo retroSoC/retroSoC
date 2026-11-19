@@ -7,6 +7,12 @@ models and Typst components. Product catalogs live in
 Canonical RTL, profiles, topology, pad maps and SDK remain authoritative.
 The data layer neither generates registers nor changes product decisions.
 
+IP primary/detail figures follow the [shared IP drawing standard](../ip-block-diagrams.md).
+Their owned/external boundaries, real instances, conditions, ports and widths
+remain in each existing circuit catalog. Source, geometry, coverage and vector
+hash audits evolve with both books. Those figures do not promote a reference
+coefficient, architectural path or connected interface to qualified hardware.
+
 ## Reading order and navigation
 
 Retain one volume and all existing level-one chapter/IP/register anchors.
@@ -138,3 +144,24 @@ documentation checks, then git diff --check. Run YAML/Actions/regression-definit
 checks if those files change. Preserve failures and unavailable gates.
 Publication checks do not close RTL, synthesis, netlist, CDC/RDC, timing,
 physical, package, board or silicon acceptance.
+
+## Scientific display maintenance
+
+[scientific_reference.py](../scientific_reference.py) collects a restricted,
+source-keyed display registry; [scientific.typ](scientific.typ) renders attached
+scripts. Quantity and power tokens are shared with the Matplotlib exporter.
+Mechanical suffixes require an explicit mechanical context. No display rule
+rewrites calculation formulas, parameter values, evidence states, software
+interfaces or code. Add a reviewed alias only with context and preservation tests.
+
+Ordinary text stays at least 9 pt. Real scripts use 70 percent Inter, minimum
+6.3 pt, with source/role/text identities and tight native or SVG-derived bounds.
+The PDF check accepts only matching script glyphs; it cannot treat a complete
+figure as a small-font exemption. The hashed scientific-notation.json tracks
+rendered sources and pages; characteristics/scientific-scripts.json and
+layout-regions.json retain export and book coordinates. Review every changed
+formula/quantity and its standalone vector, preserve raw model/CSV equality,
+and retain a byte-identical offline repeat build.
+
+Read publication-owned text explicitly as UTF-8; never depend on the host locale
+for mathematical signs or unit symbols. Include a non-UTF-8 locale regression.

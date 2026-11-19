@@ -1,4 +1,5 @@
 """Whole-book diagram coverage, binary structures, operand rules and footer behavior."""
+
 from __future__ import annotations
 
 import copy
@@ -23,7 +24,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture(scope="module")
 def diagrams():
-    return collect_data(read_json(CONFIG), check_snapshot=False)["system_reference"]["illustrations"]
+    return collect_data(read_json(CONFIG), check_snapshot=False)["system_reference"][
+        "illustrations"
+    ]
 
 
 def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
@@ -33,7 +36,9 @@ def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
     assert any(row["anchor"] == "mini-specification-quick" for row in rows)
     expected = inventory(diagrams)
     for row in rows:
-        assert {key: row[key] for key in ("level", "title", "anchor")} == contract["entries"][row["index"]]
+        assert {key: row[key] for key in ("level", "title", "anchor")} == contract["entries"][
+            row["index"]
+        ]
         for category in row["categories"].values():
             assert category["reason"]
             assert set(category["diagrams"]) <= expected.keys()
@@ -42,16 +47,21 @@ def test_every_frozen_chapter_has_explicit_diagram_coverage(diagrams):
     assert len(diagrams["layouts"]) == 41
     assert len(diagrams["storage"]) == 44
     assert len(diagrams["soc_architecture"]) == 1
-    assert len(expected) == 142
+    assert len(expected) == 142 + sum(
+        len(r.get("details", [])) for r in diagrams["circuits"].values()
+    )
     for identifier in contract["ip_ids"]:
         row = next(row for row in rows if row["anchor"] == identifier)
-        assert row["categories"]["circuiteria"]["diagrams"] == ["circuiteria:" + identifier]
+        assert "cetz:" + identifier in row["categories"]["cetz"]["diagrams"]
+        assert not row["categories"]["circuiteria"]["diagrams"]
 
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "unknown", "bad-page"])
 def test_declared_but_unused_or_duplicate_diagrams_fail_build(diagrams, mutation):
-    records = [{**item, "page": index + 1} for index, item in enumerate(inventory(diagrams).values())]
-    assert len(validate_usage(diagrams, records)) == 142
+    records = [
+        {**item, "page": index + 1} for index, item in enumerate(inventory(diagrams).values())
+    ]
+    assert len(validate_usage(diagrams, records)) == len(inventory(diagrams))
     if mutation == "missing":
         records.pop()
     elif mutation == "duplicate":
@@ -80,30 +90,44 @@ def test_all_62_opcodes_have_legal_source_encoded_examples_and_zero_slots(diagra
     control = families[0]
     wait = next(row for row in control["operations"] if row["name"] == "WAIT")
     assert wait["targets"] == "P4/P5"
-    assert next(row for row in families[-1]["operations"] if row["name"] == "EVENT")["active"] == ["predicate", "immediate"]
+    assert next(row for row in families[-1]["operations"] if row["name"] == "EVENT")["active"] == [
+        "predicate",
+        "immediate",
+    ]
 
 
 def test_structures_expand_arrays_and_preserve_mixed_ownership(diagrams):
     apu = diagrams["layouts"]["apu-descriptor"]
     assert len(apu["fields"]) == 32 and apu["bits"] == 1024
-    assert [row["offset"] for row in apu["fields"] if row["member"] == "reserved"] == list(range(96, 128, 4))
-    assert [row["name"] for row in apu["fields"] if row["member"] == "cookie"] == ["cookie[0]", "cookie[1]"]
+    assert [row["offset"] for row in apu["fields"] if row["member"] == "reserved"] == list(
+        range(96, 128, 4)
+    )
+    assert [row["name"] for row in apu["fields"] if row["member"] == "cookie"] == [
+        "cookie[0]",
+        "cookie[1]",
+    ]
     sdio = diagrams["layouts"]["sdio-descriptor"]
     assert sdio["fields"][-1]["role"] == "mixed"
     assert diagrams["layouts"]["hp-bundle-header"]["bits"] == 256
     assert diagrams["layouts"]["hp-bundle-entry"]["bits"] == 192
 
 
-@pytest.mark.parametrize("declaration", ["uint32_t reserved[3];", "uint32_t reserved[0];", "void *reserved;"])
+@pytest.mark.parametrize(
+    "declaration", ["uint32_t reserved[3];", "uint32_t reserved[0];", "void *reserved;"]
+)
 def test_binary_structure_changes_require_review(tmp_path, declaration):
-    (tmp_path / "layout.h").write_text("typedef struct { uint32_t first; " + declaration + " } sample_t;")
+    (tmp_path / "layout.h").write_text(
+        "typedef struct { uint32_t first; " + declaration + " } sample_t;"
+    )
     with pytest.raises(ValueError):
         structure_fields(tmp_path, {"file": "layout.h", "name": "sample_t", "bytes": 12})
 
 
 def test_fifo_geometry_reads_parameters_and_rejects_non_power_of_two(tmp_path):
     file = tmp_path / "fifo_top.sv"
-    file.write_text("module fifo_top; parameter int N = 8; fifo #(.DATA_WIDTH(37), .BUFFER_DEPTH(N)) u_fifo (.dat_i(data)); endmodule")
+    file.write_text(
+        "module fifo_top; parameter int N = 8; fifo #(.DATA_WIDTH(37), .BUFFER_DEPTH(N)) u_fifo (.dat_i(data)); endmodule"
+    )
     store = {"file": "fifo_top.sv", "instance": "u_fifo"}
     assert fifo_geometry(tmp_path, store) == (8, 37)
     assert fifo_geometry(tmp_path, {**store, "parameters": {"N": 32}}) == (32, 37)
@@ -132,26 +156,50 @@ def test_jtag_linker_keeps_init_inside_text_and_bss_without_load_payload():
     assert sections[-1]["initialization"] == "zero"
 
 
-@pytest.mark.parametrize("rows", [
-    [{"base": 16, "bytes": 16}, {"base": 20, "bytes": 4}],
-    [{"base": (1 << 32) - 2, "bytes": 4}],
-    [{"base": -1, "bytes": 8}],
-    [{"base": 0, "bytes": 0}],
-])
+@pytest.mark.parametrize(
+    "rows",
+    [
+        [{"base": 16, "bytes": 16}, {"base": 20, "bytes": 4}],
+        [{"base": (1 << 32) - 2, "bytes": 4}],
+        [{"base": -1, "bytes": 8}],
+        [{"base": 0, "bytes": 0}],
+    ],
+)
 def test_storage_ranges_reject_overlap_overflow_and_invalid_sizes(rows):
     with pytest.raises(ValueError):
         validate_ranges(copy.deepcopy(rows))
 
 
 def test_circuit_direction_is_checked_against_module_declaration(tmp_path):
-    (tmp_path / "wrapper.sv").write_text("module wrapper; src u_src(.data_o(shared)); sink u_sink(.data_i(shared)); endmodule")
+    (tmp_path / "wrapper.sv").write_text(
+        "module wrapper; src u_src(.data_o(shared)); sink u_sink(.data_i(shared)); endmodule"
+    )
     (tmp_path / "src.sv").write_text("module src(\noutput logic [31:0] data_o\n); endmodule")
     (tmp_path / "sink.sv").write_text("module sink(\ninput logic [31:0] data_i\n); endmodule")
-    circuit = {"nodes": [{"id": name, "instance_source": {"file": "wrapper.sv", "name": "u_" + name,
-                 "module": name, "declaration_file": name + ".sv"}} for name in ("src", "sink")],
-               "edges": [{"from": "src.out", "to": "sink.in", "instance_ports": [
-                   {"node": "src", "port": "data_o", "expression": "shared"},
-                   {"node": "sink", "port": "data_i", "expression": "shared"}]}]}
+    circuit = {
+        "nodes": [
+            {
+                "id": name,
+                "instance_source": {
+                    "file": "wrapper.sv",
+                    "name": "u_" + name,
+                    "module": name,
+                    "declaration_file": name + ".sv",
+                },
+            }
+            for name in ("src", "sink")
+        ],
+        "edges": [
+            {
+                "from": "src.out",
+                "to": "sink.in",
+                "instance_ports": [
+                    {"node": "src", "port": "data_o", "expression": "shared"},
+                    {"node": "sink", "port": "data_i", "expression": "shared"},
+                ],
+            }
+        ],
+    }
     validate_instance_connections(tmp_path, circuit)
     (tmp_path / "src.sv").write_text("module src(\ninput logic [31:0] data_o\n); endmodule")
     with pytest.raises(ValueError, match="direction"):
@@ -167,8 +215,13 @@ def test_only_repository_links_in_the_footer_are_global_footer_changes():
         pages = [
             {"/Annots": [Ref({"/A": {"/URI": REPOSITORY_URL}, "/Rect": [54, 15, 230, 28]})]},
             {"/Annots": [Ref({"/A": {"/URI": REPOSITORY_URL}, "/Rect": [54, 300, 230, 315]})]},
-            {"/Annots": [Ref({"/A": {"/URI": REPOSITORY_URL + "/issues"}, "/Rect": [54, 15, 230, 28]})]},
+            {
+                "/Annots": [
+                    Ref({"/A": {"/URI": REPOSITORY_URL + "/issues"}, "/Rect": [54, 15, 230, 28]})
+                ]
+            },
         ]
+
     assert repository_footer_pages(Reader()) == [1]
 
 
@@ -183,16 +236,37 @@ def test_all_descriptor_diagrams_match_c_layout(tmp_path, diagrams):
     for name in ("memory_map.h", "user_extensions.h"):
         (generated / name).write_text("/* No MMIO is executed. */\n")
     layouts = [record for record in diagrams["layouts"].values() if record.get("structure")]
-    includes = sorted({record["structure"]["file"].removeprefix("crt/include/") for record in layouts})
+    includes = sorted(
+        {record["structure"]["file"].removeprefix("crt/include/") for record in layouts}
+    )
     program = "#include <stddef.h>\n" + "".join(f"#include <{header}>\n" for header in includes)
     for record in layouts:
         name = record["structure"]["name"]
         program += f'_Static_assert(sizeof({name}) == {record["bits"] // 8}, "structure size");\n'
         for field in record["fields"]:
             index = field.get("array_index")
-            actual = f"offsetof({name}, {field['member']})" + (f" + {index} * {field['bits'] // 8}" if index is not None else "")
+            actual = f"offsetof({name}, {field['member']})" + (
+                f" + {index} * {field['bits'] // 8}" if index is not None else ""
+            )
             program += f'_Static_assert({actual} == {field["offset"]}, "member offset");\n'
     source = tmp_path / "descriptors.c"
     source.write_text(program + "int main(void) { return 0; }\n")
-    subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "crt/include"),
-                    "-I", str(tmp_path), str(source), "-o", str(tmp_path / "descriptors")], check=True, capture_output=True, text=True)
+    subprocess.run(
+        [
+            cc,
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "crt/include"),
+            "-I",
+            str(tmp_path),
+            str(source),
+            "-o",
+            str(tmp_path / "descriptors"),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )

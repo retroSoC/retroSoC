@@ -1,11 +1,12 @@
 #import "style.typ": *
+#import "../../ip-block-diagrams.typ": ip-block-view
 #import "@preview/bytefield:0.0.8" as bf
 #import "@preview/blockcell:0.1.0" as bc
 #import "@preview/circuiteria:0.2.1" as ce
 #import "@preview/cetz:0.3.4" as c3
 #let diagrams=data.illustrations
 #let blue-gray=rgb("#E7EFF6")
-#let diagram-id(package,id)=if package=="circuiteria" {"circuit-"+id} else if package=="bytefield" {"format-"+id} else {"storage-"+id}
+#let diagram-id(package,id)=if package in ("circuiteria","cetz") {"circuit-"+id} else if package=="bytefield" {"format-"+id} else {"storage-"+id}
 #let diagram-use(package,id)=context {
  let pos=here().position()
  metadata((kind:"tiny-diagram",id:diagram-id(package,id),source_id:id,package:package,page:pos.page,x:pos.x.pt(),y:pos.y.pt()))
@@ -19,7 +20,7 @@
  #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
  #text(size:9pt,fill:muted,body)
 ]
-#let circuit-diagram(id) = block(width:100%,breakable:false)[
+#let legacy-circuit-diagram(id) = block(width:100%,breakable:false)[
   #diagram-use("circuiteria",id)
   #set text(font:"Inter",size:9pt,fill:ink)
   #let circuit=diagrams.circuits.at(id)
@@ -157,10 +158,42 @@
 ]
 
 
-#let circuit-figure(id)=block(width:100%,breakable:false)[
- #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#diagrams.circuits.at(id).title.])
- #label("circuit-"+id)
+#let ip-canvas(record,id)=block(width:100%,breakable:false)[
+ #diagram-use("cetz",id)
+ #ip-block-view(record)
+ #diagram-note[#record.at("clock_note",default:"") #record.note #if record.at("route_detail_links",default:()).len()>0 [
+   Related paths: #record.route_detail_links.map(key=>ref(label("circuit-"+key))).join([, ]).
+ ]]
+ #diagram-end("cetz",id)
 ]
+#let circuit-diagram(id)={
+ let r=diagrams.circuits.at(id)
+ if r.at("renderer",default:"")=="cetz" {ip-canvas(r,id)} else {legacy-circuit-diagram(id)}
+}
+#let circuit-figure(id)={
+ let r=diagrams.circuits.at(id)
+ if r.at("renderer",default:"")=="cetz" {
+  change-start("tiny-v02-ip-review-20261118-ip-block-"+id,r.block_title)
+  block(width:100%,breakable:false)[
+   #show figure.caption: set text(weight:"bold")
+   #figure(ip-canvas(r,id),kind:image,supplement:[Figure],caption:[#r.block_title.])
+   #label("circuit-"+id)
+  ]
+  for d in r.details {
+   block(width:100%,breakable:false)[
+    #show figure.caption: set text(weight:"bold")
+    #figure(ip-canvas(d,d.detail_id),kind:image,supplement:[Figure],caption:[#d.block_title.])
+    #label("circuit-"+d.detail_id)
+   ]
+  }
+  change-end("tiny-v02-ip-review-20261118-ip-block-"+id)
+ } else {
+  block(width:100%,breakable:false)[
+   #figure(legacy-circuit-diagram(id),kind:image,supplement:[Figure],caption:[#r.title.])
+   #label("circuit-"+id)
+  ]
+ }
+}
 #let binary-figures(chapter,section)={
  for (id,r) in diagrams.layouts.pairs().filter(((id,r))=>chapter in r.chapters and r.section==section) {
   if "existing_label" in r {

@@ -322,6 +322,41 @@ def run_command(
     return returncode
 
 
+def delegates_yosys_resume(command: list[str], environment: dict[str, str]) -> bool:
+    if environment.get("YOSYS_OPT_RESUME") != "YES" or not command:
+        return False
+    index = 0
+    if Path(command[index]).name == "timeout":
+        index += 1
+        if index >= len(command) or command[index] != "--foreground":
+            return False
+        index += 1
+        if index >= len(command):
+            return False
+        if command[index] == "--kill-after":
+            index += 2
+        elif command[index].startswith("--kill-after="):
+            index += 1
+        else:
+            return False
+        if index >= len(command):
+            return False
+        index += 1
+    if index + 1 >= len(command) or Path(command[index]).name not in {"python", "python3", Path(sys.executable).name}:
+        return False
+    if Path(command[index + 1]).name != "yosys_opt_resume.py":
+        return False
+    index += 2
+    while index < len(command):
+        if command[index] == "--root":
+            index += 2
+        elif command[index].startswith("--root="):
+            index += 1
+        else:
+            break
+    return index < len(command) and command[index] == "synth"
+
+
 def execute(args: argparse.Namespace, environment: dict[str, str]) -> int:
     command = args.command
     cwd = (args.cwd or Path.cwd()).resolve()
@@ -340,7 +375,7 @@ def execute(args: argparse.Namespace, environment: dict[str, str]) -> int:
     with Lease(lock_path, metadata):
         if previous and previous.get("status") == "running":
             raise RuntimeError(f"another flow still owns the running result: {args.result}")
-        if args.resume and previous:
+        if args.resume and previous and not delegates_yosys_resume(command, environment):
             mismatches = fingerprint_mismatches(previous, fingerprint)
             if mismatches:
                 raise RuntimeError(f"resume fingerprint mismatch: {', '.join(mismatches)}")

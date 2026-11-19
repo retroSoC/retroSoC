@@ -5,16 +5,17 @@
   "brand_name_zh": "清溪",
   "version": "0.2",
   "status": "DRAFT",
-  "date": "2026-11-14",
+  "date": "2026-11-19",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
   "profile": "configs/ci/ics55-tiny.mk",
-  "change_prefix": "tiny-v02-navigation-gap4-20261115-",
+  "change_prefix": "tiny-v02-qfn64-layout-20261119-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",
   "filename": "retrosoc-tiny-gen1-datasheet.pdf",
   "compatibility_profiles": [
     "configs/ci/ihp130-tiny.mk"
-  ]
+  ],
+  "scientific_change_markers": false
 }

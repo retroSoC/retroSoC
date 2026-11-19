@@ -209,7 +209,7 @@ def cache_metadata(values: list[str] | None, label: str) -> dict[str, Any]:
             if number < 0:
                 raise ValueError(f"{label} must not be negative")
             result[name] = number
-        elif label == "cache-key":
+        elif label in {"cache-key", "cache-matched-key"}:
             result[name] = value or None
         else:
             if re.fullmatch(r"[0-9a-f]{64}", value) is None:
@@ -226,6 +226,8 @@ def cache_report(
     digests: list[str] | None = None,
     configs: list[str] | None = None,
     keys: list[str] | None = None,
+    matched_keys: list[str] | None = None,
+    attempted: list[str] | None = None,
 ) -> dict[str, Any]:
     caches = []
     size_values = cache_metadata(sizes, "cache-size")
@@ -233,6 +235,17 @@ def cache_report(
     digest_values = cache_metadata(digests, "cache-digest")
     config_values = cache_metadata(configs, "cache-config-digest")
     key_values = cache_metadata(keys, "cache-key")
+    matched_key_values = cache_metadata(matched_keys, "cache-matched-key")
+    attempted_states = []
+    for item in attempted or []:
+        name, separator, state = item.partition("=")
+        if not name or (separator and state not in {"true", "false"}):
+            raise ValueError(f"invalid cache-attempted observation: {item}")
+        attempted_states.append((name, not separator or state == "true"))
+    attempted_names = {name for name, _ in attempted_states}
+    if len(attempted_names) != len(attempted_states):
+        raise ValueError("cache-attempted names must be unique")
+    attempted_names = {name for name, enabled in attempted_states if enabled}
     for value in values:
         name, separator, state = value.partition("=")
         if not separator or not name:
@@ -240,11 +253,19 @@ def cache_report(
         normalized = state.lower()
         if normalized not in {"", "true", "false"}:
             raise ValueError(f"invalid cache hit state: {value}")
+        status = (
+            "HIT"
+            if normalized == "true"
+            else "MISS"
+            if normalized == "false" or name in attempted_names
+            else "NOT_RUN"
+        )
         caches.append(
             {
                 "name": name,
-                "status": "HIT" if normalized == "true" else "MISS" if normalized == "false" else "NOT_RUN",
+                "status": status,
                 "key": key_values.get(name),
+                "matched_key": matched_key_values.get(name),
                 "bytes": size_values.get(name),
                 "restore_seconds": duration_values.get(name),
                 "sha256": digest_values.get(name),
@@ -258,6 +279,8 @@ def cache_report(
         ("cache-digest", digest_values),
         ("cache-config-digest", config_values),
         ("cache-key", key_values),
+        ("cache-matched-key", matched_key_values),
+        ("cache-attempted", dict.fromkeys(attempted_names, True)),
     ):
         if set(metadata) - names:
             raise ValueError(f"{label} references a cache without a status observation")
@@ -284,6 +307,8 @@ def parse_args() -> argparse.Namespace:
     cache.add_argument("--cache-digest", action="append", default=[])
     cache.add_argument("--cache-config-digest", action="append", default=[])
     cache.add_argument("--cache-key", action="append", default=[])
+    cache.add_argument("--cache-matched-key", action="append", default=[])
+    cache.add_argument("--cache-attempted", action="append", default=[])
     return parser.parse_args()
 
 
@@ -308,6 +333,8 @@ def main() -> int:
                 digests=args.cache_digest,
                 configs=args.cache_config_digest,
                 keys=args.cache_key,
+                matched_keys=args.cache_matched_key,
+                attempted=args.cache_attempted,
             )
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0

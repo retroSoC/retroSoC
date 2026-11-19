@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <retrosoc/core/status.h>
+#include <retrosoc/hal/ppalite.h>
 #include <retrosoc/hal/spi.h>
 
 #define RS_ST7789VI_WIDTH            UINT16_C(320)
@@ -47,11 +48,21 @@ typedef struct {
     uint64_t dma_stall_cycles;
 } rs_st7789vi_dma_measurement_t;
 
+typedef struct {
+    uint32_t frames_per_row;
+    uint32_t payload_bytes_per_row;
+    uint32_t transport_bytes_per_row;
+    bool frame16;
+} rs_st7789vi_frame_layout_t;
+
 uint16_t rs_st7789vi_pattern(uint32_t stage, uint32_t row, uint32_t col);
 rs_status_t rs_st7789vi_window_cells(const rs_st7789vi_window_t *window, uint32_t *pixels,
                                      uint32_t *bytes, uint32_t *words);
 rs_status_t rs_st7789vi_buffer_layout(const rs_st7789vi_window_t *window, uintptr_t source,
                                       uint32_t capacity_bytes, uint32_t *pixels, uint32_t *words);
+rs_status_t rs_st7789vi_frame_layout(const rs_st7789vi_window_t *window,
+                                     const rs_ppalite_frame_t *frame,
+                                     rs_st7789vi_frame_layout_t *layout);
 
 rs_status_t rs_st7789vi_init(uint8_t rotation);
 rs_status_t rs_st7789vi_set_rotation(uint8_t madctl);
@@ -67,5 +78,9 @@ rs_status_t rs_st7789vi_display_buffer(const rs_st7789vi_window_t *window,
                                        rs_dma_session_t *session,
                                        rs_st7789vi_dma_measurement_t *measurement,
                                        rs_timeout_t timeout);
+rs_status_t rs_st7789vi_display_frame(const rs_st7789vi_window_t *window,
+                                      const rs_ppalite_frame_t *frame, rs_dma_session_t *session,
+                                      rs_st7789vi_dma_measurement_t *measurement,
+                                      rs_timeout_t timeout);
 
 #endif

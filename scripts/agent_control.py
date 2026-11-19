@@ -205,7 +205,7 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
         task.get("execution"),
         "execution",
         {"mode", "worktree", "artifact_root"},
-        {"approval"},
+        {"approval", "fixture_profile"},
         issues,
     )
     approval = None
@@ -219,6 +219,8 @@ def validate_task(task: Any, root: Path | None = None) -> list[str]:
             issues.append("execution.artifact_root must be below build/")
         elif not safe_relative_path(artifact_root):
             issues.append("execution.artifact_root must be repository-relative")
+        if execution.get("fixture_profile") not in (None, "hosted-pytest"):
+            issues.append("execution.fixture_profile must be hosted-pytest")
         approval = execution.get("approval")
         if approval is not None:
             approval = check_keys(
@@ -280,6 +282,7 @@ def render_task_prompt(task: dict[str, Any]) -> str:
         f"Forbidden paths: {', '.join(task['scope']['forbidden_paths']) or 'N/A'}",
         f"Non-goals: {', '.join(task['scope']['non_goals']) or 'N/A'}",
         f"Execution: {task['execution']['mode']}",
+        f"Fixture profile: {task['execution'].get('fixture_profile', 'NOT_REQUESTED')}",
         f"Validation: {task['validation']['mode']} / {task['validation']['risk']}",
         f"Profiles: {', '.join(task['validation']['profiles']) or 'N/A'}",
         f"PDKs: {', '.join(task['validation']['pdks']) or 'N/A'}",
@@ -324,6 +327,93 @@ def load_impact(root: Path) -> dict[str, Any]:
         if set(jobs) != set(JOB_NAMES) or any(not isinstance(value, bool) for value in jobs.values()):
             raise ValueError(f"job_policy.{name} must define boolean {JOB_NAMES}")
     return policy
+
+
+ENGINEERING_CONTROL_POLICY = "quality/engineering-control-impact.json"
+ENGINEERING_CONTROL_DISABLED = {
+    "regression_smoke",
+    "regression_ihp130",
+    "regression_gf180",
+    "regression_ics55",
+    "regression_sky130",
+    "development_environment",
+}
+
+
+def load_engineering_control_policy(root: Path) -> dict[str, Any]:
+    policy = read_json(root / ENGINEERING_CONTROL_POLICY)
+    if policy.get("schema_version") != 1 or policy.get("mode") != "shadow":
+        raise ValueError("engineering-control impact policy must be schema v1 shadow mode")
+    allowed = policy.get("allowed_paths")
+    if (
+        not isinstance(allowed, list)
+        or not allowed
+        or any(
+            not isinstance(path, str)
+            or not safe_relative_path(path)
+            or any(character in path for character in "*?[")
+            for path in allowed
+        )
+        or len(set(allowed)) != len(allowed)
+    ):
+        raise ValueError("engineering-control impact requires unique exact safe paths")
+    if {"Makefile", ENGINEERING_CONTROL_POLICY}.intersection(allowed):
+        raise ValueError("engineering-control impact cannot allowlist root or policy controls")
+    if set(policy.get("preserved_flags", [])) != {"quality_fast", "quality_fixtures", "skill_eval"}:
+        raise ValueError("engineering-control impact must preserve quality and Skill checks")
+    if set(policy.get("disabled_flags", [])) != ENGINEERING_CONTROL_DISABLED:
+        raise ValueError("engineering-control impact can only reduce product behavioral jobs")
+    return policy
+
+
+def engineering_control_shadow(root: Path, files: list[str], flags: dict[str, bool]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "mode": "shadow",
+        "policy": ENGINEERING_CONTROL_POLICY,
+        "policy_sha256": None,
+        "status": "FULL_REQUIRED",
+        "authoritative": False,
+        "changes_applied": False,
+        "candidate_flags": dict(flags),
+        "would_skip": [],
+        "would_run": [],
+        "unlisted_paths": [],
+        "issues": [],
+    }
+    try:
+        policy = load_engineering_control_policy(root)
+        result["policy_sha256"] = hashlib.sha256((root / ENGINEERING_CONTROL_POLICY).read_bytes()).hexdigest()
+        allowed = set(policy["allowed_paths"])
+        unlisted = sorted(path for path in files if path not in allowed)
+        if unlisted:
+            result.update(
+                unlisted_paths=unlisted,
+                reason="unlisted paths require full validation",
+            )
+            return result
+        if not files:
+            result.update(status="NOT_NEEDED", reason="no changed files")
+            return result
+        candidate = dict(flags)
+        candidate.update(quality_fast=True, quality_fixtures=True)
+        for name in policy["disabled_flags"]:
+            candidate[name] = False
+        would_skip = sorted(name for name in policy["disabled_flags"] if flags.get(name) is True)
+        if not would_skip:
+            result.update(status="NOT_NEEDED", reason="no full-matrix job would be reduced")
+            return result
+        result.update(
+            status="ELIGIBLE",
+            candidate_flags=candidate,
+            would_skip=would_skip,
+            would_run=sorted(name for name, value in candidate.items() if value),
+            reason="all paths are allowlisted; authoritative flags remain unchanged",
+        )
+    except (KeyError, OSError, TypeError, ValueError) as error:
+        result["issues"].append(str(error))
+        result["reason"] = "shadow policy unavailable or invalid; full validation remains authoritative"
+    return result
 
 
 def classify_files(policy: dict[str, Any], files: list[str]) -> tuple[str, list[dict[str, str]]]:
@@ -403,7 +493,7 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
             "python3 scripts/regress.py --root . --suite pr --pdk IHP130 --behavioral-only "
             "(in Docker and Nix)"
         ]
-    return {
+    plan = {
         "schema_version": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source_revision": git_output(root, "rev-parse", args.head),
@@ -422,6 +512,8 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
             "synthesis_netlist_sta": "NOT_RUN in behavioral jobs; use explicit full-flow evidence"
         },
     }
+    plan["engineering_control_shadow"] = engineering_control_shadow(root, files, flags)
+    return plan
 
 
 def write_github_outputs(plan: dict[str, Any], path: Path) -> None:
@@ -445,7 +537,16 @@ def write_step_summary(plan: dict[str, Any], path: Path) -> None:
     ]
     for name, value in plan["flags"].items():
         lines.append(f"| `{name}` | {'RUN' if value else 'SKIP'} |")
-    lines.extend(["", "Synthesis, netlist and STA remain NOT_RUN in behavioral-only jobs.", ""])
+    shadow = plan["engineering_control_shadow"]
+    lines.extend(
+        [
+            "",
+            f"Engineering-control shadow: `{shadow['status']}`; no authoritative flags changed.",
+            f"Shadow-only candidates (not skipped above): {', '.join(shadow['would_skip']) or 'none'}.",
+            "Synthesis, netlist and STA remain NOT_RUN in behavioral-only jobs.",
+            "",
+        ]
+    )
     with path.open("a", encoding="utf-8") as output:
         output.write("\n".join(lines))
 
@@ -557,6 +658,51 @@ def scope_issues(task: dict[str, Any], files: list[str]) -> list[str]:
     return sorted(set(issues))
 
 
+def staged_scope_check(root: Path, task_path: Path, base: str | None = None) -> dict[str, Any]:
+    root = root.resolve()
+    task = read_json(task_path)
+    issues = validate_task(task, root)
+    result = {
+        "schema_version": 1,
+        "task_id": task.get("task_id"),
+        "status": "BLOCKED",
+        "issues": issues,
+        "mode": "staged-index",
+        "base": base or "HEAD",
+        "diff_base": None,
+        "staged_files": [],
+        "unmerged_paths": [],
+        "read_only": True,
+        "merge_check": "NOT_RUN",
+        "fixture_restore": "NOT_RUN",
+    }
+    if git_output(root, "rev-parse", "--show-toplevel") != str(root):
+        result["issues"] = sorted(set([*issues, f"task root is not the Git worktree root: {root}"]))
+        return result
+    git_output(root, "rev-parse", "--verify", "HEAD^{commit}")
+    if base is not None:
+        if not base or base.startswith("-"):
+            raise ValueError("scope-check base must not be empty or an option")
+        revision = git_output(root, "rev-parse", "--verify", f"{base}^{{commit}}")
+        diff_base = git_output(root, "merge-base", revision, "HEAD")
+    else:
+        diff_base = "HEAD"
+    staged = git_output(root, "diff", "--cached", "--name-only", "--diff-filter=ACMRD", diff_base)
+    unmerged = git_output(root, "diff", "--name-only", "--diff-filter=U")
+    files = sorted({normalize_file(line) for line in staged.splitlines() if line})
+    unmerged_paths = sorted({normalize_file(line) for line in unmerged.splitlines() if line})
+    issues.extend(scope_issues(task, files))
+    issues.extend(f"staged scope check has unmerged paths: {path}" for path in unmerged_paths)
+    result.update(
+        status="BLOCKED" if issues else "READY",
+        issues=sorted(set(issues)),
+        diff_base=diff_base,
+        staged_files=files,
+        unmerged_paths=unmerged_paths,
+    )
+    return result
+
+
 def tiny_snapshot_status(root: Path) -> dict[str, Any]:
     result: dict[str, Any] = {
         "schema_version": 1,
@@ -571,7 +717,7 @@ def tiny_snapshot_status(root: Path) -> dict[str, Any]:
         source_revision = config["source_revision"]
         if not REVISION_RE.fullmatch(source_revision):
             raise ValueError("Tiny source_revision must be a complete reviewed SHA")
-        collected = tiny.collect(config, check_snapshot=False)
+        collected = tiny.collect(config, check_snapshot=False, layout=False)
         technical = sorted(
             path
             for path in collected["source_paths"]
@@ -590,6 +736,50 @@ def tiny_snapshot_status(root: Path) -> dict[str, Any]:
             ),
         )
     except (ImportError, KeyError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        result["issues"].append(str(error))
+    return result
+
+
+def mini_snapshot_status(root: Path, required: bool) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "schema_version": 1,
+        "inventory": "publications/datasheets/mini.json",
+        "system_reference": "publications/datasheets/system-reference.json",
+        "selection": "quality_fixtures",
+        "status": "BLOCKED",
+        "issues": [],
+        "fixture_restore": "NOT_RUN",
+        "managed_inputs": "NOT_REQUESTED",
+        "evidence_boundary": "Source/control and CI metadata only; no full publication, hardware, or release validation",
+    }
+    if not required:
+        result["status"] = "NOT_REQUESTED"
+        return result
+    try:
+        from publications import build_datasheet as mini
+        from publications.dev_reference import validate_ci_snapshot
+
+        config = mini.read_json(root / "publications/datasheets/mini.json")
+        mini.validate_source_snapshot(config)
+        reference = read_json(root / "publications/datasheets/system-reference.json")
+        if reference.get("source_revision") != config["source_revision"]:
+            raise ValueError("Mini system-reference snapshot differs from document snapshot")
+        ci_snapshot = reference.get("ci_snapshot")
+        if not isinstance(ci_snapshot, dict):
+            raise ValueError("Mini CI snapshot is required")
+        validate_ci_snapshot(ci_snapshot, reference["source_revision"])
+        review = config.get("build_control_review")
+        result.update(
+            status="PASS",
+            source_revision=config["source_revision"],
+            control_revision=review.get("revision") if isinstance(review, dict) else None,
+            ci_checked_at=ci_snapshot["checked_at"],
+            ci_run_count=len(ci_snapshot["runs"]),
+        )
+    except (TypeError, ValueError) as error:
+        result["status"] = "FAIL"
+        result["issues"].append(str(error))
+    except (ImportError, KeyError, OSError, subprocess.CalledProcessError) as error:
         result["issues"].append(str(error))
     return result
 
@@ -666,9 +856,32 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         issues.append(f"task root is not the Git worktree root: {root}")
     if task.get("execution", {}).get("mode") == "workspace-write" and not worktree["clean"]:
         issues.append("workspace-write preflight requires a clean worktree before execution")
+    profile_name = task.get("execution", {}).get("fixture_profile")
+    fixture = {"profile": profile_name, "status": "NOT_REQUESTED"}
+    if profile_name is not None:
+        from scripts.fixture_control import doctor, fixture_profile
+
+        verdict = doctor(root, fixture_profile(root, None))
+        fixture = {"profile": profile_name, "status": verdict["status"], "doctor": verdict}
+        issues.extend(f"fixture: {issue}" for issue in verdict["issues"])
+    merge_check = {"status": "NOT_RUN"}
+    merge_ref = getattr(args, "merge_ref", "origin/dev")
+    if getattr(args, "merge_check", False):
+        if worktree["clean"] and worktree["git_root"] == str(root):
+            from scripts.merge_preflight import merge_conflict_scan
+
+            merge_check = merge_conflict_scan(root, merge_ref)
+        else:
+            merge_check = {"status": "SKIPPED", "reason": "merge check requires a clean Git worktree"}
+        if merge_check["status"] == "CONFLICT":
+            issues.append(f"merge check conflicts with {merge_ref}: {', '.join(merge_check['unmerged_paths'])}")
     snapshot = tiny_snapshot_status(root)
     if snapshot["status"] != "PASS":
         issues.append(f"Tiny reviewed-source snapshot is {snapshot['status']}")
+    mini_snapshot = mini_snapshot_status(root, plan["flags"]["quality_fixtures"])
+    if mini_snapshot["status"] not in {"PASS", "NOT_REQUESTED"}:
+        issues.append(f"Mini reviewed-source/control snapshot is {mini_snapshot['status']}")
+    issues.extend(f"mini: {issue}" for issue in mini_snapshot["issues"])
     github = github_preflight(root, args)
     if github["status"] not in {"PASS", "NOT_RUN"}:
         issues.append(f"GitHub preflight is {github['status']}")
@@ -683,8 +896,11 @@ def create_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "dependency_lock_sha256": hashlib.sha256((root / "dependencies/dependencies.lock.json").read_bytes()).hexdigest(),
         "tools": tools,
         "worktree": worktree,
+        "fixture": fixture,
+        "merge_check": merge_check,
         "validation_plan": plan,
         "reviewed_source_snapshot": snapshot,
+        "mini_source_snapshot": mini_snapshot,
         "github": github,
         "known_gaps": gaps["known_gaps"],
         "resolving_gaps": gaps["resolving_gaps"],
@@ -905,6 +1121,12 @@ def parse_args() -> argparse.Namespace:
     snapshot.add_argument("--root", type=Path, default=ROOT)
     snapshot.add_argument("--output", type=Path)
 
+    scope_check = subparsers.add_parser("scope-check")
+    scope_check.add_argument("--root", type=Path, default=ROOT)
+    scope_check.add_argument("--task", type=Path, required=True)
+    scope_check.add_argument("--base")
+    scope_check.add_argument("--output", type=Path)
+
     preflight = subparsers.add_parser("preflight")
     preflight.add_argument("--root", type=Path, default=ROOT)
     preflight.add_argument("--task", type=Path, required=True)
@@ -916,6 +1138,8 @@ def parse_args() -> argparse.Namespace:
     preflight.add_argument("--base-branch", default="dev")
     preflight.add_argument("--pr", type=int)
     preflight.add_argument("--online", action="store_true")
+    preflight.add_argument("--merge-check", action=argparse.BooleanOptionalAction, default=False)
+    preflight.add_argument("--merge-ref", default="origin/dev")
     preflight.add_argument("--output", type=Path)
     return parser.parse_args()
 
@@ -975,6 +1199,12 @@ def main() -> int:
             for issue in result["issues"]:
                 print(f"snapshot: {issue}", file=sys.stderr)
             return int(result["status"] != "PASS")
+        if args.command == "scope-check":
+            result = staged_scope_check(args.root, args.task, args.base)
+            emit_json(result, args.output)
+            for issue in result["issues"]:
+                print(f"scope-check: {issue}", file=sys.stderr)
+            return int(result["status"] != "READY")
         if args.command == "preflight":
             result = create_preflight(args)
             emit_json(result, args.output)

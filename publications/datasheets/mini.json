@@ -5,23 +5,24 @@
   "brand_name_zh": "清溪",
   "version": "0.5",
   "status": "DRAFT",
-  "change_prefix": "v05-navigation-gap4-20261115-",
-  "date": "2026-11-14",
+  "change_prefix": "v05-ip-review-20261118-",
+  "date": "2026-11-18",
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "6f3f3c83e42eab9ce4acfe4afa8093d7e4c7ac87",
+  "source_revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
   "build_control_review": {
-    "revision": "b6d538d86d433aa32fd7ef7706a115be000afa7d",
-    "makefile_blob": "9cee101b2b303127a29c0bc6b75b3b2566a23ef6",
+    "revision": "f472ccae72747adf8ba26883a7e252c419abada0",
+    "makefile_blob": "3252853543989a8105c5c15f9e976e78b96c295d",
     "documentation_blobs": {
-      "docs/git-workflow.md": "c991d57dbea7d14e7e8a54dd1f152120c91abb9c"
+      "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "Reviewed dev synchronization changes only Agent/CI targets, help, check-fast orchestration, and the Git merge-subject policy. Product build rules, RTL, SDK, and profiles remain at the frozen source revision. Each subsequent Makefile or workflow-document change requires a new explicit review."
+    "reason": "The reviewed technical snapshot remains d9f27811; non-product control review advances through f472ccae for a behavior-preserving move of Agent and engineering targets into scripts/mk/agent.mk and a non-authoritative CI shadow plan. The root Makefile only includes the relocated control rules; product build rules, RTL, SDK, hardware profiles and dependency pins are unchanged. Representative dry-run commands are retained as equivalence evidence. Later control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
   "mpw_profile": "configs/cluster/mini-mpw.mk",
   "entrypoint": "publications/datasheets/retroSoC-mini-datasheet.typ",
-  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf"
+  "filename": "retrosoc-mini-gen2-gen2plus-datasheet.pdf",
+  "scientific_change_markers": false
 }

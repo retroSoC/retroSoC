@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,7 +44,7 @@ def trace_for(case: dict) -> dict:
 def test_registry_and_behavior_corpus_are_complete() -> None:
     assert validate_evals(ROOT) == []
     document, cases = load_cases(ROOT)
-    assert len(cases) == 57
+    assert len(cases) == 59
     assert document["defaults"]["read_only"] is True
     assert all(case["prompt"] and case["expected_output"] for case in cases)
     assert all(case["skill_contract_version"] == 1 for case in cases)
@@ -155,11 +157,32 @@ def test_prepare_workspace_isolated_from_later_source_changes(tmp_path: Path) ->
     assert subprocess.check_output(["git", "-C", str(workspace), "branch", "--show-current"], text=True).strip() == "dev"
 
 
+def test_create_workspace_uses_unique_cache_paths_and_rejects_escapes(tmp_path: Path) -> None:
+    from scripts.skill_eval import create_workspace
+
+    first = create_workspace(tmp_path, "design-03")
+    second = create_workspace(tmp_path, "design-03")
+    cache = tmp_path / ".cache/retrosoc/skill-evals"
+    assert first != second
+    assert first.is_relative_to(cache)
+    assert second.is_relative_to(cache)
+    assert not first.is_relative_to(tmp_path / "evidence")
+    with pytest.raises(ValueError, match="case identifier is unsafe"):
+        create_workspace(tmp_path, "../escape")
+
+    linked = tmp_path / "linked"
+    (linked / ".cache/retrosoc").mkdir(parents=True)
+    (linked / ".cache/retrosoc/skill-evals").symlink_to(tmp_path / "outside", target_is_directory=True)
+    with pytest.raises(ValueError, match="stay inside"):
+        create_workspace(linked, "design-03")
+
+
 def test_run_trace_binds_skill_runner_and_input_provenance(tmp_path: Path, monkeypatch) -> None:
     from scripts.skill_eval import input_snapshot_sha256, run_codex
 
     _, cases = load_cases(ROOT)
     case = next(item for item in cases if item["id"] == "design-03")
+    monkeypatch.setattr("scripts.skill_eval.create_workspace", lambda root, case_id: tmp_path.parent / "codex-scratch")
     monkeypatch.setattr("scripts.skill_eval.prepare_workspace", lambda root, workspace: None)
     monkeypatch.setattr("scripts.skill_eval.repo_snapshot", lambda root: [])
     monkeypatch.setattr(
@@ -192,6 +215,8 @@ def test_run_trace_binds_skill_runner_and_input_provenance(tmp_path: Path, monke
     assert trace["input_snapshot_sha256"] == input_snapshot_sha256(case)
     assert trace["workspace_tree"] == "b" * 40
     assert len(trace["skill_entrypoint_sha256"]) == 64
+    assert trace["workspace_disposition"] == "REBUILDABLE_CACHE"
+    assert not Path(trace["workspace"]).is_relative_to(tmp_path)
 
 
 def test_eval_contract_compatibility_and_migration(tmp_path: Path) -> None:
@@ -284,6 +309,7 @@ def test_kimi_trace_binds_runner_profile(tmp_path: Path, monkeypatch) -> None:
         (destination / ".agents").mkdir(parents=True)
         shutil.copy(root / ".agents/skill-eval-agent.md", destination / ".agents/skill-eval-agent.md")
 
+    monkeypatch.setattr("scripts.skill_eval.create_workspace", lambda root, case_id: tmp_path.parent / "kimi-scratch")
     monkeypatch.setattr("scripts.skill_eval.prepare_workspace", workspace)
     monkeypatch.setattr("scripts.skill_eval.repo_snapshot", lambda root: [])
     monkeypatch.setattr(
@@ -305,6 +331,8 @@ def test_kimi_trace_binds_runner_profile(tmp_path: Path, monkeypatch) -> None:
     assert trace["runner_agent_sha256"]
     assert trace["response"]["route"] == "retrosoc-feature-review"
     assert trace["error"] is None
+    assert trace["workspace_disposition"] == "REBUILDABLE_CACHE"
+    assert not Path(trace["workspace"]).is_relative_to(tmp_path)
 
 
 def test_prompt_requires_exact_json_and_budget() -> None:
@@ -320,3 +348,12 @@ def test_prompt_requires_exact_json_and_budget() -> None:
         [{"role": "assistant", "content": "verdict: FAIL\nskills_invoked: []"}]
     )
     assert response == {}
+
+
+def test_engineering_cases_can_be_selected_without_changing_smoke() -> None:
+    _, cases = load_cases(ROOT)
+    args = SimpleNamespace(skill=None, smoke=False, case=["dependency-09", "review-11"])
+    selected = selected_cases(cases, args)
+    assert {case["id"] for case in selected} == {"dependency-09", "review-11"}
+    assert all(case["live"] for case in selected)
+    assert all(not case.get("smoke") for case in selected)

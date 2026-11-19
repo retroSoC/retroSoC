@@ -21,8 +21,11 @@ Use [`../../task.schema.json`](../../task.schema.json) for a durable handoff.
 A task packet carries its schema and task IDs, base revision, targets, exact
 phase and specification when applicable, scope and non-goals, allowed and
 forbidden paths, acceptance criteria, profiles/PDKs, execution permissions,
-approval, worktree, artifacts, status, and evidence. Keep schema definitions in
-Git and run-specific packets below `build/`. Use the optional `resolves_gaps`
+approval, worktree, artifacts, status, and evidence. The optional
+`execution.fixture_profile: hosted-pytest` declares that worktree execution must
+run the complete lock-bound offline fixture restore and that preflight requires
+a READY doctor. Omitting it does not restore large hosted inputs. Keep schema
+definitions in Git and run-specific packets below `build/`. Use the optional `resolves_gaps`
 list only when this task intentionally resolves a named entry in
 `quality/validation-gaps.json`; otherwise do not use it to bypass validation.
 Generate the durable [handoff](../../handoff.schema.json) with the current task
