@@ -169,6 +169,21 @@
       "anchor": "tiny-assembly-reliability"
     },
     {
+      "level": 4,
+      "title": "Carrier Tape Dimensions",
+      "anchor": "tiny-carrier-tape"
+    },
+    {
+      "level": 4,
+      "title": "Reel Dimensions",
+      "anchor": "tiny-reel-dimensions"
+    },
+    {
+      "level": 4,
+      "title": "Reflow Soldering Profile",
+      "anchor": "tiny-reflow-profile"
+    },
+    {
       "level": 3,
       "title": "Minimum System and Board Design Reference",
       "anchor": "tiny-board-reference"

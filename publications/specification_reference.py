@@ -49,7 +49,8 @@ def source_inputs(product: str) -> set[str]:
             "publications/specifications/components.typ", "publications/specifications/figures.typ",
             "requirements/publication.txt"}
     if product == "tiny":
-        inputs.add("publications/datasheets/tiny/package-figures.typ")
+        inputs.update({f"{BOOKS[product]}/sources.json", "publications/datasheets/tiny/package-figures.typ",
+                       "publications/datasheets/tiny/assembly-references.typ"})
     return inputs
 
 
@@ -281,6 +282,8 @@ def collect(root: Path, product: str, base: dict) -> dict:
     parameters = read(root / BOOKS[product] / "parameters.json")
     models = read(root / MODEL_FILE)
     sources = read(root / SOURCE_FILE)
+    if product == "tiny":
+        sources.extend(read(root / BOOKS[product] / "sources.json"))
     authored_id, payload_id = product + ":authored-examples", product + ":payload-model"
     for sid, path, title, locator in (
         (authored_id, f"{BOOKS[product]}/parameters.json", "Authored electrical examples", "absolute, operating, DC and AC record values/conditions"),

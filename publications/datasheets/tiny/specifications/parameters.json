@@ -53,6 +53,18 @@
     {
       "id": "models",
       "title": "Constructed model definitions"
+    },
+    {
+      "id": "carrier-tape",
+      "title": "Carrier tape reference and Tiny release status"
+    },
+    {
+      "id": "reel",
+      "title": "Reel reference and Tiny release status"
+    },
+    {
+      "id": "reflow",
+      "title": "Pb-free reflow reference and Tiny release status"
     }
   ],
   "records": [
@@ -1113,6 +1125,666 @@
       "replacement": "Replace under the same ID with approved product/PDK/package/profile-specific evidence and measured conditions; review all dependent figures.",
       "dependencies": [],
       "model": "pcb"
+    },
+    {
+      "id": "tiny.carrier-tape.pocket-width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Pocket width along feed",
+      "group": "carrier-tape",
+      "unit": "mm",
+      "value": 9.3,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "A0"
+      ],
+      "decimals": 2
+    },
+    {
+      "id": "tiny.carrier-tape.pocket-length",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Pocket length across tape",
+      "group": "carrier-tape",
+      "unit": "mm",
+      "value": 9.3,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "B0"
+      ],
+      "decimals": 2
+    },
+    {
+      "id": "tiny.carrier-tape.pocket-depth",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Pocket depth",
+      "group": "carrier-tape",
+      "unit": "mm",
+      "value": 1.1,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "K0"
+      ],
+      "decimals": 2
+    },
+    {
+      "id": "tiny.carrier-tape.pocket-pitch",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Pitch between pocket centers",
+      "group": "carrier-tape",
+      "unit": "mm",
+      "value": 12.0,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "P1"
+      ],
+      "decimals": 2
+    },
+    {
+      "id": "tiny.carrier-tape.width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Overall tape width",
+      "group": "carrier-tape",
+      "unit": "mm",
+      "value": 16.0,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "W"
+      ],
+      "decimals": 2
+    },
+    {
+      "id": "tiny.carrier-tape.orientation",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Pin 1 orientation",
+      "group": "carrier-tape",
+      "unit": "1",
+      "value": "Q2",
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal. Component side with sprocket holes above the pockets and feed to the right.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.carrier-tape.supplier-drawing",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny tape dimensions, tolerances and orientation",
+      "group": "carrier-tape",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Supplier tape drawing, sprocket geometry and Pin 1 orientation have not been released.",
+      "assumptions": [],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reel.diameter",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Reel outside diameter",
+      "group": "reel",
+      "unit": "mm",
+      "value": 330,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "Ø"
+      ]
+    },
+    {
+      "id": "tiny.reel.width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Reel width across the outer flange faces",
+      "group": "reel",
+      "unit": "mm",
+      "value": 16.4,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "W1"
+      ],
+      "decimals": 1
+    },
+    {
+      "id": "tiny.reel.quantity",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Standard pack quantity (SPQ)",
+      "group": "reel",
+      "unit": "devices/reel",
+      "value": 2000,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-tape-reel"
+      ],
+      "conditions": "TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm body. Dimensions are nominal. Quantity applies to this exact orderable device.",
+      "assumptions": [
+        "Reference geometry for the named TI orderable device."
+      ],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reel.supplier-drawing",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny reel diameter, width and tolerances",
+      "group": "reel",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Tiny supplier packing specification has not been released.",
+      "assumptions": [],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reel.hub",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny hub and arbor bore",
+      "group": "reel",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Tiny supplier packing specification has not been released.",
+      "assumptions": [],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reel.pack-quantity",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny standard pack quantity",
+      "group": "reel",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Tiny supplier packing specification has not been released.",
+      "assumptions": [],
+      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.start-temperature",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Start temperature for time to peak",
+      "group": "reflow",
+      "unit": "°C",
+      "value": 25,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.soak-temperature",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Preheat and soak temperatures",
+      "group": "reflow",
+      "unit": "°C",
+      "value": {
+        "min": 150,
+        "typ": null,
+        "max": 200
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "T_Smin",
+        "T_Smax"
+      ]
+    },
+    {
+      "id": "tiny.reflow.soak-time",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Time in preheat and soak range",
+      "group": "reflow",
+      "unit": "s",
+      "value": {
+        "min": 60,
+        "typ": null,
+        "max": 120
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "t_S"
+      ]
+    },
+    {
+      "id": "tiny.reflow.liquidus-temperature",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Liquidus temperature",
+      "group": "reflow",
+      "unit": "°C",
+      "value": 217,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "T_L"
+      ]
+    },
+    {
+      "id": "tiny.reflow.liquidus-time",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Time at or above liquidus",
+      "group": "reflow",
+      "unit": "s",
+      "value": {
+        "min": 60,
+        "typ": null,
+        "max": 150
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "t_L"
+      ]
+    },
+    {
+      "id": "tiny.reflow.peak-temperature",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Classification peak (body thickness < 1.6 mm)",
+      "group": "reflow",
+      "unit": "°C",
+      "value": 260,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 2. Pb-free package classification for body thickness < 1.6 mm in all listed volume categories.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "T_P"
+      ]
+    },
+    {
+      "id": "tiny.reflow.peak-band",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Window below classification peak",
+      "group": "reflow",
+      "unit": "°C",
+      "value": 5,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.peak-time",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Time within the window below classification peak",
+      "group": "reflow",
+      "unit": "s",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 30
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": [],
+      "symbols": [
+        "t_P"
+      ]
+    },
+    {
+      "id": "tiny.reflow.ramp-up",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Average ramp-up rate (end of soak to peak)",
+      "group": "reflow",
+      "unit": "°C/s",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 3
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.ramp-down",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Average ramp-down rate (peak to upper soak temperature)",
+      "group": "reflow",
+      "unit": "°C/s",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 6
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.time-to-peak",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Time from start temperature to peak",
+      "group": "reflow",
+      "unit": "min",
+      "value": {
+        "min": null,
+        "typ": null,
+        "max": 8
+      },
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "adi-smp-reflow"
+      ],
+      "conditions": "ADI SMP Rev J, Table 3, Pb-free classification and preconditioning.",
+      "assumptions": [
+        "ADI classification example for the stated Pb-free package category."
+      ],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.product-limits",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny package reflow limits",
+      "group": "reflow",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "Tiny peak, time/rate limits and cycle count require package qualification.",
+      "assumptions": [],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reflow.board-profile",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny board-level reflow process",
+      "group": "reflow",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "A profile requires the released package, PCB stackup, solder paste and measured body temperature.",
+      "assumptions": [],
+      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "dependencies": []
     }
   ],
   "errata": [

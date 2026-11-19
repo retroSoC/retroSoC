@@ -26,10 +26,14 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
             "qfn-mask": 'qfn-layer(s,"mask")',
             "qfn-paste": 'qfn-layer(s,"paste")',
             "qfn-vias": 'qfn-layer(s,"vias")',
+            "qfn-carrier-tape": 'carrier-tape(s)',
+            "qfn-reel": 'reel(s)',
+            "qfn-reflow": 'reflow(s)',
         })
     text = '#import "/publications/specifications/figures.typ": *\n'
     if spec["product"] == "tiny":
         text += '#import "/publications/datasheets/tiny/package-figures.typ": *\n'
+        text += '#import "/publications/datasheets/tiny/assembly-references.typ": carrier-tape, reel, reflow\n'
     text += ('#set page(width:auto,height:auto,margin:4mm)\n'
             '#set text(font:"Inter",size:9pt,weight:"regular")\n'
             '#let s=json(sys.inputs.at("data")).specifications\n'
