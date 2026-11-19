@@ -6,6 +6,11 @@ Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
+The Tiny carrier tape, reel and Pb-free reflow references start at dev `33c61f9a`
+and compare against the 452-page QFN64 drawing build. The three plates and
+their parameter tables use the [Tiny source catalog](datasheets/tiny/specifications/sources.json)
+and the `tiny-v02-qfn64-assembly-20261119-` change namespace.
+
 The Tiny QFN64 drawing update starts at dev `c6fdcd1f` and compares against the
 455-page Tiny build from the RM0486 comparison. The mechanical plate, copper
 footprint, pin views and assembly views share the current ADI UP64 reference
