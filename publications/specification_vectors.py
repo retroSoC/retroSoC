@@ -18,16 +18,19 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
     }
     if spec["product"] == "tiny":
         expressions.update({
-            "qfn-top": 'qfn-view(s,"Top")',
-            "qfn-bottom": 'qfn-view(s,"Bottom",dimensions:true)',
+            "qfn-top": 'qfn-pin-view(s,"top")',
+            "qfn-bottom": 'qfn-pin-view(s,"bottom")',
             "qfn-side": 'qfn-side(s)',
-            "qfn-copper": 'pcb-view(s,"copper")',
-            "qfn-mask": 'pcb-view(s,"mask")',
-            "qfn-paste": 'pcb-view(s,"paste")',
-            "qfn-vias": 'pcb-view(s,"thermal vias")',
+            "qfn-mechanical": 'qfn-mechanical(s)',
+            "qfn-copper": 'qfn-copper(s)',
+            "qfn-mask": 'qfn-layer(s,"mask")',
+            "qfn-paste": 'qfn-layer(s,"paste")',
+            "qfn-vias": 'qfn-layer(s,"vias")',
         })
-    text = ('#import "/publications/specifications/figures.typ": *\n'
-            '#set page(width:auto,height:auto,margin:4mm)\n'
+    text = '#import "/publications/specifications/figures.typ": *\n'
+    if spec["product"] == "tiny":
+        text += '#import "/publications/datasheets/tiny/package-figures.typ": *\n'
+    text += ('#set page(width:auto,height:auto,margin:4mm)\n'
             '#set text(font:"Inter",size:9pt,weight:"regular")\n'
             '#let s=json(sys.inputs.at("data")).specifications\n'
             '#let view=sys.inputs.at("figure")\n')

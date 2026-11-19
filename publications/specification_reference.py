@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 import csv
+from decimal import Decimal
 import hashlib
 import json
 import math
@@ -40,13 +41,16 @@ def write(path: Path, value) -> None:
 
 
 def source_inputs(product: str) -> set[str]:
-    return {SOURCE_FILE, MODEL_FILE, f"{BOOKS[product]}/parameters.json",
+    inputs = {SOURCE_FILE, MODEL_FILE, f"{BOOKS[product]}/parameters.json",
             "publications/specification_reference.py", "publications/specification_plots.py",
             "publications/specification_vectors.py", "publications/scientific_reference.py",
             "publications/specifications/scientific.typ", "tests/test_publication_scientific.py",
             "publications/review_datasheet.py", "tests/test_publication_specifications.py",
             "publications/specifications/components.typ", "publications/specifications/figures.typ",
             "requirements/publication.txt"}
+    if product == "tiny":
+        inputs.add("publications/datasheets/tiny/package-figures.typ")
+    return inputs
 
 
 def validate_sources(sources: list[dict], root: Path) -> None:
@@ -179,20 +183,81 @@ def qfn_geometry(parameters: dict[str, float], pins: list[dict]) -> dict:
     if len(pins) != 64 or {r["pin"] for r in pins} != set(range(1, 65)):
         raise ValueError("QFN64 must have exactly 64 unique perimeter pins")
     pitch, body = parameters["pitch"], parameters["body"]
+    lead_width, lead_length = parameters["lead_width"], parameters["lead_length"]
+    pad_width, pad_length = parameters["pad_width"], parameters["pad_length"]
+    inner, outer = parameters["pad_inner"], parameters["pad_outer"]
+    ep, pad_ep = parameters["ep"], parameters["pad_ep"]
+    if pitch <= 0 or not 0 < lead_width < pitch or not 0 < pad_width < pitch:
+        raise ValueError("overlapping QFN perimeter contacts")
+    if not 0 < parameters["chamfer"] < ep / 2 or ep >= body - 2 * lead_length:
+        raise ValueError("invalid QFN exposed-pad geometry")
+    if not 0 < pad_ep < inner < outer or not math.isclose(outer - inner, 2 * pad_length, abs_tol=1e-9):
+        raise ValueError("inconsistent copper pad geometry")
+
     result = []
+    land_offset = (outer + inner) / 4 - body / 2
     for p in sorted(pins, key=lambda p: p["pin"]):
         side, n = divmod(p["pin"] - 1, 16)
         offset = (n - 7.5) * pitch
         x, y = [(-body / 2, -offset), (offset, -body / 2),
                 (body / 2, offset), (-offset, body / 2)][side]
-        result.append({**p, "side": side, "top": [x, y], "bottom": [-x, y], "pcb": [x, y]})
-    if parameters["ep"] >= body - 2 * parameters["lead_length"]:
-        raise ValueError("EP overlaps perimeter terminals")
-    if parameters["pad_width"] >= pitch or not math.isclose(
-            parameters["pad_outer"] - parameters["pad_inner"], 2 * parameters["pad_length"], abs_tol=1e-9):
-        raise ValueError("inconsistent copper pad geometry")
+        nx, ny = [(-1, 0), (0, -1), (1, 0), (0, 1)][side]
+        tx, ty = x - nx * lead_length / 2, y - ny * lead_length / 2
+        lw, lh = (lead_length, lead_width) if nx else (lead_width, lead_length)
+        pw, ph = (pad_length, pad_width) if nx else (pad_width, pad_length)
+        result.append({**p, "side": side, "top": [x, y], "bottom": [-x, y], "pcb": [x, y],
+                       "top_terminal": [tx, ty, lw, lh], "bottom_terminal": [-tx, ty, lw, lh],
+                       "land": [x + nx * land_offset, y + ny * land_offset, pw, ph]})
     return {"pins": result, "ep": {"name": "EP", "pin": None, "top": [0, 0], "bottom": [0, 0]},
-            "dimensions": parameters, "units": "mm", "status": "reference"}
+            "dimensions": parameters, "units": "mm", "status": "reference",
+            "land_row_span": f"{Decimal(str(pitch)) * 15:.2f}"}
+
+
+def qfn_measurement(record: dict) -> dict:
+    """Render the catalog value and tolerance at the drawing's precision."""
+    value = Decimal(str(record["value"]))
+    tolerance = record["tolerance"]
+    nominal = f"{value:.2f}"
+    minimum = maximum = None
+    if tolerance.startswith("+/-"):
+        delta = Decimal(tolerance.removeprefix("+/-"))
+        minimum, maximum = f"{value - delta:.2f}", f"{value + delta:.2f}"
+        label = f"{nominal} ± {delta:.2f}"
+    elif ".." in tolerance:
+        low, high = map(Decimal, tolerance.split(".."))
+        if not low <= high == value:
+            raise ValueError(f"QFN limit disagrees with {record['id']}")
+        minimum, maximum, nominal = f"{low:.2f}", f"{high:.2f}", None
+        label = f"{minimum}–{maximum}"
+    elif tolerance in {"BSC", "REF", "drawing nominal"}:
+        nominal = {"BSC": f"{nominal} BSC", "REF": f"{value:.3f} REF", "drawing nominal": nominal}[tolerance]
+        label = nominal
+    else:
+        raise ValueError(f"unknown QFN tolerance for {record['id']}")
+    return {"id": record["id"], "min": minimum, "nom": nominal, "max": maximum, "label": label}
+
+
+def qfn_assembly(dimensions: dict, models: dict) -> dict:
+    """Check nominal fit of the separate assembly overlays on the copper pattern."""
+    pcb, paste = models["pcb"], models["paste"]
+    expansion = pcb["mask_expansion_mm"]
+    web = dimensions["pitch"] - dimensions["pad_width"] - 2 * expansion
+    ep_gap = (dimensions["pad_inner"] - dimensions["pad_ep"]) / 2 - 2 * expansion
+    if expansion < 0 or min(web, ep_gap) <= 0:
+        raise ValueError("QFN solder mask openings overlap")
+
+    aperture, gap = paste["aperture_mm"], paste["gap_mm"]
+    counts = (paste["count_x"], paste["count_y"])
+    if (min(aperture, gap, paste["stencil_mm"]) <= 0 or min(counts) < 1
+            or max(n * aperture + (n - 1) * gap for n in counts) > dimensions["pad_ep"]):
+        raise ValueError("QFN paste windows do not fit the exposed-pad copper")
+
+    drill, land, pitch = pcb["via_drill_mm"], pcb["via_land_mm"], pcb["via_pitch_mm"]
+    span = (pcb["via_grid"] - 1) * pitch + land
+    if not (0 < drill < land < pitch and pcb["via_grid"] >= 1 and span <= dimensions["pad_ep"]):
+        raise ValueError("QFN thermal vias do not fit the exposed-pad copper")
+    return {"mask_web_mm": round(web, 6), "mask_ep_gap_mm": round(ep_gap, 6), "via_span_mm": span,
+            "paste_coverage_percent": math.prod(counts) * aperture ** 2 / dimensions["ep"] ** 2 * 100}
 
 
 def _record(product, profiles, key, meaning, group, unit, value, status, evidence, sources,
@@ -367,7 +432,8 @@ def collect(root: Path, product: str, base: dict) -> dict:
         item["source_revision"] = config["source_revision"]
     spec["source_paths"] = sorted(set(spec["source_paths"]) | {p for e in spec["errata"] for p in e["sources"]})
     if product == "tiny":
-        values = {r["id"].removeprefix("tiny.package."): r["value"] for r in records if r["group"] == "mechanical"}
+        mechanical = {r["id"].removeprefix("tiny.package."): r for r in records if r["group"] == "mechanical"}
+        values = {key: record["value"] for key, record in mechanical.items()}
         perimeter = [dict(pin=int(row[i]), name=row[i + 1]) for row in base["package"] for i in (0, 2)]
         for pin in perimeter:
             name = pin["name"]
@@ -389,8 +455,9 @@ def collect(root: Path, product: str, base: dict) -> dict:
             elif name in {"XIN", "RESET_N", "JTAG_TCK", "JTAG_TMS", "JTAG_TDI", "JTAG_TRST_N"}:
                 pin.update(direction="I", reset="External input", limitation="Digital input role; electrical bias and bonding TBD")
         spec["qfn"] = qfn_geometry(values, perimeter)
-        paste_area = models["paste"]["count_x"] * models["paste"]["count_y"] * models["paste"]["aperture_mm"] ** 2
-        spec["paste_coverage_percent"] = paste_area / values["ep"] ** 2 * 100
+        spec["qfn"]["measurements"] = {key: qfn_measurement(record) for key, record in mechanical.items()}
+        spec["qfn"]["assembly"] = qfn_assembly(values, models)
+        spec["paste_coverage_percent"] = spec["qfn"]["assembly"]["paste_coverage_percent"]
     spec["datasets"] = datasets(spec)
     for r in spec["records"]:
         if r["id"].endswith(".model.current"):

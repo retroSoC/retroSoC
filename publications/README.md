@@ -1,10 +1,15 @@
 # Publications
 
-Current edition: **2026-11-18**, Tiny **v0.2 DRAFT / Gen1** and Mini
-**v0.5 DRAFT / Gen2/Gen2+**. Both books use the technical source reviewed at
+Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
+**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Both books use the technical source reviewed at
 `d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
+
+The Tiny QFN64 drawing update starts at dev `c6fdcd1f` and compares against the
+455-page Tiny build from the RM0486 comparison. The mechanical plate, copper
+footprint, pin views and assembly views share the current ADI UP64 reference
+records. Tiny uses the `tiny-v02-qfn64-layout-20261119-` change namespace.
 
 The RM0486 comparison starts at dev `3d75177e` and retains the PR #289
 455-page Tiny and 828-page Mini artifacts as the baseline. The round reviews

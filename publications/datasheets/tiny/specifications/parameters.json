@@ -839,6 +839,29 @@
       "tolerance": "+/-0.05"
     },
     {
+      "id": "tiny.package.lead_height",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk"
+      ],
+      "meaning": "Terminal thickness A3",
+      "group": "mechanical",
+      "unit": "mm",
+      "value": 0.2,
+      "status": "reference",
+      "evidence": "reference-model",
+      "sources": [
+        "adi-up64"
+      ],
+      "conditions": "ADI UP64 05-08-1705 Rev C p1, side view, 0.200 REF.",
+      "assumptions": [
+        "A3 denotes the reference dimension in the side view."
+      ],
+      "replacement": "Replace under the same ID after approval of the Tiny supplier outline.",
+      "dependencies": [],
+      "tolerance": "REF"
+    },
+    {
       "id": "tiny.package.lead_length",
       "product": "tiny",
       "profiles": [

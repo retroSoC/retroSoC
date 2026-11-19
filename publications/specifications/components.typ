@@ -30,14 +30,6 @@
     if selected.len()==0 {continue}
     let title=spec.groups.find(g=>g.id==group)
     let title=if title==none {group} else {title.title}
-    if group=="mechanical" {
-      render("spec-mechanical-reference",[QFN64 reference dimensions - REFERENCE ONLY],
-        ([Dimension - REFERENCE ONLY],[Nominal / bound],[Tolerance / qualifier]),
-        selected.map(r=>(use-record(r,scientific.render(r.meaning,spec.scientific,mechanical:true)),[#number(r.value) mm],r.at("tolerance",default:"See source drawing"))),
-        widths:(1.7fr,0.8fr,1.5fr),
-        notes:[REFERENCE ONLY. ADI UP64 05-08-1705 Rev C p1; all dimensions in millimeters. BSC is a basic dimension. Tiny outline, bonding, pad metallurgy and supplier approval remain pending.])
-      continue
-    }
     let rows=selected.map(r=>{
       let scaled=r.unit=="Hz" and type(r.value) in (int,float)
       let unit=if scaled {"MHz"} else {r.unit}

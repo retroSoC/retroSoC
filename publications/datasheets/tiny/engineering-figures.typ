@@ -173,7 +173,7 @@
 #let circuit-figure(id)={
  let r=diagrams.circuits.at(id)
  if r.at("renderer",default:"")=="cetz" {
-  change-start(doc.change_prefix+"ip-block-"+id,r.block_title)
+  change-start("tiny-v02-ip-review-20261118-ip-block-"+id,r.block_title)
   block(width:100%,breakable:false)[
    #show figure.caption: set text(weight:"bold")
    #figure(ip-canvas(r,id),kind:image,supplement:[Figure],caption:[#r.block_title.])
@@ -186,7 +186,7 @@
     #label("circuit-"+d.detail_id)
    ]
   }
-  change-end(doc.change_prefix+"ip-block-"+id)
+  change-end("tiny-v02-ip-review-20261118-ip-block-"+id)
  } else {
   block(width:100%,breakable:false)[
    #figure(legacy-circuit-diagram(id),kind:image,supplement:[Figure],caption:[#r.title.])

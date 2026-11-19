@@ -1,6 +1,8 @@
 #import "../style.typ": *
-#import "../../../specifications/components.typ": parameters, pin-table, characteristics, reference-notice
-#import "../../../specifications/figures.typ": visual, qfn-view, qfn-side, pcb-view, connection, board-circuit
+#import "../../../specifications/components.typ": parameters, characteristics, reference-notice
+#import "../../../specifications/figures.typ": visual, connection, board-circuit
+#import "../package-figures.typ": qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
+#let spec = data.specifications
 
 == Packaging <tiny-pins>
 QFN64 is the confirmed Tiny product package family: 48 signal terminals and 16 perimeter power/ground terminals.
@@ -14,10 +16,12 @@ The target table is not an implemented bond map.
   data.specifications.qfn.pins.map(p=>(str(p.pin),p.function,p.gpio_mode,p.direction,p.reset,p.bias,p.limitation)),
   widths:(0.35fr,1.65fr,0.65fr,0.45fr,0.75fr,0.85fr,1.1fr),
   notes:[Directions and reset logic describe the current digital function where known. XOUT, BOOT_MODE and TEST_MODE remain unbound targets. All physical pad limits, bond mapping and electrical reset bias remain separate/TBD.])
-#visual(data.specifications,"qfn-top",qfn-view(data.specifications,"Top"),
-  [Tiny QFN64 top view and pin numbering. Numbers follow the target table; geometry is a reference outline.])
-#visual(data.specifications,"qfn-bottom",qfn-view(data.specifications,"Bottom",dimensions:true),
-  [Tiny QFN64 bottom view and exposed pad; mirrored from the top coordinate model.])
+#block(breakable: false, width: 100%)[
+  #change-start(doc.change_prefix + "pin-numbering", "QFN64 top and bottom pin numbering")
+  #visual(spec, "qfn-top", qfn-pin-view(spec, "top"), [QFN64 top view and projected terminal numbering])
+  #visual(spec, "qfn-bottom", qfn-pin-view(spec, "bottom"), [QFN64 bottom view and unnumbered exposed pad])
+  #change-end(doc.change_prefix + "pin-numbering")
+]
 
 #ds-table("target-binding",[Target signals versus RTL and physical binding],
   ([Target signal],[Current digital connection],[Physical status / restriction]),(
@@ -52,27 +56,44 @@ Stop/drain the old producer, disable output enables and release ownership before
 I2C needs external pull-ups and compatible levels. DVP, I2S, PWM, SPI and display routes share GPIO.
 Boot XPI and JTAG use dedicated target groups.
 
+#pagebreak(weak: true)
+#change-start(doc.change_prefix + "package-drawings", "QFN64 mechanical outline, footprint and assembly layers")
 === Package Dimensions, Reflow and Reliability
-#reference-notice[The preferred 9 × 9 mm / 0.5 mm pitch planning outline is redrawn from
-ADI UP64, 05-08-1705 Rev C, using one dimension set. It is not the Tiny manufacturing drawing.
-Every mechanical, land-pattern and assembly number below is Reference Only.]
-#parameters(data.specifications,"mechanical",ds-table)
-#visual(data.specifications,"qfn-side",qfn-side(data.specifications),[QFN64 side view and seating plane.])
-#visual(data.specifications,"qfn-copper",pcb-view(data.specifications,"copper"),[Copper land pattern, component-side view.])
-#visual(data.specifications,"qfn-mask",pcb-view(data.specifications,"mask"),[Solder-mask openings; expansion is a fabrication example.])
-#visual(data.specifications,"qfn-paste",pcb-view(data.specifications,"paste"),[Paste windows and calculated exposed-pad coverage.])
-#visual(data.specifications,"qfn-vias",pcb-view(data.specifications,"thermal vias"),[Exposed-pad via array; fabrication approval pending.])
+==== Package Outline and Mechanical Dimensions <tiny-package-outline>
+The preferred planning outline and terminal pitch follow the reference geometry in
+#link("https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-qfn/qfn_64_05-08-1705.pdf")[ADI UP64 05-08-1705 Rev C].
+Supplier outline, bond map and pad metallurgy approval remain pending.
+#visual(spec, "qfn-mechanical", qfn-mechanical(spec, numbered: true), [QFN64 mechanical outline], kind: image)
 
-Paste coverage = aperture count × aperture area / nominal rectangular EP bounding area.
-This illustration excludes the small chamfer/radii from its area denominator; it is not a process guarantee.
-Review stencil release, solder loss into vias, voiding, coplanarity and board finish with the assembler.
-Mask, paste and copper are separate layers. Filled/capped vias or another approved solder-loss treatment may be needed.
-EP supplements perimeter grounds. Thermal resistance, MSL, bake/reflow peaks and reliability remain TBD.
+#pagebreak(weak: true)
+==== Recommended PCB Footprint <tiny-pcb-footprint>
+The component-side copper pattern follows the top-view pin numbering. The land-pattern tolerances
+apply to the copper dimensions shown. Fabrication dimensions require approval for the selected package.
+#visual(spec, "qfn-copper", qfn-copper(spec), [QFN64 copper land pattern])
+
+#pagebreak(weak: true)
+==== Assembly Layers and Reliability <tiny-assembly-reliability>
+#grid(columns: (84mm, 84mm), column-gutter: 4mm, row-gutter: 3mm,
+  visual(spec, "qfn-mask", qfn-layer(spec, "mask"), [QFN64 solder-mask openings]),
+  visual(spec, "qfn-paste", qfn-layer(spec, "paste"), [QFN64 solder-paste windows]),
+  visual(spec, "qfn-vias", qfn-layer(spec, "vias"), [QFN64 exposed-pad thermal vias]),
+  block(width: 84mm, inset: (x: 3mm, y: 4mm))[
+    #set text(size: 9pt)
+    *Assembly review* #linebreak()
+    Paste coverage is the total aperture area divided by the nominal rectangular package EP area.
+    The calculation uses the full bounding square. Review stencil release, solder loss into vias,
+    voiding, coplanarity and board finish with the assembler. Confirm via fill, capping or another
+    approved solder-loss treatment with the fabricator. EP supplements perimeter grounds.
+  ],
+)
+
+Thermal resistance, MSL, bake/reflow peaks and reliability remain TBD.
 #parameters(data.specifications,"thermal",ds-table)
 #parameters(data.specifications,"assembly",ds-table)
 Assembly organization follows
 #link("https://www.analog.com/en/resources/app-notes/smt-assembly-and-pcb-design-guidelines-for-maxims-standard-wirebonded-quad-flatpack.html")[ADI's QFN assembly guidance].
 The selected supplier and assembler must release the final process.
+#change-end(doc.change_prefix + "package-drawings")
 
 === Minimum System and Board Design Reference <tiny-board-reference>
 #visual(data.specifications,"board-minimum",connection(data.specifications,"minimum"),[Minimum-system topology with external 24 MHz XIN.])
