@@ -727,10 +727,12 @@ rs_status_t rs_piolite_dma_bind(rs_piolite_session_t *session, rs_piolite_dma_di
                                 uint32_t word_count) {
 #ifdef RS_PIOLITE_PRESENT
     rs_piolite_dma_t *dma;
+    rs_piolite_session_t *other;
     rs_dma_config_t config = {0};
     uint32_t bytes;
     uint32_t bind;
     uint32_t offset;
+    bool bind_written = false;
     rs_status_t result = rs_piolite_claim_check(session, true);
 
     if ((result != RS_OK) || (lease == NULL) ||
@@ -755,12 +757,18 @@ rs_status_t rs_piolite_dma_bind(rs_piolite_session_t *session, rs_piolite_dma_di
     if (!rs_piolite_lock()) {
         return RS_EBUSY;
     }
+    other = rs_piolite_sessions[session->sm ^ 1U];
+    offset = (direction == RS_PIOLITE_DMA_TX) ? RS_PIOLITE_ABI_APB4_TX_BIND
+                                              : RS_PIOLITE_ABI_APB4_RX_BIND;
+    bind = RS_PIOLITE_REG(offset);
     result = rs_piolite_claim_check(session, true);
     if ((result != RS_OK) || session->started || session->closing || dma->bound || dma->acquired ||
         (session->dma[(direction == RS_PIOLITE_DMA_TX) ? RS_PIOLITE_DMA_RX : RS_PIOLITE_DMA_TX]
              .bound &&
          (session->dma[(direction == RS_PIOLITE_DMA_TX) ? RS_PIOLITE_DMA_RX : RS_PIOLITE_DMA_TX]
               .lease->channel == lease->channel)) ||
+        (((bind & RS_PIOLITE_BIND_ENABLE) != 0U) && ((bind & 1U) != session->sm)) ||
+        ((other != NULL) && (other->dma[direction].bound || other->dma[direction].acquired)) ||
         ((RS_PIOLITE_SM_REG(session->sm, RS_PIOLITE_ABI_APB4_SM_STATUS) & UINT32_C(7)) !=
          RS_PIOLITE_ABI_STATE_DISABLED)) {
         rs_piolite_unlock();
@@ -789,9 +797,8 @@ rs_status_t rs_piolite_dma_bind(rs_piolite_session_t *session, rs_piolite_dma_di
     config.burst_beats = 1U;
     result = rs_dma_session_configure(lease, &config);
     bind = RS_PIOLITE_BIND_ENABLE | session->sm | (lease->channel << 8U);
-    offset = (direction == RS_PIOLITE_DMA_TX) ? RS_PIOLITE_ABI_APB4_TX_BIND
-                                              : RS_PIOLITE_ABI_APB4_RX_BIND;
     if (result == RS_OK) {
+        bind_written = true;
         RS_PIOLITE_REG(offset) = bind;
 #ifdef RS_PIOLITE_TEST_MMIO
         extern void rs_piolite_test_bind_write(uint32_t command);
@@ -808,10 +815,12 @@ rs_status_t rs_piolite_dma_bind(rs_piolite_session_t *session, rs_piolite_dma_di
         dma->bound = true;
     } else {
         session->closing = true;
-        RS_PIOLITE_REG(offset) = 0U;
-        if (RS_PIOLITE_REG(offset) != 0U) {
-            rs_piolite_unlock();
-            return RS_EIO;
+        if (bind_written) {
+            RS_PIOLITE_REG(offset) = 0U;
+            if (RS_PIOLITE_REG(offset) != 0U) {
+                rs_piolite_unlock();
+                return RS_EIO;
+            }
         }
         if ((rs_dma_session_abort_wait(lease, 1U) == RS_OK) &&
             (rs_dma_session_reset(lease) == RS_OK) && (rs_dma_session_release(lease) == RS_OK)) {

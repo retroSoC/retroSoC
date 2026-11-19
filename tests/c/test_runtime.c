@@ -4197,9 +4197,18 @@ static int test_piolite_gpio_handoff(void) {
         return 3;
     }
     rs_gpio_test_mmio[UINT32_C(0x78) / 4U] = 0U;
+    rs_gpio_test_mmio[UINT32_C(0x24) / 4U] = 1U;
     rs_gpio_test_mmio[UINT32_C(0x14) / 4U] = 1U;
     rs_gpio_test_mmio[UINT32_C(0x5C) / 4U] = 1U;
     rs_gpio_test_mmio[UINT32_C(0x6C) / 4U] = 1U;
+    if ((rs_tiny_gpio_user_acquire(1U, 1U) != RS_ENOTSUP) ||
+        (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 0U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x14) / 4U] != 1U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x5C) / 4U] != 1U) ||
+        (rs_gpio_test_mmio[UINT32_C(0x6C) / 4U] != 1U)) {
+        return 11;
+    }
+    rs_gpio_test_mmio[UINT32_C(0x24) / 4U] = 0U;
     gpio_handoff_stall = true;
     if ((rs_tiny_gpio_user_acquire(1U, 1U) != RS_ETIMEOUT) ||
         (rs_gpio_test_mmio[UINT32_C(0x3C) / 4U] != 0U) ||
@@ -4390,10 +4399,36 @@ static int test_piolite_hal(void) {
     RS_DMA_CH_REG(3U, RS_DMA_CH_REG_REMAINING) = 0U;
     TEST_PIOLITE_SM_REG(0U, RS_PIOLITE_ABI_APB4_SM_STATUS) = RS_PIOLITE_ABI_STATE_HALTED;
     if ((rs_tiny_piolite_wait_done(&session, 1U) != RS_OK) ||
-        (rs_tiny_piolite_disable(&session) != RS_OK) ||
-        (rs_tiny_piolite_dma_unbind(&session, RS_PIOLITE_DMA_TX) != RS_OK) ||
-        session.dma[RS_PIOLITE_DMA_TX].acquired) {
+        (rs_tiny_piolite_disable(&session) != RS_OK)) {
         return 11;
+    }
+    {
+        rs_piolite_config_t other_config = config;
+        rs_piolite_session_t other = {.sm = 1U};
+        rs_dma_session_t other_lease = {.channel = 4U};
+        other_config.sm = 1U;
+        if ((rs_tiny_piolite_configure(&other, &other_config) != RS_OK) ||
+            (rs_tiny_piolite_claim(&other, 2U) != RS_OK) ||
+            (rs_tiny_piolite_dma_bind(&other, RS_PIOLITE_DMA_TX, &other_lease,
+                                      UINT32_C(0x20000000), 4U, 1U) != RS_EBUSY) ||
+            (TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TX_BIND) != UINT32_C(0x80000300)) ||
+            other.dma[RS_PIOLITE_DMA_TX].acquired || other.dma[RS_PIOLITE_DMA_TX].bound ||
+            (rs_tiny_piolite_dma_unbind(&session, RS_PIOLITE_DMA_TX) != RS_OK) ||
+            session.dma[RS_PIOLITE_DMA_TX].acquired) {
+            return 11;
+        }
+        if ((rs_tiny_piolite_dma_bind(&other, RS_PIOLITE_DMA_TX, &other_lease,
+                                      UINT32_C(0x20000000), 4U, 1U) != RS_OK) ||
+            !other.dma[RS_PIOLITE_DMA_TX].acquired || !other.dma[RS_PIOLITE_DMA_TX].bound) {
+            return 11;
+        }
+        RS_DMA_CH_REG(4U, RS_DMA_CH_REG_STATUS) = RS_DMA_STATUS_DONE;
+        RS_DMA_CH_REG(4U, RS_DMA_CH_REG_BYTES_DONE) = 4U;
+        RS_DMA_CH_REG(4U, RS_DMA_CH_REG_REMAINING) = 0U;
+        if ((rs_tiny_piolite_dma_unbind(&other, RS_PIOLITE_DMA_TX) != RS_OK) ||
+            (rs_tiny_piolite_release(&other, 2U) != RS_OK)) {
+            return 11;
+        }
     }
     TEST_PIOLITE_REG(RS_PIOLITE_ABI_APB4_RX_BIND) = 0U;
     lease.channel = 2U;

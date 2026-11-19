@@ -159,6 +159,19 @@ def test_piolite_acceptance_image_is_explicit_and_isolated() -> None:
         assert result.returncode != 0, override
 
 
+@pytest.mark.parametrize("simulator", ["VERILATOR", "IVERILOG"])
+def test_piolite_acceptance_enables_pin_observer(simulator: str) -> None:
+    result = subprocess.run(
+        ["make", "--no-print-directory", "-n", "CONFIG=configs/ci/ics55-tiny.mk", "APP=ci_smoke",
+         "TINY_PIOLITE_P3_ACCEPTANCE=YES", "BUILD_TIMESTAMP=2026-11-18-06-00",
+         f"SIMU={simulator}", "sim"],
+        cwd=ROOT, text=True, capture_output=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    command = " ".join(result.stdout.split())
+    assert command.count("+tiny_piolite_p3") == 1
+    assert "+tiny_piolite_observer_log=" in command
+
+
 def test_piolite_observer_is_source_bound() -> None:
     observer = (TINY / "dv/tiny_piolite_observers.svh").read_text()
     testbench = (TINY / "dv/retrosoc_tiny_tb.sv").read_text()
@@ -315,6 +328,12 @@ def test_piolite_evidence_identity_is_complete_and_fail_closed(tmp_path: Path,
     variant = tmp_path / "build/ihp130-tiny-test"
     monkeypatch.setattr("scripts.piolite_p3.source_state", lambda root: state)
     assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log, observer_log) == []
+    for field, value in (("source_revision", "c" * 40), ("source_dirty", True)):
+        changed = dict(state)
+        changed[field] = value
+        monkeypatch.setattr("scripts.piolite_p3.source_state", lambda root, current=changed: current)
+        assert identity_problems(manifest, verdict, variant, "IHP130", "verilator", log, observer_log)
+    monkeypatch.setattr("scripts.piolite_p3.source_state", lambda root: state)
     for field in ("source_revision", "source_state_sha256", "tool_lock_sha256"):
         broken = dict(verdict)
         broken[field] = "0" * (40 if field == "source_revision" else 64)
@@ -425,7 +444,8 @@ def test_piolite_check_entrypoint_writes_bound_verdicts() -> None:
             if stale:
                 assert result.returncode != 0
                 assert record["status"] == "failed"
-                assert "source revision is missing or differs between manifest and simulation" in record["problems"]
+                assert ("source revision is missing or differs between manifest, simulation and current source"
+                        in record["problems"])
             else:
                 assert result.returncode == 0, result.stdout + result.stderr
                 assert record["status"] == "passed"

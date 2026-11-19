@@ -68,7 +68,7 @@ TINY_SIM_ARGS             ?=
 TINY_PIOLITE_OBSERVER_LOG ?= $(SIM_BUILD_ROOT)/piolite-observer.log
 TINY_PIOLITE_OBSERVER_ARG := $(if $(filter +tiny_piolite_progress +tiny_piolite_trace,$(TINY_SIM_ARGS)),+tiny_piolite_observer_log=$(TINY_PIOLITE_OBSERVER_LOG))
 ifeq ($(TINY_PIOLITE_P3_ACCEPTANCE),YES)
-TINY_PIOLITE_OBSERVER_ARG := +tiny_piolite_observer_log=$(TINY_PIOLITE_OBSERVER_LOG)
+TINY_PIOLITE_OBSERVER_ARG := +tiny_piolite_p3 +tiny_piolite_observer_log=$(TINY_PIOLITE_OBSERVER_LOG)
 endif
 VERILATOR ?= verilator
 IVERILOG  ?= iverilog

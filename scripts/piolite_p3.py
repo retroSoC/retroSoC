@@ -164,10 +164,13 @@ def identity_problems(manifest: dict, verdict: dict, variant: Path, pdk: str, si
     current = source_state(ROOT)
     repository = manifest.get("repository", {})
     revision = repository.get("commit")
-    if re.fullmatch(r"[0-9a-f]{40}", str(revision)) is None or revision != verdict.get("source_revision"):
-        problems.append("source revision is missing or differs between manifest and simulation")
-    if repository.get("dirty") != verdict.get("source_dirty") or not isinstance(repository.get("dirty"), bool):
-        problems.append("source dirty state differs between manifest and simulation")
+    if (re.fullmatch(r"[0-9a-f]{40}", str(revision)) is None or
+            revision != verdict.get("source_revision") or revision != current.get("source_revision")):
+        problems.append("source revision is missing or differs between manifest, simulation and current source")
+    if (repository.get("dirty") != verdict.get("source_dirty") or
+            repository.get("dirty") != current.get("source_dirty") or
+            not isinstance(repository.get("dirty"), bool)):
+        problems.append("source dirty state differs between manifest, simulation and current source")
     if current.get("source_state_sha256") != verdict.get("source_state_sha256"):
         problems.append("source tree changed after simulation")
     dependency = manifest.get("dependency_lock", {})

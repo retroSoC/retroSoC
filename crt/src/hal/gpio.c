@@ -277,6 +277,9 @@ rs_status_t rs_gpio_user_acquire(uint32_t mask, rs_timeout_t timeout) {
          mask) != 0U) {
         return RS_EIO;
     }
+    if ((RS_GPIO_REG(RS_GPIO_OPEN_DRAIN_OFFSET) & mask) != 0U) {
+        return RS_ENOTSUP;
+    }
     rs_gpio_oe_clear(mask);
     RS_GPIO_REG(RS_GPIO_INTR_STATE_OFFSET) = mask;
     RS_GPIO_REG(RS_GPIO_INTR_ENABLE_OFFSET) = RS_GPIO_REG(RS_GPIO_INTR_ENABLE_OFFSET) & ~mask;
