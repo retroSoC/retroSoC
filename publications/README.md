@@ -7,6 +7,12 @@ Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
+The Tiny QFN64 pinout update starts at dev `33b9afc2` and compares against the
+457-page Figure 5 delivery. It adds the top-view target plate ahead of the pin
+descriptions. The plate shares Figure 4's fills and derives its labels from the
+QFN64 and GPIO sources. Use the `tiny-v02-qfn64-pinout-20261120-` namespace for
+change reports.
+
 The Tiny Figure 5 update starts at dev `d5a49509` and compares against the
 457-page clock-tree build. The `system-fabric` record binds local and external
 routes to Tiny source. The target matrix groups APB4 destinations by clock domain.

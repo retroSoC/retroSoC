@@ -1,17 +1,9 @@
 #import "@preview/cetz:0.5.2" as cetz
 #import "diagrams.typ": diagram
 #import "style.typ": data, ink, gold, muted, rhythm
+#import "soc-palette.typ": domain-fill, rail-fill
 
 #let point(x, y) = (x, -y)
-#let domain-fill = (
-  system: rgb("#E5ECF3"),
-  aon: rgb("#F4EFE4"),
-  memory: rgb("#ECE8F3"),
-  peripheral: rgb("#E8EFE5"),
-  jtag: rgb("#E7F1EF"),
-  audio: rgb("#F5E8E8"),
-  dvp_pixel: rgb("#F5ECDE"),
-)
 
 #let functional-canvas(spec) = cetz.canvas(length: 1mm, {
   import cetz.draw: rect, line, content
@@ -37,7 +29,7 @@
   for node in spec.nodes {
     let rail = node.role == "rail"
     rect(point(node.x, node.y), point(node.x + node.w, node.y + node.h),
-      fill: if rail { rgb("#D5D6D8") } else { white },
+      fill: if rail { rail-fill } else { white },
       stroke: 0.6pt + if node.role == "bridge" { gold } else { ink })
     if node.label != "" {
       let rotate = node.at("rotate", default: false)
