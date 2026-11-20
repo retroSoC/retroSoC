@@ -7,6 +7,11 @@ Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
+The Tiny 32-bit address map starts at dev `849b34f0` and compares against the
+458-page QFN64 pinout delivery. Its overview, APB4 details and SRAM banks
+derive from the same validated address windows and topology as the book.
+Use the `tiny-v02-address-map-20261120-` namespace for change reports.
+
 The Tiny QFN64 pinout update starts at dev `33b9afc2` and compares against the
 457-page Figure 5 delivery. It adds the top-view target plate ahead of the pin
 descriptions. The plate shares Figure 4's fills and derives its labels from the

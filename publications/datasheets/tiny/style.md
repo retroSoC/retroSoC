@@ -111,7 +111,27 @@ the MEM-domain register bridge on separate routes into the XPI controller.
 Group the independent APB4 targets by clock domain. Keep the caption,
 `circuit-system-fabric` anchor, and connection-summary reference to Figure 8.
 
-Figure 9 uses a single clock plate up to 172 × 180 mm with Inter labels at
+### Address map
+
+Place the 32-bit address map at the start of Address Mapping on one A4 page.
+Start the canonical address-window table on the next page. Keep the plate within
+172 × 200 mm, with Inter labels and Fira Code addresses at 9 pt or larger.
+Display eight hexadecimal digits, inclusive endpoints, and descending addresses.
+Use schematic band heights so narrow windows and unmapped ranges remain legible.
+
+Place the numerical APB4 address groups in separate right-hand panels, with
+their complete windows and computed gaps. Keep the expansion ribbons within
+the gutter. Use gold boundaries and pale-gold selection bands, with gray fill
+and an Unmapped label for gaps. Draw the SRAM banks below the overview. Use
+the validated address windows and SRAM geometry to generate every endpoint.
+Identify the reset address and the fitted-device limit on XPI and Flash capacity.
+Use `tiny-address-map-figure` for links and the `address-map` export for standalone
+SVG and PDF. Keep the figure directory and revision history with the active
+publication marker, and keep earlier marked figures bound to their own revision.
+
+### Clock tree
+
+The clock tree uses a single clock plate up to 172 × 180 mm with Inter labels at
 9 pt or larger. Draw external inputs, build-specific paths, SYS distribution,
 dividers and consumer branches in that order. Use trapezoids for selectors,
 rectangles for dividers and `EN` inputs for leaf hold and output controls.
