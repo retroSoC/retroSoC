@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from publications import tiny_reference as tiny
+from publications.ip_block_reference import records as ip_views
+from publications.tiny_clock_tree import prepare as prepare_clock_tree
 from publications.tiny_diagram_reference import coverage, functional_routes, validate_circuit, validate_fields, validate_rendered
 from publications.tiny_publication_reference import diagnostics, validate_navigation
 
@@ -58,6 +60,36 @@ def test_all_current_ips_have_source_bound_circuits(data):
     assert "docs/ip/piolite-verification.md" in data["source_paths"]
     assert "scripts/program_xpi_flash.py" in data["source_paths"]
     assert all(e["bindings"] for c in figures["circuits"].values() for e in c["edges"])
+
+
+def test_tiny_clock_tree_retains_separate_clock_paths_and_system_ownership(data):
+    figures = data["illustrations"]
+    clock = figures["circuits"]["system-clocks"]
+    links = {(e["from"], e["to"], e["kind"]) for e in clock["edges"]}
+    assert {
+        ("ref.out", "sys.safe", "clock"), ("xin.out", "fast.xin", "clock"),
+        ("pll.out", "fast.pll", "clock"), ("fast.out", "sys.fast", "clock"),
+        ("sys.out", "cpu_gate.in", "clock"), ("sys.out", "sys_leaves.in", "clock"),
+        ("div2.out", "mem.div2", "clock"), ("sys.out", "mem.div1", "clock"),
+        ("div2.out", "pclk_first.div2", "clock"), ("sys.out", "pclk_first.div1", "clock"),
+        ("pclk_first.out", "pclk.div1_2", "clock"), ("div4.out", "pclk.div4", "clock"),
+        ("pclk.out", "pclk_gate.in", "clock"), ("audio.out", "i2s.in", "clock"),
+        ("pixel.out", "dvp.in", "clock"), ("tck.out", "dtm.in", "clock"),
+        ("trst.out", "jtag_reset.in", "reset"),
+    } <= links
+    assert {n["source_port"] for n in clock["nodes"] if n["shape"] == "tap"} == {
+        "ref.out", "sys.out", "mem.out", "pclk.out"}
+    assert {d["name"] for d in data["clocks"]} == {n["domain"] for n in clock["nodes"] if "domain" in n}
+    assert {"point": (141, 39), "kind": "clock"} in clock["clock_tree"]["junctions"]
+    assert {"id": "circuit-system-clocks", "source_id": "system-clocks", "package": "cetz"} in figures["inventory"]
+    assert "system-clocks" not in ip_views(data)
+
+
+def test_tiny_clock_tree_rejects_diagonal_shaft(data):
+    clock = copy.deepcopy(data["illustrations"]["circuits"]["system-clocks"])
+    next(e for e in clock["edges"] if e["to"] == "ref.in")["via"][0][1] += 1
+    with pytest.raises(ValueError, match="non-orthogonal"):
+        prepare_clock_tree(clock, data["clocks"])
 
 
 @pytest.mark.parametrize(("mutation", "reason"), [

@@ -1,4 +1,5 @@
 #import "style.typ": *
+#import "clock-tree.typ": clock-tree-plate
 #import "../../ip-block-diagrams.typ": ip-block-view
 #import "@preview/bytefield:0.0.8" as bf
 #import "@preview/blockcell:0.1.0" as bc
@@ -168,11 +169,25 @@
 ]
 #let circuit-diagram(id)={
  let r=diagrams.circuits.at(id)
- if r.at("renderer",default:"")=="cetz" {ip-canvas(r,id)} else {legacy-circuit-diagram(id)}
+ if "clock_tree" in r {
+  block(width:100%,breakable:false)[
+   #diagram-use("cetz",id)
+   #clock-tree-plate(r)
+   #diagram-note[#r.note]
+   #diagram-end("cetz",id)
+  ]
+ } else if r.at("renderer",default:"")=="cetz" {ip-canvas(r,id)} else {legacy-circuit-diagram(id)}
 }
 #let circuit-figure(id)={
  let r=diagrams.circuits.at(id)
- if r.at("renderer",default:"")=="cetz" {
+ if "clock_tree" in r {
+  change-start(doc.change_prefix + "figure-9", r.title)
+  block(width:100%,breakable:false)[
+   #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#r.title.])
+   #label("circuit-"+id)
+  ]
+  change-end(doc.change_prefix + "figure-9")
+ } else if r.at("renderer",default:"")=="cetz" {
   change-start("tiny-v02-ip-review-20261118-ip-block-"+id,r.block_title)
   block(width:100%,breakable:false)[
    #show figure.caption: set text(weight:"bold")

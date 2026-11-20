@@ -1380,7 +1380,7 @@ def records(data: dict) -> dict[str, dict]:
     )
     result = {}
     for identifier, circuit in illustrations["circuits"].items():
-        if circuit.get("renderer") != "cetz":
+        if identifier in SYSTEM_IDS or circuit.get("renderer") != "cetz":
             continue
         result[identifier] = circuit
         result.update({detail["detail_id"]: detail for detail in circuit.get("details", [])})
@@ -1427,7 +1427,7 @@ def export_vectors(root: Path, out: Path, data: dict, executable: str, options: 
 #let d=json(sys.inputs.at("data"))
 #let circuits=if "illustrations" in d {d.illustrations.circuits} else {d.system_reference.illustrations.circuits}
 #let id=sys.inputs.at("figure")
-#let all=circuits.values().filter(c=>c.at("renderer",default:"")=="cetz")
+#let all=circuits.values().filter(c=>c.at("renderer",default:"")=="cetz" and "block_diagram" in c)
 #let r=all.find(c=>c.block_diagram.title+"-primary"==id or c.at("export_id",default:"")==id)
 #let r=if r==none {all.map(c=>c.details).flatten().find(c=>c.detail_id==id)} else {r}
 #align(center,text(weight:"bold",r.block_title))

@@ -1,11 +1,16 @@
 # Publications
 
-Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
+Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
 **v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Tiny uses technical source
 `d9f2781147d7a7c47e5d8c19396fcc2a3de95133`; Mini uses
 `28a2123cda135d6d1fb623a61473b15bf4cffdae`. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
+
+The Tiny Figure 9 clock-tree update starts at dev `6c863b24` and compares
+against the 457-page QFN64 assembly build. The `system-clocks` record supplies
+the routing for the CeTZ clock plate and retains each connection's Tiny source
+binding. Use the `tiny-v02-clock-tree-20261120-` namespace for change reports.
 
 The Tiny carrier tape, reel and Pb-free reflow references start at dev `33c61f9a`
 and compare against the 452-page QFN64 drawing build. The three plates and

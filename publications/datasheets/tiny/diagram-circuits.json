@@ -36931,211 +36931,1921 @@
   },
   "system-clocks": {
     "title": "Tiny clock and reset domains",
+    "note": "Solid lines carry clocks. Dashed lines show named controls and resets. A gap marks an unconnected crossing. CLKOUT tags name the matching clock nets. SAFE24 uses REF24 at boot and after PLL lock timeout. AUDIO and PIXCLK resets release on their local clocks. The clock profiles are digital configurations. Crossing and reset barriers apply in every profile.",
+    "renderer": "cetz",
     "nodes": [
       {
         "id": "xin",
-        "title": "XIN / normalized REF24\nAON control source",
-        "x": 0,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "XIN\n24 / 48 / 96 MHz",
+        "shape": "pin",
+        "x": 4,
+        "y": 7,
+        "w": 33,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
         "ports": [
           {
-            "id": "p0",
+            "id": "out",
+            "side": "east",
             "direction": "out",
             "width": 1,
-            "side": "east"
+            "position": 0.5
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
         ]
       },
       {
-        "id": "backend",
-        "title": "Safe source / PLL / dividers\nREF24 control",
-        "x": 6.3,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p0",
-            "direction": "in",
-            "width": 1,
-            "side": "west"
-          },
-          {
-            "id": "p1",
-            "direction": "out",
-            "width": 1,
-            "side": "east"
-          },
-          {
-            "id": "p2",
-            "direction": "out",
-            "width": 1,
-            "side": "west"
-          },
-          {
-            "id": "p3",
-            "direction": "out",
-            "width": 1,
-            "side": "south"
-          }
-        ],
+        "id": "ref",
+        "title": "XIN normalization\n24: ÷1  /  48: ÷2  /  96: ÷4",
+        "shape": "block",
+        "x": 46,
+        "y": 4,
+        "w": 49,
+        "h": 18,
         "sources": [
           "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "aon",
+        "title": "AON / REF24\nRCU / CLINT\nRTC / WDG",
+        "shape": "block",
+        "x": 131,
+        "y": 4,
+        "w": 37,
+        "h": 18,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ],
+        "domain": "aon"
+      },
+      {
+        "id": "pll",
+        "title": "PLL\n192 / 240 MHz",
+        "shape": "block",
+        "x": 60,
+        "y": 34,
+        "w": 33,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "fast",
+        "title": "Fast\nsource",
+        "shape": "mux",
+        "x": 104,
+        "y": 35,
+        "w": 12,
+        "h": 22,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "pll",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.22727272727272727
+          },
+          {
+            "id": "xin",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.8181818181818182
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "sys",
-        "title": "SYS\nCPU / SRAM / fabric / SDIO",
-        "x": 12.6,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "SYS\nMUX",
+        "shape": "mux",
+        "x": 125,
+        "y": 26,
+        "w": 13,
+        "h": 26,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p1",
+            "id": "safe",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "west"
+            "position": 0.19230769230769232
+          },
+          {
+            "id": "fast",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7692307692307693
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "wfi",
+        "title": "WFI policy",
+        "shape": "sink",
+        "x": 142.5,
+        "y": 22,
+        "w": 25,
+        "h": 6,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.26
+          }
+        ]
+      },
+      {
+        "id": "cpu_gate",
+        "title": "EN",
+        "shape": "gate",
+        "x": 146,
+        "y": 35,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.3
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "cpu",
+        "title": "CPU",
+        "shape": "sink",
+        "x": 160,
+        "y": 35,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "sys_leaves",
+        "title": "SRAM\nFabric / SDIO",
+        "shape": "sink",
+        "x": 148,
+        "y": 46,
+        "w": 22,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "docs/ip/tiny-soc-r2-clock-reset.md"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
           }
         ],
+        "domain": "system"
+      },
+      {
+        "id": "div2",
+        "title": "SYS ÷2",
+        "shape": "block",
+        "x": 21,
+        "y": 81,
+        "w": 30,
+        "h": 8,
         "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "div4",
+        "title": "SYS ÷4",
+        "shape": "block",
+        "x": 21,
+        "y": 108,
+        "w": 30,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "mem",
-        "title": "MEM\nXPI NOR / PSRAM",
-        "x": 0,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "MEM\nMUX",
+        "shape": "mux",
+        "x": 119,
+        "y": 70,
+        "w": 12,
+        "h": 20,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p2",
+            "id": "div1",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "north"
+            "position": 0.25
+          },
+          {
+            "id": "div2",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.75
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "xpi",
+        "title": "MEM\nXPI NOR / PSRAM",
+        "shape": "sink",
+        "x": 138,
+        "y": 72,
+        "w": 31,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
           }
         ],
+        "domain": "memory"
+      },
+      {
+        "id": "pclk_first",
+        "title": "MUX",
+        "shape": "mux",
+        "x": 84,
+        "y": 91,
+        "w": 12,
+        "h": 18,
         "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "div1",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.16666666666666666
+          },
+          {
+            "id": "div2",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7777777777777778
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "pclk",
-        "title": "PCLK\nDMA / peripherals / Crypto",
-        "x": 6.3,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "PCLK\nMUX",
+        "shape": "mux",
+        "x": 119,
+        "y": 95,
+        "w": 12,
+        "h": 22,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "div1_2",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "north"
+            "position": 0.22727272727272727
+          },
+          {
+            "id": "div4",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7727272727272727
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
         ]
       },
       {
-        "id": "external",
-        "title": "AUDIO / camera PIX / TCK\nexternal clock domains",
-        "x": 12.6,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [],
+        "id": "pclk_enable",
+        "title": "RCU gate",
+        "shape": "sink",
+        "x": 134,
+        "y": 88,
+        "w": 26,
+        "h": 7,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.38461538461538464
+          }
+        ]
+      },
+      {
+        "id": "pclk_gate",
+        "title": "EN",
+        "shape": "gate",
+        "x": 141,
+        "y": 102,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.3
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "pclk_leaves",
+        "title": "DMA\nAPB IPs",
+        "shape": "sink",
+        "x": 154.5,
+        "y": 100,
+        "w": 15.5,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ],
+        "domain": "peripheral"
+      },
+      {
+        "id": "audio",
+        "title": "GPIO17 ALT0",
+        "shape": "pin",
+        "x": 4,
+        "y": 117.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/top/retrosoc_tiny.sv",
           "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "i2s",
+        "title": "I²S serial engine",
+        "shape": "sink",
+        "x": 132,
+        "y": 117.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "audio"
+      },
+      {
+        "id": "pixel",
+        "title": "GPIO20 ALT1",
+        "shape": "pin",
+        "x": 4,
+        "y": 124.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "dvp",
+        "title": "DVP sampler",
+        "shape": "sink",
+        "x": 132,
+        "y": 124.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "dvp_pixel"
+      },
+      {
+        "id": "tck",
+        "title": "JTAG TCK",
+        "shape": "pin",
+        "x": 4,
+        "y": 131.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "dtm",
+        "title": "JTAG DTM",
+        "shape": "sink",
+        "x": 132,
+        "y": 131.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "jtag"
+      },
+      {
+        "id": "clkout_sel",
+        "title": "CLKOUT\nMUX",
+        "shape": "mux",
+        "x": 47,
+        "y": 138,
+        "w": 17,
+        "h": 20,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "ref",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.14000000000000057
+          },
+          {
+            "id": "sys",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.375
+          },
+          {
+            "id": "mem",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.6099999999999994
+          },
+          {
+            "id": "pclk",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.8450000000000003
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "clkout_en",
+        "title": "Output enable",
+        "shape": "sink",
+        "x": 73,
+        "y": 137,
+        "w": 34,
+        "h": 4,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.6470588235294118
+          }
+        ]
+      },
+      {
+        "id": "clkout_div",
+        "title": "Divider",
+        "shape": "block",
+        "x": 83,
+        "y": 144,
+        "w": 22,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5454545454545454
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "clkout_pins",
+        "title": "CLKOUT\nGPIO28 ALT0 / GPIO23 ALT1",
+        "shape": "sink",
+        "x": 112,
+        "y": 142,
+        "w": 57,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/integration/soc_topology.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "tap_ref",
+        "title": "REF24",
+        "shape": "tap",
+        "x": 12,
+        "y": 138.75,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "ref.out"
+      },
+      {
+        "id": "tap_sys",
+        "title": "SYS",
+        "shape": "tap",
+        "x": 12,
+        "y": 143.45,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "sys.out"
+      },
+      {
+        "id": "tap_mem",
+        "title": "MEM",
+        "shape": "tap",
+        "x": 12,
+        "y": 148.14999999999998,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "mem.out"
+      },
+      {
+        "id": "tap_pclk",
+        "title": "PCLK",
+        "shape": "tap",
+        "x": 12,
+        "y": 152.85,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "pclk.out"
+      },
+      {
+        "id": "reset_n",
+        "title": "RESET_N",
+        "shape": "pin",
+        "x": 4,
+        "y": 161,
+        "w": 25,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "por_sync",
+        "title": "POR sync\nREF24",
+        "shape": "block",
+        "x": 35,
+        "y": 160.5,
+        "w": 26,
+        "h": 9,
+        "sources": [
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "warm_reset",
+        "title": "RCU / watchdog\nwarm reset",
+        "shape": "sink",
+        "x": 4,
+        "y": 169,
+        "w": 42,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "reset_sync",
+        "title": "System / leaf sync\nSYS / MEM / PCLK",
+        "shape": "block",
+        "x": 69,
+        "y": 160.5,
+        "w": 44,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "por",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.28125
+          },
+          {
+            "id": "warm",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.78125
+          }
+        ]
+      },
+      {
+        "id": "trst",
+        "title": "TRST_N",
+        "shape": "pin",
+        "x": 118,
+        "y": 168,
+        "w": 20,
+        "h": 8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "jtag_reset",
+        "title": "JTAG reset\nTCK sync",
+        "shape": "block",
+        "x": 144,
+        "y": 167,
+        "w": 24,
+        "h": 10,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       }
     ],
     "edges": [
       {
-        "from": "xin.p0",
-        "to": "backend.p0",
-        "label": "Reference",
-        "kind": "control",
-        "style": "zigzag",
+        "from": "audio.out",
+        "to": "i2s.in",
+        "kind": "clock",
+        "label": "AUDIO",
+        "via": [],
         "bindings": [
           {
-            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-            "text": "input logic ref_clk_i,"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-            "scope": "tiny_clock_reset_subsystem",
-            "symbol": "ref_clk_i",
-            "bits": 1
-          }
-        ],
-        "zigzag-dir": "vertical"
-      },
-      {
-        "from": "backend.p1",
-        "to": "sys.p1",
-        "label": "SYS clock",
-        "kind": "control",
-        "style": "zigzag",
-        "bindings": [
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 17, \"alt0\": {\"inputs\": [\"s_audio_pad_clk\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}, \"alt1\": {\"inputs\": [\"u_dvp_if.dat_i[5]\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}}"
+          },
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".sys_clk_o (s_backend_sys_clk)"
-          }
-        ],
-        "zigzag-dir": "vertical"
-      },
-      {
-        "from": "backend.p2",
-        "to": "mem.p2",
-        "label": "MEM clock",
-        "kind": "control",
-        "style": "guided",
-        "bindings": [
+            "text": ".clk_aud_i (s_audio_clk)"
+          },
           {
-            "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".mem_clk_o (s_backend_mem_clk)"
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"audio\", \"clock\": \"s_audio_clk\", \"reset\": \"s_audio_rst_n\", \"reset_source\": \"s_i2s_rst_n\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/retrosoc_tiny.sv\", \"instance\": \"u_audio_rst_sync\", \"sta\": {\"source_port\": \"gpio_17_io_pad\", \"pin\": \"u_soc.u_audio_clock_buffer/clk_o\", \"period_ns\": 54.253472222, \"async_group\": \"audio\"}}"
           }
-        ],
-        "guided-sides": [
-          "west",
-          "north"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "backend.p3",
-        "to": "pclk.p3",
+        "from": "pixel.out",
+        "to": "dvp.in",
+        "kind": "clock",
+        "label": "PIXCLK",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 20, \"alt0\": {\"inputs\": [], \"do\": \"u_pwm_if.pwm_o[2]\", \"oe\": \"u_pwm_if.oe_o[2]\"}, \"alt1\": {\"inputs\": [\"u_dvp_if.pclk_i\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}}"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "u_dvp_pclk_rst_sync ("
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "dvp.pclk_i"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"dvp_pixel\", \"clock\": \"dvp_pixel_clk\", \"reset\": \"dvp_pixel_rst_n\", \"reset_source\": \"gpio_20_io_pad\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/multimedia/axi4s_dvp.sv\", \"instance\": \"u_dvp_pclk_rst_sync\", \"sta\": {\"source_port\": \"gpio_20_io_pad\", \"object_type\": \"port\", \"period_ns\": 83.333333333, \"async_group\": \"dvp_pixel\"}}"
+          }
+        ]
+      },
+      {
+        "from": "tck.out",
+        "to": "dtm.in",
+        "kind": "clock",
+        "label": "TCK",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/ip/core/mgmt_debug_wrapper.sv",
+            "text": ".clk_i(jtag_tck_i)"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"jtag\", \"clock\": \"s_jtag_tck_buf\", \"reset\": \"s_jtag_trst_n_sync\", \"reset_source\": \"jtag_trst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/core/mgmt_debug_wrapper.sv\", \"instance\": \"u_jtag_rst_sync\", \"sta\": {\"source_port\": \"jtag_tck_i_pad\", \"object_type\": \"port\", \"period_ns\": 100, \"async_group\": \"jtag\"}}"
+          }
+        ]
+      },
+      {
+        "from": "tap_ref.out",
+        "to": "clkout_sel.ref",
+        "kind": "clock",
+        "label": "REF24",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_ref_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_ref_i(s_ref_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_sys.out",
+        "to": "clkout_sel.sys",
+        "kind": "clock",
+        "label": "SYS",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_sys_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_sys_i(s_exec_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_mem.out",
+        "to": "clkout_sel.mem",
+        "kind": "clock",
+        "label": "MEM",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_mem_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_mem_i(s_backend_mem_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_pclk.out",
+        "to": "clkout_sel.pclk",
+        "kind": "clock",
         "label": "PCLK",
-        "kind": "control",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_periph_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_periph_i(s_backend_pclk)"
+          }
+        ]
+      },
+      {
+        "from": "xin.out",
+        "to": "ref.in",
+        "kind": "clock",
+        "label": "XIN",
+        "via": [
+          [
+            40,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign ref_clk_o = ref_clk_i;"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(2'(RefClkHz / 48_000_000))"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "aon.in",
+        "kind": "clock",
+        "label": "REF24",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            110,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"aon\", \"clock\": \"s_ref_clk\", \"reset\": \"ref_rst_n_o\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_ref_rst\", \"sta\": {\"source_port\": \"extclk_i_pad\", \"pin\": \"u_clock_buffer/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".rtc_clk_i (s_ref_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".wdg_clk_i (s_ref_clk)"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "pll.in",
+        "kind": "clock",
+        "label": "PLL reference",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            102,
+            23
+          ],
+          [
+            55,
+            23
+          ],
+          [
+            55,
+            40
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".fref_i (ref_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "sys.safe",
+        "kind": "clock",
+        "label": "SAFE24",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            110,
+            13
+          ],
+          [
+            110,
+            31
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (ref_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "pll.out",
+        "to": "fast.pll",
+        "kind": "clock",
+        "label": "PLL192 / PLL240",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign s_fast_clk = HavePll ? s_pll_clk : ref_clk_i;"
+          }
+        ]
+      },
+      {
+        "from": "xin.out",
+        "to": "fast.xin",
+        "kind": "clock",
+        "label": "Raw XIN in no-PLL builds",
+        "via": [
+          [
+            40,
+            13
+          ],
+          [
+            40,
+            53
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign s_fast_clk = HavePll ? s_pll_clk : ref_clk_i;"
+          }
+        ]
+      },
+      {
+        "from": "fast.out",
+        "to": "sys.fast",
+        "kind": "clock",
+        "label": "Selected fast clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_fast_clk)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "cpu_gate.in",
+        "kind": "clock",
+        "label": "SYS to WFI gate",
+        "via": [
+          [
+            141,
+            39
+          ]
+        ],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".pclk_o (s_backend_pclk)"
+            "text": "assign s_exec_clk = s_backend_sys_clk;"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".gate_i (s_gate_d)"
           }
+        ]
+      },
+      {
+        "from": "wfi.out",
+        "to": "cpu_gate.enable",
+        "kind": "control",
+        "label": "WFI gate control",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "assign s_gate_d = EnableWfiGate && wfi_gate_i && !s_cpu_clk_en && bus_idle_i &&"
+          }
+        ]
+      },
+      {
+        "from": "cpu_gate.out",
+        "to": "cpu.in",
+        "kind": "clock",
+        "label": "Gated CPU clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".clk_o (s_cpu_clk)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "sys_leaves.in",
+        "kind": "clock",
+        "label": "SYS main leaves",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ]
         ],
-        "zigzag-dir": "horizontal"
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "assign s_exec_clk = s_backend_sys_clk;"
+          },
+          {
+            "file": "docs/ip/tiny-soc-r2-clock-reset.md",
+            "text": "CPU, all 32 main SRAM macros, bank frontends, fabric and SDIO share active SYS."
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"system\", \"clock\": \"s_backend_sys_clk\", \"reset\": \"system_rst_n_o\", \"reset_source\": \"s_system_req_n\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_reset_tree.sv\", \"instance\": \"u_system_rst_sync\", \"sta\": {\"source_domain\": \"aon\", \"pin\": \"u_soc.u_clock_backend.u_sys_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "div2.in",
+        "kind": "clock",
+        "label": "SYS divider by two",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            85
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk_o (s_div2_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(1'b1)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "div4.in",
+        "kind": "clock",
+        "label": "SYS divider by four",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            112
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk_o (s_div4_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(2'd2)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "mem.div1",
+        "kind": "clock",
+        "label": "MEM divide by one",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            75
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "safe_clock_mux u_mem_mux ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (sys_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "pclk_first.div1",
+        "kind": "clock",
+        "label": "PCLK divide by one",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            94
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "safe_clock_mux u_pclk_div2_mux ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (sys_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "div2.out",
+        "to": "mem.div2",
+        "kind": "clock",
+        "label": "MEM divide by two",
+        "via": [
+          [
+            57,
+            85
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_div2_clk)"
+          }
+        ]
+      },
+      {
+        "from": "div2.out",
+        "to": "pclk_first.div2",
+        "kind": "clock",
+        "label": "PCLK divide by two",
+        "via": [
+          [
+            57,
+            85
+          ],
+          [
+            57,
+            105
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".select_i(s_ctrl_q.pclk_div != 0)"
+          }
+        ]
+      },
+      {
+        "from": "mem.out",
+        "to": "xpi.in",
+        "kind": "clock",
+        "label": "MEM for XPI",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"memory\", \"clock\": \"s_backend_mem_clk\", \"reset\": \"s_backend_mem_rst_n\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_mem_rst\", \"sta\": {\"source_domain\": \"system\", \"pin\": \"u_soc.u_clock_backend.u_mem_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "\"s_backend_mem_clk\" if name == \"xpi\" else"
+          }
+        ]
+      },
+      {
+        "from": "pclk_first.out",
+        "to": "pclk.div1_2",
+        "kind": "clock",
+        "label": "PCLK divide by one or two",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (s_pclk_mid)"
+          }
+        ]
+      },
+      {
+        "from": "div4.out",
+        "to": "pclk.div4",
+        "kind": "clock",
+        "label": "PCLK divide by four",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_div4_clk)"
+          }
+        ]
+      },
+      {
+        "from": "pclk.out",
+        "to": "pclk_gate.in",
+        "kind": "clock",
+        "label": "PCLK leaf distribution",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"peripheral\", \"clock\": \"s_backend_pclk\", \"reset\": \"pclk_rst_n_o\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_pclk_rst\", \"sta\": {\"source_domain\": \"system\", \"pin\": \"u_soc.u_clock_backend.u_pclk_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".clk_i({clock}), .rst_n_i(s_leaf_rst_n[{index + 1}]),"
+          }
+        ]
+      },
+      {
+        "from": "pclk_enable.out",
+        "to": "pclk_gate.enable",
+        "kind": "control",
+        "label": "RCU peripheral gate control",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".gate_i(s_gate_request[{target_bit}]),"
+          }
+        ]
+      },
+      {
+        "from": "pclk_gate.out",
+        "to": "pclk_leaves.in",
+        "kind": "clock",
+        "label": "PCLK gated leaves",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".clk_o({ip_clock}), .rst_n_o(s_{name}_rst_n),"
+          }
+        ]
+      },
+      {
+        "from": "clkout_sel.out",
+        "to": "clkout_div.in",
+        "kind": "clock",
+        "label": "Selected CLKOUT clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": ".clk_i (s_src_clk),"
+          }
+        ]
+      },
+      {
+        "from": "clkout_en.out",
+        "to": "clkout_div.enable",
+        "kind": "control",
+        "label": "Synchronized output enable",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": ".enable_i (s_enabled)"
+          }
+        ]
+      },
+      {
+        "from": "clkout_div.out",
+        "to": "clkout_pins.in",
+        "kind": "clock",
+        "label": "Shared CLKOUT",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 28, \"alt0\": {\"inputs\": [], \"do\": \"s_clkout\", \"oe\": \"s_clkout_enable\"}, \"alt1\": {\"inputs\": [], \"do\": \"s_spi_mosi\", \"oe\": \"s_spi_output_enable\"}}"
+          },
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 23, \"alt0\": {\"inputs\": [\"u_pwm_if.sync_i\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}, \"alt1\": {\"inputs\": [], \"do\": \"s_clkout\", \"oe\": \"s_clkout_enable\"}}"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_o (s_clkout)"
+          }
+        ]
+      },
+      {
+        "from": "reset_n.out",
+        "to": "por_sync.in",
+        "kind": "reset",
+        "label": "External reset",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": ".rst_n_i(rst_n_i)"
+          }
+        ]
+      },
+      {
+        "from": "por_sync.out",
+        "to": "reset_sync.por",
+        "kind": "reset",
+        "label": "POR release",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": "assign s_system_req_n = por_rst_n_o && !watchdog_reset_req_i &&"
+          }
+        ]
+      },
+      {
+        "from": "warm_reset.out",
+        "to": "reset_sync.warm",
+        "kind": "reset",
+        "label": "RCU or watchdog warm-reset request",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".system_request_i (s_system_reset)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".warm_reset_i (u_wdg_if.reset_req_o)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": "(!SplitDomains || backend_reset_n_i)"
+          }
+        ]
+      },
+      {
+        "from": "trst.out",
+        "to": "jtag_reset.in",
+        "kind": "reset",
+        "label": "Independent TRST_N",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/ip/core/mgmt_debug_wrapper.sv",
+            "text": ".rst_n_i(jtag_trst_n_i)"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"jtag\", \"clock\": \"s_jtag_tck_buf\", \"reset\": \"s_jtag_trst_n_sync\", \"reset_source\": \"jtag_trst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/core/mgmt_debug_wrapper.sv\", \"instance\": \"u_jtag_rst_sync\", \"sta\": {\"source_port\": \"jtag_tck_i_pad\", \"object_type\": \"port\", \"period_ns\": 100, \"async_group\": \"jtag\"}}"
+          }
+        ]
       }
     ],
-    "note": "AUDIO, camera pixel and TCK are independently supplied domains and are intentionally not drawn as backend clock outputs. Reset/crossing barriers remain required. SAFE24 and PLL profiles are digital modes, not silicon speed ratings."
+    "clock_tree": {
+      "width_mm": 172,
+      "height_mm": 179,
+      "routing": {
+        "stroke_pt": 0.65,
+        "arrow_length_mm": 1.65,
+        "arrow_width_mm": 1.5,
+        "visible_shaft_mm": 1,
+        "arrow_clearance_mm": 0.42
+      },
+      "groups": [
+        {
+          "role": "conditional",
+          "title": "ICS55 PLL path",
+          "x": 51,
+          "y": 26,
+          "w": 48,
+          "h": 22
+        },
+        {
+          "role": "reset",
+          "x": 2,
+          "y": 159,
+          "w": 168,
+          "h": 18
+        }
+      ],
+      "labels": [
+        {
+          "at": [
+            118,
+            8.7
+          ],
+          "title": "REF24",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            113,
+            23.5
+          ],
+          "title": "SAFE24",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            72,
+            50.4
+          ],
+          "title": "Raw XIN · no PLL",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            74,
+            59.4
+          ],
+          "title": "SYS distribution",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            136,
+            102
+          ],
+          "title": "PCLK",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            70,
+            72.5
+          ],
+          "title": "÷1",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            32,
+            91.5
+          ],
+          "title": "÷1",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            107,
+            97.3
+          ],
+          "title": "÷1 / ÷2",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            118.5
+          ],
+          "title": "AUDIO",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            125.5
+          ],
+          "title": "PIXCLK",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            132.5
+          ],
+          "title": "TCK",
+          "anchor": "center"
+        }
+      ]
+    }
   },
   "system-media": {
     "title": "Tiny media and external-memory composition",

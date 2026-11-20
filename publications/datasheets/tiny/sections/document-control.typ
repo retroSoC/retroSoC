@@ -14,7 +14,8 @@
  ([2026-11-17],[v0.2 DRAFT],[Functional IP diagram v2: 23 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Integrate the reviewed d9f27811 snapshot and retain the scope of the dated PPALite P4 acceptance.]),
  ([2026-11-18],[v0.2 DRAFT],[RM0486 comparison across all IP views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence.]),
  ([2026-11-19],[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.]),
- (doc.date,[v0.2 DRAFT],[Add carrier tape, reel and Pb-free reflow classification drawings and reference tables.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-19],[v0.2 DRAFT],[Add carrier tape, reel and Pb-free reflow classification drawings and reference tables.]),
+ (doc.date,[v0.2 DRAFT],[Expand Figure 9 with the clock source selection, divisors, gate controls and reset distribution.])),widths:(0.8fr,0.85fr,2.5fr))
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,

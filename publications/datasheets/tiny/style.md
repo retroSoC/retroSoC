@@ -44,9 +44,9 @@ zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
 Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
-CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
-for three system diagrams, Bytefield formats and Blockcell storage diagrams.
-CeTZ also owns the six-panel overview, connectivity matrix and
+CeTZ 0.5.2 for all 23 IP primary diagrams and their details. The system fabric
+and media diagrams use Circuiteria. Formats use Bytefield and storage diagrams
+use Blockcell. CeTZ also owns the clock tree, six-panel overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
@@ -95,12 +95,25 @@ prefix column. Measure its width from the longest complete `Table N.` or
 share one left edge; shorter prefixes retain the unused column width. Keep
 these flat lists independent of Contents hierarchy indentation and body spacing.
 
-Only the three retained system Circuiteria figures use thin rounded blocks,
+The two system Circuiteria figures use thin rounded blocks,
 1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
 cache, pad or external-memory restrictions into Tiny captions.
+
+Figure 9 uses a single clock plate up to 172 × 180 mm with Inter labels at
+9 pt or larger. Draw external inputs, build-specific paths, SYS distribution,
+dividers and consumer branches in that order. Use trapezoids for selectors,
+rectangles for dividers and `EN` inputs for leaf hold and output controls.
+Draw clock wires as solid 0.65 pt shafts and identify controls and reset
+signals with dashed shafts and named paths. Use junction dots on one shared
+shaft and a gap at unrelated crossings. Keep labels clear of the wires and
+use the existing gold and pale-gold swatches to identify the optional ICS55
+PLL group. Label its dashed boundary so it remains legible in grayscale.
+Route external AUDIO, PIXCLK and TCK separately. The bottom strip shows
+reset sources and synchronizers. Preserve the `circuit-system-clocks` anchor
+and keep a source binding for each signal path.
 
 The Overview keeps the product description, six IP groups and reference
 configuration on one page. Use three columns and two rows with Mini's outline
