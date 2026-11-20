@@ -89,8 +89,9 @@ RTL, relax checks, or change warning/metric baselines as a document workaround.
 outlined entries; `structure-contract.json` keeps the major/IP compatibility
 contract. IP detail headings are unnumbered bookmarks, with the actual IP depth.
 `engineering-figures.typ` adapts all 23 IP primary figures and their details to
-the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). Three system
-figures retain Circuiteria; Bytefield and Blockcell retain their scope.
+the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). The system
+fabric and media use Circuiteria. Figure 9 uses the
+Tiny CeTZ clock tree plate. Bytefield and Blockcell retain their scope.
 `diagrams.typ` owns the CeTZ overview, matrix and
 workflows. `soc-functional.typ` draws the functional overview from
 `soc-functional.json` and the geometry validated by the Tiny collector.

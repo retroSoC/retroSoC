@@ -5,6 +5,7 @@
 #import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reflow
 
 #let qfn-layout-change = "tiny-v02-qfn64-layout-20261119-"
+#let qfn-assembly-change = "tiny-v02-qfn64-assembly-20261119-"
 #let spec = data.specifications
 
 == Packaging <tiny-pins>
@@ -102,33 +103,33 @@ The selected supplier and assembler must release the final process.
 #let reflow-source = spec.sources.find(s => s.id == "adi-smp-reflow").url
 
 #pagebreak(weak: true)
-#change-start(doc.change_prefix + "carrier-tape", "Carrier tape engineering drawing and reference dimensions")
+#change-start(qfn-assembly-change + "carrier-tape", "Carrier tape engineering drawing and reference dimensions")
 ==== Carrier Tape Dimensions <tiny-carrier-tape>
 The component-side view shows the feed direction relative to the sprocket holes and the Pin 1 corner.
 The nominal example is for the 64-pin, 9 × 9 mm RGC VQFN in
 #link(tape-source)[TI's TUSB8041IRGCR packaging materials information].
 #visual(spec, "qfn-carrier-tape", carrier-tape(spec), [Carrier tape and pocket dimensions])
 #assembly-reference-table(spec, "carrier-tape", ds-table)
-#change-end(doc.change_prefix + "carrier-tape")
+#change-end(qfn-assembly-change + "carrier-tape")
 
 #pagebreak(weak: true)
-#change-start(doc.change_prefix + "reel", "Reel engineering drawing, dimensions and standard pack example")
+#change-start(qfn-assembly-change + "reel", "Reel engineering drawing, dimensions and standard pack example")
 ==== Reel Dimensions <tiny-reel-dimensions>
 Outside diameter and axial width are nominal. The standard pack quantity applies to the exact
 #link(tape-source)[TI TUSB8041IRGCR orderable device] shown in @tiny-carrier-tape.
 #visual(spec, "qfn-reel", reel(spec), [Reel front and axial side views])
 #assembly-reference-table(spec, "reel", ds-table)
-#change-end(doc.change_prefix + "reel")
+#change-end(qfn-assembly-change + "reel")
 
 #pagebreak(weak: true)
-#change-start(doc.change_prefix + "reflow", "Pb-free classification profile and reflow limits table")
+#change-start(qfn-assembly-change + "reflow", "Pb-free classification profile and reflow limits table")
 ==== Reflow Soldering Profile <tiny-reflow-profile>
 The example uses package body temperature for Pb-free classification and preconditioning.
 A Tiny board profile requires the released package, solder paste and measured assembly temperatures.
 See #link(reflow-source)[ADI Surface Mount Products Rev J, Tables 2 and 3 and Figure 2].
 #visual(spec, "qfn-reflow", reflow(spec), [Pb-free package classification profile])
 #assembly-reference-table(spec, "reflow", ds-table)
-#change-end(doc.change_prefix + "reflow")
+#change-end(qfn-assembly-change + "reflow")
 
 #pagebreak(weak: true)
 === Minimum System and Board Design Reference <tiny-board-reference>
