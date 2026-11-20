@@ -13,6 +13,7 @@ from publications.register_reference import strip_comments
 from publications.soc_diagram_geometry import routes, segment_distance, validate_geometry
 from publications.storage_reference import collect_storage
 from publications.tiny_clock_tree import prepare as prepare_clock_tree
+from publications.tiny_fabric_reference import prepare as prepare_system_fabric
 from publications.waveform_reference import declaration, selected_width
 
 BOOK = "publications/datasheets/tiny"
@@ -320,6 +321,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
             "scripts/generate_tiny.py",
             "publications/soc_diagram_geometry.py",
             "publications/tiny_clock_tree.py",
+            "publications/tiny_fabric_reference.py",
         }
     )
     for path in paths:
@@ -345,6 +347,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
     for circuit in circuits.values():
         validate_circuit(root, circuit)
     prepare_clock_tree(circuits["system-clocks"], clocks["domains"])
+    prepare_system_fabric(root, circuits["system-fabric"], topology, apb_domains)
     for record in flows.values():
         if record["owner"] not in ids or not record.get("bindings"):
             raise ValueError("Tiny lifecycle diagram has no owner/source binding")

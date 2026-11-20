@@ -2,9 +2,9 @@
 #import "@preview/cetz:0.5.2" as cetz
 #import "style.typ": *
 
-#let diagram(id, body, caption, package:"cetz") = block(width:100%,breakable:false)[
+#let diagram(id, body, caption, package:"cetz", figure-label:none) = block(width:100%,breakable:false)[
   #context metadata((kind:"tiny-diagram",id:id,package:package,page:here().page()))
-  #figure(body,caption:caption)
+  #figure(body,caption:caption)#if figure-label!=none {label(figure-label)}
 ]
 #let schematic(nodes, routes, height:90) = {
   set text(font:"Inter",size:9pt,weight:"regular",fill:ink)
@@ -145,4 +145,4 @@
    x+=widths.at(c)
   }
  }
-}),[Tiny connection matrix. Entries show fabric connectivity, not permission for every transaction. Admission, endpoint and private-DMA address rules still apply.])
+}),[Tiny connection matrix. Entries show fabric connectivity, not permission for every transaction. Admission, endpoint and private-DMA address rules still apply.], figure-label:"tiny-access-matrix-figure")

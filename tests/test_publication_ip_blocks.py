@@ -39,7 +39,7 @@ def test_complete_product_inventory_keeps_65_ip_views_and_seven_system_figures(b
         system = {key for key in circuits if key in blocks.SYSTEM_IDS}
         legacy = {key for key, r in circuits.items() if r.get("renderer") != "cetz"}
         assert len(system) == (3 if product == "tiny" else 4)
-        assert legacy == (system - {"system-clocks"} if product == "tiny" else system)
+        assert legacy == (system - {"system-clocks", "system-fabric"} if product == "tiny" else system)
         assert all(
             r["product"] == product and r["block_diagram"]["style"] == blocks.STYLE
             for r in views.values()
@@ -73,7 +73,7 @@ def test_legacy_system_circuit_fact_records_are_retained_without_restyling(books
         )
         current = json.loads((ROOT / path).read_text(encoding="utf-8"))
         for name, record in original.items():
-            if name.startswith("system-") and (product, name) != ("tiny", "system-clocks"):
+            if name.startswith("system-") and not (product == "tiny" and name in {"system-clocks", "system-fabric"}):
                 assert current[name] == record
                 assert "block_diagram" not in current[name]
 

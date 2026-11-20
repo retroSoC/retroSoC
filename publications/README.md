@@ -7,6 +7,11 @@ Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
+The Tiny Figure 5 update starts at dev `d5a49509` and compares against the
+457-page clock-tree build. The `system-fabric` record binds local and external
+routes to Tiny source. The target matrix groups APB4 destinations by clock domain.
+Use the `tiny-v02-system-fabric-20261120-` namespace for change reports.
+
 The Tiny Figure 9 clock-tree update starts at dev `6c863b24` and compares
 against the 457-page QFN64 assembly build. The `system-clocks` record supplies
 the routing for the CeTZ clock plate and retains each connection's Tiny source

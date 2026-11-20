@@ -11,6 +11,7 @@ from publications import tiny_reference as tiny
 from publications.ip_block_reference import records as ip_views
 from publications.tiny_clock_tree import prepare as prepare_clock_tree
 from publications.tiny_diagram_reference import coverage, functional_routes, validate_circuit, validate_fields, validate_rendered
+from publications.tiny_fabric_reference import prepare as prepare_fabric
 from publications.tiny_publication_reference import diagnostics, validate_navigation
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,6 +91,39 @@ def test_tiny_clock_tree_rejects_diagonal_shaft(data):
     next(e for e in clock["edges"] if e["to"] == "ref.in")["via"][0][1] += 1
     with pytest.raises(ValueError, match="non-orthogonal"):
         prepare_clock_tree(clock, data["clocks"])
+
+
+def test_tiny_fabric_plate_covers_actual_owner_routes_and_targets(data):
+    illustrations = data["illustrations"]
+    circuit = illustrations["circuits"]["system-fabric"]
+    plate = circuit["fabric_matrix"]
+    assert [(c["owner"], c["name"]) for c in plate["columns"]] == [(0, "cpu_slow"), (1, "central_dma"), (2, "sdio")]
+    assert (plate["data_width"], plate["id_width"], plate["sram_kib"], plate["group_kib"]) == (32, 1, 128, 32)
+    assert len(plate["rows"]) == 11
+    assert sorted(n for r in plate["rows"] for n in r["targets"]) == list(range(30))
+    assert {r["port"]: len(r["members"]) for r in plate["rows"] if "members" in r} == {
+        "apb-system": 3, "apb-aon": 2, "apb-peripheral": 17, "apb-memory": 1,
+    }
+    assert plate["crosspoints"] == [[c["x"], r["y"]] for r in plate["rows"] for c in plate["columns"]]
+    assert {(e["from"], e["to"]) for e in circuit["edges"] if e.get("local")} == {
+        ("i-decode.local", "sram.i"), ("d-decode.local", "sram.d"),
+    }
+    edges = {(e["from"], e["to"]) for e in circuit["edges"]}
+    assert {(f"fabric.b{n}", f"sram.b{n}") for n in range(4)} <= edges
+    assert {("xpi-cdc.out", "xpi.memory"), ("apb-memory.apb", "xpi.registers")} <= edges
+    assert {"id": "circuit-system-fabric", "source_id": "system-fabric", "package": "cetz"} in illustrations["inventory"]
+    assert "system-fabric" not in ip_views(data)
+
+
+def test_tiny_fabric_plate_rejects_misaligned_local_route(data):
+    circuit = copy.deepcopy(data["illustrations"]["circuits"]["system-fabric"])
+    topology = tiny.read(ROOT / "rtl/tiny/integration/soc_topology.json")
+    domains = tiny.read(ROOT / "rtl/tiny/integration/clock_reset_domains.json")["generated_apb_crossings"]
+    apb_domains = {name: d for d, names in domains["destinations"].items() for name in names}
+    apb_domains.update(dict.fromkeys(domains["native_system"] + domains["same_clock_isolation"], "system"))
+    next(e for e in circuit["edges"] if e["from"] == "i-decode.local")["via"][0][1] += 1
+    with pytest.raises(ValueError, match="non-orthogonal"):
+        prepare_fabric(ROOT, circuit, topology, apb_domains)
 
 
 @pytest.mark.parametrize(("mutation", "reason"), [
