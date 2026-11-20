@@ -15,9 +15,10 @@
  ([2026-11-18],[v0.2 DRAFT],[RM0486 comparison across all IP views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence.]),
  ([2026-11-19],[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.]),
  ([2026-11-19],[v0.2 DRAFT],[Add carrier tape, reel and Pb-free reflow classification drawings and reference tables.]),
- ([2026-11-20],[v0.2 DRAFT],[Expand Figure 9 with the clock source selection, divisors, gate controls and reset distribution.]),
+ ([2026-11-20],[v0.2 DRAFT],[Expand the clock tree with the clock source selection, divisors, gate controls and reset distribution.]),
  ([2026-11-20],[v0.2 DRAFT],[Redraw Figure 5 with independent CPU local paths, a grouped fabric matrix and XPI memory and control routes.]),
- (doc.date,[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-20],[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.]),
+ (doc.date,[v0.2 DRAFT],[Add a 32-bit address map with APB4 window and SRAM bank detail.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>
