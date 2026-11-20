@@ -14,9 +14,9 @@
 #figure-directory(tables:true)
 #change-end("tiny-v02-navigation-gap4-20261115-table-directory")
 #pagebreak()
-#change-start("tiny-v02-navigation-gap4-20261115-figure-directory", "List of figures", category:"navigation")
+#change-start(doc.change_prefix + "figure-directory", "List of figures", category:"navigation")
 #figure-directory()
-#change-end("tiny-v02-navigation-gap4-20261115-figure-directory")
+#change-end(doc.change_prefix + "figure-directory")
 #pagebreak()
 #include "sections/architecture.typ"
 #change-start("tiny-v02-commercial-20261114-hardware-reference","Package, connection, electrical and analytic reference")

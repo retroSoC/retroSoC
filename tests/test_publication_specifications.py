@@ -160,6 +160,35 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
     assert spec["paste_coverage_percent"] == pytest.approx(16 * 1.4 ** 2 / 7.15 ** 2 * 100)
 
 
+def test_tiny_target_pinout_numbering_and_callouts(spec):
+    qfn = spec["qfn"]
+    pins = qfn["pins"]
+    assert len({p["name"] for p in pins}) == 64
+    for side in range(4):
+        edge = pins[side * 16:(side + 1) * 16]
+        axis = 1 - side % 2
+        coordinates = [p["top"][axis] for p in edge]
+        assert [p["side"] for p in edge] == [side] * 16
+        assert coordinates == sorted(coordinates, reverse=side in {0, 3})
+    assert {p["name"] for p in pins if p["unbound_target"]} == {"XOUT", "BOOT_MODE", "TEST_MODE"}
+    aliases = qfn["pinout_aliases"]
+    assert [(a["pin"], a["gpio"], a["mode"], a["function"]) for a in aliases] == [
+        (13, 28, "ALT0", "CLKOUT"),
+        (27, 8, "ALT0", "UART0.TX"),
+        (28, 9, "ALT0", "UART0.RX"),
+        (40, 17, "ALT0", "AUDIO.CLKIN"),
+        (43, 20, "ALT1", "DVP.PCLK"),
+        (46, 23, "ALT1", "CLKOUT"),
+    ]
+    assert all(pins[a["pin"] - 1]["name"] == f"GPIO{a['gpio']}" for a in aliases)
+
+
+def test_tiny_target_pinout_rejects_unbound_alias(spec):
+    routes = [r for r in spec["pins"] if (r["gpio"], r["mode"]) != (20, "ALT1")]
+    with pytest.raises(ValueError, match=r"GPIO20 ALT1 DVP\.PCLK"):
+        s.qfn_pinout_aliases(spec["qfn"]["pins"], routes)
+
+
 def test_qfn_reference_dimensions_and_contact_edges(spec):
     qfn = spec["qfn"]
     pins = qfn["pins"]

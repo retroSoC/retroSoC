@@ -2,7 +2,7 @@
 #import "../diagrams.typ": flow
 
 = Document Control
-#change-start(doc.change_prefix + "document-control", "Publication revision history", category: "cross-reference")
+#change-start(doc.change_prefix + "document-control", "Publication revision history")
 == Revision History
 #ds-table("revision",[Document revision history],([Date],[Version],[Change]),(
  ([2026-09-25],[v0.1 DRAFT],[Initial IHP130/four-channel publication; original PDF retained.]),
@@ -16,7 +16,9 @@
  ([2026-11-19],[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.]),
  ([2026-11-19],[v0.2 DRAFT],[Add carrier tape, reel and Pb-free reflow classification drawings and reference tables.]),
  ([2026-11-20],[v0.2 DRAFT],[Expand Figure 9 with the clock source selection, divisors, gate controls and reset distribution.]),
- (doc.date,[v0.2 DRAFT],[Redraw Figure 5 with independent CPU local paths, a grouped fabric matrix and XPI memory and control routes.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-20],[v0.2 DRAFT],[Redraw Figure 5 with independent CPU local paths, a grouped fabric matrix and XPI memory and control routes.]),
+ (doc.date,[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.])),widths:(0.8fr,0.85fr,2.5fr))
+#change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,
@@ -29,7 +31,6 @@ The prototype brand is Rill; this identity does not establish an orderable or qu
 
 
 == License
-#change-end(doc.change_prefix + "document-control")
 The project retains Mulan PSL v2 and the respective component/font licenses. Read the repository LICENSE
 and locked third-party notices for the full terms; the publication does not change their scope.
 #source-note("LICENSE",title:"Project license")

@@ -1,7 +1,7 @@
 #import "../style.typ": *
 #import "../../../specifications/components.typ": parameters, characteristics, reference-notice
 #import "../../../specifications/figures.typ": visual, connection, board-circuit
-#import "../package-figures.typ": qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
+#import "../package-figures.typ": qfn-pinout, qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
 #import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reflow
 
 #let qfn-layout-change = "tiny-v02-qfn64-layout-20261119-"
@@ -15,6 +15,10 @@ Physical die-to-package bonding, pad electrical qualification and the supplier o
 The target table is not an implemented bond map.
 
 === Pin Mapping
+#change-start(doc.change_prefix + "target-pinout", "QFN64 target pinout and selected alternate functions")
+#visual(spec, "qfn-pinout", qfn-pinout(spec), [QFN64 target pinout — top view], anchor: "qfn64-target-pinout")
+#change-end(doc.change_prefix + "target-pinout")
+#pagebreak(weak: true)
 #ds-table("qfn64",[QFN64 pin descriptions - frozen target; physical binding pending],
   ([Pin],[Target / external function],[Mode],[Dir.],[Reset logic],[Bias],[Restrictions / state]),
   data.specifications.qfn.pins.map(p=>(str(p.pin),p.function,p.gpio_mode,p.direction,p.reset,p.bias,p.limitation)),

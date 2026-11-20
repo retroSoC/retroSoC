@@ -179,6 +179,30 @@ Never independently renumber a view or call EP pin 65.
 
 ### QFN64 drawing layout
 
+#### Target pinout
+
+Open Pin Mapping with a dedicated 172 × 180 mm target pinout plate. Read all
+64 main names and positions from the QFN64 target model. Put terminal numbers
+inside the left and right edges and between the outline and tags at the top
+and bottom. Keep side labels horizontal and rotate the top and bottom tags
+along the terminal axis. Put the Pin 1 dot
+in the upper-left corner and draw the independently named EP with a dashed
+projected outline. Display the frozen target and pending binding states, and
+flag the three unbound signal targets by name. Caption the plate `QFN64 target
+pinout — top view` and register its standalone `qfn-pinout` SVG and PDF exports.
+
+Share Figure 4's palette. Use system blue-gray for supply, rail gray for ground
+and EP, peripheral green for GPIO and UART, memory violet for boot XPI, debug
+teal for JTAG, and AON gold for clocks, reset and straps. Use the audio and DVP
+domain fills for the respective input-clock callouts. Use dark Inter text at
+9 pt or larger and name each category in the legend. Draw selected alternates in
+a separate outer lane with a leader from the GPIO name and print the RTL-bound
+ALT mode. Keep the full route matrix in its own subsection. Draw reference
+body, pitch and EP dimensions from the package catalog, and label them inside
+both the book figure and standalone exports.
+
+#### Numbered, mechanical and assembly views
+
 Reuse publication gold (`#A38442`) for view headings, dimension strokes, extension
 lines and Pin 1. Use light gray for the drawing field, medium gray for copper,
 and dark text for values. Solid outlines, dashed projections, centerlines and
@@ -186,7 +210,8 @@ labels retain their meaning in grayscale. Keep panel width within 172 mm and
 ordinary labels at 9 pt or larger. Apply the scientific renderer to dimension
 subscripts.
 
-Stack both complete pin maps on one page. Place the top and bottom mechanical
+Stack the two numbered pin views on one page after the pin-description table.
+Place the top and bottom mechanical
 views above the numbered dimensions table and the side view. Derive the table
 and drawing values from the same ADI-backed records. Show the standoff range
 with a blank nominal cell, and distinguish the finished package EP from PCB EP

@@ -18,6 +18,7 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
     }
     if spec["product"] == "tiny":
         expressions.update({
+            "qfn-pinout": 'qfn-pinout(s)',
             "qfn-top": 'qfn-pin-view(s,"top")',
             "qfn-bottom": 'qfn-pin-view(s,"bottom")',
             "qfn-side": 'qfn-side(s)',

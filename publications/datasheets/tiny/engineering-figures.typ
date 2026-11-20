@@ -182,7 +182,7 @@
 #let circuit-figure(id)={
  let r=diagrams.circuits.at(id)
  if "clock_tree" in r or "fabric_matrix" in r {
-  let marker=if "fabric_matrix" in r {doc.change_prefix + "figure-5"} else {"tiny-v02-clock-tree-20261120-figure-9"}
+  let marker=if "fabric_matrix" in r {"tiny-v02-system-fabric-20261120-figure-5"} else {"tiny-v02-clock-tree-20261120-figure-9"}
   change-start(marker, r.title)
   block(width:100%,breakable:false)[
    #figure(circuit-diagram(id),kind:image,supplement:[Figure],caption:[#r.title.])
