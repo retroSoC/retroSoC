@@ -36620,314 +36620,1230 @@
   },
   "system-fabric": {
     "title": "Tiny system fabric and CPU local paths",
+    "note": "Squares mark ports. Open circles mark fabric connections. Arrows show request direction, with responses routed by saved ownership. Address checks and target admission govern access. APB4 groups contain independent bridges.",
+    "renderer": "cetz",
     "nodes": [
       {
         "id": "cpu",
-        "title": "Hazard3 local/slow decode\nSYS",
-        "x": 0,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "Hazard3\nSYS",
+        "x": 9,
+        "y": 35,
+        "w": 30,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "i",
+            "side": "north",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.3
           },
           {
-            "id": "p0",
+            "id": "d",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.4642857142857143
           }
-        ],
+        ]
+      },
+      {
+        "id": "i-decode",
+        "title": "I address decode",
+        "x": 7,
+        "y": 15,
+        "w": 27,
+        "h": 12,
         "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv"
+        ],
+        "ports": [
+          {
+            "id": "ahb",
+            "side": "south",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4074074074074074
+          },
+          {
+            "id": "local",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.25
+          },
+          {
+            "id": "slow",
+            "side": "west",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6666666666666666
+          }
+        ]
+      },
+      {
+        "id": "d-decode",
+        "title": "D address decode",
+        "x": 49,
+        "y": 35,
+        "w": 23,
+        "h": 13,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv"
+        ],
+        "ports": [
+          {
+            "id": "ahb",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "local",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.23076923076923078
+          },
+          {
+            "id": "slow",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.7391304347826086
+          }
+        ]
+      },
+      {
+        "id": "slow",
+        "title": "Tagged non-SRAM I/D slow path\nAHB-Lite → AXI4",
+        "x": 8,
+        "y": 54,
+        "w": 62,
+        "h": 13,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv",
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "i",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.6153846153846154
+          },
+          {
+            "id": "d",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9354838709677419
+          },
+          {
+            "id": "axi",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6774193548387096
+          }
         ]
       },
       {
         "id": "dma",
-        "title": "Central DMA + admission\nPCLK to SYS CDC",
-        "x": 6.3,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p1",
-            "direction": "out",
-            "width": 32,
-            "side": "south"
-          }
-        ],
+        "title": "Central DMA",
+        "x": 86,
+        "y": 22,
+        "w": 24,
+        "h": 9,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "dma-admit",
+        "title": "Admission",
+        "x": 85,
+        "y": 36,
+        "w": 26,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "dma-cdc",
+        "title": "AXI CDC\nPCLK → SYS",
+        "x": 85,
+        "y": 49,
+        "w": 26,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "sdio",
-        "title": "SDIO private DMA\nSYS",
-        "x": 12.6,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "SDIO private\nDMA · SYS",
+        "x": 114,
+        "y": 27,
+        "w": 27,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
         "ports": [
           {
-            "id": "p2",
+            "id": "axi",
+            "side": "south",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.48148148148148145
           }
-        ],
+        ]
+      },
+      {
+        "id": "sdio-admit",
+        "title": "Admission",
+        "x": 114,
+        "y": 49,
+        "w": 27,
+        "h": 14,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.48148148148148145
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.48148148148148145
+          }
         ]
       },
       {
         "id": "fabric",
-        "title": "AXI32 target-local fabric\nthree external owners",
-        "x": 6.3,
-        "y": 5,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "AXI4 fabric · SYS",
+        "x": 7,
+        "y": 77,
+        "w": 109,
+        "h": 85,
+        "sources": [
+          "rtl/tiny/top/tiny_axi4_fabric.sv",
+          "rtl/tiny/integration/soc_topology.json"
+        ],
         "ports": [
           {
-            "id": "p0",
+            "id": "owner0",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "west"
+            "position": 0.3944954128440367
           },
           {
-            "id": "p1",
+            "id": "owner1",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.6513761467889908
           },
           {
-            "id": "p2",
+            "id": "owner2",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "east"
+            "position": 0.8899082568807339
           },
           {
-            "id": "p4",
+            "id": "b0",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "west"
+            "position": 0.15294117647058825
           },
           {
-            "id": "p5",
+            "id": "b1",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.2235294117647059
           },
           {
-            "id": "p6",
+            "id": "b2",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "east"
+            "position": 0.29411764705882354
+          },
+          {
+            "id": "b3",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.36470588235294116
+          },
+          {
+            "id": "xpi",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4588235294117647
+          },
+          {
+            "id": "apb-system",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5529411764705883
+          },
+          {
+            "id": "apb-aon",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6235294117647059
+          },
+          {
+            "id": "apb-peripheral",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6941176470588235
+          },
+          {
+            "id": "apb-memory",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.7647058823529411
+          },
+          {
+            "id": "decerr",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.8588235294117647
+          },
+          {
+            "id": "slverr",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.9294117647058824
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/retrosoc_tiny.sv"
         ]
       },
       {
-        "id": "ram",
-        "title": "Four SRAM groups\nlocal and external ports",
-        "x": 0,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
+        "id": "sram",
+        "title": "Main SRAM",
+        "x": 123,
+        "y": 76,
+        "w": 47,
+        "h": 35,
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "i",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.7659574468085106
           },
           {
-            "id": "p4",
+            "id": "d",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.425531914893617
+          },
+          {
+            "id": "b0",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4
+          },
+          {
+            "id": "b1",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5714285714285714
+          },
+          {
+            "id": "b2",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.7428571428571429
+          },
+          {
+            "id": "b3",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9142857142857143
           }
-        ],
+        ]
+      },
+      {
+        "id": "xpi-cdc",
+        "title": "AXI CDC\nSYS → MEM",
+        "x": 122,
+        "y": 112,
+        "w": 23,
+        "h": 10,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv",
-          "rtl/tiny/top/tiny_sram.sv"
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4
+          }
         ]
       },
       {
         "id": "xpi",
-        "title": "XPI MEM target\nSYS to MEM CDC",
-        "x": 6.3,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p5",
-            "direction": "in",
-            "width": 32,
-            "side": "north"
-          }
-        ],
+        "title": "XPI · MEM\nNOR\nPSRAM",
+        "x": 150,
+        "y": 112,
+        "w": 20,
+        "h": 33,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "memory",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.12121212121212122
+          },
+          {
+            "id": "registers",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9090909090909091
+          }
         ]
       },
       {
-        "id": "apb",
-        "title": "Independent APB branches\nSYS / AON / PCLK / MEM",
-        "x": 12.6,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
+        "id": "decerr",
+        "title": "DECERR responder",
+        "x": 123,
+        "y": 147.3,
+        "w": 47,
+        "h": 5.4,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p6",
+            "id": "in",
+            "side": "west",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.49999999999999784
           }
-        ],
+        ]
+      },
+      {
+        "id": "slverr",
+        "title": "SLVERR responder",
+        "x": 123,
+        "y": 153.3,
+        "w": 47,
+        "h": 5.4,
         "sources": [
-          "rtl/tiny/top/retrosoc_tiny.sv",
-          "scripts/generate_tiny.py"
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.49999999999999784
+          }
+        ]
+      },
+      {
+        "id": "apb-system",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 121.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-aon",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 127.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-peripheral",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 133.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-memory",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 139.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          },
+          {
+            "id": "apb",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
         ]
       }
     ],
     "edges": [
       {
-        "from": "cpu.p0",
-        "to": "fabric.p0",
-        "label": "Slow AXI32",
+        "from": "cpu.i",
+        "to": "i-decode.ahb",
+        "label": "I AHB-Lite",
         "kind": "data",
-        "style": "guided",
+        "via": [],
         "bindings": [
           {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "hazard3_cpu_2port"
+          },
+          {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".slow_axi4 (u_masters_axi4_if[0])"
+            "text": ".cpu(u_cpu_ahbl_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".i_haddr(cpu[0].haddr)"
           }
-        ],
-        "guided-sides": [
-          "south",
-          "west"
-        ],
-        "guided-center": [
-          50,
-          -50
         ]
       },
       {
-        "from": "dma.p1",
-        "to": "fabric.p1",
-        "label": "DMA AXI32",
+        "from": "cpu.d",
+        "to": "d-decode.ahb",
+        "label": "D AHB-Lite",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "hazard3_cpu_2port"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".cpu(u_cpu_ahbl_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".d_haddr(cpu[1].haddr)"
+          }
+        ]
+      },
+      {
+        "from": "i-decode.local",
+        "to": "sram.i",
+        "label": "Local I",
+        "kind": "data",
+        "via": [
+          [
+            75,
+            18
+          ],
+          [
+            75,
+            6
+          ],
+          [
+            159,
+            6
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign local_ports[port_index].req_valid = (s_req_q[port_index].state == LocalIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".local_ports(u_cpu_local_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": "local_ports[client].addr[16:15] == 2'(group)"
+          }
+        ],
+        "local": true
+      },
+      {
+        "from": "d-decode.local",
+        "to": "sram.d",
+        "label": "Local D",
+        "kind": "data",
+        "via": [
+          [
+            82,
+            38
+          ],
+          [
+            82,
+            13
+          ],
+          [
+            143,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign local_ports[port_index].req_valid = (s_req_q[port_index].state == LocalIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".local_ports(u_cpu_local_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": "local_ports[client].addr[16:15] == 2'(group)"
+          }
+        ],
+        "local": true
+      },
+      {
+        "from": "i-decode.slow",
+        "to": "slow.i",
+        "label": "I slow request",
+        "kind": "data",
+        "via": [
+          [
+            3,
+            23
+          ],
+          [
+            3,
+            62
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign s_slow_req[port_index] = (s_req_q[port_index].state == SlowIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": ") u_slow_adapter ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "s_slow_d.owner = s_slow_selected;"
+          }
+        ]
+      },
+      {
+        "from": "d-decode.slow",
+        "to": "slow.d",
+        "label": "D slow request",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign s_slow_req[port_index] = (s_req_q[port_index].state == SlowIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": ") u_slow_adapter ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "s_slow_d.owner = s_slow_selected;"
+          }
+        ]
+      },
+      {
+        "from": "slow.axi",
+        "to": "fabric.owner0",
+        "label": "CPU slow AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "ahbl2axi4 #("
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".slow_axi4(u_masters_axi4_if[0])"
+          }
+        ]
+      },
+      {
+        "from": "dma.axi",
+        "to": "dma-admit.in",
+        "label": "Central DMA AXI4",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".dst_axi4 (u_masters_axi4_if[1])"
+            "text": ".source (u_dma_pclk_axi4_if)"
           }
-        ],
-        "zigzag-dir": "horizontal"
+        ]
       },
       {
-        "from": "sdio.p2",
-        "to": "fabric.p2",
-        "label": "SDIO AXI32",
+        "from": "dma-admit.out",
+        "to": "dma-cdc.in",
+        "label": "Admitted DMA request",
         "kind": "data",
-        "style": "guided",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".sink (u_dma_admitted_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".src_axi4 (u_dma_admitted_axi4_if)"
+          }
+        ]
+      },
+      {
+        "from": "dma-cdc.out",
+        "to": "fabric.owner1",
+        "label": "DMA SYS ingress",
+        "kind": "data",
+        "via": [
+          [
+            98,
+            68
+          ],
+          [
+            78,
+            68
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dst_axi4(u_masters_axi4_if[1])"
+          }
+        ]
+      },
+      {
+        "from": "sdio.axi",
+        "to": "sdio-admit.in",
+        "label": "SDIO private DMA AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dma_axi4 (u_sdio_sys_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source (u_sdio_sys_axi4_if)"
+          }
+        ]
+      },
+      {
+        "from": "sdio-admit.out",
+        "to": "fabric.owner2",
+        "label": "SDIO SYS ingress",
+        "kind": "data",
+        "via": [
+          [
+            127,
+            68
+          ],
+          [
+            104,
+            68
+          ]
+        ],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
             "text": ".sink (u_masters_axi4_if[2])"
           }
-        ],
-        "guided-sides": [
-          "south",
-          "east"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "cpu.p3",
-        "to": "ram.p3",
-        "label": "Local I/D",
+        "from": "fabric.b0",
+        "to": "sram.b0",
+        "label": "Group B0 AXI4",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".local_ports (u_cpu_local_if)"
-          }
-        ],
-        "zigzag-dir": "horizontal"
-      },
-      {
-        "from": "fabric.p4",
-        "to": "ram.p4",
-        "label": "Group AXI32",
-        "kind": "data",
-        "style": "guided",
-        "bindings": [
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".sink (u_sram_axi4_if[group])"
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
           }
-        ],
-        "guided-sides": [
-          "west",
-          "north"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "fabric.p5",
-        "to": "xpi.p5",
-        "label": "AXI32",
+        "from": "fabric.b1",
+        "to": "sram.b1",
+        "label": "Group B1 AXI4",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.b2",
+        "to": "sram.b2",
+        "label": "Group B2 AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.b3",
+        "to": "sram.b3",
+        "label": "Group B3 AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.xpi",
+        "to": "xpi-cdc.in",
+        "label": "XPI memory AXI4",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
             "text": ".src_axi4 (u_targets_axi4_if[4])"
           }
-        ],
-        "zigzag-dir": "horizontal"
+        ]
       },
       {
-        "from": "fabric.p6",
-        "to": "apb.p6",
-        "label": "APB controls",
-        "kind": "control",
-        "style": "guided",
+        "from": "xpi-cdc.out",
+        "to": "xpi.memory",
+        "label": "XPI MEM clock domain",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": "`include \"tiny_apb_bridges.svh\""
+            "text": ".dst_clk_i (s_backend_mem_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".mem_axi4 (u_xpi_mem_axi4_if)"
           }
-        ],
-        "guided-sides": [
-          "east",
-          "north"
-        ],
-        "guided-center": [
-          50,
-          -50
+        ]
+      },
+      {
+        "from": "fabric.apb-system",
+        "to": "apb-system.axi",
+        "label": "Independent APB4 system bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-aon",
+        "to": "apb-aon.axi",
+        "label": "Independent APB4 aon bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-peripheral",
+        "to": "apb-peripheral.axi",
+        "label": "Independent APB4 peripheral bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-memory",
+        "to": "apb-memory.axi",
+        "label": "Independent APB4 memory bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "apb-memory.apb",
+        "to": "xpi.registers",
+        "label": "MEM-domain XPI registers",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".dst_apb4(u_{name}_apb4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".apb4 (u_xpi_apb4_if)"
+          }
+        ]
+      },
+      {
+        "from": "fabric.decerr",
+        "to": "decerr.in",
+        "label": "Decode error target",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".axi4 (u_targets_axi4_if[`RETROSOC_TINY__DECODE_ERROR])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".Response(2'b11)"
+          }
+        ]
+      },
+      {
+        "from": "fabric.slverr",
+        "to": "slverr.in",
+        "label": "Protocol error target",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".axi4 (u_targets_axi4_if[`RETROSOC_TINY__PROTOCOL_ERROR])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".Response(2'b10)"
+          }
         ]
       }
     ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
+    "fabric_matrix": {
+      "width_mm": 172,
+      "height_mm": 165,
+      "matrix_left_rail": 46,
+      "routing": {
+        "stroke_pt": 0.7,
+        "arrow_length_mm": 1.65,
+        "arrow_width_mm": 1.55,
+        "visible_shaft_mm": 1,
+        "arrow_clearance_mm": 0.42
+      },
+      "labels": [
+        {
+          "at": [
+            20,
+            31
+          ],
+          "title": "I AHB-Lite",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            50.5,
+            32
+          ],
+          "title": "D AHB-Lite",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            112,
+            3.5
+          ],
+          "title": "Local I · read",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            113,
+            10.4
+          ],
+          "title": "Local D · read/write",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            152.8,
+            116
+          ],
+          "title": "Memory",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            152.8,
+            142
+          ],
+          "title": "Registers",
+          "anchor": "west"
+        }
+      ]
+    }
   },
   "system-clocks": {
     "title": "Tiny clock and reset domains",
