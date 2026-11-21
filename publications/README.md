@@ -7,6 +7,11 @@ Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
 
+The Tiny tape and reel box drawing starts at dev `e1de8dd6` and compares against
+the 459-page address-map delivery. Its nominal carton dimensions use the same TI
+reference device as the carrier tape and reel. Use the
+`tiny-v02-reel-box-20261120-` namespace for change reports.
+
 The Tiny 32-bit address map starts at dev `849b34f0` and compares against the
 458-page QFN64 pinout delivery. Its overview, APB4 details and SRAM banks
 derive from the same validated address windows and topology as the book.

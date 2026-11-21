@@ -2,7 +2,7 @@
 #import "../../../specifications/components.typ": parameters, characteristics, reference-notice
 #import "../../../specifications/figures.typ": visual, connection, board-circuit
 #import "../package-figures.typ": qfn-pinout, qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
-#import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reflow
+#import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reel-box, reflow
 
 #let qfn-layout-change = "tiny-v02-qfn64-layout-20261119-"
 #let qfn-assembly-change = "tiny-v02-qfn64-assembly-20261119-"
@@ -104,6 +104,7 @@ The selected supplier and assembler must release the final process.
 #change-end(qfn-layout-change + "package-drawings")
 
 #let tape-source = spec.sources.find(s => s.id == "ti-tusb8041-tape-reel").url
+#let box-source = spec.sources.find(s => s.id == "ti-tusb8041-reel-box").url
 #let reflow-source = spec.sources.find(s => s.id == "adi-smp-reflow").url
 
 #pagebreak(weak: true)
@@ -124,6 +125,15 @@ Outside diameter and axial width are nominal. The standard pack quantity applies
 #visual(spec, "qfn-reel", reel(spec), [Reel front and axial side views])
 #assembly-reference-table(spec, "reel", ds-table)
 #change-end(qfn-assembly-change + "reel")
+
+#pagebreak(weak: true)
+#change-start(doc.change_prefix + "reel-box", "Tape and reel box drawing and reference dimensions")
+==== Tape and Reel Box Dimensions <tiny-reel-box-dimensions>
+The nominal outside dimensions describe the carton for the same #link(box-source)[TI TUSB8041IRGCR reference device]
+shown in @tiny-reel-dimensions. The height measures the box body up to its lid seating plane.
+#visual(spec, "qfn-reel-box", reel-box(spec), [Tape and reel box outside dimensions], anchor: "tiny-reel-box-figure")
+#assembly-reference-table(spec, "reel-box", ds-table)
+#change-end(doc.change_prefix + "reel-box")
 
 #pagebreak(weak: true)
 #change-start(qfn-assembly-change + "reflow", "Pb-free classification profile and reflow limits table")

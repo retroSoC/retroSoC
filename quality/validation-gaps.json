@@ -13,7 +13,7 @@
       "owner": "@maksyuki",
       "approved_by": "@maksyuki",
       "approved_at": "2026-11-12T03:54:35Z",
-      "review_by": "2026-11-20",
+      "review_by": "2027-06-06",
       "reason": "The bounded plain-opt iterations converged, but the independent synthesis backend did not complete ABC technology mapping or produce a final netlist. Further diagnosis is deferred by the maintainer.",
       "blocked_stages": [
         "synthesis",

@@ -249,7 +249,8 @@ order codes and physical binding remain TBD. EP supplements perimeter grounds.
 ### Tape, reel and reflow references
 
 After Assembly Layers and Reliability, give Carrier Tape Dimensions, Reel
-Dimensions, and Reflow Soldering Profile one page each. Put the English heading
+Dimensions, Tape and Reel Box Dimensions, and Reflow Soldering Profile one
+page each in that order. Put the English heading
 and source link above one numbered plate and one numbered parameter table. Use
 the QFN64 drawing palette, 172 mm maximum plate width, and 9 pt minimum base
 label size. Apply scoped scientific subscripts to tape, reel and temperature
@@ -263,6 +264,15 @@ pocket dimensions to the cavity edges, and depth from the web surface to the
 pocket floor. Anchor reel diameter to the outer rim and width to the outer
 flange faces. Label unpublished geometry as schematic and keep Tiny's supplier
 dimensions, orientation, tolerances, hub, bore and pack quantity TBD.
+
+Show the outside carton with an open lid in an isometric plate no larger than
+172 × 135 mm. Use neutral gray faces, dark outlines, and the standard gold
+dimension and extension lines. Anchor L and W to the outside bottom edges and H
+to the bottom and lid seating plane at the same corner. Label the open lid and
+folds as schematic. Use the same nominal dimensions in the plate and table.
+Reuse the reel's SPQ for the reference part, keep Tiny's carton drawing and
+contents per carton TBD, and record the carton-specific source locator. Export
+the plate as `qfn-reel-box` in SVG and PDF.
 
 Use a schematic, unticked time axis for the reflow curve. Derive its temperature
 levels from the table and align the interval arrows with the soak, liquidus and
