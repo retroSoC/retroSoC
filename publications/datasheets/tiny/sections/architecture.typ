@@ -60,10 +60,10 @@ accepted data before B. Backpressure requires valid payloads to remain stable.
 
 #pagebreak(weak: true)
 === Address Mapping <tiny-addresses>
-#change-start(doc.change_prefix + "address-map-figure", "Tiny 32-bit address map")
+#change-start("tiny-v02-address-map-20261120-address-map-figure", "Tiny 32-bit address map")
 #visual(data.specifications, "address-map", address-map(data.address_map), [Tiny 32-bit address map.],
   reference: false, anchor: "tiny-address-map-figure")
-#change-end(doc.change_prefix + "address-map-figure")
+#change-end("tiny-v02-address-map-20261120-address-map-figure")
 #pagebreak(weak: true)
 #ds-table("memory-map",[Canonical Tiny address windows],([Region],[Base],[Last address],[Size]),
   data.regions.map(r=>(code(r.symbol),code(r.base_hex),code(r.end_hex),window-size(r))),widths:(1.2fr,1fr,1fr,0.65fr))

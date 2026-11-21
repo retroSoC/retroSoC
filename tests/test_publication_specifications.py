@@ -288,6 +288,26 @@ def test_tiny_tape_and_reel_match_one_ti_orderable_device(spec):
     assert f"{s.BOOKS['tiny']}/sources.json" in s.source_inputs("tiny")
 
 
+def test_tiny_reel_box_reference_uses_the_same_orderable_device(spec):
+    records = {r["id"]: r for r in spec["records"]}
+    sources = {source["id"]: source for source in spec["sources"]}
+    carton = sources["ti-tusb8041-reel-box"]
+    reel = sources["ti-tusb8041-tape-reel"]
+    assert carton["sha256"] == reel["sha256"] and carton["version"] == reel["version"]
+    assert carton["url"].endswith("#page=48") and "TUSB8041IRGCR" in carton["locator"]
+    for key, symbol, nominal in (("length", "L", 367.0), ("width", "W", 367.0), ("height", "H", 38.0)):
+        record = records[f"tiny.reel-box.{key}"]
+        assert (record["unit"], record["value"], record["decimals"], record["symbols"]) == ("mm", nominal, 1, [symbol])
+        assert record["group"] == "reel-box" and record["status"] == "reference"
+        assert record["sources"] == [carton["id"]] and "TUSB8041IRGCR" in record["conditions"]
+    pending = records["tiny.reel-box.supplier-drawing"]
+    assert (pending["group"], pending["status"], pending["value"]) == ("reel-box", "tbd", None)
+    assert "contents per carton" in pending["meaning"]
+    quantity = records["tiny.reel.quantity"]
+    assert (quantity["value"], quantity["unit"], quantity["status"]) == (2000, "devices/reel", "reference")
+    assert "TUSB8041IRGCR" in quantity["conditions"]
+
+
 def test_tiny_reflow_classification_values_are_separate_from_product_limits(spec):
     records = {r["id"].removeprefix("tiny."): r for r in spec["records"]}
     values = {

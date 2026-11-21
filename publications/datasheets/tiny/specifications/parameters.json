@@ -63,6 +63,10 @@
       "title": "Reel reference and Tiny release status"
     },
     {
+      "id": "reel-box",
+      "title": "Tape and reel box reference and Tiny release status"
+    },
+    {
       "id": "reflow",
       "title": "Pb-free reflow reference and Tiny release status"
     }
@@ -1442,6 +1446,108 @@
       "conditions": "Tiny supplier packing specification has not been released.",
       "assumptions": [],
       "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "dependencies": []
+    },
+    {
+      "id": "tiny.reel-box.length",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Carton outside length",
+      "group": "reel-box",
+      "unit": "mm",
+      "value": 367.0,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-reel-box"
+      ],
+      "conditions": "Nominal outer dimension for TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm device body.",
+      "assumptions": [
+        "The carton outline, lid and folds are schematic."
+      ],
+      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "L"
+      ],
+      "decimals": 1
+    },
+    {
+      "id": "tiny.reel-box.width",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Carton outside width",
+      "group": "reel-box",
+      "unit": "mm",
+      "value": 367.0,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-reel-box"
+      ],
+      "conditions": "Nominal outer dimension for TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm device body.",
+      "assumptions": [
+        "The carton outline, lid and folds are schematic."
+      ],
+      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "W"
+      ],
+      "decimals": 1
+    },
+    {
+      "id": "tiny.reel-box.height",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Carton outside height",
+      "group": "reel-box",
+      "unit": "mm",
+      "value": 38.0,
+      "status": "reference",
+      "evidence": "external-drawing",
+      "sources": [
+        "ti-tusb8041-reel-box"
+      ],
+      "conditions": "Nominal outer dimension for TI TUSB8041IRGCR, RGC VQFN, 64 pins, 9 × 9 mm device body.",
+      "assumptions": [
+        "The carton outline, lid and folds are schematic."
+      ],
+      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "dependencies": [],
+      "symbols": [
+        "H"
+      ],
+      "decimals": 1
+    },
+    {
+      "id": "tiny.reel-box.supplier-drawing",
+      "product": "tiny",
+      "profiles": [
+        "configs/ci/ics55-tiny.mk",
+        "configs/ci/ihp130-tiny.mk"
+      ],
+      "meaning": "Tiny carton drawing, outside dimensions and contents per carton",
+      "group": "reel-box",
+      "unit": "1",
+      "value": null,
+      "status": "tbd",
+      "evidence": "unavailable",
+      "sources": [
+        "scenario-model"
+      ],
+      "conditions": "The Tiny supplier carton drawing and packing specification are pending.",
+      "assumptions": [],
+      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
       "dependencies": []
     },
     {

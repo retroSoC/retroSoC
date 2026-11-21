@@ -180,6 +180,11 @@
     },
     {
       "level": 4,
+      "title": "Tape and Reel Box Dimensions",
+      "anchor": "tiny-reel-box-dimensions"
+    },
+    {
+      "level": 4,
       "title": "Reflow Soldering Profile",
       "anchor": "tiny-reflow-profile"
     },

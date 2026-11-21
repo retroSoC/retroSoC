@@ -1,8 +1,8 @@
-// Carrier, reel and reflow reference plates for the Tiny package section.
+// Carrier, reel, carton and reflow reference plates for the Tiny package section.
 #import "@preview/cetz:0.5.2" as cetz
-#import "../../specifications/figures.typ": ink
+#import "../../specifications/figures.typ": ink, gray
 #import "../../specifications/components.typ": use-record
-#import "package-figures.typ": point, write-at, face, view-title, reference-label, mm-note, horizontal, vertical, outline, projection, centerline, dimension, metal, pin-mark, symbol
+#import "package-figures.typ": point, write-at, face, view-title, reference-label, mm-note, horizontal, vertical, outline, projection, centerline, dimension, extension, metal, pin-mark, symbol
 
 #let record(spec, key) = spec.records.find(r => r.id == "tiny." + key)
 #let symbol-for(spec, r) = r.at("symbols", default: ()).map(s => symbol(spec, s)).join(text(" / "))
@@ -27,6 +27,7 @@
 #let assembly-reference-table(spec, group, table-renderer) = {
   let rows = spec.records.filter(r => r.group == group)
   if group == "reflow" { rows.push(record(spec, "assembly.msl")) }
+  if group == "reel-box" { rows = (record(spec, "reel.quantity"),) + rows }
   let title = spec.groups.find(g => g.id == group).title
   table-renderer("spec-" + group, [#title],
     ([Symbol], [Parameter], [Reference value #linebreak() REFERENCE ONLY], [Tiny product]),
@@ -164,6 +165,128 @@
     write-at(13, 102, [Hub and arbor bore shown schematically.], anchor: "west")
     write-at(13, 109, [Standard pack (#marked-value(quantity))], anchor: "west")
     mm-note(168, 109, anchor: "east")
+  })
+}
+
+#let carton-base-dimension(a, b, offset, label) = {
+  let (dx, dy) = offset
+  let shift(p, factor) = (p.at(0) + factor * dx, p.at(1) + factor * dy)
+  for vertex in (a, b) {
+    cetz.draw.line(point(..vertex), point(..shift(vertex, 1.13)), stroke: extension)
+  }
+  let (x1, y1) = shift(a, 1)
+  let (x2, y2) = shift(b, 1)
+  cetz.draw.line(point(x1, y1), point(x2, y2), stroke: dimension,
+    mark: (start: "stealth", end: "stealth"))
+  write-at((x1 + x2) / 2, (y1 + y2) / 2 + 9, label)
+}
+
+#let reel-box(spec) = {
+  set text(font: "Inter", size: 9pt, fill: ink)
+  import cetz.draw: line, bezier, merge-path
+  let length = record(spec, "reel-box.length")
+  let width = record(spec, "reel-box.width")
+  let height = record(spec, "reel-box.height")
+  let (l, w, h) = (length.value, width.value, height.value)
+  let scale = 53 / calc.max(l, w)
+  let ux = scale * calc.cos(30deg)
+  let uy = scale * calc.sin(30deg)
+  let project(x, y, z) = (27 + (x + y) * ux, 84 + (y - x) * uy - z * scale)
+  let (a, c, d) = (project(0, 0, 0), project(l, w, 0), project(0, w, 0))
+  let (atop, btop, ctop, dtop) = (project(0, 0, h), project(l, 0, h), project(l, w, h), project(0, w, h))
+  let silhouette = 0.85pt + ink
+  let detail = 0.43pt + ink
+  let paper = rgb("#E3E3E1")
+  let corner = 0.552285
+  let panel(vertices, fill, stroke: outline) = line(..vertices.map(v => point(..v)), close: true, fill: fill, stroke: stroke)
+
+  // Schematic folds use their own planes and share the projection of the carton.
+  let lid(x, s) = project(x, s * calc.cos(68deg), h + s * calc.sin(68deg))
+  let lip(x, t) = project(x, w * (calc.cos(68deg) + 0.07 * t), h + w * (calc.sin(68deg) - 0.04 * t))
+  let wing(x, rise) = project(x, w - 0.17 * rise, h + rise)
+  let rim(x, y) = point(..project(x, y, h))
+  let rim-x = 0.17 * l
+  let rim-y = 0.03 * w
+  let inner-plan = ((rim-x, rim-y), (l - rim-x, rim-y), (l - rim-x, w - rim-y), (rim-x, w - rim-y))
+  let (top-a, top-b, top-c, top-d) = inner-plan.map(p => project(..p, h))
+  let (floor-a, floor-b, floor-c, floor-d) = inner-plan.map(p => project(..p, 0.24 * h))
+
+  let tab(plane, span, reach, radius, fill) = merge-path(close: true, fill: fill, stroke: outline, {
+    let tangent = corner * radius
+    line(plane(0, 0), plane(reach - radius, 0))
+    bezier(plane(reach - radius, 0), plane(reach, radius),
+      plane(reach - radius + tangent, 0), plane(reach, radius - tangent))
+    line(plane(reach, radius), plane(reach, span - radius))
+    bezier(plane(reach, span - radius), plane(reach - radius, span),
+      plane(reach, span - radius + tangent), plane(reach - radius + tangent, span))
+    line(plane(reach - radius, span), plane(0, span))
+  })
+  let slot(x, y0, y1, radius) = merge-path(close: true, fill: paper, stroke: detail, {
+    let cap = 4 * radius / 3
+    line(rim(x - radius, y0), rim(x - radius, y1))
+    bezier(rim(x - radius, y1), rim(x + radius, y1), rim(x - radius, y1 + cap), rim(x + radius, y1 + cap))
+    line(rim(x + radius, y1), rim(x + radius, y0))
+    bezier(rim(x + radius, y0), rim(x - radius, y0), rim(x + radius, y0 - cap), rim(x - radius, y0 - cap))
+  })
+
+  cetz.canvas(length: 1mm, {
+    face(172, 135)
+    plate-header([Tape and reel box], [TI TUSB8041IRGCR])
+
+    // Put the far tab behind the lid edge and the near tab on the lid face.
+    tab((x, s) => point(..lid(l + x, 0.44 * w + s)), 0.20 * w, 0.13 * l, 0.043 * l, gray)
+    panel((atop, btop, lid(l, w), lid(0, w)), white, stroke: silhouette)
+    for x in (0.012 * l, 0.988 * l) {
+      line(point(..lid(x, 0.02 * w)), point(..lid(x, w)), stroke: detail)
+    }
+    panel((lid(0, w), lid(l, w), lip(l, 1), lip(0, 1)), gray, stroke: silhouette)
+    line(point(..lip(0.012 * l, 0.84)), point(..lip(0.988 * l, 0.84)), stroke: detail)
+    tab((x, s) => point(..lid(x, 0.35 * w + s)), 0.20 * w, 0.13 * l, 0.043 * l, gray)
+
+    let hole(x, y) = point(..lid(l * (0.51 + 0.038 * x), w * (0.55 + 0.064 * y)))
+    merge-path(close: true, fill: gray, stroke: detail, {
+      bezier(hole(1, 0), hole(0, 1), hole(1, corner), hole(corner, 1))
+      bezier(hole(0, 1), hole(-1, 0), hole(-corner, 1), hole(-1, corner))
+      bezier(hole(-1, 0), hole(0, -1), hole(-1, -corner), hole(-corner, -1))
+      bezier(hole(0, -1), hole(1, 0), hole(corner, -1), hole(1, -corner))
+    })
+    let lid-mark(x, y) = point(..lid(x * l, y * w))
+    merge-path(close: true, stroke: projection, {
+      line(lid-mark(0.23, 0.12), lid-mark(0.425, 0.12))
+      bezier(lid-mark(0.425, 0.12), lid-mark(0.515, 0.12), lid-mark(0.425, 0.19), lid-mark(0.515, 0.19))
+      line(lid-mark(0.515, 0.12), lid-mark(0.72, 0.12), lid-mark(0.72, 0.41), lid-mark(0.23, 0.41))
+    })
+
+    // Draw the recess and four rim slots before the near wing occludes them.
+    panel((floor-a, floor-b, floor-c, floor-d), white, stroke: detail)
+    panel((top-a, top-b, floor-b, floor-a), gray, stroke: detail)
+    panel((top-b, top-c, floor-c, floor-b), paper, stroke: detail)
+    panel((atop, btop, top-b, top-a), gray)
+    panel((btop, ctop, top-c, top-b), white)
+    panel((dtop, atop, top-a, top-d), white)
+    panel((ctop, dtop, top-d, top-c), gray)
+    for x in (0.45 * rim-x, l - 0.45 * rim-x) {
+      for (start, end) in ((0.23, 0.39), (0.58, 0.84)) {
+        slot(x, start * w, end * w, 0.0075 * l)
+      }
+    }
+    line(rim(l - rim-x + 0.01 * l, rim-y), rim(l - rim-x + 0.01 * l, w - rim-y), stroke: detail)
+    panel((a, d, dtop, atop), gray, stroke: silhouette)
+    panel((d, c, ctop, dtop), paper, stroke: silhouette)
+    for x in (0.18 * l, 0.83 * l) {
+      line(point(..project(x, w, 0)), point(..project(x, w, h)), stroke: detail)
+    }
+    let rise = 1.65 * h
+    panel((dtop, ctop, wing(l, rise), wing(0, rise)), white, stroke: silhouette)
+    line(point(..wing(0.012 * l, rise - 0.09 * h)), point(..wing(0.988 * l, rise - 0.09 * h)), stroke: detail)
+    tab((x, s) => point(..wing(-x, 0.43 * h + s)), 1.19 * h, 0.095 * l, 0.34 * h, gray)
+
+    carton-base-dimension(d, c, (5.5, 9), dimension-label(spec, length))
+    carton-base-dimension(a, d, (-5.5, 9), dimension-label(spec, width))
+    vertical(ctop.at(1), c.at(1), ctop.at(0), c.at(0), c.at(0) + 12,
+      dimension-label(spec, height), small: true)
+    write-at(5, 131, [Carton details shown schematically.], anchor: "west")
+    mm-note(167, 131, anchor: "east")
   })
 }
 
