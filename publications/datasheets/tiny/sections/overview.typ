@@ -20,32 +20,51 @@
 == Features
   #columns(2,gutter:rhythm.cover-gutter)[
     #set par(leading:rhythm.cover-leading,spacing:rhythm.cover-spacing)
-    #set list(spacing:rhythm.cover-list-spacing)
-*Compute and debug*
-    - One Hazard3 hart: *RV32IMC*, A disabled; default RV32IM firmware.
-    - Independent local instruction/data paths; JTAG halt, resume and hart reset.
+    #set list(tight:false,spacing:rhythm.cover-list-spacing,body-indent:rhythm.cover-list-indent,marker:([•],[▪]))
+    *Compute and debug*
+    - One Hazard3 hart with *RV32IMC* hardware. Default firmware targets RV32IM.
+    - Independent local instruction and data paths connect the CPU to on-chip SRAM.
+    - JTAG halt, resume and hart reset with retained debug state.
+    - *1 MHz CLINT timebase* with machine timer and software interrupts.
+
     *Memory and interconnect*
-    - *128 KiB SRAM*: four 32 KiB groups, 32 physical 4 KiB banks.
-    - AXI32 fabric with CPU slow, central-DMA and SDIO initiators; APB4 controls.
-    - XPI NOR boot; optional *8 MiB NSS1 PSRAM* after explicit initialization.
-    *DMA and platform control*
-    - *Eight DMA channels*, stream endpoints and SPI V2.2 admission.
-    - RCU source switching, leaf gates/reset, rate snapshots and fault recovery.
-    - SYSCTRL diagnostics; ARCHINFO discovery; 1 MHz CLINT timebase.
+    - *128 KiB SRAM* in four 32 KiB groups with 32 physical 4 KiB banks.
+    - AXI32 fabric with CPU slow, central DMA and SDIO initiators and APB4 controls.
+    - Four XPI chip-select slots and *16 LUT sequences* for 1/2/4-bit SDR transfers.
+    - NSS0 NOR boot. Optional *8 MiB NSS1 PSRAM* with explicit initialization.
+    - *Eight DMA channels*, 64-byte aligned TCDs, up to 16-beat bursts and stream endpoints.
+
+    *Platform and configuration*
+    - ICS55 SAFE24 boot with PLL parked off and functional PLL192/240 profiles.
+    - IHP130 no-PLL profile. RCU switches clocks and controls leaf gates and resets.
+    - Two 32-bit timers with 16-bit prescalers. Four PWM outputs with capture/fault.
+    - 64-bit RTC with subsecond time and alarms. Window watchdog with early warning.
+    - SYSCTRL first-fault capture and ARCHINFO.
+
     #colbreak()
     *Wired connectivity*
-    - *32 GPIOs*; one FIFO UART and one controller-mode I2C.
-    - Native 1/4-bit SDIO with private DMA; general 8/16-bit SPI master.
-    - Four-slot SDR XPI; GPIO-routed chip selects retain shared pin ownership.
-    *Media and services*
-    - Stereo 16/24-bit I2S; DVP snapshot/crop; PPALite sampling/luma; WS2812.
-    - AES/SHA2/raw RSA, programmable CRC and an unqualified RNG source.
-    - Two general timers, four PWM outputs, RTC and window watchdog.
-    *Configuration and evidence*
-    - *ICS55 default*: SAFE24 boot, PLL parked off; functional PLL192/240 profiles.
-    - Explicit IHP130/no-PLL compatibility; hardware qualification remains separate.
-    - Freestanding SDK and bounded camera, display, audio and SD workloads.
+    - *32 GPIOs* with atomic outputs, pin IRQs and two alternate-function selections.
+    - UART0 with *64-byte TX/RX FIFOs*, fractional baud and central-DMA requests.
+    - I2C0 controller with 7/10-bit addressing and command and receive FIFOs.
+    - SPI0 master modes 0–3 with *8/16-bit frames* and guarded V2.2 DMA admission.
+    - 1/4-bit SDR SDIO with private AXI32 DMA.
+    - WS2812 24-bit RGB output with programmable pulse and reset timing.
 
+    *Media and data processing*
+    - Stereo 16/24-bit I2S master with separate TX/RX streams and AUDIO clock domain.
+    - *8-bit DVP* captures RGB565/YUV422 with snapshot and crop controls.
+    - PPALite finite-frame sampling and luma extraction before the first memory write.
+    - AES-128/192/256, SHA-224/256 and raw RSA-2048 with 24 KiB private storage.
+    - Programmable CRC and RNG health status. Entropy qualification remains open.
+
+    *Development and applications*
+    - Freestanding CRT/HAL and reference apps.
+    - Bounded camera, display, audio and SD workloads with shared pin ownership.
+    - Application
+      #list(
+        [*Wearables*, IoT services, E-readers],
+        [Education, ASIC Prototype],
+      )
   ]
   #v(1fr)
   #note(below:0pt)[This DRAFT describes an implemented *prototype*. SAFE24 and PLL profiles are digital capabilities,
