@@ -44,6 +44,11 @@
       "anchor": null
     },
     {
+      "level": 3,
+      "title": "Smartwatch host architecture",
+      "anchor": "tiny-smartwatch"
+    },
+    {
       "level": 2,
       "title": "Specification and Evidence Quick Reference",
       "anchor": "tiny-specification-quick"

@@ -127,13 +127,13 @@ Outside diameter and axial width are nominal. The standard pack quantity applies
 #change-end(qfn-assembly-change + "reel")
 
 #pagebreak(weak: true)
-#change-start(doc.change_prefix + "reel-box", "Tape and reel box drawing and reference dimensions")
+#change-start("tiny-v02-reel-box-20261120-reel-box", "Tape and reel box drawing and reference dimensions")
 ==== Tape and Reel Box Dimensions <tiny-reel-box-dimensions>
 The nominal outside dimensions describe the carton for the same #link(box-source)[TI TUSB8041IRGCR reference device]
 shown in @tiny-reel-dimensions. The height measures the box body up to its lid seating plane.
 #visual(spec, "qfn-reel-box", reel-box(spec), [Tape and reel box outside dimensions], anchor: "tiny-reel-box-figure")
 #assembly-reference-table(spec, "reel-box", ds-table)
-#change-end(doc.change_prefix + "reel-box")
+#change-end("tiny-v02-reel-box-20261120-reel-box")
 
 #pagebreak(weak: true)
 #change-start(qfn-assembly-change + "reflow", "Pb-free classification profile and reflow limits table")

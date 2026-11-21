@@ -102,14 +102,14 @@ Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
 cache, pad or external-memory restrictions into Tiny captions.
 
-Figure 5 uses a 172 × 165 mm maximum plate with Inter labels at 9 pt or
-larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.
+The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
+at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.
 Square terminals mark ports and the three owner columns lead to grouped
 target rows. Open circles mark structural fabric connections. Draw separate
 AXI arrivals for B0–B3 in the shared SRAM block. Keep the XPI memory CDC and
 the MEM-domain register bridge on separate routes into the XPI controller.
 Group the independent APB4 targets by clock domain. Keep the caption,
-`circuit-system-fabric` anchor, and connection-summary reference to Figure 8.
+`circuit-system-fabric` anchor, and reference to the Tiny connection matrix.
 
 ### Address map
 
@@ -211,7 +211,8 @@ projected outline. Display the frozen target and pending binding states, and
 flag the three unbound signal targets by name. Caption the plate `QFN64 target
 pinout — top view` and register its standalone `qfn-pinout` SVG and PDF exports.
 
-Share Figure 4's palette. Use system blue-gray for supply, rail gray for ground
+Share the SoC functional architecture palette. Use system blue-gray for supply,
+rail gray for ground
 and EP, peripheral green for GPIO and UART, memory violet for boot XPI, debug
 teal for JTAG, and AON gold for clocks, reset and straps. Use the audio and DVP
 domain fills for the respective input-clock callouts. Use dark Inter text at
