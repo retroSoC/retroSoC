@@ -19,7 +19,8 @@
  ([2026-11-20],[v0.2 DRAFT],[Redraw Figure 5 with independent CPU local paths, a grouped fabric matrix and XPI memory and control routes.]),
  ([2026-11-20],[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.]),
  ([2026-11-20],[v0.2 DRAFT],[Add a 32-bit address map with APB4 window and SRAM bank detail.]),
- (doc.date,[v0.2 DRAFT],[Add a tape and reel box drawing and nominal carton reference dimensions.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-20],[v0.2 DRAFT],[Add a tape and reel box drawing and nominal carton reference dimensions.]),
+ (doc.date,[v0.2 DRAFT],[Add a smartwatch host diagram and reference pin assignments. The pin assignments follow the reviewed Tiny topology.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

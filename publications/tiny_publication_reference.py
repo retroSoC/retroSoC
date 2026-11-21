@@ -7,6 +7,82 @@ from pathlib import Path
 from publications.structure_reference import content_text
 
 
+def smartwatch_reference(gpio: list[dict], facts: dict) -> dict:
+    """Resolve the example board's pin ownership and validate its alternate functions."""
+    pads = {row["pin"]: row for row in gpio}
+    used: dict[int, str] = {}
+
+    def bind(pin: int, mode: str, signal: str, *, output: str | None = None, input_: str | None = None) -> str:
+        name = f"GPIO{pin}"
+        if pin in used or pin not in pads:
+            raise ValueError(f"Tiny smartwatch: invalid or shared {name} for {signal}")
+        used[pin] = signal
+        if mode == "gpio":
+            return f"{name} (GPIO output) {signal}"
+        alt = pads[pin][mode]
+        if (alt["inputs"] != ([input_] if input_ else [])
+                or alt["do"] != (output or "1'b0") or (alt["oe"] != "1'b0") != (output is not None)):
+            raise ValueError(f"Tiny smartwatch: {name} {mode.upper()} does not route {signal}")
+        return f"{name} {mode.upper()} {signal}"
+
+    xin_mhz = int(facts["profile"]["EXT_CLK_HZ"]) // 1_000_000
+    boot_cs, ram_cs = "NSS0", "NSS1"
+    reference = {
+        "power": dict(
+            title="Power and clock", rails="Core / I/O", clock=f"{xin_mhz} MHz",
+            connections=[f"Battery → external charger / PMIC → Core and I/O rails. External {xin_mhz} MHz clock → XIN."],
+        ),
+        "memory": dict(
+            title="XPI memory", bus="XPI", boot_cs=boot_cs, ram_cs=ram_cs,
+            connections=[f"Dedicated {boot_cs} → boot NOR.",
+                         f"{bind(29, 'alt0', ram_cs, output='xpi.nss_o[1]')} → optional PSRAM. Initialize explicitly before use."],
+        ),
+        "display": dict(
+            title="LCD and backlight", bus="SPI0", pwm="PWM0",
+            connections=[
+                " · ".join((bind(27, "alt0", "SCK", output="s_spi_sck"),
+                            bind(28, "alt1", "MOSI", output="s_spi_mosi"),
+                            bind(31, "alt1", "CS_N", output="s_spi_cs_n"))),
+                " · ".join((bind(30, "gpio", "D/C"), bind(25, "gpio", "panel reset"),
+                            bind(18, "alt0", "PWM0", output="u_pwm_if.pwm_o[0]") + " → backlight driver.")),
+            ],
+        ),
+        "sensing": dict(
+            title="Touch and sensors", bus="I²C0",
+            connections=[" · ".join((
+                bind(10, "alt0", "SCL", input_="u_i2c0_if.scl_i", output="u_i2c0_if.scl_o"),
+                bind(11, "alt0", "SDA", input_="u_i2c0_if.sda_i", output="u_i2c0_if.sda_o"),
+            )) + " → shared bus."],
+        ),
+        "ble": dict(
+            title="External BLE (optional)", bus="UART0",
+            connections=[
+                bind(8, "alt0", "TX", output="u_uart0_if.tx_o") + " → BLE RX · "
+                + bind(9, "alt0", "RX", input_="u_uart0_if.rx_i") + " ← BLE TX.",
+                "Use a separate configuration for the UART0 console when BLE is fitted.",
+            ],
+        ),
+        "audio": dict(
+            title="External audio (optional)", bus="I²S", ref_clock="AUDIO ref.",
+            connections=[
+                " · ".join((bind(12, "alt0", "SCLK", output="u_i2s_if.sclk_o"),
+                            bind(13, "alt0", "LRCK", output="u_i2s_if.lrck_o"),
+                            bind(14, "alt0", "DACDAT", output="u_i2s_if.dacdat_o"))),
+                " · ".join((bind(15, "alt0", "ADCDAT (in)", input_="u_i2s_if.adcdat_i"),
+                            bind(16, "alt0", "MCLK (out)", output="u_i2s_if.mclk_o"))),
+                "Independent AUDIO clock → " + bind(17, "alt0", "AUDIO.CLKIN", input_="s_audio_pad_clk") + ".",
+            ],
+        ),
+    }
+    return dict(
+        hardware_isa=facts["hardware_isa"],
+        sram_kib=facts["sram"]["CapacityKiB"],
+        axi_width=facts["sram"]["DataWidth"],
+        dma_channels=facts["dma"]["NumChannels"],
+        links=reference,
+    )
+
+
 def validate_navigation(contract: dict, headings: list[dict]) -> None:
     if contract.get("state") != "frozen" or contract.get("depth") != 5:
         raise ValueError("Tiny navigation must use the reviewed five-level contract")

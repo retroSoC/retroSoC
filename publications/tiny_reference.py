@@ -370,7 +370,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     tcd = [dict(name=name, offset=getattr(tcd_layout, name).offset, bytes=ctypes.sizeof(types[kind]),
                 role="reserved" if "reserved" in name else "HAL result" if name in {"crc_result", "status", "bytes_done", "error_status"} else "configuration") for kind, name in members]
     from publications.tiny_diagram_reference import collect as collect_illustrations
-    from publications.tiny_publication_reference import diagnostics
+    from publications.tiny_publication_reference import diagnostics, smartwatch_reference
     illustrations = collect_illustrations(ROOT, catalog, regions, layout=layout)
     diagnostic_reference = diagnostics(ROOT, refs)
     paths.update(illustrations["source_paths"])
@@ -391,6 +391,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     data = dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
                 package=package_rows(ROOT), reset_address=f"0x{reset:08X}", regions=sorted(regions, key=lambda r: r["base"]),
                 address_map=address_map_model(reset, regions, topology["main_sram"]),
+                smartwatch=smartwatch_reference(topology["gpio_alt_functions"], fact),
                 interrupts=sorted(topology["interrupts"], key=lambda r: r["core_bit"]), gpio=topology["gpio_alt_functions"],
                 pads=[dataclasses.asdict(p) for p in pads], power_pads=read(ROOT / PINS)["power_pads"],
                 clocks=read(ROOT / CLOCKS)["domains"], registers=refs, catalog=catalog,

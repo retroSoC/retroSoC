@@ -2,6 +2,8 @@
 #import "../style.typ": *
 #import "../diagrams.typ": architecture, clock-tree, overview, flow
 #import "../waveforms.typ": timing
+#import "../smartwatch.typ": smartwatch
+#import "../../../specifications/figures.typ": visual
 
 == Product Configuration and Feature Availability <tiny-configuration>
 The main reference is #code(doc.profile). *Tiny is an independent wired MCU integration*; it is not a selectable Mini mode.
@@ -49,6 +51,23 @@ See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for
 #source-note("app/apps/ci_smoke/tiny.c",title:"Current acceptance composition")
 #source-note("docs/ip/ppalite-verification.md",title:"Scoped PPALite P4 application evidence")
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
+
+#pagebreak()
+#change-start(doc.change_prefix + "smartwatch", "Smartwatch host architecture and reference pin assignments", category: "added")
+=== Smartwatch host architecture <tiny-smartwatch>
+The host reads touch and sensor data over a shared I²C bus and updates a write-only SPI LCD.
+Fit the external BLE and audio modules as needed. #visual(
+  data.specifications, "smartwatch", smartwatch(data.smartwatch), [Tiny smartwatch host architecture],
+  anchor: "tiny-smartwatch-figure",
+)
+#ds-table("smartwatch-connections", [Smartwatch example connections - REFERENCE ONLY.],
+  ([Board function], [Example Tiny signal assignment]), data.smartwatch.links.values().map(link => (
+    text(link.title), link.connections.map(text).join(linebreak()),
+  )), widths: (1fr, 3.65fr))
+Check supply and pad limits, device compatibility and I²C addresses before board integration.
+See @tiny-board-reference for the minimum system and @tiny-conflicts for pin ownership.
+#change-end(doc.change_prefix + "smartwatch")
+#pagebreak()
 
 #change-start("tiny-v02-commercial-20261114-quick-reference","Specification and evidence quick reference")
 == Specification and Evidence Quick Reference <tiny-specification-quick>

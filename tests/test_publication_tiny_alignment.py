@@ -12,7 +12,7 @@ from publications.ip_block_reference import records as ip_views
 from publications.tiny_clock_tree import prepare as prepare_clock_tree
 from publications.tiny_diagram_reference import coverage, functional_routes, validate_circuit, validate_fields, validate_rendered
 from publications.tiny_fabric_reference import prepare as prepare_fabric
-from publications.tiny_publication_reference import diagnostics, validate_navigation
+from publications.tiny_publication_reference import diagnostics, smartwatch_reference, validate_navigation
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / tiny.BOOK
@@ -21,6 +21,31 @@ BOOK = ROOT / tiny.BOOK
 @pytest.fixture(scope="module")
 def data():
     return tiny.collect(tiny.read(BOOK / "tiny.json"))
+
+
+def test_smartwatch_reference_exposes_separate_clock_and_chip_selects(data):
+    watch = data["smartwatch"]
+    links = watch["links"]
+    assert (watch["hardware_isa"], watch["sram_kib"], watch["dma_channels"]) == ("RV32IMC", 128, 8)
+    assert links["power"]["clock"] == "24 MHz"
+    assert (links["memory"]["boot_cs"], links["memory"]["ram_cs"]) == ("NSS0", "NSS1")
+    assert "GPIO29 ALT0 NSS1" in links["memory"]["connections"][1]
+    assert "GPIO30 (GPIO output) D/C" in links["display"]["connections"][1]
+    assert "GPIO8 ALT0 TX → BLE RX" in links["ble"]["connections"][0]
+    assert "GPIO16 ALT0 MCLK (out)" in links["audio"]["connections"][1]
+    assert links["audio"]["connections"][2] == "Independent AUDIO clock → GPIO17 ALT0 AUDIO.CLKIN."
+
+
+@pytest.mark.parametrize(("pin", "mode", "field", "wrong"), [
+    (28, "alt1", "do", "s_clkout"),
+    (10, "alt0", "inputs", []),
+    (17, "alt0", "oe", "1'b1"),
+])
+def test_smartwatch_reference_rejects_route_or_direction_drift(data, pin, mode, field, wrong):
+    gpio = copy.deepcopy(data["gpio"])
+    next(row for row in gpio if row["pin"] == pin)[mode][field] = wrong
+    with pytest.raises(ValueError, match=f"GPIO{pin} {mode.upper()} does not route"):
+        smartwatch_reference(gpio, data["facts"])
 
 
 def test_reviewed_peripheral_hierarchy_and_inventory(data):
