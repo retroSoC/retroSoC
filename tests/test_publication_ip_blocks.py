@@ -25,7 +25,7 @@ def books():
     }
 
 
-def test_complete_product_inventory_keeps_65_primary_views_and_seven_legacy_systems(books):
+def test_complete_product_inventory_keeps_65_ip_views_and_seven_system_figures(books):
     for product, count in [("tiny", 23), ("mini", 42)]:
         data = books[product]
         views = blocks.records(data)
@@ -36,9 +36,10 @@ def test_complete_product_inventory_keeps_65_primary_views_and_seven_legacy_syst
             if product == "tiny"
             else data["system_reference"]["illustrations"]["circuits"]
         )
-        assert len([r for r in circuits.values() if r.get("renderer") != "cetz"]) == (
-            3 if product == "tiny" else 4
-        )
+        system = {key for key in circuits if key in blocks.SYSTEM_IDS}
+        legacy = {key for key, r in circuits.items() if r.get("renderer") != "cetz"}
+        assert len(system) == (3 if product == "tiny" else 4)
+        assert legacy == (system - {"system-clocks", "system-fabric"} if product == "tiny" else system)
         assert all(
             r["product"] == product and r["block_diagram"]["style"] == blocks.STYLE
             for r in views.values()
@@ -60,7 +61,7 @@ def test_every_drawn_unit_line_and_label_passes_geometric_checks(books):
                 assert wire["label"]
 
 
-def test_system_circuit_fact_records_are_retained_without_restyling(books):
+def test_legacy_system_circuit_fact_records_are_retained_without_restyling(books):
     for product, path in [
         ("tiny", "publications/datasheets/tiny/diagram-circuits.json"),
         ("mini", "publications/datasheets/diagram-circuits.json"),
@@ -72,7 +73,7 @@ def test_system_circuit_fact_records_are_retained_without_restyling(books):
         )
         current = json.loads((ROOT / path).read_text(encoding="utf-8"))
         for name, record in original.items():
-            if name.startswith("system-"):
+            if name.startswith("system-") and not (product == "tiny" and name in {"system-clocks", "system-fabric"}):
                 assert current[name] == record
                 assert "block_diagram" not in current[name]
 

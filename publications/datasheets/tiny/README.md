@@ -89,8 +89,9 @@ RTL, relax checks, or change warning/metric baselines as a document workaround.
 outlined entries; `structure-contract.json` keeps the major/IP compatibility
 contract. IP detail headings are unnumbered bookmarks, with the actual IP depth.
 `engineering-figures.typ` adapts all 23 IP primary figures and their details to
-the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). Three system
-figures retain Circuiteria; Bytefield and Blockcell retain their scope.
+the shared locked CeTZ [IP renderer](../../ip-block-diagrams.md). The system
+media figure uses Circuiteria. CeTZ draws the system fabric, the 32-bit address
+map and the clock tree. Bytefield and Blockcell retain their scope.
 `diagrams.typ` owns the CeTZ overview, matrix and
 workflows. `soc-functional.typ` draws the functional overview from
 `soc-functional.json` and the geometry validated by the Tiny collector.
@@ -104,6 +105,8 @@ Use the [shared standard](../../specifications/README.md) and this book's
 [parameter catalog](specifications/parameters.json). Tiny QFN64 and examples stay
 separate from Mini. Current builds emit specification-data/status/usage/replacement
 audits, CSV/SVG/PDF curves, editable standalone engineering vectors and paired
-change markers. The common report_changes.py compares against the retained 439-page delivery
-for this IP round; the 425-page baseline belongs to the earlier commercial-reference
-round. Tests and successful publication builds do not qualify hardware.
+change markers. The tape, reel and reflow references use the
+[Tiny source catalog](specifications/sources.json) and the same parameter records
+in the plates, tables and audits. The Tiny QFN64 assembly update compares against
+the 452-page delivery from dev `33c61f9a` using `report_changes.py`. Tests and
+successful publication builds do not qualify hardware.

@@ -12,6 +12,8 @@ from publications.format_reference import collect_layouts
 from publications.register_reference import strip_comments
 from publications.soc_diagram_geometry import routes, segment_distance, validate_geometry
 from publications.storage_reference import collect_storage
+from publications.tiny_clock_tree import prepare as prepare_clock_tree
+from publications.tiny_fabric_reference import prepare as prepare_system_fabric
 from publications.waveform_reference import declaration, selected_width
 
 BOOK = "publications/datasheets/tiny"
@@ -45,6 +47,7 @@ def validate_bindings(root: Path, bindings: list[dict]) -> None:
 
 def validate_circuit(root: Path, circuit: dict) -> None:
     nodes, ports = {}, {}
+    kinds = {"clock", "control", "reset"} if "clock_tree" in circuit else {"control", "data"}
     for node in circuit["nodes"]:
         if node["id"] in nodes or not node.get("title") or not node.get("sources"):
             raise ValueError("Tiny circuit node missing or duplicated")
@@ -70,7 +73,7 @@ def validate_circuit(root: Path, circuit: dict) -> None:
             raise ValueError("Tiny circuit connection missing or duplicated")
         if ports[a]["direction"] != "out" or ports[b]["direction"] != "in":
             raise ValueError("Tiny circuit connection direction mismatch")
-        if ports[a]["width"] != ports[b]["width"] or edge["kind"] not in {"control", "data"}:
+        if ports[a]["width"] != ports[b]["width"] or edge["kind"] not in kinds:
             raise ValueError("Tiny circuit connection width/kind mismatch")
         width = re.search(r"/\s*(\d+)$", edge.get("label", ""))
         if width and ports[a]["width"] is not None and int(width[1]) != ports[a]["width"]:
@@ -317,6 +320,8 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
             "rtl/tiny/integration/clock_reset_domains.json",
             "scripts/generate_tiny.py",
             "publications/soc_diagram_geometry.py",
+            "publications/tiny_clock_tree.py",
+            "publications/tiny_fabric_reference.py",
         }
     )
     for path in paths:
@@ -341,6 +346,8 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
     paths.update(trace_paths(circuits))
     for circuit in circuits.values():
         validate_circuit(root, circuit)
+    prepare_clock_tree(circuits["system-clocks"], clocks["domains"])
+    prepare_system_fabric(root, circuits["system-fabric"], topology, apb_domains)
     for record in flows.values():
         if record["owner"] not in ids or not record.get("bindings"):
             raise ValueError("Tiny lifecycle diagram has no owner/source binding")

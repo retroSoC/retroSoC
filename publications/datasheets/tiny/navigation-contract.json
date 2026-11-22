@@ -44,6 +44,11 @@
       "anchor": null
     },
     {
+      "level": 3,
+      "title": "Smartwatch host architecture",
+      "anchor": "tiny-smartwatch"
+    },
+    {
       "level": 2,
       "title": "Specification and Evidence Quick Reference",
       "anchor": "tiny-specification-quick"
@@ -167,6 +172,26 @@
       "level": 4,
       "title": "Assembly Layers and Reliability",
       "anchor": "tiny-assembly-reliability"
+    },
+    {
+      "level": 4,
+      "title": "Carrier Tape Dimensions",
+      "anchor": "tiny-carrier-tape"
+    },
+    {
+      "level": 4,
+      "title": "Reel Dimensions",
+      "anchor": "tiny-reel-dimensions"
+    },
+    {
+      "level": 4,
+      "title": "Tape and Reel Box Dimensions",
+      "anchor": "tiny-reel-box-dimensions"
+    },
+    {
+      "level": 4,
+      "title": "Reflow Soldering Profile",
+      "anchor": "tiny-reflow-profile"
     },
     {
       "level": 3,

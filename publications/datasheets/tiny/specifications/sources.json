@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ti-tusb8041-tape-reel",
+    "kind": "external",
+    "title": "Texas Instruments TUSB8041 package materials information",
+    "version": "SLLSEE4E / package materials appendix 2025-06-18",
+    "locator": "PDF page 47 (Pack Materials-Page 1), Tape and Reel Information, TUSB8041IRGCR row and pocket quadrants",
+    "url": "https://www.ti.com/lit/ds/symlink/tusb8041.pdf#page=47",
+    "sha256": "b715bce72e988310d18dbc8eb041a05b5f15e4a0b690843a873abdc373a1ad87",
+    "use": "Nominal tape and reel example for the TI 9 × 9 mm, 64-pin RGC VQFN orderable device."
+  },
+  {
+    "id": "ti-tusb8041-reel-box",
+    "kind": "external",
+    "title": "Texas Instruments TUSB8041 package materials information",
+    "version": "SLLSEE4E / package materials appendix 2025-06-18",
+    "locator": "PDF page 48 (Pack Materials-Page 2), Tape and Reel Box Dimensions, TUSB8041IRGCR row",
+    "url": "https://www.ti.com/lit/ds/symlink/tusb8041.pdf#page=48",
+    "sha256": "b715bce72e988310d18dbc8eb041a05b5f15e4a0b690843a873abdc373a1ad87",
+    "use": "Nominal reel-box dimensions for the TI 9 × 9 mm, 64-pin RGC VQFN orderable device."
+  },
+  {
+    "id": "adi-smp-reflow",
+    "kind": "external",
+    "title": "Analog Devices Surface Mount Products",
+    "version": "SMP Rev J",
+    "locator": "PDF page 1, Tables 2 and 3 (Pb-free column), and page 2, Figure 2",
+    "url": "https://www.analog.com/media/en/package-pcb-resources/package/smp_rev_j.pdf",
+    "sha256": "4f86bf557ca073573b395cc7b31ce98ea76392d015cf4c8517792dda7722f80d",
+    "use": "Pb-free package classification and preconditioning example for the stated thickness category."
+  }
+]

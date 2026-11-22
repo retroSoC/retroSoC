@@ -49,7 +49,9 @@ def source_inputs(product: str) -> set[str]:
             "publications/specifications/components.typ", "publications/specifications/figures.typ",
             "requirements/publication.txt"}
     if product == "tiny":
-        inputs.add("publications/datasheets/tiny/package-figures.typ")
+        inputs.update({f"{BOOKS[product]}/sources.json", "publications/datasheets/tiny/package-figures.typ",
+                       "publications/datasheets/tiny/assembly-references.typ",
+                       "publications/datasheets/tiny/soc-palette.typ"})
     return inputs
 
 
@@ -213,6 +215,27 @@ def qfn_geometry(parameters: dict[str, float], pins: list[dict]) -> dict:
             "land_row_span": f"{Decimal(str(pitch)) * 15:.2f}"}
 
 
+def qfn_pinout_aliases(pins: list[dict], routes: list[dict]) -> list[dict]:
+    """Select the published callouts and resolve their QFN targets and mux routes."""
+    selected = (
+        (28, "ALT0", "CLKOUT"),
+        (8, "ALT0", "UART0.TX"),
+        (9, "ALT0", "UART0.RX"),
+        (17, "ALT0", "AUDIO.CLKIN"),
+        (20, "ALT1", "DVP.PCLK"),
+        (23, "ALT1", "CLKOUT"),
+    )
+    pin_numbers = {p["name"]: p["pin"] for p in pins}
+    route_keys = {(r["gpio"], r["mode"], r["function"]) for r in routes}
+    aliases = []
+    for gpio, mode, function in selected:
+        pin = pin_numbers.get(f"GPIO{gpio}")
+        if pin is None or (gpio, mode, function) not in route_keys:
+            raise ValueError(f"QFN64 pinout requires a routed target for GPIO{gpio} {mode} {function}")
+        aliases.append(dict(pin=pin, gpio=gpio, mode=mode, function=function))
+    return aliases
+
+
 def qfn_measurement(record: dict) -> dict:
     """Render the catalog value and tolerance at the drawing's precision."""
     value = Decimal(str(record["value"]))
@@ -281,6 +304,8 @@ def collect(root: Path, product: str, base: dict) -> dict:
     parameters = read(root / BOOKS[product] / "parameters.json")
     models = read(root / MODEL_FILE)
     sources = read(root / SOURCE_FILE)
+    if product == "tiny":
+        sources.extend(read(root / BOOKS[product] / "sources.json"))
     authored_id, payload_id = product + ":authored-examples", product + ":payload-model"
     for sid, path, title, locator in (
         (authored_id, f"{BOOKS[product]}/parameters.json", "Authored electrical examples", "absolute, operating, DC and AC record values/conditions"),
@@ -438,7 +463,8 @@ def collect(root: Path, product: str, base: dict) -> dict:
         for pin in perimeter:
             name = pin["name"]
             pin.update(function=name, gpio_mode="-", direction="TBD", reset="TBD", bias="TBD",
-                       limitation="Frozen target; physical binding TBD")
+                       limitation="Frozen target; physical binding TBD",
+                       unbound_target=name in {"XOUT", "BOOT_MODE", "TEST_MODE"})
             match = re.fullmatch(r"GPIO(\d+)", name)
             if match:
                 number = int(match[1])
@@ -455,6 +481,7 @@ def collect(root: Path, product: str, base: dict) -> dict:
             elif name in {"XIN", "RESET_N", "JTAG_TCK", "JTAG_TMS", "JTAG_TDI", "JTAG_TRST_N"}:
                 pin.update(direction="I", reset="External input", limitation="Digital input role; electrical bias and bonding TBD")
         spec["qfn"] = qfn_geometry(values, perimeter)
+        spec["qfn"]["pinout_aliases"] = qfn_pinout_aliases(perimeter, spec["pins"])
         spec["qfn"]["measurements"] = {key: qfn_measurement(record) for key, record in mechanical.items()}
         spec["qfn"]["assembly"] = qfn_assembly(values, models)
         spec["paste_coverage_percent"] = spec["qfn"]["assembly"]["paste_coverage_percent"]

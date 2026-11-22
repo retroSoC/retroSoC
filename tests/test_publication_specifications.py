@@ -160,6 +160,35 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
     assert spec["paste_coverage_percent"] == pytest.approx(16 * 1.4 ** 2 / 7.15 ** 2 * 100)
 
 
+def test_tiny_target_pinout_numbering_and_callouts(spec):
+    qfn = spec["qfn"]
+    pins = qfn["pins"]
+    assert len({p["name"] for p in pins}) == 64
+    for side in range(4):
+        edge = pins[side * 16:(side + 1) * 16]
+        axis = 1 - side % 2
+        coordinates = [p["top"][axis] for p in edge]
+        assert [p["side"] for p in edge] == [side] * 16
+        assert coordinates == sorted(coordinates, reverse=side in {0, 3})
+    assert {p["name"] for p in pins if p["unbound_target"]} == {"XOUT", "BOOT_MODE", "TEST_MODE"}
+    aliases = qfn["pinout_aliases"]
+    assert [(a["pin"], a["gpio"], a["mode"], a["function"]) for a in aliases] == [
+        (13, 28, "ALT0", "CLKOUT"),
+        (27, 8, "ALT0", "UART0.TX"),
+        (28, 9, "ALT0", "UART0.RX"),
+        (40, 17, "ALT0", "AUDIO.CLKIN"),
+        (43, 20, "ALT1", "DVP.PCLK"),
+        (46, 23, "ALT1", "CLKOUT"),
+    ]
+    assert all(pins[a["pin"] - 1]["name"] == f"GPIO{a['gpio']}" for a in aliases)
+
+
+def test_tiny_target_pinout_rejects_unbound_alias(spec):
+    routes = [r for r in spec["pins"] if (r["gpio"], r["mode"]) != (20, "ALT1")]
+    with pytest.raises(ValueError, match=r"GPIO20 ALT1 DVP\.PCLK"):
+        s.qfn_pinout_aliases(spec["qfn"]["pins"], routes)
+
+
 def test_qfn_reference_dimensions_and_contact_edges(spec):
     qfn = spec["qfn"]
     pins = qfn["pins"]
@@ -239,3 +268,59 @@ def test_models_are_centrally_fingerprinted_and_references_stay_separate(spec):
     assert "publications/datasheets/tiny/specifications/parameters.json" in s.source_inputs("tiny")
     params = json.loads((ROOT / s.BOOKS["mini"] / "parameters.json").read_text(encoding="utf-8"))
     assert not any(r["group"] == "mechanical" for r in params["records"])
+
+
+def test_tiny_tape_and_reel_match_one_ti_orderable_device(spec):
+    records = {r["id"].removeprefix("tiny."): r for r in spec["records"]}
+    expected = {
+        "carrier-tape.pocket-width": (9.30, "mm"), "carrier-tape.pocket-length": (9.30, "mm"),
+        "carrier-tape.pocket-depth": (1.10, "mm"), "carrier-tape.pocket-pitch": (12.00, "mm"),
+        "carrier-tape.width": (16.00, "mm"), "carrier-tape.orientation": ("Q2", "1"),
+        "reel.diameter": (330, "mm"), "reel.width": (16.4, "mm"), "reel.quantity": (2000, "devices/reel"),
+    }
+    for key, pair in expected.items():
+        record = records[key]
+        assert (record["value"], record["unit"]) == pair
+        assert record["status"] == "reference" and record["sources"] == ["ti-tusb8041-tape-reel"]
+        assert "TUSB8041IRGCR" in record["conditions"]
+    for key in ("carrier-tape.supplier-drawing", "reel.supplier-drawing", "reel.hub", "reel.pack-quantity"):
+        assert records[key]["status"] == "tbd" and records[key]["value"] is None
+    assert f"{s.BOOKS['tiny']}/sources.json" in s.source_inputs("tiny")
+
+
+def test_tiny_reel_box_reference_uses_the_same_orderable_device(spec):
+    records = {r["id"]: r for r in spec["records"]}
+    sources = {source["id"]: source for source in spec["sources"]}
+    carton = sources["ti-tusb8041-reel-box"]
+    reel = sources["ti-tusb8041-tape-reel"]
+    assert carton["sha256"] == reel["sha256"] and carton["version"] == reel["version"]
+    assert carton["url"].endswith("#page=48") and "TUSB8041IRGCR" in carton["locator"]
+    for key, symbol, nominal in (("length", "L", 367.0), ("width", "W", 367.0), ("height", "H", 38.0)):
+        record = records[f"tiny.reel-box.{key}"]
+        assert (record["unit"], record["value"], record["decimals"], record["symbols"]) == ("mm", nominal, 1, [symbol])
+        assert record["group"] == "reel-box" and record["status"] == "reference"
+        assert record["sources"] == [carton["id"]] and "TUSB8041IRGCR" in record["conditions"]
+    pending = records["tiny.reel-box.supplier-drawing"]
+    assert (pending["group"], pending["status"], pending["value"]) == ("reel-box", "tbd", None)
+    assert "contents per carton" in pending["meaning"]
+    quantity = records["tiny.reel.quantity"]
+    assert (quantity["value"], quantity["unit"], quantity["status"]) == (2000, "devices/reel", "reference")
+    assert "TUSB8041IRGCR" in quantity["conditions"]
+
+
+def test_tiny_reflow_classification_values_are_separate_from_product_limits(spec):
+    records = {r["id"].removeprefix("tiny."): r for r in spec["records"]}
+    values = {
+        "start-temperature": 25, "liquidus-temperature": 217, "peak-temperature": 260, "peak-band": 5,
+    }
+    bounds = {
+        "soak-temperature": (150, 200), "soak-time": (60, 120), "liquidus-time": (60, 150),
+        "peak-time": (None, 30), "ramp-up": (None, 3), "ramp-down": (None, 6), "time-to-peak": (None, 8),
+    }
+    for key, expected in (values | {k: dict(min=lo, typ=None, max=hi) for k, (lo, hi) in bounds.items()}).items():
+        record = records["reflow." + key]
+        assert record["value"] == expected
+        assert record["status"] == "reference" and record["sources"] == ["adi-smp-reflow"]
+    assert "< 1.6 mm" in records["reflow.peak-temperature"]["conditions"]
+    for key in ("reflow.product-limits", "reflow.board-profile", "assembly.msl"):
+        assert records[key]["status"] == "tbd" and records[key]["value"] is None

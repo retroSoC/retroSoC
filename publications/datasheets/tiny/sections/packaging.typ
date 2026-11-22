@@ -1,7 +1,11 @@
 #import "../style.typ": *
 #import "../../../specifications/components.typ": parameters, characteristics, reference-notice
 #import "../../../specifications/figures.typ": visual, connection, board-circuit
-#import "../package-figures.typ": qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
+#import "../package-figures.typ": qfn-pinout, qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
+#import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reel-box, reflow
+
+#let qfn-layout-change = "tiny-v02-qfn64-layout-20261119-"
+#let qfn-assembly-change = "tiny-v02-qfn64-assembly-20261119-"
 #let spec = data.specifications
 
 == Packaging <tiny-pins>
@@ -11,16 +15,20 @@ Physical die-to-package bonding, pad electrical qualification and the supplier o
 The target table is not an implemented bond map.
 
 === Pin Mapping
+#change-start("tiny-v02-qfn64-pinout-20261120-target-pinout", "QFN64 target pinout and selected alternate functions")
+#visual(spec, "qfn-pinout", qfn-pinout(spec), [QFN64 target pinout — top view], anchor: "qfn64-target-pinout")
+#change-end("tiny-v02-qfn64-pinout-20261120-target-pinout")
+#pagebreak(weak: true)
 #ds-table("qfn64",[QFN64 pin descriptions - frozen target; physical binding pending],
   ([Pin],[Target / external function],[Mode],[Dir.],[Reset logic],[Bias],[Restrictions / state]),
   data.specifications.qfn.pins.map(p=>(str(p.pin),p.function,p.gpio_mode,p.direction,p.reset,p.bias,p.limitation)),
   widths:(0.35fr,1.65fr,0.65fr,0.45fr,0.75fr,0.85fr,1.1fr),
   notes:[Directions and reset logic describe the current digital function where known. XOUT, BOOT_MODE and TEST_MODE remain unbound targets. All physical pad limits, bond mapping and electrical reset bias remain separate/TBD.])
 #block(breakable: false, width: 100%)[
-  #change-start(doc.change_prefix + "pin-numbering", "QFN64 top and bottom pin numbering")
+  #change-start(qfn-layout-change + "pin-numbering", "QFN64 top and bottom pin numbering")
   #visual(spec, "qfn-top", qfn-pin-view(spec, "top"), [QFN64 top view and projected terminal numbering])
   #visual(spec, "qfn-bottom", qfn-pin-view(spec, "bottom"), [QFN64 bottom view and unnumbered exposed pad])
-  #change-end(doc.change_prefix + "pin-numbering")
+  #change-end(qfn-layout-change + "pin-numbering")
 ]
 
 #ds-table("target-binding",[Target signals versus RTL and physical binding],
@@ -57,7 +65,7 @@ I2C needs external pull-ups and compatible levels. DVP, I2S, PWM, SPI and displa
 Boot XPI and JTAG use dedicated target groups.
 
 #pagebreak(weak: true)
-#change-start(doc.change_prefix + "package-drawings", "QFN64 mechanical outline, footprint and assembly layers")
+#change-start(qfn-layout-change + "package-drawings", "QFN64 mechanical outline, footprint and assembly layers")
 === Package Dimensions, Reflow and Reliability
 ==== Package Outline and Mechanical Dimensions <tiny-package-outline>
 The preferred planning outline and terminal pitch follow the reference geometry in
@@ -93,8 +101,51 @@ Thermal resistance, MSL, bake/reflow peaks and reliability remain TBD.
 Assembly organization follows
 #link("https://www.analog.com/en/resources/app-notes/smt-assembly-and-pcb-design-guidelines-for-maxims-standard-wirebonded-quad-flatpack.html")[ADI's QFN assembly guidance].
 The selected supplier and assembler must release the final process.
-#change-end(doc.change_prefix + "package-drawings")
+#change-end(qfn-layout-change + "package-drawings")
 
+#let tape-source = spec.sources.find(s => s.id == "ti-tusb8041-tape-reel").url
+#let box-source = spec.sources.find(s => s.id == "ti-tusb8041-reel-box").url
+#let reflow-source = spec.sources.find(s => s.id == "adi-smp-reflow").url
+
+#pagebreak(weak: true)
+#change-start(qfn-assembly-change + "carrier-tape", "Carrier tape engineering drawing and reference dimensions")
+==== Carrier Tape Dimensions <tiny-carrier-tape>
+The component-side view shows the feed direction relative to the sprocket holes and the Pin 1 corner.
+The nominal example is for the 64-pin, 9 × 9 mm RGC VQFN in
+#link(tape-source)[TI's TUSB8041IRGCR packaging materials information].
+#visual(spec, "qfn-carrier-tape", carrier-tape(spec), [Carrier tape and pocket dimensions])
+#assembly-reference-table(spec, "carrier-tape", ds-table)
+#change-end(qfn-assembly-change + "carrier-tape")
+
+#pagebreak(weak: true)
+#change-start(qfn-assembly-change + "reel", "Reel engineering drawing, dimensions and standard pack example")
+==== Reel Dimensions <tiny-reel-dimensions>
+Outside diameter and axial width are nominal. The standard pack quantity applies to the exact
+#link(tape-source)[TI TUSB8041IRGCR orderable device] shown in @tiny-carrier-tape.
+#visual(spec, "qfn-reel", reel(spec), [Reel front and axial side views])
+#assembly-reference-table(spec, "reel", ds-table)
+#change-end(qfn-assembly-change + "reel")
+
+#pagebreak(weak: true)
+#change-start("tiny-v02-reel-box-20261120-reel-box", "Tape and reel box drawing and reference dimensions")
+==== Tape and Reel Box Dimensions <tiny-reel-box-dimensions>
+The nominal outside dimensions describe the carton for the same #link(box-source)[TI TUSB8041IRGCR reference device]
+shown in @tiny-reel-dimensions. The height measures the box body up to its lid seating plane.
+#visual(spec, "qfn-reel-box", reel-box(spec), [Tape and reel box outside dimensions], anchor: "tiny-reel-box-figure")
+#assembly-reference-table(spec, "reel-box", ds-table)
+#change-end("tiny-v02-reel-box-20261120-reel-box")
+
+#pagebreak(weak: true)
+#change-start(qfn-assembly-change + "reflow", "Pb-free classification profile and reflow limits table")
+==== Reflow Soldering Profile <tiny-reflow-profile>
+The example uses package body temperature for Pb-free classification and preconditioning.
+A Tiny board profile requires the released package, solder paste and measured assembly temperatures.
+See #link(reflow-source)[ADI Surface Mount Products Rev J, Tables 2 and 3 and Figure 2].
+#visual(spec, "qfn-reflow", reflow(spec), [Pb-free package classification profile])
+#assembly-reference-table(spec, "reflow", ds-table)
+#change-end(qfn-assembly-change + "reflow")
+
+#pagebreak(weak: true)
 === Minimum System and Board Design Reference <tiny-board-reference>
 #visual(data.specifications,"board-minimum",connection(data.specifications,"minimum"),[Minimum-system topology with external 24 MHz XIN.])
 The minimum system needs valid core/digital-I/O rails, return paths, XIN, reset, boot NOR and JTAG access.

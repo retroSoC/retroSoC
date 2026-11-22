@@ -248,6 +248,58 @@ def validate_maps(root: Path, fact: dict) -> tuple:
     return reset, regions, topology
 
 
+def _address_bands(windows: list[dict], base: int, end: int) -> list[dict]:
+    """Cover an inclusive range with explicit gaps, in descending display order."""
+    bands = []
+    cursor = base
+    for window in sorted(windows, key=lambda row: row["base"]):
+        if not cursor <= window["base"] <= window["end"] <= end:
+            raise ValueError("overlapping or invalid Tiny address-map window")
+        if cursor < window["base"]:
+            bands.append(dict(name="Unmapped", kind="unmapped", base=cursor, end=window["base"] - 1))
+        bands.append(window)
+        cursor = window["end"] + 1
+    if cursor <= end:
+        bands.append(dict(name="Unmapped", kind="unmapped", base=cursor, end=end))
+    return bands[::-1]
+
+
+def address_map_model(reset: int, regions: list[dict], main_sram: dict) -> dict:
+    """Build the overview and detail views from the same decoded windows as the table."""
+    group_names = {"apb4_system": "APB4 system addresses", "apb4_periph": "APB4 peripheral addresses"}
+    names = {
+        "FLASH": "Boot Flash alias", "SRAM": "Main SRAM", "XPI": "XPI memory aperture",
+        "APB4_GPIO": "GPIO Data", "APB4_GPIO_ADMIN": "GPIO Admin", "APB4_XPI": "XPI registers",
+        "APB4_SRAM": "SRAM controller", "APB4_SPI": "SPI0",
+        "APB4_PPALITE": "PPALite", "APB4_TIM0": "Timer 0", "APB4_TIM1": "Timer 1",
+    }
+
+    def band(region: dict, kind: str) -> dict:
+        symbol = region["symbol"]
+        return dict(symbol=symbol, kind=kind, name=names.get(symbol, symbol.removeprefix("APB4_")),
+                    base=region["base"], end=region["end"], size=region["size"])
+
+    overview = [band(region, "memory") for region in regions if region["route"] not in group_names]
+    groups = []
+    for route, name in group_names.items():
+        windows = [band(region, "apb-window") for region in regions if region["route"] == route]
+        base, end = min(w["base"] for w in windows), max(w["end"] for w in windows)
+        group = dict(symbol=route, kind="apb-group", name=name, base=base, end=end)
+        overview.append(group)
+        groups.append(dict(**group, bands=_address_bands(windows, base, end)))
+
+    sram = next(row for row in overview if row["symbol"] == "SRAM")
+    group_bytes = main_sram["group_bytes"]
+    count = main_sram["groups"]
+    if int(main_sram["base"], 0) != sram["base"] or group_bytes <= 0 or group_bytes * count != sram["size"]:
+        raise ValueError("Tiny address-map SRAM groups do not cover the decoded SRAM window")
+    sram_banks = [dict(name=f"B{i}", base=sram["base"] + i * group_bytes,
+                       end=sram["base"] + (i + 1) * group_bytes - 1, size=group_bytes)
+                  for i in reversed(range(count))]
+    return dict(reset=reset, overview=_address_bands(overview, 0, (1 << 32) - 1),
+                apb_groups=groups, sram_banks=sram_banks)
+
+
 def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -> dict:
     if check_snapshot and not layout:
         raise ValueError("Publication checks require complete IP layout; source inventory uses check_snapshot=False")
@@ -318,7 +370,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     tcd = [dict(name=name, offset=getattr(tcd_layout, name).offset, bytes=ctypes.sizeof(types[kind]),
                 role="reserved" if "reserved" in name else "HAL result" if name in {"crc_result", "status", "bytes_done", "error_status"} else "configuration") for kind, name in members]
     from publications.tiny_diagram_reference import collect as collect_illustrations
-    from publications.tiny_publication_reference import diagnostics
+    from publications.tiny_publication_reference import diagnostics, smartwatch_reference
     illustrations = collect_illustrations(ROOT, catalog, regions, layout=layout)
     diagnostic_reference = diagnostics(ROOT, refs)
     paths.update(illustrations["source_paths"])
@@ -338,6 +390,8 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
         r.update(base_hex=f"0x{r['base']:08X}", end_hex=f"0x{r['end']:08X}", size_label=f"{r['size'] // 1024} KiB")
     data = dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
                 package=package_rows(ROOT), reset_address=f"0x{reset:08X}", regions=sorted(regions, key=lambda r: r["base"]),
+                address_map=address_map_model(reset, regions, topology["main_sram"]),
+                smartwatch=smartwatch_reference(topology["gpio_alt_functions"], fact),
                 interrupts=sorted(topology["interrupts"], key=lambda r: r["core_bit"]), gpio=topology["gpio_alt_functions"],
                 pads=[dataclasses.asdict(p) for p in pads], power_pads=read(ROOT / PINS)["power_pads"],
                 clocks=read(ROOT / CLOCKS)["domains"], registers=refs, catalog=catalog,

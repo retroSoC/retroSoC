@@ -3,6 +3,8 @@
 #import "../diagrams.typ": architecture, clock-tree, overview, flow
 #import "../soc-functional.typ": functional-architecture
 #import "../waveforms.typ": timing
+#import "../address-map.typ": address-map
+#import "../../../specifications/figures.typ": visual
 
 = System Architecture
 == Introduction <tiny-core>
@@ -56,7 +58,13 @@ accepted data before B. Backpressure requires valid payloads to remain stable.
 
 #access-matrix()
 
+#pagebreak(weak: true)
 === Address Mapping <tiny-addresses>
+#change-start("tiny-v02-address-map-20261120-address-map-figure", "Tiny 32-bit address map")
+#visual(data.specifications, "address-map", address-map(data.address_map), [Tiny 32-bit address map.],
+  reference: false, anchor: "tiny-address-map-figure")
+#change-end("tiny-v02-address-map-20261120-address-map-figure")
+#pagebreak(weak: true)
 #ds-table("memory-map",[Canonical Tiny address windows],([Region],[Base],[Last address],[Size]),
   data.regions.map(r=>(code(r.symbol),code(r.base_hex),code(r.end_hex),window-size(r))),widths:(1.2fr,1fr,1fr,0.65fr))
 The Flash alias and XPI aperture identify memory routing, not fitted NOR capacity. The selected acceptance device and slot

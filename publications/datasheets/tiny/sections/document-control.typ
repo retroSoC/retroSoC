@@ -2,7 +2,7 @@
 #import "../diagrams.typ": flow
 
 = Document Control
-#change-start(doc.change_prefix + "document-control", "Publication revision history", category: "cross-reference")
+#change-start(doc.change_prefix + "document-control", "Publication revision history")
 == Revision History
 #ds-table("revision",[Document revision history],([Date],[Version],[Change]),(
  ([2026-09-25],[v0.1 DRAFT],[Initial IHP130/four-channel publication; original PDF retained.]),
@@ -13,7 +13,16 @@
  ([2026-11-14],[v0.2 DRAFT],[Commercial-reference organization, typed data/provenance, QFN64 and board vectors, characteristic models and common maintenance rules. No new hardware qualification.]),
  ([2026-11-17],[v0.2 DRAFT],[Functional IP diagram v2: 23 main and 12 detail views, source-bound units and dimensions, solid fine-line routing and outline audits. Integrate the reviewed d9f27811 snapshot and retain the scope of the dated PPALite P4 acceptance.]),
  ([2026-11-18],[v0.2 DRAFT],[RM0486 comparison across all IP views. Refine signal labels, local route details and crossing limits. Retain the reviewed hardware source and evidence.]),
- (doc.date,[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-19],[v0.2 DRAFT],[Redraw QFN64 pin numbering, mechanical views, land pattern and assembly layers in the publication gold and gray palette.]),
+ ([2026-11-19],[v0.2 DRAFT],[Add carrier tape, reel and Pb-free reflow classification drawings and reference tables.]),
+ ([2026-11-20],[v0.2 DRAFT],[Expand the clock tree with the clock source selection, divisors, gate controls and reset distribution.]),
+ ([2026-11-20],[v0.2 DRAFT],[Redraw Figure 5 with independent CPU local paths, a grouped fabric matrix and XPI memory and control routes.]),
+ ([2026-11-20],[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.]),
+ ([2026-11-20],[v0.2 DRAFT],[Add a 32-bit address map with APB4 window and SRAM bank detail.]),
+ ([2026-11-20],[v0.2 DRAFT],[Add a tape and reel box drawing and nominal carton reference dimensions.]),
+ ([2026-11-21],[v0.2 DRAFT],[Add a smartwatch host diagram and reference pin assignments. The pin assignments follow the reviewed Tiny topology.]),
+ (doc.date,[v0.2 DRAFT],[Expand the smartwatch diagram and pin assignments to cover storage, radio and service options, sensing, audio, actuation and an alternate camera assembly.])),widths:(0.8fr,0.85fr,2.5fr))
+#change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>
 Hardware/software snapshot: #code(doc.source_revision). This document's source manifest records the exact technical files,
@@ -26,7 +35,6 @@ The prototype brand is Rill; this identity does not establish an orderable or qu
 
 
 == License
-#change-end(doc.change_prefix + "document-control")
 The project retains Mulan PSL v2 and the respective component/font licenses. Read the repository LICENSE
 and locked third-party notices for the full terms; the publication does not change their scope.
 #source-note("LICENSE",title:"Project license")

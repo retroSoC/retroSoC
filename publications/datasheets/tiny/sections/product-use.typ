@@ -2,6 +2,8 @@
 #import "../style.typ": *
 #import "../diagrams.typ": architecture, clock-tree, overview, flow
 #import "../waveforms.typ": timing
+#import "../smartwatch.typ": smartwatch
+#import "../../../specifications/figures.typ": visual
 
 == Product Configuration and Feature Availability <tiny-configuration>
 The main reference is #code(doc.profile). *Tiny is an independent wired MCU integration*; it is not a selectable Mini mode.
@@ -49,6 +51,28 @@ See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for
 #source-note("app/apps/ci_smoke/tiny.c",title:"Current acceptance composition")
 #source-note("docs/ip/ppalite-verification.md",title:"Scoped PPALite P4 application evidence")
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
+
+#pagebreak()
+#change-start(doc.change_prefix + "smartwatch", "Expanded smartwatch architecture and assembly assignments")
+=== Smartwatch host architecture <tiny-smartwatch>
+Choose the watch or camera assembly. The watch uses native SDIO for storage and selects
+one UART0 attachment for wireless or service. See @tiny-smartwatch-connections for the wiring and resource assignments.
+#visual(
+  data.specifications, "smartwatch", smartwatch(data.smartwatch), [Tiny smartwatch host architecture],
+  anchor: "tiny-smartwatch-figure",
+)
+#pagebreak()
+The assignments below follow @tiny-smartwatch-figure. Check supply limits and device compatibility before board integration.
+#ds-table("smartwatch-connections", [Smartwatch example connections - REFERENCE ONLY.],
+  ([Board function], [Tiny assignment], [Board connection and conditions]), data.smartwatch.rows.map(row => (
+    text(row.title), row.assignments.map(text).join(linebreak()), text(row.notes),
+  )), widths: (0.83fr, 1.57fr, 1.83fr),
+  notes: [GPIO entries without an ALT use GPIO mode. DMA3 is shared by XPI, CRC, SPI display and WS2812.
+    Serialize the leases through completion, including wire completion for the display and LEDs.
+    See @tiny-board-reference for the minimum system and @tiny-conflicts for resource ownership.],
+) <tiny-smartwatch-connections>
+#change-end(doc.change_prefix + "smartwatch")
+#pagebreak()
 
 #change-start("tiny-v02-commercial-20261114-quick-reference","Specification and evidence quick reference")
 == Specification and Evidence Quick Reference <tiny-specification-quick>

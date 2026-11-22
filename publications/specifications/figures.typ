@@ -81,9 +81,10 @@
   })
 }
 
-#let visual(spec,id,body,caption,reference:true,kind:auto)=block(width:100%,breakable:false)[
+#let visual(spec,id,body,caption,reference:true,kind:auto,anchor:none)=block(width:100%,breakable:false)[
   #context metadata((kind:"specification-figure",id:id,category:"engineering",status:if reference {"reference"} else {"confirmed"},page:here().page()))
-  #figure(body,kind:kind,caption:[#caption #if reference {text(" - REFERENCE ONLY.")}])
+  #let item=figure(body,kind:kind,caption:[#caption #if reference {text(" - REFERENCE ONLY.")}])
+  #if anchor == none { item } else { [#item#label(anchor)] }
 ]
 #let connection(spec,kind)={
   set text(font:"Inter",size:9pt,weight:"regular",fill:ink)

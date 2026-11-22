@@ -3,6 +3,7 @@
 #import "../../specifications/figures.typ": ink, gold, gray
 #import "../../specifications/components.typ": use-record
 #import "../../specifications/scientific.typ" as scientific
+#import "soc-palette.typ": domain-fill, rail-fill
 
 #let metal = rgb("#A0A09C")
 #let outline = 0.6pt + ink
@@ -33,11 +34,12 @@
   let (right, high) = transform(center, scale, (x + half-w, y + half-h))
   cetz.draw.rect(point(left, low), point(right, high), fill: fill, stroke: stroke)
 }
-#let exposed-pad(center, scale, d) = {
+#let exposed-pad(center, scale, d, top: false, fill: metal, stroke: outline) = {
   let half = d.ep / 2
   let corners = ((-half, half), (half - d.chamfer, half), (half, half - d.chamfer),
     (half, -half), (-half, -half))
-  cetz.draw.line(..corners.map(p => point(..transform(center, scale, p))), close: true, fill: metal, stroke: outline)
+  let xy = corners.map(((x, y)) => transform(center, scale, (if top { -x } else { x }, y)))
+  cetz.draw.line(..xy.map(p => point(..p)), close: true, fill: fill, stroke: stroke)
 }
 #let pin-position(spec, center, scale, view) = {
   let (x, y) = spec.qfn.pins.first().at(view)
@@ -114,6 +116,109 @@
       }
     }
     pin-mark(pin-position(spec, centre, scale, view))
+  })
+}
+
+#let pinout-fill = (
+  supply: domain-fill.system,
+  ground: rail-fill,
+  gpio: domain-fill.peripheral,
+  xpi: domain-fill.memory,
+  jtag: domain-fill.jtag,
+  control: domain-fill.aon,
+  audio: domain-fill.audio,
+  pixel: domain-fill.dvp_pixel,
+)
+
+#let pinout-primary-fill(name) = {
+  if name.starts-with("GPIO") { pinout-fill.gpio }
+  else if name.starts-with("XPI_") { pinout-fill.xpi }
+  else if name.starts-with("JTAG_") { pinout-fill.jtag }
+  else if name.starts-with("VDD") or name.starts-with("AVDD") { pinout-fill.supply }
+  else if name.starts-with("VSS") or name.starts-with("AVSS") { pinout-fill.ground }
+  else { pinout-fill.control }
+}
+
+#let pinout-tag(body, fill) = box(body, fill: fill, radius: 0.55mm, inset: (x: 0.85mm, y: 0.33mm))
+
+#let qfn-pinout(spec) = context {
+  set text(font: "Inter", size: 9pt, fill: ink)
+  let qfn = spec.qfn
+  let d = qfn.dimensions
+  let centre = (86, 77)
+  let scale = 9
+  let half = d.body * scale / 2
+  let number-inset = (d.lead_length * scale + (d.body - d.ep) * scale / 2) / 2
+  let normals = ((-1, 0), (0, 1), (1, 0), (0, -1))
+  let anchors = ("east", "north", "west", "south")
+  let alias-fills = (CLKOUT: pinout-fill.control, UART0: pinout-fill.gpio,
+    AUDIO: pinout-fill.audio, DVP: pinout-fill.pixel)
+  let size(key) = qfn.measurements.at(key).nom.split(" ").first()
+  measures(spec, ("body", "pitch", "ep"))
+  cetz.canvas(length: 1mm, {
+    import cetz.draw: circle, line, rect
+    face(172, 180)
+    write-at(4, 5.5, [*FROZEN TARGET* · Physical binding pending], anchor: "west")
+    square(centre, scale, d.body, fill: white, stroke: 0.9pt + ink)
+    exposed-pad(centre, scale, d, top: true, fill: none, stroke: projection)
+    circle(point(centre.at(0) - half + 3, centre.at(1) - half + 3), radius: 0.9mm, fill: ink, stroke: none)
+    write-at(86, 66, text(size: 16pt, weight: "bold", [Tiny Gen1]))
+    write-at(86, 73.5, text(size: 12pt, weight: "semibold", [QFN64 · Top view]))
+    write-at(86, 91, pinout-tag([*EP* · Intended GND · Bonding TBD], pinout-fill.ground))
+    for p in qfn.pins {
+      let (x, y) = transform(centre, scale, p.top)
+      let (dx, dy) = normals.at(p.side)
+      let anchor = anchors.at(p.side)
+      let name = p.name + if p.unbound_target { "*" } else { "" }
+      let primary = pinout-tag(text(weight: "semibold", name), pinout-primary-fill(p.name))
+      let (lx, ly) = (x + 1.55 * dx, y + 5.15 * dy)
+      contact(centre, scale, p.top_terminal, fill: none, stroke: projection)
+      // Split the number lanes at each corner so the adjacent edge numbers stay distinct.
+      if dy == 0 {
+        write-at(x - dx * number-inset, y, str(p.pin))
+        line(point(x, y), point(lx, ly), stroke: 0.45pt + ink)
+      } else {
+        write-at(x, y + 2.35 * dy, str(p.pin))
+        line(point(x, y + 4.05 * dy), point(lx, ly), stroke: 0.45pt + ink)
+      }
+      let angled = if dy == 0 { primary } else { rotate(dy * 90deg, reflow: true, primary) }
+      write-at(lx, ly, angled, anchor: anchor)
+
+      let alt = qfn.pinout_aliases.find(a => a.pin == p.pin)
+      if alt != none {
+        let fill = alias-fills.at(alt.function.split(".").first())
+        let width = measure(primary).width / 1mm
+        if dy == 0 {
+          let badge = pinout-tag(stack(spacing: 0.6mm, strong(alt.function), alt.mode), fill)
+          let start = lx + dx * width
+          let end = start + dx * 2.6
+          line(point(start, ly), point(end, ly), stroke: 0.45pt + ink)
+          write-at(end, ly, badge, anchor: anchor)
+        } else {
+          // Give the adjacent UART callouts separate outward lanes.
+          let direction = if alt.function == "UART0.TX" { -1 } else { 1 }
+          let row = 146
+          let end = lx + direction * 2.6
+          line(point(lx, ly + width), point(lx, row), point(end, row), stroke: 0.45pt + ink)
+          let badge = pinout-tag([#alt.mode · #strong(alt.function)], fill)
+          write-at(end, row, badge, anchor: if direction < 0 { "east" } else { "west" })
+        }
+      }
+    }
+
+    let legend = (([Supply], pinout-fill.supply), ([Ground / EP], pinout-fill.ground),
+      ([GPIO / UART0], pinout-fill.gpio), ([Boot XPI], pinout-fill.xpi),
+      ([Clock / reset / straps], pinout-fill.control), ([JTAG], pinout-fill.jtag),
+      ([AUDIO (ALT)], pinout-fill.audio), ([PIXCLK (ALT)], pinout-fill.pixel))
+    for (i, (title, fill)) in legend.enumerate() {
+      let x = 4 + 41 * calc.rem(i, 4)
+      let y = if i < 4 { 153 } else { 159 }
+      rect(point(x, y - 1.55), point(x + 3.1, y + 1.55), fill: fill, stroke: 0.4pt + ink)
+      write-at(x + 4.8, y, title, anchor: "west")
+    }
+    write-at(4, 165, [\* Unbound target assignment.], anchor: "west")
+    write-at(4, 173, [*REFERENCE ONLY* · Body #size("body") × #size("body") mm ·
+      Pitch #size("pitch") mm · EP #size("ep") × #size("ep") mm], anchor: "west")
   })
 }
 

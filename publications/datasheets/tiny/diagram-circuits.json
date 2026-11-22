@@ -36620,522 +36620,3148 @@
   },
   "system-fabric": {
     "title": "Tiny system fabric and CPU local paths",
+    "note": "Squares mark ports. Open circles mark fabric connections. Arrows show request direction, with responses routed by saved ownership. Address checks and target admission govern access. APB4 groups contain independent bridges.",
+    "renderer": "cetz",
     "nodes": [
       {
         "id": "cpu",
-        "title": "Hazard3 local/slow decode\nSYS",
-        "x": 0,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "Hazard3\nSYS",
+        "x": 9,
+        "y": 35,
+        "w": 30,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "i",
+            "side": "north",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.3
           },
           {
-            "id": "p0",
+            "id": "d",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.4642857142857143
           }
-        ],
+        ]
+      },
+      {
+        "id": "i-decode",
+        "title": "I address decode",
+        "x": 7,
+        "y": 15,
+        "w": 27,
+        "h": 12,
         "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv"
+        ],
+        "ports": [
+          {
+            "id": "ahb",
+            "side": "south",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4074074074074074
+          },
+          {
+            "id": "local",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.25
+          },
+          {
+            "id": "slow",
+            "side": "west",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6666666666666666
+          }
+        ]
+      },
+      {
+        "id": "d-decode",
+        "title": "D address decode",
+        "x": 49,
+        "y": 35,
+        "w": 23,
+        "h": 13,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv"
+        ],
+        "ports": [
+          {
+            "id": "ahb",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "local",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.23076923076923078
+          },
+          {
+            "id": "slow",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.7391304347826086
+          }
+        ]
+      },
+      {
+        "id": "slow",
+        "title": "Tagged non-SRAM I/D slow path\nAHB-Lite → AXI4",
+        "x": 8,
+        "y": 54,
+        "w": 62,
+        "h": 13,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_mem.sv",
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "i",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.6153846153846154
+          },
+          {
+            "id": "d",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9354838709677419
+          },
+          {
+            "id": "axi",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6774193548387096
+          }
         ]
       },
       {
         "id": "dma",
-        "title": "Central DMA + admission\nPCLK to SYS CDC",
-        "x": 6.3,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p1",
-            "direction": "out",
-            "width": 32,
-            "side": "south"
-          }
-        ],
+        "title": "Central DMA",
+        "x": 86,
+        "y": 22,
+        "w": 24,
+        "h": 9,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "dma-admit",
+        "title": "Admission",
+        "x": 85,
+        "y": 36,
+        "w": 26,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "dma-cdc",
+        "title": "AXI CDC\nPCLK → SYS",
+        "x": 85,
+        "y": 49,
+        "w": 26,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "sdio",
-        "title": "SDIO private DMA\nSYS",
-        "x": 12.6,
-        "y": 10,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "SDIO private\nDMA · SYS",
+        "x": 114,
+        "y": 27,
+        "w": 27,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
         "ports": [
           {
-            "id": "p2",
+            "id": "axi",
+            "side": "south",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.48148148148148145
           }
-        ],
+        ]
+      },
+      {
+        "id": "sdio-admit",
+        "title": "Admission",
+        "x": 114,
+        "y": 49,
+        "w": 27,
+        "h": 14,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "north",
+            "direction": "in",
+            "width": 32,
+            "position": 0.48148148148148145
+          },
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 32,
+            "position": 0.48148148148148145
+          }
         ]
       },
       {
         "id": "fabric",
-        "title": "AXI32 target-local fabric\nthree external owners",
-        "x": 6.3,
-        "y": 5,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "AXI4 fabric · SYS",
+        "x": 7,
+        "y": 77,
+        "w": 109,
+        "h": 85,
+        "sources": [
+          "rtl/tiny/top/tiny_axi4_fabric.sv",
+          "rtl/tiny/integration/soc_topology.json"
+        ],
         "ports": [
           {
-            "id": "p0",
+            "id": "owner0",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "west"
+            "position": 0.3944954128440367
           },
           {
-            "id": "p1",
+            "id": "owner1",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.6513761467889908
           },
           {
-            "id": "p2",
+            "id": "owner2",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "east"
+            "position": 0.8899082568807339
           },
           {
-            "id": "p4",
+            "id": "b0",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "west"
+            "position": 0.15294117647058825
           },
           {
-            "id": "p5",
+            "id": "b1",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "south"
+            "position": 0.2235294117647059
           },
           {
-            "id": "p6",
+            "id": "b2",
+            "side": "east",
             "direction": "out",
             "width": 32,
-            "side": "east"
+            "position": 0.29411764705882354
+          },
+          {
+            "id": "b3",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.36470588235294116
+          },
+          {
+            "id": "xpi",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4588235294117647
+          },
+          {
+            "id": "apb-system",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.5529411764705883
+          },
+          {
+            "id": "apb-aon",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6235294117647059
+          },
+          {
+            "id": "apb-peripheral",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.6941176470588235
+          },
+          {
+            "id": "apb-memory",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.7647058823529411
+          },
+          {
+            "id": "decerr",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.8588235294117647
+          },
+          {
+            "id": "slverr",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.9294117647058824
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/retrosoc_tiny.sv"
         ]
       },
       {
-        "id": "ram",
-        "title": "Four SRAM groups\nlocal and external ports",
-        "x": 0,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
+        "id": "sram",
+        "title": "Main SRAM",
+        "x": 123,
+        "y": 76,
+        "w": 47,
+        "h": 35,
+        "sources": [
+          "rtl/tiny/top/tiny_sram.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "i",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.7659574468085106
           },
           {
-            "id": "p4",
+            "id": "d",
+            "side": "north",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.425531914893617
+          },
+          {
+            "id": "b0",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4
+          },
+          {
+            "id": "b1",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.5714285714285714
+          },
+          {
+            "id": "b2",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.7428571428571429
+          },
+          {
+            "id": "b3",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9142857142857143
           }
-        ],
+        ]
+      },
+      {
+        "id": "xpi-cdc",
+        "title": "AXI CDC\nSYS → MEM",
+        "x": 122,
+        "y": 112,
+        "w": 23,
+        "h": 10,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv",
-          "rtl/tiny/top/tiny_sram.sv"
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4
+          }
         ]
       },
       {
         "id": "xpi",
-        "title": "XPI MEM target\nSYS to MEM CDC",
-        "x": 6.3,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
-          {
-            "id": "p5",
-            "direction": "in",
-            "width": 32,
-            "side": "north"
-          }
-        ],
+        "title": "XPI · MEM\nNOR\nPSRAM",
+        "x": 150,
+        "y": 112,
+        "w": 20,
+        "h": 33,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "memory",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.12121212121212122
+          },
+          {
+            "id": "registers",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.9090909090909091
+          }
         ]
       },
       {
-        "id": "apb",
-        "title": "Independent APB branches\nSYS / AON / PCLK / MEM",
-        "x": 12.6,
-        "y": 0,
-        "w": 4.0,
-        "h": 1.8,
+        "id": "decerr",
+        "title": "DECERR responder",
+        "x": 123,
+        "y": 147.3,
+        "w": 47,
+        "h": 5.4,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
         "ports": [
           {
-            "id": "p6",
+            "id": "in",
+            "side": "west",
             "direction": "in",
             "width": 32,
-            "side": "north"
+            "position": 0.49999999999999784
           }
-        ],
+        ]
+      },
+      {
+        "id": "slverr",
+        "title": "SLVERR responder",
+        "x": 123,
+        "y": 153.3,
+        "w": 47,
+        "h": 5.4,
         "sources": [
-          "rtl/tiny/top/retrosoc_tiny.sv",
-          "scripts/generate_tiny.py"
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.49999999999999784
+          }
+        ]
+      },
+      {
+        "id": "apb-system",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 121.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-aon",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 127.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-peripheral",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 133.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
+        ]
+      },
+      {
+        "id": "apb-memory",
+        "title": "AXI→APB4",
+        "x": 122,
+        "y": 139.65,
+        "w": 23,
+        "h": 4.7,
+        "sources": [
+          "scripts/generate_tiny.py",
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "axi",
+            "side": "west",
+            "direction": "in",
+            "width": 32,
+            "position": 0.4999999999999988
+          },
+          {
+            "id": "apb",
+            "side": "east",
+            "direction": "out",
+            "width": 32,
+            "position": 0.4999999999999988
+          }
         ]
       }
     ],
     "edges": [
       {
-        "from": "cpu.p0",
-        "to": "fabric.p0",
-        "label": "Slow AXI32",
+        "from": "cpu.i",
+        "to": "i-decode.ahb",
+        "label": "I AHB-Lite",
         "kind": "data",
-        "style": "guided",
+        "via": [],
         "bindings": [
           {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "hazard3_cpu_2port"
+          },
+          {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".slow_axi4 (u_masters_axi4_if[0])"
+            "text": ".cpu(u_cpu_ahbl_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".i_haddr(cpu[0].haddr)"
           }
-        ],
-        "guided-sides": [
-          "south",
-          "west"
-        ],
-        "guided-center": [
-          50,
-          -50
         ]
       },
       {
-        "from": "dma.p1",
-        "to": "fabric.p1",
-        "label": "DMA AXI32",
+        "from": "cpu.d",
+        "to": "d-decode.ahb",
+        "label": "D AHB-Lite",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "hazard3_cpu_2port"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".cpu(u_cpu_ahbl_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "for (genvar port_index = 0; port_index < 2; port_index++) begin : gen_port"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".d_haddr(cpu[1].haddr)"
+          }
+        ]
+      },
+      {
+        "from": "i-decode.local",
+        "to": "sram.i",
+        "label": "Local I",
+        "kind": "data",
+        "via": [
+          [
+            75,
+            18
+          ],
+          [
+            75,
+            6
+          ],
+          [
+            159,
+            6
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign local_ports[port_index].req_valid = (s_req_q[port_index].state == LocalIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".local_ports(u_cpu_local_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": "local_ports[client].addr[16:15] == 2'(group)"
+          }
+        ],
+        "local": true
+      },
+      {
+        "from": "d-decode.local",
+        "to": "sram.d",
+        "label": "Local D",
+        "kind": "data",
+        "via": [
+          [
+            82,
+            38
+          ],
+          [
+            82,
+            13
+          ],
+          [
+            143,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign local_ports[port_index].req_valid = (s_req_q[port_index].state == LocalIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".local_ports(u_cpu_local_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": "local_ports[client].addr[16:15] == 2'(group)"
+          }
+        ],
+        "local": true
+      },
+      {
+        "from": "i-decode.slow",
+        "to": "slow.i",
+        "label": "I slow request",
+        "kind": "data",
+        "via": [
+          [
+            3,
+            23
+          ],
+          [
+            3,
+            62
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign s_slow_req[port_index] = (s_req_q[port_index].state == SlowIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": ") u_slow_adapter ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "s_slow_d.owner = s_slow_selected;"
+          }
+        ]
+      },
+      {
+        "from": "d-decode.slow",
+        "to": "slow.d",
+        "label": "D slow request",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "assign s_slow_req[port_index] = (s_req_q[port_index].state == SlowIssue)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": ") u_slow_adapter ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "s_slow_d.owner = s_slow_selected;"
+          }
+        ]
+      },
+      {
+        "from": "slow.axi",
+        "to": "fabric.owner0",
+        "label": "CPU slow AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_mem.sv",
+            "text": "ahbl2axi4 #("
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".slow_axi4(u_masters_axi4_if[0])"
+          }
+        ]
+      },
+      {
+        "from": "dma.axi",
+        "to": "dma-admit.in",
+        "label": "Central DMA AXI4",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".dst_axi4 (u_masters_axi4_if[1])"
+            "text": ".source (u_dma_pclk_axi4_if)"
           }
-        ],
-        "zigzag-dir": "horizontal"
+        ]
       },
       {
-        "from": "sdio.p2",
-        "to": "fabric.p2",
-        "label": "SDIO AXI32",
+        "from": "dma-admit.out",
+        "to": "dma-cdc.in",
+        "label": "Admitted DMA request",
         "kind": "data",
-        "style": "guided",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".sink (u_dma_admitted_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".src_axi4 (u_dma_admitted_axi4_if)"
+          }
+        ]
+      },
+      {
+        "from": "dma-cdc.out",
+        "to": "fabric.owner1",
+        "label": "DMA SYS ingress",
+        "kind": "data",
+        "via": [
+          [
+            98,
+            68
+          ],
+          [
+            78,
+            68
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dst_axi4(u_masters_axi4_if[1])"
+          }
+        ]
+      },
+      {
+        "from": "sdio.axi",
+        "to": "sdio-admit.in",
+        "label": "SDIO private DMA AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".dma_axi4 (u_sdio_sys_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source (u_sdio_sys_axi4_if)"
+          }
+        ]
+      },
+      {
+        "from": "sdio-admit.out",
+        "to": "fabric.owner2",
+        "label": "SDIO SYS ingress",
+        "kind": "data",
+        "via": [
+          [
+            127,
+            68
+          ],
+          [
+            104,
+            68
+          ]
+        ],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
             "text": ".sink (u_masters_axi4_if[2])"
           }
-        ],
-        "guided-sides": [
-          "south",
-          "east"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "cpu.p3",
-        "to": "ram.p3",
-        "label": "Local I/D",
+        "from": "fabric.b0",
+        "to": "sram.b0",
+        "label": "Group B0 AXI4",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".local_ports (u_cpu_local_if)"
-          }
-        ],
-        "zigzag-dir": "horizontal"
-      },
-      {
-        "from": "fabric.p4",
-        "to": "ram.p4",
-        "label": "Group AXI32",
-        "kind": "data",
-        "style": "guided",
-        "bindings": [
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".sink (u_sram_axi4_if[group])"
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
           }
-        ],
-        "guided-sides": [
-          "west",
-          "north"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "fabric.p5",
-        "to": "xpi.p5",
-        "label": "AXI32",
+        "from": "fabric.b1",
+        "to": "sram.b1",
+        "label": "Group B1 AXI4",
         "kind": "data",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.b2",
+        "to": "sram.b2",
+        "label": "Group B2 AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.b3",
+        "to": "sram.b3",
+        "label": "Group B3 AXI4",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "for (genvar group = 0; group < 4; group++) begin : gen_sram_attachment"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".source(u_targets_axi4_if[group])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".external_ports(u_sram_axi4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_sram.sv",
+            "text": ".axi4 (external_ports[group])"
+          }
+        ]
+      },
+      {
+        "from": "fabric.xpi",
+        "to": "xpi-cdc.in",
+        "label": "XPI memory AXI4",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
             "text": ".src_axi4 (u_targets_axi4_if[4])"
           }
-        ],
-        "zigzag-dir": "horizontal"
+        ]
       },
       {
-        "from": "fabric.p6",
-        "to": "apb.p6",
-        "label": "APB controls",
-        "kind": "control",
-        "style": "guided",
+        "from": "xpi-cdc.out",
+        "to": "xpi.memory",
+        "label": "XPI MEM clock domain",
+        "kind": "data",
+        "via": [],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": "`include \"tiny_apb_bridges.svh\""
-          }
-        ],
-        "guided-sides": [
-          "east",
-          "north"
-        ],
-        "guided-center": [
-          50,
-          -50
-        ]
-      }
-    ],
-    "note": "Reviewed logical grouping. Bundled-bus arrows identify initiator-to-target direction; responses belong to the same interface. Control and data widths are separate. No physical placement or measured latency is implied."
-  },
-  "system-clocks": {
-    "title": "Tiny clock and reset domains",
-    "nodes": [
-      {
-        "id": "xin",
-        "title": "XIN / normalized REF24\nAON control source",
-        "x": 0,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [
+            "text": ".dst_clk_i (s_backend_mem_clk)"
+          },
           {
-            "id": "p0",
-            "direction": "out",
-            "width": 1,
-            "side": "east"
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".mem_axi4 (u_xpi_mem_axi4_if)"
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
         ]
       },
       {
-        "id": "backend",
-        "title": "Safe source / PLL / dividers\nREF24 control",
-        "x": 6.3,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
+        "from": "fabric.apb-system",
+        "to": "apb-system.axi",
+        "label": "Independent APB4 system bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-aon",
+        "to": "apb-aon.axi",
+        "label": "Independent APB4 aon bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-peripheral",
+        "to": "apb-peripheral.axi",
+        "label": "Independent APB4 peripheral bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "fabric.apb-memory",
+        "to": "apb-memory.axi",
+        "label": "Independent APB4 memory bridges",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "for index, target in enumerate(document[\"apb_targets\"]):"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "tiny_axi42apb4 u_{name}_bridge"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".axi4(u_targets_axi4_if[{index + 5}]), .apb4({endpoint})"
+          }
+        ]
+      },
+      {
+        "from": "apb-memory.apb",
+        "to": "xpi.registers",
+        "label": "MEM-domain XPI registers",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".dst_apb4(u_{name}_apb4_if)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".apb4 (u_xpi_apb4_if)"
+          }
+        ]
+      },
+      {
+        "from": "fabric.decerr",
+        "to": "decerr.in",
+        "label": "Decode error target",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".axi4 (u_targets_axi4_if[`RETROSOC_TINY__DECODE_ERROR])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".Response(2'b11)"
+          }
+        ]
+      },
+      {
+        "from": "fabric.slverr",
+        "to": "slverr.in",
+        "label": "Protocol error target",
+        "kind": "data",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".axi4 (u_targets_axi4_if[`RETROSOC_TINY__PROTOCOL_ERROR])"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".Response(2'b10)"
+          }
+        ]
+      }
+    ],
+    "fabric_matrix": {
+      "width_mm": 172,
+      "height_mm": 165,
+      "matrix_left_rail": 46,
+      "routing": {
+        "stroke_pt": 0.7,
+        "arrow_length_mm": 1.65,
+        "arrow_width_mm": 1.55,
+        "visible_shaft_mm": 1,
+        "arrow_clearance_mm": 0.42
+      },
+      "labels": [
+        {
+          "at": [
+            20,
+            31
+          ],
+          "title": "I AHB-Lite",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            50.5,
+            32
+          ],
+          "title": "D AHB-Lite",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            112,
+            3.5
+          ],
+          "title": "Local I · read",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            113,
+            10.4
+          ],
+          "title": "Local D · read/write",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            152.8,
+            116
+          ],
+          "title": "Memory",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            152.8,
+            142
+          ],
+          "title": "Registers",
+          "anchor": "west"
+        }
+      ]
+    }
+  },
+  "system-clocks": {
+    "title": "Tiny clock and reset domains",
+    "note": "Solid lines carry clocks. Dashed lines show named controls and resets. A gap marks an unconnected crossing. CLKOUT tags name the matching clock nets. SAFE24 uses REF24 at boot and after PLL lock timeout. AUDIO and PIXCLK resets release on their local clocks. The clock profiles are digital configurations. Crossing and reset barriers apply in every profile.",
+    "renderer": "cetz",
+    "nodes": [
+      {
+        "id": "xin",
+        "title": "XIN\n24 / 48 / 96 MHz",
+        "shape": "pin",
+        "x": 4,
+        "y": 7,
+        "w": 33,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
         "ports": [
           {
-            "id": "p0",
-            "direction": "in",
-            "width": 1,
-            "side": "west"
-          },
-          {
-            "id": "p1",
+            "id": "out",
+            "side": "east",
             "direction": "out",
             "width": 1,
-            "side": "east"
-          },
-          {
-            "id": "p2",
-            "direction": "out",
-            "width": 1,
-            "side": "west"
-          },
-          {
-            "id": "p3",
-            "direction": "out",
-            "width": 1,
-            "side": "south"
+            "position": 0.5
           }
-        ],
+        ]
+      },
+      {
+        "id": "ref",
+        "title": "XIN normalization\n24: ÷1  /  48: ÷2  /  96: ÷4",
+        "shape": "block",
+        "x": 46,
+        "y": 4,
+        "w": 49,
+        "h": 18,
         "sources": [
           "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "aon",
+        "title": "AON / REF24\nRCU / CLINT\nRTC / WDG",
+        "shape": "block",
+        "x": 131,
+        "y": 4,
+        "w": 37,
+        "h": 18,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ],
+        "domain": "aon"
+      },
+      {
+        "id": "pll",
+        "title": "PLL\n192 / 240 MHz",
+        "shape": "block",
+        "x": 60,
+        "y": 34,
+        "w": 33,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "fast",
+        "title": "Fast\nsource",
+        "shape": "mux",
+        "x": 104,
+        "y": 35,
+        "w": 12,
+        "h": 22,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "pll",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.22727272727272727
+          },
+          {
+            "id": "xin",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.8181818181818182
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "sys",
-        "title": "SYS\nCPU / SRAM / fabric / SDIO",
-        "x": 12.6,
-        "y": 9,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "SYS\nMUX",
+        "shape": "mux",
+        "x": 125,
+        "y": 26,
+        "w": 13,
+        "h": 26,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p1",
+            "id": "safe",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "west"
+            "position": 0.19230769230769232
+          },
+          {
+            "id": "fast",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7692307692307693
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "wfi",
+        "title": "WFI policy",
+        "shape": "sink",
+        "x": 142.5,
+        "y": 22,
+        "w": 25,
+        "h": 6,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.26
+          }
+        ]
+      },
+      {
+        "id": "cpu_gate",
+        "title": "EN",
+        "shape": "gate",
+        "x": 146,
+        "y": 35,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.3
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "cpu",
+        "title": "CPU",
+        "shape": "sink",
+        "x": 160,
+        "y": 35,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_cpu_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "sys_leaves",
+        "title": "SRAM\nFabric / SDIO",
+        "shape": "sink",
+        "x": 148,
+        "y": 46,
+        "w": 22,
+        "h": 14,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "docs/ip/tiny-soc-r2-clock-reset.md"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
           }
         ],
+        "domain": "system"
+      },
+      {
+        "id": "div2",
+        "title": "SYS ÷2",
+        "shape": "block",
+        "x": 21,
+        "y": 81,
+        "w": 30,
+        "h": 8,
         "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "div4",
+        "title": "SYS ÷4",
+        "shape": "block",
+        "x": 21,
+        "y": 108,
+        "w": 30,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "mem",
-        "title": "MEM\nXPI NOR / PSRAM",
-        "x": 0,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "MEM\nMUX",
+        "shape": "mux",
+        "x": 119,
+        "y": 70,
+        "w": 12,
+        "h": 20,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p2",
+            "id": "div1",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "north"
+            "position": 0.25
+          },
+          {
+            "id": "div2",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.75
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "xpi",
+        "title": "MEM\nXPI NOR / PSRAM",
+        "shape": "sink",
+        "x": 138,
+        "y": 72,
+        "w": 31,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
           }
         ],
+        "domain": "memory"
+      },
+      {
+        "id": "pclk_first",
+        "title": "MUX",
+        "shape": "mux",
+        "x": 84,
+        "y": 91,
+        "w": 12,
+        "h": 18,
         "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "div1",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.16666666666666666
+          },
+          {
+            "id": "div2",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7777777777777778
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       },
       {
         "id": "pclk",
-        "title": "PCLK\nDMA / peripherals / Crypto",
-        "x": 6.3,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
+        "title": "PCLK\nMUX",
+        "shape": "mux",
+        "x": 119,
+        "y": 95,
+        "w": 12,
+        "h": 22,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
         "ports": [
           {
-            "id": "p3",
+            "id": "div1_2",
+            "side": "west",
             "direction": "in",
             "width": 1,
-            "side": "north"
+            "position": 0.22727272727272727
+          },
+          {
+            "id": "div4",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.7727272727272727
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
           }
-        ],
-        "sources": [
-          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-          "rtl/tiny/top/retrosoc_tiny.sv"
         ]
       },
       {
-        "id": "external",
-        "title": "AUDIO / camera PIX / TCK\nexternal clock domains",
-        "x": 12.6,
-        "y": 3,
-        "w": 4.0,
-        "h": 1.8,
-        "ports": [],
+        "id": "pclk_enable",
+        "title": "RCU gate",
+        "shape": "sink",
+        "x": 134,
+        "y": 88,
+        "w": 26,
+        "h": 7,
         "sources": [
           "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.38461538461538464
+          }
+        ]
+      },
+      {
+        "id": "pclk_gate",
+        "title": "EN",
+        "shape": "gate",
+        "x": 141,
+        "y": 102,
+        "w": 10,
+        "h": 8,
+        "sources": [
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.3
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "pclk_leaves",
+        "title": "DMA\nAPB IPs",
+        "shape": "sink",
+        "x": 154.5,
+        "y": 100,
+        "w": 15.5,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "scripts/generate_tiny.py"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ],
+        "domain": "peripheral"
+      },
+      {
+        "id": "audio",
+        "title": "GPIO17 ALT0",
+        "shape": "pin",
+        "x": 4,
+        "y": 117.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/top/retrosoc_tiny.sv",
           "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "i2s",
+        "title": "I²S serial engine",
+        "shape": "sink",
+        "x": 132,
+        "y": 117.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "audio"
+      },
+      {
+        "id": "pixel",
+        "title": "GPIO20 ALT1",
+        "shape": "pin",
+        "x": 4,
+        "y": 124.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "dvp",
+        "title": "DVP sampler",
+        "shape": "sink",
+        "x": 132,
+        "y": 124.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/tiny/integration/soc_topology.json",
+          "rtl/ip/multimedia/axi4s_dvp.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "dvp_pixel"
+      },
+      {
+        "id": "tck",
+        "title": "JTAG TCK",
+        "shape": "pin",
+        "x": 4,
+        "y": 131.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ]
+      },
+      {
+        "id": "dtm",
+        "title": "JTAG DTM",
+        "shape": "sink",
+        "x": 132,
+        "y": 131.6,
+        "w": 37,
+        "h": 6.8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv",
+          "rtl/tiny/integration/clock_reset_domains.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5000000000000009
+          }
+        ],
+        "domain": "jtag"
+      },
+      {
+        "id": "clkout_sel",
+        "title": "CLKOUT\nMUX",
+        "shape": "mux",
+        "x": 47,
+        "y": 138,
+        "w": 17,
+        "h": 20,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "ref",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.14000000000000057
+          },
+          {
+            "id": "sys",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.375
+          },
+          {
+            "id": "mem",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.6099999999999994
+          },
+          {
+            "id": "pclk",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.8450000000000003
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "clkout_en",
+        "title": "Output enable",
+        "shape": "sink",
+        "x": 73,
+        "y": 137,
+        "w": 34,
+        "h": 4,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "south",
+            "direction": "out",
+            "width": 1,
+            "position": 0.6470588235294118
+          }
+        ]
+      },
+      {
+        "id": "clkout_div",
+        "title": "Divider",
+        "shape": "block",
+        "x": 83,
+        "y": 144,
+        "w": 22,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "enable",
+            "side": "north",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5454545454545454
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "clkout_pins",
+        "title": "CLKOUT\nGPIO28 ALT0 / GPIO23 ALT1",
+        "shape": "sink",
+        "x": 112,
+        "y": 142,
+        "w": 57,
+        "h": 12,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/integration/soc_topology.json"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "tap_ref",
+        "title": "REF24",
+        "shape": "tap",
+        "x": 12,
+        "y": 138.75,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "ref.out"
+      },
+      {
+        "id": "tap_sys",
+        "title": "SYS",
+        "shape": "tap",
+        "x": 12,
+        "y": 143.45,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "sys.out"
+      },
+      {
+        "id": "tap_mem",
+        "title": "MEM",
+        "shape": "tap",
+        "x": 12,
+        "y": 148.14999999999998,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "mem.out"
+      },
+      {
+        "id": "tap_pclk",
+        "title": "PCLK",
+        "shape": "tap",
+        "x": 12,
+        "y": 152.85,
+        "w": 16,
+        "h": 4.1,
+        "sources": [
+          "rtl/tiny/top/tiny_clock_output.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5000000000000028
+          }
+        ],
+        "source_port": "pclk.out"
+      },
+      {
+        "id": "reset_n",
+        "title": "RESET_N",
+        "shape": "pin",
+        "x": 4,
+        "y": 161,
+        "w": 25,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "por_sync",
+        "title": "POR sync\nREF24",
+        "shape": "block",
+        "x": 35,
+        "y": 160.5,
+        "w": 26,
+        "h": 9,
+        "sources": [
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          },
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "warm_reset",
+        "title": "RCU / watchdog\nwarm reset",
+        "shape": "sink",
+        "x": 4,
+        "y": 169,
+        "w": 42,
+        "h": 8,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "reset_sync",
+        "title": "System / leaf sync\nSYS / MEM / PCLK",
+        "shape": "block",
+        "x": 69,
+        "y": 160.5,
+        "w": 44,
+        "h": 16,
+        "sources": [
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+          "rtl/tiny/top/tiny_reset_tree.sv"
+        ],
+        "ports": [
+          {
+            "id": "por",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.28125
+          },
+          {
+            "id": "warm",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.78125
+          }
+        ]
+      },
+      {
+        "id": "trst",
+        "title": "TRST_N",
+        "shape": "pin",
+        "x": 118,
+        "y": 168,
+        "w": 20,
+        "h": 8,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "out",
+            "side": "east",
+            "direction": "out",
+            "width": 1,
+            "position": 0.5
+          }
+        ]
+      },
+      {
+        "id": "jtag_reset",
+        "title": "JTAG reset\nTCK sync",
+        "shape": "block",
+        "x": 144,
+        "y": 167,
+        "w": 24,
+        "h": 10,
+        "sources": [
+          "rtl/ip/core/mgmt_debug_wrapper.sv"
+        ],
+        "ports": [
+          {
+            "id": "in",
+            "side": "west",
+            "direction": "in",
+            "width": 1,
+            "position": 0.5
+          }
         ]
       }
     ],
     "edges": [
       {
-        "from": "xin.p0",
-        "to": "backend.p0",
-        "label": "Reference",
-        "kind": "control",
-        "style": "zigzag",
+        "from": "audio.out",
+        "to": "i2s.in",
+        "kind": "clock",
+        "label": "AUDIO",
+        "via": [],
         "bindings": [
           {
-            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-            "text": "input logic ref_clk_i,"
-          }
-        ],
-        "signals": [
-          {
-            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
-            "scope": "tiny_clock_reset_subsystem",
-            "symbol": "ref_clk_i",
-            "bits": 1
-          }
-        ],
-        "zigzag-dir": "vertical"
-      },
-      {
-        "from": "backend.p1",
-        "to": "sys.p1",
-        "label": "SYS clock",
-        "kind": "control",
-        "style": "zigzag",
-        "bindings": [
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 17, \"alt0\": {\"inputs\": [\"s_audio_pad_clk\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}, \"alt1\": {\"inputs\": [\"u_dvp_if.dat_i[5]\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}}"
+          },
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".sys_clk_o (s_backend_sys_clk)"
-          }
-        ],
-        "zigzag-dir": "vertical"
-      },
-      {
-        "from": "backend.p2",
-        "to": "mem.p2",
-        "label": "MEM clock",
-        "kind": "control",
-        "style": "guided",
-        "bindings": [
+            "text": ".clk_aud_i (s_audio_clk)"
+          },
           {
-            "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".mem_clk_o (s_backend_mem_clk)"
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"audio\", \"clock\": \"s_audio_clk\", \"reset\": \"s_audio_rst_n\", \"reset_source\": \"s_i2s_rst_n\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/retrosoc_tiny.sv\", \"instance\": \"u_audio_rst_sync\", \"sta\": {\"source_port\": \"gpio_17_io_pad\", \"pin\": \"u_soc.u_audio_clock_buffer/clk_o\", \"period_ns\": 54.253472222, \"async_group\": \"audio\"}}"
           }
-        ],
-        "guided-sides": [
-          "west",
-          "north"
-        ],
-        "guided-center": [
-          -50,
-          -50
         ]
       },
       {
-        "from": "backend.p3",
-        "to": "pclk.p3",
+        "from": "pixel.out",
+        "to": "dvp.in",
+        "kind": "clock",
+        "label": "PIXCLK",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 20, \"alt0\": {\"inputs\": [], \"do\": \"u_pwm_if.pwm_o[2]\", \"oe\": \"u_pwm_if.oe_o[2]\"}, \"alt1\": {\"inputs\": [\"u_dvp_if.pclk_i\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}}"
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "u_dvp_pclk_rst_sync ("
+          },
+          {
+            "file": "rtl/ip/multimedia/axi4s_dvp.sv",
+            "text": "dvp.pclk_i"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"dvp_pixel\", \"clock\": \"dvp_pixel_clk\", \"reset\": \"dvp_pixel_rst_n\", \"reset_source\": \"gpio_20_io_pad\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/multimedia/axi4s_dvp.sv\", \"instance\": \"u_dvp_pclk_rst_sync\", \"sta\": {\"source_port\": \"gpio_20_io_pad\", \"object_type\": \"port\", \"period_ns\": 83.333333333, \"async_group\": \"dvp_pixel\"}}"
+          }
+        ]
+      },
+      {
+        "from": "tck.out",
+        "to": "dtm.in",
+        "kind": "clock",
+        "label": "TCK",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/ip/core/mgmt_debug_wrapper.sv",
+            "text": ".clk_i(jtag_tck_i)"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"jtag\", \"clock\": \"s_jtag_tck_buf\", \"reset\": \"s_jtag_trst_n_sync\", \"reset_source\": \"jtag_trst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/core/mgmt_debug_wrapper.sv\", \"instance\": \"u_jtag_rst_sync\", \"sta\": {\"source_port\": \"jtag_tck_i_pad\", \"object_type\": \"port\", \"period_ns\": 100, \"async_group\": \"jtag\"}}"
+          }
+        ]
+      },
+      {
+        "from": "tap_ref.out",
+        "to": "clkout_sel.ref",
+        "kind": "clock",
+        "label": "REF24",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_ref_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_ref_i(s_ref_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_sys.out",
+        "to": "clkout_sel.sys",
+        "kind": "clock",
+        "label": "SYS",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_sys_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_sys_i(s_exec_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_mem.out",
+        "to": "clkout_sel.mem",
+        "kind": "clock",
+        "label": "MEM",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_mem_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_mem_i(s_backend_mem_clk)"
+          }
+        ]
+      },
+      {
+        "from": "tap_pclk.out",
+        "to": "clkout_sel.pclk",
+        "kind": "clock",
         "label": "PCLK",
-        "kind": "control",
-        "style": "zigzag",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": "input logic clk_periph_i,"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_periph_i(s_backend_pclk)"
+          }
+        ]
+      },
+      {
+        "from": "xin.out",
+        "to": "ref.in",
+        "kind": "clock",
+        "label": "XIN",
+        "via": [
+          [
+            40,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign ref_clk_o = ref_clk_i;"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(2'(RefClkHz / 48_000_000))"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "aon.in",
+        "kind": "clock",
+        "label": "REF24",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            110,
+            13
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"aon\", \"clock\": \"s_ref_clk\", \"reset\": \"ref_rst_n_o\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_ref_rst\", \"sta\": {\"source_port\": \"extclk_i_pad\", \"pin\": \"u_clock_buffer/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".rtc_clk_i (s_ref_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".wdg_clk_i (s_ref_clk)"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "pll.in",
+        "kind": "clock",
+        "label": "PLL reference",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            102,
+            23
+          ],
+          [
+            55,
+            23
+          ],
+          [
+            55,
+            40
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".fref_i (ref_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "ref.out",
+        "to": "sys.safe",
+        "kind": "clock",
+        "label": "SAFE24",
+        "via": [
+          [
+            102,
+            13
+          ],
+          [
+            110,
+            13
+          ],
+          [
+            110,
+            31
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (ref_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "pll.out",
+        "to": "fast.pll",
+        "kind": "clock",
+        "label": "PLL192 / PLL240",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign s_fast_clk = HavePll ? s_pll_clk : ref_clk_i;"
+          }
+        ]
+      },
+      {
+        "from": "xin.out",
+        "to": "fast.xin",
+        "kind": "clock",
+        "label": "Raw XIN in no-PLL builds",
+        "via": [
+          [
+            40,
+            13
+          ],
+          [
+            40,
+            53
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "assign s_fast_clk = HavePll ? s_pll_clk : ref_clk_i;"
+          }
+        ]
+      },
+      {
+        "from": "fast.out",
+        "to": "sys.fast",
+        "kind": "clock",
+        "label": "Selected fast clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_fast_clk)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "cpu_gate.in",
+        "kind": "clock",
+        "label": "SYS to WFI gate",
+        "via": [
+          [
+            141,
+            39
+          ]
+        ],
         "bindings": [
           {
             "file": "rtl/tiny/top/retrosoc_tiny.sv",
-            "text": ".pclk_o (s_backend_pclk)"
+            "text": "assign s_exec_clk = s_backend_sys_clk;"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".gate_i (s_gate_d)"
           }
+        ]
+      },
+      {
+        "from": "wfi.out",
+        "to": "cpu_gate.enable",
+        "kind": "control",
+        "label": "WFI gate control",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": "assign s_gate_d = EnableWfiGate && wfi_gate_i && !s_cpu_clk_en && bus_idle_i &&"
+          }
+        ]
+      },
+      {
+        "from": "cpu_gate.out",
+        "to": "cpu.in",
+        "kind": "clock",
+        "label": "Gated CPU clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_cpu_wrapper.sv",
+            "text": ".clk_o (s_cpu_clk)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "sys_leaves.in",
+        "kind": "clock",
+        "label": "SYS main leaves",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ]
         ],
-        "zigzag-dir": "horizontal"
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "assign s_exec_clk = s_backend_sys_clk;"
+          },
+          {
+            "file": "docs/ip/tiny-soc-r2-clock-reset.md",
+            "text": "CPU, all 32 main SRAM macros, bank frontends, fabric and SDIO share active SYS."
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"system\", \"clock\": \"s_backend_sys_clk\", \"reset\": \"system_rst_n_o\", \"reset_source\": \"s_system_req_n\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_reset_tree.sv\", \"instance\": \"u_system_rst_sync\", \"sta\": {\"source_domain\": \"aon\", \"pin\": \"u_soc.u_clock_backend.u_sys_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "div2.in",
+        "kind": "clock",
+        "label": "SYS divider by two",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            85
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk_o (s_div2_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(1'b1)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "div4.in",
+        "kind": "clock",
+        "label": "SYS divider by four",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            112
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk_o (s_div4_clk)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".RESET_DIV(2'd2)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "mem.div1",
+        "kind": "clock",
+        "label": "MEM divide by one",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            75
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "safe_clock_mux u_mem_mux ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (sys_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "sys.out",
+        "to": "pclk_first.div1",
+        "kind": "clock",
+        "label": "PCLK divide by one",
+        "via": [
+          [
+            141,
+            39
+          ],
+          [
+            141,
+            53
+          ],
+          [
+            141,
+            63
+          ],
+          [
+            10,
+            63
+          ],
+          [
+            10,
+            94
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": "safe_clock_mux u_pclk_div2_mux ("
+          },
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (sys_clk_o)"
+          }
+        ]
+      },
+      {
+        "from": "div2.out",
+        "to": "mem.div2",
+        "kind": "clock",
+        "label": "MEM divide by two",
+        "via": [
+          [
+            57,
+            85
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_div2_clk)"
+          }
+        ]
+      },
+      {
+        "from": "div2.out",
+        "to": "pclk_first.div2",
+        "kind": "clock",
+        "label": "PCLK divide by two",
+        "via": [
+          [
+            57,
+            85
+          ],
+          [
+            57,
+            105
+          ]
+        ],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".select_i(s_ctrl_q.pclk_div != 0)"
+          }
+        ]
+      },
+      {
+        "from": "mem.out",
+        "to": "xpi.in",
+        "kind": "clock",
+        "label": "MEM for XPI",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"memory\", \"clock\": \"s_backend_mem_clk\", \"reset\": \"s_backend_mem_rst_n\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_mem_rst\", \"sta\": {\"source_domain\": \"system\", \"pin\": \"u_soc.u_clock_backend.u_mem_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": "\"s_backend_mem_clk\" if name == \"xpi\" else"
+          }
+        ]
+      },
+      {
+        "from": "pclk_first.out",
+        "to": "pclk.div1_2",
+        "kind": "clock",
+        "label": "PCLK divide by one or two",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk0_i (s_pclk_mid)"
+          }
+        ]
+      },
+      {
+        "from": "div4.out",
+        "to": "pclk.div4",
+        "kind": "clock",
+        "label": "PCLK divide by four",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_reset_subsystem.sv",
+            "text": ".clk1_i (s_div4_clk)"
+          }
+        ]
+      },
+      {
+        "from": "pclk.out",
+        "to": "pclk_gate.in",
+        "kind": "clock",
+        "label": "PCLK leaf distribution",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"peripheral\", \"clock\": \"s_backend_pclk\", \"reset\": \"pclk_rst_n_o\", \"reset_source\": \"rst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/tiny/top/tiny_clock_reset_subsystem.sv\", \"instance\": \"u_pclk_rst\", \"sta\": {\"source_domain\": \"system\", \"pin\": \"u_soc.u_clock_backend.u_pclk_mux/clk_o\", \"period_ns\": 41.666666667, \"async_group\": \"core\"}}"
+          },
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".clk_i({clock}), .rst_n_i(s_leaf_rst_n[{index + 1}]),"
+          }
+        ]
+      },
+      {
+        "from": "pclk_enable.out",
+        "to": "pclk_gate.enable",
+        "kind": "control",
+        "label": "RCU peripheral gate control",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".gate_i(s_gate_request[{target_bit}]),"
+          }
+        ]
+      },
+      {
+        "from": "pclk_gate.out",
+        "to": "pclk_leaves.in",
+        "kind": "clock",
+        "label": "PCLK gated leaves",
+        "via": [],
+        "bindings": [
+          {
+            "file": "scripts/generate_tiny.py",
+            "text": ".clk_o({ip_clock}), .rst_n_o(s_{name}_rst_n),"
+          }
+        ]
+      },
+      {
+        "from": "clkout_sel.out",
+        "to": "clkout_div.in",
+        "kind": "clock",
+        "label": "Selected CLKOUT clock",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": ".clk_i (s_src_clk),"
+          }
+        ]
+      },
+      {
+        "from": "clkout_en.out",
+        "to": "clkout_div.enable",
+        "kind": "control",
+        "label": "Synchronized output enable",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_clock_output.sv",
+            "text": ".enable_i (s_enabled)"
+          }
+        ]
+      },
+      {
+        "from": "clkout_div.out",
+        "to": "clkout_pins.in",
+        "kind": "clock",
+        "label": "Shared CLKOUT",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 28, \"alt0\": {\"inputs\": [], \"do\": \"s_clkout\", \"oe\": \"s_clkout_enable\"}, \"alt1\": {\"inputs\": [], \"do\": \"s_spi_mosi\", \"oe\": \"s_spi_output_enable\"}}"
+          },
+          {
+            "file": "rtl/tiny/integration/soc_topology.json",
+            "text": "{\"pin\": 23, \"alt0\": {\"inputs\": [\"u_pwm_if.sync_i\"], \"do\": \"1'b0\", \"oe\": \"1'b0\"}, \"alt1\": {\"inputs\": [], \"do\": \"s_clkout\", \"oe\": \"s_clkout_enable\"}}"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".clk_o (s_clkout)"
+          }
+        ]
+      },
+      {
+        "from": "reset_n.out",
+        "to": "por_sync.in",
+        "kind": "reset",
+        "label": "External reset",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": ".rst_n_i(rst_n_i)"
+          }
+        ]
+      },
+      {
+        "from": "por_sync.out",
+        "to": "reset_sync.por",
+        "kind": "reset",
+        "label": "POR release",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": "assign s_system_req_n = por_rst_n_o && !watchdog_reset_req_i &&"
+          }
+        ]
+      },
+      {
+        "from": "warm_reset.out",
+        "to": "reset_sync.warm",
+        "kind": "reset",
+        "label": "RCU or watchdog warm-reset request",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".system_request_i (s_system_reset)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".warm_reset_i (u_wdg_if.reset_req_o)"
+          },
+          {
+            "file": "rtl/tiny/top/tiny_reset_tree.sv",
+            "text": "(!SplitDomains || backend_reset_n_i)"
+          }
+        ]
+      },
+      {
+        "from": "trst.out",
+        "to": "jtag_reset.in",
+        "kind": "reset",
+        "label": "Independent TRST_N",
+        "via": [],
+        "bindings": [
+          {
+            "file": "rtl/ip/core/mgmt_debug_wrapper.sv",
+            "text": ".rst_n_i(jtag_trst_n_i)"
+          },
+          {
+            "file": "rtl/tiny/integration/clock_reset_domains.json",
+            "text": "{\"name\": \"jtag\", \"clock\": \"s_jtag_tck_buf\", \"reset\": \"s_jtag_trst_n_sync\", \"reset_source\": \"jtag_trst_n_i\", \"reset_primitive\": \"rst_sync\", \"path\": \"rtl/ip/core/mgmt_debug_wrapper.sv\", \"instance\": \"u_jtag_rst_sync\", \"sta\": {\"source_port\": \"jtag_tck_i_pad\", \"object_type\": \"port\", \"period_ns\": 100, \"async_group\": \"jtag\"}}"
+          }
+        ]
       }
     ],
-    "note": "AUDIO, camera pixel and TCK are independently supplied domains and are intentionally not drawn as backend clock outputs. Reset/crossing barriers remain required. SAFE24 and PLL profiles are digital modes, not silicon speed ratings."
+    "clock_tree": {
+      "width_mm": 172,
+      "height_mm": 179,
+      "routing": {
+        "stroke_pt": 0.65,
+        "arrow_length_mm": 1.65,
+        "arrow_width_mm": 1.5,
+        "visible_shaft_mm": 1,
+        "arrow_clearance_mm": 0.42
+      },
+      "groups": [
+        {
+          "role": "conditional",
+          "title": "ICS55 PLL path",
+          "x": 51,
+          "y": 26,
+          "w": 48,
+          "h": 22
+        },
+        {
+          "role": "reset",
+          "x": 2,
+          "y": 159,
+          "w": 168,
+          "h": 18
+        }
+      ],
+      "labels": [
+        {
+          "at": [
+            118,
+            8.7
+          ],
+          "title": "REF24",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            113,
+            23.5
+          ],
+          "title": "SAFE24",
+          "anchor": "west"
+        },
+        {
+          "at": [
+            72,
+            50.4
+          ],
+          "title": "Raw XIN · no PLL",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            74,
+            59.4
+          ],
+          "title": "SYS distribution",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            136,
+            102
+          ],
+          "title": "PCLK",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            70,
+            72.5
+          ],
+          "title": "÷1",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            32,
+            91.5
+          ],
+          "title": "÷1",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            107,
+            97.3
+          ],
+          "title": "÷1 / ÷2",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            118.5
+          ],
+          "title": "AUDIO",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            125.5
+          ],
+          "title": "PIXCLK",
+          "anchor": "center"
+        },
+        {
+          "at": [
+            88,
+            132.5
+          ],
+          "title": "TCK",
+          "anchor": "center"
+        }
+      ]
+    }
   },
   "system-media": {
     "title": "Tiny media and external-memory composition",

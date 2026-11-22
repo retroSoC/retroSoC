@@ -8,8 +8,11 @@ from pathlib import Path
 import pytest
 
 from publications import tiny_reference as tiny
+from publications.ip_block_reference import records as ip_views
+from publications.tiny_clock_tree import prepare as prepare_clock_tree
 from publications.tiny_diagram_reference import coverage, functional_routes, validate_circuit, validate_fields, validate_rendered
-from publications.tiny_publication_reference import diagnostics, validate_navigation
+from publications.tiny_fabric_reference import prepare as prepare_fabric
+from publications.tiny_publication_reference import diagnostics, smartwatch_reference, validate_navigation
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / tiny.BOOK
@@ -18,6 +21,48 @@ BOOK = ROOT / tiny.BOOK
 @pytest.fixture(scope="module")
 def data():
     return tiny.collect(tiny.read(BOOK / "tiny.json"))
+
+
+def test_smartwatch_reference_exposes_separate_clock_and_chip_selects(data):
+    watch = data["smartwatch"]
+    links = watch["links"]
+    assert (watch["hardware_isa"], watch["sram_kib"], watch["dma_channels"]) == ("RV32IMC", 128, 8)
+    assert links["power"]["clock"] == "24 MHz"
+    assert (links["memory"]["boot_cs"], links["memory"]["ram_cs"]) == ("NSS0", "NSS1")
+    gpio = watch["profiles"]["watch"]
+    assert gpio[29] == dict(pin=29, mode="ALT0", signal="NSS1", direction="out")
+    assert gpio[30] == dict(pin=30, mode="GPIO", signal="D/C", direction="out")
+    assert [gpio[i]["direction"] for i in range(12, 18)] == ["out", "out", "out", "in", "out", "in"]
+    assert [gpio[i]["signal"] for i in range(14, 18)] == ["DACDAT", "ADCDAT", "MCLK", "AUDIO.CLKIN"]
+
+
+def test_smartwatch_uses_disjoint_radio_storage_and_camera_routes(data):
+    watch = data["smartwatch"]
+    main, camera = (watch["profiles"][name] for name in ("watch", "camera"))
+    assert [pin["pin"] for pin in main] == [pin["pin"] for pin in camera] == list(range(32))
+    assert [i for i in range(32) if main[i] != camera[i]] == list(range(12, 24))
+    assert [(p["mode"], p["direction"]) for p in camera[12:24]] == [("ALT1", "in")] * 11 + [("ALT1", "out")]
+    assert [p["signal"] for p in camera[20:24]] == ["PCLK", "HREF", "VSYNC", "CAM_XCLK"]
+    assert [p["signal"] for p in main[:8]] == ["CLK", "CMD", "DAT0", "DAT1", "DAT2", "DAT3", "SD_CD_N", "SD_PWR_EN"]
+    assert [p["direction"] for p in main[:8]] == ["out", *(["I/O"] * 5), "in", "out"]
+    assert [(p["signal"], p["direction"]) for p in main[8:10]] == [("TX", "out"), ("RX", "in")]
+    assert watch["links"]["serial"]["options"] == {"ble": "BLE", "wifi": "Wi-Fi", "service": "USB-UART"}
+    assert watch["links"]["serial"]["selection"] == "Fit one"
+
+
+@pytest.mark.parametrize(("pin", "mode", "field", "wrong"), [
+    (28, "alt1", "do", "s_clkout"),
+    (10, "alt0", "inputs", []),
+    (17, "alt0", "oe", "1'b1"),
+    (4, "alt0", "inputs", []),
+    (20, "alt1", "inputs", ["u_dvp_if.href_i"]),
+    (23, "alt1", "oe", "1'b0"),
+])
+def test_smartwatch_reference_rejects_route_or_direction_drift(data, pin, mode, field, wrong):
+    gpio = copy.deepcopy(data["gpio"])
+    next(row for row in gpio if row["pin"] == pin)[mode][field] = wrong
+    with pytest.raises(ValueError, match=f"GPIO{pin} {mode.upper()} does not route"):
+        smartwatch_reference(gpio, data["facts"])
 
 
 def test_reviewed_peripheral_hierarchy_and_inventory(data):
@@ -58,6 +103,69 @@ def test_all_current_ips_have_source_bound_circuits(data):
     assert "docs/ip/piolite-verification.md" in data["source_paths"]
     assert "scripts/program_xpi_flash.py" in data["source_paths"]
     assert all(e["bindings"] for c in figures["circuits"].values() for e in c["edges"])
+
+
+def test_tiny_clock_tree_retains_separate_clock_paths_and_system_ownership(data):
+    figures = data["illustrations"]
+    clock = figures["circuits"]["system-clocks"]
+    links = {(e["from"], e["to"], e["kind"]) for e in clock["edges"]}
+    assert {
+        ("ref.out", "sys.safe", "clock"), ("xin.out", "fast.xin", "clock"),
+        ("pll.out", "fast.pll", "clock"), ("fast.out", "sys.fast", "clock"),
+        ("sys.out", "cpu_gate.in", "clock"), ("sys.out", "sys_leaves.in", "clock"),
+        ("div2.out", "mem.div2", "clock"), ("sys.out", "mem.div1", "clock"),
+        ("div2.out", "pclk_first.div2", "clock"), ("sys.out", "pclk_first.div1", "clock"),
+        ("pclk_first.out", "pclk.div1_2", "clock"), ("div4.out", "pclk.div4", "clock"),
+        ("pclk.out", "pclk_gate.in", "clock"), ("audio.out", "i2s.in", "clock"),
+        ("pixel.out", "dvp.in", "clock"), ("tck.out", "dtm.in", "clock"),
+        ("trst.out", "jtag_reset.in", "reset"),
+    } <= links
+    assert {n["source_port"] for n in clock["nodes"] if n["shape"] == "tap"} == {
+        "ref.out", "sys.out", "mem.out", "pclk.out"}
+    assert {d["name"] for d in data["clocks"]} == {n["domain"] for n in clock["nodes"] if "domain" in n}
+    assert {"point": (141, 39), "kind": "clock"} in clock["clock_tree"]["junctions"]
+    assert {"id": "circuit-system-clocks", "source_id": "system-clocks", "package": "cetz"} in figures["inventory"]
+    assert "system-clocks" not in ip_views(data)
+
+
+def test_tiny_clock_tree_rejects_diagonal_shaft(data):
+    clock = copy.deepcopy(data["illustrations"]["circuits"]["system-clocks"])
+    next(e for e in clock["edges"] if e["to"] == "ref.in")["via"][0][1] += 1
+    with pytest.raises(ValueError, match="non-orthogonal"):
+        prepare_clock_tree(clock, data["clocks"])
+
+
+def test_tiny_fabric_plate_covers_actual_owner_routes_and_targets(data):
+    illustrations = data["illustrations"]
+    circuit = illustrations["circuits"]["system-fabric"]
+    plate = circuit["fabric_matrix"]
+    assert [(c["owner"], c["name"]) for c in plate["columns"]] == [(0, "cpu_slow"), (1, "central_dma"), (2, "sdio")]
+    assert (plate["data_width"], plate["id_width"], plate["sram_kib"], plate["group_kib"]) == (32, 1, 128, 32)
+    assert len(plate["rows"]) == 11
+    assert sorted(n for r in plate["rows"] for n in r["targets"]) == list(range(30))
+    assert {r["port"]: len(r["members"]) for r in plate["rows"] if "members" in r} == {
+        "apb-system": 3, "apb-aon": 2, "apb-peripheral": 17, "apb-memory": 1,
+    }
+    assert plate["crosspoints"] == [[c["x"], r["y"]] for r in plate["rows"] for c in plate["columns"]]
+    assert {(e["from"], e["to"]) for e in circuit["edges"] if e.get("local")} == {
+        ("i-decode.local", "sram.i"), ("d-decode.local", "sram.d"),
+    }
+    edges = {(e["from"], e["to"]) for e in circuit["edges"]}
+    assert {(f"fabric.b{n}", f"sram.b{n}") for n in range(4)} <= edges
+    assert {("xpi-cdc.out", "xpi.memory"), ("apb-memory.apb", "xpi.registers")} <= edges
+    assert {"id": "circuit-system-fabric", "source_id": "system-fabric", "package": "cetz"} in illustrations["inventory"]
+    assert "system-fabric" not in ip_views(data)
+
+
+def test_tiny_fabric_plate_rejects_misaligned_local_route(data):
+    circuit = copy.deepcopy(data["illustrations"]["circuits"]["system-fabric"])
+    topology = tiny.read(ROOT / "rtl/tiny/integration/soc_topology.json")
+    domains = tiny.read(ROOT / "rtl/tiny/integration/clock_reset_domains.json")["generated_apb_crossings"]
+    apb_domains = {name: d for d, names in domains["destinations"].items() for name in names}
+    apb_domains.update(dict.fromkeys(domains["native_system"] + domains["same_clock_isolation"], "system"))
+    next(e for e in circuit["edges"] if e["from"] == "i-decode.local")["via"][0][1] += 1
+    with pytest.raises(ValueError, match="non-orthogonal"):
+        prepare_fabric(ROOT, circuit, topology, apb_domains)
 
 
 @pytest.mark.parametrize(("mutation", "reason"), [

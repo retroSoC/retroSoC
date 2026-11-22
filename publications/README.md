@@ -1,10 +1,42 @@
 # Publications
 
-Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-19)** and Mini
-**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Both books use the technical source reviewed at
-`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`. Tiny describes ICS55 and the explicit
+Current editions are Tiny **v0.2 DRAFT / Gen1 (2026-11-20)** and Mini
+**v0.5 DRAFT / Gen2/Gen2+ (2026-11-18)**. Tiny uses technical source
+`d9f2781147d7a7c47e5d8c19396fcc2a3de95133`; Mini uses
+`28a2123cda135d6d1fb623a61473b15bf4cffdae`. Tiny describes ICS55 and the explicit
 IHP130 compatibility profile. Mini describes IHP130 PRODUCT, HP and MPW. Each
 book keeps its own product configuration, manifest and output marker.
+
+The Tiny tape and reel box drawing starts at dev `e1de8dd6` and compares against
+the 459-page address-map delivery. Its nominal carton dimensions use the same TI
+reference device as the carrier tape and reel. Use the
+`tiny-v02-reel-box-20261120-` namespace for change reports.
+
+The Tiny 32-bit address map starts at dev `849b34f0` and compares against the
+458-page QFN64 pinout delivery. Its overview, APB4 details and SRAM banks
+derive from the same validated address windows and topology as the book.
+Use the `tiny-v02-address-map-20261120-` namespace for change reports.
+
+The Tiny QFN64 pinout update starts at dev `33b9afc2` and compares against the
+457-page Figure 5 delivery. It adds the top-view target plate ahead of the pin
+descriptions. The plate shares Figure 4's fills and derives its labels from the
+QFN64 and GPIO sources. Use the `tiny-v02-qfn64-pinout-20261120-` namespace for
+change reports.
+
+The Tiny Figure 5 update starts at dev `d5a49509` and compares against the
+457-page clock-tree build. The `system-fabric` record binds local and external
+routes to Tiny source. The target matrix groups APB4 destinations by clock domain.
+Use the `tiny-v02-system-fabric-20261120-` namespace for change reports.
+
+The Tiny Figure 9 clock-tree update starts at dev `6c863b24` and compares
+against the 457-page QFN64 assembly build. The `system-clocks` record supplies
+the routing for the CeTZ clock plate and retains each connection's Tiny source
+binding. Use the `tiny-v02-clock-tree-20261120-` namespace for change reports.
+
+The Tiny carrier tape, reel and Pb-free reflow references start at dev `33c61f9a`
+and compare against the 452-page QFN64 drawing build. The three plates and
+their parameter tables use the [Tiny source catalog](datasheets/tiny/specifications/sources.json)
+and the `tiny-v02-qfn64-assembly-20261119-` change namespace.
 
 The Tiny QFN64 drawing update starts at dev `c6fdcd1f` and compares against the
 455-page Tiny build from the RM0486 comparison. The mechanical plate, copper
@@ -36,7 +68,7 @@ drawing acceptance and subsequent integration with dev. Use each build's
 structure and change-page reports for page numbers.
 
 Mini's `mini.json.build_control_review` separately records reviewed non-product
-Makefile and contribution-policy changes through `f472ccae`. It binds a full
+Makefile and contribution-policy changes through `28a2123c`. It binds a full
 commit and each file's blob identity independently of the technical source
 snapshot. The optional `documentation_blobs` mapping accepts only
 `docs/git-workflow.md`; product documents cannot be exempted. Source checks

@@ -44,9 +44,9 @@ zero capability field must not be mislabeled reserved when it has defined
 semantics, such as Tiny's truncated DMA maximum-burst discovery field.
 
 Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
-CeTZ 0.5.2 for all 23 IP primary diagrams and their details. Retain Circuiteria
-for three system diagrams, Bytefield formats and Blockcell storage diagrams.
-CeTZ also owns the six-panel overview, connectivity matrix and
+CeTZ 0.5.2 for all 23 IP primary diagrams and their details. The system media
+figure uses Circuiteria. Formats use Bytefield and storage diagrams use
+Blockcell. CeTZ also owns the system fabric, clock tree, overview, connectivity matrix and
 software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
@@ -95,12 +95,54 @@ prefix column. Measure its width from the longest complete `Table N.` or
 share one left edge; shorter prefixes retain the unused column width. Keep
 these flat lists independent of Contents hierarchy indentation and body spacing.
 
-Only the three retained system Circuiteria figures use thin rounded blocks,
+The system media Circuiteria figure uses thin rounded blocks,
 1 pt signal/control wires and 1.5 pt data buses;
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
 cache, pad or external-memory restrictions into Tiny captions.
+
+The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
+at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.
+Square terminals mark ports and the three owner columns lead to grouped
+target rows. Open circles mark structural fabric connections. Draw separate
+AXI arrivals for B0–B3 in the shared SRAM block. Keep the XPI memory CDC and
+the MEM-domain register bridge on separate routes into the XPI controller.
+Group the independent APB4 targets by clock domain. Keep the caption,
+`circuit-system-fabric` anchor, and reference to the Tiny connection matrix.
+
+### Address map
+
+Place the 32-bit address map at the start of Address Mapping on one A4 page.
+Start the canonical address-window table on the next page. Keep the plate within
+172 × 200 mm, with Inter labels and Fira Code addresses at 9 pt or larger.
+Display eight hexadecimal digits, inclusive endpoints, and descending addresses.
+Use schematic band heights so narrow windows and unmapped ranges remain legible.
+
+Place the numerical APB4 address groups in separate right-hand panels, with
+their complete windows and computed gaps. Keep the expansion ribbons within
+the gutter. Use gold boundaries and pale-gold selection bands, with gray fill
+and an Unmapped label for gaps. Draw the SRAM banks below the overview. Use
+the validated address windows and SRAM geometry to generate every endpoint.
+Identify the reset address and the fitted-device limit on XPI and Flash capacity.
+Use `tiny-address-map-figure` for links and the `address-map` export for standalone
+SVG and PDF. Keep the figure directory and revision history with the active
+publication marker, and keep earlier marked figures bound to their own revision.
+
+### Clock tree
+
+The clock tree uses a single clock plate up to 172 × 180 mm with Inter labels at
+9 pt or larger. Draw external inputs, build-specific paths, SYS distribution,
+dividers and consumer branches in that order. Use trapezoids for selectors,
+rectangles for dividers and `EN` inputs for leaf hold and output controls.
+Draw clock wires as solid 0.65 pt shafts and identify controls and reset
+signals with dashed shafts and named paths. Use junction dots on one shared
+shaft and a gap at unrelated crossings. Keep labels clear of the wires and
+use the existing gold and pale-gold swatches to identify the optional ICS55
+PLL group. Label its dashed boundary so it remains legible in grayscale.
+Route external AUDIO, PIXCLK and TCK separately. The bottom strip shows
+reset sources and synchronizers. Preserve the `circuit-system-clocks` anchor
+and keep a source binding for each signal path.
 
 The Overview keeps the product description, six IP groups and reference
 configuration on one page. Use three columns and two rows with Mini's outline
@@ -157,6 +199,31 @@ Never independently renumber a view or call EP pin 65.
 
 ### QFN64 drawing layout
 
+#### Target pinout
+
+Open Pin Mapping with a dedicated 172 × 180 mm target pinout plate. Read all
+64 main names and positions from the QFN64 target model. Put terminal numbers
+inside the left and right edges and between the outline and tags at the top
+and bottom. Keep side labels horizontal and rotate the top and bottom tags
+along the terminal axis. Put the Pin 1 dot
+in the upper-left corner and draw the independently named EP with a dashed
+projected outline. Display the frozen target and pending binding states, and
+flag the three unbound signal targets by name. Caption the plate `QFN64 target
+pinout — top view` and register its standalone `qfn-pinout` SVG and PDF exports.
+
+Share the SoC functional architecture palette. Use system blue-gray for supply,
+rail gray for ground
+and EP, peripheral green for GPIO and UART, memory violet for boot XPI, debug
+teal for JTAG, and AON gold for clocks, reset and straps. Use the audio and DVP
+domain fills for the respective input-clock callouts. Use dark Inter text at
+9 pt or larger and name each category in the legend. Draw selected alternates in
+a separate outer lane with a leader from the GPIO name and print the RTL-bound
+ALT mode. Keep the full route matrix in its own subsection. Draw reference
+body, pitch and EP dimensions from the package catalog, and label them inside
+both the book figure and standalone exports.
+
+#### Numbered, mechanical and assembly views
+
 Reuse publication gold (`#A38442`) for view headings, dimension strokes, extension
 lines and Pin 1. Use light gray for the drawing field, medium gray for copper,
 and dark text for values. Solid outlines, dashed projections, centerlines and
@@ -164,7 +231,8 @@ labels retain their meaning in grayscale. Keep panel width within 172 mm and
 ordinary labels at 9 pt or larger. Apply the scientific renderer to dimension
 subscripts.
 
-Stack both complete pin maps on one page. Place the top and bottom mechanical
+Stack the two numbered pin views on one page after the pin-description table.
+Place the top and bottom mechanical
 views above the numbered dimensions table and the side view. Derive the table
 and drawing values from the same ADI-backed records. Show the standoff range
 with a blank nominal cell, and distinguish the finished package EP from PCB EP
@@ -178,6 +246,43 @@ Copper, mask, paste and via layers are separate. Constructed values belong in
 the model catalog and inside standalone vector status labels. Paste coverage
 is total aperture area divided by reference EP area. MSL/reflow, thermal values,
 order codes and physical binding remain TBD. EP supplements perimeter grounds.
+
+### Tape, reel and reflow references
+
+After Assembly Layers and Reliability, give Carrier Tape Dimensions, Reel
+Dimensions, Tape and Reel Box Dimensions, and Reflow Soldering Profile one
+page each in that order. Put the English heading
+and source link above one numbered plate and one numbered parameter table. Use
+the QFN64 drawing palette, 172 mm maximum plate width, and 9 pt minimum base
+label size. Apply scoped scientific subscripts to tape, reel and temperature
+symbols. Place REFERENCE ONLY in each plate and its caption and identify the
+status of each table row.
+
+Show the component side of the tape with the sprocket row above the pockets and
+the user feed arrow pointing right. Draw the selected Pin 1 quadrant from the
+source record. Anchor tape width to the edges, pitch to adjacent pocket centers,
+pocket dimensions to the cavity edges, and depth from the web surface to the
+pocket floor. Anchor reel diameter to the outer rim and width to the outer
+flange faces. Label unpublished geometry as schematic and keep Tiny's supplier
+dimensions, orientation, tolerances, hub, bore and pack quantity TBD.
+
+Show the outside carton with an open lid in an isometric plate no larger than
+172 × 135 mm. Use neutral gray faces, dark outlines, and the standard gold
+dimension and extension lines. Anchor L and W to the outside bottom edges and H
+to the bottom and lid seating plane at the same corner. Label the open lid and
+folds as schematic. Use the same nominal dimensions in the plate and table.
+Reuse the reel's SPQ for the reference part, keep Tiny's carton drawing and
+contents per carton TBD, and record the carton-specific source locator. Export
+the plate as `qfn-reel-box` in SVG and PDF.
+
+Use a schematic, unticked time axis for the reflow curve. Derive its temperature
+levels from the table and align the interval arrows with the soak, liquidus and
+near-peak crossings. Identify the peak's package thickness class and the source's
+classification and preconditioning scope. Tiny's package limits, MSL and board
+profile require product evidence. Maintain nominal values and bounds in the
+Tiny parameter catalog and source page, date and fingerprint in the Tiny source
+catalog. Export the same plates as standalone SVG and PDF and verify the English
+labels, dimensions and grayscale differentiation at 144 dpi.
 
 Minimum-system drawings use external 24 MHz XIN. XOUT, BOOT_MODE, TEST_MODE and
 EP separately state target allocation, executable connection and physical binding.
