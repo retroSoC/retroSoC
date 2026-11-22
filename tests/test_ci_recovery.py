@@ -156,14 +156,15 @@ def test_cache_report_distinguishes_an_attempted_empty_hit_from_not_run(tmp_path
 
 def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
     root = Path(__file__).resolve().parents[1]
-    action = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    restore_action = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    save_action = "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     for relative, names in (
         (".github/workflows/quality.yml", ("pip", "sources", "toolchains", "references")),
         (".github/workflows/_regression.yml", ("sources", "toolchains", "ccache")),
     ):
         workflow = (root / relative).read_text(encoding="utf-8")
-        assert workflow.count(f"uses: actions/cache/restore@{action}") == len(names)
-        assert workflow.count(f"uses: actions/cache/save@{action}") == len(names)
+        assert workflow.count(f"uses: actions/cache/restore@{restore_action}") == len(names)
+        assert workflow.count(f"uses: actions/cache/save@{save_action}") == len(names)
         for name in names:
             assert f"steps.{name}.outputs.cache-primary-key" in workflow
             assert f"steps.{name}.outputs.cache-matched-key" in workflow
