@@ -203,14 +203,14 @@ jobs:
 
       - name: Restore pip cache
         id: pip
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-${{ hashFiles('requirements/build.txt', 'requirements/ci.txt') }}
 
       - name: Restore locked source dependencies
         id: sources
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             physical/pdk/IHP-Open-PDK
@@ -224,7 +224,7 @@ jobs:
 
       - name: Restore locked toolchains
         id: toolchains
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             .cache/retrosoc/downloads
@@ -233,7 +233,7 @@ jobs:
 
       - name: Restore accelerator reference cache
         id: references
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: |
             .cache/retrosoc/sources/apu-libflac
