@@ -20,7 +20,8 @@
  ([2026-11-20],[v0.2 DRAFT],[Add a QFN64 target pinout with functional colors and selected GPIO alternate functions.]),
  ([2026-11-20],[v0.2 DRAFT],[Add a 32-bit address map with APB4 window and SRAM bank detail.]),
  ([2026-11-20],[v0.2 DRAFT],[Add a tape and reel box drawing and nominal carton reference dimensions.]),
- (doc.date,[v0.2 DRAFT],[Add a smartwatch host diagram and reference pin assignments. The pin assignments follow the reviewed Tiny topology.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-21],[v0.2 DRAFT],[Add a smartwatch host diagram and reference pin assignments. The pin assignments follow the reviewed Tiny topology.]),
+ (doc.date,[v0.2 DRAFT],[Expand the smartwatch diagram and pin assignments to cover storage, radio and service options, sensing, audio, actuation and an alternate camera assembly.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

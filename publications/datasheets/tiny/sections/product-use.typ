@@ -53,19 +53,24 @@ See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
 
 #pagebreak()
-#change-start(doc.change_prefix + "smartwatch", "Smartwatch host architecture and reference pin assignments", category: "added")
+#change-start(doc.change_prefix + "smartwatch", "Expanded smartwatch architecture and assembly assignments")
 === Smartwatch host architecture <tiny-smartwatch>
-The host reads touch and sensor data over a shared I²C bus and updates a write-only SPI LCD.
-Fit the external BLE and audio modules as needed. #visual(
+Choose the watch or camera assembly. The watch uses native SDIO for storage and selects
+one UART0 attachment for wireless or service. See @tiny-smartwatch-connections for the wiring and resource assignments.
+#visual(
   data.specifications, "smartwatch", smartwatch(data.smartwatch), [Tiny smartwatch host architecture],
   anchor: "tiny-smartwatch-figure",
 )
+#pagebreak()
+The assignments below follow @tiny-smartwatch-figure. Check supply limits and device compatibility before board integration.
 #ds-table("smartwatch-connections", [Smartwatch example connections - REFERENCE ONLY.],
-  ([Board function], [Example Tiny signal assignment]), data.smartwatch.links.values().map(link => (
-    text(link.title), link.connections.map(text).join(linebreak()),
-  )), widths: (1fr, 3.65fr))
-Check supply and pad limits, device compatibility and I²C addresses before board integration.
-See @tiny-board-reference for the minimum system and @tiny-conflicts for pin ownership.
+  ([Board function], [Tiny assignment], [Board connection and conditions]), data.smartwatch.rows.map(row => (
+    text(row.title), row.assignments.map(text).join(linebreak()), text(row.notes),
+  )), widths: (0.83fr, 1.57fr, 1.83fr),
+  notes: [GPIO entries without an ALT use GPIO mode. DMA3 is shared by XPI, CRC, SPI display and WS2812.
+    Serialize the leases through completion, including wire completion for the display and LEDs.
+    See @tiny-board-reference for the minimum system and @tiny-conflicts for resource ownership.],
+) <tiny-smartwatch-connections>
 #change-end(doc.change_prefix + "smartwatch")
 #pagebreak()
 
