@@ -216,24 +216,38 @@ def qfn_geometry(parameters: dict[str, float], pins: list[dict]) -> dict:
 
 
 def qfn_pinout_aliases(pins: list[dict], routes: list[dict]) -> list[dict]:
-    """Select the published callouts and resolve their QFN targets and mux routes."""
-    selected = (
-        (28, "ALT0", "CLKOUT"),
-        (8, "ALT0", "UART0.TX"),
-        (9, "ALT0", "UART0.RX"),
-        (17, "ALT0", "AUDIO.CLKIN"),
-        (20, "ALT1", "DVP.PCLK"),
-        (23, "ALT1", "CLKOUT"),
-    )
-    pin_numbers = {p["name"]: p["pin"] for p in pins}
-    route_keys = {(r["gpio"], r["mode"], r["function"]) for r in routes}
+    """Resolve every enabled Tiny mux route to its frozen QFN64 target."""
+    gpio_names = {f"GPIO{i}" for i in range(32)}
+    pin_numbers: dict[str, int] = {}
+    for pin in pins:
+        name = pin["name"]
+        if not name.startswith("GPIO"):
+            continue
+        if name not in gpio_names:
+            raise ValueError(f"Unknown QFN64 GPIO target {name}")
+        if name in pin_numbers or pin["pin"] in pin_numbers.values():
+            raise ValueError(f"Duplicate QFN64 GPIO target {name}")
+        pin_numbers[name] = pin["pin"]
+    if missing := sorted(gpio_names - pin_numbers.keys()):
+        raise ValueError(f"Missing QFN64 GPIO target {missing[0]}")
+
+    modes = ("ALT0", "ALT1")
+    seen = set()
     aliases = []
-    for gpio, mode, function in selected:
-        pin = pin_numbers.get(f"GPIO{gpio}")
-        if pin is None or (gpio, mode, function) not in route_keys:
-            raise ValueError(f"QFN64 pinout requires a routed target for GPIO{gpio} {mode} {function}")
-        aliases.append(dict(pin=pin, gpio=gpio, mode=mode, function=function))
-    return aliases
+    for route in routes:
+        gpio, mode, function = route["gpio"], route["mode"], route["function"]
+        name = f"GPIO{gpio}"
+        if name not in pin_numbers or mode not in modes:
+            raise ValueError(f"Unknown QFN64 mux mapping for {name} {mode}")
+        if (name, mode) in seen:
+            raise ValueError(f"Duplicate QFN64 mux mapping for {name} {mode}")
+        seen.add((name, mode))
+        if function != "Not routed":
+            aliases.append(dict(pin=pin_numbers[name], gpio=gpio, mode=mode, function=function))
+    if missing := sorted({(name, mode) for name in gpio_names for mode in modes} - seen):
+        name, mode = missing[0]
+        raise ValueError(f"Missing QFN64 mux mapping for {name} {mode}")
+    return sorted(aliases, key=lambda a: (a["pin"], a["mode"]))
 
 
 def qfn_measurement(record: dict) -> dict:

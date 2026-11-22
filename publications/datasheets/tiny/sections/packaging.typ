@@ -15,9 +15,9 @@ Physical die-to-package bonding, pad electrical qualification and the supplier o
 The target table is not an implemented bond map.
 
 === Pin Mapping
-#change-start("tiny-v02-qfn64-pinout-20261120-target-pinout", "QFN64 target pinout and selected alternate functions")
+#change-start(doc.change_prefix + "target-pinout", "QFN64 target pinout with complete alternate functions")
 #visual(spec, "qfn-pinout", qfn-pinout(spec), [QFN64 target pinout — top view], anchor: "qfn64-target-pinout")
-#change-end("tiny-v02-qfn64-pinout-20261120-target-pinout")
+#change-end(doc.change_prefix + "target-pinout")
 #pagebreak(weak: true)
 #ds-table("qfn64",[QFN64 pin descriptions - frozen target; physical binding pending],
   ([Pin],[Target / external function],[Mode],[Dir.],[Reset logic],[Bias],[Restrictions / state]),

@@ -202,25 +202,30 @@ Never independently renumber a view or call EP pin 65.
 #### Target pinout
 
 Open Pin Mapping with a dedicated 172 × 180 mm target pinout plate. Read all
-64 main names and positions from the QFN64 target model. Put terminal numbers
-inside the left and right edges and between the outline and tags at the top
-and bottom. Keep side labels horizontal and rotate the top and bottom tags
-along the terminal axis. Put the Pin 1 dot
-in the upper-left corner and draw the independently named EP with a dashed
+64 main names and positions from the QFN64 target model. Use a 58.5 mm square
+outline and 1.2 mm deep schematic terminal marks to leave a numbering lane
+beside the exposed pad. Put terminal numbers inside the left and right edges
+and stagger the numbers in two rows between the outline and tags at the top
+and bottom. Put the Pin 1 dot in
+the upper-left corner and draw the independently named EP with a dashed
 projected outline. Display the frozen target and pending binding states, and
 flag the three unbound signal targets by name. Caption the plate `QFN64 target
-pinout — top view` and register its standalone `qfn-pinout` SVG and PDF exports.
+pinout — top view` and export standalone `qfn-pinout` SVG and PDF.
 
-Share the SoC functional architecture palette. Use system blue-gray for supply,
-rail gray for ground
-and EP, peripheral green for GPIO and UART, memory violet for boot XPI, debug
-teal for JTAG, and AON gold for clocks, reset and straps. Use the audio and DVP
-domain fills for the respective input-clock callouts. Use dark Inter text at
-9 pt or larger and name each category in the legend. Draw selected alternates in
-a separate outer lane with a leader from the GPIO name and print the RTL-bound
-ALT mode. Keep the full route matrix in its own subsection. Draw reference
-body, pitch and EP dimensions from the package catalog, and label them inside
-both the book figure and standalone exports.
+Generate every routed entry from the GPIO alternate-function table and print
+its full function name. Put ALT0 in the inner band and ALT1 in the outer band.
+Measure both bands before placing tags and align their leaders to the GPIO
+centreline. Keep side tags horizontal and rotate the upper and lower primary
+tags and lower alternates along the terminal axis. Route the two upper PWM
+capture entries to horizontal tags above the primary labels. Explain the band
+order and exclusive mode selection on the plate.
+
+Use dark Inter text at 9 pt or larger and share the SoC functional architecture
+palette. Use separate fills for GPIO (green), ALT0 (pale pink), and ALT1 (pale
+orange). Label each of these fills and the dedicated supply, ground, boot XPI,
+clock and control, and JTAG categories in the legend. Include the catalog
+reference dimensions for body, pitch and EP and their reference status in the
+book figure and standalone exports.
 
 #### Numbered, mechanical and assembly views
 
