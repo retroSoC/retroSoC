@@ -29,17 +29,34 @@ def test_smartwatch_reference_exposes_separate_clock_and_chip_selects(data):
     assert (watch["hardware_isa"], watch["sram_kib"], watch["dma_channels"]) == ("RV32IMC", 128, 8)
     assert links["power"]["clock"] == "24 MHz"
     assert (links["memory"]["boot_cs"], links["memory"]["ram_cs"]) == ("NSS0", "NSS1")
-    assert "GPIO29 ALT0 NSS1" in links["memory"]["connections"][1]
-    assert "GPIO30 (GPIO output) D/C" in links["display"]["connections"][1]
-    assert "GPIO8 ALT0 TX → BLE RX" in links["ble"]["connections"][0]
-    assert "GPIO16 ALT0 MCLK (out)" in links["audio"]["connections"][1]
-    assert links["audio"]["connections"][2] == "Independent AUDIO clock → GPIO17 ALT0 AUDIO.CLKIN."
+    gpio = watch["profiles"]["watch"]
+    assert gpio[29] == dict(pin=29, mode="ALT0", signal="NSS1", direction="out")
+    assert gpio[30] == dict(pin=30, mode="GPIO", signal="D/C", direction="out")
+    assert [gpio[i]["direction"] for i in range(12, 18)] == ["out", "out", "out", "in", "out", "in"]
+    assert [gpio[i]["signal"] for i in range(14, 18)] == ["DACDAT", "ADCDAT", "MCLK", "AUDIO.CLKIN"]
+
+
+def test_smartwatch_uses_disjoint_radio_storage_and_camera_routes(data):
+    watch = data["smartwatch"]
+    main, camera = (watch["profiles"][name] for name in ("watch", "camera"))
+    assert [pin["pin"] for pin in main] == [pin["pin"] for pin in camera] == list(range(32))
+    assert [i for i in range(32) if main[i] != camera[i]] == list(range(12, 24))
+    assert [(p["mode"], p["direction"]) for p in camera[12:24]] == [("ALT1", "in")] * 11 + [("ALT1", "out")]
+    assert [p["signal"] for p in camera[20:24]] == ["PCLK", "HREF", "VSYNC", "CAM_XCLK"]
+    assert [p["signal"] for p in main[:8]] == ["CLK", "CMD", "DAT0", "DAT1", "DAT2", "DAT3", "SD_CD_N", "SD_PWR_EN"]
+    assert [p["direction"] for p in main[:8]] == ["out", *(["I/O"] * 5), "in", "out"]
+    assert [(p["signal"], p["direction"]) for p in main[8:10]] == [("TX", "out"), ("RX", "in")]
+    assert watch["links"]["serial"]["options"] == {"ble": "BLE", "wifi": "Wi-Fi", "service": "USB-UART"}
+    assert watch["links"]["serial"]["selection"] == "Fit one"
 
 
 @pytest.mark.parametrize(("pin", "mode", "field", "wrong"), [
     (28, "alt1", "do", "s_clkout"),
     (10, "alt0", "inputs", []),
     (17, "alt0", "oe", "1'b1"),
+    (4, "alt0", "inputs", []),
+    (20, "alt1", "inputs", ["u_dvp_if.href_i"]),
+    (23, "alt1", "oe", "1'b0"),
 ])
 def test_smartwatch_reference_rejects_route_or_direction_drift(data, pin, mode, field, wrong):
     gpio = copy.deepcopy(data["gpio"])
