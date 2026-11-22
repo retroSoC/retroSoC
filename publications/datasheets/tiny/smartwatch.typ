@@ -9,7 +9,7 @@
   let wire = 0.65pt + ink
   let icon = 0.85pt + ink
   cetz.canvas(length: 1mm, {
-    import cetz.draw: rect, line, content, circle, bezier
+    import cetz.draw: rect, line, content, circle, bezier, merge-path
     let p(x, y) = (x, -y)
     let print(x, y, body, anchor: "center") = content(p(x, y), body, anchor: anchor)
     let box(left, top, right, bottom, fill, optional: false, weight: 0.6pt) = {
@@ -41,8 +41,21 @@
       line(p(x - 2, y), p(x + 2, y), stroke: icon)
     }
     let bluetooth(x, y) = {
-      line(p(x, y + 3), p(x, y - 3), p(x + 1.9, y - 1.35), p(x - 2, y + 1.75), stroke: icon)
-      line(p(x - 2, y - 1.75), p(x + 1.9, y + 1.35), p(x, y + 3), stroke: icon)
+      let half-width = 1.8
+      let half-height = 2.375
+      merge-path(close: true, fill: rgb("#0082FC"), stroke: none, {
+        bezier(p(x, y - half-height), p(x + half-width, y),
+          p(x + 1.4, y - half-height), p(x + half-width, y - 1.55))
+        bezier(p(x + half-width, y), p(x, y + half-height),
+          p(x + half-width, y + 1.55), p(x + 1.4, y + half-height))
+        bezier(p(x, y + half-height), p(x - half-width, y),
+          p(x - 1.4, y + half-height), p(x - half-width, y + 1.55))
+        bezier(p(x - half-width, y), p(x, y - half-height),
+          p(x - half-width, y - 1.55), p(x - 1.4, y - half-height))
+      })
+      let glyph = 0.65pt + white
+      line(p(x, y + 1.65), p(x, y - 1.65), p(x + 0.94, y - 0.78), p(x - 0.94, y + 0.98), stroke: glyph)
+      line(p(x - 0.94, y - 0.98), p(x + 0.94, y + 0.78), p(x, y + 1.65), stroke: glyph)
     }
     let wifi(x, y) = {
       bezier(p(x - 3.2, y - 0.7), p(x + 3.2, y - 0.7), p(x - 1.35, y - 2.9), p(x + 1.35, y - 2.9), stroke: icon)
@@ -173,26 +186,30 @@
     signal(119.8, 106.25, links.display.backlight)
     route((148.5, 103), (148.5, 100))
 
-    box(128, 114.5, 171, 145, domain-fill.audio)
-    print(130, 117.6, title(links.audio.bus + " codec"), anchor: "west")
-    route((113, 116.8), (128, 116.8))
+    let codec-left = 128
+    let codec-content-left = codec-left + 2.5
+    let converter-right = 147
+    let converter-center = (codec-content-left + converter-right) / 2
+    box(codec-left, 114.5, 171, 145, domain-fill.audio)
+    print(codec-content-left, 117.6, title(links.audio.bus + " codec"), anchor: "west")
+    route((113, 116.8), (codec-left, 116.8))
     signal(120.5, 116.8, [Clocks])
-    box(128, 120, 147, 135, white)
-    line(p(128, 127.5), p(147, 127.5), stroke: wire)
-    print(137.5, 123.75, [ADC])
-    print(137.5, 131.25, [DAC])
+    box(codec-content-left, 120, converter-right, 135, white)
+    line(p(codec-content-left, 127.5), p(converter-right, 127.5), stroke: wire)
+    print(converter-center, 123.75, [ADC])
+    print(converter-center, 131.25, [DAC])
     microphone(165, 123.3)
-    route((161.6, 123.75), (147, 123.75))
-    route((128, 123.75), (113, 123.75))
+    route((161.6, 123.75), (converter-right, 123.75))
+    route((codec-content-left, 123.75), (113, 123.75))
     signal(120.5, 123.75, links.audio.adc)
-    route((113, 131.25), (128, 131.25))
+    route((113, 131.25), (codec-content-left, 131.25))
     signal(120.5, 131.25, links.audio.dac)
     card(149.8, 128.25, 159.5, 134.25, white, ([Amp],))
-    route((147, 131.25), (149.8, 131.25))
+    route((converter-right, 131.25), (149.8, 131.25))
     route((159.5, 131.25), (163.3, 131.25))
     speaker(167.2, 131.25)
-    card(128, 137.5, 169, 143.5, domain-fill.aon, ([Independent ref. clock],))
-    route((128, 140.5), (113, 140.5))
+    card(codec-content-left, 137.5, 169, 143.5, domain-fill.aon, ([Independent ref. clock],))
+    route((codec-content-left, 140.5), (113, 140.5))
     signal(120.5, 140.5, links.audio.ref_clock)
 
     card(126, 148, 171, 155, domain-fill.peripheral, ([Motor driver + motor],))
