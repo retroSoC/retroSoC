@@ -23,11 +23,11 @@ A qualification package must tie the device/lot/revision and physical implementa
 PDK/corners, constraints, board and instruments. Missing reports remain missing; see the electrical section.
 
 == Performance and Power Characterization
-#change-start(doc.change_prefix + "power-characterization", "Power-rail terminology in the characterization guidance")
+#change-start("tiny-v02-power-pin-table-20261123-power-characterization", "Power-rail terminology in the characterization guidance")
 Separate instruction throughput, memory bandwidth, DMA transport, peripheral wire rate and complete-workload time.
 Record useful payload, startup/drain costs, alignment, burst limits, clock profile and contention. A calculated
 buffer size or divider rate is not a measurement. Power measurements require power-rail conditions and a defined workload.
-#change-end(doc.change_prefix + "power-characterization")
+#change-end("tiny-v02-power-pin-table-20261123-power-characterization")
 Retain the dated R2-P10 workload records with their own source/backend identity; do not extrapolate them into
 continuous camera FPS, arbitrary-panel performance or a qualified PLL operating rating.
 #source-note("docs/ip/tiny-soc-verification.md",title:"Scoped performance, timing and backend observations")
