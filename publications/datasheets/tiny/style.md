@@ -102,6 +102,14 @@ Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
 cache, pad or external-memory restrictions into Tiny captions.
 
+Place Tiny Gen1 feature highlights on a dedicated portrait page after the
+Overview configuration table. Use the 1200 × 674 design coordinates at a
+172 mm width, gray cards, violet gradient headlines and Inter labels at
+9 pt or larger. Keep the chip mark and empty symbol frames illustrative.
+Use the shared functional data for the ISA, DMA, SRAM and GPIO quantities.
+The integrated figure and the standalone SVG and PDF use the same vector
+source. Note the shared I²S and DVP GPIOs in the figure explanation.
+
 The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
 at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.
 Square terminals mark ports and the three owner columns lead to grouped

@@ -1,5 +1,6 @@
 #import "../style.typ": *
-#import "../diagrams.typ": architecture, clock-tree, overview, flow
+#import "../diagrams.typ": architecture, clock-tree, diagram, overview, flow
+#import "../feature-highlights.typ": feature-highlights
 #import "../waveforms.typ": timing
 
 #cover(evaluation:((name:"Available",fill:"full"),(name:"Functional",fill:"left-half"),(name:"Reproduced",fill:"empty"),(name:"Tapedout",fill:"empty")))[
@@ -84,3 +85,14 @@ retroSoC Tiny Gen1 is a wired MCU with one Hazard3 hart, separate local instruct
   ([Main SRAM],[#data.facts.sram.CapacityKiB KiB]),
   ([Compatibility],[#code(compat.profile_path), #reference-boot(compat)])),widths:(1.05fr,2.55fr))
 See @tiny-configuration for profile differences and @tiny-core for the functional architecture.
+
+#pagebreak()
+#v(1fr)
+#change-start(doc.change_prefix + "feature-highlights", "Tiny Gen1 feature highlights", category: "added")
+#block(width: 100%, breakable: false)[
+  #diagram("tiny-gen1-highlights", feature-highlights(data), [Tiny Gen1 feature highlights.],
+    figure-label: "tiny-gen1-highlights")
+  #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
+]
+#change-end(doc.change_prefix + "feature-highlights")
+#v(1fr)
