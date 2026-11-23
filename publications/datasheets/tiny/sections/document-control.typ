@@ -22,7 +22,8 @@
  ([2026-11-20],[v0.2 DRAFT],[Add a tape and reel box drawing and nominal carton reference dimensions.]),
  ([2026-11-21],[v0.2 DRAFT],[Add a smartwatch host diagram and reference pin assignments. The pin assignments follow the reviewed Tiny topology.]),
  ([2026-11-22],[v0.2 DRAFT],[Expand the smartwatch diagram and pin assignments to cover storage, radio and service options, sensing, audio, actuation and an alternate camera assembly.]),
- (doc.date,[v0.2 DRAFT],[Show all 49 routed GPIO alternate functions on the QFN64 target pinout with full names and distinct GPIO, ALT0, and ALT1 fills.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-22],[v0.2 DRAFT],[Show all 49 routed GPIO alternate functions on the QFN64 target pinout with full names and distinct GPIO, ALT0, and ALT1 fills.]),
+ (doc.date,[v0.2 DRAFT],[Use power-rail terminology throughout Tiny and split QFN64 alternate functions and their directions into distinct ALT0 and ALT1 columns.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

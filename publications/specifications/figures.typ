@@ -33,13 +33,13 @@
       rect((7,-27),(45,-48),fill:gray,stroke:0.6pt+ink)
       label-at(26,37,[Regulator #linebreak()voltage / order TBD])
       wire((45,37),(154,37),(154,58))
-      label-at(96,29,[Approved rail group; repeat at each supply])
+      label-at(96,29,if tiny {[Repeat for each approved power rail]} else {[Approved rail group; repeat at each supply]})
       for (x,value) in ((63,[#b.bulk_cap_uf #scientific.render("uF",spec.scientific,unit:true)]),(95,[#b.domain_cap_uf #scientific.render("uF",spec.scientific,unit:true)]),(127,[#b.local_cap_nf nF])) {
         cap(x,37,value)
         ground(x,58)
       }
       rect((133,-58),(168,-89),fill:gray,stroke:0.6pt+ink)
-      label-at(150,73,[VDD / VDDIO #linebreak()SoC supply pins])
+      label-at(150,73,[VDD / VDDIO #linebreak()#if tiny {[SoC power pins]} else {[SoC supply pins]}])
       wire((150,89),(150,105))
       ground(150,105)
       label-at(76,96,[Keep each bypass loop short. #linebreak()Review AVDD / PLL rails separately.])
@@ -99,7 +99,7 @@
     (64,108,50,20,[JTAG header #linebreak()TCK / TMS / TDI / TDO]),
   )} else if kind=="supply" {(
     (5,22,43,28,[Regulator #linebreak()limits / sequence TBD]),
-    (67,22,43,28,[Local bypass #linebreak()#b.local_cap_nf nF / supply]),
+    (67,22,43,28,[Local bypass #linebreak()#b.local_cap_nf nF / #if tiny {[power rail]} else {[supply]}]),
     (129,22,38,28,[SoC rail pins #linebreak()all perimeter GND]),
     (18,83,49,26,[Domain reservoir #linebreak()#b.domain_cap_uf uF + #b.bulk_cap_uf uF]),
     (103,83,55,26,[Ground plane / EP #linebreak()EP binding pending]),

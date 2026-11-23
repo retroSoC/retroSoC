@@ -62,7 +62,9 @@ one UART0 attachment for wireless or service. See @tiny-smartwatch-connections f
   anchor: "tiny-smartwatch-figure",
 )
 #pagebreak()
-The assignments below follow @tiny-smartwatch-figure. Check supply limits and device compatibility before board integration.
+#change-start(doc.change_prefix + "smartwatch-power", "Power-rail terminology in the smartwatch connection guidance")
+The assignments below follow @tiny-smartwatch-figure. Check power-rail limits and device compatibility before board integration.
+#change-end(doc.change_prefix + "smartwatch-power")
 #ds-table("smartwatch-connections", [Smartwatch example connections - REFERENCE ONLY.],
   ([Board function], [Tiny assignment], [Board connection and conditions]), data.smartwatch.rows.map(row => (
     text(row.title), row.assignments.map(text).join(linebreak()), text(row.notes),

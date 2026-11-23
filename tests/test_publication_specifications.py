@@ -136,6 +136,14 @@ def test_selected_fabric_clock_is_not_the_backend_clock(spec):
     assert {c["bus_hz"] for c in mini["clocks"]} == {72e6}
     assert {values[c["bandwidth_id"]] for c in mini["clocks"]} == {576e6}
     assert {c["memory_hz"] for c in mini["clocks"]} == {36e6}
+    tiny_voltage = next(d for d in spec["datasets"] if d["id"] == "current-voltage")
+    mini_voltage = next(d for d in mini["datasets"] if d["id"] == "current-voltage")
+    assert (tiny_voltage["title"], tiny_voltage["x_label"]) == (
+        "Core current versus power-rail voltage", "Model core power-rail voltage (V)",
+    )
+    assert (mini_voltage["title"], mini_voltage["x_label"]) == (
+        "Core current versus supply", "Model core supply (V)",
+    )
 
 
 def test_qfn64_views_share_numbering_and_mirror(spec):
@@ -155,9 +163,28 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
     assert (audio["function"], audio["direction"]) == ("AUDIO.CLKIN", "I")
     assert audio["rtl"] == "s_audio_pad_clk"
     assert qfn["pins"][39]["name"] == "GPIO17"
-    assert "ALT0 I" in qfn["pins"][39]["gpio_mode"]
     assert qfn["dimensions"]["pad_outer"] - qfn["dimensions"]["pad_inner"] == pytest.approx(2 * qfn["dimensions"]["pad_length"])
     assert spec["paste_coverage_percent"] == pytest.approx(16 * 1.4 ** 2 / 7.15 ** 2 * 100)
+
+
+def test_tiny_pin_descriptions_keep_roles_and_electrical_status(spec):
+    pins = {p["name"]: p for p in spec["qfn"]["pins"]}
+    for pin in pins.values():
+        if pin["name"].startswith(("VDD", "AVDD")):
+            assert (pin["function"], pin["direction"], pin["reset"], pin["bias"]) == ("Power", "-", "N/A", "N/A")
+        elif pin["name"].startswith(("VSS", "AVSS")):
+            assert (pin["function"], pin["direction"], pin["reset"], pin["bias"]) == ("Ground", "-", "N/A", "N/A")
+    for name in ("GPIO6", "GPIO7", "GPIO17"):
+        pin = pins[name]
+        assert (pin["function"], pin["direction"], pin["reset"], pin["bias"]) == (
+            "General-purpose I/O", "I/O", "Input, OE off", "Pulls off",
+        )
+    for name in ("XOUT", "BOOT_MODE", "TEST_MODE"):
+        pin = pins[name]
+        assert pin["unbound_target"]
+        assert (pin["function"], pin["direction"], pin["reset"], pin["bias"]) == ("Unbound target", "TBD", "TBD", "TBD")
+    assert pins["XPI_D0"]["direction"] == "I/O"
+    assert "Direction changes by phase" in pins["XPI_D0"]["limitation"]
 
 
 def test_tiny_target_pinout_numbering_and_callouts(spec):
