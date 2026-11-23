@@ -30,7 +30,7 @@
   if group == "reel-box" { rows = (record(spec, "reel.quantity"),) + rows }
   let title = spec.groups.find(g => g.id == group).title
   table-renderer("spec-" + group, [#title],
-    ([Symbol], [Parameter], [Reference value #linebreak() REFERENCE ONLY], [Tiny product]),
+    ([Symbol], [Parameter], [Reference value #linebreak() REFERENCE ONLY], [TINY product]),
     rows.map(r => (
       if "symbols" in r { symbol-for(spec, r) } else { [—] },
       r.meaning,

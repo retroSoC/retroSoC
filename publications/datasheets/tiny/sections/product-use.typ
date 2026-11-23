@@ -6,11 +6,11 @@
 #import "../../../specifications/figures.typ": visual
 
 == Product Configuration and Feature Availability <tiny-configuration>
-The main reference is #code(doc.profile). *Tiny is an independent wired MCU integration*; it is not a selectable Mini mode.
+The main reference is #code(doc.profile). *TINY is an independent wired MCU integration*; it is not a selectable Mini mode.
 The reviewed implementation is identified by #code(doc.source_revision). An interface name, shared SDK declaration or mapped
 offset does not establish an optional feature. Identify the product before using an inherited register or API name.
 #let compat = data.compatibility.first()
-#ds-table("configuration",[Tiny selected and compatibility configurations],([Item],[ICS55 main reference],[IHP130 compatibility]),(
+#ds-table("configuration",[TINY selected and compatibility configurations],([Item],[ICS55 main reference],[IHP130 compatibility]),(
   ([Profile],code(doc.profile),code(compat.profile_path)),
   ([Processor],[One RV32IMC hart; A disabled; RV32IM default firmware],[Same hardware and default firmware ISA]),
   ([Boot / clocks],[#reference-boot(data.facts). Functional PLL192/240 profiles.],[#reference-boot(compat). Explicit external-XIN variants use separate profiles.]),
@@ -25,10 +25,10 @@ GPIO administration and user windows are views of the same pad bank. UART0/I2C0 
 @tiny-migration records the removed UART1/I2C1 interfaces without advertising them as current hardware.
 
 PPALite P3 is integrated with APB4, IRQ27, RCU17 and the existing request-11/DMA2 path.
-PIO-lite has standalone P2 RTL and host tools, but Tiny integration remains absent.
+PIO-lite has standalone P2 RTL and host tools, but TINY integration remains absent.
 The document does not imply USB, wireless, CAN, ADC, an application hart, Linux, secure boot or a production entropy source.
 Optional PSRAM and the camera/display workflows require explicit device initialization and resource ownership.
-#source-note("docs/ip/tiny-soc.md",title:"Frozen Tiny target and separately phased extensions")
+#source-note("docs/ip/tiny-soc.md",title:"Frozen TINY target and separately phased extensions")
 #source-note("docs/ip/piolite-verification.md",title:"PIO-lite standalone evidence and remaining integration gates")
 
  #pagebreak()
@@ -46,7 +46,7 @@ These operations have separate ownership and completion boundaries. Camera and a
 #flow("application-composition",([Acquire routes and initialize external devices],
  [Capture or produce a bounded payload],[Drain producer; publish immutable payload],
  [Display or save through the selected consumer],[Verify completion and release ownership]),
- [Tiny application composition. This ordering does not claim concurrent pipelines or measured throughput.])
+ [TINY application composition. This ordering does not claim concurrent pipelines or measured throughput.])
 See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for shared resources.
 #source-note("app/apps/ci_smoke/tiny.c",title:"Current acceptance composition")
 #source-note("docs/ip/ppalite-verification.md",title:"Scoped PPALite P4 application evidence")
@@ -58,7 +58,7 @@ See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for
 Choose the watch or camera assembly. The watch uses native SDIO for storage and selects
 one UART0 attachment for wireless or service. See @tiny-smartwatch-connections for the wiring and resource assignments.
 #visual(
-  data.specifications, "smartwatch", smartwatch(data.smartwatch), [Tiny smartwatch host architecture],
+  data.specifications, "smartwatch", smartwatch(data.smartwatch), [TINY smartwatch host architecture],
   anchor: "tiny-smartwatch-figure",
 )
 #pagebreak()
@@ -66,7 +66,7 @@ one UART0 attachment for wireless or service. See @tiny-smartwatch-connections f
 The assignments below follow @tiny-smartwatch-figure. Check power-rail limits and device compatibility before board integration.
 #change-end("tiny-v02-power-pin-table-20261123-smartwatch-power")
 #ds-table("smartwatch-connections", [Smartwatch example connections - REFERENCE ONLY.],
-  ([Board function], [Tiny assignment], [Board connection and conditions]), data.smartwatch.rows.map(row => (
+  ([Board function], [TINY assignment], [Board connection and conditions]), data.smartwatch.rows.map(row => (
     text(row.title), row.assignments.map(text).join(linebreak()), text(row.notes),
   )), widths: (0.83fr, 1.57fr, 1.83fr),
   notes: [GPIO entries without an ALT use GPIO mode. DMA3 is shared by XPI, CRC, SPI display and WS2812.

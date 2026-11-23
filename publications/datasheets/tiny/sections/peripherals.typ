@@ -2,7 +2,7 @@
 #import "../ip-reference.typ": reference
 
 == Peripherals <tiny-peripherals>
-Every current IP appears once. The hierarchy follows the Mini publication; address, clock, routing and capability facts are Tiny-specific.
+Every current IP appears once. The hierarchy follows the Mini publication; address, clock, routing and capability facts are TINY-specific.
 
 === Memory Interface
 ==== Non-Volatile Memory (NVM)

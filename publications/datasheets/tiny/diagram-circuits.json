@@ -470,7 +470,7 @@
         ]
       }
     ],
-    "note": "Memory-mapped and indirect requests share the LUT/serial engine. Tiny uses AXI32: NOR programming remains indirect, while initialized NSS1 PSRAM admits the qualified memory-write path. Apertures and fitted capacity are distinct. XPI OUT groups SCK, NSS[3:0], IO output[3:0] and output enables[3:0]; IN is IO input[3:0].",
+    "note": "Memory-mapped and indirect requests share the LUT/serial engine. TINY uses AXI32: NOR programming remains indirect, while initialized NSS1 PSRAM admits the qualified memory-write path. Apertures and fitted capacity are distinct. XPI OUT groups SCK, NSS[3:0], IO output[3:0] and output enables[3:0]; IN is IO input[3:0].",
     "title": "XPI Universal Controller",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -4402,7 +4402,7 @@
       },
       {
         "id": "user",
-        "title": "Restricted user interface\nTiny outputs tied zero",
+        "title": "Restricted user interface\nTINY outputs tied zero",
         "x": 6.3,
         "y": 0.0,
         "w": 4.0,
@@ -4597,7 +4597,7 @@
         ]
       }
     ],
-    "note": "The management/user register views share 32 GPIOs. Tiny ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls. Register s_irq passes through gpio_core to gpio.irq_o; this IRQ is a SoC interface member, not an extra GPIO pad.",
+    "note": "The management/user register views share 32 GPIOs. TINY ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls. Register s_irq passes through gpio_core to gpio.irq_o; this IRQ is a SoC interface member, not an extra GPIO pad.",
     "title": "General-Purpose Input/Output (GPIO)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -4658,7 +4658,7 @@
             "id": "user-interface",
             "owner": "user",
             "ref": "user",
-            "title": "Restricted user interface\nTiny outputs tied zero\nIN / 32"
+            "title": "Restricted user interface\nTINY outputs tied zero\nIN / 32"
           },
           {
             "id": "reg-registers",
@@ -5737,7 +5737,7 @@
       },
       {
         "id": "memory",
-        "title": "Admission + PCLK/SYS CDC\nTiny AXI32 fabric",
+        "title": "Admission + PCLK/SYS CDC\nTINY AXI32 fabric",
         "x": 12.6,
         "y": 0,
         "w": 4.0,
@@ -5912,7 +5912,7 @@
         ]
       }
     ],
-    "note": "Tiny selects 8 channels and 32 payload words per channel. I2S/DVP/Crypto stream paths and SPI requests 16/17 retain their distinct admission and completion rules. The diagram shows selected paths, not an extra master per channel.",
+    "note": "TINY selects 8 channels and 32 payload words per channel. I2S/DVP/Crypto stream paths and SPI requests 16/17 retain their distinct admission and completion rules. The diagram shows selected paths, not an extra master per channel.",
     "title": "Direct Memory Access (DMA)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -9103,7 +9103,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "The shared implementation uses command/response clock crossings. Tiny supplies normalized AON REF24 to the functional RTC input. This is not evidence of battery retention or operation without XIN.",
+    "note": "The shared implementation uses command/response clock crossings. TINY supplies normalized AON REF24 to the functional RTC input. This is not evidence of battery retention or operation without XIN.",
     "title": "Real-Time Clock (RTC)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -10354,7 +10354,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Command/response crossings separate APB access and watchdog operation. Tiny uses AON REF24 for functional timekeeping and retains the documented whole-system reset and reset-cause boundaries.",
+    "note": "Command/response crossings separate APB access and watchdog operation. TINY uses AON REF24 for functional timekeeping and retains the documented whole-system reset and reset-cause boundaries.",
     "title": "Watchdog (WDG)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -11160,7 +11160,7 @@
         ]
       }
     ],
-    "note": "Tiny uses the actual committed PCLK report and four waveform outputs. The shared fault/sync/capture interface does not establish a board pin assignment beyond the Tiny GPIO map.",
+    "note": "TINY uses the actual committed PCLK report and four waveform outputs. The shared fault/sync/capture interface does not establish a board pin assignment beyond the TINY GPIO map.",
     "title": "Pulse Width Modulation (PWM)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -12654,7 +12654,7 @@
         ]
       }
     ],
-    "note": "Tiny routes TX/RX on GPIO8/9 ALT0, ties CTS_n low and provides no external RTS route. Shared flow-control registers do not create external flow-control pads. TX and RX FIFO widths differ because receive entries retain error metadata.",
+    "note": "TINY routes TX/RX on GPIO8/9 ALT0, ties CTS_n low and provides no external RTS route. Shared flow-control registers do not create external flow-control pads. TX and RX FIFO widths differ because receive entries retain error metadata.",
     "title": "Management UART (UART0)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -17405,7 +17405,7 @@
       },
       {
         "id": "id",
-        "title": "ID valid=0 / read-enable=0\nTiny identity adapter",
+        "title": "ID valid=0 / read-enable=0\nTINY identity adapter",
         "x": 12.6,
         "y": 3.5,
         "w": 4.0,
@@ -17487,7 +17487,7 @@
         ]
       }
     ],
-    "note": "The Tiny adapter supplies the TINY SoC identity and selected profile metadata. Device-ID valid/read-enable are tied zero, so device-ID payload reads return APB error.",
+    "note": "The TINY adapter supplies the TINY SoC identity and selected profile metadata. Device-ID valid/read-enable are tied zero, so device-ID payload reads return APB error.",
     "title": "Architecture Information (ARCHINFO)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -17525,7 +17525,7 @@
             "id": "id-interface",
             "owner": "id",
             "ref": "id",
-            "title": "ID valid=0 / read en=0\nTiny identity adapter"
+            "title": "ID valid=0 / read en=0\nTINY identity adapter"
           },
           {
             "id": "reg-sequencer",
@@ -19376,7 +19376,7 @@
         ]
       }
     ],
-    "note": "Control/FIFO transport uses PCLK; serialization uses AUDIO. Tiny has no APU/KWS routing. Master-only audio modes and external clock/device qualification remain separate. I2S OUT groups MCLK, BCLK, LRCK and DAC data; ADC is the returning serial data line. The register s_irq passes through i2s_core to i2s.irq_o; it is not a separate audio-domain interrupt source. RX/TX word packing and the return ADC path are shown explicitly.",
+    "note": "Control/FIFO transport uses PCLK; serialization uses AUDIO. TINY has no APU/KWS routing. Master-only audio modes and external clock/device qualification remain separate. I2S OUT groups MCLK, BCLK, LRCK and DAC data; ADC is the returning serial data line. The register s_irq passes through i2s_core to i2s.irq_o; it is not a separate audio-domain interrupt source. RX/TX word packing and the return ADC path are shown explicitly.",
     "title": "Inter-IC Sound (I2S)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -23237,7 +23237,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
-    "note": "Shown control and data paths belong to the current SRAM-backed AES/SHA2/RSA implementation. Tiny has 24 KiB of private PCLK-domain storage; initialization, scrub and accepted DMA work have separate completion boundaries.",
+    "note": "Shown control and data paths belong to the current SRAM-backed AES/SHA2/RSA implementation. TINY has 24 KiB of private PCLK-domain storage; initialization, scrub and accepted DMA work have separate completion boundaries.",
     "title": "Cryptographic Accelerator (CRYPTO)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -27789,7 +27789,7 @@
     }
   },
   "sram": {
-    "title": "Tiny SRAM local and external paths",
+    "title": "TINY SRAM local and external paths",
     "nodes": [
       {
         "id": "local",
@@ -29485,7 +29485,7 @@
     }
   },
   "sysctrl": {
-    "title": "Tiny SYSCTRL diagnostics and RCU subregion",
+    "title": "TINY SYSCTRL diagnostics and RCU subregion",
     "nodes": [
       {
         "id": "apb",
@@ -30834,7 +30834,7 @@
     }
   },
   "rcu": {
-    "title": "Tiny RCU register, backend and leaf lifecycle",
+    "title": "TINY RCU register, backend and leaf lifecycle",
     "nodes": [
       {
         "id": "reg",
@@ -30944,7 +30944,7 @@
                 "text": "u_pll ("
               }
             ],
-            "condition": "HAVE_PLL; Tiny ICS55 main profile"
+            "condition": "HAVE_PLL; TINY ICS55 main profile"
           },
           {
             "id": "u_sys_mux",
@@ -31626,7 +31626,7 @@
               ]
             }
           ],
-          "note": "REF24 is 24 MHz in the reviewed profile. The PLL branch exists only with HAVE_PLL (Tiny ICS55 main); IHP130 compatibility has no PLL. SAFE24 boots with the PLL parked off. These digital clock paths do not qualify an operating rate.",
+          "note": "REF24 is 24 MHz in the reviewed profile. The PLL branch exists only with HAVE_PLL (TINY ICS55 main); IHP130 compatibility has no PLL. SAFE24 boots with the PLL parked off. These digital clock paths do not qualify an operating rate.",
           "functional": {
             "nodes": [
               {
@@ -33224,7 +33224,7 @@
             "scope": "rtl-instance",
             "instance_ref": "u_pll",
             "shape": "block",
-            "condition": "HAVE_PLL; Tiny ICS55 main profile"
+            "condition": "HAVE_PLL; TINY ICS55 main profile"
           },
           {
             "id": "backend-system",
@@ -36619,7 +36619,7 @@
     }
   },
   "system-fabric": {
-    "title": "Tiny system fabric and CPU local paths",
+    "title": "TINY system fabric and CPU local paths",
     "note": "Squares mark ports. Open circles mark fabric connections. Arrows show request direction, with responses routed by saved ownership. Address checks and target admission govern access. APB4 groups contain independent bridges.",
     "renderer": "cetz",
     "nodes": [
@@ -37846,7 +37846,7 @@
     }
   },
   "system-clocks": {
-    "title": "Tiny clock and reset domains",
+    "title": "TINY clock and reset domains",
     "note": "Solid lines carry clocks. Dashed lines show named controls and resets. A gap marks an unconnected crossing. CLKOUT tags name the matching clock nets. SAFE24 uses REF24 at boot and after PLL lock timeout. AUDIO and PIXCLK resets release on their local clocks. The clock profiles are digital configurations. Crossing and reset barriers apply in every profile.",
     "renderer": "cetz",
     "nodes": [
@@ -39764,7 +39764,7 @@
     }
   },
   "system-media": {
-    "title": "Tiny media and external-memory composition",
+    "title": "TINY media and external-memory composition",
     "nodes": [
       {
         "id": "dvp",
@@ -40502,10 +40502,10 @@
           "file": "rtl/ip/ppalite/apb4_ppalite.sv"
         }
       ],
-      "review": "The gray boundary is apb4_ppalite; route ownership and exact DMA2 admission guard belong to Tiny SoC integration and remain outside it. DVP is a distinct source IP. ExternalRoute is selected by Tiny integration; no duplicate processor/FIFO is inferred.",
+      "review": "The gray boundary is apb4_ppalite; route ownership and exact DMA2 admission guard belong to TINY SoC integration and remain outside it. DVP is a distinct source IP. ExternalRoute is selected by TINY integration; no duplicate processor/FIFO is inferred.",
       "titles": {
-        "route": "Tiny integration\nRAW / PROCESS\nroute barrier",
-        "dma": "Tiny integration\nDMA2 guard\nrequest 11"
+        "route": "TINY integration\nRAW / PROCESS\nroute barrier",
+        "dma": "TINY integration\nDMA2 guard\nrequest 11"
       },
       "interfaces": [
         {

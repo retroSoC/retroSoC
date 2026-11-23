@@ -6,7 +6,7 @@
 #cover(evaluation:((name:"Available",fill:"full"),(name:"Functional",fill:"left-half"),(name:"Reproduced",fill:"empty"),(name:"Tapedout",fill:"empty")))[
   #text(9pt,weight:"semibold",fill:gold)[PRODUCT DATASHEET / #doc.status]
   #v(rhythm.cover-gap)
-  #text(30pt,weight:"semibold")[retroSoC Tiny]
+  #text(30pt,weight:"semibold")[retroSoC TINY]
   #linebreak()
   #text(23pt,weight:"semibold",fill:gold)[Gen1]
   #v(rhythm.cover-gap)
@@ -75,7 +75,7 @@
 
 #pagebreak()
 == Overview <tiny-overview>
-retroSoC Tiny Gen1 is a wired MCU with one Hazard3 hart, separate local instruction and data paths, and a 32-bit AXI fabric for shared resources.
+retroSoC TINY Gen1 is a wired MCU with one Hazard3 hart, separate local instruction and data paths, and a 32-bit AXI fabric for shared resources.
 #overview()
 #let compat = data.compatibility.first()
 #ds-table("reference-configuration",[Document reference configuration],([Property],[Reference]),(
@@ -88,11 +88,11 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
 
 #pagebreak()
 #v(1fr)
-#change-start(doc.change_prefix + "feature-highlights", "Tiny Gen1 feature highlights", category: "added")
+#change-start("tiny-v02-overview-highlights-20261123-feature-highlights", "TINY Gen1 feature highlights", category: "added")
 #block(width: 100%, breakable: false)[
-  #diagram("tiny-gen1-highlights", feature-highlights(data), [Tiny Gen1 feature highlights.],
+  #diagram("tiny-gen1-highlights", feature-highlights(data), [TINY Gen1 feature highlights.],
     figure-label: "tiny-gen1-highlights")
   #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
 ]
-#change-end(doc.change_prefix + "feature-highlights")
+#change-end("tiny-v02-overview-highlights-20261123-feature-highlights")
 #v(1fr)

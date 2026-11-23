@@ -106,7 +106,7 @@
       "SRAM code, data, BSS and stack; reset does not erase memory."
     ],
     "paragraphs": [
-      "The Tiny top overrides the reusable SRAM to 128 KiB and 32-bit data. The native memory aperture is 0x30000000 through 0x3001FFFF. APB registers describe the integrated configuration and observations; they are not another storage aperture.",
+      "The TINY top overrides the reusable SRAM to 128 KiB and 32-bit data. The native memory aperture is 0x30000000 through 0x3001FFFF. APB registers describe the integrated configuration and observations; they are not another storage aperture.",
       "Both reviewed profiles select 32 technology macros of 4 KiB, organized as **four independently serviced 32 KiB groups**. CPU local I/D and external AXI attachments arbitrate at the groups; this is not a single global CPU/DMA lock. Physical area, timing and bank concurrency require their own evidence.",
       "Reset clears control state, **not SRAM contents**. Startup copies initialized sections from Flash and clears BSS explicitly. Stack placement at the SRAM end does not establish a measured maximum stack demand."
     ],
@@ -144,16 +144,16 @@
     "summary": "32 physical GPIOs with management and restricted-user register windows.",
     "features": [
       "**Atomic set, clear and toggle** outputs; mode, output-enable and open-drain control.",
-      "Per-pin interrupts and filtering; alternate functions from the Tiny pin map.",
+      "Per-pin interrupts and filtering; alternate functions from the TINY pin map.",
       "Both windows address the same pads, not two GPIO banks."
     ],
     "paragraphs": [
       "GPIO administration controls pad mode, filtering, masks and locks. The restricted window exposes only permitted data/event operations. The **user-access mask starts clear**; grant only the pins required by the application.",
-      "Current peripheral routes come from the Tiny topology. UART0 uses GPIO8/9 and I2C0 uses GPIO10/11; retired dedicated UART outputs in the compatibility wrapper are not additional active UARTs. Input CMOS and pull capability are selected by the technology: ICS55 exposes all three capability bits; IHP130 exposes zero.",
+      "Current peripheral routes come from the TINY topology. UART0 uses GPIO8/9 and I2C0 uses GPIO10/11; retired dedicated UART outputs in the compatibility wrapper are not additional active UARTs. Input CMOS and pull capability are selected by the technology: ICS55 exposes all three capability bits; IHP130 exposes zero.",
       "Before changing a driven alternate function, **disable its producer**, release output enable and use the controller guard/ownership sequence. Electrical drive settings require a reviewed pad/board specification; a register field is not a voltage rating."
     ],
     "steps": [
-      "Confirm the Tiny alternate-function map and external circuit.",
+      "Confirm the TINY alternate-function map and external circuit.",
       "Prepare output data before enabling the driver; set open-drain/pull behavior only as supported by the pad.",
       "Clear observed event causes before enabling the intended interrupt mask.",
       "Use atomic aliases for concurrent updates and apply irreversible locks **only after validation**."
@@ -323,7 +323,7 @@
     ],
     "paragraphs": [
       "Configure timing and window policy **while inactive**, then start and service using the prescribed key sequence. An early or malformed service can request reset just as an expired timeout can.",
-      "Tiny routes the watchdog request into system reset generation. Its own reset/retention boundary is distinct from the reset it requests; the acceptance application checks retained reset_count on reboot.",
+      "TINY routes the watchdog request into system reset generation. Its own reset/retention boundary is distinct from the reset it requests; the acceptance application checks retained reset_count on reboot.",
       "Because the watchdog uses the **same AON REF24 clock**, it does not guarantee recovery from a failed AON REF24 clock or provide independent deep-sleep supervision. The current integration is not a safety certificate."
     ],
     "steps": [
@@ -364,7 +364,7 @@
       "Runtime PCLK reporting; 24 MHz at SAFE24, updated after RCU transition."
     ],
     "paragraphs": [
-      "PWM outputs and capture/fault inputs are selected through Tiny GPIO alternate functions. The reusable block has timer/operator state, not an unrestricted programmable I/O processor.",
+      "PWM outputs and capture/fault inputs are selected through TINY GPIO alternate functions. The reusable block has timer/operator state, not an unrestricted programmable I/O processor.",
       "Shadow values become active at the **configured update event**. Writing a duty field alone does not guarantee an immediate glitch-free transition. Establish safe output levels before enabling external power circuitry.",
       "Capture entries and overflow status require coherent reads and **explicit acknowledgement**. Fault handling and debug-halt behavior must be checked with the actual pin route; no electrical frequency limit is qualified here."
     ],
@@ -403,10 +403,10 @@
     "features": [
       "Fractional baud generation, 5-8 data bits, parity, break and diagnostics.",
       "**GPIO8/9 ALT0 TX/RX**; central-DMA requests 5/6.",
-      "Tiny **does not route RTS/CTS**; unsupported flow-control configuration is rejected."
+      "TINY **does not route RTS/CTS**; unsupported flow-control configuration is rejected."
     ],
     "paragraphs": [
-      "The shared rs_uart_* convenience HAL targets UART0. It is the normal Tiny diagnostic console. Configure baud against the **committed PCLK** and the permitted fractional divider range; sampling margin remains a board/peer requirement.",
+      "The shared rs_uart_* convenience HAL targets UART0. It is the normal TINY diagnostic console. Configure baud against the **committed PCLK** and the permitted fractional divider range; sampling margin remains a board/peer requirement.",
       "FIFO acceptance is not completed wire transmission. A UART write timeout can leave a **transmitted/queued prefix**. Preserve protocol framing and inspect RX error flags instead of blindly retrying an entire message.",
       "The polling budget is consumed while the FIFO blocks progress and is shared across the call. It is not a duration in milliseconds and cannot bound a stalled bus access."
     ],
@@ -447,7 +447,7 @@
       "I2C0 central-DMA requests 7/8; I2C1 is not instantiated."
     ],
     "paragraphs": [
-      "Only I2C0 is instantiated at 0x10006000, core interrupt input 7. The shared driver supports other product instances, but Tiny rejects I2C1 before MMIO. Its old window and DMA requests are absent.",
+      "Only I2C0 is instantiated at 0x10006000, core interrupt input 7. The shared driver supports other product instances, but TINY rejects I2C1 before MMIO. Its old window and DMA requests are absent.",
       "Program timing against the committed peripheral rate and external pull-ups/capacitance. Clock changes require **idle clients and timing reconfiguration**. A queued command, FIFO empty or DMA transfer return is not automatically completed serial I/O.",
       "Handle NACK, arbitration/bus errors and timeout with explicit status capture and the supported recovery sequence. **Release external SDA/SCL drivers** before alternate-function changes; electrical rise time and peripheral compatibility need board evidence."
     ],
@@ -491,12 +491,12 @@
       "SPI0 uses GPIO27 ALT0 SCK, GPIO28 ALT1 MOSI and GPIO31 ALT1 CS_N. GPIO30 ALT1 is MISO, or ordinary GPIO D/C in write-only display personality; the personalities are mutually exclusive.",
       "A session is acquired only when GPIO routing and readiness agree. SCK=PCLK/(2*DIV). Configuration changes require the documented **disabled/unowned or clean segment boundary**; HELD and ARMED are not lifecycle-idle states.",
       "Transport packs 8/16-bit wire frames into 32-bit words. FRAME_COUNT defines a finite quota; reject zero and overflow before ARM. Matching request16/17, origin, bound channel, direction and reserved credit are all required at DMA ports. CPU and DMA ports are distinct.",
-      "The current raw CAPABILITY value is 0x00003F7F: **DMA discovery bit 7 remains zero** despite the connected Tiny V2.2 DMA path. Treat this as a source/specification discrepancy. Document actual routing and qualified workload evidence separately; this publication does not change the hardware or driver probe.",
+      "The current raw CAPABILITY value is 0x00003F7F: **DMA discovery bit 7 remains zero** despite the connected TINY V2.2 DMA path. Treat this as a source/specification discrepancy. Document actual routing and qualified workload evidence separately; this publication does not change the hardware or driver probe.",
       "Successful completion includes **wire completion**, clean packers/FIFOs, fulfilled TX/RX quotas and **drained descriptor/admission/responses**. A software timeout retains all resources. ABORT closes admission; RECOVER and explicit release/reacquisition follow confirmed cleanup.",
       "The ST7789VI-style reference uses 8-bit commands with D/C low and big-endian RGB565 byte streams with D/C high. SPI-P4 covers panel patterns and a sequential capture/verify/display/SD workflow, including direct immutable-PSRAM display and 1024-byte SRAM chunking. It is not parallel video, an arbitrary panel driver or physical panel qualification."
     ],
     "steps": [
-      "Validate Tiny/DMA identity, select the complete GPIO personality and acquire the session.",
+      "Validate TINY/DMA identity, select the complete GPIO personality and acquire the session.",
       "Configure timing and finite segment geometry; bind the leased DMA channel before ARM.",
       "Publish immutable data, ARM and START; update D/C **only at clean held-CS boundaries**.",
       "Wait for wire, quotas and drain; on failure retain ownership through abort/recovery, then release explicitly."
@@ -563,27 +563,27 @@
       "APB4_ARCHINFO"
     ],
     "irqs": [],
-    "summary": "Read-only Tiny identity and build/configuration discovery.",
+    "summary": "Read-only TINY identity and build/configuration discovery.",
     "features": [
-      "Tiny SOC_ID 0x54494E59; **128 KiB SRAM** and 24 MHz reference clock.",
+      "TINY SOC_ID 0x54494E59; **128 KiB SRAM** and 24 MHz reference clock.",
       "Topology 0x20200001; ICS55 FEATURES0=0x00007FFF and TECHNOLOGY=0x02040037. IHP130 compatibility is 0x00007FFE / 0x02010082.",
       "No provisioned unique device ID is advertised."
     ],
     "paragraphs": [
-      "The owned Tiny adapter replaces the managed block's fixed SoC identity while retaining its register ABI. BUILD_ID, CONFIG_ID and BUILD_STATUS are supplied by **generated build metadata**; they must not be published as default zero values for a built image.",
-      "Read and **validate Tiny identity** before interpreting product-specific capabilities or selecting a firmware layout. The build/profile identity is distinct from a silicon lot/serial number.",
+      "The owned TINY adapter replaces the managed block's fixed SoC identity while retaining its register ABI. BUILD_ID, CONFIG_ID and BUILD_STATUS are supplied by **generated build metadata**; they must not be published as default zero values for a built image.",
+      "Read and **validate TINY identity** before interpreting product-specific capabilities or selecting a firmware layout. The build/profile identity is distinct from a silicon lot/serial number.",
       "Device-ID inputs are tied invalid/read-disabled. Their register offsets do not establish a provisioned unique identity, secure key storage or production traceability."
     ],
     "steps": [
       "Read discovery through the SDK and validate the build identity.",
-      "Confirm Tiny SOC_ID, one-hart topology, 128 KiB memory and active capabilities.",
+      "Confirm TINY SOC_ID, one-hart topology, 128 KiB memory and active capabilities.",
       "Reject mismatched images/configurations **before hardware initialization**.",
       "Read device ID only when qualified and enabled; this integration does not supply it."
     ],
     "nodes": [
       "APB read-only ABI",
       "Build / config metadata",
-      "Tiny identity override",
+      "TINY identity override",
       "Capability / device-ID gate"
     ],
     "sources": [
@@ -603,28 +603,28 @@
       "APB4_SYSCTRL"
     ],
     "irqs": [],
-    "summary": "Tiny-owned control and first-fault/acceptance register bank.",
+    "summary": "TINY-owned control and first-fault/acceptance register bank.",
     "features": [
       "Sticky first-fault address, master, response and saturating event count.",
       "CPU/DMA wait-counter snapshot; live/sticky RTC wake status.",
       "**First full-word valid** TEST_STATUS result remains sticky until reset."
     ],
     "paragraphs": [
-      "Only the decoded Tiny offsets below are implemented. Compatibility identity reads do not create selectable cores, an application processor; clock control is provided by the separate RCU subregion. Other offsets fail; writes to read-only locations, unaligned accesses and partial writes return APB error.",
+      "Only the decoded TINY offsets below are implemented. Compatibility identity reads do not create selectable cores, an application processor; clock control is provided by the separate RCU subregion. Other offsets fail; writes to read-only locations, unaligned accesses and partial writes return APB error.",
       "FAULT_STATUS captures the first pending event. Clearing pending permits a subsequent fault record; FAULT_COUNT counts events independently and saturates. Capture address/master/response **before clearing**.",
       "PERF_CTRL controls wait counters and snapshots. Read low/high words from the **captured snapshot**, not from independently changing live values. A wait count is not end-to-end throughput.",
       "TEST_STATUS accepts a full-word write with VALID set only while the prior result is invalid. Reserved input bits are masked; the terminal result is not UART text. A later result **cannot overwrite the first valid one** before reset.",
       "The RCU uses offsets 0x100..0x15C within this same 4 KiB window, through an acknowledged AON crossing. Its independent chapter owns those register definitions; the global address index lists each address once."
     ],
     "steps": [
-      "Use the Tiny identity before choosing control operations.",
+      "Use the TINY identity before choosing control operations.",
       "Read and preserve pending fault status/address/master/detail **before W1C acknowledgement**.",
       "Enable/capture CPU and DMA wait counters through PERF_CTRL and then read both snapshot words.",
       "For automated acceptance write VALID, PASS and result code once; an earlier failure cannot be replaced by a later pass."
     ],
     "nodes": [
       "APB alignment / strobe gate",
-      "Tiny offset decoder",
+      "TINY offset decoder",
       "First-fault / snapshots",
       "Sticky TEST_STATUS / RTC wake"
     ],
@@ -698,12 +698,12 @@
       "64-bit time and compare are accessed as RV32 words."
     ],
     "paragraphs": [
-      "Tiny has one management hart and uses hart slot zero. CLINT is distinct from the external interrupt vector and does not provide a PLIC.",
+      "TINY has one management hart and uses hart slot zero. CLINT is distinct from the external interrupt vector and does not provide a PLIC.",
       "Read time using a **coherent high/low/high retry sequence**. Update compare with the documented **safe word order** so an intermediate value does not trigger an unintended interrupt.",
       "The 1 MHz timebase supports timing measurements/deadlines, while peripheral dividers still use their own committed engine clock. A software busy-loop count is not this timebase."
     ],
     "steps": [
-      "Use slot zero and the CLINT base from the generated Tiny map.",
+      "Use slot zero and the CLINT base from the generated TINY map.",
       "Read coherent time through the SDK helper.",
       "Mask/prepare the timer cause and update compare in safe word order.",
       "Handle and rearm the **appropriate local cause**; do not subtract two to form an external IRQ ordinal."
@@ -739,7 +739,7 @@
       "Channels 6/7 and requests 1/2 by convention."
     ],
     "paragraphs": [
-      "Tiny integrates the I2S master on GPIO12-17 ALT0. AUDIO is an external/reference clock domain and may be absent at boot; the ordinary CPU release does not wait for it.",
+      "TINY integrates the I2S master on GPIO12-17 ALT0. AUDIO is an external/reference clock domain and may be absent at boot; the ordinary CPU release does not wait for it.",
       "Control uses PCLK while serial timing uses AUDIO. The retained acceptance uses 18.432 MHz audio reference; the profile AUD_CLK_HZ setting and actual supplied AUDIO source must be identified separately.",
       "GPIO12-17 overlap the DVP camera profile. **Stop and drain both streams**, release their pads and confirm reset barriers before changing personality. **Missing AUDIO edges** cannot produce a successful engine reset completion.",
       "The integrated serial path is master-only. Generic SDK declarations or a second clock domain do not establish slave mode, continuous underrun-free audio or board codec qualification.",
@@ -784,7 +784,7 @@
       "DVP at 0x1000E000 uses core input 15 and GPIO12-23 ALT1. GPIO23 is CAM_XCLK from the same RCU CLKOUT generator also routable to GPIO28 ALT0; the two routes are mirrors, not independent clocks.",
       "Snapshot success requires frame completion, DMA completion with the **exact byte count**, **all final destination responses drained** and no DVP/DMA/XPI errors. A frame-done interrupt alone cannot publish a valid frame or justify flushing the tail FIFO.",
       "For RAW capture, even active widths use the DMA helper and odd widths retain the PIO helper. Both RAW helpers reject PROCESS with RS_ENOTSUP. PROCESS uses the PPALite row-aligned transport contract, which also supports odd active widths. A larger allocation never changes the programmed frame length.",
-      "Tiny places an exclusive RAW/PROCESS route after the existing payload CDC. PROCESS locks source configuration and observes coherent configuration, error, geometry and sequence handshakes through finalization. rs_dvp_stop is a non-flushing disable/drain operation; ABORT is reserved for ordered failure cleanup. Crop extent must fit the configured frame; dropped-pixel statistics restart for each frame.",
+      "TINY places an exclusive RAW/PROCESS route after the existing payload CDC. PROCESS locks source configuration and observes coherent configuration, error, geometry and sequence handshakes through finalization. rs_dvp_stop is a non-flushing disable/drain operation; ABORT is reserved for ordered failure cleanup. Crop extent must fit the configured frame; dropped-pixel statistics restart for each frame.",
       "Loss of PIXCLK, malformed synchronization, overflow and partial frames invalidate the capture. Preserve diagnostics and bus response obligations during abort/rearm. PCLK/APB stays available without PIXCLK, but engine reset readiness requires the applicable **real clock edges**.",
       "The QVGA/VGA and recovery records are bounded simulator/model results. They do not establish continuous FPS, a sensor register protocol, JPEG encoding or physical camera timing."
     ],
@@ -829,7 +829,7 @@
       "Two input words, eight output words and a 32-bit packer; **no line or frame RAM**."
     ],
     "paragraphs": [
-      "Tiny wires the complete P3 path with CAPABILITY=0x000003FF. Reset selects RAW bypass. PROCESS sends the DVP stream through PPALite and returns only that result to the existing DVP_RX endpoint. The two routes are exclusive; there is no simultaneous RAW/processed fanout.",
+      "TINY wires the complete P3 path with CAPABILITY=0x000003FF. Reset selects RAW bypass. PROCESS sends the DVP stream through PPALite and returns only that result to the existing DVP_RX endpoint. The two routes are exclusive; there is no simultaneous RAW/processed fanout.",
       "Registers occupy offsets 0x000..0x09C. Accesses must be word-aligned and writes use all four byte strobes. Reads of COMMAND, writes to read-only or undefined offsets, reserved write bits and illegal state/command combinations return an APB error without accepting the operation. IRQ_STATE is write-one-to-clear with simultaneous hardware set taking priority.",
       "All PPALite logic runs in PCLK after the existing DVP PIXCLK-to-PCLK FIFO. Input formats are RGB565_BE=0, RGB565_LE=1, YUYV=2, UYVY=3, YVYU=4 and VYUY=5. PROCESS requires DVP byte/pixel swap disabled and matching post-crop geometry. RGB input supports RGB565 only; YUV input discards chroma and preserves Y without range expansion, producing GRAY8 or replicated gray RGB565.",
       "DVP chronological bytes b0,b1,b2,b3 arrive as {b2,b3,b0,b1}; the first pixel is the low halfword. Canonical RGB565 output places the first pixel low and its low byte in the low memory lane. Optional output byte swap acts within each RGB565 pixel, not across pixels. RGB_SWAP is legal only for RGB input; output byte swap is illegal for GRAY8.",
@@ -884,7 +884,7 @@
       "Central-DMA stream requests 12/13; initialization and explicit scrub/zeroize lifecycle."
     ],
     "paragraphs": [
-      "Tiny selects the macro-backed Crypto integration with 24 KiB private working storage. This memory does not reduce or extend the CPU-visible main SRAM aperture.",
+      "TINY selects the macro-backed Crypto integration with 24 KiB private working storage. This memory does not reduce or extend the CPU-visible main SRAM aperture.",
       "Wait for storage/table initialization and **verified readiness before loading keys** or submitting a job. A capability bit identifies a supported operation, not a completed key load, validated protocol or side-channel qualification.",
       "Channels 4/5 conventionally serve input/output streams. Preserve key, message, result and descriptor ownership until **accelerator completion, DMA completion and final transport drain** agree. Use bounded waits, inspect engine errors and perform the documented zeroize/scrub recovery.",
       "Raw RSA is a modular-arithmetic primitive. Padding, authentication, secure boot, key provisioning and production entropy are application/platform responsibilities; hardware support alone provides none of these guarantees."
@@ -961,7 +961,7 @@
       "Bounded SDK reads; source quality is an independent integration requirement."
     ],
     "paragraphs": [
-      "The managed RNG is integrated into Tiny PCLK at 0x20001000. The publication describes its digital FIFO and health/control ABI; it does not certify entropy, unpredictability or cryptographic suitability.",
+      "The managed RNG is integrated into TINY PCLK at 0x20001000. The publication describes its digital FIFO and health/control ABI; it does not certify entropy, unpredictability or cryptographic suitability.",
       "A deterministic verification source and source-level health checks are **not production randomness qualification**. Inspect readiness, startup and health/fault status before consuming data; use the bounded SDK operation and preserve partial/error semantics."
     ],
     "steps": [

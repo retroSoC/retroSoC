@@ -30,7 +30,7 @@ repair a source clock, drain an outstanding transaction or release buffer owners
 The selected application and flags define result-code meaning; the same byte value can belong to different
 acceptance sequences. Keep that selection with the result, and consult @tiny-diagnostics for workload scope.
 An application function's C return value is not automatically the sticky terminal test result.
-#source-note("app/apps/ci_smoke/tiny.c",title:"Tiny acceptance sequence and result publication")
+#source-note("app/apps/ci_smoke/tiny.c",title:"TINY acceptance sequence and result publication")
 
 == Automated Completion and Simulator Verdicts
 The first valid full-word TEST_STATUS write is sticky until reset. Bit 31 marks valid, bit 0 marks pass,

@@ -9,7 +9,7 @@ input. Diagrams describe digital structure and ordering; they do not specify mea
 
 Use @tiny-addresses for memory windows, @tiny-irq for interrupt numbering, @tiny-register-index for address-first register
 lookup, @tiny-boot for startup, @tiny-diagnostics for terminal results and @tiny-evidence for verification boundaries.
-The document uses the approved Mini visual language; all product facts and source inventories here belong to Tiny.
+The document uses the approved Mini visual language; all product facts and source inventories here belong to TINY.
 
 
 #ds-table("reading-map",[Finding the relevant contract],([Reader task],[Start here]),(

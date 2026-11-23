@@ -1,5 +1,6 @@
 #import "style.typ": *
 #show: template
+#change-start(doc.change_prefix + "product-name", "TINY product name throughout the publication")
 #include "sections/overview.typ"
 #pagebreak()
 #include "sections/product-use.typ"

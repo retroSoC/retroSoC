@@ -15,7 +15,7 @@
     #block(below:6pt)[
       #text(13pt,weight:"semibold")[Disclaimer and Copyright Notice]
     ]
-    This document describes the reviewed retroSoC Tiny Gen1 implementation and is subject to change.
+    This document describes the reviewed retroSoC TINY Gen1 implementation and is subject to change.
     DRAFT status does not establish production availability, electrical ratings or qualification.
 
     Use and redistribution of retroSoC project material are governed by the Mulan Permissive
@@ -30,6 +30,7 @@
     #link("https://github.com/retroSoC/retroSoC")[https://github.com/retroSoC/retroSoC]
   ]
   #change-end("closing-page")
+  #change-end(doc.change_prefix + "product-name")
   #context metadata((kind:"publication-closing-end",page:here().page(),
     total_pages:counter(page).final().first()))
 ]

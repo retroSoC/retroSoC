@@ -17,7 +17,7 @@
 }
 
 == Packaging <tiny-pins>
-QFN64 is the confirmed Tiny product package family: 48 signal terminals and 16 perimeter power/ground terminals.
+QFN64 is the confirmed TINY product package family: 48 signal terminals and 16 perimeter power/ground terminals.
 EP is separate and unnumbered. The frozen target allocation remains authoritative for planning.
 Physical die-to-package bonding, pad electrical qualification and the supplier outline are not released.
 The target table is not an implemented bond map.
@@ -71,7 +71,7 @@ The target table is not an implemented bond map.
 
 The current ASIC compatibility wrapper retains legacy dedicated UART/XPI-CS terminals and an older power-pad inventory.
 GPIO8/9 carry active UART0. The wrapper is not another package option or an approved bond map.
-#ds-table("pads",[Tiny executable logical pads - traceability inventory],
+#ds-table("pads",[TINY executable logical pads - traceability inventory],
   ([Signal],[RTL direction],[Pad kind]),
   data.pads.map(p=>(code(p.name),p.direction,p.kind.replace("_"," "))),widths:(2fr,0.8fr,1.2fr))
 The wrapper has #data.pads.len() logical signal pads and #data.power_pads.values().sum() power/ground pad cells,
@@ -83,7 +83,7 @@ The pin-description table above gives external function names and digital reset/
   let terms=mode.inputs + if mode.do.contains("'") {()} else {(mode.do,)}
   if terms.len()==0 {[Not routed]} else {code(terms.join(" / "))}
 }
-#ds-table("gpio-alternates",[Tiny GPIO canonical RTL routes],
+#ds-table("gpio-alternates",[TINY GPIO canonical RTL routes],
   ([GPIO],[ALT0 RTL identifiers],[ALT1 RTL identifiers]),
   data.gpio.map(g=>(str(g.pin),gpio-mode(g.alt0),gpio-mode(g.alt1))),widths:(0.4fr,1.85fr,1.85fr))
 Stop/drain the old producer, disable output enables and release ownership before changing routes.
@@ -165,7 +165,7 @@ shown in @tiny-reel-dimensions. The height measures the box body up to its lid s
 #change-start(qfn-assembly-change + "reflow", "Pb-free classification profile and reflow limits table")
 ==== Reflow Soldering Profile <tiny-reflow-profile>
 The example uses package body temperature for Pb-free classification and preconditioning.
-A Tiny board profile requires the released package, solder paste and measured assembly temperatures.
+A TINY board profile requires the released package, solder paste and measured assembly temperatures.
 See #link(reflow-source)[ADI Surface Mount Products Rev J, Tables 2 and 3 and Figure 2].
 #visual(spec, "qfn-reflow", reflow(spec), [Pb-free package classification profile])
 #assembly-reference-table(spec, "reflow", ds-table)
@@ -192,7 +192,7 @@ These figures are not PCB manufacturing files or a production schematic.
 #change-end("tiny-v02-power-pin-table-20261123-board-layout-power")
 
 == Electrical and Timing Specifications
-#reference-notice[No production electrical ratings or measured Tiny curves are attached.
+#reference-notice[No production electrical ratings or measured TINY curves are attached.
 The examples complete the specification structure. They are not stress limits, safe operating ranges,
 drive guarantees or PCB release requirements. TBD preserves missing product evidence.]
 A real result retains PDK/corner, rail/pad domain, device/package/board identity, source/profile, workload, clock,

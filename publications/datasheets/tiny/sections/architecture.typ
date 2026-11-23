@@ -11,7 +11,7 @@
 === Management Processor and Local Memory
 #functional-architecture()
 
-Hazard3 is hart zero. The locked dual-port wrapper selects the C and M extensions and disables A for Tiny. Instruction fetch
+Hazard3 is hart zero. The locked dual-port wrapper selects the C and M extensions and disables A for TINY. Instruction fetch
 and load/store use independent AHB ports through separate local SRAM frontends; non-SRAM accesses use the tagged slow path.
 JTAG supports halt/resume, register access and halted-hart abstract-command memory access, without an independent system-bus master.
 Debug hart reset first halts the hart and drains accepted local I/D and slow-path responses. SRAM and unrelated DMA work stay active.
@@ -20,7 +20,7 @@ The system has no application hart, MMU/Linux platform, hardware cache-coherent 
 slots. CPU-visible SRAM, XPI and APB routes are the implemented interconnect. The single-hart architecture does not remove
 the need for software/DMA buffer ownership and fences.
 #architecture()
-#source-note("rtl/tiny/top/retrosoc_tiny.sv",title:"Tiny product integration and parameters")
+#source-note("rtl/tiny/top/retrosoc_tiny.sv",title:"TINY product integration and parameters")
 #source-note("rtl/tiny/top/tiny_cpu_wrapper.sv",title:"Dual-port CPU ISA, AHB ports and debug wrapper")
 #source-note("rtl/tiny/top/tiny_sram.sv",title:"Four local SRAM groups and external attachment")
 
@@ -40,7 +40,7 @@ does not clear the count, and a simultaneous hardware event wins over clear.
 
 Memory transfers support naturally aligned 1/2/4-byte beats and up to 16 INCR beats. Single-beat FIXED is also admitted.
 The complete address span must remain within one decoded target and one 4 KiB page without overflow. MMIO accepts only
-one beat. The addressed register can impose stricter width/strobe rules; Tiny SYSCTRL requires aligned full-word writes.
+one beat. The addressed register can impose stricter width/strobe rules; TINY SYSCTRL requires aligned full-word writes.
 #ds-table("bus-rules",[Transfer outcome and software consequence],([Condition],[Result],[Required handling]),(
   ([Legal SRAM access],[Target response with saved ID/owner],[Do not reuse DMA buffers before completion.]),
   ([XPI memory aperture],[Mapped reads and slot-qualified PSRAM writes],[NOR program/erase uses the indirect command interface.]),
@@ -51,7 +51,7 @@ one beat. The addressed register can impose stricter width/strobe rules; Tiny SY
 AW and W are independent. W is backpressured until the saved write address reaches its target; another requester cannot
 take over accepted write data. Rejected reads return the advertised response beat count, and rejected writes drain their
 accepted data before B. Backpressure requires valid payloads to remain stable.
-#timing("axi4",[Representative AXI read response and backpressure; Tiny uses 32-bit data and one-bit ID.])
+#timing("axi4",[Representative AXI read response and backpressure; TINY uses 32-bit data and one-bit ID.])
 #timing("apb4",[APB4 setup/access sequence with a wait state; address and write data remain stable.])
 #source-note("rtl/tiny/top/tiny_axi4_fabric.sv",title:"Saved ownership, admission and terminal handshake")
 #source-note("rtl/ip/interconnect/axi4_error_slave.sv",title:"Error response and write-drain implementation")
@@ -60,12 +60,12 @@ accepted data before B. Backpressure requires valid payloads to remain stable.
 
 #pagebreak(weak: true)
 === Address Mapping <tiny-addresses>
-#change-start("tiny-v02-address-map-20261120-address-map-figure", "Tiny 32-bit address map")
-#visual(data.specifications, "address-map", address-map(data.address_map), [Tiny 32-bit address map.],
+#change-start("tiny-v02-address-map-20261120-address-map-figure", "TINY 32-bit address map")
+#visual(data.specifications, "address-map", address-map(data.address_map), [TINY 32-bit address map.],
   reference: false, anchor: "tiny-address-map-figure")
 #change-end("tiny-v02-address-map-20261120-address-map-figure")
 #pagebreak(weak: true)
-#ds-table("memory-map",[Canonical Tiny address windows],([Region],[Base],[Last address],[Size]),
+#ds-table("memory-map",[Canonical TINY address windows],([Region],[Base],[Last address],[Size]),
   data.regions.map(r=>(code(r.symbol),code(r.base_hex),code(r.end_hex),window-size(r))),widths:(1.2fr,1fr,1fr,0.65fr))
 The Flash alias and XPI aperture identify memory routing, not fitted NOR capacity. The selected acceptance device and slot
 configuration remain separate. Main SRAM is the startup/runtime RAM; optional NSS1 PSRAM is usable only after successful explicit initialization. Unsupported holes and omitted peripheral
@@ -76,7 +76,7 @@ read-modify-write can clear unrelated pending events. A live value or producer-d
 assignment when software later reads it. Use coherent snapshots for multiword counters.
 
 == Memory Attributes and DMA Buffer Ownership <tiny-memory-ownership>
-Tiny has one hart and no application-CPU cache handoff. Local SRAM, external serial-memory apertures and
+TINY has one hart and no application-CPU cache handoff. Local SRAM, external serial-memory apertures and
 MMIO controls nevertheless have different access and lifetime rules. A single CPU does not make DMA buffers
 implicitly safe: completion, fences and peripheral ownership still apply.
 #ds-table("memory-attributes",[Software-visible memory classes],([Class],[Access and use],[Ownership boundary]),(
@@ -90,7 +90,7 @@ owning operation completes or abort/drain is confirmed. A timeout is not a relea
 #source-note("crt/src/hal/dma.c",title:"Submission, polling and completion")
 
 == Clock and Reset <tiny-clock>
-Tiny has distinct AON, SYS, MEM, PCLK, AUDIO, camera-pixel and debug domains. AON uses normalized REF24; CPU/main SRAM/fabric/SDIO use SYS,
+TINY has distinct AON, SYS, MEM, PCLK, AUDIO, camera-pixel and debug domains. AON uses normalized REF24; CPU/main SRAM/fabric/SDIO use SYS,
 XPI uses MEM, and central DMA plus peripheral/security service use PCLK. I2S data uses AUDIO; JTAG uses external TCK.
 Declared crossings and reset barriers remain required even for nominal integer clock ratios.
 #clock-tree()
@@ -99,7 +99,7 @@ Declared crossings and reset barriers remain required even for nominal integer c
   ([PLL192],[192],[96],[48],[ICS55 functional PLL profile]),
   ([PLL240],[240],[120],[60],[ICS55 functional PLL profile]),
   ([XIN48 / XIN96],[48 / 96],[48 / 96],[48 / 48],[Explicit no-PLL external-input profiles; REF stays 24 MHz])),widths:(0.85fr,0.55fr,0.55fr,0.55fr,1.8fr))
-#ds-table("clocks",[Declared Tiny clock/reset domains],([Domain],[Clock],[Reset],[Reset primitive]),
+#ds-table("clocks",[Declared TINY clock/reset domains],([Domain],[Clock],[Reset],[Reset primitive]),
   data.clocks.map(c=>(c.name,code(c.clock),code(c.reset),code(c.reset_primitive))),widths:(0.65fr,1.1fr,1.5fr,0.9fr))
 Clock requests drain accepted work and switch through a safe source before publishing committed rates. A failed drain
 does not authorize dropping traffic. PLL lock timeout returns SAFE24; stopped-source recovery has a separate reset contract.
@@ -114,7 +114,7 @@ domain, not a demonstrated independent power or battery-retention domain. Missin
 #source-note("docs/ip/tiny-soc-r2-clock-reset.md",title:"Implemented transition, reset and failure contracts")
 
 == Interrupt System <tiny-irq>
-#ds-table("irq-map",[Tiny interrupt wiring],([Source],[Core bit],[External ordinal],[Producer]),
+#ds-table("irq-map",[TINY interrupt wiring],([Source],[Core bit],[External ordinal],[Producer]),
   data.interrupts.map(r=>(r.name,str(r.core_bit),if r.core_bit < 2 {[Local]} else {str(r.core_bit - 2)},code(r.signal))),widths:(1.05fr,0.5fr,0.7fr,1.95fr))
 Core bits 0/1 are CLINT software/timer causes. The other 30 positions feed Hazard3 external interrupt inputs;
 *external ordinal equals core bit minus two*. All omitted producers are tied zero. A register index, DMA selector and
@@ -134,7 +134,7 @@ DMA V2.2 request bit 4 must be retained in both register and TCD programming. St
 different legal transfer forms. PROCESS requires PPALite's exact armed direct DMA2 job; processed TCDs are rejected.
 See @dma, @spi and @ppalite for quotas, response drain and recovery.
 #source-note("rtl/tiny/integration/soc_topology.json",title:"Interrupt, DMA and GPIO bindings")
-#source-note("crt/src/hal/dma_math.c",title:"Tiny DMA transfer-kind and request validation")
+#source-note("crt/src/hal/dma_math.c",title:"TINY DMA transfer-kind and request validation")
 
 == Bus Master Coordination and Resource Ownership <tiny-master-ownership>
 The CPU slow path, central DMA and SDIO private DMA are independent external requesters. CPU local SRAM
@@ -143,7 +143,7 @@ there is only one hart. DMA channel numbers do not identify independent peripher
 #flow("master-ownership",([Reserve peripheral route, channel and memory],
  [Configure while idle and publish immutable inputs],[Start the owner and service its interrupts],
  [Observe peripheral completion plus transport drain],[Return ownership only after completion or recovery]),
- [Ownership transfer for Tiny bus masters. A command accepted by a register is not completed payload traffic.])
+ [Ownership transfer for TINY bus masters. A command accepted by a register is not completed payload traffic.])
 Acquire shared resources in a consistent order and release them after all accepted responses are drained.
 For SDIO, preserve descriptor and buffer lifetime through its own command/data/writeback status. Do not
 substitute central-DMA completion for private-DMA completion. See @sdio and @dma.
@@ -184,7 +184,7 @@ Use @tiny-fault-reference for code namespaces and @tiny-evidence for evidence li
 #source-note("rtl/tiny/top/tiny_sysctrl.sv",title:"First-fault and terminal-result state")
 
 == Register Access and Programming Conventions <tiny-register-programming>
-Use each register's documented access width, alignment and strobe policy. Tiny SYSCTRL requires aligned
+Use each register's documented access width, alignment and strobe policy. TINY SYSCTRL requires aligned
 full-word writes. Read-only, write-one-clear, write-one-set and command fields have different side effects;
 do not apply a generic read-modify-write sequence to them.
 Read multiword counters through their snapshot or coherent sequence. Respect busy-state restrictions and
@@ -193,7 +193,7 @@ The first valid full-word TEST_STATUS write is sticky until reset; a later pass 
 #source-note("rtl/tiny/top/tiny_sysctrl.sv",title:"Alignment, strobes and sticky test result")
 
 == Interface Standards and Supported Subsets <tiny-interface-subsets>
-#ds-table("interface-subsets",[Implemented digital interface subsets],([Interface],[Current Tiny subset],[Separate external boundary]),(
+#ds-table("interface-subsets",[Implemented digital interface subsets],([Interface],[Current TINY subset],[Separate external boundary]),(
  ([AXI/APB],[32-bit data; selected AXI burst rules; APB4 register controls],[Not arbitrary AXI option support.]),
  ([XPI],[Single/dual/quad SDR; NOR and explicitly initialized NSS1 PSRAM],[Actual device commands, capacity and board timing.]),
  ([SPI0],[Master, 8/16-bit finite segments and qualified DMA ports],[Panel-specific command and pin timing.]),

@@ -344,7 +344,7 @@
 
 #let template(body) = {
   set document(title: doc.title, author: doc.author,
-    keywords: ("retroSoC", "Tiny", "Gen1", "datasheet", doc.document_id, "v"+doc.version, doc.status))
+    keywords: ("retroSoC", "TINY", "Gen1", "datasheet", doc.document_id, "v"+doc.version, doc.status))
   set text(font: "Inter", size: 10.5pt, fill: ink, lang: "en", weight: "regular")
   show strong: it => text(weight:"bold",it.body)
   set par(justify: false, leading: rhythm.body-leading, spacing: rhythm.body-spacing,first-line-indent:0pt)

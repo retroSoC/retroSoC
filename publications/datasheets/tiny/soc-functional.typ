@@ -74,4 +74,4 @@
   #align(center)[Solid arrows show bus or payload routes. Gray arrows show media streams. Dashed arrows show control and debug.
     Numbers identify AXI owners. APB4 branches are independent. AF and asterisks mark GPIO alternate functions.
     See @tiny-applications and @ppalite for PPALite RAW/PROCESS data routing.]
-], [Tiny functional architecture, clock domains and initiator paths.])
+], [TINY functional architecture, clock domains and initiator paths.])

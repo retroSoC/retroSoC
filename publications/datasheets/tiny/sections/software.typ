@@ -4,21 +4,21 @@
 
 = Software
 == Boot Configuration, Initialization and Recovery <tiny-boot>
-Reset enters the Flash alias at #code(data.reset_address). The Tiny runtime excludes the generic PSRAM delay/setup branches.
+Reset enters the Flash alias at #code(data.reset_address). The TINY runtime excludes the generic PSRAM delay/setup branches.
 With CSR support selected it masks interrupts and installs the direct trap entry, initializes registers/stack, copies code
 and data when load/run addresses differ, clears BSS, performs the configured premain work, and enters main.
 #flow("boot",(
   [Reset / JTAG state established · Fetch from NOR alias],
   [Mask interrupts; establish trap entry and register/stack state],
-  [Tiny skips PSRAM setup · Copy initialized code/data into SRAM],
+  [TINY skips PSRAM setup · Copy initialized code/data into SRAM],
   [Clear SRAM BSS · Perform configured premain initialization],
-  [Enter Tiny application · Handle terminal result or watchdog restart]
-),[Tiny ordinary startup: source order, not a guaranteed boot-time measurement.])
+  [Enter TINY application · Handle terminal result or watchdog restart]
+),[TINY ordinary startup: source order, not a guaranteed boot-time measurement.])
 The `ld2_all_sram` layout places runtime code, data, BSS and stack in SRAM with initialized material loaded from Flash.
 Memory-map capacity, load-image bytes, runtime static occupation and stack high-water demand are different quantities.
 Inspect the actual ELF/MAP and reserve buffers plus stack/scratch margin before deployment. No matching size/high-water
 measurement is supplied by this datasheet build.
-#source-note("crt/arch/riscv/startup.S",title:"Tiny conditional startup and relocation")
+#source-note("crt/arch/riscv/startup.S",title:"TINY conditional startup and relocation")
 #source-note("crt/linker/ld2_all_sram.lds",title:"Flash load / SRAM runtime linker layout")
 
  #storage-figures("tiny-boot",section:"linker")
@@ -36,9 +36,9 @@ retain the result and re-establish device/controller state before recovery.
 
 == Runtime, SDK and Shell <tiny-runtime>
 === SDK and Completion Semantics
-Consume public headers under #code("<retrosoc/...>") and the #code("rs_") namespace. The Tiny build selects product-specific
+Consume public headers under #code("<retrosoc/...>") and the #code("rs_") namespace. The TINY build selects product-specific
 application composition and generated address/IRQ/capability metadata. This does not generate replacement IP register ABIs.
-Tiny-specific RCU APIs expose the selected clock backend; unsupported profiles and application-hart/selectable-core APIs remain rejected.
+TINY-specific RCU APIs expose the selected clock backend; unsupported profiles and application-hart/selectable-core APIs remain rejected.
 
 *A successful API return describes that API's completion boundary*: a start command can be accepted before its operation
 finishes. FIFO acceptance is not completed serial transmission. A timeout can leave work active and buffers owned by a
@@ -60,7 +60,7 @@ The selected application and acceptance flags determine the executed workload. O
 PSRAM, DVP, system-performance and SPI display/snapshot images have distinct setup and terminal contracts. A watchdog
 reboot path can terminate early; a retained reset count is not proof that this boot replayed all tests.
 #ds-table("acceptance-codes",[Selected acceptance paths and completion boundary],([Selection],[Coverage],[Required interpretation]),(
-  ([Ordinary Tiny],[CPU, SRAM, faults, shared I/O, streams and watchdog],[Read the current image sequence and controlled reset state.]),
+  ([Ordinary TINY],[CPU, SRAM, faults, shared I/O, streams and watchdog],[Read the current image sequence and controlled reset state.]),
   ([R2-P7],[Profile/gate/reset lifecycle and source failure],[Drain, committed rates and reset barriers; no physical frequency qualification.]),
   ([R2-P8],[NSS1 identity, PSRAM CPU/DMA readback and recovery],[Actual device capacity and mapping validity; preserve NOR boot.]),
   ([R2-P9],[Recovery, QVGA RGB565 and VGA YUV422 snapshots],[Frame and DMA completion, exact bytes, final drain and guards.]),
@@ -81,11 +81,11 @@ text is diagnostic only. The compact assembly netlist boot test has a narrower s
 
 == Software Support and Validated Configurations <tiny-software-support>
 #ds-table("software-support",[Source support and execution evidence],([Path],[Source support],[Validation boundary]),(
- ([Bare-metal firmware],[Tiny profiles, startup, SDK and application composition],[Build and run the selected image; publication examples are syntax checks.]),
+ ([Bare-metal firmware],[TINY profiles, startup, SDK and application composition],[Build and run the selected image; publication examples are syntax checks.]),
  ([Bringup / shell / benchmark],[Application selectors and product-specific composition],[Availability of a selector is not a passing workload result.]),
  ([Debug acceptance],[Dedicated debug-transport image and JTAG tests],[Separate from a user firmware profile.]),
- ([Specialized Tiny campaigns],[RCU, PSRAM, DVP, system-performance and SPI scenarios],[Each retains its own source/profile/tool/workload result.]),
- ([Linux / application CPU],[Not a Tiny execution platform],[No imported Mini driver-support claim.])),widths:(0.9fr,1.7fr,1.7fr))
+ ([Specialized TINY campaigns],[RCU, PSRAM, DVP, system-performance and SPI scenarios],[Each retains its own source/profile/tool/workload result.]),
+ ([Linux / application CPU],[Not a TINY execution platform],[No imported Mini driver-support claim.])),widths:(0.9fr,1.7fr,1.7fr))
 A validated configuration record must identify source revision, PDK/profile, tool and model versions, application and flags,
 commands, exit code, terminal markers and raw artifacts. Do not transfer results across products or model/backend choices.
 #source-note("app/README.md",title:"Application composition and supported selectors")

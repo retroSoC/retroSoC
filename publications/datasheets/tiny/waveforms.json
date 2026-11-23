@@ -42,8 +42,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only. Local bus clock; the Tiny domain depends on the instance.",
-    "clock_domain": "Selected APB endpoint clock; instance-specific Tiny domain",
+    "note": "Scope: apb4_if. Clock: pclk. Write with wait states; address and write data are distinct stable buses. Transfer completes when psel, penable and pready are high. Example cycles only. Local bus clock; the TINY domain depends on the instance.",
+    "clock_domain": "Selected APB endpoint clock; instance-specific TINY domain",
     "signals": {
       "pclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/apb4_if.sv",
@@ -147,8 +147,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only. Tiny domain: SYS. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
+    "note": "Scope: axi4_if. Clock: aclk. Independent address and response channels. D0 is held while rready is low, then D1 completes with rlast. Example cycles only. TINY domain: SYS. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY SYS; SAFE24 does not remove declared crossings",
     "signals": {
       "aclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -211,7 +211,7 @@
       "ID_WIDTH": 1,
       "USER_WIDTH": 1
     },
-    "parameter_note": "Tiny integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
+    "parameter_note": "TINY integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
   },
   "xpi": {
     "source": {
@@ -252,8 +252,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data. Tiny domain: MEM. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny MEM; SAFE24 does not remove declared crossings",
+    "note": "Scope: xpi_if. Clock: xpi_core.clk_i; sck_o is the serial clock. Quad mode-0 command/address, turnaround and read excerpt. Serial phases are compressed; io_do_o is not a tri-state pad. io_oe_o defines when outputs drive and io_di_i carries received data. TINY domain: MEM. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY MEM; SAFE24 does not remove declared crossings",
     "signals": {
       "nss_o[0]": {
         "file": "rtl/ip/storage/xpi_if.sv",
@@ -339,8 +339,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled. Tiny domain: SYS. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
+    "note": "Scope: axi4_if. Clock: aclk at the native SRAM AXI boundary. Native SRAM AXI read with response backpressure. The diagram illustrates the interface contract, not a guaranteed memory latency; read data remains stable while stalled. TINY domain: SYS. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY SYS; SAFE24 does not remove declared crossings",
     "signals": {
       "aclk": {
         "file": "rtl/managed/clusterip/common/rtl/interface/axi4_if.sv",
@@ -396,7 +396,7 @@
       "ID_WIDTH": 1,
       "USER_WIDTH": 1
     },
-    "parameter_note": "Tiny integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
+    "parameter_note": "TINY integration: AXI data/address 32 bits, ID 1 bit, USER 1 bit."
   },
   "gpio": {
     "source": {
@@ -431,8 +431,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: gpio_core, gpio_if. Clock: clk_i; ownership handoff observation. Pin 0 push-pull ownership handoff. The actual pad OE equation is !user_handoff_i[0] && s_selected_oe[0] when open drain is disabled; the guard suppresses drive while selection changes. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "user_select_i[0]": {
         "file": "rtl/ip/peripheral/gpio_core.sv",
@@ -524,8 +524,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: dma_core. Clock: clk_i; descriptor/data work and response latency omitted. Channel 0 successful transfer after a valid configuration or linked descriptor. Remaining bytes reach zero before completion is consumed. Descriptor fetches, bus handshakes and variable stalls are omitted; interrupt routing remains a register-bank function. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "start_i[0]": {
         "file": "rtl/ip/peripheral/dma_core.sv",
@@ -573,7 +573,7 @@
       "DataWidth": 32,
       "AddrWidth": 32
     },
-    "parameter_note": "Tiny selects eight channels, 32-bit memory transfers and implemented stream endpoints; this example uses channel 0."
+    "parameter_note": "TINY selects eight channels, 32-bit memory transfers and implemented stream endpoints; this example uses channel 0."
   },
   "timer": {
     "source": {
@@ -607,8 +607,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: timer_core. Clock: clk_i; qualified prescaler ticks shown. Periodic up-count example with load_i = 3 and compare0_i = 2. The event tests the current value on s_tick; the counter then advances or reloads. Prescale clocks are omitted. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "s_tick": {
         "file": "rtl/ip/peripheral/timer_core.sv",
@@ -694,8 +694,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: pwm_core. Clock: clk_i; timer/update boundaries shown. Timer/channel 0 example with a shadow duty update. Actual application timing depends on the configured update mode; counter wrap and update intervals are illustrative, not an electrical timing guarantee. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "timer_counter_o[0]": {
         "file": "rtl/managed/clusterip/pwm/rtl/pwm_core.sv",
@@ -770,8 +770,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
+    "note": "Scope: rtc_core. Clock: clk_i (RTC core domain). Core command/response handshake: response_valid_o equals command_valid_i and command_ready_o equals response_ready_i. The APB-to-RTC CDC and software snapshot reads are outside this interface sketch. TINY domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "command_valid_i": {
         "file": "rtl/managed/clusterip/rtc/rtl/rtc_core.sv",
@@ -837,8 +837,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
+    "note": "Scope: wdg_core. Clock: clk_i (watchdog reference domain); elapsed count intervals omitted. A legal service occurs while the window is open; a later unserviced interval reaches early warning and timeout. Programmed timeouts, prescale clocks and reset-pulse duration are not drawn to scale. TINY domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "active_o": {
         "file": "rtl/managed/clusterip/wdg/rtl/wdg_core.sv",
@@ -895,8 +895,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: uart_core. Clock: clk_i; displayed intervals are programmed serial bit periods. 8N1 transmission of 0xA5, least-significant bit first: idle, start, eight data bits and stop. Oversampling clocks are omitted. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "tx_o": {
         "file": "rtl/ip/serial/uart_core.sv",
@@ -930,8 +930,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted. Tiny domain: PCLK. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "note": "Scope: i2c_core. Clock: clk_i; observed serial SCL/SDA intervals. Representative data and acknowledge bit intervals, not a complete byte: START/STOP change SDA while SCL is high; other changes occur while SCL is low. Full address/data bytes are omitted. TINY domain: PCLK. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "scl_i": {
         "file": "rtl/ip/serial/i2c_core.sv",
@@ -990,8 +990,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
+    "note": "Scope: clint_core. Clock: clk_i; mtime tick and comparator update. Hart 0: the timer IRQ is a registered comparison of mtime_o against mtimecmp_i[0]. Updating compare above the current time deasserts the IRQ on a subsequent core edge; timebase tick spacing is illustrative. TINY domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "tick_i": {
         "file": "rtl/ip/peripheral/clint_core.sv",
@@ -1071,8 +1071,8 @@
         "skin": "lowkey"
       }
     },
-    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper APB clock domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied. Tiny domain: AON REF24. Illustrative ordering, not measured timing.",
-    "clock_domain": "Tiny AON REF24; SAFE24 does not remove declared crossings",
+    "note": "Scope: archinfo_reg. Clock: APB combinational read boundary; sampled in its wrapper APB clock domain. Read-only identification register selection. pready_o is asserted combinationally; no invented internal PCLK port or multi-cycle read-result pipeline is implied. TINY domain: AON REF24. Illustrative ordering, not measured timing.",
+    "clock_domain": "TINY AON REF24; SAFE24 does not remove declared crossings",
     "signals": {
       "paddr_i": {
         "file": "rtl/managed/clusterip/archinfo/rtl/archinfo_reg.sv",
@@ -1163,7 +1163,7 @@
       }
     },
     "note": "Scope: sdio_if. Clock: sdio_core.clk_i; sck_o samples card responses/data. Four-bit SDR read excerpt; command, response and data intervals are compressed and do not depict their full frames. Command/data drive enables remain distinct from sampled input values.",
-    "clock_domain": "Tiny SYS; SAFE24 does not remove declared crossings",
+    "clock_domain": "TINY SYS; SAFE24 does not remove declared crossings",
     "signals": {
       "sck_o": {
         "file": "rtl/ip/storage/sdio_if.sv",
@@ -1239,7 +1239,7 @@
       }
     },
     "note": "Scope: i2s_if. Clock: i2s_core.clk_i; sclk_o serial sampling edges. Stereo I2S bit excerpt: a channel MSB begins one bit clock after the lrck_o transition. The break omits intervening bit clocks; channel words are not represented as a bus on dacdat_o.",
-    "clock_domain": "Tiny AUDIO; SAFE24 does not remove declared crossings",
+    "clock_domain": "TINY AUDIO; SAFE24 does not remove declared crossings",
     "signals": {
       "sclk_o": {
         "file": "rtl/ip/serial/apb4_i2s.sv",
@@ -1311,7 +1311,7 @@
       }
     },
     "note": "Scope: dvp_core. Clock: clk_i is the captured pixel-clock domain. RGB565 excerpt with positive HREF and active-high VSYNC configuration. Two bytes form a pixel; two pixels form the 32-bit payload in one output record. Full frame/line lengths and partial-line records are omitted.",
-    "clock_domain": "Tiny raw PIXCLK; SAFE24 does not remove declared crossings",
+    "clock_domain": "TINY raw PIXCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "clk_i": {
         "file": "rtl/ip/multimedia/dvp_core.sv",
@@ -1394,7 +1394,7 @@
       }
     },
     "note": "Scope: ws2812_core. Clock: clk_i; example bit_cycles_i = 4. Two serial symbols in an already active transfer: t0h_cycles = 1, t1h_cycles = 2 and bit_cycles = 4 are illustrative settings, not qualified electrical limits. Bytes are sent most-significant bit first.",
-    "clock_domain": "Tiny PCLK; SAFE24 does not remove declared crossings",
+    "clock_domain": "TINY PCLK; SAFE24 does not remove declared crossings",
     "signals": {
       "s_xfer_data_q[23]": {
         "file": "rtl/ip/serial/ws2812_core.sv",
@@ -1450,7 +1450,7 @@
       }
     },
     "note": "Mode-0 TX excerpt inside an owned session. The break compresses intervening serial bits. GPIO ownership is already established; setup/hold counts, DMA traffic and full frames are not shown. This is not a measured latency or electrical waveform.",
-    "clock_domain": "Tiny PCLK; derived serial SCK",
+    "clock_domain": "TINY PCLK; derived serial SCK",
     "signals": {
       "s_spi_cs_n": {
         "file": "rtl/tiny/top/retrosoc_tiny.sv",
@@ -1487,7 +1487,7 @@
       "rtl/ip/serial/spi_master_core.sv",
       "rtl/tiny/top/retrosoc_tiny.sv"
     ],
-    "review_note": "Actual Tiny top-level SPI pad nets; CPOL=0/CPHA=0 illustrative excerpt. Full frames and service intervals are omitted."
+    "review_note": "Actual TINY top-level SPI pad nets; CPOL=0/CPHA=0 illustrative excerpt. Full frames and service intervals are omitted."
   },
   "ppalite": {
     "source": {
@@ -1522,7 +1522,7 @@
       }
     },
     "note": "Illustrative final output word stalled before acceptance. Data and row-end metadata stay stable; accepting this word does not by itself prove SOURCE_DONE, memory response drain or RESULT_VALID. Example cycles only.",
-    "clock_domain": "Tiny PCLK",
+    "clock_domain": "TINY PCLK",
     "signals": {
       "clk_i": {
         "file": "rtl/ip/ppalite/ppalite_core.sv",

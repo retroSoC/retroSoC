@@ -4,13 +4,13 @@
     "offset": 256,
     "access": "RO",
     "reset": "0x54524355",
-    "description": "Tiny RCU identity, ASCII TRCU.",
+    "description": "TINY RCU identity, ASCII TRCU.",
     "fields": [
       [
         "ID",
         0,
         31,
-        "Tiny RCU identifier."
+        "TINY RCU identifier."
       ]
     ]
   },

@@ -87,7 +87,8 @@
     [The main profile uses the independent 24 MHz reference and 72 MHz external performance input. REF24 and LP performance-divider alternatives are separate configurations; they are not simultaneous operating points or a shared LP/HP synchronous-clock claim. HP has its own root and CDC boundary.]
   }
   parameters(spec,"clocks",render)
-  [The ideal bandwidth boundary is the active SYS AXI32 fabric in Tiny and the independent HP AXI64 fabric in Mini.
+  let tiny-name = if spec.product == "tiny" { "TINY" } else { "Tiny" }
+  [The ideal bandwidth boundary is the active SYS AXI32 fabric in #tiny-name and the independent HP AXI64 fabric in Mini.
   MEM/backend clocks are separate; width times a backend clock does not specify SRAM or external-memory throughput.]
   curve(spec,"cpu-relative")
   heading(level:3,[Peripheral wire rates and application payloads])
