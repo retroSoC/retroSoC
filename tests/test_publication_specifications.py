@@ -172,21 +172,39 @@ def test_tiny_target_pinout_numbering_and_callouts(spec):
         assert coordinates == sorted(coordinates, reverse=side in {0, 3})
     assert {p["name"] for p in pins if p["unbound_target"]} == {"XOUT", "BOOT_MODE", "TEST_MODE"}
     aliases = qfn["pinout_aliases"]
-    assert [(a["pin"], a["gpio"], a["mode"], a["function"]) for a in aliases] == [
-        (13, 28, "ALT0", "CLKOUT"),
-        (27, 8, "ALT0", "UART0.TX"),
-        (28, 9, "ALT0", "UART0.RX"),
-        (40, 17, "ALT0", "AUDIO.CLKIN"),
-        (43, 20, "ALT1", "DVP.PCLK"),
-        (46, 23, "ALT1", "CLKOUT"),
-    ]
-    assert all(pins[a["pin"] - 1]["name"] == f"GPIO{a['gpio']}" for a in aliases)
+    pin_numbers = {p["name"]: p["pin"] for p in pins}
+    expected = sorted(
+        (pin_numbers[f"GPIO{r['gpio']}"], r["gpio"], r["mode"], r["function"])
+        for r in spec["pins"] if r["function"] != "Not routed"
+    )
+    assert [(a["pin"], a["gpio"], a["mode"], a["function"]) for a in aliases] == expected
+    assert [sum(a["mode"] == mode for a in aliases) for mode in ("ALT0", "ALT1")] == [30, 19]
+    assert [sum(pins[a["pin"] - 1]["side"] == side for a in aliases) for side in range(4)] == [9, 14, 24, 2]
+    assert {a["gpio"] for a in aliases} == set(range(32)) - {6, 7}
 
 
-def test_tiny_target_pinout_rejects_unbound_alias(spec):
-    routes = [r for r in spec["pins"] if (r["gpio"], r["mode"]) != (20, "ALT1")]
-    with pytest.raises(ValueError, match=r"GPIO20 ALT1 DVP\.PCLK"):
-        s.qfn_pinout_aliases(spec["qfn"]["pins"], routes)
+@pytest.mark.parametrize("change, error", [
+    ("missing-mode", r"Missing QFN64 mux mapping for GPIO20 ALT1"),
+    ("duplicate-mode", r"Duplicate QFN64 mux mapping for GPIO20 ALT1"),
+    ("unknown-route", r"Unknown QFN64 mux mapping for GPIO32 ALT1"),
+    ("unknown-target", r"Unknown QFN64 GPIO target GPIO32"),
+    ("duplicate-target", r"Duplicate QFN64 GPIO target GPIO17"),
+])
+def test_tiny_target_pinout_rejects_bad_mapping(spec, change, error):
+    pins = deepcopy(spec["qfn"]["pins"])
+    routes = deepcopy(spec["pins"])
+    route = next(r for r in routes if (r["gpio"], r["mode"]) == (20, "ALT1"))
+    if change == "missing-mode":
+        routes.remove(route)
+    elif change == "duplicate-mode":
+        routes.append(route.copy())
+    elif change == "unknown-route":
+        route["gpio"] = 32
+    else:
+        pin = next(p for p in pins if p["name"] == "GPIO20")
+        pin["name"] = "GPIO32" if change == "unknown-target" else "GPIO17"
+    with pytest.raises(ValueError, match=error):
+        s.qfn_pinout_aliases(pins, routes)
 
 
 def test_qfn_reference_dimensions_and_contact_edges(spec):

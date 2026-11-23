@@ -126,8 +126,8 @@
   xpi: domain-fill.memory,
   jtag: domain-fill.jtag,
   control: domain-fill.aon,
-  audio: domain-fill.audio,
-  pixel: domain-fill.dvp_pixel,
+  alt0: domain-fill.audio,
+  alt1: domain-fill.dvp_pixel,
 )
 
 #let pinout-primary-fill(name) = {
@@ -139,85 +139,117 @@
   else { pinout-fill.control }
 }
 
-#let pinout-tag(body, fill) = box(body, fill: fill, radius: 0.55mm, inset: (x: 0.85mm, y: 0.33mm))
+#let pinout-tag(body, fill, horizontal-inset: 0.55mm, weight: "regular") = {
+  // Use the same typography when measuring and painting a tag.
+  box(text(font: "Inter", size: 9pt, weight: weight, body),
+    fill: fill, radius: 0.55mm, inset: (x: horizontal-inset, y: 0.2mm))
+}
 
 #let qfn-pinout(spec) = context {
   set text(font: "Inter", size: 9pt, fill: ink)
   let qfn = spec.qfn
   let d = qfn.dimensions
-  let centre = (86, 77)
-  let scale = 9
+  let centre = (84, 72.5)
+  let scale = 6.5
   let half = d.body * scale / 2
-  let number-inset = (d.lead_length * scale + (d.body - d.ep) * scale / 2) / 2
+  let terminal-depth = 1.2
+  let terminal-half-width = d.lead_width * scale / 2
+  let number-inset = (terminal-depth + (d.body - d.ep) * scale / 2) / 2
+  let vertical-tag-offset = 6.95
   let normals = ((-1, 0), (0, 1), (1, 0), (0, -1))
   let anchors = ("east", "north", "west", "south")
-  let alias-fills = (CLKOUT: pinout-fill.control, UART0: pinout-fill.gpio,
-    AUDIO: pinout-fill.audio, DVP: pinout-fill.pixel)
+  let pins = qfn.pins.map(p => {
+    let name = p.name + if p.unbound_target { "*" } else { "" }
+    let tag = pinout-tag(name, pinout-primary-fill(p.name), horizontal-inset: 0.75mm, weight: "semibold")
+    p + (tag: tag, tag-width: measure(tag).width / 1mm)
+  })
+  let alternates = qfn.pinout_aliases.map(a => {
+    let fill = pinout-fill.at(lower(a.mode))
+    let tag = pinout-tag(a.function, fill)
+    a + (tag: tag, tag-width: measure(tag).width / 1mm, side: pins.at(a.pin - 1).side, fill: fill)
+  })
+  // Measure each band independently. Its start stays fixed for every pin on that edge.
+  let lane-gap = 0.8
+  let lanes = range(3).map(side => {
+    let rows = alternates.filter(a => a.side == side)
+    let main-width = calc.max(0, ..rows.map(a => pins.at(a.pin - 1).tag-width))
+    let inner-width = calc.max(0, ..rows.filter(a => a.mode == "ALT0").map(a => a.tag-width))
+    let inner = main-width + lane-gap
+    (ALT0: inner, ALT1: inner + inner-width + lane-gap)
+  })
   let size(key) = qfn.measurements.at(key).nom.split(" ").first()
   measures(spec, ("body", "pitch", "ep"))
   cetz.canvas(length: 1mm, {
     import cetz.draw: circle, line, rect
     face(172, 180)
     write-at(4, 5.5, [*FROZEN TARGET* · Physical binding pending], anchor: "west")
+    write-at(4, 18, [\* Unbound target assignment.], anchor: "west")
+    write-at(4, 25.5, [ALT0 · Inner band], anchor: "west")
+    write-at(4, 30, [ALT1 · Outer band], anchor: "west")
+    write-at(4, 34.5, [Select one mode per GPIO.], anchor: "west")
     square(centre, scale, d.body, fill: white, stroke: 0.9pt + ink)
     exposed-pad(centre, scale, d, top: true, fill: none, stroke: projection)
-    circle(point(centre.at(0) - half + 3, centre.at(1) - half + 3), radius: 0.9mm, fill: ink, stroke: none)
-    write-at(86, 66, text(size: 16pt, weight: "bold", [Tiny Gen1]))
-    write-at(86, 73.5, text(size: 12pt, weight: "semibold", [QFN64 · Top view]))
-    write-at(86, 91, pinout-tag([*EP* · Intended GND · Bonding TBD], pinout-fill.ground))
-    for p in qfn.pins {
+    circle(point(centre.at(0) - half + 3, centre.at(1) - half + 2.15), radius: 0.9mm, fill: ink, stroke: none)
+    write-at(centre.at(0), centre.at(1) - 10, text(size: 16pt, weight: "bold", [Tiny Gen1]))
+    write-at(centre.at(0), centre.at(1) - 1.5, text(size: 12pt, weight: "semibold", [QFN64 · Top view]))
+    write-at(centre.at(0), centre.at(1) + 13, pinout-tag(
+      align(center, stack(spacing: 0.7mm, [*EP* · Intended GND], [Bonding TBD])), pinout-fill.ground))
+    for p in pins {
       let (x, y) = transform(centre, scale, p.top)
       let (dx, dy) = normals.at(p.side)
       let anchor = anchors.at(p.side)
-      let name = p.name + if p.unbound_target { "*" } else { "" }
-      let primary = pinout-tag(text(weight: "semibold", name), pinout-primary-fill(p.name))
-      let (lx, ly) = (x + 1.55 * dx, y + 5.15 * dy)
-      contact(centre, scale, p.top_terminal, fill: none, stroke: projection)
-      // Split the number lanes at each corner so the adjacent edge numbers stay distinct.
+      let (lx, ly) = (x + dx, y + vertical-tag-offset * dy)
+      // Schematic terminal marks leave room for the side numbering beside the EP.
       if dy == 0 {
+        rect(point(x, y - terminal-half-width), point(x - terminal-depth * dx, y + terminal-half-width),
+          fill: none, stroke: projection)
         write-at(x - dx * number-inset, y, str(p.pin))
         line(point(x, y), point(lx, ly), stroke: 0.45pt + ink)
       } else {
-        write-at(x, y + 2.35 * dy, str(p.pin))
-        line(point(x, y + 4.05 * dy), point(lx, ly), stroke: 0.45pt + ink)
+        rect(point(x - terminal-half-width, y), point(x + terminal-half-width, y - terminal-depth * dy),
+          fill: none, stroke: projection)
+        let number-offset = if calc.rem(p.pin, 2) == 1 { 1.65 } else { 4.9 }
+        write-at(x, y + number-offset * dy, str(p.pin))
+        line(point(x, y + (number-offset + 1.55) * dy), point(lx, ly), stroke: 0.45pt + ink)
       }
-      let angled = if dy == 0 { primary } else { rotate(dy * 90deg, reflow: true, primary) }
-      write-at(lx, ly, angled, anchor: anchor)
+      let orient(tag) = if dy == 0 { tag } else { rotate(dy * 90deg, reflow: true, tag) }
+      write-at(lx, ly, orient(p.tag), anchor: anchor)
 
-      let alt = qfn.pinout_aliases.find(a => a.pin == p.pin)
-      if alt != none {
-        let fill = alias-fills.at(alt.function.split(".").first())
-        let width = measure(primary).width / 1mm
-        if dy == 0 {
-          let badge = pinout-tag(stack(spacing: 0.6mm, strong(alt.function), alt.mode), fill)
-          let start = lx + dx * width
-          let end = start + dx * 2.6
-          line(point(start, ly), point(end, ly), stroke: 0.45pt + ink)
-          write-at(end, ly, badge, anchor: anchor)
-        } else {
-          // Give the adjacent UART callouts separate outward lanes.
-          let direction = if alt.function == "UART0.TX" { -1 } else { 1 }
-          let row = 146
-          let end = lx + direction * 2.6
-          line(point(lx, ly + width), point(lx, row), point(end, row), stroke: 0.45pt + ink)
-          let badge = pinout-tag([#alt.mode · #strong(alt.function)], fill)
-          write-at(end, row, badge, anchor: if direction < 0 { "east" } else { "west" })
+      if p.side < 3 {
+        let previous = p.tag-width
+        for alt in alternates.filter(a => a.pin == p.pin) {
+          let offset = lanes.at(p.side).at(alt.mode)
+          let (tx, ty) = (lx + dx * offset, ly + dy * offset)
+          line(point(lx + dx * previous, ly + dy * previous), point(tx, ty), stroke: 0.45pt + ink)
+          write-at(tx, ty, orient(alt.tag), anchor: anchor)
+          previous = offset + alt.tag-width
         }
       }
     }
+    // The two upper capture labels face away from each other in a shared horizontal row.
+    let top-callouts = alternates.filter(a => a.side == 3).rev()
+    for (i, alt) in top-callouts.enumerate() {
+      let pin = pins.at(alt.pin - 1)
+      let (x, y) = transform(centre, scale, pin.top)
+      let direction = if i == 0 { -1 } else { 1 }
+      let row = 10.25
+      let end = x + direction * 2.5
+      line(point(x, y - vertical-tag-offset - pin.tag-width), point(x, row), point(end, row), stroke: 0.45pt + ink)
+      write-at(end, row, pinout-tag([#alt.mode · #alt.function], alt.fill),
+        anchor: if direction < 0 { "east" } else { "west" })
+    }
 
     let legend = (([Supply], pinout-fill.supply), ([Ground / EP], pinout-fill.ground),
-      ([GPIO / UART0], pinout-fill.gpio), ([Boot XPI], pinout-fill.xpi),
+      ([GPIO], pinout-fill.gpio), ([Boot XPI], pinout-fill.xpi),
       ([Clock / reset / straps], pinout-fill.control), ([JTAG], pinout-fill.jtag),
-      ([AUDIO (ALT)], pinout-fill.audio), ([PIXCLK (ALT)], pinout-fill.pixel))
+      ([ALT0], pinout-fill.alt0), ([ALT1], pinout-fill.alt1))
     for (i, (title, fill)) in legend.enumerate() {
       let x = 4 + 41 * calc.rem(i, 4)
-      let y = if i < 4 { 153 } else { 159 }
+      let y = if i < 4 { 169.5 } else { 173.5 }
       rect(point(x, y - 1.55), point(x + 3.1, y + 1.55), fill: fill, stroke: 0.4pt + ink)
       write-at(x + 4.8, y, title, anchor: "west")
     }
-    write-at(4, 165, [\* Unbound target assignment.], anchor: "west")
-    write-at(4, 173, [*REFERENCE ONLY* · Body #size("body") × #size("body") mm ·
+    write-at(4, 177.5, [*REFERENCE ONLY* · Body #size("body") × #size("body") mm ·
       Pitch #size("pitch") mm · EP #size("ep") × #size("ep") mm], anchor: "west")
   })
 }

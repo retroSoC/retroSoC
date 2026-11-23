@@ -156,7 +156,7 @@ def test_cache_report_distinguishes_an_attempted_empty_hit_from_not_run(tmp_path
 
 def test_observed_caches_expose_restore_identity_and_explicit_save() -> None:
     root = Path(__file__).resolve().parents[1]
-    restore_action = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    restore_action = "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     save_action = "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     for relative, names in (
         (".github/workflows/quality.yml", ("pip", "sources", "toolchains", "references")),

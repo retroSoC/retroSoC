@@ -53,7 +53,7 @@ See @tiny-diagnostics for the current snapshot procedure and @tiny-conflicts for
 #source-note("docs/ip/spi-verification.md",title:"Scoped display and snapshot evidence")
 
 #pagebreak()
-#change-start(doc.change_prefix + "smartwatch", "Expanded smartwatch architecture and assembly assignments")
+#change-start("tiny-v02-smartwatch-peripherals-20261122-smartwatch", "Expanded smartwatch architecture and assembly assignments")
 === Smartwatch host architecture <tiny-smartwatch>
 Choose the watch or camera assembly. The watch uses native SDIO for storage and selects
 one UART0 attachment for wireless or service. See @tiny-smartwatch-connections for the wiring and resource assignments.
@@ -71,7 +71,7 @@ The assignments below follow @tiny-smartwatch-figure. Check supply limits and de
     Serialize the leases through completion, including wire completion for the display and LEDs.
     See @tiny-board-reference for the minimum system and @tiny-conflicts for resource ownership.],
 ) <tiny-smartwatch-connections>
-#change-end(doc.change_prefix + "smartwatch")
+#change-end("tiny-v02-smartwatch-peripherals-20261122-smartwatch")
 #pagebreak()
 
 #change-start("tiny-v02-commercial-20261114-quick-reference","Specification and evidence quick reference")
