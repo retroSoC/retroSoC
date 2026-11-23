@@ -476,24 +476,23 @@ def collect(root: Path, product: str, base: dict) -> dict:
         perimeter = [dict(pin=int(row[i]), name=row[i + 1]) for row in base["package"] for i in (0, 2)]
         for pin in perimeter:
             name = pin["name"]
-            pin.update(function=name, gpio_mode="-", direction="TBD", reset="TBD", bias="TBD",
-                       limitation="Frozen target; physical binding TBD",
-                       unbound_target=name in {"XOUT", "BOOT_MODE", "TEST_MODE"})
-            match = re.fullmatch(r"GPIO(\d+)", name)
-            if match:
-                number = int(match[1])
-                routes = [r for r in spec["pins"] if r["gpio"] == number and r["function"] != "Not routed"]
-                pin.update(function=name + "; " + "; ".join(r["mode"] + ": " + r["function"] for r in routes),
-                           gpio_mode=" / ".join(["GPIO"] + [r["mode"] + " " + r["direction"] for r in routes]), direction="I/O", reset="Input; OE off",
-                           bias="Pull controls off; PDK conditional", limitation="One active owner; bond map TBD")
+            unbound = name in {"XOUT", "BOOT_MODE", "TEST_MODE"}
+            pin.update(function="Unbound target" if unbound else name, direction="TBD", reset="TBD", bias="TBD",
+                       limitation="Physical binding TBD.", unbound_target=unbound)
+            if re.fullmatch(r"GPIO\d+", name):
+                pin.update(function="General-purpose I/O", direction="I/O", reset="Input, OE off",
+                           bias="Pulls off", limitation="")
             elif name.startswith(("VDD", "VSS", "AVDD", "AVSS")):
-                pin.update(direction="Supply", reset="N/A", bias="N/A", limitation="Rail / return target; electrical and bond approval pending")
+                pin.update(function="Power" if name.startswith(("VDD", "AVDD")) else "Ground", direction="-",
+                           reset="N/A", bias="N/A", limitation="Electrical and bond approval pending.")
             elif name in {"XPI_SCK", "XPI_CS0_N", "JTAG_TDO"}:
-                pin.update(direction="O", limitation="Digital controller output; pad/bond limits TBD")
+                pin.update(function="Digital controller output", direction="O", limitation="Pad and bond limits TBD.")
             elif name.startswith("XPI_D"):
-                pin.update(direction="I/O", limitation="Boot-XPI data; direction changes by phase; bonding TBD")
+                pin.update(function="Boot XPI data", direction="I/O",
+                           limitation="Direction changes by phase. Bonding TBD.")
             elif name in {"XIN", "RESET_N", "JTAG_TCK", "JTAG_TMS", "JTAG_TDI", "JTAG_TRST_N"}:
-                pin.update(direction="I", reset="External input", limitation="Digital input role; electrical bias and bonding TBD")
+                pin.update(function="Digital input", direction="I", reset="External input",
+                           limitation="Electrical bias and bonding TBD.")
         spec["qfn"] = qfn_geometry(values, perimeter)
         spec["qfn"]["pinout_aliases"] = qfn_pinout_aliases(perimeter, spec["pins"])
         spec["qfn"]["measurements"] = {key: qfn_measurement(record) for key, record in mechanical.items()}
@@ -559,6 +558,8 @@ def pin_reference(product: str, base: dict) -> list[dict]:
 
 def datasets(spec: dict) -> list[dict]:
     product = spec["product"]
+    voltage_title = "Core current versus power-rail voltage" if product == "tiny" else "Core current versus supply"
+    voltage_axis = "Model core power-rail voltage (V)" if product == "tiny" else "Model core supply (V)"
     m = spec["models"]
     currents, modes, voltage, temperature, transfer, gpio, relative = [], [], [], [], [], [], []
     def point(series, x, y, ids):
@@ -597,7 +598,7 @@ def datasets(spec: dict) -> list[dict]:
          "Constructed Hazard3 core model; 1.2 V, 25 C; HP/fabric/SRAM/I/O and other rails excluded.", currents),
         ("current-modes", "Core current by digital activity scenario", "Activity scenario", "Core current (mA)", "reference",
          "Run / WFI / WFI + idle leaf gates; no power isolation, retention or deep-sleep current inferred.", modes),
-        ("current-voltage", "Core current versus supply", "Model core supply (V)", "Core current (mA)", "reference",
+        ("current-voltage", voltage_title, voltage_axis, "Core current (mA)", "reference",
          f"Constructed Run model; {f:g} MHz; scan is not an approved operating envelope.", voltage),
         ("current-temperature", "Core current versus temperature", "Model temperature (C)", "Core current (mA)", "reference",
          f"Constructed Run model; {f:g} MHz; scan is not a temperature grade.", temperature),

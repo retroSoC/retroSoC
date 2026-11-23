@@ -270,8 +270,11 @@
   ]
 })
 
-#let ds-table(key, caption, headers, rows, widths: auto, notes: none) = {
+#let ds-table(key, caption, headers, rows, widths: auto, notes: none, header-cells: auto, cell-inset: rhythm.table-inset) = {
   let anchor = label("start-" + key)
+  let heading-cells = if header-cells == auto {
+    headers.map(h => table.cell(fill: gray, text(weight: "semibold", h)))
+  } else { header-cells }
   figure(
     kind: table, supplement: [Table], caption: caption,
     block(breakable: rows.len() > 8, width: 100%)[
@@ -280,7 +283,7 @@
       #set par(leading: rhythm.small-leading, spacing: rhythm.small-spacing)
       #table(
         columns: if widths == auto { headers.len() } else { widths },
-        inset: rhythm.table-inset,
+        inset: cell-inset,
         stroke: table-rules(headers.len(),header-row:1),
         fill: (x, y) => if y == 1 { gray } else { none },
         align: left + horizon,
@@ -291,7 +294,7 @@
               continuation-notice()
             }
           ],
-          ..headers.map(h => table.cell(fill: gray, text(weight: "semibold", h))),
+          ..heading-cells,
         ),
         ..rows.map(row => row.map(v => table.cell(breakable: false, v))).flatten(),
       )

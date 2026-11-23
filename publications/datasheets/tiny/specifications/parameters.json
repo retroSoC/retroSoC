@@ -156,7 +156,7 @@
       "profiles": [
         "configs/ci/ics55-tiny.mk"
       ],
-      "meaning": "Core operating supply example",
+      "meaning": "Core power rail example",
       "group": "operating",
       "unit": "V",
       "value": {
@@ -182,7 +182,7 @@
       "profiles": [
         "configs/ci/ics55-tiny.mk"
       ],
-      "meaning": "Digital I/O supply example",
+      "meaning": "Digital I/O power rail example",
       "group": "operating",
       "unit": "V",
       "value": {
@@ -221,7 +221,7 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Constructed ambient range at nominal example supplies; junction margin and grade are unqualified.",
+      "conditions": "Constructed ambient range at nominal example power-rail voltages. Junction margin and grade are unqualified.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -754,7 +754,7 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Example values only; regulator stability, supply sequencing, loading, reset and signal integrity require board-specific design.",
+      "conditions": "Example values only. Regulator stability, power sequencing, loading, reset and signal integrity require board-specific design.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],

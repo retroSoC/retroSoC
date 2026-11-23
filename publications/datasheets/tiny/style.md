@@ -222,10 +222,21 @@ order and exclusive mode selection on the plate.
 
 Use dark Inter text at 9 pt or larger and share the SoC functional architecture
 palette. Use separate fills for GPIO (green), ALT0 (pale pink), and ALT1 (pale
-orange). Label each of these fills and the dedicated supply, ground, boot XPI,
+orange). Label each of these fills and the dedicated power, ground, boot XPI,
 clock and control, and JTAG categories in the legend. Include the catalog
 reference dimensions for body, pitch and EP and their reference status in the
 book figure and standalone exports.
+
+#### Pin descriptions
+
+Use one row per QFN64 target pin. Give the pin number, target, direction,
+reset and bias, primary function or status, ALT0 and ALT1 in that order.
+Repeat the two-tier header on continued pages with Alternate Functions above
+the two mode columns. Use the pinout's mode colors in the header, 9 pt Inter
+text and 4 pt cell insets. Set column widths to 9, 26, 10, 24, 42, 33 and 28 mm.
+Print the complete mode name and its direction on separate lines. Use Power
+and Ground as roles for the rail and return terminals. Use power rail,
+power-rail voltage and power sequencing in the relevant Tiny text and figures.
 
 #### Numbered, mechanical and assembly views
 

@@ -239,7 +239,7 @@
         anchor: if direction < 0 { "east" } else { "west" })
     }
 
-    let legend = (([Supply], pinout-fill.supply), ([Ground / EP], pinout-fill.ground),
+    let legend = (([Power], pinout-fill.supply), ([Ground / EP], pinout-fill.ground),
       ([GPIO], pinout-fill.gpio), ([Boot XPI], pinout-fill.xpi),
       ([Clock / reset / straps], pinout-fill.control), ([JTAG], pinout-fill.jtag),
       ([ALT0], pinout-fill.alt0), ([ALT1], pinout-fill.alt1))

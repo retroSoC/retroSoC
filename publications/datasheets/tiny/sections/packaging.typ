@@ -3,10 +3,18 @@
 #import "../../../specifications/figures.typ": visual, connection, board-circuit
 #import "../package-figures.typ": qfn-pinout, qfn-pin-view, qfn-mechanical, qfn-copper, qfn-layer
 #import "../assembly-references.typ": assembly-reference-table, carrier-tape, reel, reel-box, reflow
+#import "../soc-palette.typ": domain-fill
 
 #let qfn-layout-change = "tiny-v02-qfn64-layout-20261119-"
 #let qfn-assembly-change = "tiny-v02-qfn64-assembly-20261119-"
 #let spec = data.specifications
+
+#let qfn-alternate(pin, mode) = {
+  if not pin.name.starts-with("GPIO") { return [—] }
+  let gpio = int(pin.name.slice(4))
+  let route = spec.pins.find(r => r.gpio == gpio and r.mode == mode)
+  if route.function == "Not routed" { [—] } else { [#route.function#linebreak()#route.direction] }
+}
 
 == Packaging <tiny-pins>
 QFN64 is the confirmed Tiny product package family: 48 signal terminals and 16 perimeter power/ground terminals.
@@ -15,15 +23,31 @@ Physical die-to-package bonding, pad electrical qualification and the supplier o
 The target table is not an implemented bond map.
 
 === Pin Mapping
-#change-start(doc.change_prefix + "target-pinout", "QFN64 target pinout with complete alternate functions")
+#change-start(doc.change_prefix + "target-pinout", "QFN64 target pinout power legend")
 #visual(spec, "qfn-pinout", qfn-pinout(spec), [QFN64 target pinout — top view], anchor: "qfn64-target-pinout")
 #change-end(doc.change_prefix + "target-pinout")
 #pagebreak(weak: true)
+#let qfn-headings = ([Pin], [Target], [Dir.], [Reset / Bias], [Primary Function / Status], [ALT0], [ALT1])
+#let qfn-header-cells = qfn-headings.slice(0, 5).map(heading =>
+  table.cell(rowspan: 2, fill: gray, text(weight: "semibold", heading))) + (
+  table.cell(colspan: 2, fill: gray, align: center + horizon,
+    stroke: (top: table-stroke, bottom: table-stroke, left: none, right: table-stroke),
+    text(weight: "semibold")[Alternate Functions]),
+  table.cell(fill: domain-fill.audio, align: center + horizon, text(weight: "semibold", qfn-headings.at(5))),
+  table.cell(fill: domain-fill.dvp_pixel, align: center + horizon, text(weight: "semibold", qfn-headings.at(6))),
+)
+#change-start(doc.change_prefix + "qfn-pin-table", "QFN64 pin descriptions with separate alternate-function columns")
 #ds-table("qfn64",[QFN64 pin descriptions - frozen target; physical binding pending],
-  ([Pin],[Target / external function],[Mode],[Dir.],[Reset logic],[Bias],[Restrictions / state]),
-  data.specifications.qfn.pins.map(p=>(str(p.pin),p.function,p.gpio_mode,p.direction,p.reset,p.bias,p.limitation)),
-  widths:(0.35fr,1.65fr,0.65fr,0.45fr,0.75fr,0.85fr,1.1fr),
-  notes:[Directions and reset logic describe the current digital function where known. XOUT, BOOT_MODE and TEST_MODE remain unbound targets. All physical pad limits, bond mapping and electrical reset bias remain separate/TBD.])
+  qfn-headings,
+  spec.qfn.pins.map(p => (
+    str(p.pin), p.name, if p.direction == "-" { [—] } else { p.direction },
+    if p.reset == p.bias { p.reset } else { [#p.reset#linebreak()#p.bias] },
+    if p.limitation == "" { p.function } else { [#p.function#linebreak()#p.limitation] },
+    qfn-alternate(p, "ALT0"), qfn-alternate(p, "ALT1"),
+  )),
+  widths: (9mm, 26mm, 10mm, 24mm, 42mm, 33mm, 28mm),
+  header-cells: qfn-header-cells, cell-inset: (x: 4pt, y: 4pt),
+  notes: [I = input, O = output, I/O = bidirectional. A dash in ALT0 or ALT1 means no routed function. A dash in Dir. marks a power or ground terminal. GPIO resets to ordinary input mode with ALT and output enable off. Pull controls reset off, and hardware pull availability depends on the PDK. Select one active owner per GPIO. Physical pad limits, bond mapping and electrical reset bias remain TBD.#change-end(doc.change_prefix + "qfn-pin-table")])
 #block(breakable: false, width: 100%)[
   #change-start(qfn-layout-change + "pin-numbering", "QFN64 top and bottom pin numbering")
   #visual(spec, "qfn-top", qfn-pin-view(spec, "top"), [QFN64 top view and projected terminal numbering])
@@ -31,6 +55,7 @@ The target table is not an implemented bond map.
   #change-end(qfn-layout-change + "pin-numbering")
 ]
 
+#change-start(doc.change_prefix + "binding-power", "Power and ground wording in the target binding table")
 #ds-table("target-binding",[Target signals versus RTL and physical binding],
   ([Target signal],[Current digital connection],[Physical status / restriction]),(
     ([GPIO0-31],[Canonical GPIO/ALT routes; ALT disabled and output-enable off at reset.],[Target pins allocated; pad-to-bond map pending.]),
@@ -40,7 +65,8 @@ The target table is not an implemented bond map.
     ([RESET_N],[External active-low reset and synchronized domain releases.],[Supervisor, strap and passive values require board/pad review.]),
     ([BOOT_MODE / TEST_MODE],[Target allocation; no confirmed production strap decoding or physical binding.],[Intended straps are planning fields; release tie states TBD.]),
     ([EP],[Separate exposed pad; no confirmed wrapper-to-EP binding.],[Intended GND; substrate/die attach/supplier confirmation required.]),
-    ([Power / ground],[Target core, analog and digital-I/O rails; wrapper inventory differs.],[All supply/ground connections require rail and bonding approval.])),widths:(0.8fr,1.6fr,1.6fr))
+    ([Power / ground],[Target core, analog and digital-I/O rails. The wrapper inventory differs.],[All power and ground connections require rail and bonding approval.])),widths:(0.8fr,1.6fr,1.6fr))
+#change-end(doc.change_prefix + "binding-power")
 #source-note("docs/ip/tiny-soc.md",title:"QFN64 target, voltage planning and frozen allocation")
 
 The current ASIC compatibility wrapper retains legacy dedicated UART/XPI-CS terminals and an older power-pad inventory.
@@ -152,14 +178,18 @@ The minimum system needs valid core/digital-I/O rails, return paths, XIN, reset,
 An audio design also supplies the AUDIO reference on GPIO17 ALT0 and acquires the complete I2S pad group.
 Replace target names with the approved bond map and rail definitions before hardware release.
 No brownout detector, passive-crystal oscillator, production strap mode or sequencing guarantee is inferred.
-#visual(data.specifications,"board-supply",board-circuit(data.specifications,"decoupling"),[Supply and local-decoupling placement.])
+#change-start(doc.change_prefix + "board-decoupling", "Power-rail and decoupling figure terminology")
+#visual(data.specifications,"board-supply",board-circuit(data.specifications,"decoupling"),[Power-rail and local decoupling placement.])
+#change-end(doc.change_prefix + "board-decoupling")
 #visual(data.specifications,"board-reset",board-circuit(data.specifications,"clock-reset-boot"),[Clock, reset, boot-NOR and JTAG connection examples.])
 #visual(data.specifications,"board-layout",connection(data.specifications,"layout"),[Peripheral connection and routing review.])
-The passive examples are registered below. Place bypass loops close to supply/ground pins, preserve continuous return paths,
+#change-start(doc.change_prefix + "board-layout-power", "Power and ground layout guidance")
+The passive examples are registered below. Place bypass loops close to power and ground pins, preserve continuous return paths,
 minimize boot-clock/data stubs and review NOR power-up/CS behavior. Match external pull-ups to the approved I/O bank.
 Place JTAG ground returns close to signal references; apply series damping only after signal-integrity review.
 Do not connect an assumed crystal network to XOUT. Review the entire alternate-function group for every external device.
 These figures are not PCB manufacturing files or a production schematic.
+#change-end(doc.change_prefix + "board-layout-power")
 
 == Electrical and Timing Specifications
 #reference-notice[No production electrical ratings or measured Tiny curves are attached.
@@ -169,9 +199,11 @@ A real result retains PDK/corner, rail/pad domain, device/package/board identity
 load, temperature, measurement boundary, sample count and uncertainty. Stress and operating limits need separate
 qualification. Digital timing waveforms show ordering; they do not establish analog limits.
 #parameters(data.specifications,"absolute",ds-table)
+#change-start(doc.change_prefix + "electrical-power", "Power-rail terminology in electrical reference conditions and characteristics")
 #parameters(data.specifications,"operating",ds-table)
 #parameters(data.specifications,"dc",ds-table)
 #parameters(data.specifications,"ac",ds-table)
 #characteristics(data.specifications,ds-table)
+#change-end(doc.change_prefix + "electrical-power")
 Dated negative STA observations in @tiny-evidence retain their original source/profile and stage.
 Reference graphs and analytic lane rates do not close timing or physical qualification gaps.
