@@ -18,7 +18,7 @@
 #change-end("tiny-v02-commercial-20261114-errata")
 #ds-table("known-limitations",[Implementation and evidence boundaries],([Area],[Current limitation]),(
  ([DMA discovery],[The four-bit maximum-burst field truncates configured 16 to zero; actual engine maximum remains 16 beats.]),
- ([SPI discovery],[CAPABILITY bit 7 reads zero despite the connected Tiny V2.2 DMA path.]),
+ ([SPI discovery],[CAPABILITY bit 7 reads zero despite the connected TINY V2.2 DMA path.]),
  ([External memory],[PSRAM requires explicit initialization; clock/reset invalidates its session.]),
  ([Shared routes],[Camera/audio/PWM and selected display/bulk channels require ownership and ordered handoff.]),
  ([Recovery],[Polling timeout does not prove peripheral idle or guarantee completion of a blocked bus read.]),
@@ -26,7 +26,7 @@
  ([Qualification],[Negative timing observations, package/board/electrical and final product gates remain open.])),widths:(0.9fr,3.2fr))
 
 == Revision Identification and Compatibility
-Read the Tiny SOC_ID, selected capabilities and build/configuration metadata before using product-specific controls.
+Read the TINY SOC_ID, selected capabilities and build/configuration metadata before using product-specific controls.
 A source SHA or build flag is not a silicon serial number. Preserve the versioned register contract and reject
 unavailable operations rather than inferring them from a library default.
 

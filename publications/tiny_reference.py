@@ -129,7 +129,7 @@ def facts(root: Path = ROOT, profile_path: str = "configs/ci/ics55-tiny.mk") -> 
 def field_rows(parts: list[tuple[str, int, int, str]]) -> list[dict]:
     rows, used = [], set()
     for name, low, high, description in parts:
-        rows.append(dict(name=name, lsb=low, msb=high, description=description, reset="0", expression="Tiny source-bound field"))
+        rows.append(dict(name=name, lsb=low, msb=high, description=description, reset="0", expression="TINY source-bound field"))
         if used.intersection(range(low, high + 1)):
             raise ValueError("overlapping Tiny SYSCTRL field")
         used.update(range(low, high + 1))
@@ -173,7 +173,7 @@ def sysctrl_registers(root: Path) -> dict:
                          width=32, access=access, reset=f"0x{reset:08X}", rtl_reset=f"0x{reset:08X}", description=description,
                          fields=fields, source=SYSCTRL, line=text[:text.index("`APB4_SYSCTRL__" + name)].count("\n") + 1,
                          c_source="crt/include/retrosoc/hal/sysctrl.h", review=None, readback=[]))
-    return dict(id="sysctrl", groups=[dict(id="main", title="Tiny control and diagnostics", base=0, stride=0, count=1)],
+    return dict(id="sysctrl", groups=[dict(id="main", title="TINY control and diagnostics", base=0, stride=0, count=1)],
                 registers=rows, document="docs/ip/tiny-soc.md", sources=[SYSCTRL, MAP, "rtl/ip/peripheral/sysctrl_define.svh", "crt/include/retrosoc/hal/sysctrl.h", "crt/src/hal/sysctrl.c"])
 
 
@@ -197,8 +197,8 @@ def collect_registers(fact: dict, root: Path = ROOT) -> dict:
     for reg in info["registers"]:
         if reg["name"] == "SOC_ID":
             value = fact["soc_id"]
-            reg.update(reset=f"0x{value:08X}", rtl_reset=f"0x{value:08X}", readback=["Tiny adapter constant 0x54494E59"], description="Tiny SoC identity supplied by the owned adapter.", source=ARCHINFO, line=28,
-                       fields=[dict(name="SOC_ID", lsb=0, msb=31, description="ASCII TINY; validate before using product-specific controls.", reset=hex(value), expression="Tiny adapter constant")])
+            reg.update(reset=f"0x{value:08X}", rtl_reset=f"0x{value:08X}", readback=["TINY adapter constant 0x54494E59"], description="TINY SoC identity supplied by the owned adapter.", source=ARCHINFO, line=28,
+                       fields=[dict(name="SOC_ID", lsb=0, msb=31, description="ASCII TINY; validate before using product-specific controls.", reset=hex(value), expression="TINY adapter constant")])
         if reg["name"] in {"BUILD_ID_LO", "BUILD_ID_HI", "CONFIG_ID", "BUILD_STATUS"}:
             reg.pop("rtl_reset", None)
             reg["reset"] = "Build-dependent"
@@ -228,7 +228,7 @@ def validate_evidence(value: dict) -> None:
 
 
 def validate_configuration(config: dict) -> None:
-    expected = {"title": "retroSoC Tiny Gen1", "document_id": "RS-TINY-DS", "status": "DRAFT",
+    expected = {"title": "retroSoC TINY Gen1", "document_id": "RS-TINY-DS", "status": "DRAFT",
                 "profile": "configs/ci/ics55-tiny.mk", "entrypoint": "publications/datasheets/tiny/datasheet.typ",
                 "filename": "retrosoc-tiny-gen1-datasheet.pdf"}
     if any(config.get(key) != value for key, value in expected.items()):
@@ -403,6 +403,9 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
 
     from publications.specification_reference import collect as collect_specifications
     data["specifications"] = collect_specifications(ROOT, "tiny", data)
+    for source in data["specifications"]["sources"]:
+        if "use" in source:
+            source["use"] = source["use"].replace("Tiny", "TINY")
     from publications.scientific_reference import prepare as prepare_scientific
     data["source_paths"] = sorted(set(data["source_paths"]) | {
         "publications/scientific_reference.py", "publications/specifications/scientific.typ"})

@@ -54,7 +54,7 @@
     "offset": 8,
     "access": "RO",
     "reset": "0x3FF",
-    "description": "Selected Tiny capability is 0x3FF; reusable core default 0xFF does not advertise route integration.",
+    "description": "Selected TINY capability is 0x3FF; reusable core default 0xFF does not advertise route integration.",
     "fields": [
       [
         "CAMERA",

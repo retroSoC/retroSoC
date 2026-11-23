@@ -92,7 +92,7 @@
   let b=spec.models.board
   let nodes=if kind=="minimum" {(
     (5,25,42,24,[Regulated rails #linebreak()core / digital IO]),
-    (64,18,50,69,[#if tiny {[Tiny / QFN64 target]} else {[Mini / logical pads]} #linebreak()VDD / VDDIO / GND #linebreak()external clock inputs #linebreak()RESET_N #linebreak()boot XPI / JTAG]),
+    (64,18,50,69,[#if tiny {[TINY / QFN64 target]} else {[Mini / logical pads]} #linebreak()VDD / VDDIO / GND #linebreak()external clock inputs #linebreak()RESET_N #linebreak()boot XPI / JTAG]),
     (130,22,37,24,[External clock #linebreak()#if tiny {[24 MHz XIN]} else {[24 MHz + 72 MHz]}]),
     (5,69,42,26,[Reset supervisor #linebreak()valid rails + clock]),
     (130,64,37,26,[Boot NOR #linebreak()SCK / CS0 / DQ]),

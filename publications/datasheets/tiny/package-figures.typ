@@ -190,7 +190,7 @@
     square(centre, scale, d.body, fill: white, stroke: 0.9pt + ink)
     exposed-pad(centre, scale, d, top: true, fill: none, stroke: projection)
     circle(point(centre.at(0) - half + 3, centre.at(1) - half + 2.15), radius: 0.9mm, fill: ink, stroke: none)
-    write-at(centre.at(0), centre.at(1) - 10, text(size: 16pt, weight: "bold", [Tiny Gen1]))
+    write-at(centre.at(0), centre.at(1) - 10, text(size: 16pt, weight: "bold", [TINY Gen1]))
     write-at(centre.at(0), centre.at(1) - 1.5, text(size: 12pt, weight: "semibold", [QFN64 · Top view]))
     write-at(centre.at(0), centre.at(1) + 13, pinout-tag(
       align(center, stack(spacing: 0.7mm, [*EP* · Intended GND], [Bonding TBD])), pinout-fill.ground))

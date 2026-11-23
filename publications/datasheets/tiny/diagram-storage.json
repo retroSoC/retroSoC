@@ -95,7 +95,7 @@
         "text": ".FifoDepth(32)"
       }
     ],
-    "note": "The Tiny integration selects eight channels and a 32-word  FIFO per channel. The cells illustrate one channel; channels do not share a single software-visible  FIFO. A 64-byte descriptor is separate from this payload storage."
+    "note": "The TINY integration selects eight channels and a 32-word  FIFO per channel. The cells illustrate one channel; channels do not share a single software-visible  FIFO. A 64-byte descriptor is separate from this payload storage."
   },
   {
     "id": "uart-fifos",
@@ -124,7 +124,7 @@
       "rtl/ip/serial/uart_reg.sv"
     ],
     "bindings": [],
-    "note": "Tiny instantiates UART0 only. RX metadata is part of each stored entry, distinct from the 32-bit APB read width. UART0 DMA is connected; RTS/CTS are not exposed on Tiny pads."
+    "note": "TINY instantiates UART0 only. RX metadata is part of each stored entry, distinct from the 32-bit APB read width. UART0 DMA is connected; RTS/CTS are not exposed on TINY pads."
   },
   {
     "id": "i2c-fifos",
@@ -449,7 +449,7 @@
     "chapters": [
       "sram"
     ],
-    "title": "Tiny four-group SRAM organization",
+    "title": "TINY four-group SRAM organization",
     "section": "functional",
     "sources": [
       "rtl/tiny/top/tiny_sram.sv",
@@ -494,7 +494,7 @@
     "chapters": [
       "xpi"
     ],
-    "title": "Tiny XPI apertures and device capacity",
+    "title": "TINY XPI apertures and device capacity",
     "section": "functional",
     "sources": [
       "rtl/tiny/address_map/memory_map.json",
@@ -513,7 +513,7 @@
       "tiny-memory-budget",
       "tiny-boot"
     ],
-    "title": "Tiny Flash load and SRAM runtime placement",
+    "title": "TINY Flash load and SRAM runtime placement",
     "section": "linker",
     "sources": [
       "configs/ci/ics55-tiny.mk",
@@ -546,7 +546,7 @@
     "chapters": [
       "crypto"
     ],
-    "title": "Tiny Crypto private SRAM geometry",
+    "title": "TINY Crypto private SRAM geometry",
     "section": "functional",
     "stores": [
       {

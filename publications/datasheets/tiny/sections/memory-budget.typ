@@ -7,7 +7,7 @@
 The main SRAM capacity is 131072 bytes. Count runtime text/rodata/data, BSS, stack, heapless workspaces,
 descriptors and live payload together. The .init section remains in Flash; text/rodata/data use Flash load
 addresses and SRAM runtime addresses. BSS has no load bytes. Names of linker symbols containing PSRAM
-do not change the selected Tiny section placement.
+do not change the selected TINY section placement.
 #ds-table("linker-accounting",[Selected linker placement],([Section],[Run location],[Load / accounting]),(
  ([.init],[Flash],[Flash-resident entry code.]),([.text / .rodata],[SRAM],[Initialized bytes loaded from Flash.]),
  ([.data],[SRAM],[Initialized bytes loaded from Flash.]),([.bss],[SRAM],[NOLOAD; zeroed by startup.]),
@@ -38,11 +38,11 @@ three useful bytes per sample but four bytes of transport storage. Do not silent
 See @format-dma-tcd in the DMA chapter for the byte layout alongside the channel FIFO and protocol example.
 #ds-table("tcd-fields",[Source-derived DMA C descriptor layout],([Byte offset],[Field],[Bytes],[Role]),
   data.tcd.map(f=>(code("0x"+upper(str(f.offset,base:16))),code(f.name),str(f.bytes),f.role)),widths:(0.75fr,1.7fr,0.45fr,1.1fr))
-The descriptor is 64 bytes and each descriptor address is 64-byte aligned. Tiny permits only the implemented transfer kind,
+The descriptor is 64 bytes and each descriptor address is 64-byte aligned. TINY permits only the implemented transfer kind,
 request, increment and width combinations. Stride fields remain zero and row count is at most one. A field in the ABI is
 not evidence of cyclic or 2D support; stream support follows the implemented endpoint/kind rules. HAL result fields do not imply that hardware directly writes every result word.
 
-#ds-table("tcd-control",[Descriptor control positions and portable Tiny use],([Bits],[Field],[Meaning / restriction]),(
+#ds-table("tcd-control",[Descriptor control positions and portable TINY use],([Bits],[Field],[Meaning / restriction]),(
   ([0],[VALID],[Must be set for a submitted descriptor.]),
   ([1 / 2],[SRC_INC / DST_INC],[Increment the corresponding memory address; use the endpoint's required mode.]),
   ([3 / 4],[CRC_ENABLE / CRC_FINAL],[Select the implemented CRC processing/final comparison.]),
@@ -58,7 +58,7 @@ follows #code("next_ptr"), bounded by #code("max_tcds"). It is not an autonomous
 the helper records observed progress but the caller must still confirm abort/drain before releasing memory.
 
 Reserve channel, descriptor and payload storage through completion or confirmed recovery. Publish CPU-produced input with
-the required fence before starting the non-CPU master. Tiny has no application-hart cache handoff protocol; importing the
+the required fence before starting the non-CPU master. TINY has no application-hart cache handoff protocol; importing the
 Mini HP cache-clean service would describe nonexistent hardware.
 #flow("dma-recovery",([Validate channel / request / bounds and reserve storage],
   [Publish descriptor/input and configure while idle], [Start and wait for the required completion boundary],

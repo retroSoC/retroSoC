@@ -101,7 +101,7 @@
    ])
   }
  }
-}),[Integrated Tiny IP inventory, organized by function.])
+}),[Integrated TINY IP inventory, organized by function.])
 
 #let ip-diagram(entry) = {
   let children=entry.nodes.slice(1)
@@ -145,4 +145,4 @@
    x+=widths.at(c)
   }
  }
-}),[Tiny connection matrix. Entries show fabric connectivity, not permission for every transaction. Admission, endpoint and private-DMA address rules still apply.], figure-label:"tiny-access-matrix-figure")
+}),[TINY connection matrix. Entries show fabric connectivity, not permission for every transaction. Admission, endpoint and private-DMA address rules still apply.], figure-label:"tiny-access-matrix-figure")

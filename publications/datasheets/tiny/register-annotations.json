@@ -685,7 +685,7 @@
           "msb": 0,
           "description": "SRAM is present.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "NATIVE_AXI4",
@@ -693,7 +693,7 @@
           "msb": 1,
           "description": "Native AXI memory interface.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "BYTE_WRITE",
@@ -701,15 +701,15 @@
           "msb": 2,
           "description": "Byte-write strobes supported.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "FIXED",
           "lsb": 3,
           "msb": 3,
-          "description": "Local SRAM supports FIXED; Tiny fabric admits only single-beat FIXED.",
+          "description": "Local SRAM supports FIXED; TINY fabric admits only single-beat FIXED.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "INCR",
@@ -717,15 +717,15 @@
           "msb": 4,
           "description": "Incrementing bursts supported within system limits.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "WRAP",
           "lsb": 5,
           "msb": 5,
-          "description": "Local SRAM capability only: Tiny fabric rejects WRAP requests.",
+          "description": "Local SRAM capability only: TINY fabric rejects WRAP requests.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "PERFORMANCE",
@@ -733,7 +733,7 @@
           "msb": 6,
           "description": "Performance counters present.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "Reserved",
@@ -741,7 +741,7 @@
           "msb": 7,
           "description": "Reads zero.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "MAX_BEATS",
@@ -749,15 +749,15 @@
           "msb": 15,
           "description": "Local maximum 16 beats.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "DATA_BYTES",
           "lsb": 16,
           "msb": 23,
-          "description": "Four data bytes in the Tiny instance.",
+          "description": "Four data bytes in the TINY instance.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "Reserved",
@@ -765,10 +765,10 @@
           "msb": 31,
           "description": "Reads zero.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         }
       ],
-      "description": "Local SRAM capabilities, 16 maximum beats and four data bytes. The Tiny fabric imposes the narrower end-to-end transfer subset."
+      "description": "Local SRAM capabilities, 16 maximum beats and four data bytes. The TINY fabric imposes the narrower end-to-end transfer subset."
     }
   },
   "gpio": {
@@ -1318,7 +1318,7 @@
       "reset": "Not retained"
     },
     "main.IP_VERSION": {
-      "description": "Tiny enables DMA V2.2 (0x00020002), SPI admission/origin qualifiers and five-bit request selectors."
+      "description": "TINY enables DMA V2.2 (0x00020002), SPI admission/origin qualifiers and five-bit request selectors."
     },
     "main.SUPPORTED_REQUESTS": {
       "description": "Integrated request bitmap 0x000339FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 and PIO-lite selectors are absent.",
@@ -1347,13 +1347,13 @@
       ]
     },
     "ch.REQUEST_SEL": {
-      "description": "Stored selector: Tiny enables 0..8, 11..13 and 16..17 subject to transfer kind. SPI requests 16/17 require the integrated V2.2 admission and bound channel.",
+      "description": "Stored selector: TINY enables 0..8, 11..13 and 16..17 subject to transfer kind. SPI requests 16/17 require the integrated V2.2 admission and bound channel.",
       "fields": [
         {
           "name": "REQUEST",
           "lsb": 0,
           "msb": 4,
-          "description": "Tiny enables 0..8, 11..13 and 16..17, subject to transfer kind. SPI TX/RX are 16/17 and require matching admission and bound channel.",
+          "description": "TINY enables 0..8, 11..13 and 16..17, subject to transfer kind. SPI TX/RX are 16/17 and require matching admission and bound channel.",
           "reset": "0",
           "expression": "Reviewed producer and consumer bit slice"
         },
@@ -1376,10 +1376,10 @@
           "text": "if ((s_cfg_req_raw[channel][31:5] != 27'd0) ||"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "main.CAPABILITY": {
-      "description": "Tiny: eight 32-bit channels, descriptor support and three stream-kind encoding. The 4-bit maximum-burst field truncates configured 16 to zero; the actual supported limit is 16 beats.",
+      "description": "TINY: eight 32-bit channels, descriptor support and three stream-kind encoding. The 4-bit maximum-burst field truncates configured 16 to zero; the actual supported limit is 16 beats.",
       "fields": [
         {
           "name": "DESCRIPTOR",
@@ -1456,7 +1456,7 @@
           "text": "s_src_addr_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.DST_ADDR": {
       "fields": [
@@ -1475,7 +1475,7 @@
           "text": "s_dst_addr_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.BYTE_COUNT": {
       "fields": [
@@ -1494,7 +1494,7 @@
           "text": "s_byte_count_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.ERROR_ADDR": {
       "fields": [
@@ -1513,7 +1513,7 @@
           "text": "error_addr_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.CURRENT_SRC": {
       "fields": [
@@ -1532,7 +1532,7 @@
           "text": "current_src_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.CURRENT_DST": {
       "fields": [
@@ -1551,7 +1551,7 @@
           "text": "current_dst_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.REMAINING": {
       "fields": [
@@ -1570,7 +1570,7 @@
           "text": "remaining_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.BYTES_DONE": {
       "fields": [
@@ -1589,7 +1589,7 @@
           "text": "bytes_done_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.STALL_CYCLES_LO": {
       "fields": [
@@ -1608,7 +1608,7 @@
           "text": "stall_cycles_lo_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.STALL_CYCLES_HI": {
       "fields": [
@@ -1627,7 +1627,7 @@
           "text": "stall_cycles_hi_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.TCD_HEAD": {
       "fields": [
@@ -1646,7 +1646,7 @@
           "text": "s_tcd_head_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.TCD_COUNT": {
       "fields": [
@@ -1665,7 +1665,7 @@
           "text": "s_tcd_count_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.CRC_EXPECTED": {
       "fields": [
@@ -1684,7 +1684,7 @@
           "text": "s_crc_expected_q[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.CRC_RESULT": {
       "fields": [
@@ -1703,7 +1703,7 @@
           "text": "crc_result_i[(s_channel_index*32)+:32]"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.CFG": {
       "fields": [
@@ -1794,7 +1794,7 @@
           "text": "s_cfg_crc_final[channel] = EnableCrc && ch_cfg_i[(channel*32)+11];"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.BURST_CFG": {
       "fields": [
@@ -1825,7 +1825,7 @@
           "text": "(s_cfg_burst[channel] == 5'd0) ||"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.EVENT_ENABLE": {
       "fields": [
@@ -1868,7 +1868,7 @@
           "text": "s_irq_source[channel] = |(event_status_i[(channel*3)+:3] & s_evt_en_q[(channel*32)+:3]);"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     },
     "ch.ERROR_STATUS": {
       "fields": [
@@ -1927,7 +1927,7 @@
           "text": "channel_error_status = {stream_last_i, 1'b0, error_read_i, response_i, error_code_i};"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     }
   },
   "timer": {
@@ -2717,8 +2717,8 @@
       "reset": "0"
     },
     "main.CLOCK_HZ": {
-      "description": "Runtime PCLK frequency supplied by Tiny RCU after the rate-transfer handshake; SAFE24 reports 24000000 Hz. Recompute timing after a clock profile change.",
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished.",
+      "description": "Runtime PCLK frequency supplied by TINY RCU after the rate-transfer handshake; SAFE24 reports 24000000 Hz. Recompute timing after a clock profile change.",
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished.",
       "reset": "Dynamic (SAFE24: 24000000)",
       "fields": [
         {
@@ -3070,7 +3070,7 @@
     "main.SECOND_CYCLES": {
       "reset": "24000000",
       "notes": "Reset comes from the RTC_CLOCK_HZ integration parameter; it is not a 32.768 kHz oscillator assumption.",
-      "description": "AON REF24 clocks per second; reset is 24000000 in Tiny. Minimum 256. Stage the value and apply the RTC configuration protocol.",
+      "description": "AON REF24 clocks per second; reset is 24000000 in TINY. Minimum 256. Stage the value and apply the RTC configuration protocol.",
       "fields": [
         {
           "name": "SECOND_CYCLES",
@@ -3078,7 +3078,7 @@
           "msb": 31,
           "description": "RTC input cycles per second. SYS/MEM/PCLK profile changes do not alter the AON REF24 source.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -3447,7 +3447,7 @@
           "text": "s_fifo_level[22:16] = 7'(s_rx_count);"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     }
   },
   "i2c": {
@@ -3682,7 +3682,7 @@
           "text": "s_fifo_level[23:16] = 8'(s_rx_count);"
         }
       ],
-      "review_notes": "2026-10-29: Tiny producer/consumer review; stored unused and hardwired-zero bits are distinguished."
+      "review_notes": "2026-10-29: TINY producer/consumer review; stored unused and hardwired-zero bits are distinguished."
     }
   },
   "clint": {
@@ -3764,7 +3764,7 @@
           "msb": 7,
           "description": "One management MCU hart.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "USER_CORE_SLOTS",
@@ -3772,7 +3772,7 @@
           "msb": 15,
           "description": "Zero selectable user-core slots.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "GPIO_COUNT",
@@ -3780,7 +3780,7 @@
           "msb": 23,
           "description": "32 GPIOs.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "IRQ_VECTOR_WIDTH",
@@ -3788,7 +3788,7 @@
           "msb": 31,
           "description": "32 core interrupt positions.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         }
       ]
     },
@@ -3800,7 +3800,7 @@
           "msb": 15,
           "description": "55 for the selected ICS55 profile; 130 for IHP130 compatibility. Technology identifier, not a manufacturing measurement.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "PDK_ID",
@@ -3808,7 +3808,7 @@
           "msb": 23,
           "description": "4: ICS55 main reference; 1: IHP130 compatibility.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         },
         {
           "name": "TARGET_CLASS",
@@ -3816,7 +3816,7 @@
           "msb": 31,
           "description": "2: ASIC target class; not silicon qualification.",
           "reset": "Register reset applies",
-          "expression": "source-bound Tiny capability field"
+          "expression": "source-bound TINY capability field"
         }
       ]
     },
@@ -3828,7 +3828,7 @@
           "msb": 31,
           "description": "Build source identifier bits 31:0.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "description": "Build source identifier bits 31:0. Read the actual generated build metadata; this publication does not assign a fixed value."
@@ -3841,7 +3841,7 @@
           "msb": 31,
           "description": "Build source identifier bits 63:32.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "description": "Build source identifier bits 63:32. Read the actual generated build metadata; this publication does not assign a fixed value."
@@ -3854,7 +3854,7 @@
           "msb": 31,
           "description": "First 32 bits of the canonical build configuration digest.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "description": "First 32 bits of the canonical build configuration digest. Read the actual generated build metadata; this publication does not assign a fixed value."
@@ -3868,7 +3868,7 @@
           "msb": 0,
           "description": "Build input worktree is dirty.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "LOCK_VALID",
@@ -3876,7 +3876,7 @@
           "msb": 1,
           "description": "Dependency-lock validity flag.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "RELEASE",
@@ -3884,7 +3884,7 @@
           "msb": 2,
           "description": "Build release flag.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "SOURCE_KNOWN",
@@ -3892,7 +3892,7 @@
           "msb": 3,
           "description": "Build source identity is known.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "Reserved",
@@ -3900,7 +3900,7 @@
           "msb": 31,
           "description": "Reads zero.",
           "reset": "0",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -3924,23 +3924,23 @@
     },
     "main.DEVICE_ID_STATUS": {
       "reset": "0x00001000",
-      "description": "Tiny ties device ID valid and read-enable low. Width metadata is 16 bytes, but no readable device ID is supplied.",
+      "description": "TINY ties device ID valid and read-enable low. Width metadata is 16 bytes, but no readable device ID is supplied.",
       "fields": [
         {
           "name": "VALID",
           "lsb": 0,
           "msb": 0,
-          "description": "Tied low in Tiny.",
+          "description": "Tied low in TINY.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "READ_ENABLE",
           "lsb": 1,
           "msb": 1,
-          "description": "Tied low in Tiny.",
+          "description": "Tied low in TINY.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "READABLE",
@@ -3948,7 +3948,7 @@
           "msb": 2,
           "description": "Zero: ID reads return an APB error.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "Reserved",
@@ -3956,7 +3956,7 @@
           "msb": 7,
           "description": "Reads zero.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "WIDTH_BYTES",
@@ -3964,7 +3964,7 @@
           "msb": 15,
           "description": "Managed ABI width 16; this is not an available ID.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         },
         {
           "name": "Reserved",
@@ -3972,7 +3972,7 @@
           "msb": 31,
           "description": "Reads zero.",
           "reset": "Register reset applies",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -3988,15 +3988,15 @@
     },
     "main.DEVICE_ID0": {
       "reset": "Unavailable (APB error)",
-      "description": "Device ID bits 31:0. Tiny supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
+      "description": "Device ID bits 31:0. TINY supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
       "fields": [
         {
           "name": "DEVICE_ID",
           "lsb": 0,
           "msb": 31,
-          "description": "Unavailable in Tiny. Read only after confirming READABLE; currently it is tied zero.",
+          "description": "Unavailable in TINY. Read only after confirming READABLE; currently it is tied zero.",
           "reset": "Unavailable",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -4012,15 +4012,15 @@
     },
     "main.DEVICE_ID1": {
       "reset": "Unavailable (APB error)",
-      "description": "Device ID bits 63:32. Tiny supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
+      "description": "Device ID bits 63:32. TINY supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
       "fields": [
         {
           "name": "DEVICE_ID",
           "lsb": 0,
           "msb": 31,
-          "description": "Unavailable in Tiny. Read only after confirming READABLE; currently it is tied zero.",
+          "description": "Unavailable in TINY. Read only after confirming READABLE; currently it is tied zero.",
           "reset": "Unavailable",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -4036,15 +4036,15 @@
     },
     "main.DEVICE_ID2": {
       "reset": "Unavailable (APB error)",
-      "description": "Device ID bits 95:64. Tiny supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
+      "description": "Device ID bits 95:64. TINY supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
       "fields": [
         {
           "name": "DEVICE_ID",
           "lsb": 0,
           "msb": 31,
-          "description": "Unavailable in Tiny. Read only after confirming READABLE; currently it is tied zero.",
+          "description": "Unavailable in TINY. Read only after confirming READABLE; currently it is tied zero.",
           "reset": "Unavailable",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -4060,15 +4060,15 @@
     },
     "main.DEVICE_ID3": {
       "reset": "Unavailable (APB error)",
-      "description": "Device ID bits 127:96. Tiny supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
+      "description": "Device ID bits 127:96. TINY supplies no readable ID; a read returns zero response data with APB error, not a valid zero identifier.",
       "fields": [
         {
           "name": "DEVICE_ID",
           "lsb": 0,
           "msb": 31,
-          "description": "Unavailable in Tiny. Read only after confirming READABLE; currently it is tied zero.",
+          "description": "Unavailable in TINY. Read only after confirming READABLE; currently it is tied zero.",
           "reset": "Unavailable",
-          "expression": "Tiny source-bound integration field"
+          "expression": "TINY source-bound integration field"
         }
       ],
       "source_bindings": [
@@ -4083,7 +4083,7 @@
       ]
     },
     "main.VENDOR_ID": {
-      "description": "Vendor identification encoding; zero means unassigned in the current Tiny instantiation.",
+      "description": "Vendor identification encoding; zero means unassigned in the current TINY instantiation.",
       "fields": [
         {
           "name": "VENDOR_ID",
@@ -4165,7 +4165,7 @@
         }
       ],
       "review_source": "rtl/managed/clusterip/rng/rtl/rng_define.svh",
-      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected Tiny integration and access restrictions."
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected TINY integration and access restrictions."
     }
   },
   "crc": {
@@ -4274,7 +4274,7 @@
         }
       ],
       "review_source": "rtl/managed/clusterip/crc/rtl/crc_define.svh",
-      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected Tiny integration and access restrictions."
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected TINY integration and access restrictions."
     }
   },
   "ws2812": {
@@ -5253,7 +5253,7 @@
       "description": "Engine busy bits 0..2, maintenance busy bit 3, READY bit 4, AES key valid bit 8 and RSA prepared bit 9. Reset scrub starts with maintenance busy; consume live state."
     },
     "main.CAPABILITY0": {
-      "description": "Selected Tiny macro-backed configuration reads 0x03FFFFFF. Bit 24 requires the V2 initialization protocol; bit 25 describes selected SRAM mapping, not completed physical qualification.",
+      "description": "Selected TINY macro-backed configuration reads 0x03FFFFFF. Bit 24 requires the V2 initialization protocol; bit 25 describes selected SRAM mapping, not completed physical qualification.",
       "fields": [
         {
           "name": "AES_128",
@@ -5499,7 +5499,7 @@
         }
       ],
       "review_source": "rtl/ip/security/apb4_crypto.sv",
-      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected Tiny integration and access restrictions."
+      "review_notes": "Reviewed against executable producers and consumer slices on 2026-10-22; rechecked for the selected TINY integration and access restrictions."
     }
   },
   "i2s": {
@@ -6531,7 +6531,7 @@
     "main.CAPABILITY": {
       "access": "RO",
       "reset": "0x00003F7F",
-      "description": "Actual source constant. Bit 7 reads zero although Tiny wires the central-DMA admission path; this discovery discrepancy is retained, not silently corrected.",
+      "description": "Actual source constant. Bit 7 reads zero although TINY wires the central-DMA admission path; this discovery discrepancy is retained, not silently corrected.",
       "fields": [
         {
           "name": "MASTER",
@@ -6706,7 +6706,7 @@
     "main.ROUTABLE_MASK": {
       "access": "RO",
       "reset": "0xD8000000",
-      "description": "Tiny SPI pad candidates GPIO27,28,30,31; session personality determines required pins.",
+      "description": "TINY SPI pad candidates GPIO27,28,30,31; session personality determines required pins.",
       "fields": [
         {
           "name": "PINS",
@@ -7193,7 +7193,7 @@
     "main.TX_BIND": {
       "access": "RW",
       "reset": "0",
-      "description": "Bind a Tiny central-DMA channel before ARM; lifecycle ownership persists through terminal response and drain.",
+      "description": "Bind a TINY central-DMA channel before ARM; lifecycle ownership persists through terminal response and drain.",
       "fields": [
         {
           "name": "CHANNEL",
@@ -7230,7 +7230,7 @@
     "main.RX_BIND": {
       "access": "RW",
       "reset": "0",
-      "description": "Bind a Tiny central-DMA channel before ARM; lifecycle ownership persists through terminal response and drain.",
+      "description": "Bind a TINY central-DMA channel before ARM; lifecycle ownership persists through terminal response and drain.",
       "fields": [
         {
           "name": "CHANNEL",

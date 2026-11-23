@@ -56,19 +56,19 @@
     },
     {
       "id": "carrier-tape",
-      "title": "Carrier tape reference and Tiny release status"
+      "title": "Carrier tape reference and TINY release status"
     },
     {
       "id": "reel",
-      "title": "Reel reference and Tiny release status"
+      "title": "Reel reference and TINY release status"
     },
     {
       "id": "reel-box",
-      "title": "Tape and reel box reference and Tiny release status"
+      "title": "Tape and reel box reference and TINY release status"
     },
     {
       "id": "reflow",
-      "title": "Pb-free reflow reference and Tiny release status"
+      "title": "Pb-free reflow reference and TINY release status"
     }
   ],
   "records": [
@@ -777,7 +777,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -800,7 +800,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; BSC mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; BSC mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -823,7 +823,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -846,7 +846,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -873,7 +873,7 @@
       "assumptions": [
         "A3 denotes the reference dimension in the side view."
       ],
-      "replacement": "Replace under the same ID after approval of the Tiny supplier outline.",
+      "replacement": "Replace under the same ID after approval of the TINY supplier outline.",
       "dependencies": [],
       "tolerance": "REF"
     },
@@ -892,7 +892,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.10 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -915,7 +915,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -938,7 +938,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; 0.00..0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; 0.00..0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -961,7 +961,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; drawing nominal mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; drawing nominal mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -984,7 +984,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -1007,7 +1007,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -1030,7 +1030,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -1053,7 +1053,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -1076,7 +1076,7 @@
       "sources": [
         "adi-up64"
       ],
-      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; Tiny supplier/outline/bonding approval pending.",
+      "conditions": "ADI UP64 05-08-1705 Rev C p1; +/-0.05 mm unless BSC. Reference pattern; TINY supplier/outline/bonding approval pending.",
       "assumptions": [
         "Reference Only; no product simulation, physical implementation or silicon test confirms this value."
       ],
@@ -1150,7 +1150,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "A0"
@@ -1177,7 +1177,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "B0"
@@ -1204,7 +1204,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "K0"
@@ -1231,7 +1231,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "P1"
@@ -1258,7 +1258,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "W"
@@ -1285,7 +1285,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1295,7 +1295,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny tape dimensions, tolerances and orientation",
+      "meaning": "TINY tape dimensions, tolerances and orientation",
       "group": "carrier-tape",
       "unit": "1",
       "value": null,
@@ -1306,7 +1306,7 @@
       ],
       "conditions": "Supplier tape drawing, sprocket geometry and Pin 1 orientation have not been released.",
       "assumptions": [],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1329,7 +1329,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "Ø"
@@ -1355,7 +1355,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "W1"
@@ -1382,7 +1382,7 @@
       "assumptions": [
         "Reference geometry for the named TI orderable device."
       ],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1392,7 +1392,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny reel diameter, width and tolerances",
+      "meaning": "TINY reel diameter, width and tolerances",
       "group": "reel",
       "unit": "1",
       "value": null,
@@ -1401,9 +1401,9 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Tiny supplier packing specification has not been released.",
+      "conditions": "TINY supplier packing specification has not been released.",
       "assumptions": [],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1413,7 +1413,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny hub and arbor bore",
+      "meaning": "TINY hub and arbor bore",
       "group": "reel",
       "unit": "1",
       "value": null,
@@ -1422,9 +1422,9 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Tiny supplier packing specification has not been released.",
+      "conditions": "TINY supplier packing specification has not been released.",
       "assumptions": [],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1434,7 +1434,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny standard pack quantity",
+      "meaning": "TINY standard pack quantity",
       "group": "reel",
       "unit": "1",
       "value": null,
@@ -1443,9 +1443,9 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Tiny supplier packing specification has not been released.",
+      "conditions": "TINY supplier packing specification has not been released.",
       "assumptions": [],
-      "replacement": "Use the released Tiny supplier packaging drawing, orientation and packing specification for production.",
+      "replacement": "Use the released TINY supplier packaging drawing, orientation and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1468,7 +1468,7 @@
       "assumptions": [
         "The carton outline, lid and folds are schematic."
       ],
-      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "replacement": "Use the released TINY supplier carton drawing and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "L"
@@ -1495,7 +1495,7 @@
       "assumptions": [
         "The carton outline, lid and folds are schematic."
       ],
-      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "replacement": "Use the released TINY supplier carton drawing and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "W"
@@ -1522,7 +1522,7 @@
       "assumptions": [
         "The carton outline, lid and folds are schematic."
       ],
-      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "replacement": "Use the released TINY supplier carton drawing and packing specification for production.",
       "dependencies": [],
       "symbols": [
         "H"
@@ -1536,7 +1536,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny carton drawing, outside dimensions and contents per carton",
+      "meaning": "TINY carton drawing, outside dimensions and contents per carton",
       "group": "reel-box",
       "unit": "1",
       "value": null,
@@ -1545,9 +1545,9 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "The Tiny supplier carton drawing and packing specification are pending.",
+      "conditions": "The TINY supplier carton drawing and packing specification are pending.",
       "assumptions": [],
-      "replacement": "Use the released Tiny supplier carton drawing and packing specification for production.",
+      "replacement": "Use the released TINY supplier carton drawing and packing specification for production.",
       "dependencies": []
     },
     {
@@ -1570,7 +1570,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1597,7 +1597,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "T_Smin",
@@ -1628,7 +1628,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "t_S"
@@ -1654,7 +1654,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "T_L"
@@ -1684,7 +1684,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "t_L"
@@ -1710,7 +1710,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "T_P"
@@ -1736,7 +1736,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1763,7 +1763,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": [],
       "symbols": [
         "t_P"
@@ -1793,7 +1793,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1820,7 +1820,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1847,7 +1847,7 @@
       "assumptions": [
         "ADI classification example for the stated Pb-free package category."
       ],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1857,7 +1857,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny package reflow limits",
+      "meaning": "TINY package reflow limits",
       "group": "reflow",
       "unit": "1",
       "value": null,
@@ -1866,9 +1866,9 @@
       "sources": [
         "scenario-model"
       ],
-      "conditions": "Tiny peak, time/rate limits and cycle count require package qualification.",
+      "conditions": "TINY peak, time/rate limits and cycle count require package qualification.",
       "assumptions": [],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     },
     {
@@ -1878,7 +1878,7 @@
         "configs/ci/ics55-tiny.mk",
         "configs/ci/ihp130-tiny.mk"
       ],
-      "meaning": "Tiny board-level reflow process",
+      "meaning": "TINY board-level reflow process",
       "group": "reflow",
       "unit": "1",
       "value": null,
@@ -1889,7 +1889,7 @@
       ],
       "conditions": "A profile requires the released package, PCB stackup, solder paste and measured body temperature.",
       "assumptions": [],
-      "replacement": "Use the approved Tiny package qualification and assembler's board/paste process for production.",
+      "replacement": "Use the approved TINY package qualification and assembler's board/paste process for production.",
       "dependencies": []
     }
   ],
@@ -1897,7 +1897,7 @@
     {
       "id": "TINY-DS-E01",
       "title": "DMA maximum-burst discovery truncation",
-      "applies_to": "Tiny v0.2 / reviewed dev / 8-channel central DMA",
+      "applies_to": "TINY v0.2 / reviewed dev / 8-channel central DMA",
       "trigger": "Reading the four-bit maximum-burst discovery field with a configured engine maximum of 16 beats.",
       "impact": "The field reads zero; interpreting it as no supported burst loses the actual 16-beat engine limit.",
       "workaround": "Preserve raw readback and the source-bound integration limit separately; use capability-aware, product-specific initialization.",
@@ -1910,10 +1910,10 @@
     {
       "id": "TINY-DS-E02",
       "title": "SPI DMA capability-bit discrepancy",
-      "applies_to": "Tiny V2.2 SPI0 path in the reviewed v0.2 source",
-      "trigger": "Relying only on CAPABILITY bit 7 to discover Tiny SPI DMA.",
-      "impact": "The bit reads zero although Tiny connects the DMA admission/readiness path.",
-      "workaround": "Use the reviewed Tiny integration contract and retain version/configuration checks; request a separate RTL/SDK compatibility decision before changing discovery.",
+      "applies_to": "TINY V2.2 SPI0 path in the reviewed v0.2 source",
+      "trigger": "Relying only on CAPABILITY bit 7 to discover TINY SPI DMA.",
+      "impact": "The bit reads zero although TINY connects the DMA admission/readiness path.",
+      "workaround": "Use the reviewed TINY integration contract and retain version/configuration checks; request a separate RTL/SDK compatibility decision before changing discovery.",
       "evidence": "Current instance and register source review; historical SPI acceptance retains its original revision/profile.",
       "sources": [
         "rtl/ip/serial/spi_reg.sv",
@@ -1924,7 +1924,7 @@
     {
       "id": "TINY-DS-E03",
       "title": "Functional PLL profiles are not a physical operating qualification",
-      "applies_to": "Tiny ICS55 main reference; R2-P7 policy",
+      "applies_to": "TINY ICS55 main reference; R2-P7 policy",
       "trigger": "Treating a functional R2-P7 PLL192/PLL240 selection or a calculated curve as a timing-qualified SYS operating point.",
       "impact": "The RTL supports conditional drain/park/qualify/commit transitions; this does not establish final timing closure, board margin, analog lock or measured power.",
       "workaround": "Boot in SAFE24 with the PLL off. Use R2-P7 capability, lock, drain and recovery checks for a requested transition; require matching timing/physical evidence before publishing an operating rating.",

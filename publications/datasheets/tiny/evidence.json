@@ -37,7 +37,7 @@
     ],
     [
       "Discovery discrepancies",
-      "DMA max-burst readback truncates 16 to zero. SPI CAPABILITY bit 7 reads zero although Tiny connects the V2.2 DMA path.",
+      "DMA max-burst readback truncates 16 to zero. SPI CAPABILITY bit 7 reads zero although TINY connects the V2.2 DMA path.",
       "Preserve raw readback and actual integration separately; changes to RTL or HAL require a separate engineering task."
     ]
   ],

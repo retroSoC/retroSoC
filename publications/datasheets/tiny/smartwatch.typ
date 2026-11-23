@@ -111,7 +111,7 @@
     print(91, 43.25, links.memory.bus, anchor: "west")
 
     box(61, 46, 113, 165, domain-fill.system, weight: 0.9pt)
-    print(87, 52, text(size: 11pt, weight: "bold")[retroSoC Tiny Gen1])
+    print(87, 52, text(size: 11pt, weight: "bold")[retroSoC TINY Gen1])
     print(87, 57.5, [Host microcontroller])
     card(64, 63, 110, 87, white, (
       title("Hazard3 " + model.hardware_isa),

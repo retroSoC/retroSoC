@@ -1,9 +1,9 @@
-# Tiny datasheet layout supplement
+# TINY datasheet layout supplement
 
 ## Functional IP figure revision
 
 Apply the shared [v2 IP figure standard](../../ip-block-diagrams.md) to all 23
-Tiny primary figures and their details. Display the selected Tiny instances and
+TINY primary figures and their details. Display the selected TINY instances and
 local functional logic, including lifecycle/clock/reset limits. Thin solid
 payload/control arrows use explicit source-bound endpoints and channels;
 segments are at least 4 mm, with at most four turns. Mark actual fanout with a
@@ -12,12 +12,12 @@ line and text footprints. Keep 9 pt text and the 172 x 200 mm frame limit. Other
 figure families retain their conventions and selected-product facts.
 Check the named functional port assignment inside each IP, not only its outer
 module, and keep every label at least 1 mm clear of the IP border. The source
-and geometry audits enforce both rules; Tiny SYSCTRL separates APB decode,
+and geometry audits enforce both rules; TINY SYSCTRL separates APB decode,
 first-fault capture, TEST_STATUS and the AON RCU bridge without adding RTL.
 
-Tiny follows the reviewed [Mini visual language](../style.md), but owns an
+TINY follows the reviewed [Mini visual language](../style.md), but owns an
 independent [style implementation](style.typ). This addition does not edit,
-import or reflow Mini's template. Changes to Tiny must preserve the publication
+import or reflow Mini's template. Changes to TINY must preserve the publication
 isolation boundary rather than inserting fake Mini/HP data into its model.
 
 Use A4 portrait, 19 mm horizontal margins, a 172 mm body, 10.5 pt Inter body,
@@ -27,7 +27,10 @@ directories and underlined links follow the approved layout. Short critical
 phrases use true Inter Bold, not an extra font-weight increment. Code remains
 regular. Continuation notices retain the existing 8.5 pt exception.
 
-The cover title is `retroSoC Tiny` (30 pt) / `Gen1` (23 pt). The 13 pt positioning
+Write the product name as `TINY` in the book, figure exports, bookmarks and
+PDF metadata. Use the canonical spelling of referenced paths and identifiers.
+
+The cover title is `retroSoC TINY` (30 pt) / `Gen1` (23 pt). The 13 pt positioning
 line is `An Open-Source, Single-Core RISC-V MCU`. The Rill bilingual metadata,
 version/date, author email and maintainer retain the established two-line grid.
 Keep the right-hand title area empty for a logo. The Chinese label uses the
@@ -41,13 +44,13 @@ Every IP starts on a new page. Shared UART layouts have one canonical reference
 with instance-specific address, IRQ and software qualifications. GPIO views and
 DMA/PWM repeated groups preserve exact base/stride/index formulas. A constant
 zero capability field must not be mislabeled reserved when it has defined
-semantics, such as Tiny's truncated DMA maximum-burst discovery field.
+semantics, such as TINY's truncated DMA maximum-burst discovery field.
 
 Use the [shared IP drawing standard](../../ip-block-diagrams.md) and locked
 CeTZ 0.5.2 for all 23 IP primary diagrams and their details. The system media
 figure uses Circuiteria. Formats use Bytefield and storage diagrams use
 Blockcell. CeTZ also owns the system fabric, clock tree, overview, connectivity matrix and
-software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; Tiny has no need to invent compact bus CDC
+software workflows; retain the existing locked waveform renderer. Keep labels at least 9 pt; TINY has no need to invent compact bus CDC
 boxes. Explain diagram abstraction: functional control reach is not a complete
 netlist, and representative waveforms are not measured cycle timings. Register
 bit layouts and the source-derived 64-byte DMA diagram must match their tables.
@@ -64,7 +67,7 @@ RCU uses a SYSCTRL subregion address card, with one canonical definition per
 absolute address in the global index. Main and compatibility profile facts
 remain distinct even when their digital layout is identical.
 
-Use the current Mini closing-page visual language in Tiny's independent
+Use the current Mini closing-page visual language in TINY's independent
 `closing.typ`: one final A4 page, bottom-aligned logo reservation and reviewed
 notice, with no running header/footer or printed page number. Its paired role
 markers are hashed in the manifest; they cannot exempt any ordinary page.
@@ -100,9 +103,9 @@ The system media Circuiteria figure uses thin rounded blocks,
 solid data and dashed control paths have horizontal labels on white backing.
 Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
-cache, pad or external-memory restrictions into Tiny captions.
+cache, pad or external-memory restrictions into TINY captions.
 
-Place Tiny Gen1 feature highlights on a dedicated portrait page after the
+Place TINY Gen1 feature highlights on a dedicated portrait page after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
 9 pt or larger. Keep the chip mark and empty symbol frames illustrative.
@@ -117,7 +120,7 @@ target rows. Open circles mark structural fabric connections. Draw separate
 AXI arrivals for B0–B3 in the shared SRAM block. Keep the XPI memory CDC and
 the MEM-domain register bridge on separate routes into the XPI controller.
 Group the independent APB4 targets by clock domain. Keep the caption,
-`circuit-system-fabric` anchor, and reference to the Tiny connection matrix.
+`circuit-system-fabric` anchor, and reference to the TINY connection matrix.
 
 ### Address map
 
@@ -168,7 +171,7 @@ Place their text clear of the wires so the domain colors remain visible.
 
 Keep the AXI width on the bus or bridge symbol. Use wire labels for function
 and ownership. Place grouped JTAG, SDIO0, XPI, I2S and DVP signals near their
-interfaces, with names bound to Tiny's fixed pad and alternate-function routes.
+interfaces, with names bound to TINY's fixed pad and alternate-function routes.
 Use the left margin beside the PCLK rows for GPIO, UART0, I2C0, SPI0, PWM and
 WS2812 signal groups. Mark GPIO alternate functions with asterisks and keep
 their leaders clear of the APB4 branches.
@@ -192,14 +195,14 @@ Use explicit shared and not-applicable coverage in the diagram inventory.
 ## 2026-11-14 commercial-reference supplement
 
 The [shared specification standard](../../specifications/README.md) is normative
-for states, provenance, reference blocks, curves and replacement. Keep Tiny
+for states, provenance, reference blocks, curves and replacement. Keep TINY
 v0.2 DRAFT / Gen1 / ICS55-main / IHP130-compatibility independent of Mini.
 The current reviewed source is the frozen 2026-11-14 dev commit.
 
-QFN64 is Tiny's confirmed package family with 64 frozen perimeter assignments;
+QFN64 is TINY's confirmed package family with 64 frozen perimeter assignments;
 EP is separate and unnumbered. The preferred 9 x 9 mm / 0.5 mm pitch planning
 geometry remains Reference Only until supplier outline, die fit, bond map,
-metallurgy and assembly approval. No other current Tiny package is advertised.
+metallurgy and assembly approval. No other current TINY package is advertised.
 Use ADI UP64 05-08-1705 Rev C as one coherent outline/land-pattern reference.
 Top pin 1 is upper left; numbering is counterclockwise. Bottom mirrors x; PCB
 component view follows top. Test uniqueness, mirror, pitch, EP and pad spans.
@@ -244,7 +247,7 @@ the two mode columns. Use the pinout's mode colors in the header, 9 pt Inter
 text and 4 pt cell insets. Set column widths to 9, 26, 10, 24, 42, 33 and 28 mm.
 Print the complete mode name and its direction on separate lines. Use Power
 and Ground as roles for the rail and return terminals. Use power rail,
-power-rail voltage and power sequencing in the relevant Tiny text and figures.
+power-rail voltage and power sequencing in the relevant TINY text and figures.
 
 #### Numbered, mechanical and assembly views
 
@@ -287,7 +290,7 @@ the user feed arrow pointing right. Draw the selected Pin 1 quadrant from the
 source record. Anchor tape width to the edges, pitch to adjacent pocket centers,
 pocket dimensions to the cavity edges, and depth from the web surface to the
 pocket floor. Anchor reel diameter to the outer rim and width to the outer
-flange faces. Label unpublished geometry as schematic and keep Tiny's supplier
+flange faces. Label unpublished geometry as schematic and keep TINY's supplier
 dimensions, orientation, tolerances, hub, bore and pack quantity TBD.
 
 Show the outside carton with an open lid in an isometric plate no larger than
@@ -295,16 +298,16 @@ Show the outside carton with an open lid in an isometric plate no larger than
 dimension and extension lines. Anchor L and W to the outside bottom edges and H
 to the bottom and lid seating plane at the same corner. Label the open lid and
 folds as schematic. Use the same nominal dimensions in the plate and table.
-Reuse the reel's SPQ for the reference part, keep Tiny's carton drawing and
+Reuse the reel's SPQ for the reference part, keep TINY's carton drawing and
 contents per carton TBD, and record the carton-specific source locator. Export
 the plate as `qfn-reel-box` in SVG and PDF.
 
 Use a schematic, unticked time axis for the reflow curve. Derive its temperature
 levels from the table and align the interval arrows with the soak, liquidus and
 near-peak crossings. Identify the peak's package thickness class and the source's
-classification and preconditioning scope. Tiny's package limits, MSL and board
+classification and preconditioning scope. TINY's package limits, MSL and board
 profile require product evidence. Maintain nominal values and bounds in the
-Tiny parameter catalog and source page, date and fingerprint in the Tiny source
+TINY parameter catalog and source page, date and fingerprint in the TINY source
 catalog. Export the same plates as standalone SVG and PDF and verify the English
 labels, dimensions and grayscale differentiation at 144 dpi.
 
@@ -315,7 +318,7 @@ A/B/C/D labels do not establish independent qualified voltage domains.
 
 Keep uppercase-only Contents suffix emphasis, with PPALITE and CRYPTO suffixes.
 Architecture wire labels remain transparent. Field captions include IP context.
-Tiny now emits paired change markers and their manifest hash for the shared
+TINY now emits paired change markers and their manifest hash for the shared
 change-page report. PLL192/PLL240 are conditional functional R2-P7 profiles. SAFE24 boots with the
 PLL off; runtime switching requires backend capability, digital lock and the
 drain/park/commit protocol. No qualified physical operating rate is implied.

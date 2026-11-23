@@ -44,7 +44,7 @@ def rcu_registers(fact: dict, root: Path) -> dict:
                          offset=row["offset"], group="main", width=32, access=row["access"], reset=reset,
                          description=row["description"], fields=fields, source=sv,
                          line=definitions[:definitions.index("`define APB4_TINY_RCU__" + row["name"] + " ")].count("\n") + 1,
-                         c_source=header, review=None, readback=["Tiny SYSCTRL AON register decode"]))
+                         c_source=header, review=None, readback=["TINY SYSCTRL AON register decode"]))
     return dict(id="rcu", groups=[dict(id="main", title="RCU offsets relative to SYSCTRL", base=0, stride=0, count=1)],
                 registers=rows, document="docs/ip/tiny-soc-r2-clock-reset.md",
                 sources=[SYSCTRL, sv, header, "crt/include/retrosoc/hal/rcu.h", "crt/src/hal/rcu.c"])
