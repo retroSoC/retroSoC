@@ -30,7 +30,7 @@
     #link("https://github.com/retroSoC/retroSoC")[https://github.com/retroSoC/retroSoC]
   ]
   #change-end("closing-page")
-  #change-end(doc.change_prefix + "product-name")
+  #change-end("tiny-v02-uppercase-name-20261123-product-name")
   #context metadata((kind:"publication-closing-end",page:here().page(),
     total_pages:counter(page).final().first()))
 ]

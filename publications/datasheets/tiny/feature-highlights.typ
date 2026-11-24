@@ -64,13 +64,37 @@
   label(186.5, 586, "Audio capture and playback", size: 9.25pt, weight: 600)
   label(186.5, 619, "Camera preview on SPI LCD", size: 9.25pt, weight: 600)
 
-  // The reserved logo area and chip mark are illustrative artwork.
+  // The chip labels and reserved logo areas are illustrative artwork.
   let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
   panel(456, 222, 289, 289, fill: chip-fill, radius: 0, stroke: 0.55pt + rgb("#525158"))
-  frame((511, -317), (575, -384), stroke: 0.65pt + rgb("#D1CDD9"))
-  label(637, 328, "R1", size: 30pt, weight: 650, paint: rgb("#FAFAFB"), tracking: -0.022em)
-  label(600.5, 404, "TINY", size: 16pt, weight: 650,
-    paint: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"))
+  let logo-outline = 0.65pt + rgb("#D1CDD9")
+  frame((474, -240), (536, -272), stroke: logo-outline)
+  frame((544, -240), (620, -272), stroke: logo-outline)
+  panel(631, 240, 96, 32, fill: rgb("#EAD7FB"), radius: 8)
+  content((679, -256), box(text(
+    font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
+    top-edge: "bounds", bottom-edge: "bounds", "Edge AI",
+  )), anchor: "center")
+
+  let chip-mark = {
+    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "baseline")
+    let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
+    // Limit the purple gradient to the product word within the shared baseline.
+    let product = box(text(size: 16pt, weight: 650,
+      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), "TINY"))
+    box(model + h(1.8mm) + product)
+  }
+  // Anchor the model line at its existing position independently of the copy below it.
+  content((474, -381.6234), chip-mark, anchor: "north-west")
+
+  let chip-description = {
+    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "descender")
+    stack(dir: ttb, spacing: 0.8mm,
+      box(text(size: 10pt, weight: 500, "RISC-V AI MCU")),
+      box(text(size: 6pt, weight: 400, "Open Silicon Design")),
+    )
+  }
+  content((474, -447.2), chip-description, anchor: "north-west")
   label(600.5, 578, "Two alternate modes")
   accent(600.5, 605, str(data.gpio.len()) + " GPIOs", 19pt)
 

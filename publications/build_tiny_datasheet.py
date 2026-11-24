@@ -378,7 +378,8 @@ def check_pdf(pdf: Path, data: dict) -> dict:
         [r for r in regions if r.get("kind") == "scientific-script"], data["scientific"]
     )
     layout = read(pdf.parent / "ip-pages.json")
-    register_count = validate_rendered_registers(data, read(pdf.parent / "layout.json"))
+    rendered_items = read(pdf.parent / "layout.json")
+    register_count = validate_rendered_registers(data, rendered_items)
     starts = [r["id"] for r in layout if r["kind"] == "ip-start"]
     ends = [r["id"] for r in layout if r["kind"] == "ip-end"]
     if starts != ends or starts != [r["id"] for r in data["chapter_index"]]:
@@ -397,7 +398,7 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     validate_chapter_pages(
         read(pdf.parent / "document-structure.json"), layout, data["chapter_index"]
     )
-    validate_rendered(data["illustrations"], read(pdf.parent / "layout.json"))
+    validate_rendered(data["illustrations"], rendered_items)
     if read(pdf.parent / "diagram-coverage.json") != diagram_coverage(
         data["illustrations"], read(ROOT / BOOK / "navigation-contract.json")
     ):
@@ -448,8 +449,25 @@ def check_pdf(pdf: Path, data: dict) -> dict:
             descriptor = child.get("/FontDescriptor", {}).get_object()
             if not any(key in descriptor for key in ("/FontFile", "/FontFile2", "/FontFile3")):
                 raise ValueError("Tiny font is not embedded")
+    chip_figure_page = next(
+        (
+            row["page"]
+            for row in rendered_items
+            if isinstance(row, dict)
+            and row.get("kind") == "tiny-diagram"
+            and row.get("id") == "tiny-gen1-highlights"
+        ),
+        None,
+    )
     with pdfplumber.open(pdf) as rendered:
         for page in rendered.pages:
+            matches = (
+                page.search("Open Silicon Design", regex=False)
+                if page.page_number == chip_figure_page
+                else []
+            )
+            # The chip inscription uses small type within the illustration.
+            chip_inscription = matches[0]["chars"] if len(matches) == 1 else ()
             for char in page.chars:
                 if not char["text"].strip():
                     continue
@@ -472,7 +490,10 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                     and abs(matrix[2]) > 1e-8
                 )
                 size = char["width"] if quarter_turn else char["size"]
-                if size < (8.45 if continuation else 8.95) and not scientific.script_allowed(
+                minimum_size = 8.45 if continuation else 8.95
+                if char in chip_inscription:
+                    minimum_size = 5.95
+                if size < minimum_size and not scientific.script_allowed(
                     char, page.page_number, regions
                 ):
                     raise ValueError(

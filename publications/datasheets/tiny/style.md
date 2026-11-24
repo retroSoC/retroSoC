@@ -108,7 +108,8 @@ cache, pad or external-memory restrictions into TINY captions.
 Place TINY Gen1 feature highlights on a dedicated portrait page after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
-9 pt or larger. Keep the chip mark and empty symbol frames illustrative.
+9 pt or larger. Use 6 pt for the `Open Silicon Design` inscription on the chip.
+Keep the chip mark and empty symbol frames illustrative.
 Use the shared functional data for the ISA, DMA, SRAM and GPIO quantities.
 The integrated figure and the standalone SVG and PDF use the same vector
 source. Note the shared I²S and DVP GPIOs in the figure explanation.
