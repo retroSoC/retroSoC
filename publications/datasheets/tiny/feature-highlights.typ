@@ -7,6 +7,7 @@
 #let detail-ink = rgb("#171717")
 #let violet = gradient.linear(rgb("#C392F7"), rgb("#8345DC"), angle: 0deg, relative: "parent")
 #let schematic-stroke = 0.55pt + rgb("#9D64DF")
+#let chip-logos = json("chip-logo-outlines.json")
 
 #let feature-highlights(data) = cetz.canvas(length: unit, {
   import cetz.draw: content, line, rect as frame
@@ -64,12 +65,22 @@
   label(186.5, 586, "Audio capture and playback", size: 9.25pt, weight: 600)
   label(186.5, 619, "Camera preview on SPI LCD", size: 9.25pt, weight: 600)
 
-  // The chip labels and reserved logo areas are illustrative artwork.
+  // The logo paths retain the circuit cutouts and the wordmark counters.
+  let chip-logo(cx, slot-width, logo) = {
+    let scale = calc.min(slot-width / logo.width, 32 / logo.height) * unit
+    let commands = logo.rings.map(ring => {
+      let points = ring.map(p => (p.at(0) * scale, p.at(1) * scale))
+      (curve.move(points.first()),) + points.slice(1).map(p => curve.line(p)) + (curve.close(),)
+    }).flatten()
+    content((cx, -256), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: "center")
+  }
+
+  // The chip labels and marks are illustrative artwork.
   let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
   panel(456, 222, 289, 289, fill: chip-fill, radius: 0, stroke: 0.55pt + rgb("#525158"))
-  let logo-outline = 0.65pt + rgb("#D1CDD9")
-  frame((474, -240), (536, -272), stroke: logo-outline)
-  frame((544, -240), (620, -272), stroke: logo-outline)
+  // Align the ECOS disc with the visible R1 edge and leave a 1.65 mm gap to ICsprout.
+  chip-logo(494.32432, 62, chip-logos.ecos)
+  chip-logo(559.82048, 76, chip-logos.icsprout)
   panel(631, 240, 96, 32, fill: rgb("#EAD7FB"), radius: 8)
   content((679, -256), box(text(
     font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
