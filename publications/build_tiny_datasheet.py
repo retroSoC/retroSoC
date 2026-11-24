@@ -231,9 +231,15 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
         raise ValueError("Tiny Typst build failed or warned:\n" + result.stderr)
     query = (
         '(headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,label:repr(h.at("label",default:none)),page:h.location().page())),'
-        "items:query(metadata).map(it=>it.value),regions:query(<table-continuation-region>).map(region=>{"
-        'let pos=region.location().position();(kind:"table-continuation",page:pos.page,x:pos.x.pt(),y:pos.y.pt(),'
-        "width:region.width.length.pt(),height:region.height.length.pt())}))"
+        "items:query(metadata).map(it=>it.value),"
+        "regions:query(selector(<table-continuation-region>).or(<tiny-cover-chip-region>)).map(region=>{"
+        'let kind=if region.at("label")==<tiny-cover-chip-region>{"cover-chip"}else{"table-continuation"};'
+        "let pos=region.location().position();"
+        "let bounds=(kind:kind,page:pos.page,x:pos.x.pt(),y:pos.y.pt(),"
+        "width:region.width.length.pt(),height:region.height.length.pt());"
+        'if kind=="cover-chip"{let scales=query(<tiny-cover-chip-scale>);'
+        'assert(scales.len()==1,message:"TINY cover chip needs one scale");'
+        "bounds+(scale:scales.first().value)}else{bounds}}))"
     )
     from publications import scientific_reference as scientific
 
@@ -330,6 +336,31 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     return pdf
 
 
+def cover_chip_type_limits(page, region: dict) -> list[tuple[list[dict], float]]:
+    """Allow the three scaled inscriptions inside the cover chip."""
+    scale = region.get("scale")
+    if not isinstance(scale, (int, float)) or not 0 < scale < 1:
+        raise ValueError("Tiny cover chip scale must be a fraction between zero and one")
+    limits = []
+    for label, native_size in (("Edge AI", 9), ("RISC-V AI MCU", 10), ("Open Silicon Design", 6)):
+        matches = [
+            row
+            for row in page.search(label, regex=False)
+            if row["x0"] >= region["x"]
+            and row["x1"] <= region["x"] + region["width"]
+            and row["top"] >= region["y"]
+            and row["bottom"] <= region["y"] + region["height"]
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"Tiny cover chip requires one {label!r} inscription inside the artwork")
+        expected = native_size * scale
+        glyphs = matches[0]["chars"]
+        if any(abs(glyph["size"] - expected) > 0.05 for glyph in glyphs if glyph["text"].strip()):
+            raise ValueError(f"Tiny cover chip inscription {label!r} must scale to {expected:.2f} pt")
+        limits.append((glyphs, expected - 0.05))
+    return limits
+
+
 def check_pdf(pdf: Path, data: dict) -> dict:
     from pypdf import PdfReader
     import pdfplumber
@@ -371,6 +402,10 @@ def check_pdf(pdf: Path, data: dict) -> dict:
         if sha256(pdf.parent / filename) != manifest[key]:
             raise ValueError(f"Tiny layout record changed: {filename}")
     regions = read(pdf.parent / "layout-regions.json")
+    cover_chips = [region for region in regions if region["kind"] == "cover-chip"]
+    if len(cover_chips) != 1 or cover_chips[0]["page"] != 1:
+        raise ValueError("Tiny requires one chip illustration on the cover")
+    cover_chip = cover_chips[0]
     from publications import scientific_reference as scientific
 
     scientific.verify_audit(pdf.parent, manifest, data)
@@ -461,13 +496,13 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     )
     with pdfplumber.open(pdf) as rendered:
         for page in rendered.pages:
-            matches = (
-                page.search("Open Silicon Design", regex=False)
-                if page.page_number == chip_figure_page
-                else []
-            )
-            # The chip inscription uses small type within the illustration.
-            chip_inscription = matches[0]["chars"] if len(matches) == 1 else ()
+            chip_limits = []
+            if page.page_number == cover_chip["page"]:
+                chip_limits = cover_chip_type_limits(page, cover_chip)
+            elif page.page_number == chip_figure_page:
+                matches = page.search("Open Silicon Design", regex=False)
+                if len(matches) == 1:
+                    chip_limits = [(matches[0]["chars"], 5.95)]
             for char in page.chars:
                 if not char["text"].strip():
                     continue
@@ -490,9 +525,10 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                     and abs(matrix[2]) > 1e-8
                 )
                 size = char["width"] if quarter_turn else char["size"]
-                minimum_size = 8.45 if continuation else 8.95
-                if char in chip_inscription:
-                    minimum_size = 5.95
+                minimum_size = next(
+                    (limit for glyphs, limit in chip_limits if char in glyphs),
+                    8.45 if continuation else 8.95,
+                )
                 if size < minimum_size and not scientific.script_allowed(
                     char, page.page_number, regions
                 ):
