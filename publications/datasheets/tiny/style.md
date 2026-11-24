@@ -33,8 +33,11 @@ PDF metadata. Use the canonical spelling of referenced paths and identifiers.
 The cover title is `retroSoC TINY` (30 pt) / `Gen1` (23 pt). The 13 pt positioning
 line is `An Open-Source, Single-Core RISC-V MCU`. The Rill bilingual metadata,
 version/date, author email and maintainer retain the established two-line grid.
-Keep the right-hand title area empty for a logo. The Chinese label uses the
-locked Noto CJK Bold and the same cap-edge compensation as the approved cover.
+Place the square chip artwork in the right-hand title area. Align its visible
+top with the top of `PRODUCT DATASHEET / DRAFT` and its right edge with the end
+of the author line. Anchor its bottom 3 mm above the signature cell without
+consuming space in the title layout. The Chinese label uses the locked Noto
+CJK Bold and the same cap-edge compensation as the approved cover.
 
 Available is full pale gold; Functional uses a vertical left-half fill;
 Reproduced/Tapedout are empty. Marks remain manually controlled prototype status,
@@ -108,8 +111,12 @@ cache, pad or external-memory restrictions into TINY captions.
 Place TINY Gen1 feature highlights on a dedicated portrait page after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
-9 pt or larger. Use 6 pt for the `Open Silicon Design` inscription on the chip.
-Keep the chip mark and empty symbol frames illustrative.
+9 pt or larger. The Figure 2 chip uses 6 pt for its `Open Silicon Design`
+inscription. On the cover, scale that complete vector chip, including its
+outline, typography and marks, to the 33.55 mm square. The cover chip's
+`Edge AI`, `RISC-V AI MCU` and `Open Silicon Design` inscriptions may use their
+scaled sizes of approximately 7.26, 8.06 and 4.84 pt within the marked chip
+region. Keep the chip mark and empty symbol frames illustrative.
 Use the shared functional data for the ISA, DMA, SRAM and GPIO quantities.
 The integrated figure and the standalone SVG and PDF use the same vector
 source. Note the shared I²S and DVP GPIOs in the figure explanation.

@@ -1,23 +1,86 @@
 #import "@preview/cetz:0.5.2" as cetz
 
-// The design coordinates follow the 1200 × 674 reference. All geometry uses
-// the same scale at the 172 mm publication width.
+// Figure 2 uses the 1200 × 674 design coordinates at 172 mm wide.
 #let unit = 172mm / 1200
 #let card-fill = rgb("#EDEDED")
 #let detail-ink = rgb("#171717")
 #let violet = gradient.linear(rgb("#C392F7"), rgb("#8345DC"), angle: 0deg, relative: "parent")
 #let schematic-stroke = 0.55pt + rgb("#9D64DF")
 #let chip-logos = json("chip-logo-outlines.json")
+#let chip-side = 289
+#let chip-edge = 0.55pt
+// Match the visible top of the status line with the signature fixing the bottom.
+#let cover-chip-size = 33.552375mm
+
+#let panel(x, y, w, h, fill: card-fill, radius: 24, stroke: none) = {
+  cetz.draw.content((x, -y), box(rect(
+    width: w * unit, height: h * unit, radius: radius * unit,
+    fill: fill, stroke: stroke, inset: 0pt,
+  )), anchor: "north-west")
+}
+
+#let draw-chip(x, y) = {
+  import cetz.draw: content
+
+  // The logo paths retain the circuit cutouts and the wordmark counters.
+  let chip-logo(cx, slot-width, logo) = {
+    let scale = calc.min(slot-width / logo.width, 32 / logo.height) * unit
+    let commands = logo.rings.map(ring => {
+      let points = ring.map(p => (p.at(0) * scale, p.at(1) * scale))
+      (curve.move(points.first()),) + points.slice(1).map(p => curve.line(p)) + (curve.close(),)
+    }).flatten()
+    content((x + cx, -y - 34), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: "center")
+  }
+
+  // The chip labels and marks are illustrative artwork.
+  let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
+  panel(x, y, chip-side, chip-side, fill: chip-fill, radius: 0, stroke: chip-edge + rgb("#525158"))
+  // Figure 2's disc aligns with the visible R1 edge, 1.65 mm from ICsprout.
+  chip-logo(38.32432, 62, chip-logos.ecos)
+  chip-logo(103.82048, 76, chip-logos.icsprout)
+  panel(x + 175, y + 18, 96, 32, fill: rgb("#EAD7FB"), radius: 8)
+  content((x + 223, -y - 34), box(text(
+    font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
+    top-edge: "bounds", bottom-edge: "bounds", "Edge AI",
+  )), anchor: "center")
+
+  let chip-mark = {
+    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "baseline")
+    let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
+    // Limit the purple gradient to the product word within the shared baseline.
+    let product = box(text(size: 16pt, weight: 650,
+      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), "TINY"))
+    box(model + h(1.8mm) + product)
+  }
+  content((x + 18, -y - 159.6234), chip-mark, anchor: "north-west")
+
+  let chip-description = {
+    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "descender")
+    stack(dir: ttb, spacing: 0.8mm,
+      box(text(size: 10pt, weight: 500, "RISC-V AI MCU")),
+      box(text(size: 6pt, weight: 400, "Open Silicon Design")),
+    )
+  }
+  content((x + 18, -y - 225.2), chip-description, anchor: "north-west")
+}
+
+#let cover-chip() = {
+  // Include the outline in the master bounds before scaling the complete chip.
+  let native-size = chip-side * unit + chip-edge
+  let artwork = cetz.canvas(length: unit, draw-chip(0, 0))
+  let master = block(width: native-size, height: native-size, above: 0pt, below: 0pt)[
+    #place(top + left, dx: chip-edge / 2, dy: chip-edge / 2, artwork)
+  ]
+  let factor = cover-chip-size / native-size
+  [#block(width: cover-chip-size, height: cover-chip-size, above: 0pt, below: 0pt)[
+    #metadata(factor)<tiny-cover-chip-scale>
+    #place(top + left, scale(x: factor * 100%, y: factor * 100%, origin: top + left, reflow: true, master))
+  ]<tiny-cover-chip-region>]
+}
 
 #let feature-highlights(data) = cetz.canvas(length: unit, {
   import cetz.draw: content, line, rect as frame
 
-  let panel(x, y, w, h, fill: card-fill, radius: 24, stroke: none) = {
-    content((x, -y), box(rect(
-      width: w * unit, height: h * unit, radius: radius * unit,
-      fill: fill, stroke: stroke, inset: 0pt,
-    )), anchor: "north-west")
-  }
   let label(x, y, body, size: 9pt, weight: 500, paint: detail-ink, tracking: 0em) = {
     // A snug parent gives each label one continuous gradient across its glyphs.
     content((x, -y), box(text(
@@ -65,47 +128,7 @@
   label(186.5, 586, "Audio capture and playback", size: 9.25pt, weight: 600)
   label(186.5, 619, "Camera preview on SPI LCD", size: 9.25pt, weight: 600)
 
-  // The logo paths retain the circuit cutouts and the wordmark counters.
-  let chip-logo(cx, slot-width, logo) = {
-    let scale = calc.min(slot-width / logo.width, 32 / logo.height) * unit
-    let commands = logo.rings.map(ring => {
-      let points = ring.map(p => (p.at(0) * scale, p.at(1) * scale))
-      (curve.move(points.first()),) + points.slice(1).map(p => curve.line(p)) + (curve.close(),)
-    }).flatten()
-    content((cx, -256), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: "center")
-  }
-
-  // The chip labels and marks are illustrative artwork.
-  let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
-  panel(456, 222, 289, 289, fill: chip-fill, radius: 0, stroke: 0.55pt + rgb("#525158"))
-  // Align the ECOS disc with the visible R1 edge and leave a 1.65 mm gap to ICsprout.
-  chip-logo(494.32432, 62, chip-logos.ecos)
-  chip-logo(559.82048, 76, chip-logos.icsprout)
-  panel(631, 240, 96, 32, fill: rgb("#EAD7FB"), radius: 8)
-  content((679, -256), box(text(
-    font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
-    top-edge: "bounds", bottom-edge: "bounds", "Edge AI",
-  )), anchor: "center")
-
-  let chip-mark = {
-    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "baseline")
-    let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
-    // Limit the purple gradient to the product word within the shared baseline.
-    let product = box(text(size: 16pt, weight: 650,
-      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), "TINY"))
-    box(model + h(1.8mm) + product)
-  }
-  // Anchor the model line at its existing position independently of the copy below it.
-  content((474, -381.6234), chip-mark, anchor: "north-west")
-
-  let chip-description = {
-    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "descender")
-    stack(dir: ttb, spacing: 0.8mm,
-      box(text(size: 10pt, weight: 500, "RISC-V AI MCU")),
-      box(text(size: 6pt, weight: 400, "Open Silicon Design")),
-    )
-  }
-  content((474, -447.2), chip-description, anchor: "north-west")
+  draw-chip(456, 222)
   label(600.5, 578, "Two alternate modes")
   accent(600.5, 605, str(data.gpio.len()) + " GPIOs", 19pt)
 

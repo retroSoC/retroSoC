@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from publications.build_datasheet import validate_character_size  # noqa: E402
+from publications.build_tiny_datasheet import cover_chip_type_limits  # noqa: E402
 
 
 REGION = {"kind": "table-continuation", "page": 2,
@@ -78,3 +80,35 @@ def test_compact_exception_does_not_leak_into_other_text(changes, region):
 def test_compact_text_still_has_eight_point_floor():
     with pytest.raises(ValueError, match="smaller than 8 pt"):
         validate_character_size(character(size=7.8), 2, [COMPACT])
+
+
+@pytest.fixture
+def cover_chip_text():
+    region = {"kind": "cover-chip", "page": 1, "x": 54, "y": 60, "width": 95, "height": 95, "scale": 0.8}
+    rows = {
+        label: [character(size=size * region["scale"], chars=[character(size=size * region["scale"])])]
+        for label, size in (("Edge AI", 9), ("RISC-V AI MCU", 10), ("Open Silicon Design", 6))
+    }
+    page = SimpleNamespace(search=lambda label, **_: rows[label])
+    return page, region, rows
+
+
+def test_cover_limits_include_only_scaled_inscriptions_inside_chip(cover_chip_text):
+    page, region, rows = cover_chip_text
+    rows["Edge AI"].append(character(x0=10, x1=52, chars=[character(x0=10, x1=13, size=7.2)]))
+    limits = cover_chip_type_limits(page, region)
+    assert [glyphs for glyphs, _ in limits] == [
+        rows[label][0]["chars"] for label in ("Edge AI", "RISC-V AI MCU", "Open Silicon Design")
+    ]
+    assert [limit for _, limit in limits] == pytest.approx([7.15, 7.95, 4.75])
+
+
+@pytest.mark.parametrize("changes,message", [
+    ({"x1": 150}, "inside the artwork"),
+    ({"chars": [character(size=6)]}, "must scale to 4.80 pt"),
+])
+def test_cover_limits_reject_outside_or_unscaled_inscriptions(cover_chip_text, changes, message):
+    page, region, rows = cover_chip_text
+    rows["Open Silicon Design"][0].update(changes)
+    with pytest.raises(ValueError, match=message):
+        cover_chip_type_limits(page, region)
