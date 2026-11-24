@@ -89,12 +89,14 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
 #pagebreak()
 #v(1fr)
 #change-start("tiny-v02-overview-highlights-20261123-feature-highlights", "TINY Gen1 feature highlights", category: "added")
-#change-start(doc.change_prefix + "chip-mark", "Figure 2 chip markings and logo placeholders")
+#change-start("tiny-v02-chip-mark-20261124-chip-mark", "Figure 2 chip markings and logo placeholders")
+#change-start(doc.change_prefix + "chip-logos", "Figure 2 white ECOS and ICsprout logos")
 #block(width: 100%, breakable: false)[
   #diagram("tiny-gen1-highlights", feature-highlights(data), [TINY Gen1 feature highlights.],
     figure-label: "tiny-gen1-highlights")
   #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
 ]
-#change-end(doc.change_prefix + "chip-mark")
+#change-end(doc.change_prefix + "chip-logos")
+#change-end("tiny-v02-chip-mark-20261124-chip-mark")
 #change-end("tiny-v02-overview-highlights-20261123-feature-highlights")
 #v(1fr)
