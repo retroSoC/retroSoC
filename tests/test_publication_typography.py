@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from publications.build_datasheet import validate_character_size  # noqa: E402
-from publications.build_tiny_datasheet import cover_chip_type_limits  # noqa: E402
+from publications.build_tiny_datasheet import scaled_chip_type_limits  # noqa: E402
 
 
 REGION = {"kind": "table-continuation", "page": 2,
@@ -96,7 +96,7 @@ def cover_chip_text():
 def test_cover_limits_include_only_scaled_inscriptions_inside_chip(cover_chip_text):
     page, region, rows = cover_chip_text
     rows["Edge AI"].append(character(x0=10, x1=52, chars=[character(x0=10, x1=13, size=7.2)]))
-    limits = cover_chip_type_limits(page, region)
+    limits = scaled_chip_type_limits(page, region)
     assert [glyphs for glyphs, _ in limits] == [
         rows[label][0]["chars"] for label in ("Edge AI", "RISC-V AI MCU", "Open Silicon Design")
     ]
@@ -111,4 +111,21 @@ def test_cover_limits_reject_outside_or_unscaled_inscriptions(cover_chip_text, c
     page, region, rows = cover_chip_text
     rows["Open Silicon Design"][0].update(changes)
     with pytest.raises(ValueError, match=message):
-        cover_chip_type_limits(page, region)
+        scaled_chip_type_limits(page, region)
+
+
+def test_r1_soc_chip_type_limits_match_scaled_inscriptions(cover_chip_text):
+    page, region, rows = cover_chip_text
+    rows["Physical AI"] = rows.pop("Edge AI")
+    rows["RISC-V AI SoC"] = rows.pop("RISC-V AI MCU")
+    limits = scaled_chip_type_limits(page, region, "Physical AI", "RISC-V AI SoC")
+    assert [glyphs for glyphs, _ in limits] == [
+        rows[label][0]["chars"] for label in ("Physical AI", "RISC-V AI SoC", "Open Silicon Design")
+    ]
+
+
+def test_r1_soc_chip_type_limits_reject_mcu_badge(cover_chip_text):
+    _, region, rows = cover_chip_text
+    page = SimpleNamespace(search=lambda label, **_: rows.get(label, []))
+    with pytest.raises(ValueError, match="requires one 'Physical AI'"):
+        scaled_chip_type_limits(page, region, "Physical AI", "RISC-V AI SoC")

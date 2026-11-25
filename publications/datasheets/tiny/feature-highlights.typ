@@ -3,23 +3,25 @@
 // Figure 2 uses the 1200 × 674 design coordinates at 172 mm wide.
 #let unit = 172mm / 1200
 #let card-fill = rgb("#EDEDED")
+#let card-radius = 24
 #let detail-ink = rgb("#171717")
 #let violet = gradient.linear(rgb("#C392F7"), rgb("#8345DC"), angle: 0deg, relative: "parent")
 #let schematic-stroke = 0.55pt + rgb("#9D64DF")
 #let chip-logos = json("chip-logo-outlines.json")
 #let chip-side = 289
 #let chip-edge = 0.55pt
+#let chip-native-size = chip-side * unit + chip-edge
 // Match the visible top of the status line with the signature fixing the bottom.
 #let cover-chip-size = 33.552375mm
 
-#let panel(x, y, w, h, fill: card-fill, radius: 24, stroke: none) = {
+#let panel(x, y, w, h, fill: card-fill, radius: card-radius, stroke: none) = {
   cetz.draw.content((x, -y), box(rect(
     width: w * unit, height: h * unit, radius: radius * unit,
     fill: fill, stroke: stroke, inset: 0pt,
   )), anchor: "north-west")
 }
 
-#let draw-chip(x, y) = {
+#let draw-chip(x, y, product-name: "TINY", description: "RISC-V AI MCU", badge: "Edge AI") = {
   import cetz.draw: content
 
   // The logo paths retain the circuit cutouts and the wordmark counters.
@@ -38,10 +40,12 @@
   // Figure 2's disc aligns with the visible R1 edge, 1.65 mm from ICsprout.
   chip-logo(38.32432, 62, chip-logos.ecos)
   chip-logo(103.82048, 76, chip-logos.icsprout)
-  panel(x + 175, y + 18, 96, 32, fill: rgb("#EAD7FB"), radius: 8)
-  content((x + 223, -y - 34), box(text(
+  // The longer badge retains its text padding and clears the ICsprout mark.
+  let (badge-left, badge-width) = if badge == "Physical AI" { (149, 133) } else { (175, 96) }
+  panel(x + badge-left, y + 18, badge-width, 32, fill: rgb("#EAD7FB"), radius: 8)
+  content((x + badge-left + badge-width / 2, -y - 34), box(text(
     font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
-    top-edge: "bounds", bottom-edge: "bounds", "Edge AI",
+    top-edge: "bounds", bottom-edge: "bounds", badge,
   )), anchor: "center")
 
   let chip-mark = {
@@ -49,7 +53,7 @@
     let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
     // Limit the purple gradient to the product word within the shared baseline.
     let product = box(text(size: 16pt, weight: 650,
-      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), "TINY"))
+      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), product-name))
     box(model + h(1.8mm) + product)
   }
   content((x + 18, -y - 159.6234), chip-mark, anchor: "north-west")
@@ -57,25 +61,52 @@
   let chip-description = {
     set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "descender")
     stack(dir: ttb, spacing: 0.8mm,
-      box(text(size: 10pt, weight: 500, "RISC-V AI MCU")),
+      box(text(size: 10pt, weight: 500, description)),
       box(text(size: 6pt, weight: 400, "Open Silicon Design")),
     )
   }
   content((x + 18, -y - 225.2), chip-description, anchor: "north-west")
 }
 
-#let cover-chip() = {
+#let scaled-chip(size, ..variant) = {
   // Include the outline in the master bounds before scaling the complete chip.
-  let native-size = chip-side * unit + chip-edge
-  let artwork = cetz.canvas(length: unit, draw-chip(0, 0))
-  let master = block(width: native-size, height: native-size, above: 0pt, below: 0pt)[
+  let artwork = cetz.canvas(length: unit, draw-chip(0, 0, ..variant))
+  let master = block(width: chip-native-size, height: chip-native-size, above: 0pt, below: 0pt)[
     #place(top + left, dx: chip-edge / 2, dy: chip-edge / 2, artwork)
   ]
-  let factor = cover-chip-size / native-size
+  let factor = size / chip-native-size * 100%
+  scale(x: factor, y: factor, origin: top + left, reflow: true, master)
+}
+
+#let cover-chip() = {
   [#block(width: cover-chip-size, height: cover-chip-size, above: 0pt, below: 0pt)[
-    #metadata(factor)<tiny-cover-chip-scale>
-    #place(top + left, scale(x: factor * 100%, y: factor * 100%, origin: top + left, reflow: true, master))
+    #metadata(cover-chip-size / chip-native-size)<tiny-cover-chip-scale>
+    #place(top + left, scaled-chip(cover-chip-size))
   ]<tiny-cover-chip-region>]
+}
+
+#let r1-product-line(height) = {
+  let size = 24mm
+  let gap = 3mm
+  assert(height >= size + gap, message: "R1 product line must fit below Figure 2")
+
+  let group(products, description, badge) = rect(
+    width: 84mm, height: height, radius: card-radius * unit, stroke: none, fill: card-fill,
+    inset: (top: gap, left: gap, right: gap, bottom: 0pt),
+    align(top + left, grid(columns: (size, size, size), column-gutter: gap, ..products.map(product => [
+      #block(width: size, height: size, above: 0pt, below: 0pt)[
+        #place(top + left, scaled-chip(size, product-name: product, description: description, badge: badge))
+      ]<tiny-r1-chip-region>
+    ]))),
+  )
+
+  [#block(width: 172mm, height: height, above: 0pt, below: 0pt, breakable: false)[
+    #metadata(size / chip-native-size)<tiny-r1-chip-scale>
+    #place(top + left, grid(columns: (84mm, 84mm), column-gutter: 4mm,
+      group(("TINY", "MINI", "STD"), "RISC-V AI MCU", "Edge AI"),
+      group(("PRO", "MAX", "ULTRA"), "RISC-V AI SoC", "Physical AI"),
+    ))
+  ]<tiny-r1-product-line-region>]
 }
 
 #let feature-highlights(data) = cetz.canvas(length: unit, {

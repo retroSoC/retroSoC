@@ -381,6 +381,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
     native_owners = {
         "tiny-overview": "tiny-overview",
         "tiny-gen1-highlights": "tiny-overview",
+        "tiny-r1-product-line": "tiny-overview",
         "application-composition": "tiny-applications",
         "tiny-soc-functional": "tiny-core",
         "master-ownership": "tiny-master-ownership",

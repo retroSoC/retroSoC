@@ -217,7 +217,6 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
         "--creation-timestamp",
         str(epoch),
     ]
-    engineering_vectors = render_vectors(ROOT, out, data["specifications"], executable, options)
     ip_vectors = ip_blocks.export_vectors(ROOT, out, data, executable, options)
     result = subprocess.run(
         [executable, "compile", config["entrypoint"], str(pdf), *options],
@@ -232,13 +231,18 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     query = (
         '(headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,label:repr(h.at("label",default:none)),page:h.location().page())),'
         "items:query(metadata).map(it=>it.value),"
-        "regions:query(selector(<table-continuation-region>).or(<tiny-cover-chip-region>)).map(region=>{"
-        'let kind=if region.at("label")==<tiny-cover-chip-region>{"cover-chip"}else{"table-continuation"};'
+        "regions:query(selector(<table-continuation-region>).or("
+        "<tiny-cover-chip-region>,<tiny-r1-product-line-region>,<tiny-r1-chip-region>)).map(region=>{"
+        'let tag=region.at("label");'
+        'let kind=if tag==<tiny-cover-chip-region>{"cover-chip"}'
+        'else if tag==<tiny-r1-product-line-region>{"r1-product-line"}'
+        'else if tag==<tiny-r1-chip-region>{"r1-chip"}else{"table-continuation"};'
         "let pos=region.location().position();"
         "let bounds=(kind:kind,page:pos.page,x:pos.x.pt(),y:pos.y.pt(),"
         "width:region.width.length.pt(),height:region.height.length.pt());"
-        'if kind=="cover-chip"{let scales=query(<tiny-cover-chip-scale>);'
-        'assert(scales.len()==1,message:"TINY cover chip needs one scale");'
+        'if kind in ("cover-chip","r1-chip"){'
+        'let scales=query(if kind=="cover-chip"{<tiny-cover-chip-scale>}else{<tiny-r1-chip-scale>});'
+        'assert(scales.len()==1,message:"TINY chip artwork needs one scale per placement");'
         "bounds+(scale:scales.first().value)}else{bounds}}))"
     )
     from publications import scientific_reference as scientific
@@ -261,6 +265,12 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     validate_chapter_pages(layout["headings"], layout["items"], data["chapter_index"])
     validate_rendered(data["illustrations"], layout["items"])
     validate_rendered_registers(data, layout["items"])
+    lineup = [region for region in layout["regions"] if region["kind"] == "r1-product-line"]
+    if len(lineup) != 1 or lineup[0]["page"] != 3:
+        raise ValueError("Tiny R1 product line must fit on page 3")
+    engineering_vectors = render_vectors(
+        ROOT, out, data["specifications"], executable, options, r1_product_line_height=lineup[0]["height"],
+    )
     write(out / "document-structure.json", layout["headings"])
     write(out / "layout.json", layout["items"])
     write(out / "layout-regions.json", layout["regions"] + scientific.regions(layout, data))
@@ -336,27 +346,35 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     return pdf
 
 
-def cover_chip_type_limits(page, region: dict) -> list[tuple[list[dict], float]]:
-    """Allow the three scaled inscriptions inside the cover chip."""
+def inside_region(row: dict, region: dict) -> bool:
+    return (
+        row["x0"] >= region["x"]
+        and row["x1"] <= region["x"] + region["width"]
+        and row["top"] >= region["y"]
+        and row["bottom"] <= region["y"] + region["height"]
+    )
+
+
+def scaled_chip_type_limits(
+    page, region: dict, badge: str = "Edge AI", description: str = "RISC-V AI MCU",
+) -> list[tuple[list[dict], float]]:
+    """Check and allow the three scaled inscriptions inside one chip."""
     scale = region.get("scale")
     if not isinstance(scale, (int, float)) or not 0 < scale < 1:
-        raise ValueError("Tiny cover chip scale must be a fraction between zero and one")
+        raise ValueError("Tiny chip scale must be a fraction between zero and one")
     limits = []
-    for label, native_size in (("Edge AI", 9), ("RISC-V AI MCU", 10), ("Open Silicon Design", 6)):
+    for label, native_size in ((badge, 9), (description, 10), ("Open Silicon Design", 6)):
         matches = [
             row
             for row in page.search(label, regex=False)
-            if row["x0"] >= region["x"]
-            and row["x1"] <= region["x"] + region["width"]
-            and row["top"] >= region["y"]
-            and row["bottom"] <= region["y"] + region["height"]
+            if inside_region(row, region)
         ]
         if len(matches) != 1:
-            raise ValueError(f"Tiny cover chip requires one {label!r} inscription inside the artwork")
+            raise ValueError(f"Tiny chip requires one {label!r} inscription inside the artwork")
         expected = native_size * scale
         glyphs = matches[0]["chars"]
         if any(abs(glyph["size"] - expected) > 0.05 for glyph in glyphs if glyph["text"].strip()):
-            raise ValueError(f"Tiny cover chip inscription {label!r} must scale to {expected:.2f} pt")
+            raise ValueError(f"Tiny chip inscription {label!r} must scale to {expected:.2f} pt")
         limits.append((glyphs, expected - 0.05))
     return limits
 
@@ -406,6 +424,9 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     if len(cover_chips) != 1 or cover_chips[0]["page"] != 1:
         raise ValueError("Tiny requires one chip illustration on the cover")
     cover_chip = cover_chips[0]
+    lineup_chips = sorted((r for r in regions if r["kind"] == "r1-chip"), key=lambda r: r["x"])
+    if len(lineup_chips) != 6 or {r["page"] for r in lineup_chips} != {3}:
+        raise ValueError("Tiny requires six R1 product chips on page 3")
     from publications import scientific_reference as scientific
 
     scientific.verify_audit(pdf.parent, manifest, data)
@@ -498,11 +519,21 @@ def check_pdf(pdf: Path, data: dict) -> dict:
         for page in rendered.pages:
             chip_limits = []
             if page.page_number == cover_chip["page"]:
-                chip_limits = cover_chip_type_limits(page, cover_chip)
-            elif page.page_number == chip_figure_page:
-                matches = page.search("Open Silicon Design", regex=False)
-                if len(matches) == 1:
-                    chip_limits = [(matches[0]["chars"], 5.95)]
+                chip_limits = scaled_chip_type_limits(page, cover_chip)
+            elif page.page_number == 3:
+                products = ("TINY", "MINI", "STD", "PRO", "MAX", "ULTRA")
+                for i, (region, product) in enumerate(zip(lineup_chips, products)):
+                    if sum(inside_region(row, region) for row in page.search(product, regex=False)) != 1:
+                        raise ValueError(f"Tiny R1 product line requires {product} in position {i + 1}")
+                    badge, description = ("Edge AI", "RISC-V AI MCU") if i < 3 else ("Physical AI", "RISC-V AI SoC")
+                    chip_limits.extend(scaled_chip_type_limits(page, region, badge, description))
+                inscriptions = [
+                    row for row in page.search("Open Silicon Design", regex=False)
+                    if not any(inside_region(row, region) for region in lineup_chips)
+                ]
+                if chip_figure_page != 3 or len(inscriptions) != 1:
+                    raise ValueError("Tiny requires the Figure 2 chip inscription on page 3")
+                chip_limits.append((inscriptions[0]["chars"], 5.95))
             for char in page.chars:
                 if not char["text"].strip():
                     continue

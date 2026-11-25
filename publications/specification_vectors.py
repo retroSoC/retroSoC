@@ -7,7 +7,8 @@ import subprocess
 from publications.specification_reference import digest
 
 
-def render(root: Path, out: Path, spec: dict, executable: str, options: list[str]) -> dict:
+def render(root: Path, out: Path, spec: dict, executable: str, options: list[str],
+           *, r1_product_line_height: float | None = None) -> dict:
     destination = out / "engineering"
     destination.mkdir(exist_ok=True)
     expressions = {
@@ -35,10 +36,12 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
             "qfn-reel-box": 'reel-box(s)',
             "qfn-reflow": 'reflow(s)',
         })
+        if r1_product_line_height is not None:
+            expressions["tiny-r1-product-line"] = f"r1-product-line({r1_product_line_height:.9f}pt)"
     text = '#import "/publications/specifications/figures.typ": *\n'
     if spec["product"] == "tiny":
         text += '#import "/publications/datasheets/tiny/address-map.typ": address-map\n'
-        text += '#import "/publications/datasheets/tiny/feature-highlights.typ": feature-highlights\n'
+        text += '#import "/publications/datasheets/tiny/feature-highlights.typ": feature-highlights, r1-product-line\n'
         text += '#import "/publications/datasheets/tiny/smartwatch.typ": smartwatch\n'
         text += '#import "/publications/datasheets/tiny/package-figures.typ": *\n'
         text += '#import "/publications/datasheets/tiny/assembly-references.typ": carrier-tape, reel, reel-box, reflow\n'
