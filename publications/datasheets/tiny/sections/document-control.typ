@@ -31,7 +31,11 @@
  ([2026-11-24],[v0.2 DRAFT],[Reuse the Figure 2 chip artwork on the cover.]),
  ([2026-11-24],[v0.2 DRAFT],[Place the feature highlights and R1 product line illustrations together in the Overview.]),
  ([2026-11-25],[v0.2 DRAFT],[Apply warm-yellow accents to the PRO, MAX and ULTRA chip markings in Figure 3.]),
- ([2026-11-25],[v0.2 DRAFT],[Remove ICsprout from the cover chip and the Figure 3 product line.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-25],[v0.2 DRAFT],[Remove ICsprout from the cover chip and the Figure 3 product line.]),
+ ([2026-11-25],[v0.2 DRAFT],[Add positioning, highlights and development status for the six R1 products in Figure 3.]),
+ ([2026-11-25],[v0.2 DRAFT],[Align the R1 product cards and fit their descriptions and highlights to single lines.]),
+ ([2026-11-25],[v0.2 DRAFT],[Refine the R1 figure placement, card typography and shading.]),
+ ([2026-11-25],[v0.2 DRAFT],[Enlarge the six chip illustrations and product names in Figure 3 and align each status pill with its chip.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

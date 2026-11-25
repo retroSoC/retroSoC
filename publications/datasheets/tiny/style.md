@@ -122,13 +122,42 @@ The integrated figure and the standalone SVG and PDF use the same vector
 source. Note the shared I²S and DVP GPIOs in the figure explanation.
 
 Place the numbered R1 product line illustration below the feature highlights
-on the same page. Its two 84 mm gray panels are separated by 4 mm and share
-the feature-card fill and 3.44 mm corner radius. Size both panels to the
-remaining body height so their bottom edges reach the 20 mm bottom margin.
-Place three 24 mm vector chips across the top of each panel, with 3 mm gaps
-and insets. Scale the whole chip artwork. The six marked chip frames allow
-the scaled badge, descriptor and `Open Silicon Design` inscriptions near
-5.19, 5.77 and 3.46 pt. Apply the same panel height to the standalone figure.
+on the same page. Center the 178.4 mm plate against the 172 mm body for a
+3.2 mm overhang on each side. Offset the art by 2.1 mm below its body slot
+and allow up to 3 mm below that slot above the footer. Separate the 87.4 mm
+and 89.3 mm panels by 1.7 mm. Use a 128.5 mm panel height, a 19.5 mm heading
+band with about 8 mm of visible space below the group headings, and 33.6 mm
+cards with 2.15 mm vertical gaps. Use 3.8 mm panel and 3 mm card radii
+with softly shaded panels and white card gradients. Limit the
+plate height to 136.4 mm and set the 9 pt roadmap and concept note 3.6 mm
+below the panels.
+
+Use 20.4 pt Inter Bold for Embedded & Edge, 20 pt for Professional Compute
+and 12 pt Bold for the product name beside each chip. Align the chip and
+title 3.4 mm from the card top. Set the chip 2.1 mm from the left edge,
+leave 3 mm between the chip and the copy, and inset the copy 1 mm from the
+right edge. The copy widths are 50.8 mm and 52.7 mm in the two panels.
+Use separate purple and gold card palettes for the model, pill and bullets.
+Align the three highlights across each pair of cards. Align the bottom of the
+5.2 mm status pill with the chip outline, 29.9 mm from the card top. Use
+2.8 mm of horizontal padding on each side of the status text. Use 1.4 mm
+shaded dots and set the single-line highlights at 8.25 pt Inter with 4.6 mm
+line spacing. Use
+8.5 pt Semibold for status. Use 8.75 pt Semibold for positioning, with
+8.25 pt for MINI and 7.25 pt for ULTRA. Apply −0.025 em tracking to the
+entire ULTRA card title. Measure the title and highlight
+widths before placement. Limit compact type to the six marked copy regions
+and limit the 7.25 pt exception to the ULTRA positioning text.
+
+Render each 26.5 mm square by scaling the entire vector chip, including
+its outline, by the same factor on both axes. The badge, descriptor and
+`Open Silicon Design` inscriptions measure approximately 5.73, 6.37 and
+3.82 pt inside the marked chip regions.
+Validate the chip order top to bottom in each column, beginning with the left
+column. Purple denotes Embedded & Edge and warm yellow denotes Professional
+Compute. Use the product plan for STD roadmap targets and label each right-hand
+entry `Concept`. Render the same figure at the same height in the book and in
+its standalone SVG and PDF.
 
 The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
 at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.

@@ -232,11 +232,13 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
         '(headings:query(heading).map(h=>(level:h.level,outlined:h.outlined,title:h.body,label:repr(h.at("label",default:none)),page:h.location().page())),'
         "items:query(metadata).map(it=>it.value),"
         "regions:query(selector(<table-continuation-region>).or("
-        "<tiny-cover-chip-region>,<tiny-r1-product-line-region>,<tiny-r1-chip-region>)).map(region=>{"
+        "<tiny-cover-chip-region>,<tiny-r1-product-line-region>,<tiny-r1-chip-region>,"
+        "<tiny-r1-card-copy-region>)).map(region=>{"
         'let tag=region.at("label");'
         'let kind=if tag==<tiny-cover-chip-region>{"cover-chip"}'
         'else if tag==<tiny-r1-product-line-region>{"r1-product-line"}'
-        'else if tag==<tiny-r1-chip-region>{"r1-chip"}else{"table-continuation"};'
+        'else if tag==<tiny-r1-chip-region>{"r1-chip"}'
+        'else if tag==<tiny-r1-card-copy-region>{"r1-card-copy"}else{"table-continuation"};'
         "let pos=region.location().position();"
         "let bounds=(kind:kind,page:pos.page,x:pos.x.pt(),y:pos.y.pt(),"
         "width:region.width.length.pt(),height:region.height.length.pt());"
@@ -265,11 +267,10 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     validate_chapter_pages(layout["headings"], layout["items"], data["chapter_index"])
     validate_rendered(data["illustrations"], layout["items"])
     validate_rendered_registers(data, layout["items"])
-    lineup = [region for region in layout["regions"] if region["kind"] == "r1-product-line"]
-    if len(lineup) != 1 or lineup[0]["page"] != 3:
-        raise ValueError("Tiny R1 product line must fit on page 3")
+    lineup, chips = r1_product_line_regions(layout["regions"])
+    r1_card_copy_regions(layout["regions"], lineup, chips)
     engineering_vectors = render_vectors(
-        ROOT, out, data["specifications"], executable, options, r1_product_line_height=lineup[0]["height"],
+        ROOT, out, data["specifications"], executable, options, r1_product_line_height=lineup["height"],
     )
     write(out / "document-structure.json", layout["headings"])
     write(out / "layout.json", layout["items"])
@@ -346,6 +347,20 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     return pdf
 
 
+def r1_product_line_regions(regions: list[dict]) -> tuple[dict, list[dict]]:
+    figures = [region for region in regions if region["kind"] == "r1-product-line"]
+    if len(figures) != 1 or figures[0]["page"] != 3:
+        raise ValueError("Tiny R1 product line must fit on page 3")
+    figure = figures[0]
+    divider = figure["x"] + figure["width"] / 2
+    chips = [region for region in regions if region["kind"] == "r1-chip"]
+    left = sorted((chip for chip in chips if chip["x"] + chip["width"] <= divider), key=lambda chip: chip["y"])
+    right = sorted((chip for chip in chips if chip["x"] >= divider), key=lambda chip: chip["y"])
+    if len(chips) != 6 or {chip["page"] for chip in chips} != {3} or len(left) != 3 or len(right) != 3:
+        raise ValueError("Tiny requires three R1 product chips in each column on page 3")
+    return figure, left + right
+
+
 def inside_region(row: dict, region: dict) -> bool:
     return (
         row["x0"] >= region["x"]
@@ -353,6 +368,45 @@ def inside_region(row: dict, region: dict) -> bool:
         and row["top"] >= region["y"]
         and row["bottom"] <= region["y"] + region["height"]
     )
+
+
+def r1_card_copy_regions(regions: list[dict], figure: dict, chips: list[dict]) -> list[dict]:
+    divider = figure["x"] + figure["width"] / 2
+    copies = sorted(
+        (region for region in regions if region["kind"] == "r1-card-copy"),
+        key=lambda region: (region["x"] >= divider, region["y"]),
+    )
+    if len(copies) != len(chips):
+        raise ValueError("Tiny requires one copy region for each R1 product chip")
+    for copy, chip in zip(copies, chips):
+        bounds = {"x0": copy["x"], "x1": copy["x"] + copy["width"],
+                  "top": copy["y"], "bottom": copy["y"] + copy["height"]}
+        if (
+            copy["page"] != figure["page"]
+            or not inside_region(bounds, figure)
+            or not (copy["width"] > 0 and copy["height"] > 0)
+            or bounds["x0"] < chip["x"] + chip["width"]
+            or bounds["x0"] < divider < bounds["x1"]
+            or (bounds["x0"] >= divider) != (chip["x"] >= divider)
+            or bounds["top"] > chip["y"]
+            or bounds["bottom"] < chip["y"] + chip["height"]
+        ):
+            raise ValueError("Tiny R1 product copy must stay beside its chip in Figure 3")
+    return copies
+
+
+def r1_ultra_type_limit(page, region: dict) -> tuple[list[dict], float]:
+    matches = [
+        row
+        for row in page.search("— Maximum compute & memory", regex=False, x_tolerance=1)
+        if inside_region(row, region)
+    ]
+    if len(matches) != 1:
+        raise ValueError("Tiny requires one ULTRA positioning phrase inside its product card")
+    glyphs = matches[0]["chars"]
+    if any(abs(glyph["size"] - 7.25) > 0.05 for glyph in glyphs if glyph["text"].strip()):
+        raise ValueError("Tiny ULTRA positioning phrase must use 7.25 pt text")
+    return glyphs, 7.20
 
 
 def scaled_chip_type_limits(
@@ -424,9 +478,8 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     if len(cover_chips) != 1 or cover_chips[0]["page"] != 1:
         raise ValueError("Tiny requires one chip illustration on the cover")
     cover_chip = cover_chips[0]
-    lineup_chips = sorted((r for r in regions if r["kind"] == "r1-chip"), key=lambda r: r["x"])
-    if len(lineup_chips) != 6 or {r["page"] for r in lineup_chips} != {3}:
-        raise ValueError("Tiny requires six R1 product chips on page 3")
+    lineup, lineup_chips = r1_product_line_regions(regions)
+    lineup_copy = r1_card_copy_regions(regions, lineup, lineup_chips)
     from publications import scientific_reference as scientific
 
     scientific.verify_audit(pdf.parent, manifest, data)
@@ -517,23 +570,26 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     )
     with pdfplumber.open(pdf) as rendered:
         for page in rendered.pages:
-            chip_limits = []
+            type_limits = []
+            compact_copy = []
             if page.page_number == cover_chip["page"]:
-                chip_limits = scaled_chip_type_limits(page, cover_chip)
+                type_limits = scaled_chip_type_limits(page, cover_chip)
             elif page.page_number == 3:
+                compact_copy = lineup_copy
+                type_limits.append(r1_ultra_type_limit(page, lineup_copy[-1]))
                 products = ("TINY", "MINI", "STD", "PRO", "MAX", "ULTRA")
                 for i, (region, product) in enumerate(zip(lineup_chips, products)):
                     if sum(inside_region(row, region) for row in page.search(product, regex=False)) != 1:
                         raise ValueError(f"Tiny R1 product line requires {product} in position {i + 1}")
                     badge, description = ("Edge AI", "RISC-V AI MCU") if i < 3 else ("Physical AI", "RISC-V AI SoC")
-                    chip_limits.extend(scaled_chip_type_limits(page, region, badge, description))
+                    type_limits.extend(scaled_chip_type_limits(page, region, badge, description))
                 inscriptions = [
                     row for row in page.search("Open Silicon Design", regex=False)
                     if not any(inside_region(row, region) for region in lineup_chips)
                 ]
                 if chip_figure_page != 3 or len(inscriptions) != 1:
                     raise ValueError("Tiny requires the Figure 2 chip inscription on page 3")
-                chip_limits.append((inscriptions[0]["chars"], 5.95))
+                type_limits.append((inscriptions[0]["chars"], 5.95))
             for char in page.chars:
                 if not char["text"].strip():
                     continue
@@ -556,9 +612,12 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                     and abs(matrix[2]) > 1e-8
                 )
                 size = char["width"] if quarter_turn else char["size"]
+                default_minimum = 8.45 if continuation else 8.95
+                if any(inside_region(char, region) for region in compact_copy):
+                    default_minimum = 7.95
                 minimum_size = next(
-                    (limit for glyphs, limit in chip_limits if char in glyphs),
-                    8.45 if continuation else 8.95,
+                    (limit for glyphs, limit in type_limits if char in glyphs),
+                    default_minimum,
                 )
                 if size < minimum_size and not scientific.script_allowed(
                     char, page.page_number, regions
