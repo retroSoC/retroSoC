@@ -10,7 +10,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from publications.build_datasheet import validate_character_size  # noqa: E402
-from publications.build_tiny_datasheet import scaled_chip_type_limits  # noqa: E402
+from publications.build_tiny_datasheet import (  # noqa: E402
+    r1_card_copy_regions,
+    r1_product_line_regions,
+    r1_ultra_type_limit,
+    scaled_chip_type_limits,
+)
 
 
 REGION = {"kind": "table-continuation", "page": 2,
@@ -20,6 +25,46 @@ REGION = {"kind": "table-continuation", "page": 2,
 def character(**overrides):
     return {"text": "x", "size": 8.5, "x0": 55, "x1": 60,
             "top": 61, "bottom": 69.5, **overrides}
+
+
+def test_r1_chip_regions_are_read_down_each_column():
+    figure = {"kind": "r1-product-line", "page": 3, "x": 54, "width": 488}
+    chips = [
+        {"kind": "r1-chip", "page": 3, "x": x, "y": y, "width": 68}
+        for x, y in ((65.1, 450), (65, 555), (65.2, 660), (316, 450), (316.1, 555), (316, 660))
+    ]
+    assert r1_product_line_regions([figure, *reversed(chips)]) == (figure, chips)
+    chips[-1]["x"] = 260
+    with pytest.raises(ValueError, match="three R1 product chips in each column"):
+        r1_product_line_regions([figure, *chips])
+
+
+def test_r1_card_copy_regions_are_confined_to_their_cards():
+    figure = {"kind": "r1-product-line", "page": 3, "x": 54, "y": 400, "width": 488, "height": 373}
+    chips = [
+        {"kind": "r1-chip", "page": 3, "x": x, "y": y, "width": 68, "height": 68}
+        for x, y in ((66, 460), (66, 558), (66, 656), (312, 460), (312, 558), (312, 656))
+    ]
+    copies = [
+        {**chip, "kind": "r1-card-copy", "x": chip["x"] + 75, "y": chip["y"] - 9,
+         "width": 144, "height": 92}
+        for chip in chips
+    ]
+    assert r1_card_copy_regions([*chips, *reversed(copies)], figure, chips) == copies
+    copies[-1]["x"] = chips[-1]["x"] + 60
+    with pytest.raises(ValueError, match="must stay beside its chip"):
+        r1_card_copy_regions([*chips, *copies], figure, chips)
+
+
+def test_r1_ultra_type_limit_accepts_only_the_scoped_positioning_text():
+    region = {"kind": "r1-card-copy", "page": 3, "x": 370, "y": 640, "width": 144, "height": 92}
+    glyph = character(text="M", size=7.25, x0=400, x1=405, top=655, bottom=662.25)
+    matches = [{**glyph, "chars": [glyph]}, {**glyph, "top": 600, "bottom": 607.25, "chars": []}]
+    page = SimpleNamespace(search=lambda label, **_: matches if label == "— Maximum compute & memory" else [])
+    assert r1_ultra_type_limit(page, region) == ([glyph], 7.20)
+    glyph["size"] = 7
+    with pytest.raises(ValueError, match="must use 7.25 pt"):
+        r1_ultra_type_limit(page, region)
 
 
 def test_continuation_size_allowed_only_inside_its_region():

@@ -13,11 +13,11 @@
   #text(13pt)[An Open-Source, Single-Core RISC-V MCU]
   #v(rhythm.cover-meta-gap)
   #change-start("tiny-v02-cover-chip-20261124-cover-chip", "Cover chip artwork")
-  #change-start(doc.change_prefix + "cover-chip-mark", "ICsprout removal from cover chip")
+  #change-start("tiny-v02-r1-chip-marks-20261125-cover-chip-mark", "ICsprout removal from cover chip")
   #grid(columns:(1fr,1fr),
     [#text(font:("Inter","Noto Sans CJK SC"),weight:"bold",top-edge:0.7275390625em)[#doc.brand_name（#doc.brand_name_zh）] · v#doc.version \ #doc.date],
     align(right)[#place(top + right, dy: -(cover-chip-size + 3mm), cover-chip())#doc.author#link("mailto:"+doc.author_email)[(#doc.author_email)] \ #doc.maintainer])
-  #change-end(doc.change_prefix + "cover-chip-mark")
+  #change-end("tiny-v02-r1-chip-marks-20261125-cover-chip-mark")
   #change-end("tiny-v02-cover-chip-20261124-cover-chip")
   #v(rhythm.cover-rule-gap)
   #line(length:100%,stroke:1.1pt+gold)
@@ -105,23 +105,36 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
     #change-end("tiny-v02-chip-mark-20261124-chip-mark")
     #change-end("tiny-v02-overview-highlights-20261123-feature-highlights")
   ]
-  let plates(height) = block(width: 100%, above: 0pt, below: 0pt, breakable: false)[
+  let plates(product-line) = block(width: 100%, above: 0pt, below: 0pt, breakable: false)[
     #change-start("tiny-v02-r1-product-line-20261124-r1-product-line", "Figure 2 layout and R1 product line")
     #change-start("tiny-v02-r1-warm-yellow-20261125-r1-product-line", "Warm-yellow accents for the right R1 group")
-    #change-start(doc.change_prefix + "r1-product-line", "ICsprout removal from product line chips")
+    #change-start("tiny-v02-r1-chip-marks-20261125-r1-product-line", "ICsprout removal from product line chips")
+    #change-start("tiny-v02-r1-product-cards-20261125-r1-product-line", "R1 product descriptions and status cards")
+    #change-start("tiny-v02-r1-compact-cards-20261125-r1-product-line", "Compact R1 card typography and alignment")
+    #change-start("tiny-v02-r1-reference-layout-20261125-r1-product-line", "R1 figure page placement and card finish")
+    #change-start(doc.change_prefix + "r1-product-line", "R1 chip scale and status pill alignment")
     #stack(dir: ttb, spacing: rhythm.figure-space,
       highlights,
-      diagram("tiny-r1-product-line", r1-product-line(height), [R1 product line.],
+      diagram("tiny-r1-product-line", product-line, [R1 product line.],
         figure-label: "tiny-r1-product-line"),
     )
     #change-end(doc.change_prefix + "r1-product-line")
+    #change-end("tiny-v02-r1-reference-layout-20261125-r1-product-line")
+    #change-end("tiny-v02-r1-compact-cards-20261125-r1-product-line")
+    #change-end("tiny-v02-r1-product-cards-20261125-r1-product-line")
+    #change-end("tiny-v02-r1-chip-marks-20261125-r1-product-line")
     #change-end("tiny-v02-r1-warm-yellow-20261125-r1-product-line")
     #change-end("tiny-v02-r1-product-line-20261124-r1-product-line")
   ]
   layout(size => {
-    // Measure the captions, highlights and spacing before sizing the gray panels.
-    let probe = 40mm
-    let fixed-height = measure(plates(probe), width: size.width).height - probe
-    plates(size.height - fixed-height)
+    // Reserve the figure height after measuring the captions, highlights and spacing.
+    let probe = block(width: 172mm, height: 40mm, above: 0pt, below: 0pt)
+    let fixed-height = measure(plates(probe), width: size.width).height - 40mm
+    let slot-height = size.height - fixed-height
+    let art-offset = 2.1mm
+    // Offset the plate and its layout anchor into the 3.2 mm side overhang.
+    plates(block(width: 100%, height: slot-height, above: 0pt, below: 0pt, breakable: false)[
+      #place(top + left, dx: -3.2mm, dy: art-offset, r1-product-line(slot-height + 3mm - art-offset))
+    ])
   })
 }
