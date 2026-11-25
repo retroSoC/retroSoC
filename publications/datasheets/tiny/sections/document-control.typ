@@ -29,7 +29,9 @@
  ([2026-11-24],[v0.2 DRAFT],[Rearrange the Figure 2 chip lettering, logo placeholders and Edge AI badge.]),
  ([2026-11-24],[v0.2 DRAFT],[Add the white ECOS and ICsprout marks to Figure 2.]),
  ([2026-11-24],[v0.2 DRAFT],[Reuse the Figure 2 chip artwork on the cover.]),
- (doc.date,[v0.2 DRAFT],[Place the feature highlights and R1 product line illustrations together in the Overview.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-24],[v0.2 DRAFT],[Place the feature highlights and R1 product line illustrations together in the Overview.]),
+ ([2026-11-25],[v0.2 DRAFT],[Apply warm-yellow accents to the PRO, MAX and ULTRA chip markings in Figure 3.]),
+ ([2026-11-25],[v0.2 DRAFT],[Remove ICsprout from the cover chip and the Figure 3 product line.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

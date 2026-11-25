@@ -6,6 +6,8 @@
 #let card-radius = 24
 #let detail-ink = rgb("#171717")
 #let violet = gradient.linear(rgb("#C392F7"), rgb("#8345DC"), angle: 0deg, relative: "parent")
+#let chip-violet = (light: rgb("#EAD7FB"), dark: rgb("#8345DC"))
+#let chip-warm-yellow = (light: rgb("#FBF2D7"), dark: rgb("#DCB645"))
 #let schematic-stroke = 0.55pt + rgb("#9D64DF")
 #let chip-logos = json("chip-logo-outlines.json")
 #let chip-side = 289
@@ -21,7 +23,10 @@
   )), anchor: "north-west")
 }
 
-#let draw-chip(x, y, product-name: "TINY", description: "RISC-V AI MCU", badge: "Edge AI") = {
+#let draw-chip(
+  x, y, product-name: "TINY", description: "RISC-V AI MCU", badge: "Edge AI",
+  accent: chip-violet, show-icsprout: true,
+) = {
   import cetz.draw: content
 
   // The logo paths retain the circuit cutouts and the wordmark counters.
@@ -39,10 +44,12 @@
   panel(x, y, chip-side, chip-side, fill: chip-fill, radius: 0, stroke: chip-edge + rgb("#525158"))
   // Figure 2's disc aligns with the visible R1 edge, 1.65 mm from ICsprout.
   chip-logo(38.32432, 62, chip-logos.ecos)
-  chip-logo(103.82048, 76, chip-logos.icsprout)
-  // The longer badge retains its text padding and clears the ICsprout mark.
+  if show-icsprout {
+    chip-logo(103.82048, 76, chip-logos.icsprout)
+  }
+  // The longer badge retains its text padding.
   let (badge-left, badge-width) = if badge == "Physical AI" { (149, 133) } else { (175, 96) }
-  panel(x + badge-left, y + 18, badge-width, 32, fill: rgb("#EAD7FB"), radius: 8)
+  panel(x + badge-left, y + 18, badge-width, 32, fill: accent.light, radius: 8)
   content((x + badge-left + badge-width / 2, -y - 34), box(text(
     font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
     top-edge: "bounds", bottom-edge: "bounds", badge,
@@ -51,9 +58,9 @@
   let chip-mark = {
     set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "baseline")
     let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
-    // Limit the purple gradient to the product word within the shared baseline.
+    // Limit the gradient to the product word within the shared baseline.
     let product = box(text(size: 16pt, weight: 650,
-      fill: gradient.linear(rgb("#EAD7FB"), rgb("#8345DC"), angle: 0deg, relative: "parent"), product-name))
+      fill: gradient.linear(accent.light, accent.dark, angle: 0deg, relative: "parent"), product-name))
     box(model + h(1.8mm) + product)
   }
   content((x + 18, -y - 159.6234), chip-mark, anchor: "north-west")
@@ -81,7 +88,7 @@
 #let cover-chip() = {
   [#block(width: cover-chip-size, height: cover-chip-size, above: 0pt, below: 0pt)[
     #metadata(cover-chip-size / chip-native-size)<tiny-cover-chip-scale>
-    #place(top + left, scaled-chip(cover-chip-size))
+    #place(top + left, scaled-chip(cover-chip-size, show-icsprout: false))
   ]<tiny-cover-chip-region>]
 }
 
@@ -90,12 +97,15 @@
   let gap = 3mm
   assert(height >= size + gap, message: "R1 product line must fit below Figure 2")
 
-  let group(products, description, badge) = rect(
+  let group(products, description, badge, accent: chip-violet) = rect(
     width: 84mm, height: height, radius: card-radius * unit, stroke: none, fill: card-fill,
     inset: (top: gap, left: gap, right: gap, bottom: 0pt),
     align(top + left, grid(columns: (size, size, size), column-gutter: gap, ..products.map(product => [
       #block(width: size, height: size, above: 0pt, below: 0pt)[
-        #place(top + left, scaled-chip(size, product-name: product, description: description, badge: badge))
+        #place(top + left, scaled-chip(
+          size, product-name: product, description: description, badge: badge, accent: accent,
+          show-icsprout: false,
+        ))
       ]<tiny-r1-chip-region>
     ]))),
   )
@@ -104,7 +114,7 @@
     #metadata(size / chip-native-size)<tiny-r1-chip-scale>
     #place(top + left, grid(columns: (84mm, 84mm), column-gutter: 4mm,
       group(("TINY", "MINI", "STD"), "RISC-V AI MCU", "Edge AI"),
-      group(("PRO", "MAX", "ULTRA"), "RISC-V AI SoC", "Physical AI"),
+      group(("PRO", "MAX", "ULTRA"), "RISC-V AI SoC", "Physical AI", accent: chip-warm-yellow),
     ))
   ]<tiny-r1-product-line-region>]
 }
