@@ -108,7 +108,7 @@ Avoid routing through unrelated boxes and retain visible arrow shafts. Source
 bindings and logical abstraction notes are mandatory. Never copy Mini LP/HP,
 cache, pad or external-memory restrictions into TINY captions.
 
-Place TINY Gen1 feature highlights on a dedicated portrait page after the
+Place TINY Gen1 feature highlights at the top of page 3, after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
 9 pt or larger. The Figure 2 chip uses 6 pt for its `Open Silicon Design`
@@ -120,6 +120,15 @@ region. Keep the chip mark and empty symbol frames illustrative.
 Use the shared functional data for the ISA, DMA, SRAM and GPIO quantities.
 The integrated figure and the standalone SVG and PDF use the same vector
 source. Note the shared I²S and DVP GPIOs in the figure explanation.
+
+Place the numbered R1 product line illustration below the feature highlights
+on the same page. Its two 84 mm gray panels are separated by 4 mm and share
+the feature-card fill and 3.44 mm corner radius. Size both panels to the
+remaining body height so their bottom edges reach the 20 mm bottom margin.
+Place three 24 mm vector chips across the top of each panel, with 3 mm gaps
+and insets. Scale the whole chip artwork. The six marked chip frames allow
+the scaled badge, descriptor and `Open Silicon Design` inscriptions near
+5.19, 5.77 and 3.46 pt. Apply the same panel height to the standalone figure.
 
 The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
 at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.

@@ -1,6 +1,6 @@
 #import "../style.typ": *
 #import "../diagrams.typ": architecture, clock-tree, diagram, overview, flow
-#import "../feature-highlights.typ": cover-chip, cover-chip-size, feature-highlights
+#import "../feature-highlights.typ": cover-chip, cover-chip-size, feature-highlights, r1-product-line
 #import "../waveforms.typ": timing
 
 #cover(evaluation:((name:"Available",fill:"full"),(name:"Functional",fill:"left-half"),(name:"Reproduced",fill:"empty"),(name:"Tapedout",fill:"empty")))[
@@ -12,11 +12,11 @@
   #v(rhythm.cover-gap)
   #text(13pt)[An Open-Source, Single-Core RISC-V MCU]
   #v(rhythm.cover-meta-gap)
-  #change-start(doc.change_prefix + "cover-chip", "Cover chip artwork")
+  #change-start("tiny-v02-cover-chip-20261124-cover-chip", "Cover chip artwork")
   #grid(columns:(1fr,1fr),
     [#text(font:("Inter","Noto Sans CJK SC"),weight:"bold",top-edge:0.7275390625em)[#doc.brand_name（#doc.brand_name_zh）] · v#doc.version \ #doc.date],
     align(right)[#place(top + right, dy: -(cover-chip-size + 3mm), cover-chip())#doc.author#link("mailto:"+doc.author_email)[(#doc.author_email)] \ #doc.maintainer])
-  #change-end(doc.change_prefix + "cover-chip")
+  #change-end("tiny-v02-cover-chip-20261124-cover-chip")
   #v(rhythm.cover-rule-gap)
   #line(length:100%,stroke:1.1pt+gold)
 = Product Brief
@@ -89,16 +89,33 @@ retroSoC TINY Gen1 is a wired MCU with one Hazard3 hart, separate local instruct
 See @tiny-configuration for profile differences and @tiny-core for the functional architecture.
 
 #pagebreak()
-#v(1fr)
-#change-start("tiny-v02-overview-highlights-20261123-feature-highlights", "TINY Gen1 feature highlights", category: "added")
-#change-start("tiny-v02-chip-mark-20261124-chip-mark", "Figure 2 chip markings and logo placeholders")
-#change-start("tiny-v02-chip-logos-20261124-chip-logos", "Figure 2 white ECOS and ICsprout logos")
-#block(width: 100%, breakable: false)[
-  #diagram("tiny-gen1-highlights", feature-highlights(data), [TINY Gen1 feature highlights.],
-    figure-label: "tiny-gen1-highlights")
-  #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
-]
-#change-end("tiny-v02-chip-logos-20261124-chip-logos")
-#change-end("tiny-v02-chip-mark-20261124-chip-mark")
-#change-end("tiny-v02-overview-highlights-20261123-feature-highlights")
-#v(1fr)
+#{
+  show figure: set block(above: 0pt, below: 0pt, breakable: false)
+  let highlights = block(width: 100%, above: 0pt, below: 0pt, breakable: false)[
+    #change-start("tiny-v02-overview-highlights-20261123-feature-highlights", "TINY Gen1 feature highlights", category: "added")
+    #change-start("tiny-v02-chip-mark-20261124-chip-mark", "Figure 2 chip markings and logo placeholders")
+    #change-start("tiny-v02-chip-logos-20261124-chip-logos", "Figure 2 white ECOS and ICsprout logos")
+    #diagram("tiny-gen1-highlights", feature-highlights(data), [TINY Gen1 feature highlights.],
+      figure-label: "tiny-gen1-highlights")
+    #v(rhythm.figure-space)
+    #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
+    #change-end("tiny-v02-chip-logos-20261124-chip-logos")
+    #change-end("tiny-v02-chip-mark-20261124-chip-mark")
+    #change-end("tiny-v02-overview-highlights-20261123-feature-highlights")
+  ]
+  let plates(height) = block(width: 100%, above: 0pt, below: 0pt, breakable: false)[
+    #change-start(doc.change_prefix + "r1-product-line", "Figure 2 layout and R1 product line")
+    #stack(dir: ttb, spacing: rhythm.figure-space,
+      highlights,
+      diagram("tiny-r1-product-line", r1-product-line(height), [R1 product line.],
+        figure-label: "tiny-r1-product-line"),
+    )
+    #change-end(doc.change_prefix + "r1-product-line")
+  ]
+  layout(size => {
+    // Measure the captions, highlights and spacing before sizing the gray panels.
+    let probe = 40mm
+    let fixed-height = measure(plates(probe), width: size.width).height - probe
+    plates(size.height - fixed-height)
+  })
+}
