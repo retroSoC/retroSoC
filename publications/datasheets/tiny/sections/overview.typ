@@ -97,8 +97,10 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
     #change-start("tiny-v02-overview-highlights-20261123-feature-highlights", "TINY Gen1 feature highlights", category: "added")
     #change-start("tiny-v02-chip-mark-20261124-chip-mark", "Figure 2 chip markings and logo placeholders")
     #change-start("tiny-v02-chip-logos-20261124-chip-logos", "Figure 2 white ECOS and ICsprout logos")
+    #change-start(doc.change_prefix + "feature-highlights", "Figure 2 feature card layout")
     #diagram("tiny-gen1-highlights", feature-highlights(data), [TINY Gen1 feature highlights.],
       figure-label: "tiny-gen1-highlights")
+    #change-end(doc.change_prefix + "feature-highlights")
     #v(rhythm.figure-space)
     #align(center)[#text(size: 9pt, fill: muted)[Applications are illustrative. I²S and DVP share GPIOs and use alternate pin configurations.]]
     #change-end("tiny-v02-chip-logos-20261124-chip-logos")
@@ -114,13 +116,13 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
     #change-start("tiny-v02-r1-reference-layout-20261125-r1-product-line", "R1 figure page placement and card finish")
     #change-start("tiny-v02-r1-chip-alignment-20261125-r1-product-line", "R1 chip scale and status pill alignment")
     #change-start("tiny-v02-pdk-highlights-20261125-overview-figures", "ICSprout55 PDK tile, chip marks and semibold R1 highlights")
-    #change-start(doc.change_prefix + "r1-product-line", "R1 product highlights at weight 450")
+    #change-start("tiny-v02-r1-weight-450-20261126-r1-product-line", "R1 product highlights at weight 450")
     #stack(dir: ttb, spacing: rhythm.figure-space,
       highlights,
       diagram("tiny-r1-product-line", product-line, [R1 product line.],
         figure-label: "tiny-r1-product-line"),
     )
-    #change-end(doc.change_prefix + "r1-product-line")
+    #change-end("tiny-v02-r1-weight-450-20261126-r1-product-line")
     #change-end("tiny-v02-pdk-highlights-20261125-overview-figures")
     #change-end("tiny-v02-r1-chip-alignment-20261125-r1-product-line")
     #change-end("tiny-v02-r1-reference-layout-20261125-r1-product-line")

@@ -111,9 +111,20 @@ cache, pad or external-memory restrictions into TINY captions.
 Place TINY Gen1 feature highlights at the top of page 3, after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
-9 pt or larger. The upper-left tile identifies the locked ICSprout55 reference
-PDK. Center `55nm` in the same 22 pt violet gradient type as the adjacent
-counts, with `Open-source` and `PDK` on two centered 9 pt lines below it.
+9 pt or larger. Use a 24-unit corner radius and at least 10 units between
+cards. Put SRAM capacity, DVP input and stereo I²S across the top. Fix the
+central 463 × 373 card at (369, 179) and the chip at (456, 222). Center the
+two-line application summary in a card of the same width below the chip.
+
+On the left, pair the ICSprout55 PDK and Hazard3 cards above a full-width
+PPALite card, with SDIO and GPIO below. Set `55nm` in 22 pt violet type above
+`Open-source` and `PDK` on two centered 9 pt lines. Set `Two alternate` above
+`modes` and keep `32 GPIOs` on one line in 14.5 pt. On the right, place DMA
+and the four SRAM groups above XPI and the multimedia applications. Keep the
+boot NOR outline solid and the optional PSRAM outline dashed. Set
+`Camera capture` on one line in 9 pt, followed by `Stereo audio` and the
+two-line `SPI LCD preview` in 10.5 pt.
+
 The Figure 2 chip places the white ECOS and ICsprout outlines on one
 horizontal centerline at a visible height of 4.59 mm each. Anchor the
 ICsprout wordmark by its left edge, leaving 1.65 mm from ECOS and about
