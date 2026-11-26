@@ -35,7 +35,9 @@
  ([2026-11-25],[v0.2 DRAFT],[Add positioning, highlights and development status for the six R1 products in Figure 3.]),
  ([2026-11-25],[v0.2 DRAFT],[Align the R1 product cards and fit their descriptions and highlights to single lines.]),
  ([2026-11-25],[v0.2 DRAFT],[Refine the R1 figure placement, card typography and shading.]),
- ([2026-11-25],[v0.2 DRAFT],[Enlarge the six chip illustrations and product names in Figure 3 and align each status pill with its chip.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-25],[v0.2 DRAFT],[Enlarge the six chip illustrations and product names in Figure 3 and align each status pill with its chip.]),
+ ([2026-11-25],[v0.2 DRAFT],[Feature the 55nm open-source PDK and enlarge the ICsprout mark in Figure 2. Set the Figure 3 highlights in Inter Semibold (600).]),
+ ([2026-11-26],[v0.2 DRAFT],[Set all 18 highlights in the Figure 3 product cards to Inter weight 450.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

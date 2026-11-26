@@ -111,12 +111,18 @@ cache, pad or external-memory restrictions into TINY captions.
 Place TINY Gen1 feature highlights at the top of page 3, after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
-9 pt or larger. The Figure 2 chip uses 6 pt for its `Open Silicon Design`
+9 pt or larger. The upper-left tile identifies the locked ICSprout55 reference
+PDK. Center `55nm` in the same 22 pt violet gradient type as the adjacent
+counts, with `Open-source` and `PDK` on two centered 9 pt lines below it.
+The Figure 2 chip places the white ECOS and ICsprout outlines on one
+horizontal centerline at a visible height of 4.59 mm each. Anchor the
+ICsprout wordmark by its left edge, leaving 1.65 mm from ECOS and about
+2.21 mm to the Edge AI badge. The chip uses 6 pt for its `Open Silicon Design`
 inscription. On the cover, scale that complete vector chip, including its
 outline, typography and marks, to the 33.55 mm square. The cover chip's
 `Edge AI`, `RISC-V AI MCU` and `Open Silicon Design` inscriptions may use their
 scaled sizes of approximately 7.26, 8.06 and 4.84 pt within the marked chip
-region. Keep the chip mark and empty symbol frames illustrative.
+region.
 Use the shared functional data for the ISA, DMA, SRAM and GPIO quantities.
 The integrated figure and the standalone SVG and PDF use the same vector
 source. Note the shared I²S and DVP GPIOs in the figure explanation.
@@ -141,9 +147,9 @@ Use separate purple and gold card palettes for the model, pill and bullets.
 Align the three highlights across each pair of cards. Align the bottom of the
 5.2 mm status pill with the chip outline, 29.9 mm from the card top. Use
 2.8 mm of horizontal padding on each side of the status text. Use 1.4 mm
-shaded dots and set the single-line highlights at 8.25 pt Inter with 4.6 mm
-line spacing. Use
-8.5 pt Semibold for status. Use 8.75 pt Semibold for positioning, with
+shaded dots and set all three highlights in each card in 8.25 pt Inter at
+weight 450 with −0.015 em tracking and 4.6 mm line spacing. Fit each highlight on
+one line. Use 8.5 pt Semibold for status. Use 8.75 pt Semibold for positioning, with
 8.25 pt for MINI and 7.25 pt for ULTRA. Apply −0.025 em tracking to the
 entire ULTRA card title. Measure the title and highlight
 widths before placement. Limit compact type to the six marked copy regions

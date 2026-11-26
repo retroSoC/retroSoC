@@ -112,13 +112,17 @@ See @tiny-configuration for profile differences and @tiny-core for the functiona
     #change-start("tiny-v02-r1-product-cards-20261125-r1-product-line", "R1 product descriptions and status cards")
     #change-start("tiny-v02-r1-compact-cards-20261125-r1-product-line", "Compact R1 card typography and alignment")
     #change-start("tiny-v02-r1-reference-layout-20261125-r1-product-line", "R1 figure page placement and card finish")
-    #change-start(doc.change_prefix + "r1-product-line", "R1 chip scale and status pill alignment")
+    #change-start("tiny-v02-r1-chip-alignment-20261125-r1-product-line", "R1 chip scale and status pill alignment")
+    #change-start("tiny-v02-pdk-highlights-20261125-overview-figures", "ICSprout55 PDK tile, chip marks and semibold R1 highlights")
+    #change-start(doc.change_prefix + "r1-product-line", "R1 product highlights at weight 450")
     #stack(dir: ttb, spacing: rhythm.figure-space,
       highlights,
       diagram("tiny-r1-product-line", product-line, [R1 product line.],
         figure-label: "tiny-r1-product-line"),
     )
     #change-end(doc.change_prefix + "r1-product-line")
+    #change-end("tiny-v02-pdk-highlights-20261125-overview-figures")
+    #change-end("tiny-v02-r1-chip-alignment-20261125-r1-product-line")
     #change-end("tiny-v02-r1-reference-layout-20261125-r1-product-line")
     #change-end("tiny-v02-r1-compact-cards-20261125-r1-product-line")
     #change-end("tiny-v02-r1-product-cards-20261125-r1-product-line")

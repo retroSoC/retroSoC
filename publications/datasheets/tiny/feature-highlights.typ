@@ -29,23 +29,23 @@
 ) = {
   import cetz.draw: content
 
-  // The logo paths retain the circuit cutouts and the wordmark counters.
-  let chip-logo(cx, slot-width, logo) = {
-    let scale = calc.min(slot-width / logo.width, 32 / logo.height) * unit
+  // Both white marks share one visible height and horizontal centerline.
+  let chip-logo(anchor-x, logo, anchor: "center") = {
+    let scale = 32 / logo.height * unit
     let commands = logo.rings.map(ring => {
       let points = ring.map(p => (p.at(0) * scale, p.at(1) * scale))
       (curve.move(points.first()),) + points.slice(1).map(p => curve.line(p)) + (curve.close(),)
     }).flatten()
-    content((x + cx, -y - 34), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: "center")
+    content((x + anchor-x, -y - 34), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: anchor)
   }
 
   // The chip labels and marks are illustrative artwork.
   let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
   panel(x, y, chip-side, chip-side, fill: chip-fill, radius: 0, stroke: chip-edge + rgb("#525158"))
   // Figure 2's disc aligns with the visible R1 edge, 1.65 mm from ICsprout.
-  chip-logo(38.32432, 62, chip-logos.ecos)
+  chip-logo(38.32432, chip-logos.ecos)
   if show-icsprout {
-    chip-logo(103.82048, 76, chip-logos.icsprout)
+    chip-logo(65.82048, chip-logos.icsprout, anchor: "west")
   }
   // The longer badge retains its text padding.
   let (badge-left, badge-width) = if badge == "Physical AI" { (149, 133) } else { (175, 96) }
@@ -180,7 +180,7 @@
     let copy = [#block(width: copy-width, height: card-height, above: 0pt, below: 0pt)[
       #place(top + left, dy: title-top, title)
       #for (index, highlight) in highlights.enumerate() {
-        let point = box(text(font: "Inter", size: 8.25pt, weight: "regular", highlight))
+        let point = box(text(font: "Inter", size: 8.25pt, weight: 450, tracking: -0.015em, highlight))
         assert(measure(point).width <= copy-width - point-inset,
           message: "R1 product highlight exceeds its frame: " + name + " / " + highlight)
         let point-top = 10.1mm + index * 4.6mm
@@ -240,9 +240,9 @@
   ) { panel(x, y, w, h) }
 
   // Five tiles across the top.
-  frame((82, -41), (113, -104), stroke: 0.7pt + detail-ink)
+  accent(97.5, 53, "55nm", 22pt)
   label(97.5, 117, "Open-source")
-  label(97.5, 141, "MCU")
+  label(97.5, 141, "PDK")
   label(275, 29, "Hazard3 hart")
   accent(275, 69, "1", 22pt)
   label(275, 139, data.facts.hardware_isa)
