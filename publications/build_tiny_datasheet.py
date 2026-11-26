@@ -140,6 +140,7 @@ def inputs(data: dict) -> dict[str, str]:
             "publications/storage_reference.py",
             "publications/implementation_reference.py",
             "tests/test_publication_tiny_alignment.py",
+            "tests/test_publication_r1_roadmap.py",
         }
     )
     return {path: sha256(ROOT / path) for path in sorted(paths)}
@@ -233,17 +234,20 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
         "items:query(metadata).map(it=>it.value),"
         "regions:query(selector(<table-continuation-region>).or("
         "<tiny-cover-chip-region>,<tiny-r1-product-line-region>,<tiny-r1-chip-region>,"
-        "<tiny-r1-card-copy-region>)).map(region=>{"
+        "<tiny-r1-card-copy-region>,<tiny-r1-roadmap-region>,<tiny-roadmap-chip-region>)).map(region=>{"
         'let tag=region.at("label");'
         'let kind=if tag==<tiny-cover-chip-region>{"cover-chip"}'
         'else if tag==<tiny-r1-product-line-region>{"r1-product-line"}'
         'else if tag==<tiny-r1-chip-region>{"r1-chip"}'
+        'else if tag==<tiny-r1-roadmap-region>{"r1-roadmap"}'
+        'else if tag==<tiny-roadmap-chip-region>{"roadmap-chip"}'
         'else if tag==<tiny-r1-card-copy-region>{"r1-card-copy"}else{"table-continuation"};'
         "let pos=region.location().position();"
         "let bounds=(kind:kind,page:pos.page,x:pos.x.pt(),y:pos.y.pt(),"
         "width:region.width.length.pt(),height:region.height.length.pt());"
-        'if kind in ("cover-chip","r1-chip"){'
-        'let scales=query(if kind=="cover-chip"{<tiny-cover-chip-scale>}else{<tiny-r1-chip-scale>});'
+        'if kind in ("cover-chip","r1-chip","roadmap-chip"){'
+        'let scales=query(if kind=="cover-chip"{<tiny-cover-chip-scale>}'
+        'else if kind=="roadmap-chip"{<tiny-roadmap-chip-scale>}else{<tiny-r1-chip-scale>});'
         'assert(scales.len()==1,message:"TINY chip artwork needs one scale per placement");'
         "bounds+(scale:scales.first().value)}else{bounds}}))"
     )
@@ -269,6 +273,7 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     validate_rendered_registers(data, layout["items"])
     lineup, chips = r1_product_line_regions(layout["regions"])
     r1_card_copy_regions(layout["regions"], lineup, chips)
+    r1_roadmap_regions(layout["regions"], chips[0])
     engineering_vectors = render_vectors(
         ROOT, out, data["specifications"], executable, options, r1_product_line_height=lineup["height"],
     )
@@ -370,6 +375,23 @@ def inside_region(row: dict, region: dict) -> bool:
     )
 
 
+def r1_roadmap_regions(regions: list[dict], master: dict) -> tuple[dict, list[dict]]:
+    plates = [r for r in regions if r["kind"] == "r1-roadmap"]
+    chips = sorted((r for r in regions if r["kind"] == "roadmap-chip"), key=lambda r: r["y"])
+    if len(plates) != 1 or len(chips) != 6:
+        raise ValueError("Tiny requires one R1 roadmap with six chip regions")
+    plate = plates[0]
+    last_bottom = plate["y"]
+    for chip in chips:
+        bounds = {"x0": chip["x"], "x1": chip["x"] + chip["width"],
+                  "top": chip["y"], "bottom": chip["y"] + chip["height"]}
+        if (chip["page"] != plate["page"] or chip["y"] < last_bottom or not inside_region(bounds, plate)
+                or any(abs(chip[k] - master[k]) > 0.001 for k in ("width", "height", "scale"))):
+            raise ValueError("R1 roadmap rows must contain distinct Figure 3 sized chips inside the plate")
+        last_bottom = bounds["bottom"]
+    return plate, chips
+
+
 def r1_card_copy_regions(regions: list[dict], figure: dict, chips: list[dict]) -> list[dict]:
     divider = figure["x"] + figure["width"] / 2
     copies = sorted(
@@ -433,6 +455,19 @@ def scaled_chip_type_limits(
     return limits
 
 
+def family_chip_type_limits(page, chips: list[dict], products: list[dict]) -> list[tuple[list[dict], float]]:
+    limits = []
+    for region, product in zip(chips, products, strict=True):
+        area = page.within_bbox((region["x"], region["y"], region["x"] + region["width"],
+                                 region["y"] + region["height"]))
+        if len(area.search(product["name"], regex=False)) != 1:
+            raise ValueError(f"Tiny R1 figure requires the {product['name']} chip in its assigned row")
+        badge, description = (("Edge AI", "RISC-V AI MCU") if product["group"] == "embedded"
+                              else ("Physical AI", "RISC-V AI SoC"))
+        limits.extend(scaled_chip_type_limits(area, region, badge, description))
+    return limits
+
+
 def check_pdf(pdf: Path, data: dict) -> dict:
     from pypdf import PdfReader
     import pdfplumber
@@ -480,6 +515,7 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     cover_chip = cover_chips[0]
     lineup, lineup_chips = r1_product_line_regions(regions)
     lineup_copy = r1_card_copy_regions(regions, lineup, lineup_chips)
+    roadmap, roadmap_chips = r1_roadmap_regions(regions, lineup_chips[0])
     from publications import scientific_reference as scientific
 
     scientific.verify_audit(pdf.parent, manifest, data)
@@ -577,12 +613,7 @@ def check_pdf(pdf: Path, data: dict) -> dict:
             elif page.page_number == 3:
                 compact_copy = lineup_copy
                 type_limits.append(r1_ultra_type_limit(page, lineup_copy[-1]))
-                products = ("TINY", "MINI", "STD", "PRO", "MAX", "ULTRA")
-                for i, (region, product) in enumerate(zip(lineup_chips, products)):
-                    if sum(inside_region(row, region) for row in page.search(product, regex=False)) != 1:
-                        raise ValueError(f"Tiny R1 product line requires {product} in position {i + 1}")
-                    badge, description = ("Edge AI", "RISC-V AI MCU") if i < 3 else ("Physical AI", "RISC-V AI SoC")
-                    type_limits.extend(scaled_chip_type_limits(page, region, badge, description))
+                type_limits.extend(family_chip_type_limits(page, lineup_chips, data["r1_roadmap"]["products"]))
                 inscriptions = [
                     row for row in page.search("Open Silicon Design", regex=False)
                     if not any(inside_region(row, region) for region in lineup_chips)
@@ -590,6 +621,8 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                 if chip_figure_page != 3 or len(inscriptions) != 1:
                     raise ValueError("Tiny requires the Figure 2 chip inscription on page 3")
                 type_limits.append((inscriptions[0]["chars"], 5.95))
+            elif page.page_number == roadmap["page"]:
+                type_limits.extend(family_chip_type_limits(page, roadmap_chips, data["r1_roadmap"]["products"]))
             for char in page.chars:
                 if not char["text"].strip():
                     continue

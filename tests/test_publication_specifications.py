@@ -170,20 +170,21 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
 
 
 @pytest.mark.parametrize("product", ["tiny", "mini"])
-def test_package_marking_exports_are_tiny_only(tmp_path, monkeypatch, product):
+def test_tiny_family_and_package_exports(tmp_path, monkeypatch, product):
     def compile_view(command, **kwargs):
         Path(command[3]).write_text(command[-1], encoding="utf-8")
         return CompletedProcess(command, 0, stdout="", stderr="")
 
     monkeypatch.setattr(specification_vectors.subprocess, "run", compile_view)
     files = specification_vectors.render(ROOT, tmp_path, {"product": product}, "typst", [])
-    for suffix in ("svg", "pdf"):
-        relative = f"engineering/qfn-marking.{suffix}"
-        if product == "tiny":
-            assert (tmp_path / relative).read_text(encoding="utf-8") == "figure=qfn-marking"
-            assert files[relative] == s.digest(tmp_path / relative)
-        else:
-            assert relative not in files and not (tmp_path / relative).exists()
+    for view in ("qfn-marking", "r1-roadmap"):
+        for suffix in ("svg", "pdf"):
+            relative = f"engineering/{view}.{suffix}"
+            if product == "tiny":
+                assert (tmp_path / relative).read_text(encoding="utf-8") == f"figure={view}"
+                assert files[relative] == s.digest(tmp_path / relative)
+            else:
+                assert relative not in files and not (tmp_path / relative).exists()
 
 
 def test_tiny_pin_descriptions_keep_roles_and_electrical_status(spec):

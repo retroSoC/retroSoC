@@ -40,7 +40,8 @@
  ([2026-11-26],[v0.2 DRAFT],[Set all 18 highlights in the Figure 3 product cards to Inter weight 450.]),
  ([2026-11-26],[v0.2 DRAFT],[Rearrange the Figure 2 feature cards around the R1 TINY chip and place SRAM, camera input and stereo audio across the top.]),
  ([2026-11-26],[v0.2 DRAFT],[Align the Figure 2 columns, pair the hart and DMA counts, and place multimedia beside the PDK. Align the XPI and SRAM caption rows.]),
- ([2026-11-26],[v0.2 DRAFT],[Add a QFN64 package marking illustration with the R1 TINY artwork and Pin 1 orientation in both views.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-26],[v0.2 DRAFT],[Add a QFN64 package marking illustration with the R1 TINY artwork and Pin 1 orientation in both views.]),
+ ([2026-11-26],[v0.2 DRAFT],[Add the R1 family roadmap with recorded TINY and MINI milestones, four planned development windows and a link from the Overview.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

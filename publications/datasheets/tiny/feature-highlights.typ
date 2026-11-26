@@ -92,6 +92,15 @@
   scale(x: factor, y: factor, origin: top + left, reflow: true, master)
 }
 
+#let r1-chip-size = 26.5mm
+#let r1-chip(product) = {
+  let embedded = product.group == "embedded"
+  scaled-chip(r1-chip-size, product-name: product.name, show-icsprout: false,
+    description: if embedded { "RISC-V AI MCU" } else { "RISC-V AI SoC" },
+    badge: if embedded { "Edge AI" } else { "Physical AI" },
+    accent: if embedded { chip-violet } else { chip-warm-yellow })
+}
+
 #let cover-chip() = {
   [#block(width: cover-chip-size, height: cover-chip-size, above: 0pt, below: 0pt)[
     #metadata(cover-chip-size / chip-native-size)<tiny-cover-chip-scale>
@@ -100,46 +109,23 @@
 }
 
 #let r1-product-line(height) = context {
-  // Embedded tiers follow the product ladder and the reviewed MINI overview.
-  let embedded = (
-    ("TINY", "Compact control MCU", (
-      "1× Hazard3 · RV32IMC", "128 KiB on-chip SRAM", "DVP + PPALite · I²S · SDIO",
-    ), "In development"),
-    ("MINI", "Heterogeneous Linux SoC", (
-      "OpenC906 RV64 + Hazard3 RV32", "64 MiB external SDRAM window", "INT8 NPU · GA2D · APU",
-    ), "In development"),
-    ("STD", "Graphical Linux SoC", (
-      "RV32 Linux + real-time cores", "512 MiB–1 GiB DDR target", "3D graphics · 1080p60 · AI targets",
-    ), "Roadmap"),
-  )
-  let professional = (
-    ("PRO", "Balanced pro compute", (
-      "Balanced CPU and graphics", "Memory for complex projects", "Data modeling · Audio production",
-    ), "Concept"),
-    ("MAX", "Graphics & AI compute", (
-      "More GPU compute and bandwidth", "Larger memory capacity", "3D animation · AI research",
-    ), "Concept"),
-    ("ULTRA", "Maximum compute & memory", (
-      "Expanded CPU and GPU scale", "Largest memory capacity", "Large models · Complex simulation",
-    ), "Concept"),
-  )
-
+  let products = json("r1-roadmap.json").products
   let embedded-palette = (
-    width: 87.4mm, chip: chip-violet,
+    width: 87.4mm,
     heading: rgb("#883ACF"), heading-size: 20.4pt,
     model: rgb("#963ADF"), status: rgb("#962ACB"), pill: rgb("#ECDBFA"),
     dot: gradient.radial(rgb("#C982F3"), rgb("#9C49DE"),
       center: (31%, 24%), radius: 80%, relative: "self"),
   )
   let professional-palette = (
-    width: 89.3mm, chip: chip-warm-yellow,
+    width: 89.3mm,
     heading: rgb("#B1842A"), heading-size: 20pt,
     model: rgb("#B48629"), status: rgb("#A47414"), pill: rgb("#F5E8CC"),
     dot: gradient.radial(rgb("#DAC079"), rgb("#AE8025"),
       center: (31%, 24%), radius: 80%, relative: "self"),
   )
 
-  let chip-size = 26.5mm
+  let chip-size = r1-chip-size
   let plate-height = 136.4mm
   let column-gap = 1.7mm
   let plate-width = embedded-palette.width + column-gap + professional-palette.width
@@ -159,15 +145,12 @@
   let product-fill = gradient.linear(white, rgb("#FBFBFB"), angle: 90deg)
   assert(height >= plate-height - 0.01pt, message: "R1 product line must fit below Figure 2")
 
-  let product-card(product, description, badge, palette) = {
-    let (name, positioning, highlights, status) = product
+  let product-card(product, palette) = {
+    let (name, positioning, highlights, status) = (product.name, product.positioning, product.highlights, product.status)
     let card-width = palette.width - 2 * group-inset
     let copy-width = card-width - copy-left - 1mm
     let chip = [#block(width: chip-size, height: chip-size, above: 0pt, below: 0pt)[
-      #place(top + left, scaled-chip(
-        chip-size, product-name: name, description: description, badge: badge, accent: palette.chip,
-        show-icsprout: false,
-      ))
+      #place(top + left, r1-chip(product))
     ]<tiny-r1-chip-region>]
     set text(font: "Inter", fill: detail-ink,
       top-edge: "cap-height", bottom-edge: "descender")
@@ -202,7 +185,7 @@
     ]
   }
 
-  let group(title, products, description, badge, palette) = block(
+  let group(title, group-name, palette) = block(
     width: palette.width, height: group-height, radius: 3.8mm, fill: panel-fill,
     above: 0pt, below: 0pt,
   )[
@@ -210,14 +193,15 @@
       text(font: "Inter", size: palette.heading-size, weight: "bold", fill: palette.heading,
         top-edge: "cap-height", bottom-edge: "descender", title))
     #place(top + left, dx: group-inset, dy: heading-height,
-      stack(dir: ttb, spacing: card-gap, ..products.map(product => product-card(product, description, badge, palette))))
+      stack(dir: ttb, spacing: card-gap,
+        ..products.filter(p => p.group == group-name).map(p => product-card(p, palette))))
   ]
 
   [#block(width: plate-width, height: plate-height, above: 0pt, below: 0pt, breakable: false)[
     #metadata(chip-size / chip-native-size)<tiny-r1-chip-scale>
     #place(top + left, grid(columns: (embedded-palette.width, professional-palette.width), column-gutter: column-gap,
-      group("Embedded & Edge", embedded, "RISC-V AI MCU", "Edge AI", embedded-palette),
-      group("Professional Compute", professional, "RISC-V AI SoC", "Physical AI", professional-palette),
+      group("Embedded & Edge", "embedded", embedded-palette),
+      group("Professional Compute", "professional", professional-palette),
     ))
     #place(top + center, dy: group-height + 3.6mm, text(
       font: "Inter", size: 9pt, fill: rgb("#64646C"), top-edge: "cap-height", bottom-edge: "descender",
