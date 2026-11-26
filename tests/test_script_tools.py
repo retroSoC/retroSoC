@@ -1521,24 +1521,23 @@ def test_tiny_p7_iverilog_timeout_preserves_acceptance_budget() -> None:
         "IHP130",
         "--dry-run",
     )
-    assert "TINY_RUN=timeout --foreground 14400s" in default_nightly.stdout
+    assert "TINY_RUN=" not in default_nightly.stdout
 
 
-def test_long_tiny_p7_iverilog_moves_from_pr_to_nightly() -> None:
+def test_long_tiny_p7_iverilog_is_reserved_for_final_campaign() -> None:
     workflow = (ROOT / ".github/workflows/regression-ihp130.yml").read_text()
     nightly = (ROOT / ".github/workflows/nightly.yml").read_text()
+    full_flow = (ROOT / ".github/workflows/full-flow.yml").read_text()
     reusable = (ROOT / ".github/workflows/_regression.yml").read_text()
+    contract = (ROOT / "docs/ip/tiny-soc.md").read_text()
 
+    assert "TINY-057" in contract
     assert "tiny-p7-iverilog:" not in workflow
     assert "tiny_p7_iverilog: exclude" in workflow
-    assert nightly.count("tiny_p7_iverilog: only") == 2
-    assert nightly.count("tiny_p7_iverilog_timeout_seconds: 19800") == 2
-    assert "pdk: IHP130" in nightly
-    assert "pdk: ICS55" in nightly
-    assert "timeout_minutes: 360" in nightly
-    assert "timeout_minutes: 480" in nightly
-    assert "artifact_suffix: -tiny-p7-iverilog-ihp130" in nightly
-    assert "artifact_suffix: -tiny-p7-iverilog-ics55" in nightly
+    assert "tiny-p7-iverilog" not in nightly
+    assert "tiny_p7_iverilog: only" not in nightly
+    assert "tiny_p7_iverilog: include" not in full_flow
+    assert full_flow.count("tiny_p7_iverilog: exclude") == 4
     assert "default: exclude" in reusable
     assert "TINY_P7_IVERILOG: ${{ inputs.tiny_p7_iverilog }}" in reusable
     assert "TINY_P7_TIMEOUT: ${{ inputs.tiny_p7_iverilog_timeout_seconds }}" in reusable

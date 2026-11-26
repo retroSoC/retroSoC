@@ -16,15 +16,15 @@ This does not change warning/metrics policy or another product's gates.
 
 | Tier | Profile | Automated coverage |
 | --- | --- | --- |
-| Pull request | `configs/ci/ics55-tiny.mk` | Default Tiny SAFE24/parked PLL; firmware, Verilator/Icarus and JTAG, lint; local Yosys, netlist and OpenSTA |
-| Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator/Icarus, lint; local Yosys, netlist and OpenSTA |
+| Pull request | `configs/ci/ics55-tiny.mk` | Default Tiny SAFE24/parked PLL; Verilator full-system firmware acceptance and JTAG, lint; local Yosys, netlist and OpenSTA |
+| Pull request | `configs/ci/ihp130-tiny.mk` | Tiny firmware, Verilator full-system acceptance, lint; local Yosys, netlist and OpenSTA |
 | Smoke | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator SVA compilation, Icarus assembly self-test |
 | Pull request | `configs/ci/ihp130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ihp130-debug.mk` | Verilator remote-bitbang JTAG DTM, Debug Module, OpenOCD, and GDB acceptance |
 | Pull request | `configs/ci/gf180.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/ics55.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
 | Pull request | `configs/ci/sky130.mk` | strict Verilator RTL lint, firmware, Verilator, Icarus |
-| Nightly | `configs/ci/ihp130.mk` | repeated behavioral IHP130 regression, CoreMark, and dedicated Tiny P7 Icarus jobs for IHP130/ICS55 |
+| Nightly | `configs/ci/ihp130.mk` | repeated behavioral IHP130 regression and CoreMark; no pre-final full-system Tiny Icarus jobs |
 | Cluster | `configs/cluster/ics55.mk` | compatibility profile for site-specific ICS55 runs |
 
 Regression Verilator firmware simulations override the profiles' manual
@@ -45,11 +45,12 @@ scratch area, and test-status completion within the CI time budget;
 manual runs.
 
 PR regressions retain the Icarus assembly self-test for the serial XPI and
-PSRAM paths, but do not run the multi-hour Tiny P7 Icarus acceptance command by
-default. That command moves to two dedicated nightly jobs for IHP130 and ICS55,
-each with a 19800-second inner budget and independent job limits. This changes
-when the coverage runs, not its verdict or acceptance requirements. Explicit
-`--tiny-p7-iverilog only|include` and full-flow runs retain the long command.
+PSRAM paths. Under TINY-057, ordinary PR, nightly and full-flow definitions use
+Verilator for full-system Tiny firmware acceptance and do not run the long
+full-system Icarus command. That command is reserved for the final combined
+complete-product campaign, with unchanged cycle budgets and strict verdicts.
+Explicit `--tiny-p7-iverilog only|include` is limited to that final campaign;
+parsing the selector is not evidence of acceptance.
 
 ARCHINFO ABI exposes immutable build, configuration, topology, feature, and
 technology identity. Its register specification, driver, standalone tests, and

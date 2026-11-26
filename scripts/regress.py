@@ -411,7 +411,7 @@ def main() -> int:
     parser.add_argument(
         "--tiny-p7-iverilog",
         choices=("include", "exclude", "only"),
-        help="include, exclude, or isolate the long Tiny P7 Icarus command (default: exclude for pr, include otherwise)",
+        help="include, exclude, or isolate the final-campaign Tiny P7 Icarus command (default: exclude)",
     )
     parser.add_argument(
         "--tiny-p7-iverilog-timeout-seconds",
@@ -441,7 +441,7 @@ def main() -> int:
         profiles = tuple(profile for profile in profiles if profile not in TINY_PROFILES.values())
         if not commands:
             parser.error(f"suite {args.suite} has no {args.soc} configuration for this PDK")
-    p7_selection = args.tiny_p7_iverilog or ("exclude" if args.suite == "pr" else "include")
+    p7_selection = args.tiny_p7_iverilog or "exclude"
     try:
         commands = select_tiny_p7_iverilog(commands, p7_selection)
         commands = with_tiny_p7_iverilog_timeout(

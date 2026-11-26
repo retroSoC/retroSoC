@@ -175,10 +175,12 @@ or retained local evidence, while formal proofs use the explicit formal shards.
 - `check-metrics` records firmware size, area, cell count, timing, and flow
   duration. It is non-blocking in the regression runner, including if a future
   policy changes the standalone command into a gate.
-- PR regressions keep the Icarus assembly self-test. The multi-hour Tiny P7
-  Icarus acceptance command runs in dedicated nightly jobs for IHP130 and ICS55
-  instead of blocking every PR. Explicit include/only and full-flow runs retain
-  the same acceptance command and verdict requirements.
+- PR regressions keep the Icarus assembly self-test. Under TINY-057, pre-final
+  full-system Tiny firmware acceptance uses Verilator; long full-system Icarus
+  acceptance is reserved for the final combined complete-product campaign and
+  is not run by ordinary PR, nightly or full-flow definitions. Explicit
+  include/only selection is for that final campaign, with unchanged cycle
+  budgets and verdict requirements.
 - Verilator currently runs through `scripts/run_flow.py`, which captures the
   emulator stdout in a pipe. UART output can therefore appear only after a
   newline or when simulation ends. Treat `sim.log` and `result-sim*.json` as

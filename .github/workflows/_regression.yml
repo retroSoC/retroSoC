@@ -61,7 +61,7 @@ on:
         default: ubuntu-22.04
         type: string
       tiny_p7_iverilog:
-        description: Include, exclude, or isolate the Tiny P7 Icarus acceptance command; excluded by default from PR jobs
+        description: Include, exclude, or isolate the final-campaign Tiny P7 Icarus command; excluded from ordinary jobs
         required: false
         default: exclude
         type: string
