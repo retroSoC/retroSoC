@@ -175,6 +175,11 @@
     },
     {
       "level": 4,
+      "title": "Package Marking",
+      "anchor": "tiny-package-marking"
+    },
+    {
+      "level": 4,
       "title": "Carrier Tape Dimensions",
       "anchor": "tiny-carrier-tape"
     },

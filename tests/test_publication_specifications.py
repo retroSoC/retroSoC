@@ -6,10 +6,12 @@ import csv
 import json
 import math
 from pathlib import Path
+from subprocess import CompletedProcess
 
 import pytest
 
 from publications import specification_reference as s
+from publications import specification_vectors
 from publications import tiny_reference
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -165,6 +167,23 @@ def test_qfn64_views_share_numbering_and_mirror(spec):
     assert qfn["pins"][39]["name"] == "GPIO17"
     assert qfn["dimensions"]["pad_outer"] - qfn["dimensions"]["pad_inner"] == pytest.approx(2 * qfn["dimensions"]["pad_length"])
     assert spec["paste_coverage_percent"] == pytest.approx(16 * 1.4 ** 2 / 7.15 ** 2 * 100)
+
+
+@pytest.mark.parametrize("product", ["tiny", "mini"])
+def test_package_marking_exports_are_tiny_only(tmp_path, monkeypatch, product):
+    def compile_view(command, **kwargs):
+        Path(command[3]).write_text(command[-1], encoding="utf-8")
+        return CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(specification_vectors.subprocess, "run", compile_view)
+    files = specification_vectors.render(ROOT, tmp_path, {"product": product}, "typst", [])
+    for suffix in ("svg", "pdf"):
+        relative = f"engineering/qfn-marking.{suffix}"
+        if product == "tiny":
+            assert (tmp_path / relative).read_text(encoding="utf-8") == "figure=qfn-marking"
+            assert files[relative] == s.digest(tmp_path / relative)
+        else:
+            assert relative not in files and not (tmp_path / relative).exists()
 
 
 def test_tiny_pin_descriptions_keep_roles_and_electrical_status(spec):

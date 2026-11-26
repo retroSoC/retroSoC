@@ -27,6 +27,7 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
             "qfn-bottom": 'qfn-pin-view(s,"bottom")',
             "qfn-side": 'qfn-side(s)',
             "qfn-mechanical": 'qfn-mechanical(s)',
+            "qfn-marking": 'qfn-marking(s)',
             "qfn-copper": 'qfn-copper(s)',
             "qfn-mask": 'qfn-layer(s,"mask")',
             "qfn-paste": 'qfn-layer(s,"paste")',

@@ -347,9 +347,25 @@ the model catalog and inside standalone vector status labels. Paste coverage
 is total aperture area divided by reference EP area. MSL/reflow, thermal values,
 order codes and physical binding remain TBD. EP supplements perimeter grounds.
 
+#### Package marking
+
+Place the marking plate after the assembly qualification tables and before
+Carrier Tape Dimensions. Within a 172 × 112 mm field, draw two 74 mm square
+faces at the same scale. Place the marked top face 46 mm right and 16 mm below
+the rear bottom face. Draw all 64 underside contacts and the chamfered EP from
+the QFN model before covering them with the front view. Locate Pin 1 from each
+view's coordinates and keep the top dimple clear of the ECOS logo.
+
+Use the Figure 2 chip master with matte `#D4C4A3` ink on the front face.
+Scale both logo outlines, the Edge AI badge and all lettering together.
+Label the views in English and place REFERENCE ONLY inside the plate and in
+its caption. The text identifies the production marking drawing and the
+formats for lot and date codes as TBD. Export this same artwork as `qfn-marking.svg` and
+`qfn-marking.pdf`.
+
 ### Tape, reel and reflow references
 
-After Assembly Layers and Reliability, give Carrier Tape Dimensions, Reel
+After Package Marking, give Carrier Tape Dimensions, Reel
 Dimensions, Tape and Reel Box Dimensions, and Reflow Soldering Profile one
 page each in that order. Put the English heading
 and source link above one numbered plate and one numbered parameter table. Use

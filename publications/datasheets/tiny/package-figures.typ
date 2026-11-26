@@ -3,6 +3,7 @@
 #import "../../specifications/figures.typ": ink, gold, gray
 #import "../../specifications/components.typ": use-record
 #import "../../specifications/scientific.typ" as scientific
+#import "feature-highlights.typ": scaled-chip
 #import "soc-palette.typ": domain-fill, rail-fill
 
 #let metal = rgb("#A0A09C")
@@ -370,6 +371,55 @@
     qfn-side(spec, standalone: false),
   )
 ]
+
+#let qfn-marking(spec) = {
+  set text(font: "Inter", size: 9pt, weight: "regular", fill: ink)
+  context metadata((kind: "tiny-diagram", id: "qfn-marking", package: "cetz", page: here().page()))
+  measures(spec, ("body", "pitch", "ep", "lead_length", "lead_width", "chamfer"))
+  let d = spec.qfn.dimensions
+  let side = 74
+  let magnification = side / d.body
+  let rear = (26, 10)
+  let front = (rear.at(0) + 46, rear.at(1) + 16)
+  let centre(origin) = (origin.at(0) + side / 2, origin.at(1) + side / 2)
+
+  // Sidewalls and shadows are illustrative. Only the two face views use package coordinates.
+  let sidewalls(origin) = {
+    let (x, y) = origin
+    let (r, b) = (x + side, y + side)
+    cetz.draw.rect(point(x - 0.6, y + 2.2), point(r + 0.8, b + 2.6),
+      fill: rgb("#17171918"), stroke: none)
+    cetz.draw.line(point(x, y), point(x, b), point(x - 1.4, b + 1.4), point(x - 1.4, y + 1.4),
+      close: true, fill: rgb("#4C4B4E"), stroke: none)
+    cetz.draw.line(point(x, b), point(r, b), point(r - 1.4, b + 1.4), point(x - 1.4, b + 1.4),
+      close: true, fill: rgb("#1B1B1E"), stroke: none)
+  }
+  let pin-one(origin, view) = {
+    let xy = pin-position(spec, centre(origin), magnification, view)
+    cetz.draw.circle(point(..xy), radius: 0.6mm, fill: rgb("#171719"), stroke: 0.45pt + rgb("#ADA99F"))
+  }
+
+  cetz.canvas(length: 1mm, {
+    face(172, 112)
+    sidewalls(rear)
+    square(centre(rear), magnification, d.body, fill: rgb("#373639"), stroke: none)
+    exposed-pad(centre(rear), magnification, d,
+      fill: gradient.linear(rgb("#BDBBB3"), rgb("#8A8C89"), angle: 40deg),
+      stroke: 0.35pt + rgb("#777876"))
+    let contact-metal = gradient.linear(rgb("#D0CEC6"), rgb("#A4A59E"), angle: 50deg)
+    for pin in spec.qfn.pins {
+      contact(centre(rear), magnification, pin.bottom_terminal, fill: contact-metal, stroke: none)
+    }
+    pin-one(rear, "bottom")
+
+    sidewalls(front)
+    write-at(..front, scaled-chip(side * 1mm, marking-ink: rgb("#D4C4A3")), anchor: "north-west")
+    pin-one(front, "top")
+    view-title(48, 92, [Bottom view])
+    view-title(centre(front).at(0), 106, [Top view])
+    reference-label(167, 6, anchor: "east")
+  })
+}
 
 #let land-pattern(spec, centre, scale, fill: metal, stroke: outline, expand: 0) = {
   square(centre, scale, spec.qfn.dimensions.pad_ep + 2 * expand, fill: fill, stroke: stroke)
