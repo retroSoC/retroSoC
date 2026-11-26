@@ -382,6 +382,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
         "tiny-overview": "tiny-overview",
         "tiny-gen1-highlights": "tiny-overview",
         "tiny-r1-product-line": "tiny-overview",
+        "r1-roadmap": "tiny-r1-roadmap",
         "qfn-marking": "tiny-package-marking",
         "application-composition": "tiny-applications",
         "tiny-soc-functional": "tiny-core",

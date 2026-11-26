@@ -21,6 +21,7 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
         expressions.update({
             "address-map": 'address-map(json(sys.inputs.at("data")).address_map)',
             "tiny-gen1-highlights": 'feature-highlights(json(sys.inputs.at("data")))',
+            "r1-roadmap": 'r1-roadmap(json(sys.inputs.at("data")).r1_roadmap)',
             "smartwatch": 'smartwatch(json(sys.inputs.at("data")).smartwatch)',
             "qfn-pinout": 'qfn-pinout(s)',
             "qfn-top": 'qfn-pin-view(s,"top")',
@@ -43,6 +44,7 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
     if spec["product"] == "tiny":
         text += '#import "/publications/datasheets/tiny/address-map.typ": address-map\n'
         text += '#import "/publications/datasheets/tiny/feature-highlights.typ": feature-highlights, r1-product-line\n'
+        text += '#import "/publications/datasheets/tiny/r1-roadmap.typ": r1-roadmap\n'
         text += '#import "/publications/datasheets/tiny/smartwatch.typ": smartwatch\n'
         text += '#import "/publications/datasheets/tiny/package-figures.typ": *\n'
         text += '#import "/publications/datasheets/tiny/assembly-references.typ": carrier-tape, reel, reel-box, reflow\n'

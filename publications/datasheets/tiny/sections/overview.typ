@@ -88,7 +88,9 @@ retroSoC TINY Gen1 is a wired MCU with one Hazard3 hart, separate local instruct
   ([Boot clock],reference-boot(data.facts)),
   ([Main SRAM],[#data.facts.sram.CapacityKiB KiB]),
   ([Compatibility],[#code(compat.profile_path), #reference-boot(compat)])),widths:(1.05fr,2.55fr))
-See @tiny-configuration for profile differences and @tiny-core for the functional architecture.
+#change-start(doc.change_prefix + "overview-link", "Overview link to the R1 family roadmap")
+See @tiny-configuration for profile differences, @tiny-core for the functional architecture and @tiny-r1-roadmap-figure for the R1 family schedule.
+#change-end(doc.change_prefix + "overview-link")
 
 #pagebreak()
 #{

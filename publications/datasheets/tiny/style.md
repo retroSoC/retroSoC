@@ -186,6 +186,28 @@ Compute. Use the product plan for STD roadmap targets and label each right-hand
 entry `Concept`. Render the same figure at the same height in the book and in
 its standalone SVG and PDF.
 
+In section 5.2 (Roadmap), use the same six 26.5 mm chips in product order.
+Draw a 172 × 190 mm plate with a two-level year/quarter header and 12 mm per
+calendar quarter. Align each chip's right edge with its endpoint. Place the
+positioning card to its left and the dated bar below, independent of either
+card's width. Use at least 9 pt Inter outside the chip artwork. Apply the
+existing scaled inscription limits only to the six measured roadmap chips.
+
+Use publication gold (`#A38442`) for the year band, bars, endpoint marks,
+milestone diamonds, key symbols and card outlines. Use pale gold (`#F4EFE4`)
+for the quarter band and positioning cards. Set header labels in the chip
+master's dark detail ink and grid lines in the standard rule color. Mix
+60% publication gold and 40% publication ink in RGB for the small date
+labels. The six chips use their Figure 3 product colors.
+
+Maintain the family copy, status, observation date, evidence links and
+planning windows in `r1-roadmap.json`. Draw recorded development through
+the observation date with a solid line and an open endpoint. Place dated
+milestones at their actual day within the quarter. Preserve a quarter-only
+start for MINI Gen2. Draw planned windows with dashed lines spanning both
+endpoint quarters. Link the Overview to the numbered figure, and export
+`r1-roadmap.svg` and `r1-roadmap.pdf` from the same drawing.
+
 The system fabric diagram uses a 172 × 165 mm maximum plate with Inter labels
 at 9 pt or larger. Keep I and D decoding and the two 1.4 pt gold local routes distinct.
 Square terminals mark ports and the three owner columns lead to grouped

@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 from publications import register_reference as registers
+from publications.r1_roadmap import roadmap_reference
 from publications.waveform_reference import source_paths as wave_sources, validate_waveforms
 from scripts.check_clock_reset_domains import validate as validate_clocks
 from scripts.generate_tiny import read_topology
@@ -375,6 +376,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     diagnostic_reference = diagnostics(ROOT, refs)
     paths.update(illustrations["source_paths"])
     paths.update({"publications/tiny_diagram_reference.py", "publications/tiny_publication_reference.py",
+                  "publications/r1_roadmap.py", (BOOK / "r1-roadmap.json").as_posix(),
                   "crt/include/retrosoc/core/status.h", "crt/include/retrosoc/hal/spi_regs.h"})
     for relative in paths:
         if relative.startswith("rtl/mini/") or not (ROOT / relative).is_file():
@@ -391,6 +393,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     data = dict(document=config, facts=fact, compatibility=compatibility, register_index=register_index, overview=overview,
                 package=package_rows(ROOT), reset_address=f"0x{reset:08X}", regions=sorted(regions, key=lambda r: r["base"]),
                 address_map=address_map_model(reset, regions, topology["main_sram"]),
+                r1_roadmap=roadmap_reference(read(ROOT / BOOK / "r1-roadmap.json")),
                 smartwatch=smartwatch_reference(topology["gpio_alt_functions"], fact),
                 interrupts=sorted(topology["interrupts"], key=lambda r: r["core_bit"]), gpio=topology["gpio_alt_functions"],
                 pads=[dataclasses.asdict(p) for p in pads], power_pads=read(ROOT / PINS)["power_pads"],

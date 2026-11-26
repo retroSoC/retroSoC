@@ -129,12 +129,12 @@ Assembly organization follows
 The selected supplier and assembler must release the final process.
 #change-end(qfn-layout-change + "package-drawings")
 
-#change-start(doc.change_prefix + "package-marking", "QFN64 package marking", category: "added")
+#change-start("tiny-v02-package-marking-20261126-package-marking", "QFN64 package marking", category: "added")
 ==== Package Marking <tiny-package-marking>
 The marking follows @tiny-gen1-highlights. Pin 1 is at upper left in top view and upper right in bottom view.#linebreak()
 The production marking drawing and the formats for lot and date codes are TBD.
 #visual(spec, "qfn-marking", qfn-marking(spec), [QFN64 package marking], kind: image, anchor: "tiny-package-marking-figure")
-#change-end(doc.change_prefix + "package-marking")
+#change-end("tiny-v02-package-marking-20261126-package-marking")
 
 #let tape-source = spec.sources.find(s => s.id == "ti-tusb8041-tape-reel").url
 #let box-source = spec.sources.find(s => s.id == "ti-tusb8041-reel-box").url
