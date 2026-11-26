@@ -25,22 +25,29 @@
 
 #let draw-chip(
   x, y, product-name: "TINY", description: "RISC-V AI MCU", badge: "Edge AI",
-  accent: chip-violet, show-icsprout: true,
+  accent: chip-violet, show-icsprout: true, marking-ink: none,
 ) = {
   import cetz.draw: content
 
-  // Both white marks share one visible height and horizontal centerline.
+  let mark(original) = if marking-ink == none { original } else { marking-ink }
+  // Both logos share one visible height and horizontal centerline.
   let chip-logo(anchor-x, logo, anchor: "center") = {
     let scale = 32 / logo.height * unit
     let commands = logo.rings.map(ring => {
       let points = ring.map(p => (p.at(0) * scale, p.at(1) * scale))
       (curve.move(points.first()),) + points.slice(1).map(p => curve.line(p)) + (curve.close(),)
     }).flatten()
-    content((x + anchor-x, -y - 34), curve(..commands, fill: white, stroke: none, fill-rule: "even-odd"), anchor: anchor)
+    content((x + anchor-x, -y - 34), curve(..commands, fill: mark(white), stroke: none, fill-rule: "even-odd"), anchor: anchor)
   }
 
   // The chip labels and marks are illustrative artwork.
-  let chip-fill = gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg)
+  // A single-ink marking uses the mold color for the lettering inside the badge.
+  let (chip-fill, badge-ink) = if marking-ink == none {
+    (gradient.linear(rgb("#44434B"), rgb("#171719"), angle: 45deg), detail-ink)
+  } else {
+    let mold = rgb("#2D2C30")
+    (mold, mold)
+  }
   panel(x, y, chip-side, chip-side, fill: chip-fill, radius: 0, stroke: chip-edge + rgb("#525158"))
   // Figure 2's disc aligns with the visible R1 edge, 1.65 mm from ICsprout.
   chip-logo(38.32432, chip-logos.ecos)
@@ -49,24 +56,24 @@
   }
   // The longer badge retains its text padding.
   let (badge-left, badge-width) = if badge == "Physical AI" { (149, 133) } else { (175, 96) }
-  panel(x + badge-left, y + 18, badge-width, 32, fill: accent.light, radius: 8)
+  panel(x + badge-left, y + 18, badge-width, 32, fill: mark(accent.light), radius: 8)
   content((x + badge-left + badge-width / 2, -y - 34), box(text(
-    font: "Inter", size: 9pt, weight: 700, fill: detail-ink,
+    font: "Inter", size: 9pt, weight: 700, fill: badge-ink,
     top-edge: "bounds", bottom-edge: "bounds", badge,
   )), anchor: "center")
 
   let chip-mark = {
-    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "baseline")
+    set text(font: "Inter", fill: mark(rgb("#FAFAFB")), top-edge: "cap-height", bottom-edge: "baseline")
     let model = text(size: 30pt, weight: 650, tracking: -0.022em, "R1")
     // Limit the gradient to the product word within the shared baseline.
     let product = box(text(size: 16pt, weight: 650,
-      fill: gradient.linear(accent.light, accent.dark, angle: 0deg, relative: "parent"), product-name))
+      fill: mark(gradient.linear(accent.light, accent.dark, angle: 0deg, relative: "parent")), product-name))
     box(model + h(1.8mm) + product)
   }
   content((x + 18, -y - 159.6234), chip-mark, anchor: "north-west")
 
   let chip-description = {
-    set text(font: "Inter", fill: rgb("#FAFAFB"), top-edge: "cap-height", bottom-edge: "descender")
+    set text(font: "Inter", fill: mark(rgb("#FAFAFB")), top-edge: "cap-height", bottom-edge: "descender")
     stack(dir: ttb, spacing: 0.8mm,
       box(text(size: 10pt, weight: 500, description)),
       box(text(size: 6pt, weight: 400, "Open Silicon Design")),
