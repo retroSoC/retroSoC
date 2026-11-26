@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
+  "source_revision": "349c40035428db808e6e3d8cc7027c14abfed20e",
   "sources": [
     "Makefile",
     "app/README.md",
@@ -14934,24 +14934,76 @@
     "soc_architecture_catalog": "publications/datasheets/soc-architecture.json"
   },
   "ci_snapshot": {
-    "revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
-    "checked_date": "2026-11-19",
-    "checked_at": "2026-11-19T08:16:58Z",
-    "boundary": "Exact PR #297 head quality workflow completed with failure because the RTL coding-style source snapshot had not yet been rebound. This diagnostic is not a passing result or a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
+    "revision": "349c40035428db808e6e3d8cc7027c14abfed20e",
+    "checked_date": "2026-11-26",
+    "checked_at": "2026-11-26T13:36:19Z",
+    "boundary": "Exact reviewed source snapshot 349c4003 policy quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 44483225170,
+        "run_id": 45826452113,
         "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/44483225170",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/45826452113",
         "status": "completed",
-        "conclusion": "failure",
-        "scope": "Repository quality workflow on exact PR #297 head 28a2123c; fast identified the stale Mini technical-source snapshot, impact and incremental-shadow succeeded, and quality-gate failed",
-        "note": "Failure evidence only; the corrected snapshot requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred.",
-        "observations": []
+        "conclusion": "success",
+        "scope": "Repository quality workflow on exact PR #326 source snapshot 349c4003: fast checks, four fixture shards, fixture fan-in and aggregate quality gate completed successfully",
+        "note": "Exact source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred. Later metadata-only updates do not change the reviewed technical inputs.",
+        "observations": [
+          {
+            "name": "fast",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/45826452113/job/139931732612",
+            "status": "completed",
+            "conclusion": "success",
+            "scope": "environment-check"
+          }
+        ]
       }
     ]
   },
   "historical_ci_snapshots": [
+    {
+      "revision": "d5d18005fc4ae46d65ef45f0c35d6ba28ac206fa",
+      "checked_date": "2026-11-26",
+      "checked_at": "2026-11-26T13:06:31Z",
+      "boundary": "Historical PR #326 policy head d5d18005 quality workflow completed with failure because publication snapshots had not yet been rebound. This diagnostic is not a passing result or a hardware, physical or release qualification.",
+      "runs": [
+        {
+          "run_id": 45821903269,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/45821903269",
+          "status": "completed",
+          "conclusion": "failure",
+          "scope": "Repository quality workflow on exact PR #326 policy head d5d18005; fast and all four fixture shards completed with failure while publication source/CI snapshots predated the policy change",
+          "note": "Failure evidence only; the corrected metadata requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred.",
+          "observations": [
+            {
+              "name": "fast",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/45821903269/job/139916018973",
+              "status": "completed",
+              "conclusion": "failure",
+              "scope": "environment-check"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
+      "checked_date": "2026-11-19",
+      "checked_at": "2026-11-19T08:16:58Z",
+      "boundary": "Historical PR #297 head quality workflow completed with failure because the RTL coding-style source snapshot had not yet been rebound. This diagnostic is not a passing result or a hardware, physical or release qualification.",
+      "runs": [
+        {
+          "run_id": 44483225170,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/44483225170",
+          "status": "completed",
+          "conclusion": "failure",
+          "scope": "Repository quality workflow on exact PR #297 head 28a2123c; fast identified the stale Mini technical-source snapshot, impact and incremental-shadow succeeded, and quality-gate failed",
+          "note": "Failure evidence only; the corrected snapshot requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred.",
+          "observations": []
+        }
+      ]
+    },
     {
       "revision": "d9f2781147d7a7c47e5d8c19396fcc2a3de95133",
       "checked_date": "2026-11-17",

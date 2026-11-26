@@ -310,7 +310,13 @@ def test_tiny_plan_excludes_unsupported_pdks() -> None:
 def test_full_event_and_unknown_paths_fail_closed() -> None:
     full = create_plan(plan_args(["README.md"], event="push"))
     unknown = create_plan(plan_args(["unregistered/file.xyz"]))
-    assert any("TINY_RUN=timeout --foreground 14400s" in command for command in full["commands"]["regression_ihp130"])
+    for event in ("push", "schedule", "workflow_dispatch"):
+        plan = create_plan(plan_args(["README.md"], event=event))
+        assert all("TINY_RUN=" not in command for command in plan["commands"]["regression_ihp130"])
+        assert all("TINY_RUN=" not in command for command in plan["commands"]["regression_ics55"])
+    full_mode = create_plan(plan_args(["README.md"], mode="full"))
+    assert all("TINY_RUN=" not in command for command in full_mode["commands"]["regression_ihp130"])
+    assert all("TINY_RUN=" not in command for command in full_mode["commands"]["regression_ics55"])
     for plan in (full, unknown):
         assert plan["selected_policy"] == "full"
         assert plan["flags"]["development_environment"] is True

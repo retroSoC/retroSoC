@@ -655,8 +655,11 @@ python3 scripts/regress.py --root . --suite nightly --soc TINY
 python3 scripts/regress.py --root . --suite pr --pdk IHP130 --soc MINI
 ```
 
-Both Verilator and Icarus must exercise independent pin-level models. Existing
-Tiny profiles do not acquire new IP merely because these commands parse.
+Before the combined final campaign, Verilator exercises the full-system
+independent pin-level models. Full-system Icarus acceptance of those models is
+reserved for the final combined campaign under TINY-057; focused standalone
+Icarus coverage remains separate. Existing Tiny profiles do not acquire new IP
+merely because these commands parse.
 Missing R2 prerequisites, unavailable tools/models and skipped cases remain
 explicit gaps, not substituted products or passing tests.
 
@@ -691,7 +694,7 @@ Stable IDs/titles below do not rename, reuse or advance R2/PIO phases.
 | SPI-P1 - SPI Core and Register Implementation | P0; owned master/APB/packing/phase/guard interfaces, register mirror and standalone protocol/negative tests. All four modes, widths, ordering, quotas, held-CS lifecycle, lint/style/formal and block-synthesis evidence. No real Tiny capability until wiring exists. |
 | SPI-P2 - DMA V2.2 Paced FIFO Integration | P1 and V2.1 cancellation/compatibility obligations, implemented here if not already delivered;5-bit encoding, port/source-qualified credit interfaces, exact packing/counts, jobs/drain and old-Mini regression. Retain single-beat MMIO policy; no PIO peripheral completion prerequisite or hidden burst optimization. |
 | SPI-P3 - Tiny GPIO RCU and SDK Integration | P2 plus applicable TINY-R2-P6/P7; topology/address/IRQ/RCU/filelists, four Gen1 ALT additions, latched source qualifier through fabric/CDC, GPIO readiness/ownership, bounded HAL. Firmware/simulations and unaffected Mini/PIO compatibility; no layout/source swap of legacy LCD. |
-| SPI-P4 - Display and Snapshot Application Qualification | P3; board display adapter, independent panel/data oracle and three stages of display patterns, PSRAM-source display and sequential camera/verify/display/SD. Camera/PSRAM cases require R2-P8/P9. Both simulators, host boundaries, error recovery and current-source regression/measurements pass. |
+| SPI-P4 - Display and Snapshot Application Qualification | P3; board display adapter, independent panel/data oracle and three stages of display patterns, PSRAM-source display and sequential camera/verify/display/SD. Camera/PSRAM cases require R2-P8/P9. Pre-final full-system acceptance uses Verilator under TINY-057; full-system Icarus is final-campaign-only. Host boundaries, error recovery and current-source regression/measurements pass. |
 | SPI-P5 - IHP130 Timing and Physical Qualification | Historical title; default ICS55. P4 and all product functional prerequisites; mandatory final campaign with R2-P11/PIOLITE-P5/PPALITE-P5 on the same complete netlist. Close synthesis/netlist/STA/CDC/RDC/physical/Pad gates; publish only qualified operating points. |
 
 ### Next-phase preflight handoff

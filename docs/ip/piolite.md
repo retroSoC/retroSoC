@@ -681,8 +681,12 @@ Test unaffected SMs/channels and Mini's PIO-disabled shared-IP integration.
 Firmware verdict is Tiny SYSCTRL TEST_STATUS and `SIM_TEST_PASS`, successful
 command exit, and no `FAILED`, `FATAL`, `assertion failed`, `%Error`,
 `SIM_TEST_FAIL` or `SIM_TEST_TIMEOUT`. UART boot text is not acceptance.
-Verilator and Icarus pin BFMs must validate first/last-bit timing, all SPI modes,
-UART asynchronous phase/error recovery, pulse bounds and display blanking.
+Before the combined final campaign, full-system pin-level firmware acceptance
+uses Verilator for first/last-bit timing, all SPI modes, UART asynchronous
+phase/error recovery, pulse bounds and display blanking. Full-system Icarus
+firmware acceptance of those cases is reserved for the final combined campaign
+under TINY-057. Focused standalone Icarus tests retain their own frozen coverage
+and do not replace full-system firmware acceptance.
 
 Current commands below describe existing tooling, not proof that PIO tests
 already exist. P1/P2 add focused tests to normal test discovery, not fictional

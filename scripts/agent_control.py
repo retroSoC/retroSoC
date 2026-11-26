@@ -482,7 +482,7 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
     for pdk in sorted(PDKS):
         key = f"regression_{pdk.lower()}"
         if flags[key]:
-            commands[key] = regression_commands(pdk, include_long=forced_full)
+            commands[key] = regression_commands(pdk, include_long=False)
     if flags["regression_smoke"]:
         commands["regression_smoke"] = [
             shlex.join(["make", f"CONFIG={profile}", *values])

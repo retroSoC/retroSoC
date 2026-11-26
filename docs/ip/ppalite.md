@@ -670,9 +670,12 @@ python3 scripts/regress.py --root . --suite pr --pdk IHP130 --soc MINI
 ```
 
 The current committed profile lacks PPALite integration; successfully parsing
-these commands is not its execution. Verilator and Icarus must both exercise
-stream and real pin-level camera/memory paths as applicable. Skipped fixtures,
-source gaps and unavailable tools/models remain visible failures or unrun gates.
+these commands is not its execution. Before the combined final campaign,
+Verilator exercises the full-system stream and real pin-level camera/memory
+paths as applicable. Full-system Icarus acceptance is reserved for the final
+combined campaign under TINY-057; focused standalone Icarus coverage remains
+separate. Skipped fixtures, source gaps and unavailable tools/models remain
+visible failures or unrun gates.
 
 ## Synthesis, Timing, and Physical Evidence
 
@@ -707,7 +710,7 @@ PPALite there. IDs and titles are stable and do not replace earlier roadmaps.
 | PPALITE-P1 - Stream Pixel Core and Reference Model | P0; owned stream core, validator, decimator, formatter, buffers, APB/register mirror and scalar/stream models. Exact pixels/layout, protocol/backpressure, invalid cases, parity, lint/style/formal and block-synthesis evidence. No Tiny capability claim. |
 | PPALITE-P2 - DVP Route and Source Qualification | P1; coherent source guards, RAW bypass, route/barrier/epoch behavior and DVP correctness prerequisites. Close minimal shared error/statistic/snapshot/CDC/drain defects or reuse accepted fixes, retaining DVP ABI/FIFO and Mini behavior. Source integrity must be proved, not inferred from PPA output. |
 | PPALITE-P3 - Tiny DMA RCU and SDK Integration | P2 plus applicable R2-P6/P7; APB/IRQ27/RCU17/topology/filelists, exact direct DMA2 admission, complete-job drain, capability and bounded HAL. Existing DMA cancellation obligations are prerequisites; no new DMA encoding/master/channel. Target firmware and affected Tiny/Mini tests pass. |
-| PPALITE-P4 - Camera Memory and Display Qualification | P3 plus R2-P8/P9 and display's applicable SPI stages; SRAM/PSRAM captures, pixel/padding/canary checks, SD/stride-aware preview, repeated/error recovery, both simulators, full regressions and measurements. No continuous-video or FPS guarantee without separate evidence. |
+| PPALITE-P4 - Camera Memory and Display Qualification | P3 plus R2-P8/P9 and display's applicable SPI stages; SRAM/PSRAM captures, pixel/padding/canary checks, SD/stride-aware preview, repeated/error recovery, pre-final Verilator full-system acceptance under TINY-057, final-campaign-only full-system Icarus, full regressions and measurements. No continuous-video or FPS guarantee without separate evidence. |
 | PPALITE-P5 - IHP130 Timing and Physical Qualification | Historical title; default ICS55. P4 plus all product functional prerequisites; mandatory final campaign with R2-P11/SPI-P5/PIOLITE-P5 on the identical complete-product design, closing source-bound synthesis/netlist/STA/CDC/RDC/physical/power/Pad gates. |
 
 ### Next-phase preflight handoff

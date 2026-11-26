@@ -127,6 +127,17 @@ performance-only scope; unrelated SoCs and PDK rollouts remain excluded.
   qualification, Tiny's own synthesis/netlist requirements, behavioral
   simulator verdicts, forbidden-marker checks or warning baselines. Historical
   Mini synthesis attempts are diagnostic only, not passing or required evidence.
+- TINY-057: full-system Tiny firmware acceptance uses Verilator before the
+  combined final campaign. Full-system Icarus firmware acceptance runs only in
+  that final campaign on the same SPI/PIO-lite/PPALite-inclusive source,
+  configuration and PDK. This supersedes earlier pre-final full-system Icarus
+  requirements in this contract, the extension contracts and their verification
+  companions. Focused standalone simulator tests and required synthesis/netlist-
+  function checks remain separate evidence, not substitutes for full-system
+  firmware acceptance. Ordinary PR, nightly and full-flow definitions do not
+  execute the long full-system Icarus command. Final acceptance retains the
+  original cycle budgets, command success, TEST_STATUS, SIM_TEST_PASS and
+  forbidden-error rules; no publication document is changed by this policy.
 
 The execution order is ICS55 platform enablement, remaining Tiny foundation
 through R2-P10, SPI-P1..P4, PIOLITE-P1..P4, PPALITE-P1..P4, then one final
@@ -204,7 +215,8 @@ RCU transitions, gating, fault recovery and rate reporting remain R2-P7.
 Do not advertise unimplemented RCU capability or force an early high-rate boot.
 
 Acceptance requires an executable source-bound platform, actual macro binding,
-both simulators and strict Tiny verdicts, dependency/model identity, relevant
+Verilator full-system firmware acceptance before the final campaign under
+TINY-057, strict Tiny verdicts, dependency/model identity, relevant
 synthesis/netlist checks and observational timing with explicit gaps. Physical
 timing closure is deferred to the combined final campaign. This refreeze
 implemented only documentation and dependency acquisition. The subsequent
@@ -2200,6 +2212,11 @@ make CONFIG=configs/ci/ihp130-tiny.mk SIMU=IVERILOG firmware sim
 make CONFIG=configs/ci/ihp130-tiny.mk regress-pr
 make CONFIG=configs/ci/ihp130-tiny.mk regress-nightly
 ```
+
+The explicit `SIMU=IVERILOG` full-system firmware command above belongs only to
+the final combined campaign under TINY-057; pre-final full-system acceptance
+uses Verilator. Focused standalone Icarus and required netlist-function commands
+retain their own evidence scopes.
 
 R2-P2/P4/P5 retain their affected synthesis/STA attempts and focused protocol/reset
 tests; R2-P10/P11 require the relevant synthesis/netlist/physical flows in

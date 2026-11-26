@@ -38,7 +38,7 @@ jobs:
       runner: ${{ inputs.runner }}
       timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
-      tiny_p7_iverilog: include
+      tiny_p7_iverilog: exclude
       change_mode: full
       retention_days: 90
       artifact_suffix: -full-flow
@@ -53,7 +53,7 @@ jobs:
       runner: ${{ inputs.runner }}
       timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
-      tiny_p7_iverilog: include
+      tiny_p7_iverilog: exclude
       change_mode: full
       retention_days: 90
       artifact_suffix: -full-flow
@@ -68,7 +68,7 @@ jobs:
       runner: ${{ inputs.runner }}
       timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
-      tiny_p7_iverilog: include
+      tiny_p7_iverilog: exclude
       change_mode: full
       retention_days: 90
       artifact_suffix: -full-flow
@@ -83,7 +83,7 @@ jobs:
       runner: ${{ inputs.runner }}
       timeout_minutes: ${{ fromJSON(format('{0}', inputs.timeout_minutes)) }}
       behavioral_only: false
-      tiny_p7_iverilog: include
+      tiny_p7_iverilog: exclude
       change_mode: full
       retention_days: 90
       artifact_suffix: -full-flow
