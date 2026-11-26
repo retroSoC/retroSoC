@@ -112,18 +112,28 @@ Place TINY Gen1 feature highlights at the top of page 3, after the
 Overview configuration table. Use the 1200 × 674 design coordinates at a
 172 mm width, gray cards, violet gradient headlines and Inter labels at
 9 pt or larger. Use a 24-unit corner radius and at least 10 units between
-cards. Put SRAM capacity, DVP input and stereo I²S across the top. Fix the
-central 463 × 373 card at (369, 179) and the chip at (456, 222). Center the
-two-line application summary in a card of the same width below the chip.
+cards. Set the SRAM, DVP and stereo I²S top cards at y = 14 with a height of
+154. Their horizontal spans are 7–359, 369–832 and 842–1193 respectively.
+Align the DVP card with both edges of the central 463 × 373 chip card at
+(369, 179). Place the chip at (456, 222). Center the two-line application
+summary in a card of the same width directly below it.
 
-On the left, pair the ICSprout55 PDK and Hazard3 cards above a full-width
-PPALite card, with SDIO and GPIO below. Set `55nm` in 22 pt violet type above
-`Open-source` and `PDK` on two centered 9 pt lines. Set `Two alternate` above
-`modes` and keep `32 GPIOs` on one line in 14.5 pt. On the right, place DMA
-and the four SRAM groups above XPI and the multimedia applications. Keep the
-boot NOR outline solid and the optional PSRAM outline dashed. Set
-`Camera capture` on one line in 9 pt, followed by `Stereo audio` and the
-two-line `SPI LCD preview` in 10.5 pt.
+On the left, pair the ICSprout55 PDK and multimedia applications above the
+full-width PPALite card, with SDIO and GPIO below. Set `55nm` in 22 pt violet
+type above the two centered 9 pt lines `Open-source` and `PDK`. Center the
+four application lines `Camera capture`, `Stereo audio`, `SPI LCD` and
+`preview` in the 170 × 166 card. Use 9 pt Inter at weight 650 with the violet
+gradient. Use −0.060 em tracking on the first line and −0.018 em on the
+other three. Set `Two alternate` above `modes` and keep `32 GPIOs` on one
+line in 14.5 pt.
+
+On the right, align Central DMA and Hazard3 hart using the same three rows.
+Place each 9 pt title, 22 pt violet count and 9 pt caption at 27, 85 and
+163 units below its card top. Put XPI below DMA, with a solid boot NOR
+outline and a dashed optional PSRAM outline. Center the 2 × 2 SRAM bank
+drawing horizontally, with its top edge 49.5 units below the card top.
+In the XPI and SRAM cards, anchor the 12.5 pt violet headings at 180 units
+and the 9 pt descriptions at 218 units so each pair shares a baseline.
 
 The Figure 2 chip places the white ECOS and ICsprout outlines on one
 horizontal centerline at a visible height of 4.59 mm each. Anchor the
