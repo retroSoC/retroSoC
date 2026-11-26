@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
+  "source_revision": "d5d18005fc4ae46d65ef45f0c35d6ba28ac206fa",
   "build_control_review": {
-    "revision": "28a2123cda135d6d1fb623a61473b15bf4cffdae",
+    "revision": "d5d18005fc4ae46d65ef45f0c35d6ba28ac206fa",
     "makefile_blob": "3252853543989a8105c5c15f9e976e78b96c295d",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical and control snapshot advances to 28a2123c for expression-free instance port connections and the prohibition of trailing instance-port comments. The previously reviewed Makefile and Git workflow blobs are unchanged; RTL behavior, product interfaces, hardware profiles and dependency pins are unchanged. Later technical or control-file edits require a fresh explicit review."
+    "reason": "The reviewed technical and control snapshot advances to d5d18005 for TINY-057 final-only full-system Icarus acceptance. The Makefile and Git workflow blobs are unchanged; RTL behavior, Mini product interfaces, hardware profiles and dependency pins are unchanged. Later technical or control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
