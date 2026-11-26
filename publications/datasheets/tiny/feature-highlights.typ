@@ -230,70 +230,99 @@
     )), anchor: "north")
   }
   let accent(x, y, body, size) = label(x, y, body, size: size, weight: 650, paint: violet, tracking: -0.018em)
+  // Place the contents relative to the tile's top center.
+  let tile(x, y, w, h, contents) = {
+    panel(x, y, w, h)
+    cetz.draw.group({
+      cetz.draw.translate((x + w / 2, -y))
+      contents
+    })
+  }
 
   frame((0, 0), (1200, -674), stroke: none, fill: white)
-  for (x, y, w, h) in (
-    (14, 14, 167, 154), (191, 14, 168, 154), (369, 14, 167, 154), (546, 14, 286, 154), (842, 14, 345, 154),
-    (14, 179, 345, 209), (14, 398, 167, 154), (191, 398, 168, 154), (14, 562, 345, 100),
-    (369, 179, 463, 373), (369, 562, 463, 100),
-    (842, 179, 167, 264), (1019, 179, 168, 264), (842, 453, 345, 209),
-  ) { panel(x, y, w, h) }
+  // Top row: on-chip storage and multimedia interfaces.
+  tile(7, 14, 387, 154, {
+    label(0, 13, "On-chip")
+    accent(0, 48, str(data.facts.sram.CapacityKiB) + " KiB", 28pt)
+    label(0, 121, "SRAM")
+  })
+  tile(404, 14, 393, 154, {
+    label(0, 13, "Camera input", size: 10pt)
+    accent(0, 52, "8-bit DVP", 23.5pt)
+    label(0, 118, "RGB565 / YUV422", size: 10pt)
+  })
+  tile(807, 14, 386, 154, {
+    accent(0, 22, "16/24-bit", 24.5pt)
+    label(0, 88, "Stereo I²S", size: 11pt, weight: 600)
+    label(0, 121, "TX and RX")
+  })
 
-  // Five tiles across the top.
-  accent(97.5, 53, "55nm", 22pt)
-  label(97.5, 117, "Open-source")
-  label(97.5, 141, "PDK")
-  label(275, 29, "Hazard3 hart")
-  accent(275, 69, "1", 22pt)
-  label(275, 139, data.facts.hardware_isa)
-  label(452.5, 29, "Central DMA")
-  accent(452.5, 69, str(data.facts.dma.NumChannels), 22pt)
-  label(452.5, 139, "Channels")
-  for (y, title) in ((48, "Camera capture"), (77, "Stereo audio"), (106, "SPI LCD preview")) {
-    accent(689, y, title, 10.5pt)
-  }
-  label(1014.5, 29, "On-chip")
-  accent(1014.5, 59, str(data.facts.sram.CapacityKiB) + " KiB", 28pt)
-  label(1014.5, 139, "SRAM")
+  // Left of the chip, PPALite spans the two columns.
+  tile(7, 179, 172, 166, {
+    accent(0, 37, "55nm", 22pt)
+    label(0, 98, "Open-source")
+    label(0, 125, "PDK")
+  })
+  tile(189, 179, 170, 166, {
+    label(0, 16, "Hazard3 hart")
+    accent(0, 52, "1", 22pt)
+    label(0, 124, data.facts.hardware_isa)
+  })
+  tile(7, 355, 352, 164, {
+    label(0, 13, "Inline")
+    accent(0, 48, "PPALite", 14pt)
+    label(0, 95, "Pixel sampling")
+    label(0, 122, "Extract luma")
+  })
+  tile(7, 529, 167, 133, {
+    accent(0, 38, "4-bit", 20pt)
+    label(0, 92, "SDIO host")
+  })
+  tile(184, 529, 175, 133, {
+    label(0, 23, "Two alternate")
+    label(0, 47, "modes")
+    accent(0, 83, str(data.gpio.len()) + " GPIOs", 14.5pt)
+  })
 
-  // Camera and media application tiles below the left-hand metrics.
-  label(186.5, 214, "Camera input", size: 10pt)
-  accent(186.5, 258, "8-bit DVP", 23.5pt)
-  label(186.5, 326, "RGB565 / YUV422", size: 10pt)
-  label(97.5, 412, "Inline")
-  accent(97.5, 448, "PPALite", 14pt)
-  label(97.5, 490, "Pixel sampling")
-  label(97.5, 522, "Extract luma")
-  accent(275, 456, "4-bit", 20pt)
-  label(275, 522, "SDIO host")
-  label(186.5, 586, "Audio capture and playback", size: 9.25pt, weight: 600)
-  label(186.5, 619, "Camera preview on SPI LCD", size: 9.25pt, weight: 600)
-
+  panel(369, 179, 463, 373)
   draw-chip(456, 222)
-  label(600.5, 578, "Two alternate modes")
-  accent(600.5, 605, str(data.gpio.len()) + " GPIOs", 19pt)
+  tile(369, 562, 463, 100, {
+    label(0, 21, "Audio capture and playback", size: 9.25pt, weight: 600)
+    label(0, 54, "Camera preview on SPI LCD", size: 9.25pt, weight: 600)
+  })
 
-  // The two tall tiles use logical memory views in place of die illustrations.
-  let banks = data.address_map.sram_banks
-  for i in range(banks.len()) {
-    let x = 862 + calc.rem(i, 2) * 65
-    let y = 232 + calc.floor(i / 2) * 48
-    frame((x, -y), (x + 61, -y - 44), stroke: schematic-stroke)
-    frame((x + 5, -y - 5), (x + 56, -y - 30), stroke: 0.35pt + rgb("#B382EB"))
-    line((x + 5, -y - 35), (x + 56, -y - 35), stroke: schematic-stroke)
-  }
-  accent(925.5, 382, str(banks.len()) + " groups", 12.5pt)
-  label(925.5, 418, "Main SRAM")
-  frame((1051, -203), (1155, -271), stroke: schematic-stroke)
-  frame((1051, -282), (1155, -350), stroke: (paint: rgb("#9D64DF"), thickness: 0.55pt, dash: "dashed"))
-  label(1103, 216, "NOR")
-  label(1103, 243, "Boot")
-  label(1103, 295, "PSRAM")
-  label(1103, 322, "Optional")
-  accent(1103, 382, "XPI", 12.5pt)
-  label(1103, 418, "Memory port")
-
-  accent(1014.5, 510, "16/24-bit", 24.5pt)
-  label(1014.5, 577, "Stereo I²S", size: 11pt, weight: 600)
-  label(1014.5, 616, "TX and RX")
+  // Right of the chip, both rows share one column divider.
+  tile(842, 179, 159, 216, {
+    label(0, 27, "Central DMA")
+    accent(0, 85, str(data.facts.dma.NumChannels), 22pt)
+    label(0, 163, "Channels")
+  })
+  tile(1011, 179, 182, 216, {
+    let banks = data.address_map.sram_banks
+    for i in range(banks.len()) {
+      let x = -63 + calc.rem(i, 2) * 65
+      let y = 29 + calc.floor(i / 2) * 48
+      frame((x, -y), (x + 61, -y - 44), stroke: schematic-stroke)
+      frame((x + 5, -y - 5), (x + 56, -y - 30), stroke: 0.35pt + rgb("#B382EB"))
+      line((x + 5, -y - 35), (x + 56, -y - 35), stroke: schematic-stroke)
+    }
+    accent(0, 137, str(banks.len()) + " groups", 12.5pt)
+    label(0, 173, "Main SRAM")
+  })
+  tile(842, 405, 159, 257, {
+    frame((-52, -15), (52, -83), stroke: schematic-stroke)
+    frame((-52, -94), (52, -162), stroke: (paint: rgb("#9D64DF"), thickness: 0.55pt, dash: "dashed"))
+    label(0, 28, "NOR")
+    label(0, 55, "Boot")
+    label(0, 107, "PSRAM")
+    label(0, 134, "Optional")
+    accent(0, 180, "XPI", 12.5pt)
+    label(0, 218, "Memory port")
+  })
+  tile(1011, 405, 182, 257, {
+    accent(0, 54, "Camera capture", 9pt)
+    accent(0, 100, "Stereo audio", 10.5pt)
+    accent(0, 146, "SPI LCD", 10.5pt)
+    accent(0, 174, "preview", 10.5pt)
+  })
 })
