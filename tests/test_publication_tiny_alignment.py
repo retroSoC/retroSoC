@@ -69,11 +69,11 @@ def test_reviewed_peripheral_hierarchy_and_inventory(data):
     index = data["chapter_index"]
     assert [r["id"] for r in index] == [
         "xpi", "sdio", "sram", "gpio", "dma", "timer", "rtc", "wdg", "pwm", "uart0",
-        "i2c", "spi", "ws2812", "archinfo", "sysctrl", "rcu", "clint", "i2s", "dvp", "ppalite", "crypto", "crc", "rng"]
+        "i2c", "spi", "piolite", "ws2812", "archinfo", "sysctrl", "rcu", "clint", "i2s", "dvp", "ppalite", "crypto", "crc", "rng"]
     assert {r["id"] for r in index if r["depth"] == 5} == {"xpi", "sdio", "sram", "uart0"}
     assert {r["id"] for r in index if r["depth"] == 3} == {"gpio", "dma"}
-    assert len(data["register_index"]) == 1210
-    assert sum(len(r["registers"]) for r in data["registers"].values()) == 626
+    assert len(data["register_index"]) == 1329
+    assert sum(len(r["registers"]) for r in data["registers"].values()) == 682
     assert "#contents(depth:5)" in (BOOK / "datasheet.typ").read_text(encoding="utf-8")
 
 
@@ -142,9 +142,9 @@ def test_tiny_fabric_plate_covers_actual_owner_routes_and_targets(data):
     assert [(c["owner"], c["name"]) for c in plate["columns"]] == [(0, "cpu_slow"), (1, "central_dma"), (2, "sdio")]
     assert (plate["data_width"], plate["id_width"], plate["sram_kib"], plate["group_kib"]) == (32, 1, 128, 32)
     assert len(plate["rows"]) == 11
-    assert sorted(n for r in plate["rows"] for n in r["targets"]) == list(range(30))
+    assert sorted(n for r in plate["rows"] for n in r["targets"]) == list(range(31))
     assert {r["port"]: len(r["members"]) for r in plate["rows"] if "members" in r} == {
-        "apb-system": 3, "apb-aon": 2, "apb-peripheral": 17, "apb-memory": 1,
+        "apb-system": 3, "apb-aon": 2, "apb-peripheral": 18, "apb-memory": 1,
     }
     assert plate["crosspoints"] == [[c["x"], r["y"]] for r in plate["rows"] for c in plate["columns"]]
     assert {(e["from"], e["to"]) for e in circuit["edges"] if e.get("local")} == {

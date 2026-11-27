@@ -26,7 +26,7 @@ def books():
 
 
 def test_complete_product_inventory_keeps_65_ip_views_and_seven_system_figures(books):
-    for product, count in [("tiny", 23), ("mini", 42)]:
+    for product, count in [("tiny", 24), ("mini", 42)]:
         data = books[product]
         views = blocks.records(data)
         primary = {key: r for key, r in views.items() if "parent_id" not in r}

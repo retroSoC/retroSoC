@@ -16436,6 +16436,7 @@
         "zigzag-dir": "horizontal"
       }
     ],
+    "note": "Two state machines share 32 instruction words. GPIO USER ownership qualifies execution and OE; central DMA14/15 uses bounded per-job admission, stable beats and reset/drain recovery. No pin rate or physical timing is implied.",
     "block_diagram": {
       "style": "ip-block-v2",
       "title": "PIOLITE",
