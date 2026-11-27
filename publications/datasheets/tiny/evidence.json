@@ -32,7 +32,7 @@
     ],
     [
       "Final complete product",
-      "PIO-lite remains unintegrated; PPALite is integrated through P3. Complete-product timing, physical/PVT, IO/board/package and silicon/power qualification remain open.",
+      "In the 2026-11-10 record, PIO-lite was unintegrated and PPALite was integrated through P3. Complete-product timing, physical/PVT, IO/board/package and silicon/power qualification were open.",
       "The final combined campaign must identify the same complete implementation, source, profile, PDK and netlist."
     ],
     [

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from publications import register_reference as registers
 from publications.r1_roadmap import roadmap_reference
+from publications.r1_specifications import collect as collect_r1_specs
 from publications.waveform_reference import source_paths as wave_sources, validate_waveforms
 from scripts.check_clock_reset_domains import validate as validate_clocks
 from scripts.generate_tiny import read_topology
@@ -377,7 +378,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     diagnostic_reference = diagnostics(ROOT, refs)
     paths.update(illustrations["source_paths"])
     paths.update({"publications/tiny_diagram_reference.py", "publications/tiny_publication_reference.py",
-                  "publications/r1_roadmap.py", (BOOK / "r1-roadmap.json").as_posix(),
+                  "publications/r1_roadmap.py", "publications/r1_specifications.py", (BOOK / "r1-roadmap.json").as_posix(),
                   "crt/include/retrosoc/core/status.h", "crt/include/retrosoc/hal/spi_regs.h"})
     for relative in paths:
         if relative.startswith("rtl/mini/") or not (ROOT / relative).is_file():
@@ -405,6 +406,7 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
                 evidence=copy.deepcopy(evidence), examples=examples, apis=apis, tcd=tcd,
                 illustrations=illustrations, diagnostics=diagnostic_reference)
 
+    data["r1_specs"] = collect_r1_specs(ROOT, data["r1_roadmap"]["products"], fact)
     from publications.specification_reference import collect as collect_specifications
     data["specifications"] = collect_specifications(ROOT, "tiny", data)
     for source in data["specifications"]["sources"]:

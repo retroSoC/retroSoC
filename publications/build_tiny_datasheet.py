@@ -23,6 +23,7 @@ from publications.package_reference import (  # noqa: E402
     validate_package_closure,
 )  # noqa: E402
 from publications.structure_reference import validate_structure  # noqa: E402
+from publications.r1_specifications import validate_pages as validate_r1_spec_pages  # noqa: E402
 from publications.specification_reference import export_audits, verify_audits  # noqa: E402
 from publications.specification_plots import render as render_specifications  # noqa: E402
 from publications.specification_vectors import render as render_vectors  # noqa: E402
@@ -104,6 +105,7 @@ def prepare(lock: dict) -> None:
 
 def inputs(data: dict) -> dict[str, str]:
     paths = set(data["source_paths"])
+    paths.update(s["path"] for s in data["r1_specs"]["sources"].values() if "path" in s)
     paths.update(data["specifications"]["source_paths"])
     paths.update(
         p.relative_to(ROOT).as_posix()
@@ -141,6 +143,7 @@ def inputs(data: dict) -> dict[str, str]:
             "publications/implementation_reference.py",
             "tests/test_publication_tiny_alignment.py",
             "tests/test_publication_r1_roadmap.py",
+            "tests/test_publication_r1_specifications.py",
         }
     )
     return {path: sha256(ROOT / path) for path in sorted(paths)}
@@ -234,20 +237,23 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
         "items:query(metadata).map(it=>it.value),"
         "regions:query(selector(<table-continuation-region>).or("
         "<tiny-cover-chip-region>,<tiny-r1-product-line-region>,<tiny-r1-chip-region>,"
-        "<tiny-r1-card-copy-region>,<tiny-r1-roadmap-region>,<tiny-roadmap-chip-region>)).map(region=>{"
+        "<tiny-r1-card-copy-region>,<tiny-r1-roadmap-region>,<tiny-roadmap-chip-region>,"
+        "<tiny-spec-plate>,<tiny-spec-chip>)).map(region=>{"
         'let tag=region.at("label");'
         'let kind=if tag==<tiny-cover-chip-region>{"cover-chip"}'
         'else if tag==<tiny-r1-product-line-region>{"r1-product-line"}'
         'else if tag==<tiny-r1-chip-region>{"r1-chip"}'
         'else if tag==<tiny-r1-roadmap-region>{"r1-roadmap"}'
         'else if tag==<tiny-roadmap-chip-region>{"roadmap-chip"}'
+        'else if tag==<tiny-spec-plate>{"spec-plate"}else if tag==<tiny-spec-chip>{"spec-chip"}'
         'else if tag==<tiny-r1-card-copy-region>{"r1-card-copy"}else{"table-continuation"};'
         "let pos=region.location().position();"
         "let bounds=(kind:kind,page:pos.page,x:pos.x.pt(),y:pos.y.pt(),"
         "width:region.width.length.pt(),height:region.height.length.pt());"
-        'if kind in ("cover-chip","r1-chip","roadmap-chip"){'
+        'if kind in ("cover-chip","r1-chip","roadmap-chip","spec-chip"){'
         'let scales=query(if kind=="cover-chip"{<tiny-cover-chip-scale>}'
-        'else if kind=="roadmap-chip"{<tiny-roadmap-chip-scale>}else{<tiny-r1-chip-scale>});'
+        'else if kind=="roadmap-chip"{<tiny-roadmap-chip-scale>}else if kind=="spec-chip"{<tiny-spec-chip-scale>}'
+        'else{<tiny-r1-chip-scale>}).filter(s=>s.location().page()==pos.page);'
         'assert(scales.len()==1,message:"TINY chip artwork needs one scale per placement");'
         "bounds+(scale:scales.first().value)}else{bounds}}))"
     )
@@ -274,6 +280,7 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     lineup, chips = r1_product_line_regions(layout["regions"])
     r1_card_copy_regions(layout["regions"], lineup, chips)
     r1_roadmap_regions(layout["regions"], chips[0])
+    validate_r1_spec_pages(data["r1_specs"], layout["regions"], layout["headings"], layout["items"], chips[0])
     engineering_vectors = render_vectors(
         ROOT, out, data["specifications"], executable, options, r1_product_line_height=lineup["height"],
     )
@@ -282,6 +289,7 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
     write(out / "layout-regions.json", layout["regions"] + scientific.regions(layout, data))
     write(out / "page-roles.json", collect_page_roles(layout["items"]))
     write(out / "register-index.json", data["register_index"])
+    write(out / "r1-specification-sources.json", data["r1_specs"])
     write(
         out / "ip-pages.json",
         [
@@ -343,6 +351,7 @@ def build(config: dict, executable: str, out: Path | None = None) -> Path:
             "ip-pages.json",
             "waveform-audit.json",
             "register-index.json",
+            "r1-specification-sources.json",
             "diagram-coverage.json",
         )
     }
@@ -516,6 +525,10 @@ def check_pdf(pdf: Path, data: dict) -> dict:
     lineup, lineup_chips = r1_product_line_regions(regions)
     lineup_copy = r1_card_copy_regions(regions, lineup, lineup_chips)
     roadmap, roadmap_chips = r1_roadmap_regions(regions, lineup_chips[0])
+    spec_chips = validate_r1_spec_pages(data["r1_specs"], regions, read(pdf.parent / "document-structure.json"),
+                                        read(pdf.parent / "layout.json"), lineup_chips[0])
+    if read(pdf.parent / "r1-specification-sources.json") != data["r1_specs"]:
+        raise ValueError("R1 specification audit differs from current source records")
     from publications import scientific_reference as scientific
 
     scientific.verify_audit(pdf.parent, manifest, data)
@@ -623,6 +636,8 @@ def check_pdf(pdf: Path, data: dict) -> dict:
                 type_limits.append((inscriptions[0]["chars"], 5.95))
             elif page.page_number == roadmap["page"]:
                 type_limits.extend(family_chip_type_limits(page, roadmap_chips, data["r1_roadmap"]["products"]))
+            elif page.page_number in spec_chips:
+                type_limits.extend(family_chip_type_limits(page, spec_chips[page.page_number], data["r1_specs"]["products"]))
             for char in page.chars:
                 if not char["text"].strip():
                     continue

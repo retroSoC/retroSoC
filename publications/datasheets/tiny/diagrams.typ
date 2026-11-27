@@ -76,7 +76,7 @@
 
  let labels=("sysctrl":"SYSCTRL","rcu":"RCU","clint":"CLINT","archinfo":"ARCHINFO",
   "xpi":"XPI","sram":"128 KiB SRAM","dma":"8-channel DMA","gpio":"GPIO","timer":"TIM0 / TIM1",
-  "pwm":"PWM","rtc":"RTC","wdg":"WDG","uart0":"UART0","i2c":"I2C0","spi":"SPI0","sdio":"SDIO0",
+  "pwm":"PWM","rtc":"RTC","wdg":"WDG","uart0":"UART0","i2c":"I2C0","spi":"SPI0","piolite":"PIOLITE","sdio":"SDIO0",
   "i2s":"I2S","dvp":"DVP","ppalite":"PPALite","ws2812":"WS2812","crypto":"Crypto","crc":"CRC","rng":"RNG")
  let icons=(0,2,5,6,7,8)
  rect((0,0),(17.2,-10.8),fill:white,stroke:0.85pt+ink,radius:0.20)

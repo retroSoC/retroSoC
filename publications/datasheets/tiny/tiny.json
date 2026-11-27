@@ -11,7 +11,7 @@
   "maintainer": "ECOS Team, ICT, CAS",
   "source_revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
   "profile": "configs/ci/ics55-tiny.mk",
-  "change_prefix": "tiny-v02-r1-roadmap-20261126-",
+  "change_prefix": "tiny-v02-r1-specifications-20261127-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",
   "filename": "retrosoc-tiny-gen1-datasheet.pdf",
   "compatibility_profiles": [

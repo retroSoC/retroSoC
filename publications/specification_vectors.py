@@ -38,6 +38,8 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
             "qfn-reel-box": 'reel-box(s)',
             "qfn-reflow": 'reflow(s)',
         })
+        for key in ("compute", "memory", "graphics", "connectivity"):
+            expressions[f"r1-spec-{key}"] = f'r1-specification-plate(json(sys.inputs.at("data")).r1_specs, "{key}")'
         if r1_product_line_height is not None:
             expressions["tiny-r1-product-line"] = f"r1-product-line({r1_product_line_height:.9f}pt)"
     text = '#import "/publications/specifications/figures.typ": *\n'
@@ -45,6 +47,7 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
         text += '#import "/publications/datasheets/tiny/address-map.typ": address-map\n'
         text += '#import "/publications/datasheets/tiny/feature-highlights.typ": feature-highlights, r1-product-line\n'
         text += '#import "/publications/datasheets/tiny/r1-roadmap.typ": r1-roadmap\n'
+        text += '#import "/publications/datasheets/tiny/r1-specifications.typ": r1-specification-plate\n'
         text += '#import "/publications/datasheets/tiny/smartwatch.typ": smartwatch\n'
         text += '#import "/publications/datasheets/tiny/package-figures.typ": *\n'
         text += '#import "/publications/datasheets/tiny/assembly-references.typ": carrier-tape, reel, reel-box, reflow\n'

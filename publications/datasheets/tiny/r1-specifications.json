@@ -1,0 +1,428 @@
+{
+  "as_of": "2026-11-27",
+  "profiles": {
+    "TINY": {"profile": "configs/ci/ics55-tiny.mk", "source": "tiny-contract"},
+    "MINI": {"profile": "configs/ci/ihp130.mk", "source": "mini-design"},
+    "STD": {"profile": "RV32 graphical Linux roadmap", "source": "family-plan"},
+    "PRO": {"profile": "RV64 coherent compute concept", "source": "family-plan"},
+    "MAX": {"profile": "Maximum concept configuration"},
+    "ULTRA": {"profile": "Maximum concept configuration"}
+  },
+  "sources": {
+    "tiny-contract": {"path": "docs/ip/tiny-soc.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "4956c1d9ab6a1bade694a645cd5d64ca508baf89", "products": ["TINY"], "section": "Gen1 product scope, clock and memory profiles, external ports"},
+    "tiny-topology": {"path": "rtl/tiny/integration/soc_topology.json", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "e6e725bb4ca0204e56e333e273e6982951c7dd85", "products": ["TINY"], "section": "CPU, four SRAM groups, clocks, fabric and peripheral attachments"},
+    "tiny-profile": {"path": "configs/ci/ics55-tiny.mk", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "febdd1a91d89793e6b18244f13b40e6ba850b1a3", "products": ["TINY"], "section": "ICS55 wired MCU with SAFE24 startup"},
+    "mini-platform": {"path": "docs/ip/hp-platform.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "4cd6e2842cca00789e64ebc1d19575790171ba9b", "products": ["MINI"], "section": "Locked OpenC906 core and cache configuration"},
+    "mini-profile": {"path": "configs/ci/ihp130.mk", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "7d84e99059f925b29e2279ee8e0d9b9e31ac172f", "products": ["MINI"], "section": "IHP130 PRODUCT with main SRAM and HP enabled"},
+    "mini-design": {"path": "publications/datasheets/sections/overview.typ", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "3c6438470565a6ecf656cb8b393ef9dd2e868806", "products": ["MINI"], "section": "Compute, memory, interfaces and media inventory"},
+    "mini-npu": {"path": "docs/ip/npu.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "548df7c4efbbb8cb9c36f483abc22a59e6135e76", "products": ["MINI"], "section": "INT8 dense and depthwise lanes and accelerator-private memory"},
+    "mini-ga2d": {"path": "docs/ip/ga2d.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "b62b48bcab1acbeaecbc1fdc66329808be75dfd7", "products": ["MINI"], "section": "Fixed-function graphics command coverage"},
+    "mini-jpeg": {"path": "docs/ip/jpeg.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "2d95d2f19e2d75a917ab52d1af513031e529184f", "products": ["MINI"], "section": "Baseline still-image encode and decode geometry"},
+    "mini-usb": {"path": "docs/ip/usb2.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "af9e75b380b368f767d8d95c06a1046618bbcae8", "products": ["MINI"], "section": "Host/device controller and external ULPI PHY"},
+    "mini-sdram": {"path": "docs/ip/sdram.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "e02d1f477191fcae1533768f1126ba745f5c4838", "products": ["MINI"], "section": "AXI window, x16 SDR device and burst geometry"},
+    "mini-os": {"path": "docs/hp-rv64-validation.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "4eb1e5dbd21b44229082ad4e69200992734d7905", "products": ["MINI"], "section": "Profile-specific Linux and RT-Thread evidence"},
+    "family-plan": {"path": "docs/soc-family-positioning.md", "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba", "blob": "0f7ea389eb94d77bf1a09bc7a70862d8481fd201", "products": ["STD", "PRO"], "section": "STD and PRO CPU topology, memory, multimedia and interfaces"},
+    "family-status": {"path": "publications/datasheets/tiny/r1-roadmap.json", "revision": "35748f3b18b2806ff5b6f25b210df8decfc75fae", "blob": "e9f1dbb9112db25a38e7720cd8009ca27b55ec7b", "products": ["TINY", "MINI", "STD", "PRO", "MAX", "ULTRA"], "section": "Current product names, groups, positioning and development status"},
+    "concept-1": {"reviewed": "2026-11-27", "authority": "User-approved R1 maximum concept configuration", "reference_image_sha256": "fa1a8111385fab537aed9b5e440ef44be747ea253092a5c594927eb5fbb701d9", "products": ["MAX", "ULTRA"]},
+    "concept-2": {"reviewed": "2026-11-27", "authority": "User-approved R1 maximum concept configuration", "reference_image_sha256": "7aadbee44db3986ff04655e02006f6b5c19af1c30e7fc1ee075a6839fd1edca7", "products": ["MAX", "ULTRA"]},
+    "concept-3": {"reviewed": "2026-11-27", "authority": "User-approved R1 maximum concept configuration", "reference_image_sha256": "c6a9d7ba843286737195ff8d363a353e6cbe174b02856a9828ab422b19f941fe", "products": ["MAX", "ULTRA"]},
+    "concept-4": {"reviewed": "2026-11-27", "authority": "User-approved R1 maximum concept configuration", "reference_image_sha256": "43bd3e484704cefa9321685fb9a67e8aa53a164a6e7cb8258b4dcf85f89e4f97", "products": ["MAX", "ULTRA"]}
+  },
+  "topics": [
+    {
+      "key": "compute",
+      "title": "Compute & AI",
+      "metrics": [
+        "cpu-count",
+        "core-layout",
+        "isa",
+        "gpu-cores",
+        "accelerator",
+        "neural-cores",
+        "mac-lanes",
+        "int8-tops",
+        "status"
+      ],
+      "notes": [
+        "CPU totals include the roles shown. MAX and ULTRA split CPU cores by performance class. Management and real-time roles are TBD.",
+        "MAC lanes count arithmetic datapaths. Neural cores and peak INT8 throughput are separate measures."
+      ]
+    },
+    {
+      "key": "memory",
+      "title": "Memory & Interconnect",
+      "metrics": [
+        "sram",
+        "l1",
+        "shared-cache",
+        "system-memory",
+        "external-memory",
+        "bandwidth",
+        "interconnect"
+      ],
+      "notes": [
+        "MINI also has 64 KiB of private NPU SRAM. Its SDRAM window gives decoded address space. Board population sets capacity.",
+        "STD L1 is for the Linux core and DDR is minimum / preferred. PRO L1 is the per-application-core minimum. Bandwidth targets are peak values."
+      ]
+    },
+    {
+      "key": "graphics",
+      "title": "Graphics & Media",
+      "metrics": [
+        "graphics",
+        "display",
+        "ray-tracing",
+        "video-decode",
+        "video-encode",
+        "prores",
+        "formats"
+      ],
+      "notes": [
+        "MINI JPEG processes still images. Each ProRes unit serves both encode and decode. AV1 is decode-only in the MAX and ULTRA targets.",
+        "Display combinations depend on resolution, refresh rate and board I/O. MAX targets 2 × 8K60 plus 1 × 5K60. ULTRA targets up to 4 × 8K60."
+      ]
+    },
+    {
+      "key": "connectivity",
+      "title": "Connectivity & Software",
+      "metrics": [
+        "usb",
+        "expansion",
+        "storage",
+        "control-io",
+        "camera",
+        "audio",
+        "software",
+        "drivers",
+        "status"
+      ],
+      "notes": [
+        "TINY camera and I²S use alternate pin configurations. MINI USB requires an external ULPI PHY. Network and display connections depend on the board.",
+        "MINI Linux and RT-Thread use separate HP profiles with LP management firmware. MAX and ULTRA host interfaces and software remain subject to definition."
+      ]
+    }
+  ],
+  "metrics": {
+    "cpu-count": {"label": "CPU cores", "unit": "cores", "derive": "sum roles", "emphasis": true},
+    "core-layout": {
+      "label": "Core configuration", "unit": "cores",
+      "cells": {
+        "TINY": {"MCU": 1},
+        "MINI": {"application": 1, "management": 1},
+        "STD": {"Linux": 1, "real-time": 1, "management": 1},
+        "PRO": {"Linux": 4, "management": 1},
+        "MAX": {"super": 6, "performance": 12},
+        "ULTRA": {"super": 12, "performance": 24}
+      }
+    },
+    "isa": {
+      "label": "CPU architecture", "unit": "architecture",
+      "cells": {
+        "TINY": "Hazard3 / RV32IMC",
+        "MINI": {"value": "OpenC906 RV64GC + Hazard3 RV32", "source": "mini-platform"},
+        "STD": "RV32 VexiiRiscv + Hazard3",
+        "PRO": "RV64 VexiiRiscv + Hazard3",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "gpu-cores": {
+      "label": "Programmable GPU cores", "unit": "cores", "emphasis": true,
+      "cells": {
+        "TINY": "None",
+        "MINI": "None",
+        "STD": null,
+        "PRO": null,
+        "MAX": 40,
+        "ULTRA": 80
+      }
+    },
+    "accelerator": {
+      "label": "AI accelerator", "unit": "architecture",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "1 INT8 NPU", "source": "mini-npu"},
+        "STD": "INT8 NPU",
+        "PRO": "INT8 NPU",
+        "MAX": "AI unit in each GPU core",
+        "ULTRA": "AI unit in each GPU core"
+      }
+    },
+    "neural-cores": {
+      "label": "Neural Engine cores", "unit": "cores",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "None", "source": "mini-npu"},
+        "STD": null,
+        "PRO": null,
+        "MAX": 16,
+        "ULTRA": 32
+      }
+    },
+    "mac-lanes": {
+      "label": "MAC lanes", "unit": "lanes",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "64 dense + 8 depthwise", "source": "mini-npu"},
+        "STD": null,
+        "PRO": null,
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "int8-tops": {
+      "label": "INT8 throughput (TOPS)", "unit": "TOPS",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": null, "source": "mini-npu"},
+        "STD": "0.5–1",
+        "PRO": "2–4",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "status": {"label": "Development status", "unit": "stage", "derive": "family status"},
+    "sram": {
+      "label": "Main on-chip SRAM", "unit": "KiB", "value_unit": true,
+      "cells": {
+        "TINY": {"value": 128, "source": "tiny-topology"},
+        "MINI": {"value": 32, "source": "mini-profile"},
+        "STD": null,
+        "PRO": null,
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "l1": {
+      "label": "CPU L1 cache", "unit": "KiB, instruction / data",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "32 KiB I + 32 KiB D (HP)", "source": "mini-platform"},
+        "STD": "32 KiB I + 32 KiB D",
+        "PRO": "≥32 KiB I + 32 KiB D per core",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "shared-cache": {
+      "label": "Shared cache", "unit": "capacity",
+      "cells": {
+        "TINY": "None",
+        "MINI": "None",
+        "STD": "512 KiB system cache",
+        "PRO": "2 MiB coherent L2",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "system-memory": {
+      "label": "System memory", "unit": "capacity", "value_unit": true,
+      "cells": {
+        "TINY": {"from": "sram", "format": "{display} SRAM + optional PSRAM"},
+        "MINI": {"value": "64 MiB SDRAM window", "source": "mini-sdram"},
+        "STD": "512 MiB–1 GiB DDR",
+        "PRO": "2–8 GiB DDR",
+        "MAX": {"value": 128, "unit": "GB unified"},
+        "ULTRA": {"value": 512, "unit": "GB unified"}
+      }
+    },
+    "external-memory": {
+      "label": "External memory", "unit": "interface",
+      "cells": {
+        "TINY": "Optional 8 MiB XPI PSRAM",
+        "MINI": {"value": "x16 SDR SDRAM, native bursts", "source": "mini-sdram"},
+        "STD": "DDR",
+        "PRO": "DDR4 / LPDDR4",
+        "MAX": {"value": "Unified memory", "note": "Interface TBD"},
+        "ULTRA": {"value": "Unified memory", "note": "Interface TBD"}
+      }
+    },
+    "bandwidth": {
+      "label": "Peak memory bandwidth", "unit": "rate", "value_unit": true,
+      "cells": {
+        "TINY": null,
+        "MINI": null,
+        "STD": null,
+        "PRO": null,
+        "MAX": {"value": 614, "unit": "GB/s"},
+        "ULTRA": {"value": 1.2, "unit": "TB/s"}
+      }
+    },
+    "interconnect": {
+      "label": "System interconnect", "unit": "interface",
+      "cells": {
+        "TINY": "AXI32 + APB4",
+        "MINI": "AXI32 control / AXI64 data",
+        "STD": "64-bit AXI4, I/O coherency",
+        "PRO": "128-bit coherent fabric",
+        "MAX": "Unified memory architecture",
+        "ULTRA": "Unified memory architecture"
+      }
+    },
+    "graphics": {
+      "label": "Graphics engine", "unit": "architecture",
+      "cells": {
+        "TINY": "PPALite camera preprocessing",
+        "MINI": {"value": "GA2D fixed-function 2D", "source": "mini-ga2d"},
+        "STD": "2D / 3D GPU",
+        "PRO": "2D / 3D GPU",
+        "MAX": {"from": "gpu-cores", "format": "{value}-core GPU"},
+        "ULTRA": {"from": "gpu-cores", "format": "{value}-core GPU"}
+      }
+    },
+    "display": {
+      "label": "Display capability", "unit": "display mode",
+      "cells": {
+        "TINY": "SPI LCD, panel dependent",
+        "MINI": null,
+        "STD": "1 × 1080p60",
+        "PRO": "1 × 4K30 or 2 × 1080p60",
+        "MAX": "Up to 5 displays",
+        "ULTRA": "Up to 8 displays"
+      }
+    },
+    "ray-tracing": {
+      "label": "Ray tracing", "unit": "capability",
+      "cells": {
+        "TINY": "None",
+        "MINI": "None",
+        "STD": null,
+        "PRO": null,
+        "MAX": "3rd-gen hardware RT",
+        "ULTRA": "3rd-gen hardware RT"
+      }
+    },
+    "video-decode": {
+      "label": "Video decode", "unit": "capability or engine count",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "None", "source": "mini-jpeg"},
+        "STD": null,
+        "PRO": "H.264 / H.265 at 4K30",
+        "MAX": "1 video engine",
+        "ULTRA": "2 video engines"
+      }
+    },
+    "video-encode": {
+      "label": "Video encode", "unit": "capability or engine count",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "None", "source": "mini-jpeg"},
+        "STD": null,
+        "PRO": "H.264 / H.265 at 1080p60",
+        "MAX": "2 video engines",
+        "ULTRA": "4 video engines"
+      }
+    },
+    "prores": {
+      "label": "ProRes encode / decode engines", "unit": "shared engines",
+      "cells": {
+        "TINY": "None",
+        "MINI": "None",
+        "STD": null,
+        "PRO": null,
+        "MAX": 2,
+        "ULTRA": 4
+      }
+    },
+    "formats": {
+      "label": "Image and video formats", "unit": "formats",
+      "cells": {
+        "TINY": "DVP RGB565 / YUV422",
+        "MINI": {"value": "8-bit baseline JPEG up to 2048 × 2048", "source": "mini-jpeg"},
+        "STD": null,
+        "PRO": "H.264 / H.265",
+        "MAX": "H.264, HEVC, ProRes, ProRes RAW, AV1 decode",
+        "ULTRA": "H.264, HEVC, ProRes, ProRes RAW, AV1 decode"
+      }
+    },
+    "usb": {
+      "label": "USB and high-speed I/O", "unit": "interface",
+      "cells": {
+        "TINY": "None",
+        "MINI": {"value": "USB 2.0 dual-role, external ULPI PHY", "source": "mini-usb"},
+        "STD": "USB 2.0",
+        "PRO": "USB 3.0",
+        "MAX": "Thunderbolt 5 capability",
+        "ULTRA": "Thunderbolt 5 capability"
+      }
+    },
+    "expansion": {
+      "label": "Network and expansion", "unit": "interface",
+      "cells": {
+        "TINY": "None",
+        "MINI": "EXT-L / EXT-H slots",
+        "STD": "Ethernet, optional PCIe",
+        "PRO": "PCIe + Gigabit Ethernet",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "storage": {
+      "label": "Storage interfaces", "unit": "interface",
+      "cells": {
+        "TINY": "XPI NOR / 1- or 4-bit SDIO",
+        "MINI": "XPI, SPI-SD, 2 × SDIO",
+        "STD": "SD / eMMC",
+        "PRO": "SDIO / eMMC",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "control-io": {
+      "label": "Control I/O", "unit": "interface",
+      "cells": {
+        "TINY": {"value": "32 GPIO, 1 UART, 1 I²C, SPI, PWM, PIOLITE", "source": "tiny-topology"},
+        "MINI": "32 GPIO, 2 UART, 2 I²C, PWM",
+        "STD": null,
+        "PRO": null,
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "camera": {
+      "label": "Camera input", "unit": "interface",
+      "cells": {
+        "TINY": "8-bit DVP",
+        "MINI": "8-bit DVP",
+        "STD": null,
+        "PRO": "Serial camera interface",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "audio": {
+      "label": "Audio", "unit": "interface",
+      "cells": {
+        "TINY": "Stereo I²S, 16/24-bit",
+        "MINI": "I²S + WAV/FLAC APU",
+        "STD": "I²S / TDM / PDM",
+        "PRO": "Multichannel I²S / TDM / PDM",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "software": {
+      "label": "Operating systems and firmware", "unit": "software",
+      "cells": {
+        "TINY": "Bare-metal CRT / HAL",
+        "MINI": {"value": "HP Linux or RT-Thread, LP firmware", "source": "mini-os"},
+        "STD": "Linux + RTOS",
+        "PRO": "RV64 Linux SMP",
+        "MAX": null,
+        "ULTRA": null
+      }
+    },
+    "drivers": {
+      "label": "Accelerator drivers", "unit": "software",
+      "cells": {
+        "TINY": "Bare-metal HAL",
+        "MINI": {"value": "Bare-metal NPU / GA2D", "source": "mini-design"},
+        "STD": "Mesa, ALSA, Linux NPU ABI",
+        "PRO": "Mesa / Vulkan, ALSA",
+        "MAX": null,
+        "ULTRA": null
+      }
+    }
+  }
+}

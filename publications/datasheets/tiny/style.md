@@ -186,6 +186,30 @@ Compute. Use the product plan for STD roadmap targets and label each right-hand
 entry `Concept`. Render the same figure at the same height in the book and in
 its standalone SVG and PDF.
 
+Section 5.1 has four full-page specification tables in this order: Compute & AI,
+Memory & Interconnect, Graphics & Media, and Connectivity & Software.
+Register one topic bookmark and a List of tables entry for each. Retain
+`start-series` on the first table. The four plates share the normal running
+header, date, repository link and continuous book folios. Use the title and
+the line “Product planning draft” in both the book and standalone artwork.
+
+Use a 172 mm plate with two 85 mm pale-gray panels and a 2 mm gap. Each panel
+contains three 26.5 mm Figure 3 master chips on a 28 mm pitch. Keep all six
+positions fixed on all four pages. Pair the baselines for each metric across
+both panels and measure row height using the tallest of its six entries.
+Use 24 pt bold topic titles, 21 pt numeric CPU/GPU counts on the compute
+page, and at least 9 pt Inter for all text outside the measured chip regions.
+
+Maintain product-scoped units, values, states and source identities in
+[`r1-specifications.json`](r1-specifications.json). CPU totals are sums of the
+stated roles or performance classes. Use `target` on engineering or approved
+concept values, `TBD` for open specifications and `None` for verified
+absences. Keep MAC lanes, Neural Engine cores, INT8 throughput, main SRAM,
+private working storage and memory windows distinct. Record the MAX/ULTRA
+planning approval and reference image fingerprints separately from the two
+reviewed implementations. Export the resolved sources and all four SVG/PDF
+pairs from the book's own data and layout.
+
 In section 5.2 (Roadmap), use the same six 26.5 mm chips in product order.
 Draw a 172 × 190 mm plate with a two-level year/quarter header and 12 mm per
 calendar quarter. Align each chip's right edge with its endpoint. Place the
