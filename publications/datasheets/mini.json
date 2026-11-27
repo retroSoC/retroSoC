@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "349c40035428db808e6e3d8cc7027c14abfed20e",
+  "source_revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
   "build_control_review": {
-    "revision": "349c40035428db808e6e3d8cc7027c14abfed20e",
-    "makefile_blob": "3252853543989a8105c5c15f9e976e78b96c295d",
+    "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
+    "makefile_blob": "200dead771c7f7e9df6769b568dff65192ef1275",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed technical and control snapshot advances to 349c4003 for TINY-057 and its metadata-only source/CI binding. The Makefile and Git workflow blobs are unchanged; RTL behavior, Mini product interfaces, hardware profiles and dependency pins are unchanged. Later technical or control-file edits require a fresh explicit review."
+    "reason": "The reviewed snapshot advances to 0f2dbfe7 for PIOLITE-P3 Tiny integration and source-bound build inputs. Mini remains default-off and omits the unavailable HAL source; no Mini synthesis, netlist, STA or feature rollout is claimed. Later technical or control-file edits require a fresh explicit review."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",
