@@ -31,7 +31,7 @@ CPU = "rtl/tiny/top/tiny_cpu_wrapper.sv"
 CPU_MEM = "rtl/tiny/top/tiny_cpu_mem.sv"
 SRAM = "rtl/tiny/top/tiny_sram.sv"
 FAMILIES = {"xpi", "sram", "gpio", "dma", "timer", "pwm", "rtc", "wdg", "uart", "i2c", "clint", "archinfo",
-            "rng", "crc", "ws2812", "crypto", "i2s", "sdio", "dvp", "spi"}
+            "rng", "crc", "ws2812", "crypto", "i2s", "sdio", "dvp", "spi", "piolite"}
 MANAGED = {"publication_media", "hazard3", "cluster_common", "cluster_archinfo", "cluster_pwm", "cluster_rtc", "cluster_wdg",
            "cluster_crc", "cluster_rng"}
 PROFILES = {"configs/ci/ics55-tiny.mk": ("ICS55", "YES"), "configs/ci/ihp130-tiny.mk": ("IHP130", "NO")}
@@ -87,9 +87,9 @@ def facts(root: Path = ROOT, profile_path: str = "configs/ci/ics55-tiny.mk") -> 
     require_snippets(root, TOP, ["tiny_sram u_sram", "gen_sram_attachment", "axi4_connector u_connector",
                                ".ID_WIDTH(1)", ".DATA_WIDTH(32)"])
     require_snippets(root, SRAM, ["group < 4", "tiny_sram_group u_group"])
-    if dma != {"NumChannels": 8, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x339FF,
-               "SupportedRequests": 0x339FF, "IpVersion": 0x20002, "EnableStreams": 1, "EnableSpi": 1,
-               "EnableOriginQualifier": 1, "EnablePpaliteGuard": 1,
+    if dma != {"NumChannels": 8, "MaxBurstBeats": 16, "FifoDepth": 32, "RequestMask": 0x3F9FF,
+               "SupportedRequests": 0x3F9FF, "IpVersion": 0x20002, "EnableStreams": 1, "EnableSpi": 1,
+               "EnableOriginQualifier": 1, "EnablePpaliteGuard": 1, "EnablePiolite": 1,
                "SpiTxAddress": 0x1001D054, "SpiRxAddress": 0x1001D058}:
         raise ValueError("Tiny DMA parameters changed")
     if topology["dma_channels"] != dma["NumChannels"] or int(topology["dma_request_mask"], 0) != dma["RequestMask"]:
@@ -100,7 +100,7 @@ def facts(root: Path = ROOT, profile_path: str = "configs/ci/ics55-tiny.mk") -> 
     require_snippets(root, CPU, ["hazard3_cpu_2port", ".EXTENSION_C(1)", ".EXTENSION_A(EnableAtomics)"])
     require_snippets(root, CPU_MEM, [".TwoCycleErrors(1'b1)", "ErrorFirst", "ErrorLast"])
     require_snippets(root, TOP, ["u_masters_axi4_if[3]", "u_targets_axi4_if[`RETROSOC_TINY__TARGET_COUNT]",
-                               ".cfg_apb4(u_sram_apb4_if)", ".TargetMask(18'h37fff)"])
+                               ".cfg_apb4(u_sram_apb4_if)", ".TargetMask(18'h3ffff)"])
     ppalite = instance_parameters(top, "apb4_ppalite", "u_ppalite")
     if ppalite != {"ExternalRoute": 1, "CapabilityValue": 0x3FF}:
         raise ValueError("Tiny PPALite integration parameters changed")
@@ -206,9 +206,10 @@ def collect_registers(fact: dict, root: Path = ROOT) -> dict:
             for f in reg["fields"]:
                 f["reset"] = "0" if f["name"] == "Reserved" else "Build-dependent"
     result["sysctrl"] = sysctrl_registers(root)
-    from publications.tiny_v02_reference import apply_integration, ppalite_registers, rcu_registers
+    from publications.tiny_v02_reference import apply_integration, piolite_registers, ppalite_registers, rcu_registers
     result["rcu"] = rcu_registers(fact, root)
     result["ppalite"] = ppalite_registers(fact, root)
+    result["piolite"] = piolite_registers(fact, root)
     apply_integration(result, fact, root)
     registers.validate_reference(result)
     validate_register_inventory(result, read(root / BOOK / "register-contract.json"))
@@ -318,8 +319,8 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     index = read(ROOT / BOOK / "chapter-index.json")
     frozen_ids = read(ROOT / BOOK / "structure-contract.json")["ip_ids"]
     if ([r["id"] for r in catalog] != [r["id"] for r in index] or [r["id"] for r in index] != frozen_ids
-            or len(catalog) != 23 or any(r["family"] not in refs for r in catalog)):
-        raise ValueError("Tiny IP inventory must contain the twenty-three reviewed chapters")
+            or len(catalog) != 24 or any(r["family"] not in refs for r in catalog)):
+        raise ValueError("Tiny IP inventory must contain the twenty-four reviewed chapters")
     assigned = {r for row in catalog for r in row["regions"]}
     if assigned != {r["symbol"] for r in regions} or sum(len(r["regions"]) for r in catalog) != len(assigned):
         raise ValueError("Tiny catalog misses an address region")

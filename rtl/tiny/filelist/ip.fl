@@ -105,3 +105,13 @@
 /ip/ppalite/ppalite_core.sv
 /ip/ppalite/ppalite_reg.sv
 /ip/ppalite/apb4_ppalite.sv
+/ip/piolite/piolite_pkg.sv
+/ip/piolite/piolite_if.sv
+/ip/piolite/piolite_imem.sv
+/ip/piolite/piolite_fifo.sv
+/ip/piolite/piolite_sm.sv
+/ip/piolite/piolite_core.sv
+/ip/piolite/piolite_reg.sv
+/ip/piolite/piolite_gpio_guard.sv
+/ip/piolite/piolite_dma_adapter.sv
+/ip/piolite/apb4_piolite.sv

@@ -29,6 +29,8 @@ package dma_pkg;
   localparam logic [4:0] DMA_REQUEST_DVP_RX = 5'd11;
   localparam logic [4:0] DMA_REQUEST_CRYPTO_IN = 5'd12;
   localparam logic [4:0] DMA_REQUEST_CRYPTO_OUT = 5'd13;
+  localparam logic [4:0] DMA_REQUEST_PIOLITE_TX = 5'd14;
+  localparam logic [4:0] DMA_REQUEST_PIOLITE_RX = 5'd15;
   localparam logic [4:0] DMA_REQUEST_SPI_TX = 5'd16;
   localparam logic [4:0] DMA_REQUEST_SPI_RX = 5'd17;
 

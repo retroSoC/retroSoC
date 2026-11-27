@@ -107,6 +107,10 @@
     "APB4_PPALITE": [
       268558336,
       4096
+    ],
+    "APB4_PIOLITE": [
+      268550144,
+      4096
     ]
   },
   "interrupts": {
@@ -130,7 +134,8 @@
     "crypto": 23,
     "spi": 25,
     "rcu": 31,
-    "ppalite": 27
+    "ppalite": 27,
+    "piolite": 24
   },
   "sources": [
     "app/apps/bringup/tiny.mk",
@@ -138,17 +143,22 @@
     "app/apps/ci_smoke/tiny.c",
     "app/apps/ci_smoke/tiny.mk",
     "app/apps/ci_smoke/tiny_ppalite_p3.c",
+    "app/apps/ci_smoke/tiny_piolite_p3.c",
     "configs/ci/ihp130-tiny-xin48.mk",
     "configs/ci/ihp130-tiny-xin96.mk",
     "crt/arch/riscv/startup.S",
+    "crt/include/retrosoc/hal/piolite.h",
+    "crt/include/retrosoc/hal/piolite_regs.h",
     "crt/include/retrosoc/hal/xpi_psram.h",
     "crt/linker/ld2_all_sram.lds",
     "crt/src/core/archinfo.c",
     "crt/src/hal/dma_math.c",
+    "crt/src/hal/piolite.c",
     "crt/src/hal/ppalite.c",
     "crt/src/hal/ppalite_math.c",
     "crt/src/hal/sysctrl.c",
     "crt/src/hal/xpi_psram.c",
+    "docs/ip/piolite.md",
     "docs/ip/piolite-verification.md",
     "docs/ip/ppalite-verification.md",
     "docs/ip/spi-p3.md",
@@ -163,7 +173,17 @@
     "rtl/ip/core/mgmt_debug_reset.sv",
     "rtl/ip/core/mgmt_debug_wrapper.sv",
     "rtl/ip/interconnect/ahbl2axi4.sv",
+    "rtl/ip/peripheral/apb4_dma.sv",
+    "rtl/ip/peripheral/apb4_gpio.sv",
+    "rtl/ip/peripheral/dma_core.sv",
+    "rtl/ip/peripheral/dma_pkg.sv",
+    "rtl/ip/peripheral/dma_reg.sv",
+    "rtl/ip/peripheral/dma_req_if.sv",
     "rtl/ip/peripheral/gpio_pad_caps_pkg.sv",
+    "rtl/ip/piolite/apb4_piolite.sv",
+    "rtl/ip/piolite/piolite_define.svh",
+    "rtl/ip/piolite/piolite_gpio_guard.sv",
+    "rtl/ip/piolite/piolite_reg.sv",
     "rtl/ip/ppalite/apb4_ppalite.sv",
     "rtl/ip/ppalite/ppalite_core.sv",
     "rtl/ip/ppalite/ppalite_decimator.sv",
@@ -173,6 +193,8 @@
     "rtl/ip/ppalite/ppalite_packer.sv",
     "rtl/ip/ppalite/ppalite_reg.sv",
     "rtl/ip/ppalite/ppalite_stream_guard.sv",
+    "rtl/tiny/filelist/inc.fl",
+    "rtl/tiny/filelist/ip.fl",
     "rtl/tiny/top/ppalite_dma_guard.sv",
     "rtl/tiny/top/ppalite_route_ctrl.sv",
     "rtl/tiny/top/tiny_axi4_target.sv",
@@ -190,6 +212,10 @@
     "scripts/piolite_asm.py",
     "scripts/piolite_isa.py",
     "scripts/piolite_model.py",
+    "tests/c/test_runtime.c",
+    "tests/rtl/piolite_p3_dma_tb.sv",
+    "tests/test_piolite_p3.py",
+    "tests/test_piolite_register_parity.py",
     "tests/test_tiny.py"
   ],
   "bindings": [
@@ -202,7 +228,7 @@
     {
       "file": "rtl/ip/peripheral/dma_reg.sv",
       "text": [
-        "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'd3 : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
+        "`APB4_DMA__CAPABILITY:\n      s_read_data = {\n        1'b0,\n        (EnableStreams ? 3'($countones(SupportedRequests & 32'h0000_f806)) : 3'd0),\n        4'(MaxBurstBeats),\n        8'(DataWidth),\n        8'(NumChannels),\n        7'd0,\n        1'b1\n      };"
       ]
     },
     {
@@ -230,7 +256,7 @@
     {
       "file": "rtl/tiny/top/retrosoc_tiny.sv",
       "text": [
-        ".TargetMask(18'h37fff)",
+        ".TargetMask(18'h3ffff)",
         ".EnableWfiGate(1'b1)",
         ".PreserveDebug(1'b1)",
         ".PllProfiles(TinyPllPresent)",

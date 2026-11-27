@@ -115,7 +115,10 @@ check-rtl-lint: rtl-lint
 
 sim: comp firmware | manifest
 	$(PYTHON) $(ROOT_PATH)/scripts/run_flow.py --tool $(SIM_TOOL_NAME)-sim \
-		--log $(SIM_BUILD_ROOT)/sim.log --result $(SIM_BUILD_ROOT)/result-sim.json -- \
+		--log $(SIM_BUILD_ROOT)/sim.log --result $(SIM_BUILD_ROOT)/result-sim.json \
+		--input $(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex \
+		--input $(if $(filter VERILATOR,$(SIMU)),$(SIM_BUILD_ROOT)/emu,$(SIM_BUILD_ROOT)/simv) \
+		--pdk $(PDK) --soc $(SOC) --profile $(PROFILE_NAME) -- \
 		$(TINY_RUN) +firmware=$(SW_BUILD_DIR)/$(SIM_FIRMWARE_NAME).hex +max_cycles=$(TINY_SIM_TIMEOUT) $(TINY_SIM_ARGS)
 	$(PYTHON) $(ROOT_PATH)/scripts/check_simulation.py --log $(SIM_BUILD_ROOT)/sim.log \
 		--result $(SIM_BUILD_ROOT)/result-sim-check.json --require '$(SIM_SUCCESS_MARKER)'

@@ -21,6 +21,7 @@ module dma_core #(
     parameter bit          EnableCrc             = 1'b1,
     parameter logic [31:0] RequestMask           = 32'h0000_3fff,
     parameter bit          EnableStreams         = 1'b1,
+    parameter bit          EnablePiolite         = 1'b0,
     parameter bit          EnableSpi             = 1'b0,
     parameter bit          EnableOriginQualifier = 1'b0,
     parameter bit          EnablePpaliteGuard    = 1'b0,
@@ -82,7 +83,15 @@ module dma_core #(
     axi4_stream_if.sink                    i2s_rx_axis,
     axi4_stream_if.sink                    dvp_rx_axis,
     axi4_stream_if.source                  crypto_in_axis,
-    axi4_stream_if.sink                    crypto_out_axis
+    axi4_stream_if.sink                    crypto_out_axis,
+    axi4_stream_if.source                  piolite_tx_axis,
+    axi4_stream_if.sink                    piolite_rx_axis,
+    input  logic [NumChannels-1:0]         piolite_tx_admit_i,
+    input  logic [NumChannels-1:0]         piolite_rx_admit_i,
+    output logic [NumChannels-1:0]         piolite_tx_job_o,
+    output logic [NumChannels-1:0]         piolite_rx_job_o,
+    output logic [NumChannels-1:0]         channel_busy_o,
+    output logic [NumChannels-1:0]         channel_start_o
     // verilog_format: on
 );
   import dma_pkg::*;
@@ -246,6 +255,14 @@ module dma_core #(
   logic                                             s_dvp_rx_fire;
   logic                                             s_crypto_in_fire;
   logic                                             s_crypto_out_fire;
+  logic [      NumChannels-1:0]                     s_piolite_tx_owned_q;
+  logic [      NumChannels-1:0]                     s_piolite_rx_owned_q;
+  logic                                             s_piolite_tx_channel_valid;
+  logic [ChannelIndexWidth-1:0]                     s_piolite_tx_channel;
+  logic                                             s_piolite_rx_channel_valid;
+  logic [ChannelIndexWidth-1:0]                     s_piolite_rx_channel;
+  logic                                             s_piolite_tx_fire;
+  logic                                             s_piolite_rx_fire;
   logic                                             s_stream_rx_keep_err;
   logic [ChannelIndexWidth-1:0]                     s_stream_rx_err_channel;
   logic [      NumChannels-1:0]                     s_progress;
@@ -446,6 +463,10 @@ module dma_core #(
     s_req_ready[DMA_REQUEST_DVP_RX] = EnableStreams;
     s_req_ready[DMA_REQUEST_CRYPTO_IN] = EnableStreams && req.crypto_in_proc;
     s_req_ready[DMA_REQUEST_CRYPTO_OUT] = EnableStreams && req.crypto_out_proc;
+    s_req_ready[DMA_REQUEST_PIOLITE_TX] = EnablePiolite && RequestMask[DMA_REQUEST_PIOLITE_TX] &&
+        req.piolite_tx_proc;
+    s_req_ready[DMA_REQUEST_PIOLITE_RX] = EnablePiolite && RequestMask[DMA_REQUEST_PIOLITE_RX] &&
+        req.piolite_rx_proc;
     s_req_ready[DMA_REQUEST_SPI_TX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_TX] &&
         spi_admit_ready_i[0];
     s_req_ready[DMA_REQUEST_SPI_RX]     = EnableSpi && RequestMask[DMA_REQUEST_SPI_RX] &&
@@ -476,6 +497,7 @@ module dma_core #(
     s_tcd_fetch_valid    = 1'b0;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
       if (s_tcd_fetch_pending_q[channel] && s_busy_q[channel] &&
+          !s_suspended_q[channel] && !s_suspend_req_q[channel] && !suspend_i[channel] &&
           !s_abort_q[channel] && !abort_i[channel] && !s_err_q[channel] &&
           !s_tcd_read_owner_valid_q && !s_tcd_parse_q && !s_axi_read_busy) begin
         if (!s_tcd_fetch_valid || (s_priority_q[channel] >
@@ -498,7 +520,8 @@ module dma_core #(
               (s_kind_q[other] == DMA_KIND_MM_TO_STREAM) &&
               (s_req_q[other] == s_cfg_req[channel]) &&
               ((s_cfg_req[channel] == DMA_REQUEST_I2S_TX) ||
-               (s_cfg_req[channel] == DMA_REQUEST_CRYPTO_IN))) begin
+               (s_cfg_req[channel] == DMA_REQUEST_CRYPTO_IN) ||
+               (s_cfg_req[channel] == DMA_REQUEST_PIOLITE_TX))) begin
             endpoint_busy = 1'b1;
           end
           if ((s_cfg_kind[channel] == DMA_KIND_STREAM_TO_MM) &&
@@ -555,7 +578,9 @@ module dma_core #(
                 (s_cfg_byte_count[channel][1:0] != 2'b00) ||
                 !s_cfg_src_increment[channel] ||
                 ((s_cfg_req[channel] != DMA_REQUEST_I2S_TX) &&
-                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_IN)) || endpoint_busy) begin
+                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_IN) &&
+                 ((s_cfg_req[channel] != DMA_REQUEST_PIOLITE_TX) || !EnablePiolite ||
+                  !piolite_tx_admit_i[channel])) || endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
                   ((s_cfg_src_addr[channel][1:0] != 2'b00) ||
@@ -571,8 +596,9 @@ module dma_core #(
                 !s_cfg_dst_increment[channel] ||
                 ((s_cfg_req[channel] != DMA_REQUEST_I2S_RX) &&
                  (s_cfg_req[channel] != DMA_REQUEST_DVP_RX) &&
-                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_OUT)) ||
-                endpoint_busy) begin
+                 (s_cfg_req[channel] != DMA_REQUEST_CRYPTO_OUT) &&
+                 ((s_cfg_req[channel] != DMA_REQUEST_PIOLITE_RX) || !EnablePiolite ||
+                  !piolite_rx_admit_i[channel])) || endpoint_busy) begin
               s_start_valid[channel] = 1'b0;
               s_start_err_code[channel] =
                   ((s_cfg_dst_addr[channel][1:0] != 2'b00) ||
@@ -591,6 +617,12 @@ module dma_core #(
         s_start_valid[channel] = ((tcd_head_i[(channel*32)+:32] & 32'h0000_003F) == 32'd0) &&
                                  (tcd_count_i[(channel*32)+:32] <= 32'h0000_FFFF);
         s_start_err_code[channel] = s_start_valid[channel] ? DMA_ERROR_NONE : DMA_ERROR_ALIGNMENT;
+      end
+      if (s_start_valid[channel] &&
+          ((!EnablePiolite && (piolite_tx_admit_i[channel] || piolite_rx_admit_i[channel])) ||
+           (piolite_tx_admit_i[channel] && piolite_rx_admit_i[channel]))) begin
+        s_start_valid[channel]    = 1'b0;
+        s_start_err_code[channel] = DMA_ERROR_CONFIG;
       end
       if (s_start_valid[channel] && s_cfg_src_increment[channel] &&
           (s_cfg_kind[channel] != DMA_KIND_STREAM_TO_MM)) begin
@@ -631,7 +663,8 @@ module dma_core #(
       current_page_offset = s_src_base_q[channel][11:0] +
                             (s_src_increment_q[channel] ? s_read_issued_q[channel][11:0]
                                                          : 12'd0);
-      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
+      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_suspend_req_q[channel] &&
+          !suspend_i[channel] && !s_abort_q[channel] && !abort_i[channel] &&
           !s_err_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
           ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
            (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM)) &&
@@ -691,7 +724,8 @@ module dma_core #(
       current_page_offset = s_dst_base_q[channel][11:0] +
                             (s_dst_increment_q[channel] ? s_write_issued_q[channel][11:0]
                                                          : 12'd0);
-      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_abort_q[channel] &&
+      if (s_busy_q[channel] && !s_suspended_q[channel] && !s_suspend_req_q[channel] &&
+          !suspend_i[channel] && !s_abort_q[channel] && !abort_i[channel] &&
           !s_err_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
           !read_owns_channel &&
           ((s_kind_q[channel] == DMA_KIND_MM_TO_MM) ||
@@ -787,6 +821,10 @@ module dma_core #(
     s_crypto_in_channel        = '0;
     s_crypto_out_channel_valid = 1'b0;
     s_crypto_out_channel       = '0;
+    s_piolite_tx_channel_valid = 1'b0;
+    s_piolite_tx_channel       = '0;
+    s_piolite_rx_channel_valid = 1'b0;
+    s_piolite_rx_channel       = '0;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
       if (s_busy_q[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
           (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
@@ -817,6 +855,20 @@ module dma_core #(
           (s_req_q[channel] == DMA_REQUEST_CRYPTO_OUT)) begin
         s_crypto_out_channel_valid = 1'b1;
         s_crypto_out_channel       = ChannelIndexWidth'(channel);
+      end
+      if (EnablePiolite && s_busy_q[channel] && s_piolite_tx_owned_q[channel] &&
+          (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_MM_TO_STREAM) &&
+          (s_req_q[channel] == DMA_REQUEST_PIOLITE_TX)) begin
+        s_piolite_tx_channel_valid = 1'b1;
+        s_piolite_tx_channel       = ChannelIndexWidth'(channel);
+      end
+      if (EnablePiolite && s_busy_q[channel] && s_piolite_rx_owned_q[channel] &&
+          piolite_rx_admit_i[channel] && (!s_tcd_mode_q[channel] || s_tcd_loaded_q[channel]) &&
+          (s_kind_q[channel] == DMA_KIND_STREAM_TO_MM) &&
+          (s_req_q[channel] == DMA_REQUEST_PIOLITE_RX)) begin
+        s_piolite_rx_channel_valid = 1'b1;
+        s_piolite_rx_channel       = ChannelIndexWidth'(channel);
       end
     end
   end
@@ -877,6 +929,30 @@ module dma_core #(
                              !s_fifo_full[s_crypto_out_channel] &&
                              (s_stream_accepted_q[s_crypto_out_channel] <
                               s_len_q[s_crypto_out_channel]);
+
+    piolite_tx_axis.tdata = '0;
+    piolite_tx_axis.tkeep = 4'hF;
+    piolite_tx_axis.tstrb = 4'hF;
+    piolite_tx_axis.tlast = 1'b0;
+    piolite_tx_axis.tid = '0;
+    piolite_tx_axis.tdest = '0;
+    piolite_tx_axis.tuser = '0;
+    piolite_tx_axis.tvalid = 1'b0;
+    if (s_piolite_tx_channel_valid && !s_suspended_q[s_piolite_tx_channel] &&
+        !s_stream_tx_stop_q[s_piolite_tx_channel] && !s_fifo_empty[s_piolite_tx_channel]) begin
+      piolite_tx_axis.tdata = s_fifo_rdata[s_piolite_tx_channel];
+      piolite_tx_axis.tlast = (s_bytes_done_q[s_piolite_tx_channel] + WordBytes) >=
+                              s_len_q[s_piolite_tx_channel];
+      piolite_tx_axis.tvalid = 1'b1;
+    end
+
+    piolite_rx_axis.tready = s_piolite_rx_channel_valid &&
+                             !s_suspended_q[s_piolite_rx_channel] &&
+                             !s_abort_q[s_piolite_rx_channel] &&
+                             !s_err_q[s_piolite_rx_channel] &&
+                             !s_fifo_full[s_piolite_rx_channel] &&
+                             (s_stream_accepted_q[s_piolite_rx_channel] <
+                              s_len_q[s_piolite_rx_channel]);
   end
 
   assign s_i2s_tx_fire = i2s_tx_axis.tvalid && i2s_tx_axis.tready;
@@ -884,6 +960,8 @@ module dma_core #(
   assign s_dvp_rx_fire = dvp_rx_axis.tvalid && dvp_rx_axis.tready;
   assign s_crypto_in_fire = crypto_in_axis.tvalid && crypto_in_axis.tready;
   assign s_crypto_out_fire = crypto_out_axis.tvalid && crypto_out_axis.tready;
+  assign s_piolite_tx_fire = piolite_tx_axis.tvalid && piolite_tx_axis.tready;
+  assign s_piolite_rx_fire = piolite_rx_axis.tvalid && piolite_rx_axis.tready;
   assign s_stream_rx_keep_err =
       (s_i2s_rx_fire && (i2s_rx_axis.tkeep != 4'hF)) ||
       (s_dvp_rx_fire && (dvp_rx_axis.tkeep != 4'hF)) ||
@@ -960,6 +1038,10 @@ module dma_core #(
       s_fifo_push[s_crypto_out_channel]  = 1'b1;
       s_fifo_wdata[s_crypto_out_channel] = crypto_out_axis.tdata;
     end
+    if (s_piolite_rx_fire) begin
+      s_fifo_push[s_piolite_rx_channel]  = 1'b1;
+      s_fifo_wdata[s_piolite_rx_channel] = piolite_rx_axis.tdata;
+    end
     if (s_axi_write_data_valid && s_axi_write_data_ready && s_write_owner_valid_q) begin
       s_fifo_pop[s_write_owner_q] = 1'b1;
     end
@@ -968,6 +1050,9 @@ module dma_core #(
     end
     if (s_crypto_in_fire && s_crypto_in_channel_valid) begin
       s_fifo_pop[s_crypto_in_channel] = 1'b1;
+    end
+    if (s_piolite_tx_fire && s_piolite_tx_channel_valid) begin
+      s_fifo_pop[s_piolite_tx_channel] = 1'b1;
     end
     if (s_axi_write_done && s_write_owner_valid_q &&
         ((s_axi_write_resp != `AXI4_RESP_OKAY) || s_axi_write_id_error ||
@@ -979,7 +1064,7 @@ module dma_core #(
   always_comb begin
     s_progress = '0;
     if (s_axi_read_start_valid && s_axi_read_start_ready) begin
-      s_progress[s_read_rr_selected] = 1'b1;
+      s_progress[s_tcd_fetch_valid?s_tcd_fetch_selected : s_read_rr_selected] = 1'b1;
     end
     if (s_axi_read_beat_valid && s_read_owner_valid_q) begin
       s_progress[s_read_owner_q] = 1'b1;
@@ -1008,6 +1093,12 @@ module dma_core #(
     if (s_crypto_out_fire && s_crypto_out_channel_valid) begin
       s_progress[s_crypto_out_channel] = 1'b1;
     end
+    if (s_piolite_tx_fire && s_piolite_tx_channel_valid) begin
+      s_progress[s_piolite_tx_channel] = 1'b1;
+    end
+    if (s_piolite_rx_fire && s_piolite_rx_channel_valid) begin
+      s_progress[s_piolite_rx_channel] = 1'b1;
+    end
   end
 
   always_comb begin
@@ -1029,6 +1120,9 @@ module dma_core #(
       s_stream_tx_valid[channel] |= s_crypto_in_channel_valid &&
                                     (s_crypto_in_channel == ChannelIndexWidth'(channel)) &&
                                     crypto_in_axis.tvalid;
+      s_stream_tx_valid[channel] |= s_piolite_tx_channel_valid &&
+                                    (s_piolite_tx_channel == ChannelIndexWidth'(channel)) &&
+                                    piolite_tx_axis.tvalid;
     end
   end
 
@@ -1043,6 +1137,8 @@ module dma_core #(
       s_abort_q                <= '0;
       s_suspend_req_q          <= '0;
       s_stream_tx_stop_q       <= '0;
+      s_piolite_tx_owned_q     <= '0;
+      s_piolite_rx_owned_q     <= '0;
       s_half_seen_q            <= '0;
       s_evt_done_q             <= '0;
       s_evt_half_q             <= '0;
@@ -1108,6 +1204,8 @@ module dma_core #(
         s_abort_q                <= '0;
         s_suspend_req_q          <= '0;
         s_stream_tx_stop_q       <= '0;
+        s_piolite_tx_owned_q     <= '0;
+        s_piolite_rx_owned_q     <= '0;
         s_half_seen_q            <= '0;
         s_evt_done_q             <= '0;
         s_evt_half_q             <= '0;
@@ -1165,6 +1263,8 @@ module dma_core #(
             s_evt_err_q[channel] <= 1'b0;
           end
           if (channel_reset_i[channel]) begin
+            s_piolite_tx_owned_q[channel]  <= 1'b0;
+            s_piolite_rx_owned_q[channel]  <= 1'b0;
             s_busy_q[channel]              <= 1'b0;
             s_suspended_q[channel]         <= 1'b0;
             s_done_q[channel]              <= 1'b0;
@@ -1226,6 +1326,8 @@ module dma_core #(
               s_err_read_q[channel]        <= 1'b0;
               if (s_start_valid[channel]) begin
                 s_busy_q[channel] <= 1'b1;
+                s_piolite_tx_owned_q[channel] <= EnablePiolite && piolite_tx_admit_i[channel];
+                s_piolite_rx_owned_q[channel] <= EnablePiolite && piolite_rx_admit_i[channel];
                 s_kind_q[channel] <= s_cfg_kind[channel];
                 s_req_q[channel] <= s_cfg_req[channel];
                 s_priority_q[channel] <= s_cfg_priority[channel];
@@ -1287,7 +1389,9 @@ module dma_core #(
                    ((s_i2s_tx_channel == ChannelIndexWidth'(channel)) &&
                     s_i2s_tx_fire) ||
                    ((s_crypto_in_channel == ChannelIndexWidth'(channel)) &&
-                    s_crypto_in_fire))) begin
+                    s_crypto_in_fire) ||
+                   ((s_piolite_tx_channel == ChannelIndexWidth'(channel)) &&
+                    s_piolite_tx_fire))) begin
                 s_stream_tx_stop_q[channel] <= 1'b1;
               end
             end
@@ -1355,7 +1459,7 @@ module dma_core #(
 
         if (s_tcd_parse_q) begin
           s_tcd_parse_q <= 1'b0;
-          if (s_abort_q[s_tcd_read_owner_q]) begin
+          if (s_abort_q[s_tcd_read_owner_q] || abort_i[s_tcd_read_owner_q]) begin
             s_tcd_loaded_q[s_tcd_read_owner_q] <= 1'b0;
           end else if ((EnablePpaliteGuard && ppalite_route_i &&
                         ({s_tcd_word7_q[s_tcd_read_owner_q][25],
@@ -1363,6 +1467,26 @@ module dma_core #(
               !RequestMask[{s_tcd_word7_q[s_tcd_read_owner_q][25],
                             s_tcd_word7_q[s_tcd_read_owner_q][15:12]}] ||
               (!EnableStreams && (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_MM)) ||
+              (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                 s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_PIOLITE_TX) &&
+               (!EnablePiolite || !s_piolite_tx_owned_q[s_tcd_read_owner_q] ||
+                !piolite_tx_admit_i[s_tcd_read_owner_q] ||
+                (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_MM_TO_STREAM))) ||
+              (({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                 s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_PIOLITE_RX) &&
+               (!EnablePiolite || !s_piolite_rx_owned_q[s_tcd_read_owner_q] ||
+                !piolite_rx_admit_i[s_tcd_read_owner_q] ||
+                (s_tcd_word7_q[s_tcd_read_owner_q][10:8] != DMA_KIND_STREAM_TO_MM))) ||
+              ((s_piolite_tx_owned_q[s_tcd_read_owner_q] ||
+                s_piolite_rx_owned_q[s_tcd_read_owner_q]) &&
+               ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                 s_tcd_word7_q[s_tcd_read_owner_q][15:12]} != DMA_REQUEST_SOFTWARE) &&
+               !((s_piolite_tx_owned_q[s_tcd_read_owner_q] &&
+                  ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                   s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_PIOLITE_TX)) ||
+                 (s_piolite_rx_owned_q[s_tcd_read_owner_q] &&
+                  ({s_tcd_word7_q[s_tcd_read_owner_q][25],
+                   s_tcd_word7_q[s_tcd_read_owner_q][15:12]} == DMA_REQUEST_PIOLITE_RX)))) ||
               s_err_q[s_tcd_read_owner_q] ||
               (s_tcd_word7_q[s_tcd_read_owner_q][0] == 1'b0) ||
               (s_tcd_word3_q[s_tcd_read_owner_q] == 32'd0) ||
@@ -1491,7 +1615,8 @@ module dma_core #(
             if ((s_kind_q[s_read_owner_q] == DMA_KIND_MM_TO_STREAM) &&
                 (!s_stream_tx_valid[s_read_owner_q] ||
                  ((s_i2s_tx_channel == s_read_owner_q) && s_i2s_tx_fire) ||
-                 ((s_crypto_in_channel == s_read_owner_q) && s_crypto_in_fire))) begin
+                 ((s_crypto_in_channel == s_read_owner_q) && s_crypto_in_fire) ||
+                 ((s_piolite_tx_channel == s_read_owner_q) && s_piolite_tx_fire))) begin
               s_stream_tx_stop_q[s_read_owner_q] <= 1'b1;
             end
           end else if (s_abort_q[s_read_owner_q]) begin
@@ -1635,18 +1760,26 @@ module dma_core #(
               s_stream_last_q[s_crypto_out_channel] <= 1'b1;
             end
           end
+          if (s_piolite_rx_fire) begin
+            s_stream_accepted_q[s_piolite_rx_channel] <=
+                s_stream_accepted_q[s_piolite_rx_channel] + WordBytes;
+            if (piolite_rx_axis.tlast) begin
+              s_stream_last_q[s_piolite_rx_channel] <= 1'b1;
+            end
+          end
         end
 
         if (s_i2s_tx_fire && s_i2s_tx_channel_valid) begin
-          if (s_abort_q[s_i2s_tx_channel] || s_err_q[s_i2s_tx_channel] ||
-              s_suspend_req_q[s_i2s_tx_channel]) begin
+          if (s_abort_q[s_i2s_tx_channel] || s_err_q[s_i2s_tx_channel]) begin
             s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
-            if (s_suspend_req_q[s_i2s_tx_channel] && !s_abort_q[s_i2s_tx_channel] &&
-                !s_err_q[s_i2s_tx_channel]) begin
-              s_suspended_q[s_i2s_tx_channel]   <= 1'b1;
-              s_suspend_req_q[s_i2s_tx_channel] <= 1'b0;
-            end
           end else begin
+            if (s_suspend_req_q[s_i2s_tx_channel] || suspend_i[s_i2s_tx_channel]) begin
+              s_stream_tx_stop_q[s_i2s_tx_channel] <= 1'b1;
+              if (s_suspend_req_q[s_i2s_tx_channel]) begin
+                s_suspended_q[s_i2s_tx_channel]   <= 1'b1;
+                s_suspend_req_q[s_i2s_tx_channel] <= 1'b0;
+              end
+            end
             s_bytes_done_q[s_i2s_tx_channel] <= s_bytes_done_q[s_i2s_tx_channel] + WordBytes;
             if (!s_half_seen_q[s_i2s_tx_channel] &&
                 ((s_bytes_done_q[s_i2s_tx_channel] + WordBytes) >=
@@ -1675,15 +1808,16 @@ module dma_core #(
         end
 
         if (s_crypto_in_fire && s_crypto_in_channel_valid) begin
-          if (s_abort_q[s_crypto_in_channel] || s_err_q[s_crypto_in_channel] ||
-              s_suspend_req_q[s_crypto_in_channel]) begin
+          if (s_abort_q[s_crypto_in_channel] || s_err_q[s_crypto_in_channel]) begin
             s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
-            if (s_suspend_req_q[s_crypto_in_channel] && !s_abort_q[s_crypto_in_channel] &&
-                !s_err_q[s_crypto_in_channel]) begin
-              s_suspended_q[s_crypto_in_channel]   <= 1'b1;
-              s_suspend_req_q[s_crypto_in_channel] <= 1'b0;
-            end
           end else begin
+            if (s_suspend_req_q[s_crypto_in_channel] || suspend_i[s_crypto_in_channel]) begin
+              s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
+              if (s_suspend_req_q[s_crypto_in_channel]) begin
+                s_suspended_q[s_crypto_in_channel]   <= 1'b1;
+                s_suspend_req_q[s_crypto_in_channel] <= 1'b0;
+              end
+            end
             s_bytes_done_q[s_crypto_in_channel] <= s_bytes_done_q[s_crypto_in_channel] + WordBytes;
             if (!s_half_seen_q[s_crypto_in_channel] &&
                 ((s_bytes_done_q[s_crypto_in_channel] + WordBytes) >=
@@ -1707,6 +1841,46 @@ module dma_core #(
                 s_done_q[s_crypto_in_channel]           <= 1'b1;
                 s_evt_done_q[s_crypto_in_channel]       <= 1'b1;
                 s_stream_tx_stop_q[s_crypto_in_channel] <= 1'b1;
+              end
+            end
+          end
+        end
+
+        if (s_piolite_tx_fire && s_piolite_tx_channel_valid) begin
+          if (s_abort_q[s_piolite_tx_channel] || s_err_q[s_piolite_tx_channel]) begin
+            s_stream_tx_stop_q[s_piolite_tx_channel] <= 1'b1;
+          end else begin
+            if (s_suspend_req_q[s_piolite_tx_channel] || suspend_i[s_piolite_tx_channel]) begin
+              s_stream_tx_stop_q[s_piolite_tx_channel] <= 1'b1;
+              if (s_suspend_req_q[s_piolite_tx_channel]) begin
+                s_suspended_q[s_piolite_tx_channel]   <= 1'b1;
+                s_suspend_req_q[s_piolite_tx_channel] <= 1'b0;
+              end
+            end
+            s_bytes_done_q[s_piolite_tx_channel] <=
+                s_bytes_done_q[s_piolite_tx_channel] + WordBytes;
+            if (!s_half_seen_q[s_piolite_tx_channel] &&
+                ((s_bytes_done_q[s_piolite_tx_channel] + WordBytes) >=
+                 (s_len_q[s_piolite_tx_channel] >> 1))) begin
+              s_half_seen_q[s_piolite_tx_channel] <= 1'b1;
+              s_evt_half_q[s_piolite_tx_channel]  <= 1'b1;
+            end
+            if ((s_bytes_done_q[s_piolite_tx_channel] + WordBytes) >=
+                s_len_q[s_piolite_tx_channel]) begin
+              if (s_tcd_mode_q[s_piolite_tx_channel] &&
+                  (s_tcd_next_ptr_q[s_piolite_tx_channel] != 32'd0) &&
+                  (s_tcd_words_left_q[s_piolite_tx_channel] > 16'd1)) begin
+                s_tcd_ptr_q[s_piolite_tx_channel] <= s_tcd_next_ptr_q[s_piolite_tx_channel];
+                s_tcd_words_left_q[s_piolite_tx_channel] <=
+                    s_tcd_words_left_q[s_piolite_tx_channel] - 16'd1;
+                s_tcd_fetch_pending_q[s_piolite_tx_channel] <= 1'b1;
+                s_tcd_loaded_q[s_piolite_tx_channel] <= 1'b0;
+                s_stream_tx_stop_q[s_piolite_tx_channel] <= 1'b1;
+              end else begin
+                s_busy_q[s_piolite_tx_channel]           <= 1'b0;
+                s_done_q[s_piolite_tx_channel]           <= 1'b1;
+                s_evt_done_q[s_piolite_tx_channel]       <= 1'b1;
+                s_stream_tx_stop_q[s_piolite_tx_channel] <= 1'b1;
               end
             end
           end
@@ -1768,7 +1942,15 @@ module dma_core #(
     stall_cycles_lo_o = '0;
     stall_cycles_hi_o = '0;
     crc_result_o      = '0;
+    piolite_tx_job_o  = '0;
+    piolite_rx_job_o  = '0;
+    channel_busy_o    = s_busy_q;
+    channel_start_o   = start_i;
     for (int unsigned channel = 0; channel < NumChannels; channel++) begin
+      piolite_tx_job_o[channel] = (s_busy_q[channel] && s_piolite_tx_owned_q[channel]) ||
+          (start_i[channel] && s_start_valid[channel] && piolite_tx_admit_i[channel]);
+      piolite_rx_job_o[channel] = (s_busy_q[channel] && s_piolite_rx_owned_q[channel]) ||
+          (start_i[channel] && s_start_valid[channel] && piolite_rx_admit_i[channel]);
       event_status_o[(channel*3)+:3] = {
         s_evt_err_q[channel], s_evt_half_q[channel], s_evt_done_q[channel]
       };

@@ -8,6 +8,14 @@ module spi_dma_admit_tb;
   logic rst_n_i = 1'b0;
   always #5 clk_i = ~clk_i;
 
+  axi4_stream_if piolite_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if piolite_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
   dma_req_if req ();
   apb4_if dma_apb (
       .pclk   (clk_i),
@@ -359,6 +367,14 @@ module spi_dma_admit_tb;
       .dvp_rx_axis        (dvp_rx_axis),
       .crypto_in_axis     (crypto_in_axis),
       .crypto_out_axis    (crypto_out_axis),
+      .piolite_tx_axis    (piolite_tx_axis),
+      .piolite_rx_axis    (piolite_rx_axis),
+      .piolite_tx_admit_i ('0),
+      .piolite_rx_admit_i ('0),
+      .piolite_tx_job_o   (),
+      .piolite_rx_job_o   (),
+      .channel_busy_o     (),
+      .channel_start_o    (),
       .spi_admit_ready_i  (dma_admit_ready),
       .spi_credit_valid_o (spi_credit_valid_o),
       .spi_credit_retire_o(spi_credit_retire_o),

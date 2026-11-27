@@ -72,6 +72,12 @@
     "depth": 4
   },
   {
+    "id": "piolite",
+    "family": "piolite",
+    "title": "Programmable IO-lite (PIOLITE)",
+    "depth": 4
+  },
+  {
     "id": "ws2812",
     "family": "ws2812",
     "title": "WS2812 LED Output",

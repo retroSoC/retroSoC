@@ -187,9 +187,12 @@ are compatibility-only evidence.
 For Tiny firmware, success requires command exit 0, the configured
 `SIM_TEST_PASS`, and no `FAILED`, `FATAL`, `assertion failed`, `%Error`,
 `SIM_TEST_FAIL` or `SIM_TEST_TIMEOUT`. SYSCTRL TEST_STATUS is the terminal
-verdict; UART output is diagnostic. Run both Verilator and Icarus pin-level
-checks; preserve simulator-specific unsupported coverage rather than replacing
-one with the other. Neither a dry-run nor a skipped fixture is a passing test.
+verdict; UART output is diagnostic. Before the combined final campaign,
+full-system pin-level firmware acceptance uses Verilator; long full-system
+Icarus acceptance is reserved for that campaign under TINY-057. Focused
+standalone Icarus tests retain their own frozen coverage and do not replace
+full-system firmware acceptance. Neither a dry-run nor a skipped fixture is a
+passing test.
 
 ## PIOLITE-P1 Host Implementation Evidence
 
@@ -490,6 +493,27 @@ output and no longer self-invalidates evidence. P3+ integration, central-DMA
 V2.1/GPIO/RCU drain and handoff, firmware/application qualification, final
 PVT/physical/pad/silicon evidence, and independent phase review remain open.
 
+## PIOLITE-P3 Integration Evidence
+
+P3 now connects Tiny APB `0x1001C000`, IRQ24, RCU target15, USER GPIO and
+DMA14/15, with Mini request/admission grants default off. The acceptance image
+uses the real RCU/GPIO handoff, direct and mixed-TCD transfers, residual RX
+recovery, bounded abort/reset and source-bound verdicts. Independent review
+iterations closed stream-stability, command-arbitration, per-SM lifecycle,
+rollback, TCD reuse, reset self-wait, evidence-identity and product-source-list
+issues; the final incremental review reported no P0-P3 finding.
+
+Before the final clean-revision campaign, source state
+`1b67c0c967d16e1e5156e3651a25e8e092059b41a939ae488f208511fdec1e7d`
+produced `SIM_TEST_PASS` in both Verilator profiles, with 5,489,220 IHP130
+cycles and 5,492,846 ICS55 cycles, no forbidden marker and a passing
+`meta/piolite-p3/check/record.json` in each variant. These are candidate
+measurements, not evidence for a later source revision. Both 12:15 P2 aggregate
+variants also passed lint, Verilator, standalone Icarus, formal, synthesis,
+netlist and observational STA. The final PR-head source, complete Pytest,
+PR/nightly, full-SoC synthesis/netboot/STA and CI checks remain mandatory and
+are not claimed by these earlier records.
+
 ## Freeze Record and Remaining Gaps
 
 | Phase | Status |
@@ -497,7 +521,7 @@ PVT/physical/pad/silicon evidence, and independent phase review remain open.
 | PIOLITE-P0 | Documentation freeze complete; local links/anchor, command dry-runs, unchanged legacy/R2 IDs and QFN64/ALT tables, documentation-only scope and whitespace checks passed on 2026-10-04 |
 | PIOLITE-P1 | Host model, assembler, focused tests and actual 32-word footprints added on 2026-10-28; `phase_accepted: false`; Tiny integration and protocol qualification remain absent |
 | PIOLITE-P2 | Standalone core/CSR/parity, exhaustive and directed dual-simulator, PL-V checklist, full-top formal, IHP130/ICS55 synthesis/netlist and observational STA evidence added on 2026-10-30; `phase_accepted=false`; independent review and P3+ product acceptance remain open |
-| PIOLITE-P3 | Not started: R2-dependent Tiny wiring, DMA V2.1 and GPIO/RCU/HAL lifecycle absent |
+| PIOLITE-P3 | Tiny GPIO/DMA/RCU/HAL integration and independent review complete; pre-finalization dual-profile Verilator and dual-PDK standalone evidence recorded above; final clean-revision and PR-head CI acceptance pending |
 | PIOLITE-P4 | Not started: complete SDK/application and dual-simulator/contention qualification absent |
 | PIOLITE-P5 | Not started: PIO-inclusive IHP130 timing, physical, Pad/package and silicon evidence absent |
 

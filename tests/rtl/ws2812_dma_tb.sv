@@ -50,6 +50,14 @@ module ws2812_dma_tb;
   integer             observed_cycle = 0;
   integer             reset_low_cycles = 0;
 
+  axi4_stream_if piolite_tx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if piolite_rx_axis (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
   dma_req_if req ();
   axi4_if axi4 (
       .aclk   (clk_i),
@@ -243,6 +251,14 @@ module ws2812_dma_tb;
       .dvp_rx_axis          (dvp_rx_axis),
       .crypto_in_axis       (crypto_in_axis),
       .crypto_out_axis      (crypto_out_axis),
+      .piolite_tx_axis      (piolite_tx_axis),
+      .piolite_rx_axis      (piolite_rx_axis),
+      .piolite_tx_admit_i   ('0),
+      .piolite_rx_admit_i   ('0),
+      .piolite_tx_job_o     (),
+      .piolite_rx_job_o     (),
+      .channel_busy_o       (),
+      .channel_start_o      (),
       .spi_admit_ready_i    (2'b00)
   );
 

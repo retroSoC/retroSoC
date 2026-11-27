@@ -23,7 +23,7 @@ def test_dma_v22_abi_and_product_defaults():
     assert "logic [      NumChannels-1:0][               4:0] s_req_q" in core
     assert "!EnableSpi && ((s_cfg_req[channel] == DMA_REQUEST_SPI_TX)" in core
     assert "s_tcd_parse_q &&" in core
-    assert ".RequestMask" in tiny and "0003_39ff" in tiny
+    assert ".RequestMask" in tiny and "0003_f9ff" in tiny
     assert ".EnableSpi(1'b1)" in re.sub(r"\s+", "", tiny)
 
 
@@ -41,14 +41,14 @@ def test_dma_v22_hal_mask_and_discovery_order():
     c_dma = (ROOT / "crt/src/hal/dma.c").read_text()
     core = (ROOT / "rtl/ip/peripheral/dma_core.sv").read_text()
     apb = (ROOT / "rtl/ip/peripheral/apb4_dma.sv").read_text()
-    assert "UINT32_C(0x000339FF)" in c_math
+    assert "UINT32_C(0x0003F9FF)" in c_math
     assert "RS_DMA_V22" not in c_math
     assert c_dma.index("rs_dma_supports_request(config->request)") < c_dma.index(
         "rs_dma_config_validate(channel, config)"
     )
     assert "s_cfg_req[channel] > DMA_REQUEST_SPI_RX" in core
     assert "s_cfg_req_raw[channel][31:5] != 27'd0" in core
-    assert "32'h0003_ffff" in apb
+    assert "EffectiveSupportedRequests" in apb
     assert "EnableStreams ?" in apb
 
 
@@ -78,7 +78,7 @@ def test_dma_v21_descriptor_cancel_guards_are_structural():
     assert "!s_abort_q[channel]" in fetch
     assert "!abort_i[channel]" in fetch
     assert "!s_tcd_parse_q" in fetch
-    assert "if (s_abort_q[s_tcd_read_owner_q])" in parse
+    assert "if (s_abort_q[s_tcd_read_owner_q] || abort_i[s_tcd_read_owner_q])" in parse
     assert "s_tcd_parse_q &&" in ownership
     assert "s_tcd_fetch_pending_q[channel] <= 1'b0" in core
     assert "tcd_read_owner_valid" in formal

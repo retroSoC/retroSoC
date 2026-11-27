@@ -654,6 +654,18 @@
       "apb_target": "spi"
     },
     {
+      "id": "piolite",
+      "label": "PIOLITE",
+      "domain": "peripheral",
+      "x": 6,
+      "y": 186,
+      "w": 34,
+      "h": 8,
+      "role": "block",
+      "ip": "piolite",
+      "apb_target": "piolite"
+    },
+    {
       "id": "timer0",
       "label": "TIM0",
       "domain": "peripheral",
@@ -1142,6 +1154,27 @@
       "source_position": 0.4236111111111111,
       "target_position": 0.5,
       "via": [],
+      "arrow": true
+    },
+    {
+      "id": "pclk-piolite",
+      "from": "pclk-rail",
+      "to": "piolite",
+      "kind": "control",
+      "source_side": "west",
+      "target_side": "west",
+      "source_position": 0.8333333333333334,
+      "target_position": 0.5,
+      "via": [
+        [
+          44.5,
+          202
+        ],
+        [
+          6,
+          202
+        ]
+      ],
       "arrow": true
     },
     {

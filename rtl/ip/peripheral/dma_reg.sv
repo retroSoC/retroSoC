@@ -357,7 +357,7 @@ module dma_reg #(
       `APB4_DMA__CAPABILITY:
       s_read_data = {
         1'b0,
-        (EnableStreams ? 3'd3 : 3'd0),
+        (EnableStreams ? 3'($countones(SupportedRequests & 32'h0000_f806)) : 3'd0),
         4'(MaxBurstBeats),
         8'(DataWidth),
         8'(NumChannels),

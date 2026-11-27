@@ -16310,6 +16310,514 @@
       }
     }
   },
+  "piolite": {
+    "nodes": [
+      {
+        "id": "reg",
+        "title": "APB4 session / loader\nregister and IMEM access",
+        "x": 0.0,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "p0", "direction": "out", "width": 1, "side": "east"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/apb4_piolite.sv",
+          "rtl/ip/piolite/piolite_reg.sv"
+        ]
+      },
+      {
+        "id": "sm",
+        "title": "Two state machines\nshared 32-word IMEM",
+        "x": 6.3,
+        "y": 7.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "p0", "direction": "in", "width": 1, "side": "west"},
+          {"id": "p1", "direction": "in", "width": 32, "side": "west"},
+          {"id": "p2", "direction": "out", "width": 32, "side": "east"},
+          {"id": "p3", "direction": "out", "width": 32, "side": "east"},
+          {"id": "p4", "direction": "in", "width": 32, "side": "east"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/piolite_core.sv",
+          "rtl/ip/piolite/piolite_sm.sv"
+        ]
+      },
+      {
+        "id": "dma",
+        "title": "DMA admission / transport\nTX14 / RX15",
+        "x": 0.0,
+        "y": 3.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "p0", "direction": "out", "width": 32, "side": "east"},
+          {"id": "p1", "direction": "in", "width": 32, "side": "east"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/apb4_piolite.sv",
+          "rtl/ip/piolite/piolite_dma_adapter.sv"
+        ]
+      },
+      {
+        "id": "gpio",
+        "title": "GPIO ownership guard\nvalue / OE / input",
+        "x": 12.6,
+        "y": 3.0,
+        "w": 4.0,
+        "h": 1.8,
+        "ports": [
+          {"id": "p0", "direction": "in", "width": 32, "side": "west"},
+          {"id": "p1", "direction": "out", "width": 32, "side": "west"}
+        ],
+        "sources": [
+          "rtl/ip/piolite/apb4_piolite.sv",
+          "rtl/ip/piolite/piolite_gpio_guard.sv"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "reg.p0",
+        "to": "sm.p0",
+        "label": "PIOLITE control",
+        "kind": "control",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": "piolite_if u_ctrl ();"}
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "dma.p0",
+        "to": "sm.p1",
+        "label": "TX words /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".tx_data_i(dma_tx_data_i)"}
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "sm.p2",
+        "to": "dma.p1",
+        "label": "RX words /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".rx_data_o(dma_rx_data_o)"}
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "sm.p3",
+        "to": "gpio.p0",
+        "label": "Output value / OE /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".gpio_oe_o(gpio_oe_o)"}
+        ],
+        "zigzag-dir": "horizontal"
+      },
+      {
+        "from": "gpio.p1",
+        "to": "sm.p4",
+        "label": "GPIO input /32",
+        "kind": "data",
+        "style": "zigzag",
+        "bindings": [
+          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".pin_inputs_i(gpio_input_i)"}
+        ],
+        "zigzag-dir": "horizontal"
+      }
+    ],
+    "note": "Two state machines share 32 instruction words. GPIO USER ownership qualifies execution and OE; central DMA14/15 uses bounded per-job admission, stable beats and reset/drain recovery. No pin rate or physical timing is implied.",
+    "block_diagram": {
+      "style": "ip-block-v2",
+      "title": "PIOLITE",
+      "rows": [
+        ["reg"],
+        ["sm"],
+        ["dma", "gpio"]
+      ],
+      "external": [],
+      "buses": [],
+      "wrapper": [
+        "rtl/ip/piolite/apb4_piolite.sv"
+      ],
+      "ports": [
+        {"name": "clk_i", "direction": "input", "role": "clock", "file": "rtl/ip/piolite/apb4_piolite.sv"},
+        {"name": "rst_n_i", "direction": "input", "role": "reset", "file": "rtl/ip/piolite/apb4_piolite.sv"},
+        {"name": "irq_o", "direction": "output", "role": "irq", "file": "rtl/ip/piolite/apb4_piolite.sv"}
+      ],
+      "review": "Two state machines and shared instruction memory with guarded GPIO and bounded central DMA. External pin and memory timing remain outside this logical-IP boundary.",
+      "titles": {},
+      "interfaces": [
+        {
+          "protocol": "APB4",
+          "width": 32,
+          "side": "left",
+          "node": "reg",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "apb4_if.slave"
+        },
+        {
+          "protocol": "AXI4-Stream TX",
+          "width": 32,
+          "side": "left",
+          "node": "dma",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "logic [31:0]"
+        },
+        {
+          "protocol": "AXI4-Stream RX",
+          "width": 32,
+          "side": "right",
+          "node": "dma",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "logic [31:0]"
+        },
+        {
+          "protocol": "USER GPIO",
+          "width": 32,
+          "side": "right",
+          "node": "gpio",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "logic [31:0]"
+        }
+      ],
+      "port_layout": "grouped",
+      "details": [],
+      "product": "tiny",
+      "functional": {
+        "nodes": [
+          {
+            "id": "reg-registers",
+            "owner": "reg",
+            "title": "PIO-lite\nAPB and loader",
+            "scope": "local-logic",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "symbols": ["s_req_accept", "s_access_err"],
+              "bindings": [
+                "assign s_req_accept        = s_req && !s_ready_q;",
+                "s_resp_err_d = s_req_accept ? s_access_err : s_resp_err_q;"
+              ]
+            }
+          },
+          {
+            "id": "sm-core",
+            "owner": "sm",
+            "title": "PIO-lite\nTwo state machines",
+            "scope": "local-logic",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": ["s_flags_d", "s_flags_q"],
+              "bindings": [
+                "s_flags_d = ctrl.cmd_block_reset ? 32'd0 :",
+                "assign ctrl.flags = s_flags_q[3:0];"
+              ]
+            }
+          },
+          {
+            "id": "dma-transport",
+            "owner": "dma",
+            "title": "PIO-lite\nHeld-beat transport",
+            "scope": "local-logic",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_dma_adapter.sv",
+              "module": "piolite_dma_adapter",
+              "symbols": ["s_tx_held_d", "s_tx_held_q"],
+              "bindings": [
+                "s_tx_held_d = s_tx_held_q;",
+                "assign tx_held_o = s_tx_held_q;"
+              ]
+            }
+          },
+          {
+            "id": "gpio-guard",
+            "owner": "gpio",
+            "title": "PIO-lite\nGPIO readiness guard",
+            "scope": "local-logic",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "symbols": ["s_claimed_ready"],
+              "bindings": [
+                "assign s_claimed_ready = user_select_i & user_status_i & ~filter_enable_i;"
+              ]
+            }
+          },
+          {
+            "id": "if-apb",
+            "owner": "reg",
+            "title": "APB4 /32",
+            "interface_refs": [0]
+          },
+          {
+            "id": "if-tx",
+            "owner": "dma",
+            "title": "DMA TX /32",
+            "interface_refs": [1]
+          },
+          {
+            "id": "if-rx",
+            "owner": "dma",
+            "title": "DMA RX /32",
+            "side": "right",
+            "interface_refs": [2]
+          },
+          {
+            "id": "if-gpio",
+            "owner": "gpio",
+            "title": "USER GPIO /32",
+            "side": "right",
+            "interface_refs": [3]
+          },
+          {
+            "id": "if-clock-reset",
+            "owner": "reg",
+            "title": "PCLK / reset",
+            "boundary_members": ["clk_i", "rst_n_i"]
+          },
+          {
+            "id": "if-irq",
+            "owner": "reg",
+            "title": "IRQ",
+            "boundary_members": ["irq_o"]
+          }
+        ],
+        "edges": [
+          {
+            "id": "reg-control",
+            "from": "reg-registers",
+            "to": "sm-core",
+            "kind": "control",
+            "label": "PIOLITE ctrl",
+            "net": "parent:reg.p0",
+            "parent_edge": 0,
+            "width": 1,
+            "source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "signals": ["u_ctrl"],
+              "bindings": ["piolite_if u_ctrl ();"]
+            }
+          },
+          {
+            "id": "dma-tx",
+            "from": "dma-transport",
+            "to": "sm-core",
+            "kind": "data",
+            "label": "TX words /32",
+            "net": "parent:dma.p0",
+            "parent_edge": 1,
+            "width": 32
+          },
+          {
+            "id": "dma-rx",
+            "from": "sm-core",
+            "to": "dma-transport",
+            "kind": "data",
+            "label": "RX words /32",
+            "net": "parent:sm.p2",
+            "parent_edge": 2,
+            "width": 32
+          },
+          {
+            "id": "gpio-output",
+            "from": "sm-core",
+            "to": "gpio-guard",
+            "kind": "data",
+            "label": "Output value / OE /32",
+            "net": "parent:sm.p3",
+            "parent_edge": 3,
+            "width": 32
+          },
+          {
+            "id": "gpio-input",
+            "from": "gpio-guard",
+            "to": "sm-core",
+            "kind": "data",
+            "label": "GPIO input /32",
+            "net": "parent:gpio.p1",
+            "parent_edge": 4,
+            "width": 32
+          },
+          {
+            "id": "apb-interface",
+            "from": "if-apb",
+            "to": "reg-registers",
+            "kind": "data",
+            "label": "APB4 /32",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:0",
+            "interface": 0,
+            "width": 32
+          },
+          {
+            "id": "tx-interface",
+            "from": "if-tx",
+            "to": "dma-transport",
+            "kind": "data",
+            "label": "DMA TX /32",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:1",
+            "interface": 1,
+            "width": 32
+          },
+          {
+            "id": "rx-interface",
+            "from": "dma-transport",
+            "to": "if-rx",
+            "kind": "data",
+            "label": "DMA RX /32",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:2",
+            "interface": 2,
+            "width": 32
+          },
+          {
+            "id": "gpio-interface",
+            "from": "gpio-guard",
+            "to": "if-gpio",
+            "kind": "data",
+            "label": "USER GPIO /32",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:3",
+            "interface": 3,
+            "width": 32
+          },
+          {
+            "id": "clock-boundary",
+            "from": "if-clock-reset",
+            "to": "reg-registers",
+            "kind": "clock",
+            "label": "clk_i",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:clk_i",
+            "boundary": true,
+            "boundary_signals": ["clk_i"]
+          },
+          {
+            "id": "reset-boundary",
+            "from": "if-clock-reset",
+            "to": "reg-registers",
+            "kind": "reset",
+            "label": "rst_n_i",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:rst_n_i",
+            "boundary": true,
+            "boundary_signals": ["rst_n_i"]
+          },
+          {
+            "id": "irq-boundary",
+            "from": "reg-registers",
+            "to": "if-irq",
+            "kind": "irq",
+            "label": "irq_o",
+            "net": "rtl/ip/piolite/apb4_piolite.sv:irq_o",
+            "boundary": true,
+            "boundary_signals": ["irq_o"]
+          }
+        ],
+        "layout": {
+          "height": 140,
+          "boundary": [0, 0, 150, 136],
+          "nodes": {
+            "reg-registers": [38, 10, 36, 16],
+            "sm-core": [86, 10, 36, 16],
+            "dma-transport": [38, 38, 36, 16],
+            "gpio-guard": [86, 38, 36, 16],
+            "if-apb": [2, 12, 16, 12],
+            "if-tx": [2, 40, 16, 12],
+            "if-rx": [134, 40, 16, 12],
+            "if-gpio": [134, 66, 16, 12],
+            "if-clock-reset": [2, 68, 16, 12],
+            "if-irq": [134, 12, 16, 12]
+          },
+          "routes": {
+            "reg-control": {
+              "points": [[56, 10], [56, 6], [104, 6], [104, 10]],
+              "from": {"side": "north", "offset": 18},
+              "to": {"side": "north", "offset": 18},
+              "label": [2, 82, 32]
+            },
+            "dma-tx": {
+              "points": [[74, 44], [74, 30], [104, 30], [104, 26]],
+              "from": {"side": "east", "offset": 6},
+              "to": {"side": "south", "offset": 18},
+              "label": [38, 82, 32]
+            },
+            "dma-rx": {
+              "points": [[86, 18], [78, 18], [78, 60], [74, 60], [74, 50]],
+              "from": {"side": "west", "offset": 8},
+              "to": {"side": "east", "offset": 12},
+              "label": [74, 82, 32]
+            },
+            "gpio-output": {
+              "points": [[122, 16], [128, 16], [128, 46], [122, 46]],
+              "from": {"side": "east", "offset": 6},
+              "to": {"side": "east", "offset": 8},
+              "label": [110, 82, 32]
+            },
+            "gpio-input": {
+              "points": [[86, 48], [82, 48], [82, 24], [86, 24]],
+              "from": {"side": "west", "offset": 10},
+              "to": {"side": "west", "offset": 14},
+              "label": [2, 96, 32]
+            },
+            "apb-interface": {
+              "points": [[18, 18], [22, 18], [22, 6], [38, 6], [38, 10]],
+              "from": {"side": "east", "offset": 6},
+              "to": {"side": "north", "offset": 0},
+              "label": [38, 96, 32]
+            },
+            "tx-interface": {
+              "points": [[18, 46], [38, 46]],
+              "from": {"side": "east", "offset": 6},
+              "to": {"side": "west", "offset": 8},
+              "label": [74, 96, 32]
+            },
+            "rx-interface": {
+              "points": [[56, 54], [56, 64], [134, 64], [134, 44]],
+              "from": {"side": "south", "offset": 18},
+              "to": {"side": "west", "offset": 4},
+              "label": [110, 96, 32]
+            },
+            "gpio-interface": {
+              "points": [[122, 50], [128, 50], [128, 72], [134, 72]],
+              "from": {"side": "east", "offset": 12},
+              "to": {"side": "west", "offset": 6},
+              "label": [2, 110, 32]
+            },
+            "clock-boundary": {
+              "points": [[18, 72], [26, 72], [26, 18], [38, 18]],
+              "from": {"side": "east", "offset": 4},
+              "to": {"side": "west", "offset": 8},
+              "label": [38, 110, 32]
+            },
+            "reset-boundary": {
+              "points": [[18, 76], [32, 76], [32, 22], [38, 22]],
+              "from": {"side": "east", "offset": 8},
+              "to": {"side": "west", "offset": 12},
+              "label": [74, 110, 32]
+            },
+            "irq-boundary": {
+              "points": [[74, 14], [74, 2], [134, 2], [134, 16]],
+              "from": {"side": "east", "offset": 4},
+              "to": {"side": "west", "offset": 4},
+              "label": [110, 110, 32]
+            }
+          },
+          "groups": [],
+          "heading": [4, 4],
+          "border_clearance_version": 3
+        }
+      }
+    }
+  },
   "ws2812": {
     "nodes": [
       {
@@ -33290,7 +33798,7 @@
                 "s_gate_request"
               ],
               "bindings": [
-                "assign s_periph_idle[15] = 1'b1;",
+                "assign s_periph_idle[15] = s_piolite_lifecycle_idle && !(|s_gpio_user_select);",
                 ".dat_i  (s_gate_request[0]),"
               ]
             }
@@ -33310,7 +33818,7 @@
                 "s_reset_held"
               ],
               "bindings": [
-                "assign s_actual_gate[15] = 1'b0;",
+                ".TargetMask (18'h3ffff)",
                 ".reset_o        (s_local_reset),",
                 "assign s_reset_held[0]   = 1'b0;"
               ]

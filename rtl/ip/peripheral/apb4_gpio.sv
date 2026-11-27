@@ -27,7 +27,8 @@ module apb4_gpio #(
     output logic [31:0]  alt_enable_o,
     output logic [31:0]  alt_select_o,
     output logic [31:0]  output_enable_o,
-    output logic [31:0]  open_drain_o
+    output logic [31:0]  open_drain_o,
+    output logic [31:0]  filter_enable_o
     // verilog_format: on
 );
 
@@ -120,5 +121,6 @@ module apb4_gpio #(
   assign alt_select_o    = s_alt_sel;
   assign output_enable_o = s_output_en;
   assign open_drain_o    = s_open_drain;
+  assign filter_enable_o = s_filter_en;
 
 endmodule

@@ -1321,39 +1321,39 @@
       "description": "TINY enables DMA V2.2 (0x00020002), SPI admission/origin qualifiers and five-bit request selectors."
     },
     "main.SUPPORTED_REQUESTS": {
-      "description": "Integrated request bitmap 0x000339FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 and PIO-lite selectors are absent.",
+      "description": "Integrated request bitmap 0x0003F9FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 is absent; PIO-lite TX14 and RX15 are enabled.",
       "fields": [
         {
           "name": "REQUEST_BITMAP",
           "lsb": 0,
           "msb": 31,
-          "description": "Integrated request bitmap 0x000339FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 and PIO-lite selectors are absent.",
+          "description": "Integrated request bitmap 0x0003F9FF: software, I2S, XPI, UART0, I2C0, DVP, Crypto and SPI. I2C1 is absent; PIO-lite TX14 and RX15 are enabled.",
           "reset": "Register reset applies",
           "expression": "SupportedRequests"
         }
       ]
     },
     "main.REQUEST_STATUS": {
-      "description": "Live request readiness masked by 0x000339FF. Readiness does not replace admission credit, buffer ownership or completion.",
+      "description": "Live request readiness masked by 0x0003F9FF. Readiness does not replace admission credit, buffer ownership or completion.",
       "fields": [
         {
           "name": "REQUEST_BITMAP",
           "lsb": 0,
           "msb": 31,
-          "description": "Live request readiness masked by 0x000339FF. Readiness does not replace admission credit, buffer ownership or completion.",
+          "description": "Live request readiness masked by 0x0003F9FF. Readiness does not replace admission credit, buffer ownership or completion.",
           "reset": "Register reset applies",
           "expression": "request_status_i"
         }
       ]
     },
     "ch.REQUEST_SEL": {
-      "description": "Stored selector: TINY enables 0..8, 11..13 and 16..17 subject to transfer kind. SPI requests 16/17 require the integrated V2.2 admission and bound channel.",
+      "description": "Stored selector: TINY enables 0..8, 11..15 and 16..17 subject to transfer kind. PIO-lite TX/RX use 14/15; SPI requests 16/17 require the integrated V2.2 admission and bound channel.",
       "fields": [
         {
           "name": "REQUEST",
           "lsb": 0,
           "msb": 4,
-          "description": "TINY enables 0..8, 11..13 and 16..17, subject to transfer kind. SPI TX/RX are 16/17 and require matching admission and bound channel.",
+          "description": "TINY enables 0..8, 11..15 and 16..17, subject to transfer kind. PIO-lite TX/RX are 14/15; SPI TX/RX are 16/17 and require matching admission and bound channel.",
           "reset": "0",
           "expression": "Reviewed producer and consumer bit slice"
         },

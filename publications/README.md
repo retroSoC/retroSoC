@@ -54,7 +54,7 @@ build directories to reproduce the [per-figure comparison](ip-block-rm0486-revie
 
 The preceding functional IP drawing round starts at publication dev `80486b9f`, preserving
 the delivered 455-page Tiny and 830-page Mini PDFs/manifests as baselines.
-Tiny's 23 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
+Tiny's 24 main / 12 detail and Mini's 42 main / 24 detail IP diagrams use
 shared CeTZ 0.5.2, the `ip-block-v2` style and the
 [IP design/maintenance standard](ip-block-diagrams.md), with adjacent details.
 The seven system Circuiteria figures and all other figure families retain
@@ -112,7 +112,7 @@ configuration and report scope.
 
 The independent [Tiny Gen1 publication](datasheets/tiny/README.md) uses the same
 visual language with Tiny-only configuration, register/IRQ/pad extraction,
-twenty-three current IP chapters and its own source/structure/evidence checks. The
+twenty-four current IP chapters and its own source/structure/evidence checks. The
 v0.2 DRAFT uses ICS55 as its main reference, with explicit IHP130 compatibility;
 retired UART1/I2C1 interfaces remain in a migration appendix. Run
 `python3 publications/build_tiny_datasheet.py setup`, then `build` or `check`.

@@ -14,13 +14,13 @@ def test_tiny_spi_topology_and_capability() -> None:
     memory = json.loads((TINY / "address_map/memory_map.json").read_text())
     regions = {row["symbol"]: row for row in memory["regions"]}
     assert regions["APB4_SPI"]["base"] == "0x1001D000"
-    assert topology["fabric"]["target_count"] == 30
-    assert topology["fabric"]["decode_error_target"] == 28
-    assert topology["fabric"]["protocol_error_target"] == 29
+    assert topology["fabric"]["target_count"] == 31
+    assert topology["fabric"]["decode_error_target"] == 29
+    assert topology["fabric"]["protocol_error_target"] == 30
     assert {row["core_bit"] for row in topology["interrupts"] if row["name"] == "spi"} == {25}
     assert any(row["name"] == "spi" and row["regions"] == ["APB4_SPI"]
                for row in topology["apb_targets"])
-    assert topology["dma_request_mask"] == "0x339ff"
+    assert topology["dma_request_mask"] == "0x3f9ff"
 
 
 def test_tiny_spi_routes_and_lifecycle() -> None:
@@ -31,7 +31,7 @@ def test_tiny_spi_routes_and_lifecycle() -> None:
     assert routes[30]["alt1"]["inputs"] == ["s_spi_miso"]
     assert routes[31]["alt1"]["do"] == "s_spi_cs_n"
     top = (TINY / "top/retrosoc_tiny.sv").read_text()
-    assert ".TargetMask (18'h37fff)" in top
+    assert ".TargetMask (18'h3ffff)" in top
     assert ".EnableSpi(1'b1)" in re.sub(r"\s+", "", top)
     assert ".EnableOriginQualifier" in top
     assert "s_periph_idle[16] = s_spi_lifecycle_idle" in top
