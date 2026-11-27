@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -224,7 +225,7 @@ def check_coverage(directory: Path) -> None:
 
 EXPECTED_ASSERTIONS = {
     "fifo_prove": (17, "76f37737c5e120b5eeec892966ba2a055670831c9a49111baa8d58a08b5096c0"),
-    "top_bmc": (28, "0a1313b860da992ffb6593959b8aa5e90bacfd4f22538833146eb1bc5bc1a140"),
+    "top_bmc": (28, "05b3fbf1bcec71819831478c31e0627036d1cc4bf059de2f4e905f9bb5d83766"),
 }
 EXPECTED_COVERS = [
     "pready",
@@ -252,6 +253,29 @@ def validate_assertions(path: Path, label: str) -> str:
     return actual
 
 
+def cover_witness_map(directory: Path, label: str) -> dict[str, Path]:
+    report = directory / label / "top_cover.xml"
+    try:
+        root = ET.parse(report).getroot()
+    except (OSError, ET.ParseError) as error:
+        raise ValueError(f"PIOLITE cover report is missing/invalid: {report}") from error
+    witnesses = {}
+    for testcase in root.findall(".//testcase[@type='COVER']"):
+        identifier = testcase.get("id", "")
+        tracefile = testcase.get("tracefile", "")
+        if not identifier or not tracefile or identifier in witnesses:
+            raise ValueError(f"PIOLITE cover report has a missing/duplicate witness binding: {report}")
+        witness = directory / label / tracefile
+        if Path(tracefile).is_absolute():
+            raise ValueError(f"PIOLITE cover witness escapes its proof directory: {witness}")
+        try:
+            witness.resolve().relative_to((directory / label).resolve())
+        except ValueError as error:
+            raise ValueError(f"PIOLITE cover witness escapes its proof directory: {witness}") from error
+        witnesses[identifier] = witness
+    return witnesses
+
+
 def validate_cover(directory: Path, label: str, converted: Path, model: Path) -> list[dict]:
     expressions = re.findall(r"^\s*cover\s*\((.*?)\);", converted.read_text(), re.M)
     expected_present = [expression for expression in expressions if expression in EXPECTED_COVERS]
@@ -260,16 +284,19 @@ def validate_cover(directory: Path, label: str, converted: Path, model: Path) ->
     comments = re.findall(r"^; yosys-smt2-cover\s+(\d+)\s+(\S+)", model.read_text(), re.M)
     if [int(index) for index, _ in comments] != list(range(len(EXPECTED_COVERS))):
         raise ValueError(f"PIOLITE {label} cover-site indices changed: {comments}")
+    witnesses = cover_witness_map(directory, label)
+    if set(witnesses) != {name for _, name in comments}:
+        raise ValueError(f"PIOLITE {label} cover report/model identities differ: {comments}")
     sites = []
     for index, name in comments:
         goal = EXPECTED_COVERS[int(index)]
-        witness = directory / label / "engine_0" / f"trace{index}.yw"
+        witness = witnesses[name]
         if not witness.is_file():
             raise ValueError(f"PIOLITE cover goal has no witness: {goal} ({witness})")
         data = json.loads(witness.read_text())
         if data.get("format") != "Yosys Witness Trace" or not data.get("steps"):
             raise ValueError(f"PIOLITE cover witness is empty/invalid: {witness}")
-        sites.append({"goal": goal, "smt2_site": name, "witness": witness.name,
+        sites.append({"goal": goal, "smt2_site": name, "witness": str(witness.relative_to(directory / label)),
                       "steps": len(data["steps"])})
     if len(sites) != len(EXPECTED_COVERS):
         raise ValueError(f"PIOLITE {label} cover witness count changed")
@@ -329,16 +356,22 @@ def formal_selfcheck(directory: Path) -> None:
 
     converted = negative / "top_cover.v"
     model = negative / "design_smt2.smt2"
-    engine = negative / "engine_0"
-    engine.mkdir()
     shutil.copy(directory / "top_cover.v", converted)
     shutil.copy(directory / "top_cover/model/design_smt2.smt2", model)
-    for index in range(6):
-        shutil.copy(directory / f"top_cover/engine_0/trace{index}.yw", engine / f"trace{index}.yw")
-    (engine / "trace5.yw").unlink()
+    shutil.copy(directory / "top_cover/top_cover.xml", negative / "top_cover.xml")
+    for tracefile in {testcase.attrib["tracefile"] for testcase in
+                      ET.parse(negative / "top_cover.xml").getroot().findall(".//testcase[@type='COVER']")}:
+        (negative / tracefile).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(directory / "top_cover" / tracefile, negative / tracefile)
+    model_comments = re.findall(r"^; yosys-smt2-cover\s+(\d+)\s+(\S+)", model.read_text(), re.M)
+    oe_index = EXPECTED_COVERS.index("formal_sm0[31:0] != 32'd0")
+    oe_site = next(name for index, name in model_comments if int(index) == oe_index)
+    oe_case = next(testcase for testcase in ET.parse(negative / "top_cover.xml").getroot().findall(
+        ".//testcase[@type='COVER']") if testcase.get("id") == oe_site)
+    (negative / oe_case.attrib["tracefile"]).unlink()
     try:
         validate_cover(negative, "", converted, model)
-    except (ValueError, FileNotFoundError):
+    except ValueError:
         pass
     else:
         raise ValueError("PIOLITE selfcheck accepted a missing named cover witness")

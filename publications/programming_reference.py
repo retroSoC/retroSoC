@@ -177,12 +177,15 @@ def validate_programming(spec: dict, ids: set[str], root: Path, revision: str) -
     sdk = constants((root / "crt/include/retrosoc/hal/dma.h").read_text(), "RS_DMA_REQUEST_")
     rtl = constants((root / "rtl/ip/peripheral/dma_pkg.sv").read_text(), "DMA_REQUEST_", rtl=True)
     routes = spec["dma_routes"]
-    # Future extension request IDs are part of the shared ABI while their
-    # product wiring is intentionally absent from the current publication.
-    # Publish only the executable legacy 0..15 route inventory; later phases
-    # add their own source-bound route rows when the endpoint is wired.
-    published_sdk = {name for name, number in sdk.items() if number < 16}
-    published_rtl = {name for name, number in rtl.items() if number < 16}
+    # Extension request IDs are part of the shared ABI while their Mini wiring
+    # is intentionally disabled. Publish only Mini's executable legacy 0..13
+    # routes; Tiny documents its wired extension routes in its own publication.
+    published_rtl = {name for name, number in rtl.items() if number < 14}
+    extension_requests = {name.removeprefix("DMA_REQUEST_") for name in rtl if name not in published_rtl}
+    published_sdk = {
+        name for name in sdk
+        if name.removeprefix("RS_DMA_REQUEST_") not in extension_requests
+    }
     if {r["sdk"] for r in routes} != published_sdk or {r["rtl"] for r in routes} != published_rtl:
         raise ValueError("DMA route coverage mismatch")
     if len(routes) != len(published_sdk) or len({r["sdk"] for r in routes}) != len(routes):

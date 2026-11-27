@@ -94,7 +94,7 @@ def collect_mini_bindings(root: Path, product: dict[str, str]) -> dict:
                             "apb4_dma", instance_parameters(top, "apb4_dma", "u_apb4_dma"))
     expected_dma = {"AddrWidth": 32, "DataWidth": 32, "NumChannels": 8, "MaxBurstBeats": 16,
                     "FifoDepth": 32, "RequestMask": 0x3FFF, "SupportedRequests": 0x3FFF,
-                    "IpVersion": 0x20000, "EnableStreams": 1, "EnableSpi": 0,
+                    "IpVersion": 0x20000, "EnableStreams": 1, "EnablePiolite": 0, "EnableSpi": 0,
                     "EnableOriginQualifier": 0, "EnablePpaliteGuard": 0,
                     "SpiTxAddress": 0, "SpiRxAddress": 0}
     if dma != expected_dma or re.search(r"\bapb4_spi\b", strip_comments(top)):

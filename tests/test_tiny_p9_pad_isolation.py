@@ -46,6 +46,7 @@ def prepare_wiring(directory: Path) -> None:
     audio = [one(r"(^\s*logic s_p9_camera_population\s*=[^;]+;)", board)]
     audio += [one(rf"(^assign s_gpio_{pin}\s*=[^;]+;)", p6) for pin in (17, 15)]
     audio.append(one(r"(^always #[^\n]+s_p6_audio_reference[^;]+;)", p6))
+    audio.insert(0, "logic s_piolite_p3_loopback = 1'b0;")
     (directory / "pad_audio_drivers.svh").write_text("\n".join(audio) + "\n")
     camera = [one(rf"(^\s*assign s_gpio_{pin}\s*=[^;]+;)", board) for pin in range(12, 23)]
     (directory / "pad_camera_drivers.svh").write_text("\n".join(camera) + "\n")

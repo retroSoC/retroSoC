@@ -24,7 +24,7 @@ static bool rs_dma_address_valid(uintptr_t address, uint32_t byte_count, bool in
 
 static bool rs_dma_request_valid(const rs_dma_config_t *config) {
 #ifdef RS_SOC_TINY
-    const uint32_t request_mask = UINT32_C(0x000339FF);
+    const uint32_t request_mask = UINT32_C(0x0003F9FF);
     if (((uint32_t)config->request >= 32U) ||
         ((request_mask & (UINT32_C(1) << (uint32_t)config->request)) == 0U)) {
         return false;
@@ -49,11 +49,13 @@ static bool rs_dma_request_valid(const rs_dma_config_t *config) {
                 (config->request <= RS_DMA_REQUEST_I2C1_RX));
     case RS_DMA_KIND_MM_TO_STREAM:
         return (config->request == RS_DMA_REQUEST_I2S_TX) ||
-               (config->request == RS_DMA_REQUEST_CRYPTO_IN);
+               (config->request == RS_DMA_REQUEST_CRYPTO_IN) ||
+               (config->request == RS_DMA_REQUEST_PIOLITE_TX);
     case RS_DMA_KIND_STREAM_TO_MM:
         return (config->request == RS_DMA_REQUEST_I2S_RX) ||
                (config->request == RS_DMA_REQUEST_DVP_RX) ||
-               (config->request == RS_DMA_REQUEST_CRYPTO_OUT);
+               (config->request == RS_DMA_REQUEST_CRYPTO_OUT) ||
+               (config->request == RS_DMA_REQUEST_PIOLITE_RX);
     default:
         return false;
     }
@@ -119,7 +121,7 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
     }
     burst = (tcd->control >> RS_DMA_TCD_BURST_SHIFT) & UINT32_C(0x1F);
 #ifdef RS_SOC_TINY
-    const uint32_t request_mask = UINT32_C(0x000339FF);
+    const uint32_t request_mask = UINT32_C(0x0003F9FF);
     if ((request >= 32U) || ((request_mask & (UINT32_C(1) << request)) == 0U)) {
         return RS_ENOTSUP;
     }
@@ -161,14 +163,16 @@ rs_status_t rs_dma_tcd_validate(uint32_t channel, const rs_dma_tcd_t *tcd) {
 #endif
     if ((kind == (uint32_t)RS_DMA_KIND_MM_TO_STREAM) &&
         (!((request == (uint32_t)RS_DMA_REQUEST_I2S_TX) ||
-           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_IN)) ||
+           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_IN) ||
+           (request == (uint32_t)RS_DMA_REQUEST_PIOLITE_TX)) ||
          ((tcd->control & RS_DMA_TCD_SRC_INC) == UINT32_C(0)))) {
         return RS_EINVAL;
     }
     if ((kind == (uint32_t)RS_DMA_KIND_STREAM_TO_MM) &&
         (!((request == (uint32_t)RS_DMA_REQUEST_I2S_RX) ||
            (request == (uint32_t)RS_DMA_REQUEST_DVP_RX) ||
-           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT)) ||
+           (request == (uint32_t)RS_DMA_REQUEST_CRYPTO_OUT) ||
+           (request == (uint32_t)RS_DMA_REQUEST_PIOLITE_RX)) ||
          ((tcd->control & RS_DMA_TCD_DST_INC) == UINT32_C(0)))) {
         return RS_EINVAL;
     }

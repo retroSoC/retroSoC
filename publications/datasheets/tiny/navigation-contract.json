@@ -335,6 +335,11 @@
     },
     {
       "level": 4,
+      "title": "Programmable IO-lite (PIOLITE)",
+      "anchor": "piolite"
+    },
+    {
+      "level": 4,
       "title": "WS2812 LED Output",
       "anchor": "ws2812"
     },

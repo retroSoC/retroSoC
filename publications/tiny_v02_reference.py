@@ -103,13 +103,113 @@ def ppalite_registers(fact: dict, root: Path) -> dict:
                 registers=rows, document="docs/ip/ppalite.md", sources=sorted(sources))
 
 
+def piolite_registers(fact: dict, root: Path) -> dict:
+    """Read the handwritten PIO mirror and retain source-qualified field layouts."""
+    from publications.tiny_reference import BOOK, field_rows, read
+
+    sv = "rtl/ip/piolite/piolite_define.svh"
+    rtl = "rtl/ip/piolite/piolite_reg.sv"
+    header = "crt/include/retrosoc/hal/piolite_regs.h"
+    definitions = (root / sv).read_text(encoding="utf-8")
+    offsets = {
+        name: int(value, 16)
+        for name, value in re.findall(
+            r"`define APB4_PIOLITE__(\w+) 12'h([0-9a-fA-F]+)", definitions
+        )
+        if name not in {"IMEM_BASE", "IMEM_END", "SM0_BASE", "SM1_BASE", "SM_STRIDE"}
+    }
+    c_offsets = {
+        name: int(value, 16)
+        for name, value in re.findall(
+            r"#define RS_PIOLITE_ABI_APB4_(\w+)\s+UINT32_C\(0x([0-9a-fA-F]+)\)",
+            (root / header).read_text(encoding="utf-8"),
+        )
+        if name not in {
+            "IMEM_BASE", "IMEM_END", "SM0_BASE", "SM1_BASE", "SM_STRIDE", "ID_VALUE",
+            "VERSION_VALUE", "ISA_VALUE", "CAPABILITY_VALUE", "ROUTES_VALUE", "DIV_RESET",
+            "SHIFT_LIMITS_RESET", "WATERMARKS_RESET", "IRQ_MASK",
+        }
+    }
+    spec = read(root / BOOK / "piolite-registers.json")
+    expected = {
+        row["name"] if row["group"] == "main" else "SM_" + row["name"]: row["offset"]
+        for row in spec
+        if row["group"] != "imem"
+    }
+    if offsets != c_offsets or offsets != expected:
+        raise ValueError("Tiny PIOLITE SV/C/publication register parity changed")
+    if len(spec) != 56 or len(expected) + 32 + 32 != 119:
+        raise ValueError("Tiny PIOLITE physical register coverage changed")
+    rows = []
+    for row in spec:
+        group = row["group"]
+        name = row["name"]
+        fields = field_rows([tuple(field) for field in row["fields"]])
+        reset = row["reset"]
+        try:
+            value = registers.number(reset)
+        except ValueError:
+            value = None
+        for field in fields:
+            field["reset"] = (
+                hex((value >> field["lsb"]) & ((1 << (field["msb"] - field["lsb"] + 1)) - 1))
+                if value is not None
+                else "0" if field["name"] == "Reserved" else reset
+            )
+        symbol = "APB4_PIOLITE__" + (name if group == "main" else "SM_" + name)
+        source_line = (
+            definitions[: definitions.index("`define " + symbol + " ")].count("\n") + 1
+            if group != "imem"
+            else 1
+        )
+        rows.append(
+            dict(
+                key=group + "." + name,
+                name=name,
+                symbol=symbol if group != "imem" else None,
+                offset=row["offset"],
+                group=group,
+                width=32,
+                access=row["access"],
+                reset=reset,
+                description=row["description"],
+                fields=fields,
+                source=sv,
+                line=source_line,
+                c_source=header,
+                review=None,
+                readback=["Reviewed handwritten PIOLITE APB decode"],
+            )
+        )
+    return dict(
+        id="piolite",
+        groups=[
+            dict(id="main", title="PIO-lite global registers", base=0, stride=0, count=1),
+            dict(id="imem", title="Shared instruction memory", base=256, stride=4, count=32),
+            dict(id="sm", title="PIO-lite state-machine registers", base=512, stride=128, count=2),
+        ],
+        registers=rows,
+        document="docs/ip/piolite.md",
+        sources=[
+            sv,
+            rtl,
+            header,
+            "crt/include/retrosoc/hal/piolite.h",
+            "crt/src/hal/piolite.c",
+            "tests/test_piolite_register_parity.py",
+            "publications/datasheets/tiny/piolite-registers.json",
+        ],
+    )
+
+
 def apply_integration(reference: dict, fact: dict, root: Path) -> None:
     """Qualify live inputs and protect instance parameters from library defaults."""
     from publications.tiny_reference import require_snippets
 
     require_snippets(root, "rtl/ip/peripheral/gpio_pad_caps_pkg.sv", ["localparam bit HasInputCmos", "localparam bit HasPullUp"])
     for family, key in [("spi", "main.CLOCK_HZ"), ("uart", "main.CLOCK_HZ"),
-                        ("i2c", "main.CLOCK_HZ"), ("ws2812", "main.CLOCK_HZ")]:
+                        ("i2c", "main.CLOCK_HZ"), ("ws2812", "main.CLOCK_HZ"),
+                        ("piolite", "main.CLOCK_HZ")]:
         for register in reference[family]["registers"]:
             if register["key"] != key:
                 continue
@@ -131,7 +231,7 @@ def validate_catalog(catalog: list, reference: dict, regions: list, topology: di
     irq = [irq for row in catalog for irq in row["irqs"]]
     if len(irq) != len(set(irq)) or set(irq) != {r["name"] for r in topology["interrupts"]}:
         raise ValueError("Tiny interrupt catalog coverage changed")
-    if any(r["id"] in {"uart1", "i2c1", "piolite"} for r in catalog):
+    if any(r["id"] in {"uart1", "i2c1"} for r in catalog):
         raise ValueError("Tiny catalog advertises an absent peripheral")
     addresses, rows = set(), []
     windows = {r["symbol"]: r for r in regions}

@@ -1330,5 +1330,90 @@
       "rtl/ip/serial/spi_dma_pacing.sv",
       "rtl/ip/serial/spi_gpio_guard.sv"
     ]
+  },
+  "piolite": {
+    "document": "docs/ip/piolite.md",
+    "defines": [
+      "rtl/ip/piolite/piolite_define.svh"
+    ],
+    "rtl": [
+      "rtl/ip/piolite/piolite_reg.sv"
+    ],
+    "parameters": {},
+    "memory_map": "rtl/tiny/address_map/memory_map.json",
+    "default_access": "RW",
+    "groups": [
+      {
+        "id": "main",
+        "title": "PIO-lite global registers",
+        "pattern": "APB4_PIOLITE__(?!SM_).+",
+        "strip": "^APB4_PIOLITE__",
+        "base": 0,
+        "stride": 0,
+        "count": 1,
+        "exclude": [
+          "APB4_PIOLITE__IMEM_BASE",
+          "APB4_PIOLITE__IMEM_END"
+        ]
+      },
+      {
+        "id": "imem",
+        "title": "Shared instruction memory",
+        "pattern": "(?!)",
+        "strip": "^",
+        "base": 256,
+        "stride": 4,
+        "count": 32
+      },
+      {
+        "id": "sm",
+        "title": "PIO-lite state-machine registers",
+        "pattern": "APB4_PIOLITE__SM_.+",
+        "strip": "^APB4_PIOLITE__SM_",
+        "base": 512,
+        "stride": 128,
+        "count": 2,
+        "exclude": [
+          "APB4_PIOLITE__SM0_BASE",
+          "APB4_PIOLITE__SM1_BASE",
+          "APB4_PIOLITE__SM_STRIDE"
+        ]
+      }
+    ],
+    "support": [
+      "rtl/ip/piolite/apb4_piolite.sv",
+      "rtl/ip/piolite/piolite_core.sv",
+      "rtl/ip/piolite/piolite_sm.sv",
+      "rtl/ip/piolite/piolite_gpio_guard.sv",
+      "rtl/ip/piolite/piolite_dma_adapter.sv"
+    ],
+    "extra": [
+      {
+        "group": "imem",
+        "name": "IMEM",
+        "offset": 0,
+        "access": "RW",
+        "reset": "0x00000000",
+        "description": "One shared 16-bit instruction word; 32 words at consecutive word addresses. Writes require a quiescent loader and are rejected by live state machines.",
+        "fields": [
+          {
+            "name": "INSTRUCTION",
+            "lsb": 0,
+            "msb": 15,
+            "description": "ISA1.0 instruction word.",
+            "reset": "0",
+            "expression": "reviewed semantic field"
+          },
+          {
+            "name": "Reserved",
+            "lsb": 16,
+            "msb": 31,
+            "description": "Reads zero; writes must be zero.",
+            "reset": "0",
+            "expression": "reserved"
+          }
+        ]
+      }
+    ]
   }
 }

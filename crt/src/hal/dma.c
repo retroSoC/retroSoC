@@ -49,14 +49,16 @@ rs_status_t rs_dma_supports_request(rs_dma_request_t request) {
     uint32_t supported;
     uint32_t bit;
 
-    if ((uint32_t)request < 16U) {
+    if ((uint32_t)request < 14U) {
         return RS_OK;
     }
     if ((uint32_t)request >= 32U) {
         return RS_ENOTSUP;
     }
     version = RS_DMA_REG(RS_DMA_REG_IP_VERSION);
-    if (version < RS_DMA_IP_VERSION_V22) {
+    if (((version >> 16U) != 2U) ||
+        (((uint32_t)request < 16U) && (version < RS_DMA_IP_VERSION_V21)) ||
+        (((uint32_t)request >= 16U) && (version < RS_DMA_IP_VERSION_V22))) {
         return RS_ENOTSUP;
     }
     supported = RS_DMA_REG(RS_DMA_REG_SUPPORTED_REQUESTS);

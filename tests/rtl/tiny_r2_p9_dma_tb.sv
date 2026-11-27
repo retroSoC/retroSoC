@@ -116,6 +116,14 @@ tiny_peripheral_control u_rcu (
       clk,
       rst_n
   );
+  axi4_stream_if piolite_tx_axis (
+      .aclk   (clk),
+      .aresetn(rst_n)
+  );
+  axi4_stream_if piolite_rx_axis (
+      .aclk   (clk),
+      .aresetn(rst_n)
+  );
   dma_req_if requests ();
   dvp_if camera ();
   assign camera.pclk_i = pixel_clk;
@@ -157,20 +165,28 @@ tiny_peripheral_control u_rcu (
   apb4_dma #(
       `include "tiny_p9_dma_parameters.svh"
   ) u_dma (
-      .clk_i            (clk),
-      .rst_n_i          (rst_n),
-      .apb4             (dma_apb),
-      .axi4             (bus),
-      .hw_trg           (requests),
-      .i2s_tx_axis      (i2s_tx),
-      .i2s_rx_axis      (i2s_rx),
-      .dvp_rx_axis      (dma_axis),
-      .crypto_in_axis   (crypto_tx),
-      .crypto_out_axis  (crypto_rx),
-      .spi_admit_ready_i(2'b11),
-      .lifecycle_idle_o (dma_idle),
-      .irq_o            (dma_irq),
-      .dma_xfer_done_o  (dma_done)
+      .clk_i             (clk),
+      .rst_n_i           (rst_n),
+      .apb4              (dma_apb),
+      .axi4              (bus),
+      .hw_trg            (requests),
+      .i2s_tx_axis       (i2s_tx),
+      .i2s_rx_axis       (i2s_rx),
+      .dvp_rx_axis       (dma_axis),
+      .crypto_in_axis    (crypto_tx),
+      .crypto_out_axis   (crypto_rx),
+      .piolite_tx_axis   (piolite_tx_axis),
+      .piolite_rx_axis   (piolite_rx_axis),
+      .piolite_tx_admit_i('0),
+      .piolite_rx_admit_i('0),
+      .piolite_tx_job_o  (),
+      .piolite_rx_job_o  (),
+      .channel_busy_o    (),
+      .channel_start_o   (),
+      .spi_admit_ready_i (2'b11),
+      .lifecycle_idle_o  (dma_idle),
+      .irq_o             (dma_irq),
+      .dma_xfer_done_o   (dma_done)
   );
 
 `ifdef TINY_P9_XPI

@@ -32,6 +32,7 @@
       "uart0",
       "i2c",
       "spi",
+      "piolite",
       "sdio"
     ]
   },

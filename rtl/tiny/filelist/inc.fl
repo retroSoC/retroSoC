@@ -20,5 +20,6 @@
 +incdir+/ip/security
 +incdir+/ip/multimedia
 +incdir+/ip/ppalite
++incdir+/ip/piolite
 +incdir+/clusterip/rng/rtl
 +incdir+/clusterip/crc/rtl

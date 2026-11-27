@@ -98,6 +98,10 @@ def test_constant_reader_does_not_execute_source_text():
     assert number("4'(MaxBurstBeats)", {"MaxBurstBeats": 16}) == 0
     assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 1}) == 3
     assert number("(EnableStreams ? 3'd3 : 3'd0)", {"EnableStreams": 0}) == 0
+    assert number("3'($countones(SupportedRequests & 32'h0000_f806))", {"SupportedRequests": 0x3FFF}) == 5
+    assert number("3'($countones(SupportedRequests & 32'h0000_f806))", {"SupportedRequests": 0x3F9FF}) == 7
+    assert number("(EnableStreams ? 3'($countones(SupportedRequests & 32'h0000_f806)) : 3'd0)",
+                  {"EnableStreams": 0, "SupportedRequests": 0x3F9FF}) == 0
     assert number("(DEPTH > 4) ? 32'd4 : DEPTH - 1", {"DEPTH": 16}) == 4
     assert number("(32'd1 << 0) |\n (32'd1 << 8)") == 0x101
     with pytest.raises(ValueError):

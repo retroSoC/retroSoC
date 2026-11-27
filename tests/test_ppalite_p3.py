@@ -42,14 +42,14 @@ def test_tiny_ppalite_topology_and_rcu() -> None:
     memory = json.loads((TINY / "address_map/memory_map.json").read_text())
     regions = {row["symbol"]: row for row in memory["regions"]}
     assert regions["APB4_PPALITE"]["base"] == "0x1001E000"
-    assert topology["fabric"]["target_count"] == 30
-    assert topology["fabric"]["decode_error_target"] == 28
-    assert topology["fabric"]["protocol_error_target"] == 29
+    assert topology["fabric"]["target_count"] == 31
+    assert topology["fabric"]["decode_error_target"] == 29
+    assert topology["fabric"]["protocol_error_target"] == 30
     assert any(row["name"] == "ppalite" and row["regions"] == ["APB4_PPALITE"]
                for row in topology["apb_targets"])
     assert {row["core_bit"] for row in topology["interrupts"] if row["name"] == "ppalite"} == {27}
     top = (TINY / "top/retrosoc_tiny.sv").read_text()
-    assert ".TargetMask (18'h37fff)" in top
+    assert ".TargetMask (18'h3ffff)" in top
     assert "s_leaf_rst_n[23]" in top
     assert "s_ppalite_active_ref" in top
 

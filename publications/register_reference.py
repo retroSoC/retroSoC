@@ -34,7 +34,7 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
         if not enclosed or depth != 0:
             break
         expression = expression[1:-1].strip()
-    sized_cast = re.fullmatch(r"(\d+)'\(([^()]*)\)", expression)
+    sized_cast = re.fullmatch(r"(\d+)'\((.*)\)", expression)
     if sized_cast:
         return number(sized_cast[2], constants) & ((1 << int(sized_cast[1])) - 1)
     expression = LITERAL.sub(
@@ -46,7 +46,7 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
     expression = re.sub(r"\b(\d+)[uUlL]+\b", r"\1", expression)
     if expression in {"'0", "'1"}:
         return 0 if expression == "'0" else 0xFFFFFFFF
-    expression = expression.replace("$clog2", "clog2")
+    expression = expression.replace("$clog2", "clog2").replace("$countones", "countones")
     expression = expression.replace("&&", " and ").replace("||", " or ")
     expression = re.sub(r"!(?!=)", " not ", expression).strip()
     expression = re.sub(r"(?:\w+|\d+)'\(([^()]+)\)", r"(\1)", expression)
@@ -103,10 +103,11 @@ def number(expression: str, constants: dict[str, int] | None = None) -> int:
         if (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Name)
-            and node.func.id == "clog2"
+            and node.func.id in {"clog2", "countones"}
             and len(node.args) == 1
         ):
-            return (visit(node.args[0]) - 1).bit_length()
+            value = visit(node.args[0])
+            return value.bit_count() if node.func.id == "countones" else (value - 1).bit_length()
         raise ValueError(f"unresolved constant expression: {expression}")
 
     try:

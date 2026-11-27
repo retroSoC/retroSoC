@@ -37,9 +37,9 @@
     ],
     "xpi_target": 4,
     "apb_target_base": 5,
-    "decode_error_target": 28,
-    "protocol_error_target": 29,
-    "target_count": 30
+    "decode_error_target": 29,
+    "protocol_error_target": 30,
+    "target_count": 31
   },
   "gpio_pins": 32,
   "irq_vector_width": 32,
@@ -184,6 +184,12 @@
       "regions": [
         "APB4_PPALITE"
       ]
+    },
+    {
+      "name": "piolite",
+      "regions": [
+        "APB4_PIOLITE"
+      ]
     }
   ],
   "interrupts": [
@@ -286,6 +292,11 @@
       "name": "ppalite",
       "core_bit": 27,
       "signal": "s_ppalite_irq"
+    },
+    {
+      "name": "piolite",
+      "core_bit": 24,
+      "signal": "s_piolite_irq"
     },
     {
       "name": "rcu",
@@ -763,7 +774,7 @@
       }
     }
   ],
-  "dma_request_mask": "0x339ff",
+  "dma_request_mask": "0x3f9ff",
   "private_crypto": {
     "banks": 6,
     "bank_bytes": 4096,

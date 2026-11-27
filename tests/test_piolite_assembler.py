@@ -75,9 +75,9 @@ def test_deterministic_assembly_and_independent_c_object_golden() -> None:
     assert first.flag_mask == 0
     generated = emit_c(first).encode("utf-8")
     assert generated == emit_c(second).encode("utf-8")
-    assert len(generated) == 1780
+    assert len(generated) == 1019
     assert hashlib.sha256(generated).hexdigest() == (
-        "07c41f5875b17c8d9fb439d4b6169c26ef47739eca44af35dd9ee61783d675f6"
+        "0dd5944c150c89c156cc82428fa2770773717e356aba91436bf6ad6e9b7dc3ef"
     )
     assert b"0x00010000u" in generated
     assert b".test_pin_enable = 0u" in generated

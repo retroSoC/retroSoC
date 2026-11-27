@@ -173,6 +173,14 @@ axi4_stream_if #(
       .aresetn(rst_n_i)
   );
 
+  axi4_stream_if u_piolite_tx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
+  axi4_stream_if u_piolite_rx_axis_if (
+      .aclk   (clk_i),
+      .aresetn(rst_n_i)
+  );
   clint_if u_clint_if ();
   dma_req_if u_dma_req_if ();
   apb4_if u_psram_mem_apb4_if (
@@ -239,6 +247,8 @@ axi4_stream_if #(
   assign u_dma_req_if.i2c1_rx_proc = ~s_dma_i2c1_rx_stall;
   assign u_dma_req_if.crypto_in_proc = s_dma_crypto_in_proc;
   assign u_dma_req_if.crypto_out_proc = s_dma_crypto_out_proc;
+  assign u_dma_req_if.piolite_tx_proc = 1'b0;
+  assign u_dma_req_if.piolite_rx_proc = 1'b0;
   assign hp_time_o = u_clint_if.mtime_o;
   assign hp_plic_src_o = s_hp_plic_source;
   assign resource_irq_raw_o = {
@@ -474,6 +484,14 @@ axi4_stream_if #(
       .dvp_rx_axis        (u_dvp_rx_axis_if),
       .crypto_in_axis     (u_crypto_in_axis_if),
       .crypto_out_axis    (u_crypto_out_axis_if),
+      .piolite_tx_axis    (u_piolite_tx_axis_if),
+      .piolite_rx_axis    (u_piolite_rx_axis_if),
+      .piolite_tx_admit_i ('0),
+      .piolite_rx_admit_i ('0),
+      .piolite_tx_job_o   (),
+      .piolite_rx_job_o   (),
+      .channel_busy_o     (),
+      .channel_start_o    (),
       .spi_admit_ready_i  (2'b00),
       .tcd_idle_o         (),
       .dvp_start_pending_o(),

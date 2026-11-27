@@ -353,48 +353,15 @@ def _choice(token: str, choices: tuple[str, ...], line: int, name: str) -> str:
 
 
 def emit_c(program: Program) -> str:
-    """Emit a self-contained deterministic P1 C object, not a future HAL ABI."""
+    """Emit a deterministic program object using the public HAL program ABI."""
 
     program.validate()
     symbol = f"piolite_p1_{program.name}"
     words = program.words
     sites = program.relocation_sites
     lines = [
-        "/* Deterministic PIO-lite P1 program object; no HAL ABI is implied. */",
-        "#include <stdint.h>",
-        "",
-        "typedef struct {",
-        "    uint32_t isa_version;",
-        "    const uint16_t *words;",
-        "    uint32_t word_count;",
-        "    uint8_t entry;",
-        "    uint8_t wrap_bottom;",
-        "    uint8_t wrap_top;",
-        "    const uint8_t *relocation_sites;",
-        "    uint32_t relocation_count;",
-        "    uint8_t in_base;",
-        "    uint8_t in_width;",
-        "    uint8_t out_base;",
-        "    uint8_t out_width;",
-        "    uint8_t set_base;",
-        "    uint8_t set_width;",
-        "    uint8_t tx_bits;",
-        "    uint8_t tx_right;",
-        "    uint8_t autopull;",
-        "    uint8_t rx_bits;",
-        "    uint8_t rx_right;",
-        "    uint8_t autopush;",
-        "    uint8_t test_pin;",
-        "    uint8_t test_flag;",
-        "    uint8_t test_pin_enable;",
-        "    uint32_t claim_mask;",
-        "    uint32_t flag_mask;",
-        "    uint32_t tx_items;",
-        "    uint32_t rx_items;",
-        "    uint8_t item_bits;",
-        "    uint32_t clock_ticks;",
-        "    uint8_t stretchable;",
-        "} piolite_p1_program_object_t;",
+        "/* Deterministic PIO-lite program object using the public HAL ABI. */",
+        "#include <retrosoc/hal/piolite.h>",
         "",
         f"static const uint16_t {symbol}_words[{len(words)}] = {{",
     ]
@@ -412,7 +379,7 @@ def emit_c(program: Program) -> str:
     lines.extend(
         [
             "};",
-            f"static const piolite_p1_program_object_t {symbol} = {{",
+            f"static const rs_piolite_program_t {symbol} = {{",
             f"    .isa_version = 0x{ISA_VERSION:08X}u,",
             f"    .words = {symbol}_words,",
             f"    .word_count = {len(words)}u,",

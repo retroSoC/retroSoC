@@ -49,14 +49,14 @@ def test_address_map_covers_decoded_windows_and_gaps():
     decoded = [row for row in left if row["kind"] == "memory"]
     panels = model["apb_groups"]
     assert [(p["base"], p["end"]) for p in panels] == [(0x20000000, 0x20006FFF), (0x10000000, 0x1002FFFF)]
-    assert [len(p["bands"]) for p in panels] == [7, 24]
-    for panel, count in zip(panels, (6, 18), strict=True):
+    assert [len(p["bands"]) for p in panels] == [7, 25]
+    for panel, count in zip(panels, (6, 19), strict=True):
         rows = panel["bands"]
         assert (rows[0]["end"], rows[-1]["base"]) == (panel["end"], panel["base"])
         windows = [row for row in rows if row["kind"] == "apb-window"]
         assert len(windows) == count
         decoded.extend(windows)
-    assert len(decoded) == len(regions) == 27
+    assert len(decoded) == len(regions) == 28
     assert {(r["symbol"], r["base"], r["end"]) for r in decoded} == {
         (r["symbol"], r["base"], r["end"]) for r in regions
     }
@@ -73,6 +73,23 @@ def test_address_map_covers_decoded_windows_and_gaps():
     ]
     for rows in (left, banks, *(p["bands"] for p in panels)):
         assert all(lower["end"] + 1 == upper["base"] for upper, lower in zip(rows, rows[1:]))
+
+
+def test_piolite_capability_is_not_described_as_absent():
+    catalog = tiny.read(ROOT / tiny.BOOK / "catalog.json")
+    dma = next(row for row in catalog if row["id"] == "dma")
+    rcu = next(row for row in catalog if row["id"] == "rcu")
+    assert "0x0003F9FF" in dma["features"][2]
+    assert "PIO-lite TX 14/RX 15" in dma["paragraphs"][1]
+    assert "0x0003FFFF" in rcu["paragraphs"][5]
+    assert "PIO-lite at 15" in rcu["paragraphs"][5]
+    for name in ("catalog.json", "rcu-registers.json", "register-annotations.json"):
+        text = (ROOT / tiny.BOOK / name).read_text()
+        assert "PIO-lite bit 15 is absent" not in text
+        assert "Bit 15 (PIO-lite) is absent" not in text
+        assert "PIO-lite at 15 is absent" not in text
+        assert "PIO-lite selectors are absent" not in text
+        assert "PIO-lite 14/15 remain absent" not in text
 
 
 def test_address_map_rejects_overlapping_windows_and_incomplete_sram():
