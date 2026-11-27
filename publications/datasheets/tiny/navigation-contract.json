@@ -486,7 +486,27 @@
     {
       "level": 2,
       "title": "Product Series",
-      "anchor": null
+      "anchor": "tiny-product-series"
+    },
+    {
+      "level": 3,
+      "title": "Compute & AI",
+      "anchor": "tiny-family-compute"
+    },
+    {
+      "level": 3,
+      "title": "Memory & Interconnect",
+      "anchor": "tiny-family-memory"
+    },
+    {
+      "level": 3,
+      "title": "Graphics & Media",
+      "anchor": "tiny-family-graphics"
+    },
+    {
+      "level": 3,
+      "title": "Connectivity & Software",
+      "anchor": "tiny-family-connectivity"
     },
     {
       "level": 2,
@@ -657,6 +677,11 @@
       "level": 3,
       "title": "APB4_SRAM",
       "anchor": "index-APB4_SRAM"
+    },
+    {
+      "level": 3,
+      "title": "APB4_PIOLITE",
+      "anchor": "index-APB4_PIOLITE"
     },
     {
       "level": 3,

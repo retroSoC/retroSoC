@@ -127,8 +127,9 @@ interrupt number are different namespaces. Core bits here number the wrapper inp
   ([1 / 2],[I2S transmit / receive],[6 / 7]),([3 / 4],[XPI transmit / receive],[3]),
   ([5 / 6],[UART0 transmit / receive],[0]),([7 / 8],[I2C0 transmit / receive],[1]),
   ([11],[DVP RAW / PPALite PROCESS],[2]),([12 / 13],[Crypto input / output],[4 / 5]),
+  ([14 / 15],[PIOLITE transmit / receive],[Distinct leased channels]),
   ([16 / 17],[SPI transmit / receive],[Bound leased channel; display normally uses 3])),widths:(0.7fr,2fr,1.4fr))
-The implemented mask is #code("0x000339FF"). I2C1 selectors 9/10 and PIO-lite selectors 14/15 are absent. SDIO is a separate
+The implemented mask is #code("0x" + ("00000000" + upper(str(data.facts.dma.RequestMask, base: 16))).slice(-8)). I2C1 selectors 9/10 are absent. SDIO is a separate
 fabric master and does not use this table. Channel conventions are software leases, not separate physical engines.
 DMA V2.2 request bit 4 must be retained in both register and TCD programming. Stream, memory and SPI port admission have
 different legal transfer forms. PROCESS requires PPALite's exact armed direct DMA2 job; processed TCDs are rejected.

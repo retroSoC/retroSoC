@@ -2,8 +2,8 @@
 
 This directory owns the English **retroSoC Tiny Gen1 / Rill (清溪)** datasheet,
 its independent v0.2 DRAFT identity and 24 current IP chapters. The same-version
-Mini alignment uses 12 main chapters, 87 frozen major/IP entries and a five-level
-140-entry navigation contract. The explicitly
+Mini alignment uses 12 main chapters, 88 frozen major/IP entries and a five-level
+155-entry navigation contract. The explicitly
 reviewed structure retains stable anchors, moves retired UART1/I2C1 interfaces
 to migration guidance and adds the RCU/SPI/shared-IP chapters. It is a publication
 adapter, not an RTL or SDK register generator.
@@ -16,6 +16,14 @@ from Tiny's canonical inputs. The register profiles select only applicable
 families; the owned SYSCTRL and ARCHINFO overrides are checked separately.
 
 ## Build and check
+
+The four section 5.1 comparison plates use publication baseline `35748f3b`
+and the reviewed `0f2dbfe7` hardware snapshot. The six models share their
+names, positioning and chip artwork with Figure 3. See the [specification
+catalog](r1-specifications.json) for engineering sources and the 2026-11-27
+MAX/ULTRA concept targets. Each build exports `r1-specification-sources.json`
+and four `engineering/r1-spec-*.svg` / PDF pairs. Compare with the 462-page
+roadmap delivery under change namespace `tiny-v02-r1-specifications-20261127-`.
 
 The 2026-11-18 RM0486 review compares all Tiny IP views against the PR #289
 baseline. Source-qualified local routes in adjacent details use the same
