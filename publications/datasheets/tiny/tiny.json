@@ -9,7 +9,7 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
+  "source_revision": "47c57da9316564d93e0e78b2edfce36fc3afb33d",
   "profile": "configs/ci/ics55-tiny.mk",
   "change_prefix": "tiny-v02-piolite-r1-badges-20261128-",
   "entrypoint": "publications/datasheets/tiny/datasheet.typ",
