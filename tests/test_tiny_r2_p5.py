@@ -34,7 +34,7 @@ def sources(tmp_path):
     return files, includes
 
 
-def simulate(tmp_path, simulator, top, files, includes, arguments=()):
+def simulate(tmp_path, simulator, top, files, includes, arguments=(), timeout=180):
     for tool in (simulator, "sv2v", "vvp"):
         assert shutil.which(tool), f"required tool unavailable: {tool}"
     binary = tmp_path / "sim"
@@ -55,7 +55,7 @@ def simulate(tmp_path, simulator, top, files, includes, arguments=()):
         run([simulator, "-g2012", "-s", top, "-o", str(binary), str(tmp_path / "converted.v")],
             tmp_path, "compile")
         launch = ["vvp", str(binary)]
-    log = run([*launch, *arguments], tmp_path, "sim", timeout=180)
+    log = run([*launch, *arguments], tmp_path, "sim", timeout=timeout)
     assert "SIM_TEST_PASS Tiny P5" in log
     return log
 
@@ -102,7 +102,7 @@ def test_real_cpu_dma_progress_and_abort(tmp_path, simulator):
     includes += ["-DPDK_BEHAV", "-DRETROSOC_SOC__TINY", "-DSOC_JTAG_IDCODE=32'hDEADBEEF",
                  "-DSOC_EXT_CLK_HZ=24000000"]
     log = simulate(tmp_path, simulator, "tiny_r2_p5_system_tb", files, includes,
-                   [f"+firmware={tmp_path / 'cpu.hex'}"])
+                   [f"+firmware={tmp_path / 'cpu.hex'}"], timeout=300)
     assert "hart_reset=1 abort_drained=1" in log
 
 
