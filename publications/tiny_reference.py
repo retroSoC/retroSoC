@@ -332,6 +332,8 @@ def collect(config: dict, *, check_snapshot: bool = True, layout: bool = True) -
     if len(overview_ids) != len(set(overview_ids)) or set(overview_ids) != set(frozen_ids):
         raise ValueError("Tiny overview must cover each current IP exactly once")
     waves = read(ROOT / BOOK / "waveforms.json")
+    if "piolite" not in waves:
+        raise ValueError("TINY PIOLITE requires its own TX14 backpressure and abort waveform")
     audit = validate_waveforms(waves, ROOT)
     evidence = read(ROOT / BOOK / "evidence.json")
     validate_evidence(evidence)

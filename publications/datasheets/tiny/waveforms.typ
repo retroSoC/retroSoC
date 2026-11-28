@@ -42,12 +42,20 @@
   svg.replace("</style>", "text{font-weight:400}.info{font-weight:400;font-style:normal}.s8{fill:#F4EFE4}.s9{fill:#E7EFF6}.s10{fill:#E8F1EA}.s11{fill:#EEEAF5}</style>")
 }
 
+#let standalone-wave(key) = block(width:172mm)[
+  #align(center,text(9pt,weight:"bold",data.waveforms.at(key).caption))
+  #v(2mm)
+  #image(bytes(wave-svg(key)),width:100%)
+  #v(2mm)
+  #align(center,text(9pt,fill:muted,data.waveforms.at(key).note))
+]
+
 #let timing(key, caption, instance:none) = {
   let entry = data.waveforms.at(key)
   block(width:100%,above:rhythm.figure-space,below:rhythm.figure-space,breakable:false)[
-    #context metadata((kind:"tiny-diagram",package:"wavedrom",id:"wave-"+if instance==none {key} else {instance},page:here().page()))
+    #context metadata((kind:"tiny-diagram",package:"wavedrom",id:"wave-"+if instance==none {key} else {instance},source_id:key,page:here().page()))
     #show figure: set block(above:0pt,below:0pt)
-    #figure(image(bytes(wave-svg(key))), caption: caption)
+    #figure(image(bytes(wave-svg(key))), caption: caption)#if instance=="piolite" {label("wave-piolite")}
     #block(width:100%,above:rhythm.metadata-before,below:0pt)[
       #set par(leading:rhythm.small-leading,spacing:rhythm.small-spacing)
       #align(center,text(9pt,fill:muted,entry.note))

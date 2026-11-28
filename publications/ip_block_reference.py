@@ -689,11 +689,14 @@ def scoped_route_detail(identifier: str, parent: dict, spec: dict, advances: dic
     graph = drawing_graph(view["functional"], set(spec["edges"]))
     if "layout" in spec:
         graph["layout"] = spec["layout"]
+    elif "frame" in spec:
+        graph["layout"].update(spec["frame"])
     owners = {node["owner"] for node in graph["nodes"]}
     detail = {
         "block_diagram": {
             **view,
             "title": title,
+            "boundary_title": spec.get("boundary_title", view.get("boundary_title", view["title"])),
             "functional": graph,
             "ports": [],
             "interfaces": [],
@@ -1239,7 +1242,7 @@ def make_detail(
         renderer="cetz",
         product=product,
         block_title=parent["block_diagram"]["title"] + " / " + spec["title"] + " block diagram",
-        note="Named source instances and shared-net directions; protocol handshakes and generate repetition are grouped. Parent product integration and qualification limits still apply.",
+        note=spec.get("note", "Named source instances and shared-net directions; protocol handshakes and generate repetition are grouped. Parent product integration and qualification limits still apply."),
         detail_id=identifier + "-detail-" + spec["id"],
         parent_id=identifier,
         block_diagram=dict(

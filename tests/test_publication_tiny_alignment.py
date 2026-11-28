@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from publications import tiny_reference as tiny
+from publications import ip_block_layout, ip_block_reference
+from publications.tiny_diagram_reference import validate_gpio_user
 from publications.ip_block_reference import records as ip_views
 from publications.tiny_clock_tree import prepare as prepare_clock_tree
 from publications.tiny_diagram_reference import coverage, functional_routes, validate_circuit, validate_fields, validate_rendered
@@ -227,6 +229,79 @@ def test_missing_or_duplicate_figure_cannot_pass(data, mutation):
         rows.append(dict(kind="tiny-diagram", package="circuiteria", id="unreviewed"))
     with pytest.raises(ValueError, match="omitted, duplicated or unknown"):
         validate_rendered(data["illustrations"], rows)
+
+
+def test_piolite_regression_rejects_wrong_gpio_and_timing(data):
+    figures = data["illustrations"]
+    gpio = copy.deepcopy(figures["circuits"]["gpio"])
+    validate_gpio_user(gpio)
+    gpio["note"] = "TINY outputs tied zero"
+    with pytest.raises(ValueError, match="connected to PIOLITE"):
+        validate_gpio_user(gpio)
+    gpio["note"] = ""
+    gpio["block_diagram"]["functional"]["edges"].pop()
+    with pytest.raises(ValueError, match="independent 32-bit paths"):
+        validate_gpio_user(gpio)
+    rows = [dict(kind="tiny-diagram", **r) for r in figures["inventory"] + figures["native_inventory"]]
+    next(r for r in rows if r["id"] == "wave-piolite")["source_id"] = "apb4"
+    with pytest.raises(ValueError, match="dedicated waveform"):
+        validate_rendered(figures, rows)
+
+
+def test_piolite_layout_rejects_original_overlap_and_detached_label(data):
+    drawing = copy.deepcopy(data["illustrations"]["functional"])
+    next(n for n in drawing["nodes"] if n["id"] == "piolite").update(x=6, y=186, w=34, h=8)
+    with pytest.raises(ValueError, match="functional symbols overlap"):
+        functional_routes(drawing, set(), {}, {}, {})
+    circuit = data["illustrations"]["circuits"]["piolite"]
+    assert {d["detail_id"] for d in circuit["details"]} == {
+        "piolite-detail-gpio-ownership", "piolite-detail-dma-transport",
+    }
+    scene = copy.deepcopy(circuit["scene"])
+    scene["labels"][0].update(x=80, y=170)
+    advances = ip_block_reference.font_advances(ROOT / "publications/media/fonts/inter/Inter-VariableFont_opsz,wght.ttf")
+    assert any(e.startswith("detached-label:") for e in ip_block_layout.geometry_issues(scene, advances))
+    scene["nodes"][0]["title"] = r"PIOLITE\nUSER port"
+    assert any(e.startswith("literal-line-break:") for e in ip_block_layout.review_issues(scene))
+
+
+def test_piolite_irq_fields_and_held_offer(data):
+    registers = data["registers"]["piolite"]["registers"]
+    for name in ("IRQ_STATUS", "IRQ_ENABLE"):
+        reg = next(r for r in registers if r["name"] == name)
+        fields = {f["name"]: (f["lsb"], f["msb"]) for f in reg["fields"] if f["name"] != "Reserved"}
+        assert fields == {"SM0": (0, 0), "SM1": (1, 1), "FLAGS": (8, 11),
+                          "TX_LEVEL": (16, 17), "RX_LEVEL": (24, 25)}
+    wave = {r["name"]: r for r in data["waveforms"]["piolite"]["source"]["signal"]}
+    def samples(name):
+        states = []
+        for symbol in wave[name]["wave"]:
+            states.append(states[-1] if symbol == "." else symbol)
+        return states
+    offer, ready = samples("tvalid"), samples("tready")
+    guard, abort = samples("piolite_tx_admit_i[3]"), samples("abort_i[3]")
+    last = next(i for i in range(len(offer)) if offer[i] == ready[i] == "1")
+    lost = guard.index("0", offer.index("1"))
+    assert lost < abort.index("1") < last < samples("aborted_o[3]").index("1")
+    assert set(offer[lost:last + 1]) == {"1"} and set(samples("tdata")[lost:last + 1]) == {"="}
+    assert wave["tdata"]["data"] == ["0xA5000010"]
+
+
+def test_piolite_missing_irq_field_bits_fail_source_check(monkeypatch):
+    from publications.tiny_v02_reference import piolite_registers
+
+    source = tiny.read
+
+    def remove_flag_bits(path):
+        spec = source(path)
+        if path.name == "piolite-registers.json":
+            row = next(r for r in spec if r["name"] == "IRQ_STATUS")
+            next(f for f in row["fields"] if f[0] == "FLAGS")[2] = 8
+        return spec
+
+    monkeypatch.setattr(tiny, "read", remove_flag_bits)
+    with pytest.raises(ValueError, match="implemented IRQ mask"):
+        piolite_registers({}, ROOT)
 
 
 def test_binary_fields_are_complete_and_storage_uses_tiny_geometry(data):

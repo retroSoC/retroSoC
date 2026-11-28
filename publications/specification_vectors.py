@@ -19,6 +19,8 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
     }
     if spec["product"] == "tiny":
         expressions.update({
+            "tiny-soc-functional": 'functional-canvas(json(sys.inputs.at("data")).illustrations.functional)',
+            "wave-piolite": 'standalone-wave("piolite")',
             "address-map": 'address-map(json(sys.inputs.at("data")).address_map)',
             "tiny-gen1-highlights": 'feature-highlights(json(sys.inputs.at("data")))',
             "r1-roadmap": 'r1-roadmap(json(sys.inputs.at("data")).r1_roadmap)',
@@ -44,6 +46,8 @@ def render(root: Path, out: Path, spec: dict, executable: str, options: list[str
             expressions["tiny-r1-product-line"] = f"r1-product-line({r1_product_line_height:.9f}pt)"
     text = '#import "/publications/specifications/figures.typ": *\n'
     if spec["product"] == "tiny":
+        text += '#import "/publications/datasheets/tiny/soc-functional.typ": functional-canvas\n'
+        text += '#import "/publications/datasheets/tiny/waveforms.typ": standalone-wave\n'
         text += '#import "/publications/datasheets/tiny/address-map.typ": address-map\n'
         text += '#import "/publications/datasheets/tiny/feature-highlights.typ": feature-highlights, r1-product-line\n'
         text += '#import "/publications/datasheets/tiny/r1-roadmap.typ": r1-roadmap\n'

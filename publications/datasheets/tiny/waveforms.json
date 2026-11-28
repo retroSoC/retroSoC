@@ -1565,5 +1565,123 @@
       "rtl/ip/ppalite/ppalite_packer.sv"
     ],
     "review_note": "Output READY/VALID interface; this representative handshake is not a simulator trace or measured latency."
+  },
+  "piolite": {
+    "source": {
+      "signal": [
+        {
+          "name": "clk_i",
+          "wave": "p........"
+        },
+        {
+          "name": "piolite_tx_admit_i[3]",
+          "wave": "1..0....."
+        },
+        {
+          "name": "tvalid",
+          "wave": "0.1....0."
+        },
+        {
+          "name": "tdata",
+          "wave": "x.=....x.",
+          "data": [
+            "0xA5000010"
+          ]
+        },
+        {
+          "name": "abort_i[3]",
+          "wave": "0...10..."
+        },
+        {
+          "name": "tready",
+          "wave": "0.....10."
+        },
+        {
+          "name": "piolite_tx_job_o[3]",
+          "wave": "01......0"
+        },
+        {
+          "name": "aborted_o[3]",
+          "wave": "0.......1"
+        }
+      ],
+      "config": {
+        "hscale": 1,
+        "skin": "lowkey"
+      }
+    },
+    "clock_domain": "TINY PCLK, central DMA channel 3 and PIOLITE TX14",
+    "signals": {
+      "clk_i": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "clk_i",
+        "meaning": "PCLK of the DMA control and PIOLITE transport.",
+        "polarity": "rising-edge"
+      },
+      "piolite_tx_admit_i[3]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "piolite_tx_admit_i",
+        "meaning": "Admission for the channel-3 example drops after the word is offered.",
+        "polarity": "active-high"
+      },
+      "abort_i[3]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "abort_i",
+        "meaning": "Software requests a bounded abort of the bound TX job.",
+        "polarity": "active-high"
+      },
+      "piolite_tx_job_o[3]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "piolite_tx_job_o",
+        "meaning": "Channel ownership persists until the outstanding transfer drains.",
+        "polarity": "active-high"
+      },
+      "aborted_o[3]": {
+        "file": "rtl/ip/peripheral/dma_core.sv",
+        "scope": "dma_core",
+        "symbol": "aborted_o",
+        "meaning": "Terminal abort is reported after drain.",
+        "polarity": "active-high"
+      },
+      "tvalid": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tvalid",
+        "meaning": "The DMA keeps the TX offer valid through stalls and abort.",
+        "polarity": "active-high"
+      },
+      "tdata": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tdata",
+        "meaning": "Stable 32-bit TX word while the offer is held.",
+        "polarity": "data"
+      },
+      "tready": {
+        "file": "rtl/managed/clusterip/common/rtl/interface/axi4_stream_if.sv",
+        "scope": "axi4_stream_if",
+        "symbol": "tready",
+        "meaning": "The receiving endpoint accepts the outstanding beat when READY rises.",
+        "polarity": "active-high"
+      }
+    },
+    "note": "TX14, PCLK, illustrative ordering. The P3 DMA test holds READY low as admission falls and abort is requested. VALID and the 32-bit word remain stable until the handshake. In the integrated PIOLITE adapter, a closing handshake discards the word. The channel reports abort after drain.",
+    "review_sources": [
+      "rtl/ip/piolite/apb4_piolite.sv",
+      "rtl/ip/piolite/piolite_dma_adapter.sv",
+      "rtl/ip/peripheral/dma_core.sv",
+      "rtl/tiny/top/retrosoc_tiny.sv"
+    ],
+    "review_note": "DMA boundary sequence follows guard_loss_held_tx in tests/rtl/piolite_p3_dma_tb.sv. READY represents backpressure and closing acceptance; the adapter suppresses FIFO pushes in Closing. Intermediate repeated cycles are condensed.",
+    "parameters": {
+      "NumChannels": 8,
+      "DATA_WIDTH": 32
+    },
+    "parameter_note": "TINY instantiates eight central DMA channels; channel 3 is the exercised TX lease.",
+    "caption": "PIOLITE TX14 backpressure, guard loss and abort."
   }
 }

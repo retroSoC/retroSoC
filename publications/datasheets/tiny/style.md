@@ -484,3 +484,15 @@ normal PDF font checks. Verify raw-source preservation, mechanical/protocol
 context, exponent parsing, managed fonts and rejection of unrelated small text.
 Review changed pages in color and grayscale, including exponent baselines,
 line breaks, table rows and standalone figures, then repeat the offline build.
+## PIOLITE integration figures
+
+Use the TINY USER owner for PIOLITE in the functional architecture, GPIO diagram and pin notes.
+Show the independent 32-bit input, output value and output-enable paths. Pin sampling reaches
+the SMs directly through the GPIO input path. Claims, the handoff and GPIO readiness qualify drive.
+Keep request selectors 14/15, leased channel numbers, IRQ24 and RCU target 15 in their own namespaces.
+
+Draw the PIOLITE primary and its GPIO and DMA details from the same source-bound graph. A freestanding
+wire label must be within 3 mm of its own route. Endpoint labels name the corresponding connection.
+The two mechanism frames name the interacting blocks across the integration boundary. The TX14
+waveform follows the held-offer and abort ordering exercised in the P3 DMA bench. Identify its
+bench-controlled READY and compressed cycles in the note. Render the same vector in standalone exports.

@@ -148,7 +148,7 @@
       "Both windows address the same pads, not two GPIO banks."
     ],
     "paragraphs": [
-      "GPIO administration controls pad mode, filtering, masks and locks. The restricted window exposes only permitted data/event operations. The **user-access mask starts clear**; grant only the pins required by the application.",
+      "GPIO administration controls mode, filtering, masks and locks. The restricted APB window permits selected data/event operations. Its access mask resets clear. Independently, USER_SELECT grants pad ownership to PIOLITE: the GPIO mux accepts its 32-bit value and OE buses after handoff and returns filtered inputs to the state machines.",
       "Current peripheral routes come from the TINY topology. UART0 uses GPIO8/9 and I2C0 uses GPIO10/11; retired dedicated UART outputs in the compatibility wrapper are not additional active UARTs. Input CMOS and pull capability are selected by the technology: ICS55 exposes all three capability bits; IHP130 exposes zero.",
       "Before changing a driven alternate function, **disable its producer**, release output enable and use the controller guard/ownership sequence. Electrical drive settings require a reviewed pad/board specification; a register field is not a voltage rating."
     ],
@@ -529,21 +529,23 @@
     ],
     "summary": "Two programmable state machines with shared instruction memory, guarded GPIO and bounded central-DMA paths.",
     "features": [
-      "Two state machines sharing **32 16-bit instruction words** and ISA1.0 encoding.",
-      "All 32 USER GPIO paths with explicit acquisition, ownership handoff and readback.",
-      "TX request14 and RX request15 at V2.2, with direct and linked-descriptor DMA ownership."
+      "Two state machines share **32 instruction words of 16 bits each**. Each state machine has its own eight-word, 32-bit transmit and receive FIFOs.",
+      "A USER claim can select any of the 32 GPIOs. Pin sampling, output data and output enable follow separate paths.",
+      "Central DMA request 14 feeds TX and request 15 drains RX. Each direction may use a direct job or a finite linked TCD chain."
     ],
     "paragraphs": [
-      "PIOLITE is decoded at 0x1001C000 and uses IRQ24. Its 23 global registers, 32 instruction words and two 32-register state-machine windows are described by the handwritten SVH/C mirror and the independent 119-entry register parity check.",
-      "GPIO claims cover input, output, direction and authorized test-pin windows. Acquisition must complete the USER high-impedance handoff before START; release requires stopped transport and checked ownership removal. Clearing a stopped SM claim does not conceal a still-selected USER pad from RCU.",
-      "DMA TX uses MM_TO_STREAM request14 and RX uses STREAM_TO_MM request15. Bindings select distinct leased channels. A linked job retains its binding through software descriptors, suspension and final drain; invalid direction, count, tail or residual data is not successful completion.",
-      "The current phase evidence is source and implementation review only. Application protocol rates, sustained workloads, timing closure and physical pad behavior require later measured evidence; this source entry does not claim them."
+      "The 4 KiB APB4 window at `0x1001C000`–`0x1001CFFF` contains 23 global registers, 32 instruction locations and two banks of 32 state-machine registers. The APB register ABI and the instruction encoding each have version 1.0. The divider runs from the PCLK leaf reported by `CLOCK_HZ`.",
+      "GPIO USER selection is per pin. Configure the claim and output masks while disabled. The handoff suppresses pad drive until USER ownership is active, the input filter is disabled on the claim and GPIO is ready. Input samples pass to the state machines independently of the output guard. Loss of ownership or readiness removes the affected output enables and reports a guard fault to a live session.",
+      "IRQ24 is level-sensitive. Each state machine contributes its enabled sticky events. The four shared flags and the two TX-low and two RX-high conditions feed separate global enables. Acknowledge sticky events through the per-SM write-one-to-clear register, clear shared flags through FLAG_CLEAR, and service or mask an active watermark to deassert it.",
+      "The P3 ledger records TINY integration and independent review, dual-profile Verilator runs on a pre-final candidate, and standalone IHP130/ICS55 evidence at the recorded revisions. P4 application/protocol qualification and P5 physical, pad and silicon qualification remain open."
     ],
     "steps": [
-      "Validate identity and load programs while the complete session is quiescent.",
-      "Acquire GPIO, configure both state machines and bind distinct leased DMA channels.",
-      "Arm direct or complete linked jobs, then START and wait for exact counts, drained responses and clean FIFO/shift tails.",
-      "On failure retain ownership through bounded abort/recovery; release only after stopped transport and confirmed GPIO handoff."
+      "Initialize the session and load programs.",
+      "Configure both disabled state machines, then acquire GPIO.",
+      "Bind and arm the two DMA directions.",
+      "Start the state machines and check completion.",
+      "Disable, unbind and release.",
+      "Recover from timeout or lost ownership."
     ],
     "nodes": [
       "APB / serialized session loader",
@@ -557,9 +559,23 @@
       "rtl/ip/piolite/piolite_define.svh",
       "rtl/ip/piolite/piolite_reg.sv",
       "crt/include/retrosoc/hal/piolite_regs.h",
-      "tests/test_piolite_register_parity.py"
+      "tests/test_piolite_register_parity.py",
+      "rtl/ip/piolite/piolite_core.sv",
+      "rtl/ip/piolite/piolite_gpio_guard.sv",
+      "rtl/ip/piolite/piolite_dma_adapter.sv",
+      "app/apps/ci_smoke/tiny_piolite_p3.c",
+      "tests/rtl/piolite_p3_dma_tb.sv",
+      "docs/ip/piolite-verification.md"
     ],
-    "evidence": "Source reviewed; current-commit matching raw qualification report not supplied. No protocol-rate or physical qualification is claimed."
+    "evidence": "Current integration is source-reviewed. P3 results retain their recorded source, profile and stage. Published limits for pin rate, sustained protocol throughput and physical timing await qualification.",
+    "step_checks": [
+      "Probe the ABI and capabilities. Reserve nonoverlapping ranges in the shared IMEM while the session is quiescent.",
+      "Set entry, wrap, FIFO options, claim mask, output mask and initial OE. Wait for USER handoff and GPIO readiness before binding or starting.",
+      "In the full-duplex firmware example TX14 binds SM0 to channel 3, and RX15 binds SM1 to channel 2. These are lease choices. Arm RX before TX.",
+      "Start SM0 and SM1. Check both SM outcomes, the expected RX word/count and the DMA terminal state. An SM halt alone does not release an outstanding AXI response or stream beat.",
+      "Disable participating SMs; wait for transport and FIFO/shift cleanup. Unbind both directions, release GPIO, unload the program allocations, then release the session.",
+      "Stop new admissions. Keep the channel, buffers and pins owned through bounded abort and response drain. Inspect fault, FIFO and held/closing status; reset only when permitted. Reacquire a valid GPIO claim before restarting."
+    ]
   },
   {
     "id": "ws2812",
