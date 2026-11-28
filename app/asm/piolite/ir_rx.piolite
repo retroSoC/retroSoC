@@ -2,7 +2,7 @@
 .program ir_rx
 .entry wait_high
 .wrap_bottom wait_high
-.wrap_top again
+.wrap_top done
 .in 13, 1
 .out 0, 0
 .set 0, 0
@@ -23,4 +23,5 @@ low: BRANCH TEST_PIN_HIGH, low_done
 low_count: BRANCH DEC_X_NONZERO, low
 low_done: MOVE ISR, X
 FIFO PUSH, BLOCKING
-again: BRANCH ALWAYS, wait_high
+again: BRANCH DEC_Y_NONZERO, wait_high
+done: CTRL HALT

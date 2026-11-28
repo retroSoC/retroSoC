@@ -641,8 +641,12 @@ static rs_status_t rs_piolite_unlocked_program_load(rs_piolite_session_t *sessio
         for (uint32_t candidate = 0U; candidate <= (RS_PIOLITE_IMEM_WORDS - program->word_count);
              ++candidate) {
             bool free = true;
-            for (uint32_t index = 0U; index < program->word_count; ++index) {
-                if (session->allocations[candidate + index].published) {
+            for (uint32_t index = 0U; index < RS_PIOLITE_IMEM_WORDS; ++index) {
+                if (session->allocations[index].published &&
+                    (candidate < (index + session->allocations[index].word_count)) &&
+                    (index < (candidate + program->word_count)) &&
+                    ((index != candidate) ||
+                     !rs_piolite_program_equal(session->allocations[index].program, program))) {
                     free = false;
                     break;
                 }
@@ -656,8 +660,10 @@ static rs_status_t rs_piolite_unlocked_program_load(rs_piolite_session_t *sessio
             return RS_ENOSPC;
         }
     }
-    for (uint32_t index = 0U; index < program->word_count; ++index) {
-        if (!session->allocations[base].published && session->allocations[base + index].published) {
+    for (uint32_t index = 0U; index < RS_PIOLITE_IMEM_WORDS; ++index) {
+        if ((index != base) && session->allocations[index].published &&
+            (base < (index + session->allocations[index].word_count)) &&
+            (index < (base + program->word_count))) {
             return RS_ENOSPC;
         }
     }
@@ -1356,6 +1362,13 @@ static rs_status_t rs_piolite_unlocked_get_status(const rs_piolite_session_t *se
     status->fifo_levels = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_FIFO_LEVELS);
     status->transport_status = RS_PIOLITE_REG(RS_PIOLITE_ABI_APB4_TRANSPORT_STATUS);
     status->owned_mask = RS_PIOLITE_REG(RS_PIOLITE_ABI_APB4_OWNED_MASK);
+    status->events = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_EVENTS);
+    status->pc = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_PC);
+    status->shift_counts = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_SHIFT_COUNTS);
+    status->tick_count = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_TICK_COUNT);
+    status->tx_stall_count = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_TX_STALL_COUNT);
+    status->rx_stall_count = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_RX_STALL_COUNT);
+    status->retired_count = RS_PIOLITE_SM_REG(sm, RS_PIOLITE_ABI_APB4_SM_RETIRED_COUNT);
     return RS_OK;
 }
 
@@ -1486,4 +1499,25 @@ rs_status_t rs_piolite_abort_reset(rs_piolite_session_t *session, uint32_t sm_ma
 rs_status_t rs_piolite_get_status(const rs_piolite_session_t *session, uint32_t sm,
                                   rs_piolite_status_t *status) {
     return rs_piolite_unlocked_get_status(session, sm, status);
+}
+
+static rs_status_t rs_piolite_flag_command(rs_piolite_session_t *session, uint32_t flag_mask,
+                                           uint32_t offset) {
+    const uint32_t saved = rs_piolite_lock();
+    rs_status_t status = rs_piolite_active(session);
+    if ((status == RS_OK) && ((flag_mask == 0U) || (flag_mask > 0xFU) || !session->claimed)) {
+        status = RS_EINVAL;
+    }
+    if (status == RS_OK) {
+        RS_PIOLITE_REG(offset) = flag_mask;
+    }
+    return rs_piolite_locked_result(saved, status);
+}
+
+rs_status_t rs_piolite_flag_set(rs_piolite_session_t *session, uint32_t flag_mask) {
+    return rs_piolite_flag_command(session, flag_mask, RS_PIOLITE_ABI_APB4_FLAG_SET);
+}
+
+rs_status_t rs_piolite_flag_clear(rs_piolite_session_t *session, uint32_t flag_mask) {
+    return rs_piolite_flag_command(session, flag_mask, RS_PIOLITE_ABI_APB4_FLAG_CLEAR);
 }

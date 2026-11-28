@@ -1,0 +1,28 @@
+; Mode 3, LSB first; INITIAL_XY.Y is frame_bits-1 and each bit takes 12 ticks.
+.program spi_master_mode3
+.entry idle
+.wrap_bottom idle
+.wrap_top done
+.in 7, 1
+.out 6, 1
+.set 4, 2
+.tx_bits 32, right, manual
+.rx_bits 8, right, auto
+.test none, 0
+.packing 0, 0, 32
+.clock_ticks 12, stretchable
+idle: SET_PIN 3
+frame: FIFO PULL, BLOCKING
+SET_PIN 1
+SET_PIN 0 [2]
+OUT PINS, 1 [2]
+SET_PIN 1 [1]
+IN PINS, 1 [2]
+MOVE X, Y
+bit: SET_PIN 0 [2]
+OUT PINS, 1 [2]
+SET_PIN 1 [1]
+IN PINS, 1 [2]
+BRANCH DEC_X_NONZERO, bit
+SET_PIN 3
+done: CTRL HALT

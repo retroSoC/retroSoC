@@ -28,6 +28,12 @@ tooling.
   `piolite-p2-{lint,rtl,formal,synth,netsim,sta,report}` retains
   source/tool/artifact-bound standalone evidence, not Tiny integration or a
   qualified product operating point.
+- `test_piolite_p4.py` checks deterministic generated application objects,
+  scenario/build isolation and fail-closed source/binary/log identity. Host C
+  tests execute every generated program through loader/session setup and
+  cleanup. Tiny Verilator scenarios use independent digital, pulse, UART, SPI,
+  IR, LED and gamepad pin models, exact counts/tails, adverse scheduling and
+  bounded recovery; long full-system Icarus remains final-campaign-only.
 - `test_ppalite_model.py` checks independent scalar pixel/layout oracles and
   `test_ppalite_register_parity.py` checks the 40-entry handwritten APB1.0
   SVH/C mirror with RAW/PROCESS integration capability absent.

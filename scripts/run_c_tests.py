@@ -11,6 +11,22 @@ import tempfile
 from pathlib import Path
 
 
+PIOLITE_PROGRAM_NAMES = (
+    "logic_capture",
+    "pulse_generate",
+    "pulse_capture",
+    "uart_tx",
+    "uart_rx",
+    "spi_master",
+    "spi_master_mode1",
+    "spi_master_mode2",
+    "spi_master_mode3",
+    "ir_tx",
+    "ir_rx",
+    "led_scan",
+    "gamepad",
+)
+
 TEST_SOURCES = (
     "crt/arch/riscv/libgcc/clzsi2.c",
     "crt/arch/riscv/libgcc/divdi3.c",
@@ -61,6 +77,7 @@ TEST_SOURCES = (
     "app/media/src/video_player.c",
     "app/media/src/wav_audio.c",
     "app/board/src/st7789vi_math.c",
+    "app/apps/bringup/piolite_p4_examples.c",
     "app/benchmark/npu/npu_p6_reference.c",
     "tests/c/test_runtime.c",
 )
@@ -109,9 +126,20 @@ def main() -> int:
             sys.executable, str(root / "scripts/crypto_constants.py"),
             "--root", str(root), "--output", str(crypto_constants_root),
         ], check=True)
+        piolite_program_root = temporary_root / "piolite_programs"
+        for name in PIOLITE_PROGRAM_NAMES:
+            subprocess.run([
+                sys.executable,
+                str(root / "scripts/piolite_asm.py"),
+                str(root / "app/asm/piolite" / f"{name}.piolite"),
+                str(piolite_program_root / f"{name}.c"),
+            ], check=True)
         command = [
             compiler,
             "-std=c11",
+            "-DRS_PIOLITE_P4_PROGRAM_TEST",
+            "-I",
+            str(piolite_program_root),
             "-Wall",
             "-Wextra",
             "-Werror",
@@ -150,6 +178,8 @@ def main() -> int:
             str(root / "app/media/include"),
             "-I",
             str(root / "app/board/include"),
+            "-I",
+            str(root / "app/apps/bringup"),
             "-I",
             str(root / "app/benchmark/npu"),
             "-o",

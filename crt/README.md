@@ -113,6 +113,13 @@ until wire completion or safe cleanup. Callers retain source buffers after a
 timeout while status is active. See the [P3 runbook](../docs/ip/tiny-soc-r2-software-scheduling.md);
 these shared APIs do not add WS2812 to the current Tiny integration.
 
+`<retrosoc/hal/piolite.h>` provides versioned discovery, static program
+load/unload and SM configuration, GPIO/DMA ownership, bounded lifecycle,
+FIFO access and completion/recovery operations. Status snapshots expose the
+existing event, PC, shift, tick, stall and retirement registers. Shared flags
+have checked set/clear operations for application-controlled finite programs;
+DMA idle alone is not a successful program result.
+
 `<retrosoc/hal/crypto.h>` provides bounded AES PIO/DMA, SHA-224/256, raw
 RSA-2048 modular exponentiation, zeroize, and known-answer self-test APIs.
 V2 callers first use `rs_crypto_init(timeout)` to load and lock CRYC1. It

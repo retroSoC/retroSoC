@@ -7,6 +7,94 @@ model, assembler, RTL, firmware, performance or physical result below is
 marked passed by this freeze. Existing Tiny/R2/DMA/GPIO evidence does not
 automatically cover the new feature.
 
+## PIOLITE-P4 implementation candidate (2026-11-28)
+
+Before the final clean-revision campaign, source revision
+`35748f3b18b2806ff5b6f25b210df8decfc75fae` with working-tree source state
+`2c267042471ea17d52900788eec1f92490161543a81564467887acac57e3828a`
+produced the following candidate records. Every record reports
+`status=passed` and `problems=[]`, binds the same source state and compiled
+firmware/emulator inputs, and retains `phase_accepted=false`. These are
+candidate measurements, not evidence for a later source revision or phase
+acceptance. The final incremental independent review reported no P0-P3
+findings.
+
+| Profile | Scenario | Candidate record under `meta/piolite-p4/check/record.json` |
+| --- | --- | --- |
+| IHP130 | LOGIC_CAPTURE | `build/ihp130-tiny-2026-11-29-00-10-eae59d9b47b8/` |
+| IHP130 | PULSE | `build/ihp130-tiny-2026-11-28-23-57-5a59548c4aa8/` |
+| IHP130 | UART | `build/ihp130-tiny-2026-11-28-23-58-d2c62095ce7a/` |
+| IHP130 | SPI | `build/ihp130-tiny-2026-11-28-23-59-e542504c58d9/` |
+| IHP130 | IR | `build/ihp130-tiny-2026-11-28-23-58-4421565bc961/` |
+| IHP130 | LED | `build/ihp130-tiny-2026-11-29-00-20-1e7074434938/` |
+| IHP130 | GAMEPAD | `build/ihp130-tiny-2026-11-29-00-30-c022582426dd/` |
+| IHP130 | CONTENTION | `build/ihp130-tiny-2026-11-28-23-56-31fda8be5d99/` |
+| ICS55 | LOGIC_CAPTURE | `build/ics55-tiny-2026-11-29-01-40-201576ef1c43/` |
+| ICS55 | PULSE | `build/ics55-tiny-2026-11-29-00-40-429de6a3e81a/` |
+| ICS55 | UART | `build/ics55-tiny-2026-11-29-01-00-223414f7e62e/` |
+| ICS55 | SPI | `build/ics55-tiny-2026-11-29-01-10-75cdc3af9e71/` |
+| ICS55 | IR | `build/ics55-tiny-2026-11-29-00-50-08fbee748d6e/` |
+| ICS55 | LED | `build/ics55-tiny-2026-11-29-01-20-3e6757719e3b/` |
+| ICS55 | GAMEPAD | `build/ics55-tiny-2026-11-29-01-30-514dfb03bfd2/` |
+| ICS55 | CONTENTION | `build/ics55-tiny-2026-11-29-02-00-9209589bd59c/` |
+
+All scenarios produced SYSCTRL `TEST_STATUS` and `SIM_TEST_PASS` without a
+forbidden marker. Logic capture transferred 32768 samples/8192 words per
+pattern with zero stalls. Contention measured `longest_gap=40`,
+`overlap=7376`, `late_overlap=192`, heartbeat 213 and 22 iterations per
+pattern. The first ICS55 contention attempt expired at the external 4200 s
+wall limit with exit 124 and no terminal verdict; the separate 5400 s attempt
+passed after 22,730,283 cycles without changing the 24,000,000-cycle limit or
+any functional check. The 4200 s failure is retained and is not a passing
+record.
+
+Candidate Tiny PR regressions passed on both PDKs, including Verilator,
+Yosys, short netlist boot and observational OpenSTA. Mini behavioral-only
+compatibility passed after restoring the existing locked FatFs/CoreMark
+inputs; no Mini synthesis was run. Warning observations retain their existing
+non-blocking policy and metrics remain in observe mode. The candidate full
+Pytest was stopped before completion because integration would change its
+source identity; no complete-suite result is claimed here. Final
+source-bound scenarios, complete Pytest, PR/nightly regressions and PR-head
+CI remain required before delivery.
+
+This candidate does not qualify 48/60 MHz operation, complete-product timing,
+PVT, analog CDC, pad/board/package, power, physical implementation or silicon.
+
+## PIOLITE-P3 human acceptance (2026-11-27)
+
+The maintainer's standing development goal explicitly authorizes automatic
+acceptance recording when independent review is clean and CI is green. The
+accepted checkpoint is `35748f3b18b2806ff5b6f25b210df8decfc75fae` on `dev`,
+the merge commit of PR #327. The final head is
+`c19c840e75650e8363cd30478a72cbef5a460632`; all 29 GitHub checks passed.
+The final incremental independent review reported no P0-P3 findings.
+
+The final source-bound acceptance records are
+`build/ihp130-tiny-2026-11-27-13-30-16f9f5c88892/meta/piolite-p3/check/record.json`
+and
+`build/ics55-tiny-2026-11-27-13-30-6e316fb1f403/meta/piolite-p3/check/record.json`.
+Both bind the final head, clean source state and compiled firmware/emulator
+hashes, and report `status=passed` with `problems=[]`. Both Tiny Verilator
+profiles produced SYSCTRL `TEST_STATUS` and `SIM_TEST_PASS` with no forbidden
+marker; long full-system Icarus remained deferred under TINY-057.
+
+Both dual-PDK standalone P2 aggregate reports passed, including lint,
+Verilator, standalone Icarus, formal, synthesis, mapped-netlist simulation and
+observational STA. Complete host Pytest passed 3170 tests with three skips.
+C/RTL format/style/policy, Ruff, `make check-fast`, both Tiny PR/nightly
+regressions, full-SoC synthesis, netlist boot and observational STA passed.
+Mini validation was behavioral-only under TINY-056; no Mini synthesis was run.
+The warning-only missing-baseline observation and observe-mode metrics retain
+their existing non-blocking policy and are not promoted to acceptance gates.
+`phase_accepted=false` remains in generated records while acceptance is
+recorded here.
+
+This acceptance is limited to the frozen P3 integration scope. It does not
+qualify P4 applications/rates, 48/60 MHz operation, complete-product timing,
+PVT, analog CDC, pad/board/package, power, physical implementation or silicon;
+those remain P4/P5 work.
+
 ## PIOLITE-P2 human acceptance (2026-10-30)
 
 The maintainer's standing development goal explicitly authorizes automatic
@@ -521,8 +609,8 @@ are not claimed by these earlier records.
 | PIOLITE-P0 | Documentation freeze complete; local links/anchor, command dry-runs, unchanged legacy/R2 IDs and QFN64/ALT tables, documentation-only scope and whitespace checks passed on 2026-10-04 |
 | PIOLITE-P1 | Host model, assembler, focused tests and actual 32-word footprints added on 2026-10-28; `phase_accepted: false`; Tiny integration and protocol qualification remain absent |
 | PIOLITE-P2 | Standalone core/CSR/parity, exhaustive and directed dual-simulator, PL-V checklist, full-top formal, IHP130/ICS55 synthesis/netlist and observational STA evidence added on 2026-10-30; `phase_accepted=false`; independent review and P3+ product acceptance remain open |
-| PIOLITE-P3 | Tiny GPIO/DMA/RCU/HAL integration and independent review complete; pre-finalization dual-profile Verilator and dual-PDK standalone evidence recorded above; final clean-revision and PR-head CI acceptance pending |
-| PIOLITE-P4 | Not started: complete SDK/application and dual-simulator/contention qualification absent |
+| PIOLITE-P3 | Accepted on 2026-11-27 at merge `35748f3b`; final source-bound dual-profile Verilator, dual-PDK standalone, host/regression and PR-head CI evidence recorded above |
+| PIOLITE-P4 | In progress: SDK, application and independent-BFM/contention qualification is being implemented; no phase acceptance or 48/60 MHz claim is recorded |
 | PIOLITE-P5 | Not started: PIO-inclusive IHP130 timing, physical, Pad/package and silicon evidence absent |
 
 Executed P0 validation used `git diff --check`, local Markdown link/anchor and

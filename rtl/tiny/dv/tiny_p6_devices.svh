@@ -25,41 +25,44 @@ always @(negedge u_dut.u_soc.s_i2c0_clk) begin
 end
 `define _P6_WS u_dut.u_soc.u_ws2812
 logic       s_piolite_p3_loopback = $test$plusargs("piolite_p3_loopback");
+logic       s_piolite_p4_loopback = $test$plusargs("piolite_p4_loopback");
+logic       s_piolite_loopback = s_piolite_p3_loopback || s_piolite_p4_loopback;
 logic       s_p6_uart_rx = 1;
 logic [7:0] s_p6_uart_byte;
-logic [7:0] s_p6_uart_packet                                              [4];
+logic [7:0] s_p6_uart_packet                                                    [4];
 integer s_p6_uart_index = 0, s_p6_uart_routes = 0;
-assign s_gpio_9 = s_piolite_p3_loopback ? 1'bz : s_p6_uart_rx;
+assign s_gpio_9 = s_piolite_loopback ? 1'bz : s_p6_uart_rx;
 initial begin
-  forever begin
-    @(negedge s_gpio_8);
-    #1627.604;
-    for (integer bit_index = 0; bit_index < 8; bit_index++) begin
-      s_p6_uart_byte[bit_index] = s_gpio_8;
-      #1085.069;
-    end
-    if (s_p6_uart_index != 0 || s_p6_uart_byte == 8'ha5) begin
-      s_p6_uart_packet[s_p6_uart_index] = s_p6_uart_byte;
-      s_p6_uart_index++;
-      if (s_p6_uart_index == 4) begin
-        if (s_p6_uart_packet[0] != 8'ha5 || s_p6_uart_packet[1] != 8'h5a ||
+  if (!s_piolite_loopback)
+    forever begin
+      @(negedge s_gpio_8);
+      #1627.604;
+      for (integer bit_index = 0; bit_index < 8; bit_index++) begin
+        s_p6_uart_byte[bit_index] = s_gpio_8;
+        #1085.069;
+      end
+      if (s_p6_uart_index != 0 || s_p6_uart_byte == 8'ha5) begin
+        s_p6_uart_packet[s_p6_uart_index] = s_p6_uart_byte;
+        s_p6_uart_index++;
+        if (s_p6_uart_index == 4) begin
+          if (s_p6_uart_packet[0] != 8'ha5 || s_p6_uart_packet[1] != 8'h5a ||
             s_p6_uart_packet[2] != 8'h96 || s_p6_uart_packet[3] != 8'h69)
-          $fatal(1, "SIM_TEST_FAIL P6 UART GPIO8 framing/data");
-        for (integer byte_index = 0; byte_index < 4; byte_index++) begin
-          s_p6_uart_rx = 0;
-          #1085.069;
-          for (integer bit_index = 0; bit_index < 8; bit_index++) begin
-            s_p6_uart_rx = s_p6_uart_packet[byte_index][bit_index];
+            $fatal(1, "SIM_TEST_FAIL P6 UART GPIO8 framing/data");
+          for (integer byte_index = 0; byte_index < 4; byte_index++) begin
+            s_p6_uart_rx = 0;
+            #1085.069;
+            for (integer bit_index = 0; bit_index < 8; bit_index++) begin
+              s_p6_uart_rx = s_p6_uart_packet[byte_index][bit_index];
+              #1085.069;
+            end
+            s_p6_uart_rx = 1;
             #1085.069;
           end
-          s_p6_uart_rx = 1;
-          #1085.069;
+          s_p6_uart_index = 0;
+          s_p6_uart_routes++;
         end
-        s_p6_uart_index = 0;
-        s_p6_uart_routes++;
       end
     end
-  end
 end
 integer s_p6_frames = 0, s_p6_completed = 0, s_p6_underflows = 0, s_p6_aborts = 0;
 longint unsigned s_p6_sdio_overlap = 0, s_p6_overlap_fetches = 0;
@@ -283,10 +286,10 @@ for (genvar owner = 0; owner < 3; owner++) begin : gen_p6_axi_observer
 end
 always #27.126736111 if (s_p6_audio_running) s_p6_audio_reference = !s_p6_audio_reference;
 // Camera and codec are alternative board populations on these shared pads.
-assign s_gpio_17 = (s_p9_camera_population || s_piolite_p3_loopback) ? 1'bz : s_p6_audio_reference;
+assign s_gpio_17 = (s_p9_camera_population || s_piolite_loopback) ? 1'bz : s_p6_audio_reference;
 // The first integration case is an external codec loopback, across actual pads.
 // Independent wire decoding and error injection supplement firmware readback.
-assign s_gpio_15 = (s_p9_camera_population || s_piolite_p3_loopback) ? 1'bz : s_gpio_14;
+assign s_gpio_15 = (s_p9_camera_population || s_piolite_loopback) ? 1'bz : s_gpio_14;
 wire       s_p6_card_cmd;
 wire [3:0] s_p6_card_data;
 wire       s_p6_card_irq;
@@ -304,11 +307,11 @@ sdio_native_card_model #(
     .dat_do_o(s_p6_card_data),
     .irq_o   (s_p6_card_irq)
 );
-assign s_gpio_1 = (s_piolite_p3_loopback || u_dut.u_soc.u_sdio_if.cmd_oe_o) ? 1'bz : s_p6_card_cmd;
-assign s_gpio_2 = (s_piolite_p3_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[0]) ? 1'bz : s_p6_card_data[0];
-assign s_gpio_3 = (s_piolite_p3_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[1]) ? 1'bz : s_p6_card_data[1];
-assign s_gpio_4 = (s_piolite_p3_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[2]) ? 1'bz : s_p6_card_data[2];
-assign s_gpio_5 = (s_piolite_p3_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[3]) ? 1'bz : s_p6_card_data[3];
+assign s_gpio_1 = (s_piolite_loopback || u_dut.u_soc.u_sdio_if.cmd_oe_o) ? 1'bz : s_p6_card_cmd;
+assign s_gpio_2 = (s_piolite_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[0]) ? 1'bz : s_p6_card_data[0];
+assign s_gpio_3 = (s_piolite_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[1]) ? 1'bz : s_p6_card_data[1];
+assign s_gpio_4 = (s_piolite_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[2]) ? 1'bz : s_p6_card_data[2];
+assign s_gpio_5 = (s_piolite_loopback || u_dut.u_soc.u_sdio_if.dat_oe_o[3]) ? 1'bz : s_p6_card_data[3];
 always @(negedge u_dut.u_soc.s_sdio_clk) begin
   // Reuse the standalone card's explicit data-stimulus API. The wire command
   // fixes direction/address/length; host DATA_START only schedules admission.

@@ -85,6 +85,7 @@ module retrosoc_tiny_tb;
   `include "tiny_p10_observers.svh"
   `include "tiny_ppalite_observers.svh"
   `include "tiny_piolite_observers.svh"
+  `include "tiny_piolite_p4.svh"
 `endif
   integer       s_max_cycles = 20000000;
   integer       s_done_cycles = 0;
@@ -116,6 +117,7 @@ module retrosoc_tiny_tb;
     if ($value$plusargs("max_cycles=%d", s_max_cycles)) begin
     end
     if ($test$plusargs("tiny_spi_p4")) s_done_limit = 65536;
+    if ($test$plusargs("piolite_p4_loopback")) s_done_limit = 2000000;
     repeat (20) @(posedge s_clk);
     @(negedge s_clk);
     s_reset_driver = 1'b1;

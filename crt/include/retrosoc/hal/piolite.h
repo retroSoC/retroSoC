@@ -112,6 +112,13 @@ typedef struct {
     uint32_t fifo_levels;
     uint32_t transport_status;
     uint32_t owned_mask;
+    uint32_t events;
+    uint32_t pc;
+    uint32_t shift_counts;
+    uint32_t tick_count;
+    uint32_t tx_stall_count;
+    uint32_t rx_stall_count;
+    uint32_t retired_count;
 } rs_piolite_status_t;
 
 rs_status_t rs_piolite_probe(rs_piolite_info_t *info);
@@ -149,5 +156,7 @@ rs_status_t rs_piolite_abort_reset(rs_piolite_session_t *session, uint32_t sm_ma
                                    rs_timeout_t timeout);
 rs_status_t rs_piolite_get_status(const rs_piolite_session_t *session, uint32_t sm,
                                   rs_piolite_status_t *status);
+rs_status_t rs_piolite_flag_set(rs_piolite_session_t *session, uint32_t flag_mask);
+rs_status_t rs_piolite_flag_clear(rs_piolite_session_t *session, uint32_t flag_mask);
 
 #endif

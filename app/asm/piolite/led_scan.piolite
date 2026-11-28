@@ -2,14 +2,14 @@
 .program led_scan
 .entry scan
 .wrap_bottom scan
-.wrap_top again
+.wrap_top done
 .in 0, 0
 .out 19, 1
 .set 16, 3
 .tx_bits 16, right, manual
 .rx_bits 32, right, manual
 .test none, 0
-.packing 1, 0, 16
+.packing 0, 0, 16
 .clock_ticks 4, stretchable
 scan: SET_PIN 4
 FIFO PULL, BLOCKING
@@ -24,4 +24,5 @@ BRANCH DEC_X_NONZERO, bit
 SET_PIN 6
 SET_PIN 0
 CTRL NOP [7]
-again: BRANCH ALWAYS, scan
+again: BRANCH DEC_Y_NONZERO, scan
+done: CTRL HALT
