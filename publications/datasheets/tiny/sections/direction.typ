@@ -12,7 +12,7 @@
     == Product Series <tiny-product-series>
   ])
 }
-#change-start(doc.change_prefix + "specification-plates", "Four R1 family specification comparisons")
+#change-start("tiny-v02-r1-specifications-20261127-specification-plates", "Four R1 family specification comparisons")
 #for (i, topic) in data.r1_specs.topics.enumerate() {
   if i > 0 { pagebreak() }
   v(1fr)
@@ -23,7 +23,7 @@
     #r1-specification-plate(data.r1_specs, topic.key, book: true)
   ])
 }
-#change-end(doc.change_prefix + "specification-plates")
+#change-end("tiny-v02-r1-specifications-20261127-specification-plates")
 
 == Roadmap <tiny-r1-roadmap>
 PIOLITE P3 integrates GPIO ownership, DMA, RCU and the TINY HAL. Application and protocol qualification (P4) and the combined physical campaign (P5) remain open.

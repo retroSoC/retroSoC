@@ -234,6 +234,26 @@
     {
       "file": "rtl/tiny/top/retrosoc_tiny.sv",
       "text": ".apb4(u_ppalite_apb4_if)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".gpio_input_i (u_user_gpio_if.di_i)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": "assign u_user_gpio_if.do_o = s_piolite_gpio_value;"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": "assign u_user_gpio_if.oe_o = s_piolite_gpio_oe;"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".dma_tx_data_i (u_piolite_tx_axis_if.tdata)"
+    },
+    {
+      "file": "rtl/tiny/top/retrosoc_tiny.sv",
+      "text": ".dma_rx_data_o (u_piolite_rx_axis_if.tdata)"
     }
   ],
   "panels": [
@@ -610,9 +630,9 @@
       "label": "GPIO / AF",
       "domain": "peripheral",
       "x": 23,
-      "y": 130,
+      "y": 140.0,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "gpio",
       "apb_target": "gpio"
@@ -622,9 +642,9 @@
       "label": "UART0",
       "domain": "peripheral",
       "x": 23,
-      "y": 139,
+      "y": 147.9,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "uart0",
       "apb_target": "uart0"
@@ -634,9 +654,9 @@
       "label": "I2C0",
       "domain": "peripheral",
       "x": 23,
-      "y": 148,
+      "y": 155.8,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "i2c",
       "apb_target": "i2c0"
@@ -646,21 +666,21 @@
       "label": "SPI0",
       "domain": "peripheral",
       "x": 23,
-      "y": 157,
+      "y": 163.7,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "spi",
       "apb_target": "spi"
     },
     {
       "id": "piolite",
-      "label": "PIOLITE",
+      "label": "PIOLITE · USER",
       "domain": "peripheral",
       "x": 6,
-      "y": 186,
+      "y": 130,
       "w": 34,
-      "h": 8,
+      "h": 7,
       "role": "block",
       "ip": "piolite",
       "apb_target": "piolite"
@@ -670,9 +690,9 @@
       "label": "TIM0",
       "domain": "peripheral",
       "x": 23,
-      "y": 166,
+      "y": 171.6,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "timer",
       "apb_target": "timer0"
@@ -682,9 +702,9 @@
       "label": "TIM1",
       "domain": "peripheral",
       "x": 23,
-      "y": 175,
+      "y": 179.5,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "apb_target": "timer1"
     },
@@ -693,9 +713,9 @@
       "label": "PWM",
       "domain": "peripheral",
       "x": 23,
-      "y": 184,
+      "y": 187.4,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "pwm",
       "apb_target": "pwm"
@@ -705,9 +725,9 @@
       "label": "WS2812",
       "domain": "peripheral",
       "x": 23,
-      "y": 193,
+      "y": 195.3,
       "w": 18,
-      "h": 7,
+      "h": 6.6,
       "role": "block",
       "ip": "ws2812",
       "apb_target": "ws2812"
@@ -1115,7 +1135,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.04861111111111111,
+      "source_position": 0.18472222222222237,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1127,7 +1147,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.1736111111111111,
+      "source_position": 0.2944444444444447,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1139,7 +1159,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.2986111111111111,
+      "source_position": 0.404166666666667,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1151,7 +1171,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.4236111111111111,
+      "source_position": 0.5138888888888888,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1162,19 +1182,10 @@
       "to": "piolite",
       "kind": "control",
       "source_side": "west",
-      "target_side": "west",
-      "source_position": 0.8333333333333334,
+      "target_side": "east",
+      "source_position": 0.04861111111111111,
       "target_position": 0.5,
-      "via": [
-        [
-          44.5,
-          202
-        ],
-        [
-          6,
-          202
-        ]
-      ],
+      "via": [],
       "arrow": true
     },
     {
@@ -1184,7 +1195,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.5486111111111112,
+      "source_position": 0.6236111111111112,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1196,7 +1207,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.6736111111111113,
+      "source_position": 0.7333333333333335,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1208,7 +1219,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.7986111111111112,
+      "source_position": 0.8430555555555558,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1220,7 +1231,7 @@
       "kind": "control",
       "source_side": "west",
       "target_side": "east",
-      "source_position": 0.9236111111111112,
+      "source_position": 0.9527777777777781,
       "target_position": 0.5,
       "via": [],
       "arrow": true
@@ -1563,6 +1574,53 @@
         ]
       ],
       "arrow": true
+    },
+    {
+      "id": "dma-piolite-tx",
+      "from": "dma",
+      "to": "piolite",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.35,
+      "target_position": 0.35,
+      "kind": "stream",
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "TX14",
+        "x": 11,
+        "y": 126.5
+      }
+    },
+    {
+      "id": "piolite-dma-rx",
+      "from": "piolite",
+      "to": "dma",
+      "source_side": "north",
+      "target_side": "south",
+      "source_position": 0.7,
+      "target_position": 0.7,
+      "kind": "stream",
+      "via": [],
+      "arrow": true,
+      "label": {
+        "text": "RX15",
+        "x": 36.3,
+        "y": 126.5
+      }
+    },
+    {
+      "id": "piolite-gpio",
+      "from": "piolite",
+      "to": "gpio",
+      "source_side": "south",
+      "target_side": "north",
+      "source_position": 0.7647058823529411,
+      "target_position": 0.5,
+      "kind": "data",
+      "via": [],
+      "arrow": true,
+      "duplex": true
     }
   ],
   "pin_labels": [
@@ -1612,97 +1670,97 @@
     },
     {
       "x": 10,
-      "y": 133.5,
+      "y": 143.3,
       "width": 20,
       "text": "GPIO[31:0]",
       "leader": [
         [
           20.8,
-          133.5
+          143.3
         ],
         [
           23,
-          133.5
+          143.3
         ]
       ]
     },
     {
       "x": 10,
-      "y": 142.5,
+      "y": 151.20000000000002,
       "width": 20,
       "text": "TX/RX*",
       "leader": [
         [
           20.8,
-          142.5
+          151.20000000000002
         ],
         [
           23,
-          142.5
+          151.20000000000002
         ]
       ]
     },
     {
       "x": 10,
-      "y": 151.5,
+      "y": 159.10000000000002,
       "width": 20,
       "text": "SCL/SDA*",
       "leader": [
         [
           20.8,
-          151.5
+          159.10000000000002
         ],
         [
           23,
-          151.5
+          159.10000000000002
         ]
       ]
     },
     {
       "x": 10,
-      "y": 160.5,
+      "y": 167.0,
       "width": 20,
       "text": "SCK/CSn*\nMOSI/MISO*",
       "leader": [
         [
           20.8,
-          160.5
+          167.0
         ],
         [
           23,
-          160.5
+          167.0
         ]
       ]
     },
     {
       "x": 10,
-      "y": 187.5,
+      "y": 190.70000000000002,
       "width": 20,
       "text": "PWM[3:0]*",
       "leader": [
         [
           20.8,
-          187.5
+          190.70000000000002
         ],
         [
           23,
-          187.5
+          190.70000000000002
         ]
       ]
     },
     {
       "x": 10,
-      "y": 196.5,
+      "y": 198.60000000000002,
       "width": 20,
       "text": "DOUT*",
       "leader": [
         [
           20.8,
-          196.5
+          198.60000000000002
         ],
         [
           23,
-          196.5
+          198.60000000000002
         ]
       ]
     }

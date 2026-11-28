@@ -190,7 +190,8 @@
   ]
   change-end(marker)
  } else if r.at("renderer",default:"")=="cetz" {
-  change-start("tiny-v02-ip-review-20261118-ip-block-"+id,r.block_title)
+  let marker=if id in ("gpio","dma") {"tiny-v02-piolite-integration-20261127-ip-block-" + id} else {"tiny-v02-ip-review-20261118-ip-block-"+id}
+  change-start(marker,r.block_title)
   block(width:100%,breakable:false)[
    #show figure.caption: set text(weight:"bold")
    #figure(ip-canvas(r,id),kind:image,supplement:[Figure],caption:[#r.block_title.])
@@ -203,7 +204,7 @@
     #label("circuit-"+d.detail_id)
    ]
   }
-  change-end("tiny-v02-ip-review-20261118-ip-block-"+id)
+  change-end(marker)
  } else {
   block(width:100%,breakable:false)[
    #figure(legacy-circuit-diagram(id),kind:image,supplement:[Figure],caption:[#r.title.])

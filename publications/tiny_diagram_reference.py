@@ -105,6 +105,25 @@ def validate_fields(fields: list[dict], bits: int) -> None:
         raise ValueError("Tiny binary diagram omits fields")
 
 
+def validate_gpio_user(circuit: dict) -> None:
+    """The TINY USER port reads PIOLITE drive buses and returns filtered pad inputs."""
+    functional = circuit["block_diagram"]["functional"]
+    titles = [n["title"] for n in circuit["nodes"] + functional["nodes"]]
+    obsolete = r"(?:USER.{0,50}outputs?|TINY outputs?)\s+(?:tied(?: to)?\s+)?zero\b"
+    if any(re.search(obsolete, text, re.I | re.S) for text in [circuit["note"], *titles]):
+        raise ValueError("TINY GPIO USER drive is connected to PIOLITE")
+    expected = {
+        ("user-interface", "core-pads", "USER value /32"),
+        ("user-interface", "core-pads", "USER OE /32"),
+        ("core-rx", "user-interface", "IN / 32"),
+    }
+    routes = {
+        (e["from"], e["to"], e["label"]) for e in functional["edges"] if e.get("width") == 32
+    }
+    if not expected <= routes:
+        raise ValueError("TINY GPIO USER input, value and OE must appear as independent 32-bit paths")
+
+
 def functional_routes(
     diagram: dict, ip_ids: set[str], fabric: dict, clocks: dict, apb_domains: dict[str, str]
 ) -> list[dict]:
@@ -113,6 +132,15 @@ def functional_routes(
     edges = {edge["id"]: edge for edge in diagram["edges"]}
     if len(nodes) != len(diagram["nodes"]) or len(edges) != len(diagram["edges"]):
         raise ValueError("Tiny functional architecture repeats a node or edge")
+    # Domain panels overlap intentionally. Functional symbols are siblings.
+    symbols = diagram["nodes"]
+    for i, left in enumerate(symbols):
+        for right in symbols[i + 1:]:
+            if all(
+                max(left[pos], right[pos]) < min(left[pos] + left[size], right[pos] + right[size])
+                for pos, size in (("x", "w"), ("y", "h"))
+            ):
+                raise ValueError(f"TINY functional symbols overlap: {left['id']} and {right['id']}")
     if Counter(n["ip"] for n in nodes.values() if "ip" in n) != Counter(ip_ids):
         raise ValueError("Tiny functional architecture must show each IP chapter once")
     domains = {domain["name"] for domain in clocks["domains"]}
@@ -145,6 +173,9 @@ def functional_routes(
         "dma-admit": ("dma", "dma-admission", "data"),
         "dma-axi": ("dma-admission", "dma-cdc", "data"),
         "dma-owner": ("dma-cdc", "fabric", "data"),
+        "dma-piolite-tx": ("dma", "piolite", "stream"),
+        "piolite-dma-rx": ("piolite", "dma", "stream"),
+        "piolite-gpio": ("piolite", "gpio", "data"),
         "sdio-private": ("sdio", "sdio-dma", "data"),
         "sdio-admit": ("sdio-dma", "sdio-admission", "data"),
         "sdio-owner": ("sdio-admission", "fabric", "data"),
@@ -227,6 +258,7 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
         return json.loads((root / BOOK / name).read_text(encoding="utf-8"))
 
     circuits = read("diagram-circuits.json")
+    validate_gpio_user(circuits["gpio"])
     ids = {r["id"] for r in catalog}
     if set(circuits) != ids | SYSTEM_CIRCUITS:
         raise ValueError(
@@ -395,7 +427,11 @@ def collect(root: Path, catalog: list[dict], regions: list[dict], *, layout: boo
         **{key: r["owner"] for key, r in flows.items()},
     }
     native = [dict(id=key, package="cetz", owner=owner) for key, owner in native_owners.items()]
-    native += [dict(id="wave-" + key, package="wavedrom", owner=key) for key in ids]
+    native += [
+        dict(id="wave-" + key, package="wavedrom", owner=key,
+             **({"source_id": key} if key == "piolite" else {}))
+        for key in sorted(ids)
+    ]
     native += [
         dict(id="wave-" + key, package="wavedrom", owner="tiny-bus") for key in ["axi4", "apb4"]
     ]
@@ -424,6 +460,10 @@ def validate_rendered(illustrations: dict, items: list[dict]) -> None:
     ]
     if len(actual) != len(set(actual)) or set(actual) != expected:
         raise ValueError("Tiny specialized figure omitted, duplicated or unknown")
+    for item in items:
+        if isinstance(item, dict) and item.get("kind") == "tiny-diagram" and item["id"] == "wave-piolite":
+            if item.get("source_id") != "piolite":
+                raise ValueError("PIOLITE timing figure must use its dedicated waveform source")
 
 
 def coverage(illustrations: dict, navigation: dict) -> list[dict]:

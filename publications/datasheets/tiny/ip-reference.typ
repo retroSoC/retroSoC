@@ -150,10 +150,22 @@
   [The common AXI/APB rules in @tiny-bus and this instance's access rules both apply.
     *Example waveforms show ordering and stable handshakes, not guaranteed latency or electrical timing.*]
   binary-figures(entry.id,"protocol")
-  timing(if entry.family in data.waveforms {entry.family} else {"apb4"},[#entry.title representative transaction.],instance:entry.id)
+  if entry.id=="piolite" {
+    timing("piolite",data.waveforms.piolite.caption,instance:entry.id)
+  } else {
+    timing(if entry.family in data.waveforms {entry.family} else {"apb4"},[#entry.title representative transaction.],instance:entry.id)
+  }
   register-section(entry.family,entry.depth)
   subhead(entry.id,"Software",entry.depth)
-  enum(..entry.steps.map(inline))
+  if "step_checks" in entry {
+    assert(entry.steps.len()==entry.step_checks.len(),message:"PIOLITE operating steps and checks must match")
+    ds-table("piolite-operation",[PIOLITE full-duplex operation and bounded recovery],
+      ([Operation],[Ownership and completion checks]),
+      entry.steps.zip(entry.step_checks).map(pair=>(inline(pair.first()),inline(pair.last()))),
+      widths:(1fr,2.5fr))
+    source-note("app/apps/ci_smoke/tiny_piolite_p3.c",title:"P3 direct and linked transport examples")
+    source-note("docs/ip/piolite-verification.md",title:"Phase evidence and remaining qualification")
+  } else {enum(..entry.steps.map(inline))}
   let api=data.apis.at(entry.family)
   if api.len()>0 {ds-table("api-"+entry.id,[#entry.title selected SDK interfaces],([Function],[Declaration]),
     api.map(a=>(code(a.name),code(a.signature))),widths:(1fr,2.8fr))}

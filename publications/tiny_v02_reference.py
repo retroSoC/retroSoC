@@ -145,6 +145,14 @@ def piolite_registers(fact: dict, root: Path) -> dict:
         group = row["group"]
         name = row["name"]
         fields = field_rows([tuple(field) for field in row["fields"]])
+        if name in {"IRQ_STATUS", "IRQ_ENABLE"}:
+            implemented = sum(
+                ((1 << (field["msb"] - field["lsb"] + 1)) - 1) << field["lsb"]
+                for field in fields if field["name"] != "Reserved"
+            )
+            irq_mask = re.search(r"\bAPB4_PIOLITE__IRQ_MASK\s+32'h([\da-fA-F_]+)", definitions)
+            if irq_mask is None or implemented != int(irq_mask[1], 16):
+                raise ValueError(f"TINY PIOLITE {name} fields differ from the implemented IRQ mask")
         reset = row["reset"]
         try:
             value = registers.number(reset)

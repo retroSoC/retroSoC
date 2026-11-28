@@ -88,6 +88,11 @@ The pin-description table above gives external function names and digital reset/
   data.gpio.map(g=>(str(g.pin),gpio-mode(g.alt0),gpio-mode(g.alt1))),widths:(0.4fr,1.85fr,1.85fr))
 Stop/drain the old producer, disable output enables and release ownership before changing routes.
 I2C needs external pull-ups and compatible levels. DVP, I2S, PWM, SPI and display routes share GPIO.
+#change-start("tiny-v02-piolite-integration-20261127-mux", "GPIO USER ownership and alternate functions")
+PIOLITE can acquire any of GPIO0–31 through the USER owner. ALT0 and ALT1 are the two peripheral
+function selections. A PIOLITE claim uses the same package terminal and must complete the GPIO handoff
+before driving it. See @piolite and @gpio.
+#change-end("tiny-v02-piolite-integration-20261127-mux")
 Boot XPI and JTAG use dedicated target groups.
 
 #pagebreak(weak: true)

@@ -9,7 +9,9 @@
 = System Architecture
 == Introduction <tiny-core>
 === Management Processor and Local Memory
+#change-start("tiny-v02-piolite-integration-20261127-functional", "Functional architecture and PIOLITE USER/stream paths")
 #functional-architecture()
+#change-end("tiny-v02-piolite-integration-20261127-functional")
 
 Hazard3 is hart zero. The locked dual-port wrapper selects the C and M extensions and disables A for TINY. Instruction fetch
 and load/store use independent AHB ports through separate local SRAM frontends; non-SRAM accesses use the tagged slow path.
@@ -106,6 +108,12 @@ does not authorize dropping traffic. PLL lock timeout returns SAFE24; stopped-so
 The @rcu chapter specifies commands, snapshots and recovery. Timing observation and digital profile availability remain
 separate from final physical closure.
 
+#change-start("tiny-v02-piolite-integration-20261127-clock", "PIOLITE clock and reset release conditions")
+PIOLITE uses the gated PCLK leaf at RCU target 15. Its idle vote requires released GPIO USER selections,
+inactive state machines, empty FIFOs and cleared DMA bindings, jobs and held transfers. GPIO target 1
+also requires all USER selections to be clear before it can gate. See @piolite.
+#change-end("tiny-v02-piolite-integration-20261127-clock")
+
 CPU WFI gating affects its leaf only. Debug hart reset drains CPU work while SRAM and other masters remain active.
 Warm system reset preserves SRAM payload and recorded cause/fault/debug state, returns SAFE24 and resets functional RTC/WDG
 state. SRAM contents are not initialized by reset; startup establishes initialized data and BSS. AON is a clock/control
@@ -133,7 +141,11 @@ The implemented mask is #code("0x" + ("00000000" + upper(str(data.facts.dma.Requ
 fabric master and does not use this table. Channel conventions are software leases, not separate physical engines.
 DMA V2.2 request bit 4 must be retained in both register and TCD programming. Stream, memory and SPI port admission have
 different legal transfer forms. PROCESS requires PPALite's exact armed direct DMA2 job; processed TCDs are rejected.
-See @dma, @spi and @ppalite for quotas, response drain and recovery.
+#change-start("tiny-v02-piolite-integration-20261127-dma-routes", "PIOLITE DMA endpoints and channel leases")
+PIOLITE TX14 transfers a memory word to a selected TX FIFO. RX15 transfers a selected RX FIFO word
+to memory. The request selects the endpoint; each active direction leases a distinct central DMA channel.
+See @dma, @piolite, @spi and @ppalite for admission, response drain and recovery.
+#change-end("tiny-v02-piolite-integration-20261127-dma-routes")
 #source-note("rtl/tiny/integration/soc_topology.json",title:"Interrupt, DMA and GPIO bindings")
 #source-note("crt/src/hal/dma_math.c",title:"TINY DMA transfer-kind and request validation")
 
@@ -151,13 +163,16 @@ substitute central-DMA completion for private-DMA completion. See @sdio and @dma
 #source-note("rtl/tiny/top/tiny_axi4_fabric.sv",title:"Active owners and target-local arbitration")
 
 == Peripheral Coexistence and Resource Conflicts <tiny-conflicts>
+#change-start("tiny-v02-piolite-integration-20261127-coexistence", "Shared pins and transport resources")
 #ds-table("coexistence",[Resource coexistence and route changes],([Use],[Owned resources],[Change/release condition]),(
   ([Audio],[GPIO12-17 ALT0; AUDIO; DMA6/7],[Stop/drain both directions and verify engine reset readiness.]),
   ([Camera],[GPIO12-23 ALT1; DMA2; CLKOUT; initialized PSRAM],[Excludes audio and conflicting PWM routes; complete frame and drain before consumers.]),
   ([Display],[GPIO27/28/31; GPIO30 D/C; DMA3],[D/C changes at clean held-CS boundaries; release only after wire/transport cleanup.]),
   ([NSS1 PSRAM],[Shared XPI engine; GPIO29 ALT0; slot1/LUT8-11],[Invalidate and reinitialize after reset or rate change.]),
   ([SD storage],[GPIO0-5; SDIO private DMA; SRAM bounce buffers],[Wait for command/data/status writeback; keep descriptors live.]),
+  ([PIOLITE],[Claimed USER GPIOs; TX14 and RX15 on distinct leased DMA channels],[Drain transport, disable both participating state machines and release the USER handoff before selecting a native or alternate function.]),
   ([Bulk services],[DMA3 shared by XPI/CRC/WS2812/display],[Serialize leases; WS ownership continues through wire completion.])),widths:(0.7fr,1.65fr,1.85fr))
+#change-end("tiny-v02-piolite-integration-20261127-coexistence")
 
 A route change is a lifecycle operation: stop admission, drain accepted payload, release drive enables,
 change the complete pad group, configure the new clock-dependent timings and then re-enable the consumer.

@@ -22,7 +22,9 @@
   #v(rhythm.cover-rule-gap)
   #line(length:100%,stroke:1.1pt+gold)
 = Product Brief
+#change-start("tiny-v02-piolite-integration-20261127-features", "GPIO and PIOLITE on the TINY feature list")
 == Features
+#change-end("tiny-v02-piolite-integration-20261127-features")
   #columns(2,gutter:rhythm.cover-gutter)[
     #set par(leading:rhythm.cover-leading,spacing:rhythm.cover-spacing)
     #set list(tight:false,spacing:rhythm.cover-list-spacing,body-indent:rhythm.cover-list-indent,marker:([•],[▪]))
@@ -48,7 +50,7 @@
 
     #colbreak()
     *Wired connectivity*
-    - *32 GPIOs* with atomic outputs, pin IRQs and two alternate-function selections.
+    - *32 GPIOs* with atomic outputs, pin IRQs, two alternate modes and PIOLITE USER ownership.
     - UART0 with *64-byte TX/RX FIFOs*, fractional baud and central-DMA requests.
     - I2C0 controller with 7/10-bit addressing and command and receive FIFOs.
     - SPI0 master modes 0–3 with *8/16-bit frames* and guarded V2.2 DMA admission.

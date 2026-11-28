@@ -4247,9 +4247,8 @@
           {
             "id": "p4",
             "direction": "in",
-            "width": null,
-            "side": "south",
-            "bundle": true
+            "width": 32,
+            "side": "south"
           },
           {
             "id": "pad_rx",
@@ -4260,6 +4259,12 @@
           {
             "id": "user_rx",
             "direction": "out",
+            "width": 32,
+            "side": "south"
+          },
+          {
+            "id": "user_oe",
+            "direction": "in",
             "width": 32,
             "side": "south"
           }
@@ -4402,7 +4407,7 @@
       },
       {
         "id": "user",
-        "title": "Restricted user interface\nTINY outputs tied zero",
+        "title": "PIOLITE USER\n32-bit value and OE",
         "x": 6.3,
         "y": 0.0,
         "w": 4.0,
@@ -4411,15 +4416,20 @@
           {
             "id": "p4",
             "direction": "out",
-            "width": null,
-            "side": "north",
-            "bundle": true
+            "width": 32,
+            "side": "north"
           },
           {
             "id": "user_rx",
             "direction": "in",
             "width": 32,
             "side": "north"
+          },
+          {
+            "id": "user_oe",
+            "direction": "out",
+            "width": 32,
+            "side": "south"
           }
         ],
         "sources": [
@@ -4553,12 +4563,20 @@
         "from": "user.p4",
         "to": "core.p4",
         "kind": "data",
-        "label": "OUT",
+        "label": "USER value /32",
         "style": "direct",
         "bindings": [
           {
             "file": "rtl/ip/peripheral/apb4_gpio.sv",
             "text": ".user_gpio(user_gpio)"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "assign u_user_gpio_if.do_o = s_piolite_gpio_value;"
+          },
+          {
+            "file": "rtl/ip/peripheral/gpio_core.sv",
+            "text": "user_select_i[pin] ? user_gpio.do_o[pin] : s_native_data[pin]"
           }
         ],
         "instance_ports": [
@@ -4593,11 +4611,32 @@
           {
             "file": "rtl/ip/peripheral/gpio_core.sv",
             "text": "assign user_gpio.di_i = s_input_filtered_q;"
+          },
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": ".gpio_input_i (u_user_gpio_if.di_i)"
+          }
+        ]
+      },
+      {
+        "from": "user.user_oe",
+        "to": "core.user_oe",
+        "kind": "data",
+        "label": "USER OE /32",
+        "style": "direct",
+        "bindings": [
+          {
+            "file": "rtl/tiny/top/retrosoc_tiny.sv",
+            "text": "assign u_user_gpio_if.oe_o = s_piolite_gpio_oe;"
+          },
+          {
+            "file": "rtl/ip/peripheral/gpio_core.sv",
+            "text": "user_select_i[pin] ? user_gpio.oe_o[pin] : s_native_oe[pin]"
           }
         ]
       }
     ],
-    "note": "The management/user register views share 32 GPIOs. TINY ties the user-interface drive outputs zero; shared wrapper ports do not create a selectable user core. Apply actual GPIO route and lock rules. GPIO OUT/IN are the 32 data lines; per-pin output enable, input mode and pull controls are additional pad controls. Register s_irq passes through gpio_core to gpio.irq_o; this IRQ is a SoC interface member, not an extra GPIO pad.",
+    "note": "PIOLITE drives the USER value and output-enable buses independently. GPIO suppresses pad OE during the ownership handoff and applies open-drain control at the pad. Filtered input returns to PIOLITE for SM sampling. The management and restricted USER register views address the same 32 GPIOs.",
     "title": "General-Purpose Input/Output (GPIO)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -4658,7 +4697,7 @@
             "id": "user-interface",
             "owner": "user",
             "ref": "user",
-            "title": "Restricted user interface\nTINY outputs tied zero\nIN / 32"
+            "title": "PIOLITE\nUSER port\nIN / 32"
           },
           {
             "id": "reg-registers",
@@ -4707,7 +4746,7 @@
           {
             "id": "core-pads",
             "owner": "core",
-            "title": "Output / OE mux\nopen drain",
+            "title": "Output / OE mux\nHandoff and open drain",
             "scope": "local-logic",
             "logic_source": {
               "file": "rtl/ip/peripheral/gpio_core.sv",
@@ -4896,13 +4935,12 @@
           {
             "id": "bound-4",
             "to": "core-pads",
-            "label": "OUT",
+            "label": "USER value /32",
             "kind": "data",
-            "width": null,
+            "width": 32,
             "parent_edge": 4,
             "net": "parent:user.p4",
-            "from": "user-interface",
-            "label_in_node": true
+            "from": "user-interface"
           },
           {
             "id": "bound-5",
@@ -4968,16 +5006,26 @@
                 ".irq_i             (s_irq),"
               ]
             }
+          },
+          {
+            "id": "user-oe",
+            "from": "user-interface",
+            "to": "core-pads",
+            "label": "USER OE /32",
+            "kind": "data",
+            "width": 32,
+            "parent_edge": 7,
+            "net": "parent:user.user_oe"
           }
         ],
         "review": "Reviewed functional projection of current product source; boxes may group local RTL logic and are not additional hardware instances.",
         "layout": {
-          "height": 118,
+          "height": 143,
           "boundary": [
             23.5,
             21.5,
             125,
-            95.0
+            119
           ],
           "nodes": {
             "boundary-clk_i": [
@@ -5257,11 +5305,11 @@
                 ],
                 [
                   154,
-                  116
+                  125
                 ],
                 [
                   22,
-                  116
+                  125
                 ],
                 [
                   22,
@@ -5279,7 +5327,12 @@
               "from": {
                 "side": "south",
                 "offset": 4
-              }
+              },
+              "label": [
+                72,
+                119.5,
+                29
+              ]
             },
             "bound-5": {
               "points": [
@@ -5416,6 +5469,47 @@
                 "side": "east",
                 "offset": 4
               }
+            },
+            "user-oe": {
+              "from": {
+                "side": "south",
+                "offset": 12
+              },
+              "to": {
+                "side": "south",
+                "offset": 6
+              },
+              "points": [
+                [
+                  162,
+                  108
+                ],
+                [
+                  162,
+                  136
+                ],
+                [
+                  16,
+                  136
+                ],
+                [
+                  16,
+                  58
+                ],
+                [
+                  32,
+                  58
+                ],
+                [
+                  32,
+                  52
+                ]
+              ],
+              "label": [
+                72,
+                130.5,
+                29
+              ]
             }
           },
           "groups": [],
@@ -5712,7 +5806,7 @@
       },
       {
         "id": "streams",
-        "title": "I2S / DVP / Crypto\nstream endpoints",
+        "title": "I2S, DVP, Crypto\nand PIOLITE streams",
         "x": 6.3,
         "y": 0,
         "w": 4.0,
@@ -5887,6 +5981,10 @@
           {
             "file": "rtl/ip/peripheral/apb4_dma.sv",
             "text": ".crypto_in_axis(crypto_in_axis)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".piolite_tx_axis (piolite_tx_axis)"
           }
         ]
       },
@@ -5908,11 +6006,15 @@
           {
             "file": "rtl/ip/peripheral/apb4_dma.sv",
             "text": ".crypto_out_axis(crypto_out_axis)"
+          },
+          {
+            "file": "rtl/ip/peripheral/apb4_dma.sv",
+            "text": ".piolite_rx_axis (piolite_rx_axis)"
           }
         ]
       }
     ],
-    "note": "TINY selects 8 channels and 32 payload words per channel. I2S/DVP/Crypto stream paths and SPI requests 16/17 retain their distinct admission and completion rules. The diagram shows selected paths, not an extra master per channel.",
+    "note": "Eight central channels share one AXI4 master. TX14 sends memory data to PIOLITE; RX15 writes PIOLITE data to memory. Each direction leases a distinct channel. I2S, DVP, Crypto and SPI16/17 retain their endpoint-specific admission and completion rules.",
     "title": "Direct Memory Access (DMA)",
     "block_diagram": {
       "style": "ip-block-v2",
@@ -5958,7 +6060,7 @@
       ],
       "review": "Functional source grouping; actual interfaces, widths and integration restrictions retain the bound circuit evidence. External context is outside the owned logical-IP boundary.",
       "titles": {
-        "streams": "Stream endpoints\nI2S TX / RX\nDVP RX\nCrypto IN / OUT"
+        "streams": "I2S TX/RX, DVP RX, Crypto IN/OUT and PIOLITE TX14/RX15"
       },
       "interfaces": [],
       "port_layout": "grouped",
@@ -5978,7 +6080,7 @@
               {
                 "id": "parent-controller",
                 "owner": "parent",
-                "title": "Channel scheduling\nlocal sequencing / staging\naxi read start ready\naxi read data",
+                "title": "Channel scheduler\naxi read start ready\naxi read data",
                 "scope": "local-logic",
                 "shape": "block",
                 "logic_source": {
@@ -6033,6 +6135,36 @@
                   "rst_n_i"
                 ],
                 "scope": "declared-boundary"
+              },
+              {
+                "id": "pio-tx",
+                "owner": "parent",
+                "title": "TX14 · memory to SM\nLease TX channel",
+                "logic_source": {
+                  "file": "rtl/ip/peripheral/dma_core.sv",
+                  "module": "dma_core",
+                  "symbols": [
+                    "piolite_tx_axis"
+                  ],
+                  "bindings": [
+                    "piolite_tx_axis.tdata = s_fifo_rdata[s_piolite_tx_channel]"
+                  ]
+                }
+              },
+              {
+                "id": "pio-rx",
+                "owner": "parent",
+                "title": "RX15 · SM to memory\nLease RX channel",
+                "logic_source": {
+                  "file": "rtl/ip/peripheral/dma_core.sv",
+                  "module": "dma_core",
+                  "symbols": [
+                    "piolite_rx_axis"
+                  ],
+                  "bindings": [
+                    "piolite_rx_axis.tdata"
+                  ]
+                }
               }
             ],
             "edges": [
@@ -6112,16 +6244,56 @@
                 "net": "rtl/ip/peripheral/dma_core.sv:rst_n_i",
                 "label_in_node": true,
                 "from": "boundary-rst_n_i"
+              },
+              {
+                "id": "pio-tx-payload",
+                "from": "u_data_fifo-stage",
+                "to": "pio-tx",
+                "label": "TX14",
+                "kind": "data",
+                "width": 32,
+                "source": {
+                  "file": "rtl/ip/peripheral/dma_core.sv",
+                  "module": "dma_core",
+                  "signals": [
+                    "piolite_tx_axis"
+                  ],
+                  "bindings": [
+                    "piolite_tx_axis.tdata = s_fifo_rdata[s_piolite_tx_channel]"
+                  ]
+                },
+                "net": "internal:pio-tx-payload",
+                "label_in_node": true
+              },
+              {
+                "id": "pio-rx-payload",
+                "from": "pio-rx",
+                "to": "u_data_fifo-stage",
+                "label": "RX15",
+                "kind": "data",
+                "width": 32,
+                "source": {
+                  "file": "rtl/ip/peripheral/dma_core.sv",
+                  "module": "dma_core",
+                  "signals": [
+                    "piolite_rx_axis"
+                  ],
+                  "bindings": [
+                    "piolite_rx_axis.tdata"
+                  ]
+                },
+                "net": "internal:pio-rx-payload",
+                "label_in_node": true
               }
             ],
             "review": "Reviewed functional projection of current product source; boxes may group local RTL logic and are not additional hardware instances.",
             "layout": {
-              "height": 73.0,
+              "height": 113,
               "boundary": [
                 23.5,
                 21.5,
                 125,
-                51.0
+                88
               ],
               "nodes": {
                 "boundary-clk_i": [
@@ -6153,6 +6325,18 @@
                   34,
                   30,
                   18
+                ],
+                "pio-tx": [
+                  78,
+                  81,
+                  34,
+                  22
+                ],
+                "pio-rx": [
+                  116,
+                  81,
+                  31,
+                  22
                 ]
               },
               "routes": {
@@ -6327,6 +6511,54 @@
                     "side": "east",
                     "offset": 4
                   }
+                },
+                "pio-tx-payload": {
+                  "from": {
+                    "side": "south",
+                    "offset": 8
+                  },
+                  "to": {
+                    "side": "north",
+                    "offset": 14
+                  },
+                  "points": [
+                    [
+                      124,
+                      52
+                    ],
+                    [
+                      124,
+                      72
+                    ],
+                    [
+                      92,
+                      72
+                    ],
+                    [
+                      92,
+                      81
+                    ]
+                  ]
+                },
+                "pio-rx-payload": {
+                  "from": {
+                    "side": "north",
+                    "offset": 22
+                  },
+                  "to": {
+                    "side": "south",
+                    "offset": 22
+                  },
+                  "points": [
+                    [
+                      138,
+                      81
+                    ],
+                    [
+                      138,
+                      52
+                    ]
+                  ]
                 }
               },
               "groups": [],
@@ -6341,7 +6573,8 @@
             "clk_i",
             "rst_n_i"
           ],
-          "boundary_review": "Only clock/reset/IRQ ports directly used by the selected named instances are repeated here. The primary retains the complete product boundary; named local-scope context connections remain in this detail."
+          "boundary_review": "Only clock/reset/IRQ ports directly used by the selected named instances are repeated here. The primary retains the complete product boundary; named local-scope context connections remain in this detail.",
+          "note": "The channel FIFOs feed TX14 for memory-to-PIOLITE transfers and accept RX15 for PIOLITE-to-memory transfers. The selected channels share the AXI transaction engine. A request selector identifies the stream endpoint; software leases a channel for each active direction."
         }
       ],
       "product": "tiny",
@@ -6357,7 +6590,7 @@
             "id": "streams-interface",
             "owner": "streams",
             "ref": "streams",
-            "title": "I2S\nDVP\nCrypto\nTX / 32"
+            "title": "I2S\nDVP\nCrypto\nPIOLITE\nTX14\nRX15\nTX / 32"
           },
           {
             "id": "memory-interface",
@@ -6540,7 +6773,7 @@
           {
             "id": "core-fifo",
             "owner": "core",
-            "title": "FIFO words\n8 \u00d7 32 \u00d7 32 bits\nstream input\nREAD / 32",
+            "title": "FIFO words\n8 × 32 × 32 bits\nstream input\nREAD / 32",
             "scope": "local-logic",
             "shape": "fifo",
             "logic_source": {
@@ -6558,7 +6791,7 @@
               ]
             },
             "instance_ref": "u_data_fifo",
-            "title_template": "FIFO words\n{channels} \u00d7 {fifo_words} \u00d7 {word_bits} bits\nstream input\nREAD / 32"
+            "title_template": "FIFO words\n{channels} × {fifo_words} × {word_bits} bits\nstream input\nREAD / 32"
           },
           {
             "id": "core-crc",
@@ -6584,7 +6817,7 @@
           {
             "id": "core-streams",
             "owner": "core",
-            "title": "Stream routing\nFIFO words\nI2S / DVP / Crypto\nRX / 32",
+            "title": "Stream routing\nFIFO words\nRX / 32",
             "scope": "local-logic",
             "shape": "block",
             "logic_source": {
@@ -16314,13 +16547,19 @@
     "nodes": [
       {
         "id": "reg",
-        "title": "APB4 session / loader\nregister and IMEM access",
+        "title": "APB4 registers and loader",
         "x": 0.0,
         "y": 7.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
-          {"id": "p0", "direction": "out", "width": 1, "side": "east"}
+          {
+            "id": "start",
+            "direction": "out",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          }
         ],
         "sources": [
           "rtl/ip/piolite/apb4_piolite.sv",
@@ -16329,17 +16568,44 @@
       },
       {
         "id": "sm",
-        "title": "Two state machines\nshared 32-word IMEM",
+        "title": "Instruction store, two state machines and FIFOs",
         "x": 6.3,
         "y": 7.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
-          {"id": "p0", "direction": "in", "width": 1, "side": "west"},
-          {"id": "p1", "direction": "in", "width": 32, "side": "west"},
-          {"id": "p2", "direction": "out", "width": 32, "side": "east"},
-          {"id": "p3", "direction": "out", "width": 32, "side": "east"},
-          {"id": "p4", "direction": "in", "width": 32, "side": "east"}
+          {
+            "id": "start",
+            "direction": "in",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          },
+          {
+            "id": "tx-push",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          },
+          {
+            "id": "rx-pop",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "sm-out",
+            "direction": "out",
+            "width": null,
+            "side": "east",
+            "bundle": true
+          },
+          {
+            "id": "guard-fault",
+            "direction": "in",
+            "width": 2,
+            "side": "west"
+          }
         ],
         "sources": [
           "rtl/ip/piolite/piolite_core.sv",
@@ -16348,102 +16614,145 @@
       },
       {
         "id": "dma",
-        "title": "DMA admission / transport\nTX14 / RX15",
+        "title": "DMA admission and held-word transport",
         "x": 0.0,
         "y": 3.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
-          {"id": "p0", "direction": "out", "width": 32, "side": "east"},
-          {"id": "p1", "direction": "in", "width": 32, "side": "east"}
+          {
+            "id": "tx-push",
+            "direction": "out",
+            "width": 32,
+            "side": "east"
+          },
+          {
+            "id": "rx-pop",
+            "direction": "in",
+            "width": 32,
+            "side": "west"
+          }
         ],
         "sources": [
           "rtl/ip/piolite/apb4_piolite.sv",
-          "rtl/ip/piolite/piolite_dma_adapter.sv"
+          "rtl/ip/piolite/piolite_dma_adapter.sv",
+          "rtl/ip/peripheral/dma_core.sv",
+          "rtl/ip/piolite/piolite_reg.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv"
         ]
       },
       {
         "id": "gpio",
-        "title": "GPIO ownership guard\nvalue / OE / input",
+        "title": "GPIO ownership and output qualification",
         "x": 12.6,
         "y": 3.0,
         "w": 4.0,
         "h": 1.8,
         "ports": [
-          {"id": "p0", "direction": "in", "width": 32, "side": "west"},
-          {"id": "p1", "direction": "out", "width": 32, "side": "west"}
+          {
+            "id": "sm-out",
+            "direction": "in",
+            "width": null,
+            "side": "west",
+            "bundle": true
+          },
+          {
+            "id": "guard-fault",
+            "direction": "out",
+            "width": 2,
+            "side": "east"
+          }
         ],
         "sources": [
           "rtl/ip/piolite/apb4_piolite.sv",
-          "rtl/ip/piolite/piolite_gpio_guard.sv"
+          "rtl/ip/piolite/piolite_gpio_guard.sv",
+          "rtl/tiny/top/retrosoc_tiny.sv",
+          "rtl/ip/peripheral/gpio_core.sv"
         ]
       }
     ],
     "edges": [
       {
-        "from": "reg.p0",
-        "to": "sm.p0",
-        "label": "PIOLITE control",
+        "from": "reg.start",
+        "to": "sm.start",
         "kind": "control",
-        "style": "zigzag",
+        "label": "SM commands",
+        "style": "direct",
         "bindings": [
-          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": "piolite_if u_ctrl ();"}
-        ],
-        "zigzag-dir": "horizontal"
+          {
+            "file": "rtl/ip/piolite/piolite_core.sv",
+            "text": ".start_i (ctrl.cmd_start[index])"
+          }
+        ]
       },
       {
-        "from": "dma.p0",
-        "to": "sm.p1",
-        "label": "TX words /32",
+        "from": "dma.tx-push",
+        "to": "sm.tx-push",
         "kind": "data",
-        "style": "zigzag",
+        "label": "TX /32",
+        "style": "direct",
         "bindings": [
-          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".tx_data_i(dma_tx_data_i)"}
-        ],
-        "zigzag-dir": "horizontal"
+          {
+            "file": "rtl/ip/piolite/apb4_piolite.sv",
+            "text": ".dma_tx_data_i (s_dma_tx_fifo_data)"
+          }
+        ]
       },
       {
-        "from": "sm.p2",
-        "to": "dma.p1",
-        "label": "RX words /32",
+        "from": "sm.rx-pop",
+        "to": "dma.rx-pop",
         "kind": "data",
-        "style": "zigzag",
+        "label": "RX /32",
+        "style": "direct",
         "bindings": [
-          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".rx_data_o(dma_rx_data_o)"}
-        ],
-        "zigzag-dir": "horizontal"
+          {
+            "file": "rtl/ip/piolite/apb4_piolite.sv",
+            "text": ".dma_rx_data_o (s_dma_rx_fifo_data)"
+          }
+        ]
       },
       {
-        "from": "sm.p3",
-        "to": "gpio.p0",
-        "label": "Output value / OE /32",
-        "kind": "data",
-        "style": "zigzag",
+        "from": "sm.sm-out",
+        "to": "gpio.sm-out",
+        "kind": "control",
+        "label": "OUT, OE",
+        "style": "direct",
         "bindings": [
-          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".gpio_oe_o(gpio_oe_o)"}
-        ],
-        "zigzag-dir": "horizontal"
+          {
+            "file": "rtl/ip/piolite/apb4_piolite.sv",
+            "text": ".runtime_i (u_ctrl.runtime)"
+          }
+        ]
       },
       {
-        "from": "gpio.p1",
-        "to": "sm.p4",
-        "label": "GPIO input /32",
-        "kind": "data",
-        "style": "zigzag",
+        "from": "gpio.guard-fault",
+        "to": "sm.guard-fault",
+        "kind": "control",
+        "label": "Fault",
+        "style": "direct",
         "bindings": [
-          {"file": "rtl/ip/piolite/apb4_piolite.sv", "text": ".pin_inputs_i(gpio_input_i)"}
-        ],
-        "zigzag-dir": "horizontal"
+          {
+            "file": "rtl/ip/piolite/apb4_piolite.sv",
+            "text": ".guard_fault_i (s_guard_fault)"
+          }
+        ]
       }
     ],
-    "note": "Two state machines share 32 instruction words. GPIO USER ownership qualifies execution and OE; central DMA14/15 uses bounded per-job admission, stable beats and reset/drain recovery. No pin rate or physical timing is implied.",
+    "note": "Each state machine has its own TX and RX FIFOs. Peripheral register access, instruction loading and execution use the PIOLITE PCLK leaf. TX14 and RX15 use the central DMA. The USER input is sampled independently of the output guard; the guard qualifies each output enable.",
     "block_diagram": {
       "style": "ip-block-v2",
       "title": "PIOLITE",
       "rows": [
-        ["reg"],
-        ["sm"],
-        ["dma", "gpio"]
+        [
+          "reg"
+        ],
+        [
+          "sm"
+        ],
+        [
+          "dma",
+          "gpio"
+        ]
       ],
       "external": [],
       "buses": [],
@@ -16451,11 +16760,26 @@
         "rtl/ip/piolite/apb4_piolite.sv"
       ],
       "ports": [
-        {"name": "clk_i", "direction": "input", "role": "clock", "file": "rtl/ip/piolite/apb4_piolite.sv"},
-        {"name": "rst_n_i", "direction": "input", "role": "reset", "file": "rtl/ip/piolite/apb4_piolite.sv"},
-        {"name": "irq_o", "direction": "output", "role": "irq", "file": "rtl/ip/piolite/apb4_piolite.sv"}
+        {
+          "name": "clk_i",
+          "direction": "input",
+          "role": "clock",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        },
+        {
+          "name": "rst_n_i",
+          "direction": "input",
+          "role": "reset",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        },
+        {
+          "name": "irq_o",
+          "direction": "output",
+          "role": "irq",
+          "file": "rtl/ip/piolite/apb4_piolite.sv"
+        }
       ],
-      "review": "Two state machines and shared instruction memory with guarded GPIO and bounded central DMA. External pin and memory timing remain outside this logical-IP boundary.",
+      "review": "PCLK contains the APB4 register bank, a shared instruction store, two state machines with private FIFOs, the USER output guard and the DMA adapter. The pad input reaches both state machines independently of the output guard.",
       "titles": {},
       "interfaces": [
         {
@@ -16464,31 +16788,59 @@
           "side": "left",
           "node": "reg",
           "file": "rtl/ip/piolite/apb4_piolite.sv",
-          "declaration": "apb4_if.slave"
+          "declaration": "apb4_if.slave",
+          "port": "apb4",
+          "direction": "input"
         },
         {
-          "protocol": "AXI4-Stream TX",
+          "protocol": "TX14",
           "width": 32,
           "side": "left",
           "node": "dma",
           "file": "rtl/ip/piolite/apb4_piolite.sv",
-          "declaration": "logic [31:0]"
+          "declaration": "31:0]",
+          "port": "dma_tx_data_i",
+          "direction": "input"
         },
         {
-          "protocol": "AXI4-Stream RX",
+          "protocol": "RX15",
           "width": 32,
-          "side": "right",
+          "side": "left",
           "node": "dma",
           "file": "rtl/ip/piolite/apb4_piolite.sv",
-          "declaration": "logic [31:0]"
+          "declaration": "31:0]",
+          "port": "dma_rx_data_o",
+          "direction": "output"
         },
         {
-          "protocol": "USER GPIO",
+          "protocol": "USER input",
+          "width": 32,
+          "side": "right",
+          "node": "sm",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "31:0]",
+          "port": "gpio_input_i",
+          "direction": "input"
+        },
+        {
+          "protocol": "USER value",
           "width": 32,
           "side": "right",
           "node": "gpio",
           "file": "rtl/ip/piolite/apb4_piolite.sv",
-          "declaration": "logic [31:0]"
+          "declaration": "31:0]",
+          "port": "gpio_value_o",
+          "direction": "output"
+        },
+        {
+          "protocol": "USER OE",
+          "width": 32,
+          "side": "right",
+          "node": "gpio",
+          "file": "rtl/ip/piolite/apb4_piolite.sv",
+          "declaration": "31:0]",
+          "port": "gpio_oe_o",
+          "direction": "output"
         }
       ],
       "port_layout": "grouped",
@@ -16497,325 +16849,2252 @@
       "functional": {
         "nodes": [
           {
-            "id": "reg-registers",
+            "id": "csr",
             "owner": "reg",
-            "title": "PIO-lite\nAPB and loader",
-            "scope": "local-logic",
+            "title": "APB4 registers\nLoader and SM commands",
             "logic_source": {
               "file": "rtl/ip/piolite/piolite_reg.sv",
               "module": "piolite_reg",
-              "symbols": ["s_req_accept", "s_access_err"],
+              "symbols": [
+                "s_req_accept"
+              ],
               "bindings": [
-                "assign s_req_accept        = s_req && !s_ready_q;",
-                "s_resp_err_d = s_req_accept ? s_access_err : s_resp_err_q;"
+                "assign s_req_accept = s_req && !s_ready_q;"
               ]
             }
           },
           {
-            "id": "sm-core",
+            "id": "irq",
+            "owner": "reg",
+            "title": "IRQ enables\nEvents, flags, watermarks",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "symbols": [
+                "s_irq_sources"
+              ],
+              "bindings": [
+                "assign irq_o = ((s_irq_sources & s_irq_en_q) != 28'd0);"
+              ]
+            }
+          },
+          {
+            "id": "imem",
             "owner": "sm",
-            "title": "PIO-lite\nTwo state machines",
-            "scope": "local-logic",
+            "title": "Shared IMEM\n32 × 16 bits",
             "logic_source": {
               "file": "rtl/ip/piolite/piolite_core.sv",
               "module": "piolite_core",
-              "symbols": ["s_flags_d", "s_flags_q"],
+              "symbols": [
+                "u_imem"
+              ],
               "bindings": [
-                "s_flags_d = ctrl.cmd_block_reset ? 32'd0 :",
-                "assign ctrl.flags = s_flags_q[3:0];"
+                "piolite_imem u_imem ("
               ]
-            }
+            },
+            "scope": "rtl-instance"
           },
           {
-            "id": "dma-transport",
-            "owner": "dma",
-            "title": "PIO-lite\nHeld-beat transport",
-            "scope": "local-logic",
+            "id": "sm",
+            "owner": "sm",
+            "title": "SM0 and SM1\nPC, divider, ISR / OSR",
             "logic_source": {
-              "file": "rtl/ip/piolite/piolite_dma_adapter.sv",
-              "module": "piolite_dma_adapter",
-              "symbols": ["s_tx_held_d", "s_tx_held_q"],
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": [
+                "u_sm"
+              ],
               "bindings": [
-                "s_tx_held_d = s_tx_held_q;",
-                "assign tx_held_o = s_tx_held_q;"
+                "piolite_sm u_sm ("
+              ]
+            },
+            "scope": "rtl-instance"
+          },
+          {
+            "id": "fifos",
+            "owner": "sm",
+            "title": "Per state machine\nTX FIFO: 8 × 32\nRX FIFO: 8 × 32",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": [
+                "u_tx_fifo",
+                "u_rx_fifo"
+              ],
+              "bindings": [
+                "piolite_fifo u_tx_fifo (",
+                "piolite_fifo u_rx_fifo ("
               ]
             }
           },
           {
-            "id": "gpio-guard",
+            "id": "guard",
             "owner": "gpio",
-            "title": "PIO-lite\nGPIO readiness guard",
-            "scope": "local-logic",
+            "title": "GPIO ownership guard\nPer-pin drive masks",
             "logic_source": {
               "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
               "module": "piolite_gpio_guard",
-              "symbols": ["s_claimed_ready"],
+              "symbols": [
+                "s_claimed_ready"
+              ],
               "bindings": [
                 "assign s_claimed_ready = user_select_i & user_status_i & ~filter_enable_i;"
               ]
             }
           },
           {
-            "id": "if-apb",
+            "id": "adapter",
+            "owner": "dma",
+            "title": "DMA stream adapter\nBound SM and channel\nTX / RX held words",
+            "logic_source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "symbols": [
+                "u_dma_adapter"
+              ],
+              "bindings": [
+                "piolite_dma_adapter u_dma_adapter ("
+              ]
+            },
+            "scope": "rtl-instance"
+          },
+          {
+            "id": "idle",
+            "owner": "gpio",
+            "title": "RCU idle interlock\nHeld / closing\nUSER, SM, DMA idle",
+            "logic_source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "symbols": [
+                "lifecycle_idle_o"
+              ],
+              "bindings": [
+                "assign lifecycle_idle_o = (user_select_i == 32'd0) && !(|s_session_live) &&"
+              ]
+            }
+          },
+          {
+            "id": "apb",
             "owner": "reg",
             "title": "APB4 /32",
-            "interface_refs": [0]
+            "interface_refs": [
+              0
+            ],
+            "side": "left"
           },
           {
-            "id": "if-tx",
+            "id": "tx",
             "owner": "dma",
-            "title": "DMA TX /32",
-            "interface_refs": [1]
+            "title": "TX14 /32",
+            "interface_refs": [
+              1
+            ],
+            "side": "left"
           },
           {
-            "id": "if-rx",
+            "id": "rx",
             "owner": "dma",
-            "title": "DMA RX /32",
-            "side": "right",
-            "interface_refs": [2]
+            "title": "RX15 /32",
+            "interface_refs": [
+              2
+            ],
+            "side": "left"
           },
           {
-            "id": "if-gpio",
+            "id": "input",
+            "owner": "sm",
+            "title": "GPIO input /32",
+            "interface_refs": [
+              3
+            ],
+            "side": "right"
+          },
+          {
+            "id": "value",
             "owner": "gpio",
-            "title": "USER GPIO /32",
-            "side": "right",
-            "interface_refs": [3]
+            "title": "Value /32",
+            "interface_refs": [
+              4
+            ],
+            "side": "right"
           },
           {
-            "id": "if-clock-reset",
-            "owner": "reg",
-            "title": "PCLK / reset",
-            "boundary_members": ["clk_i", "rst_n_i"]
+            "id": "oe",
+            "owner": "gpio",
+            "title": "OE /32",
+            "interface_refs": [
+              5
+            ],
+            "side": "right"
           },
           {
-            "id": "if-irq",
+            "id": "clock-pin",
             "owner": "reg",
-            "title": "IRQ",
-            "boundary_members": ["irq_o"]
+            "title": "clk_i",
+            "boundary_members": [
+              "clk_i"
+            ]
+          },
+          {
+            "id": "reset-pin",
+            "owner": "reg",
+            "title": "rst_n_i",
+            "boundary_members": [
+              "rst_n_i"
+            ]
+          },
+          {
+            "id": "irq24",
+            "owner": "reg",
+            "title": "IRQ24",
+            "boundary_members": [
+              "irq_o"
+            ]
+          },
+          {
+            "id": "rcu",
+            "owner": "gpio",
+            "title": "RCU target 15",
+            "context": true,
+            "logic_source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "symbols": [
+                "s_piolite_lifecycle_idle"
+              ],
+              "bindings": [
+                "assign s_periph_idle[15] = s_piolite_lifecycle_idle && !(|s_gpio_user_select);"
+              ]
+            }
+          },
+          {
+            "id": "handoff",
+            "owner": "gpio",
+            "title": "GPIO register bank\nUSER selection and handoff",
+            "logic_source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "symbols": [
+                "s_piolite_gpio_user_status"
+              ],
+              "bindings": [
+                "s_gpio_user_select & ~s_gpio_user_handoff"
+              ]
+            }
+          },
+          {
+            "id": "gstatus",
+            "owner": "gpio",
+            "title": "Stable USER ownership\nFilter off; GPIO leaf ready",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "symbols": [
+                "s_ready_ok"
+              ],
+              "bindings": [
+                "gpio_ready_i && ((cfg_i[index].claim_mask & ~user_status_i) == 32'd0)"
+              ]
+            }
+          },
+          {
+            "id": "masks",
+            "owner": "gpio",
+            "title": "Per-SM configuration\nClaim mask and output mask",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "symbols": [
+                "cfg_i"
+              ],
+              "bindings": [
+                "cfg_i[index].claim_mask &"
+              ]
+            }
+          },
+          {
+            "id": "qualify",
+            "owner": "gpio",
+            "title": "PIOLITE guard\nQualify OE and signal faults",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "symbols": [
+                "gpio_oe_o"
+              ],
+              "bindings": [
+                "gpio_oe_o |= runtime_i[index].output_oe & cfg_i[index].claim_mask"
+              ]
+            }
+          },
+          {
+            "id": "pads",
+            "owner": "gpio",
+            "title": "GPIO output mux and pads\nUSER data / OE; open drain",
+            "logic_source": {
+              "file": "rtl/ip/peripheral/gpio_core.sv",
+              "module": "gpio_core",
+              "symbols": [
+                "s_selected_oe"
+              ],
+              "bindings": [
+                "user_select_i[pin] ? user_gpio.oe_o[pin] : s_native_oe[pin]"
+              ]
+            }
+          },
+          {
+            "id": "insample",
+            "owner": "sm",
+            "title": "GPIO input to both SMs\nSynchronize and sample",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": [
+                "pin_inputs_i"
+              ],
+              "bindings": [
+                ".pin_inputs_i (pin_inputs_i)"
+              ]
+            }
+          },
+          {
+            "id": "fault-stop",
+            "owner": "sm",
+            "title": "SM fault and CLOSING\nReacquire before restarting",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": [
+                "guard_fault_i"
+              ],
+              "bindings": [
+                ".guard_fault_i (guard_fault_i[index])"
+              ]
+            }
+          },
+          {
+            "id": "bind",
+            "owner": "reg",
+            "title": "TX_BIND / RX_BIND\nSM index and leased channel",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "symbols": [
+                "s_bind_ok"
+              ],
+              "bindings": [
+                "apb4.pwdata[10:8] == s_rx_bind_q[10:8]"
+              ]
+            }
+          },
+          {
+            "id": "admit",
+            "owner": "dma",
+            "title": "Per-channel admission\nGuard ready and SM open",
+            "logic_source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "symbols": [
+                "dma_tx_channel_admit_o"
+              ],
+              "bindings": [
+                "dma_tx_channel_admit_o[u_ctrl.tx_bind[10:8]] = 1'b1"
+              ]
+            }
+          },
+          {
+            "id": "memory",
+            "owner": "dma",
+            "title": "Central DMA job\nMemory read / write responses",
+            "logic_source": {
+              "file": "rtl/ip/peripheral/dma_core.sv",
+              "module": "dma_core",
+              "symbols": [
+                "piolite_tx_job_o"
+              ],
+              "bindings": [
+                "piolite_tx_axis.tvalid ="
+              ]
+            }
+          },
+          {
+            "id": "hold",
+            "owner": "dma",
+            "title": "PIOLITE word staging\nTX offer / RX held register",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_dma_adapter.sv",
+              "module": "piolite_dma_adapter",
+              "symbols": [
+                "s_rx_held_q"
+              ],
+              "bindings": [
+                "rx_valid_o = s_rx_held_q",
+                "s_tx_accept = tx_valid_i && tx_ready_o"
+              ]
+            }
+          },
+          {
+            "id": "tails",
+            "owner": "dma",
+            "title": "Close and drain\nDisable / unbind when clear",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "symbols": [
+                "s_bind_ok"
+              ],
+              "bindings": [
+                "tx_job_i || tx_held_i || tx_closing_i"
+              ]
+            }
+          },
+          {
+            "id": "queues",
+            "owner": "sm",
+            "title": "Selected SM FIFOs\nPush TX; pop RX when accepted",
+            "logic_source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "symbols": [
+                "s_tx_push_accept"
+              ],
+              "bindings": [
+                "dma_tx_push_i && s_tx_push_accept[dma_tx_sm_i]"
+              ]
+            }
           }
         ],
         "edges": [
           {
-            "id": "reg-control",
-            "from": "reg-registers",
-            "to": "sm-core",
-            "kind": "control",
-            "label": "PIOLITE ctrl",
-            "net": "parent:reg.p0",
-            "parent_edge": 0,
+            "id": "apb-access",
+            "from": "apb",
+            "to": "csr",
+            "kind": "data",
+            "label": "APB4 /32",
+            "width": 32,
+            "interface": 0,
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:0"
+          },
+          {
+            "id": "clock",
+            "from": "clock-pin",
+            "to": "csr",
+            "kind": "clock",
+            "label": "clk_i",
             "width": 1,
+            "boundary": true,
+            "boundary_signals": [
+              "clk_i"
+            ],
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:clk_i"
+          },
+          {
+            "id": "reset",
+            "from": "reset-pin",
+            "to": "csr",
+            "kind": "reset",
+            "label": "rst_n_i",
+            "width": 1,
+            "boundary": true,
+            "boundary_signals": [
+              "rst_n_i"
+            ],
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:rst_n_i"
+          },
+          {
+            "id": "enable",
+            "from": "csr",
+            "to": "irq",
+            "kind": "control",
+            "label": "IRQ mask",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "signals": [
+                "s_irq_en_q"
+              ],
+              "bindings": [
+                "s_irq_sources & s_irq_en_q"
+              ]
+            },
+            "net": "internal:enable"
+          },
+          {
+            "id": "irq24-out",
+            "from": "irq",
+            "to": "irq24",
+            "kind": "irq",
+            "label": "IRQ24",
+            "width": 1,
+            "boundary": true,
+            "boundary_signals": [
+              "irq_o"
+            ],
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:irq_o"
+          },
+          {
+            "id": "load",
+            "from": "csr",
+            "to": "imem",
+            "kind": "data",
+            "label": "Write /16",
+            "width": 16,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "u_imem"
+              ],
+              "bindings": [
+                ".write_data_i (ctrl.imem_write_data)"
+              ]
+            },
+            "net": "internal:load"
+          },
+          {
+            "id": "start",
+            "from": "csr",
+            "to": "sm",
+            "kind": "control",
+            "label": "SM commands",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "u_sm"
+              ],
+              "bindings": [
+                ".start_i (ctrl.cmd_start[index])"
+              ]
+            },
+            "net": "parent:reg.start",
+            "parent_edge": 0
+          },
+          {
+            "id": "events",
+            "from": "sm",
+            "to": "irq",
+            "kind": "status",
+            "label": "Events",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "signals": [
+                "s_irq_sources"
+              ],
+              "bindings": [
+                "ctrl.runtime[index].events & s_event_en_q[index]"
+              ]
+            },
+            "net": "internal:events"
+          },
+          {
+            "id": "fetch",
+            "from": "imem",
+            "to": "sm",
+            "kind": "data",
+            "label": "Fetch /16",
+            "width": 16,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "s_instruction_data"
+              ],
+              "bindings": [
+                ".instruction_i (s_instruction_data[index])"
+              ]
+            },
+            "net": "internal:fetch"
+          },
+          {
+            "id": "pad-sample",
+            "from": "input",
+            "to": "sm",
+            "kind": "data",
+            "label": "GPIO input /32",
+            "width": 32,
+            "interface": 3,
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:3"
+          },
+          {
+            "id": "sm-out",
+            "from": "sm",
+            "to": "guard",
+            "kind": "control",
+            "label": "OUT, OE",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "signals": [
+                "gpio_oe_o"
+              ],
+              "bindings": [
+                "gpio_oe_o |= runtime_i[index].output_oe"
+              ]
+            },
+            "net": "parent:sm.sm-out",
+            "parent_edge": 3
+          },
+          {
+            "id": "guard-fault",
+            "from": "guard",
+            "to": "sm",
+            "kind": "status",
+            "label": "Fault",
+            "width": 2,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "guard_fault_i"
+              ],
+              "bindings": [
+                ".guard_fault_i (guard_fault_i[index])"
+              ]
+            },
+            "net": "parent:gpio.guard-fault",
+            "parent_edge": 4
+          },
+          {
+            "id": "value-out",
+            "from": "guard",
+            "to": "value",
+            "kind": "data",
+            "label": "Value /32",
+            "width": 32,
+            "interface": 4,
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:4"
+          },
+          {
+            "id": "oe-out",
+            "from": "guard",
+            "to": "oe",
+            "kind": "data",
+            "label": "OE /32",
+            "width": 32,
+            "interface": 5,
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:5"
+          },
+          {
+            "id": "sm-tx",
+            "from": "fifos",
+            "to": "sm",
+            "kind": "data",
+            "label": "TX pop /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "s_tx_pop_data"
+              ],
+              "bindings": [
+                ".tx_data_i (s_tx_pop_data[index])"
+              ]
+            },
+            "net": "internal:sm-tx"
+          },
+          {
+            "id": "sm-rx",
+            "from": "sm",
+            "to": "fifos",
+            "kind": "data",
+            "label": "RX push /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_core.sv",
+              "module": "piolite_core",
+              "signals": [
+                "s_sm_rx_data"
+              ],
+              "bindings": [
+                ".rx_data_o (s_sm_rx_data[index])"
+              ]
+            },
+            "net": "internal:sm-rx"
+          },
+          {
+            "id": "tx-push",
+            "from": "adapter",
+            "to": "fifos",
+            "kind": "data",
+            "label": "TX /32",
+            "width": 32,
             "source": {
               "file": "rtl/ip/piolite/apb4_piolite.sv",
               "module": "apb4_piolite",
-              "signals": ["u_ctrl"],
-              "bindings": ["piolite_if u_ctrl ();"]
-            }
+              "signals": [
+                "s_dma_tx_fifo_data"
+              ],
+              "bindings": [
+                ".dma_tx_data_i (s_dma_tx_fifo_data)"
+              ]
+            },
+            "net": "parent:dma.tx-push",
+            "parent_edge": 1
           },
           {
-            "id": "dma-tx",
-            "from": "dma-transport",
-            "to": "sm-core",
+            "id": "rx-pop",
+            "from": "fifos",
+            "to": "adapter",
             "kind": "data",
-            "label": "TX words /32",
-            "net": "parent:dma.p0",
-            "parent_edge": 1,
-            "width": 32
+            "label": "RX /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "signals": [
+                "s_dma_rx_fifo_data"
+              ],
+              "bindings": [
+                ".dma_rx_data_o (s_dma_rx_fifo_data)"
+              ]
+            },
+            "net": "parent:sm.rx-pop",
+            "parent_edge": 2
           },
           {
-            "id": "dma-rx",
-            "from": "sm-core",
-            "to": "dma-transport",
+            "id": "tx14",
+            "from": "tx",
+            "to": "adapter",
             "kind": "data",
-            "label": "RX words /32",
-            "net": "parent:sm.p2",
-            "parent_edge": 2,
-            "width": 32
-          },
-          {
-            "id": "gpio-output",
-            "from": "sm-core",
-            "to": "gpio-guard",
-            "kind": "data",
-            "label": "Output value / OE /32",
-            "net": "parent:sm.p3",
-            "parent_edge": 3,
-            "width": 32
-          },
-          {
-            "id": "gpio-input",
-            "from": "gpio-guard",
-            "to": "sm-core",
-            "kind": "data",
-            "label": "GPIO input /32",
-            "net": "parent:gpio.p1",
-            "parent_edge": 4,
-            "width": 32
-          },
-          {
-            "id": "apb-interface",
-            "from": "if-apb",
-            "to": "reg-registers",
-            "kind": "data",
-            "label": "APB4 /32",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:0",
-            "interface": 0,
-            "width": 32
-          },
-          {
-            "id": "tx-interface",
-            "from": "if-tx",
-            "to": "dma-transport",
-            "kind": "data",
-            "label": "DMA TX /32",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:1",
+            "label": "TX14 /32",
+            "width": 32,
             "interface": 1,
-            "width": 32
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:1"
           },
           {
-            "id": "rx-interface",
-            "from": "dma-transport",
-            "to": "if-rx",
+            "id": "rx15",
+            "from": "adapter",
+            "to": "rx",
             "kind": "data",
-            "label": "DMA RX /32",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:2",
+            "label": "RX15 /32",
+            "width": 32,
             "interface": 2,
-            "width": 32
+            "label_in_node": true,
+            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:2"
           },
           {
-            "id": "gpio-interface",
-            "from": "gpio-guard",
-            "to": "if-gpio",
+            "id": "held",
+            "from": "adapter",
+            "to": "idle",
+            "kind": "status",
+            "label": "Held / closing",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "signals": [
+                "s_tx_held"
+              ],
+              "bindings": [
+                "!s_tx_held && !s_rx_held && !s_tx_closing && !s_rx_closing"
+              ]
+            },
+            "label_in_node": true,
+            "net": "internal:held"
+          },
+          {
+            "id": "lifecycle",
+            "from": "idle",
+            "to": "rcu",
+            "kind": "status",
+            "label": "RCU target 15",
+            "width": null,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "s_periph_idle"
+              ],
+              "bindings": [
+                "s_periph_idle[15] = s_piolite_lifecycle_idle && !(|s_gpio_user_select)"
+              ]
+            },
+            "label_in_node": true,
+            "net": "internal:lifecycle"
+          },
+          {
+            "id": "owner-status",
+            "from": "handoff",
+            "to": "gstatus",
+            "kind": "status",
+            "label": "USER active",
+            "width": null,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "s_piolite_gpio_user_status"
+              ],
+              "bindings": [
+                "s_gpio_user_select & ~s_gpio_user_handoff"
+              ]
+            },
+            "net": "internal:owner-status"
+          },
+          {
+            "id": "ready",
+            "from": "gstatus",
+            "to": "qualify",
+            "kind": "control",
+            "label": "Claim ready",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "signals": [
+                "start_guard_ok_o"
+              ],
+              "bindings": [
+                "s_ownership_ok[index] && s_ready_ok[index]"
+              ]
+            },
+            "net": "internal:ready"
+          },
+          {
+            "id": "claim",
+            "from": "masks",
+            "to": "qualify",
+            "kind": "control",
+            "label": "Claim / OE",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "signals": [
+                "gpio_oe_o"
+              ],
+              "bindings": [
+                "cfg_i[index].output_mask & s_claimed_ready"
+              ]
+            },
+            "net": "internal:claim"
+          },
+          {
+            "id": "value",
+            "from": "qualify",
+            "to": "pads",
             "kind": "data",
-            "label": "USER GPIO /32",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:interface:3",
-            "interface": 3,
-            "width": 32
+            "label": "Value /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "s_piolite_gpio_value"
+              ],
+              "bindings": [
+                "assign u_user_gpio_if.do_o = s_piolite_gpio_value"
+              ]
+            },
+            "net": "internal:value"
           },
           {
-            "id": "clock-boundary",
-            "from": "if-clock-reset",
-            "to": "reg-registers",
-            "kind": "clock",
-            "label": "clk_i",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:clk_i",
-            "boundary": true,
-            "boundary_signals": ["clk_i"]
+            "id": "oe",
+            "from": "qualify",
+            "to": "pads",
+            "kind": "data",
+            "label": "OE /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "s_piolite_gpio_oe"
+              ],
+              "bindings": [
+                "assign u_user_gpio_if.oe_o = s_piolite_gpio_oe"
+              ]
+            },
+            "net": "internal:oe"
           },
           {
-            "id": "reset-boundary",
-            "from": "if-clock-reset",
-            "to": "reg-registers",
-            "kind": "reset",
-            "label": "rst_n_i",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:rst_n_i",
-            "boundary": true,
-            "boundary_signals": ["rst_n_i"]
+            "id": "sample",
+            "from": "pads",
+            "to": "insample",
+            "kind": "data",
+            "label": "Input /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "u_user_gpio_if"
+              ],
+              "bindings": [
+                ".gpio_input_i (u_user_gpio_if.di_i)"
+              ]
+            },
+            "net": "internal:sample"
           },
           {
-            "id": "irq-boundary",
-            "from": "reg-registers",
-            "to": "if-irq",
-            "kind": "irq",
-            "label": "irq_o",
-            "net": "rtl/ip/piolite/apb4_piolite.sv:irq_o",
-            "boundary": true,
-            "boundary_signals": ["irq_o"]
+            "id": "fault-live",
+            "from": "qualify",
+            "to": "fault-stop",
+            "kind": "status",
+            "label": "Fault",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_gpio_guard.sv",
+              "module": "piolite_gpio_guard",
+              "signals": [
+                "fault_valid_o"
+              ],
+              "bindings": [
+                "session_live_i[index] && !(s_ownership_ok[index] && s_ready_ok[index])"
+              ]
+            },
+            "net": "internal:fault-live"
+          },
+          {
+            "id": "lease",
+            "from": "bind",
+            "to": "admit",
+            "kind": "control",
+            "label": "SM / channel",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "signals": [
+                "dma_tx_admit_o"
+              ],
+              "bindings": [
+                "u_ctrl.tx_bind[31] && !s_tx_closing && u_ctrl.start_guard_ok[u_ctrl.tx_bind[0]]"
+              ]
+            },
+            "net": "internal:lease"
+          },
+          {
+            "id": "dma-grant",
+            "from": "admit",
+            "to": "memory",
+            "kind": "control",
+            "label": "Selected lease",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/peripheral/dma_core.sv",
+              "module": "dma_core",
+              "signals": [
+                "piolite_tx_admit_i"
+              ],
+              "bindings": [
+                "!piolite_tx_admit_i[channel]"
+              ]
+            },
+            "net": "internal:dma-grant"
+          },
+          {
+            "id": "tx-stream",
+            "from": "memory",
+            "to": "hold",
+            "kind": "data",
+            "label": "TX14 /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "u_piolite_tx_axis_if"
+              ],
+              "bindings": [
+                ".dma_tx_data_i (u_piolite_tx_axis_if.tdata)"
+              ]
+            },
+            "net": "internal:tx-stream"
+          },
+          {
+            "id": "rx-stream",
+            "from": "hold",
+            "to": "memory",
+            "kind": "data",
+            "label": "RX15 /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/tiny/top/retrosoc_tiny.sv",
+              "module": "retrosoc_tiny",
+              "signals": [
+                "u_piolite_rx_axis_if"
+              ],
+              "bindings": [
+                ".dma_rx_data_o (u_piolite_rx_axis_if.tdata)"
+              ]
+            },
+            "net": "internal:rx-stream"
+          },
+          {
+            "id": "tx-fifo",
+            "from": "hold",
+            "to": "queues",
+            "kind": "data",
+            "label": "Push /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_dma_adapter.sv",
+              "module": "piolite_dma_adapter",
+              "signals": [
+                "tx_fifo_push_o"
+              ],
+              "bindings": [
+                "tx_fifo_push_o = s_tx_held_q && !s_tx_closing"
+              ]
+            },
+            "net": "internal:tx-fifo"
+          },
+          {
+            "id": "rx-fifo",
+            "from": "queues",
+            "to": "hold",
+            "kind": "data",
+            "label": "Pop /32",
+            "width": 32,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_dma_adapter.sv",
+              "module": "piolite_dma_adapter",
+              "signals": [
+                "rx_fifo_pop_o"
+              ],
+              "bindings": [
+                "rx_fifo_pop_o = !s_rx_held_q && rx_bind_i[31]"
+              ]
+            },
+            "net": "internal:rx-fifo"
+          },
+          {
+            "id": "job",
+            "from": "memory",
+            "to": "tails",
+            "kind": "status",
+            "label": "Job active",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/apb4_piolite.sv",
+              "module": "apb4_piolite",
+              "signals": [
+                "dma_tx_job_i"
+              ],
+              "bindings": [
+                ".tx_job_i (dma_tx_job_i)"
+              ]
+            },
+            "net": "internal:job"
+          },
+          {
+            "id": "handle-close",
+            "from": "hold",
+            "to": "tails",
+            "kind": "status",
+            "label": "Held / closing",
+            "width": null,
+            "source": {
+              "file": "rtl/ip/piolite/piolite_reg.sv",
+              "module": "piolite_reg",
+              "signals": [
+                "tx_held_i"
+              ],
+              "bindings": [
+                "tx_job_i || tx_held_i || tx_closing_i"
+              ]
+            },
+            "net": "internal:handle-close"
           }
         ],
         "layout": {
-          "height": 140,
-          "boundary": [0, 0, 150, 136],
+          "height": 179,
+          "boundary": [
+            27,
+            13,
+            115,
+            160
+          ],
+          "heading": [
+            80,
+            15
+          ],
           "nodes": {
-            "reg-registers": [38, 10, 36, 16],
-            "sm-core": [86, 10, 36, 16],
-            "dma-transport": [38, 38, 36, 16],
-            "gpio-guard": [86, 38, 36, 16],
-            "if-apb": [2, 12, 16, 12],
-            "if-tx": [2, 40, 16, 12],
-            "if-rx": [134, 40, 16, 12],
-            "if-gpio": [134, 66, 16, 12],
-            "if-clock-reset": [2, 68, 16, 12],
-            "if-irq": [134, 12, 16, 12]
+            "csr": [
+              31,
+              22,
+              46,
+              20
+            ],
+            "irq": [
+              95,
+              22,
+              42,
+              20
+            ],
+            "imem": [
+              31,
+              55,
+              46,
+              20
+            ],
+            "sm": [
+              95,
+              55,
+              42,
+              24
+            ],
+            "fifos": [
+              31,
+              95,
+              46,
+              25
+            ],
+            "guard": [
+              95,
+              95,
+              42,
+              25
+            ],
+            "adapter": [
+              31,
+              139,
+              46,
+              28
+            ],
+            "idle": [
+              95,
+              139,
+              42,
+              28
+            ],
+            "apb": [
+              2,
+              22,
+              20,
+              19
+            ],
+            "tx": [
+              2,
+              132,
+              20,
+              18
+            ],
+            "rx": [
+              2,
+              153,
+              20,
+              18
+            ],
+            "input": [
+              149,
+              58,
+              21,
+              23
+            ],
+            "value": [
+              149,
+              89,
+              21,
+              17
+            ],
+            "oe": [
+              149,
+              109,
+              21,
+              15
+            ],
+            "irq24": [
+              148,
+              22,
+              22,
+              16
+            ],
+            "rcu": [
+              147,
+              145,
+              23,
+              16
+            ],
+            "handoff": [
+              12,
+              20,
+              60,
+              21
+            ],
+            "gstatus": [
+              100,
+              20,
+              60,
+              21
+            ],
+            "masks": [
+              12,
+              64,
+              60,
+              20
+            ],
+            "qualify": [
+              100,
+              64,
+              60,
+              20
+            ],
+            "pads": [
+              100,
+              109,
+              60,
+              21
+            ],
+            "insample": [
+              12,
+              109,
+              60,
+              21
+            ],
+            "fault-stop": [
+              12,
+              87,
+              60,
+              16
+            ],
+            "bind": [
+              12,
+              20,
+              60,
+              21
+            ],
+            "admit": [
+              100,
+              20,
+              60,
+              21
+            ],
+            "memory": [
+              12,
+              67,
+              60,
+              23
+            ],
+            "hold": [
+              100,
+              67,
+              60,
+              23
+            ],
+            "tails": [
+              12,
+              117,
+              60,
+              22
+            ],
+            "queues": [
+              100,
+              117,
+              60,
+              22
+            ],
+            "clock-pin": [
+              35,
+              2,
+              16,
+              8
+            ],
+            "reset-pin": [
+              59,
+              2,
+              16,
+              8
+            ]
           },
           "routes": {
-            "reg-control": {
-              "points": [[56, 10], [56, 6], [104, 6], [104, 10]],
-              "from": {"side": "north", "offset": 18},
-              "to": {"side": "north", "offset": 18},
-              "label": [2, 82, 32]
+            "apb-access": {
+              "from": {
+                "side": "east",
+                "offset": 9
+              },
+              "to": {
+                "side": "west",
+                "offset": 9
+              },
+              "points": [
+                [
+                  22,
+                  31
+                ],
+                [
+                  31,
+                  31
+                ]
+              ]
             },
-            "dma-tx": {
-              "points": [[74, 44], [74, 30], [104, 30], [104, 26]],
-              "from": {"side": "east", "offset": 6},
-              "to": {"side": "south", "offset": 18},
-              "label": [38, 82, 32]
+            "clock": {
+              "from": {
+                "side": "south",
+                "offset": 8
+              },
+              "to": {
+                "side": "north",
+                "offset": 12
+              },
+              "points": [
+                [
+                  43,
+                  10
+                ],
+                [
+                  43,
+                  22
+                ]
+              ]
             },
-            "dma-rx": {
-              "points": [[86, 18], [78, 18], [78, 60], [74, 60], [74, 50]],
-              "from": {"side": "west", "offset": 8},
-              "to": {"side": "east", "offset": 12},
-              "label": [74, 82, 32]
+            "reset": {
+              "from": {
+                "side": "south",
+                "offset": 8
+              },
+              "to": {
+                "side": "north",
+                "offset": 36
+              },
+              "points": [
+                [
+                  67,
+                  10
+                ],
+                [
+                  67,
+                  22
+                ]
+              ]
             },
-            "gpio-output": {
-              "points": [[122, 16], [128, 16], [128, 46], [122, 46]],
-              "from": {"side": "east", "offset": 6},
-              "to": {"side": "east", "offset": 8},
-              "label": [110, 82, 32]
+            "enable": {
+              "from": {
+                "side": "east",
+                "offset": 9
+              },
+              "to": {
+                "side": "west",
+                "offset": 9
+              },
+              "points": [
+                [
+                  77,
+                  31
+                ],
+                [
+                  95,
+                  31
+                ]
+              ],
+              "label": [
+                78.67,
+                25.6,
+                14.65
+              ]
             },
-            "gpio-input": {
-              "points": [[86, 48], [82, 48], [82, 24], [86, 24]],
-              "from": {"side": "west", "offset": 10},
-              "to": {"side": "west", "offset": 14},
-              "label": [2, 96, 32]
+            "irq24-out": {
+              "from": {
+                "side": "east",
+                "offset": 9
+              },
+              "to": {
+                "side": "west",
+                "offset": 9
+              },
+              "points": [
+                [
+                  137,
+                  31
+                ],
+                [
+                  148,
+                  31
+                ]
+              ]
             },
-            "apb-interface": {
-              "points": [[18, 18], [22, 18], [22, 6], [38, 6], [38, 10]],
-              "from": {"side": "east", "offset": 6},
-              "to": {"side": "north", "offset": 0},
-              "label": [38, 96, 32]
+            "load": {
+              "from": {
+                "side": "south",
+                "offset": 17
+              },
+              "to": {
+                "side": "north",
+                "offset": 17
+              },
+              "points": [
+                [
+                  48,
+                  42
+                ],
+                [
+                  48,
+                  55
+                ]
+              ],
+              "label": [
+                32.57,
+                46.65,
+                13.73
+              ]
             },
-            "tx-interface": {
-              "points": [[18, 46], [38, 46]],
-              "from": {"side": "east", "offset": 6},
-              "to": {"side": "west", "offset": 8},
-              "label": [74, 96, 32]
+            "start": {
+              "from": {
+                "side": "south",
+                "offset": 39
+              },
+              "to": {
+                "side": "north",
+                "offset": 6
+              },
+              "points": [
+                [
+                  70,
+                  42
+                ],
+                [
+                  70,
+                  48
+                ],
+                [
+                  101,
+                  48
+                ],
+                [
+                  101,
+                  55
+                ]
+              ],
+              "label": [
+                76.49,
+                49.65,
+                22.81
+              ]
             },
-            "rx-interface": {
-              "points": [[56, 54], [56, 64], [134, 64], [134, 44]],
-              "from": {"side": "south", "offset": 18},
-              "to": {"side": "west", "offset": 4},
-              "label": [110, 96, 32]
+            "events": {
+              "from": {
+                "side": "north",
+                "offset": 28
+              },
+              "to": {
+                "side": "south",
+                "offset": 28
+              },
+              "points": [
+                [
+                  123,
+                  55
+                ],
+                [
+                  123,
+                  42
+                ]
+              ],
+              "label": [
+                110.72,
+                46.65,
+                10.58
+              ]
             },
-            "gpio-interface": {
-              "points": [[122, 50], [128, 50], [128, 72], [134, 72]],
-              "from": {"side": "east", "offset": 12},
-              "to": {"side": "west", "offset": 6},
-              "label": [2, 110, 32]
+            "fetch": {
+              "from": {
+                "side": "east",
+                "offset": 11
+              },
+              "to": {
+                "side": "west",
+                "offset": 11
+              },
+              "points": [
+                [
+                  77,
+                  66
+                ],
+                [
+                  95,
+                  66
+                ]
+              ],
+              "label": [
+                78.9,
+                60.6,
+                14.2
+              ]
             },
-            "clock-boundary": {
-              "points": [[18, 72], [26, 72], [26, 18], [38, 18]],
-              "from": {"side": "east", "offset": 4},
-              "to": {"side": "west", "offset": 8},
-              "label": [38, 110, 32]
+            "pad-sample": {
+              "from": {
+                "side": "west",
+                "offset": 10
+              },
+              "to": {
+                "side": "east",
+                "offset": 13
+              },
+              "points": [
+                [
+                  149,
+                  68
+                ],
+                [
+                  137,
+                  68
+                ]
+              ]
             },
-            "reset-boundary": {
-              "points": [[18, 76], [32, 76], [32, 22], [38, 22]],
-              "from": {"side": "east", "offset": 8},
-              "to": {"side": "west", "offset": 12},
-              "label": [74, 110, 32]
+            "sm-out": {
+              "from": {
+                "side": "south",
+                "offset": 23
+              },
+              "to": {
+                "side": "north",
+                "offset": 23
+              },
+              "points": [
+                [
+                  118,
+                  79
+                ],
+                [
+                  118,
+                  95
+                ]
+              ],
+              "label": [
+                119.8,
+                81,
+                13.43
+              ]
             },
-            "irq-boundary": {
-              "points": [[74, 14], [74, 2], [134, 2], [134, 16]],
-              "from": {"side": "east", "offset": 4},
-              "to": {"side": "west", "offset": 4},
-              "label": [110, 110, 32]
+            "guard-fault": {
+              "from": {
+                "side": "north",
+                "offset": 41
+              },
+              "to": {
+                "side": "south",
+                "offset": 41
+              },
+              "points": [
+                [
+                  136,
+                  95
+                ],
+                [
+                  136,
+                  79
+                ]
+              ],
+              "label": [
+                126.41,
+                89.5,
+                7.79
+              ]
+            },
+            "value-out": {
+              "from": {
+                "side": "east",
+                "offset": 5
+              },
+              "to": {
+                "side": "west",
+                "offset": 11
+              },
+              "points": [
+                [
+                  137,
+                  100
+                ],
+                [
+                  149,
+                  100
+                ]
+              ]
+            },
+            "oe-out": {
+              "from": {
+                "side": "east",
+                "offset": 20
+              },
+              "to": {
+                "side": "west",
+                "offset": 6
+              },
+              "points": [
+                [
+                  137,
+                  115
+                ],
+                [
+                  149,
+                  115
+                ]
+              ]
+            },
+            "sm-tx": {
+              "from": {
+                "side": "north",
+                "offset": 35
+              },
+              "to": {
+                "side": "south",
+                "offset": 7
+              },
+              "points": [
+                [
+                  66,
+                  95
+                ],
+                [
+                  66,
+                  85
+                ],
+                [
+                  102,
+                  85
+                ],
+                [
+                  102,
+                  79
+                ]
+              ],
+              "label": [
+                75.36,
+                79.6,
+                17.28
+              ]
+            },
+            "sm-rx": {
+              "from": {
+                "side": "south",
+                "offset": 16
+              },
+              "to": {
+                "side": "north",
+                "offset": 22
+              },
+              "points": [
+                [
+                  111,
+                  79
+                ],
+                [
+                  111,
+                  91
+                ],
+                [
+                  53,
+                  91
+                ],
+                [
+                  53,
+                  95
+                ]
+              ],
+              "label": [
+                32.44,
+                89.95,
+                18.86
+              ]
+            },
+            "tx-push": {
+              "from": {
+                "side": "north",
+                "offset": 12
+              },
+              "to": {
+                "side": "south",
+                "offset": 12
+              },
+              "points": [
+                [
+                  43,
+                  139
+                ],
+                [
+                  43,
+                  120
+                ]
+              ],
+              "label": [
+                30.7,
+                127.65,
+                10.6
+              ]
+            },
+            "rx-pop": {
+              "from": {
+                "side": "south",
+                "offset": 34
+              },
+              "to": {
+                "side": "north",
+                "offset": 34
+              },
+              "points": [
+                [
+                  65,
+                  120
+                ],
+                [
+                  65,
+                  139
+                ]
+              ],
+              "label": [
+                52.71,
+                127.65,
+                10.59
+              ]
+            },
+            "tx14": {
+              "from": {
+                "side": "east",
+                "offset": 13
+              },
+              "to": {
+                "side": "west",
+                "offset": 6
+              },
+              "points": [
+                [
+                  22,
+                  145
+                ],
+                [
+                  31,
+                  145
+                ]
+              ]
+            },
+            "rx15": {
+              "from": {
+                "side": "west",
+                "offset": 23
+              },
+              "to": {
+                "side": "east",
+                "offset": 9
+              },
+              "points": [
+                [
+                  31,
+                  162
+                ],
+                [
+                  22,
+                  162
+                ]
+              ]
+            },
+            "held": {
+              "from": {
+                "side": "east",
+                "offset": 14
+              },
+              "to": {
+                "side": "west",
+                "offset": 14
+              },
+              "points": [
+                [
+                  77,
+                  153
+                ],
+                [
+                  95,
+                  153
+                ]
+              ]
+            },
+            "lifecycle": {
+              "from": {
+                "side": "east",
+                "offset": 14
+              },
+              "to": {
+                "side": "west",
+                "offset": 8
+              },
+              "points": [
+                [
+                  137,
+                  153
+                ],
+                [
+                  147,
+                  153
+                ]
+              ]
+            },
+            "owner-status": {
+              "from": {
+                "side": "east",
+                "offset": 11
+              },
+              "to": {
+                "side": "west",
+                "offset": 11
+              },
+              "points": [
+                [
+                  72,
+                  31
+                ],
+                [
+                  100,
+                  31
+                ]
+              ],
+              "label": [
+                76.64,
+                25.6,
+                18.73
+              ]
+            },
+            "ready": {
+              "from": {
+                "side": "south",
+                "offset": 28
+              },
+              "to": {
+                "side": "north",
+                "offset": 28
+              },
+              "points": [
+                [
+                  128,
+                  41
+                ],
+                [
+                  128,
+                  64
+                ]
+              ],
+              "label": [
+                107.98,
+                50.65,
+                18.32
+              ]
+            },
+            "claim": {
+              "from": {
+                "side": "east",
+                "offset": 10
+              },
+              "to": {
+                "side": "west",
+                "offset": 10
+              },
+              "points": [
+                [
+                  72,
+                  74
+                ],
+                [
+                  100,
+                  74
+                ]
+              ],
+              "label": [
+                77.93,
+                68.6,
+                16.14
+              ]
+            },
+            "value": {
+              "from": {
+                "side": "south",
+                "offset": 15
+              },
+              "to": {
+                "side": "north",
+                "offset": 15
+              },
+              "points": [
+                [
+                  115,
+                  84
+                ],
+                [
+                  115,
+                  109
+                ]
+              ],
+              "label": [
+                98.44,
+                94.65,
+                14.86
+              ]
+            },
+            "oe": {
+              "from": {
+                "side": "south",
+                "offset": 45
+              },
+              "to": {
+                "side": "north",
+                "offset": 45
+              },
+              "points": [
+                [
+                  145,
+                  84
+                ],
+                [
+                  145,
+                  109
+                ]
+              ],
+              "label": [
+                132.58,
+                94.65,
+                10.72
+              ]
+            },
+            "sample": {
+              "from": {
+                "side": "west",
+                "offset": 10
+              },
+              "to": {
+                "side": "east",
+                "offset": 10
+              },
+              "points": [
+                [
+                  100,
+                  119
+                ],
+                [
+                  72,
+                  119
+                ]
+              ],
+              "label": [
+                79.02,
+                113.6,
+                13.97
+              ]
+            },
+            "fault-live": {
+              "from": {
+                "side": "west",
+                "offset": 16
+              },
+              "to": {
+                "side": "east",
+                "offset": 8
+              },
+              "points": [
+                [
+                  100,
+                  80
+                ],
+                [
+                  86,
+                  80
+                ],
+                [
+                  86,
+                  95
+                ],
+                [
+                  72,
+                  95
+                ]
+              ],
+              "label": [
+                76.51,
+                85.65,
+                7.79
+              ]
+            },
+            "lease": {
+              "from": {
+                "side": "east",
+                "offset": 11
+              },
+              "to": {
+                "side": "west",
+                "offset": 11
+              },
+              "points": [
+                [
+                  72,
+                  31
+                ],
+                [
+                  100,
+                  31
+                ]
+              ],
+              "label": [
+                75.94,
+                25.6,
+                20.13
+              ]
+            },
+            "dma-grant": {
+              "from": {
+                "side": "south",
+                "offset": 21
+              },
+              "to": {
+                "side": "north",
+                "offset": 39
+              },
+              "points": [
+                [
+                  121,
+                  41
+                ],
+                [
+                  121,
+                  53
+                ],
+                [
+                  51,
+                  53
+                ],
+                [
+                  51,
+                  67
+                ]
+              ],
+              "label": [
+                74.78,
+                47.6,
+                22.43
+              ]
+            },
+            "tx-stream": {
+              "from": {
+                "side": "east",
+                "offset": 5
+              },
+              "to": {
+                "side": "west",
+                "offset": 5
+              },
+              "points": [
+                [
+                  72,
+                  72
+                ],
+                [
+                  100,
+                  72
+                ]
+              ],
+              "label": [
+                79.03,
+                66.6,
+                13.94
+              ]
+            },
+            "rx-stream": {
+              "from": {
+                "side": "west",
+                "offset": 18
+              },
+              "to": {
+                "side": "east",
+                "offset": 18
+              },
+              "points": [
+                [
+                  100,
+                  85
+                ],
+                [
+                  72,
+                  85
+                ]
+              ],
+              "label": [
+                79.11,
+                79.6,
+                13.77
+              ]
+            },
+            "tx-fifo": {
+              "from": {
+                "side": "south",
+                "offset": 14
+              },
+              "to": {
+                "side": "north",
+                "offset": 14
+              },
+              "points": [
+                [
+                  114,
+                  90
+                ],
+                [
+                  114,
+                  117
+                ]
+              ],
+              "label": [
+                98.36,
+                107.5,
+                13.84
+              ]
+            },
+            "rx-fifo": {
+              "from": {
+                "side": "north",
+                "offset": 45
+              },
+              "to": {
+                "side": "south",
+                "offset": 45
+              },
+              "points": [
+                [
+                  145,
+                  117
+                ],
+                [
+                  145,
+                  90
+                ]
+              ],
+              "label": [
+                146.8,
+                107.5,
+                12.26
+              ]
+            },
+            "job": {
+              "from": {
+                "side": "south",
+                "offset": 26
+              },
+              "to": {
+                "side": "north",
+                "offset": 26
+              },
+              "points": [
+                [
+                  38,
+                  90
+                ],
+                [
+                  38,
+                  117
+                ]
+              ],
+              "label": [
+                20.26,
+                101.65,
+                16.04
+              ]
+            },
+            "handle-close": {
+              "from": {
+                "side": "south",
+                "offset": 1
+              },
+              "to": {
+                "side": "north",
+                "offset": 52
+              },
+              "points": [
+                [
+                  101,
+                  90
+                ],
+                [
+                  101,
+                  101
+                ],
+                [
+                  64,
+                  101
+                ],
+                [
+                  64,
+                  117
+                ]
+              ],
+              "label": [
+                71.97,
+                95.6,
+                21.06
+              ]
             }
           },
-          "groups": [],
-          "heading": [4, 4],
-          "border_clearance_version": 3
+          "direct_labels": true
         }
-      }
+      },
+      "route_details": [
+        {
+          "id": "gpio-ownership",
+          "title": "GPIO ownership and drive",
+          "note": "Across the GPIO and PIOLITE integration boundary, USER selection initiates a high-impedance handoff. The pad-input path feeds both SMs independently. A live claim that loses ownership or GPIO readiness faults and loses the affected output enables.",
+          "edges": [
+            "owner-status",
+            "ready",
+            "claim",
+            "value",
+            "oe",
+            "sample",
+            "fault-live"
+          ],
+          "boundary_title": "GPIO controller and PIOLITE",
+          "frame": {
+            "height": 147,
+            "boundary": [
+              5,
+              5,
+              162,
+              137
+            ],
+            "heading": [
+              9,
+              8
+            ]
+          }
+        },
+        {
+          "id": "dma-transport",
+          "title": "DMA admission and closing",
+          "note": "TX14 and RX15 select stream directions. Each direction binds a disabled SM and a distinct idle central channel. While closing, an outstanding TX offer can handshake for discard; no new TX FIFO word is pushed. Check held words, job state and responses before releasing the lease.",
+          "edges": [
+            "lease",
+            "dma-grant",
+            "tx-stream",
+            "rx-stream",
+            "tx-fifo",
+            "rx-fifo",
+            "job",
+            "handle-close"
+          ],
+          "boundary_title": "Central DMA and PIOLITE",
+          "frame": {
+            "height": 156,
+            "boundary": [
+              5,
+              5,
+              162,
+              146
+            ],
+            "heading": [
+              9,
+              8
+            ]
+          }
+        }
+      ]
     }
   },
   "ws2812": {

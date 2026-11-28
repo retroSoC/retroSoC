@@ -78,6 +78,10 @@ def overview_edges(view: dict) -> set[str]:
                 geometry.get("routes", {})
             ) != set(selection):
                 raise ValueError("IP scoped detail layout differs from the verified route selection")
+        if "frame" in detail and (
+            "layout" in detail or set(detail["frame"]) != {"height", "boundary", "heading"}
+        ):
+            raise ValueError("IP scoped detail frame may only change the canvas and heading")
         moved.update(selection)
     overview = set(edges) - moved
     if moved:
@@ -96,6 +100,9 @@ def overview_edges(view: dict) -> set[str]:
 def review_issues(scene: dict) -> list[str]:
     """Apply readability rules to each printed view, including local details."""
     issues = []
+    for node in scene["nodes"]:
+        if r"\n" in node["title"]:
+            issues.append("literal-line-break:" + node["id"])
     crossings = len(scene["crossings"])
     if crossings > MAX_CROSSINGS:
         issues.append(f"crossing-limit:{crossings}>{MAX_CROSSINGS}")
@@ -543,6 +550,8 @@ def make_scene(circuit: dict, advances: dict, graph: dict | None = None) -> dict
         groups=deepcopy(layout.get("groups", [])),
         routing_strategy="authored-functional-lanes-v2",
     )
+    if layout.get("direct_labels"):
+        scene["direct_labels"] = True
     from publications.ip_block_reference import text_width
 
     heading = view.get("boundary_title", view["title"].split(" / ")[0])
@@ -942,6 +951,10 @@ def geometry_issues(scene, advances):
     for label in decorations:
         x, y, w, h = [label[k] for k in ("x", "y", "w", "h")]
         polygon = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
+        if scene.get("direct_labels") and "edge" in label:
+            points = wires[label["edge"]]["points"]
+            if min(polygon_distance(segment, polygon) for segment in zip(points, points[1:])) > 3:
+                issues.append("detached-label:" + label["text"])
         if any(polygon_distance((a, b), polygon) < 1 + 0.9 * 25.4 / 144 - 0.01 for a, b in border):
             issues.append("label-boundary:" + label["text"])
         if x < 1 or y < 1 or x + w > scene["width"] - 1 or y + h > scene["height"] - 1:
