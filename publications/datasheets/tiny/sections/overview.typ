@@ -123,11 +123,13 @@ See @tiny-configuration for profile differences, @tiny-core for the functional a
     #change-start("tiny-v02-r1-chip-alignment-20261125-r1-product-line", "R1 chip scale and status pill alignment")
     #change-start("tiny-v02-pdk-highlights-20261125-overview-figures", "ICSprout55 PDK tile, chip marks and semibold R1 highlights")
     #change-start("tiny-v02-r1-weight-450-20261126-r1-product-line", "R1 product highlights at weight 450")
+    #change-start("tiny-v02-piolite-r1-badges-20261128-overview", "PIOLITE feature tile and R1 product line badges")
     #stack(dir: ttb, spacing: rhythm.figure-space,
       highlights,
       diagram("tiny-r1-product-line", product-line, [R1 product line.],
         figure-label: "tiny-r1-product-line"),
     )
+    #change-end("tiny-v02-piolite-r1-badges-20261128-overview")
     #change-end("tiny-v02-r1-weight-450-20261126-r1-product-line")
     #change-end("tiny-v02-pdk-highlights-20261125-overview-figures")
     #change-end("tiny-v02-r1-chip-alignment-20261125-r1-product-line")

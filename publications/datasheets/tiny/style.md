@@ -118,14 +118,15 @@ Align the DVP card with both edges of the central 463 × 373 chip card at
 (369, 179). Place the chip at (456, 222). Center the two-line application
 summary in a card of the same width directly below it.
 
-On the left, pair the ICSprout55 PDK and multimedia applications above the
-full-width PPALite card, with SDIO and GPIO below. Set `55nm` in 22 pt violet
-type above the two centered 9 pt lines `Open-source` and `PDK`. Center the
-four application lines `Camera capture`, `Stereo audio`, `SPI LCD` and
-`preview` in the 170 × 166 card. Use 9 pt Inter at weight 650 with the violet
-gradient. Use −0.060 em tracking on the first line and −0.018 em on the
-other three. Set `Two alternate` above `modes` and keep `32 GPIOs` on one
-line in 14.5 pt.
+On the left, pair the ICSprout55 PDK and PIOLITE above the full-width PPALite
+card, with SDIO and GPIO below. Set `55nm` in 22 pt violet
+type above the two centered 9 pt lines `Open-source` and `PDK`. Place the
+170 × 166 PIOLITE tile at (189, 179) and center its four lines. Use
+16 pt for `PIOLITE` and 9 pt for `2 I/O SMs`, `32-word IMEM` and `TX/RX DMA`.
+Set all four in Inter 650 with the violet gradient and −0.018 em tracking,
+at 24, 70, 99 and 128 design units below the card top. Read the numeric
+labels from the PIOLITE CAPABILITY fields. TX and RX use selectors 14 and 15.
+Set `Two alternate` above `modes` and keep `32 GPIOs` on one line in 14.5 pt.
 
 On the right, align Central DMA and Hazard3 hart using the same three rows.
 Place each 9 pt title, 22 pt violet count and 9 pt caption at 27, 85 and
@@ -182,8 +183,15 @@ its outline, by the same factor on both axes. The badge, descriptor and
 3.82 pt inside the marked chip regions.
 Validate the chip order top to bottom in each column, beginning with the left
 column. Purple denotes Embedded & Edge and warm yellow denotes Professional
-Compute. Use the product plan for STD roadmap targets and label each right-hand
-entry `Concept`. Render the same figure at the same height in the book and in
+Compute. Read each family chip's badge from its product record. TINY, MINI and
+STD use Edge AI, PRO uses Generative AI, MAX uses Embodied AI and ULTRA uses
+Physical AI. Anchor the warm-yellow capsules to x = 282 on the chip master.
+Use the original 133-unit Physical AI capsule to determine horizontal padding
+with 9 pt Inter Bold. Extend longer capsules to the left, keeping their
+32-unit height, 8-unit radius and centered lettering. The historical Git blob
+anchors the family plan. The publication manifest also records the live catalog
+including `chip_badge`. Use the product plan for STD roadmap targets and label
+each right-hand entry `Concept`. Render the same figure at the same height in the book and in
 its standalone SVG and PDF.
 
 Section 5.1 has four full-page specification tables in this order: Compute & AI,

@@ -44,7 +44,8 @@
  ([2026-11-26],[v0.2 DRAFT],[Add the R1 family roadmap with recorded TINY and MINI milestones, four planned development windows and a link from the Overview.]),
  ([2026-11-27],[v0.2 DRAFT],[Replace the Product Series summary with four six-model comparisons covering compute, memory, media and connectivity. Record the maximum MAX and ULTRA concept targets.]),
  ([2026-11-27],[v0.2 DRAFT],[Refresh the reviewed sources for PIOLITE P3. Add its reference chapter and update programmable GPIO and DMA routing throughout the book.]),
- ([2026-11-27],[v0.2 DRAFT],[Trace PIOLITE GPIO ownership and DMA transport through the system and IP diagrams. Correct the interrupt fields and document the TX14 closing handshake and firmware recovery.])),widths:(0.8fr,0.85fr,2.5fr))
+ ([2026-11-27],[v0.2 DRAFT],[Trace PIOLITE GPIO ownership and DMA transport through the system and IP diagrams. Correct the interrupt fields and document the TX14 closing handshake and firmware recovery.]),
+ ([2026-11-28],[v0.2 DRAFT],[Highlight the PIOLITE state machines, shared instruction memory and DMA paths in Figure 2. Label the R1 PRO and MAX chip artwork Generative AI and Embodied AI throughout the product guide.])),widths:(0.8fr,0.85fr,2.5fr))
 #change-end(doc.change_prefix + "document-control")
 
 == Sources and Reproducibility <publication-provenance>

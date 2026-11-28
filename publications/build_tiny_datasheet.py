@@ -471,9 +471,8 @@ def family_chip_type_limits(page, chips: list[dict], products: list[dict]) -> li
                                  region["y"] + region["height"]))
         if len(area.search(product["name"], regex=False)) != 1:
             raise ValueError(f"Tiny R1 figure requires the {product['name']} chip in its assigned row")
-        badge, description = (("Edge AI", "RISC-V AI MCU") if product["group"] == "embedded"
-                              else ("Physical AI", "RISC-V AI SoC"))
-        limits.extend(scaled_chip_type_limits(area, region, badge, description))
+        description = "RISC-V AI MCU" if product["group"] == "embedded" else "RISC-V AI SoC"
+        limits.extend(scaled_chip_type_limits(area, region, product["chip_badge"], description))
     return limits
 
 

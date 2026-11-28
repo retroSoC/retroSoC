@@ -23,9 +23,14 @@
   )), anchor: "north-west")
 }
 
+#let badge-lettering(body, ink) = box(text(
+  font: "Inter", size: 9pt, weight: 700, fill: ink,
+  top-edge: "bounds", bottom-edge: "bounds", body,
+))
+
 #let draw-chip(
   x, y, product-name: "TINY", description: "RISC-V AI MCU", badge: "Edge AI",
-  accent: chip-violet, show-icsprout: true, marking-ink: none,
+  badge-width: 96, badge-right: 271, accent: chip-violet, show-icsprout: true, marking-ink: none,
 ) = {
   import cetz.draw: content
 
@@ -54,13 +59,9 @@
   if show-icsprout {
     chip-logo(65.82048, chip-logos.icsprout, anchor: "west")
   }
-  // The longer badge retains its text padding.
-  let (badge-left, badge-width) = if badge == "Physical AI" { (149, 133) } else { (175, 96) }
+  let badge-left = badge-right - badge-width
   panel(x + badge-left, y + 18, badge-width, 32, fill: mark(accent.light), radius: 8)
-  content((x + badge-left + badge-width / 2, -y - 34), box(text(
-    font: "Inter", size: 9pt, weight: 700, fill: badge-ink,
-    top-edge: "bounds", bottom-edge: "bounds", badge,
-  )), anchor: "center")
+  content((x + badge-left + badge-width / 2, -y - 34), badge-lettering(badge, badge-ink), anchor: "center")
 
   let chip-mark = {
     set text(font: "Inter", fill: mark(rgb("#FAFAFB")), top-edge: "cap-height", bottom-edge: "baseline")
@@ -93,11 +94,16 @@
 }
 
 #let r1-chip-size = 26.5mm
-#let r1-chip(product) = {
+#let r1-chip(product) = context {
   let embedded = product.group == "embedded"
+  // The original 133-unit gold capsule establishes the horizontal text padding.
+  let width = if embedded { 96 } else {
+    133 + (measure(badge-lettering(product.chip_badge, detail-ink)).width
+      - measure(badge-lettering("Physical AI", detail-ink)).width) / unit
+  }
   scaled-chip(r1-chip-size, product-name: product.name, show-icsprout: false,
     description: if embedded { "RISC-V AI MCU" } else { "RISC-V AI SoC" },
-    badge: if embedded { "Edge AI" } else { "Physical AI" },
+    badge: product.chip_badge, badge-width: width, badge-right: if embedded { 271 } else { 282 },
     accent: if embedded { chip-violet } else { chip-warm-yellow })
 }
 
@@ -267,10 +273,12 @@
     label(0, 125, "PDK")
   })
   tile(189, 179, 170, 166, {
-    accent(0, 32, "Camera capture", 9pt, tracking: -0.060em)
-    accent(0, 63, "Stereo audio", 9pt)
-    accent(0, 95, "SPI LCD", 9pt)
-    accent(0, 117, "preview", 9pt)
+    let capability = data.registers.piolite.registers.find(r => r.key == "main.CAPABILITY")
+    let count(name) = int(capability.fields.find(f => f.name == name).reset.slice(2), base: 16)
+    accent(0, 24, "PIOLITE", 16pt)
+    accent(0, 70, str(count("SM_COUNT")) + " I/O SMs", 9pt)
+    accent(0, 99, str(count("IMEM_WORDS")) + "-word IMEM", 9pt)
+    accent(0, 128, "TX/RX DMA", 9pt)
   })
   tile(7, 355, 352, 164, {
     label(0, 13, "Inline")

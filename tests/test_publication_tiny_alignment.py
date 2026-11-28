@@ -287,20 +287,26 @@ def test_piolite_irq_fields_and_held_offer(data):
     assert wave["tdata"]["data"] == ["0xA5000010"]
 
 
-def test_piolite_missing_irq_field_bits_fail_source_check(monkeypatch):
+@pytest.mark.parametrize("register,message", [
+    ("IRQ_STATUS", "implemented IRQ mask"), ("CAPABILITY", "CAPABILITY reset differs from RTL"),
+])
+def test_piolite_register_reference_rejects_drift(monkeypatch, register, message):
     from publications.tiny_v02_reference import piolite_registers
 
     source = tiny.read
 
-    def remove_flag_bits(path):
+    def change_register(path):
         spec = source(path)
         if path.name == "piolite-registers.json":
-            row = next(r for r in spec if r["name"] == "IRQ_STATUS")
-            next(f for f in row["fields"] if f[0] == "FLAGS")[2] = 8
+            row = next(r for r in spec if r["name"] == register)
+            if register == "CAPABILITY":
+                row["reset"] = "0x08081001"
+            else:
+                next(f for f in row["fields"] if f[0] == "FLAGS")[2] = 8
         return spec
 
-    monkeypatch.setattr(tiny, "read", remove_flag_bits)
-    with pytest.raises(ValueError, match="implemented IRQ mask"):
+    monkeypatch.setattr(tiny, "read", change_register)
+    with pytest.raises(ValueError, match=message):
         piolite_registers({}, ROOT)
 
 

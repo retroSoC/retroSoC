@@ -20,7 +20,9 @@
   show figure.caption: it => none
   figure(kind: table, supplement: [Table], caption: [R1 Family · #topic.title], [
     #metadata(none)#label(if i == 0 {"start-series"} else {"start-series-" + topic.key})
+    #change-start("tiny-v02-piolite-r1-badges-20261128-spec-" + topic.key, topic.title + " chip badges")
     #r1-specification-plate(data.r1_specs, topic.key, book: true)
+    #change-end("tiny-v02-piolite-r1-badges-20261128-spec-" + topic.key)
   ])
 }
 #change-end("tiny-v02-r1-specifications-20261127-specification-plates")
@@ -37,6 +39,8 @@ Release dates, derivative features, package/process choices and commercial avail
 #change-start("tiny-v02-r1-roadmap-20261126-family-roadmap", "Six-tier R1 development and planning roadmap", category: "added")
 #{
   show figure: set block(above: 6pt, below: 0pt, breakable: false)
+  change-start("tiny-v02-piolite-r1-badges-20261128-roadmap", "R1 roadmap chip badges")
   diagram("r1-roadmap", r1-roadmap(data.r1_roadmap), [R1 Roadmap.], figure-label: "tiny-r1-roadmap-figure")
+  change-end("tiny-v02-piolite-r1-badges-20261128-roadmap")
 }
 #change-end("tiny-v02-r1-roadmap-20261126-family-roadmap")
