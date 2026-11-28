@@ -14936,23 +14936,23 @@
   "ci_snapshot": {
     "revision": "6ae635311cfe411d1be3eea2fbfa0e1790a99afe",
     "checked_date": "2026-11-28",
-    "checked_at": "2026-11-28T09:35:26Z",
-    "boundary": "PR #331 head 3ee760ac quality workflow completed with failure because the Mini reviewed source/control snapshot predated PIOLITE-P4. This is diagnostic source/control evidence only, not a passing result or hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
+    "checked_at": "2026-11-28T10:09:38Z",
+    "boundary": "PR #331 head 1dacfb74 quality workflow completed successfully. This is a source/control result only, not a hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
     "runs": [
       {
-        "run_id": 46129009429,
+        "run_id": 46131654138,
         "name": "quality",
-        "url": "https://github.com/retroSoC/retroSoC/actions/runs/46129009429",
+        "url": "https://github.com/retroSoC/retroSoC/actions/runs/46131654138",
         "status": "completed",
-        "conclusion": "failure",
-        "scope": "Repository quality workflow on exact PR #331 head 3ee760ac: fast, four fixture shards, fixture fan-in and aggregate quality gate completed with failure while the Mini reviewed source/control snapshot required PIOLITE-P4 binding",
-        "note": "Failure evidence only; the refreshed metadata requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred. The head's test-only pad fix does not change the reviewed technical inputs.",
+        "conclusion": "success",
+        "scope": "Repository quality workflow on exact PR #331 head 1dacfb74: fast checks, four fixture shards, fixture fan-in and aggregate quality gate completed successfully",
+        "note": "Exact source/control workflow result only; no per-IP hardware, Mini HP end-to-end, physical or release qualification inferred. Later metadata-only updates do not change the reviewed technical inputs.",
         "observations": [
           {
             "name": "fast",
-            "url": "https://github.com/retroSoC/retroSoC/actions/runs/46129009429/job/140929854558",
+            "url": "https://github.com/retroSoC/retroSoC/actions/runs/46131654138/job/140937923838",
             "status": "completed",
-            "conclusion": "failure",
+            "conclusion": "success",
             "scope": "environment-check"
           }
         ]
@@ -14960,6 +14960,32 @@
     ]
   },
   "historical_ci_snapshots": [
+    {
+      "revision": "6ae635311cfe411d1be3eea2fbfa0e1790a99afe",
+      "checked_date": "2026-11-28",
+      "checked_at": "2026-11-28T09:35:26Z",
+      "boundary": "PR #331 head 3ee760ac quality workflow completed with failure because the Mini reviewed source/control snapshot predated PIOLITE-P4. This is diagnostic source/control evidence only, not a passing result or hardware, physical or release qualification. Previous observations retain their original identity in historical_ci_snapshots.",
+      "runs": [
+        {
+          "run_id": 46129009429,
+          "name": "quality",
+          "url": "https://github.com/retroSoC/retroSoC/actions/runs/46129009429",
+          "status": "completed",
+          "conclusion": "failure",
+          "scope": "Repository quality workflow on exact PR #331 head 3ee760ac: fast, four fixture shards, fixture fan-in and aggregate quality gate completed with failure while the Mini reviewed source/control snapshot required PIOLITE-P4 binding",
+          "note": "Failure evidence only; the refreshed metadata requires a fresh workflow result. No per-IP hardware, Mini HP end-to-end, physical or release qualification is inferred. The head's test-only pad fix does not change the reviewed technical inputs.",
+          "observations": [
+            {
+              "name": "fast",
+              "url": "https://github.com/retroSoC/retroSoC/actions/runs/46129009429/job/140929854558",
+              "status": "completed",
+              "conclusion": "failure",
+              "scope": "environment-check"
+            }
+          ]
+        }
+      ]
+    },
     {
       "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
       "checked_date": "2026-11-26",
