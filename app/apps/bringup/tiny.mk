@@ -14,7 +14,7 @@ TINY_SIM_ARGS            += +piolite_p4_loopback +piolite_p4_scenario_$(TINY_PIO
 APP_INC_DIRS             += $(PIOLITE_P4_GENERATED_DIR) $(ROOT_PATH)/app/apps/bringup
 $(SW_BUILD_DIR)/firmware: $(PIOLITE_P4_GENERATED_C)
 $(PIOLITE_P4_GENERATED_DIR)/%.c: $(ROOT_PATH)/app/asm/piolite/%.piolite \
-                                 $(ROOT_PATH)/scripts/piolite_asm.py $(ROOT_PATH)/scripts/piolite_isa.py
+	$(ROOT_PATH)/scripts/piolite_asm.py $(ROOT_PATH)/scripts/piolite_isa.py
 	@mkdir -p $(@D)
 	$(PYTHON) $(ROOT_PATH)/scripts/piolite_asm.py $< $@
 endif
