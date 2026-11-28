@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 
 
 MODELS = ("TINY", "MINI", "STD", "PRO", "MAX", "ULTRA")
@@ -16,6 +17,16 @@ def verify_sources(root: Path, sources: dict) -> None:
     for key, entry in sources.items():
         if "path" in entry:
             raw = (root / entry["path"]).read_bytes().replace(b"\r\n", b"\n")
+            if key == "family-status":
+                # The frozen blob owns product planning. The live publication owns the chip lettering.
+                pinned = subprocess.check_output(["git", "-C", str(root), "show", f"{entry['revision']}:{entry['path']}"])
+                live, reviewed = json.loads(raw), json.loads(pinned)
+                for family in (live, reviewed):
+                    for product in family["products"]:
+                        product.pop("chip_badge", None)
+                if live != reviewed:
+                    raise ValueError("R1 family planning differs from the reviewed roadmap")
+                raw = pinned
             blob = hashlib.sha1(f"blob {len(raw)}\0".encode() + raw).hexdigest()
             if blob != entry["blob"]:
                 raise ValueError(f"R1 specification source changed: {key} at {entry['revision']}")
@@ -106,7 +117,7 @@ def resolve(catalog: dict, products: list[dict], facts: dict) -> dict:
             or resolved["sram"]["cells"]["TINY"]["value"] != facts["sram"]["CapacityKiB"]):
         raise ValueError("R1 plate disagrees with the selected TINY SRAM configuration")
     return dict(as_of=catalog["as_of"], topics=topics, products=[
-        {k: p[k] for k in ("name", "group", "positioning", "status")} for p in products
+        {k: p[k] for k in ("name", "group", "positioning", "status", "chip_badge")} for p in products
     ], metrics=resolved, sources=sources)
 
 

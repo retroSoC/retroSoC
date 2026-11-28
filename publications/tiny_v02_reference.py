@@ -158,6 +158,10 @@ def piolite_registers(fact: dict, root: Path) -> dict:
             value = registers.number(reset)
         except ValueError:
             value = None
+        if name == "CAPABILITY":
+            capability = re.search(r"\bAPB4_PIOLITE__CAPABILITY_VALUE\s+(\S+)", definitions)
+            if capability is None or registers.number(capability[1]) != value:
+                raise ValueError("TINY PIOLITE CAPABILITY reset differs from RTL")
         for field in fields:
             field["reset"] = (
                 hex((value >> field["lsb"]) & ((1 << (field["msb"] - field["lsb"] + 1)) - 1))

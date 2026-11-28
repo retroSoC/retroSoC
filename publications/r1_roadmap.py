@@ -46,6 +46,8 @@ def roadmap_reference(config: dict) -> dict:
 
     rows = []
     for p in products:
+        if not isinstance(p.get("chip_badge"), str) or not p["chip_badge"].strip():
+            raise ValueError(f"R1 chip badge is missing for {p['name']}")
         if p["status"] not in {"In development", "Roadmap", "Concept"} or p["group"] not in {"embedded", "professional"}:
             raise ValueError(f"unknown R1 roadmap status or family group for {p['name']}")
         observed = p["status"] == "In development"

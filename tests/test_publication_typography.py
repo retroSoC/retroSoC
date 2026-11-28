@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from publications.build_datasheet import validate_character_size  # noqa: E402
 from publications.build_tiny_datasheet import (  # noqa: E402
+    family_chip_type_limits,
     r1_card_copy_regions,
     r1_product_line_regions,
     r1_ultra_type_limit,
@@ -159,13 +160,20 @@ def test_cover_limits_reject_outside_or_unscaled_inscriptions(cover_chip_text, c
         scaled_chip_type_limits(page, region)
 
 
-def test_r1_soc_chip_type_limits_match_scaled_inscriptions(cover_chip_text):
-    page, region, rows = cover_chip_text
-    rows["Physical AI"] = rows.pop("Edge AI")
+@pytest.mark.parametrize("model,badge", [
+    ("PRO", "Generative AI"), ("MAX", "Embodied AI"), ("ULTRA", "Physical AI"),
+])
+def test_r1_soc_chip_type_limits_match_scaled_inscriptions(cover_chip_text, model, badge):
+    _, region, rows = cover_chip_text
+    rows[model] = [character()]
+    rows[badge] = rows.pop("Edge AI")
     rows["RISC-V AI SoC"] = rows.pop("RISC-V AI MCU")
-    limits = scaled_chip_type_limits(page, region, "Physical AI", "RISC-V AI SoC")
+    area = SimpleNamespace(search=lambda label, **_: rows.get(label, []))
+    page = SimpleNamespace(within_bbox=lambda _: area)
+    product = {"name": model, "group": "professional", "chip_badge": badge}
+    limits = family_chip_type_limits(page, [region], [product])
     assert [glyphs for glyphs, _ in limits] == [
-        rows[label][0]["chars"] for label in ("Physical AI", "RISC-V AI SoC", "Open Silicon Design")
+        rows[label][0]["chars"] for label in (badge, "RISC-V AI SoC", "Open Silicon Design")
     ]
 
 

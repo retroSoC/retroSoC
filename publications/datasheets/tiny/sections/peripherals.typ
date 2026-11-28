@@ -84,10 +84,10 @@ External RAM uses the existing @xpi controller and explicit NSS1 PSRAM initializ
 
 #pagebreak(weak:true)
 #context metadata((kind:"ip-start",id:"piolite",page:here().page()))
-#change-start(doc.change_prefix + "piolite-reference", "PIOLITE architecture, handshake, IRQ fields and software recovery")
+#change-start("tiny-v02-piolite-integration-20261127-piolite-reference", "PIOLITE architecture, handshake, IRQ fields and software recovery")
 ==== Programmable IO-lite (PIOLITE) <piolite>
 #reference(data.catalog.find(e=>e.id=="piolite"))
-#change-end(doc.change_prefix + "piolite-reference")
+#change-end("tiny-v02-piolite-integration-20261127-piolite-reference")
 #context metadata((kind:"ip-end",id:"piolite",page:here().page()))
 
 #pagebreak(weak:true)

@@ -20,6 +20,10 @@ def test_source_identity_values_and_states(inputs):
     catalog = inputs[0]
     specs.verify_sources(ROOT, catalog["sources"])
     result = specs.resolve(*inputs)
+    assert {p["name"]: p["chip_badge"] for p in result["products"]} == {
+        "TINY": "Edge AI", "MINI": "Edge AI", "STD": "Edge AI",
+        "PRO": "Generative AI", "MAX": "Embodied AI", "ULTRA": "Physical AI",
+    }
     assert [topic["key"] for topic in result["topics"]] == list(specs.TOPICS)
     assert sum(len(topic["metrics"]) for topic in result["topics"]) == 32
     facts = result["metrics"]
@@ -43,6 +47,15 @@ def test_source_identity_values_and_states(inputs):
         for metric in ("gpu-cores", "neural-cores", "system-memory", "bandwidth", "prores", "usb"):
             cell = facts[metric]["cells"][name]
             assert cell["state"] == "target" and cell["source"].startswith("concept-")
+
+
+def test_artwork_changes_cannot_hide_family_status_drift(inputs, monkeypatch):
+    source = inputs[0]["sources"]["family-status"]
+    roadmap = json.loads((ROOT / source["path"]).read_bytes())
+    roadmap["products"][0]["status"] = "Roadmap"
+    monkeypatch.setattr(Path, "read_bytes", lambda self: json.dumps(roadmap).encode())
+    with pytest.raises(ValueError, match="family planning differs"):
+        specs.verify_sources(ROOT, {"family-status": source})
 
 
 @pytest.mark.parametrize("fault", ["wrong-soc", "positioning", "missing", "role", "absence", "zero", "derived-unknown", "capacity"])

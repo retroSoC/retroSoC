@@ -26,7 +26,7 @@
   },
   "products": [
     {
-      "name": "TINY", "group": "embedded", "status": "In development",
+      "name": "TINY", "group": "embedded", "status": "In development", "chip_badge": "Edge AI",
       "positioning": "Compact control MCU",
       "highlights": ["1× Hazard3 · RV32IMC", "128 KiB on-chip SRAM", "DVP + PPALite · I²S · SDIO"],
       "focus": "Hazard3 · 128 KiB SRAM",
@@ -34,7 +34,7 @@
       "milestone": {"label": "Gen1 RTL baseline"}
     },
     {
-      "name": "MINI", "group": "embedded", "status": "In development",
+      "name": "MINI", "group": "embedded", "status": "In development", "chip_badge": "Edge AI",
       "positioning": "Heterogeneous Linux SoC",
       "highlights": ["OpenC906 RV64 + Hazard3 RV32", "64 MiB external SDRAM window", "INT8 NPU · GA2D · APU"],
       "short_title": "Gen2 / Gen2+ · Linux", "focus": "OpenC906 + Hazard3",
@@ -42,28 +42,28 @@
       "milestone": {"date": "2026-10-10", "label": "OpenC906 integration", "source": "mini-c906"}
     },
     {
-      "name": "STD", "group": "embedded", "status": "Roadmap",
+      "name": "STD", "group": "embedded", "status": "Roadmap", "chip_badge": "Edge AI",
       "positioning": "Graphical Linux SoC",
       "highlights": ["RV32 Linux + real-time cores", "512 MiB–1 GiB DDR target", "3D graphics · 1080p60 · AI targets"],
       "focus": "3D graphics · Industrial HMI",
       "start": "2027Q1", "end": "2027Q3", "source": "r1-plan"
     },
     {
-      "name": "PRO", "group": "professional", "status": "Concept",
+      "name": "PRO", "group": "professional", "status": "Concept", "chip_badge": "Generative AI",
       "positioning": "Balanced pro compute",
       "highlights": ["Balanced CPU and graphics", "Memory for complex projects", "Data modeling · Audio production"],
       "short_title": "Professional compute", "focus": "Data modeling · Audio production",
       "start": "2027Q3", "end": "2028Q2", "source": "r1-plan"
     },
     {
-      "name": "MAX", "group": "professional", "status": "Concept",
+      "name": "MAX", "group": "professional", "status": "Concept", "chip_badge": "Embodied AI",
       "positioning": "Graphics & AI compute",
       "highlights": ["More GPU compute and bandwidth", "Larger memory capacity", "3D animation · AI research"],
       "focus": "3D animation · AI research",
       "start": "2027Q4", "end": "2028Q3", "source": "r1-plan"
     },
     {
-      "name": "ULTRA", "group": "professional", "status": "Concept",
+      "name": "ULTRA", "group": "professional", "status": "Concept", "chip_badge": "Physical AI",
       "positioning": "Maximum compute & memory",
       "highlights": ["Expanded CPU and GPU scale", "Largest memory capacity", "Large models · Complex simulation"],
       "short_title": "Workstation compute", "focus": "Large models · Simulation",
