@@ -13,8 +13,10 @@
 .clock_ticks 1, stretchable
 load_high: FIFO PULL, BLOCKING
 MOVE X, OSR
+CTRL CLEAR_OSR
 load_low: FIFO PULL, BLOCKING
 MOVE Y, OSR
+CTRL CLEAR_OSR
 prepare_high: BRANCH DEC_X_NONZERO, prepare_low
 prepare_low: BRANCH DEC_Y_NONZERO, high
 high: SET_PIN 1

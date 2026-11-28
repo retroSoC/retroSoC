@@ -395,15 +395,15 @@ def test_cli_pathological_numbers_have_normal_diagnostics(tmp_path: Path, token:
 
 EXPECTED_FOOTPRINTS = {
     "logic_capture": 9,
-    "pulse_generate": 12,
-    "pulse_capture": 8,
-    "uart_tx": 12,
-    "uart_rx": 12,
+    "pulse_generate": 14,
+    "pulse_capture": 9,
+    "uart_tx": 13,
+    "uart_rx": 13,
     "spi_master": 15,
     "ir_tx": 10,
-    "ir_rx": 13,
-    "led_scan": 14,
-    "gamepad": 11,
+    "ir_rx": 14,
+    "led_scan": 15,
+    "gamepad": 12,
 }
 
 
@@ -431,7 +431,7 @@ def test_logic_capture_metadata_describes_application_samples() -> None:
 
 @pytest.mark.parametrize(
     ("first", "second", "total"),
-    (("pulse_generate", "pulse_capture", 20), ("uart_tx", "uart_rx", 24), ("ir_tx", "ir_rx", 23)),
+    (("pulse_generate", "pulse_capture", 23), ("uart_tx", "uart_rx", 26), ("ir_tx", "ir_rx", 24)),
 )
 def test_required_dual_sm_images_fit_together(first: str, second: str, total: int) -> None:
     allocator = InstructionAllocator()

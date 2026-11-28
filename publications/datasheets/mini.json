@@ -10,14 +10,14 @@
   "author": "Yuchi Miao",
   "author_email": "miaoyuchi@ict.ac.cn",
   "maintainer": "ECOS Team, ICT, CAS",
-  "source_revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
+  "source_revision": "6ae635311cfe411d1be3eea2fbfa0e1790a99afe",
   "build_control_review": {
-    "revision": "0f2dbfe749646f9c8dde05bae3c5599239f31aba",
-    "makefile_blob": "200dead771c7f7e9df6769b568dff65192ef1275",
+    "revision": "3ee760ac1b9fafe54edd2771d7a35f5af5304c02",
+    "makefile_blob": "3a2cecf47b0d610a2104b84696aa39a01ebe614f",
     "documentation_blobs": {
       "docs/git-workflow.md": "db5010d06d1064ba27f4697cc96d4e2075221703"
     },
-    "reason": "The reviewed snapshot advances to 0f2dbfe7 for PIOLITE-P3 Tiny integration and source-bound build inputs. Mini remains default-off and omits the unavailable HAL source; no Mini synthesis, netlist, STA or feature rollout is claimed. Later technical or control-file edits require a fresh explicit review."
+    "reason": "Reviewed PIOLITE-P4 Tiny SDK, application and build-control integration through the formatted source snapshot. Mini retains behavioral-only compatibility and gains no PIO-lite capability; no Mini synthesis, netlist or STA claim is made. CI failure 46129009429 is retained as diagnostic evidence pending a fresh green run."
   },
   "profile": "configs/ci/ihp130.mk",
   "hp_profile": "configs/ci/ihp130-hp.mk",

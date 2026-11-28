@@ -628,7 +628,8 @@ def test_uart_rx_application_samples_independent_8n1_stimulus(sent: int) -> None
     assert dut.sms[0].fault_code == FaultCode.NONE
 
 
-@pytest.mark.parametrize(("high_ticks", "low_ticks"), ((3, 5), (8, 2)))
+@pytest.mark.parametrize(("high_ticks", "low_ticks"),
+                         ((3, 5), (8, 2), (1, 1), (0, 1), (1, 0), (65535, 1)))
 def test_pulse_generate_application_has_independent_exact_phase_durations(
     high_ticks: int, low_ticks: int
 ) -> None:
@@ -638,7 +639,7 @@ def test_pulse_generate_application_has_independent_exact_phase_durations(
     dut.start(1)
     transitions = []
     previous_level = 0
-    for edge in range(6 + high_ticks + low_ticks + 2):
+    for edge in range(8 + max(2, high_ticks) + max(2, low_ticks) + 3):
         dut.step()
         level = (dut.sms[0].output_value >> 2) & 1
         if level != previous_level:
@@ -646,11 +647,12 @@ def test_pulse_generate_application_has_independent_exact_phase_durations(
             previous_level = level
 
     assert transitions == [
-        (6, 1),
-        (6 + high_ticks, 0),
-        (6 + high_ticks + low_ticks, 1),
+        (8, 1),
+        (8 + max(2, high_ticks), 0),
+        (8 + max(2, high_ticks) + max(2, low_ticks), 1),
     ]
     assert dut.sms[0].state == SMState.HALTED
+    assert dut.sms[0].osr_count == 0
     assert dut.sms[0].fault_code == FaultCode.NONE
 
 

@@ -184,3 +184,11 @@ devices fail boundedly; they do not hold CPU boot reset. The image then verifies
 watchdog reset by completing after the next NOR boot. It uses
 SYSCTRL terminal status. The small `asm/tiny_boot.S` image separately qualifies
 the synthesized SRAM/pad path; it is not a replacement for the full RTL test.
+
+PIOLITE-P4 reuses `APP=bringup` with `TINY_PIOLITE_P4_ACCEPTANCE=YES` and an
+isolated `TINY_PIOLITE_P4_SCENARIO`; it does not add an application profile.
+The build assembles the checked `.piolite` sources into the selected variant's
+`generated/piolite/` directory. Firmware writes SYSCTRL terminal status before
+flushing the bounded static diagnostic report, so UART text cannot delay the
+verdict. Terminal status and the independent pin-model checks remain separate
+requirements.
